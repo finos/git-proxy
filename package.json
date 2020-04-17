@@ -1,0 +1,19 @@
+{
+  "name": "github-proxy",
+  "version": "0.0.1",
+  "description": "Github proxyy for scanning and inspecting a 'git push' ",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pGrovesy/github-proxy.git"
+  },
+  "author": "Paul Groves",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pGrovesy/github-proxy/issues"
+  },
+  "homepage": "https://github.com/pGrovesy/github-proxy#readme"
+}
