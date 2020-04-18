@@ -4,7 +4,8 @@
   "description": "Github proxyy for scanning and inspecting a 'git push' ",
   "main": "index.js",
   "scripts": {
-    "test": "test"
+    "test": "test",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -19,6 +20,7 @@
   "dependencies": {
     "express": "^4.17.1",
     "express-http-proxy": "^1.6.0",
+    "http-proxy": "^1.18.0",
     "https": "^1.0.0"
   },
   "devDependencies": {
