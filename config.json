@@ -1,0 +1,5 @@
+{
+  "repoWhiteList": [
+    "pGrovesy/test-allowed-repo.git"    
+  ]
+}

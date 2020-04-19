@@ -22,10 +22,12 @@ app.use('/', proxy('https://github.com', {
     }
 
     const result = chain.exec(req);
+
     console.log(JSON.stringify(result));
 
-    // console.log(JSON.stringify(req.headers));
-    // console.log(`body=${req.rawBody}`);
+    if (!result.ok) {
+      return false;
+    }
 
     return true;
   },
