@@ -20,15 +20,12 @@ const server = function(cb) {
   });
 };
 
-const watchTests = function() {
-  gulp.watch(watchList, () => {
-    return gulp.src(tests)
-        .pipe(mocha({reporter: 'list'}))
-        .on('error', (err) => {
-          console.log(err.stack);
-        });
-  });
+const runTest = function() {
+  return gulp.src(['test/**/*.js'], {read: false})
+      .pipe(mocha({reporter: 'list', exit: false}))
+      .on('error', console.error);
 };
+
 
 // clean up if an error goes unhandled.
 process.on('exit', function() {
@@ -38,6 +35,4 @@ process.on('exit', function() {
 });
 
 exports.server = server;
-exports.start = gulp.series(server, test);
-exports.watchTest = watchTests;
-exports.watchServer = gulp.watch(watchList, server);
+exports.test = () => gulp.watch(watchList, () => runTest());
