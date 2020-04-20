@@ -6,8 +6,9 @@ We wish to keep the process for the developer as simple and familiar as possible
 
 The idea is quite simple, scan outgoing attempts to push to public repositor and raise compliance/info-sec friendly checks before allowing the push to complete. 
 
-
 Of course every corporation will have different procedures so a key feature has to be the extensibility of the framework.
+
+
 
 ## Roadmap 
 
