@@ -8,8 +8,6 @@ The idea is quite simple, scan outgoing attempts to push to public repositor and
 
 Of course every corporation will have different procedures so a key feature has to be the extensibility of the framework.
 
-
-
 ## Roadmap 
 
 We are looking at the following functionality.
