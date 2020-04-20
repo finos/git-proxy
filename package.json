@@ -1,10 +1,10 @@
 {
   "name": "github-proxy",
   "version": "0.0.1",
-  "description": "Github proxyy for scanning and inspecting a 'git push' ",
+  "description": "Github proxy for scanning and inspecting a 'git push' ",
   "main": "index.js",
   "scripts": {
-    "test": "test",
+    "test": "mocha",
     "start": "node index.js"
   },
   "repository": {
@@ -20,8 +20,8 @@
   "dependencies": {
     "express": "^4.17.1",
     "express-http-proxy": "^1.6.0",
-    "http-proxy": "^1.18.0",
-    "https": "^1.0.0"
+    "https": "^1.0.0",
+    "why-is-node-running": "^2.1.2"
   },
   "devDependencies": {
     "eslint": "^6.8.0",
@@ -30,6 +30,11 @@
     "eslint-plugin-import": "^2.20.2",
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-promise": "^4.2.1",
-    "eslint-plugin-standard": "^4.0.1"
+    "eslint-plugin-standard": "^4.0.1",
+    "livereload": "^0.9.1",
+    "mocha": "^7.1.1",
+    "gulp": "^4.0.2",
+    "gulp-mocha": "^7.0.2",
+    "gulp-livereload": "^4.0.2"
   }
 }
