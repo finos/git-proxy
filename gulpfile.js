@@ -1,11 +1,6 @@
-const log = require('why-is-node-running');
 const gulp = require('gulp');
-
 const mocha = require('gulp-mocha');
-
-
 const watchList = ['index.js', 'test/**', 'lib/**'];
-const testFiles = ['test/**/*.js'];
 
 let node = null;
 
@@ -35,15 +30,14 @@ const watchTests = function() {
   });
 };
 
-exports.server = server;
-exports.start = gulp.series(server, test);
-exports.watchTest = watchTests;
-exports.watchServer = gulp.watch(watchList, server);
-
-
 // clean up if an error goes unhandled.
 process.on('exit', function() {
   if (node) {
     node.kill();
   }
 });
+
+exports.server = server;
+exports.start = gulp.series(server, test);
+exports.watchTest = watchTests;
+exports.watchServer = gulp.watch(watchList, server);
