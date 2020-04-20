@@ -46,7 +46,7 @@ git clone http://localhost:3000/pGrovesy/test-allowed-repo
 3. You should see some activity in the node.js proxy windows
 4. Everything should have pushed to the remote repo. 
 
-__Testing a non-white-list-repo
+__Testing a non-white-list-repo__
 
 Clone a repo that is *not* in the whitelist (see /resources/config.json), for example:
 ```
