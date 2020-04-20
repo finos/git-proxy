@@ -1,15 +1,29 @@
 const assert = require('assert');
+const processor = require('../lib/processors/checkRepoInWhiteList.js');
 
-describe('Array', () => {
-  describe('#indexOf()', () => {
-    it('should return -1 when the value is not present', (done) => {
-      assert.equal([1, 2, 3].indexOf(4), -1);
-      done();
-    });
+const whiteList = () => {
+  return ['thisproject/repo-is-ok'];
+};
 
-    it('should return -2 when the value is not present', (done) => {
-      assert.equal([1, 2, 3].indexOf(4), -1);
-      done();
-    });
+describe('Check a Repo is in the white list', () => {
+  it('Should set ok=true if repo in whitelist', () => {
+    let result = {
+      repo: 'thisproject/repo-is-ok',
+      actionLog: [],
+      ok: true,
+    };
+    result = processor.exec(null, result, whiteList);
+    assert.equal(result.ok, true);
+  });
+
+  it('Should set ok=false if not in whitelist', () => {
+    let result = {
+      repo: 'thisproject/repo-is-not-ok',
+      actionLog: [],
+      ok: true,
+    };
+    result = processor.exec(null, result, whiteList);
+    assert.equal(result.ok, false);
   });
 });
+
