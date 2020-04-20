@@ -38,8 +38,8 @@ app.listen(httpPort, () => {
 });
 
 https.createServer({
-  key: fs.readFileSync('server.key'),
-  cert: fs.readFileSync('server.cert'),
+  key: fs.readFileSync('./resources/server.key'),
+  cert: fs.readFileSync('./resources/server.cert'),
 }, app).listen(httpsPort, function() {
   console.log(`Listening on ${httpsPort}`);
 });
