@@ -12,3 +12,18 @@ The idea is to scan outgoing attempts to push and raise actions/events which ret
 - Asynchronous flows - i.e. the proxy will return the correct responses to the git client that the action has taken place, but wait for an external signal to - continue to the push. 
 - Become a "true" proxy that can be set via "git config http.proxy...."
 - Implement User access controls against corporate AD groups as well as public github accounts.
+
+
+## Project Installation Instructions
+All contributions are welcome. Please fork the repository prior to local development. 
+1. Clone `github-proxy` using `git clone <repo path>/github-proxy`   
+2. Navigate to project directory with `cd github-proxy`
+3. Install project dependencies using `npm i` or `npm install`
+4. Start Express server using `npm start` after the project has installed.
+
+Express will now start and listen on the following ports ...
+
+```
+  Listening on 3000
+  Listening on 3001
+```
