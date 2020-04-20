@@ -19,7 +19,7 @@ All contributions are welcome. Please fork the repository prior to local develop
 1. Clone `github-proxy` using `git clone <repo path>/github-proxy`   
 2. Navigate to project directory with `cd github-proxy`
 3. Install project dependencies using `npm i` or `npm install`
-4. Start the Express server using `npm start` after the project has
+4. Start Express server using `npm start` after the project has installed.
 
 Express will now start and listen on the following ports ...
 
