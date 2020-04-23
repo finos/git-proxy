@@ -75,3 +75,27 @@ Everything up-to-date
 The push essentially failed - we'll be working on correct response codes in due course
 
 ---
+```
+
+## Local Project Configuration
+The file `user-settings.json` exists in the project root to override `config.json` for local developer configuration. The following describes how to use `user-settings.json`
+
+1. `user-settings.json` overrides `config.json` if the file exists in the project root. If `user-settings.json` does not exist `config.json` is used.
+2. The `json` format of `user-settings.json` mirrors `config.json`. This enables overriding development scenarios such as forking the repos below. 
+    * Fork `pGrovesy/test-allowed-repo` and `pGrovesy/test-banned-repo`
+    * Add your forked `test-allowed-repo` to `user-settings.json` in the project root as below ...
+
+    ```
+    {
+      "repoWhiteList": [
+        "<git project>/test-allowed-repo.git"    
+      ]
+    }
+    ```
+
+    * Run `git clone http://localhost:3000/<git project>/test-allowed-repo`
+    * Run `git clone http://localhost:3000/<git project>/test-banned-repo`
+    * Edit the README.md file in `test-allowed-repo` and `test-banned-repo` repo. 
+    * Within both projects, run the `git` instructions highlighted in `push.bat`
+
+The project is set up for local development and test, including `git push origin master` to your newly forked repos.
