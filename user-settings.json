@@ -1,6 +1,6 @@
 {
     "repoWhiteList": [
-        "mcleo-d/test-allowed-repo.git"    
+        "<git project>/test-allowed-repo.git"    
     ]
 }
   
