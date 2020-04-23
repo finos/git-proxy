@@ -99,6 +99,6 @@ The file `user-settings.json` exists in the project root to override `config.jso
     * Run `git clone http://localhost:3000/<git project>/test-allowed-repo`
     * Run `git clone http://localhost:3000/<git project>/test-banned-repo`
     * Edit the README.md file in `test-allowed-repo` and `test-banned-repo` repo. 
-    * Run the `git` instructions highlighted in `push.bat` as illustrated in **Testing a Repo Through the Proxy** above.
+    * Run the `git` instructions highlighted in `push.bat` as illustrated in **Testing a Repo Through the Proxy**.
 
 The project is now set up for local development, including `git push origin master` to your forked repos.
