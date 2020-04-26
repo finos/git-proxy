@@ -1,6 +1,6 @@
 # Logs
 .logs
-.vscode
+.vscodegi
 logs
 *.log
 npm-debug.log*
