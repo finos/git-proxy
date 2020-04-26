@@ -35,6 +35,8 @@ Express will now start and listen on the following ports ...
   Listening on 3001
 ```
 
+### Testing a Repo Through the Proxy
+
 Now the project is running, lets test a repo through the proxy. Clone a repo that is in the whitelist (see /resources/config.json)
 
 ```
@@ -73,3 +75,30 @@ fatal: the remote end hung up unexpectedly
 Everything up-to-date
 ``
 The push essentially failed - we'll be working on correct response codes in due course
+
+---
+```
+
+## Local Project Configuration
+The file `user-settings.json` exists in the project root to override `config.json` for local developer configuration. The following describes how to use `user-settings.json`
+
+* If the file exists in the project root `user-settings.json` overrides `config.json` 
+* If `user-settings.json` does not exist `config.json` is used.
+* The `json` format of `user-settings.json` mirrors `config.json`. This enables local development scenarios, such as forking test repos as illustrated below. 
+    * Fork `pGrovesy/test-allowed-repo` and `pGrovesy/test-banned-repo`
+    * Add the forked `test-allowed-repo` to `user-settings.json` in your project root as below ...
+
+    ```
+    {
+      "repoWhiteList": [
+        "<git project>/test-allowed-repo.git"    
+      ]
+    }
+    ```
+
+    * Run `git clone http://localhost:3000/<git project>/test-allowed-repo`
+    * Run `git clone http://localhost:3000/<git project>/test-banned-repo`
+    * Edit the README.md file in `test-allowed-repo` and `test-banned-repo` repo. 
+    * Run the `git` instructions highlighted in `push.bat` as illustrated in **Testing a Repo Through the Proxy**.
+
+The project is now set up for local development, including `git push origin master` to your forked repos.
