@@ -10,8 +10,6 @@ Of course every corporation will have different procedures so a key feature has 
 
 ## Roadmap 
 
-We are looking at the following functionality.
-
 - Public repository whitelisting 
 - Synchronous Pluggable webhooks 
 - Asynchronous flows - i.e. the proxy will return the correct responses to the git client that the action has taken place, but wait for an external signal to - continue to the push. 
@@ -19,10 +17,12 @@ We are looking at the following functionality.
 - Implement User access controls against corporate AD groups as well as public github accounts.
 - Auditing sink + UI
  
-Please raise an issue if you have more.
+Please raise an issue if you have an idea!
 
 ## Project Installation Instructions
+
 All contributions are welcome. Please fork the repository before local development. 
+
 1. Clone `github-proxy` using `git clone <repo path>/github-proxy`   
 2. Navigate to project directory with `cd github-proxy`
 3. Install project dependencies using `npm i` or `npm install`

@@ -1,0 +1,8 @@
+{
+    "javascript.suggestionActions.enabled": false,
+    "editor.tabSize": 2,
+    "files.eol": "\n",
+    "terminal.integrated.disableLineWrapping": true,
+    "debug.console.wordWrap": false,
+    "editor.wordWrap":"off"
+}
