@@ -34,5 +34,6 @@ process.on('exit', function() {
   }
 });
 
+exports.default = server;
 exports.server = server;
 exports.test = () => gulp.watch(watchList, () => runTest());
