@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/pGrovesy/github-proxy#readme",
   "dependencies": {
+    "bit-mask": "^1.0.2",
     "express": "^4.17.1",
     "express-http-proxy": "^1.6.0",
     "https": "^1.0.0",
