@@ -21,11 +21,12 @@ app.use('/', proxy('https://github.com', {
       req.rawBody = req.body.toString('utf8');
     }
 
-    const result = chain.exec(req);
+    const result = chain.exec(req, res);
 
     console.log(JSON.stringify(result));
 
     if (!result.ok) {
+      console.error('NOT OK!');
       return false;
     }
 
