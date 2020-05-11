@@ -1,6 +1,8 @@
 # Logs
 .logs
-.vscodegi
+.vscode
+.tmp
+.remote
 logs
 *.log
 npm-debug.log*
