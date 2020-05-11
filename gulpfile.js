@@ -4,7 +4,7 @@ const watchList = ['index.js', 'test/**', 'lib/**'];
 
 let node = null;
 
-const server = function(cb) {
+const startServer = function(cb) {
   const spawn = require('child_process').spawn;
   if (node) {
     node.kill();
@@ -12,7 +12,6 @@ const server = function(cb) {
 
   node = spawn('node', ['index.js'], {stdio: 'inherit'});
   cb();
-
   node.on('close', (code) => {
     if (code === 8) {
       gulp.log('Error detected, waiting for changes...');
@@ -33,6 +32,11 @@ process.on('exit', function() {
     node.kill();
   }
 });
+
+const server = function(cb) {
+  startServer(cb);
+  return gulp.watch(watchList, gulp.series([startServer]));
+};
 
 exports.default = server;
 exports.server = server;
