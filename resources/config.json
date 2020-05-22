@@ -1,5 +1,6 @@
 {
   "repoWhiteList": [
-    "pGrovesy/test-allowed-repo.git"    
+    "pGrovesy/test-allowed-repo.git",
+    "pGrovesy/github-proxy.git"
   ]  
 }
