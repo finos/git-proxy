@@ -27,10 +27,27 @@ app.use('/', proxy('https://github.com', {
 
     if (!result.ok) {
       console.error('NOT OK!');
+
+      res.contentType = 'application/x-git-upload-pack-advertisement';
+
+      message = '000bfoobar\n';
+
+      message = Buffer.from(message, 'utf-8');
+      res.status(400).send(message);
       return false;
     }
 
     return true;
+  },
+  userResDecorator: function(proxyRes, proxyResData, userReq, userRes) {
+    const data = proxyResData;
+    const ts = Date.now();
+
+    fs.writeFileSync(`./.logs/responses/${ts}.headers`, proxyRes.headers);
+    fs.writeFileSync(`./.logs/responses/${ts}.raw`, data);
+    fs.writeFileSync(`./.logs/responses/${ts}.txt`, data.toString('utf-8'));
+
+    return proxyResData;
   },
 }));
 
