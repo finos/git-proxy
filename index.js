@@ -43,7 +43,7 @@ app.use('/', proxy('https://github.com', {
     const data = proxyResData;
     const ts = Date.now();
 
-    fs.writeFileSync(`./.logs/responses/${ts}.headers`, proxyRes.headers);
+    fs.writeFileSync(`./.logs/responses/${ts}.headers`, JSON.stringify(proxyRes.headers));
     fs.writeFileSync(`./.logs/responses/${ts}.raw`, data);
     fs.writeFileSync(`./.logs/responses/${ts}.txt`, data.toString('utf-8'));
 
