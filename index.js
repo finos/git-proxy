@@ -44,7 +44,7 @@ app.use('/', proxy('https://github.com', {
 
       const message = '0011\x02ERR problem';
 
-      res.status(200).send(message);
+      res.status(403).send(message);
 
       fs.writeFileSync(
           `./.logs/responses/${ts}.USER.${res.statusCode}.status`,
