@@ -27,13 +27,37 @@ app.use('/', proxy('https://github.com', {
 
     if (!result.ok) {
       console.error('NOT OK!');
+      const ts = Date.now();
 
-      res.contentType = 'application/x-git-upload-pack-advertisement';
 
-      message = '000bfoobar\n';
+      res.set('content-type', 'application/x-git-receive-pack-result');
 
-      message = Buffer.from(message, 'utf-8');
-      res.status(400).send(message);
+      res.set('transfer-encoding', 'chunked');
+      res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
+      res.set('pragma', 'no-cache');
+      res.set('cache-control', 'no-cache, max-age=0, must-revalidate');
+      res.set('vary', 'Accept-Encoding');
+      res.set('x-frame-options', 'DENY');
+      res.set('connection', 'close');
+
+      //const message = '001f# service=git-receive-pack\nERR 1234\n0000';
+
+      const message = '0011\x02ERR problem';
+
+      res.status(200).send(message);
+
+      fs.writeFileSync(
+          `./.logs/responses/${ts}.USER.${res.statusCode}.status`,
+          res.statusCode);
+
+      fs.writeFileSync(
+          `./.logs/responses/${ts}.USER.headers.json`,
+          JSON.stringify(res.getHeaders()));
+
+      fs.writeFileSync(
+          `./.logs/responses/${ts}.USER.raw`,
+          res.body);
+
       return false;
     }
 
@@ -43,9 +67,21 @@ app.use('/', proxy('https://github.com', {
     const data = proxyResData;
     const ts = Date.now();
 
-    fs.writeFileSync(`./.logs/responses/${ts}.headers`, JSON.stringify(proxyRes.headers));
-    fs.writeFileSync(`./.logs/responses/${ts}.raw`, data);
-    fs.writeFileSync(`./.logs/responses/${ts}.txt`, data.toString('utf-8'));
+    fs.writeFileSync(
+        `./.logs/responses/${ts}.${proxyRes.statusCode}.status`,
+        proxyRes.statusCode);
+
+    fs.writeFileSync(
+        `./.logs/responses/${ts}.headers.json`,
+        JSON.stringify(proxyRes.headers));
+
+    fs.writeFileSync(
+        `./.logs/responses/${ts}.raw`,
+        data);
+
+    fs.writeFileSync(
+        `./.logs/responses/${ts}.txt`,
+        data.toString('utf-8'));
 
     return proxyResData;
   },
