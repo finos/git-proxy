@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/pGrovesy/github-proxy#readme",
   "dependencies": {
+    "@material-ui/core": "^4.10.0",
     "bit-mask": "^1.0.2",
     "bluebird": "^3.7.2",
     "express": "^4.17.1",
