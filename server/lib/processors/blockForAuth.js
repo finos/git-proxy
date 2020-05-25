@@ -2,7 +2,7 @@ const exec = (req, result) => {
   const action = {
     action: 'blockForAuth',
     ok: false,
-    message: `Your push request is waiting authorisation, tracking id http://localhost:8080/requests/${req.timestamp}`,
+    message: `Your push request is waiting authorisation, tracking id http://localhost:8080/requests/${result.timestamp}`,
   };
 
   result.ok = false;
