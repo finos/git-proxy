@@ -16,4 +16,7 @@ module.exports = {
   },
   'rules': {
   },
+  'max-len': {
+    'code': 200    
+  }
 };
