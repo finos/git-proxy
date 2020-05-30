@@ -18,8 +18,8 @@ import Link from '@material-ui/core/Link';
 import MenuIcon from '@material-ui/icons/Menu';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import NotificationsIcon from '@material-ui/icons/Notifications';
-import { mainListItems, secondaryListItems } from './listItems';
-import Orders from './OpenPushes';
+import { mainListItems, secondaryListItems } from './ListItems';
+import Router from './Router'
 
 function Copyright() {
   return (
@@ -124,8 +124,7 @@ export default function Dashboard() {
   const handleDrawerClose = () => {
     setOpen(false);
   };
-  const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
-
+  
   return (
     <div className={classes.root}>
       <CssBaseline />
@@ -173,7 +172,7 @@ export default function Dashboard() {
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <Paper className={classes.paper}>
-                <Orders />
+                <Router />
               </Paper>
             </Grid>
           </Grid>
