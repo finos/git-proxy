@@ -29,12 +29,14 @@ proxyApp.listen(proxyHttpPort, () => {
 });
 
 https.createServer(
-    {
-      key: fs.readFileSync('./resources/server.key'),
-      cert: fs.readFileSync('./resources/server.cert'),
-    }, proxyApp).listen(proxyHttpsPort, function() {
-  console.log(`Proxy open on ${proxyHttpsPort}`);
+  {
+    key: fs.readFileSync('./resources/server.key'),
+    cert: fs.readFileSync('./resources/server.cert')
+  }, proxyApp)
+  .listen(proxyHttpsPort, function() {
+    console.log(`Proxy open on ${proxyHttpsPort}`)
 });
+
 
 // Start the service app
 serviceApp.listen(servicePort, () => {
