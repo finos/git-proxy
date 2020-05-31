@@ -46,24 +46,28 @@ export default function OpenPushes() {
       <Title>Git Pushes waiting authorization</Title>
       <Table size="small">
         <TableHead>
-          <TableRow>
-            <TableCell>Id</TableCell>
+          <TableRow>            
+            <TableCell>Timstamp</TableCell>
+            <TableCell>Author</TableCell>
+            <TableCell>Project</TableCell>
             <TableCell>Repo</TableCell>
             <TableCell>Branch</TableCell>
             <TableCell>Commit From</TableCell>
             <TableCell>Commit To</TableCell>
-            <TableCell align="right">Contents</TableCell>
+            <TableCell>Action</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {pushes.map((row) => (
             <TableRow key={row.id}>              
-              <TableCell><a href={`/pushes/${row.id}`}>{row.id}</a></TableCell>
+              <TableCell>{row.timestamp}</TableCell>
+              <TableCell>...</TableCell>
+              <TableCell>{row.project}</TableCell>
               <TableCell>{row.repoName}</TableCell>
               <TableCell>{row.branch.replace('refs/heads/', '')}</TableCell>              
               <TableCell>{row.commitFrom.substring(0, 8)}...</TableCell>
               <TableCell>{row.commitTo.substring(0, 8)}...</TableCell>              
-              <TableCell align="right">{row.contentsCount}/</TableCell>
+              <TableCell><a href={`/pushes/${row.id}`}>Open</a></TableCell>
             </TableRow>
           ))}
         </TableBody>
