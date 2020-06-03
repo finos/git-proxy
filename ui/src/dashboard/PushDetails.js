@@ -3,11 +3,30 @@ import React, { useEffect, useState } from 'react';
 import Grid from '@material-ui/core/Grid';
 import { useParams } from "react-router-dom";
 import { makeStyles } from '@material-ui/core/styles';
+
 import Button from '@material-ui/core/Button';
 
 
+
+
+import Card from '@material-ui/core/Card';
+import CardHeader from '@material-ui/core/CardHeader';
+import CardMedia from '@material-ui/core/CardMedia';
+import CardContent from '@material-ui/core/CardContent';
+import CardActions from '@material-ui/core/CardActions';
+import Collapse from '@material-ui/core/Collapse';
+import Avatar from '@material-ui/core/Avatar';
+import IconButton from '@material-ui/core/IconButton';
+import Typography from '@material-ui/core/Typography';
+import { red } from '@material-ui/core/colors';
+import FavoriteIcon from '@material-ui/icons/Favorite';
+import ShareIcon from '@material-ui/icons/Share';
+import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
+import MoreVertIcon from '@material-ui/icons/MoreVert';
+
 import Title from './Title';
-import Card from './Card';
+
+
 import { Divider } from '@material-ui/core';
 import Diff from './Diff'
 
@@ -83,6 +102,31 @@ export default function PushDetails() {
       <Divider />
       <br/>
       <Grid container spacing={1}>
+        <Grid item lg={3}>
+
+        <Card className={classes.root} variant="outlined">
+          <CardContent>
+            <Typography className={classes.title} color="textSecondary" gutterBottom>
+              Word of the Day
+            </Typography>
+            <Typography variant="h5" component="h2">
+              test 123
+            </Typography>
+            <Typography className={classes.pos} color="textSecondary">
+              adjective
+            </Typography>
+            <Typography variant="body2" component="p">
+              well meaning and kindly.
+              <br />
+              {'"a benevolent smile"'}
+            </Typography>
+          </CardContent>
+          <CardActions>
+            <Button onClick={authorise}>Authorise</Button>            
+          </CardActions>
+        </Card>
+      </Grid>
+        {/* </Grid>
         <Grid item xs={3} md={3} lg={3}>
           <Card title="Repository" text={push.repoName}/>                      
         </Grid>
@@ -101,12 +145,10 @@ export default function PushDetails() {
 
         <Grid item xs={6} md={6} lg={6}>
           <Card title="To" text={push.commitFrom.substring(8)}/>
-        </Grid>          
+        </Grid>           */}
             
-        <Grid item xs={12} md={12} lg={12}>
-          <Button onClick={authorise}>Authorise</Button>
-        </Grid>
-
+        
+        
         <Grid item xs={12} md={12} lg={12}>
           <Diff diff={push.diff.content}/>
         </Grid>
@@ -114,3 +156,4 @@ export default function PushDetails() {
     </React.Fragment>
   );
 }
+
