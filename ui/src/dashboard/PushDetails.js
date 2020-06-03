@@ -54,6 +54,7 @@ const useStyles = makeStyles((theme) => ({
   fixedHeight: {
     height: 120,
   },
+  
 
 }));
 
@@ -103,80 +104,85 @@ export default function PushDetails() {
     <React.Fragment>
       <Title>Push Details</Title>
       <Divider />
+      <Typography variant="subtitle1" gutterBottom align='left' color='textSecondary'>
+        <a href='/'>Back..</a>
+      </Typography>
+      <Divider />
       <br/>
       <Grid container spacing={2}>                    
           
           <Grid item xs={2} md={2} lg={2}>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom align='left' color='primary'>
               AUTHOR
             </Typography>
-            <Typography variant="subtitle1" gutterBottom>
+            <Typography variant="subtitle1" gutterBottom align='left' color='textSecondary'>
               pGrovesy
             </Typography>                      
           </Grid>                      
           <Grid item xs={2} md={2} lg={2}>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom align='left' color='primary' >
               PROJECT
             </Typography>
-            <Typography variant="subtitle1" gutterBottom>
+            <Typography variant="subtitle1" gutterBottom align='left' color='textSecondary'>
               {push.project}
             </Typography>                      
           </Grid>
           
           <Grid item xs={2} md={2} lg={2}>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom align='left' color='primary'>
               REPO
             </Typography>
-            <Typography variant="subtitle1" gutterBottom>
-              {push.repo}
+            <Typography variant="subtitle1" gutterBottom align='left' color='textSecondary' >
+              {push.repoName}
             </Typography>                      
           </Grid>
           
           <Grid item xs={3} md={3} lg={3}>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom align='left' color='primary' >
               BRANCH
             </Typography>
-            <Typography variant="subtitle1" gutterBottom>
+            <Typography variant="subtitle1" gutterBottom align='left' color='textSecondary'>
               {push.branch}
             </Typography>                      
           </Grid>
           
           <Grid item xs={3} md={3} lg={3}>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h6" gutterBottom align='left' color='primary'>
               COMMIT
             </Typography>
-            <Typography variant="subtitle1" gutterBottom>
+            <Typography variant="subtitle1" gutterBottom align='left' color='textSecondary'>
               {push.commitFrom.substring(0,8)}...{push.commitTo.substring(0,8)}
             </Typography>                      
           </Grid>
         </Grid>
-                                 
-                                          
-        <Grid container spacing={2}>                                
-          <Grid item xs={12} md={12} lg={12}>          
+        <Divider />
+        <br/>                           
+        <Grid container spacing={10}>                                
+          <Grid item xs={1} md={1} lg={1}>
             <Button 
               variant="contained"
               color="secondary"              
               startIcon={<DeleteIcon />}>Rject
             </Button>        
-
+          </Grid>
+          <Grid item xs={1} md={1} lg={1}>
             <Button
               variant="contained"
               color="primary"
               onClick={authorise}
               className={classes.button}
-              endIcon={<Icon>send</Icon>}
-            >Authorise</Button>
-
+              startIcon={<CloudUploadIcon />}>Authorise</Button>
+          
           </Grid>
-          <Grid item xs={12} md={12} lg={12}>
-            <Diff diff={push.diff.content}/>
-          </Grid>        
         </Grid>
+        <br/>
+        <Divider />
+        <br/>
+        <Grid item xs={12} md={12} lg={12}>
+          <Diff diff={push.diff.content}/>
+        </Grid>        
+        
       </React.Fragment>
-    
-
-
     
   );
 }
