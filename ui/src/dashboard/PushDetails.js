@@ -8,7 +8,7 @@ import Button from '@material-ui/core/Button';
 
 
 
-
+import TextField from '@material-ui/core/TextField';
 import Card from '@material-ui/core/Card';
 import CardHeader from '@material-ui/core/CardHeader';
 import CardMedia from '@material-ui/core/CardMedia';
@@ -101,59 +101,67 @@ export default function PushDetails() {
       <Title>Push Details</Title>
       <Divider />
       <br/>
-      <Grid container spacing={1}>
-        <Grid item lg={3}>
-
-        <Card className={classes.root} variant="outlined">
-          <CardContent>
-            <Typography className={classes.title} color="textSecondary" gutterBottom>
-              Word of the Day
+      <Grid container spacing={2}>                    
+          
+          <Grid item xs={2} md={2} lg={2}>
+            <Typography variant="h6" gutterBottom>
+              AUTHOR
             </Typography>
-            <Typography variant="h5" component="h2">
-              test 123
+            <Typography variant="subtitle1" gutterBottom>
+              pGrovesy
+            </Typography>                      
+          </Grid>                      
+          <Grid item xs={2} md={2} lg={2}>
+            <Typography variant="h6" gutterBottom>
+              PROJECT
             </Typography>
-            <Typography className={classes.pos} color="textSecondary">
-              adjective
+            <Typography variant="subtitle1" gutterBottom>
+              {push.project}
+            </Typography>                      
+          </Grid>
+          
+          <Grid item xs={2} md={2} lg={2}>
+            <Typography variant="h6" gutterBottom>
+              REPO
             </Typography>
-            <Typography variant="body2" component="p">
-              well meaning and kindly.
-              <br />
-              {'"a benevolent smile"'}
+            <Typography variant="subtitle1" gutterBottom>
+              {push.repo}
+            </Typography>                      
+          </Grid>
+          
+          <Grid item xs={3} md={3} lg={3}>
+            <Typography variant="h6" gutterBottom>
+              BRANCH
             </Typography>
-          </CardContent>
-          <CardActions>
-            <Button onClick={authorise}>Authorise</Button>            
-          </CardActions>
-        </Card>
-      </Grid>
-        {/* </Grid>
-        <Grid item xs={3} md={3} lg={3}>
-          <Card title="Repository" text={push.repoName}/>                      
+            <Typography variant="subtitle1" gutterBottom>
+              {push.branch}
+            </Typography>                      
+          </Grid>
+          
+          <Grid item xs={3} md={3} lg={3}>
+            <Typography variant="h6" gutterBottom>
+              COMMIT
+            </Typography>
+            <Typography variant="subtitle1" gutterBottom>
+              {push.commitFrom.substring(0,8)}...{push.commitTo.substring(0,8)}
+            </Typography>                      
+          </Grid>
         </Grid>
-        <Grid item xs={3} md={3} lg={3}>
-          <Card title="Repository" text={push.project}/>                      
-        </Grid>          
-        <Grid item xs={6} md={6} lg={6}>
-          <Card title="Branch" text={push.branch.replace('refs/heads/', '')}/>
+                                 
+                                          
+        <Grid container spacing={2}>                                
+          <Grid item xs={12} md={12} lg={12}>
+            <Button onClick={authorise}>Authorise</Button>        
+          </Grid>
+          <Grid item xs={12} md={12} lg={12}>
+            <Diff diff={push.diff.content}/>
+          </Grid>        
         </Grid>
+      </React.Fragment>
+    
 
 
-
-        <Grid item xs={6} md={6} lg={6}>
-          <Card title="From" text={push.commitTo.substring(8)}/>
-        </Grid>
-
-        <Grid item xs={6} md={6} lg={6}>
-          <Card title="To" text={push.commitFrom.substring(8)}/>
-        </Grid>           */}
-            
-        
-        
-        <Grid item xs={12} md={12} lg={12}>
-          <Diff diff={push.diff.content}/>
-        </Grid>
-      </Grid>
-    </React.Fragment>
+    
   );
 }
 
