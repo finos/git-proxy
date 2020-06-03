@@ -6,7 +6,8 @@ import { makeStyles } from '@material-ui/core/styles';
 
 import Button from '@material-ui/core/Button';
 
-
+import Icon from '@material-ui/core/Icon';
+import SaveIcon from '@material-ui/icons/Save';
 
 import TextField from '@material-ui/core/TextField';
 import Card from '@material-ui/core/Card';
@@ -23,6 +24,8 @@ import FavoriteIcon from '@material-ui/icons/Favorite';
 import ShareIcon from '@material-ui/icons/Share';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import MoreVertIcon from '@material-ui/icons/MoreVert';
+import DeleteIcon from '@material-ui/icons/Delete';
+import CloudUploadIcon from '@material-ui/icons/CloudUpload';
 
 import Title from './Title';
 
@@ -150,8 +153,21 @@ export default function PushDetails() {
                                  
                                           
         <Grid container spacing={2}>                                
-          <Grid item xs={12} md={12} lg={12}>
-            <Button onClick={authorise}>Authorise</Button>        
+          <Grid item xs={12} md={12} lg={12}>          
+            <Button 
+              variant="contained"
+              color="secondary"              
+              startIcon={<DeleteIcon />}>Rject
+            </Button>        
+
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={authorise}
+              className={classes.button}
+              endIcon={<Icon>send</Icon>}
+            >Authorise</Button>
+
           </Grid>
           <Grid item xs={12} md={12} lg={12}>
             <Diff diff={push.diff.content}/>
