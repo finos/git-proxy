@@ -1,4 +1,4 @@
-# corporate-github-proxy
+# corporate-git-proxy
 
 Many corporations, especially financial services have strict policies towards opensource contributions. On rare occasions when a developer can contribute to open source, information security and compliance officers often demand complex shadow processes are set up to ensure code reviews, scans and other processes are adhered to before a push to the public repo takes place.
 
