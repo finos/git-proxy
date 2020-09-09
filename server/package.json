@@ -12,7 +12,7 @@
     "url": "git+https://github.com/pGrovesy/github-proxy.git"
   },
   "author": "Paul Groves",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/pGrovesy/github-proxy/issues"
   },
