@@ -53,7 +53,7 @@ Now the project is running, lets test a repo through the proxy. Clone a repo tha
 
 ``` bash
 c:\projects\
-git clone http://localhost:3000/pGrovesy/test-allowed-repo
+git clone http://localhost:8000/pGrovesy/test-allowed-repo
 ```
 
 1. Edit the README.md file in 'test-allowed-repo' repo
@@ -68,7 +68,7 @@ Clone a repo that is *not* in the whitelist (see /resources/config.json), for ex
 ```bash
 
 c:\projects\
-git clone http://localhost:3000/pGrovesy/test-banned-repo
+git clone http://localhost:8000/pGrovesy/test-banned-repo
 ```
 
 1. Edit the README.md file in 'test-allowed-repo' repo
@@ -112,8 +112,8 @@ The file `user-settings.json` exists in the project root to override `config.jso
     }
     ```
 
-- Run `git clone http://localhost:3000/<git project>/test-allowed-repo`
-- Run `git clone http://localhost:3000/<git project>/test-banned-repo`
+- Run `git clone http://localhost:8000/<git project>/test-allowed-repo`
+- Run `git clone http://localhost:8000/<git project>/test-banned-repo`
 - Edit the README.md file in `test-allowed-repo` and `test-banned-repo` repo. 
 - Run the `git` instructions highlighted in `push.bat` as illustrated in **Testing a Repo Through the Proxy**.
 
