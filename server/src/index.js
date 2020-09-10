@@ -8,4 +8,4 @@ module.exports.proxy = proxy
 module.exports.service = service
 module.exports.data = data
 
-console.log(`white-list = ${JSON.stringify(config.getWhiteList())}`);
+console.log(`authorisedList = ${JSON.stringify(config.getAuthorisedList())}`);
