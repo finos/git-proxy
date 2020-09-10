@@ -1,35 +1,12 @@
-import clsx from 'clsx';
 import React, { useEffect, useState } from 'react';
 import Grid from '@material-ui/core/Grid';
 import { useParams } from "react-router-dom";
 import { makeStyles } from '@material-ui/core/styles';
-
 import Button from '@material-ui/core/Button';
-
-import Icon from '@material-ui/core/Icon';
-import SaveIcon from '@material-ui/icons/Save';
-
-import TextField from '@material-ui/core/TextField';
-import Card from '@material-ui/core/Card';
-import CardHeader from '@material-ui/core/CardHeader';
-import CardMedia from '@material-ui/core/CardMedia';
-import CardContent from '@material-ui/core/CardContent';
-import CardActions from '@material-ui/core/CardActions';
-import Collapse from '@material-ui/core/Collapse';
-import Avatar from '@material-ui/core/Avatar';
-import IconButton from '@material-ui/core/IconButton';
 import Typography from '@material-ui/core/Typography';
-import { red } from '@material-ui/core/colors';
-import FavoriteIcon from '@material-ui/icons/Favorite';
-import ShareIcon from '@material-ui/icons/Share';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import MoreVertIcon from '@material-ui/icons/MoreVert';
 import DeleteIcon from '@material-ui/icons/Delete';
 import CloudUploadIcon from '@material-ui/icons/CloudUpload';
-
 import Title from './Title';
-
-
 import { Divider } from '@material-ui/core';
 import Diff from './Diff'
 
@@ -62,9 +39,10 @@ const useStyles = makeStyles((theme) => ({
 export default function PushDetails() {
   const { id } = useParams();
   const classes = useStyles();
-  const fixedHeightPaper = clsx(classes.paper, classes.fixedHeight);
   const [hasError, setErrors] = useState(false);
   const [push, setPush] = useState([]);
+
+  console.log(hasError);
   
   async function fetchData() {
     const url = `http://localhost:8080/api/v1/pushes/${id}`;
@@ -74,7 +52,6 @@ export default function PushDetails() {
         res.diff = res.steps.find(x => x.stepName === 'diff');
         console.log(res);
         setPush(res)
-
       })
       .catch(err => setErrors(err));
   }
@@ -92,8 +69,11 @@ export default function PushDetails() {
   }
   
   useEffect(() => {
+    // eslint-disable-next-line
     fetchData();
-  }, []);
+  }, 
+  // eslint-disable-next-line
+  []);
 
   if (push.length === 0) {
     return <div><h3>Loading</h3></div>

@@ -25,6 +25,7 @@ export default function OpenPushes() {
 
   const [hasError, setErrors] = useState(false);
   const [pushes, setPushes] = useState([]);
+  console.log(hasError);
 
   async function fetchData() {
     const url = "http://localhost:8080/api/v1/pushes";
