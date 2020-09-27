@@ -1,7 +1,7 @@
 {
-  "name": "github-proxy",
+  "name": "git-proxy",
   "version": "0.0.1",
-  "description": "Github proxy for scanning and inspecting a 'git push' ",
+  "description": "Git proxy for scanning and inspecting a 'git push' ",
   "main": "index.js",
   "scripts": {
     "test": "mocha",
@@ -9,22 +9,23 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pGrovesy/github-proxy.git"
+    "url": "git+https://github.com/pGrovesy/git-proxy.git"
   },
   "author": "Paul Groves",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/pGrovesy/github-proxy/issues"
+    "url": "https://github.com/pGrovesy/git-proxy/issues"
   },
-  "homepage": "https://github.com/pGrovesy/github-proxy#readme",
+  "homepage": "https://github.com/pGrovesy/git-proxy#readme",
   "dependencies": {
     "bit-mask": "^1.0.2",
     "bluebird": "^3.7.2",
     "cors": "^2.8.5",
+    "diskdb": "^0.1.17",
     "express": "^4.17.1",
     "express-http-proxy": "^1.6.2",
     "https": "^1.0.0",
-    "lodash": "^4.17.20",
+    "lodash": "^4.17.20",    
     "uuid": "^8.3.0",
     "why-is-node-running": "^2.2.0"
   },
