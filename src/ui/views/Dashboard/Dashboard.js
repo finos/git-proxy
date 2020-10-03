@@ -52,19 +52,15 @@ export default function Dashboard() {
               <CardIcon color="warning">
                 <Icon>content_copy</Icon>
               </CardIcon>
-              <p className={classes.cardCategory}>Used Space</p>
+              <p className={classes.cardCategory}>Open Push requests</p>
               <h3 className={classes.cardTitle}>
-                49/50 <small>GB</small>
+                23 <small>Pushes</small>
               </h3>
             </CardHeader>
             <CardFooter stats>
               <div className={classes.stats}>
-                <Danger>
-                  <Warning />
-                </Danger>
-                <a href="#pablo" onClick={e => e.preventDefault()}>
-                  Get more space
-                </a>
+                <DateRange />
+                  12 older than 1 day
               </div>
             </CardFooter>
           </Card>
@@ -75,8 +71,8 @@ export default function Dashboard() {
               <CardIcon color="success">
                 <Store />
               </CardIcon>
-              <p className={classes.cardCategory}>Revenue</p>
-              <h3 className={classes.cardTitle}>$34,245</h3>
+              <p className={classes.cardCategory}>Open source Pulls</p>
+              <h3 className={classes.cardTitle}>1,432</h3>
             </CardHeader>
             <CardFooter stats>
               <div className={classes.stats}>
@@ -92,13 +88,13 @@ export default function Dashboard() {
               <CardIcon color="danger">
                 <Icon>info_outline</Icon>
               </CardIcon>
-              <p className={classes.cardCategory}>Fixed Issues</p>
+              <p className={classes.cardCategory}>Auto Rejected Pushes</p>
               <h3 className={classes.cardTitle}>75</h3>
             </CardHeader>
             <CardFooter stats>
               <div className={classes.stats}>
                 <LocalOffer />
-                Tracked from Github
+                Due to hitting guardrails
               </div>
             </CardFooter>
           </Card>
@@ -109,13 +105,13 @@ export default function Dashboard() {
               <CardIcon color="info">
                 <Accessibility />
               </CardIcon>
-              <p className={classes.cardCategory}>Followers</p>
+              <p className={classes.cardCategory}>Sucessul Pushes</p>
               <h3 className={classes.cardTitle}>+245</h3>
             </CardHeader>
             <CardFooter stats>
               <div className={classes.stats}>
                 <Update />
-                Just Updated
+                Last month
               </div>
             </CardFooter>
           </Card>
@@ -134,12 +130,12 @@ export default function Dashboard() {
               />
             </CardHeader>
             <CardBody>
-              <h4 className={classes.cardTitle}>Daily Sales</h4>
+              <h4 className={classes.cardTitle}>Daily Github pulls</h4>
               <p className={classes.cardCategory}>
                 <span className={classes.successText}>
                   <ArrowUpward className={classes.upArrowCardCategory} /> 55%
                 </span>{" "}
-                increase in today sales.
+                increase in Git pulls today.
               </p>
             </CardBody>
             <CardFooter chart>
@@ -162,12 +158,12 @@ export default function Dashboard() {
               />
             </CardHeader>
             <CardBody>
-              <h4 className={classes.cardTitle}>Email Subscriptions</h4>
-              <p className={classes.cardCategory}>Last Campaign Performance</p>
+              <h4 className={classes.cardTitle}>Push Authorizations</h4>
+              <p className={classes.cardCategory}>20% increase in git-pushes waiting authorization</p>
             </CardBody>
             <CardFooter chart>
               <div className={classes.stats}>
-                <AccessTime /> campaign sent 2 days ago
+                <AccessTime /> updated 4 minutes ago
               </div>
             </CardFooter>
           </Card>
@@ -184,12 +180,12 @@ export default function Dashboard() {
               />
             </CardHeader>
             <CardBody>
-              <h4 className={classes.cardTitle}>Completed Tasks</h4>
-              <p className={classes.cardCategory}>Last Campaign Performance</p>
+              <h4 className={classes.cardTitle}>Push Rjections</h4>
+              <p className={classes.cardCategory}>10% reduction in push rejections</p>
             </CardBody>
             <CardFooter chart>
               <div className={classes.stats}>
-                <AccessTime /> campaign sent 2 days ago
+                <AccessTime /> updated 4 minutes ago
               </div>
             </CardFooter>
           </Card>
@@ -202,35 +198,32 @@ export default function Dashboard() {
             headerColor="primary"
             tabs={[
               {
-                tabName: "Bugs",
-                tabIcon: BugReport,
-                tabContent: (
-                  <Tasks
-                    checkedIndexes={[0, 3]}
-                    tasksIndexes={[0, 1, 2, 3]}
-                    tasks={bugs}
-                  />
-                )
-              },
-              {
-                tabName: "Website",
+                tabName: "Waiting Authorization",
                 tabIcon: Code,
                 tabContent: (
-                  <Tasks
-                    checkedIndexes={[0]}
-                    tasksIndexes={[0, 1]}
-                    tasks={website}
+                  <Table
+                    tableHeaderColor="warning"
+                    tableHead={["Name", "provider", "repo", "branch", "message"]}
+                    tableData={[
+                      ["Dakota Rice", "github", "finos/datahub", "enhance-markov-model", "enhanced analyser"],
+                      ["Minerva Hooper", "github", "pgrovesy/git-proxy", "enhance-markov-model", "enhanced analyser"],
+                      ["Sage Rodriguez", "github", "finos/datahelix", "datahub-merge", "added documentation"],
+                      ["Philip Chaney", "github", "finos/datahub", "master", "quick documentation fix"],
+                    ]}
                   />
                 )
               },
               {
-                tabName: "Server",
-                tabIcon: Cloud,
+                tabName: "Rejections",
+                tabIcon: BugReport,
                 tabContent: (
-                  <Tasks
-                    checkedIndexes={[1]}
-                    tasksIndexes={[0, 1, 2]}
-                    tasks={server}
+                  <Table
+                    tableHeaderColor="warning"
+                    tableHead={["Name", "provider", "repo", "branch", "reason"]}
+                    tableData={[
+                      ["Dakota Rice", "github", "finos/datahub", "enhance-markov-model", "password discoverd"],
+                      ["Minerva Hooper", "github", "pgrovesy/git-proxy", "enhance-markov-model", "bad commit message"],
+                    ]}
                   />
                 )
               }
@@ -240,7 +233,7 @@ export default function Dashboard() {
         <GridItem xs={12} sm={12} md={6}>
           <Card>
             <CardHeader color="warning">
-              <h4 className={classes.cardTitleWhite}>Employees Stats</h4>
+              <h4 className={classes.cardTitleWhite}>Developer Stats</h4>
               <p className={classes.cardCategoryWhite}>
                 New employees on 15th September, 2016
               </p>
@@ -248,12 +241,12 @@ export default function Dashboard() {
             <CardBody>
               <Table
                 tableHeaderColor="warning"
-                tableHead={["ID", "Name", "Salary", "Country"]}
+                tableHead={["ID", "Name", "Pushes", "Pushes Authorized", "Pushes Rejected", "Pulls"]}
                 tableData={[
-                  ["1", "Dakota Rice", "$36,738", "Niger"],
-                  ["2", "Minerva Hooper", "$23,789", "Curaçao"],
-                  ["3", "Sage Rodriguez", "$56,142", "Netherlands"],
-                  ["4", "Philip Chaney", "$38,735", "Korea, South"]
+                  ["1", "Dakota Rice", "12", "11", "1", "321"],
+                  ["2", "Minerva Hooper", "6", "6", "0", "10945"],
+                  ["3", "Sage Rodriguez", "4", "1", "3", "127"],
+                  ["4", "Philip Chaney", "2", "2", "0", "1956"],
                 ]}
               />
             </CardBody>

@@ -9,7 +9,6 @@ import { makeStyles } from "@material-ui/core/styles";
 import Navbar from "ui/components/Navbars/Navbar.js";
 import Footer from "ui/components/Footer/Footer.js";
 import Sidebar from "ui/components/Sidebar/Sidebar.js";
-import FixedPlugin from "ui/components/FixedPlugin/FixedPlugin.js";
 
 import routes from "routes.js";
 
@@ -96,7 +95,7 @@ export default function Admin({ ...rest }) {
     <div className={classes.wrapper}>
       <Sidebar
         routes={routes}
-        logoText={"Creative Tim"}
+        logoText={"Git Proxy"}
         logo={logo}
         image={image}
         handleDrawerToggle={handleDrawerToggle}
@@ -119,14 +118,7 @@ export default function Admin({ ...rest }) {
           <div className={classes.map}>{switchRoutes}</div>
         )}
         {getRoute() ? <Footer /> : null}
-        <FixedPlugin
-          handleImageClick={handleImageClick}
-          handleColorClick={handleColorClick}
-          bgColor={color}
-          bgImage={image}
-          handleFixedClick={handleFixedClick}
-          fixedClasses={fixedClasses}
-        />
+
       </div>
     </div>
   );
