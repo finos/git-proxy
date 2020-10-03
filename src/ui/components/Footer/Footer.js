@@ -47,9 +47,8 @@ export default function Footer(props) {
               target="_blank"
               className={classes.a}
             >
-              Creative Tim
-            </a>
-            , made with love for a better web
+              Git Proxy
+            </a>            
           </span>
         </p>
       </div>
