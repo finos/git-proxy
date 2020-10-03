@@ -10,7 +10,7 @@ Of course every corporation will have different procedures so a key feature has 
 
 ## Roadmap
 
-- Public repository whitelisting
+- Public repository authorisation
 - Synchronous Pluggable webhooks
 - Asynchronous flows - i.e. the proxy will return the correct responses to the git client that the action has taken place, but wait for an external signal to - continue to the push.
 - Become a "true" proxy that can be set via "git config http.proxy...."
@@ -23,33 +23,48 @@ Please raise an issue if you have an idea!
 
 All contributions are welcome. Please fork the repository before local development.
 
-1. Clone `github-proxy` using `git clone <repo path>/github-proxy`
-2. Navigate to project directory with `cd github-proxy`
+1. Clone `git-proxy` using `git clone <repo path>/git-proxy`
+2. Navigate to project directory with `cd git-proxy`
 
 Install and run the 'server'
 
 - Install project dependencies using `npm i` or `npm install`
 - Start Express server using `npm start` after the project has installed.
-``` bash
-  Listening on 8000
-  Listening on 8001
-```
-
-Install and run the 'UI'
-
-- Install project dependencies using `npm i` or `npm install`
-- Start Express server using `npm start` after the project has installed.
-
-Express will now start and listen on the following ports ...
 
 ``` bash
-  Listening on 3000
-  Listening on 3001
+ git-proxy@0.0.1 start C:\projects\github-proxy
+ concurrently "npm run server" "npm run client
+
+   git-proxy@0.0.1 server C:\projects\github-proxy
+   node index.js
+
+   git-proxy@0.0.1 client C:\projects\github-proxy
+   react-scripts start & node index.js
+
+   authorisedList = ["pGrovesy/test-allowed-repo.git","pGrovesy/git-proxy.git"]
+   data sink = "fs"
+   fs
+   Successfully connected to : ./.data/db
+   {
+      getPushes: [Function: getPushes],
+      writeAudit: [Function: writeAudit],
+      getPush: [Function: getPush],
+      authorise: [Function: authorise],
+      findByUsername: [Function (anonymous)],
+      findById: [Function (anonymous)]
+   }
+   Listening on 8000
+   Service Listening on 8080
+   i ｢wds｣: Project is running at http://192.168.0.82/
+   i ｢wds｣: webpack output is served from
+   i ｢wds｣: Content not from webpack is served from C:\projects\github-proxy\public
+   i ｢wds｣: 404s will fallback to /
+   Starting the development server...
 ```
 
 ### Testing a Repo Through the Proxy
 
-Now the project is running, lets test a repo through the proxy. Clone a repo that is in the whitelist (see /resources/config.json)
+Now the project is running, lets test a repo through the proxy. Clone a repo that is in the authorised list (see /resources/config.json)
 
 ``` bash
 c:\projects\
@@ -61,9 +76,9 @@ git clone http://localhost:8000/pGrovesy/test-allowed-repo
 3. You should see some activity in the node.js proxy windows
 4. Everything should have pushed to the remote repo.
 
-#### Testing a non-white-list-repo
+#### Testing a non-authorised-repo
 
-Clone a repo that is *not* in the whitelist (see /resources/config.json), for example:
+Clone a repo that is *not* in the authorised list (see /resources/config.json), for example:
 
 ```bash
 
@@ -106,7 +121,7 @@ The file `user-settings.json` exists in the project root to override `config.jso
 
     ``` bash
     {
-      "repoWhiteList": [
+      "repoAuthorisedList": [
         "<git project>/test-allowed-repo.git"
       ]
     }
