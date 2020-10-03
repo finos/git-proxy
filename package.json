@@ -1,0 +1,77 @@
+{
+  "name": "git-proxy",
+  "version": "0.0.1",
+  "description": "Git proxy for scanning and inspecting a 'git push' ",
+  "proxy": "http://localhost:8080",
+  "scripts": {
+    "client": "react-scripts start & node index.js",
+    "clientinstall": "npm install --prefix client",
+    "server": "node index.js",
+    "start": "concurrently \"npm run server\" \"npm run client",
+    "build": "react-scripts build",
+    "test": "react-scripts test & mocha",
+    "eject": "react-scripts eject"
+  },
+  "author": "Paul Groves",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@material-ui/core": "^4.11.0",
+    "bit-mask": "^1.0.2",
+    "bluebird": "^3.7.2",
+    "concurrently": "^5.3.0",
+    "connect-ensure-login": "^0.1.1",
+    "cors": "^2.8.5",
+    "diskdb": "^0.1.17",
+    "express": "^4.17.1",
+    "express-http-proxy": "^1.6.2",
+    "express-session": "^1.17.1",
+    "https": "^1.0.0",
+    "lodash": "^4.17.20",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0",
+    "react": "^16.13.1",
+    "react-dom": "^16.13.1",
+    "react-scripts": "3.4.3",
+    "react-chartist": "0.14.3",
+    "react-google-maps": "9.4.5",
+    "react-router-dom": "5.2.0",
+    "react-swipeable-views": "0.13.9",
+    "@material-ui/icons": "4.9.1",
+    "uuid": "^8.3.0",
+    "why-is-node-running": "^2.2.0",
+    "chartist": "0.10.1",
+    "classnames": "2.2.6",
+    "history": "4.10.1",
+    "perfect-scrollbar": "1.5.0",
+    "prop-types": "15.7.2"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^4.2.4",
+    "@testing-library/react": "^9.5.0",
+    "@testing-library/user-event": "^7.2.1",
+    "eslint": "^6.8.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "gulp": "^4.0.2",
+    "gulp-livereload": "^4.0.2",
+    "gulp-mocha": "^7.0.2",
+    "livereload": "^0.9.1",
+    "mocha": "^7.2.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
