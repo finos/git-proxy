@@ -20,12 +20,17 @@
   "dependencies": {
     "bit-mask": "^1.0.2",
     "bluebird": "^3.7.2",
+    "connect-ensure-login": "^0.1.1",
     "cors": "^2.8.5",
     "diskdb": "^0.1.17",
     "express": "^4.17.1",
     "express-http-proxy": "^1.6.2",
+    "express-session": "^1.17.1",
     "https": "^1.0.0",
-    "lodash": "^4.17.20",    
+    "lodash": "^4.17.20",
+    "node-oauth2-server": "^2.4.0",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0",
     "uuid": "^8.3.0",
     "why-is-node-running": "^2.2.0"
   },
