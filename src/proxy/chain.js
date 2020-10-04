@@ -1,7 +1,7 @@
 const proc = require('./processors');
 
 // Pre Processors are mandatory steps to figure out the incomming action
-const preProcessors = [proc.parseAction];
+const preProcessors = [proc.pre.parseAction];
 
 // A NoAction chain is when we are not interested in what's going through
 const noActionChain = [];
@@ -14,8 +14,7 @@ const pushActionChain = [
   proc.push.pullRemote,
   proc.push.writePack,
   proc.push.getDiff,
-  proc.push.blockForAuth,
-  proc.push.audit
+  proc.push.blockForAuth,  
 ];
 
 // Executes the chain
@@ -32,7 +31,7 @@ const chain = (req) => {
   try {
     // For the action get the liss of processors
     getChain(action).forEach((fn) => {      
-            
+      console.log(`executing action ${fn.displayName}`);      
       if (!(action.continue())) {
         return;
       }
@@ -41,12 +40,11 @@ const chain = (req) => {
         console.log('---- ALLLOWING PUSH!!! -----------')
         return;
       }      
-      
-      console.log(`executing action ${fn.displayName}`);
+            
       action = fn(req, action);
     });
   } finally {
-    proc.audit(req, action);
+    proc.push.audit(req, action);
   }
 
   return action;

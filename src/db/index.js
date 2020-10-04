@@ -10,7 +10,7 @@ if (config.getSink() == 'fs') {
 
 module.exports.authorise = sink.authorise;
 module.exports.getPushes = sink.getPushes;
-module.exports.writeAudit = sink.authorise;
+module.exports.writeAudit = sink.writeAudit;
 module.exports.getPush = sink.getPush;
 module.exports.findByUsername = sink.findByUsername;
 module.exports.findById = sink.findById;

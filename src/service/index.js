@@ -37,9 +37,15 @@ passport.deserializeUser(function(id, cb) {
 });
 
 
+const corsOptions = {
+  "origin": "http://localhost:3000",
+  "methods": "GET,HEAD,PUT,PATCH,POST,DELETE",
+  "preflightContinue": false,
+  credentials: true,
+}
 
 // Setup the service middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(session({ secret: 'keyboard cat', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());

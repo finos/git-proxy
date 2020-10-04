@@ -1,12 +1,59 @@
-import React from "react";
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import BugReport from "@material-ui/icons/BugReport";
 import Code from "@material-ui/icons/Code";
 import Table from "ui/components/Table/Table.js";
 import CustomTabs from "ui/components/CustomTabs/CustomTabs.js";
+import { Redirect } from "react-router-dom";
+
 
 export default function PushesWaitingAuthorizationGraph() {
-  
-  return (  
+ 
+  const [data, setData] = useState([]);  
+  const [auth, setAuth] = useState(true)
+  const [url, setUrl] = useState(
+    'http://localhost:8080/api/v1/push',
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+ 
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsError(false);
+      setIsLoading(true);       
+      await axios(url,{ withCredentials: true }).then((response) => {
+        console.log('---- OK ----')
+        const data = response.data.map((x) => [
+          x.repo,
+          x.branch.replace('refs/heads/', ''),          
+          x.commitFrom.substring(0,8),
+          x.commitTo.substring(0,8),
+        ]);
+          
+        console.log(data);        
+        setData(data);
+        setAuth(true);
+        setIsLoading(false);        
+        setIsError(false);   
+      }).catch((error) => {
+        console.log(JSON.stringify(error));
+        setIsLoading(false);
+        if (error.response && error.response.status === 401) {
+          setAuth(false);
+        } else {
+          setIsError(true);
+        }
+      });
+    };
+ 
+    fetchData();
+  }, [url]);
+ 
+  if (isLoading) return(<div>Loading ...</div>);
+  if (isError) return(<div>Something went wrong ...</div>);
+  if (!auth) return(<Redirect to={{pathname: '/login'}} />);
+
+  return (    
     <CustomTabs
       title="Tasks:"
       headerColor="primary"
@@ -14,17 +61,16 @@ export default function PushesWaitingAuthorizationGraph() {
         {
           tabName: "Waiting Authorization",
           tabIcon: Code,
-          tabContent: (
+          tabContent: (            
+            isLoading ? (
+              <div>Loading ...</div>
+            ) : (
             <Table
               tableHeaderColor="warning"
-              tableHead={["Name", "provider", "repo", "branch", "message"]}
-              tableData={[
-                ["Dakota Rice", "github", "finos/datahub", "enhance-markov-model", "enhanced analyser"],
-                ["Minerva Hooper", "github", "pgrovesy/git-proxy", "enhance-markov-model", "enhanced analyser"],
-                ["Sage Rodriguez", "github", "finos/datahelix", "datahub-merge", "added documentation"],
-                ["Philip Chaney", "github", "finos/datahub", "master", "quick documentation fix"],
-              ]}
+              tableHead={["repo", "branch", "from", "to"]}
+              tableData={data}
             />
+            )
           )
         },
         {
