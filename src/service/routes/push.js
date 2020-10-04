@@ -3,8 +3,14 @@ const router = express.Router();
 const db = require('../../db');
 const login = require('connect-ensure-login');
 
-router.get('/', login.ensureLoggedIn(), function(req, res) {    
-  res.send(db.getPushes());  
+router.get('/', (req, res) => {    
+  if (req.user) {
+    res.send(db.getPushes());  
+  } else {
+    res.status(401).send({
+      message: 'not logged in'
+    });
+  }
 })
 
 router.get('/:id', login.ensureLoggedIn(), function(req, res) {    
