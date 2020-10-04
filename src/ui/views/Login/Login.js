@@ -1,16 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 // @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
-
+import FormControl from "@material-ui/core/FormControl";
+import InputLabel from "@material-ui/core/InputLabel";
 // core components
 import GridItem from "ui/components/Grid/GridItem.js";
 import GridContainer from "ui/components/Grid/GridContainer.js";
-import CustomInput from "ui/components/CustomInput/CustomInput.js";
+import Input from "@material-ui/core/Input";
 import Button from "ui/components/CustomButtons/Button.js";
 import Card from "ui/components/Card/Card.js";
 import CardHeader from "ui/components/Card/CardHeader.js";
 import CardBody from "ui/components/Card/CardBody.js";
 import CardFooter from "ui/components/Card/CardFooter.js";
+import axios from "axios";
+import { Redirect } from "react-router-dom";
 
 const styles = {
   cardCategoryWhite: {
@@ -33,47 +36,92 @@ const styles = {
 
 const useStyles = makeStyles(styles);
 
+
+
 export default function UserProfile() {
   const classes = useStyles();
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  function validateForm() {
+    return username.length > 0 && password.length > 0;
+  }
+
+  function handleSubmit(event) {
+    axios.post('http://localhost:8080/auth/login', {
+      username: username,
+      password: password
+    })
+    .then(function (response) {
+      setMessage('Success!');
+      setSuccess(true);
+    })
+    .catch(function (error) {
+      setMessage('Incorrect username of password');
+    });
+
+    event.preventDefault();
+  }
+
+  if (success) {
+    return(
+      <Redirect to={{pathname: "/", state: { authed: true }}} />
+    )
+  }
+
   return (
-    <div>
+    <form onSubmit={handleSubmit}>
       <GridContainer>
-        <GridItem xs={12} sm={12} md={8}>
+        
+        <GridItem xs={12} sm={6} md={4}>
           <Card>
             <CardHeader color="primary">
-              <h4 className={classes.cardTitleWhite}>Login</h4>              
+              <h4 className={classes.cardTitleWhite}>Login</h4>
+              <p>{message}</p>
             </CardHeader>
             <CardBody>
               <GridContainer>
                 <GridItem xs={12} sm={12} md={3}>
-                  <CustomInput
-                    labelText="Username"
-                    id="username"
-                    formControlProps={{
-                      fullWidth: true
-                    }}
-                  />
+                  <FormControl>
+                    <InputLabel>
+                      Username                  
+                    </InputLabel>                  
+                    <Input                      
+                      id="username"
+                      type="username"
+                      value={username}                    
+                      onChange={e => setUsername(e.target.value)}
+                    />
+                  </FormControl>
                 </GridItem>
               </GridContainer>                
               <GridContainer>
                 <GridItem xs={12} sm={12} md={3}>
-                  <CustomInput
-                    labelText="Password"
-                    id="username"
-                    formControlProps={{
-                      fullWidth: true
-                    }}
-                  />
+                  <FormControl>
+                    <InputLabel>
+                      Password                
+                    </InputLabel>                  
+                    <Input                      
+                      id="username"
+                      type="password"
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                    />
+                  </FormControl>
                 </GridItem>
-              </GridContainer>
-              
+              </GridContainer>              
             </CardBody>
             <CardFooter>
-              <Button color="primary">Login</Button>
+              <Button block disabled={!validateForm()} type="submit">
+                Login           
+              </Button>
             </CardFooter>
           </Card>
         </GridItem>        
       </GridContainer>
-    </div>
+    </form>
   );
 }
