@@ -21,7 +21,6 @@ import Person from "@material-ui/icons/Person";
 
 import DashboardPage from "ui/views/Dashboard/Dashboard.js";
 import OpenPushRequests from "ui/views/OpenPushRequests/OpenPushRequests.js";
-import Login from "ui/views/Login/Login.js";
 
 // import LibraryBooks from "@material-ui/icons/LibraryBooks";
 // import BubbleChart from "@material-ui/icons/BubbleChart";
@@ -48,13 +47,6 @@ const dashboardRoutes = [
     component: OpenPushRequests,
     layout: "/admin"
   },
-  {
-    path: "/login",
-    name: "Login",    
-    icon: Person,
-    component: Login,
-    layout: "/admin"
-  },  
 ];
 
 export default dashboardRoutes;
