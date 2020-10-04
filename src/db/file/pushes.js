@@ -10,6 +10,7 @@ if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db')
 db.connect('./.data/db', ['pushes']);
 
 const getPushes = (query={ error: false, blocked: true, allowPush: false, }) => {
+  console.log(`data.file:getPushes`);
   const data = db.pushes.find(query);
   console.log(data);
   return _.chain(data)
@@ -18,8 +19,10 @@ const getPushes = (query={ error: false, blocked: true, allowPush: false, }) => 
 }
 
 const getPush = (id) => {
+  console.log(JSON.stringify(id));
   console.log(`data.file:getPush(${id})`);
-  const data = db.pushes.findOne({id: id});  
+  const data = db.pushes.findOne({id: id});
+  console.log(JSON.stringify(data));
   const action = toClass(data, Action.prototype);
   return action;    
 }

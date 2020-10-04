@@ -54,6 +54,9 @@ export default function UserProfile() {
     axios.post('http://localhost:8080/auth/login', {
       username: username,
       password: password
+    }, {
+      withCredentials: true,
+      headers: {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
     })
     .then(function (response) {
       setMessage('Success!');

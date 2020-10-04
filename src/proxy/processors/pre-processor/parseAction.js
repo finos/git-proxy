@@ -33,8 +33,5 @@ const getRepoNameFromUrl = (url) => {
   return 'NOT-FOUND';
 };
 
-
-
-
 exec.displayName = 'parseAction.exec';
 exports.exec = exec;
