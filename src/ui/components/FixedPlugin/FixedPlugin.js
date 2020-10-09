@@ -9,7 +9,6 @@ import imagine1 from "ui/assets/img/sidebar-1.jpg";
 import imagine2 from "ui/assets/img/sidebar-2.jpg";
 import imagine3 from "ui/assets/img/sidebar-3.jpg";
 import imagine4 from "ui/assets/img/sidebar-4.jpg";
-
 import Button from "ui/components/CustomButtons/Button.js";
 
 export default function FixedPlugin(props) {

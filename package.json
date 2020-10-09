@@ -25,6 +25,7 @@
     "concurrently": "^5.3.0",
     "connect-ensure-login": "^0.1.1",
     "cors": "^2.8.5",
+    "diff2html": "^3.1.13",
     "diskdb": "^0.1.17",
     "express": "^4.17.1",
     "express-http-proxy": "^1.6.2",
@@ -32,6 +33,7 @@
     "history": "4.10.1",
     "https": "^1.0.0",
     "lodash": "^4.17.20",
+    "moment": "^2.29.1",
     "passport": "^0.4.1",
     "passport-local": "^1.0.0",
     "perfect-scrollbar": "1.5.0",
@@ -40,10 +42,11 @@
     "react-chartist": "0.14.3",
     "react-dom": "^16.13.1",
     "react-google-maps": "9.4.5",
+    "react-html-parser": "^2.0.2",
     "react-router-dom": "5.2.0",
     "react-scripts": "3.4.3",
     "react-swipeable-views": "0.13.9",
-    "uuid": "^8.3.0",
+    "uuid": "^8.3.1",
     "why-is-node-running": "^2.2.0"
   },
   "devDependencies": {

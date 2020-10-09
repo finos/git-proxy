@@ -19,29 +19,29 @@ export default function DailyPullsGraph() {
   const classes = useStyles();
   return (   
     <Card chart>
-    <CardHeader color="success">
-      <ChartistGraph
-        className="ct-chart"
-        data={dailySalesChart.data}
-        type="Line"
-        options={dailySalesChart.options}
-        listener={dailySalesChart.animation}
-      />
-    </CardHeader>
-    <CardBody>
-      <h4 className={classes.cardTitle}>Daily Github pulls</h4>
-      <p className={classes.cardCategory}>
-        <span className={classes.successText}>
-          <ArrowUpward className={classes.upArrowCardCategory} /> 55%
-        </span>{" "}
-        increase in Git pulls today.
-      </p>
-    </CardBody>
-    <CardFooter chart>
-      <div className={classes.stats}>
-        <AccessTime /> updated 4 minutes ago
-      </div>
-    </CardFooter>
-  </Card>
+      <CardHeader color="success">
+        <ChartistGraph
+          className="ct-chart"
+          data={dailySalesChart.data}
+          type="Line"
+          options={dailySalesChart.options}
+          listener={dailySalesChart.animation}
+        />
+      </CardHeader>
+      <CardBody>
+        <h4 className={classes.cardTitle}>Daily Github pulls</h4>
+        <p className={classes.cardCategory}>
+          <span className={classes.successText}>
+            <ArrowUpward className={classes.upArrowCardCategory} /> 55%
+          </span>{" "}
+          increase in Git pulls today.
+        </p>
+      </CardBody>
+      <CardFooter chart>
+        <div className={classes.stats}>
+          <AccessTime /> updated 4 minutes ago
+        </div>
+      </CardFooter>
+    </Card>
   );
 }

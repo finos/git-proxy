@@ -11,9 +11,7 @@ export default function PushesWaitingAuthorizationGraph() {
  
   const [data, setData] = useState([]);  
   const [auth, setAuth] = useState(true)
-  const [url, setUrl] = useState(
-    'http://localhost:8080/api/v1/push',
-  );
+  const url = 'http://localhost:8080/api/v1/push';
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
  
