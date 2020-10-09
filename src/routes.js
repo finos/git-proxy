@@ -18,19 +18,9 @@
 // @material-ui/icons
 import Dashboard from "@material-ui/icons/Dashboard";
 import Person from "@material-ui/icons/Person";
-
 import DashboardPage from "ui/views/Dashboard/Dashboard.js";
 import OpenPushRequests from "ui/views/OpenPushRequests/OpenPushRequests.js";
-
-// import LibraryBooks from "@material-ui/icons/LibraryBooks";
-// import BubbleChart from "@material-ui/icons/BubbleChart";
-// import LocationOn from "@material-ui/icons/LocationOn";
-// import Notifications from "@material-ui/icons/Notifications";
-// import Unarchive from "@material-ui/icons/Unarchive";
-// import Language from "@material-ui/icons/Language";
-// core components/views for Admin layout
-// import UserProfile from "ui/views/UserProfile/UserProfile.js";
-
+import PushDetails from "ui/views/PushDetails/PushDetails.js";
 
 const dashboardRoutes = [
   {
@@ -38,14 +28,24 @@ const dashboardRoutes = [
     name: "Dashboard",    
     icon: Dashboard,
     component: DashboardPage,
-    layout: "/admin"
+    layout: "/admin",
+    visible: true
   },
   {
-    path: "/open-pushges",
+    path: "/push",
     name: "Open Push Requests",    
     icon: Person,
     component: OpenPushRequests,
-    layout: "/admin"
+    layout: "/admin",
+    visible: true
+  },
+  {
+    path: "/push/:id",
+    name: "Open Push Requests",    
+    icon: Person,
+    component: PushDetails,
+    layout: "/admin",
+    visible: false
   },
 ];
 

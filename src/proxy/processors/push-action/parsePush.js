@@ -12,7 +12,7 @@ if (!fs.existsSync(dir)) {
 const exec = (req, action) => {
   // TODO - this needs a good refactoring!
   // But for the time being - it's working for POC
-  // purporses - turns out Streams and node are not nice
+  // purporses - turns out Streams and node are not nice#
 
   const step = new Step('parsePackFile')
 
@@ -39,7 +39,6 @@ const exec = (req, action) => {
 };
 
 const getPackMeta = (buffer) => {
-  
   const sig = buffer.slice(0, 4).toString('utf-8');
   const version = buffer.readUIntBE(4, 4);
   const entries = buffer.readUIntBE(8, 4);

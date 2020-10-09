@@ -1,11 +1,7 @@
-/*eslint-disable*/
 import React from "react";
-import PropTypes from "prop-types";
-// @material-ui/core components
 import { makeStyles } from "@material-ui/core/styles";
 import ListItem from "@material-ui/core/ListItem";
 import List from "@material-ui/core/List";
-// core components
 import styles from "ui/assets/jss/material-dashboard-react/components/footerStyle.js";
 
 const useStyles = makeStyles(styles);
@@ -27,9 +23,7 @@ export default function Footer(props) {
         <p className={classes.right}>
           <span>
             &copy; {1900 + new Date().getYear()}{" "}
-
-              Git Proxy
-            
+              Git Proxy            
           </span>
         </p>
       </div>
