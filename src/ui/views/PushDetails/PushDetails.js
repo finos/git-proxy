@@ -1,58 +1,28 @@
 import React, { useState, useEffect } from 'react';
+import { Redirect } from "react-router-dom";
+import moment from "moment";
+import Icon from "@material-ui/core/Icon";
 import GridItem from "ui/components/Grid/GridItem.js";
 import GridContainer from "ui/components/Grid/GridContainer.js";
-import { makeStyles } from "@material-ui/core/styles";
 import Card from "ui/components/Card/Card.js";
 import CardIcon from "ui/components/Card/CardIcon.js";
 import CardBody from "ui/components/Card/CardBody.js";
 import CardHeader from "ui/components/Card/CardHeader.js";
 import CardFooter from "ui/components/Card/CardFooter.js";
 import Button from "ui/components/CustomButtons/Button.js";
-import axios from 'axios';
-import moment from "moment";
-import Paper from '@material-ui/core/Paper';
-import Icon from "@material-ui/core/Icon";
-import { Redirect } from "react-router-dom";
 import Diff from "./components/Diff";
-import styles from "ui/assets/jss/material-dashboard-react/views/dashboardStyle.js";
-
-const useStyles = makeStyles(styles);
+import { getPush, authorisePush, rejectPush, cancelPush } from "../../services/git-push.js";
 
 export default function Dashboard(props) {  
-  const id = props.match.params.id;
-  const classes = useStyles();
+  const id = props.match.params.id;  
   const [data, setData] = useState([]);  
-  const [auth, setAuth] = useState(true);
-  const url = `http://localhost:8080/api/v1/push/${id}`;
+  const [auth, setAuth] = useState(true);  
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
  
   useEffect(() => {
-    const fetchData = async () => {
-      setIsError(false);
-      setIsLoading(true);
-      await axios(url,{ withCredentials: true }).then((response) => {        
-        const data = response.data;
-        data.diff = data.steps.find(x => x.stepName === 'diff');
-        console.log(data.diff);
-        console.log(data)
-        setData(data);
-        setAuth(true);
-        setIsLoading(false);
-        setIsError(false);
-      }).catch((error) => {
-        console.log(JSON.stringify(error));
-        setIsLoading(false);
-        if (error.response && error.response.status === 401) {
-          setAuth(false);
-        } else {
-          setIsError(true);
-        }
-      });
-    };
- 
-    fetchData();
-  }, [url]);
+    getPush(id, setIsLoading, setData, setAuth, setIsError);
+  }, [id]);
  
   if (isLoading) return(<div>Loading ...</div>);
   if (isError) return(<div>Something went wrong ...</div>);
@@ -68,9 +38,8 @@ export default function Dashboard(props) {
             </CardIcon>          
           </CardHeader>
           <CardBody>
-            <GridContainer>        
-
-            <GridItem xs={2} sm={2} md={2}>
+            <GridContainer>
+              <GridItem xs={2} sm={2} md={2}>
                 <h3>Commit</h3>            
                 <p>{moment(data.timestamp).toString()}</p>
               </GridItem>              
@@ -102,7 +71,6 @@ export default function Dashboard(props) {
           </CardBody>
         </Card>
       </GridItem>
-    
       <GridItem xs={12} sm={12} md={12}>
         <Card>
           <CardHeader></CardHeader>
@@ -110,13 +78,12 @@ export default function Dashboard(props) {
             <Diff diff={data.diff.content}/>
           </CardBody>
           <CardFooter>
-            <Button>Rject</Button>
-            <Button>Approve</Button>          
+            <Button onClick={async () => { await cancelPush(id, setAuth, setIsError);}}>Cancel</Button>
+            <Button onClick={async () => { await rejectPush(id, setAuth, setIsError);}}>Rject</Button>
+            <Button onClick={async () => { await authorisePush(id, setAuth, setIsError);}}>Approve</Button>
           </CardFooter>
         </Card>
-        
       </GridItem>                
     </GridContainer>    
   );
 }
-

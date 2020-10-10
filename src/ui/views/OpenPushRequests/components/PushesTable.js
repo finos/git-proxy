@@ -16,48 +16,23 @@ import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import { Redirect } from "react-router-dom";
 import styles from "ui/assets/jss/material-dashboard-react/views/dashboardStyle.js";
+import { getPushes } from "../../../services/git-push";
 
 export default function PushesTable() {
   const useStyles = makeStyles(styles);
   const classes = useStyles();
   const [data, setData] = useState([]);  
   const [auth, setAuth] = useState(true);
-  const url = 'http://localhost:8080/api/v1/push';
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
 
   const history = useHistory();
 
-  const openPush = (push) => {
-    
-    let path = `/admin/push/${push}`; 
-    console.log(path);
-    history.push(path);
-  }  
+  const openPush = (push) => history.push(`/admin/push/${push}`);
  
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsError(false);
-      setIsLoading(true);
-      await axios(url,{ withCredentials: true }).then((response) => {        
-        const data = response.data;                
-        setData(data);
-        setAuth(true);
-        setIsLoading(false);
-        setIsError(false);
-      }).catch((error) => {
-        console.log(JSON.stringify(error));
-        setIsLoading(false);
-        if (error.response && error.response.status === 401) {
-          setAuth(false);
-        } else {
-          setIsError(true);
-        }
-      });
-    };
- 
-    fetchData();
-  }, [url]);
+  useEffect(() => { 
+    getPushes(setIsLoading, setData, setAuth, setIsError);
+  }, []);
  
   if (isLoading) return(<div>Loading ...</div>);
   if (isError) return(<div>Something went wrong ...</div>);

@@ -9,7 +9,7 @@ if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db')
 
 db.connect('./.data/db', ['pushes']);
 
-const getPushes = (query={ error: false, blocked: true, allowPush: false, }) => {
+const getPushes = (query={ error: false, blocked: true, allowPush: false, authorised: false }) => {
   console.log(`data.file:getPushes`);
   const data = db.pushes.find(query);
   console.log(data);

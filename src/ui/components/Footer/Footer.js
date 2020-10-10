@@ -14,7 +14,7 @@ export default function Footer(props) {
         <div className={classes.left}>
           <List className={classes.list}>
             <ListItem className={classes.inlineBlock}>
-              <a href="https://github.com/pGrovesy/git-proxy" className={classes.block} target="_blank">
+              <a href="https://github.com/pGrovesy/git-proxy" className={classes.block} target="_blank" rel="noopener noreferrer">
                 Github
               </a>
             </ListItem>            
