@@ -7,13 +7,14 @@ if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir);
 }
 
-const exec = (req, action) => {
+const exec = async (req, action) => {
   const step = new Step('pullRemote');
 
   try {    
     action.proxyGitPath = `${dir}/${action.timestamp}`;
 
     step.log(`Creating folder ${action.proxyGitPath}`);
+
     if (!fs.existsSync(action.proxyGitPath)) {
       fs.mkdirSync(action.proxyGitPath, '0777', true);
     }

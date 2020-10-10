@@ -1,6 +1,6 @@
 const actions = require('../../actions');
 
-const exec = (req) => {
+const exec = async (req) => {
   
   const id = Date.now();
   const timestamp = id;

@@ -1,18 +1,15 @@
 const Step = require('../../actions').Step;
 const data = require('../../../db')
 
-const exec = (req, action) => {
+const exec = async (req, action) => {
   const step = new Step('checkIfWaitingAuth');
   
   try {
     
-    existingAction = data.getPush(action.id)
+    existingAction = await data.getPush(action.id)
     
     if (existingAction) {      
-            
-      if (existingAction.blocked) {
-        action = existingAction;                
-      }
+      action = existingAction;    
       
       if (existingAction.authorised) {                      
         action = existingAction;

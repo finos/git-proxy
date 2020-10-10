@@ -1,8 +1,7 @@
 const execSync = require('child_process').execSync;
 const Step = require('../../actions').Step;
 
-const exec = (req, action) => {
-
+const exec = async (req, action) => {
   const step = new Step('writePack');
   try {
     

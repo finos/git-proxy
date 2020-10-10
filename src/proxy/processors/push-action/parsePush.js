@@ -9,7 +9,7 @@ if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir);
 }
 
-const exec = (req, action) => {
+const exec = async (req, action) => {
   // TODO - this needs a good refactoring!
   // But for the time being - it's working for POC
   // purporses - turns out Streams and node are not nice#
@@ -17,6 +17,7 @@ const exec = (req, action) => {
   const step = new Step('parsePackFile')
 
   const messageParts = req.rawBody.split(' ');
+  // console.log(messageParts);
     
   action.setCommit(messageParts[0].substr(4), messageParts[1]);  
   action.branch = messageParts[2].trim().replace('\u0000', '');
@@ -26,7 +27,9 @@ const exec = (req, action) => {
 
   const [meta, contentBuff] = getPackMeta(buf);
 
-  const contents = getContents(contentBuff, meta.entries);
+  const contents = [];
+  
+  // const contents = getContents(contentBuff, meta.entries);
 
   step.content = {
     meta: meta,
