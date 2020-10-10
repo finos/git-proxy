@@ -6,7 +6,7 @@ const exec = async (req, action) => {
   
   try {
     
-    existingAction = await data.getPush(action.id)
+    const existingAction = await data.getPush(action.id)
     
     if (existingAction) {      
       action = existingAction;    
@@ -21,8 +21,9 @@ const exec = async (req, action) => {
     return action;    
   }
   catch(e) {        
+    console.error(e.stack || e)
     step.setError(e.message);
-    action.addStep(step);
+    action.addStep(step);    
     return action;
   }
 };
