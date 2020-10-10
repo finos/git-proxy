@@ -7,9 +7,7 @@ import CardHeader from "ui/components/Card/CardHeader.js";
 import CardBody from "ui/components/Card/CardBody.js";
 import CardFooter from "ui/components/Card/CardFooter.js";
 
-import {
-  emailsSubscriptionChart,  
-} from "ui/variables/charts.js";
+import { emailsSubscriptionChart, } from "ui/variables/charts.js";
 
 import styles from "ui/assets/jss/material-dashboard-react/views/dashboardStyle.js";
 
