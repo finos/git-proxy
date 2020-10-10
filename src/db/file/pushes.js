@@ -9,18 +9,18 @@ if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db')
 
 db.connect('./.data/db', ['pushes']);
 
-const getPushes = (query={ error: false, blocked: true, allowPush: false, authorised: false }) => {
+const getPushes = async (query={ error: false, blocked: true, allowPush: false, authorised: false }) => {
   console.log(`data.file:getPushes`);
-  const data = db.pushes.find(query);
+  const data = await db.pushes.find(query);
   console.log(data);
   return _.chain(data)
     .map((x) => toClass(x, Action.prototype))
     .value();  
 }
 
-const getPush = (id) => {  
+const getPush = async (id) => {  
   console.log(`data.file:getPush(${id})`);
-  const data = db.pushes.findOne({id: id});
+  const data = await db.pushes.findOne({id: id});
   
   if (data) {
     const action = toClass(data, Action.prototype);
@@ -28,17 +28,17 @@ const getPush = (id) => {
   }
 }
 
-const writeAudit = (action) => {
-  console.log(`data.file:writeAudit(${action})`);
+const writeAudit = async (action) => {
+  console.log(`data.file:writeAudit(${action.id})`);
   var options = { multi: false, upsert: true };  
-  db.pushes.update({id: action.id}, action, options);
+  await db.pushes.update({id: action.id}, action, options);
 }
 
-const authorise = (id) => {
+const authorise = async(id) => {
   console.log(`data::authorizing ${id}`)
-  const action = getPush(id);
+  const action = await getPush(id);
   action.authorised = true;
-  writeAudit(action);
+  await writeAudit(action);
   return { message: `authorised ${id}`};
 }
 

@@ -1,7 +1,7 @@
 const config = require('../../../config');
 const Step = require('../../actions').Step;
 
-const exec = (req, action, authorisedList=config.getAuthorisedList) => {
+const exec = async (req, action, authorisedList=config.getAuthorisedList) => {
   
   const step = new Step('checkRepoInAuthorisedList')
   

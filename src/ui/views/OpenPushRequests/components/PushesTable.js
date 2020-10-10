@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { makeStyles } from "@material-ui/core/styles";
 import Card from "ui/components/Card/Card.js";
 import CardHeader from "ui/components/Card/CardHeader.js";

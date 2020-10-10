@@ -1,7 +1,7 @@
 const db = require('../../../db')
 
-const exec = (req, action) => {
-  db.writeAudit(action);
+const exec = async (req, action) => {
+  await db.writeAudit(action);
   return action;
 };
 

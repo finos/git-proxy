@@ -4,13 +4,13 @@ const router = express.Router();
 const chain = require('../chain')
 
 router.use('/', proxy('https://github.com', {
-  filter: function(req, res) {
+  filter: async function(req, res) {
     try {
       if (req.body && req.body.length) {
         req.rawBody = req.body.toString('utf8');
       }
 
-      const action = chain.exec(req, res);
+      const action = await chain.exec(req, res);
 
       if (action.error || action.blocked) {      
         res.set('content-type', 'application/x-git-receive-pack-result');

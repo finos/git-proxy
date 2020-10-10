@@ -1,7 +1,6 @@
 /** Class representing a Push. */
 class Action {
-  steps = [];
-  lastStep;
+  steps = [];  
   error = false;
   errorMessage;
   blocked = false;
@@ -10,6 +9,9 @@ class Action {
   commitFrom;
   commitTo;
   branch;
+  message;
+  author;
+  user;
     
   /**
    * Create a Push Action
@@ -52,6 +54,22 @@ class Action {
 
   setBranch(branch) {
     this.branch = branch;
+  }
+
+  setMessage(message) {
+    this.message = message;
+  }
+
+  setBranch(branch) {
+    this.branch = branch;
+  }
+
+  setAuthor(branch) {
+    this.author = author;
+  }
+
+  setUser(branch) {
+    this.user = user;
   }
 
   setAllowPush() {

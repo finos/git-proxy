@@ -5,9 +5,9 @@ const login = require('connect-ensure-login');
 
 
 
-router.get('/', (req, res) => {    
+router.get('/', async (req, res) => {    
   if (req.user) {
-    res.send(db.getPushes());  
+    res.send(await db.getPushes());  
   } else {
     res.status(401).send({
       message: 'not logged in'
@@ -15,10 +15,10 @@ router.get('/', (req, res) => {
   }
 })
 
-router.get('/:id', login.ensureLoggedIn(), function(req, res) {    
+router.get('/:id', async(req, res) => {    
   if (req.user) {
     const id = req.params.id  
-    res.send(db.getPush(id));
+    res.send(await db.getPush(id));
   } else {
     res.status(401).send({
       message: 'not logged in'
@@ -26,10 +26,10 @@ router.get('/:id', login.ensureLoggedIn(), function(req, res) {
   }
 })
 
-router.post('/:id/reject', login.ensureLoggedIn(), function(req, res) { 
+router.post('/:id/reject', async(req, res) => { 
   if (req.user) { 
     const id = req.params.id  
-    const result = db.reject(id);
+    const result = await db.reject(id);
     res.send(result);
   } else {
     res.status(401).send({
@@ -38,10 +38,10 @@ router.post('/:id/reject', login.ensureLoggedIn(), function(req, res) {
   }
 });
 
-router.post('/:id/authorise', login.ensureLoggedIn(), function(req, res) { 
+router.post('/:id/authorise',  async (req, res) => { 
   if (req.user) { 
     const id = req.params.id  
-    const result = db.authorise(id);
+    const result = await db.authorise(id);
     res.send(result);
   } else {
     res.status(401).send({
@@ -50,10 +50,10 @@ router.post('/:id/authorise', login.ensureLoggedIn(), function(req, res) {
   }
 });
 
-router.post('/:id/cancel', login.ensureLoggedIn(), function(req, res) { 
+router.post('/:id/cancel', async (req, res) => { 
   if (req.user) { 
     const id = req.params.id  
-    const result = db.cancel(id);
+    const result = await db.cancel(id);
     res.send(result);
   } else {
     res.status(401).send({

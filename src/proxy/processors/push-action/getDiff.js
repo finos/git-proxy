@@ -1,7 +1,7 @@
 const child = require('child_process');
 const Step = require('../../actions').Step;
 
-const exec = (req, action) => {
+const exec = async (req, action) => {
   const step = new Step('diff');
 
   try {
@@ -22,8 +22,12 @@ const exec = (req, action) => {
     step.log(`executing "${cmd}" in foler ${path}`);
 
     // Get the diff
-    const content = child.execSync(cmd, {cwd: path}).toString('utf-8');    
+    const content = child.execSync(cmd, {
+      cwd: path,
+      encoding: 'utf8',
+      maxBuffer: 50 * 1024 * 1024 }).toString('utf-8');    
 
+    
     step.log(`completed ${cmd}`);
     step.setContent(content);
   }
