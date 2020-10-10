@@ -21,18 +21,21 @@ const chain = async (req) => {
     
     for (const i in actions) {
       const fn = actions[i];
-    
-      console.log(`executing action ${fn.displayName}`);      
+
+      console.log(`executing action ${fn.displayName}`);            
+      action = await fn(req, action);
+      console.log(action);
+      console.log(`executed ${fn.displayName}`);      
+          
       if (!(action.continue())) {
-        return;
+        console.log(`do not continue`);      
+        return action;
       }
 
       if (action.allowPush) {
         console.log('---- ALLLOWING PUSH!!! -----------')
-        return;
-      }      
-            
-      action = await fn(req, action);
+        return action;
+      }          
     }    
   } catch(e){
     console.error(e || e.stackTrace);
