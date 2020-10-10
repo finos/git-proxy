@@ -18,13 +18,14 @@ const getPushes = (query={ error: false, blocked: true, allowPush: false, author
     .value();  
 }
 
-const getPush = (id) => {
-  console.log(JSON.stringify(id));
+const getPush = (id) => {  
   console.log(`data.file:getPush(${id})`);
   const data = db.pushes.findOne({id: id});
-  console.log(JSON.stringify(data));
-  const action = toClass(data, Action.prototype);
-  return action;    
+  
+  if (data) {
+    const action = toClass(data, Action.prototype);
+    return action;    
+  }
 }
 
 const writeAudit = (action) => {
