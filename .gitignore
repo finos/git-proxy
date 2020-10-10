@@ -3,6 +3,7 @@
 .vscode
 .tmp
 .remote
+.data
 logs
 *.log
 npm-debug.log*
