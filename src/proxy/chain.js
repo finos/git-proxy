@@ -5,10 +5,10 @@ const pushActionChain = [
   proc.push.parsePush,  
   proc.push.checkRepoInAuthorisedList,  
   proc.push.checkIfWaitingAuth,
-  // proc.push.pullRemote,
-  // proc.push.writePack,
-  // proc.push.getDiff,
-  // proc.push.blockForAuth,  
+  proc.push.pullRemote,
+  proc.push.writePack,
+  proc.push.getDiff,
+  proc.push.blockForAuth,  
 ];
 
 // Executes the chain
