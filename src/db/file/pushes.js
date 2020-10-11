@@ -37,6 +37,8 @@ const authorise = async(id) => {
   console.log(`data::authorizing ${id}`)
   const action = await getPush(id);
   action.authorised = true;
+  action.canceled = false;
+  action.rejected = false;  
   await writeAudit(action);
   return { message: `authorised ${id}`};
 }
@@ -45,6 +47,7 @@ const reject = async(id) => {
   console.log(`data::reject ${id}`)
   const action = await getPush(id);
   action.authorised = false;
+  action.canceled = false;
   action.rejected = true;
   await writeAudit(action);
   return { message: `reject ${id}`};
@@ -53,7 +56,9 @@ const reject = async(id) => {
 const cancel = async(id) => {
   console.log(`data::cancel ${id}`)
   const action = await getPush(id);  
+  action.authorised = false;
   action.canceled = true;
+  action.rejected = false;
   await writeAudit(action);
   return { message: `cancel ${id}`};
 }

@@ -64,7 +64,7 @@ export default function Dashboard(props) {
     }
   }
     
-  if (data.rejected) {
+  if (data.authorised) {
     headerData = {
       color: "success",
       title: "Approved!"
@@ -111,7 +111,11 @@ export default function Dashboard(props) {
                 <h3>Message</h3>
                 <p>{data.commitMessage} Temporary placeholder message</p>
               </GridItem>              
-            </GridContainer>        
+            </GridContainer>
+            <Button color="warning" onClick={ async () => { await cancel() } }>Cancel</Button>
+            <Button color="danger" onClick={ async () => { await reject() } }>Rject</Button>
+            <Button color="success" onClick={ async () => { await authorise() }}>Approve</Button>
+
           </CardBody>
         </Card>
       </GridItem>
@@ -122,9 +126,6 @@ export default function Dashboard(props) {
             <Diff diff={data.diff.content}/>
           </CardBody>
           <CardFooter>
-            <Button onClick={ async () => { await cancel() } }>Cancel</Button>
-            <Button onClick={ async () => { await reject() } }>Rject</Button>
-            <Button onClick={ async () => { await authorise() }}>Approve</Button>
           </CardFooter>
         </Card>
       </GridItem>                
