@@ -23,8 +23,7 @@ const chain = async (req) => {
       const fn = actions[i];
 
       console.log(`executing action ${fn.displayName}`);            
-      action = await fn(req, action);
-      console.log(action);
+      action = await fn(req, action);      
       console.log(`executed ${fn.displayName}`);      
           
       if (!(action.continue())) {
