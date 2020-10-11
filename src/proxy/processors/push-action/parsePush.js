@@ -62,10 +62,10 @@ const getCommitData = (contents) => {
       console.log(parts);
 
       return {
-        tree: tree,
-        parent: parent,
-        author: author,
-        committer: committer,        
+        tree: tree.replace('parent', '').trim(),
+        parent: parent.replace('parent', '').trim(),
+        author: author.split(' ')[1],
+        committer: committer.split(' ')[1],        
         message: message
       }
     }).value();
