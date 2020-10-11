@@ -125,14 +125,16 @@ export default function Dashboard(props) {
                 <TableCell>Parent#</TableCell>
                 <TableCell>Committer</TableCell>
                 <TableCell>Author</TableCell>
+                <TableCell>Timestamp</TableCell>
                 <TableCell>Message</TableCell>                  
               </TableHead>
               <TableBody>
                 {data.commitData.map((c) => (
                   <TableRow>
                     <TableCell>{c.parent}</TableCell>
-                    <TableCell>{c.committer}</TableCell>
+                    <TableCell>{c.committer}</TableCell>                    
                     <TableCell>{c.author}</TableCell>
+                    <TableCell>{moment(Date(c.commitTs)).format('yyyy-MM-DD HH:mm:ss.mmmm')}</TableCell>
                     <TableCell>{c.message}</TableCell>
                   </TableRow>
                 ))}        
