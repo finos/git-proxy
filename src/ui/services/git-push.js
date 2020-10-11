@@ -6,8 +6,10 @@ const config = {
 }
 
 const getPush = async (id, setIsLoading, setData, setAuth, setIsError) => {
-  const url = `${baseUrl}/push/${id}`;
-  await axios(url, config)
+  const url = new URL(`${baseUrl}/push/${id}`);  
+  console.log(`fetching data from ${url}`);
+
+  await axios(url.toString(), config)
     .then((response) => {        
       console.log(`loading data from: ${url}`)
       const data = response.data;
@@ -22,10 +24,12 @@ const getPush = async (id, setIsLoading, setData, setAuth, setIsError) => {
     });
 };
 
-const getPushes = async (setIsLoading, setData, setAuth, setIsError) => {
-  const url = `${baseUrl}/push`;
-  console.log(`loading data from: ${url}`)
-  await axios(url,{ withCredentials: true }).then((response) => {        
+const getPushes = async (setIsLoading, setData, setAuth, setIsError, query={blocked: true, canceled: false, authorised: false, rejected: false}) => {
+  const url = new URL(`${baseUrl}/push`);
+  url.search = new URLSearchParams(query); 
+  console.log(`fetching data from ${url}`);
+
+  await axios(url.toString(),{ withCredentials: true }).then((response) => {        
     const data = response.data;
     setData(data);    
     setIsLoading(false);    

@@ -11,8 +11,7 @@ db.connect('./.data/db', ['pushes']);
 
 const getPushes = async (query={ error: false, blocked: true, allowPush: false, authorised: false }) => {
   console.log(`data.file:getPushes`);
-  const data = await db.pushes.find(query);
-  console.log(data);
+  const data = await db.pushes.find(query);  
   return _.chain(data)
     .map((x) => toClass(x, Action.prototype))
     .value();  
@@ -46,7 +45,7 @@ const reject = async(id) => {
   console.log(`data::reject ${id}`)
   const action = await getPush(id);
   action.authorised = false;
-  action.reject = true;
+  action.rejected = true;
   await writeAudit(action);
   return { message: `reject ${id}`};
 }
@@ -54,7 +53,7 @@ const reject = async(id) => {
 const cancel = async(id) => {
   console.log(`data::cancel ${id}`)
   const action = await getPush(id);  
-  action.cancel = true;
+  action.canceled = true;
   await writeAudit(action);
   return { message: `cancel ${id}`};
 }

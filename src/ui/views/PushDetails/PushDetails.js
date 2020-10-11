@@ -45,13 +45,40 @@ export default function Dashboard(props) {
   if (isError) return(<div>Something went wrong ...</div>);
   if (!auth) return(<Redirect to={{pathname: '/login'}} />);
 
+  let headerData = {
+    title: "Waiting Approval",
+    color: "warning"
+  };
+
+  if (data.canceled) {
+    headerData = {
+      color: "warning",
+      title: "Canceled"
+    }
+  }
+
+  if (data.rejected) {
+    headerData = {
+      color: "danger",
+      title: "REJECTED"
+    }
+  }
+    
+  if (data.rejected) {
+    headerData = {
+      color: "success",
+      title: "Approved!"
+    }
+  }
+
   return (    
     <GridContainer>        
       <GridItem xs={12} sm={12} md={12}>
         <Card>
-          <CardHeader color="success" stats icon>
-            <CardIcon color="success">
+          <CardHeader color={headerData.color} stats icon>
+            <CardIcon color={headerData.color}>
               <Icon>content_copy</Icon>
+              <h3>{headerData.title}</h3>
             </CardIcon>          
           </CardHeader>
           <CardBody>
