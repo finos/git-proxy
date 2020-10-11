@@ -49,10 +49,8 @@ const exec = async (req, action) => {
 const getCommitData = (contents) => {
   return lod.chain(contents)
     .filter({'type': 1})
-    .map(x => {
-      
+    .map(x => {      
       const parts = x.content.split('\n');
-
       const tree = parts[0];
       const parent = parts[1];
       const author = parts[2];

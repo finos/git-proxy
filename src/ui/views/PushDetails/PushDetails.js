@@ -96,11 +96,11 @@ export default function Dashboard(props) {
                 <p>{moment(data.timestamp).toString()}</p>
               </GridItem>              
               <GridItem xs={3} sm={3} md={3}>
-                <h3>Commit From</h3>            
+                <h3>Commit From</h3>
                 <p>{data.commitFrom}</p>
               </GridItem>
               <GridItem xs={3} sm={3} md={3}>
-                <h3>Commit From</h3>            
+                <h3>Commit</h3>            
                 <p>{data.commitTo}</p>
               </GridItem>              
               <GridItem xs={2} sm={2} md={2}>
@@ -122,6 +122,7 @@ export default function Dashboard(props) {
       
             <Table>
               <TableHead>
+                <TableCell>Parent#</TableCell>
                 <TableCell>Committer</TableCell>
                 <TableCell>Author</TableCell>
                 <TableCell>Message</TableCell>                  
@@ -129,6 +130,7 @@ export default function Dashboard(props) {
               <TableBody>
                 {data.commitData.map((c) => (
                   <TableRow>
+                    <TableCell>{c.parent}</TableCell>
                     <TableCell>{c.committer}</TableCell>
                     <TableCell>{c.author}</TableCell>
                     <TableCell>{c.message}</TableCell>
