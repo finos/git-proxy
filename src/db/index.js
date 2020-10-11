@@ -9,6 +9,8 @@ if (config.getSink() == 'fs') {
 }
 
 module.exports.authorise = sink.authorise;
+module.exports.reject = sink.reject;
+module.exports.cancel = sink.cancel;
 module.exports.getPushes = sink.getPushes;
 module.exports.writeAudit = sink.writeAudit;
 module.exports.getPush = sink.getPush;

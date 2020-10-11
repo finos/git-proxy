@@ -6,6 +6,9 @@ class Action {
   blocked = false;
   blockedMessage;
   allowPush = false;
+  authorised = false;
+  canceled = false;
+  rejected = false;
   commitFrom;
   commitTo;
   branch;
