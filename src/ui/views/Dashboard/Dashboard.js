@@ -8,7 +8,7 @@ import SuccessfulPushRequestSummary from "./Components/SuccessfulPushRequestSumm
 import DailyPullsGraph from "./Components/DailyPullsGraph";
 import RejectedPushGraph from "./Components/RejectedPushGraph";
 import PushAuthorizationsGraph from "./Components/PushAuthorizationsGraph";
-import PushesWaitingAuthorizationGraph from "./Components/PushesWaitingAuthorizationGraph";
+import PushTable from "./Components/PushTable";
 import ContributorsTable from "./Components/ContributorsTable";
 
 export default function Dashboard() {  
@@ -41,7 +41,7 @@ export default function Dashboard() {
       </GridContainer>
       <GridContainer>
         <GridItem xs={12} sm={12} md={6}>
-          <PushesWaitingAuthorizationGraph />
+          <PushTable />
         </GridItem>
         <GridItem xs={12} sm={12} md={6}>
           <ContributorsTable />

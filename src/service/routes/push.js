@@ -5,14 +5,22 @@ const db = require('../../db');
 router.get('/', async (req, res) => {    
   if (req.user) {
 
-    const query = {};
+    const query = {
+      type: "push",
+    };
 
-    for(const k in req.query.params) { 
+    for(const k in req.query) { 
+      
       if (k === 'limit') continue;
       if (k === 'skip') continue;
-      const v = req.query.params[i];
+      let v = req.query[k];
+      if (v === 'false') v = false;
+      if (v === 'true') v = true;
+      console.log(`${k}==${v}`);
       query[k] = v;
     }
+
+    console.log(query);
 
     res.send(await db.getPushes(query));  
   } else {
