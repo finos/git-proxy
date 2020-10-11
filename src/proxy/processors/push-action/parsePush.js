@@ -17,7 +17,7 @@ const exec = async (req, action) => {
   const step = new Step('parsePackFile')
 
   const messageParts = req.rawBody.split(' ');
-  console.log(messageParts);
+  // console.log(messageParts);
     
   action.setCommit(messageParts[0].substr(4), messageParts[1]);  
   action.branch = messageParts[2].trim().replace('\u0000', '');
@@ -29,7 +29,7 @@ const exec = async (req, action) => {
 
   const contents = [];
   
-  // const contents = getContents(contentBuff, meta.entries);
+  const contents = getContents(contentBuff, meta.entries);
 
   step.content = {
     meta: meta,
