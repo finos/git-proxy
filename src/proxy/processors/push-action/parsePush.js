@@ -27,9 +27,9 @@ const exec = async (req, action) => {
 
   const [meta, contentBuff] = getPackMeta(buf);
 
-  const contents = [];
-  
   const contents = getContents(contentBuff, meta.entries);
+
+  action.commitData = getCommitData(contents);
 
   step.content = {
     meta: meta,
@@ -40,6 +40,35 @@ const exec = async (req, action) => {
   
   return action;
 };
+
+const getCommitData = (contents) => {
+
+  _.chain(contents)
+    .filter({'type': 1})
+    .map(x => {
+      
+      const parts = x.content.split(' ');
+
+      const tree = parts[1];
+      const parent = parts[3];
+      const author = parts[5];
+      const commiter = parts[10];
+
+      const message = parts[15];
+      
+      for (let i=16; i < parts.length; i++) {
+        message = message + " " + parts[i];
+      }
+      
+      // tree c76dd5933cc7dceaba36130c78e144543a4322b6
+      // parent 3ff1bf1ddb0e4a0dafda7d1422b0ab1b11a510d0
+      // author grovesy <62599442+grovesy@users.noreply.github.com> 1602410672 +0100
+      // committer grovesy <62599442+grovesy@users.noreply.github.com> 1602410672 +0100
+      // parsing author/message       
+      // x.content.split(' ');
+    })
+}
+
 
 const getPackMeta = (buffer) => {
   const sig = buffer.slice(0, 4).toString('utf-8');
