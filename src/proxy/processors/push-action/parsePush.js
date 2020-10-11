@@ -1,9 +1,9 @@
 const zlib = require('zlib');
 const fs = require('fs');
+const lod = require('lodash');
 const BitMask = require('bit-mask');
 const Step = require('../../actions').Step;
 const dir = './.tmp/';
-
 
 if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir);
@@ -11,7 +11,9 @@ if (!fs.existsSync(dir)) {
 
 const exec = async (req, action) => {
   const step = new Step('parsePackFile')
+  console.log("working!");
   try {    
+    console.log("line 1");
     const messageParts = req.rawBody.split(' ');
           
     action.setCommit(messageParts[0].substr(4), messageParts[1]);  
@@ -23,8 +25,9 @@ const exec = async (req, action) => {
     const [meta, contentBuff] = getPackMeta(buf);
 
     const contents = getContents(contentBuff, meta.entries);
-
+    console.log("get commit!");
     action.commitData = getCommitData(contents);
+    console.log("got commit!");
 
     step.content = {
       meta: meta,
@@ -33,7 +36,7 @@ const exec = async (req, action) => {
   }
   catch (e) {
     console.error(e.stack || e);
-    step.setError(e.message);
+    step.setError(e.message || e);
     throw e;
   }
   finally {
@@ -44,8 +47,7 @@ const exec = async (req, action) => {
 };
 
 const getCommitData = (contents) => {
-
-  _.chain(contents)
+  return lod.chain(contents)
     .filter({'type': 1})
     .map(x => {
       
@@ -55,20 +57,21 @@ const getCommitData = (contents) => {
       const parent = parts[3];
       const author = parts[5];
       const commiter = parts[10];
-
       const message = parts[15];
       
       for (let i=16; i < parts.length; i++) {
-        message = message + " " + parts[i];
+        message = message + " " + parts[i];    
       }
-      
-      // tree c76dd5933cc7dceaba36130c78e144543a4322b6
-      // parent 3ff1bf1ddb0e4a0dafda7d1422b0ab1b11a510d0
-      // author grovesy <62599442+grovesy@users.noreply.github.com> 1602410672 +0100
-      // committer grovesy <62599442+grovesy@users.noreply.github.com> 1602410672 +0100
-      // parsing author/message       
-      // x.content.split(' ');
-    })
+
+      return {
+        tree: tree,
+        parent: parent,
+        author: author,
+        commiter: commiter,
+        message: message
+
+      }
+    }).value();
 }
 
 

@@ -1,5 +1,5 @@
 const fs = require('fs');
-const _ = require('lodash')
+const _ = require('lodash');
 const db = require('diskdb');
 const Action = require('../../proxy/actions').Action;
 const toClass = require('./helper').toClass;
