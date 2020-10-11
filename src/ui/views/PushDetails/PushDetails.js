@@ -12,6 +12,11 @@ import CardHeader from "ui/components/Card/CardHeader.js";
 import CardFooter from "ui/components/Card/CardFooter.js";
 import Button from "ui/components/CustomButtons/Button.js";
 import Diff from "./components/Diff";
+import Table from "@material-ui/core/Table"
+import TableBody from "@material-ui/core/TableBody"
+import TableHead from "@material-ui/core/TableHead"
+import TableRow from "@material-ui/core/TableRow"
+import TableCell from "@material-ui/core/TableCell"
 import { getPush, authorisePush, rejectPush, cancelPush } from "../../services/git-push.js";
 
 export default function Dashboard(props) {  
@@ -78,8 +83,11 @@ export default function Dashboard(props) {
           <CardHeader color={headerData.color} stats icon>
             <CardIcon color={headerData.color}>
               <Icon>content_copy</Icon>
-              <h3>{headerData.title}</h3>
+              <h3>{headerData.title}</h3>              
             </CardIcon>          
+            <Button color="warning" onClick={ async () => { await cancel() } }>Cancel</Button>
+            <Button color="danger" onClick={ async () => { await reject() } }>Rject</Button>
+            <Button color="success" onClick={ async () => { await authorise() }}>Approve</Button>            
           </CardHeader>
           <CardBody>
             <GridContainer>
@@ -103,19 +111,31 @@ export default function Dashboard(props) {
                 <h3>Branch</h3>            
                 <p>{data.branch.replace('refs/heads/', '')}</p>
               </GridItem>
-              <GridItem xs={2} sm={2} md={2}>
-                <h3>Author</h3>            
-                <p>{data.author} pGrovesy</p>
-              </GridItem>
-              <GridItem xs={10} sm={10} md={10}>
-                <h3>Message</h3>
-                <p>{data.commitMessage} Temporary placeholder message</p>
-              </GridItem>              
             </GridContainer>
-            <Button color="warning" onClick={ async () => { await cancel() } }>Cancel</Button>
-            <Button color="danger" onClick={ async () => { await reject() } }>Rject</Button>
-            <Button color="success" onClick={ async () => { await authorise() }}>Approve</Button>
-
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader color={headerData.color} stats icon>
+            <h3>{headerData.title}</h3>
+          </CardHeader>
+          <CardBody>
+      
+            <Table>
+              <TableHead>
+                <TableCell>Committer</TableCell>
+                <TableCell>Author</TableCell>
+                <TableCell>Message</TableCell>                  
+              </TableHead>
+              <TableBody>
+                {data.commitData.map((c) => (
+                  <TableRow>
+                    <TableCell>{c.committer}</TableCell>
+                    <TableCell>{c.author}</TableCell>
+                    <TableCell>{c.message}</TableCell>
+                  </TableRow>
+                ))}        
+              </TableBody>        
+            </Table>
           </CardBody>
         </Card>
       </GridItem>
