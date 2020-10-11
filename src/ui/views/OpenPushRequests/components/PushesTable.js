@@ -52,9 +52,9 @@ export default function PushesTable(props) {
             <TableCell align="right">Repo</TableCell>
             <TableCell align="right">Branch</TableCell>
             <TableCell align="right">Commit</TableCell>
-            <TableCell align="right">Git Author</TableCell>
-            <TableCell align="right">Internal Id</TableCell>
-            <TableCell align="right">Message</TableCell>
+            <TableCell align="right">Last Commit</TableCell>                        
+            <TableCell align="right">Last Message</TableCell> 
+            <TableCell align="right">Commits</TableCell> 
           </TableRow>
         </TableHead>
         <TableBody>
@@ -70,10 +70,10 @@ export default function PushesTable(props) {
               </TableCell>
               <TableCell align="right">{row.repo}</TableCell>
               <TableCell align="right">{row.branch.replace('refs/heads/', '')}</TableCell>
-              <TableCell align="right">{row.commitFrom.substring(0,7)} - {row.commitTo.substring(0,7)}</TableCell>
-              <TableCell align="right">{row.gitAuthor}</TableCell>
-              <TableCell align="right">{row.internalAuthor}</TableCell>
-              <TableCell align="right">{row.message}</TableCell>
+              <TableCell align="right">{row.commitFrom.substring(0,5)} - {row.commitTo.substring(0,5)}</TableCell>                            
+              <TableCell align="left">{row.commitData[row.commitData.length -1].author} </TableCell>
+              <TableCell align="left">{row.commitData[row.commitData.length -1].message} </TableCell>
+              <TableCell align="left">{row.commitData.length}</TableCell>
             </TableRow>
           ))}
         </TableBody>

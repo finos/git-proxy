@@ -92,7 +92,7 @@ export default function Dashboard(props) {
           <CardBody>
             <GridContainer>
               <GridItem xs={2} sm={2} md={2}>
-                <h3>Commit</h3>            
+                <h3>Timestamp</h3>            
                 <p>{moment(data.timestamp).toString()}</p>
               </GridItem>              
               <GridItem xs={3} sm={3} md={3}>
@@ -100,7 +100,7 @@ export default function Dashboard(props) {
                 <p>{data.commitFrom}</p>
               </GridItem>
               <GridItem xs={3} sm={3} md={3}>
-                <h3>Commit</h3>            
+                <h3>Commit To</h3>            
                 <p>{data.commitTo}</p>
               </GridItem>              
               <GridItem xs={2} sm={2} md={2}>
