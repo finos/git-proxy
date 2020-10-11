@@ -32,12 +32,12 @@ export default function Dashboard(props) {
   }
 
   const reject = async () => {
-    await authorisePush(id, setAuth, setIsError);
+    await rejectPush(id, setAuth, setIsError);
     history.push(`/admin/push/`);
   }
  
   const cancel = async () => {
-    await authorisePush(id, setAuth, setIsError);
+    await cancelPush(id, setAuth, setIsError);
     history.push(`/admin/push/`);
   }
 

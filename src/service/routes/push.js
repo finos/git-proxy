@@ -1,13 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../../db');
-const login = require('connect-ensure-login');
-
-
 
 router.get('/', async (req, res) => {    
   if (req.user) {
-    res.send(await db.getPushes());  
+
+    const query = {};
+
+    for(const k in req.query.params) { 
+      if (k === 'limit') continue;
+      if (k === 'skip') continue;
+      const v = req.query.params[i];
+      query[k] = v;
+    }
+
+    res.send(await db.getPushes(query));  
   } else {
     res.status(401).send({
       message: 'not logged in'

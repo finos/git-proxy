@@ -42,7 +42,26 @@ const authorise = async(id) => {
   return { message: `authorised ${id}`};
 }
 
+const reject = async(id) => {
+  console.log(`data::reject ${id}`)
+  const action = await getPush(id);
+  action.authorised = false;
+  action.reject = true;
+  await writeAudit(action);
+  return { message: `reject ${id}`};
+}
+
+const cancel = async(id) => {
+  console.log(`data::cancel ${id}`)
+  const action = await getPush(id);  
+  action.cancel = true;
+  await writeAudit(action);
+  return { message: `cancel ${id}`};
+}
+
 module.exports.getPushes = getPushes;
 module.exports.writeAudit = writeAudit;
 module.exports.getPush = getPush;
 module.exports.authorise = authorise;
+module.exports.reject = reject;
+module.exports.cancel = cancel;
