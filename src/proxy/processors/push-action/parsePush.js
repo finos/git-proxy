@@ -10,35 +10,37 @@ if (!fs.existsSync(dir)) {
 }
 
 const exec = async (req, action) => {
-  // TODO - this needs a good refactoring!
-  // But for the time being - it's working for POC
-  // purporses - turns out Streams and node are not nice#
-
   const step = new Step('parsePackFile')
+  try {    
+    const messageParts = req.rawBody.split(' ');
+          
+    action.setCommit(messageParts[0].substr(4), messageParts[1]);  
+    action.branch = messageParts[2].trim().replace('\u0000', '');
+      
+    const index = req.body.lastIndexOf('PACK');
+    const buf = req.body.slice(index);
 
-  const messageParts = req.rawBody.split(' ');
-  // console.log(messageParts);
-    
-  action.setCommit(messageParts[0].substr(4), messageParts[1]);  
-  action.branch = messageParts[2].trim().replace('\u0000', '');
-    
-  const index = req.body.lastIndexOf('PACK');
-  const buf = req.body.slice(index);
+    const [meta, contentBuff] = getPackMeta(buf);
 
-  const [meta, contentBuff] = getPackMeta(buf);
+    const contents = getContents(contentBuff, meta.entries);
 
-  const contents = getContents(contentBuff, meta.entries);
+    action.commitData = getCommitData(contents);
 
-  action.commitData = getCommitData(contents);
+    step.content = {
+      meta: meta,
+      contents: contents,
+    };   
+  }
+  catch (e) {
+    console.error(e.stack || e);
+    step.setError(e.message);
+    throw e;
+  }
+  finally {
+    action.addStep(step)
+    return action;
+  }
 
-  step.content = {
-    meta: meta,
-    contents: contents,
-  };
-
-  action.addStep(step)
-  
-  return action;
 };
 
 const getCommitData = (contents) => {
