@@ -54,20 +54,19 @@ const getCommitData = (contents) => {
       const parts = x.content.split('\n');
 
       const tree = parts[0];
-      const authoer = parts[1];
-      const message = parts[2];
+      const parent = parts[1];
+      const author = parts[2];
+      const committer = parts[3];
+      const message = parts[5];
 
       console.log(parts);
-      
-      for (let i=17; i < parts.length; i++) {
-        message = message + " " + parts[i];    
-      }
 
       return {
         tree: tree,
-        author: auther,      
+        parent: parent,
+        author: author,
+        committer: committer,        
         message: message
-
       }
     }).value();
 }
