@@ -57,9 +57,11 @@ const getCommitData = (contents) => {
       const parent = parts[3];
       const author = parts[5];
       const commiter = parts[10];
-      const message = parts[15];
+      const message = parts[16];
+
+      console.log(parts);
       
-      for (let i=16; i < parts.length; i++) {
+      for (let i=17; i < parts.length; i++) {
         message = message + " " + parts[i];    
       }
 
