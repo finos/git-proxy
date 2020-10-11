@@ -19,7 +19,7 @@ export default function Dashboard() {
               },
               {
                 tabName: "Approved",                
-                tabContent: (<PushesTable  authorised={true} rejected={false} canceled={false} />)
+                tabContent: (<PushesTable  authorised={true} />)
               },
               {
                 tabName: "Canceled",
