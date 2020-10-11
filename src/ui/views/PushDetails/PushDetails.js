@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Redirect } from "react-router-dom";
 import moment from "moment";
+import { useHistory } from "react-router-dom";
 import Icon from "@material-ui/core/Icon";
 import GridItem from "ui/components/Grid/GridItem.js";
 import GridContainer from "ui/components/Grid/GridContainer.js";
@@ -19,11 +20,27 @@ export default function Dashboard(props) {
   const [auth, setAuth] = useState(true);  
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
- 
+  const history = useHistory();
+
   useEffect(() => {
     getPush(id, setIsLoading, setData, setAuth, setIsError);
   }, [id]);
+
+  const authorise = async () => {
+    await authorisePush(id, setAuth, setIsError);
+    history.push(`/admin/push/`);
+  }
+
+  const reject = async () => {
+    await authorisePush(id, setAuth, setIsError);
+    history.push(`/admin/push/`);
+  }
  
+  const cancel = async () => {
+    await authorisePush(id, setAuth, setIsError);
+    history.push(`/admin/push/`);
+  }
+
   if (isLoading) return(<div>Loading ...</div>);
   if (isError) return(<div>Something went wrong ...</div>);
   if (!auth) return(<Redirect to={{pathname: '/login'}} />);
@@ -78,9 +95,9 @@ export default function Dashboard(props) {
             <Diff diff={data.diff.content}/>
           </CardBody>
           <CardFooter>
-            <Button onClick={async () => { await cancelPush(id, setAuth, setIsError);}}>Cancel</Button>
-            <Button onClick={async () => { await rejectPush(id, setAuth, setIsError);}}>Rject</Button>
-            <Button onClick={async () => { await authorisePush(id, setAuth, setIsError);}}>Approve</Button>
+            <Button onClick={ async () => { await cancel() } }>Cancel</Button>
+            <Button onClick={ async () => { await reject() } }>Rject</Button>
+            <Button onClick={ async () => { await authorise() }}>Approve</Button>
           </CardFooter>
         </Card>
       </GridItem>                
