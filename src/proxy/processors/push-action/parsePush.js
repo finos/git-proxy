@@ -64,7 +64,7 @@ const getCommitData = (contents) => {
         parent: parent.replace('parent', '').trim(),
         author: author.split(' ')[1],
         committer: committer.split(' ')[1],
-        commitTs: committer.split(' ')[4],
+        commitTs: committer.split(' ')[3],
         message: message
       }
     }).value();
