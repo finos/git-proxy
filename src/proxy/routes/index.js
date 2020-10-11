@@ -11,9 +11,7 @@ router.use('/', proxy('https://github.com', {
       }
 
       const action = await chain.exec(req, res);
-
-      console.log(action);
-
+      
       if (action.error || action.blocked) {      
         res.set('content-type', 'application/x-git-receive-pack-result');
         res.set('transfer-encoding', 'chunked');
