@@ -51,13 +51,11 @@ const getCommitData = (contents) => {
     .filter({'type': 1})
     .map(x => {
       
-      const parts = x.content.split(' ');
+      const parts = x.content.split('\n');
 
-      const tree = parts[1];
-      const parent = parts[3];
-      const author = parts[5];
-      const commiter = parts[10];
-      const message = parts[16];
+      const tree = parts[0];
+      const authoer = parts[1];
+      const message = parts[2];
 
       console.log(parts);
       
@@ -67,9 +65,7 @@ const getCommitData = (contents) => {
 
       return {
         tree: tree,
-        parent: parent,
-        author: author,
-        commiter: commiter,
+        author: auther,      
         message: message
 
       }
