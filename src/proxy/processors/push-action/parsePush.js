@@ -63,7 +63,8 @@ const getCommitData = (contents) => {
         tree: tree.replace('parent', '').trim(),
         parent: parent.replace('parent', '').trim(),
         author: author.split(' ')[1],
-        committer: committer.split(' ')[1],        
+        committer: committer.split(' ')[1],
+        commitTs: committer.split(' ')[5],
         message: message
       }
     }).value();
