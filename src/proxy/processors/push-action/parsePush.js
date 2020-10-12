@@ -21,17 +21,13 @@ const exec = async (req, action) => {
       
     const index = req.body.lastIndexOf('PACK');
     const buf = req.body.slice(index);
-
     const [meta, contentBuff] = getPackMeta(buf);
-
     const contents = getContents(contentBuff, meta.entries);
-    console.log("get commit!");
+    
     action.commitData = getCommitData(contents);
-    console.log("got commit!");
-
+    
     step.content = {
-      meta: meta,
-      contents: contents,
+      meta: meta      
     };   
   }
   catch (e) {
@@ -94,7 +90,7 @@ const getContents = (buffer, entries) => {
       buffer = nextBuffer;
       contents.push(content);
     } catch (e) {
-      console.log(e);
+      // console.log(e);
     }
   }
   return contents;
