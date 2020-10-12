@@ -13,7 +13,7 @@ const exec = async (req, action) => {
 
     if (action.commitFrom === '0000000000000000000000000000000000000000') {
       if (action.commitData[0].parent !== '0000000000000000000000000000000000000000') {        
-        cmd = `git diff ${action.commitData[0].parent} ${action.commitTo}`
+        cmd = `git diff ${action.commitData[action.commitData.length -1].parent} ${action.commitTo}`
       }
     }
 
