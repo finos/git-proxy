@@ -1,4 +1,10 @@
 /** Class representing a Push. */
+
+String.prototype.replaceAll = function(str1, str2, ignore) 
+{
+    return this.replace(new RegExp(str1.replace(/([\/\,\!\\\^\$\{\}\[\]\(\)\.\*\+\?\|\<\>\-\&])/g,"\\$&"),(ignore?"gi":"g")),(typeof(str2)=="string")?str2.replace(/\$/g,"$$$$"):str2);
+} 
+
 class Action {
   steps = [];  
   error = false;
@@ -30,6 +36,7 @@ class Action {
     this.repo = repo;
   }
 
+
   addStep(step) {
     this.steps.push(step)
     this.lastStep = step;
@@ -52,7 +59,8 @@ class Action {
   setCommit(commitFrom, commitTo) {
     this.commitFrom = commitFrom;
     this.commitTo = commitTo;
-    this.id = `${commitFrom}__${commitTo}`;
+    const branch = this.branch.replaceAll(' ', '-')    
+    this.id = `${branch}_${commitFrom.substring(0,8)}_${commitTo.substring(0,8)}`;
   }
 
   setBranch(branch) {
