@@ -13,9 +13,9 @@ const exec = async (req, action) => {
   const step = new Step('parsePackFile')
   try {        
     const messageParts = req.rawBody.split(' ');          
-    action.setCommit(messageParts[0].substr(4), messageParts[1]);  
     action.branch = messageParts[2].trim().replace('\u0000', '');      
-
+    action.setCommit(messageParts[0].substr(4), messageParts[1]);  
+    
     const index = req.body.lastIndexOf('PACK');
     const buf = req.body.slice(index);
     const [meta, contentBuff] = getPackMeta(buf);
