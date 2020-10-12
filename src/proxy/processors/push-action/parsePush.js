@@ -23,7 +23,7 @@ const exec = async (req, action) => {
     action.commitData = getCommitData(contents);
 
     if (action.commitFrom === '0000000000000000000000000000000000000000') {
-      action.commitFrom = action.commitData[0].parent;
+      action.commitFrom = action.commitData[action.commitData.length -1].parent;
     }
     
     step.content = {
