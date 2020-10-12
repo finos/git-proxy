@@ -50,8 +50,6 @@ const getCommitData = (contents) => {
       const committer = parts[3];
       const message = parts[5];
 
-      console.log(parts);
-
       return {
         tree: tree.replace('parent', '').trim(),
         parent: parent.replace('parent', '').trim(),
@@ -86,8 +84,7 @@ const getContents = (buffer, entries) => {
       const [content, nextBuffer] = getContent(i, buffer);
       buffer = nextBuffer;
       contents.push(content);
-    } catch (e) {
-      // console.log(e);
+    } catch (e) {      
     }
   }
   return contents;

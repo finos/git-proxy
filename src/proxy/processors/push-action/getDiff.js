@@ -5,8 +5,6 @@ const exec = async (req, action) => {
   const step = new Step('diff');
 
   try {
-    console.log(action.commitFrom)
-    
     const path = `${action.proxyGitPath}/${action.repoName}`;
     
     // If this is a new repo or fresh branch
@@ -23,8 +21,7 @@ const exec = async (req, action) => {
     else {
       cmd = `git diff ${action.commitFrom} ${action.commitTo}`;
     }
-
-    console.log(process.cwd());
+    
     step.log(`executing "${cmd}" in foler ${path}`);
 
     // Get the diff
@@ -36,8 +33,7 @@ const exec = async (req, action) => {
     step.log(`completed ${cmd}`);
     step.setContent(content);
   }
-  catch (e) {
-    console.error(e.stack || e);
+  catch (e) {    
     step.setError(e.message);
     throw e;
   }

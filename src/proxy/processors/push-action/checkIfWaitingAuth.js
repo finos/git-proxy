@@ -2,15 +2,11 @@ const Step = require('../../actions').Step;
 const data = require('../../../db')
 
 const exec = async (req, action) => {
-  const step = new Step('checkIfWaitingAuth');
-  
+  const step = new Step('checkIfWaitingAuth');  
   try {
-    
-    const existingAction = await data.getPush(action.id)
-    
+    const existingAction = await data.getPush(action.id)    
     if (existingAction) {      
-      action = existingAction;    
-      
+      action = existingAction;          
       if (existingAction.authorised) {                      
         action = existingAction;
         action.setAllowPush()
@@ -20,8 +16,7 @@ const exec = async (req, action) => {
     action.addStep(step);
     return action;    
   }
-  catch(e) {        
-    console.error(e.stack || e)
+  catch(e) {            
     step.setError(e.message);
     action.addStep(step);    
     return action;
