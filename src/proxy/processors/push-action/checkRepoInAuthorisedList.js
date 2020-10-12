@@ -2,7 +2,6 @@ const config = require('../../../config');
 const Step = require('../../actions').Step;
 
 const exec = async (req, action, authorisedList=config.getAuthorisedList) => {
-  
   const step = new Step('checkRepoInAuthorisedList')
   
   if (!authorisedList().includes(action.repo)) {
@@ -12,12 +11,9 @@ const exec = async (req, action, authorisedList=config.getAuthorisedList) => {
   } else {
     step.log(`repo ${action.repo} is in the authorisedList`);
   }
-
   action.addStep(step);
-
   return action;
 };
 
 exec.displayName = 'checkRepoInAuthorisedList.exec';
-
 exports.exec = exec
