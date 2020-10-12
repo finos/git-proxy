@@ -9,10 +9,11 @@ if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db')
 
 const db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
 
-
-const getPushes = (query={ error: false, blocked: true, allowPush: false, authorised: false }) => {
+const getPushes = (
+  query={ error: false, blocked: true, allowPush: false, authorised: false },
+  logger=console) => {
   return new Promise((resolve, reject) => {
-    console.log(`data.file:getPushes`);
+    logger.log(`data.file:getPushes`);
     db.find(query, (err, docs) => {
       if (err)
         reject(err);
@@ -26,9 +27,9 @@ const getPushes = (query={ error: false, blocked: true, allowPush: false, author
   });
 }
 
-const getPush = async (id) => {
+const getPush = async (id, logger=console) => {
   return new Promise((resolve, reject) => {
-    console.log(`data.file:getPush(${id})`);
+    logger.log(`data.file:getPush(${id})`);
     db.findOne({id: id}, (err, doc) => {
       if (err)
         reject(err);
@@ -42,9 +43,9 @@ const getPush = async (id) => {
 }
   
 
-const writeAudit = async (action) => {
+const writeAudit = async (action, logger=console) => {
   return new Promise((resolve, reject) => {
-    console.log(`data.file:writeAudit(${action.id})`);
+    logger.log(`data.file:writeAudit(${action.id})`);
     var options = { multi: false, upsert: true };  
     db.update({id: action.id}, action, options, (err) => {
       if (err)
@@ -55,9 +56,9 @@ const writeAudit = async (action) => {
   });
 }
 
-const authorise = async(id) => {
-  console.log(`data::authorizing ${id}`)
-  const action = await getPush(id);
+const authorise = async(id, logger=console) => {
+  logger.log(`data::authorizing ${id}`)
+  const action = await getPush(id, logger);  
   action.authorised = true;
   action.canceled = false;
   action.rejected = false;  
@@ -65,9 +66,9 @@ const authorise = async(id) => {
   return { message: `authorised ${id}`};
 }
 
-const reject = async(id) => {
-  console.log(`data::reject ${id}`)
-  const action = await getPush(id);
+const reject = async(id, logger=console) => {
+  logger.log(`data::reject ${id}`)
+  const action = await getPush(id, logger);  
   action.authorised = false;
   action.canceled = false;
   action.rejected = true;
@@ -75,9 +76,9 @@ const reject = async(id) => {
   return { message: `reject ${id}`};
 }
 
-const cancel = async(id) => {
-  console.log(`data::cancel ${id}`)
-  const action = await getPush(id);  
+const cancel = async(id, logger=console) => {
+  logger.log(`data::cancel ${id}`)
+  const action = await getPush(id, logger);  
   action.authorised = false;
   action.canceled = true;
   action.rejected = false;
