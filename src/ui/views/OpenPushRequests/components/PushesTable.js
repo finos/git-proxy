@@ -48,13 +48,13 @@ export default function PushesTable(props) {
         <TableHead>
           <TableRow>
             <TableCell>Actions</TableCell>
-            <TableCell align="right">Time</TableCell>
-            <TableCell align="right">Repo</TableCell>
-            <TableCell align="right">Branch</TableCell>
-            <TableCell align="right">Commit</TableCell>
-            <TableCell align="right">Last Commit</TableCell>                        
-            <TableCell align="right">Last Message</TableCell> 
-            <TableCell align="right">Commits</TableCell> 
+            <TableCell align="left">Time</TableCell>
+            <TableCell align="left">Repo</TableCell>
+            <TableCell align="left">Branch</TableCell>
+            <TableCell align="left">Commit</TableCell>
+            <TableCell align="left">Last Author</TableCell> 
+            <TableCell align="left">Last Message</TableCell> 
+            <TableCell align="left">Commits</TableCell> 
           </TableRow>
         </TableHead>
         <TableBody>
@@ -65,12 +65,12 @@ export default function PushesTable(props) {
                   Open
                 </Button>
               </TableCell>
-              <TableCell align="right" >
+              <TableCell align="left" >
                 {moment(row.timestamp).format("yyyy-MM-DD HH:mm")}
               </TableCell>
-              <TableCell align="right">{row.repo}</TableCell>
-              <TableCell align="right">{row.branch.replace('refs/heads/', '')}</TableCell>
-              <TableCell align="right">{row.commitFrom.substring(0,5)} - {row.commitTo.substring(0,5)}</TableCell>                            
+              <TableCell align="left">{row.repo}</TableCell>
+              <TableCell align="left">{row.branch.replace('refs/heads/', '')}</TableCell>
+              <TableCell align="left">{row.commitFrom.substring(0,5)} - {row.commitTo.substring(0,5)}</TableCell>                                          
               <TableCell align="left">{row.commitData[row.commitData.length -1].author} </TableCell>
               <TableCell align="left">{row.commitData[row.commitData.length -1].message} </TableCell>
               <TableCell align="left">{row.commitData.length}</TableCell>
