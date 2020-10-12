@@ -11,9 +11,8 @@ if (!fs.existsSync(dir)) {
 
 const exec = async (req, action) => {
   const step = new Step('parsePackFile')
-  console.log("working!");
   try {    
-    console.log("line 1");
+    
     const messageParts = req.rawBody.split(' ');
           
     action.setCommit(messageParts[0].substr(4), messageParts[1]);  
@@ -30,8 +29,7 @@ const exec = async (req, action) => {
       meta: meta      
     };   
   }
-  catch (e) {
-    console.error(e.stack || e);
+  catch (e) {    
     step.setError(e.message || e);
     throw e;
   }
@@ -39,7 +37,6 @@ const exec = async (req, action) => {
     action.addStep(step)
     return action;
   }
-
 };
 
 const getCommitData = (contents) => {
