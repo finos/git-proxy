@@ -26,7 +26,6 @@ const exec = async (req, action) => {
       cwd: path,
       encoding: 'utf8',
       maxBuffer: 50 * 1024 * 1024 }).toString('utf-8');    
-
     
     step.log(`completed ${cmd}`);
     step.setContent(content);
