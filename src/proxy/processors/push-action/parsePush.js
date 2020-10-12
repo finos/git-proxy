@@ -24,6 +24,10 @@ const exec = async (req, action) => {
     const contents = getContents(contentBuff, meta.entries);
     
     action.commitData = getCommitData(contents);
+
+    if (action.commitFrom === '0000000000000000000000000000000000000000') {
+      action.commitFrom = action.commitData[0].parent;
+    }
     
     step.content = {
       meta: meta      
