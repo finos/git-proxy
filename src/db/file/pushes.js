@@ -1,36 +1,58 @@
 const fs = require('fs');
 const _ = require('lodash');
-const db = require('diskdb');
+const Datastore = require('nedb');
 const Action = require('../../proxy/actions').Action;
 const toClass = require('./helper').toClass;
 
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data')
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db')
 
-db.connect('./.data/db', ['pushes']);
+const db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
 
-const getPushes = async (query={ error: false, blocked: true, allowPush: false, authorised: false }) => {
-  console.log(`data.file:getPushes`);
-  const data = await db.pushes.find(query);  
-  return _.chain(data)
-    .map((x) => toClass(x, Action.prototype))
-    .value();  
+
+const getPushes = (query={ error: false, blocked: true, allowPush: false, authorised: false }) => {
+  return new Promise((resolve, reject) => {
+    console.log(`data.file:getPushes`);
+    db.find(query, (err, docs) => {
+      if (err)
+        reject(err);
+      else 
+        resolve(
+          _.chain(docs)
+          .map((x) => toClass(x, Action.prototype))
+          .value()
+        )
+    });        
+  });
 }
 
-const getPush = async (id) => {  
-  console.log(`data.file:getPush(${id})`);
-  const data = await db.pushes.findOne({id: id});
+const getPush = async (id) => {
+  return new Promise((resolve, reject) => {
+    console.log(`data.file:getPush(${id})`);
+    db.findOne({id: id}, (err, doc) => {
+      if (err)
+        reject(err);
+      else 
+        if (!doc) 
+          resolve(null);
+        else 
+          resolve(toClass(doc, Action.prototype));
+    });
+  });
+}
   
-  if (data) {
-    const action = toClass(data, Action.prototype);
-    return action;    
-  }
-}
 
 const writeAudit = async (action) => {
-  console.log(`data.file:writeAudit(${action.id})`);
-  var options = { multi: false, upsert: true };  
-  await db.pushes.update({id: action.id}, action, options);
+  return new Promise((resolve, reject) => {
+    console.log(`data.file:writeAudit(${action.id})`);
+    var options = { multi: false, upsert: true };  
+    db.update({id: action.id}, action, options, (err) => {
+      if (err)
+        reject(err)
+      else
+        resolve(null);
+    });
+  });
 }
 
 const authorise = async(id) => {
