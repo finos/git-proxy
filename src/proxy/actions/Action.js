@@ -59,8 +59,8 @@ class Action {
   setCommit(commitFrom, commitTo) {
     this.commitFrom = commitFrom;
     this.commitTo = commitTo;
-    const branch = this.branch.replaceAll(' ', '-')    
-    this.id = `${branch}_${commitFrom.substring(0,8)}_${commitTo.substring(0,8)}`;
+    //const branch = this.branch.replaceAll(' ', '')
+    this.id = `${commitFrom}__${commitTo}`;
   }
 
   setBranch(branch) {
