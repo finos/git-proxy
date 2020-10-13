@@ -3,9 +3,8 @@ const Step = require('../../actions').Step;
 const fs = require('fs');
 const dir = './.remote';
 
-if (!fs.existsSync(dir)) {
+if (!fs.existsSync(dir))
   fs.mkdirSync(dir);
-}
 
 const exec = async (req, action) => {
   const step = new Step('pullRemote');
