@@ -1,6 +1,5 @@
 const proc = require('./processors');
 
-// A push action chain is when someone tries to push to a remote repo
 const pushActionChain = [    
   proc.push.parsePush,  
   proc.push.checkRepoInAuthorisedList,  
@@ -11,7 +10,6 @@ const pushActionChain = [
   proc.push.blockForAuth,  
 ];
 
-// Executes the chain
 const chain = async (req) => {
   let action;
   try {
@@ -45,7 +43,6 @@ const chain = async (req) => {
   return action;
 };
 
-// Get the chain for the action type
 const getChain = (action) => {
   if (action.type === 'pull') return [];
   if (action.type === 'push') return pushActionChain;
