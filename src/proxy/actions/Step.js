@@ -5,6 +5,7 @@ class Step {
 
   logs = [];
   
+  
   constructor(stepName, error=false, errorMessage=null, blocked=false, blockedMessage=null, content=null) {
     this.id = uuidv4();
     this.stepName = stepName;
