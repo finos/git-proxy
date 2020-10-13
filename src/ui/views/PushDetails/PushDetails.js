@@ -96,11 +96,11 @@ export default function Dashboard(props) {
                 <p>{moment(data.timestamp).toString()}</p>
               </GridItem>              
               <GridItem xs={3} sm={3} md={3}>
-                <h3>Commit From</h3>
+                <h3>Remote Head</h3>
                 <p>{data.commitFrom}</p>
               </GridItem>
               <GridItem xs={3} sm={3} md={3}>
-                <h3>Commit To</h3>            
+                <h3>Commit</h3>            
                 <p>{data.commitTo}</p>
               </GridItem>              
               <GridItem xs={2} sm={2} md={2}>
