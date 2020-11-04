@@ -1,4 +1,6 @@
-# corporate-git-proxy
+[![FINOS - Forming](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-forming.svg)](https://finosfoundation.atlassian.net/wiki/display/FINOS/Incubating)
+
+# (Corporate) Git Proxy
 
 Many corporations, especially financial services have strict policies towards opensource contributions. On rare occasions when a developer can contribute to open source, information security and compliance officers often demand complex shadow processes are set up to ensure code reviews, scans and other processes are adhered to before a push to the public repo takes place.
 
@@ -8,6 +10,7 @@ The idea is quite simple, scan outgoing attempts to push to public repositor and
 
 Of course every corporation will have different procedures so a key feature has to be the extensibility of the framework.
 
+<<<<<<< HEAD
 ## Roadmap
 
 - Public repository authorisation
@@ -19,6 +22,8 @@ Of course every corporation will have different procedures so a key feature has 
 
 Please raise an issue if you have an idea!
 
+=======
+>>>>>>> 6e8aa0dce990253ab5e19e0ca16fb3c55e6df73a
 ## Project Installation Instructions
 
 All contributions are welcome. Please fork the repository before local development.
@@ -134,4 +139,35 @@ The file `user-settings.json` exists in the project root to override `config.jso
 
 The project is now set up for local development, including `git push origin master` to your forked repos.
 
-test 1234
+## Roadmap
+
+- Public repository whitelisting
+- Synchronous Pluggable webhooks
+- Asynchronous flows - i.e. the proxy will return the correct responses to the git client that the action has taken place, but wait for an external signal to - continue to the push.
+- Become a "true" proxy that can be set via `git config http.proxy....`
+- Implement User access controls against corporate AD groups as well as public github accounts.
+- Auditing sink + UI
+
+Please [raise an issue](https://github.com/pGrovesy/git-proxy/issues/new/choose) if you have an idea!
+
+## Contributing
+
+1. Fork it (<https://github.com/finos/{project slug}/fork>)
+2. Create your feature branch (`git checkout -b feature/fooBar`)
+3. Read our [contribution guidelines](.github/CONTRIBUTING.md) and [Community Code of Conduct](https://www.finos.org/code-of-conduct)
+4. Commit your changes (`git commit -am 'Add some fooBar'`)
+5. Push to the branch (`git push origin feature/fooBar`)
+6. Create a new Pull Request
+
+_NOTE:_ Commits and pull requests to FINOS repositories will only be accepted from those contributors with an active, executed Individual Contributor License Agreement (ICLA) with FINOS OR who are covered under an existing and active Corporate Contribution License Agreement (CCLA) executed with FINOS. Commits from individuals not covered under an ICLA or CCLA will be flagged and blocked by the FINOS Clabot tool. Please note that some CCLAs require individuals/employees to be explicitly named on the CCLA.
+
+*Need an ICLA? Unsure if you are covered under an existing CCLA? Email [help@finos.org](mailto:help@finos.org)*
+
+
+## License
+
+Copyright 2020 Citigroup
+
+Distributed under the [Apache License, Version 2.0](http://www.apache.org/licenses/LICENSE-2.0).
+
+SPDX-License-Identifier: [Apache-2.0](https://spdx.org/licenses/Apache-2.0)
