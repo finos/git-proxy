@@ -1,5 +1,5 @@
 {
-  "name": "github-proxy",
+  "name": "gitproxy-server",
   "version": "0.0.1",
   "description": "Github proxy for scanning and inspecting a 'git push' ",
   "main": "index.js",
