@@ -1,0 +1,7 @@
+SPDXVersion: SPDX-2.0
+DataLicense: CC0-1.0
+Creator: Citigroup
+PackageName: Git Proxy
+PackageOriginator: Citigroup
+PackageHomePage: https://github.com/finos/git-proxy
+PackageLicenseDeclared: Apache-2.0
