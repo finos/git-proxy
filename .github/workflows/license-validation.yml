@@ -1,0 +1,49 @@
+# This workflow will do a clean install of node dependencies, build the source code and run tests across different versions of node
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
+
+name: License Validation
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  validate-server:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [13.x]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Install node-license-validator
+      run: npm i -g node-license-validator
+    - name: Validate Server
+      run: |
+        cd server
+        npm install --prod
+        node-license-validator . --allow-licenses MIT Apache-2.0 BSD BSD-3-Clause ISC BSD-2-Clause Unlicense --allow-packages spdx-exceptions spdx-license-ids
+
+  validate-ui:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [13.x]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - name: Install node-license-validator
+      run: npm i -g node-license-validator
+    - name: Validate UI
+      run: |
+        cd ui
+        npm install --prod
+        node-license-validator . --allow-licenses MIT Apache-2.0 BSD BSD-3-Clause ISC BSD-2-Clause 
