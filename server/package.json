@@ -1,0 +1,45 @@
+{
+  "name": "gitproxy-server",
+  "version": "0.0.1",
+  "description": "Github proxy for scanning and inspecting a 'git push' ",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pGrovesy/github-proxy.git"
+  },
+  "author": "Paul Groves",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/pGrovesy/github-proxy/issues"
+  },
+  "homepage": "https://github.com/pGrovesy/github-proxy#readme",
+  "dependencies": {
+    "bit-mask": "^1.0.2",
+    "bluebird": "^3.7.2",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "express-http-proxy": "^1.6.2",
+    "https": "^1.0.0",
+    "lodash": "^4.17.20",
+    "uuid": "^8.3.0",
+    "why-is-node-running": "^2.2.0"
+  },
+  "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-google": "^0.14.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "gulp": "^4.0.2",
+    "gulp-livereload": "^4.0.2",
+    "gulp-mocha": "^7.0.2",
+    "livereload": "^0.9.1",
+    "mocha": "^7.2.0"
+  }
+}
