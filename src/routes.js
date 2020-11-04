@@ -21,6 +21,7 @@ import Person from "@material-ui/icons/Person";
 import DashboardPage from "ui/views/Dashboard/Dashboard.js";
 import OpenPushRequests from "ui/views/OpenPushRequests/OpenPushRequests.js";
 import PushDetails from "ui/views/PushDetails/PushDetails.js";
+import User from "ui/views/User/User.js";
 
 const dashboardRoutes = [
   {
@@ -47,6 +48,14 @@ const dashboardRoutes = [
     layout: "/admin",
     visible: false
   },
+  {
+    path: "/user",
+    name: "User Settings",
+    icon: Person,
+    component: User,
+    layout: "/admin",
+    visible: true,    
+  },  
 ];
 
 export default dashboardRoutes;

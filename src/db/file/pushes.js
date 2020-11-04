@@ -42,7 +42,6 @@ const getPush = async (id, logger=console) => {
   });
 }
   
-
 const writeAudit = async (action, logger=console) => {
   return new Promise((resolve, reject) => {
     logger.log(`data.file:writeAudit(${action.id})`);

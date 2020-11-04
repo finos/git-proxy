@@ -1,11 +1,10 @@
 const config = require('../config');
-let sink = null
 
-console.log(config.getSink())
+console.log(JSON.stringify(config.getDatabase()));
 
-if (config.getSink() == 'fs') {
+if (config.getDatabase().type === 'fs') {
   sink = require('../db/file');
-  console.log(sink)
+  console.log('USING TYPE FS')
 }
 
 module.exports.authorise = sink.authorise;
@@ -14,5 +13,5 @@ module.exports.cancel = sink.cancel;
 module.exports.getPushes = sink.getPushes;
 module.exports.writeAudit = sink.writeAudit;
 module.exports.getPush = sink.getPush;
-module.exports.findByUsername = sink.findByUsername;
-module.exports.findById = sink.findById;
+module.exports.findUser = sink.findUser;
+module.exports.createUser = sink.createUser;
