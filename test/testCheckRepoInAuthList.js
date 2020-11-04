@@ -1,24 +1,23 @@
 const assert = require('assert');
-const actions = require('../src/node_modules/proxy/actions/Action');
-const processor = require('../src/node_modules/proxy/processors/push-action/checkRepoInAuthorisedList');
+const actions = require('../src/proxy/actions/Action');
+const processor = require('../src/proxy/processors/push-action/checkRepoInAuthorisedList');
 
 const authList = () => {
   return ['thisproject/repo-is-ok'];
 };
 
-describe('Check a Repo is in the authorised list', () => {
-  it('Should set ok=true if repo in whitelist', () => {
+describe('Check a Repo is in the authorised list', async () => {
+  it('Should set ok=true if repo in whitelist', async () => {
     let action = new actions.Action('123', 'type', 'get', 1234, 'thisproject/repo-is-ok');
-    result = processor.exec(null, action, authList);
-    console.log(result);
-    assert.equal(result.error, false);
+    result = await processor.exec(null, action, authList);
+    
+    assert.strictEqual(result.error, false);
   });
 
-  it('Should set ok=false if not in authorised', () => {
+  it('Should set ok=false if not in authorised', async () => {
     let action = new actions.Action('123', 'type', 'get', 1234, 'thisproject/repo-is-not-ok');
-    result = processor.exec(null, action, authList);
-    console.log(result);
-    assert.equal(result.error, true);
+    result = await processor.exec(null, action, authList);
+    assert.strictEqual(result.error, true);
   });
 });
 
