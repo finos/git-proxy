@@ -3,5 +3,26 @@
     "pGrovesy/test-allowed-repo.git",
     "pGrovesy/git-proxy.git"
   ],
-  "sink": "fs"
+  "sink": [
+    {
+      "type": "fs",
+      "params": {
+        "filepath": "./."
+      },
+      "enabled": true
+    },
+    {
+      "type": "mongo",
+      "params": {
+        "connectionString": "..."
+      },
+      "enabled": false
+    }
+  ],
+  "authentication": [
+    {
+      "type": "local",
+      "enabled": true
+    }
+  ]
 }

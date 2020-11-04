@@ -7,5 +7,5 @@ module.exports.getPush = pushes.getPush;
 module.exports.authorise = pushes.authorise;
 module.exports.cancel = pushes.cancel;
 module.exports.reject = pushes.reject;
-module.exports.findByUsername = users.findByUsername;
-module.exports.findById = users.findById;
+module.exports.findUser = users.findUser;
+module.exports.createUser = users.createUser;

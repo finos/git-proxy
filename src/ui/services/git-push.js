@@ -5,6 +5,27 @@ const config = {
   withCredentials: true 
 }
 
+
+const getUser = async (setIsLoading, setData, setAuth, setIsError) => {
+  const url = new URL(`http://localhost:8080/auth/success`);  
+  console.log(`fetching data from ${url}`);
+
+  await axios(url.toString(), config)
+    .then((response) => {        
+      console.log(`loading data from: ${url}`)
+      const data = response.data;
+      console.log(data);      
+      setData(data)
+      setIsLoading(false);    
+    })
+    .catch((error) => {        
+      console.log(error);
+      if (error.response && error.response.status === 401) setAuth(false);      
+      else setIsError(true);      
+      setIsLoading(false);
+    });
+};
+
 const getPush = async (id, setIsLoading, setData, setAuth, setIsError) => {
   const url = new URL(`${baseUrl}/push/${id}`);  
   console.log(`fetching data from ${url}`);
@@ -92,5 +113,6 @@ export {
   getPushes,
   authorisePush,
   rejectPush,
-  cancelPush
+  cancelPush,
+  getUser
 };

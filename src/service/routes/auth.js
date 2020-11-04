@@ -1,14 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const passport = require('passport');
+const passport = require('../passport').getPassport();
+const passportType = passport.type;
 
 
-router.post('/login', passport.authenticate('local'), (req, res) => {  
+console.log(`routes:auth authType = ${passportType}`);
+
+router.post('/login', passport.authenticate(passportType), (req, res) => {
+  console.log('logged in!');
   res.send({
     message: "success"
   })
 });
-
 
 // when login is successful, retrieve user info
 router.get("/success", (req, res) => {
