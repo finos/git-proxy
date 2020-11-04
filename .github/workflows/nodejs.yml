@@ -27,4 +27,9 @@ jobs:
     - name: Build Server
       run: cd server; npm install; npm run test; cd -
     - name: Build UI
-      run: cd ui; npm install; npm run build; npm run test; cd -
+      run: |
+        cd ui
+        npm install
+        npm run build
+        npm run test
+        cd -
