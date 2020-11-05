@@ -69,7 +69,7 @@
     "gulp": "^4.0.2",
     "gulp-livereload": "^4.0.2",
     "gulp-mocha": "^7.0.2",
-    "livereload": "^0.9.1",    
+    "livereload": "^0.9.1"
   },
   "browserslist": {
     "production": [
