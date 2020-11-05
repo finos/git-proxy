@@ -26,4 +26,4 @@ jobs:
     - name: Validate Server
       run: |        
         npm install --prod
-        node-license-validator . --allow-licenses MIT Apache-2.0 BSD BSD-3-Clause ISC BSD-2-Clause Unlicense --allow-packages spdx-exceptions spdx-license-ids
+        node-license-validator . --allow-licenses MIT Apache-2.0 BSD BSD-3-Clause ISC BSD-2-Clause Unlicense --allow-packages spdx-exceptions spdx-license-ids underscore
