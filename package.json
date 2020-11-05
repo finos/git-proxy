@@ -9,8 +9,8 @@
     "start": "concurrently \"npm run server\" \"npm run client",
     "build": "react-scripts build",
     "ui-test": "react-scripts",
-    "server-test-ci": "./node_modules/mocha/.bin/mocha",
-    "server-test": "node node_modules/mocha/bin/mocha",
+    "server-test-ci": "mocha",
+    "server-test": "mocha",
     "eject": "react-scripts eject"
   },
   "author": "Paul Groves",
