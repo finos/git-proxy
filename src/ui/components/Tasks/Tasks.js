@@ -1,25 +1,27 @@
-import React from "react";
-import PropTypes from "prop-types";
-import classnames from "classnames";
-import { makeStyles } from "@material-ui/core/styles";
-import Checkbox from "@material-ui/core/Checkbox";
-import Tooltip from "@material-ui/core/Tooltip";
-import IconButton from "@material-ui/core/IconButton";
-import Table from "@material-ui/core/Table";
-import TableRow from "@material-ui/core/TableRow";
-import TableBody from "@material-ui/core/TableBody";
-import TableCell from "@material-ui/core/TableCell";
-import Edit from "@material-ui/icons/Edit";
-import Close from "@material-ui/icons/Close";
-import Check from "@material-ui/icons/Check";
-import styles from "ui/assets/jss/material-dashboard-react/components/tasksStyle.js";
+/* eslint-disable max-len */
+/* eslint-disable require-jsdoc */
+import React from 'react';
+import PropTypes from 'prop-types';
+import classnames from 'classnames';
+import {makeStyles} from '@material-ui/core/styles';
+import Checkbox from '@material-ui/core/Checkbox';
+import Tooltip from '@material-ui/core/Tooltip';
+import IconButton from '@material-ui/core/IconButton';
+import Table from '@material-ui/core/Table';
+import TableRow from '@material-ui/core/TableRow';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import Edit from '@material-ui/icons/Edit';
+import Close from '@material-ui/icons/Close';
+import Check from '@material-ui/icons/Check';
+import styles from '../../assets/jss/material-dashboard-react/components/tasksStyle.js';
 
 const useStyles = makeStyles(styles);
 
 export default function Tasks(props) {
   const classes = useStyles();
   const [checked, setChecked] = React.useState([...props.checkedIndexes]);
-  const handleToggle = value => {
+  const handleToggle = (value) => {
     const currentIndex = checked.indexOf(value);
     const newChecked = [...checked];
     if (currentIndex === -1) {
@@ -29,14 +31,14 @@ export default function Tasks(props) {
     }
     setChecked(newChecked);
   };
-  const { tasksIndexes, tasks, rtlActive } = props;
+  const {tasksIndexes, tasks, rtlActive} = props;
   const tableCellClasses = classnames(classes.tableCell, {
-    [classes.tableCellRTL]: rtlActive
+    [classes.tableCellRTL]: rtlActive,
   });
   return (
     <Table className={classes.table}>
       <TableBody>
-        {tasksIndexes.map(value => (
+        {tasksIndexes.map((value) => (
           <TableRow key={value} className={classes.tableRow}>
             <TableCell className={tableCellClasses}>
               <Checkbox
@@ -47,7 +49,7 @@ export default function Tasks(props) {
                 icon={<Check className={classes.uncheckedIcon} />}
                 classes={{
                   checked: classes.checked,
-                  root: classes.root
+                  root: classes.root,
                 }}
               />
             </TableCell>
@@ -57,7 +59,7 @@ export default function Tasks(props) {
                 id="tooltip-top"
                 title="Edit Task"
                 placement="top"
-                classes={{ tooltip: classes.tooltip }}
+                classes={{tooltip: classes.tooltip}}
               >
                 <IconButton
                   aria-label="Edit"
@@ -65,7 +67,7 @@ export default function Tasks(props) {
                 >
                   <Edit
                     className={
-                      classes.tableActionButtonIcon + " " + classes.edit
+                      classes.tableActionButtonIcon + ' ' + classes.edit
                     }
                   />
                 </IconButton>
@@ -74,7 +76,7 @@ export default function Tasks(props) {
                 id="tooltip-top-start"
                 title="Remove"
                 placement="top"
-                classes={{ tooltip: classes.tooltip }}
+                classes={{tooltip: classes.tooltip}}
               >
                 <IconButton
                   aria-label="Close"
@@ -82,7 +84,7 @@ export default function Tasks(props) {
                 >
                   <Close
                     className={
-                      classes.tableActionButtonIcon + " " + classes.close
+                      classes.tableActionButtonIcon + ' ' + classes.close
                     }
                   />
                 </IconButton>
@@ -99,5 +101,5 @@ Tasks.propTypes = {
   tasksIndexes: PropTypes.arrayOf(PropTypes.number),
   tasks: PropTypes.arrayOf(PropTypes.node),
   rtlActive: PropTypes.bool,
-  checkedIndexes: PropTypes.array
+  checkedIndexes: PropTypes.array,
 };

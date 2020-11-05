@@ -4,8 +4,7 @@ const Step = require('../../actions').Step;
 const exec = async (req, action) => {
   const step = new Step('writePack');
   try {
-    
-    const cmd = `git receive-pack ${action.repoName}`
+    const cmd = `git receive-pack ${action.repoName}`;
     step.log(`executing ${cmd}`);
 
     const content = execSync(
@@ -16,15 +15,13 @@ const exec = async (req, action) => {
     ).toString('utf-8');
 
     step.setContent(content);
-  } 
-  catch (e) {    
-    step.setError(e.toString('utf-8'))
+  } catch (e) {
+    step.setError(e.toString('utf-8'));
     throw e;
-  } 
-  finally {
+  } finally {
     action.addStep(step);
     return action;
-  }  
+  }
 };
 
 exec.displayName = 'writePack.exec';

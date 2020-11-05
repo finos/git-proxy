@@ -1,49 +1,50 @@
-import React, { useState } from "react";
+/* eslint-disable max-len */
+/* eslint-disable require-jsdoc */
+import React, {useState} from 'react';
 // @material-ui/core components
-import { makeStyles } from "@material-ui/core/styles";
-import FormControl from "@material-ui/core/FormControl";
-import InputLabel from "@material-ui/core/InputLabel";
+import {makeStyles} from '@material-ui/core/styles';
+import FormControl from '@material-ui/core/FormControl';
+import InputLabel from '@material-ui/core/InputLabel';
 // core components
-import GridItem from "ui/components/Grid/GridItem.js";
-import GridContainer from "ui/components/Grid/GridContainer.js";
-import Input from "@material-ui/core/Input";
-import Button from "ui/components/CustomButtons/Button.js";
-import Card from "ui/components/Card/Card.js";
-import CardHeader from "ui/components/Card/CardHeader.js";
-import CardBody from "ui/components/Card/CardBody.js";
-import CardFooter from "ui/components/Card/CardFooter.js";
-import axios from "axios";
-import { Redirect } from "react-router-dom";
+import GridItem from '../../components/Grid/GridItem.js';
+import GridContainer from '../../components/Grid/GridContainer.js';
+import Input from '@material-ui/core/Input';
+import Button from '../../components/CustomButtons/Button.js';
+import Card from '../../components/Card/Card.js';
+import CardHeader from '../../components/Card/CardHeader.js';
+import CardBody from '../../components/Card/CardBody.js';
+import CardFooter from '../../components/Card/CardFooter.js';
+import axios from 'axios';
+import {Redirect} from 'react-router-dom';
 
 const styles = {
   cardCategoryWhite: {
-    color: "rgba(255,255,255,.62)",
-    margin: "0",
-    fontSize: "14px",
-    marginTop: "0",
-    marginBottom: "0"
+    color: 'rgba(255,255,255,.62)',
+    margin: '0',
+    fontSize: '14px',
+    marginTop: '0',
+    marginBottom: '0',
   },
   cardTitleWhite: {
-    color: "#FFFFFF",
-    marginTop: "0px",
-    minHeight: "auto",
-    fontWeight: "300",
-    fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
-    marginBottom: "3px",
-    textDecoration: "none"
-  }
+    color: '#FFFFFF',
+    marginTop: '0px',
+    minHeight: 'auto',
+    fontWeight: '300',
+    fontFamily: '\'Roboto\', \'Helvetica\', \'Arial\', sans-serif',
+    marginBottom: '3px',
+    textDecoration: 'none',
+  },
 };
 
 const useStyles = makeStyles(styles);
 
 
-
 export default function UserProfile() {
   const classes = useStyles();
 
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [message, setMessage] = useState('');
   const [success, setSuccess] = useState(false);
 
   function validateForm() {
@@ -53,32 +54,32 @@ export default function UserProfile() {
   function handleSubmit(event) {
     axios.post('http://localhost:8080/auth/login', {
       username: username,
-      password: password
+      password: password,
     }, {
       withCredentials: true,
-      headers: {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }
+      headers: {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
     })
-    .then(function (response) {
-      setMessage('Success!');
-      setSuccess(true);
-    })
-    .catch(function (error) {
-      setMessage('Incorrect username of password');
-    });
+        .then(function(response) {
+          setMessage('Success!');
+          setSuccess(true);
+        })
+        .catch(function(error) {
+          setMessage('Incorrect username of password');
+        });
 
     event.preventDefault();
   }
 
   if (success) {
-    return(
-      <Redirect to={{pathname: "/", state: { authed: true }}} />
-    )
+    return (
+      <Redirect to={{pathname: '/', state: {authed: true}}} />
+    );
   }
 
   return (
     <form onSubmit={handleSubmit}>
       <GridContainer>
-        
+
         <GridItem xs={12} sm={6} md={4}>
           <Card>
             <CardHeader color="primary">
@@ -90,40 +91,40 @@ export default function UserProfile() {
                 <GridItem xs={12} sm={12} md={3}>
                   <FormControl>
                     <InputLabel>
-                      Username                  
-                    </InputLabel>                  
-                    <Input                      
+                      Username
+                    </InputLabel>
+                    <Input
                       id="username"
                       type="username"
-                      value={username}                    
-                      onChange={e => setUsername(e.target.value)}
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
                     />
                   </FormControl>
                 </GridItem>
-              </GridContainer>                
+              </GridContainer>
               <GridContainer>
                 <GridItem xs={12} sm={12} md={3}>
                   <FormControl>
                     <InputLabel>
-                      Password                
-                    </InputLabel>                  
-                    <Input                      
+                      Password
+                    </InputLabel>
+                    <Input
                       id="username"
                       type="password"
                       value={password}
-                      onChange={e => setPassword(e.target.value)}
+                      onChange={(e) => setPassword(e.target.value)}
                     />
                   </FormControl>
                 </GridItem>
-              </GridContainer>              
+              </GridContainer>
             </CardBody>
             <CardFooter>
               <Button block disabled={!validateForm()} type="submit">
-                Login           
+                Login
               </Button>
             </CardFooter>
           </Card>
-        </GridItem>        
+        </GridItem>
       </GridContainer>
     </form>
   );

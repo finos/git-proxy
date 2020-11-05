@@ -10,59 +10,56 @@ if (!fs.existsSync(dir)) {
 }
 
 const exec = async (req, action) => {
-  const step = new Step('parsePackFile')
-  try {        
-    const messageParts = req.rawBody.split(' ');          
-    action.branch = messageParts[2].trim().replace('\u0000', '');      
-    action.setCommit(messageParts[0].substr(4), messageParts[1]);  
-    
+  const step = new Step('parsePackFile');
+  try {
+    const messageParts = req.rawBody.split(' ');
+    action.branch = messageParts[2].trim().replace('\u0000', '');
+    action.setCommit(messageParts[0].substr(4), messageParts[1]);
+
     const index = req.body.lastIndexOf('PACK');
     const buf = req.body.slice(index);
     const [meta, contentBuff] = getPackMeta(buf);
     const contents = getContents(contentBuff, meta.entries);
-    
+
     action.commitData = getCommitData(contents);
 
     if (action.commitFrom === '0000000000000000000000000000000000000000') {
       action.commitFrom = action.commitData[action.commitData.length -1].parent;
     }
-    
+
     step.content = {
-      meta: meta      
-    };   
-  }
-  catch (e) {    
+      meta: meta,
+    };
+  } catch (e) {
     step.setError(e.message || e);
     throw e;
-  }
-  finally {
-    action.addStep(step)
+  } finally {
+    action.addStep(step);
     return action;
   }
 };
 
 const getCommitData = (contents) => {
   return lod.chain(contents)
-    .filter({'type': 1})
-    .map(x => {      
-      const parts = x.content.split('\n');
-      const tree = parts[0];
-      const parent = parts[1];
-      const author = parts[2];
-      const committer = parts[3];
-      const message = parts[5];
+      .filter({'type': 1})
+      .map((x) => {
+        const parts = x.content.split('\n');
+        const tree = parts[0];
+        const parent = parts[1];
+        const author = parts[2];
+        const committer = parts[3];
+        const message = parts[5];
 
-      return {
-        tree: tree.replace('parent', '').trim(),
-        parent: parent.replace('parent', '').trim(),
-        author: author.split(' ')[1],
-        committer: committer.split(' ')[1],
-        commitTs: author.split(' ')[3],
-        message: message
-      }
-    }).value();
-}
-
+        return {
+          tree: tree.replace('parent', '').trim(),
+          parent: parent.replace('parent', '').trim(),
+          author: author.split(' ')[1],
+          committer: committer.split(' ')[1],
+          commitTs: author.split(' ')[3],
+          message: message,
+        };
+      }).value();
+};
 
 const getPackMeta = (buffer) => {
   const sig = buffer.slice(0, 4).toString('utf-8');
@@ -86,7 +83,7 @@ const getContents = (buffer, entries) => {
       const [content, nextBuffer] = getContent(i, buffer);
       buffer = nextBuffer;
       contents.push(content);
-    } catch (e) {      
+    } catch (e) {
     }
   }
   return contents;
@@ -173,7 +170,6 @@ const getContent = (item, buffer) => {
 
 
 const unpack = (buf) => {
-  
   // Unzip the content
   const inflated = zlib.inflateSync(buf);
 

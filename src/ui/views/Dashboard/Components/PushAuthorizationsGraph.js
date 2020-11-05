@@ -1,15 +1,17 @@
-import React from "react";
-import ChartistGraph from "react-chartist";
-import { makeStyles } from "@material-ui/core/styles";
-import AccessTime from "@material-ui/icons/AccessTime";
-import Card from "ui/components/Card/Card.js";
-import CardHeader from "ui/components/Card/CardHeader.js";
-import CardBody from "ui/components/Card/CardBody.js";
-import CardFooter from "ui/components/Card/CardFooter.js";
+/* eslint-disable max-len */
+/* eslint-disable require-jsdoc */
+import React from 'react';
+import ChartistGraph from 'react-chartist';
+import {makeStyles} from '@material-ui/core/styles';
+import AccessTime from '@material-ui/icons/AccessTime';
+import Card from '../../../components/Card/Card.js';
+import CardHeader from '../../../components/Card/CardHeader.js';
+import CardBody from '../../../components/Card/CardBody.js';
+import CardFooter from '../../../components/Card/CardFooter.js';
 
-import { emailsSubscriptionChart, } from "ui/variables/charts.js";
+import {emailsSubscriptionChart} from '../../../variables/charts.js';
 
-import styles from "ui/assets/jss/material-dashboard-react/views/dashboardStyle.js";
+import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
 
 const useStyles = makeStyles(styles);
 

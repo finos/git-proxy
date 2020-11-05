@@ -1,20 +1,22 @@
-import React from "react";
-import PropTypes from "prop-types";
-import classNames from "classnames";
-import { makeStyles } from "@material-ui/core/styles";
-import Snack from "@material-ui/core/SnackbarContent";
-import IconButton from "@material-ui/core/IconButton";
-import Close from "@material-ui/icons/Close";
-import styles from "ui/assets/jss/material-dashboard-react/components/snackbarContentStyle.js";
+/* eslint-disable max-len */
+/* eslint-disable require-jsdoc */
+import React from 'react';
+import PropTypes from 'prop-types';
+import classNames from 'classnames';
+import {makeStyles} from '@material-ui/core/styles';
+import Snack from '@material-ui/core/SnackbarContent';
+import IconButton from '@material-ui/core/IconButton';
+import Close from '@material-ui/icons/Close';
+import styles from '../../assets/jss/material-dashboard-react/components/snackbarContentStyle.js';
 
 const useStyles = makeStyles(styles);
 
 export default function SnackbarContent(props) {
   const classes = useStyles();
-  const { message, color, close, icon, rtlActive } = props;
-  var action = [];
+  const {message, color, close, icon, rtlActive} = props;
+  let action = [];
   const messageClasses = classNames({
-    [classes.iconMessage]: icon !== undefined
+    [classes.iconMessage]: icon !== undefined,
   });
   if (close !== undefined) {
     action = [
@@ -25,7 +27,7 @@ export default function SnackbarContent(props) {
         color="inherit"
       >
         <Close className={classes.close} />
-      </IconButton>
+      </IconButton>,
     ];
   }
   return (
@@ -37,9 +39,9 @@ export default function SnackbarContent(props) {
         </div>
       }
       classes={{
-        root: classes.root + " " + classes[color],
+        root: classes.root + ' ' + classes[color],
         message: classes.message,
-        action: classNames({ [classes.actionRTL]: rtlActive })
+        action: classNames({[classes.actionRTL]: rtlActive}),
       }}
       action={action}
     />
@@ -48,8 +50,8 @@ export default function SnackbarContent(props) {
 
 SnackbarContent.propTypes = {
   message: PropTypes.node.isRequired,
-  color: PropTypes.oneOf(["info", "success", "warning", "danger", "primary"]),
+  color: PropTypes.oneOf(['info', 'success', 'warning', 'danger', 'primary']),
   close: PropTypes.bool,
   icon: PropTypes.object,
-  rtlActive: PropTypes.bool
+  rtlActive: PropTypes.bool,
 };

@@ -1,23 +1,25 @@
-import React from "react";
-import ChartistGraph from "react-chartist";
-import { makeStyles } from "@material-ui/core/styles";
-import AccessTime from "@material-ui/icons/AccessTime";
-import Card from "ui/components/Card/Card.js";
-import CardHeader from "ui/components/Card/CardHeader.js";
-import CardBody from "ui/components/Card/CardBody.js";
-import CardFooter from "ui/components/Card/CardFooter.js";
-import ArrowUpward from "@material-ui/icons/ArrowUpward";
-import styles from "ui/assets/jss/material-dashboard-react/views/dashboardStyle.js";
+/* eslint-disable max-len */
+/* eslint-disable require-jsdoc */
+import React from 'react';
+import ChartistGraph from 'react-chartist';
+import {makeStyles} from '@material-ui/core/styles';
+import AccessTime from '@material-ui/icons/AccessTime';
+import Card from '../../../components/Card/Card.js';
+import CardHeader from '../../../components/Card/CardHeader.js';
+import CardBody from '../../../components/Card/CardBody.js';
+import CardFooter from '../../../components/Card/CardFooter.js';
+import ArrowUpward from '@material-ui/icons/ArrowUpward';
+import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
 
-import {    
-  dailySalesChart
-} from "ui/variables/charts.js";
+import {
+  dailySalesChart,
+} from '../../../variables/charts.js';
 
 const useStyles = makeStyles(styles);
 
 export default function DailyPullsGraph() {
   const classes = useStyles();
-  return (   
+  return (
     <Card chart>
       <CardHeader color="success">
         <ChartistGraph
@@ -33,7 +35,7 @@ export default function DailyPullsGraph() {
         <p className={classes.cardCategory}>
           <span className={classes.successText}>
             <ArrowUpward className={classes.upArrowCardCategory} /> 55%
-          </span>{" "}
+          </span>{' '}
           increase in Git pulls today.
         </p>
       </CardBody>

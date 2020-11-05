@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { makeStyles } from "@material-ui/core/styles";
-import Card from "ui/components/Card/Card.js";
-import CardHeader from "ui/components/Card/CardHeader.js";
-import CardBody from "ui/components/Card/CardBody.js";
-import moment from "moment";
-import { useHistory } from "react-router-dom";
+/* eslint-disable max-len */
+/* eslint-disable require-jsdoc */
+import React, {useState, useEffect} from 'react';
+import {makeStyles} from '@material-ui/core/styles';
+import moment from 'moment';
+import {useHistory} from 'react-router-dom';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -13,35 +12,36 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-import { Redirect } from "react-router-dom";
-import styles from "ui/assets/jss/material-dashboard-react/views/dashboardStyle.js";
-import { getPushes } from "../../../services/git-push";
+import {Redirect} from 'react-router-dom';
+import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
+import {getPushes} from '../../../services/git-push';
 
 export default function PushesTable(props) {
   const useStyles = makeStyles(styles);
   const classes = useStyles();
-  const [data, setData] = useState([]);  
+  const [data, setData] = useState([]);
   const [auth, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const history = useHistory();
 
-  const query = {}
-
-  for (const k in props) {
-    query[k] = props[k];
-  }
 
   const openPush = (push) => history.push(`/admin/push/${push}`);
- 
-  useEffect(() => { 
+
+  useEffect(() => {
+    const query = {};
+
+    for (const k in props) {
+      if (!k) continue;
+      query[k] = props[k];
+    }
     getPushes(setIsLoading, setData, setAuth, setIsError, query);
-  }, []);
- 
-  if (isLoading) return(<div>Loading ...</div>);
-  if (isError) return(<div>Something went wrong ...</div>);
-  if (!auth) return(<Redirect to={{pathname: '/login'}} />);
-    
+  }, [props]);
+
+  if (isLoading) return (<div>Loading ...</div>);
+  if (isError) return (<div>Something went wrong ...</div>);
+  if (!auth) return (<Redirect to={{pathname: '/login'}} />);
+
   return (
     <TableContainer component={Paper}>
       <Table className={classes.table} aria-label="simple table">
@@ -52,9 +52,9 @@ export default function PushesTable(props) {
             <TableCell align="left">Repo</TableCell>
             <TableCell align="left">Branch</TableCell>
             <TableCell align="left">Commit</TableCell>
-            <TableCell align="left">Last Author</TableCell> 
-            <TableCell align="left">Last Message</TableCell> 
-            <TableCell align="left">Commits</TableCell> 
+            <TableCell align="left">Last Author</TableCell>
+            <TableCell align="left">Last Message</TableCell>
+            <TableCell align="left">Commits</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -66,11 +66,11 @@ export default function PushesTable(props) {
                 </Button>
               </TableCell>
               <TableCell align="left" >
-                {moment(row.timestamp).format("yyyy-MM-DD HH:mm")}
+                {moment(row.timestamp).format('yyyy-MM-DD HH:mm')}
               </TableCell>
               <TableCell align="left">{row.repo}</TableCell>
               <TableCell align="left">{row.branch.replace('refs/heads/', '')}</TableCell>
-              <TableCell align="left">{row.commitFrom.substring(0,5)} - {row.commitTo.substring(0,5)}</TableCell>                                          
+              <TableCell align="left">{row.commitFrom.substring(0, 5)} - {row.commitTo.substring(0, 5)}</TableCell>
               <TableCell align="left">{row.commitData[row.commitData.length -1].author} </TableCell>
               <TableCell align="left">{row.commitData[row.commitData.length -1].message} </TableCell>
               <TableCell align="left">{row.commitData.length}</TableCell>
