@@ -1,7 +1,7 @@
 const local = require('./local');
 const activeDirectory = require('./activeDirectory');
 const config = require('../../config');
-const authenticationConfig = config.getAuthentication()
+const authenticationConfig = config.getAuthentication();
 let _passport;
 
 const configure = async () => {
@@ -14,19 +14,17 @@ const configure = async () => {
     case 'activedirectory':
       _passport = await activeDirectory.configure();
       break;
-    
     case 'local':
       _passport = await local.configure();
       break;
     default:
       throw Error(`uknown authentication type ${type}`);
   }
-  
   return _passport;
-}
+};
 
 module.exports.configure = configure;
-module.exports.getPassport = () => {   
+module.exports.getPassport = () => {
   console.log(`passport:index getting passport ${_passport}`);
-  return _passport; 
-}
+  return _passport;
+};

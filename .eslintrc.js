@@ -1,22 +1,24 @@
 module.exports = {
+  'parser': 'babel-eslint',
   'env': {
-    'es6': true,
+    'browser': true,
+    'commonjs': true,
+    'es2021': true,
     'node': true,
   },
   'extends': [
+    'plugin:react/recommended',
     'google',
   ],
-  'globals': {
-    'Atomics': 'readonly',
-    'SharedArrayBuffer': 'readonly',
-  },
   'parserOptions': {
-    'ecmaVersion': 2018,
-    'sourceType': 'module',
+    'ecmaFeatures': {
+      'jsx': true,
+    },
+    'ecmaVersion': 12,
   },
+  'plugins': [
+    'react',
+  ],
   'rules': {
   },
-  'max-len': {
-    'code': 200    
-  }
 };

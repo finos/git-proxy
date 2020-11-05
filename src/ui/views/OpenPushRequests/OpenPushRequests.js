@@ -1,10 +1,12 @@
-import React from "react";
-import GridItem from "ui/components/Grid/GridItem.js";
-import GridContainer from "ui/components/Grid/GridContainer.js";
-import PushesTable from "./components/PushesTable";
-import CustomTabs from "ui/components/CustomTabs/CustomTabs"
+/* eslint-disable max-len */
+/* eslint-disable require-jsdoc */
+import React from 'react';
+import GridItem from '../../components/Grid/GridItem.js';
+import GridContainer from '../../components/Grid/GridContainer.js';
+import PushesTable from './components/PushesTable';
+import CustomTabs from '../../components/CustomTabs/CustomTabs';
 
-export default function Dashboard() {  
+export default function Dashboard() {
   return (
     <div>
       <GridContainer>
@@ -14,25 +16,25 @@ export default function Dashboard() {
             headerColor="primary"
             tabs={[
               {
-                tabName: "Open",                
-                tabContent: (<PushesTable blocked={true} authorised={false} rejected={false} canceled={false} />)
+                tabName: 'Open',
+                tabContent: (<PushesTable blocked={true} authorised={false} rejected={false} canceled={false} />),
               },
               {
-                tabName: "Approved",                
-                tabContent: (<PushesTable  authorised={true} />)
+                tabName: 'Approved',
+                tabContent: (<PushesTable authorised={true} />),
               },
               {
-                tabName: "Canceled",
-                
-                tabContent: (<PushesTable  authorised={false} rejected={false} canceled={true} />)
+                tabName: 'Canceled',
+
+                tabContent: (<PushesTable authorised={false} rejected={false} canceled={true} />),
               },
               {
-                tabName: "Rejected",
+                tabName: 'Rejected',
                 // tabIcon: Code,
-                tabContent: (<PushesTable  authorised={false} rejected={true} canceled={false} />)
-              }
+                tabContent: (<PushesTable authorised={false} rejected={true} canceled={false} />),
+              },
             ]
-          } />
+            } />
         </GridItem>
       </GridContainer>
     </div>

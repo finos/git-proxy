@@ -3,7 +3,7 @@ const auth = require('./auth');
 const push = require('./push');
 const home = require('./home');
 const healthcheck = require('./healthcheck');
-const router = express.Router();
+const router = new express.Router();
 
 router.use('/', home);
 router.use('/auth', auth);

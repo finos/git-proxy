@@ -1,21 +1,23 @@
-import React from "react";
-import classNames from "classnames";
-import PropTypes from "prop-types";
-import { makeStyles } from "@material-ui/core/styles";
-import styles from "ui/assets/jss/material-dashboard-react/components/cardHeaderStyle.js";
+/* eslint-disable max-len */
+/* eslint-disable require-jsdoc */
+import React from 'react';
+import classNames from 'classnames';
+import PropTypes from 'prop-types';
+import {makeStyles} from '@material-ui/core/styles';
+import styles from '../../assets/jss/material-dashboard-react/components/cardHeaderStyle.js';
 
 const useStyles = makeStyles(styles);
 
 export default function CardHeader(props) {
   const classes = useStyles();
-  const { className, children, color, plain, stats, icon, ...rest } = props;
+  const {className, children, color, plain, stats, icon, ...rest} = props;
   const cardHeaderClasses = classNames({
     [classes.cardHeader]: true,
-    [classes[color + "CardHeader"]]: color,
+    [classes[color + 'CardHeader']]: color,
     [classes.cardHeaderPlain]: plain,
     [classes.cardHeaderStats]: stats,
     [classes.cardHeaderIcon]: icon,
-    [className]: className !== undefined
+    [className]: className !== undefined,
   });
   return (
     <div className={cardHeaderClasses} {...rest}>
@@ -27,15 +29,15 @@ export default function CardHeader(props) {
 CardHeader.propTypes = {
   className: PropTypes.string,
   color: PropTypes.oneOf([
-    "warning",
-    "success",
-    "danger",
-    "info",
-    "primary",
-    "rose"
+    'warning',
+    'success',
+    'danger',
+    'info',
+    'primary',
+    'rose',
   ]),
   plain: PropTypes.bool,
   stats: PropTypes.bool,
   icon: PropTypes.bool,
-  children: PropTypes.node
+  children: PropTypes.node,
 };

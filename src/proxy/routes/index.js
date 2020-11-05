@@ -1,7 +1,9 @@
+/* eslint-disable max-len */
 const express = require('express');
 const proxy = require('express-http-proxy');
+// eslint-disable-next-line new-cap
 const router = express.Router();
-const chain = require('../chain')
+const chain = require('../chain');
 
 router.use('/', proxy('https://github.com', {
   filter: async function(req, res) {
@@ -11,8 +13,8 @@ router.use('/', proxy('https://github.com', {
       }
 
       const action = await chain.exec(req, res);
-      
-      if (action.error || action.blocked) {      
+
+      if (action.error || action.blocked) {
         res.set('content-type', 'application/x-git-receive-pack-result');
         res.set('transfer-encoding', 'chunked');
         res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
@@ -31,10 +33,10 @@ router.use('/', proxy('https://github.com', {
           message = action.blockedMessage;
         }
 
-        // ERROR PCT LINE -- MOVE THIS TO HELPER 
-        const errorMessage = `ERR\t${message}`;        
+        // ERROR PCT LINE -- MOVE THIS TO HELPER
+        const errorMessage = `ERR\t${message}`;
         const len = 6 + errorMessage.length;
-        
+
         const prefix = len.toString(16);
         const packetMessage = `00${prefix}\x02${errorMessage}\n0000`;
 
@@ -46,8 +48,7 @@ router.use('/', proxy('https://github.com', {
       }
 
       return true;
-    }
-    catch (e) {
+    } catch (e) {
       console.error(e.stack || e);
       return false;
     }
@@ -59,9 +60,8 @@ router.use('/', proxy('https://github.com', {
     // fs.writeFileSync(`./.logs/responses/${ts}.headers.json`, JSON.stringify(proxyRes.headers));
     // fs.writeFileSync(`./.logs/responses/${ts}.raw`, data);
     // fs.writeFileSync(`./.logs/responses/${ts}.txt`, data.toString('utf-8'));
-
     return proxyResData;
-  }
+  },
 }));
 
 module.exports = router;

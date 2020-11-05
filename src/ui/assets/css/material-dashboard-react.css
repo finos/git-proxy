@@ -251,7 +251,7 @@ footer ul li a:hover {
   border-radius: 8px 0 0 8px;
   text-align: center;
   top: 120px;
-  .badge-primary-background-color: #9c27b0;
+  /* .badge-primary-background-color: #9c27b0; */
 }
 
 .fixed-plugin .SocialMediaShareButton,
@@ -391,7 +391,7 @@ footer ul li a:hover {
 }
 
 .fixed-plugin .adjustments-line p {
-  float: left;
+  /* float: left; */
   display: inline-block;
   margin-bottom: 0;
   font-size: 1em;

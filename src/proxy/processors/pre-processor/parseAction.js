@@ -1,21 +1,19 @@
 const actions = require('../../actions');
 
 const exec = async (req) => {
-  
   const id = Date.now();
   const timestamp = id;
   const repoName = getRepoNameFromUrl(req.originalUrl);
   const paths = req.originalUrl.split('/');
-  
-  let type = 'pull';
 
-  if (paths[paths.length -1] == 'git-receive-pack' 
-      && req.method == 'POST' 
-      && req.headers['content-type'] == 'application/x-git-receive-pack-request') {    
+  let type = 'pull';
+  if (paths[paths.length -1] == 'git-receive-pack' &&
+      req.method == 'POST' &&
+      req.headers['content-type'] == 'application/x-git-receive-pack-request') {
     type = 'push';
   }
 
-  return new actions.Action(id, type, req.method, timestamp, repoName);  
+  return new actions.Action(id, type, req.method, timestamp, repoName);
 };
 
 

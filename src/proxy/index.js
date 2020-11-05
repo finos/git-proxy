@@ -1,6 +1,6 @@
 const proxyApp = require('express')();
 const bodyParser = require('body-parser');
-const routes = require('./routes')
+const routes = require('./routes');
 const proxyHttpPort = 8000;
 
 const options = {
@@ -8,7 +8,7 @@ const options = {
   limit: '100000kb',
   type: '*/*',
 };
-  
+
 // Setup the proxy middleware
 proxyApp.use(bodyParser.raw(options));
 proxyApp.use('/', routes);
@@ -18,6 +18,6 @@ const start = () => {
   proxyApp.listen(proxyHttpPort, () => {
     console.log(`Listening on ${proxyHttpPort}`);
   });
-}
+};
 
-module.exports.start = start
+module.exports.start = start;

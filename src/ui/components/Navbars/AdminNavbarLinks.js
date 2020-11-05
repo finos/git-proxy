@@ -1,18 +1,20 @@
-import React from "react";
-import classNames from "classnames";
-import { makeStyles } from "@material-ui/core/styles";
-import MenuItem from "@material-ui/core/MenuItem";
-import MenuList from "@material-ui/core/MenuList";
-import Grow from "@material-ui/core/Grow";
-import Paper from "@material-ui/core/Paper";
-import ClickAwayListener from "@material-ui/core/ClickAwayListener";
-import Hidden from "@material-ui/core/Hidden";
-import Poppers from "@material-ui/core/Popper";
-import Divider from "@material-ui/core/Divider";
-import Person from "@material-ui/icons/Person";
-import Notifications from "@material-ui/icons/Notifications";
-import Button from "ui/components/CustomButtons/Button.js";
-import styles from "ui/assets/jss/material-dashboard-react/components/headerLinksStyle.js";
+/* eslint-disable max-len */
+/* eslint-disable require-jsdoc */
+import React from 'react';
+import classNames from 'classnames';
+import {makeStyles} from '@material-ui/core/styles';
+import MenuItem from '@material-ui/core/MenuItem';
+import MenuList from '@material-ui/core/MenuList';
+import Grow from '@material-ui/core/Grow';
+import Paper from '@material-ui/core/Paper';
+import ClickAwayListener from '@material-ui/core/ClickAwayListener';
+import Hidden from '@material-ui/core/Hidden';
+import Poppers from '@material-ui/core/Popper';
+import Divider from '@material-ui/core/Divider';
+import Person from '@material-ui/icons/Person';
+import Notifications from '@material-ui/icons/Notifications';
+import Button from '../CustomButtons/Button.js';
+import styles from '../../assets/jss/material-dashboard-react/components/headerLinksStyle.js';
 
 const useStyles = makeStyles(styles);
 
@@ -20,7 +22,7 @@ export default function AdminNavbarLinks() {
   const classes = useStyles();
   const [openNotification, setOpenNotification] = React.useState(null);
   const [openProfile, setOpenProfile] = React.useState(null);
-  const handleClickNotification = event => {
+  const handleClickNotification = (event) => {
     if (openNotification && openNotification.contains(event.target)) {
       setOpenNotification(null);
     } else {
@@ -30,7 +32,7 @@ export default function AdminNavbarLinks() {
   const handleCloseNotification = () => {
     setOpenNotification(null);
   };
-  const handleClickProfile = event => {
+  const handleClickProfile = (event) => {
     if (openProfile && openProfile.contains(event.target)) {
       setOpenProfile(null);
     } else {
@@ -45,10 +47,10 @@ export default function AdminNavbarLinks() {
 
       <div className={classes.manager}>
         <Button
-          color={window.innerWidth > 959 ? "transparent" : "white"}
+          color={window.innerWidth > 959 ? 'transparent' : 'white'}
           justIcon={window.innerWidth > 959}
           simple={!(window.innerWidth > 959)}
-          aria-owns={openNotification ? "notification-menu-list-grow" : null}
+          aria-owns={openNotification ? 'notification-menu-list-grow' : null}
           aria-haspopup="true"
           onClick={handleClickNotification}
           className={classes.buttonLink}
@@ -67,18 +69,18 @@ export default function AdminNavbarLinks() {
           transition
           disablePortal
           className={
-            classNames({ [classes.popperClose]: !openNotification }) +
-            " " +
+            classNames({[classes.popperClose]: !openNotification}) +
+            ' ' +
             classes.popperNav
           }
         >
-          {({ TransitionProps, placement }) => (
+          {({TransitionProps, placement}) => (
             <Grow
               {...TransitionProps}
               id="notification-menu-list-grow"
               style={{
                 transformOrigin:
-                  placement === "bottom" ? "center top" : "center bottom"
+                  placement === 'bottom' ? 'center top' : 'center bottom',
               }}
             >
               <Paper>
@@ -100,7 +102,7 @@ export default function AdminNavbarLinks() {
                       onClick={handleCloseNotification}
                       className={classes.dropdownItem}
                     >
-                      You{"'"}re now friend with Andrew
+                      You{'\''}re now friend with Andrew
                     </MenuItem>
                     <MenuItem
                       onClick={handleCloseNotification}
@@ -123,10 +125,10 @@ export default function AdminNavbarLinks() {
       </div>
       <div className={classes.manager}>
         <Button
-          color={window.innerWidth > 959 ? "transparent" : "white"}
+          color={window.innerWidth > 959 ? 'transparent' : 'white'}
           justIcon={window.innerWidth > 959}
           simple={!(window.innerWidth > 959)}
-          aria-owns={openProfile ? "profile-menu-list-grow" : null}
+          aria-owns={openProfile ? 'profile-menu-list-grow' : null}
           aria-haspopup="true"
           onClick={handleClickProfile}
           className={classes.buttonLink}
@@ -142,18 +144,18 @@ export default function AdminNavbarLinks() {
           transition
           disablePortal
           className={
-            classNames({ [classes.popperClose]: !openProfile }) +
-            " " +
+            classNames({[classes.popperClose]: !openProfile}) +
+            ' ' +
             classes.popperNav
           }
         >
-          {({ TransitionProps, placement }) => (
+          {({TransitionProps, placement}) => (
             <Grow
               {...TransitionProps}
               id="profile-menu-list-grow"
               style={{
                 transformOrigin:
-                  placement === "bottom" ? "center top" : "center bottom"
+                  placement === 'bottom' ? 'center top' : 'center bottom',
               }}
             >
               <Paper>

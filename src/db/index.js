@@ -4,7 +4,7 @@ console.log(JSON.stringify(config.getDatabase()));
 
 if (config.getDatabase().type === 'fs') {
   sink = require('../db/file');
-  console.log('USING TYPE FS')
+  console.log('USING TYPE FS');
 }
 
 module.exports.authorise = sink.authorise;
