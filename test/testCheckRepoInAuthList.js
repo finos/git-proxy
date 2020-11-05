@@ -20,4 +20,3 @@ describe('Check a Repo is in the authorised list', async () => {
     assert.strictEqual(result.error, true);
   });
 });
-
