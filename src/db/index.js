@@ -7,6 +7,8 @@ if (config.getDatabase().type === 'fs') {
   console.log('USING TYPE FS');
 }
 
+
+// The module exports
 module.exports.authorise = sink.authorise;
 module.exports.reject = sink.reject;
 module.exports.cancel = sink.cancel;
