@@ -1,6 +1,6 @@
 {
-  "name": "gitproxy-server",
-  "version": "0.0.1",
+  "name": "@finos/gitproxy-server",
+  "version": "0.1.0",
   "description": "Github proxy for scanning and inspecting a 'git push' ",
   "main": "index.js",
   "scripts": {
@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pGrovesy/github-proxy.git"
+    "url": "git+https://github.com/finos/github-proxy.git"
   },
   "author": "Paul Groves",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/pGrovesy/github-proxy/issues"
+    "url": "https://github.com/finos/github-proxy/issues"
   },
-  "homepage": "https://github.com/pGrovesy/github-proxy#readme",
+  "homepage": "https://github.com/finos/github-proxy#readme",
   "dependencies": {
     "bit-mask": "^1.0.2",
     "bluebird": "^3.7.2",

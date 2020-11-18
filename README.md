@@ -44,7 +44,7 @@ Now the project is running, lets test a repo through the proxy. Clone a repo tha
 
 ``` bash
 c:\projects\
-git clone http://localhost:8000/pGrovesy/test-allowed-repo
+git clone http://localhost:8000/finos/test-allowed-repo
 ```
 
 1. Edit the README.md file in 'test-allowed-repo' repo
@@ -59,7 +59,7 @@ Clone a repo that is *not* in the whitelist (see /resources/config.json), for ex
 ```bash
 
 c:\projects\
-git clone http://localhost:8000/pGrovesy/test-banned-repo
+git clone http://localhost:8000/finos/test-banned-repo
 ```
 
 1. Edit the README.md file in 'test-allowed-repo' repo
@@ -92,7 +92,7 @@ The file `user-settings.json` exists in the project root to override `config.jso
 - If the file exists in the project root `user-settings.json` overrides `config.json` 
 - If `user-settings.json` does not exist `config.json` is used.
 - The `json` format of `user-settings.json` mirrors `config.json`. This enables local development scenarios, such as forking test repos as illustrated below.
-  - Fork `pGrovesy/test-allowed-repo` and `pGrovesy/test-banned-repo`
+  - Fork `finos/test-allowed-repo` and `finos/test-banned-repo`
   - Add the forked `test-allowed-repo` to `user-settings.json` in your project root as below ...
 
     ``` bash
@@ -119,7 +119,7 @@ The project is now set up for local development, including `git push origin mast
 - Implement User access controls against corporate AD groups as well as public github accounts.
 - Auditing sink + UI
 
-Please [raise an issue](https://github.com/pGrovesy/git-proxy/issues/new/choose) if you have an idea!
+Please [raise an issue](https://github.com/finos/git-proxy/issues/new/choose) if you have an idea!
 
 ## Contributing
 
