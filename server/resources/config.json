@@ -1,7 +1,7 @@
 {
   "authorisedList": [
-    "pGrovesy/test-allowed-repo.git",
-    "pGrovesy/github-proxy.git"
+    "finos/test-allowed-repo.git",
+    "finos/github-proxy.git"
   ],
   "sink": "fs"
 }
