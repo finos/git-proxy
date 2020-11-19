@@ -1,5 +1,5 @@
 {
-  "name": "gitproxy-ui",
+  "name": "@finos/gitproxy-ui",
   "version": "0.1.0",
   "private": true,
   "author": "Paul Groves",
