@@ -1,5 +1,5 @@
 {
-  "name": "git-proxy",
+  "name": "@finos/git-proxy",
   "version": "0.0.1",
   "description": "Git proxy for scanning and inspecting a 'git push' ",
   "scripts": {
