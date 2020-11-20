@@ -10,7 +10,7 @@ on:
     branches: [ master ]
 
 jobs:
-  validate-server:
+  validate:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -24,26 +24,6 @@ jobs:
     - name: Install node-license-validator
       run: npm i -g node-license-validator
     - name: Validate Server
-      run: |
-        cd server
+      run: |        
         npm install --prod
-        node-license-validator . --allow-licenses MIT Apache-2.0 BSD BSD-3-Clause ISC BSD-2-Clause Unlicense --allow-packages spdx-exceptions spdx-license-ids
-
-  validate-ui:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [13.x]
-    steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: Install node-license-validator
-      run: npm i -g node-license-validator
-    - name: Validate UI
-      run: |
-        cd ui
-        npm install --prod
-        node-license-validator . --allow-licenses MIT Apache-2.0 BSD BSD-3-Clause ISC BSD-2-Clause 
+        node-license-validator . --allow-licenses MIT Apache-2.0 BSD BSD-3-Clause ISC BSD-2-Clause Unlicense --allow-packages spdx-exceptions spdx-license-ids underscore
