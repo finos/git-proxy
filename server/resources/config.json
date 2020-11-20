@@ -1,7 +1,0 @@
-{
-  "authorisedList": [
-    "finos/test-allowed-repo.git",
-    "finos/github-proxy.git"
-  ],
-  "sink": "fs"
-}
