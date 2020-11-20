@@ -13,7 +13,7 @@ const configure = async () => {
             console.log(`could not find user ${username}`);
             return cb(null, false);
           }
-          if (user.password != password) {
+          if (user.password !== password) {
             console.log(`passowrd for ${username} incorrect`);
             return cb(null, false);
           }

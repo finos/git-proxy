@@ -6,9 +6,7 @@ let _passport;
 
 const configure = async () => {
   console.log(JSON.stringify(authenticationConfig));
-
   const type = authenticationConfig.type.toLowerCase();
-
 
   switch (type) {
     case 'activedirectory':
