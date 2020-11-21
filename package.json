@@ -33,6 +33,7 @@
     "lodash": "^4.17.20",
     "mocha": "^7.2.0",
     "moment": "^2.29.1",
+    "mongodb": "^3.6.3",
     "nedb": "^1.8.0",
     "passport": "^0.4.1",
     "passport-activedirectory": "^1.0.4",
@@ -48,7 +49,7 @@
     "uuid": "^8.3.1"
   },
   "devDependencies": {
-    "eslint": "^6.6.0",
+    "eslint": "^7.11.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.22.1",
