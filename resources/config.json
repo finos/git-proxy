@@ -9,14 +9,14 @@
       "params": {
         "filepath": "./."
       },
-      "enabled": true
+      "enabled": false
     },
     {
       "type": "mongo",
-      "params": {
-        "connectionString": "..."
-      },
-      "enabled": false
+      "connectionString": "mongodb://localhost:27017/gitproxy",
+      "options": {        
+      },      
+      "enabled": true
     }
   ],
   "authentication": [
