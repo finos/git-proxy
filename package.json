@@ -49,12 +49,8 @@
     "uuid": "^8.3.1"
   },
   "devDependencies": {
-<<<<<<< HEAD
-    "eslint": "^7.11.0",
-=======
     "react-scripts": "^4.0.0",
     "eslint": "^6.6.0",
->>>>>>> 4a59c73cee2ad619bccfb5d23887a14172a9dab7
     "eslint-config-google": "^0.14.0",
     "eslint-config-standard": "^14.1.1",
     "eslint-plugin-import": "^2.22.1",
