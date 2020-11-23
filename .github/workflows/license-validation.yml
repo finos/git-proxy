@@ -23,7 +23,14 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - name: Install node-license-validator
       run: npm i -g node-license-validator
+<<<<<<< HEAD
     # - name: Validate Server
     #   run: |        
     #     npm install --prod
     #     node-license-validator . --allow-licenses MIT Apache-2.0 BSD BSD-3-Clause ISC BSD-2-Clause Unlicense CC0-1.0 0BSD Unknown MIT/X11 MPL MPL-2.0 CC-BY-4.0 ODC-By-1.0 CC-BY-3.0 ODC-By-1.0 Public Domain --allow-packages spdx-exceptions spdx-license-ids underscore
+=======
+    - name: Validate Server
+      run: |        
+        npm install --prod
+        node-license-validator . --allow-licenses MIT Apache-2.0 BSD BSD-3-Clause ISC BSD-2-Clause Unlicense CC0-1.0 0BSD MIT/X11 MPL --allow-packages spdx-exceptions spdx-license-ids underscore precond password-hash
+>>>>>>> 4a59c73cee2ad619bccfb5d23887a14172a9dab7
