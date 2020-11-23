@@ -1,8 +1,8 @@
 const fs = require('fs');
 const _ = require('lodash');
 const Datastore = require('nedb');
-const Action = require('../../proxy/actions').Action;
-const toClass = require('./helper').toClass;
+const Action = require('../../proxy/actions/Action').Action;
+const toClass = require('../helper').toClass;
 
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');

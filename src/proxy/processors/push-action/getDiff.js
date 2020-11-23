@@ -30,8 +30,8 @@ const exec = async (req, action) => {
     step.log(`completed ${cmd}`);
     step.setContent(content);
   } catch (e) {
-    step.setError(e.message);
-    throw e;
+    console.log(e || e.stackTrace);
+    step.setError(e.toString('utf-8'));
   } finally {
     action.addStep(step);
     return action;

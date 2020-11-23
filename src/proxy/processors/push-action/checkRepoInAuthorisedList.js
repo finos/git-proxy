@@ -8,7 +8,6 @@ const exec = async (req, action, authorisedList=config.getAuthorisedList) => {
     step.error = true;
     step.log(`repo ${action.repo} is not in the authorisedList, ending`);
     step.setError(
-        true,
         `Rejecting repo ${action.repo} not in the authorisedList`,
     );
   } else {
