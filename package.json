@@ -38,6 +38,7 @@
     "passport": "^0.4.1",
     "passport-activedirectory": "^1.0.4",
     "passport-local": "^1.0.0",
+    "password-hash": "^1.2.2",
     "perfect-scrollbar": "1.5.0",
     "prop-types": "15.7.2",
     "react": "^16.13.1",

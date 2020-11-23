@@ -1,22 +1,47 @@
 const connect = require('./helper').connect;
+const Action = require('../../proxy/actions').Action;
+const toClass = require('../helper').toClass;
 const cnName = 'pushes';
 
+const defaultPushQuery = {
+  error: false,
+  blocked: true,
+  allowPush: false,
+  authorised: false,
+};
+
 const getPushes = async (query=defaultPushQuery, logger=console) => {
+  logger.info(`getting pushes for query=${query}`);
   const collection = await connect(cnName);
-  return await collection.find(query).toArray();
+  const results = await collection.find(query).toArray();
+  return results;
 };
 
 const getPush = async (id, logger=console) => {
+  logger.info(`loading doc ${id}`);
   const collection = await connect(cnName);
   const doc = await collection.findOne({id: id});
-  return toClass(doc, Action.prototype);
+
+  console.log(doc);
+
+  if (doc) {
+    const result = toClass(doc, Action.prototype);
+    logger.info(`loaded doc ${id}`);
+    return result;
+  }
+
+  return null;
 };
 
 const writeAudit = async (action, logger=console) => {
-  logger.log(`data.file:writeAudit(${action.id})`);
+  const data = JSON.parse(JSON.stringify(action));
+  logger.log(`data.file:writeAudit(${data.id})`);
   const options = {upsert: true};
   const collection = await connect(cnName);
-  collection.update({id: action.id}, action, options);
+  delete data._id;
+  await collection.update({id: data.id}, data, options);
+  logger.log(`data.file:writeAudit(${data.id}) complete`);
+  return action;
 };
 
 const authorise = async (id, logger=console) => {
