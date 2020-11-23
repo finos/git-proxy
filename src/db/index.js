@@ -4,7 +4,12 @@ console.log(JSON.stringify(config.getDatabase()));
 
 if (config.getDatabase().type === 'fs') {
   sink = require('../db/file');
-  console.log('USING TYPE FS');
+  console.log('using local file database');
+}
+
+if (config.getDatabase().type === 'mongo') {
+  sink = require('../db/mongo');
+  console.log('using mongo db');
 }
 
 
