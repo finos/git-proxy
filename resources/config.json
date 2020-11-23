@@ -1,7 +1,6 @@
 {
-  "authorisedList": [
-    "pGrovesy/test-allowed-repo.git",
-    "pGrovesy/git-proxy.git"
+  "authorisedList": [    
+    "finos/git-proxy.git"
   ],
   "sink": [
     {
@@ -13,9 +12,9 @@
     },
     {
       "type": "mongo",
-      "params": {
-        "connectionString": "..."
-      },
+      "connectionString": "mongodb://localhost:27017/gitproxy",
+      "options": {        
+      },      
       "enabled": false
     }
   ],

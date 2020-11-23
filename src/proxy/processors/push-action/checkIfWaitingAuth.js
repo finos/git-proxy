@@ -12,11 +12,11 @@ const exec = async (req, action) => {
         action.setAllowPush();
       }
     }
-
-    action.addStep(step);
-    return action;
   } catch (e) {
-    step.setError(e.message);
+    console.log(e || e.stackTrace);
+    step.setError(e.toString('utf-8'));
+    throw e;
+  } finally {
     action.addStep(step);
     return action;
   }

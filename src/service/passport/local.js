@@ -1,3 +1,5 @@
+const passwordHash = require('password-hash');
+
 const configure = async () => {
   console.log(`configuring local passport authentication`);
   const passport = require('passport');
@@ -13,7 +15,10 @@ const configure = async () => {
             console.log(`could not find user ${username}`);
             return cb(null, false);
           }
-          if (user.password !== password) {
+
+          const passwordCorrect = passwordHash.verify(password, user.password);
+
+          if (!passwordCorrect) {
             console.log(`passowrd for ${username} incorrect`);
             return cb(null, false);
           }
@@ -38,10 +43,12 @@ const configure = async () => {
   });
 
   const admin = await db.findUser('admin');
-  console.log(`trying to find default admin user ${admin}`);
+  console.log(`trying to find default admin user`);
 
   if (!admin) {
-    await db.createUser('admin', 'admin');
+    console.log(`admin not found, creating default account`);
+    const hashedPassword = passwordHash.generate('admin');
+    await db.createUser('admin', hashedPassword);
   }
 
   passport.type = 'local';
