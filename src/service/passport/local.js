@@ -8,21 +8,16 @@ const configure = async () => {
 
   passport.use(new Strategy(
       (username, password, cb) => {
-        console.log(`verifying user=${username}`);
         db.findUser(username).then((user) => {
-          console.log(user);
           if (!user) {
-            console.log(`could not find user ${username}`);
             return cb(null, false);
           }
 
           const passwordCorrect = passwordHash.verify(password, user.password);
 
           if (!passwordCorrect) {
-            console.log(`passowrd for ${username} incorrect`);
             return cb(null, false);
           }
-          console.log(`found ${user}`);
           return cb(null, user);
         }).catch((err) => {
           console.error(err);

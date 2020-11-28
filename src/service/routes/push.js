@@ -16,11 +16,8 @@ router.get('/', async (req, res) => {
       let v = req.query[k];
       if (v === 'false') v = false;
       if (v === 'true') v = true;
-      console.log(`${k}==${v}`);
       query[k] = v;
     }
-
-    console.log(query);
 
     res.send(await db.getPushes(query));
   } else {

@@ -9,7 +9,6 @@ const connectionString = dbConfig.connectionString;
 // use client to work with db
 exports.connect = async (collectionName) => {
   try {
-    console.log(`connection to mongo on ${connectionString}`);
     const client = new mongo.MongoClient(connectionString, options);
     await client.connect();
     const db = await client.db();

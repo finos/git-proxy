@@ -31,7 +31,6 @@ const exec = async (req, action) => {
       meta: meta,
     };
   } catch (e) {
-    console.log(e || e.stackTrace);
     step.setError(e.toString('utf-8'));
     throw e;
   } finally {

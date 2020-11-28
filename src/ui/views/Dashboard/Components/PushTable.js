@@ -21,21 +21,17 @@ export default function PushesWaitingAuthorizationGraph() {
       setIsError(false);
       setIsLoading(true);
       await axios(url, {withCredentials: true}).then((response) => {
-        console.log('---- OK ----');
         const data = response.data.map((x) => [
           x.repo,
           x.branch.replace('refs/heads/', ''),
           x.commitFrom.substring(0, 8),
           x.commitTo.substring(0, 8),
         ]);
-
-        console.log(data);
         setData(data);
         setAuth(true);
         setIsLoading(false);
         setIsError(false);
       }).catch((error) => {
-        console.log(JSON.stringify(error));
         setIsLoading(false);
         if (error.response && error.response.status === 401) {
           setAuth(false);
