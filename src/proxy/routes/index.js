@@ -40,8 +40,6 @@ router.use('/', proxy('https://github.com', {
         const prefix = len.toString(16);
         const packetMessage = `00${prefix}\x02${errorMessage}\n0000`;
 
-        console.log(packetMessage);
-
         res.status(200).send(packetMessage);
 
         return false;

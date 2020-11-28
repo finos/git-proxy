@@ -12,7 +12,6 @@ if (config.getDatabase().type === 'mongo') {
   console.log('using mongo db');
 }
 
-
 module.exports.createUser = async (
     username, password, email,
     canPull=false, canPush=false, canAuthorise=false, admin=false) => {
@@ -24,21 +23,18 @@ module.exports.createUser = async (
     canPull: canPull,
     canPush: canPush,
     canAuthorise: canAuthorise,
+    changePassword: true,
   };
-
-  console.log(data);
 
   const existingUser = await sink.findUser(username);
 
   if (existingUser) {
     const errorMessage = `user ${username} already exists`;
-    console.log(errorMessage);
     throw new Error(errorMessage);
   }
 
   sink.createUser(data);
 };
-
 
 // The module exports
 module.exports.authorise = sink.authorise;
@@ -49,3 +45,4 @@ module.exports.writeAudit = sink.writeAudit;
 module.exports.getPush = sink.getPush;
 module.exports.findUser = sink.findUser;
 module.exports.deleteUser = sink.deleteUser;
+module.exports.updateUser = sink.updateUser;

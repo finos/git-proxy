@@ -9,7 +9,6 @@ const passwordHash = require('password-hash');
 console.log(`routes:auth authType = ${passportType}`);
 
 router.post('/login', passport.authenticate(passportType), (req, res) => {
-  console.log('logged in!');
   res.send({
     message: 'success',
   });
@@ -56,7 +55,6 @@ router.get('failed', (req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-  console.log('logging out');
   req.logout();
   res.send({
     message: 'logged out',
@@ -81,9 +79,6 @@ router.post('/profile', async (req, res) => {
       });
 
       const hashedPassword = passwordHash.generate(password);
-
-      console.log(password);
-
       const newUser = await db.createUser(
           req.body.username,
           hashedPassword,
@@ -95,10 +90,34 @@ router.post('/profile', async (req, res) => {
 
       res.send(newUser);
     } catch (e) {
-      console.log('failed to create new user');
       res.status(500).send(e).end();
     }
   } else {
+    res.status(401).end();
+  }
+});
+
+router.post('/password', async (req, res) => {
+  if (req.user) {
+    try {
+      const user = await db.findUser(req.user.username);
+      console.log(user);
+
+      if (passwordHash.verify(req.body.oldPassword, user.password)) {
+        user.password = passwordHash.generate(req.body.newPassword);
+        user.changePassword = false;
+        db.updateUser(user);
+        res.status(200).end();
+      } else {
+        console.log('passwords do not match');
+        throw new Error('current password did not match the given');
+      }
+    } catch (e) {
+      console.log(e);
+      res.status(500).send(e).end();
+    }
+  } else {
+    console.log('not logged in');
     res.status(401).end();
   }
 });

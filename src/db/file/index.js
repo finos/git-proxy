@@ -10,3 +10,4 @@ module.exports.reject = pushes.reject;
 module.exports.findUser = users.findUser;
 module.exports.createUser = users.createUser;
 module.exports.deleteUser = users.deleteUser;
+module.exports.updateUser = users.updateUser;

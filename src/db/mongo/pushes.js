@@ -22,8 +22,6 @@ const getPush = async (id, logger=console) => {
   const collection = await connect(cnName);
   const doc = await collection.findOne({id: id});
 
-  console.log(doc);
-
   if (doc) {
     const result = toClass(doc, Action.prototype);
     logger.info(`loaded doc ${id}`);
