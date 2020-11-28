@@ -31,7 +31,7 @@ exports.createUser = function(data) {
         console.error(err);
         reject(err);
       } else {
-        console.log(`created user ${username}`);
+        console.log(`created user ${data.username}`);
         resolve(data);
       }
     });
@@ -41,7 +41,7 @@ exports.createUser = function(data) {
 exports.deleteUser = function(username, logger=console) {
   return new Promise((resolve, reject) => {
     console.log(`data.file:findUser(${username})`);
-    db.deleteOne({username: username}, (err, doc) => {
+    db.remove({username: username}, (err) => {
       if (err) {
         reject(err);
       } else {
