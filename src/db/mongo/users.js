@@ -1,18 +1,16 @@
 const connect = require('./helper').connect;
 
-exports.findUser = async function(username, logger=console) {
+exports.findUser = async function(username) {
   const collection = await connect('users');
   return await collection.findOne({username: username});
 };
 
-exports.createUser = async function(username, password, logger=console) {
-  const data = {
-    username: username,
-    password: password,
-  };
+exports.deleteUser = async function(username) {
+  const collection = await connect('users');
+  return await collection.deleteOne({username: username});
+};
 
-  console.log(`data.mongo:createUser(${username})`);
-
+exports.createUser = async function(data) {
   const collection = await connect('users');
   const result = await collection.insertOne(data);
   return result;

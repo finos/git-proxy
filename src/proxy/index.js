@@ -18,6 +18,8 @@ const start = () => {
   proxyApp.listen(proxyHttpPort, () => {
     console.log(`Listening on ${proxyHttpPort}`);
   });
+
+  return proxyApp;
 };
 
 module.exports.start = start;

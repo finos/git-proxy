@@ -23,13 +23,7 @@ exports.findUser = function(username, logger=console) {
   });
 };
 
-exports.createUser = function(username, password, logger=console) {
-  const data = {
-    username: username,
-    password: password,
-  };
-
-  console.log(`data.file:createUser(${username})`);
+exports.createUser = function(data) {
   return new Promise((resolve, reject) => {
     db.insert(data, (err) => {
       if (err) {
@@ -39,6 +33,19 @@ exports.createUser = function(username, password, logger=console) {
       } else {
         console.log(`created user ${username}`);
         resolve(data);
+      }
+    });
+  });
+};
+
+exports.deleteUser = function(username, logger=console) {
+  return new Promise((resolve, reject) => {
+    console.log(`data.file:findUser(${username})`);
+    db.deleteOne({username: username}, (err, doc) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
       }
     });
   });

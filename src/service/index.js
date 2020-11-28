@@ -1,8 +1,11 @@
 const express = require('express');
 const session = require('express-session');
+const http = require('http');
 const cors = require('cors');
 const app = express();
 const port = 8080;
+
+const _httpServer = http.createServer(app);
 
 const corsOptions = {
   origin: 'http://localhost:3000',
@@ -27,9 +30,14 @@ const start = async () => {
   app.use(express.json());
   app.use(express.urlencoded({extended: true}));
   app.use('/', routes);
-  app.listen(port, () => {
-    console.log(`Service Listening on ${port}`);
-  });
+
+  await _httpServer.listen(port);
+
+  console.log(`Service Listening on ${port}`);
+  app.emit('ready');
+
+  return app;
 };
 
 module.exports.start = start;
+module.exports.httpServer = _httpServer;
