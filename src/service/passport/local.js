@@ -48,7 +48,8 @@ const configure = async () => {
   if (!admin) {
     console.log(`admin not found, creating default account`);
     const hashedPassword = passwordHash.generate('admin');
-    await db.createUser('admin', hashedPassword);
+    await db.createUser(
+        'admin', hashedPassword, 'admin@place.com', true, true, true, true);
   }
 
   passport.type = 'local';
