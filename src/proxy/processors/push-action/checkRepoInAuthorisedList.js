@@ -1,10 +1,10 @@
-const config = require('../../../config');
 const Step = require('../../actions').Step;
+const db = require('../../../db');
 
-const exec = async (req, action, authorisedList=config.getAuthorisedList) => {
+const exec = async (req, action, authorisedList=db.getAuthorisedList) => {
   const step = new Step('checkRepoInAuthorisedList');
 
-  if (!authorisedList().includes(action.repo)) {
+  if (!authorisedList().find((x) => `${x.project}/${x.name}` == action.repo)) {
     step.error = true;
     step.log(`repo ${action.repo} is not in the authorisedList, ending`);
     step.setError(

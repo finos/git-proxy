@@ -17,66 +17,54 @@ describe('auth', async () => {
     await db.deleteUser('login-test-user');
   });
 
-  describe('test login / logout', function() {
+  describe('test login / logout', async function() {
     // Test to get all students record
-    it('should get 401 not logged in', function(done) {
-      chai.request(app)
-          .get('/auth/profile')
-          .end((err, res) => {
-            res.should.have.status(401);
-            done();
-          });
+    it('should get 401 not logged in', async function() {
+      const res = await chai.request(app)
+          .get('/auth/profile');
+
+      res.should.have.status(401);
     });
 
-    it('should be able to login', function(done) {
-      chai.request(app)
+    it('should be able to login', async function() {
+      const res = await chai.request(app)
           .post('/auth/login')
           .send({
             username: 'admin',
             password: 'admin',
-          })
-          .end((err, res) => {
-            expect(res).to.have.cookie('connect.sid');
-            res.should.have.status(200);
-
-            // Get the connect cooie
-            res.headers['set-cookie'].forEach((x) => {
-              if (x.startsWith('connect')) {
-                cookie = x.split(';')[0];
-              }
-            });
-            done();
           });
+
+      expect(res).to.have.cookie('connect.sid');
+      res.should.have.status(200);
+
+      // Get the connect cooie
+      res.headers['set-cookie'].forEach((x) => {
+        if (x.startsWith('connect')) {
+          cookie = x.split(';')[0];
+        }
+      });
     });
 
-    it('should now be able to access the profile', function(done) {
-      chai.request(app)
+    it('should now be able to access the profile', async function() {
+      const res = await chai.request(app)
           .get('/auth/profile')
-          .set('Cookie', `${cookie}`)
-          .end((err, res) => {
-            res.should.have.status(200);
-            done();
-          });
+          .set('Cookie', `${cookie}`);
+      res.should.have.status(200);
     });
 
-    it('should now be able to logout', function(done) {
-      chai.request(app)
+    it('should now be able to logout', async function() {
+      const res = await chai.request(app)
           .post('/auth/logout')
-          .set('Cookie', `${cookie}`)
-          .end((err, res) => {
-            res.should.have.status(200);
-            done();
-          });
+          .set('Cookie', `${cookie}`);
+      res.should.have.status(200);
     });
 
-    it('test cannot access profile page', function(done) {
-      chai.request(app)
+    it('test cannot access profile page', async function() {
+      const res = await chai.request(app)
           .get('/auth/profile')
-          .set('Cookie', `${cookie}`)
-          .end((err, res) => {
-            res.should.have.status(401);
-            done();
-          });
+          .set('Cookie', `${cookie}`);
+
+      res.should.have.status(401);
     });
   });
 

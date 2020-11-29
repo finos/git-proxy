@@ -16,7 +16,8 @@ const defaultPushQuery = {
   authorised: false,
 };
 
-const getPushes = (query=defaultPushQuery, logger=console) => {
+const getPushes = (query, logger) => {
+  if (!query) query=defaultPushQuery;
   return new Promise((resolve, reject) => {
     logger.log(`data.file:getPushes`);
     db.find(query, (err, docs) => {
@@ -31,7 +32,7 @@ const getPushes = (query=defaultPushQuery, logger=console) => {
   });
 };
 
-const getPush = async (id, logger=console) => {
+const getPush = async (id, logger) => {
   return new Promise((resolve, reject) => {
     logger.log(`data.file:getPush(${id})`);
     db.findOne({id: id}, (err, doc) => {
@@ -48,7 +49,7 @@ const getPush = async (id, logger=console) => {
   });
 };
 
-const writeAudit = async (action, logger=console) => {
+const writeAudit = async (action, logger) => {
   return new Promise((resolve, reject) => {
     logger.log(`data.file:writeAudit(${action.id})`);
     const options = {multi: false, upsert: true};
@@ -62,7 +63,7 @@ const writeAudit = async (action, logger=console) => {
   });
 };
 
-const authorise = async (id, logger=console) => {
+const authorise = async (id, logger) => {
   logger.log(`data::authorizing ${id}`);
   const action = await getPush(id, logger);
   action.authorised = true;
@@ -72,7 +73,7 @@ const authorise = async (id, logger=console) => {
   return {message: `authorised ${id}`};
 };
 
-const reject = async (id, logger=console) => {
+const reject = async (id, logger) => {
   logger.log(`data::reject ${id}`);
   const action = await getPush(id, logger);
   action.authorised = false;
@@ -82,7 +83,7 @@ const reject = async (id, logger=console) => {
   return {message: `reject ${id}`};
 };
 
-const cancel = async (id, logger=console) => {
+const cancel = async (id, logger) => {
   logger.log(`data::cancel ${id}`);
   const action = await getPush(id, logger);
   action.authorised = false;

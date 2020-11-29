@@ -47,7 +47,6 @@ router.use('/', proxy('https://github.com', {
 
       return true;
     } catch (e) {
-      console.error(e.stack || e);
       return false;
     }
   },

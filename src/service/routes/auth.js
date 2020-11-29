@@ -6,8 +6,6 @@ const passportType = passport.type;
 const generator = require('generate-password');
 const passwordHash = require('password-hash');
 
-console.log(`routes:auth authType = ${passportType}`);
-
 router.post('/login', passport.authenticate(passportType), (req, res) => {
   res.send({
     message: 'success',
@@ -101,7 +99,6 @@ router.post('/password', async (req, res) => {
   if (req.user) {
     try {
       const user = await db.findUser(req.user.username);
-      console.log(user);
 
       if (passwordHash.verify(req.body.oldPassword, user.password)) {
         user.password = passwordHash.generate(req.body.newPassword);
@@ -109,15 +106,12 @@ router.post('/password', async (req, res) => {
         db.updateUser(user);
         res.status(200).end();
       } else {
-        console.log('passwords do not match');
         throw new Error('current password did not match the given');
       }
     } catch (e) {
-      console.log(e);
       res.status(500).send(e).end();
     }
   } else {
-    console.log('not logged in');
     res.status(401).end();
   }
 });

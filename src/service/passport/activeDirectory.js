@@ -1,6 +1,5 @@
 /* eslint-disable max-len */
 const configure = () => {
-  console.log(`configuring active directory passport authentication`);
   const passport = require('passport');
   const ActiveDirectoryStrategy = require('passport-activedirectory');
 

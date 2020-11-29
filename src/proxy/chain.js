@@ -32,7 +32,7 @@ const chain = async (req) => {
       }
     }
   } catch (e) {
-    console.error(e || e.stackTrace);
+    throw e;
   } finally {
     await proc.push.audit(req, action);
   }
