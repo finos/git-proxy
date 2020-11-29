@@ -37,7 +37,7 @@ const writeAudit = async (action) => {
 };
 
 const authorise = async (id) => {
-  const action = await getPush(id, logger);
+  const action = await getPush(id);
   action.authorised = true;
   action.canceled = false;
   action.rejected = false;
@@ -46,7 +46,7 @@ const authorise = async (id) => {
 };
 
 const reject = async (id) => {
-  const action = await getPush(id, logger);
+  const action = await getPush(id);
   action.authorised = false;
   action.canceled = false;
   action.rejected = true;
@@ -55,7 +55,7 @@ const reject = async (id) => {
 };
 
 const cancel = async (id) => {
-  const action = await getPush(id, logger);
+  const action = await getPush(id);
   action.authorised = false;
   action.canceled = true;
   action.rejected = false;
