@@ -77,6 +77,7 @@ router.post('/profile', async (req, res) => {
       });
 
       const hashedPassword = passwordHash.generate(password);
+
       const newUser = await db.createUser(
           req.body.username,
           hashedPassword,
