@@ -6,10 +6,11 @@ const exec = async (req, action) => {
   try {
     const existingAction = await data.getPush(action.id);
     if (existingAction) {
-      action = existingAction;
-      if (existingAction.authorised) {
-        action = existingAction;
-        action.setAllowPush();
+      if (!action.error) {
+        if (existingAction.authorised) {
+          action = existingAction;
+          action.setAllowPush();
+        }
       }
     }
   } catch (e) {
