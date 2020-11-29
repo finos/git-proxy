@@ -1,6 +1,10 @@
 {
-  "authorisedList": [    
-    "finos/git-proxy.git"
+  "authorisedList": [
+    {
+      "project": "finos",
+      "name": "git-proxy",
+      "url": "https://github.com/finos/git-proxy.git"
+    }
   ],
   "sink": [
     {

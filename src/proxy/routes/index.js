@@ -8,11 +8,13 @@ const chain = require('../chain');
 router.use('/', proxy('https://github.com', {
   filter: async function(req, res) {
     try {
+      console.log('recieved');
       if (req.body && req.body.length) {
         req.rawBody = req.body.toString('utf8');
       }
 
       const action = await chain.exec(req, res);
+      console.log('action processed');
 
       if (action.error || action.blocked) {
         res.set('content-type', 'application/x-git-receive-pack-result');
@@ -28,6 +30,7 @@ router.use('/', proxy('https://github.com', {
 
         if (action.error) {
           message = action.errorMessage;
+          console.error(message);
         }
         if (action.blocked) {
           message = action.blockedMessage;
@@ -47,6 +50,7 @@ router.use('/', proxy('https://github.com', {
 
       return true;
     } catch (e) {
+      console.error(e);
       return false;
     }
   },
