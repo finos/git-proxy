@@ -5,7 +5,6 @@ const authenticationConfig = config.getAuthentication();
 let _passport;
 
 const configure = async () => {
-  console.log(JSON.stringify(authenticationConfig));
   const type = authenticationConfig.type.toLowerCase();
 
   switch (type) {
@@ -23,6 +22,5 @@ const configure = async () => {
 
 module.exports.configure = configure;
 module.exports.getPassport = () => {
-  console.log(`passport:index getting passport ${_passport}`);
   return _passport;
 };

@@ -1,15 +1,11 @@
 const config = require('../config');
 
-console.log(JSON.stringify(config.getDatabase()));
-
 if (config.getDatabase().type === 'fs') {
   sink = require('../db/file');
-  console.log('using local file database');
 }
 
 if (config.getDatabase().type === 'mongo') {
   sink = require('../db/mongo');
-  console.log('using mongo db');
 }
 
 module.exports.createUser = async (

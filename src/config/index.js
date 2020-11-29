@@ -63,7 +63,7 @@ const logConfiguration = () => {
   console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
 };
 
-logConfiguration();
+// logConfiguration();
 
 exports.getAuthorisedList = getAuthorisedList;
 exports.getDatabase = getDatabase;
