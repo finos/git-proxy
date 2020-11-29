@@ -1,3 +1,4 @@
+const generator = require('generate-password');
 const config = require('../config');
 
 if (config.getDatabase().type === 'fs') {
@@ -20,6 +21,7 @@ module.exports.createUser = async (
     canPush: canPush,
     canAuthorise: canAuthorise,
     changePassword: true,
+    token: generator.generate({length: 10, numbers: true}),
   };
 
   const existingUser = await sink.findUser(username);
