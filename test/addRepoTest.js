@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 // Import the dependencies for testing
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -27,8 +28,8 @@ describe('add new repo', async () => {
     await db.deleteRepo('test-repo');
     await db.deleteUser('u1');
     await db.deleteUser('u2');
-    await db.createUser('u1', 'abc', 'abc@1234.com', true, true, true, false);
-    await db.createUser('u2', 'abc', 'abc@1234.com', true, true, true, false);
+    await db.createUser('u1', 'abc', '', 'test', true, true, true, false);
+    await db.createUser('u2', 'abc', '', 'test', true, true, true, false);
   });
 
   it('login', async function() {

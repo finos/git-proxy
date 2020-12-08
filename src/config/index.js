@@ -5,6 +5,7 @@ let _userSettings = null;
 let _authorisedList = proxySettings.authorisedList;
 let _database = proxySettings.sink;
 let _authentication = proxySettings.authentication;
+let _tempPassword = proxySettings.tempPassword;
 
 const userSettings = () => {
   const path = './user-settings.json';
@@ -21,6 +22,15 @@ const getAuthorisedList = () => {
   }
 
   return _authorisedList;
+};
+
+// Gets a list of authorised repositories
+const getTempPasswordConfig = () => {
+  if (userSettings !== null && userSettings.tempPassword) {
+    _tempPassword = userSettings.tempPassword;
+  }
+
+  return _tempPassword;
 };
 
 // Gets the configuared data sink, defaults to filesystem
@@ -69,3 +79,4 @@ exports.getAuthorisedList = getAuthorisedList;
 exports.getDatabase = getDatabase;
 exports.logConfiguration = logConfiguration;
 exports.getAuthentication = getAuthentication;
+exports.getTempPasswordConfig = getTempPasswordConfig;

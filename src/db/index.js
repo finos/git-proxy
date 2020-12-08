@@ -1,4 +1,7 @@
+const nodemailer = require('nodemailer');
 const generator = require('generate-password');
+const passwordHash = require('password-hash');
+const validator = require('email-validator');
 const config = require('../config');
 
 if (config.getDatabase().type === 'fs') {
@@ -10,11 +13,13 @@ if (config.getDatabase().type === 'mongo') {
 }
 
 module.exports.createUser = async (
-    username, password, email,
+    username, password, email, gitAccount,
     canPull=false, canPush=false, canAuthorise=false, admin=false) => {
+  console.log('creating user');
   const data = {
     username: username,
-    password: password,
+    password: passwordHash.generate(password),
+    gitAccount: gitAccount,
     email: email,
     admin: admin,
     canPull: canPull,
@@ -32,6 +37,43 @@ module.exports.createUser = async (
   }
 
   sink.createUser(data);
+
+  await wrapedSendMail(data, password);
+};
+
+const wrapedSendMail = function(data, password) {
+  return new Promise((resolve, reject) => {
+    const emailConfig = config.getTempPasswordConfig();
+
+    if (!emailConfig.sendEmail) {
+      resolve();
+      return;
+    }
+
+    if (!validator.validate(data.email)) {
+      resolve();
+      return;
+    }
+
+    const transporter = nodemailer.createTransport(emailConfig.emailConfig);
+
+    const mailOptions = {
+      from: emailConfig.from,
+      to: data.email,
+      subject: 'Git Proxy - temporary password',
+      text: `Your tempoary password is ${password}`,
+    };
+
+    transporter.sendMail(mailOptions, function(error, info) {
+      if (error) {
+        console.log(`error is ${error}`);
+        reject(error);
+      } else {
+        console.log('Email sent: ' + info.response);
+        resolve(true);
+      }
+    });
+  });
 };
 
 // The module exports

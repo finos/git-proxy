@@ -1,4 +1,9 @@
 {
+  "tempPassword": {
+    "sendEmail": false,
+    "emailConfig": {
+    }
+  },
   "authorisedList": [
     {
       "project": "finos",
