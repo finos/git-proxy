@@ -8,6 +8,7 @@ const chain = require('../chain');
 router.use('/', proxy('https://github.com', {
   filter: async function(req, res) {
     try {
+      console.log(req.url);
       console.log('recieved');
       if (req.body && req.body.length) {
         req.rawBody = req.body.toString('utf8');

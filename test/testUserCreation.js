@@ -8,6 +8,7 @@ const service = require('../src/service');
 chai.use(chaiHttp);
 chai.should();
 const expect = chai.expect;
+const should = chai.should();
 
 describe('user creation', async () => {
   let app;
@@ -46,7 +47,8 @@ describe('user creation', async () => {
         .set('Cookie', `${cookie}`)
         .send({
           username: 'login-test-user',
-          email: 'login-test-user@somedomain.com',
+          email: 'paul.timothy.groves@gmail.com',
+          gitAccount: 'test123',
           admin: true,
           canPush: true,
           canPull: true,
@@ -123,6 +125,16 @@ describe('user creation', async () => {
     expect(res).to.have.cookie('connect.sid');
     res.should.have.status(200);
     setCookie(res);
+  });
+
+  it('should access the profile', async function() {
+    const res = await chai.request(app)
+        .get('/auth/profile')
+        .set('Cookie', `${cookie}`);
+    res.should.have.status(200);
+
+    res.body.username.should.equal('login-test-user');
+    should.not.exist(res.body.password);
   });
 
   after(async function() {

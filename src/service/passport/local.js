@@ -1,5 +1,5 @@
 const passwordHash = require('password-hash');
-
+/* eslint-disable max-len */
 const configure = async () => {
   const passport = require('passport');
   const Strategy = require('passport-local').Strategy;
@@ -38,9 +38,8 @@ const configure = async () => {
   const admin = await db.findUser('admin');
 
   if (!admin) {
-    const hashedPassword = passwordHash.generate('admin');
     await db.createUser(
-        'admin', hashedPassword, 'admin@place.com', true, true, true, true);
+        'admin', 'admin', 'admin@place.com', 'none', true, true, true, true);
   }
 
   passport.type = 'local';

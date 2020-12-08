@@ -62,7 +62,9 @@ router.post('/logout', (req, res) => {
 
 router.get('/profile', (req, res) => {
   if (req.user) {
-    res.send(req.user);
+    const user = JSON.parse(JSON.stringify(req.user));
+    delete user.password;
+    res.send(user);
   } else {
     res.status(401).end();
   }
@@ -76,12 +78,11 @@ router.post('/profile', async (req, res) => {
         numbers: true,
       });
 
-      const hashedPassword = passwordHash.generate(password);
-
       const newUser = await db.createUser(
           req.body.username,
-          hashedPassword,
+          password,
           req.body.email,
+          req.gitAccount,
           req.body.admin,
           req.body.canPull,
           req.body.canPush,
