@@ -24,6 +24,7 @@ import DashboardPage from './ui/views/Dashboard/Dashboard.js';
 import OpenPushRequests from './ui/views/OpenPushRequests/OpenPushRequests.js';
 import PushDetails from './ui/views/PushDetails/PushDetails.js';
 import User from './ui/views/User/User.js';
+import Admin from './ui/views/Admin/Admin.js';
 
 const dashboardRoutes = [
   {
@@ -55,6 +56,14 @@ const dashboardRoutes = [
     name: 'User Settings',
     icon: Person,
     component: User,
+    layout: '/admin',
+    visible: true,
+  },
+  {
+    path: '/admin',
+    name: 'Admin',
+    icon: Person,
+    component: Admin,
     layout: '/admin',
     visible: true,
   },
