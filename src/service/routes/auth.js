@@ -90,7 +90,10 @@ router.post('/profile', async (req, res) => {
 
       res.send(newUser);
     } catch (e) {
-      res.status(500).send(e).end();
+      console.log(e);
+      res.status(500).send({
+        message: e.message,
+      }).end();
     }
   } else {
     res.status(401).end();
