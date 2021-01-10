@@ -2,7 +2,6 @@
 /* eslint-disable require-jsdoc */
 import React, {useState, useEffect} from 'react';
 import {makeStyles} from '@material-ui/core/styles';
-import moment from 'moment';
 import {useHistory} from 'react-router-dom';
 import GridItem from '../../../components/Grid/GridItem.js';
 import GridContainer from '../../../components/Grid/GridContainer.js';
@@ -16,7 +15,7 @@ import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import {Redirect} from 'react-router-dom';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
-import {getPushes} from '../../../services/git-push';
+import {getUsers} from '../../../services/user';
 import NewUser from './NewUser';
 
 export default function UserList(props) {
@@ -28,8 +27,7 @@ export default function UserList(props) {
   const [isError, setIsError] = useState(false);
   const history = useHistory();
 
-
-  const openPush = (push) => history.push(`/admin/push/${push}`);
+  const openUser = (username) => history.push(`/admin/admin/users/${username}`);
 
   useEffect(() => {
     const query = {};
@@ -38,7 +36,7 @@ export default function UserList(props) {
       if (!k) continue;
       query[k] = props[k];
     }
-    getPushes(setIsLoading, setData, setAuth, setIsError, query);
+    getUsers(setIsLoading, setData, setAuth, setIsError, query);
   }, [props]);
 
   if (isLoading) return (<div>Loading ...</div>);
@@ -56,32 +54,20 @@ export default function UserList(props) {
             <TableHead>
               <TableRow>
                 <TableCell>Actions</TableCell>
-                <TableCell align="left">Time</TableCell>
-                <TableCell align="left">Repo</TableCell>
-                <TableCell align="left">Branch</TableCell>
-                <TableCell align="left">Commit</TableCell>
-                <TableCell align="left">Last Author</TableCell>
-                <TableCell align="left">Last Message</TableCell>
-                <TableCell align="left">Commits</TableCell>
+                <TableCell align="left">Username</TableCell>
+                <TableCell align="left">Admin</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {data.map((row) => (
-                <TableRow key={row.id}>
+                <TableRow key={row.username}>
                   <TableCell component="th" scope="row">
-                    <Button variant="contained" color="primary" onClick={() => openPush(row.id)}>
+                    <Button variant="contained" color="primary" onClick={() => openUser(row.username)}>
                       Open
                     </Button>
                   </TableCell>
-                  <TableCell align="left" >
-                    {moment(row.timestamp).format('yyyy-MM-DD HH:mm')}
-                  </TableCell>
-                  <TableCell align="left">{row.repo}</TableCell>
-                  <TableCell align="left">{row.branch.replace('refs/heads/', '')}</TableCell>
-                  <TableCell align="left">{row.commitFrom.substring(0, 5)} - {row.commitTo.substring(0, 5)}</TableCell>
-                  <TableCell align="left">{row.commitData[row.commitData.length -1].author} </TableCell>
-                  <TableCell align="left">{row.commitData[row.commitData.length -1].message} </TableCell>
-                  <TableCell align="left">{row.commitData.length}</TableCell>
+                  <TableCell align="left">{row.username}</TableCell>
+                  <TableCell align="left">{row.admin.toString()}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

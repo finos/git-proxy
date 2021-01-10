@@ -2,7 +2,6 @@
 /* eslint-disable require-jsdoc */
 import React, {useState, useEffect} from 'react';
 import {makeStyles} from '@material-ui/core/styles';
-import moment from 'moment';
 import {useHistory} from 'react-router-dom';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
@@ -14,7 +13,7 @@ import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import {Redirect} from 'react-router-dom';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
-import {getPushes} from '../../../services/git-push';
+import {getRepos} from '../../../services/repo';
 
 export default function Repositories(props) {
   const useStyles = makeStyles(styles);
@@ -35,7 +34,7 @@ export default function Repositories(props) {
       if (!k) continue;
       query[k] = props[k];
     }
-    getPushes(setIsLoading, setData, setAuth, setIsError, query);
+    getRepos(setIsLoading, setData, setAuth, setIsError, query);
   }, [props]);
 
   if (isLoading) return (<div>Loading ...</div>);
@@ -48,13 +47,9 @@ export default function Repositories(props) {
         <TableHead>
           <TableRow>
             <TableCell>Actions</TableCell>
-            <TableCell align="left">Time</TableCell>
-            <TableCell align="left">Repo</TableCell>
-            <TableCell align="left">Branch</TableCell>
-            <TableCell align="left">Commit</TableCell>
-            <TableCell align="left">Last Author</TableCell>
-            <TableCell align="left">Last Message</TableCell>
-            <TableCell align="left">Commits</TableCell>
+            <TableCell align="left">Project</TableCell>
+            <TableCell align="left">Name</TableCell>
+            <TableCell align="left">Url</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -65,15 +60,9 @@ export default function Repositories(props) {
                   Open
                 </Button>
               </TableCell>
-              <TableCell align="left" >
-                {moment(row.timestamp).format('yyyy-MM-DD HH:mm')}
-              </TableCell>
-              <TableCell align="left">{row.repo}</TableCell>
-              <TableCell align="left">{row.branch.replace('refs/heads/', '')}</TableCell>
-              <TableCell align="left">{row.commitFrom.substring(0, 5)} - {row.commitTo.substring(0, 5)}</TableCell>
-              <TableCell align="left">{row.commitData[row.commitData.length -1].author} </TableCell>
-              <TableCell align="left">{row.commitData[row.commitData.length -1].message} </TableCell>
-              <TableCell align="left">{row.commitData.length}</TableCell>
+              <TableCell align="left">{row.project}</TableCell>
+              <TableCell align="left">{row.name}</TableCell>
+              <TableCell align="left">{row.url}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -81,3 +70,4 @@ export default function Repositories(props) {
     </TableContainer>
   );
 }
+

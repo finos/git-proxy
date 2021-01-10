@@ -36,7 +36,27 @@ const createUser = async (data) => {
       });
 };
 
+const getUsers = async (setIsLoading, setData, setAuth, setIsError, query={}) => {
+  const url = new URL(`${baseUrl}/api/v1/users`);
+  url.search = new URLSearchParams(query);
+
+  await axios(url.toString(), {withCredentials: true}).then((response) => {
+    const data = response.data;
+    setData(data);
+    setIsLoading(false);
+  }).catch((error) => {
+    setIsLoading(false);
+    if (error.response && error.response.status === 401) {
+      setAuth(false);
+    } else {
+      setIsError(true);
+    }
+    setIsLoading(false);
+  });
+};
+
 export {
   getUser,
   createUser,
+  getUsers,
 };
