@@ -3,7 +3,9 @@ const cnName = 'repos';
 
 exports.getRepos = async (query={}) => {
   const collection = await connect(cnName);
-  return await collection.find(query).toArray();
+  const result = await collection.find().toArray();
+  console.log(JSON.stringify(result));
+  return result;
 };
 
 exports.getRepo = async (name) => {

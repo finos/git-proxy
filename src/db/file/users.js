@@ -58,3 +58,17 @@ exports.updateUser = function(user) {
     });
   });
 };
+
+exports.getUsers = function(query) {
+  if (!query) query={};
+  return new Promise((resolve, reject) => {
+    logger.log(`data.file:getUsers`);
+    db.find(query, (err, docs) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(docs);
+      }
+    });
+  });
+};

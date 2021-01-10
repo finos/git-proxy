@@ -84,6 +84,7 @@ module.exports.getPushes = sink.getPushes;
 module.exports.writeAudit = sink.writeAudit;
 module.exports.getPush = sink.getPush;
 module.exports.findUser = sink.findUser;
+module.exports.getUsers = sink.getUsers;
 module.exports.deleteUser = sink.deleteUser;
 module.exports.updateUser = sink.updateUser;
 module.exports.getRepos = sink.getRepos;
