@@ -49,7 +49,7 @@ exports.deleteUser = function(username) {
 exports.updateUser = function(user) {
   return new Promise((resolve, reject) => {
     const options = {multi: false, upsert: false};
-    db.update({username: user.username}, action, options, (err) => {
+    db.update({username: user.username}, user, options, (err) => {
       if (err) {
         reject(err);
       } else {
