@@ -19,7 +19,6 @@ const defaultPushQuery = {
 const getPushes = (query, logger) => {
   if (!query) query=defaultPushQuery;
   return new Promise((resolve, reject) => {
-    logger.log(`data.file:getPushes`);
     db.find(query, (err, docs) => {
       if (err) {
         reject(err);
@@ -34,7 +33,6 @@ const getPushes = (query, logger) => {
 
 const getPush = async (id, logger) => {
   return new Promise((resolve, reject) => {
-    logger.log(`data.file:getPush(${id})`);
     db.findOne({id: id}, (err, doc) => {
       if (err) {
         reject(err);
@@ -51,7 +49,6 @@ const getPush = async (id, logger) => {
 
 const writeAudit = async (action, logger) => {
   return new Promise((resolve, reject) => {
-    logger.log(`data.file:writeAudit(${action.id})`);
     const options = {multi: false, upsert: true};
     db.update({id: action.id}, action, options, (err) => {
       if (err) {
@@ -64,7 +61,6 @@ const writeAudit = async (action, logger) => {
 };
 
 const authorise = async (id, logger) => {
-  logger.log(`data::authorizing ${id}`);
   const action = await getPush(id, logger);
   action.authorised = true;
   action.canceled = false;
@@ -74,7 +70,6 @@ const authorise = async (id, logger) => {
 };
 
 const reject = async (id, logger) => {
-  logger.log(`data::reject ${id}`);
   const action = await getPush(id, logger);
   action.authorised = false;
   action.canceled = false;
@@ -84,7 +79,6 @@ const reject = async (id, logger) => {
 };
 
 const cancel = async (id, logger) => {
-  logger.log(`data::cancel ${id}`);
   const action = await getPush(id, logger);
   action.authorised = false;
   action.canceled = true;
