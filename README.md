@@ -126,12 +126,7 @@ The project is now set up for local development, including `git push origin mast
 
 ## Roadmap
 
-- Public repository whitelisting
-- Synchronous Pluggable webhooks
-- Asynchronous flows - i.e. the proxy will return the correct responses to the git client that the action has taken place, but wait for an external signal to - continue to the push.
-- Become a "true" proxy that can be set via `git config http.proxy....`
-- Implement User access controls against corporate AD groups as well as public github accounts.
-- Auditing sink + UI
+Git Proxy roadmap is managed using [GitHub Milestones](https://github.com/finos/git-proxy/milestones).
 
 Please [raise an issue](https://github.com/finos/git-proxy/issues/new/choose) if you have an idea!
 
