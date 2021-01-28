@@ -6,4 +6,3 @@ service.start();
 
 module.exports.proxy = proxy;
 module.exports.service = service;
-
