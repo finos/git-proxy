@@ -6,7 +6,7 @@ Many corporations, especially financial services have strict policies towards op
 
 We wish to keep the process for the developer as simple and familiar as possible, therefore we feel the solution is a proxy that sits between the developer and the public repository.
 
-The idea is quite simple, scan outgoing attempts to push to public repositor and raise compliance/info-sec friendly checks before allowing the push to complete.
+The idea is quite simple, scan outgoing attempts to push to public repository and raise compliance/info-sec friendly checks before allowing the push to complete.
 
 Of course every corporation will have different procedures so a key feature has to be the extensibility of the framework.
 
