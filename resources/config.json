@@ -4,13 +4,20 @@
     "emailConfig": {
     }
   },
+  "authorisedList": [
+    {
+      "project": "finos",
+      "name": "git-proxy",
+      "url": "https://github.com/finos/git-proxy.git"
+    }
+  ],
   "sink": [
     {
       "type": "fs",
       "params": {
         "filepath": "./."
       },
-      "enabled": false
+      "enabled": true
     },
     {
       "type": "mongo",
@@ -18,7 +25,7 @@
       "options": {        
         "useUnifiedTopology": true
       },      
-      "enabled": true
+      "enabled": false
     }
   ],
   "authentication": [
