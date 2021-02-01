@@ -23,6 +23,7 @@ const getUser = async (setIsLoading, setData, setAuth, setIsError) => {
 };
 
 const createUser = async (data) => {
+  console.log(data);
   const url = new URL(`${baseUrl}/auth/profile`);
   await await axios.post(url, data, {withCredentials: true})
       .then(() => {
