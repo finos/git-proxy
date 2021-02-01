@@ -50,9 +50,6 @@ describe('user creation', async () => {
           email: 'paul.timothy.groves@gmail.com',
           gitAccount: 'test123',
           admin: true,
-          canPush: true,
-          canPull: true,
-          canAuthorise: true,
         });
     res.should.have.status(200);
   });

@@ -13,18 +13,21 @@ if (config.getDatabase().type === 'mongo') {
 }
 
 module.exports.createUser = async (
-    username, password, email, gitAccount,
-    canPull=false, canPush=false, canAuthorise=false, admin=false) => {
-  console.log('creating user');
+    username, password, email, gitAccount, admin=false) => {
+  console.log(
+      `creating user
+        user=${username},
+        gitAccount=${gitAccount}
+        email=${email},
+        admin=${admin}`,
+  );
+
   const data = {
     username: username,
     password: passwordHash.generate(password),
     gitAccount: gitAccount,
     email: email,
     admin: admin,
-    canPull: canPull,
-    canPush: canPush,
-    canAuthorise: canAuthorise,
     changePassword: true,
     token: generator.generate({length: 10, numbers: true}),
   };

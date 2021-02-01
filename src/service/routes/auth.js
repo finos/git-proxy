@@ -70,6 +70,7 @@ router.get('/profile', (req, res) => {
   }
 });
 
+// comment
 router.post('/profile', async (req, res) => {
   if (req.user) {
     try {
@@ -78,15 +79,14 @@ router.post('/profile', async (req, res) => {
         numbers: true,
       });
 
+      console.log(JSON.stringify(req.body));
+
       const newUser = await db.createUser(
           req.body.username,
           password,
           req.body.email,
-          req.gitAccount,
-          req.body.admin,
-          req.body.canPull,
-          req.body.canPush,
-          req.body.canAuthorise);
+          req.body.gitAccount,
+          req.body.admin);
 
       res.send(newUser);
     } catch (e) {

@@ -55,6 +55,8 @@ export default function UserList(props) {
               <TableRow>
                 <TableCell>Actions</TableCell>
                 <TableCell align="left">Username</TableCell>
+                <TableCell align="left">email</TableCell>
+                <TableCell align="left">Git Account</TableCell>
                 <TableCell align="left">Admin</TableCell>
               </TableRow>
             </TableHead>
@@ -67,6 +69,8 @@ export default function UserList(props) {
                     </Button>
                   </TableCell>
                   <TableCell align="left">{row.username}</TableCell>
+                  <TableCell align="left">{row.email}</TableCell>
+                  <TableCell align="left">{row.gitAccount}</TableCell>
                   <TableCell align="left">{row.admin.toString()}</TableCell>
                 </TableRow>
               ))}

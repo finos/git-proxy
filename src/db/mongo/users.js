@@ -18,6 +18,7 @@ exports.deleteUser = async function(username) {
 };
 
 exports.createUser = async function(data) {
+  console.log(JSON.stringify(data));
   const collection = await connect(usersCollection);
   const result = await collection.insertOne(data);
   return result;
