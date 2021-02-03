@@ -1,6 +1,7 @@
 const Step = require('../../actions').Step;
 const db = require('../../../db');
 
+// Execute if the repo is approved
 const exec = async (req, action, authorisedList=db.getRepos) => {
   const step = new Step('checkRepoInAuthorisedList');
 
