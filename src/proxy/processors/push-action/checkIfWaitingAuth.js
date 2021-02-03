@@ -1,6 +1,7 @@
 const Step = require('../../actions').Step;
 const data = require('../../../db');
 
+// Execute function
 const exec = async (req, action) => {
   const step = new Step('checkIfWaitingAuth');
   try {
