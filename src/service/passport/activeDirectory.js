@@ -1,6 +1,5 @@
 /* eslint-disable max-len */
 const configure = () => {
-  console.log(`configuring active directory passport authentication`);
   const passport = require('passport');
   const ActiveDirectoryStrategy = require('passport-activedirectory');
 
@@ -19,7 +18,6 @@ const configure = () => {
       } else {
       }
       if (err) {
-        console.log(err);
         return done(err);
       }
       return done(null, profile);
@@ -27,14 +25,10 @@ const configure = () => {
   }));
 
   passport.serializeUser(function(user, done) {
-    console.log('se user');
-    console.log(user);
     done(null, user);
   });
 
   passport.deserializeUser(function(user, done) {
-    console.log('de user');
-    console.log(user);
     done(null, user);
   });
 

@@ -138,7 +138,6 @@ class Action {
    *`
    */
   setAllowPush() {
-    console.log('STEP SETTING ALLOW PUSH');
     this.allowPush = true;
     this.blocked = false;
   }
@@ -148,9 +147,6 @@ class Action {
    */
   continue() {
     const cont = !(this.error || this.blocked);
-    console.log(
-        `continue step error=${this.error}  
-        blocked=${this.blocked} cont=${cont}`);
     return cont;
   }
 }

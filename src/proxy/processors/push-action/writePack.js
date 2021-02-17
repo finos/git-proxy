@@ -16,7 +16,6 @@ const exec = async (req, action) => {
 
     step.setContent(content);
   } catch (e) {
-    console.log(e || e.stackTrace);
     step.setError(e.toString('utf-8'));
     throw e;
   } finally {

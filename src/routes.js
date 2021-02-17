@@ -24,6 +24,9 @@ import DashboardPage from './ui/views/Dashboard/Dashboard.js';
 import OpenPushRequests from './ui/views/OpenPushRequests/OpenPushRequests.js';
 import PushDetails from './ui/views/PushDetails/PushDetails.js';
 import User from './ui/views/User/User.js';
+import UserList from './ui/views/UserList/UserList.js';
+import RepoDetails from './ui/views/RepoDetails/RepoDetails.js';
+import RepoList from './ui/views/RepoList/RepoList.js';
 
 const dashboardRoutes = [
   {
@@ -51,10 +54,42 @@ const dashboardRoutes = [
     visible: false,
   },
   {
-    path: '/user',
-    name: 'User Settings',
+    path: '/profile',
+    name: 'My Profile',
     icon: Person,
     component: User,
+    layout: '/admin',
+    visible: true,
+  },
+  {
+    path: '/user/:id',
+    name: 'User Details',
+    icon: Person,
+    component: User,
+    layout: '/admin',
+    visible: false,
+  },
+  {
+    path: '/repo/:id',
+    name: 'Repo Details',
+    icon: Person,
+    component: RepoDetails,
+    layout: '/admin',
+    visible: false,
+  },
+  {
+    path: '/repo',
+    name: 'Repositories',
+    icon: Person,
+    component: RepoList,
+    layout: '/admin',
+    visible: true,
+  },
+  {
+    path: '/user',
+    name: 'User List',
+    icon: Person,
+    component: UserList,
     layout: '/admin',
     visible: true,
   },

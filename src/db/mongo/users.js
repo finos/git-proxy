@@ -1,19 +1,31 @@
+/* eslint-disable max-len */
 const connect = require('./helper').connect;
+const usersCollection = 'users';
 
-exports.findUser = async function(username, logger=console) {
-  const collection = await connect('users');
+exports.findUser = async function(username) {
+  const collection = await connect(usersCollection);
   return await collection.findOne({username: username});
 };
 
-exports.createUser = async function(username, password, logger=console) {
-  const data = {
-    username: username,
-    password: password,
-  };
+exports.getUsers = async function(query) {
+  const collection = await connect(usersCollection);
+  return await collection.find().toArray();
+};
 
-  console.log(`data.mongo:createUser(${username})`);
+exports.deleteUser = async function(username) {
+  const collection = await connect(usersCollection);
+  return await collection.deleteOne({username: username});
+};
 
-  const collection = await connect('users');
+exports.createUser = async function(data) {
+  console.log(JSON.stringify(data));
+  const collection = await connect(usersCollection);
   const result = await collection.insertOne(data);
   return result;
+};
+
+exports.updateUser = async (user) => {
+  const options = {upsert: true};
+  const collection = await connect(usersCollection);
+  await collection.updateOne({username: user.username}, {'$set': user}, options);
 };
