@@ -49,7 +49,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.patch('/:name/users/push', async (req, res) => {
+router.patch('/:name/user/push', async (req, res) => {
   if (req.user) {
     const repoName = req.params.name;
     const username = req.body.username;
@@ -69,7 +69,7 @@ router.patch('/:name/users/push', async (req, res) => {
   }
 });
 
-router.patch('/:name/users/authorise', async (req, res) => {
+router.patch('/:name/user/authorise', async (req, res) => {
   if (req.user) {
     const repoName = req.params.name;
     const username = req.body.username;
