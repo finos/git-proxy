@@ -12,6 +12,6 @@ router.use('/auth', auth);
 router.use('/api/v1/healthcheck', healthcheck);
 router.use('/api/v1/push', push);
 router.use('/api/v1/repo', repo);
-router.use('/api/v1/users', users);
+router.use('/api/v1/user', users);
 
 module.exports = router;

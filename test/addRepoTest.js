@@ -64,7 +64,7 @@ describe('add new repo', async () => {
 
   it('add 1st can push user', async function() {
     const res = await chai.request(app)
-        .patch('/api/v1/repo/test-repo/users/push')
+        .patch('/api/v1/repo/test-repo/user/push')
         .set('Cookie', `${cookie}`)
         .send({
           username: 'u1',
@@ -79,7 +79,7 @@ describe('add new repo', async () => {
 
   it('add 2nd can push user', async function() {
     const res = await chai.request(app)
-        .patch('/api/v1/repo/test-repo/users/push')
+        .patch('/api/v1/repo/test-repo/user/push')
         .set('Cookie', `${cookie}`)
         .send({
           username: 'u2',
@@ -93,7 +93,7 @@ describe('add new repo', async () => {
 
   it('add push user that does not exist', async function() {
     const res = await chai.request(app)
-        .patch('/api/v1/repo/test-repo/users/push')
+        .patch('/api/v1/repo/test-repo/user/push')
         .set('Cookie', `${cookie}`)
         .send({
           username: 'u3',
@@ -106,7 +106,7 @@ describe('add new repo', async () => {
 
   it('add 1st can authorise user', async function() {
     const res = await chai.request(app)
-        .patch('/api/v1/repo/test-repo/users/authorise')
+        .patch('/api/v1/repo/test-repo/user/authorise')
         .set('Cookie', `${cookie}`)
         .send({
           username: 'u1',
@@ -121,7 +121,7 @@ describe('add new repo', async () => {
 
   it('add 2nd can authorise user', async function() {
     const res = await chai.request(app)
-        .patch('/api/v1/repo/test-repo/users/authorise')
+        .patch('/api/v1/repo/test-repo/user/authorise')
         .set('Cookie', `${cookie}`)
         .send({
           username: 'u2',
@@ -135,7 +135,7 @@ describe('add new repo', async () => {
 
   it('add authorise user that does not exist', async function() {
     const res = await chai.request(app)
-        .patch('/api/v1/repo/test-repo/users/authorise')
+        .patch('/api/v1/repo/test-repo/user/authorise')
         .set('Cookie', `${cookie}`)
         .send({
           username: 'u3',

@@ -7,12 +7,20 @@ const config = {
   withCredentials: true,
 };
 
-const getUser = async (setIsLoading, setData, setAuth, setIsError) => {
-  const url = new URL(`${baseUrl}/auth/profile`);
-  await axios(url.toString(), config)
+const getUser = async (setIsLoading, setData, setAuth, setIsError, id=null) => {
+  let url = `${baseUrl}/auth/profile`;
+
+  if (id) {
+    url = `${baseUrl}/api/v1/user/${id}`;
+  }
+
+  console.log(url);
+
+  await axios(url, config)
       .then((response) => {
         const data = response.data;
         setData(data);
+        console.log(data);
         setIsLoading(false);
       })
       .catch((error) => {
@@ -29,16 +37,13 @@ const createUser = async (data) => {
       .then(() => {
       })
       .catch((error) => {
-        console.log(error);
-        console.log('----');
         console.log(error.response.data.message);
-        console.log('----');
         throw (error);
       });
 };
 
 const getUsers = async (setIsLoading, setData, setAuth, setIsError, query={}) => {
-  const url = new URL(`${baseUrl}/api/v1/users`);
+  const url = new URL(`${baseUrl}/api/v1/user`);
   url.search = new URLSearchParams(query);
 
   await axios(url.toString(), {withCredentials: true}).then((response) => {

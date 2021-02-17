@@ -27,6 +27,27 @@ const getRepos = async (setIsLoading, setData, setAuth, setIsError, query={}) =>
   });
 };
 
+
+const getRepo = async (setIsLoading, setData, setAuth, setIsError) => {
+  const url = new URL(`${baseUrl}/repo`);
+  url.search = new URLSearchParams(query);
+
+  await axios(url.toString(), config).then((response) => {
+    const data = response.data;
+    setData(data);
+    setIsLoading(false);
+  }).catch((error) => {
+    setIsLoading(false);
+    if (error.response && error.response.status === 401) {
+      setAuth(false);
+    } else {
+      setIsError(true);
+    }
+    setIsLoading(false);
+  });
+};
+
 export {
   getRepos,
+  getRepo,
 };

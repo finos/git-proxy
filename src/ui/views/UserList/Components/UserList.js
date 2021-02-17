@@ -27,7 +27,7 @@ export default function UserList(props) {
   const [isError, setIsError] = useState(false);
   const history = useHistory();
 
-  const openUser = (username) => history.push(`/admin/admin/users/${username}`);
+  const openUser = (username) => history.push(`/admin/user/${username}`);
 
   useEffect(() => {
     const query = {};
