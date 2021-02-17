@@ -17,7 +17,7 @@
       "params": {
         "filepath": "./."
       },
-      "enabled": false
+      "enabled": true
     },
     {
       "type": "mongo",
@@ -25,7 +25,7 @@
       "options": {        
         "useUnifiedTopology": true
       },      
-      "enabled": true
+      "enabled": false
     }
   ],
   "authentication": [
