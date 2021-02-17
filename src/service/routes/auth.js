@@ -1,15 +1,33 @@
 const express = require('express');
 const router = new express.Router();
 const passport = require('../passport').getPassport();
+const db = require('../../db');
 const passportType = passport.type;
-
-console.log(`routes:auth authType = ${passportType}`);
+const generator = require('generate-password');
+const passwordHash = require('password-hash');
 
 router.post('/login', passport.authenticate(passportType), (req, res) => {
-  console.log('logged in!');
   res.send({
     message: 'success',
   });
+});
+
+router.get('/', (req, res) => {
+  res.status(200).json(
+      {
+        login: {
+          action: 'post',
+          uri: 'auth/login',
+        },
+        profile: {
+          action: 'get',
+          uri: 'auth/profile',
+        },
+        logout: {
+          action: 'post',
+          uri: 'auth/logout',
+        },
+      });
 });
 
 // when login is successful, retrieve user info
@@ -35,7 +53,6 @@ router.get('failed', (req, res) => {
 });
 
 router.post('/logout', (req, res) => {
-  console.log('logging out');
   req.logout();
   res.send({
     message: 'logged out',
@@ -45,7 +62,61 @@ router.post('/logout', (req, res) => {
 
 router.get('/profile', (req, res) => {
   if (req.user) {
-    res.send(req.user);
+    const user = JSON.parse(JSON.stringify(req.user));
+    delete user.password;
+    res.send(user);
+  } else {
+    res.status(401).end();
+  }
+});
+
+router.post('/profile', async (req, res) => {
+  if (req.user) {
+    try {
+      const password = generator.generate({
+        length: 10,
+        numbers: true,
+      });
+
+      console.log(JSON.stringify(req.body));
+
+      const newUser = await db.createUser(
+          req.body.username,
+          password,
+          req.body.email,
+          req.body.gitAccount,
+          req.body.admin);
+
+      res.send(newUser);
+    } catch (e) {
+      console.log(e);
+      res.status(500).send({
+        message: e.message,
+      }).end();
+    }
+  } else {
+    res.status(401).end();
+  }
+});
+
+router.post('/password', async (req, res) => {
+  if (req.user) {
+    try {
+      const user = await db.findUser(req.user.username);
+
+      if (passwordHash.verify(req.body.oldPassword, user.password)) {
+        user.password = passwordHash.generate(req.body.newPassword);
+        user.changePassword = false;
+        db.updateUser(user);
+        res.status(200).end();
+      } else {
+        throw new Error('current password did not match the given');
+      }
+    } catch (e) {
+      res.status(500).send(e).end();
+    }
+  } else {
+    res.status(401).end();
   }
 });
 

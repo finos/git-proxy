@@ -18,7 +18,6 @@ const exec = async (req) => {
 
 
 const getRepoNameFromUrl = (url) => {
-  console.log(url);
   const parts = url.split('/');
 
   for (let i = 0, len = parts.length; i < len; i++) {

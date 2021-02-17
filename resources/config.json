@@ -1,6 +1,15 @@
 {
-  "authorisedList": [    
-    "finos/git-proxy.git"
+  "tempPassword": {
+    "sendEmail": false,
+    "emailConfig": {
+    }
+  },
+  "authorisedList": [
+    {
+      "project": "finos",
+      "name": "git-proxy",
+      "url": "https://github.com/finos/git-proxy.git"
+    }
   ],
   "sink": [
     {
@@ -14,6 +23,7 @@
       "type": "mongo",
       "connectionString": "mongodb://localhost:27017/gitproxy",
       "options": {        
+        "useUnifiedTopology": true
       },      
       "enabled": false
     }

@@ -25,7 +25,6 @@ export default function Dashboard() {
               },
               {
                 tabName: 'Canceled',
-
                 tabContent: (<PushesTable authorised={false} rejected={false} canceled={true} />),
               },
               {
