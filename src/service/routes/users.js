@@ -28,14 +28,24 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-  if (req.user) {
-    const id = req.params.id;
-    res.send(await db.findUser(id));
-  } else {
+  const username = req.params.id;
+  console.log(`Retrieving details for user: ${username}`);
+  if (!req.user) {
     res.status(401).send({
       message: 'not logged in',
     });
+    return;
   }
+  if (!req.user.admin) {
+    console.error(`Retrieving details for user: ${username} - NOT AUTHORISED`);
+    // User is not an admin and forbidden form seeing other user profiles
+    res.status(403).end();
+    return;
+  }
+  const data = await db.findUser(username);
+  const user = JSON.parse(JSON.stringify(data));
+  delete user.password;
+  res.send(user);
 });
 
 

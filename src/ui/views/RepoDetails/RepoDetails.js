@@ -28,7 +28,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function Dashboard(props) {
+export default function RepoDetails(props) {
   const classes = useStyles();
   const [data, setData] = useState([]);
   const [auth, setAuth] = useState(true);
@@ -61,7 +61,7 @@ export default function Dashboard(props) {
             <CardHeader color="success" stats icon>
               <CardIcon color="success">
                 <Icon>content_copy</Icon>
-                <h3>User Details</h3>
+                <h3>Repository</h3>
               </CardIcon>
             </CardHeader>
             <br />

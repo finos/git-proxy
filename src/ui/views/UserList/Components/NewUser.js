@@ -4,11 +4,11 @@ import React, {useState} from 'react';
 import PropTypes from 'prop-types';
 import InputLabel from '@material-ui/core/InputLabel';
 import Input from '@material-ui/core/Input';
+import FormControl from '@material-ui/core/FormControl';
 import Checkbox from '@material-ui/core/Checkbox';
 import FormHelperText from '@material-ui/core/FormHelperText';
 import GridItem from '../../../components/Grid/GridItem.js';
 import GridContainer from '../../../components/Grid/GridContainer.js';
-import FormControl from '@material-ui/core/FormControl';
 import Card from '../../../components/Card/Card.js';
 import CardBody from '../../../components/Card/CardBody.js';
 import Button from '../../../components/CustomButtons/Button.js';
@@ -60,10 +60,10 @@ function CreateUserDialog(props) {
                 <InputLabel htmlFor="username">Username</InputLabel>
                 <Input
                   id="username"
-                  aria-describedby="my-helper-text"
+                  aria-describedby="username-helper-text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)} />
-                <FormHelperText id="my-helper-text">The username</FormHelperText>
+                <FormHelperText id="username-helper-text">The username</FormHelperText>
               </FormControl>
             </GridItem>
             <GridItem xs={12} sm={12} md={12}>
@@ -71,10 +71,10 @@ function CreateUserDialog(props) {
                 <InputLabel htmlFor="email">Email address</InputLabel>
                 <Input
                   id="email"
-                  aria-describedby="my-helper-text"
+                  aria-describedby="email-helper-text"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)} />
-                <FormHelperText id="my-helper-text">The users email - an email will be sent to the user with at temporary password</FormHelperText>
+                <FormHelperText id="email-helper-text">The users email - an email will be sent to the user with at temporary password</FormHelperText>
               </FormControl>
             </GridItem>
             <GridItem xs={12} sm={12} md={12}>
@@ -82,10 +82,10 @@ function CreateUserDialog(props) {
                 <InputLabel htmlFor="gitAccount">GitAccount Name</InputLabel>
                 <Input
                   id="gitAccount"
-                  aria-describedby="my-helper-text"
+                  aria-describedby="gitAccount-helper-text"
                   value={gitAccount}
                   onChange={(e) => setGitAccount(e.target.value)} />
-                <FormHelperText id="my-helper-text">The users Git Accout user name</FormHelperText>
+                <FormHelperText id="gitAccounty-helper-text">The users Git Accout user name</FormHelperText>
               </FormControl>
             </GridItem>
             <GridItem xs={12} sm={12} md={12}>
@@ -93,16 +93,15 @@ function CreateUserDialog(props) {
                 <InputLabel htmlFor="email">Is an Admin</InputLabel>
                 <Checkbox
                   id="email"
-                  aria-describedby="my-helper-text"
+                  aria-describedby="email-helper-text"
                   value={admin}
                   onChange={(e) => setAdmin(e.target.value)} />
-                <FormHelperText id="my-helper-text">Admin users are able to add repositories and create users</FormHelperText>
+                <FormHelperText id="email-helper-text">Admin users are able to add repositories and create users</FormHelperText>
               </FormControl>
             </GridItem>
             <GridItem xs={12} sm={12} md={12}>
               <Button variant="outlined" color="primary" onClick={handleClose}>Cancel</Button>
               <Button variant="outlined" color="primary" onClick={create}>Create</Button>
-
             </GridItem>
           </GridContainer>
         </CardBody>

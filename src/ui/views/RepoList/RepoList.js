@@ -10,7 +10,7 @@ import CardBody from '../../components/Card/CardBody.js';
 import CardHeader from '../../components/Card/CardHeader.js';
 import TabList from './Components/TabList';
 
-export default function Dashboard(props) {
+export default function RepoList(props) {
   return (
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>

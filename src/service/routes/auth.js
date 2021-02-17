@@ -70,7 +70,6 @@ router.get('/profile', (req, res) => {
   }
 });
 
-// comment
 router.post('/profile', async (req, res) => {
   if (req.user) {
     try {
