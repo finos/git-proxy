@@ -10,8 +10,6 @@ The idea is quite simple, scan outgoing attempts to push to public repository an
 
 Of course every corporation will have different procedures so a key feature has to be the extensibility of the framework.
 
-To watch a demo of Git Proxy, checkout the [recording of the Kickoff call](https://www.finos.org/hubfs/FINOS/2021%20Audio%20and%20Video/FINOS%20Git%20Proxy%20Kickoff%20-%2027%20Jan%2021.mp4) of January 28th 2021.
-
 ## Project Installation Instructions
 
 All contributions are welcome. Please fork the repository before local development.
