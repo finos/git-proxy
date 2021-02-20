@@ -28,10 +28,8 @@ const getRepos = async (setIsLoading, setData, setAuth, setIsError, query={}) =>
 };
 
 
-const getRepo = async (setIsLoading, setData, setAuth, setIsError) => {
-  const url = new URL(`${baseUrl}/repo`);
-  url.search = new URLSearchParams(query);
-
+const getRepo = async (setIsLoading, setData, setAuth, setIsError, id) => {
+  const url = new URL(`${baseUrl}/repo/${id}`);
   await axios(url.toString(), config).then((response) => {
     const data = response.data;
     setData(data);
@@ -47,7 +45,40 @@ const getRepo = async (setIsLoading, setData, setAuth, setIsError) => {
   });
 };
 
+const addUser = async (repoName, user, type) => {
+  let action = '';
+  if (type === 'canAuthorise') {
+    action = 'authorise';
+  } else if (type === 'canPush') {
+    action = 'push';
+  }
+
+  const url = new URL(`${baseUrl}/repo/${repoName}/user/${action}`);
+  const data = {username: user};
+  await await axios.patch(url, data, {withCredentials: true})
+      .then(() => {
+      })
+      .catch((error) => {
+        console.log(error.response.data.message);
+        throw (error);
+      });
+};
+
+const deleteUser = async (user, repoName, action) => {
+  console.log(data);
+  const url = new URL(`${baseUrl}/repo/${repoName}`);
+  await await axios.post(url, data, {withCredentials: true})
+      .then(() => {
+      })
+      .catch((error) => {
+        console.log(error.response.data.message);
+        throw (error);
+      });
+};
+
 export {
+  addUser,
+  deleteUser,
   getRepos,
   getRepo,
 };
