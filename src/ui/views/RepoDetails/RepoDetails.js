@@ -93,7 +93,7 @@ export default function RepoDetails(props) {
             <GridContainer>
               <GridItem xs={6} sm={6} md={6}>
                 <h2>Authorisers</h2>
-                <AddUser repoName={repoName} type='canAuthorise' func={reloadFn} ></AddUser>
+                <AddUser repoName={repoName} type='canAuthorise' ></AddUser>
                 <br />
                 <br />
                 <TableContainer component={Paper}>
@@ -121,7 +121,7 @@ export default function RepoDetails(props) {
               </GridItem>
               <GridItem xs={6} sm={6} md={6}>
                 <h2>Pushers</h2>
-                <AddUser repoName={repoName} type='canPush' func={reloadFn}></AddUser>
+                <AddUser repoName={repoName} type='canPush'></AddUser>
                 <br />
                 <br />
                 <TableContainer component={Paper}>

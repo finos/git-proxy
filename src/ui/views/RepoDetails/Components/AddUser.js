@@ -107,7 +107,6 @@ export default function AddUser(props) {
 
   const repoName = props.repoName;
   const type = props.type;
-  const func = props.func;
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -115,10 +114,7 @@ export default function AddUser(props) {
 
   const handleClose = () => {
     setOpen(false);
-    func();
   };
-
-  console.log(JSON.stringify(props));
 
   return (
     <div>
