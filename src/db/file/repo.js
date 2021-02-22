@@ -88,6 +88,40 @@ exports.addUserCanAuthorise = async (name, user) => {
   });
 };
 
+exports.removeUserCanAuthorise = async (name, user) => {
+  return new Promise(async (resolve, reject) => {
+    const repo = await exports.getRepo(name);
+
+    repo.users.canAuthorise = repo.users.canAuthorise.filter((x) => x != user);
+
+    const options = {multi: false, upsert: false};
+    db.update({name: name}, repo, options, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(null);
+      }
+    });
+  });
+};
+
+exports.removeUserCanPush = async (name, user) => {
+  return new Promise(async (resolve, reject) => {
+    const repo = await exports.getRepo(name);
+
+    repo.users.canPush = repo.users.canPush.filter((x) => x != user);
+
+    const options = {multi: false, upsert: false};
+    db.update({name: name}, repo, options, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(null);
+      }
+    });
+  });
+};
+
 exports.deleteRepo = async (name) => {
   return new Promise((resolve, reject) => {
     db.remove({name: name}, (err) => {
