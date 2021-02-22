@@ -25,7 +25,7 @@ export default function Repositories(props) {
   const history = useHistory();
 
 
-  const openPush = (push) => history.push(`/admin/push/${push}`);
+  const openRepo = (repo) => history.push(`/admin/repo/${repo}`);
 
   useEffect(() => {
     const query = {};
@@ -56,7 +56,7 @@ export default function Repositories(props) {
           {data.map((row) => (
             <TableRow key={row.id}>
               <TableCell component="th" scope="row">
-                <Button variant="contained" color="primary" onClick={() => openPush(row.id)}>
+                <Button variant="contained" color="primary" onClick={() => openRepo(row.name)}>
                   Open
                 </Button>
               </TableCell>

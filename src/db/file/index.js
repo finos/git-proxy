@@ -19,4 +19,7 @@ module.exports.getRepo = repo.getRepo;
 module.exports.createRepo = repo.createRepo;
 module.exports.addUserCanPush = repo.addUserCanPush;
 module.exports.addUserCanAuthorise = repo.addUserCanAuthorise;
+module.exports.removeUserCanPush = repo.removeUserCanPush;
+module.exports.removeUserCanAuthorise = repo.removeUserCanAuthorise;
+
 module.exports.deleteRepo = repo.deleteRepo;

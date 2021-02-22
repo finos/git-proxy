@@ -95,4 +95,7 @@ module.exports.getRepo = sink.getRepo;
 module.exports.createRepo = sink.createRepo;
 module.exports.addUserCanPush = sink.addUserCanPush;
 module.exports.addUserCanAuthorise = sink.addUserCanAuthorise;
+module.exports.removeUserCanAuthorise = sink.removeUserCanAuthorise;
+module.exports.removeUserCanPush = sink.removeUserCanPush;
+
 module.exports.deleteRepo = sink.deleteRepo;

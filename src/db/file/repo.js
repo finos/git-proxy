@@ -8,10 +8,11 @@ const db = new Datastore({filename: './.data/db/repos.db', autoload: true});
 
 exports.getRepos = async (query={}) => {
   return new Promise((resolve, reject) => {
-    db.find(query, (err, docs) => {
+    db.find({}, (err, docs) => {
       if (err) {
         reject(err);
       } else {
+        console.log(docs);
         resolve(docs);
       }
     });
@@ -75,6 +76,40 @@ exports.addUserCanAuthorise = async (name, user) => {
 
     if (repo.users.canAuthorise.includes(user)) resolve(null);
     repo.users.canAuthorise.push(user);
+
+    const options = {multi: false, upsert: false};
+    db.update({name: name}, repo, options, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(null);
+      }
+    });
+  });
+};
+
+exports.removeUserCanAuthorise = async (name, user) => {
+  return new Promise(async (resolve, reject) => {
+    const repo = await exports.getRepo(name);
+
+    repo.users.canAuthorise = repo.users.canAuthorise.filter((x) => x != user);
+
+    const options = {multi: false, upsert: false};
+    db.update({name: name}, repo, options, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(null);
+      }
+    });
+  });
+};
+
+exports.removeUserCanPush = async (name, user) => {
+  return new Promise(async (resolve, reject) => {
+    const repo = await exports.getRepo(name);
+
+    repo.users.canPush = repo.users.canPush.filter((x) => x != user);
 
     const options = {multi: false, upsert: false};
     db.update({name: name}, repo, options, (err) => {
