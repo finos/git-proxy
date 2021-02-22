@@ -62,7 +62,7 @@ exports.updateUser = function(user) {
 exports.getUsers = function(query) {
   if (!query) query={};
   return new Promise((resolve, reject) => {
-    db.find(query, (err, docs) => {
+    db.find({}, (err, docs) => {
       if (err) {
         reject(err);
       } else {
