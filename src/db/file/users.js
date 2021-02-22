@@ -66,7 +66,6 @@ exports.getUsers = function(query) {
       if (err) {
         reject(err);
       } else {
-        console.log(docs);
         resolve(docs);
       }
     });

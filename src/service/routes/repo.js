@@ -89,10 +89,10 @@ router.patch('/:name/user/authorise', async (req, res) => {
   }
 });
 
-router.delete('/:name/user/authorise', async (req, res) => {
+router.delete('/:name/user/authorise/:username', async (req, res) => {
   if (req.user) {
     const repoName = req.params.name;
-    const username = req.body.username;
+    const username = req.params.username;
     const user = await db.findUser(username);
 
     if (!user) {
@@ -109,10 +109,10 @@ router.delete('/:name/user/authorise', async (req, res) => {
   }
 });
 
-router.delete('/:name/user/push', async (req, res) => {
+router.delete('/:name/user/push/:username', async (req, res) => {
   if (req.user) {
     const repoName = req.params.name;
-    const username = req.body.username;
+    const username = req.params.username;
     const user = await db.findUser(username);
 
     if (!user) {
