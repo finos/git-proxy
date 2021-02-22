@@ -21,10 +21,9 @@ import {addUser} from '../../../services/repo.js';
 import {getUsers} from '../../../services/user.js';
 
 function AddUserDialog(props) {
-  // eslint-disable-next-line react/prop-types
   const repoName = props.repoName;
-  // eslint-disable-next-line react/prop-types
   const type = props.type;
+  const refreshFn = props.refreshFn;
   const [username, setUsername] = useState('');
   const [data, setData] = useState([]);
   const [auth, setAuth] = useState(true);
@@ -34,6 +33,7 @@ function AddUserDialog(props) {
   const {onClose, open} = props;
 
   const handleClose = () => {
+    refreshFn();
     onClose();
   };
 
@@ -100,6 +100,7 @@ function AddUserDialog(props) {
 AddUserDialog.propTypes = {
   onClose: PropTypes.func.isRequired,
   open: PropTypes.bool.isRequired,
+  refreshFn: PropTypes.func.isRequired,
 };
 
 export default function AddUser(props) {
@@ -107,6 +108,7 @@ export default function AddUser(props) {
 
   const repoName = props.repoName;
   const type = props.type;
+  const refreshFn = props.refreshFn;
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -119,7 +121,7 @@ export default function AddUser(props) {
   return (
     <div>
       <Button variant="outlined" color="primary" onClick={handleClickOpen}>Add User</Button>
-      <AddUserDialog repoName={repoName} type={type} open={open} onClose={handleClose} />
+      <AddUserDialog repoName={repoName} type={type} open={open} onClose={handleClose} refreshFn={refreshFn} />
     </div>
   );
 }
