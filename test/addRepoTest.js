@@ -104,6 +104,19 @@ describe('add new repo', async () => {
     repo.users.canPush.length.should.equal(2);
   });
 
+  it('delete user u2 from push', async function() {
+    const res = await chai.request(app)
+        .delete('/api/v1/repo/test-repo/user/push')
+        .set('Cookie', `${cookie}`)
+        .send({
+          username: 'u2',
+        });
+
+    res.should.have.status(200);
+    const repo = await db.getRepo('test-repo');
+    repo.users.canPush.length.should.equal(1);
+  });
+
   it('add 1st can authorise user', async function() {
     const res = await chai.request(app)
         .patch('/api/v1/repo/test-repo/user/authorise')
@@ -144,6 +157,19 @@ describe('add new repo', async () => {
     res.should.have.status(400);
     const repo = await db.getRepo('test-repo');
     repo.users.canAuthorise.length.should.equal(2);
+  });
+
+  it('Can delete u2 user', async function() {
+    const res = await chai.request(app)
+        .delete('/api/v1/repo/test-repo/user/authorise')
+        .set('Cookie', `${cookie}`)
+        .send({
+          username: 'u2',
+        });
+
+    res.should.have.status(200);
+    const repo = await db.getRepo('test-repo');
+    repo.users.canAuthorise.length.should.equal(1);
   });
 
   after(async function() {
