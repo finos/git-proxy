@@ -6,14 +6,8 @@ import {Redirect} from 'react-router-dom';
 import GridItem from '../../components/Grid/GridItem.js';
 import GridContainer from '../../components/Grid/GridContainer.js';
 import Card from '../../components/Card/Card.js';
-// import CardIcon from '../../components/Card/CardIcon.js';
 import CardBody from '../../components/Card/CardBody.js';
-// import CardHeader from '../../components/Card/CardHeader.js';
-// import Button from '../../components/CustomButtons/Button.js';
-// import PropTypes from 'prop-types';
 import TextField from '@material-ui/core/TextField';
-// import FormControlLabel from '@material-ui/core/FormControlLabel';
-// import FormControl from '@material-ui/core/FormControl';
 import Paper from '@material-ui/core/Paper';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
@@ -22,7 +16,7 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import {getRepo} from '../../services/repo.js';
+import {getRepo, deleteUser} from '../../services/repo.js';
 import {makeStyles} from '@material-ui/core/styles';
 import AddUser from './Components/AddUser';
 
@@ -50,8 +44,12 @@ export default function RepoDetails(props) {
     getRepo(setIsLoading, setData, setAuth, setIsError, id);
   }, [props]);
 
-  const removeUser = (user, type) => {
+  const removeUser = async (user, action) => {
+    await deleteUser(user, repoName, action);
+    getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
   };
+
+  const refresh = () => getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
 
   if (isLoading) return (<div>Loading ...</div>);
   if (isError) return (<div>Something went wrong ...</div>);
@@ -93,7 +91,7 @@ export default function RepoDetails(props) {
             <GridContainer>
               <GridItem xs={6} sm={6} md={6}>
                 <h2>Can Authorise Push</h2>
-                <AddUser repoName={repoName} type='canAuthorise' ></AddUser>
+                <AddUser repoName={repoName} type='authorise' refreshFn={refresh}></AddUser>
                 <br />
                 <br />
                 <TableContainer component={Paper}>
@@ -108,7 +106,7 @@ export default function RepoDetails(props) {
                       {data.users.canAuthorise.map((row) => (
                         <TableRow key={row}>
                           <TableCell component="th" scope="row">
-                            <Button variant="contained" color="secondary" onClick={() => removeUser(row, 'canAuthorise')}>
+                            <Button variant="contained" color="secondary" onClick={() => removeUser(row, 'authorise')}>
                               Remove
                             </Button>
                           </TableCell>
@@ -121,7 +119,7 @@ export default function RepoDetails(props) {
               </GridItem>
               <GridItem xs={6} sm={6} md={6}>
                 <h2>Can Push</h2>
-                <AddUser repoName={repoName} type='canPush'></AddUser>
+                <AddUser repoName={repoName} type='push' refreshFn={refresh}></AddUser>
                 <br />
                 <br />
                 <TableContainer component={Paper}>
@@ -136,7 +134,7 @@ export default function RepoDetails(props) {
                       {data.users.canPush.map((row) => (
                         <TableRow key={row}>
                           <TableCell component="th" scope="row">
-                            <Button variant="contained" color="secondary" onClick={() => removeUser(row, 'canAuthorise')}>
+                            <Button variant="contained" color="secondary" onClick={() => removeUser(row, 'push')}>
                               Remove
                             </Button>
                           </TableCell>

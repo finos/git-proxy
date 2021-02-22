@@ -12,7 +12,6 @@ exports.getRepos = async (query={}) => {
       if (err) {
         reject(err);
       } else {
-        console.log(docs);
         resolve(docs);
       }
     });
@@ -56,7 +55,10 @@ exports.addUserCanPush = async (name, user) => {
   return new Promise(async (resolve, reject) => {
     const repo = await exports.getRepo(name);
 
-    if (repo.users.canPush.includes(user)) resolve(null);
+    if (repo.users.canPush.includes(user)) {
+      resolve(null);
+      return;
+    }
     repo.users.canPush.push(user);
 
     const options = {multi: false, upsert: false};
@@ -74,7 +76,11 @@ exports.addUserCanAuthorise = async (name, user) => {
   return new Promise(async (resolve, reject) => {
     const repo = await exports.getRepo(name);
 
-    if (repo.users.canAuthorise.includes(user)) resolve(null);
+    if (repo.users.canAuthorise.includes(user)) {
+      resolve(null);
+      return;
+    }
+
     repo.users.canAuthorise.push(user);
 
     const options = {multi: false, upsert: false};
