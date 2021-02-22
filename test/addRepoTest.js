@@ -106,11 +106,9 @@ describe('add new repo', async () => {
 
   it('delete user u2 from push', async function() {
     const res = await chai.request(app)
-        .delete('/api/v1/repo/test-repo/user/push')
+        .delete('/api/v1/repo/test-repo/user/push/u2')
         .set('Cookie', `${cookie}`)
-        .send({
-          username: 'u2',
-        });
+        .send({});
 
     res.should.have.status(200);
     const repo = await db.getRepo('test-repo');
@@ -161,11 +159,9 @@ describe('add new repo', async () => {
 
   it('Can delete u2 user', async function() {
     const res = await chai.request(app)
-        .delete('/api/v1/repo/test-repo/user/authorise')
+        .delete('/api/v1/repo/test-repo/user/authorise/u2')
         .set('Cookie', `${cookie}`)
-        .send({
-          username: 'u2',
-        });
+        .send({});
 
     res.should.have.status(200);
     const repo = await db.getRepo('test-repo');
