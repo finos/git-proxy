@@ -35,7 +35,7 @@
     "generate-password": "^1.5.1",
     "history": "4.10.1",
     "lodash": "^4.17.20",
-    "moment": "^2.29.1",
+    "moment": "^2.29.2",
     "mongodb": "^3.6.3",
     "nedb": "^1.8.0",
     "nodemailer": "^6.4.16",
