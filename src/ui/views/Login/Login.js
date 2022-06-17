@@ -37,8 +37,6 @@ const styles = {
 };
 
 const useStyles = makeStyles(styles);
-
-
 export default function UserProfile() {
   const classes = useStyles();
 
@@ -46,13 +44,13 @@ export default function UserProfile() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [success, setSuccess] = useState(false);
+  const [gitAccountError, setGitAccountError] = useState(false);
 
   function validateForm() {
     return username.length > 0 && password.length > 0;
   }
-
-  function handleSubmit(event) {
-    axios.post('http://localhost:8080/auth/login', {
+ function handleSubmit(event) {
+    axios.post(`${location.origin}/api/auth/login`, {
       username: username,
       password: password,
     }, {
@@ -60,16 +58,29 @@ export default function UserProfile() {
       headers: {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
     })
         .then(function(response) {
+          window.sessionStorage.setItem('git.proxy.login', 'success');
           setMessage('Success!');
           setSuccess(true);
         })
         .catch(function(error) {
-          setMessage('Incorrect username of password');
+          if (error.response.status == 307) {
+            window.sessionStorage.setItem('git.proxy.login', 'success');
+            setGitAccountError(true);
+          } else if (error.response.status == 403) {
+            setMessage('User is not part of Admin/User group');
+          } else {
+            setMessage('Invalid username or password');
+          }
         });
 
     event.preventDefault();
   }
 
+  if (gitAccountError) {
+    return (
+      <Redirect to={{pathname: 'admin/profile'}} />
+    );
+  }
   if (success) {
     return (
       <Redirect to={{pathname: '/', state: {authed: true}}} />
@@ -88,7 +99,7 @@ export default function UserProfile() {
             </CardHeader>
             <CardBody>
               <GridContainer>
-                <GridItem xs={12} sm={12} md={3}>
+                <GridItem xs={6} sm={6} md={6}>
                   <FormControl>
                     <InputLabel>
                       Username
@@ -103,13 +114,13 @@ export default function UserProfile() {
                 </GridItem>
               </GridContainer>
               <GridContainer>
-                <GridItem xs={12} sm={12} md={3}>
+                <GridItem xs={6} sm={6} md={6}>
                   <FormControl>
                     <InputLabel>
                       Password
                     </InputLabel>
                     <Input
-                      id="username"
+                      id="password"
                       type="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}

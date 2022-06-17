@@ -6,6 +6,20 @@ let _authorisedList = proxySettings.authorisedList;
 let _database = proxySettings.sink;
 let _authentication = proxySettings.authentication;
 let _tempPassword = proxySettings.tempPassword;
+let _proxyUrl = proxySettings.proxyUrl;
+let _allowSelfSignedCert = proxySettings.allowSelfSignedCert;
+let _smtpHost = proxySettings.smtpHost;
+let _smtpPort = proxySettings.smtpPort;
+let _thirdpartyapi = proxySettings.thirdpartyapi;
+
+// Gets a list of authorised repositories
+const getProxyUrl = () => {
+  if (userSettings !== null && userSettings.proxyUrl) {
+    _proxyUrl = userSettings.proxyUrl;
+  }
+
+  return _proxyUrl;
+};
 
 const userSettings = () => {
   const path = './user-settings.json';
@@ -22,6 +36,14 @@ const getAuthorisedList = () => {
   }
 
   return _authorisedList;
+};
+
+const getAllowSelfSignedCert = () => {
+  if (userSettings !== null && userSettings.authorisedList) {
+    _allowSelfSignedCert = userSettings.allowSelfSignedCert;
+  }
+
+  return _allowSelfSignedCert;
 };
 
 // Gets a list of authorised repositories
@@ -75,8 +97,38 @@ const logConfiguration = () => {
 
 // logConfiguration();
 
+// Get SMTP host
+const getSmtpHost = () => {
+  if (userSettings !== null && userSettings.smtpHost) {
+    _smtpHost = userSettings.smtpHost;
+  }
+
+  return _smtpHost;
+};
+
+const getSmtpPort = () => {
+  if (userSettings !== null && userSettings.smtpPort) {
+    _smtpPort = userSettings.smtpPort;
+  }
+
+  return _smtpPort;
+};
+
+const getThirdPartyApi = () => {
+  if (userSettings !== null && userSettings.authorisedList) {
+    _thirdpartyapi = userSettings.thirdpartyapi;
+  }
+
+  return _thirdpartyapi;
+};
+
+exports.getThirdPartyApi = getThirdPartyApi;
+exports.getAllowSelfSignedCert = getAllowSelfSignedCert;
+exports.getProxyUrl = getProxyUrl;
 exports.getAuthorisedList = getAuthorisedList;
 exports.getDatabase = getDatabase;
 exports.logConfiguration = logConfiguration;
 exports.getAuthentication = getAuthentication;
 exports.getTempPasswordConfig = getTempPasswordConfig;
+exports.getSmtpHost = getSmtpHost;
+exports.getSmtpPort = getSmtpPort;

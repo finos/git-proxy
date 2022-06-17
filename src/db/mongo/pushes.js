@@ -1,6 +1,7 @@
 const connect = require('./helper').connect;
 const Action = require('../../proxy/actions').Action;
 const toClass = require('../helper').toClass;
+const repo = require('./repo');
 const cnName = 'pushes';
 
 const defaultPushQuery = {
@@ -60,7 +61,35 @@ const cancel = async (id) => {
   action.canceled = true;
   action.rejected = false;
   await writeAudit(action);
-  return {message: `cancel ${id}`};
+  return {message: `canceled ${id}`};
+};
+
+const canUserApproveRejectPush = async (id, user) => {
+  return new Promise(async (resolve, reject) => {
+    const action = await getPush(id);
+    const repoName = action.repoName.replace('.git', '');
+    const isAllowed = await repo.canUserApproveRejectPushRepo(repoName, user);
+
+    if (isAllowed) {
+      resolve(true);
+    } else {
+      resolve(false);
+    }
+  });
+};
+
+const canUserCanclePush = async (id, user) => {
+  return new Promise(async (resolve, reject) => {
+    const pushDetail = await getPush(id);
+    const repoName = pushDetail.repoName.replace('.git', '');
+    const isAllowed = await repo.isUserPushAllowed(repoName, user);
+
+    if (isAllowed) {
+      resolve(true);
+    } else {
+      resolve(false);
+    }
+  });
 };
 
 module.exports.getPushes = getPushes;
@@ -69,3 +98,6 @@ module.exports.getPush = getPush;
 module.exports.authorise = authorise;
 module.exports.reject = reject;
 module.exports.cancel = cancel;
+module.exports.canUserApproveRejectPush = canUserApproveRejectPush;
+module.exports.canUserCanclePush = canUserCanclePush;
+

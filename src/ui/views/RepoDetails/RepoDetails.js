@@ -62,7 +62,7 @@ export default function RepoDetails(props) {
           <CardBody>
             <form className={classes.root} noValidate autoComplete="off">
               <GridContainer>
-                <GridItem xs={4} sm={4} md={4}>
+                <GridItem xs={3} sm={3} md={3}>
                   <TextField
                     id="project"
                     label="Project"
@@ -72,14 +72,14 @@ export default function RepoDetails(props) {
                     variant="outlined"
                     value={data.project} />
                 </GridItem>
-                <GridItem xs={4} sm={4} md={4}>
+                <GridItem xs={3} sm={3} md={3}>
                   <TextField
                     id="repoName"
                     label="Repo Name"
                     variant="outlined"
                     value={data.name} />
                 </GridItem>
-                <GridItem xs={4} sm={4} md={4}>
+                <GridItem xs={5} sm={5} md={5}>
                   <TextField
                     id="gitUrl"
                     label="Url"
@@ -89,17 +89,19 @@ export default function RepoDetails(props) {
               </GridContainer>
             </form>
             <GridContainer>
-              <GridItem xs={6} sm={6} md={6}>
-                <h2>Can Authorise Push</h2>
+              <GridItem xs={12} sm={12} md={12}>
+                <h2>Can Authorise Changes</h2>
                 <AddUser repoName={repoName} type='authorise' refreshFn={refresh}></AddUser>
-                <br />
-                <br />
                 <TableContainer component={Paper}>
                   <Table className={classes.table} aria-label="simple table">
                     <TableHead>
                       <TableRow>
                         <TableCell>Actions</TableCell>
+                        <TableCell align="left">Internal Account</TableCell>
                         <TableCell align="left">Username</TableCell>
+                        <TableCell align="left">Name</TableCell>
+                        <TableCell align="left">Account</TableCell>
+                        <TableCell align="left">Email</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -117,17 +119,20 @@ export default function RepoDetails(props) {
                   </Table>
                 </TableContainer>
               </GridItem>
-              <GridItem xs={6} sm={6} md={6}>
-                <h2>Can Push</h2>
-                <AddUser repoName={repoName} type='push' refreshFn={refresh}></AddUser>
-                <br />
-                <br />
+            </GridContainer>
+            <GridContainer>
+              <GridItem xs={12} sm={12} md={12}>
+                <h2>Can Push changes</h2>
+                <AddUser repoName={repoName} type='push' refreshFn={refresh} />
                 <TableContainer component={Paper}>
                   <Table className={classes.table} aria-label="simple table">
                     <TableHead>
                       <TableRow>
                         <TableCell>Actions</TableCell>
                         <TableCell align="left">Username</TableCell>
+                        <TableCell align="left">Name</TableCell>
+                        <TableCell align="left">Account</TableCell>
+                        <TableCell align="left">Email</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>

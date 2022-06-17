@@ -2,7 +2,8 @@
 /* eslint-disable require-jsdoc */
 import React, {useState, useEffect} from 'react';
 import {makeStyles} from '@material-ui/core/styles';
-import Accessibility from '@material-ui/icons/Accessibility';
+import Icon from '@material-ui/core/Icon';
+import LocalOffer from '@material-ui/icons/LocalOffer';
 import Card from '../../../components/Card/Card.js';
 import CardHeader from '../../../components/Card/CardHeader.js';
 import CardIcon from '../../../components/Card/CardIcon.js';
@@ -10,9 +11,10 @@ import CardFooter from '../../../components/Card/CardFooter.js';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
 import {getPushes} from '../../../services/git-push';
 import {Redirect} from 'react-router-dom';
+
 const useStyles = makeStyles(styles);
 
-export default function SuccessfulPushRequestSummary(props) {
+export default function PushRequestSummary(props) {
   const classes = useStyles();
   const [data, setData] = useState([]);
   const [auth, setAuth] = useState(true);
@@ -20,7 +22,7 @@ export default function SuccessfulPushRequestSummary(props) {
   const [isError, setIsError] = useState(false);
 
   useEffect(() => {
-    const query={canceled: false, authorised: true, rejected: false};
+    const query={method: 'POST'};
     getPushes(setIsLoading, setData, setAuth, setIsError, query);
     }, [props]);
 
@@ -30,14 +32,18 @@ export default function SuccessfulPushRequestSummary(props) {
 
   return (
     <Card>
-      <CardHeader color="info" stats icon>
-        <CardIcon color="info">
-          <Accessibility />
+      <CardHeader color="success" stats icon>
+        <CardIcon color="success">
+          <Icon>info_outline</Icon>
         </CardIcon>
-        <p className={classes.cardCategory}>Successful Pushes</p>
+        <p className={classes.cardCategory}>Push Requests</p>
         <h3 className={classes.cardTitle}>{data.length}</h3>
       </CardHeader>
       <CardFooter stats>
+        <div className={classes.stats}>
+          <LocalOffer />
+          Push requests from open-source repositories
+        </div>
       </CardFooter>
     </Card>
   );

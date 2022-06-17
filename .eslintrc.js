@@ -19,6 +19,10 @@ module.exports = {
   'plugins': [
     'react',
   ],
-  'rules': {
+ 'rules': {
+  'linebreak-style': 'off',
+  'indent': 'off',
+  'react/jsx-indent': 'off',
+  'react/jsx-indent-props': 'off',
   },
 };

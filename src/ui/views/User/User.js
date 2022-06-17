@@ -9,7 +9,7 @@ import Card from '../../components/Card/Card.js';
 import CardIcon from '../../components/Card/CardIcon.js';
 import CardBody from '../../components/Card/CardBody.js';
 import CardHeader from '../../components/Card/CardHeader.js';
-// import Button from '../../components/CustomButtons/Button.js';
+import Button from '../../components/CustomButtons/Button.js';
 // import PropTypes from 'prop-types';
 import TextField from '@material-ui/core/TextField';
 import Checkbox from '@material-ui/core/Checkbox';
@@ -18,6 +18,8 @@ import Checkbox from '@material-ui/core/Checkbox';
 import FormLabel from '@material-ui/core/FormLabel';
 import {getUser} from '../../services/user.js';
 import {makeStyles} from '@material-ui/core/styles';
+import {updateUser} from '../../services/user.js';
+import {getUserLoggedIn} from '../../services/user.js';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -34,14 +36,22 @@ export default function Dashboard(props) {
   const [auth, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [isProfile, setIsProfile] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [gitAccount, setGitAccount] = useState('');
 
   useEffect(() => {
     // eslint-disable-next-line react/prop-types
     const id = props.match.params.id;
+    if (id == null) {
+      setIsProfile(true);
+    }
     if (id) {
       getUser(setIsLoading, setData, setAuth, setIsError, id);
+      getUserLoggedIn(setIsLoading, setIsAdmin, setIsError);
     } else {
       console.log('getting user data');
+      setIsProfile(true);
       getUser(setIsLoading, setData, setAuth, setIsError);
     }
   }, [props]);
@@ -52,6 +62,18 @@ export default function Dashboard(props) {
   if (!auth) return (<Redirect to={{pathname: '/login'}} />);
 
   console.log(data);
+
+  const updateProfile = async () => {
+    try {
+      console.log('GitAccount' + gitAccount);
+      data.gitAccount = gitAccount;
+      await updateUser(data);
+    } catch (e) {}
+  };
+
+  const UpdateButton = () => (
+    <Button variant="outlined" color="primary" onClick={updateProfile}>Update</Button>
+  );
 
   return (
     <form className={classes.root} noValidate autoComplete="off">
@@ -77,7 +99,7 @@ export default function Dashboard(props) {
                       readOnly: true,
                     }}
                     variant="outlined"
-                    value={data.username} />
+                    value={data.displayName==null ? data.username: data.displayName} />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
                   <TextField
@@ -85,14 +107,15 @@ export default function Dashboard(props) {
                     label="Git Account"
                     aria-describedby="gitAccount-helper-text"
                     variant="outlined"
-                    value={data.gitAccount} />
+                    value={data.gitAccount}
+                    onChange={(e) => setGitAccount(e.target.value)} />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
                   <FormLabel component="legend">Admin</FormLabel>
                   <Checkbox
                     id="admin"
                     variant="outlined"
-                    value={data.admin}/>
+                    checked={data.admin}/>
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
                   <TextField
@@ -100,7 +123,10 @@ export default function Dashboard(props) {
                     label="Email Address"
                     aria-describedby="email-helper-text"
                     variant="outlined"
-                    value={data.email} />
+                    value={data.id == null ? data.email : data.id} />
+                </GridItem>
+                <GridItem xs={12} sm={12} md={12}>
+                { isProfile || isAdmin ? <UpdateButton /> : null }
                 </GridItem>
               </GridContainer>
             </CardBody>

@@ -4,13 +4,13 @@ const cnName = 'repos';
 exports.getRepos = async (query={}) => {
   const collection = await connect(cnName);
   const result = await collection.find().toArray();
-  console.log(JSON.stringify(result));
   return result;
 };
 
 exports.getRepo = async (name) => {
   const collection = await connect(cnName);
-  return await collection.findOne({name: name});
+  const result = await collection.findOne({name: name});
+  return result;
 };
 
 exports.createRepo = async (repo) => {
@@ -56,4 +56,28 @@ exports.deleteRepo = async (name) => {
   await collection.deleteMany({name: name});
 };
 
+exports.isUserPushAllowed = async (name, user) => {
+  return new Promise(async (resolve, reject) => {
+    const repo = await exports.getRepo(name);
+    console.log(repo.users.canPush);
+    console.log(repo.users.canAuthorise);
 
+    if (repo.users.canPush.includes(user) ||
+        repo.users.canAuthorise.includes(user)) {
+      resolve(true);
+    } else {
+      resolve(false);
+    }
+  });
+};
+
+exports.canUserApproveRejectPushRepo = async (name, user) => {
+  return new Promise(async (resolve, reject) => {
+    const repo = await exports.getRepo(name);
+      if (repo.users.canAuthorise.includes(user)) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    });
+};

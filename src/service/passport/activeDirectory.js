@@ -1,38 +1,32 @@
-/* eslint-disable max-len */
 const configure = () => {
   const passport = require('passport');
   const ActiveDirectoryStrategy = require('passport-activedirectory');
+  const adConfig = require('../../config').getAuthentication().adConfig;
+
 
   passport.use(new ActiveDirectoryStrategy({
+    passReqToCallback: true,
     integrated: false,
-    ldap: {
-      url: 'ldap://20.39.221.61',
-      baseDN: 'DC=rebeladmin,DC=com',
-      username: 'ta1234@rebeladmin.com',
-      password: 'London1234',
-    },
-  }, function(profile, ad, done) {
-    ad.isUserMemberOf(profile._json.dn, 'proxy_users', (err, isMember) => {
-      if (isMember) {
-        profile.id = profile._json.userPrincipalName;
-      } else {
-      }
-      if (err) {
-        return done(err);
-      }
-      return done(null, profile);
-    });
+    ldap: adConfig,
+  }, async function (req, profile, ad, done) {
+    profile.id = profile._json.userPrincipalName;
+
+    if (response == true) {
+      profile.admin = true;
+      profile.adminGroup = true;
+      req.user = profile;
+    }
+    return done(null, profile);
   }));
 
-  passport.serializeUser(function(user, done) {
+  passport.serializeUser(function (user, done) {
     done(null, user);
   });
 
-  passport.deserializeUser(function(user, done) {
+  passport.deserializeUser(function (user, done) {
     done(null, user);
   });
 
-  passport.type = 'ActiveDirectory';
   return passport;
 };
 

@@ -1,14 +1,18 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import axios from 'axios';
-const baseUrl = 'http://localhost:8080';
+
+// const baseUrl = `${process.env.REACT_APP_API_URI}/api/v1`;
+const baseUrl = `${location.origin}`;
 
 const config = {
   withCredentials: true,
 };
 
+console.log(baseUrl);
+
 const getUser = async (setIsLoading, setData, setAuth, setIsError, id=null) => {
-  let url = `${baseUrl}/auth/profile`;
+  let url = `${baseUrl}/api/auth/profile`;
 
   if (id) {
     url = `${baseUrl}/api/v1/user/${id}`;
@@ -17,35 +21,35 @@ const getUser = async (setIsLoading, setData, setAuth, setIsError, id=null) => {
   console.log(url);
 
   await axios(url, config)
-      .then((response) => {
-        const data = response.data;
-        setData(data);
-        console.log(data);
-        setIsLoading(false);
-      })
-      .catch((error) => {
-        if (error.response && error.response.status === 401) setAuth(false);
-        else setIsError(true);
-        setIsLoading(false);
-      });
+    .then((response) => {
+      const data = response.data;
+      setData(data);
+      console.log(data);
+      setIsLoading(false);
+    })
+    .catch((error) => {
+      if (error.response && error.response.status === 401) setAuth(false);
+      else setIsError(true);
+      setIsLoading(false);
+    });
 };
 
 const createUser = async (data) => {
   console.log(data);
-  const url = new URL(`${baseUrl}/auth/profile`);
-  await await axios.post(url, data, {withCredentials: true})
-      .then(() => {
-      })
-      .catch((error) => {
-        console.log(error.response.data.message);
-        throw (error);
-      });
+  const url = new URL(`${baseUrl}/api/auth/profile`);
+  await axios.post(url, data, {withCredentials: true})
+    .then(() => {
+    })
+    .catch((error) => {
+      console.log(error.response.data.message);
+      throw (error);
+    });
 };
 
 const getUsers = async (setIsLoading, setData, setAuth, setIsError, query={}) => {
   const url = new URL(`${baseUrl}/api/v1/user`);
   url.search = new URLSearchParams(query);
-
+  setIsLoading(true);
   await axios(url.toString(), {withCredentials: true}).then((response) => {
     const data = response.data;
     setData(data);
@@ -61,8 +65,41 @@ const getUsers = async (setIsLoading, setData, setAuth, setIsError, query={}) =>
   });
 };
 
+const updateUser = async (data) => {
+  console.log(data);
+  const url = new URL(`${baseUrl}/api/auth/gitAccount`);
+
+  await axios.post(url, data, {withCredentials: true})
+    .then(() => {
+    })
+    .catch((error) => {
+      console.log(error.response.data.message);
+      throw (error);
+    });
+};
+
+const getUserLoggedIn = async (setIsLoading, setIsAdmin, setIsError) => {
+  const url = new URL(`${baseUrl}/api/auth/userLoggedIn`);
+
+  await axios(url.toString(), {withCredentials: true}).then((response) => {
+    const data = response.data;
+    setIsLoading(false);
+    setIsAdmin(data.admin);
+  }).catch((error) => {
+    setIsLoading(false);
+    if (error.response && error.response.status === 401) {
+      setAuth(false);
+    } else {
+      setIsError(true);
+    }
+    setIsLoading(false);
+  });
+};
+
 export {
   getUser,
   createUser,
   getUsers,
+  updateUser,
+  getUserLoggedIn,
 };

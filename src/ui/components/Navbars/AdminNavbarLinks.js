@@ -15,11 +15,13 @@ import Person from '@material-ui/icons/Person';
 import Notifications from '@material-ui/icons/Notifications';
 import Button from '../CustomButtons/Button.js';
 import styles from '../../assets/jss/material-dashboard-react/components/headerLinksStyle.js';
+import {useHistory} from 'react-router-dom';
 
 const useStyles = makeStyles(styles);
 
 export default function AdminNavbarLinks() {
   const classes = useStyles();
+  const history = useHistory();
   const [openNotification, setOpenNotification] = React.useState(null);
   const [openProfile, setOpenProfile] = React.useState(null);
   const handleClickNotification = (event) => {
@@ -34,14 +36,27 @@ export default function AdminNavbarLinks() {
   };
   const handleClickProfile = (event) => {
     if (openProfile && openProfile.contains(event.target)) {
-      setOpenProfile(null);
+     setOpenProfile(null);
     } else {
-      setOpenProfile(event.currentTarget);
+     setOpenProfile(event.currentTarget);
     }
   };
   const handleCloseProfile = () => {
     setOpenProfile(null);
   };
+
+  const showProfile = () => {
+    history.push('/admin/profile');
+  };
+
+  const showRepo = () => {
+    history.push('/admin/repo');
+  };
+
+  const logout = () => {
+    history.push('/login');
+  };
+
   return (
     <div>
 
@@ -162,20 +177,20 @@ export default function AdminNavbarLinks() {
                 <ClickAwayListener onClickAway={handleCloseProfile}>
                   <MenuList role="menu">
                     <MenuItem
-                      onClick={handleCloseProfile}
+                      onClick={showProfile}
                       className={classes.dropdownItem}
                     >
                       Profile
                     </MenuItem>
                     <MenuItem
-                      onClick={handleCloseProfile}
+                      onClick={showRepo}
                       className={classes.dropdownItem}
                     >
                       Settings
                     </MenuItem>
                     <Divider light />
                     <MenuItem
-                      onClick={handleCloseProfile}
+                      onClick={logout}
                       className={classes.dropdownItem}
                     >
                       Logout

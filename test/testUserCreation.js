@@ -30,7 +30,7 @@ describe('user creation', async () => {
 
   it('should be able to login', async function() {
     const res = await chai.request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           username: 'admin',
           password: 'admin',
@@ -43,7 +43,7 @@ describe('user creation', async () => {
 
   it('should be able to create a new user', async function() {
     const res = await chai.request(app)
-        .post('/auth/profile')
+        .post('/api/auth/profile')
         .set('Cookie', `${cookie}`)
         .send({
           username: 'login-test-user',
@@ -61,7 +61,7 @@ describe('user creation', async () => {
 
   it('logout', async function() {
     const res = await chai.request(app)
-        .post('/auth/logout')
+        .post('/api/auth/logout')
         .set('Cookie', `${cookie}`);
     res.should.have.status(200);
   });
@@ -74,7 +74,7 @@ describe('user creation', async () => {
     await db.updateUser(user);
 
     const res = await chai.request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           username: 'login-test-user',
           password: 'test1234',
@@ -87,7 +87,7 @@ describe('user creation', async () => {
 
   it('change the password', async function() {
     const res = await chai.request(app)
-        .post('/auth/password')
+        .post('/api/auth/password')
         .set('Cookie', `${cookie}`)
         .send({
           oldPassword: 'test1234',
@@ -104,7 +104,7 @@ describe('user creation', async () => {
 
   it('logout - again', function(done) {
     chai.request(app)
-        .post('/auth/logout')
+        .post('/api/auth/logout')
         .end((err, res) => {
           res.should.have.status(200);
           done();
@@ -113,7 +113,7 @@ describe('user creation', async () => {
 
   it('login again', async function() {
     const res = await chai.request(app)
-        .post('/auth/login')
+        .post('/api/auth/login')
         .send({
           username: 'login-test-user',
           password: 'testabcd',
@@ -126,7 +126,7 @@ describe('user creation', async () => {
 
   it('should access the profile', async function() {
     const res = await chai.request(app)
-        .get('/auth/profile')
+        .get('/api/auth/profile')
         .set('Cookie', `${cookie}`);
     res.should.have.status(200);
 

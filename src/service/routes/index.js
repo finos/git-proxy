@@ -7,8 +7,8 @@ const users = require('./users');
 const healthcheck = require('./healthcheck');
 const router = new express.Router();
 
-router.use('/', home);
-router.use('/auth', auth);
+router.use('/api', home);
+router.use('/api/auth', auth);
 router.use('/api/v1/healthcheck', healthcheck);
 router.use('/api/v1/push', push);
 router.use('/api/v1/repo', repo);

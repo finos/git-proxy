@@ -6,3 +6,5 @@ exports.writePack = require('./writePack').exec;
 exports.getDiff = require('./getDiff').exec;
 exports.blockForAuth = require('./blockForAuth').exec;
 exports.checkIfWaitingAuth = require('./checkIfWaitingAuth').exec;
+exports.checkUserPushPermission = require('./checkUserPushPermission').exec;
+exports.sendNotificationForAuth = require('./sendNotificationForAuth').exec;

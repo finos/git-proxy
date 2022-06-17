@@ -6,10 +6,10 @@ let _passport;
 
 const configure = async () => {
   const type = authenticationConfig.type.toLowerCase();
-
   switch (type) {
     case 'activedirectory':
       _passport = await activeDirectory.configure();
+
       break;
     case 'local':
       _passport = await local.configure();
@@ -17,6 +17,8 @@ const configure = async () => {
     default:
       throw Error(`uknown authentication type ${type}`);
   }
+  _passport.type = authenticationConfig.type;
+
   return _passport;
 };
 

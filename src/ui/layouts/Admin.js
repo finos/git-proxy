@@ -1,6 +1,6 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
-import React from 'react';
+import React, {useState} from 'react';
 import {Switch, Route, Redirect} from 'react-router-dom';
 import PerfectScrollbar from 'perfect-scrollbar';
 import 'perfect-scrollbar/css/perfect-scrollbar.css';
@@ -12,8 +12,11 @@ import routes from '../../routes.js';
 import styles from '../assets/jss/material-dashboard-react/layouts/adminStyle.js';
 import bgImage from '../assets/img/sidebar-2.jpg';
 import logo from '../assets/img/reactlogo.png';
+import {UserContext} from '../../context.js';
+import {getUser} from '../services/user.js';
 
 let ps;
+let refresh = false;
 
 const switchRoutes = (
   <Switch>
@@ -44,6 +47,8 @@ export default function Admin({...rest}) {
   const [image] = React.useState(bgImage);
   const [color] = React.useState('blue');
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [user, setUser] = useState({});
+
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -57,24 +62,37 @@ export default function Admin({...rest}) {
     }
   };
   // initialize and destroy the PerfectScrollbar plugin
-  React.useEffect(() => {
-    if (navigator.platform.indexOf('Win') > -1) {
-      ps = new PerfectScrollbar(mainPanel.current, {
-        suppressScrollX: true,
-        suppressScrollY: false,
-      });
-      document.body.style.overflow = 'hidden';
+  React.useEffect( () => {
+    async function loadUser() {
+      if (navigator.platform.indexOf('Win') > -1) {
+        ps = new PerfectScrollbar(mainPanel.current, {
+          suppressScrollX: true,
+          suppressScrollY: false,
+        });
+        document.body.style.overflow = 'hidden';
+  if (!refresh) {
+    refresh = true;
+  await getUser((isloading)=>{}, setUser, (auth)=>{}, null, null);
+  }
+      }
+      window.addEventListener('resize', resizeFunction);
+       if (!refresh) {
+         refresh = true;
+          await getUser((isError)=>{}, setUser, ()=>{}, null, null);
+       }
     }
-    window.addEventListener('resize', resizeFunction);
-    // Specify how to clean up after this effect:
+    loadUser();
+
+     // Specify how to clean up after this effect:
     return function cleanup() {
       if (navigator.platform.indexOf('Win') > -1) {
-        ps.destroy();
+        ps && ps.destroy();
       }
       window.removeEventListener('resize', resizeFunction);
     };
   }, [mainPanel]);
   return (
+<UserContext.Provider value={{user, setUser}}>
     <div className={classes.wrapper}>
       <Sidebar
         routes={routes}
@@ -104,5 +122,6 @@ export default function Admin({...rest}) {
 
       </div>
     </div>
+</UserContext.Provider>
   );
 }

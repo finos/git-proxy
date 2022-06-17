@@ -1,37 +1,37 @@
-{
+{  
+  "proxyUrl": "https://github.com",  
+  "allowSelfSignedCert": true,
   "tempPassword": {
     "sendEmail": false,
     "emailConfig": {
     }
   },
-  "authorisedList": [
-    {
-      "project": "finos",
-      "name": "git-proxy",
-      "url": "https://github.com/finos/git-proxy.git"
-    }
-  ],
+  "authorisedList": [{    
+  }],
   "sink": [
     {
       "type": "fs",
       "params": {
         "filepath": "./."
       },
-      "enabled": true
+      "enabled": false
     },
     {
       "type": "mongo",
-      "connectionString": "mongodb://localhost:27017/gitproxy",
-      "options": {        
-        "useUnifiedTopology": true
-      },      
-      "enabled": false
-    }
-  ],
-  "authentication": [
-    {
-      "type": "local",
+      "connectionString": "mongodb://localhost:37017",
+      "options": {
+        "useNewUrlParser": true,
+        "useUnifiedTopology": true,
+        "sslValidate": false,
+        "ssl": true
+      },
       "enabled": true
     }
-  ]
+  ],
+  "authentication": [{
+    "type": "local",
+    "enabled": true
+  }],
+  "smtpHost": "...",
+  "smtpPort": 25
 }

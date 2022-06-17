@@ -31,7 +31,20 @@ module.exports.createUser = async (
     changePassword: true,
     token: generator.generate({length: 10, numbers: true}),
   };
+  if (username === undefined || username === null || username === '' ) {
+    const errorMessage = `username ${username} cannot be empty`;
+    throw new Error(errorMessage);
+  }
 
+  if (gitAccount === undefined || gitAccount === null || gitAccount === '') {
+    const errorMessage = `GitAccount ${gitAccount} cannot be empty`;
+    throw new Error(errorMessage);
+  }
+
+  if (email === undefined || email === null || email === '') {
+    const errorMessage = `Email ${email} cannot be empty`;
+    throw new Error(errorMessage);
+  }
   const existingUser = await sink.findUser(username);
 
   if (existingUser) {
@@ -99,3 +112,7 @@ module.exports.removeUserCanAuthorise = sink.removeUserCanAuthorise;
 module.exports.removeUserCanPush = sink.removeUserCanPush;
 
 module.exports.deleteRepo = sink.deleteRepo;
+module.exports.isUserPushAllowed = sink.isUserPushAllowed;
+module.exports.canUserApproveRejectPushRepo = sink.canUserApproveRejectPushRepo;
+module.exports.canUserApproveRejectPush = sink.canUserApproveRejectPush;
+module.exports.canUserCanclePush = sink.canUserCanclePush;

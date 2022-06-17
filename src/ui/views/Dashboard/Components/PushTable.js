@@ -8,11 +8,10 @@ import Table from '../../../components/Table/Table.js';
 import CustomTabs from '../../../components/CustomTabs/CustomTabs.js';
 import {Redirect} from 'react-router-dom';
 
-
 export default function PushesWaitingAuthorizationGraph() {
   const [data, setData] = useState([]);
   const [auth, setAuth] = useState(true);
-  const url = 'http://localhost:8080/api/v1/push';
+  const url = `${location.origin}/api/v1/push`;
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
 
