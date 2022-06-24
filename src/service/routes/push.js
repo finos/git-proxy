@@ -102,7 +102,7 @@ router.post('/:id/cancel', async (req, res) => {
       userName = (req.user.id).split('@')[0];
     }
 
-    const isAllowed = await db.canUserCanclePush(id, userName);
+    const isAllowed = await db.canUserCancelPush(id, userName);
 
     if (isAllowed) {
       const result = await db.cancel(id);

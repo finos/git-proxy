@@ -115,4 +115,4 @@ module.exports.deleteRepo = sink.deleteRepo;
 module.exports.isUserPushAllowed = sink.isUserPushAllowed;
 module.exports.canUserApproveRejectPushRepo = sink.canUserApproveRejectPushRepo;
 module.exports.canUserApproveRejectPush = sink.canUserApproveRejectPush;
-module.exports.canUserCanclePush = sink.canUserCanclePush;
+module.exports.canUserCancelPush = sink.canUserCancelPush;

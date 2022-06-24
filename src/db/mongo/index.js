@@ -26,4 +26,4 @@ module.exports.deleteRepo = repo.deleteRepo;
 module.exports.isUserPushAllowed = repo.isUserPushAllowed;
 module.exports.canUserApproveRejectPushRepo = repo.canUserApproveRejectPushRepo;
 module.exports.canUserApproveRejectPush = pushes.canUserApproveRejectPush;
-module.exports.canUserCanclePush = pushes.canUserCanclePush;
+module.exports.canUserCancelPush = pushes.canUserCancelPush;
