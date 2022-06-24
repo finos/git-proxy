@@ -26,7 +26,7 @@ const canAddUser = (repoName, user, action) => {
 class DupUserValidationError extends Error {
   constructor(message) {
     super(message);
-    this.name = 'The user alread has this role';
+    this.name = 'user already in this role';
   }
 }
 

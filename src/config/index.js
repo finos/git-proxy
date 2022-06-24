@@ -11,6 +11,7 @@ let _allowSelfSignedCert = proxySettings.allowSelfSignedCert;
 let _smtpHost = proxySettings.smtpHost;
 let _smtpPort = proxySettings.smtpPort;
 let _thirdpartyapi = proxySettings.thirdpartyapi;
+let _emailNotificationFromAddress = proxySettings.emailNotificationFromAddress;
 
 // Gets a list of authorised repositories
 const getProxyUrl = () => {
@@ -115,12 +116,19 @@ const getSmtpPort = () => {
 };
 
 const getThirdPartyApi = () => {
-  if (userSettings !== null && userSettings.authorisedList) {
+  if (userSettings !== null && userSettings.thirdpartyapi) {
     _thirdpartyapi = userSettings.thirdpartyapi;
   }
 
   return _thirdpartyapi;
 };
+
+const getEmailNotificationFrom = () => {  
+  if (userSettings !== null && userSettings.authorisedList) {
+    _emailNotificationFromAddressrtyapi = userSettings.emailNotificationFromAddress;
+  }  
+  return _emailNotificationFromAddressrtyapi;  
+}
 
 exports.getThirdPartyApi = getThirdPartyApi;
 exports.getAllowSelfSignedCert = getAllowSelfSignedCert;
@@ -132,3 +140,4 @@ exports.getAuthentication = getAuthentication;
 exports.getTempPasswordConfig = getTempPasswordConfig;
 exports.getSmtpHost = getSmtpHost;
 exports.getSmtpPort = getSmtpPort;
+exports.getEmailNotificationFrom = getEmailNotificationFrom;

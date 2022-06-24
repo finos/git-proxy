@@ -67,7 +67,7 @@ const authorisePush = async (id, setMessage, setUserAllowedToApprove) => {
   await axios.post(url, {}, {withCredentials: true}).then(() => {
   }).catch((error) => {
     if (error.response && error.response.status === 401) {
-      errorMsg = 'Error! You are not authorised to approve pull request.';
+      errorMsg = 'you are not authorised to approve pull requests';
       isUserAllowedToApprove = false;
    }
   });

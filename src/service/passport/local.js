@@ -1,6 +1,5 @@
 const passwordHash = require('password-hash');
 
-// A useful comment
 const configure = async () => {
   const passport = require('passport');
   const Strategy = require('passport-local').Strategy;

@@ -57,7 +57,7 @@ router.post('/:id/reject', async (req, res) => {
       res.send(result);
     } else {
       res.status(401).send({
-        message: 'User not authorise to Reject.',
+        message: 'User not authorised to reject.',
       });
     }
   } else {
@@ -83,7 +83,7 @@ router.post('/:id/authorise', async (req, res) => {
       res.send(result);
     } else {
         res.status(401).send({
-        message: 'User not authorise to Approve.',
+        message: 'User not authorised to approve.',
       });
     }
   } else {
@@ -110,7 +110,7 @@ router.post('/:id/cancel', async (req, res) => {
       res.send(result);
     } else {
       res.status(401).send({
-        message: 'User not authorise to Cancel.',
+        message: 'User not authorised to cancel.',
       });
     }
   } else {

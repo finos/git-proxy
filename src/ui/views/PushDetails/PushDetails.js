@@ -101,7 +101,7 @@ console.log('isUserAllowedToApprove:'+isUserAllowedToApprove);
             } }>Cancel</Button>
             <Button color="danger" onClick={ async () => {
               await reject();
-            } }>Rject</Button>
+            } }>Reject</Button>
             <Button color="success" onClick={ async () => {
               await authorise();
             }}>Approve</Button>

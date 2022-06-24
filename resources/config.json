@@ -27,11 +27,12 @@
       },
       "enabled": true
     }
-  ],
+  ],  
   "authentication": [{
     "type": "local",
     "enabled": true
   }],
-  "smtpHost": "...",
-  "smtpPort": 25
+  "smtpHost": "localhost",
+  "smtpPort": 25,
+  "emailNotificationFromAddress": "\"git-proxy\" <no-reply@git-proxy.com>"
 }

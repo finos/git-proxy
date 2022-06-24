@@ -17,8 +17,7 @@ describe('auth', async () => {
     await db.deleteUser('login-test-user');
   });
 
-  describe('test login / logout', async function() {
-    // Test to get all students record
+  describe('test login / logout', async function() {    
     it('should get 401 not logged in', async function() {
       const res = await chai.request(app)
           .get('/api/auth/profile');
