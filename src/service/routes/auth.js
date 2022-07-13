@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 const express = require('express');
 const router = new express.Router();
 const passport = require('../passport').getPassport();
@@ -6,48 +7,6 @@ const passportType = passport.type;
 const generator = require('generate-password');
 const passwordHash = require('password-hash');
 
-
-router.post('/login', passport.authenticate(passportType), async (req, res) => {
-  if (req.user.admin == undefined) {
-    res.status(403).send({'message': 'not part of any group'});
-  } else {
-    let userName = req.user._json.givenName;
-
-    if (req.user._json.mail != null) {
-      userName = req.user._json.mail.split('@')[0];
-    }
-
-    userName = userName.toUpperCase();
-    let isAdmin = req.user.adminGroup;
-
-    if (req.user.adminGroup == null) {
-      isAdmin = false;
-    }
-
-    await db.updateUser(
-      {
-        admin: isAdmin,
-        username: userName,
-        email: req.user._json.mail,
-      });
-
-    try {
-      const userVal = await db.findUser(userName);
-
-      if (userVal.gitAccount == undefined || userVal.gitAccount == '') {
-        res.status(307).send({message: 'no git account'});
-        return;
-      }
-    } catch (e) {
-      res.status(500).send(e).end();
-      return;
-    }
-    res.send({
-      message: 'success',
-      user: req.user,
-    });
-  }
-});
 
 router.get('/', (req, res) => {
   res.status(200).json(
@@ -65,6 +24,20 @@ router.get('/', (req, res) => {
         uri: '/api/auth/logout',
       },
     });
+});
+
+router.post('/login', passport.authenticate(passportType), async (req, res) => {
+  try {
+    console.log(`serivce.routes.auth.login: user logged in, username=${req.user.username} profile=${JSON.stringify(req.user)}`);
+  } catch (e) {
+    console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
+    res.status(500).send(JSON.stringify(e)).end();
+    return;
+  }
+  res.send({
+    message: 'success',
+    user: req.user,
+  });
 });
 
 // when login is successful, retrieve user info
@@ -100,19 +73,9 @@ router.post('/logout', (req, res) => {
 
 router.get('/profile', async (req, res) => {
   if (req.user) {
-    const user = JSON.parse(JSON.stringify(req.user));
-    delete user.password;
-    let login = req.user.id;
-    login = login.split('@')[0].toUpperCase();
-    const userVal = await db.findUser(login);
-    if (userVal != undefined) {
-      if (userVal.gitAccount = undefined) {
-        user.gitAccount = '';
-      } else if (userVal.gitAccount != null && userVal.gitAccount != '') {
-        user.gitAccount = userVal.gitAccount;
-      }
-    }
-    res.send(user);
+    const userVal = await db.findUser(req.user.username);
+    delete userVal.password;
+    res.send(userVal);
   } else {
     res.status(401).end();
   }

@@ -28,7 +28,7 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
-  const username = req.params.id;
+  const username = req.params.id.toLowerCase();
   console.log(`Retrieving details for user: ${username}`);
   if (!req.user) {
     res.status(401).send({
