@@ -18,7 +18,7 @@ export default function RepoList(props) {
           <CardHeader color="success" stats icon>
             <CardIcon color="success">
               <Icon>content_copy</Icon>
-              <h3>Admin</h3>
+              <h3>Remote Repositories</h3>
             </CardIcon>
           </CardHeader>
           <CardBody>

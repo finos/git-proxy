@@ -14,31 +14,55 @@ import CardBody from '../../../components/Card/CardBody.js';
 import Button from '../../../components/CustomButtons/Button.js';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Dialog from '@material-ui/core/Dialog';
+import Snackbar from '@material-ui/core/Snackbar';
 
 import {createUser} from '../../../services/user.js';
 
 function CreateUserDialog(props) {
   const [username, setUsername] = useState('');
+  const [tip, setTip] = useState(false);
   const [email, setEmail] = useState('');
   const [gitAccount, setGitAccount] = useState('');
   const [admin, setAdmin] = useState(false);
   const [error, setError] = useState('');
-  const {onClose, open} = props;
+  const {onClose, open, onSuccess} = props;
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const handleClose = () => {
+    setError('');
+    resetUser();
+    setIsModalVisible(false);
     onClose();
+  };
+
+  const handleSuccess = (data)=>{
+    onSuccess(data);
+    setTip(true);
+  };
+
+  const resetUser = ()=>{
+    console.log('resetUser');
+    setUsername('');
+    setEmail('');
+    setGitAccount('');
+    setAdmin(false);
+  };
+
+  const handleChange = (event) => {
+    setAdmin(event.target.checked);
   };
 
   const create = async () => {
     const data = {
-      username: username,
-      gitAccount: gitAccount,
-      email: email,
+      username: username?username:setIsModalVisible(true),
+      gitAccount: gitAccount?gitAccount:setIsModalVisible(true),
+      email: email?email:setIsModalVisible(true),
       admin: admin,
     };
 
     try {
       await createUser(data);
+      handleSuccess(data);
       handleClose();
     } catch (e) {
       if (e.message) {
@@ -49,8 +73,12 @@ function CreateUserDialog(props) {
     }
   };
 
-  return (
-    <Dialog onClose={handleClose} aria-labelledby="simple-dialog-title" open={open}>
+  return (<>
+    <Snackbar open={tip} anchorOrigin={{
+          vertical: 'top',
+          horizontal: 'right',
+        }} autoHideDuration={5000} message="User is added successfully" onClose={()=>setTip(false)}/>
+    <Dialog onClose={handleClose} aria-labelledby="simple-dialog-title" visible={`${isModalVisible}`} open={open}>
       <DialogTitle style={{'color': 'red'}} id="simple-dialog-title">{error}</DialogTitle>
       <Card>
         <CardBody>
@@ -85,7 +113,7 @@ function CreateUserDialog(props) {
                   aria-describedby="gitAccount-helper-text"
                   value={gitAccount}
                   onChange={(e) => setGitAccount(e.target.value)} />
-                <FormHelperText id="gitAccounty-helper-text">The users Git Accout user name</FormHelperText>
+                <FormHelperText id="gitAccounty-helper-text">The users Git Account user name</FormHelperText>
               </FormControl>
             </GridItem>
             <GridItem xs={12} sm={12} md={12}>
@@ -94,8 +122,8 @@ function CreateUserDialog(props) {
                 <Checkbox
                   id="email"
                   aria-describedby="email-helper-text"
-                  value={admin}
-                  onChange={(e) => setAdmin(e.target.value)} />
+                  checked={admin}
+                  onChange={handleChange} />
                 <FormHelperText id="email-helper-text">Admin users are able to add repositories and create users</FormHelperText>
               </FormControl>
             </GridItem>
@@ -106,13 +134,18 @@ function CreateUserDialog(props) {
           </GridContainer>
         </CardBody>
       </Card>
-    </Dialog>
+    </Dialog></>
   );
 }
 
 CreateUserDialog.propTypes = {
   onClose: PropTypes.func.isRequired,
   open: PropTypes.bool.isRequired,
+  onSuccess: PropTypes.func.isRequired,
+};
+
+NewUser.propTypes = {
+  onSuccess: PropTypes.func.isRequired,
 };
 
 export default function NewUser(props) {
@@ -129,7 +162,7 @@ export default function NewUser(props) {
   return (
     <div>
       <Button variant="outlined" color="primary" onClick={handleClickOpen}>Create New User</Button>
-      <CreateUserDialog open={open} onClose={handleClose} />
+      <CreateUserDialog open={open} onClose={handleClose} onSuccess={props.onSuccess}/>
     </div>
   );
 }

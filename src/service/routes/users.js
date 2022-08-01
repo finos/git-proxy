@@ -5,9 +5,9 @@ const db = require('../../db');
 router.get('/', async (req, res) => {
   if (req.user) {
     const query = {
-      type: 'push',
     };
 
+    console.log(`fetching users = query path =${JSON.stringify(req.query)}`);
     for (const k in req.query) {
       if (!k) continue;
 

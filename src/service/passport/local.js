@@ -1,5 +1,5 @@
 const passwordHash = require('password-hash');
-/* eslint-disable max-len */
+
 const configure = async () => {
   const passport = require('passport');
   const Strategy = require('passport-local').Strategy;
@@ -47,3 +47,4 @@ const configure = async () => {
 };
 
 module.exports.configure = configure;
+

@@ -139,3 +139,25 @@ exports.deleteRepo = async (name) => {
     });
   });
 };
+
+exports.isUserPushAllowed = async (name, user) => {
+  return new Promise(async (resolve, reject) => {
+    const repo = await exports.getRepo(name);   
+      if (repo.users.canPush.includes(user) || repo.users.canAuthorise.includes(user)){
+        resolve(true);
+      }else{
+        resolve(false);
+      }   
+    });
+};
+
+exports.canUserApproveRejectPushRepo = async (name, user) => {
+  return new Promise(async (resolve, reject) => {
+    const repo = await exports.getRepo(name);   
+      if (repo.users.canAuthorise.includes(user)){
+        resolve(true);
+      }else{
+        resolve(false);
+      }   
+    });
+};

@@ -27,6 +27,10 @@ const exec = async (req, action) => {
       action.commitFrom = action.commitData[action.commitData.length -1].parent;
     }
 
+    const user = action.commitData[action.commitData.length -1].committer;
+    console.log(`Push Request recevied from user ${user}`);
+    action.user = user;
+
     step.content = {
       meta: meta,
     };
@@ -40,6 +44,7 @@ const exec = async (req, action) => {
 };
 
 const getCommitData = (contents) => {
+  console.log(contents);
   return lod.chain(contents)
       .filter({'type': 1})
       .map((x) => {

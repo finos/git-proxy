@@ -38,17 +38,6 @@ router.get('/:name', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
-  if (req.user) {
-    await db.createRepo(req.body);
-    res.send({message: 'created'});
-  } else {
-    res.status(401).send({
-      message: 'not logged in',
-    });
-  }
-});
-
 router.patch('/:name/user/push', async (req, res) => {
   if (req.user) {
     const repoName = req.params.name;
@@ -123,6 +112,24 @@ router.delete('/:name/user/push/:username', async (req, res) => {
     await db.removeUserCanPush(repoName, username);
     res.send({message: 'created'});
   } else {
+    res.status(401).send({
+      message: 'not logged in',
+    });
+  }
+});
+
+router.post('/', async (req, res) => {
+  if (req.user) {
+    const repo = await db.getRepo(req.body.name);
+    if (repo) {
+        res.status(409).send({
+           message: 'Repository already exists!',
+        });
+     } else {
+        await db.createRepo(req.body);
+        res.send({message: 'created'});
+      }
+   } else {
     res.status(401).send({
       message: 'not logged in',
     });

@@ -20,7 +20,9 @@ All contributions are welcome. Please fork the repository before local developme
 Install and run
 
 - Install project dependencies using `npm i` or `npm install`
+- Build React UI using `npm run build`
 - Start Express server using `npm start` after the project has installed.
+- Open http:localhost:8080 to access dashboard
 
 ``` bash
  git-proxy@0.0.1 start C:\projects\github-proxy
@@ -46,8 +48,8 @@ Install and run
    }
    Listening on 8000
    Service Listening on 8080
-   i ｢wds｣: Project is running at http://192.168.0.82/
-   i ｢wds｣: webpack output is served from
+   i ｢wds｣: Project is running at http://192.168.0.82/ access dashboard use localhost:8080
+   i ｢wds｣: webpack output is served from build
    i ｢wds｣: Content not from webpack is served from C:\projects\github-proxy\public
    i ｢wds｣: 404s will fallback to /
    Starting the development server...
@@ -145,6 +147,8 @@ _NOTE:_ Commits and pull requests to FINOS repositories will only be accepted fr
 *Need an ICLA? Unsure if you are covered under an existing CCLA? Email [help@finos.org](mailto:help@finos.org)*
 
 ## License
+
+
 
 Copyright 2020 Citigroup
 

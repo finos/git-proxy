@@ -28,16 +28,22 @@ export default function Dashboard(props) {
   const [auth, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [message, setMessage] = useState('');
   const history = useHistory();
-
+  let isUserAllowedToApprove = true;
+  function setUserAllowedToApprove(userAllowedToApprove) {
+      isUserAllowedToApprove = userAllowedToApprove;
+console.log('isUserAllowedToApprove:'+isUserAllowedToApprove);
+  }
   useEffect(() => {
     getPush(id, setIsLoading, setData, setAuth, setIsError);
   }, [id]);
-
   const authorise = async () => {
-    await authorisePush(id, setAuth, setIsError);
-    history.push(`/admin/push/`);
-  };
+    await authorisePush(id, setMessage, setUserAllowedToApprove);
+    if (isUserAllowedToApprove) {
+       history.push('/admin/push/');
+     }
+ };
 
   const reject = async () => {
     await rejectPush(id, setAuth, setIsError);
@@ -80,6 +86,8 @@ export default function Dashboard(props) {
   }
 
   return (
+<div>
+<div style={{color: 'red', fontWeight: 'bold'}} >{message}</div>
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
         <Card>
@@ -93,7 +101,7 @@ export default function Dashboard(props) {
             } }>Cancel</Button>
             <Button color="danger" onClick={ async () => {
               await reject();
-            } }>Rject</Button>
+            } }>Reject</Button>
             <Button color="success" onClick={ async () => {
               await authorise();
             }}>Approve</Button>
@@ -162,6 +170,6 @@ export default function Dashboard(props) {
           </CardFooter>
         </Card>
       </GridItem>
-    </GridContainer>
+    </GridContainer></div>
   );
 }

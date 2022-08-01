@@ -23,3 +23,7 @@ module.exports.removeUserCanPush = repo.removeUserCanPush;
 module.exports.removeUserCanAuthorise = repo.removeUserCanAuthorise;
 
 module.exports.deleteRepo = repo.deleteRepo;
+module.exports.isUserPushAllowed = repo.isUserPushAllowed;
+module.exports.canUserApproveRejectPushRepo = repo.canUserApproveRejectPushRepo;
+module.exports.canUserApproveRejectPush = pushes.canUserApproveRejectPush;
+module.exports.canUserCancelPush = pushes.canUserCancelPush;

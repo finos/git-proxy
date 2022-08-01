@@ -10,13 +10,19 @@ import Admin from './ui/layouts/Admin.js';
 import Login from './ui/views/Login/Login.js';
 import './ui/assets/css/material-dashboard-react.css';
 
-
 const hist = createBrowserHistory();
+const renderFn = (element)=>{
+  if (window.sessionStorage.getItem('git.proxy.login')==null) {
+    return <Redirect to="/login"/>;
+  } else {
+    return element;
+  }
+};
 
 ReactDOM.render(
     <Router history={hist}>
       <Switch>
-        <Route path="/admin" component={Admin} />
+        <Route path="/admin" render={()=>renderFn(<Admin />)} />
         <Route path="/login" component={Login} />
         <Redirect from="/" to="/admin/dashboard" />
       </Switch>

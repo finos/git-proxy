@@ -1,4 +1,5 @@
 /** Class representing a Push. */
+const config = require('../../config');
 
 /**
  *
@@ -51,7 +52,7 @@ class Action {
     this.timestamp = timestamp;
     this.project = repo.split('/')[0];
     this.repoName = repo.split('/')[1];
-    this.url = `https://github.com/${repo}`;
+    this.url = `${config.getProxyUrl()}/${repo}`;
     this.repo = repo;
   }
 
