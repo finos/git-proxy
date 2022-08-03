@@ -44,20 +44,15 @@ router.get('/:id', async (req, res) => {
 router.post('/:id/reject', async (req, res) => {
   if (req.user) {
     const id = req.params.id;
-    let userName = req.user.displayName;
 
-    if (req.user.id) {
-      userName = (req.user.id).split('@')[0];
-    }
-
-    const isAllowed = await db.canUserApproveRejectPush(id, userName);
+    const isAllowed = await db.canUserApproveRejectPush(id, req.user.username);
     if (isAllowed) {
       const result = await db.reject(id);
       sendEmailNotification(id, 'REJECT');
       res.send(result);
     } else {
       res.status(401).send({
-        message: 'User not authorised to reject.',
+        message: 'User not authorise to Reject.',
       });
     }
   } else {
@@ -70,20 +65,15 @@ router.post('/:id/reject', async (req, res) => {
 router.post('/:id/authorise', async (req, res) => {
   if (req.user) {
     const id = req.params.id;
-    let userName = req.user.displayName;
 
-    if (req.user.id) {
-      userName = (req.user.id).split('@')[0];
-    }
-
-    const isAllowed = await db.canUserApproveRejectPush(id, userName);
+    const isAllowed = await db.canUserApproveRejectPush(id, req.user.username);
     if (isAllowed) {
       const result = await db.authorise(id);
       sendEmailNotification(id, 'APPROVE');
       res.send(result);
     } else {
         res.status(401).send({
-        message: 'User not authorised to approve.',
+        message: `user ${userName} not authorised to Approve`,
       });
     }
   } else {
@@ -96,13 +86,8 @@ router.post('/:id/authorise', async (req, res) => {
 router.post('/:id/cancel', async (req, res) => {
   if (req.user) {
     const id = req.params.id;
-    let userName = req.user.displayName;
 
-    if (req.user.id) {
-      userName = (req.user.id).split('@')[0];
-    }
-
-    const isAllowed = await db.canUserCancelPush(id, userName);
+    const isAllowed = await db.canUserCanclePush(id, req.user.username);
 
     if (isAllowed) {
       const result = await db.cancel(id);
@@ -110,7 +95,7 @@ router.post('/:id/cancel', async (req, res) => {
       res.send(result);
     } else {
       res.status(401).send({
-        message: 'User not authorised to cancel.',
+        message: 'User not authorised to Cancel.',
       });
     }
   } else {

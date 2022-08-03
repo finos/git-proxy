@@ -41,7 +41,7 @@ router.get('/:name', async (req, res) => {
 router.patch('/:name/user/push', async (req, res) => {
   if (req.user) {
     const repoName = req.params.name;
-    const username = req.body.username;
+    const username = req.body.username.toLowerCase();
     const user = await db.findUser(username);
 
     if (!user) {
