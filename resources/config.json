@@ -2,8 +2,13 @@
   "proxyUrl": "https://github.com",  
   "allowSelfSignedCert": true,
   "tempPassword": {
-    "sendEmail": false,
+    "sendEmail": true,
     "emailConfig": {
+      "host": "smtp.gmail.com",
+      "auth": {
+        "user": "",                 
+        "pass": ""
+      }      
     }
   },
   "authorisedList": [{    

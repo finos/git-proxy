@@ -157,9 +157,9 @@ router.post('/gitAccount', async (req, res) => {
 router.get('/userLoggedIn', async (req, res) => {
   if (req.user) {
     const user = JSON.parse(JSON.stringify(req.user));
+    console.log(req.user);
     delete user.password;
-    let login = req.user.id;
-    login = login.split('@')[0];
+    let login = req.user.username;    
     const userVal = await db.findUser(login);
     res.send(userVal);
   } else {
