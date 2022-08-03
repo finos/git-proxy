@@ -11,7 +11,6 @@ if (config.getAllowSelfSignedCert()) {
 
 
 router.use('/', proxy(config.getProxyUrl(), {
-  preserveHostHdr: true,
   filter: async function(req, res) {
     console.log(req.headers);
     try {
@@ -70,12 +69,9 @@ router.use('/', proxy(config.getProxyUrl(), {
     return url;
   },
   proxyReqOptDecorator: function(proxyReqOpts, srcReq) {
-    // you can update headers
     if (proxyReqOpts.method === 'GET') {
       console.log('SETTING CONTENT LENGTH = 0');
     }
-    // you can change the method
-    // proxyReqOpts.method = 'GET';
     return proxyReqOpts;
   },
 

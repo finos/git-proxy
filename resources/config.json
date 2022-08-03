@@ -18,12 +18,12 @@
     },
     {
       "type": "mongo",
-      "connectionString": "mongodb://localhost:37017",
+      "connectionString": "mongodb://localhost:27017",
       "options": {
         "useNewUrlParser": true,
         "useUnifiedTopology": true,
         "sslValidate": false,
-        "ssl": true
+        "ssl": false
       },
       "enabled": true
     }
