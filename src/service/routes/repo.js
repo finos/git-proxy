@@ -126,8 +126,12 @@ router.post('/', async (req, res) => {
            message: 'Repository already exists!',
         });
      } else {
-        await db.createRepo(req.body);
-        res.send({message: 'created'});
+        try {
+          await db.createRepo(req.body);
+          res.send({message: 'created'});
+        } catch (e) {
+          res.send(e);
+        }
       }
    } else {
     res.status(401).send({

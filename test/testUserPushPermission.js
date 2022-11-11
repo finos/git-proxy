@@ -12,10 +12,9 @@ chai.should();
 const expect = chai.expect;
 
 describe('Check user has push permission', async () => {
-  
   let app;
   let cookie;
- 
+
   const setCookie = function(res) {
     res.headers['set-cookie'].forEach((x) => {
       if (x.startsWith('connect')) {
@@ -79,15 +78,14 @@ describe('Check user has push permission', async () => {
     repo.users.canPush[0].should.equal('u1');
   });
 
-  it('Should set ok=true if user has push permission', function(){this.timeout(15000);}, async () => {
+  it('Should set ok=true if user has push permission', () => this.timeout(15000), async () => {
     const action = new actions.Action('123', 'type', 'get', 1234, 'thisproject/test-repo.git');
     action.user='u1';
     const result = await processor.exec(null, action);
     expect(result.error).to.be.false;
   });
 
-  it('Should set ok=false if user has push permission', function(){this.timeout(15000);}, async () => {
-    
+  it('Should set ok=false if user has push permission', () => this.timeout(15000), async () => {
     const action = new actions.Action('123', 'type', 'get', 1234, 'thisproject/repo-is-not-ok');
     action.user='u10';
     const result = await processor.exec(null, action);

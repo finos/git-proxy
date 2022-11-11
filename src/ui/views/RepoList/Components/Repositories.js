@@ -51,7 +51,7 @@ export default function Repositories(props) {
 
   const addrepoButton = user.admin? <GridItem><NewRepo onSuccess={refresh} /></GridItem> : <GridItem/>;
 
-  return <GetGridContainerLayOut classes={classes} openRepo={openRepo} data={data} repoButton={addrepoButton} />;
+  return <GetGridContainerLayOut key="x" classes={classes} openRepo={openRepo} data={data} repoButton={addrepoButton} />;
 }
 
 GetGridContainerLayOut.propTypes = {

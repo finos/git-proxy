@@ -2,14 +2,11 @@
 /* eslint-disable require-jsdoc */
 import axios from 'axios';
 
-// const baseUrl = `${process.env.REACT_APP_API_URI}/api/v1`;
-const baseUrl = `${location.origin}`;
+const baseUrl = (process.env.REACT_APP_API_URI ? `${process.env.REACT_APP_API_URI}` : `${location.origin}`);
 
 const config = {
   withCredentials: true,
 };
-
-console.log(baseUrl);
 
 const getUser = async (setIsLoading, setData, setAuth, setIsError, id=null) => {
   let url = `${baseUrl}/api/auth/profile`;
@@ -31,18 +28,6 @@ const getUser = async (setIsLoading, setData, setAuth, setIsError, id=null) => {
       if (error.response && error.response.status === 401) setAuth(false);
       else setIsError(true);
       setIsLoading(false);
-    });
-};
-
-const createUser = async (data) => {
-  console.log(data);
-  const url = new URL(`${baseUrl}/api/auth/profile`);
-  await axios.post(url, data, {withCredentials: true})
-    .then(() => {
-    })
-    .catch((error) => {
-      console.log(error.response.data.message);
-      throw (error);
     });
 };
 
@@ -68,7 +53,6 @@ const getUsers = async (setIsLoading, setData, setAuth, setIsError, query={}) =>
 const updateUser = async (data) => {
   console.log(data);
   const url = new URL(`${baseUrl}/api/auth/gitAccount`);
-
   await axios.post(url, data, {withCredentials: true})
     .then(() => {
     })
@@ -98,7 +82,7 @@ const getUserLoggedIn = async (setIsLoading, setIsAdmin, setIsError) => {
 
 export {
   getUser,
-  createUser,
+
   getUsers,
   updateUser,
   getUserLoggedIn,

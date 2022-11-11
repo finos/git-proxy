@@ -2,8 +2,7 @@
 /* eslint-disable require-jsdoc */
 import axios from 'axios';
 
-// const baseUrl = `${process.env.REACT_APP_API_URI}/api/v1`;
-const baseUrl = `${location.origin}/api/v1`;
+const baseUrl = (process.env.REACT_APP_API_URI ? `${process.env.REACT_APP_API_URI}/api/v1` : `${location.origin}/api/v1`);
 
 const config = {
   withCredentials: true,
@@ -25,8 +24,8 @@ const getUser = async (setIsLoading, setData, setAuth, setIsError) => {
 };
 
 const getPush = async (id, setIsLoading, setData, setAuth, setIsError) => {
-  const url = new URL(`${baseUrl}/push/${id}`);
-  await axios(url.toString(), config)
+  const url = `${baseUrl}/push/${id}`;
+  await axios(url, config)
     .then((response) => {
       const data = response.data;
       data.diff = data.steps.find((x) => x.stepName === 'diff');
@@ -67,7 +66,7 @@ const authorisePush = async (id, setMessage, setUserAllowedToApprove) => {
   await axios.post(url, {}, {withCredentials: true}).then(() => {
   }).catch((error) => {
     if (error.response && error.response.status === 401) {
-      errorMsg = 'you are not authorised to approve pull requests';
+      errorMsg = 'Error! You are not authorised to approve pull request.';
       isUserAllowedToApprove = false;
    }
   });

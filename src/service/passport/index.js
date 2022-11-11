@@ -1,4 +1,3 @@
-const local = require('./local');
 const activeDirectory = require('./activeDirectory');
 const config = require('../../config');
 const authenticationConfig = config.getAuthentication();
@@ -11,9 +10,7 @@ const configure = async () => {
       _passport = await activeDirectory.configure();
 
       break;
-    case 'local':
-      _passport = await local.configure();
-      break;
+
     default:
       throw Error(`uknown authentication type ${type}`);
   }

@@ -4,9 +4,6 @@ const router = new express.Router();
 const passport = require('../passport').getPassport();
 const db = require('../../db');
 const passportType = passport.type;
-const generator = require('generate-password');
-const passwordHash = require('password-hash');
-
 
 router.get('/', (req, res) => {
   res.status(200).json(
@@ -81,56 +78,6 @@ router.get('/profile', async (req, res) => {
   }
 });
 
-router.post('/profile', async (req, res) => {
-  if (req.user) {
-    try {
-      const password = generator.generate({
-        length: 10,
-        numbers: true,
-      });
-
-      console.log(JSON.stringify(req.body));
-
-      const newUser = await db.createUser(
-        req.body.username,
-        password,
-        req.body.email,
-        req.body.gitAccount,
-        req.body.admin);
-
-      res.send(newUser);
-    } catch (e) {
-      console.log(e);
-      res.status(500).send({
-        message: e.message,
-      }).end();
-    }
-  } else {
-    res.status(401).end();
-  }
-});
-
-router.post('/password', async (req, res) => {
-  if (req.user) {
-    try {
-      const user = await db.findUser(req.user.username);
-
-      if (passwordHash.verify(req.body.oldPassword, user.password)) {
-        user.password = passwordHash.generate(req.body.newPassword);
-        user.changePassword = false;
-        db.updateUser(user);
-        res.status(200).end();
-      } else {
-        throw new Error('current password did not match the given');
-      }
-    } catch (e) {
-      res.status(500).send(e).end();
-    }
-  } else {
-    res.status(401).end();
-  }
-});
-
 router.post('/gitAccount', async (req, res) => {
   if (req.user) {
     try {
@@ -157,9 +104,9 @@ router.post('/gitAccount', async (req, res) => {
 router.get('/userLoggedIn', async (req, res) => {
   if (req.user) {
     const user = JSON.parse(JSON.stringify(req.user));
-    console.log(req.user);
     delete user.password;
-    let login = req.user.username;    
+    let login = req.user.id;
+    login = login.split('@')[0];
     const userVal = await db.findUser(login);
     res.send(userVal);
   } else {

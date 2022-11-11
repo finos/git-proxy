@@ -25,41 +25,52 @@ function AddRepositoryDialog(props) {
   const [project, setProject] = useState('');
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
-  const [maxUser, setMaxuser] = useState(0);
   const [error, setError] = useState('');
   const [tip, setTip] = useState(false);
   const {onClose, open, onSuccess} = props;
   const classes = useStyles();
 
   const handleClose = () => {
-    console.log('handle Close in NewRepo');
     setError('');
     resetRepo();
     onClose();
   };
 
   const handleSuccess = (data)=>{
-    console.log('HandleSuccess in NewRepo');
     onSuccess(data);
     setTip(true);
   };
 
   const resetRepo = ()=>{
-    console.log('resetRepo');
     setProject('');
     setName('');
     setUrl('');
-    setMaxuser(1);
   };
 
   const add = async () => {
-    console.log('add new repo');
     const data = {
       project: project,
       name: name,
       url: url,
-      maxUser: maxUser? maxUser: 1,
+      maxUser: 1,
     };
+
+    if (data.project.trim().length == 0 || data.project.length > 100) {
+      setError('project name length unexpected');
+      return;
+    }
+
+    if (data.name.trim().length == 0 || data.name.length > 100) {
+      setError('Repo name length unexpected');
+      return;
+    }
+
+    try {
+      new URL(data.url);
+    } catch (e) {
+      setError('Invalid URL');
+      return;
+    }
 
     try {
       await addRepo(onClose, setError, data);
@@ -76,7 +87,6 @@ function AddRepositoryDialog(props) {
   const inputStyle = {
     width: '100%',
   };
-
 
   return (<>
     <Snackbar open={tip} anchorOrigin={{
@@ -96,6 +106,7 @@ function AddRepositoryDialog(props) {
                 <InputLabel htmlFor="project">Project</InputLabel>
                 <Input
                   id="project"
+                  inputProps={{maxLength: 200, minLength: 3}}
                   aria-describedby="project-helper-text"
                   onChange={(e) => setProject(e.target.value)}
                   />
@@ -106,6 +117,7 @@ function AddRepositoryDialog(props) {
               <FormControl style={inputStyle}>
                 <InputLabel htmlFor="name">Name</InputLabel>
                 <Input
+                  inputProps={{maxLength: 200, minLength: 3}}
                   id="name"
                   aria-describedby="name-helper-text"
                   onChange={(e) => setName(e.target.value)}/>
@@ -116,6 +128,8 @@ function AddRepositoryDialog(props) {
               <FormControl style={inputStyle}>
                 <InputLabel htmlFor="url">Url</InputLabel>
                 <Input
+                 inputProps={{maxLength: 200, type: 'url'}}
+                  type="url"
                   id="url"
                   aria-describedby="url-helper-text"
                   onChange={(e) => setUrl(e.target.value)} />

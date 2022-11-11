@@ -46,12 +46,22 @@ export default function Dashboard(props) {
     if (id == null) {
       setIsProfile(true);
     }
+
+    // If there is an ID, then we are looking at somoene elses
+    // profile
     if (id) {
+      console.log('getting user information');
       getUser(setIsLoading, setData, setAuth, setIsError, id);
       getUserLoggedIn(setIsLoading, setIsAdmin, setIsError);
+      console.log(data);
     } else {
+      // there was no ID parma, se we are looking at ou own
       console.log('getting user data');
+
+      // Set that we are looking at our own profile
       setIsProfile(true);
+
+      // Retrieve our user details
       getUser(setIsLoading, setData, setAuth, setIsError);
     }
   }, [props]);
@@ -61,8 +71,6 @@ export default function Dashboard(props) {
   if (isError) return (<div>Something went wrong ...</div>);
   if (!auth) return (<Redirect to={{pathname: '/login'}} />);
 
-  console.log(data);
-
   const updateProfile = async () => {
     try {
       console.log('GitAccount' + gitAccount);
@@ -70,6 +78,10 @@ export default function Dashboard(props) {
       await updateUser(data);
     } catch (e) {}
   };
+
+  const onChangeGitAccount = (event) => {
+    setGitAccount(event.target.value);
+ };
 
   const UpdateButton = () => (
     <Button variant="outlined" color="primary" onClick={updateProfile}>Update</Button>
@@ -107,8 +119,8 @@ export default function Dashboard(props) {
                     label="Git Account"
                     aria-describedby="gitAccount-helper-text"
                     variant="outlined"
-                    value={data.gitAccount}
-                    onChange={(e) => setGitAccount(e.target.value)} />
+                    value={gitAccount}
+                    onChange={(e) => onChangeGitAccount(e)} />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
                   <FormLabel component="legend">Admin</FormLabel>

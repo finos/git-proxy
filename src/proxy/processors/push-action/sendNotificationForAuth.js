@@ -17,10 +17,7 @@ const exec = async (req, action) => {
     if (authUsers.length > 0) {
       toAddress ='';
       for (const user of authUsers) {
-        console.log(`finding user ${user}`);
         const userVal = await db.findUser(user);
-        if (!userVal) continue;
-        console.log(`found user, user=${JSON.stringify(userVal)}`);
         console.log(`Auth User: ${userVal.username} Email: ${userVal.email}`);
         toAddress = userVal.email + ',';
       }

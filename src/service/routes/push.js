@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 const express = require('express');
 const router = new express.Router();
 const db = require('../../db');
@@ -49,10 +50,11 @@ router.post('/:id/reject', async (req, res) => {
     if (isAllowed) {
       const result = await db.reject(id);
       sendEmailNotification(id, 'REJECT');
+      console.log(`user ${req.user.username} rejected push request for ${id}`);
       res.send(result);
     } else {
       res.status(401).send({
-        message: 'User not authorise to Reject.',
+        message: 'User is not authorised to reject changes',
       });
     }
   } else {
@@ -66,19 +68,43 @@ router.post('/:id/authorise', async (req, res) => {
   if (req.user) {
     const id = req.params.id;
 
+    // Get the push request
+    const push = await db.getPush(id);
+
+    // Get the Internal Author of the push via their Git Account name
+    const gitAccountauthor = push.user;
+    const list = await db.getUsers({'gitAccount': gitAccountauthor});
+
+    if (list.length === 0) {
+      res.status(500).send(
+        {
+          message: `The git account ${gitAccountauthor} could not be found`,
+        });
+    }
+
+    if (list[0].username.toLowerCase() === req.user.username.toLowerCase()) {
+      res.status(500).send(
+        {
+          message: `Cannot approve your own changes`,
+        });
+    }
+
+    // If we are not the author, now check that we are allowed to authorise on this
+    // repo
     const isAllowed = await db.canUserApproveRejectPush(id, req.user.username);
     if (isAllowed) {
+      console.log(`user ${req.user.username} approved push request for ${id}`);
       const result = await db.authorise(id);
       sendEmailNotification(id, 'APPROVE');
       res.send(result);
     } else {
         res.status(401).send({
-        message: `user ${userName} not authorised to Approve`,
+        message: `user ${userName} not authorised to approve push's on this project`,
       });
     }
   } else {
     res.status(401).send({
-      message: 'not logged in',
+      message: 'User is not logged in',
     });
   }
 });
@@ -91,11 +117,13 @@ router.post('/:id/cancel', async (req, res) => {
 
     if (isAllowed) {
       const result = await db.cancel(id);
+      console.log(`user ${req.user.username} canceled push request for ${id}`);
       sendEmailNotification(id, 'CANCEL');
       res.send(result);
     } else {
+      console.log(`user ${req.user.username} not authorised to cancel push request for ${id}`);
       res.status(401).send({
-        message: 'User not authorised to Cancel.',
+        message: 'User ${req.user.username)} not authorised to cancel push requests on this project.',
       });
     }
   } else {
@@ -137,7 +165,7 @@ const getEmailBody = (type, id) => {
   }
   emailBody = emailBody + `</p> <p>Tracking Id: ${id}</p>`;
 
-  emailBody = emailBody + `<p>Link: <a href="http://${hostname}:3000/requests/${id}">http://${hostname}:3000/requests/${id}</a></p>`;
+  emailBody = emailBody + `<p>Link: <a href="http://${hostname}/requests/${id}">http://${hostname}/requests/${id}</a></p>`;
 
   if (type == 'APPROVE') {
     emailBody = emailBody +

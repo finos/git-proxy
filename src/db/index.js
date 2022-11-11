@@ -1,12 +1,4 @@
-const nodemailer = require('nodemailer');
-const generator = require('generate-password');
-const passwordHash = require('password-hash');
-const validator = require('email-validator');
 const config = require('../config');
-
-if (config.getDatabase().type === 'fs') {
-  sink = require('../db/file');
-}
 
 if (config.getDatabase().type === 'mongo') {
   sink = require('../db/mongo');
@@ -24,13 +16,11 @@ module.exports.createUser = async (
 
   const data = {
     username: username,
-    password: passwordHash.generate(password),
     gitAccount: gitAccount,
     email: email,
     admin: admin,
-    changePassword: true,
-    token: generator.generate({length: 10, numbers: true}),
   };
+
   if (username === undefined || username === null || username === '' ) {
     const errorMessage = `username ${username} cannot be empty`;
     throw new Error(errorMessage);
@@ -53,43 +43,6 @@ module.exports.createUser = async (
   }
 
   sink.createUser(data);
-
-  await wrapedSendMail(data, password);
-};
-
-const wrapedSendMail = function(data, password) {
-  return new Promise((resolve, reject) => {
-    const emailConfig = config.getTempPasswordConfig();
-
-    if (!emailConfig.sendEmail) {
-      resolve();
-      return;
-    }
-
-    if (!validator.validate(data.email)) {
-      resolve();
-      return;
-    }
-
-    const transporter = nodemailer.createTransport(emailConfig.emailConfig);
-
-    const mailOptions = {
-      from: emailConfig.from,
-      to: data.email,
-      subject: 'Git Proxy - temporary password',
-      text: `Your tempoary password is ${password}`,
-    };
-
-    transporter.sendMail(mailOptions, function(error, info) {
-      if (error) {
-        console.log(`error is ${error}`);
-        reject(error);
-      } else {
-        console.log('Email sent: ' + info.response);
-        resolve(true);
-      }
-    });
-  });
 };
 
 // The module exports
@@ -115,4 +68,5 @@ module.exports.deleteRepo = sink.deleteRepo;
 module.exports.isUserPushAllowed = sink.isUserPushAllowed;
 module.exports.canUserApproveRejectPushRepo = sink.canUserApproveRejectPushRepo;
 module.exports.canUserApproveRejectPush = sink.canUserApproveRejectPush;
-module.exports.canUserCancelPush = sink.canUserCancelPush;
+module.exports.canUserCanclePush = sink.canUserCanclePush;
+module.exports.getSessionStore = sink.getSessionStore;

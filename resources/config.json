@@ -39,5 +39,5 @@
   }],
   "smtpHost": "localhost",
   "smtpPort": 25,
-  "emailNotificationFromAddress": "\"git-proxy\" <no-reply@git-proxy.com>"
+  "emailNotificationFromAddress": "'\"Admin GITProxy\" <admin@git-proxy.com>'"
 }

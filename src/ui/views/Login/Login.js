@@ -17,6 +17,8 @@ import CardFooter from '../../components/Card/CardFooter.js';
 import axios from 'axios';
 import {Redirect} from 'react-router-dom';
 
+const loginUrl = `${process.env.REACT_APP_API_URI}/api/auth/login`;
+
 const styles = {
   cardCategoryWhite: {
     color: 'rgba(255,255,255,.62)',
@@ -47,10 +49,10 @@ export default function UserProfile() {
   const [gitAccountError, setGitAccountError] = useState(false);
 
   function validateForm() {
-    return username.length > 0 && password.length > 0;
+    return username.length > 0 && username.length < 100 && password.length > 0 && password.length < 200;
   }
- function handleSubmit(event) {
-    axios.post(`${location.origin}/api/auth/login`, {
+  function handleSubmit(event) {
+    axios.post(loginUrl, {
       username: username,
       password: password,
     }, {
@@ -90,7 +92,6 @@ export default function UserProfile() {
   return (
     <form onSubmit={handleSubmit}>
       <GridContainer>
-
         <GridItem xs={12} sm={6} md={4}>
           <Card>
             <CardHeader color="primary">

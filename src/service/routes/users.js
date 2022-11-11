@@ -38,6 +38,7 @@ router.get('/:id', async (req, res) => {
   }
   if (!req.user.admin) {
     console.error(`Retrieving details for user: ${username} - NOT AUTHORISED`);
+
     // User is not an admin and forbidden form seeing other user profiles
     res.status(403).end();
     return;

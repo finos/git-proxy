@@ -1,6 +1,10 @@
 const connect = require('./helper').connect;
 const cnName = 'repos';
 
+const isBlank = (str) =>{
+  return (!str || /^\s*$/.test(str));
+};
+
 exports.getRepos = async (query={}) => {
   const collection = await connect(cnName);
   const result = await collection.find().toArray();
@@ -14,6 +18,18 @@ exports.getRepo = async (name) => {
 };
 
 exports.createRepo = async (repo) => {
+  console.log(`creating new repo ${JSON.stringify(repo)}`);
+
+  if (isBlank(repo.project)) {
+    throw new Error('Project name cannot be empty');
+  }
+  if (isBlank(repo.name)) {
+    throw new Error('Repository name cannot be empty');
+  }
+  if (isBlank(repo.url)) {
+    throw new Error('URL cannot be empty');
+  }
+
   repo.users = {
     canPush: [],
     canAuthorise: [],
@@ -21,9 +37,11 @@ exports.createRepo = async (repo) => {
 
   const collection = await connect(cnName);
   await collection.insertOne(repo);
+  console.log(`created new repo ${JSON.stringify(repo)}`);
 };
 
 exports.addUserCanPush = async (name, user) => {
+  name = name.toLowerCase();
   const collection = await connect(cnName);
   await collection.updateOne(
       {name: name},
@@ -31,6 +49,7 @@ exports.addUserCanPush = async (name, user) => {
 };
 
 exports.addUserCanAuthorise = async (name, user) => {
+  name = name.toLowerCase();
   const collection = await connect(cnName);
   await collection.updateOne(
       {name: name},
@@ -38,6 +57,7 @@ exports.addUserCanAuthorise = async (name, user) => {
 };
 
 exports.removeUserCanPush = async (name, user) => {
+  name = name.toLowerCase();
   const collection = await connect(cnName);
   await collection.updateOne(
       {name: name},
@@ -45,6 +65,7 @@ exports.removeUserCanPush = async (name, user) => {
 };
 
 exports.removeUserCanAuthorise = async (name, user) => {
+  name = name.toLowerCase();
   const collection = await connect(cnName);
   await collection.updateOne(
       {name: name},
@@ -57,6 +78,7 @@ exports.deleteRepo = async (name) => {
 };
 
 exports.isUserPushAllowed = async (name, user) => {
+  name = name.toLowerCase();
   return new Promise(async (resolve, reject) => {
     const repo = await exports.getRepo(name);
     console.log(repo.users.canPush);
@@ -71,12 +93,16 @@ exports.isUserPushAllowed = async (name, user) => {
   });
 };
 
-exports.canUserApproveRejectPushRepo = async (name, user) => {
+exports.canUserApproveRejectPushRepo = async (name, user, id) => {
+  name = name.toLowerCase();
+  console.log(`checking if user ${user} can approve/reject for ${name}`);
   return new Promise(async (resolve, reject) => {
     const repo = await exports.getRepo(name);
       if (repo.users.canAuthorise.includes(user)) {
+        console.log(`user ${user} can approve/reject to repo ${name}`);
         resolve(true);
       } else {
+        console.log(`user ${user} cannot approve/reject to repo ${name}`);
         resolve(false);
       }
     });

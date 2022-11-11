@@ -16,7 +16,6 @@ import Paper from '@material-ui/core/Paper';
 import {Redirect} from 'react-router-dom';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
 import {getUsers} from '../../../services/user';
-import NewUser from './NewUser';
 
 export default function UserList(props) {
   const useStyles = makeStyles(styles);
@@ -42,22 +41,9 @@ export default function UserList(props) {
   if (isLoading) return (<div>Loading ...</div>);
   if (isError) return (<div>Something went wrong ...</div>);
   if (!auth) return (<Redirect to={{pathname: '/login'}} />);
-  const onSuccess=async (user)=>{
-    // console.log(user, data);
-    // setData([...data, user]); //Another method to add new user to list
-    const query = {};
 
-    for (const k in props) {
-      if (!k) continue;
-      query[k] = props[k];
-    }
-    await getUsers(setIsLoading, setData, setAuth, setIsError, query);
-  };
   return (
-    <GridContainer>
-      <GridItem xs={12} sm={12} md={12}>
-        <NewUser onSuccess={onSuccess} />
-      </GridItem>
+    <GridContainer>s
       <GridItem xs={12} sm={12} md={12}>
         <TableContainer component={Paper}>
           <Table className={classes.table} aria-label="simple table">

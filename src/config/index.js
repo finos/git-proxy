@@ -1,6 +1,28 @@
+/* eslint-disable max-len */
 const fs = require('fs');
-const proxySettings = JSON.parse(fs.readFileSync('./resources/config.json'));
+const resolveToString = require('es6-template-strings/resolve-to-string');
+const configLocation = process.env['GIT_PROXY_CONFIG_PATH'];
+const userSettingsEnv = process.env['GIT_PROXY_USER-CONFIG_PATH'];
+const compile = require('es6-template-strings/compile');
 
+const loadConfig = () => {
+  // Load the config as nicely formatted string (and enusre it's JSON)
+  const proxySettingsRaw =
+    JSON.stringify(JSON.parse(fs.readFileSync(
+      configLocation ? configLocation : './resources/config.json')));
+
+      console.log(proxySettingsRaw);
+
+  // Compile the config string
+  const compiled = compile(proxySettingsRaw);
+
+  // replace any ${} in the config string with values from process.env
+  const x = resolveToString(compiled, process.env);
+
+  return JSON.parse(x);
+};
+
+const proxySettings = loadConfig();
 let _userSettings = null;
 let _authorisedList = proxySettings.authorisedList;
 let _database = proxySettings.sink;
@@ -10,8 +32,10 @@ let _proxyUrl = proxySettings.proxyUrl;
 let _allowSelfSignedCert = proxySettings.allowSelfSignedCert;
 let _smtpHost = proxySettings.smtpHost;
 let _smtpPort = proxySettings.smtpPort;
-let _thirdpartyapi = proxySettings.thirdpartyapi;
 let _emailNotificationFromAddress = proxySettings.emailNotificationFromAddress;
+let _thirdpartyapi = proxySettings.thirdpartyapi;
+let _cookieSecret = proxySettings.cookieSecret;
+let _sessionMaxAgeHours = proxySettings.sessionMaxAgeHours;
 
 // Gets a list of authorised repositories
 const getProxyUrl = () => {
@@ -23,7 +47,7 @@ const getProxyUrl = () => {
 };
 
 const userSettings = () => {
-  const path = './user-settings.json';
+  const path = userSettingsEnv ? userSettingsEnv : './user-settings.json';
   if (_userSettings === null && fs.existsSync(path)) {
     _userSettings = JSON.parse(fs.readFileSync(path));
   }
@@ -96,7 +120,6 @@ const logConfiguration = () => {
   console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
 };
 
-// logConfiguration();
 
 // Get SMTP host
 const getSmtpHost = () => {
@@ -116,18 +139,36 @@ const getSmtpPort = () => {
 };
 
 const getThirdPartyApi = () => {
-  if (userSettings !== null && userSettings.thirdpartyapi) {
+  if (userSettings !== null && userSettings.authorisedList) {
     _thirdpartyapi = userSettings.thirdpartyapi;
   }
 
   return _thirdpartyapi;
 };
 
-const getEmailNotificationFrom = () => {  
-  if (userSettings !== null && userSettings.authorisedList) {
-    _emailNotificationFromAddressrtyapi = userSettings.emailNotificationFromAddress;
-  }  
-  return _emailNotificationFromAddressrtyapi;  
+const getCookieSecret = () => {
+  if (userSettings !== null && userSettings.cookieSecret) {
+    _cookieSecret = userSettings.cookieSecret;
+  }
+
+  return _cookieSecret;
+};
+
+const getSessionMaxAgeHours = () => {
+  if (userSettings !== null && userSettings.sessionMaxAgeHours) {
+    _sessionMaxAgeHours = userSettings.sessionMaxAgeHours;
+  }
+
+  return _sessionMaxAgeHours;
+};
+
+const getEmailNotificationFromAddress = () => {
+  if (userSettings !== null && userSettings.emailNotificationFromAddress) {
+    _emailNotificationFromAddress = userSettings.emailNotificationFromAddress;
+  }
+
+  return _emailNotificationFromAddress;
+
 }
 
 exports.getThirdPartyApi = getThirdPartyApi;
@@ -140,4 +181,6 @@ exports.getAuthentication = getAuthentication;
 exports.getTempPasswordConfig = getTempPasswordConfig;
 exports.getSmtpHost = getSmtpHost;
 exports.getSmtpPort = getSmtpPort;
-exports.getEmailNotificationFrom = getEmailNotificationFrom;
+exports.getCookieSecret = getCookieSecret;
+exports.getSessionMaxAgeHours = getSessionMaxAgeHours;
+exports.getEmailNotificationFromAddress = getEmailNotificationFromAddress;

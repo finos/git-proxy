@@ -176,12 +176,12 @@ describe('add new repo', async () => {
           username: 'u2',
         });
       res.should.have.status(200);
-    const isAllowed = await db.isUserPushAllowed('test-repo','u2');
+    const isAllowed = await db.isUserPushAllowed('test-repo', 'u2');
     expect(isAllowed).to.be.true;
   });
 
   it('Invalid user push permission on Repo', async function() {
-    const isAllowed = await db.isUserPushAllowed('test-repo','test');
+    const isAllowed = await db.isUserPushAllowed('test-repo', 'test');
     expect(isAllowed).to.be.false;
   });
 

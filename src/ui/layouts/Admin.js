@@ -92,36 +92,35 @@ export default function Admin({...rest}) {
     };
   }, [mainPanel]);
   return (
-<UserContext.Provider value={{user, setUser}}>
-    <div className={classes.wrapper}>
-      <Sidebar
-        routes={routes}
-        logoText={'Git Proxy'}
-        logo={logo}
-        image={image}
-        handleDrawerToggle={handleDrawerToggle}
-        open={mobileOpen}
-        color={color}
-        {...rest}
-      />
-      <div className={classes.mainPanel} ref={mainPanel}>
-        <Navbar
+    <UserContext.Provider value={{user, setUser}}>
+      <div className={classes.wrapper}>
+        <Sidebar
           routes={routes}
+          logoText={'Git Proxy'}
+          logo={logo}
+          image={image}
           handleDrawerToggle={handleDrawerToggle}
+          open={mobileOpen}
+          color={color}
           {...rest}
         />
-        {/* On the /maps route we want the map to be on full screen - this is not possible if the content and conatiner classes are present because they have some paddings which would make the map smaller */}
-        {getRoute() ? (
-          <div className={classes.content}>
-            <div className={classes.container}>{switchRoutes}</div>
-          </div>
-        ) : (
-          <div className={classes.map}>{switchRoutes}</div>
-        )}
-        {getRoute() ? <Footer /> : null}
-
+        <div className={classes.mainPanel} ref={mainPanel}>
+          <Navbar
+            routes={routes}
+            handleDrawerToggle={handleDrawerToggle}
+            {...rest}
+          />
+          {/* On the /maps route we want the map to be on full screen - this is not possible if the content and conatiner classes are present because they have some paddings which would make the map smaller */}
+          {getRoute() ? (
+            <div className={classes.content}>
+              <div className={classes.container}>{switchRoutes}</div>
+            </div>
+          ) : (
+            <div className={classes.map}>{switchRoutes}</div>
+          )}
+          {getRoute() ? <Footer /> : null}
+        </div>
       </div>
-    </div>
-</UserContext.Provider>
+    </UserContext.Provider>
   );
 }

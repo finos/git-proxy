@@ -2,8 +2,7 @@
 /* eslint-disable require-jsdoc */
 import axios from 'axios';
 
-// const baseUrl = `${process.env.REACT_APP_API_URI}/api/v1`;
-const baseUrl = `${location.origin}/api/v1`;
+const baseUrl = (process.env.REACT_APP_API_URI ? `${process.env.REACT_APP_API_URI}/api/v1` : `${location.origin}/api/v1`);
 
 const config = {
   withCredentials: true,
@@ -26,7 +25,7 @@ const canAddUser = (repoName, user, action) => {
 class DupUserValidationError extends Error {
   constructor(message) {
     super(message);
-    this.name = 'user already in this role';
+    this.name = 'The user alread has this role';
   }
 }
 

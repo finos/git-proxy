@@ -20,12 +20,12 @@ const renderFn = (element)=>{
 };
 
 ReactDOM.render(
-    <Router history={hist}>
-      <Switch>
-        <Route path="/admin" render={()=>renderFn(<Admin />)} />
-        <Route path="/login" component={Login} />
-        <Redirect from="/" to="/admin/dashboard" />
-      </Switch>
-    </Router>,
-    document.getElementById('root'),
+  <Router history={hist}>
+    <Switch>
+      <Route path="/admin" render={()=>renderFn(<Admin />)} />
+      <Route path="/login" component={Login} />
+      <Redirect from="/" to="/admin/push" />
+    </Switch>
+  </Router>,
+  document.getElementById('root'),
 );

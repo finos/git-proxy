@@ -13,7 +13,30 @@ const defaultPushQuery = {
 
 const getPushes = async (query=defaultPushQuery) => {
   const collection = await connect(cnName);
-  const results = await collection.find(query).toArray();
+  const results = await collection.find(
+    query, {
+      projection: {
+        _id: 0,
+        id: 1,
+        allowPush: 1,
+        authorised: 1,
+        blocked: 1,
+        blockedMessage: 1,
+        branch: 1,
+        canceled: 1,
+        commitData: 1,
+        commitFrom: 1,
+        commitTo: 1,
+        error: 1,
+        method: 1,
+        project: 1,
+        rejected: 1,
+        repo: 1,
+        repoName: 1,
+        timepstamp: 1,
+        type: 1,
+        url: 1,
+    }}).toArray();
   return results;
 };
 
@@ -70,15 +93,11 @@ const canUserApproveRejectPush = async (id, user) => {
     const repoName = action.repoName.replace('.git', '');
     const isAllowed = await repo.canUserApproveRejectPushRepo(repoName, user);
 
-    if (isAllowed) {
-      resolve(true);
-    } else {
-      resolve(false);
-    }
+    resolve(isAllowed);
   });
 };
 
-const canUserCancelPush = async (id, user) => {
+const canUserCanclePush = async (id, user) => {
   return new Promise(async (resolve, reject) => {
     const pushDetail = await getPush(id);
     const repoName = pushDetail.repoName.replace('.git', '');
@@ -99,5 +118,5 @@ module.exports.authorise = authorise;
 module.exports.reject = reject;
 module.exports.cancel = cancel;
 module.exports.canUserApproveRejectPush = canUserApproveRejectPush;
-module.exports.canUserCancelPush = canUserCancelPush;
+module.exports.canUserCanclePush = canUserCanclePush;
 

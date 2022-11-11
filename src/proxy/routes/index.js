@@ -9,10 +9,9 @@ if (config.getAllowSelfSignedCert()) {
   process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 }
 
-
 router.use('/', proxy(config.getProxyUrl(), {
+  preserveHostHdr: false,
   filter: async function(req, res) {
-    console.log(req.headers);
     try {
       console.log('recieved');
       console.log(req.hostname);
@@ -69,15 +68,11 @@ router.use('/', proxy(config.getProxyUrl(), {
     return url;
   },
   proxyReqOptDecorator: function(proxyReqOpts, srcReq) {
-    if (proxyReqOpts.method === 'GET') {
-      console.log('SETTING CONTENT LENGTH = 0');
-    }
     return proxyReqOpts;
   },
 
   proxyReqBodyDecorator: function(bodyContent, srcReq) {
     if (srcReq.method === 'GET') {
-      console.log('SETTING GET BODY to NULL');
       return '';
     }
     return bodyContent;

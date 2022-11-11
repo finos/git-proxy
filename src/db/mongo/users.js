@@ -19,13 +19,15 @@ exports.deleteUser = async function(username) {
 };
 
 exports.createUser = async function(data) {
+  data.username = data.username.toLowerCase();
   const collection = await connect(usersCollection);
   const result = await collection.insertOne(data);
   return result;
 };
 
 exports.updateUser = async (user) => {
-  console.log(`updating user ${user.username}`);
+  console.log(`db.mongo.users: updating user, details->${JSON.stringify(user)}`);
+  user.username = user.username.toLowerCase();
   const options = {upsert: true};
   const collection = await connect(usersCollection);
   await collection.updateOne({username: user.username}, {'$set': user}, options);
