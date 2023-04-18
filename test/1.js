@@ -9,10 +9,6 @@ chai.should();
 // Use this test as a template
 describe('init', async () => {
   before(async function() {
-    // sinon.stub(console, 'log');
-    // sinon.stub(console, 'info');
-    // sinon.stub(console, 'warn');
-    // sinon.stub(console, 'error');
     app = await service.start();
   });
 
