@@ -17,8 +17,8 @@
   "author": "Paul Groves",
   "license": "Apache-2.0",
   "dependencies": {
-    "@material-ui/icons": "4.9.1",
     "@material-ui/core": "^4.11.0",
+    "@material-ui/icons": "4.9.1",
     "@seald-io/nedb": "^4.0.2",
     "axios": "^1.0.0",
     "bit-mask": "^1.0.2",
@@ -38,7 +38,6 @@
     "lodash": "^4.17.21",
     "moment": "^2.29.4",
     "mongodb": "^5.0.0",
-    "nedb": "^1.8.0",
     "nodemailer": "^6.6.1",
     "passport": "^0.6.0",
     "passport-activedirectory": "^1.0.4",
