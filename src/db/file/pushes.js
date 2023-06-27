@@ -1,6 +1,6 @@
 const fs = require('fs');
 const _ = require('lodash');
-const Datastore = require('nedb');
+const Datastore = require('@seald-io/nedb');
 const Action = require('../../proxy/actions/Action').Action;
 const toClass = require('../helper').toClass;
 
