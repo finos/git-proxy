@@ -17,7 +17,7 @@
   "author": "Paul Groves",
   "license": "Apache-2.0",
   "dependencies": {
-    "@material-ui/core": "^4.11.0",
+    "@mui/material": "^5.0.0",
     "@material-ui/icons": "4.9.1",
     "axios": "^0.21.2",
     "bit-mask": "^1.0.2",
