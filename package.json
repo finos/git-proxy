@@ -18,7 +18,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@mui/material": "^5.0.0",
-    "@material-ui/icons": "4.9.1",
+    "@mui/icons-material": "5.0.0",
     "axios": "^1.0.0",
     "bit-mask": "^1.0.2",
     "body-parser": "^1.20.1",
