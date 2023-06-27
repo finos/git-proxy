@@ -50,7 +50,7 @@
     "react-dom": "^16.13.1",
     "react-html-parser": "^2.0.2",
     "react-router-dom": "5.2.0",
-    "uuid": "^8.3.1"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",
