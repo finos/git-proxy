@@ -1,7 +1,7 @@
 {
   "name": "@finos/git-proxy",
-  "version": "0.0.1",
-  "description": "Git proxy for scanning and inspecting a 'git push' ",
+  "version": "1.0.0",
+  "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
     "client": "react-scripts start",
     "clientinstall": "npm install --prefix client",
