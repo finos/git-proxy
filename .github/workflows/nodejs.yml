@@ -20,7 +20,7 @@ jobs:
         mongodb-version: [4.4]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Use Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
@@ -28,7 +28,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
 
     - name: Start MongoDB
-      uses: supercharge/mongodb-github-action@1.3.0
+      uses: supercharge/mongodb-github-action@v1.9.0
       with:
         mongodb-version: ${{ matrix.mongodb-version }}
 
