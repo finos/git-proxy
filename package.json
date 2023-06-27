@@ -18,7 +18,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@mui/material": "^5.0.0",
-    "@mui/icons-material": "5.0.0",
+    "@mui/icons-material": "5.11.16",
     "axios": "^1.0.0",
     "bit-mask": "^1.0.2",
     "body-parser": "^1.20.1",
@@ -39,7 +39,7 @@
     "mongodb": "^5.0.0",
     "nedb": "^1.8.0",
     "nodemailer": "^6.6.1",
-    "passport": "^0.4.1",
+    "passport": "^0.6.0",
     "passport-activedirectory": "^1.0.4",
     "passport-local": "^1.0.0",
     "password-hash": "^1.2.2",

@@ -52,10 +52,10 @@ router.get('failed', (req, res) => {
   });
 });
 
-router.post('/logout', (req, res) => {
-  req.logout();
-  res.send({
-    message: 'logged out',
+router.post('/logout', (req, res, next) => {
+  req.logout((err) => {
+    if (err) { return next(err); }
+    res.redirect('/');
   });
 });
 
