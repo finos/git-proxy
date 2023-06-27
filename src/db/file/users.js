@@ -1,5 +1,5 @@
 const fs = require('fs');
-const Datastore = require('nedb');
+const Datastore = require('@seald-io/nedb');
 
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
