@@ -5,6 +5,7 @@
   </a>
 
   <br />
+  <br />
 
   <p align="center">
     Deploy custom push protections and policies<br />on top of Git
@@ -26,8 +27,8 @@
 [![NPM](https://img.shields.io/npm/v/@finos/git-proxy?colorA=00C586&colorB=000000)](https://www.npmjs.com/package/@finos/git-proxy)&nbsp;&nbsp;&nbsp;
 [![Build](https://img.shields.io/github/actions/workflow/status/finos/git-proxy/nodejs.yml?branch=main&label=CI&logo=github&colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/actions/workflows/nodejs.yml)&nbsp;&nbsp;&nbsp;
 [![License](https://img.shields.io/github/license/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/blob/main/LICENSEP)&nbsp;&nbsp;&nbsp;
-[![Contributors](https://img.shields.io/github/contributors/Citi/citi-ospo?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/graphs/contributors)&nbsp;&nbsp;&nbsp;
-[![Stars](https://img.shields.io/github/stars/Citi/citi-ospo?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/stargazers)&nbsp;&nbsp;&nbsp;
+[![Contributors](https://img.shields.io/github/contributors/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/graphs/contributors)&nbsp;&nbsp;&nbsp;
+[![Stars](https://img.shields.io/github/stars/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/stargazers)&nbsp;&nbsp;&nbsp;
 [![Forks](https://img.shields.io/github/forks/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/forks)&nbsp;&nbsp;&nbsp;
 
 </div>
