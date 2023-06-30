@@ -6,14 +6,11 @@
 
   <br />
 
-  <h3 align="center">Git Proxy</h3>
-
   <p align="center">
     Deploy custom push protections and policies<br />on top of Git
     <br />
     <br />
     <a href="https://www.npmjs.com/package/@finos/git-proxy"><strong><code>npm install @finos/git-proxy</code></strong></a>
-    <br />
     <br />
     <br />
     <a href="https://github.com/finos/git-proxy/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=">Report a bug</a>
