@@ -1,7 +1,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/finos/git-proxy">
-    <img src="./logo.png" alt="Logo" height="95">
+    <img src="./docs/img/logo.png" alt="Logo" height="95">
   </a>
 
   <br />
@@ -30,4 +30,43 @@
 [![Forks](https://img.shields.io/github/forks/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/forks)&nbsp;&nbsp;&nbsp;
 
 </div>
+<br />
+
+## About Git Proxy
+
+<br />
+<div align="center">
+  <img src="./docs/img/demo.png" width="500" />
+</div>
+
+<br />
+<br />
+
+Git Proxy is...
+
+## Installation
+
+To install...
+
+## Usage
+
+To start using Git Proxy...
+
+## Contributing
+
+Your contributions are at the core of making this a true open source project. Any contributions you make are **greatly appreciated**.
+
+...
+
+## Code of Conduct
+
+We are committed to making open source an enjoyable and respectful experience for our community. See <a href="https://github.com/finos/git-proxy/blob/main/CODE_OF_CONDUCT.md"><code>CODE_OF_CONDUCT</code></a> for more information.
+
+## License
+
+This project is distributed under the Apache-2.0 license. See <a href="./LICENSE"><code>LICENSE</code></a> for more information.
+
+## Contact
+
+If you have a query or require support with this project, [raise an issue](https://github.com/finos/git-proxy/issues). Otherwise, reach out to opensource@citi.com.
 
