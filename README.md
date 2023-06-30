@@ -34,15 +34,10 @@
 
 ## About Git Proxy
 
-<br />
-<div align="center">
-  <img src="./docs/img/demo.png" width="500" />
-</div>
-
-<br />
-<br />
-
 Git Proxy is...
+
+  <img align="right" width="550" src="./docs/img/demo.png" alt="Git Proxy Demonstration" />
+
 
 ## Installation
 
