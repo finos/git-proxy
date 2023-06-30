@@ -12,7 +12,7 @@
     Deploy custom push protections and policies<br />on top of Git
     <br />
     <br />
-    <a href="https://www.npmjs.com/package/@finos/git-proxy"><strong><kbd>npm install @finos/git-proxy</kbd></strong></a>
+    <a href="https://www.npmjs.com/package/@finos/git-proxy"><strong><code>npm install @finos/git-proxy</code></strong></a>
     <br />
     <br />
     <br />
@@ -31,7 +31,7 @@
 [![License](https://img.shields.io/github/license/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/blob/main/LICENSEP)&nbsp;&nbsp;&nbsp;
 [![Contributors](https://img.shields.io/github/contributors/Citi/citi-ospo?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/graphs/contributors)&nbsp;&nbsp;&nbsp;
 [![Stars](https://img.shields.io/github/stars/Citi/citi-ospo?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/stargazers)&nbsp;&nbsp;&nbsp;
-[![Forks](https://img.shields.io/github/forks/finos/git-proxy)](https://github.com/finos/git-proxy/forks)&nbsp;&nbsp;&nbsp;
+[![Forks](https://img.shields.io/github/forks/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/forks)&nbsp;&nbsp;&nbsp;
 
 </div>
 
