@@ -12,7 +12,8 @@
     "server-test-ci": "mocha --exit",
     "server-test": "mocha --exit",
     "test": "mocha --exit",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "preinstall": "npx husky install"
   },
   "author": "Paul Groves",
   "license": "Apache-2.0",
