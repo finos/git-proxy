@@ -65,6 +65,8 @@ To start using Git Proxy...
 
 Your contributions are at the core of making this a true open source project. Any contributions you make are **greatly appreciated**.
 
+<br />
+
 <a src="https://github.com/finos/git-proxy/fork">
 <img align="right" width="300" src="https://firstcontributions.github.io/assets/Readme/fork.png" alt="fork this repository" />
 </a>
@@ -91,7 +93,9 @@ $ git clone https://github.com/YOUR_GITHUB_USRERNAME/git-proxy.git
 <br />
 <br />
 
-...
+## Security
+
+If you identify a security vulnerability in our codebase, please follow the steps in our [`SECURITY.md`](https://github.com/finos/git-proxy/security/policy). This includes logic-based vulnerabilities and sensitive information or secrets found in code.
 
 ## Code of Conduct
 
