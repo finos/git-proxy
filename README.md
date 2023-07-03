@@ -125,7 +125,7 @@ $ git commit -m "YOUR COMMIT MESSAGE"
 
 ##### Push
 
-Now that you've created a commit with your changes. it's time to push to GitHub:
+Now that you've created a commit with your changes, it's time to push to GitHub:
 
 ```bash
 git push
@@ -135,13 +135,13 @@ git push
 
 ##### Open a pull request
 
-With your changes applied to your fork of the project, it's time to [open a pull request from your repository](https://github.com/finos/git-proxy/compare).
+With your changes applied to your fork of the project, it's time to [open a pull request from your repository](https://github.com/finos/git-proxy/compare)...
 
 <br />
 
 ## Security
 
-If you identify a security vulnerability in the codebase, please follow the steps in the [`SECURITY.md`](https://github.com/finos/git-proxy/security/policy). This includes logic-based vulnerabilities and sensitive information or secrets found in code.
+If you identify a security vulnerability in the codebase, please follow the steps in [`SECURITY.md`](https://github.com/finos/git-proxy/security/policy). This includes logic-based vulnerabilities and sensitive information or secrets found in code.
 
 ## Code of Conduct
 
