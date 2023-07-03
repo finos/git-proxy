@@ -35,14 +35,27 @@
 
 ## About Git Proxy
 
-Git Proxy is...
+<img align="right" width="550" src="./docs/img/demo.png" alt="Git Proxy Demonstration" style="padding: 50px" />
 
-  <img align="right" width="550" src="./docs/img/demo.png" alt="Git Proxy Demonstration" />
+
+Git Proxy deploys custom push protections and policies on top of Git. It is a highly configurable framework allowing developers and organizations to enforce push protections relevant to their developer workflow, security posture and risk appetite.
+
+Git Proxy is built with a developer-first mindset. By presenting simple-to-follow remediation instructions in the CLI/Terminal, it minimises the friction of use and adoption, and keeps developers focused on what matters; committing and pushing code.
 
 
 ## Installation
 
-To install...
+To install Git Proxy, use the [npm](https://www.npmjs.com/) package manager:
+
+```bash
+$ npm install @finos/git-proxy
+```
+
+To install a specific version of Git Proxy, append the version to the end of the `install` command:
+
+```bash
+$ npm install @finos/git-proxy@1.0.0
+```
 
 ## Usage
 
@@ -51,6 +64,32 @@ To start using Git Proxy...
 ## Contributing
 
 Your contributions are at the core of making this a true open source project. Any contributions you make are **greatly appreciated**.
+
+<a src="https://github.com/finos/git-proxy/fork">
+<img align="right" width="300" src="https://firstcontributions.github.io/assets/Readme/fork.png" alt="fork this repository" />
+</a>
+
+#### Fork the repository
+
+Click on the **fork** button at the top of the page. This will create a copy of this repository under your GitHub account.
+
+<br />
+<br />
+
+#### Clone the repository
+
+<img align="right" width="300" src="https://firstcontributions.github.io/assets/Readme/copy-to-clipboard.png" alt="copy URL to clipboard" />
+
+**Clone** the repository to your machine. Go to the repository via your GitHub account and click on the **Code** button.
+
+Run the following command in your CLI/Terminal:
+
+```bash
+$ git clone https://github.com/YOUR_GITHUB_USRERNAME/git-proxy.git
+```
+
+<br />
+<br />
 
 ...
 
