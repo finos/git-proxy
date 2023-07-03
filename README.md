@@ -35,7 +35,9 @@
 
 ## About Git Proxy
 
-<img align="right" width="550" src="./docs/img/demo.png" alt="Git Proxy Demonstration" style="padding: 50px" />
+&nbsp;&nbsp;<img align="right" width="550" src="./docs/img/demo.png" alt="Git Proxy Demonstration" />&nbsp;&nbsp;
+<br />
+<br />
 
 
 Git Proxy deploys custom push protections and policies on top of Git. It is a highly configurable framework allowing developers and organizations to enforce push protections relevant to their developer workflow, security posture and risk appetite.
