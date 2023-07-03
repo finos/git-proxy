@@ -93,9 +93,48 @@ $ git clone https://github.com/YOUR_GITHUB_USRERNAME/git-proxy.git
 <br />
 <br />
 
+#### Branch, code, commit and push
+
+##### Branch
+
+You can start coding on the default branch on your fork of the project, commonly `master` or `main`. If you want to create a branch to clearly identify your work, run:
+
+```bash
+$ git checkout -b feature/name-of-the-feature-you-are-creating
+```
+
+##### Code
+
+This part is up to you. Be creative and write some magical code! 🧙🪄
+
+##### Commit
+
+Once you have finished making all of your improvements and changes, run the following:
+
+```bash
+$ git commit -m "YOUR COMMIT MESSAGE"
+```
+
+Bear in mind, this project uses `commitlint` to enforce standardised commit messages. For more information about the types of commit messages you can and can't create, refer to the [commit conventions guide](https://www.conventionalcommits.org/en/v1.0.0/#summary).
+
+
+##### Push
+
+Now that you've created a commit with your changes. it's time to push to GitHub:
+
+```bash
+git push
+```
+
+You may get a warning asking you to push your branch reference with your changes. Feel free to copy and run this command too.
+
+##### Open a pull request
+
+With your changes applied to your fork of the project, it's time to [open a pull request from your repository](https://github.com/finos/git-proxy/compare).
+
 ## Security
 
-If you identify a security vulnerability in our codebase, please follow the steps in our [`SECURITY.md`](https://github.com/finos/git-proxy/security/policy). This includes logic-based vulnerabilities and sensitive information or secrets found in code.
+If you identify a security vulnerability in the codebase, please follow the steps in the [`SECURITY.md`](https://github.com/finos/git-proxy/security/policy). This includes logic-based vulnerabilities and sensitive information or secrets found in code.
 
 ## Code of Conduct
 
