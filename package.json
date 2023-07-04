@@ -6,7 +6,7 @@
     "client": "react-scripts start",
     "clientinstall": "npm install --prefix client",
     "server": "node index.js",
-    "start": "concurrently \"npm run server\" \"npm run client",
+    "start": "concurrently 'npm run server' 'npm run client'",
     "build": "react-scripts build",
     "ui-test": "react-scripts",
     "server-test-ci": "mocha --exit",
