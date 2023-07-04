@@ -3,7 +3,7 @@
 import React, {useState, useEffect} from 'react';
 import {makeStyles} from '@material-ui/core/styles';
 import moment from 'moment';
-import {useHistory} from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -12,7 +12,7 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-import {Redirect} from 'react-router-dom';
+import {Navigate} from 'react-router-dom';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
 import {getPushes} from '../../../services/git-push';
 
@@ -23,7 +23,7 @@ export default function PushesTable(props) {
   const [auth, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
-  const history = useHistory();
+  const history = useNavigate();
 
 
   const openPush = (push) => history.push(`/admin/push/${push}`);
@@ -40,7 +40,7 @@ export default function PushesTable(props) {
 
   if (isLoading) return (<div>Loading ...</div>);
   if (isError) return (<div>Something went wrong ...</div>);
-  if (!auth) return (<Redirect to={{pathname: '/login'}} />);
+  if (!auth) return (<Navigate to={{pathname: '/login'}} />);
 
   return (
     <TableContainer component={Paper}>

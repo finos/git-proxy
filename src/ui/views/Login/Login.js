@@ -15,7 +15,7 @@ import CardHeader from '../../components/Card/CardHeader.js';
 import CardBody from '../../components/Card/CardBody.js';
 import CardFooter from '../../components/Card/CardFooter.js';
 import axios from 'axios';
-import {Redirect} from 'react-router-dom';
+import {Navigate} from 'react-router-dom';
 
 const styles = {
   cardCategoryWhite: {
@@ -72,7 +72,7 @@ export default function UserProfile() {
 
   if (success) {
     return (
-      <Redirect to={{pathname: '/', state: {authed: true}}} />
+      <Navigate to={{pathname: '/', state: {authed: true}}} />
     );
   }
 

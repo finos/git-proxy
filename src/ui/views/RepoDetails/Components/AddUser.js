@@ -15,7 +15,7 @@ import Button from '../../../components/CustomButtons/Button.js';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Select from '@material-ui/core/Select';
 import Dialog from '@material-ui/core/Dialog';
-import {Redirect} from 'react-router-dom';
+import {Navigate} from 'react-router-dom';
 
 import {addUser} from '../../../services/repo.js';
 import {getUsers} from '../../../services/user.js';
@@ -60,7 +60,7 @@ function AddUserDialog(props) {
 
   if (isLoading) return (<div>Loading ...</div>);
   if (isError) return (<div>Something went wrong ...</div>);
-  if (!auth) return (<Redirect to={{pathname: '/login'}} />);
+  if (!auth) return (<Navigate to={{pathname: '/login'}} />);
 
   console.log(JSON.stringify(props));
 
