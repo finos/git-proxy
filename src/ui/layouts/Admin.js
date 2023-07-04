@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import React from 'react';
-import {Switch, Route, Redirect} from 'react-router-dom';
+import {Routes, Route, Redirect} from 'react-router-dom';
 import PerfectScrollbar from 'perfect-scrollbar';
 import 'perfect-scrollbar/css/perfect-scrollbar.css';
 import {makeStyles} from '@material-ui/core/styles';
@@ -16,7 +16,7 @@ import logo from '../assets/img/reactlogo.png';
 let ps;
 
 const switchRoutes = (
-  <Switch>
+  <Routes>
     {routes.map((prop, key) => {
       if (prop.layout === '/admin') {
         return (
@@ -30,7 +30,7 @@ const switchRoutes = (
       return null;
     })}
     <Redirect from="/admin" to="/admin/dashboard" />
-  </Switch>
+  </Routes>
 );
 
 const useStyles = makeStyles(styles);
