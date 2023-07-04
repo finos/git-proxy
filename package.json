@@ -5,7 +5,7 @@
   "scripts": {
     "client": "react-scripts start",
     "clientinstall": "npm install --prefix client",
-    "server": "node index.js",
+    "server": "node bin.js",
     "start": "concurrently \"npm run server\" \"npm run client",
     "build": "react-scripts build",
     "ui-test": "react-scripts",
@@ -80,5 +80,6 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  }
+  },
+  "bin": "./bin.js"
 }
