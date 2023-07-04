@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import React from 'react';
-import {Routes, Route, Redirect} from 'react-router-dom';
+import {Routes, Route, Navigate} from 'react-router-dom';
 import PerfectScrollbar from 'perfect-scrollbar';
 import 'perfect-scrollbar/css/perfect-scrollbar.css';
 import {makeStyles} from '@material-ui/core/styles';
@@ -22,14 +22,14 @@ const switchRoutes = (
         return (
           <Route
             exact path={prop.layout + prop.path}
-            component={prop.component}
+            element={prop.component}
             key={key}
           />
         );
       }
       return null;
     })}
-    <Redirect from="/admin" to="/admin/dashboard" />
+    <Navigate from="/admin" to="/admin/dashboard" />
   </Routes>
 );
 
