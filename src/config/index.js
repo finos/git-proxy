@@ -1,5 +1,5 @@
 const fs = require('fs');
-const proxySettings = JSON.parse(fs.readFileSync('./resources/config.json'));
+const proxySettings = require('../../resources/config.json');
 
 let _userSettings = null;
 let _authorisedList = proxySettings.authorisedList;
