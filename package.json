@@ -19,7 +19,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "@material-ui/core": "^4.11.0",
-    "@material-ui/icons": "4.11.3",
+    "@mui/icons-material": "5.0.0",
     "@seald-io/nedb": "^4.0.2",
     "axios": "^1.0.0",
     "bit-mask": "^1.0.2",
