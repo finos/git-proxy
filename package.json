@@ -6,13 +6,14 @@
     "client": "react-scripts start",
     "clientinstall": "npm install --prefix client",
     "server": "node index.js",
-    "start": "concurrently \"npm run server\" \"npm run client",
+    "start": "concurrently 'npm run server' 'npm run client'",
     "build": "react-scripts build",
     "ui-test": "react-scripts",
     "server-test-ci": "mocha --exit",
     "server-test": "mocha --exit",
     "test": "mocha --exit",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "preinstall": "npx husky install"
   },
   "author": "Paul Groves",
   "license": "Apache-2.0",
@@ -49,10 +50,12 @@
     "react-chartist": "0.14.4",
     "react-dom": "^16.13.1",
     "react-html-parser": "^2.0.2",
-    "react-router-dom": "6.14.0",
+    "react-router-dom": "6.14.1",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@commitlint/cli": "^17.6.6",
+    "@commitlint/config-conventional": "^17.6.6",
     "chai": "^4.2.0",
     "eslint": "^8.0.0",
     "eslint-config-google": "^0.14.0",
@@ -62,6 +65,7 @@
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-react": "^7.21.5",
     "eslint-plugin-standard": "^4.0.1",
+    "husky": "^8.0.3",
     "mocha": "^10.2.0",
     "react-scripts": "^5.0.1"
   },
