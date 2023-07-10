@@ -2,8 +2,6 @@
 /* eslint-disable require-jsdoc */
 import React from 'react';
 import {Routes, Route, Navigate} from 'react-router-dom';
-import PerfectScrollbar from 'perfect-scrollbar';
-import 'perfect-scrollbar/css/perfect-scrollbar.css';
 import {makeStyles} from '@material-ui/core/styles';
 import Navbar from '../components/Navbars/Navbar.js';
 import Footer from '../components/Footer/Footer.js';
