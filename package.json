@@ -12,7 +12,6 @@
     "server-test-ci": "mocha --exit",
     "server-test": "mocha --exit",
     "test": "mocha --exit",
-    "eject": "react-scripts eject",
     "prepare": "node ./scripts/prepare.js"
   },
   "author": "Paul Groves",
