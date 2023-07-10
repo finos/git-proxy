@@ -3,16 +3,15 @@
   "version": "1.0.0",
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
-    "client": "react-scripts start",
+    "client": "vite start",
     "clientinstall": "npm install --prefix client",
     "server": "node index.js",
     "start": "concurrently 'npm run server' 'npm run client'",
-    "build": "react-scripts build",
-    "ui-test": "react-scripts",
+    "build": "vite build",
+    "ui-test": "vite",
     "server-test-ci": "mocha --exit",
     "server-test": "mocha --exit",
     "test": "mocha --exit",
-    "eject": "react-scripts eject",
     "prepare": "node ./scripts/prepare.js"
   },
   "author": "Paul Groves",
@@ -55,6 +54,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.6.6",
     "@commitlint/config-conventional": "^17.6.6",
+    "@vitejs/plugin-react": "^4.0.2",
     "chai": "^4.2.0",
     "eslint": "^8.0.0",
     "eslint-config-google": "^0.14.0",
@@ -66,7 +66,7 @@
     "eslint-plugin-standard": "^4.0.1",
     "husky": "^8.0.3",
     "mocha": "^10.2.0",
-    "react-scripts": "^5.0.1"
+    "vite": "^4.4.2"
   },
   "browserslist": {
     "production": [
