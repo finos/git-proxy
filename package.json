@@ -13,7 +13,7 @@
     "server-test": "mocha --exit",
     "test": "mocha --exit",
     "eject": "react-scripts eject",
-    "preinstall": "npx husky install"
+    "prepare": "node ./scripts/prepare.js"
   },
   "author": "Paul Groves",
   "license": "Apache-2.0",
