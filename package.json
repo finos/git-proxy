@@ -3,17 +3,16 @@
   "version": "1.0.0",
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
-    "client": "react-scripts start",
+    "client": "vite start",
     "clientinstall": "npm install --prefix client",
     "server": "node bin.js",
     "start": "concurrently 'npm run server' 'npm run client'",
-    "build": "react-scripts build",
-    "ui-test": "react-scripts",
+    "build": "vite build",
+    "ui-test": "vite",
     "server-test-ci": "mocha --exit",
     "server-test": "mocha --exit",
     "test": "mocha --exit",
-    "eject": "react-scripts eject",
-    "preinstall": "npx husky install"
+    "prepare": "node ./scripts/prepare.js"
   },
   "author": "Paul Groves",
   "license": "Apache-2.0",
@@ -44,7 +43,6 @@
     "passport-activedirectory": "^1.0.4",
     "passport-local": "^1.0.0",
     "password-hash": "^1.2.2",
-    "perfect-scrollbar": "1.5.5",
     "prop-types": "15.8.1",
     "react": "^16.13.1",
     "react-chartist": "0.14.4",
@@ -56,6 +54,7 @@
   "devDependencies": {
     "@commitlint/cli": "^17.6.6",
     "@commitlint/config-conventional": "^17.6.6",
+    "@vitejs/plugin-react": "^4.0.2",
     "chai": "^4.2.0",
     "eslint": "^8.0.0",
     "eslint-config-google": "^0.14.0",
@@ -67,7 +66,7 @@
     "eslint-plugin-standard": "^4.0.1",
     "husky": "^8.0.3",
     "mocha": "^10.2.0",
-    "react-scripts": "^5.0.1"
+    "vite": "^4.4.2"
   },
   "browserslist": {
     "production": [
