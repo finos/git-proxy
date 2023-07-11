@@ -4,15 +4,15 @@ import React from 'react';
 import ChartistGraph from 'react-chartist';
 import {makeStyles} from '@material-ui/core/styles';
 import AccessTime from '@material-ui/icons/AccessTime';
-import Card from '../../../components/Card/Card.js';
-import CardHeader from '../../../components/Card/CardHeader.js';
-import CardBody from '../../../components/Card/CardBody.js';
-import CardFooter from '../../../components/Card/CardFooter.js';
-import ArrowUpward from '@material-ui/icons/ArrowUpward';
+import Card from '../../../components/Card/Card.jsx';
+import CardHeader from '../../../components/Card/CardHeader.jsx';
+import CardBody from '../../../components/Card/CardBody.jsx';
+import CardFooter from '../../../components/Card/CardFooter.jsx';
+
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
 
 import {
-  dailySalesChart,
+  completedTasksChart,
 } from '../../../variables/charts.js';
 
 const useStyles = makeStyles(styles);
@@ -21,23 +21,18 @@ export default function DailyPullsGraph() {
   const classes = useStyles();
   return (
     <Card chart>
-      <CardHeader color="success">
+      <CardHeader color="danger">
         <ChartistGraph
           className="ct-chart"
-          data={dailySalesChart.data}
+          data={completedTasksChart.data}
           type="Line"
-          options={dailySalesChart.options}
-          listener={dailySalesChart.animation}
+          options={completedTasksChart.options}
+          listener={completedTasksChart.animation}
         />
       </CardHeader>
       <CardBody>
-        <h4 className={classes.cardTitle}>Daily Github pulls</h4>
-        <p className={classes.cardCategory}>
-          <span className={classes.successText}>
-            <ArrowUpward className={classes.upArrowCardCategory} /> 55%
-          </span>{' '}
-          increase in Git pulls today.
-        </p>
+        <h4 className={classes.cardTitle}>Push Rjections</h4>
+        <p className={classes.cardCategory}>10% reduction in push rejections</p>
       </CardBody>
       <CardFooter chart>
         <div className={classes.stats}>

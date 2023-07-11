@@ -4,10 +4,10 @@ import React from 'react';
 import ChartistGraph from 'react-chartist';
 import {makeStyles} from '@material-ui/core/styles';
 import AccessTime from '@material-ui/icons/AccessTime';
-import Card from '../../../components/Card/Card.js';
-import CardHeader from '../../../components/Card/CardHeader.js';
-import CardBody from '../../../components/Card/CardBody.js';
-import CardFooter from '../../../components/Card/CardFooter.js';
+import Card from '../../../components/Card/Card.jsx';
+import CardHeader from '../../../components/Card/CardHeader.jsx';
+import CardBody from '../../../components/Card/CardBody.jsx';
+import CardFooter from '../../../components/Card/CardFooter.jsx';
 
 import {emailsSubscriptionChart} from '../../../variables/charts.js';
 

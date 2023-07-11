@@ -4,10 +4,10 @@ import React from 'react';
 import {makeStyles} from '@material-ui/core/styles';
 import Update from '@material-ui/icons/Update';
 import Accessibility from '@material-ui/icons/Accessibility';
-import Card from '../../../components/Card/Card.js';
-import CardHeader from '../../../components/Card/CardHeader.js';
-import CardIcon from '../../../components/Card/CardIcon.js';
-import CardFooter from '../../../components/Card/CardFooter.js';
+import Card from '../../../components/Card/Card.jsx';
+import CardHeader from '../../../components/Card/CardHeader.jsx';
+import CardIcon from '../../../components/Card/CardIcon.jsx';
+import CardFooter from '../../../components/Card/CardFooter.jsx';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
 
 const useStyles = makeStyles(styles);
