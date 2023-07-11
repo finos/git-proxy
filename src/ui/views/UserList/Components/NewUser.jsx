@@ -7,11 +7,11 @@ import Input from '@material-ui/core/Input';
 import FormControl from '@material-ui/core/FormControl';
 import Checkbox from '@material-ui/core/Checkbox';
 import FormHelperText from '@material-ui/core/FormHelperText';
-import GridItem from '../../../components/Grid/GridItem.js';
-import GridContainer from '../../../components/Grid/GridContainer.js';
-import Card from '../../../components/Card/Card.js';
-import CardBody from '../../../components/Card/CardBody.js';
-import Button from '../../../components/CustomButtons/Button.js';
+import GridItem from '../../../components/Grid/GridItem.jsx';
+import GridContainer from '../../../components/Grid/GridContainer.jsx';
+import Card from '../../../components/Card/Card.jsx';
+import CardBody from '../../../components/Card/CardBody.jsx';
+import Button from '../../../components/CustomButtons/Button.jsx';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Dialog from '@material-ui/core/Dialog';
 

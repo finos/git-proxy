@@ -3,9 +3,9 @@
 import React from 'react';
 import {Switch, Route, Redirect} from 'react-router-dom';
 import {makeStyles} from '@material-ui/core/styles';
-import Navbar from '../components/Navbars/Navbar.js';
-import Footer from '../components/Footer/Footer.js';
-import Sidebar from '../components/Sidebar/Sidebar.js';
+import Navbar from '../components/Navbars/Navbar.jsx';
+import Footer from '../components/Footer/Footer.jsx';
+import Sidebar from '../components/Sidebar/Sidebar.jsx';
 import routes from '../../routes.js';
 import styles from '../assets/jss/material-dashboard-react/layouts/adminStyle.js';
 import bgImage from '../assets/img/sidebar-2.jpg';
