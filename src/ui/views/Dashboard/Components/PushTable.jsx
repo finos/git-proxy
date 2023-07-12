@@ -6,7 +6,7 @@ import BugReport from '@material-ui/icons/BugReport';
 import Code from '@material-ui/icons/Code';
 import Table from '../../../components/Table/Table.jsx';
 import CustomTabs from '../../../components/CustomTabs/CustomTabs.jsx';
-import {Redirect} from 'react-router-dom';
+import {Navigate} from 'react-router-dom';
 
 
 export default function PushesWaitingAuthorizationGraph() {
@@ -46,7 +46,7 @@ export default function PushesWaitingAuthorizationGraph() {
 
   if (isLoading) return (<div>Loading ...</div>);
   if (isError) return (<div>Something went wrong ...</div>);
-  if (!auth) return (<Redirect to={{pathname: '/login'}} />);
+  if (!auth) return (<Navigate to={{pathname: '/login'}} />);
 
   return (
     <CustomTabs
