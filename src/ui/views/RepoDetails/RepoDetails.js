@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import React, {useState, useEffect} from 'react';
-import {Redirect} from 'react-router-dom';
+import {Navigate} from 'react-router-dom';
 // import Icon from '@material-ui/core/Icon';
 import GridItem from '../../components/Grid/GridItem.js';
 import GridContainer from '../../components/Grid/GridContainer.js';
@@ -53,7 +53,7 @@ export default function RepoDetails(props) {
 
   if (isLoading) return (<div>Loading ...</div>);
   if (isError) return (<div>Something went wrong ...</div>);
-  if (!auth) return (<Redirect to={{pathname: '/login'}} />);
+  if (!auth) return (<Navigate to={{pathname: '/login'}} />);
 
   return (
     <GridContainer>
