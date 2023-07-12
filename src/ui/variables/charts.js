@@ -184,8 +184,3 @@ export const completedTasksChart = {
     },
   },
 };
-
-// module.exports = {
-//   emailsSubscriptionChart,
-//   completedTasksChart,
-// };
