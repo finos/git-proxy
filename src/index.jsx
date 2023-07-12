@@ -6,8 +6,8 @@ import {createBrowserHistory} from 'history';
 import {BrowserRouter as Router, Route, Routes, Navigate} from 'react-router-dom';
 
 // core components
-import Admin from './ui/layouts/Admin.js';
-import Login from './ui/views/Login/Login.js';
+import Admin from './ui/layouts/Admin.jsx';
+import Login from './ui/views/Login/Login.jsx';
 import './ui/assets/css/material-dashboard-react.css';
 
 

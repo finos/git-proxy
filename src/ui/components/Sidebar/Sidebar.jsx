@@ -11,7 +11,7 @@ import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Icon from '@material-ui/core/Icon';
-import AdminNavbarLinks from '../Navbars/AdminNavbarLinks.js';
+import AdminNavbarLinks from '../Navbars/AdminNavbarLinks.jsx';
 import styles from '../../assets/jss/material-dashboard-react/components/sidebarStyle.js';
 
 const useStyles = makeStyles(styles);

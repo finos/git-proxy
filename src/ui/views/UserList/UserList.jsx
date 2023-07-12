@@ -2,12 +2,12 @@
 /* eslint-disable require-jsdoc */
 import React from 'react';
 import Icon from '@material-ui/core/Icon';
-import GridItem from '../../components/Grid/GridItem.js';
-import GridContainer from '../../components/Grid/GridContainer.js';
-import Card from '../../components/Card/Card.js';
-import CardIcon from '../../components/Card/CardIcon.js';
-import CardBody from '../../components/Card/CardBody.js';
-import CardHeader from '../../components/Card/CardHeader.js';
+import GridItem from '../../components/Grid/GridItem.jsx';
+import GridContainer from '../../components/Grid/GridContainer.jsx';
+import Card from '../../components/Card/Card.jsx';
+import CardIcon from '../../components/Card/CardIcon.jsx';
+import CardBody from '../../components/Card/CardBody.jsx';
+import CardHeader from '../../components/Card/CardHeader.jsx';
 import TabList from './Components/TabList';
 
 export default function UserList(props) {
