@@ -2,10 +2,10 @@
 /* eslint-disable require-jsdoc */
 import React from 'react';
 import {makeStyles} from '@material-ui/core/styles';
-import Table from '../../../components/Table/Table.js';
-import Card from '../../../components/Card/Card.js';
-import CardHeader from '../../../components/Card/CardHeader.js';
-import CardBody from '../../../components/Card/CardBody.js';
+import Table from '../../../components/Table/Table.jsx';
+import Card from '../../../components/Card/Card.jsx';
+import CardHeader from '../../../components/Card/CardHeader.jsx';
+import CardBody from '../../../components/Card/CardBody.jsx';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
 
 const useStyles = makeStyles(styles);

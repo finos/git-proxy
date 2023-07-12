@@ -2,9 +2,9 @@
 /* eslint-disable require-jsdoc */
 import React, {useState, useEffect} from 'react';
 import {makeStyles} from '@material-ui/core/styles';
+import GridItem from '../../../components/Grid/GridItem.jsx';
+import GridContainer from '../../../components/Grid/GridContainer.jsx';
 import {useNavigate} from 'react-router-dom';
-import GridItem from '../../../components/Grid/GridItem.js';
-import GridContainer from '../../../components/Grid/GridContainer.js';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';

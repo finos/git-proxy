@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
-    "client": "vite start",
+    "client": "vite --config vite.config.js",
     "clientinstall": "npm install --prefix client",
     "server": "node index.js",
     "start": "concurrently 'npm run server' 'npm run client'",

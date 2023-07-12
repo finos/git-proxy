@@ -4,8 +4,8 @@ import React, {useState, useEffect} from 'react';
 import axios from 'axios';
 import BugReport from '@material-ui/icons/BugReport';
 import Code from '@material-ui/icons/Code';
-import Table from '../../../components/Table/Table.js';
-import CustomTabs from '../../../components/CustomTabs/CustomTabs.js';
+import Table from '../../../components/Table/Table.jsx';
+import CustomTabs from '../../../components/CustomTabs/CustomTabs.jsx';
 import {Navigate} from 'react-router-dom';
 
 

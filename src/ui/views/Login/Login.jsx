@@ -6,14 +6,14 @@ import {makeStyles} from '@material-ui/core/styles';
 import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
 // core components
-import GridItem from '../../components/Grid/GridItem.js';
-import GridContainer from '../../components/Grid/GridContainer.js';
+import GridItem from '../../components/Grid/GridItem.jsx';
+import GridContainer from '../../components/Grid/GridContainer.jsx';
 import Input from '@material-ui/core/Input';
-import Button from '../../components/CustomButtons/Button.js';
-import Card from '../../components/Card/Card.js';
-import CardHeader from '../../components/Card/CardHeader.js';
-import CardBody from '../../components/Card/CardBody.js';
-import CardFooter from '../../components/Card/CardFooter.js';
+import Button from '../../components/CustomButtons/Button.jsx';
+import Card from '../../components/Card/Card.jsx';
+import CardHeader from '../../components/Card/CardHeader.jsx';
+import CardBody from '../../components/Card/CardBody.jsx';
+import CardFooter from '../../components/Card/CardFooter.jsx';
 import axios from 'axios';
 import {Navigate} from 'react-router-dom';
 
