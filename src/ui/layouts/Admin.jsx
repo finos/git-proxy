@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import React from 'react';
-import {Switch, Route, Redirect} from 'react-router-dom';
+import {Routes, Route, Navigate} from 'react-router-dom';
 import {makeStyles} from '@material-ui/core/styles';
 import Navbar from '../components/Navbars/Navbar.jsx';
 import Footer from '../components/Footer/Footer.jsx';
@@ -14,21 +14,21 @@ import logo from '../assets/img/reactlogo.png';
 let ps;
 
 const switchRoutes = (
-  <Switch>
+  <Routes>
     {routes.map((prop, key) => {
       if (prop.layout === '/admin') {
         return (
           <Route
             exact path={prop.layout + prop.path}
-            component={prop.component}
+            element={prop.component}
             key={key}
           />
         );
       }
       return null;
     })}
-    <Redirect from="/admin" to="/admin/dashboard" />
-  </Switch>
+    <Navigate from="/admin" to="/admin/dashboard" />
+  </Routes>
 );
 
 const useStyles = makeStyles(styles);
