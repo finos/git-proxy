@@ -17,23 +17,42 @@ export default function Dashboard() {
             tabs={[
               {
                 tabName: 'Open',
-                tabContent: (<PushesTable blocked={true} authorised={false} rejected={false} canceled={false} />),
+                tabContent: (
+                  <PushesTable
+                    blocked={true}
+                    authorised={false}
+                    rejected={false}
+                    canceled={false}
+                  />
+                ),
               },
               {
                 tabName: 'Approved',
-                tabContent: (<PushesTable authorised={true} />),
+                tabContent: <PushesTable authorised={true} />,
               },
               {
                 tabName: 'Canceled',
-                tabContent: (<PushesTable authorised={false} rejected={false} canceled={true} />),
+                tabContent: (
+                  <PushesTable
+                    authorised={false}
+                    rejected={false}
+                    canceled={true}
+                  />
+                ),
               },
               {
                 tabName: 'Rejected',
                 // tabIcon: Code,
-                tabContent: (<PushesTable authorised={false} rejected={true} canceled={false} />),
+                tabContent: (
+                  <PushesTable
+                    authorised={false}
+                    rejected={true}
+                    canceled={false}
+                  />
+                ),
               },
-            ]
-            } />
+            ]}
+          />
         </GridItem>
       </GridContainer>
     </div>

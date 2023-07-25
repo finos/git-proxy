@@ -3,14 +3,14 @@
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import {makeStyles} from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import styles from '../../assets/jss/material-dashboard-react/components/cardFooterStyle.js';
 
 const useStyles = makeStyles(styles);
 
 export default function CardFooter(props) {
   const classes = useStyles();
-  const {className, children, plain, profile, stats, chart, ...rest} = props;
+  const { className, children, plain, profile, stats, chart, ...rest } = props;
   const cardFooterClasses = classNames({
     [classes.cardFooter]: true,
     [classes.cardFooterPlain]: plain,

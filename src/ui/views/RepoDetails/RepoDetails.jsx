@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
-import React, {useState, useEffect} from 'react';
-import {Navigate} from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 // import Icon from '@material-ui/core/Icon';
 import GridItem from '../../components/Grid/GridItem.jsx';
 import GridContainer from '../../components/Grid/GridContainer.jsx';
@@ -16,8 +16,8 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import {getRepo, deleteUser} from '../../services/repo.js';
-import {makeStyles} from '@material-ui/core/styles';
+import { getRepo, deleteUser } from '../../services/repo.js';
+import { makeStyles } from '@material-ui/core/styles';
 import AddUser from './Components/AddUser';
 
 const useStyles = makeStyles((theme) => ({
@@ -49,11 +49,12 @@ export default function RepoDetails(props) {
     getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
   };
 
-  const refresh = () => getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
+  const refresh = () =>
+    getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
 
-  if (isLoading) return (<div>Loading ...</div>);
-  if (isError) return (<div>Something went wrong ...</div>);
-  if (!auth) return (<Navigate to={{pathname: '/login'}} />);
+  if (isLoading) return <div>Loading ...</div>;
+  if (isError) return <div>Something went wrong ...</div>;
+  if (!auth) return <Navigate to={{ pathname: '/login' }} />;
 
   return (
     <GridContainer>
@@ -70,28 +71,35 @@ export default function RepoDetails(props) {
                       readOnly: true,
                     }}
                     variant="outlined"
-                    value={data.project} />
+                    value={data.project}
+                  />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
                   <TextField
                     id="repoName"
                     label="Repo Name"
                     variant="outlined"
-                    value={data.name} />
+                    value={data.name}
+                  />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
                   <TextField
                     id="gitUrl"
                     label="Url"
                     variant="outlined"
-                    value={data.url} />
+                    value={data.url}
+                  />
                 </GridItem>
               </GridContainer>
             </form>
             <GridContainer>
               <GridItem xs={6} sm={6} md={6}>
                 <h2>Can Authorise Push</h2>
-                <AddUser repoName={repoName} type='authorise' refreshFn={refresh}></AddUser>
+                <AddUser
+                  repoName={repoName}
+                  type="authorise"
+                  refreshFn={refresh}
+                ></AddUser>
                 <br />
                 <br />
                 <TableContainer component={Paper}>
@@ -106,7 +114,11 @@ export default function RepoDetails(props) {
                       {data.users.canAuthorise.map((row) => (
                         <TableRow key={row}>
                           <TableCell component="th" scope="row">
-                            <Button variant="contained" color="secondary" onClick={() => removeUser(row, 'authorise')}>
+                            <Button
+                              variant="contained"
+                              color="secondary"
+                              onClick={() => removeUser(row, 'authorise')}
+                            >
                               Remove
                             </Button>
                           </TableCell>
@@ -119,7 +131,11 @@ export default function RepoDetails(props) {
               </GridItem>
               <GridItem xs={6} sm={6} md={6}>
                 <h2>Can Push</h2>
-                <AddUser repoName={repoName} type='push' refreshFn={refresh}></AddUser>
+                <AddUser
+                  repoName={repoName}
+                  type="push"
+                  refreshFn={refresh}
+                ></AddUser>
                 <br />
                 <br />
                 <TableContainer component={Paper}>
@@ -134,7 +150,11 @@ export default function RepoDetails(props) {
                       {data.users.canPush.map((row) => (
                         <TableRow key={row}>
                           <TableCell component="th" scope="row">
-                            <Button variant="contained" color="secondary" onClick={() => removeUser(row, 'push')}>
+                            <Button
+                              variant="contained"
+                              color="secondary"
+                              onClick={() => removeUser(row, 'push')}
+                            >
                               Remove
                             </Button>
                           </TableCell>

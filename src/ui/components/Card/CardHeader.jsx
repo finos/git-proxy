@@ -3,14 +3,14 @@
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import {makeStyles} from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import styles from '../../assets/jss/material-dashboard-react/components/cardHeaderStyle.js';
 
 const useStyles = makeStyles(styles);
 
 export default function CardHeader(props) {
   const classes = useStyles();
-  const {className, children, color, plain, stats, icon, ...rest} = props;
+  const { className, children, color, plain, stats, icon, ...rest } = props;
   const cardHeaderClasses = classNames({
     [classes.cardHeader]: true,
     [classes[color + 'CardHeader']]: color,

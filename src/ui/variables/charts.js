@@ -37,17 +37,17 @@ export const dailySalesChart = {
   },
   // for animation
   animation: {
-    draw: function(data) {
+    draw: function (data) {
       if (data.type === 'line' || data.type === 'area') {
         data.element.animate({
           d: {
             begin: 600,
             dur: 700,
             from: data.path
-                .clone()
-                .scale(1, 0)
-                .translate(0, data.chartRect.height())
-                .stringify(),
+              .clone()
+              .scale(1, 0)
+              .translate(0, data.chartRect.height())
+              .stringify(),
             to: data.path.clone().stringify(),
             easing: Chartist.Svg.Easing.easeOutQuint,
           },
@@ -108,7 +108,7 @@ export const emailsSubscriptionChart = {
       {
         seriesBarDistance: 5,
         axisX: {
-          labelInterpolationFnc: function(value) {
+          labelInterpolationFnc: function (value) {
             return value[0];
           },
         },
@@ -116,7 +116,7 @@ export const emailsSubscriptionChart = {
     ],
   ],
   animation: {
-    draw: function(data) {
+    draw: function (data) {
       if (data.type === 'bar') {
         data.element.animate({
           opacity: {
@@ -155,17 +155,17 @@ export const completedTasksChart = {
     },
   },
   animation: {
-    draw: function(data) {
+    draw: function (data) {
       if (data.type === 'line' || data.type === 'area') {
         data.element.animate({
           d: {
             begin: 600,
             dur: 700,
             from: data.path
-                .clone()
-                .scale(1, 0)
-                .translate(0, data.chartRect.height())
-                .stringify(),
+              .clone()
+              .scale(1, 0)
+              .translate(0, data.chartRect.height())
+              .stringify(),
             to: data.path.clone().stringify(),
             easing: Chartist.Svg.Easing.easeOutQuint,
           },

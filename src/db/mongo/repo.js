@@ -1,7 +1,7 @@
 const connect = require('./helper').connect;
 const cnName = 'repos';
 
-exports.getRepos = async (query={}) => {
+exports.getRepos = async (query = {}) => {
   const collection = await connect(cnName);
   const result = await collection.find().toArray();
   console.log(JSON.stringify(result));
@@ -10,7 +10,7 @@ exports.getRepos = async (query={}) => {
 
 exports.getRepo = async (name) => {
   const collection = await connect(cnName);
-  return await collection.findOne({name: name});
+  return await collection.findOne({ name: name });
 };
 
 exports.createRepo = async (repo) => {
@@ -26,34 +26,36 @@ exports.createRepo = async (repo) => {
 exports.addUserCanPush = async (name, user) => {
   const collection = await connect(cnName);
   await collection.updateOne(
-      {name: name},
-      {'$push': {'users.canPush': user}});
+    { name: name },
+    { $push: { 'users.canPush': user } },
+  );
 };
 
 exports.addUserCanAuthorise = async (name, user) => {
   const collection = await connect(cnName);
   await collection.updateOne(
-      {name: name},
-      {'$push': {'users.canAuthorise': user}});
+    { name: name },
+    { $push: { 'users.canAuthorise': user } },
+  );
 };
 
 exports.removeUserCanPush = async (name, user) => {
   const collection = await connect(cnName);
   await collection.updateOne(
-      {name: name},
-      {'$pull': {'users.canPush': user}});
+    { name: name },
+    { $pull: { 'users.canPush': user } },
+  );
 };
 
 exports.removeUserCanAuthorise = async (name, user) => {
   const collection = await connect(cnName);
   await collection.updateOne(
-      {name: name},
-      {'$pull': {'users.canAuthorise': user}});
+    { name: name },
+    { $pull: { 'users.canAuthorise': user } },
+  );
 };
 
 exports.deleteRepo = async (name) => {
   const collection = await connect(cnName);
-  await collection.deleteMany({name: name});
+  await collection.deleteMany({ name: name });
 };
-
-

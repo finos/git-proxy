@@ -1,5 +1,5 @@
-const proxy = require('./src/proxy');
-const service = require('./src/service');
+import proxy from './src/proxy';
+import service from './src/service';
 
 proxy.start();
 service.start();

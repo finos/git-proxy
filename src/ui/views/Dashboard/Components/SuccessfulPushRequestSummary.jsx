@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import React from 'react';
-import {makeStyles} from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import Update from '@material-ui/icons/Update';
 import Accessibility from '@material-ui/icons/Accessibility';
 import Card from '../../../components/Card/Card.jsx';
