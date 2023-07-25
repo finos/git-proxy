@@ -23,6 +23,7 @@ module.exports = {
     'prettier/prettier': ['error', { singleQuote: true }],
     'object-curly-spacing': ['error', 'always'],
     'space-before-function-paren': 'off',
+    'operator-linebreak': 'off',
     'quote-props': [
       'error',
       'as-needed',
