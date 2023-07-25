@@ -13,21 +13,20 @@ router.post('/login', passport.authenticate(passportType), (req, res) => {
 });
 
 router.get('/', (req, res) => {
-  res.status(200).json(
-      {
-        login: {
-          action: 'post',
-          uri: 'auth/login',
-        },
-        profile: {
-          action: 'get',
-          uri: 'auth/profile',
-        },
-        logout: {
-          action: 'post',
-          uri: 'auth/logout',
-        },
-      });
+  res.status(200).json({
+    login: {
+      action: 'post',
+      uri: 'auth/login',
+    },
+    profile: {
+      action: 'get',
+      uri: 'auth/profile',
+    },
+    logout: {
+      action: 'post',
+      uri: 'auth/logout',
+    },
+  });
 });
 
 // when login is successful, retrieve user info
@@ -54,11 +53,12 @@ router.get('failed', (req, res) => {
 
 router.post('/logout', (req, res, next) => {
   req.logout((err) => {
-    if (err) { return next(err); }
+    if (err) {
+      return next(err);
+    }
     res.redirect('/');
   });
 });
-
 
 router.get('/profile', (req, res) => {
   if (req.user) {
@@ -81,18 +81,22 @@ router.post('/profile', async (req, res) => {
       console.log(JSON.stringify(req.body));
 
       const newUser = await db.createUser(
-          req.body.username,
-          password,
-          req.body.email,
-          req.body.gitAccount,
-          req.body.admin);
+        req.body.username,
+        password,
+        req.body.email,
+        req.body.gitAccount,
+        req.body.admin,
+      );
 
       res.send(newUser);
     } catch (e) {
       console.log(e);
-      res.status(500).send({
-        message: e.message,
-      }).end();
+      res
+        .status(500)
+        .send({
+          message: e.message,
+        })
+        .end();
     }
   } else {
     res.status(401).end();

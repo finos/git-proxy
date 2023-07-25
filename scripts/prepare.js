@@ -16,7 +16,7 @@ const FILE_HUSKY = './.husky/_/husky.sh';
 // Commands.
 // =========
 
-const COMMIT_MSG_STRING = `'npx --no -- commitlint --edit $'{1}''`
+const COMMIT_MSG_STRING = '\'npx --no -- commitlint --edit $\'{1}\'\'';
 const CLI_COMMIT = `npx husky add .husky/commit-msg ${COMMIT_MSG_STRING}`;
 const CLI_HUSKY = 'npx husky install';
 
@@ -26,8 +26,8 @@ const CLI_HUSKY = 'npx husky install';
 
 // this will create .husky/_/husky.sh if it does not yet exist.
 if (!existsSync(FILE_HUSKY)) {
-	global.console.log(CLI_HUSKY);
-	execSync(CLI_HUSKY);
+  global.console.log(CLI_HUSKY);
+  execSync(CLI_HUSKY);
 }
 
 // ====================
@@ -36,6 +36,6 @@ if (!existsSync(FILE_HUSKY)) {
 
 // this will create .husky/commit-msg if it does not yet exist.
 if (!existsSync(FILE_COMMIT)) {
-	global.console.log(CLI_COMMIT);
-	execSync(CLI_COMMIT);
+  global.console.log(CLI_COMMIT);
+  execSync(CLI_COMMIT);
 }

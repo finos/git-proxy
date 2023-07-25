@@ -2,7 +2,7 @@ const Step = require('../../actions').Step;
 const db = require('../../../db');
 
 // Execute if the repo is approved
-const exec = async (req, action, authorisedList=db.getRepos) => {
+const exec = async (req, action, authorisedList = db.getRepos) => {
   const step = new Step('checkRepoInAuthorisedList');
 
   const list = await authorisedList();
@@ -22,9 +22,7 @@ const exec = async (req, action, authorisedList=db.getRepos) => {
     step.error = true;
     step.log(`repo ${action.repo} is not in the authorisedList, ending`);
     console.log('setting error');
-    step.setError(
-        `Rejecting repo ${action.repo} not in the authorisedList`,
-    );
+    step.setError(`Rejecting repo ${action.repo} not in the authorisedList`);
     action.addStep(step);
     return action;
   }

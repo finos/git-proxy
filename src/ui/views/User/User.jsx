@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
-import React, {useState, useEffect} from 'react';
-import {Navigate} from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import Icon from '@material-ui/core/Icon';
 import GridItem from '../../components/Grid/GridItem.jsx';
 import GridContainer from '../../components/Grid/GridContainer.jsx';
@@ -16,8 +16,8 @@ import Checkbox from '@material-ui/core/Checkbox';
 // import FormControlLabel from '@material-ui/core/FormControlLabel';
 // import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
-import {getUser} from '../../services/user.js';
-import {makeStyles} from '@material-ui/core/styles';
+import { getUser } from '../../services/user.js';
+import { makeStyles } from '@material-ui/core/styles';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -46,10 +46,9 @@ export default function Dashboard(props) {
     }
   }, [props]);
 
-
-  if (isLoading) return (<div>Loading ...</div>);
-  if (isError) return (<div>Something went wrong ...</div>);
-  if (!auth) return (<Navigate to={{pathname: '/login'}} />);
+  if (isLoading) return <div>Loading ...</div>;
+  if (isError) return <div>Something went wrong ...</div>;
+  if (!auth) return <Navigate to={{ pathname: '/login' }} />;
 
   console.log(data);
 
@@ -77,7 +76,8 @@ export default function Dashboard(props) {
                       readOnly: true,
                     }}
                     variant="outlined"
-                    value={data.username} />
+                    value={data.username}
+                  />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
                   <TextField
@@ -85,14 +85,12 @@ export default function Dashboard(props) {
                     label="Git Account"
                     aria-describedby="gitAccount-helper-text"
                     variant="outlined"
-                    value={data.gitAccount} />
+                    value={data.gitAccount}
+                  />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
                   <FormLabel component="legend">Admin</FormLabel>
-                  <Checkbox
-                    id="admin"
-                    variant="outlined"
-                    value={data.admin}/>
+                  <Checkbox id="admin" variant="outlined" value={data.admin} />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
                   <TextField
@@ -100,7 +98,8 @@ export default function Dashboard(props) {
                     label="Email Address"
                     aria-describedby="email-helper-text"
                     variant="outlined"
-                    value={data.email} />
+                    value={data.email}
+                  />
                 </GridItem>
               </GridContainer>
             </CardBody>

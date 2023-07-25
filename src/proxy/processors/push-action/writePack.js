@@ -7,12 +7,10 @@ const exec = async (req, action) => {
     const cmd = `git receive-pack ${action.repoName}`;
     step.log(`executing ${cmd}`);
 
-    const content = execSync(
-        `git receive-pack ${action.repoName}`, {
-          cwd: action.proxyGitPath,
-          input: req.body,
-        },
-    ).toString('utf-8');
+    const content = execSync(`git receive-pack ${action.repoName}`, {
+      cwd: action.proxyGitPath,
+      input: req.body,
+    }).toString('utf-8');
 
     step.setContent(content);
   } catch (e) {

@@ -1,8 +1,8 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import React from 'react';
-import {Routes, Route, Navigate} from 'react-router-dom';
-import {makeStyles} from '@material-ui/core/styles';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { makeStyles } from '@material-ui/core/styles';
 import Navbar from '../components/Navbars/Navbar.jsx';
 import Footer from '../components/Footer/Footer.jsx';
 import Sidebar from '../components/Sidebar/Sidebar.jsx';
@@ -19,7 +19,8 @@ const switchRoutes = (
       if (prop.layout === '/admin') {
         return (
           <Route
-            exact path={prop.layout + prop.path}
+            exact
+            path={prop.layout + prop.path}
             element={prop.component}
             key={key}
           />
@@ -33,7 +34,7 @@ const switchRoutes = (
 
 const useStyles = makeStyles(styles);
 
-export default function Admin({...rest}) {
+export default function Admin({ ...rest }) {
   // styles
   const classes = useStyles();
   // ref to help us initialize PerfectScrollbar on windows devices
@@ -99,7 +100,6 @@ export default function Admin({...rest}) {
           <div className={classes.map}>{switchRoutes}</div>
         )}
         {getRoute() ? <Footer /> : null}
-
       </div>
     </div>
   );

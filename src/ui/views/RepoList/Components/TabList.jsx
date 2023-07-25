@@ -17,10 +17,10 @@ export default function Dashboard() {
             tabs={[
               {
                 tabName: 'Repositories',
-                tabContent: (<Repositories />),
+                tabContent: <Repositories />,
               },
-            ]
-            } />
+            ]}
+          />
         </GridItem>
       </GridContainer>
     </div>

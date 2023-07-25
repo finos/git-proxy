@@ -14,13 +14,13 @@ const headerLinksStyle = (theme) => ({
       marginTop: '0',
     },
     [theme.breakpoints.down('sm')]: {
-      'margin': '10px 15px !important',
-      'float': 'none !important',
-      'paddingTop': '1px',
-      'paddingBottom': '1px',
-      'padding': '0!important',
-      'width': '60%',
-      'marginTop': '40px',
+      margin: '10px 15px !important',
+      float: 'none !important',
+      paddingTop: '1px',
+      paddingBottom: '1px',
+      padding: '0!important',
+      width: '60%',
+      marginTop: '40px',
       '& input': {
         color: whiteColor,
       },
@@ -34,9 +34,9 @@ const headerLinksStyle = (theme) => ({
   },
   buttonLink: {
     [theme.breakpoints.down('sm')]: {
-      'display': 'flex',
-      'margin': '10px 15px 0',
-      'width': '-webkit-fill-available',
+      display: 'flex',
+      margin: '10px 15px 0',
+      width: '-webkit-fill-available',
       '& svg': {
         width: '24px',
         height: '30px',

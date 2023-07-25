@@ -7,7 +7,7 @@ const resource = {
   auth: '/api/v1/auth',
 };
 
-router.get('/', function(req, res) {
+router.get('/', function (req, res) {
   res.send(resource);
 });
 

@@ -3,8 +3,8 @@
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import {NavLink} from 'react-router-dom';
-import {makeStyles} from '@material-ui/core/styles';
+import { NavLink } from 'react-router-dom';
+import { makeStyles } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
 import Hidden from '@material-ui/core/Hidden';
 import List from '@material-ui/core/List';
@@ -23,7 +23,7 @@ export default function Sidebar(props) {
     return window.location.href.indexOf(routeName) > -1 ? true : false;
   }
   // eslint-disable-next-line react/prop-types
-  const {color, logo, image, logoText, routes} = props;
+  const { color, logo, image, logoText, routes } = props;
   const links = (
     <List className={classes.list}>
       {routes.map((prop, key) => {
@@ -37,7 +37,7 @@ export default function Sidebar(props) {
         });
 
         if (!prop.visible) {
-          return (<div key={key}></div>);
+          return <div key={key}></div>;
         }
         return (
           <NavLink
@@ -116,7 +116,7 @@ export default function Sidebar(props) {
           {image !== undefined ? (
             <div
               className={classes.background}
-              style={{backgroundImage: 'url(' + image + ')'}}
+              style={{ backgroundImage: 'url(' + image + ')' }}
             />
           ) : null}
         </Drawer>
@@ -137,7 +137,7 @@ export default function Sidebar(props) {
           {image !== undefined ? (
             <div
               className={classes.background}
-              style={{backgroundImage: 'url(' + image + ')'}}
+              style={{ backgroundImage: 'url(' + image + ')' }}
             />
           ) : null}
         </Drawer>
