@@ -1,4 +1,9 @@
 module.exports = {
+  settings: {
+    react: {
+      version: 'detect',
+    },
+  },
   env: {
     browser: true,
     commonjs: true,
@@ -25,4 +30,5 @@ module.exports = {
     ],
     indent: 'off',
   },
+  ignorePatterns: ['build/'],
 };
