@@ -232,6 +232,7 @@ const title = {
   marginTop: '30px',
   marginBottom: '25px',
   minHeight: '32px',
+  // eslint-disable-next-line quotes
   fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
   '& small': {
     color: grayColor[1],

@@ -1,3 +1,4 @@
+/* eslint-disable quotes */
 import {
   successColor,
   whiteColor,
