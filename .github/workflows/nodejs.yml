@@ -36,5 +36,11 @@ jobs:
       run: npm i
 
     - name: Test
-      run: npm test
+      run: npm run test-coverage-ci
+
+    - name: Comment test coverage report on PR
+      uses: romeovs/lcov-reporter-action@v0.2.16
+      with:
+        lcov-file: ./coverage/lcov.info
+        github-token: ${{ secrets.GITHUB_TOKEN }}
 
