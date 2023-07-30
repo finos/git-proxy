@@ -1,0 +1,29 @@
+name: Lint Code Base
+
+on: [push, pull_request]
+
+env: # environment variables (available in any part of the action)
+  NODE_VERSION: 16
+  JAVASCRIPT_ES_CONFIG_FILE: .eslintrc.cjs
+
+jobs:
+  linting:
+    name: Linting
+    runs-on: ubuntu-latest
+    steps: # list of steps
+      - name: Install NodeJS
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Code Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Code Linting
+        uses: super-linter/super-linter@v5
+        env:
+          DEFAULT_BRANCH: main
+          VALIDATE_JAVASCRIPT_ES: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
