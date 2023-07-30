@@ -41,7 +41,7 @@ jobs:
     - name: Test
       id: test
       run: |
-        npm run test-coverage-ci || echo "exit_code=$?\n" >> $GITHUB_OUTPUT
+        npm run test-coverage-ci || echo "exit_code=$?" >> $GITHUB_OUTPUT
 
     - name: Comment test coverage report on PR
       uses: romeovs/lcov-reporter-action@v0.2.16
