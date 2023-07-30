@@ -13,6 +13,7 @@
     "server-test": "mocha --exit",
     "test": "mocha --exit",
     "test-coverage": "nyc npm run test",
+    "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text-summary --check-coverage npm run test",
     "prepare": "node ./scripts/prepare.js"
   },
   "author": "Paul Groves",
