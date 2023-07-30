@@ -19,6 +19,9 @@ jobs:
         node-version: [13.x]
         mongodb-version: [4.4]
 
+    permissions:
+      pull-requests: write
+
     steps:
     - uses: actions/checkout@v3
 
