@@ -36,11 +36,17 @@ jobs:
       run: npm i
 
     - name: Test
-      run: npm run test-coverage-ci
+      id: test
+      run: |
+        npm run test-coverage-ci || echo "exit_code=$?\n" >> $GITHUB_OUTPUT
 
     - name: Comment test coverage report on PR
       uses: romeovs/lcov-reporter-action@v0.2.16
       with:
         lcov-file: ./coverage/lcov.info
         github-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Exit if coverage condition not met
+      if: ${{ steps.test.outputs.exit_code }} != 0
+      run: exit ${{ steps.test.outputs.exit_code }}
 
