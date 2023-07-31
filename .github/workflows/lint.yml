@@ -4,8 +4,6 @@ on: [push, pull_request]
 
 env: # environment variables (available in any part of the action)
   NODE_VERSION: 16
-  LINTER_RULES_PATH: /
-  JAVASCRIPT_ES_CONFIG_FILE: .eslintrc.cjs
 
 jobs:
   linting:
@@ -22,9 +20,8 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install Dependencies
+        run: npm ci
+  
       - name: Code Linting
-        uses: super-linter/super-linter/slim@v5  #https://github.com/super-linter/super-linter#slim-image
-        env:
-          DEFAULT_BRANCH: main
-          VALIDATE_JAVASCRIPT_ES: true
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run lint
