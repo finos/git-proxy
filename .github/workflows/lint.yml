@@ -4,7 +4,8 @@ on: [push, pull_request]
 
 env: # environment variables (available in any part of the action)
   NODE_VERSION: 16
-  JAVASCRIPT_ES_CONFIG_FILE: ../../.eslintrc.cjs
+  LINTER_RULES_PATH: /
+  JAVASCRIPT_ES_CONFIG_FILE: .eslintrc.cjs
 
 jobs:
   linting:
