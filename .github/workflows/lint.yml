@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 env: # environment variables (available in any part of the action)
   NODE_VERSION: 16
-  JAVASCRIPT_ES_CONFIG_FILE: .eslintrc.cjs
+  JAVASCRIPT_ES_CONFIG_FILE: ../../.eslintrc.cjs
 
 jobs:
   linting:
@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Code Linting
-        uses: super-linter/super-linter@v5
+        uses: super-linter/super-linter/slim@v5  #https://github.com/super-linter/super-linter#slim-image
         env:
           DEFAULT_BRANCH: main
           VALIDATE_JAVASCRIPT_ES: true
