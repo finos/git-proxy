@@ -11,12 +11,17 @@ module.exports = {
     node: true,
   },
   extends: ['plugin:react/recommended', 'prettier', 'google'],
+  parser: '@babel/eslint-parser',
   parserOptions: {
     ecmaFeatures: {
       jsx: true,
     },
-    ecmaVersion: 12,
+    babelOptions: {
+      presets: ["@babel/preset-react"]
+    },
+    ecmaVersion: 2020,
     sourceType: 'module',
+    "requireConfigFile": false,
   },
   plugins: ['prettier', 'react'],
   rules: {

@@ -1,4 +1,4 @@
-const {v4: uuidv4} = require('uuid');
+const { v4: uuidv4 } = require('uuid');
 
 /** Class representing a Push. */
 class Step {
@@ -14,12 +14,13 @@ class Step {
    * @param {*} content
    */
   constructor(
-      stepName,
-      error=false,
-      errorMessage=null,
-      blocked=false,
-      blockedMessage=null,
-      content=null) {
+    stepName,
+    error = false,
+    errorMessage = null,
+    blocked = false,
+    blockedMessage = null,
+    content = null,
+  ) {
     this.id = uuidv4();
     this.stepName = stepName;
     this.content = content;
