@@ -53,6 +53,8 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@babel/eslint-parser": "^7.22.9",
+    "@babel/preset-react": "^7.22.5",
     "@commitlint/cli": "^17.6.6",
     "@commitlint/config-conventional": "^17.6.6",
     "@vitejs/plugin-react": "^4.0.2",
