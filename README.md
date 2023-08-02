@@ -57,10 +57,6 @@ To install a specific version of Git Proxy, append the version to the end of the
 $ npm install @finos/git-proxy@1.0.0
 ```
 
-## Usage
-
-To start using Git Proxy...
-
 ## Contributing
 
 Your contributions are at the core of making this a true open source project. Any contributions you make are **greatly appreciated**.
