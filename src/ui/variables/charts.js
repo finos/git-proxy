@@ -3,7 +3,7 @@
 // ##############################
 // // // javascript library for creating charts
 // #############################
-const Chartist = require('chartist');
+import Chartist from 'chartist';
 
 // ##############################
 // // // variables used to create animation on charts
@@ -17,7 +17,7 @@ const durations2 = 500;
 // // // Daily Sales
 // #############################
 
-const dailySalesChart = {
+export const dailySalesChart = {
   data: {
     labels: ['M', 'T', 'W', 'T', 'F', 'S', 'S'],
     series: [[12, 17, 7, 17, 23, 18, 38]],
@@ -71,7 +71,7 @@ const dailySalesChart = {
 // // // Email Subscriptions
 // #############################
 
-const emailsSubscriptionChart = {
+export const emailsSubscriptionChart = {
   data: {
     labels: [
       'Jan',
@@ -136,7 +136,7 @@ const emailsSubscriptionChart = {
 // // // Completed Tasks
 // #############################
 
-const completedTasksChart = {
+export const completedTasksChart = {
   data: {
     labels: ['12am', '3pm', '6pm', '9pm', '12pm', '3am', '6am', '9am'],
     series: [[230, 750, 450, 300, 280, 240, 200, 190]],
@@ -183,10 +183,4 @@ const completedTasksChart = {
       }
     },
   },
-};
-
-module.exports = {
-  dailySalesChart,
-  emailsSubscriptionChart,
-  completedTasksChart,
 };
