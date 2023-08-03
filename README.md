@@ -149,5 +149,5 @@ This project is distributed under the Apache-2.0 license. See <a href="./LICENSE
 
 ## Contact
 
-If you have a query or require support with this project, [raise an issue](https://github.com/finos/git-proxy/issues). Otherwise, reach out to opensource@citi.com.
+If you have a query or require support with this project, [raise an issue](https://github.com/finos/git-proxy/issues). Otherwise, reach out to [help@finos.org](mailto:help@finos.org).
 
