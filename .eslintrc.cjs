@@ -17,11 +17,11 @@ module.exports = {
       jsx: true,
     },
     babelOptions: {
-      presets: ["@babel/preset-react"]
+      presets: ['@babel/preset-react'],
     },
     ecmaVersion: 2020,
     sourceType: 'module',
-    "requireConfigFile": false,
+    requireConfigFile: false,
   },
   plugins: ['prettier', 'react'],
   rules: {
