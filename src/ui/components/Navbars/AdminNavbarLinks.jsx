@@ -2,7 +2,7 @@
 /* eslint-disable require-jsdoc */
 import React from 'react';
 import classNames from 'classnames';
-import {makeStyles} from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import MenuItem from '@material-ui/core/MenuItem';
 import MenuList from '@material-ui/core/MenuList';
 import Grow from '@material-ui/core/Grow';
@@ -44,7 +44,6 @@ export default function AdminNavbarLinks() {
   };
   return (
     <div>
-
       <div className={classes.manager}>
         <Button
           color={window.innerWidth > 959 ? 'transparent' : 'white'}
@@ -69,12 +68,12 @@ export default function AdminNavbarLinks() {
           transition
           disablePortal
           className={
-            classNames({[classes.popperClose]: !openNotification}) +
+            classNames({ [classes.popperClose]: !openNotification }) +
             ' ' +
             classes.popperNav
           }
         >
-          {({TransitionProps, placement}) => (
+          {({ TransitionProps, placement }) => (
             <Grow
               {...TransitionProps}
               id="notification-menu-list-grow"
@@ -102,7 +101,7 @@ export default function AdminNavbarLinks() {
                       onClick={handleCloseNotification}
                       className={classes.dropdownItem}
                     >
-                      You{'\''}re now friend with Andrew
+                      ${`You're now friend with Andrew`}
                     </MenuItem>
                     <MenuItem
                       onClick={handleCloseNotification}
@@ -144,12 +143,12 @@ export default function AdminNavbarLinks() {
           transition
           disablePortal
           className={
-            classNames({[classes.popperClose]: !openProfile}) +
+            classNames({ [classes.popperClose]: !openProfile }) +
             ' ' +
             classes.popperNav
           }
         >
-          {({TransitionProps, placement}) => (
+          {({ TransitionProps, placement }) => (
             <Grow
               {...TransitionProps}
               id="profile-menu-list-grow"

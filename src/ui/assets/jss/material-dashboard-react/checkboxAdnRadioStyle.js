@@ -6,7 +6,7 @@ import {
 
 const checkboxAdnRadioStyle = {
   root: {
-    'padding': '13px',
+    padding: '13px',
     '&:hover': {
       backgroundColor: 'unset',
     },

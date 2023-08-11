@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
@@ -15,10 +15,10 @@ import Button from '../../../components/CustomButtons/Button.jsx';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Select from '@material-ui/core/Select';
 import Dialog from '@material-ui/core/Dialog';
-import {Navigate} from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 
-import {addUser} from '../../../services/repo.js';
-import {getUsers} from '../../../services/user.js';
+import { addUser } from '../../../services/repo.js';
+import { getUsers } from '../../../services/user.js';
 
 function AddUserDialog(props) {
   const repoName = props.repoName;
@@ -30,7 +30,7 @@ function AddUserDialog(props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const [error, setError] = useState('');
-  const {onClose, open} = props;
+  const { onClose, open } = props;
 
   const handleClose = () => {
     refreshFn();
@@ -58,15 +58,21 @@ function AddUserDialog(props) {
     getUsers(setIsLoading, setData, setAuth, setIsError, {});
   }, [props]);
 
-  if (isLoading) return (<div>Loading ...</div>);
-  if (isError) return (<div>Something went wrong ...</div>);
-  if (!auth) return (<Navigate to={{pathname: '/login'}} />);
+  if (isLoading) return <div>Loading ...</div>;
+  if (isError) return <div>Something went wrong ...</div>;
+  if (!auth) return <Navigate to={{ pathname: '/login' }} />;
 
   console.log(JSON.stringify(props));
 
   return (
-    <Dialog onClose={handleClose} aria-labelledby="simple-dialog-title" open={open}>
-      <DialogTitle style={{'color': 'red'}} id="simple-dialog-title">{error} Add User to {repoName} for {type} </DialogTitle>
+    <Dialog
+      onClose={handleClose}
+      aria-labelledby="simple-dialog-title"
+      open={open}
+    >
+      <DialogTitle style={{ color: 'red' }} id="simple-dialog-title">
+        {error} Add User to {repoName} for {type}{' '}
+      </DialogTitle>
       <Card>
         <CardBody>
           <GridContainer>
@@ -80,15 +86,21 @@ function AddUserDialog(props) {
                   onChange={handleChange}
                 >
                   {data.map((row) => (
-                    <MenuItem key={row.username} value={row.username}>{row.username} / {row.gitAccount}</MenuItem>
+                    <MenuItem key={row.username} value={row.username}>
+                      {row.username} / {row.gitAccount}
+                    </MenuItem>
                   ))}
                 </Select>
                 <FormHelperText>Some important helper text</FormHelperText>
               </FormControl>
             </GridItem>
             <GridItem xs={12} sm={12} md={12}>
-              <Button variant="outlined" color="primary" onClick={handleClose}>Cancel</Button>
-              <Button variant="outlined" color="primary" onClick={add}>Create</Button>
+              <Button variant="outlined" color="primary" onClick={handleClose}>
+                Cancel
+              </Button>
+              <Button variant="outlined" color="primary" onClick={add}>
+                Create
+              </Button>
             </GridItem>
           </GridContainer>
         </CardBody>
@@ -120,8 +132,16 @@ export default function AddUser(props) {
 
   return (
     <div>
-      <Button variant="outlined" color="primary" onClick={handleClickOpen}>Add User</Button>
-      <AddUserDialog repoName={repoName} type={type} open={open} onClose={handleClose} refreshFn={refreshFn} />
+      <Button variant="outlined" color="primary" onClick={handleClickOpen}>
+        Add User
+      </Button>
+      <AddUserDialog
+        repoName={repoName}
+        type={type}
+        open={open}
+        onClose={handleClose}
+        refreshFn={refreshFn}
+      />
     </div>
   );
 }
