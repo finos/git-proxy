@@ -10,4 +10,3 @@ const exec = async (req, action) => {
 
 exec.displayName = 'audit.exec';
 exports.exec = exec;
-

@@ -1,9 +1,9 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
-import React, {useState, useEffect} from 'react';
-import {Navigate} from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Navigate } from 'react-router-dom';
 import moment from 'moment';
-import {useNavigate} from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Icon from '@material-ui/core/Icon';
 import GridItem from '../../components/Grid/GridItem.jsx';
 import GridContainer from '../../components/Grid/GridContainer.jsx';
@@ -19,7 +19,12 @@ import TableBody from '@material-ui/core/TableBody';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
-import {getPush, authorisePush, rejectPush, cancelPush} from '../../services/git-push.js';
+import {
+  getPush,
+  authorisePush,
+  rejectPush,
+  cancelPush,
+} from '../../services/git-push.js';
 
 export default function Dashboard(props) {
   // eslint-disable-next-line react/prop-types
@@ -49,9 +54,9 @@ export default function Dashboard(props) {
     history.push(`/admin/push/`);
   };
 
-  if (isLoading) return (<div>Loading ...</div>);
-  if (isError) return (<div>Something went wrong ...</div>);
-  if (!auth) return (<Navigate to={{pathname: '/login'}} />);
+  if (isLoading) return <div>Loading ...</div>;
+  if (isError) return <div>Something went wrong ...</div>;
+  if (!auth) return <Navigate to={{ pathname: '/login' }} />;
 
   let headerData = {
     title: 'Waiting Approval',
@@ -88,15 +93,30 @@ export default function Dashboard(props) {
               <Icon>content_copy</Icon>
               <h3>{headerData.title}</h3>
             </CardIcon>
-            <Button color="warning" onClick={ async () => {
-              await cancel();
-            } }>Cancel</Button>
-            <Button color="danger" onClick={ async () => {
-              await reject();
-            } }>Rject</Button>
-            <Button color="success" onClick={ async () => {
-              await authorise();
-            }}>Approve</Button>
+            <Button
+              color="warning"
+              onClick={async () => {
+                await cancel();
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              color="danger"
+              onClick={async () => {
+                await reject();
+              }}
+            >
+              Rject
+            </Button>
+            <Button
+              color="success"
+              onClick={async () => {
+                await authorise();
+              }}
+            >
+              Approve
+            </Button>
           </CardHeader>
           <CardBody>
             <GridContainer>
@@ -128,7 +148,6 @@ export default function Dashboard(props) {
             <h3>{headerData.title}</h3>
           </CardHeader>
           <CardBody>
-
             <Table>
               <TableHead>
                 <TableCell>Parent#</TableCell>
@@ -143,7 +162,11 @@ export default function Dashboard(props) {
                     <TableCell>{c.parent}</TableCell>
                     <TableCell>{c.committer}</TableCell>
                     <TableCell>{c.author}</TableCell>
-                    <TableCell>{moment(Date(c.commitTs)).format('yyyy-MM-DD HH:mm:ss.mmmm')}</TableCell>
+                    <TableCell>
+                      {moment(Date(c.commitTs)).format(
+                        'yyyy-MM-DD HH:mm:ss.mmmm',
+                      )}
+                    </TableCell>
                     <TableCell>{c.message}</TableCell>
                   </TableRow>
                 ))}
@@ -156,10 +179,9 @@ export default function Dashboard(props) {
         <Card>
           <CardHeader></CardHeader>
           <CardBody>
-            <Diff diff={data.diff.content}/>
+            <Diff diff={data.diff.content} />
           </CardBody>
-          <CardFooter>
-          </CardFooter>
+          <CardFooter></CardFooter>
         </Card>
       </GridItem>
     </GridContainer>

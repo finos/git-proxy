@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import Icon from '@material-ui/core/Icon';
 import GridItem from '../../components/Grid/GridItem.jsx';
@@ -10,7 +8,12 @@ import CardBody from '../../components/Card/CardBody.jsx';
 import CardHeader from '../../components/Card/CardHeader.jsx';
 import TabList from './Components/TabList';
 
-export default function UserList(props) {
+/**
+ * Renders a list of users.
+ *
+ * @return {JSX.Element} The rendered component.
+ */
+export default function UserList() {
   return (
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>

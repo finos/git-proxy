@@ -2,22 +2,22 @@
 const connect = require('./helper').connect;
 const usersCollection = 'users';
 
-exports.findUser = async function(username) {
+exports.findUser = async function (username) {
   const collection = await connect(usersCollection);
-  return await collection.findOne({username: username});
+  return await collection.findOne({ username: username });
 };
 
-exports.getUsers = async function(query) {
+exports.getUsers = async function (query) {
   const collection = await connect(usersCollection);
   return await collection.find().toArray();
 };
 
-exports.deleteUser = async function(username) {
+exports.deleteUser = async function (username) {
   const collection = await connect(usersCollection);
-  return await collection.deleteOne({username: username});
+  return await collection.deleteOne({ username: username });
 };
 
-exports.createUser = async function(data) {
+exports.createUser = async function (data) {
   console.log(JSON.stringify(data));
   const collection = await connect(usersCollection);
   const result = await collection.insertOne(data);
@@ -25,7 +25,11 @@ exports.createUser = async function(data) {
 };
 
 exports.updateUser = async (user) => {
-  const options = {upsert: true};
+  const options = { upsert: true };
   const collection = await connect(usersCollection);
-  await collection.updateOne({username: user.username}, {'$set': user}, options);
+  await collection.updateOne(
+    { username: user.username },
+    { $set: user },
+    options,
+  );
 };

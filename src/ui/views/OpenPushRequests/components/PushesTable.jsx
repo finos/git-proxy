@@ -1,9 +1,9 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
-import React, {useState, useEffect} from 'react';
-import {makeStyles} from '@material-ui/core/styles';
+import React, { useState, useEffect } from 'react';
+import { makeStyles } from '@material-ui/core/styles';
 import moment from 'moment';
-import {useNavigate} from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -12,9 +12,9 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-import {Navigate} from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
-import {getPushes} from '../../../services/git-push';
+import { getPushes } from '../../../services/git-push';
 
 export default function PushesTable(props) {
   const useStyles = makeStyles(styles);
@@ -24,7 +24,6 @@ export default function PushesTable(props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const history = useNavigate();
-
 
   const openPush = (push) => history.push(`/admin/push/${push}`);
 
@@ -38,9 +37,9 @@ export default function PushesTable(props) {
     getPushes(setIsLoading, setData, setAuth, setIsError, query);
   }, [props]);
 
-  if (isLoading) return (<div>Loading ...</div>);
-  if (isError) return (<div>Something went wrong ...</div>);
-  if (!auth) return (<Navigate to={{pathname: '/login'}} />);
+  if (isLoading) return <div>Loading ...</div>;
+  if (isError) return <div>Something went wrong ...</div>;
+  if (!auth) return <Navigate to={{ pathname: '/login' }} />;
 
   return (
     <TableContainer component={Paper}>
@@ -61,18 +60,31 @@ export default function PushesTable(props) {
           {data.map((row) => (
             <TableRow key={row.id}>
               <TableCell component="th" scope="row">
-                <Button variant="contained" color="primary" onClick={() => openPush(row.id)}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => openPush(row.id)}
+                >
                   Open
                 </Button>
               </TableCell>
-              <TableCell align="left" >
+              <TableCell align="left">
                 {moment(row.timestamp).format('yyyy-MM-DD HH:mm')}
               </TableCell>
               <TableCell align="left">{row.repo}</TableCell>
-              <TableCell align="left">{row.branch.replace('refs/heads/', '')}</TableCell>
-              <TableCell align="left">{row.commitFrom.substring(0, 5)} - {row.commitTo.substring(0, 5)}</TableCell>
-              <TableCell align="left">{row.commitData[row.commitData.length -1].author} </TableCell>
-              <TableCell align="left">{row.commitData[row.commitData.length -1].message} </TableCell>
+              <TableCell align="left">
+                {row.branch.replace('refs/heads/', '')}
+              </TableCell>
+              <TableCell align="left">
+                {row.commitFrom.substring(0, 5)} -{' '}
+                {row.commitTo.substring(0, 5)}
+              </TableCell>
+              <TableCell align="left">
+                {row.commitData[row.commitData.length - 1].author}{' '}
+              </TableCell>
+              <TableCell align="left">
+                {row.commitData[row.commitData.length - 1].message}{' '}
+              </TableCell>
               <TableCell align="left">{row.commitData.length}</TableCell>
             </TableRow>
           ))}

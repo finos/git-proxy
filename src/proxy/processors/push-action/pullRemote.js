@@ -23,7 +23,9 @@ const exec = async (req, action) => {
     step.log(`Exectuting ${cmd}`);
 
     // eslint-disable-next-line max-len
-    const response = execSync(`git clone ${action.url} --bare`, {cwd: action.proxyGitPath}).toString('utf-8');
+    const response = execSync(`git clone ${action.url} --bare`, {
+      cwd: action.proxyGitPath,
+    }).toString('utf-8');
 
     step.log(`Completed ${cmd}`);
     step.setContent(response);

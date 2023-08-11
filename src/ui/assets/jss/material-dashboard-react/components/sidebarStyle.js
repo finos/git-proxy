@@ -61,9 +61,9 @@ const sidebarStyle = (theme) => ({
     },
   },
   logo: {
-    'position': 'relative',
-    'padding': '15px 15px',
-    'zIndex': '4',
+    position: 'relative',
+    padding: '15px 15px',
+    zIndex: '4',
     '&:after': {
       content: '""',
       position: 'absolute',
@@ -77,15 +77,15 @@ const sidebarStyle = (theme) => ({
   },
   logoLink: {
     ...defaultFont,
-    'textTransform': 'uppercase',
-    'padding': '5px 0',
-    'display': 'block',
-    'fontSize': '18px',
-    'textAlign': 'left',
-    'fontWeight': '400',
-    'lineHeight': '30px',
-    'textDecoration': 'none',
-    'backgroundColor': 'transparent',
+    textTransform: 'uppercase',
+    padding: '5px 0',
+    display: 'block',
+    fontSize: '18px',
+    textAlign: 'left',
+    fontWeight: '400',
+    lineHeight: '30px',
+    textDecoration: 'none',
+    backgroundColor: 'transparent',
     '&,&:hover': {
       color: whiteColor,
     },
@@ -108,15 +108,15 @@ const sidebarStyle = (theme) => ({
     border: '0',
   },
   background: {
-    'position': 'absolute',
-    'zIndex': '1',
-    'height': '100%',
-    'width': '100%',
-    'display': 'block',
-    'top': '0',
-    'left': '0',
-    'backgroundSize': 'cover',
-    'backgroundPosition': 'center center',
+    position: 'absolute',
+    zIndex: '1',
+    height: '100%',
+    width: '100%',
+    display: 'block',
+    top: '0',
+    left: '0',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center center',
     '&:after': {
       position: 'absolute',
       zIndex: '3',
@@ -138,9 +138,9 @@ const sidebarStyle = (theme) => ({
     position: 'unset',
   },
   item: {
-    'position': 'relative',
-    'display': 'block',
-    'textDecoration': 'none',
+    position: 'relative',
+    display: 'block',
+    textDecoration: 'none',
     '&:hover,&:focus,&:visited,&': {
       color: whiteColor,
     },
@@ -186,7 +186,7 @@ const sidebarStyle = (theme) => ({
     color: whiteColor,
   },
   purple: {
-    'backgroundColor': primaryColor[0],
+    backgroundColor: primaryColor[0],
     ...primaryBoxShadow,
     '&:hover,&:focus': {
       backgroundColor: primaryColor[0],
@@ -194,8 +194,8 @@ const sidebarStyle = (theme) => ({
     },
   },
   blue: {
-    'backgroundColor': infoColor[0],
-    'boxShadow':
+    backgroundColor: infoColor[0],
+    boxShadow:
       '0 12px 20px -10px rgba(' +
       hexToRgb(infoColor[0]) +
       ',.28), 0 4px 20px 0 rgba(' +
@@ -216,8 +216,8 @@ const sidebarStyle = (theme) => ({
     },
   },
   green: {
-    'backgroundColor': successColor[0],
-    'boxShadow':
+    backgroundColor: successColor[0],
+    boxShadow:
       '0 12px 20px -10px rgba(' +
       hexToRgb(successColor[0]) +
       ',.28), 0 4px 20px 0 rgba(' +
@@ -238,8 +238,8 @@ const sidebarStyle = (theme) => ({
     },
   },
   orange: {
-    'backgroundColor': warningColor[0],
-    'boxShadow':
+    backgroundColor: warningColor[0],
+    boxShadow:
       '0 12px 20px -10px rgba(' +
       hexToRgb(warningColor[0]) +
       ',.28), 0 4px 20px 0 rgba(' +
@@ -260,8 +260,8 @@ const sidebarStyle = (theme) => ({
     },
   },
   red: {
-    'backgroundColor': dangerColor[0],
-    'boxShadow':
+    backgroundColor: dangerColor[0],
+    boxShadow:
       '0 12px 20px -10px rgba(' +
       hexToRgb(dangerColor[0]) +
       ',.28), 0 4px 20px 0 rgba(' +

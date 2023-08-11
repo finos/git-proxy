@@ -1,8 +1,8 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
-import React, {useState, useEffect} from 'react';
-import {makeStyles} from '@material-ui/core/styles';
-import {useNavigate} from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { makeStyles } from '@material-ui/core/styles';
+import { useNavigate } from 'react-router-dom';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -11,9 +11,9 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-import {Navigate} from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
-import {getRepos} from '../../../services/repo';
+import { getRepos } from '../../../services/repo';
 
 export default function Repositories(props) {
   const useStyles = makeStyles(styles);
@@ -23,7 +23,6 @@ export default function Repositories(props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const history = useNavigate();
-
 
   const openRepo = (repo) => history.push(`/admin/repo/${repo}`);
 
@@ -37,9 +36,9 @@ export default function Repositories(props) {
     getRepos(setIsLoading, setData, setAuth, setIsError, query);
   }, [props]);
 
-  if (isLoading) return (<div>Loading ...</div>);
-  if (isError) return (<div>Something went wrong ...</div>);
-  if (!auth) return (<Navigate to={{pathname: '/login'}} />);
+  if (isLoading) return <div>Loading ...</div>;
+  if (isError) return <div>Something went wrong ...</div>;
+  if (!auth) return <Navigate to={{ pathname: '/login' }} />;
 
   return (
     <TableContainer component={Paper}>
@@ -56,7 +55,11 @@ export default function Repositories(props) {
           {data.map((row) => (
             <TableRow key={row.id}>
               <TableCell component="th" scope="row">
-                <Button variant="contained" color="primary" onClick={() => openRepo(row.name)}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={() => openRepo(row.name)}
+                >
                   Open
                 </Button>
               </TableCell>
@@ -70,4 +73,3 @@ export default function Repositories(props) {
     </TableContainer>
   );
 }
-

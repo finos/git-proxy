@@ -1,4 +1,4 @@
-const toClass = function(obj, proto) {
+const toClass = function (obj, proto) {
   obj = JSON.parse(JSON.stringify(obj));
   obj.__proto__ = proto;
   return obj;
