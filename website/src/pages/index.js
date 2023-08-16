@@ -44,9 +44,16 @@ function Home() {
           <div className="container">
             <h2>What is Git Proxy</h2>
             {/* <img align="right" width="550" src="/docs/img/demo.png" alt="Git Proxy Demonstration" /> */}
-            <div className="row row--center">Git Proxy deploys custom push protections and policies on top of Git. It is a highly configurable framework allowing developers and organizations to enforce push protections relevant to their developer workflow, security posture and risk appetite.</div>
-            <br/>
-            <div className="row row--center">Git Proxy is built with a developer-first mindset. By presenting simple-to-follow remediation instructions in the CLI/Terminal, it minimises the friction of use and adoption, and keeps developers focused on what matters; committing and pushing code.</div>
+            <div className="row row--center">
+              <p className="hero--bigtext">
+                Git Proxy deploys custom push protections and policies on top of Git. It is a highly configurable framework allowing developers and organizations to enforce push protections relevant to their developer workflow, security posture and risk appetite.
+              </p>
+            </div>
+            <div className="row row--center">
+              <p className='hero--bigtext'>
+                Git Proxy is built with a developer-first mindset. By presenting simple-to-follow remediation instructions in the CLI/Terminal, it minimises the friction of use and adoption, and keeps developers focused on what matters; committing and pushing code.
+              </p>
+            </div>
           </div>
         </section>
         {features && features.length && (
