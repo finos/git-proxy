@@ -1,0 +1,148 @@
+{
+  "docusaurus-plugin-content-docs": {
+    "default": {
+      "loadedVersions": [
+        {
+          "versionName": "current",
+          "label": "Next",
+          "banner": null,
+          "badge": false,
+          "noIndex": false,
+          "className": "docs-version-current",
+          "path": "/docs",
+          "tagsPath": "/docs/tags",
+          "editUrl": "https://github.com/finos/open-developer-platform/edit/master/website/../docs",
+          "editUrlLocalized": "https://github.com/finos/open-developer-platform/edit/master/website/i18n/en/docusaurus-plugin-content-docs/current",
+          "isLast": true,
+          "routePriority": -1,
+          "sidebarFilePath": "/Users/m/w/git-proxy/website/sidebars.js",
+          "contentPath": "/Users/m/w/git-proxy/docs",
+          "contentPathLocalized": "/Users/m/w/git-proxy/website/i18n/en/docusaurus-plugin-content-docs/current",
+          "docs": [
+            {
+              "unversionedId": "home",
+              "id": "home",
+              "title": "Homepage",
+              "description": "Welcome to Git Proxy !",
+              "source": "@site/../docs/home.mdx",
+              "sourceDirName": ".",
+              "slug": "/home",
+              "permalink": "/docs/home",
+              "draft": false,
+              "editUrl": "https://github.com/finos/open-developer-platform/edit/master/website/../docs/home.mdx",
+              "tags": [],
+              "version": "current",
+              "frontMatter": {
+                "id": "home",
+                "title": "Homepage"
+              },
+              "sidebar": "mainSidebar",
+              "next": {
+                "title": "Team",
+                "permalink": "/docs/team"
+              }
+            },
+            {
+              "unversionedId": "roadmap",
+              "id": "roadmap",
+              "title": "Roadmap",
+              "description": "1. (Jamie) Consolidate Citi codebase, code and (default) configuration",
+              "source": "@site/../docs/roadmap.mdx",
+              "sourceDirName": ".",
+              "slug": "/roadmap",
+              "permalink": "/docs/roadmap",
+              "draft": false,
+              "editUrl": "https://github.com/finos/open-developer-platform/edit/master/website/../docs/roadmap.mdx",
+              "tags": [],
+              "version": "current",
+              "frontMatter": {
+                "id": "roadmap",
+                "title": "Roadmap"
+              },
+              "sidebar": "mainSidebar",
+              "previous": {
+                "title": "Team",
+                "permalink": "/docs/team"
+              }
+            },
+            {
+              "unversionedId": "team",
+              "id": "team",
+              "title": "Team",
+              "description": "This is the Git Proxy maintainers team:",
+              "source": "@site/../docs/team.mdx",
+              "sourceDirName": ".",
+              "slug": "/team",
+              "permalink": "/docs/team",
+              "draft": false,
+              "editUrl": "https://github.com/finos/open-developer-platform/edit/master/website/../docs/team.mdx",
+              "tags": [],
+              "version": "current",
+              "frontMatter": {
+                "id": "team",
+                "title": "Team"
+              },
+              "sidebar": "mainSidebar",
+              "previous": {
+                "title": "Homepage",
+                "permalink": "/docs/home"
+              },
+              "next": {
+                "title": "Roadmap",
+                "permalink": "/docs/roadmap"
+              }
+            }
+          ],
+          "drafts": [],
+          "sidebars": {
+            "mainSidebar": [
+              {
+                "type": "category",
+                "label": "Main Menu",
+                "items": [
+                  {
+                    "type": "doc",
+                    "id": "home"
+                  },
+                  {
+                    "type": "doc",
+                    "id": "team"
+                  },
+                  {
+                    "type": "doc",
+                    "id": "roadmap"
+                  }
+                ],
+                "collapsed": true,
+                "collapsible": true
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "docusaurus-plugin-content-blog": {
+    "default": {
+      "blogSidebarTitle": "Recent posts",
+      "blogPosts": [],
+      "blogListPaginated": [],
+      "blogTags": {},
+      "blogTagsListPath": "/blog/tags",
+      "blogTagsPaginated": []
+    }
+  },
+  "docusaurus-plugin-content-pages": {
+    "default": [
+      {
+        "type": "jsx",
+        "permalink": "/",
+        "source": "@site/src/pages/index.js"
+      }
+    ]
+  },
+  "docusaurus-plugin-debug": {},
+  "docusaurus-theme-classic": {},
+  "docusaurus-bootstrap-plugin": {},
+  "docusaurus-mdx-fallback-plugin": {}
+}

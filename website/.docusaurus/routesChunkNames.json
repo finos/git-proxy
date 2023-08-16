@@ -1,0 +1,71 @@
+{
+  "/__docusaurus/debug-21b": {
+    "__comp": "__comp---theme-debug-config-23-a-2ff",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-7-c-3-02d"
+    }
+  },
+  "/__docusaurus/debug/config-e2f": {
+    "__comp": "__comp---theme-debug-config-23-a-2ff",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-7-c-3-02d"
+    }
+  },
+  "/__docusaurus/debug/content-d06": {
+    "__comp": "__comp---theme-debug-contentba-8-ce7",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-7-c-3-02d"
+    },
+    "allContent": "allContent---docusaurus-debug-content-246-9aa"
+  },
+  "/__docusaurus/debug/globalData-2fa": {
+    "__comp": "__comp---theme-debug-global-dataede-0fa",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-7-c-3-02d"
+    }
+  },
+  "/__docusaurus/debug/metadata-bac": {
+    "__comp": "__comp---theme-debug-site-metadata-68-e-3d4",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-7-c-3-02d"
+    }
+  },
+  "/__docusaurus/debug/registry-a61": {
+    "__comp": "__comp---theme-debug-registry-679-501",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-7-c-3-02d"
+    }
+  },
+  "/__docusaurus/debug/routes-daf": {
+    "__comp": "__comp---theme-debug-routes-946-699",
+    "__context": {
+      "plugin": "plugin---docusaurus-debug-7-c-3-02d"
+    }
+  },
+  "/docs-945": {
+    "__comp": "__comp---theme-doc-page-1-be-9be",
+    "__context": {
+      "plugin": "plugin---docsa-1-a-9d5"
+    },
+    "versionMetadata": "versionMetadata---docs-935-398"
+  },
+  "/docs/home-0dd": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-homeecc-d7a"
+  },
+  "/docs/roadmap-b44": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-roadmapf-87-806"
+  },
+  "/docs/team-335": {
+    "__comp": "__comp---theme-doc-item-178-a40",
+    "content": "content---docs-teamea-8-d87"
+  },
+  "/-d33": {
+    "__comp": "__comp---site-src-pages-index-jsc-4-f-f99",
+    "__context": {
+      "plugin": "plugin---d-73-a39"
+    },
+    "config": "config---5-e-9-4f3"
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "unversionedId": "team",
+  "id": "team",
+  "title": "Team",
+  "description": "This is the Git Proxy maintainers team:",
+  "source": "@site/../docs/team.mdx",
+  "sourceDirName": ".",
+  "slug": "/team",
+  "permalink": "/docs/team",
+  "draft": false,
+  "editUrl": "https://github.com/finos/open-developer-platform/edit/master/website/../docs/team.mdx",
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "id": "team",
+    "title": "Team"
+  },
+  "sidebar": "mainSidebar",
+  "previous": {
+    "title": "Homepage",
+    "permalink": "/docs/home"
+  },
+  "next": {
+    "title": "Roadmap",
+    "permalink": "/docs/roadmap"
+  }
+}
