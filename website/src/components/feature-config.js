@@ -17,7 +17,7 @@ export const features = [
     },
     {
         title: <>Share configurations</>,
-        imageUrl: '/img/finos/share.png',
+        imageUrl: '/img/share.png',
         description: (
             <>Share and reuse Git Proxy configurations across firms and individuals, by simply pointing to the extension plugins</>
         )
