@@ -42,7 +42,7 @@ function Home() {
       <main>
         <section className={styles.members}>
           <div className="container">
-            <h2>What is Git Proxy</h2>
+            <h2 className="hero--bigtitle">What is Git Proxy</h2>
             {/* <img align="right" width="550" src="/docs/img/demo.png" alt="Git Proxy Demonstration" /> */}
             <div className="row row--center">
               <p className="hero--bigtext">

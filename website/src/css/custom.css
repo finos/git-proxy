@@ -64,6 +64,12 @@
   font-size: 1.2rem;
 }
 
+h2.hero--bigtitle {
+  margin-left: 20%;
+  margin-right: 20%;
+  font-size: 1.4rem;
+}
+
 .row h2 {
   margin-bottom: 30px;
 }
