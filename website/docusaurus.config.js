@@ -1,12 +1,12 @@
 // Docs at https://v2.docusaurus.io/docs/configuration
 
-
 // Replace 'project-blueprint' with {project name}
-const projectName = 'Git Proxy'
+const projectName = 'Git Proxy';
 // Replace 'project-blueprint' with {project name}
-const projectSlug = 'git-proxy'
+const projectSlug = 'git-proxy';
 // Replace 'FINOS' with {name of copyright owner}
-const copyrightOwner = 'FINOS'
+const copyrightOwner = 'FINOS';
+const year = new Date().getFullYear();
 
 module.exports = {
   title: `${projectName}`,
@@ -20,10 +20,12 @@ module.exports = {
     repoUrl: `https://github.com/finos/${projectSlug}`,
   },
   scripts: ['https://buttons.github.io/buttons.js'],
-  stylesheets: ['https://fonts.googleapis.com/css?family=Overpass:400,400i,700'],
+  stylesheets: [
+    'https://fonts.googleapis.com/css?family=Overpass:400,400i,700',
+  ],
   themeConfig: {
     colorMode: {
-      disableSwitch: true
+      disableSwitch: true,
     },
     navbar: {
       title: `${projectName}`,
@@ -32,22 +34,22 @@ module.exports = {
         src: 'img/favicon/favicon-finos.ico',
       },
       items: [
-        {to: 'docs/home', label: 'Docs', position: 'right'},
-        {to: 'docs/roadmap', label: 'Roadmap', position: 'right'},
-        {to: 'docs/team', label: 'Team', position: 'right'},
+        { to: 'docs/home', label: 'Docs', position: 'right' },
+        { to: 'docs/roadmap', label: 'Roadmap', position: 'right' },
+        { to: 'docs/team', label: 'Team', position: 'right' },
         {
           href: 'https://github.com/finos/git-proxy',
           label: 'GitHub',
           position: 'right',
-        }
+        },
       ],
     },
     footer: {
-      copyright: `Copyright © ${new Date().getFullYear()} ${projectName} - ${copyrightOwner}`,
+      copyright: `Copyright © ${year} ${projectName} - ${copyrightOwner}`,
       logo: {
         alt: 'FINOS Logo',
         src: 'img/favicon/favicon-finos.ico',
-        href: 'https://finos.org'
+        href: 'https://finos.org',
       },
       links: [
         {
@@ -64,8 +66,8 @@ module.exports = {
             {
               label: 'Team',
               to: 'docs/team',
-            }
-          ]
+            },
+          ],
         },
         {
           title: 'FINOS',
@@ -81,8 +83,8 @@ module.exports = {
             {
               label: 'Community Governance',
               to: 'https://community.finos.org/docs/governance/#community-governance',
-            }
-          ]
+            },
+          ],
         },
         {
           title: 'About FINOS',
@@ -98,10 +100,10 @@ module.exports = {
             {
               label: 'FINOS News and Events',
               to: 'https://www.finos.org/news-and-events',
-            }
-          ]
+            },
+          ],
         },
-      ]
+      ],
     },
   },
   presets: [
@@ -110,14 +112,13 @@ module.exports = {
       {
         docs: {
           path: '../docs',
-          editUrl:
-            'https://github.com/finos/git-proxy/edit/master/website/',
-          sidebarPath: require.resolve('./sidebars.js')
+          editUrl: 'https://github.com/finos/git-proxy/edit/master/website/',
+          sidebarPath: require.resolve('./sidebars.js'),
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
-        }
-      }
-    ]
-  ]
+        },
+      },
+    ],
+  ],
 };
