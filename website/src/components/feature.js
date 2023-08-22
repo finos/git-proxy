@@ -2,6 +2,7 @@ import React from 'react';
 import classnames from 'classnames';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from '../pages/styles.module.css';
+import PropTypes from 'prop-types';
 
 /**
  * Feature page component
