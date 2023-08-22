@@ -1,5 +1,5 @@
 module.exports = {
   mainSidebar: {
-    'Main Menu': ["home", "team", "roadmap"]
+    'Main Menu': ['home', 'team', 'roadmap'],
   },
-}
+};
