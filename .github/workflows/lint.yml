@@ -1,6 +1,6 @@
 name: Lint Code Base
 
-on: [push, pull_request]
+on: [pull_request]
 
 env: # environment variables (available in any part of the action)
   NODE_VERSION: 16
