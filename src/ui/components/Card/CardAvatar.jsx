@@ -3,14 +3,14 @@
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import {makeStyles} from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import styles from '../../assets/jss/material-dashboard-react/components/cardAvatarStyle.js';
 
 const useStyles = makeStyles(styles);
 
 export default function CardAvatar(props) {
   const classes = useStyles();
-  const {children, className, plain, profile, ...rest} = props;
+  const { children, className, plain, profile, ...rest } = props;
   const cardAvatarClasses = classNames({
     [classes.cardAvatar]: true,
     [classes.cardAvatarProfile]: profile,

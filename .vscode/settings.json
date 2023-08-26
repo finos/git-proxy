@@ -4,5 +4,12 @@
     "files.eol": "\n",
     "terminal.integrated.disableLineWrapping": true,
     "debug.console.wordWrap": false,
-    "editor.wordWrap":"off"
+    "editor.wordWrap": "off",
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true
+    },
+    "eslint.validate": [
+        "javascript",
+        "javascriptreact",
+    ]
 }
