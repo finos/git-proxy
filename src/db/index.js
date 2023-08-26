@@ -13,9 +13,14 @@ if (config.getDatabase().type === 'mongo') {
 }
 
 module.exports.createUser = async (
-    username, password, email, gitAccount, admin=false) => {
+  username,
+  password,
+  email,
+  gitAccount,
+  admin = false,
+) => {
   console.log(
-      `creating user
+    `creating user
         user=${username},
         gitAccount=${gitAccount}
         email=${email},
@@ -29,7 +34,7 @@ module.exports.createUser = async (
     email: email,
     admin: admin,
     changePassword: true,
-    token: generator.generate({length: 10, numbers: true}),
+    token: generator.generate({ length: 10, numbers: true }),
   };
 
   const existingUser = await sink.findUser(username);
@@ -44,7 +49,7 @@ module.exports.createUser = async (
   await wrapedSendMail(data, password);
 };
 
-const wrapedSendMail = function(data, password) {
+const wrapedSendMail = function (data, password) {
   return new Promise((resolve, reject) => {
     const emailConfig = config.getTempPasswordConfig();
 
@@ -67,7 +72,7 @@ const wrapedSendMail = function(data, password) {
       text: `Your tempoary password is ${password}`,
     };
 
-    transporter.sendMail(mailOptions, function(error, info) {
+    transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
         console.log(`error is ${error}`);
         reject(error);

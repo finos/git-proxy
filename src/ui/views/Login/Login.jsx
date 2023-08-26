@@ -1,8 +1,8 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 // @material-ui/core components
-import {makeStyles} from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
 // core components
@@ -15,7 +15,7 @@ import CardHeader from '../../components/Card/CardHeader.jsx';
 import CardBody from '../../components/Card/CardBody.jsx';
 import CardFooter from '../../components/Card/CardFooter.jsx';
 import axios from 'axios';
-import {Navigate} from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 
 const styles = {
   cardCategoryWhite: {
@@ -30,14 +30,14 @@ const styles = {
     marginTop: '0px',
     minHeight: 'auto',
     fontWeight: '300',
-    fontFamily: '\'Roboto\', \'Helvetica\', \'Arial\', sans-serif',
+    // eslint-disable-next-line quotes
+    fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
     marginBottom: '3px',
     textDecoration: 'none',
   },
 };
 
 const useStyles = makeStyles(styles);
-
 
 export default function UserProfile() {
   const classes = useStyles();
@@ -52,34 +52,39 @@ export default function UserProfile() {
   }
 
   function handleSubmit(event) {
-    axios.post('http://localhost:8080/auth/login', {
-      username: username,
-      password: password,
-    }, {
-      withCredentials: true,
-      headers: {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'},
-    })
-        .then(function(response) {
-          setMessage('Success!');
-          setSuccess(true);
-        })
-        .catch(function(error) {
-          setMessage('Incorrect username of password');
-        });
+    axios
+      .post(
+        'http://localhost:8080/auth/login',
+        {
+          username: username,
+          password: password,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+          },
+        },
+      )
+      .then(function (response) {
+        setMessage('Success!');
+        setSuccess(true);
+      })
+      .catch(function (error) {
+        setMessage('Incorrect username of password');
+      });
 
     event.preventDefault();
   }
 
   if (success) {
-    return (
-      <Navigate to={{pathname: '/', state: {authed: true}}} />
-    );
+    return <Navigate to={{ pathname: '/', state: { authed: true } }} />;
   }
 
   return (
     <form onSubmit={handleSubmit}>
       <GridContainer>
-
         <GridItem xs={12} sm={6} md={4}>
           <Card>
             <CardHeader color="primary">
@@ -90,9 +95,7 @@ export default function UserProfile() {
               <GridContainer>
                 <GridItem xs={12} sm={12} md={3}>
                   <FormControl>
-                    <InputLabel>
-                      Username
-                    </InputLabel>
+                    <InputLabel>Username</InputLabel>
                     <Input
                       id="username"
                       type="username"
@@ -105,9 +108,7 @@ export default function UserProfile() {
               <GridContainer>
                 <GridItem xs={12} sm={12} md={3}>
                   <FormControl>
-                    <InputLabel>
-                      Password
-                    </InputLabel>
+                    <InputLabel>Password</InputLabel>
                     <Input
                       id="username"
                       type="password"

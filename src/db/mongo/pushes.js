@@ -10,7 +10,7 @@ const defaultPushQuery = {
   authorised: false,
 };
 
-const getPushes = async (query=defaultPushQuery) => {
+const getPushes = async (query = defaultPushQuery) => {
   const collection = await connect(cnName);
   const results = await collection.find(query).toArray();
   return results;
@@ -18,7 +18,7 @@ const getPushes = async (query=defaultPushQuery) => {
 
 const getPush = async (id) => {
   const collection = await connect(cnName);
-  const doc = await collection.findOne({id: id});
+  const doc = await collection.findOne({ id: id });
 
   if (doc) {
     return toClass(doc, Action.prototype);
@@ -29,10 +29,10 @@ const getPush = async (id) => {
 
 const writeAudit = async (action) => {
   const data = JSON.parse(JSON.stringify(action));
-  const options = {upsert: true};
+  const options = { upsert: true };
   const collection = await connect(cnName);
   delete data._id;
-  await collection.updateOne({id: data.id}, {'$set': data}, options);
+  await collection.updateOne({ id: data.id }, { $set: data }, options);
   return action;
 };
 
@@ -42,7 +42,7 @@ const authorise = async (id) => {
   action.canceled = false;
   action.rejected = false;
   await writeAudit(action);
-  return {message: `authorised ${id}`};
+  return { message: `authorised ${id}` };
 };
 
 const reject = async (id) => {
@@ -51,7 +51,7 @@ const reject = async (id) => {
   action.canceled = false;
   action.rejected = true;
   await writeAudit(action);
-  return {message: `reject ${id}`};
+  return { message: `reject ${id}` };
 };
 
 const cancel = async (id) => {
@@ -60,7 +60,7 @@ const cancel = async (id) => {
   action.canceled = true;
   action.rejected = false;
   await writeAudit(action);
-  return {message: `cancel ${id}`};
+  return { message: `cancel ${id}` };
 };
 
 module.exports.getPushes = getPushes;

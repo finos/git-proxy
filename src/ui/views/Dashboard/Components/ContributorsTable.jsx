@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import React from 'react';
-import {makeStyles} from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import Table from '../../../components/Table/Table.jsx';
 import Card from '../../../components/Card/Card.jsx';
 import CardHeader from '../../../components/Card/CardHeader.jsx';
@@ -23,7 +23,14 @@ export default function ContributorsTable() {
       <CardBody>
         <Table
           tableHeaderColor="warning"
-          tableHead={['ID', 'Name', 'Pushes', 'Pushes Authorized', 'Pushes Rejected', 'Pulls']}
+          tableHead={[
+            'ID',
+            'Name',
+            'Pushes',
+            'Pushes Authorized',
+            'Pushes Rejected',
+            'Pulls',
+          ]}
           tableData={[
             ['1', 'Dakota Rice', '12', '11', '1', '321'],
             ['2', 'Minerva Hooper', '6', '6', '0', '10945'],

@@ -2,7 +2,7 @@
 /* eslint-disable require-jsdoc */
 import React from 'react';
 import ChartistGraph from 'react-chartist';
-import {makeStyles} from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import AccessTime from '@material-ui/icons/AccessTime';
 import Card from '../../../components/Card/Card.jsx';
 import CardHeader from '../../../components/Card/CardHeader.jsx';
@@ -11,8 +11,7 @@ import CardFooter from '../../../components/Card/CardFooter.jsx';
 import ArrowUpward from '@material-ui/icons/ArrowUpward';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
 
-import 
-  {dailySalesChart} from '../../../variables/charts.js';
+import { dailySalesChart } from '../../../variables/charts.js';
 
 const useStyles = makeStyles(styles);
 

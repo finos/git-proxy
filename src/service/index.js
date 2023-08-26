@@ -20,15 +20,17 @@ const start = async () => {
   const passport = await require('./passport').configure();
   const routes = require('./routes');
   app.use(cors(corsOptions));
-  app.use(session({
-    secret: 'keyboard cat',
-    resave: false,
-    saveUninitialized: false,
-  }));
+  app.use(
+    session({
+      secret: 'keyboard cat',
+      resave: false,
+      saveUninitialized: false,
+    }),
+  );
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(express.json());
-  app.use(express.urlencoded({extended: true}));
+  app.use(express.urlencoded({ extended: true }));
   app.use('/', routes);
 
   await _httpServer.listen(port);

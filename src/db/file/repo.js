@@ -4,9 +4,9 @@ const Datastore = require('@seald-io/nedb');
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
-const db = new Datastore({filename: './.data/db/repos.db', autoload: true});
+const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
 
-exports.getRepos = async (query={}) => {
+exports.getRepos = async (query = {}) => {
   return new Promise((resolve, reject) => {
     db.find({}, (err, docs) => {
       if (err) {
@@ -20,7 +20,7 @@ exports.getRepos = async (query={}) => {
 
 exports.getRepo = async (name) => {
   return new Promise((resolve, reject) => {
-    db.findOne({name: name}, (err, doc) => {
+    db.findOne({ name: name }, (err, doc) => {
       if (err) {
         reject(err);
       } else {
@@ -61,8 +61,8 @@ exports.addUserCanPush = async (name, user) => {
     }
     repo.users.canPush.push(user);
 
-    const options = {multi: false, upsert: false};
-    db.update({name: name}, repo, options, (err) => {
+    const options = { multi: false, upsert: false };
+    db.update({ name: name }, repo, options, (err) => {
       if (err) {
         reject(err);
       } else {
@@ -83,8 +83,8 @@ exports.addUserCanAuthorise = async (name, user) => {
 
     repo.users.canAuthorise.push(user);
 
-    const options = {multi: false, upsert: false};
-    db.update({name: name}, repo, options, (err) => {
+    const options = { multi: false, upsert: false };
+    db.update({ name: name }, repo, options, (err) => {
       if (err) {
         reject(err);
       } else {
@@ -100,8 +100,8 @@ exports.removeUserCanAuthorise = async (name, user) => {
 
     repo.users.canAuthorise = repo.users.canAuthorise.filter((x) => x != user);
 
-    const options = {multi: false, upsert: false};
-    db.update({name: name}, repo, options, (err) => {
+    const options = { multi: false, upsert: false };
+    db.update({ name: name }, repo, options, (err) => {
       if (err) {
         reject(err);
       } else {
@@ -117,8 +117,8 @@ exports.removeUserCanPush = async (name, user) => {
 
     repo.users.canPush = repo.users.canPush.filter((x) => x != user);
 
-    const options = {multi: false, upsert: false};
-    db.update({name: name}, repo, options, (err) => {
+    const options = { multi: false, upsert: false };
+    db.update({ name: name }, repo, options, (err) => {
       if (err) {
         reject(err);
       } else {
@@ -130,7 +130,7 @@ exports.removeUserCanPush = async (name, user) => {
 
 exports.deleteRepo = async (name) => {
   return new Promise((resolve, reject) => {
-    db.remove({name: name}, (err) => {
+    db.remove({ name: name }, (err) => {
       if (err) {
         reject(err);
       } else {

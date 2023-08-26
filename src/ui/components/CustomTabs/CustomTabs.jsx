@@ -3,7 +3,7 @@
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import {makeStyles} from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import Card from '../Card/Card.jsx';
@@ -20,7 +20,7 @@ export default function CustomTabs(props) {
     setValue(value);
   };
   const classes = useStyles();
-  const {headerColor, plainTabs, tabs, title, rtlActive} = props;
+  const { headerColor, plainTabs, tabs, title, rtlActive } = props;
   const cardTitle = classNames({
     [classes.cardTitle]: true,
     [classes.cardTitleRTL]: rtlActive,
@@ -85,11 +85,11 @@ CustomTabs.propTypes = {
   ]),
   title: PropTypes.string,
   tabs: PropTypes.arrayOf(
-      PropTypes.shape({
-        tabName: PropTypes.string.isRequired,
-        tabIcon: PropTypes.object,
-        tabContent: PropTypes.node.isRequired,
-      }),
+    PropTypes.shape({
+      tabName: PropTypes.string.isRequired,
+      tabIcon: PropTypes.object,
+      tabContent: PropTypes.node.isRequired,
+    }),
   ),
   rtlActive: PropTypes.bool,
   plainTabs: PropTypes.bool,

@@ -23,7 +23,7 @@ const chain = async (req) => {
 
       action = await fn(req, action);
 
-      if (!(action.continue())) {
+      if (!action.continue()) {
         return action;
       }
 
