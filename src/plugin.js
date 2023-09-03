@@ -19,65 +19,64 @@ class PluginManager {
     this.paths = paths;
     this.plugins = [];
     this.pluginModules = [];
-    this.modulesLoaded = false;
-    this.loaded = false;
   }
 
   /**
    * Load configured plugins as modules and set each concrete ProxyPlugin
    * to this.plugins for use in proxying.
    */
-  async loadModules() {
-    // load a list of modules from file path or node_modules
-    const loadPlugin = (await lpModule).loadPlugin;
-    const resolvePlugin = (await lpModule).resolvePlugin;
-    if (this.names !== undefined && this.names.length !== 0) {
-      console.log(`Found ${this.names.length} packages to load.`);
-      this.names.forEach(async (name) => {
-        try {
-          // Only plugins from the @finos scope are supported
-          const resolved = await resolvePlugin(name, { prefix: '@finos' });
-          const plugin = await loadPlugin(resolved, { prefix: '@finos' });
-          this.pluginModules.concat(plugin);
-        } catch (err) {
-          console.error(`Unable to load plugin ${name}: ${err}`);
-        }
-      });
+  loadPlugins() {
+    const modulePromises = [];
+    for (const path of this.paths) {
+      modulePromises.push(this._loadFilePlugin(path));
     }
-    if (this.paths !== undefined && this.paths.length !== 0) {
-      console.log(`Found ${this.paths.length} local plugins to load.`);
-      this.paths.forEach(async (p) => {
-        try {
-          const resolved = await resolvePlugin(path.join(process.cwd(), p));
-          const plugin = await loadPlugin(resolved);
-          this.pluginModules.concat(plugin);
-        } catch (err) {
-          console.error(`Unable to load plugin ${p}: ${err}`);
-        }
-      });
+    for (const name of this.names) {
+      modulePromises.push(this._loadPackagePlugin(name));
     }
-    this.modulesLoaded = true;
+    Promise.all(modulePromises).then((vals) => {
+      this.pluginModules = vals;
+      console.log(`Found ${this.pluginModules.length} plugin modules`);
+      const pluginObjPromises = [];
+      for (const mod of this.pluginModules) {
+        pluginObjPromises.push(this._castToPluginObjects(mod));
+      }
+      Promise.all(pluginObjPromises).then((vals) => {
+        this.plugins = this.plugins.concat(vals);
+        console.log(`Loaded ${this.plugins.length} plugins`);
+      });
+    });
   }
 
-  loadPlugins() {
-    // This function runs before loadModules finishes. No idea how to resolve
-    // since load-plugin package only supports async.
+  async _loadFilePlugin(filepath) {
+    const lp = await lpModule;
+    const resolvedModuleFile = await lp.resolvePlugin(
+      path.join(process.cwd(), filepath),
+    );
+    return await lp.loadPlugin(resolvedModuleFile);
+  }
+
+  async _loadPackagePlugin(packageName) {
+    const lp = await lpModule;
+    const resolvedPackageFile = await lp.resolvePlugin(packageName, {
+      prefix: '@finos',
+    });
+    return await lp.loadPlugin(resolvedPackageFile);
+  }
+
+  async _castToPluginObjects(pluginModule) {
     const plugins = [];
-    for (pluginModule in this.pluginModules) {
-      // iterate over the module.exports keys
-      for (key in Object.keys(pluginModule)) {
-        // only extract instances of the GenericPlugin base class
-        // add it to the list of loaded plugins
-        if (
-          Object.prototype.hasOwnProperty.call(pluginModule, key) &&
-          p[key] instanceof ProxyPlugin
-        ) {
-          plugins.concat(p[key]);
-        }
+    // iterate over the module.exports keys
+    for (const key of Object.keys(pluginModule)) {
+      // only extract instances of the GenericPlugin base class
+      // add it to the list of loaded plugins
+      if (
+        Object.prototype.hasOwnProperty.call(pluginModule, key) &&
+        pluginModule[key] instanceof ProxyPlugin
+      ) {
+        plugins.push(pluginModule[key]);
       }
     }
-    this.plugins = plugins;
-    this.loaded = true;
+    return plugins;
   }
 }
 
@@ -111,7 +110,7 @@ class GenericPlugin extends ProxyPlugin {
   }
 }
 
-const setupPluginManager = async () => {
+const setupPluginManager = () => {
   // Auto-register plugins that are part of git-proxy core
   let packagePlugins = [];
   let localPlugins = ['./packages/git-proxy-notify-hello/index.js'];
@@ -133,7 +132,6 @@ const setupPluginManager = async () => {
       });
   }
   const pluginMgr = new PluginManager(packagePlugins, localPlugins);
-  await pluginMgr.loadModules();
   pluginMgr.loadPlugins();
   return pluginMgr;
 };

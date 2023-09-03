@@ -45,14 +45,7 @@ const getChain = (action) => {
   if (action.type === 'pull') return [];
   if (action.type === 'push') {
     console.log('Checking for plugin actions');
-    // plugin.pluginManager is a Promise. How to get pluginManager.plugins if
-    // its lazily loaded and initalized async???
-    const pluginActions = plugin.pluginManager
-      .then((pm) => (pm.loaded ? pm.plugins : []))
-      .catch((err) => {
-        console.error(err);
-        return [];
-      });
+    const pluginActions = plugin.pluginManager.plugins;
     // insert loaded plugins as actions
     // this probably isn't the place to insert these functions
     if (pluginActions.length > 0) {
