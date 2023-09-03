@@ -12,13 +12,14 @@ class PluginManager {
    * Initialize PluginManager
    * @param {Array.<string>} names List of Node module/package names to load.
    * @param {Array.<string>} paths List of directory paths to load modules from.
+   * @property {Array.<ProxyPlugin>} this.plugins List of ProxyPlugin objects
+   *                                              set via loadPlugins()
    */
   constructor(names, paths) {
     console.log(`Initializing plugin manager...`);
     this.names = names;
     this.paths = paths;
     this.plugins = [];
-    this.pluginModules = [];
   }
 
   /**
@@ -34,10 +35,10 @@ class PluginManager {
       modulePromises.push(this._loadPackagePlugin(name));
     }
     Promise.all(modulePromises).then((vals) => {
-      this.pluginModules = vals;
-      console.log(`Found ${this.pluginModules.length} plugin modules`);
+      const modules = vals;
+      console.log(`Found ${modules.length} plugin modules`);
       const pluginObjPromises = [];
-      for (const mod of this.pluginModules) {
+      for (const mod of modules) {
         pluginObjPromises.push(this._castToPluginObjects(mod));
       }
       Promise.all(pluginObjPromises).then((vals) => {
