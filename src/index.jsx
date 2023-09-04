@@ -20,7 +20,7 @@ const hist = createBrowserHistory();
 ReactDOM.render(
   <Router history={hist}>
     <Routes>
-      <Route exact path="/admin" element={<Admin />} />
+      <Route exact path="/admin/*" element={<Admin />} />
       <Route exact path="/login" element={<Login />} />
       <Route exact path="/" element={<Navigate from="/" to="/login" />} />
     </Routes>
