@@ -18,7 +18,7 @@ const chain = async (req) => {
   try {
     action = await proc.pre.parseAction(req);
 
-    const actions = getChain(action);
+    const actions = await getChain(action);
 
     for (const i in actions) {
       if (!i) continue;
@@ -43,18 +43,20 @@ const chain = async (req) => {
   return action;
 };
 
-const getChain = (action) => {
+const getChain = async (action) => {
   if (action.type === 'pull') return [];
   if (action.type === 'push') {
     // insert loaded plugins as actions
     // this probably isn't the place to insert these functions
-    const pluginActions = plugin.pluginManager.plugins;
+    const loader = await plugin.defaultLoader;
+    const pluginActions = loader.plugins;
     if (!pluginsLoaded && pluginActions.length > 0) {
       console.log(`Found ${pluginActions.length}, inserting into proxy chain`);
       for (const pluginAction of pluginActions) {
-        if (pluginAction instanceof plugin.GenericPlugin) {
+        if (pluginAction instanceof plugin.ActionPlugin) {
           console.log(`Inserting plugin ${pluginAction} into chain`);
-          pushActionChain.splice(1, 0, pluginAction.execute);
+          // insert custom functions after parsePush but before other actions
+          pushActionChain.splice(1, 0, pluginAction.exec);
         }
       }
       pluginsLoaded = true;
