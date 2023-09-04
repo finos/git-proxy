@@ -12,13 +12,16 @@ class PluginManager {
    * Initialize PluginManager
    * @param {Array.<string>} names List of Node module/package names to load.
    * @param {Array.<string>} paths List of directory paths to load modules from.
-   * @property {Array.<ProxyPlugin>} this.plugins List of ProxyPlugin objects
-   *                                              set via loadPlugins()
    */
   constructor(names, paths) {
     console.log(`Initializing plugin manager...`);
     this.names = names;
     this.paths = paths;
+    /**
+     * @type {Array.<ProxyPlugin>} List of ProxyPlugin objects set via
+     *                             loadPlugins()
+     * @public
+     */
     this.plugins = [];
   }
 
@@ -42,7 +45,9 @@ class PluginManager {
         pluginObjPromises.push(this._castToPluginObjects(mod));
       }
       Promise.all(pluginObjPromises).then((vals) => {
-        this.plugins = this.plugins.concat(vals);
+        for (const pluginObjs of vals) {
+          this.plugins = this.plugins.concat(pluginObjs);
+        }
         console.log(`Loaded ${this.plugins.length} plugins`);
       });
     });
@@ -106,8 +111,8 @@ class GenericPlugin extends ProxyPlugin {
    * @param {*} request
    * @param {*} action
    */
-  execute(request, action) {
-    this.execFunc(request, action);
+  async execute(request, action) {
+    await this.execFunc(request, action);
   }
 }
 
@@ -138,5 +143,5 @@ const setupPluginManager = () => {
 };
 
 module.exports.pluginManager = setupPluginManager();
+module.exports.ProxyPlugin = ProxyPlugin;
 module.exports.GenericPlugin = GenericPlugin;
-module.exports.PluginManager = PluginManager;

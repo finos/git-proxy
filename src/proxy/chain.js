@@ -11,6 +11,8 @@ const pushActionChain = [
   proc.push.blockForAuth,
 ];
 
+let pluginsLoaded = false;
+
 const chain = async (req) => {
   let action;
   try {
@@ -44,14 +46,18 @@ const chain = async (req) => {
 const getChain = (action) => {
   if (action.type === 'pull') return [];
   if (action.type === 'push') {
-    console.log('Checking for plugin actions');
-    const pluginActions = plugin.pluginManager.plugins;
     // insert loaded plugins as actions
     // this probably isn't the place to insert these functions
-    if (pluginActions.length > 0) {
-      console.log(`Found ${pluginActions.length}, upserting into proxy chain`);
-      pushActionChain = pushActionChain.splice(1, 0, ...pluginActions);
-      console.log(pushActionChain);
+    const pluginActions = plugin.pluginManager.plugins;
+    if (!pluginsLoaded && pluginActions.length > 0) {
+      console.log(`Found ${pluginActions.length}, inserting into proxy chain`);
+      for (const pluginAction of pluginActions) {
+        if (pluginAction instanceof plugin.GenericPlugin) {
+          console.log(`Inserting plugin ${pluginAction} into chain`);
+          pushActionChain.splice(1, 0, pluginAction.execute);
+        }
+      }
+      pluginsLoaded = true;
     }
     return pushActionChain;
   }
