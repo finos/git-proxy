@@ -15,20 +15,19 @@ let ps;
 
 const switchRoutes = (
   <Routes>
-    {routes.map((prop, key) => {
-      if (prop.layout === '/admin') {
+    {routes
+      .filter((prop, _) => prop.layout === '/admin')
+      .map((prop, key) => {
         return (
           <Route
             exact
-            path={prop.layout + prop.path}
-            element={prop.component}
+            path={prop.path}
             key={key}
+            element={<prop.component />}
           />
         );
-      }
-      return null;
-    })}
-    <Navigate from="/admin" to="/admin/dashboard" />
+      })}
+    <Route exact path="/admin" element={<Navigate to="/admin/dashboard" />} />
   </Routes>
 );
 

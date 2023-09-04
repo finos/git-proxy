@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import moment from 'moment';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Icon from '@material-ui/core/Icon';
 import GridItem from '../../components/Grid/GridItem.jsx';
 import GridContainer from '../../components/Grid/GridContainer.jsx';
@@ -26,9 +26,9 @@ import {
   cancelPush,
 } from '../../services/git-push.js';
 
-export default function Dashboard(props) {
+export default function Dashboard() {
   // eslint-disable-next-line react/prop-types
-  const id = props.match.params.id;
+  const { id } = useParams();
   const [data, setData] = useState([]);
   const [auth, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
