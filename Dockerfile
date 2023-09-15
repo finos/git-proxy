@@ -8,16 +8,20 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install project dependencies
-RUN npm ci --omit=dev --ignore-scripts
+# Use `npm install` instead of `npm ci` to include dev dependencies
+RUN npm install
 
 # Copy the rest of the application code to the container
-COPY --from=build /app/node_modules/ node_modules/
 COPY . .
 
-# Expose the port that your application listens on
-EXPOSE 8000
+# We don't need to expose ports in the build stage; it's for documentation
+# EXPOSE 8000
+# EXPOSE 8080
 
-EXPOSE 8080
+# We should define an environment variable for your Node.js app
+# It's a good practice to specify a non-root user for security reasons
+ENV NODE_ENV=production
+USER node
 
 # Define the command to run your application
 CMD ["node", "index.js"]
