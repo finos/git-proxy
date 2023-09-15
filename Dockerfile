@@ -1,5 +1,5 @@
 # Use an official Node.js runtime as a parent image
-FROM node:18
+FROM node:16-slim AS build
 
 # Set the working directory to /app
 WORKDIR /app
@@ -8,9 +8,10 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install project dependencies
-RUN npm install
+RUN npm ci --omit=dev --ignore-scripts
 
 # Copy the rest of the application code to the container
+COPY --from=build /app/node_modules/ node_modules/
 COPY . .
 
 # Expose the port that your application listens on
@@ -19,4 +20,4 @@ EXPOSE 8000
 EXPOSE 8080
 
 # Define the command to run your application
-CMD ["npm", "start"]
+CMD ["node", "index.js"]
