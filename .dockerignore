@@ -1,40 +1,20 @@
-# Exclude typical development and build files
-node_modules
+# Ignore development and build-related files
+node_modules/
 npm-debug.log
-yarn-error.log
+package-lock.json
+yarn.lock
 *.log
-*.logs
-*.lck
-*.bak
-*.tmp
 *.swp
-*.DS_Store
-.vscode/
-.idea/
-__tests__/
-coverage/
-dist/
-build/
-docs/
-*.md
-*.markdown
-
-# Exclude version control files and directories
-.git
+.DS_Store
+*.git
 .gitignore
-.svn
-.hg
+.vscode/
+.editorconfig
+.env
 
-# Exclude editor and IDE files
-*.sublime-*
-*.idea
-*.iml
-*.ipr
-*.iws
-*.class
-*.code-workspace
-
-# Exclude project-specific files and directories (add more as needed)
-config/
-data/
-secrets/
+# Ignore test and documentation files
+__tests__/
+doc/
+docs/
+test/
+tests/
