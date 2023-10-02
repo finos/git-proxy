@@ -101,15 +101,15 @@ Navigate into your test-bed repository on your PC:
 cd ./git-proxy
 ```
 
+By default the clone of your repository will communicate with GitHub. To change this, so that your local copy of the repository speaks with Git Proxy, run:
+
 ```bash
-git remote add proxy http://localhost:8000/<YOUR-GITHUB-USERNAME>/git-proxy.git
+git remote set-url origin http://localhost:8000/<YOUR-GITHUB-USERNAME>/git-proxy.git
 ```
 
 #### 4. Make some changes to the codebase
 
-Open up the `README.md` and turn this frown upside-down:
-
-☹️
+Open up the `README.md` and turn this frown upside-down: ☹️
 
 Once you've cheered up our friend above, run:
 
