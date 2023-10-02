@@ -75,10 +75,26 @@ npx --package=@finos/git-proxy@1.1.0 -- git-proxy # No installation required...
 
 ## Quickstart 🚀
 
-#### 1. Run Git Proxy on your PC
+#### 1. Run Git Proxy with simple config
+
+Create a `proxy.config.json` in a workspace with the following:
+
+```json
+{
+    "authorisedList": [
+    {
+      "project": "<YOUR-GITHUB-USERNAME>",
+      "name": "git-proxy",
+      "url": "https://github.com/<YOUR-GITHUB-USERNAME>/git-proxy.git"
+    }
+  ],
+}
+```
+
+Then run Git Proxy and load your `proxy.config.json` configuration file from your workspace:
 
 ```bash
-npx --package=@finos/git-proxy@1.1.0 -- git-proxy
+npx --package=@finos/git-proxy@1.1.0 -- git-proxy --config ./proxy.config.json
 ```
 
 #### 2. Pick a repository
@@ -136,7 +152,7 @@ git config --global credential.helper manager # Windows
 git config --global credential.helper store # Linux
 ```
 
-#### 6. Success & Next Steps
+#### 6. Success
 
 Immediately after a push, you should receive the following message in your terminal:
 
