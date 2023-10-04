@@ -1,0 +1,13 @@
+{
+  "name": "git-proxy-notify-hello",
+  "version": "1.0.0",
+  "description": "A simple notification plugin to display a message on push via git-proxy",
+  "scripts": {
+    "test": "mocha --exit"
+  },
+  "author": "Thomas Cooper",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@finos/git-proxy": "file:../.."
+  }
+}

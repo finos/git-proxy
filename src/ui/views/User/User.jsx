@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import Icon from '@material-ui/core/Icon';
 import GridItem from '../../components/Grid/GridItem.jsx';
 import GridContainer from '../../components/Grid/GridContainer.jsx';
@@ -28,23 +28,23 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function Dashboard(props) {
+export default function Dashboard() {
   const classes = useStyles();
   const [data, setData] = useState([]);
   const [auth, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const { id } = useParams();
 
   useEffect(() => {
     // eslint-disable-next-line react/prop-types
-    const id = props.match.params.id;
     if (id) {
       getUser(setIsLoading, setData, setAuth, setIsError, id);
     } else {
       console.log('getting user data');
       getUser(setIsLoading, setData, setAuth, setIsError);
     }
-  }, [props]);
+  }, [id]);
 
   if (isLoading) return <div>Loading ...</div>;
   if (isError) return <div>Something went wrong ...</div>;

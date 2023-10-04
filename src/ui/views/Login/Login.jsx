@@ -79,7 +79,7 @@ export default function UserProfile() {
   }
 
   if (success) {
-    return <Navigate to={{ pathname: '/', state: { authed: true } }} />;
+    return <Navigate to={{ pathname: '/admin', state: { authed: true } }} />;
   }
 
   return (
