@@ -18,7 +18,7 @@ export default function Avatar({ name, description, username }) {
   const imageUrl = `${profileUrl}.png`;
 
   return (
-    <div className="avatar avatar--vertical">
+    <div className="avatar avatar--vertical margin-bottom--xl">
       <img
         className="avatar__photo avatar__photo--xl margin-bottom--md"
         src={imageUrl}
