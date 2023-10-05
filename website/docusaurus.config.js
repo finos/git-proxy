@@ -1,23 +1,17 @@
 // Docs at https://v2.docusaurus.io/docs/configuration
 
-// Replace 'project-blueprint' with {project name}
 const projectName = 'Git Proxy';
-// Replace 'project-blueprint' with {project name}
-const projectSlug = 'git-proxy';
-// Replace 'FINOS' with {name of copyright owner}
-const copyrightOwner = 'FINOS';
-const year = new Date().getFullYear();
 
 module.exports = {
   title: `${projectName}`,
-  tagline: `Enforce push protections and auditability for Git repositories`,
-  url: 'https://finos.org',
+  tagline: `Deploy custom push protections and policies on top of Git`,
+  url: 'https://git-proxy.finos.org',
   baseUrl: '/',
   favicon: 'img/favicon/favicon-finos.ico',
   projectName: `${projectName}`,
   organizationName: 'FINOS',
   customFields: {
-    repoUrl: `https://github.com/finos/${projectSlug}`,
+    version: '1.1.0',
   },
   scripts: ['https://buttons.github.io/buttons.js'],
   stylesheets: [
@@ -25,85 +19,57 @@ module.exports = {
   ],
   themeConfig: {
     colorMode: {
-      disableSwitch: true,
+      disableSwitch: false,
     },
     navbar: {
-      title: `${projectName}`,
       logo: {
-        alt: 'FINOS Logo',
-        src: 'img/favicon/favicon-finos.ico',
+        alt: 'Git Proxy Logo',
+        src: 'img/logo.png',
+        height: 50,
       },
       items: [
-        { to: 'docs/home', label: 'Docs', position: 'right' },
-        { to: 'docs/roadmap', label: 'Roadmap', position: 'right' },
-        { to: 'docs/team', label: 'Team', position: 'right' },
+        {
+          to: 'docs',
+          position: 'right',
+          className: 'header-read-doc-link',
+          'aria-label': 'Read our Docs',
+        },
+        {
+          href: 'https://github.com/finos/git-proxy/stargazers',
+          position: 'right',
+          className: 'header-star-link',
+          'aria-label': 'Star on GitHub',
+        },
+        {
+          href: 'https://github.com/finos/git-proxy/fork',
+          position: 'right',
+          className: 'header-fork-link',
+          'aria-label': 'Fork on GitHub',
+        },
         {
           href: 'https://github.com/finos/git-proxy',
-          label: 'GitHub',
           position: 'right',
+          className: 'header-github-link',
+          'aria-label': 'Git Proxy on GitHub',
         },
       ],
     },
     footer: {
-      copyright: `Copyright © ${year} ${projectName} - ${copyrightOwner}`,
       logo: {
-        alt: 'FINOS Logo',
-        src: 'img/favicon/favicon-finos.ico',
+        alt: 'Fintech Open Source Foundation',
+        src: 'img/finos/finos-blue.png',
+        srcDark: 'img/finos/finos-white.png',
         href: 'https://finos.org',
+        height: 50,
       },
-      links: [
-        {
-          title: 'Docs',
-          items: [
-            {
-              label: 'Getting Started',
-              to: 'docs/home',
-            },
-            {
-              label: 'Roadmap',
-              to: 'docs/roadmap',
-            },
-            {
-              label: 'Team',
-              to: 'docs/team',
-            },
-          ],
-        },
-        {
-          title: 'FINOS',
-          items: [
-            {
-              label: 'FINOS Website',
-              to: 'https://www.finos.org/',
-            },
-            {
-              label: 'Community Handbook',
-              to: 'https://community.finos.org/',
-            },
-            {
-              label: 'Community Governance',
-              to: 'https://community.finos.org/docs/governance/#community-governance',
-            },
-          ],
-        },
-        {
-          title: 'About FINOS',
-          items: [
-            {
-              label: 'FINOS Projects on GitHub',
-              to: 'https://github.com/finos',
-            },
-            {
-              label: 'Engage the FINOS Community',
-              to: 'https://www.finos.org/engage-with-our-community',
-            },
-            {
-              label: 'FINOS News and Events',
-              to: 'https://www.finos.org/news-and-events',
-            },
-          ],
-        },
-      ],
+    },
+    announcementBar: {
+      id: 'osff',
+      content:
+        '<a style="text-decoration: none" href="https://sched.co/1PzH1">Join us at Open Source in Finance Forum (OSFF) on November 1st in New York 🇺🇸</a>',
+      backgroundColor: '#3578E5',
+      textColor: 'white',
+      isCloseable: true,
     },
   },
   presets: [
@@ -111,8 +77,7 @@ module.exports = {
       '@docusaurus/preset-classic',
       {
         docs: {
-          path: '../docs',
-          editUrl: 'https://github.com/finos/git-proxy/edit/master/website/',
+          editUrl: 'https://github.com/finos/git-proxy/website/',
           sidebarPath: require.resolve('./sidebars.js'),
         },
         theme: {
