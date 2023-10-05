@@ -143,10 +143,9 @@ function Home() {
               />
             </div>
           </div>
-        </div>
-        <div className="row margin-top--xl margin-bottom--xl">
-          <div className="col col--12">
+          <div className="col col--4">
             <div className="col-demo">
+              {' '}
               <Avatar
                 name="Thomas Cooper"
                 description="Director, OSS Development at RBC"
