@@ -1,0 +1,100 @@
+---
+title: Quickstart
+description: Ready to take Git Proxy for a test drive?
+---
+
+### 1. Create a simple configuration
+
+Create a configuration file in a workspace with the following JSON:
+
+```json title="proxy.config.json"
+{
+  "authorisedList": [
+    {
+      "project": "<YOUR-GITHUB-USERNAME>",
+      "name": "git-proxy",
+      "url": "https://github.com/<YOUR-GITHUB-USERNAME>/git-proxy.git"
+    }
+  ],
+}
+```
+
+Then run Git Proxy and load the configuration file from your workspace:
+
+```bash
+npx --package=@finos/git-proxy@1.1.0 -- git-proxy --config ./proxy.config.json
+```
+
+### 2. Pick a repository
+
+Git Proxy sits between the local clone of your repository and its remote upstream. Essentially, instead of communicating directly with the live version of your repository, you configure your local clone to speak with Git Proxy first.
+
+For demonstration purposes, we recommend forking [Git Proxy](https://github.com/finos/git-proxy/fork) and cloning the repository to your PC:
+
+```bash
+git clone https://github.com/<YOUR-GITHUB-USERNAME>/git-proxy.git
+```
+
+### 3. Introduce Git Proxy to your clone
+
+Navigate into your test-bed repository on your PC:
+
+```bash
+cd ./git-proxy
+```
+
+By default the clone of your repository will communicate with GitHub. To change this, so that your local copy of the repository speaks with Git Proxy, run:
+
+```bash
+git remote set-url origin http://localhost:8000/<YOUR-GITHUB-USERNAME>/git-proxy.git
+```
+
+### 4. Make some changes to the codebase
+
+Open up the `README.md` and make a change to the file.
+
+```bash
+git add README.md
+git commit -m "chore: update README.md"
+```
+
+### 5. Push your changes
+
+```bash
+git push
+```
+
+#### Managing credentials
+
+Git Proxy will prompt the entry of your git credentials. These credentials are your GitHub username and a [Personal Access Token](https://github.com/settings/tokens). For the ability to push and pull code through Git Proxy, you will only require the `public_repo` scope.
+
+Git Proxy will reprompt you for credentials each time you push. To automatically re-use your credentials, you can run:
+
+```bash
+git config --global credential.helper osxkeychain # MacOS
+
+git config --global credential.helper manager # Windows
+
+git config --global credential.helper store # Linux
+```
+
+:::info
+
+Git Proxy **does not** use your Personal Access Token other than to authenticate with GitHub when pushing code. This is identical to the process of pushing code to a repository without Git Proxy installed.
+
+:::
+
+### 6. Eureka! 🎉
+
+Immediately after a push, you should receive a message, like this, in your terminal:
+
+```bash
+remote: Git Proxy has received your push 🎉
+remote: ----------------------------------------------------------
+remote:    Commit from | 000000
+remote:     Commit to  | b12557
+remote:        URL     | http://localhost:8080/push/000000__b12557    
+```
+
+
+
