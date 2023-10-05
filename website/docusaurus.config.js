@@ -35,7 +35,7 @@ module.exports = {
           'aria-label': 'Read our Docs',
         },
         {
-          href: 'https://github.com/finos/git-proxy/stargazers',
+          href: 'https://github.com/finos/git-proxy',
           position: 'right',
           className: 'header-star-link',
           'aria-label': 'Star on GitHub',
