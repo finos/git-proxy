@@ -137,10 +137,10 @@ git commit -m "fix: turn frown upside-down"
 ####  5. Push your changes via Git Proxy
 
 ```bash
-git push proxy main
+git push
 ```
 
-Git Proxy may prompt the entry of your git credentials. These credentials are your GitHub username and a [Personal Access Token](https://github.com/settings/tokens). For the ability to push and pull code through Git Proxy, you will only require the `public_repo` scope.
+Git Proxy will prompt the entry of your git credentials. These credentials are your GitHub username and a [Personal Access Token](https://github.com/settings/tokens). For the ability to push and pull code through Git Proxy, you will only require the `public_repo` scope.
 
 Git Proxy will reprompt you for credentials each time you push. To automatically re-use your credentials, you can run:
 
