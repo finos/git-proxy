@@ -1,0 +1,43 @@
+---
+title: Configuration
+description: How to customise push protections and policies
+---
+
+### Default configuration
+
+On installation, Git Proxy ships with an out-of-the-box configuration.
+
+### Customise configuration
+
+To customise your Git Proxy configuration, create a `proxy.config.json` in your directory.
+
+### Alter the configuration path
+
+To specify a different file name for your Git Proxy configuration, use:
+
+```bash
+git-proxy --config ./config.json
+```
+
+Or with npx:
+
+```bash
+npx -- @finos/git-proxy --config ./config.json
+```
+
+### Validate configuration
+
+To validate your Git Proxy configuration, run:
+
+```bash
+git-proxy --validate
+```
+
+To validate your configuration at a custom file location, run:
+
+```bash
+git-proxy --validate --config ./config.json
+```
+
+
+

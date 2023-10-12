@@ -1,107 +1,154 @@
-/* stylelint-disable docusaurus/copyright-header */
-/**
- * Any CSS included here will be global. The classic template
- * bundles Infima by default. Infima is a CSS framework designed to
- * work well for content-centric websites.
- */ 
+.header-github-link:hover,
+.header-star-link:hover,
+.header-fork-link:hover,
+.header-read-doc-link:hover  {
+  opacity: 0.6;
+}
 
-/* You can override the default Infima variables here. */
+.header-github-link:before {
+  background: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12'/%3E%3C/svg%3E")
+    no-repeat;
+  content: "";
+  display: flex;
+  height: 24px;
+  width: 24px;
+}
+
+[data-theme='dark'] .header-github-link::before {
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' d='M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12'/%3E%3C/svg%3E")
+    no-repeat;
+}
+
+.header-star-link:before {
+  background: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='orange' d='M 8 0.25 a 0.75 0.75 0 0 1 0.673 0.418 l 1.882 3.815 l 4.21 0.612 a 0.75 0.75 0 0 1 0.416 1.279 l -3.046 2.97 l 0.719 4.192 a 0.751 0.751 0 0 1 -1.088 0.791 L 8 12.347 l -3.766 1.98 a 0.75 0.75 0 0 1 -1.088 -0.79 l 0.72 -4.194 L 0.818 6.374 a 0.75 0.75 0 0 1 0.416 -1.28 l 4.21 -0.611 L 7.327 0.668 A 0.75 0.75 0 0 1 8 0.25 Z'/%3E%3C/svg%3E")
+    no-repeat;
+  content: "";
+  display: flex;
+  height: 24px;
+  width: 24px;
+}
+
+[data-theme='dark'] .header-star-link::before {
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='orange' d='M 8 0.25 a 0.75 0.75 0 0 1 0.673 0.418 l 1.882 3.815 l 4.21 0.612 a 0.75 0.75 0 0 1 0.416 1.279 l -3.046 2.97 l 0.719 4.192 a 0.751 0.751 0 0 1 -1.088 0.791 L 8 12.347 l -3.766 1.98 a 0.75 0.75 0 0 1 -1.088 -0.79 l 0.72 -4.194 L 0.818 6.374 a 0.75 0.75 0 0 1 0.416 -1.28 l 4.21 -0.611 L 7.327 0.668 A 0.75 0.75 0 0 1 8 0.25 Z'/%3E%3C/svg%3E")
+    no-repeat;
+}
+
+.header-fork-link:before {
+  background: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M5 5.372v.878c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-.878a2.25 2.25 0 1 1 1.5 0v.878a2.25 2.25 0 0 1-2.25 2.25h-1.5v2.128a2.251 2.251 0 1 1-1.5 0V8.5h-1.5A2.25 2.25 0 0 1 3.5 6.25v-.878a2.25 2.25 0 1 1 1.5 0ZM5 3.25a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Zm6.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm-3 8.75a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Z'/%3E%3C/svg%3E")
+    no-repeat;
+  content: "";
+  display: flex;
+  height: 24px;
+  width: 24px;
+}
+
+[data-theme='dark'] .header-fork-link::before {
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' d='M5 5.372v.878c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-.878a2.25 2.25 0 1 1 1.5 0v.878a2.25 2.25 0 0 1-2.25 2.25h-1.5v2.128a2.251 2.251 0 1 1-1.5 0V8.5h-1.5A2.25 2.25 0 0 1 3.5 6.25v-.878a2.25 2.25 0 1 1 1.5 0ZM5 3.25a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Zm6.75.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Zm-3 8.75a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Z'/%3E%3C/svg%3E")
+    no-repeat;
+}
+
+.header-read-doc-link:before {
+  background: url("data:image/svg+xml;charset=utf-8,%3Csvg viewBox='0 0 448 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M96 0C43 0 0 43 0 96V416c0 53 43 96 96 96H384h32c17.7 0 32-14.3 32-32s-14.3-32-32-32V384c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32H384 96zm0 384H352v64H96c-17.7 0-32-14.3-32-32s14.3-32 32-32zm32-240c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16zm16 48H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16s7.2-16 16-16z'/%3E%3C/svg%3E")
+    no-repeat;
+  content: "";
+  display: flex;
+  height: 24px;
+  width: 24px;
+}
+
+
+[data-theme='dark'] .header-read-doc-link::before {
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 448 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='white' d='M96 0C43 0 0 43 0 96V416c0 53 43 96 96 96H384h32c17.7 0 32-14.3 32-32s-14.3-32-32-32V384c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32H384 96zm0 384H352v64H96c-17.7 0-32-14.3-32-32s14.3-32 32-32zm32-240c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16zm16 48H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16s7.2-16 16-16z'/%3E%3C/svg%3E")
+    no-repeat;
+}
+
+.navbar__logo img {
+  height: 160%;
+  margin-top: -10px;
+  filter: brightness(0%);
+}
+
+[data-theme='dark'] .navbar__logo img {
+  filter: brightness(0) invert(1);
+}
+
 :root {
-  --ifm-color-primary: #00b5e2;
-  --ifm-color-primary-dark: #0079ac;
-  --ifm-color-primary-darker: #0072a2;
-  --ifm-color-primary-darkest: #005e86;
-  --ifm-color-primary-light: #0093d2;
-  --ifm-color-primary-lighter: #009adc;
-  --ifm-color-primary-lightest: #00aef8;
-  --ifm-font-color-base: #1C1E21;
-  --ifm-heading-color: #19B6CC;
-  --ifm-navbar-background-color: #0086BF;
-  --ifm-navbar-link-color: #FFFFFF;
-  --ifm-navbar-shadow: 0;
-  --ifm-footer-background-color: #0086BF;
-  --ifm-footer-title-color: #ffffff;
-  --ifm-footer-color: #ffffff;
-  --ifm-footer-link-color: #ffffff;
-  --ifm-code-font-size: 95%;
+  --ifm-navbar-height: 85px;
 }
 
-.navbar__items {
-  color: #ffffff;
+.terminal-window {
+  text-align: left;
+  width: 600px;
+  height: 380px;
+  border-radius: 10px;
+  margin: auto;
+  position: relative;
 }
 
-.docusaurus-highlight-code-line {
-  background-color: #0033A0;
-  display: block;
-  margin: 0 calc(-1 * var(--ifm-pre-padding));
-  padding: 0 var(--ifm-pre-padding);
+.terminal-window header {
+  background: #E0E8F0;
+  height: 30px;
+  border-radius: 8px 8px 0 0;
+  padding-left: 10px;
 }
 
-.hero.hero--primary {
-  background-color: #0086BF;
-  background-repeat: no-repeat;
-  background-size: cover;
+.terminal-window header .btn {
+  width: 12px;
+  height: 12px;
+  margin: 10px 4px 0 0;
+  display: inline-block;
+  border-radius: 8px;
 }
 
-.hero.hero--primary img {
-  margin-bottom: 30px;
-  width: 50%;
+.terminal-window header .btn.green {
+  background: #3BB662;
 }
 
-.hero__title {
-  color: #ffffff;
+.terminal-window header .btn.yellow {
+  background: #E5C30F;
 }
 
-.hero--subtitle {
-  margin-bottom: 50px;
-  font-size: 1.5rem;
+.terminal-window header .btn.red {
+  background: #E75448;
 }
 
-.hero--bigtext {
-  margin-bottom: 20px;
-  margin-left: 20%;
-  margin-right: 20%;
-  font-size: 1.2rem;
-}
-
-h2.hero--bigtitle {
-  margin-left: 20%;
-  margin-right: 20%;
-  font-size: 1.4rem;
-}
-
-.row h2 {
-  margin-bottom: 30px;
-}
-
-.button.button--secondary {
+.terminal-window section.terminal {
   color: white;
+  font-family: Menlo, Monaco, "Consolas", "Courier New", "Courier";
+  font-size: 11pt;
+  background: #30353A;
+  padding: 10px;
+  box-sizing: border-box;
+  position: absolute;
+  width: 100%;
+  top: 30px;
+  bottom: 0;
+  overflow: auto;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
 }
 
-.button.button--secondary.button--outline:not(.button--active):not(:hover) {
-  color: white;
+.terminal-window section.terminal .typed-cursor {
+  opacity: 1;
+  -webkit-animation: blink 0.7s infinite;
+  -moz-animation: blink 0.7s infinite;
+  animation: blink 0.7s infinite;
+}
+@keyframes blink{
+  0% { opacity:1; }
+  50% { opacity:0; }
+  100% { opacity:1; }
+}
+@-webkit-keyframes blink{
+  0% { opacity:1; }
+  50% { opacity:0; }
+  100% { opacity:1; }
+}
+@-moz-keyframes blink{
+  0% { opacity:1; }
+  50% { opacity:0; }
+  100% { opacity:1; }
 }
 
-.row--center h2{
-  color: #29327A;
-  font-size: 35px;
-  font-weight: bolder;
-  text-align: center;
-  margin-left: 0;
-  margin-right: 0;
-  width:100%;
-}
-
-span {
-  color: var(#ffffff);
-}
-
-body{
-  font-family: 'Overpass', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial,
-  sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-}
-
-.padding {
-  margin-top: 25px;
-  margin-bottom: 25px;
-}
+.terminal-window .gray { color: gray; }
+.terminal-window .green { color: green;}
