@@ -35,12 +35,6 @@ For demonstration purposes, we recommend forking [Git Proxy](https://github.com/
 git clone https://github.com/<YOUR-GITHUB-USERNAME>/git-proxy.git
 ```
 
-:::note
-
-SSH protocol is currently not supported, see https://github.com/finos/git-proxy/issues/27
-
-:::
-
 ### 3. Introduce Git Proxy to your clone
 
 Navigate into your test-bed repository on your PC:
@@ -54,6 +48,12 @@ By default the clone of your repository will communicate with GitHub. To change 
 ```bash
 git remote set-url origin http://localhost:8000/<YOUR-GITHUB-USERNAME>/git-proxy.git
 ```
+
+:::note
+
+SSH and HTTPS protocols are currently not supported, see https://github.com/finos/git-proxy/issues/27
+
+:::
 
 ### 4. Make some changes to the codebase
 
