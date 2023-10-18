@@ -77,7 +77,7 @@ module.exports = {
       '@docusaurus/preset-classic',
       {
         docs: {
-          editUrl: 'https://github.com/finos/git-proxy/website/',
+          editUrl: 'https://github.com/finos/git-proxy/edit/main/website/',
           sidebarPath: require.resolve('./sidebars.js'),
         },
         theme: {
