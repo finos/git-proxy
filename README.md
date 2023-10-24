@@ -161,7 +161,7 @@ remote: Git Proxy has received your push 🎉
 remote: ----------------------------------------------------------
 remote:    Commit from | 000000
 remote:     Commit to  | b12557
-remote:        URL     | http://localhost:8080/push/000000__b12557    
+remote:        URL     | http://localhost:8080/requests/000000__b12557    
 ```
 
 ## Configuring Git Proxy ⚙️
