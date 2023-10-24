@@ -6,7 +6,7 @@ const exec = async (req, action) => {
   const message =
     '\n\n' +
     `Git Proxy has received your push 🎉\n` +
-    '----------------------------------------------------------\n\n' +
+    '----------------------------------------------------------\n' +
     `   Commit from | ${action.commitFrom}\n` +
     `    Commit to  | ${action.commitTo}\n` +
     `       URL     | http://localhost:8080/requests/${action.id}` +
