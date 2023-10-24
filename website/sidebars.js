@@ -24,6 +24,7 @@ module.exports = {
         'get-started/usage',
         'get-started/configuration',
         'get-started/quickstart',
+        'get-started/authorize',
       ],
     },
   ],
