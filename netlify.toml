@@ -1,2 +1,2 @@
 [build]
-   base = "./website"
+   base = "/website"
