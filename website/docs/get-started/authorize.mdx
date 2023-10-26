@@ -41,13 +41,13 @@ curl -H "Content-Type: application/json" -c git-proxy-cookie -X POST \
 
 #### 3. Retrieve push with `ID` from database
 
-Using the [cookie](/docs/get-started/authorize#2-authenticate-with-the-api) generated, execute a GET against the API to confirm that your push with `ID` exists in the database:
+Using the [cookie](/docs/get-started/authorize#2-authenticate-with-the-api) generated, execute a `GET` request to confirm that your push with `ID` exists in the database:
 
 ```bash
 curl -I -b ./git-proxy-cookie http://localhost:8080/api/v1/push/${ID}
 ```
 
-You should receive a 200 OK in the response.
+You should receive a `200 OK` in the response.
 
 #### 4. Approve the push with `ID`
 
