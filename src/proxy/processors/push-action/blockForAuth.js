@@ -13,4 +13,5 @@ const exec = async (req, action) => {
   return action;
 };
 
+exec.displayName = 'blockForAuth.exec';
 exports.exec = exec;
