@@ -1,6 +1,6 @@
 ---
 title: Approving a push
-description: How to review & approve a push in Git Proxy
+description: How to approve a push in Git Proxy
 ---
 
 All pushes that flow through Git Proxy require an approval (authorisation). Until a push is approved, Git Proxy will block the commits from being sent to the upstream repository. To approve a push, you can use the REST API or web UI.
@@ -11,14 +11,14 @@ All pushes that flow through Git Proxy require an approval (authorisation). Unti
 
 - Proxy and REST API are running ([default behaviour](https://github.com/finos/git-proxy/blob/main/index.js))
 - Proxy and REST API are running on `localhost:8000` and `localhost:8080`, respectively
-- [Quickstart](docs/get-started/quickstart) instructions have been followed and you've reached [Eureka! 🎉](/docs/get-started/quickstart#6-eureka-)
+- [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy)
 - [`curl`](https://curl.se/) is installed
 
 ### Instructions
 
 #### 1. Find the tracking `ID`
 
-Following on from [Eureka! 🎉](/docs/get-started/quickstart#6-eureka-), you'll receive a unique URL:
+Following on from [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy), you'll receive a unique URL:
 
 ```
 http://localhost:8080/requests/0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
@@ -41,7 +41,7 @@ curl -H "Content-Type: application/json" -c git-proxy-cookie -X POST \
 
 #### 3. Retrieve push with `ID` from database
 
-Using the [cookie](/docs/get-started/authorize#2-authenticate-with-the-api) generated, execute a `GET` request to confirm that your push with `ID` exists in the database:
+Using the [cookie](/docs/quickstart/approve#2-authenticate-with-the-api) generated, execute a `GET` request to confirm that your push with `ID` exists in the database:
 
 ```bash
 curl -I -b ./git-proxy-cookie http://localhost:8080/api/v1/push/${ID}
@@ -51,7 +51,7 @@ You should receive a `200 OK` in the response.
 
 #### 4. Approve the push with `ID`
 
-Using the same [cookie](/docs/get-started/authorize#2-authenticate-with-the-api) again, send a `POST` command to approve the push:
+Using the same [cookie](/docs/quickstart/approve#2-authenticate-with-the-api) again, send a `POST` command to approve the push:
 
 ```bash
 curl -b ./git-proxy-cookie \
