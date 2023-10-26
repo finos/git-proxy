@@ -2,9 +2,13 @@ const Step = require('../../actions').Step;
 
 const exec = async (req, action) => {
   const step = new Step('authBlock');
-  step.setAsyncBlock(
-    `Your push request is waiting authorisation, tracking id http://localhost:8080/requests/${action.id}`,
-  );
+
+  const message =
+    '\n\n\n' +
+    `Git Proxy has received your push:\n\n` +
+    `http://localhost:8080/requests/${action.id}` +
+    '\n\n\n';
+  step.setAsyncBlock(message);
   action.addStep(step);
   return action;
 };

@@ -28,7 +28,7 @@ function Home() {
             </a>
             <a
               className="button button--outline button--secondary button--lg margin-left--sm"
-              href="/docs/get-started/quickstart"
+              href="/docs/category/quickstart"
             >
               Quickstart 🚀
             </a>

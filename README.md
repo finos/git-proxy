@@ -158,11 +158,11 @@ git config --global credential.helper store # Linux
 Immediately after a push, you should receive the following message in your terminal:
 
 ```bash
-remote: Git Proxy has received your push 🎉
-remote: ----------------------------------------------------------
-remote:    Commit from | 000000
-remote:     Commit to  | b12557
-remote:        URL     | http://localhost:8080/push/000000__b12557    
+remote:
+remote: Git Proxy has received your push:
+remote: 
+remote: http://localhost:8080/requests/000000__b12557    
+remote:
 ```
 
 ## Configuring Git Proxy ⚙️
