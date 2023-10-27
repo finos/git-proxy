@@ -1,0 +1,121 @@
+---
+title: Intercepting a push
+description: How to intercept a push with Git Proxy
+---
+
+In this section, we will demonstrate the power 💪 of Git Proxy and how it works with a barebones & out-of-the-box demonstration using default configuration. Before we start, there are a few prerequisites:
+
+### Prerequisites
+
+#### 1. Fork Git Proxy
+
+For demonstration purposes, we recommend forking [Git Proxy](https://github.com/finos/git-proxy/fork) and then cloning the repository to your PC:
+
+```bash
+git clone https://github.com/<YOUR-GITHUB-USERNAME>/git-proxy.git
+```
+
+#### 2. Create a simple configuration
+
+Create a configuration file in a new folder (separate to your fresh clone) with the following `JSON`:
+
+```json title="new-folder/proxy.config.json"
+{
+  "authorisedList": [
+    {
+      "project": "<YOUR-GITHUB-USERNAME>",
+      "name": "git-proxy",
+      "url": "https://github.com/<YOUR-GITHUB-USERNAME>/git-proxy.git"
+    }
+  ]
+}
+```
+
+### Running Git Proxy
+
+Now that you've got the prerequisites in place, it's time to run Git Proxy and load the configuration file from your new folder:
+
+```bash
+npx --package=@finos/git-proxy@1.1.0 -- git-proxy --config ./new-folder/proxy.config.json
+```
+
+To confirm Git Proxy is running successfully, you should see the following in your terminal:
+
+```bash
+Listening on 8000
+Service Listening on 8080
+```
+
+
+### Introduce Git Proxy to your clone
+
+Navigate into your test-bed repository (where you cloned your Git Proxy fork) on your PC:
+
+```bash
+cd ./git-proxy
+```
+
+By default the clone of your repository will communicate with GitHub. To change this, so that your local copy of the repository speaks with Git Proxy, run:
+
+```bash
+git remote -v
+git remote set-url origin http://localhost:8000/<YOUR-GITHUB-USERNAME>/git-proxy.git
+git remote -v
+```
+
+:::note
+
+SSH and HTTPS protocols are currently not supported. See [#27](https://github.com/finos/git-proxy/issues/27) for more.
+
+:::
+
+### Make changes to the codebase
+
+Open up the `README.md` and make a change to the file.
+
+```bash
+git add README.md
+git commit -m "chore: update README.md"
+```
+
+### Push via Git Proxy
+
+```bash
+git push
+```
+
+Immediately after a push, you should receive a message in your terminal:
+
+```bash
+remote:
+remote: Git Proxy has received your push:
+remote: 
+remote: http://localhost:8080/requests/000000__b12557    
+remote:
+```
+
+The push is now held in a suspended state by Git Proxy and requires [approval](/docs/quickstart/approve) before it can be pushed to the upstream repository on GitHub.
+
+
+#### Managing credentials
+
+Git Proxy will prompt the entry of your git credentials. These credentials are your GitHub username and a [Personal Access Token](https://github.com/settings/tokens). For the ability to push and pull code through Git Proxy, you will only require the `public_repo` scope.
+
+Git Proxy will reprompt you for credentials each time you push. To automatically re-use your credentials, you can run:
+
+```bash
+git config --global credential.helper osxkeychain # MacOS
+
+git config --global credential.helper manager # Windows
+
+git config --global credential.helper store # Linux
+```
+
+:::info
+
+Git Proxy **does not** use your Personal Access Token other than to authenticate with GitHub when pushing code. This is identical to the process of pushing code to a repository without Git Proxy installed.
+
+:::
+
+
+
