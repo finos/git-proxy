@@ -80,9 +80,9 @@ Delta compression using up to 8 threads
 Compressing objects: 100% (2/2), done.
 Writing objects: 100% (3/3), 946 bytes | 946.00 KiB/s, done.
 Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
-remote: ERR     Rejecting repo coopernetes/Hello-World.git not in the authorisedList
+remote: ERR     Rejecting repo yourGithubUser/Hello-World.git not in the authorisedList
 fatal: the remote end hung up unexpectedly
-error: failed to push some refs to 'http://localhost:8000/coopernetes/Hello-World.git'
+error: failed to push some refs to 'http://localhost:8000/yourGithubUser/Hello-World.git'
 ```
 
 Git Proxy intercepts the push and _blocks_ it, as the default configuration only permits pushes
