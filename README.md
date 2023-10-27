@@ -23,6 +23,7 @@
 
   <br />
 
+[![FINOS - Incubating](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-incubating.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/incubating)
 [![NPM](https://img.shields.io/npm/v/@finos/git-proxy?colorA=00C586&colorB=000000)](https://www.npmjs.com/package/@finos/git-proxy)
 [![Build](https://img.shields.io/github/actions/workflow/status/finos/git-proxy/nodejs.yml?branch=main&label=CI&logo=github&colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/actions/workflows/nodejs.yml)
 [![Documentation](https://img.shields.io/badge/_-documentation-000000?colorA=00C586&logo=docusaurus&logoColor=FFFFFF&)](https://git-proxy.finos.org)
@@ -157,11 +158,11 @@ git config --global credential.helper store # Linux
 Immediately after a push, you should receive the following message in your terminal:
 
 ```bash
-remote: Git Proxy has received your push 🎉
-remote: ----------------------------------------------------------
-remote:    Commit from | 000000
-remote:     Commit to  | b12557
-remote:        URL     | http://localhost:8080/push/000000__b12557    
+remote:
+remote: Git Proxy has received your push:
+remote: 
+remote: http://localhost:8080/requests/000000__b12557    
+remote:
 ```
 
 ## Configuring Git Proxy ⚙️
