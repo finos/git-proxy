@@ -1,4 +1,4 @@
-<br />
+
 <div align="center">
   <a href="https://github.com/finos/git-proxy">
     <img src="./docs/img/logo.png" alt="Logo" height="95">
