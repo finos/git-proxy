@@ -1,51 +1,48 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "https://json-schema.org/draft-07/schema",
   "$id": "https://git-proxy.finos.org/config.schema.json",
-  "title": "Git Proxy",
-  "description": "Configuration file for modifying the behaviour of git-proxy",
+  "title": "Git Proxy configuration file",
+  "description": "Configuration for customizing git-proxy",
   "type": "object",
-  "properties": {
-    "authorisedList": {
-      "description": "List of repositories that are authorised to be pushed to through the proxy.",
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/authorisedRepo"
-      }
-    },
-    "sink": {
-      "description": "List of database sources. The first source in the configuration with enabled=true will be used.",
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/database"
-      }
-    },
-    "authentication": {
-      "description": "List of authentication sources. The first source in the configuration with enabled=true will be used.",
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/authentication"
-      }
-    },
-    "tempPassword": {
-      "description": "Toggle the generation of temporary password for git-proxy admin user",
-      "type": "object",
+  "oneOf": [
+    {
       "properties": {
-        "sendEmail": { "type": "boolean" },
-        "emailConfig": {
-          "description": "Generic object to configure nodemailer. For full type information, please see https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/nodemailer",
-          "type": "object"
+        "authorisedList": {
+          "description": "List of repositories that are authorised to be pushed to through the proxy.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/authorisedRepo"
+          }
+        },
+        "sink": {
+          "description": "List of database sources. The first source in the configuration with enabled=true will be used.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/database"
+          }
+        },
+        "authentication": {
+          "description": "List of authentication sources. The first source in the configuration with enabled=true will be used.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/authentication"
+          }
+        },
+        "tempPassword": {
+          "description": "Toggle the generation of temporary password for git-proxy admin user",
+          "type": "object",
+          "properties": {
+            "sendEmail": { "type": "boolean" },
+            "emailConfig": {
+              "description": "Generic object to configure nodemailer. For full type information, please see https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/nodemailer",
+              "type": "object"
+            }
+          }
         }
       }
     }
-  },
-  "additionalProperties": false,
-  "anyOf": [
-    { "required": "authorisedList" },
-    { "required": "sink" },
-    { "required": "authentication" },
-    { "required": "tempPassword" }
   ],
-  "$defs": {
+  "definitions": {
     "authorisedRepo": {
       "type": "object",
       "properties": {
@@ -75,5 +72,6 @@
       },
       "required": [ "type", "enabled" ]
     }
-  }
+  },
+  "additionalProperties": false
 }
