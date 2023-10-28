@@ -14,6 +14,8 @@
     <a href="https://www.npmjs.com/package/@finos/git-proxy"><strong><code>npm install @finos/git-proxy</code></strong></a>
     <br />
     <br />
+    <a href="https://git-proxy.finos.org">Docs</a>
+    ·
     <a href="https://github.com/finos/git-proxy/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=">Report a bug</a>
     ·
     <a href="https://github.com/finos/git-proxy/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=">Suggest a new feature</a>
@@ -21,9 +23,10 @@
 
   <br />
 
-[![FINOS - Released](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-released.svg?colorA=000000)](https://finosfoundation.atlassian.net/wiki/display/FINOS/Released)
+[![FINOS - Incubating](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-incubating.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/incubating)
 [![NPM](https://img.shields.io/npm/v/@finos/git-proxy?colorA=00C586&colorB=000000)](https://www.npmjs.com/package/@finos/git-proxy)
 [![Build](https://img.shields.io/github/actions/workflow/status/finos/git-proxy/nodejs.yml?branch=main&label=CI&logo=github&colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/actions/workflows/nodejs.yml)
+[![Documentation](https://img.shields.io/badge/_-documentation-000000?colorA=00C586&logo=docusaurus&logoColor=FFFFFF&)](https://git-proxy.finos.org)
 <br />
 [![License](https://img.shields.io/github/license/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/blob/main/LICENSEP)
 [![Contributors](https://img.shields.io/github/contributors/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/graphs/contributors)
@@ -45,16 +48,153 @@ Git Proxy is built with a developer-first mindset. By presenting simple-to-follo
 
 ## Installation
 
-To install Git Proxy, use the [npm](https://www.npmjs.com/) package manager:
+To install Git Proxy, you must first install [Node.js](https://nodejs.org/en/download). Then, use the [npm](https://www.npmjs.com/) package manager:
 
 ```bash
-$ npm install @finos/git-proxy
+npm install -g @finos/git-proxy
 ```
 
 To install a specific version of Git Proxy, append the version to the end of the `install` command:
 
 ```bash
-$ npm install @finos/git-proxy@1.0.0
+npm install -g @finos/git-proxy@1.1.0
+```
+
+## Run Git Proxy ⚡
+
+Once you have followed the [installation](#installation) steps, run Git Proxy with:
+
+```bash
+git-proxy
+```
+
+Alternatively, if you prefer the magic of [npx over npm](https://www.freecodecamp.org/news/npm-vs-npx-whats-the-difference/), you can run Git Proxy with:
+
+```bash
+npx --package=@finos/git-proxy@1.1.0 -- git-proxy # No installation required...
+```
+
+## Quickstart 🚀
+
+#### 1. Run Git Proxy with simple config
+
+Create a `proxy.config.json` in a workspace with the following:
+
+```json
+{
+    "authorisedList": [
+    {
+      "project": "<YOUR-GITHUB-USERNAME>",
+      "name": "git-proxy",
+      "url": "https://github.com/<YOUR-GITHUB-USERNAME>/git-proxy.git"
+    }
+  ],
+}
+```
+
+Then run Git Proxy and load your `proxy.config.json` configuration file from your workspace:
+
+```bash
+npx --package=@finos/git-proxy@1.1.0 -- git-proxy --config ./proxy.config.json
+```
+
+#### 2. Pick a repository
+
+Git Proxy sits between the local clone of your repository and its remote upstream. Essentially, instead of communicating directly with the **live** version of your repository, you configure your local clone to speak with Git Proxy first.
+
+For demonstration purposes, we recommend 👉 [forking Git Proxy](https://github.com/finos/git-proxy/fork) and cloning the repository to your PC:
+
+```bash
+git clone https://github.com/<YOUR-GITHUB-USERNAME>/git-proxy.git
+```
+
+Pretty meta, huh? Testing Git Proxy on Git Proxy...
+
+#### 3. Introduce Git Proxy to your clone
+
+Navigate into your test-bed repository on your PC:
+
+```bash
+cd ./git-proxy
+```
+
+By default the clone of your repository will communicate with GitHub. To change this, so that your local copy of the repository speaks with Git Proxy, run:
+
+```bash
+git remote set-url origin http://localhost:8000/<YOUR-GITHUB-USERNAME>/git-proxy.git
+```
+
+#### 4. Make some changes to the codebase
+
+Open up the `README.md` and turn this frown upside-down: ☹️
+
+Once you've cheered up our friend above, run:
+
+```bash
+git add README.md
+git commit -m "fix: turn frown upside-down"
+```
+
+####  5. Push your changes via Git Proxy
+
+```bash
+git push
+```
+
+Git Proxy will prompt the entry of your git credentials. These credentials are your GitHub username and a [Personal Access Token](https://github.com/settings/tokens). For the ability to push and pull code through Git Proxy, you will only require the `public_repo` scope.
+
+Git Proxy will reprompt you for credentials each time you push. To automatically re-use your credentials, you can run:
+
+```bash
+git config --global credential.helper osxkeychain # MacOS
+
+git config --global credential.helper manager # Windows
+
+git config --global credential.helper store # Linux
+```
+
+#### 6. Success
+
+Immediately after a push, you should receive the following message in your terminal:
+
+```bash
+remote:
+remote: Git Proxy has received your push:
+remote: 
+remote: http://localhost:8080/requests/000000__b12557    
+remote:
+```
+
+## Configuring Git Proxy ⚙️
+
+By default, Git Proxy ships with an out-of-the-box configuration.
+
+To customise your Git Proxy configuration, create a `proxy.config.json` in your directory.
+
+To specify a different file name for your Git Proxy configuration, use:
+
+```bash
+git-proxy --config ./config.json
+```
+
+Or with npx:
+
+```bash
+npx -- @finos/git-proxy --config ./config.json
+```
+
+## Know Your Configuration (KYC) ✅
+
+To check that your Git Proxy configuration is valid, run:
+
+```bash
+git-proxy --validate
+```
+
+To validate your configuration at a custom file location, run:
+
+```bash
+git-proxy --validate --config ./config.json
 ```
 
 ## Contributing
@@ -83,7 +223,7 @@ Click on the **fork** button at the top of the page. This will create a copy of 
 Run the following command in your CLI/Terminal:
 
 ```bash
-$ git clone https://github.com/YOUR_GITHUB_USRERNAME/git-proxy.git
+git clone https://github.com/YOUR_GITHUB_USRERNAME/git-proxy.git
 ```
 
 <br />
@@ -98,7 +238,7 @@ $ git clone https://github.com/YOUR_GITHUB_USRERNAME/git-proxy.git
 You can start coding on the default branch on your fork of the project, commonly `master` or `main`. If you want to create a branch to clearly identify your work, run:
 
 ```bash
-$ git checkout -b feature/name-of-the-feature-you-are-creating
+git checkout -b feature/name-of-the-feature-you-are-creating
 ```
 
 <br />
@@ -114,7 +254,7 @@ This part is up to you. Be creative and write some magical code! 🧙🪄
 Once you have finished making all of your improvements and changes, run the following:
 
 ```bash
-$ git commit -m "YOUR COMMIT MESSAGE"
+git commit -m "YOUR COMMIT MESSAGE"
 ```
 
 <br />

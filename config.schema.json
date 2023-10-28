@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://git-proxy.finos.org/config.schema.json",
+  "title": "Git Proxy",
+  "description": "Configuration file for modifying the behaviour of git-proxy",
+  "type": "object",
+  "properties": {
+    "authorisedList": {
+      "description": "List of repositories that are authorised to be pushed to through the proxy.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/authorisedRepo"
+      }
+    },
+    "sink": {
+      "description": "List of database sources. The first source in the configuration with enabled=true will be used.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/database"
+      }
+    },
+    "authentication": {
+      "description": "List of authentication sources. The first source in the configuration with enabled=true will be used.",
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/authentication"
+      }
+    },
+    "tempPassword": {
+      "description": "Toggle the generation of temporary password for git-proxy admin user",
+      "type": "object",
+      "properties": {
+        "sendEmail": { "type": "boolean" },
+        "emailConfig": {
+          "description": "Generic object to configure nodemailer. For full type information, please see https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/nodemailer",
+          "type": "object"
+        }
+      }
+    }
+  },
+  "additionalProperties": false,
+  "anyOf": [
+    { "required": "authorisedList" },
+    { "required": "sink" },
+    { "required": "authentication" },
+    { "required": "tempPassword" }
+  ],
+  "$defs": {
+    "authorisedRepo": {
+      "type": "object",
+      "properties": {
+        "project": { "type": "string" },
+        "name": { "type": "string" },
+        "url": { "type": "string" }
+      },
+      "required": [ "project", "name", "url" ]
+    },
+    "database": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "connectionString": { "type": "string" },
+        "options": { "type": "object" },
+        "params": { "type": "object" }
+      },
+      "required": [ "type", "enabled" ]
+    },
+    "authentication": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "options": { "type": "object" }
+      },
+      "required": [ "type", "enabled" ]
+    }
+  }
+}

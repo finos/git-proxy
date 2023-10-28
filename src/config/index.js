@@ -1,24 +1,21 @@
 const fs = require('fs');
-const proxySettings = JSON.parse(fs.readFileSync('./resources/config.json'));
+
+const defaultSettings = require('../../proxy.config.json');
+const userSettingsPath = require('./file').configFile;
 
 let _userSettings = null;
-let _authorisedList = proxySettings.authorisedList;
-let _database = proxySettings.sink;
-let _authentication = proxySettings.authentication;
-let _tempPassword = proxySettings.tempPassword;
-
-const userSettings = () => {
-  const path = './user-settings.json';
-  if (_userSettings === null && fs.existsSync(path)) {
-    _userSettings = JSON.parse(fs.readFileSync(path));
-  }
-  return _userSettings;
-};
+if (fs.existsSync(userSettingsPath)) {
+  _userSettings = JSON.parse(fs.readFileSync(userSettingsPath));
+}
+let _authorisedList = defaultSettings.authorisedList;
+let _database = defaultSettings.sink;
+let _authentication = defaultSettings.authentication;
+let _tempPassword = defaultSettings.tempPassword;
 
 // Gets a list of authorised repositories
 const getAuthorisedList = () => {
-  if (userSettings !== null && userSettings.authorisedList) {
-    _authorisedList = userSettings.authorisedList;
+  if (_userSettings !== null && _userSettings.authorisedList) {
+    _authorisedList = _userSettings.authorisedList;
   }
 
   return _authorisedList;
@@ -26,8 +23,8 @@ const getAuthorisedList = () => {
 
 // Gets a list of authorised repositories
 const getTempPasswordConfig = () => {
-  if (userSettings !== null && userSettings.tempPassword) {
-    _tempPassword = userSettings.tempPassword;
+  if (_userSettings !== null && _userSettings.tempPassword) {
+    _tempPassword = _userSettings.tempPassword;
   }
 
   return _tempPassword;
@@ -35,8 +32,8 @@ const getTempPasswordConfig = () => {
 
 // Gets the configuared data sink, defaults to filesystem
 const getDatabase = () => {
-  if (userSettings !== null && userSettings.sink) {
-    _database = userSettings.database;
+  if (_userSettings !== null && _userSettings.sink) {
+    _database = _userSettings.sink;
   }
   for (const ix in _database) {
     if (ix) {
@@ -52,8 +49,8 @@ const getDatabase = () => {
 
 // Gets the configuared data sink, defaults to filesystem
 const getAuthentication = () => {
-  if (userSettings !== null && userSettings.sink) {
-    _authentication = userSettings.authentication;
+  if (_userSettings !== null && _userSettings.authentication) {
+    _authentication = _userSettings.authentication;
   }
   for (const ix in _authentication) {
     if (!ix) continue;
