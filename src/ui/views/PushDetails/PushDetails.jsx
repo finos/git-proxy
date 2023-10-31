@@ -19,12 +19,7 @@ import TableBody from '@material-ui/core/TableBody';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
-import {
-  getPush,
-  authorisePush,
-  rejectPush,
-  cancelPush,
-} from '../../services/git-push.js';
+import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/git-push.js';
 
 export default function Dashboard() {
   // eslint-disable-next-line react/prop-types
@@ -94,7 +89,7 @@ export default function Dashboard() {
               <h3>{headerData.title}</h3>
             </CardIcon>
             <Button
-              color="warning"
+              color='warning'
               onClick={async () => {
                 await cancel();
               }}
@@ -102,7 +97,7 @@ export default function Dashboard() {
               Cancel
             </Button>
             <Button
-              color="danger"
+              color='danger'
               onClick={async () => {
                 await reject();
               }}
@@ -110,7 +105,7 @@ export default function Dashboard() {
               Rject
             </Button>
             <Button
-              color="success"
+              color='success'
               onClick={async () => {
                 await authorise();
               }}
@@ -163,9 +158,7 @@ export default function Dashboard() {
                     <TableCell>{c.committer}</TableCell>
                     <TableCell>{c.author}</TableCell>
                     <TableCell>
-                      {moment(Date(c.commitTs)).format(
-                        'yyyy-MM-DD HH:mm:ss.mmmm',
-                      )}
+                      {moment(Date(c.commitTs)).format('yyyy-MM-DD HH:mm:ss.mmmm')}
                     </TableCell>
                     <TableCell>{c.message}</TableCell>
                   </TableRow>

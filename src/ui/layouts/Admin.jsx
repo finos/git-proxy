@@ -18,16 +18,9 @@ const switchRoutes = (
     {routes
       .filter((prop, _) => prop.layout === '/admin')
       .map((prop, key) => {
-        return (
-          <Route
-            exact
-            path={prop.path}
-            key={key}
-            element={<prop.component />}
-          />
-        );
+        return <Route exact path={prop.path} key={key} element={<prop.component />} />;
       })}
-    <Route exact path="/admin" element={<Navigate to="/admin/dashboard" />} />
+    <Route exact path='/admin' element={<Navigate to='/admin/dashboard' />} />
   </Routes>
 );
 
@@ -85,11 +78,7 @@ export default function Admin({ ...rest }) {
         {...rest}
       />
       <div className={classes.mainPanel} ref={mainPanel}>
-        <Navbar
-          routes={routes}
-          handleDrawerToggle={handleDrawerToggle}
-          {...rest}
-        />
+        <Navbar routes={routes} handleDrawerToggle={handleDrawerToggle} {...rest} />
         {/* On the /maps route we want the map to be on full screen - this is not possible if the content and conatiner classes are present because they have some paddings which would make the map smaller */}
         {getRoute() ? (
           <div className={classes.content}>

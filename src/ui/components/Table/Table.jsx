@@ -24,10 +24,7 @@ export default function CustomTable(props) {
             <TableRow className={classes.tableHeadRow}>
               {tableHead.map((prop, key) => {
                 return (
-                  <TableCell
-                    className={classes.tableCell + ' ' + classes.tableHeadCell}
-                    key={key}
-                  >
+                  <TableCell className={classes.tableCell + ' ' + classes.tableHeadCell} key={key}>
                     {prop}
                   </TableCell>
                 );

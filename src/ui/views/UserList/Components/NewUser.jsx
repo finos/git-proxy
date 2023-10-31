@@ -50,12 +50,8 @@ function CreateUserDialog(props) {
   };
 
   return (
-    <Dialog
-      onClose={handleClose}
-      aria-labelledby="simple-dialog-title"
-      open={open}
-    >
-      <DialogTitle style={{ color: 'red' }} id="simple-dialog-title">
+    <Dialog onClose={handleClose} aria-labelledby='simple-dialog-title' open={open}>
+      <DialogTitle style={{ color: 'red' }} id='simple-dialog-title'>
         {error}
       </DialogTitle>
       <Card>
@@ -63,66 +59,63 @@ function CreateUserDialog(props) {
           <GridContainer>
             <GridItem xs={12} sm={12} md={12}>
               <FormControl>
-                <InputLabel htmlFor="username">Username</InputLabel>
+                <InputLabel htmlFor='username'>Username</InputLabel>
                 <Input
-                  id="username"
-                  aria-describedby="username-helper-text"
+                  id='username'
+                  aria-describedby='username-helper-text'
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
-                <FormHelperText id="username-helper-text">
-                  The username
-                </FormHelperText>
+                <FormHelperText id='username-helper-text'>The username</FormHelperText>
               </FormControl>
             </GridItem>
             <GridItem xs={12} sm={12} md={12}>
               <FormControl>
-                <InputLabel htmlFor="email">Email address</InputLabel>
+                <InputLabel htmlFor='email'>Email address</InputLabel>
                 <Input
-                  id="email"
-                  aria-describedby="email-helper-text"
+                  id='email'
+                  aria-describedby='email-helper-text'
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
-                <FormHelperText id="email-helper-text">
-                  The users email - an email will be sent to the user with at
-                  temporary password
+                <FormHelperText id='email-helper-text'>
+                  The users email - an email will be sent to the user with at temporary password
                 </FormHelperText>
               </FormControl>
             </GridItem>
             <GridItem xs={12} sm={12} md={12}>
               <FormControl>
-                <InputLabel htmlFor="gitAccount">GitAccount Name</InputLabel>
+                <InputLabel htmlFor='gitAccount'>GitAccount Name</InputLabel>
                 <Input
-                  id="gitAccount"
-                  aria-describedby="gitAccount-helper-text"
+                  id='gitAccount'
+                  aria-describedby='gitAccount-helper-text'
                   value={gitAccount}
                   onChange={(e) => setGitAccount(e.target.value)}
                 />
-                <FormHelperText id="gitAccounty-helper-text">
+                <FormHelperText id='gitAccounty-helper-text'>
                   The users Git Accout user name
                 </FormHelperText>
               </FormControl>
             </GridItem>
             <GridItem xs={12} sm={12} md={12}>
               <FormControl>
-                <InputLabel htmlFor="email">Is an Admin</InputLabel>
+                <InputLabel htmlFor='email'>Is an Admin</InputLabel>
                 <Checkbox
-                  id="email"
-                  aria-describedby="email-helper-text"
+                  id='email'
+                  aria-describedby='email-helper-text'
                   value={admin}
                   onChange={(e) => setAdmin(e.target.value)}
                 />
-                <FormHelperText id="email-helper-text">
+                <FormHelperText id='email-helper-text'>
                   Admin users are able to add repositories and create users
                 </FormHelperText>
               </FormControl>
             </GridItem>
             <GridItem xs={12} sm={12} md={12}>
-              <Button variant="outlined" color="primary" onClick={handleClose}>
+              <Button variant='outlined' color='primary' onClick={handleClose}>
                 Cancel
               </Button>
-              <Button variant="outlined" color="primary" onClick={create}>
+              <Button variant='outlined' color='primary' onClick={create}>
                 Create
               </Button>
             </GridItem>
@@ -151,7 +144,7 @@ export default function NewUser(props) {
 
   return (
     <div>
-      <Button variant="outlined" color="primary" onClick={handleClickOpen}>
+      <Button variant='outlined' color='primary' onClick={handleClickOpen}>
         Create New User
       </Button>
       <CreateUserDialog open={open} onClose={handleClose} />

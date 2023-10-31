@@ -53,12 +53,12 @@ export default function Dashboard() {
   console.log(data);
 
   return (
-    <form className={classes.root} noValidate autoComplete="off">
+    <form className={classes.root} noValidate autoComplete='off'>
       <GridContainer>
         <GridItem xs={12} sm={12} md={12}>
           <Card>
-            <CardHeader color="success" stats icon>
-              <CardIcon color="success">
+            <CardHeader color='success' stats icon>
+              <CardIcon color='success'>
                 <Icon>content_copy</Icon>
                 <h3>User Details</h3>
               </CardIcon>
@@ -69,35 +69,35 @@ export default function Dashboard() {
               <GridContainer>
                 <GridItem xs={4} sm={4} md={4}>
                   <TextField
-                    id="username"
-                    label="Username"
-                    aria-describedby="username-helper-text"
+                    id='username'
+                    label='Username'
+                    aria-describedby='username-helper-text'
                     InputProps={{
                       readOnly: true,
                     }}
-                    variant="outlined"
+                    variant='outlined'
                     value={data.username}
                   />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
                   <TextField
-                    id="gitAccount"
-                    label="Git Account"
-                    aria-describedby="gitAccount-helper-text"
-                    variant="outlined"
+                    id='gitAccount'
+                    label='Git Account'
+                    aria-describedby='gitAccount-helper-text'
+                    variant='outlined'
                     value={data.gitAccount}
                   />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
-                  <FormLabel component="legend">Admin</FormLabel>
-                  <Checkbox id="admin" variant="outlined" value={data.admin} />
+                  <FormLabel component='legend'>Admin</FormLabel>
+                  <Checkbox id='admin' variant='outlined' value={data.admin} />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
                   <TextField
-                    id="email"
-                    label="Email Address"
-                    aria-describedby="email-helper-text"
-                    variant="outlined"
+                    id='email'
+                    label='Email Address'
+                    aria-describedby='email-helper-text'
+                    variant='outlined'
                     value={data.email}
                   />
                 </GridItem>

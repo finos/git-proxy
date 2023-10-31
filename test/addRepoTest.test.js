@@ -42,15 +42,11 @@ describe('add new repo', async () => {
   });
 
   it('create a new repo', async function () {
-    const res = await chai
-      .request(app)
-      .post('/api/v1/repo')
-      .set('Cookie', `${cookie}`)
-      .send({
-        project: 'finos',
-        name: 'test-repo',
-        url: 'https://github.com/finos/test-repo.git',
-      });
+    const res = await chai.request(app).post('/api/v1/repo').set('Cookie', `${cookie}`).send({
+      project: 'finos',
+      name: 'test-repo',
+      url: 'https://github.com/finos/test-repo.git',
+    });
     res.should.have.status(200);
 
     const repo = await db.getRepo('test-repo');

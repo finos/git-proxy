@@ -20,12 +20,7 @@ export default function SnackbarContent(props) {
   });
   if (close !== undefined) {
     action = [
-      <IconButton
-        className={classes.iconButton}
-        key="close"
-        aria-label="Close"
-        color="inherit"
-      >
+      <IconButton className={classes.iconButton} key='close' aria-label='Close' color='inherit'>
         <Close className={classes.close} />
       </IconButton>,
     ];

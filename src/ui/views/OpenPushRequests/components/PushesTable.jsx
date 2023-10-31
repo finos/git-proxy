@@ -43,49 +43,40 @@ export default function PushesTable(props) {
 
   return (
     <TableContainer component={Paper}>
-      <Table className={classes.table} aria-label="simple table">
+      <Table className={classes.table} aria-label='simple table'>
         <TableHead>
           <TableRow>
             <TableCell>Actions</TableCell>
-            <TableCell align="left">Time</TableCell>
-            <TableCell align="left">Repo</TableCell>
-            <TableCell align="left">Branch</TableCell>
-            <TableCell align="left">Commit</TableCell>
-            <TableCell align="left">Last Author</TableCell>
-            <TableCell align="left">Last Message</TableCell>
-            <TableCell align="left">Commits</TableCell>
+            <TableCell align='left'>Time</TableCell>
+            <TableCell align='left'>Repo</TableCell>
+            <TableCell align='left'>Branch</TableCell>
+            <TableCell align='left'>Commit</TableCell>
+            <TableCell align='left'>Last Author</TableCell>
+            <TableCell align='left'>Last Message</TableCell>
+            <TableCell align='left'>Commits</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {data.map((row) => (
             <TableRow key={row.id}>
-              <TableCell component="th" scope="row">
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => openPush(row.id)}
-                >
+              <TableCell component='th' scope='row'>
+                <Button variant='contained' color='primary' onClick={() => openPush(row.id)}>
                   Open
                 </Button>
               </TableCell>
-              <TableCell align="left">
-                {moment(row.timestamp).format('yyyy-MM-DD HH:mm')}
+              <TableCell align='left'>{moment(row.timestamp).format('yyyy-MM-DD HH:mm')}</TableCell>
+              <TableCell align='left'>{row.repo}</TableCell>
+              <TableCell align='left'>{row.branch.replace('refs/heads/', '')}</TableCell>
+              <TableCell align='left'>
+                {row.commitFrom.substring(0, 5)} - {row.commitTo.substring(0, 5)}
               </TableCell>
-              <TableCell align="left">{row.repo}</TableCell>
-              <TableCell align="left">
-                {row.branch.replace('refs/heads/', '')}
-              </TableCell>
-              <TableCell align="left">
-                {row.commitFrom.substring(0, 5)} -{' '}
-                {row.commitTo.substring(0, 5)}
-              </TableCell>
-              <TableCell align="left">
+              <TableCell align='left'>
                 {row.commitData[row.commitData.length - 1].author}{' '}
               </TableCell>
-              <TableCell align="left">
+              <TableCell align='left'>
                 {row.commitData[row.commitData.length - 1].message}{' '}
               </TableCell>
-              <TableCell align="left">{row.commitData.length}</TableCell>
+              <TableCell align='left'>{row.commitData.length}</TableCell>
             </TableRow>
           ))}
         </TableBody>

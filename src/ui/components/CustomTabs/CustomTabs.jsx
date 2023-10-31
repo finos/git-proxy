@@ -37,8 +37,8 @@ export default function CustomTabs(props) {
             indicator: classes.displayNone,
             scrollButtons: classes.displayNone,
           }}
-          variant="scrollable"
-          scrollButtons="auto"
+          variant='scrollable'
+          scrollButtons='auto'
         >
           {tabs.map((prop, key) => {
             let icon = {};
@@ -75,14 +75,7 @@ export default function CustomTabs(props) {
 }
 
 CustomTabs.propTypes = {
-  headerColor: PropTypes.oneOf([
-    'warning',
-    'success',
-    'danger',
-    'info',
-    'primary',
-    'rose',
-  ]),
+  headerColor: PropTypes.oneOf(['warning', 'success', 'danger', 'info', 'primary', 'rose']),
   title: PropTypes.string,
   tabs: PropTypes.arrayOf(
     PropTypes.shape({

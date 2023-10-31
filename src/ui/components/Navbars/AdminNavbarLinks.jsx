@@ -50,13 +50,13 @@ export default function AdminNavbarLinks() {
           justIcon={window.innerWidth > 959}
           simple={!(window.innerWidth > 959)}
           aria-owns={openNotification ? 'notification-menu-list-grow' : null}
-          aria-haspopup="true"
+          aria-haspopup='true'
           onClick={handleClickNotification}
           className={classes.buttonLink}
         >
           <Notifications className={classes.icons} />
           <span className={classes.notifications}>5</span>
-          <Hidden mdUp implementation="css">
+          <Hidden mdUp implementation='css'>
             <p onClick={handleCloseNotification} className={classes.linkText}>
               Notification
             </p>
@@ -68,51 +68,33 @@ export default function AdminNavbarLinks() {
           transition
           disablePortal
           className={
-            classNames({ [classes.popperClose]: !openNotification }) +
-            ' ' +
-            classes.popperNav
+            classNames({ [classes.popperClose]: !openNotification }) + ' ' + classes.popperNav
           }
         >
           {({ TransitionProps, placement }) => (
             <Grow
               {...TransitionProps}
-              id="notification-menu-list-grow"
+              id='notification-menu-list-grow'
               style={{
-                transformOrigin:
-                  placement === 'bottom' ? 'center top' : 'center bottom',
+                transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom',
               }}
             >
               <Paper>
                 <ClickAwayListener onClickAway={handleCloseNotification}>
-                  <MenuList role="menu">
-                    <MenuItem
-                      onClick={handleCloseNotification}
-                      className={classes.dropdownItem}
-                    >
+                  <MenuList role='menu'>
+                    <MenuItem onClick={handleCloseNotification} className={classes.dropdownItem}>
                       Mike John responded to your email
                     </MenuItem>
-                    <MenuItem
-                      onClick={handleCloseNotification}
-                      className={classes.dropdownItem}
-                    >
+                    <MenuItem onClick={handleCloseNotification} className={classes.dropdownItem}>
                       You have 5 new tasks
                     </MenuItem>
-                    <MenuItem
-                      onClick={handleCloseNotification}
-                      className={classes.dropdownItem}
-                    >
+                    <MenuItem onClick={handleCloseNotification} className={classes.dropdownItem}>
                       ${`You're now friend with Andrew`}
                     </MenuItem>
-                    <MenuItem
-                      onClick={handleCloseNotification}
-                      className={classes.dropdownItem}
-                    >
+                    <MenuItem onClick={handleCloseNotification} className={classes.dropdownItem}>
                       Another Notification
                     </MenuItem>
-                    <MenuItem
-                      onClick={handleCloseNotification}
-                      className={classes.dropdownItem}
-                    >
+                    <MenuItem onClick={handleCloseNotification} className={classes.dropdownItem}>
                       Another One
                     </MenuItem>
                   </MenuList>
@@ -128,12 +110,12 @@ export default function AdminNavbarLinks() {
           justIcon={window.innerWidth > 959}
           simple={!(window.innerWidth > 959)}
           aria-owns={openProfile ? 'profile-menu-list-grow' : null}
-          aria-haspopup="true"
+          aria-haspopup='true'
           onClick={handleClickProfile}
           className={classes.buttonLink}
         >
           <Person className={classes.icons} />
-          <Hidden mdUp implementation="css">
+          <Hidden mdUp implementation='css'>
             <p className={classes.linkText}>Profile</p>
           </Hidden>
         </Button>
@@ -142,41 +124,27 @@ export default function AdminNavbarLinks() {
           anchorEl={openProfile}
           transition
           disablePortal
-          className={
-            classNames({ [classes.popperClose]: !openProfile }) +
-            ' ' +
-            classes.popperNav
-          }
+          className={classNames({ [classes.popperClose]: !openProfile }) + ' ' + classes.popperNav}
         >
           {({ TransitionProps, placement }) => (
             <Grow
               {...TransitionProps}
-              id="profile-menu-list-grow"
+              id='profile-menu-list-grow'
               style={{
-                transformOrigin:
-                  placement === 'bottom' ? 'center top' : 'center bottom',
+                transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom',
               }}
             >
               <Paper>
                 <ClickAwayListener onClickAway={handleCloseProfile}>
-                  <MenuList role="menu">
-                    <MenuItem
-                      onClick={handleCloseProfile}
-                      className={classes.dropdownItem}
-                    >
+                  <MenuList role='menu'>
+                    <MenuItem onClick={handleCloseProfile} className={classes.dropdownItem}>
                       Profile
                     </MenuItem>
-                    <MenuItem
-                      onClick={handleCloseProfile}
-                      className={classes.dropdownItem}
-                    >
+                    <MenuItem onClick={handleCloseProfile} className={classes.dropdownItem}>
                       Settings
                     </MenuItem>
                     <Divider light />
-                    <MenuItem
-                      onClick={handleCloseProfile}
-                      className={classes.dropdownItem}
-                    >
+                    <MenuItem onClick={handleCloseProfile} className={classes.dropdownItem}>
                       Logout
                     </MenuItem>
                   </MenuList>

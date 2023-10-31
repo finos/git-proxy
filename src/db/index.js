@@ -12,13 +12,7 @@ if (config.getDatabase().type === 'mongo') {
   sink = require('../db/mongo');
 }
 
-module.exports.createUser = async (
-  username,
-  password,
-  email,
-  gitAccount,
-  admin = false,
-) => {
+module.exports.createUser = async (username, password, email, gitAccount, admin = false) => {
   console.log(
     `creating user
         user=${username},
