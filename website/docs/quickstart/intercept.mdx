@@ -65,7 +65,9 @@ git remote -v
 
 :::note
 
-SSH and HTTPS protocols are currently not supported. See [#27](https://github.com/finos/git-proxy/issues/27) for more.
+SSH protocol is currently not supported, see [#27](https://github.com/finos/git-proxy/issues/27).
+
+To simulate HTTPS connectivity, you can use `ngrok` (or similar tools) to create an HTTP/HTTPS public ingress and use its host to replace `http://localhost:8080` in the `git remote set-url` command mentioned above.
 
 :::
 
