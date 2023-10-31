@@ -50,32 +50,32 @@ export default function UserList(props) {
       </GridItem>
       <GridItem xs={12} sm={12} md={12}>
         <TableContainer component={Paper}>
-          <Table className={classes.table} aria-label="simple table">
+          <Table className={classes.table} aria-label='simple table'>
             <TableHead>
               <TableRow>
                 <TableCell>Actions</TableCell>
-                <TableCell align="left">Username</TableCell>
-                <TableCell align="left">email</TableCell>
-                <TableCell align="left">Git Account</TableCell>
-                <TableCell align="left">Admin</TableCell>
+                <TableCell align='left'>Username</TableCell>
+                <TableCell align='left'>email</TableCell>
+                <TableCell align='left'>Git Account</TableCell>
+                <TableCell align='left'>Admin</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {data.map((row) => (
                 <TableRow key={row.username}>
-                  <TableCell component="th" scope="row">
+                  <TableCell component='th' scope='row'>
                     <Button
-                      variant="contained"
-                      color="primary"
+                      variant='contained'
+                      color='primary'
                       onClick={() => openUser(row.username)}
                     >
                       Open
                     </Button>
                   </TableCell>
-                  <TableCell align="left">{row.username}</TableCell>
-                  <TableCell align="left">{row.email}</TableCell>
-                  <TableCell align="left">{row.gitAccount}</TableCell>
-                  <TableCell align="left">{row.admin.toString()}</TableCell>
+                  <TableCell align='left'>{row.username}</TableCell>
+                  <TableCell align='left'>{row.email}</TableCell>
+                  <TableCell align='left'>{row.gitAccount}</TableCell>
+                  <TableCell align='left'>{row.admin.toString()}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

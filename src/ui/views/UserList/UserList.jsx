@@ -18,8 +18,8 @@ export default function UserList() {
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
         <Card>
-          <CardHeader color="success" stats icon>
-            <CardIcon color="success">
+          <CardHeader color='success' stats icon>
+            <CardIcon color='success'>
               <Icon>content_copy</Icon>
               <h3>Admin</h3>
             </CardIcon>

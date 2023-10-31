@@ -43,26 +43,17 @@ describe('auth', async () => {
     });
 
     it('should now be able to access the profile', async function () {
-      const res = await chai
-        .request(app)
-        .get('/auth/profile')
-        .set('Cookie', `${cookie}`);
+      const res = await chai.request(app).get('/auth/profile').set('Cookie', `${cookie}`);
       res.should.have.status(200);
     });
 
     it('should now be able to logout', async function () {
-      const res = await chai
-        .request(app)
-        .post('/auth/logout')
-        .set('Cookie', `${cookie}`);
+      const res = await chai.request(app).post('/auth/logout').set('Cookie', `${cookie}`);
       res.should.have.status(200);
     });
 
     it('test cannot access profile page', async function () {
-      const res = await chai
-        .request(app)
-        .get('/auth/profile')
-        .set('Cookie', `${cookie}`);
+      const res = await chai.request(app).get('/auth/profile').set('Cookie', `${cookie}`);
 
       res.should.have.status(401);
     });

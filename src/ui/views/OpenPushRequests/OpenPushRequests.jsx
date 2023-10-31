@@ -12,8 +12,8 @@ export default function Dashboard() {
       <GridContainer>
         <GridItem xs={12} sm={12} md={12}>
           <CustomTabs
-            title="Push Requests"
-            headerColor="primary"
+            title='Push Requests'
+            headerColor='primary'
             tabs={[
               {
                 tabName: 'Open',
@@ -32,24 +32,12 @@ export default function Dashboard() {
               },
               {
                 tabName: 'Canceled',
-                tabContent: (
-                  <PushesTable
-                    authorised={false}
-                    rejected={false}
-                    canceled={true}
-                  />
-                ),
+                tabContent: <PushesTable authorised={false} rejected={false} canceled={true} />,
               },
               {
                 tabName: 'Rejected',
                 // tabIcon: Code,
-                tabContent: (
-                  <PushesTable
-                    authorised={false}
-                    rejected={true}
-                    canceled={false}
-                  />
-                ),
+                tabContent: <PushesTable authorised={false} rejected={true} canceled={false} />,
               },
             ]}
           />

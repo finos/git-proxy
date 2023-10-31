@@ -40,16 +40,12 @@ describe('user creation', async () => {
   });
 
   it('should be able to create a new user', async function () {
-    const res = await chai
-      .request(app)
-      .post('/auth/profile')
-      .set('Cookie', `${cookie}`)
-      .send({
-        username: 'login-test-user',
-        email: 'paul.timothy.groves@gmail.com',
-        gitAccount: 'test123',
-        admin: true,
-      });
+    const res = await chai.request(app).post('/auth/profile').set('Cookie', `${cookie}`).send({
+      username: 'login-test-user',
+      email: 'paul.timothy.groves@gmail.com',
+      gitAccount: 'test123',
+      admin: true,
+    });
     res.should.have.status(200);
   });
 
@@ -59,10 +55,7 @@ describe('user creation', async () => {
   });
 
   it('logout', async function () {
-    const res = await chai
-      .request(app)
-      .post('/auth/logout')
-      .set('Cookie', `${cookie}`);
+    const res = await chai.request(app).post('/auth/logout').set('Cookie', `${cookie}`);
     res.should.have.status(200);
   });
 
@@ -84,14 +77,10 @@ describe('user creation', async () => {
   });
 
   it('change the password', async function () {
-    const res = await chai
-      .request(app)
-      .post('/auth/password')
-      .set('Cookie', `${cookie}`)
-      .send({
-        oldPassword: 'test1234',
-        newPassword: 'testabcd',
-      });
+    const res = await chai.request(app).post('/auth/password').set('Cookie', `${cookie}`).send({
+      oldPassword: 'test1234',
+      newPassword: 'testabcd',
+    });
 
     res.should.have.status(200);
   });
@@ -123,10 +112,7 @@ describe('user creation', async () => {
   });
 
   it('should access the profile', async function () {
-    const res = await chai
-      .request(app)
-      .get('/auth/profile')
-      .set('Cookie', `${cookie}`);
+    const res = await chai.request(app).get('/auth/profile').set('Cookie', `${cookie}`);
     res.should.have.status(200);
 
     res.body.username.should.equal('login-test-user');

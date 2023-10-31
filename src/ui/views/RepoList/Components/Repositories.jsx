@@ -42,30 +42,26 @@ export default function Repositories(props) {
 
   return (
     <TableContainer component={Paper}>
-      <Table className={classes.table} aria-label="simple table">
+      <Table className={classes.table} aria-label='simple table'>
         <TableHead>
           <TableRow>
             <TableCell>Actions</TableCell>
-            <TableCell align="left">Project</TableCell>
-            <TableCell align="left">Name</TableCell>
-            <TableCell align="left">Url</TableCell>
+            <TableCell align='left'>Project</TableCell>
+            <TableCell align='left'>Name</TableCell>
+            <TableCell align='left'>Url</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {data.map((row) => (
             <TableRow key={row.id}>
-              <TableCell component="th" scope="row">
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => openRepo(row.name)}
-                >
+              <TableCell component='th' scope='row'>
+                <Button variant='contained' color='primary' onClick={() => openRepo(row.name)}>
                   Open
                 </Button>
               </TableCell>
-              <TableCell align="left">{row.project}</TableCell>
-              <TableCell align="left">{row.name}</TableCell>
-              <TableCell align="left">{row.url}</TableCell>
+              <TableCell align='left'>{row.project}</TableCell>
+              <TableCell align='left'>{row.name}</TableCell>
+              <TableCell align='left'>{row.url}</TableCell>
             </TableRow>
           ))}
         </TableBody>

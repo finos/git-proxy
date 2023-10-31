@@ -36,19 +36,15 @@ export default function Header(props) {
       <Toolbar className={classes.container}>
         <div className={classes.flex}>
           {/* Here we create navbar brand, based on route name */}
-          <Button color="transparent" href="#" className={classes.title}>
+          <Button color='transparent' href='#' className={classes.title}>
             {makeBrand()}
           </Button>
         </div>
-        <Hidden smDown implementation="css">
+        <Hidden smDown implementation='css'>
           <AdminNavbarLinks />
         </Hidden>
-        <Hidden mdUp implementation="css">
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={props.handleDrawerToggle}
-          >
+        <Hidden mdUp implementation='css'>
+          <IconButton color='inherit' aria-label='open drawer' onClick={props.handleDrawerToggle}>
             <Menu />
           </IconButton>
         </Hidden>

@@ -12,8 +12,8 @@ export default function Dashboard() {
       <GridContainer>
         <GridItem xs={12} sm={12} md={12}>
           <CustomTabs
-            title=""
-            headerColor="primary"
+            title=''
+            headerColor='primary'
             tabs={[
               {
                 tabName: 'Users',

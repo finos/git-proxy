@@ -65,12 +65,8 @@ function AddUserDialog(props) {
   console.log(JSON.stringify(props));
 
   return (
-    <Dialog
-      onClose={handleClose}
-      aria-labelledby="simple-dialog-title"
-      open={open}
-    >
-      <DialogTitle style={{ color: 'red' }} id="simple-dialog-title">
+    <Dialog onClose={handleClose} aria-labelledby='simple-dialog-title' open={open}>
+      <DialogTitle style={{ color: 'red' }} id='simple-dialog-title'>
         {error} Add User to {repoName} for {type}{' '}
       </DialogTitle>
       <Card>
@@ -78,10 +74,10 @@ function AddUserDialog(props) {
           <GridContainer>
             <GridItem xs={12} sm={12} md={12}>
               <FormControl>
-                <InputLabel htmlFor="username">Username</InputLabel>
+                <InputLabel htmlFor='username'>Username</InputLabel>
                 <Select
-                  labelId="demo-simple-select-helper-label"
-                  id="demo-simple-select-helper"
+                  labelId='demo-simple-select-helper-label'
+                  id='demo-simple-select-helper'
                   value={username}
                   onChange={handleChange}
                 >
@@ -95,10 +91,10 @@ function AddUserDialog(props) {
               </FormControl>
             </GridItem>
             <GridItem xs={12} sm={12} md={12}>
-              <Button variant="outlined" color="primary" onClick={handleClose}>
+              <Button variant='outlined' color='primary' onClick={handleClose}>
                 Cancel
               </Button>
-              <Button variant="outlined" color="primary" onClick={add}>
+              <Button variant='outlined' color='primary' onClick={add}>
                 Create
               </Button>
             </GridItem>
@@ -132,7 +128,7 @@ export default function AddUser(props) {
 
   return (
     <div>
-      <Button variant="outlined" color="primary" onClick={handleClickOpen}>
+      <Button variant='outlined' color='primary' onClick={handleClickOpen}>
         Add User
       </Button>
       <AddUserDialog

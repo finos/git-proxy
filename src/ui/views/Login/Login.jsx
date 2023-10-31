@@ -87,7 +87,7 @@ export default function UserProfile() {
       <GridContainer>
         <GridItem xs={12} sm={6} md={4}>
           <Card>
-            <CardHeader color="primary">
+            <CardHeader color='primary'>
               <h4 className={classes.cardTitleWhite}>Login</h4>
               <p>{message}</p>
             </CardHeader>
@@ -97,8 +97,8 @@ export default function UserProfile() {
                   <FormControl>
                     <InputLabel>Username</InputLabel>
                     <Input
-                      id="username"
-                      type="username"
+                      id='username'
+                      type='username'
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                     />
@@ -110,8 +110,8 @@ export default function UserProfile() {
                   <FormControl>
                     <InputLabel>Password</InputLabel>
                     <Input
-                      id="username"
-                      type="password"
+                      id='username'
+                      type='password'
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                     />
@@ -120,7 +120,7 @@ export default function UserProfile() {
               </GridContainer>
             </CardBody>
             <CardFooter>
-              <Button block disabled={!validateForm()} type="submit">
+              <Button block disabled={!validateForm()} type='submit'>
                 Login
               </Button>
             </CardFooter>

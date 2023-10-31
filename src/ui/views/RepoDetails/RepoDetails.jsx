@@ -49,8 +49,7 @@ export default function RepoDetails(props) {
     getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
   };
 
-  const refresh = () =>
-    getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
+  const refresh = () => getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
 
   if (isLoading) return <div>Loading ...</div>;
   if (isError) return <div>Something went wrong ...</div>;
@@ -61,68 +60,54 @@ export default function RepoDetails(props) {
       <GridItem xs={12} sm={12} md={12}>
         <Card>
           <CardBody>
-            <form className={classes.root} noValidate autoComplete="off">
+            <form className={classes.root} noValidate autoComplete='off'>
               <GridContainer>
                 <GridItem xs={4} sm={4} md={4}>
                   <TextField
-                    id="project"
-                    label="Project"
+                    id='project'
+                    label='Project'
                     InputProps={{
                       readOnly: true,
                     }}
-                    variant="outlined"
+                    variant='outlined'
                     value={data.project}
                   />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
-                  <TextField
-                    id="repoName"
-                    label="Repo Name"
-                    variant="outlined"
-                    value={data.name}
-                  />
+                  <TextField id='repoName' label='Repo Name' variant='outlined' value={data.name} />
                 </GridItem>
                 <GridItem xs={4} sm={4} md={4}>
-                  <TextField
-                    id="gitUrl"
-                    label="Url"
-                    variant="outlined"
-                    value={data.url}
-                  />
+                  <TextField id='gitUrl' label='Url' variant='outlined' value={data.url} />
                 </GridItem>
               </GridContainer>
             </form>
             <GridContainer>
               <GridItem xs={6} sm={6} md={6}>
                 <h2>Can Authorise Push</h2>
-                <AddUser
-                  repoName={repoName}
-                  type="authorise"
-                  refreshFn={refresh}
-                ></AddUser>
+                <AddUser repoName={repoName} type='authorise' refreshFn={refresh}></AddUser>
                 <br />
                 <br />
                 <TableContainer component={Paper}>
-                  <Table className={classes.table} aria-label="simple table">
+                  <Table className={classes.table} aria-label='simple table'>
                     <TableHead>
                       <TableRow>
                         <TableCell>Actions</TableCell>
-                        <TableCell align="left">Username</TableCell>
+                        <TableCell align='left'>Username</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {data.users.canAuthorise.map((row) => (
                         <TableRow key={row}>
-                          <TableCell component="th" scope="row">
+                          <TableCell component='th' scope='row'>
                             <Button
-                              variant="contained"
-                              color="secondary"
+                              variant='contained'
+                              color='secondary'
                               onClick={() => removeUser(row, 'authorise')}
                             >
                               Remove
                             </Button>
                           </TableCell>
-                          <TableCell align="left">{row}</TableCell>
+                          <TableCell align='left'>{row}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -131,34 +116,30 @@ export default function RepoDetails(props) {
               </GridItem>
               <GridItem xs={6} sm={6} md={6}>
                 <h2>Can Push</h2>
-                <AddUser
-                  repoName={repoName}
-                  type="push"
-                  refreshFn={refresh}
-                ></AddUser>
+                <AddUser repoName={repoName} type='push' refreshFn={refresh}></AddUser>
                 <br />
                 <br />
                 <TableContainer component={Paper}>
-                  <Table className={classes.table} aria-label="simple table">
+                  <Table className={classes.table} aria-label='simple table'>
                     <TableHead>
                       <TableRow>
                         <TableCell>Actions</TableCell>
-                        <TableCell align="left">Username</TableCell>
+                        <TableCell align='left'>Username</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {data.users.canPush.map((row) => (
                         <TableRow key={row}>
-                          <TableCell component="th" scope="row">
+                          <TableCell component='th' scope='row'>
                             <Button
-                              variant="contained"
-                              color="secondary"
+                              variant='contained'
+                              color='secondary'
                               onClick={() => removeUser(row, 'push')}
                             >
                               Remove
                             </Button>
                           </TableCell>
-                          <TableCell align="left">{row}</TableCell>
+                          <TableCell align='left'>{row}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

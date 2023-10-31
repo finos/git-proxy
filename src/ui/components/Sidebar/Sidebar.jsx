@@ -43,7 +43,7 @@ export default function Sidebar(props) {
           <NavLink
             to={prop.layout + prop.path}
             className={activePro + classes.item}
-            activeClassName="active"
+            activeClassName='active'
             key={key}
           >
             <ListItem button className={classes.itemLink + listItemClasses}>
@@ -78,14 +78,14 @@ export default function Sidebar(props) {
   const brand = (
     <div className={classes.logo}>
       <a
-        href="/"
+        href='/'
         className={classNames(classes.logoLink, {
           [classes.logoLinkRTL]: props.rtlActive,
         })}
-        target="_blank"
+        target='_blank'
       >
         <div className={classes.logoImage}>
-          <img src={logo} alt="logo" className={classes.img} />
+          <img src={logo} alt='logo' className={classes.img} />
         </div>
         {logoText}
       </a>
@@ -93,9 +93,9 @@ export default function Sidebar(props) {
   );
   return (
     <div>
-      <Hidden mdUp implementation="css">
+      <Hidden mdUp implementation='css'>
         <Drawer
-          variant="temporary"
+          variant='temporary'
           anchor={props.rtlActive ? 'left' : 'right'}
           open={props.open}
           classes={{
@@ -114,17 +114,14 @@ export default function Sidebar(props) {
             {links}
           </div>
           {image !== undefined ? (
-            <div
-              className={classes.background}
-              style={{ backgroundImage: 'url(' + image + ')' }}
-            />
+            <div className={classes.background} style={{ backgroundImage: 'url(' + image + ')' }} />
           ) : null}
         </Drawer>
       </Hidden>
-      <Hidden smDown implementation="css">
+      <Hidden smDown implementation='css'>
         <Drawer
           anchor={props.rtlActive ? 'right' : 'left'}
-          variant="permanent"
+          variant='permanent'
           open
           classes={{
             paper: classNames(classes.drawerPaper, {
@@ -135,10 +132,7 @@ export default function Sidebar(props) {
           {brand}
           <div className={classes.sidebarWrapper}>{links}</div>
           {image !== undefined ? (
-            <div
-              className={classes.background}
-              style={{ backgroundImage: 'url(' + image + ')' }}
-            />
+            <div className={classes.background} style={{ backgroundImage: 'url(' + image + ')' }} />
           ) : null}
         </Drawer>
       </Hidden>
