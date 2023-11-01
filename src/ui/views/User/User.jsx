@@ -1,14 +1,12 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React, { useState, useEffect } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
 import Icon from '@material-ui/core/Icon';
-import GridItem from '../../components/Grid/GridItem.jsx';
-import GridContainer from '../../components/Grid/GridContainer.jsx';
-import Card from '../../components/Card/Card.jsx';
-import CardIcon from '../../components/Card/CardIcon.jsx';
-import CardBody from '../../components/Card/CardBody.jsx';
-import CardHeader from '../../components/Card/CardHeader.jsx';
+import GridItem from '../../components/Grid/GridItem';
+import GridContainer from '../../components/Grid/GridContainer';
+import Card from '../../components/Card/Card';
+import CardIcon from '../../components/Card/CardIcon';
+import CardBody from '../../components/Card/CardBody';
+import CardHeader from '../../components/Card/CardHeader';
 // import Button from '../../components/CustomButtons/Button.js';
 // import PropTypes from 'prop-types';
 import TextField from '@material-ui/core/TextField';
@@ -16,7 +14,7 @@ import Checkbox from '@material-ui/core/Checkbox';
 // import FormControlLabel from '@material-ui/core/FormControlLabel';
 // import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
-import { getUser } from '../../services/user.js';
+import { getUser } from '../../services/user';
 import { makeStyles } from '@material-ui/core/styles';
 
 const useStyles = makeStyles((theme) => ({

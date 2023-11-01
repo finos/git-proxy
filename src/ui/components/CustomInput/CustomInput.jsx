@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
@@ -9,7 +7,7 @@ import InputLabel from '@material-ui/core/InputLabel';
 import Input from '@material-ui/core/Input';
 import Clear from '@material-ui/icons/Clear';
 import Check from '@material-ui/icons/Check';
-import styles from '../../assets/jss/material-dashboard-react/components/customInputStyle.js';
+import styles from '../../assets/jss/material-dashboard-react/components/customInputStyle';
 
 const useStyles = makeStyles(styles);
 

@@ -1,14 +1,12 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
-import Card from '../Card/Card.jsx';
-import CardBody from '../Card/CardBody.jsx';
-import CardHeader from '../Card/CardHeader.jsx';
+import Card from '../Card/Card';
+import CardBody from '../Card/CardBody';
+import CardHeader from '../Card/CardHeader';
 
 import styles from '../../assets/jss/material-dashboard-react/components/customTabsStyle';
 
@@ -16,8 +14,8 @@ const useStyles = makeStyles(styles);
 
 export default function CustomTabs(props) {
   const [value, setValue] = React.useState(0);
-  const handleChange = (event, value) => {
-    setValue(value);
+  const handleChange = (event, val) => {
+    setValue(val);
   };
   const classes = useStyles();
   const { headerColor, plainTabs, tabs, title, rtlActive } = props;

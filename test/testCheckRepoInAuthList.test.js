@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-
 const chai = require('chai');
 const actions = require('../src/proxy/actions/Action');
 const processor = require('../src/proxy/processors/push-action/checkRepoInAuthorisedList');

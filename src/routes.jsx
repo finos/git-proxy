@@ -20,13 +20,13 @@
 */
 import Dashboard from '@material-ui/icons/Dashboard';
 import Person from '@material-ui/icons/Person';
-import DashboardPage from './ui/views/Dashboard/Dashboard.jsx';
-import OpenPushRequests from './ui/views/OpenPushRequests/OpenPushRequests.jsx';
-import PushDetails from './ui/views/PushDetails/PushDetails.jsx';
-import User from './ui/views/User/User.jsx';
-import UserList from './ui/views/UserList/UserList.jsx';
-import RepoDetails from './ui/views/RepoDetails/RepoDetails.jsx';
-import RepoList from './ui/views/RepoList/RepoList.jsx';
+import DashboardPage from './ui/views/Dashboard/Dashboard';
+import OpenPushRequests from './ui/views/OpenPushRequests/OpenPushRequests';
+import PushDetails from './ui/views/PushDetails/PushDetails';
+import User from './ui/views/User/User';
+import UserList from './ui/views/UserList/UserList';
+import RepoDetails from './ui/views/RepoDetails/RepoDetails';
+import RepoList from './ui/views/RepoList/RepoList';
 
 const dashboardRoutes = [
   {

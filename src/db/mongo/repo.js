@@ -25,34 +25,22 @@ exports.createRepo = async (repo) => {
 
 exports.addUserCanPush = async (name, user) => {
   const collection = await connect(cnName);
-  await collection.updateOne(
-    { name: name },
-    { $push: { 'users.canPush': user } },
-  );
+  await collection.updateOne({ name: name }, { $push: { 'users.canPush': user } });
 };
 
 exports.addUserCanAuthorise = async (name, user) => {
   const collection = await connect(cnName);
-  await collection.updateOne(
-    { name: name },
-    { $push: { 'users.canAuthorise': user } },
-  );
+  await collection.updateOne({ name: name }, { $push: { 'users.canAuthorise': user } });
 };
 
 exports.removeUserCanPush = async (name, user) => {
   const collection = await connect(cnName);
-  await collection.updateOne(
-    { name: name },
-    { $pull: { 'users.canPush': user } },
-  );
+  await collection.updateOne({ name: name }, { $pull: { 'users.canPush': user } });
 };
 
 exports.removeUserCanAuthorise = async (name, user) => {
   const collection = await connect(cnName);
-  await collection.updateOne(
-    { name: name },
-    { $pull: { 'users.canAuthorise': user } },
-  );
+  await collection.updateOne({ name: name }, { $pull: { 'users.canAuthorise': user } });
 };
 
 exports.deleteRepo = async (name) => {

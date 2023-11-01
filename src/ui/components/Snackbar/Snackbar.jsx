@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
@@ -7,7 +5,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Snack from '@material-ui/core/Snackbar';
 import IconButton from '@material-ui/core/IconButton';
 import Close from '@material-ui/icons/Close';
-import styles from '../../assets/jss/material-dashboard-react/components/snackbarContentStyle.js';
+import styles from '../../assets/jss/material-dashboard-react/components/snackbarContentStyle';
 
 const useStyles = makeStyles(styles);
 

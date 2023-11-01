@@ -15,7 +15,7 @@
     "prepare": "node ./scripts/prepare.js",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx,json}\" \"test/**/*.{js,jsx,ts,tsx,json}\"",
     "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx,json}\" \"test/**/*.{js,jsx,ts,tsx,json}\"",
-    "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,md,json,scss} test/**/*.{js,jsx,ts,tsx,json}"
+    "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,md,json,scss} test/**/*.{js,jsx,ts,tsx,json} --config ./.prettierrc"
   },
   "bin": "./index.js",
   "author": "Paul Groves",

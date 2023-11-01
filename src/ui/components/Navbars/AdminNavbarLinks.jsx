@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import classNames from 'classnames';
 import { makeStyles } from '@material-ui/core/styles';
@@ -13,8 +11,8 @@ import Poppers from '@material-ui/core/Popper';
 import Divider from '@material-ui/core/Divider';
 import Person from '@material-ui/icons/Person';
 import Notifications from '@material-ui/icons/Notifications';
-import Button from '../CustomButtons/Button.jsx';
-import styles from '../../assets/jss/material-dashboard-react/components/headerLinksStyle.js';
+import Button from '../CustomButtons/Button';
+import styles from '../../assets/jss/material-dashboard-react/components/headerLinksStyle';
 
 const useStyles = makeStyles(styles);
 

@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
@@ -9,7 +7,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
-import styles from '../../assets/jss/material-dashboard-react/components/tableStyle.js';
+import styles from '../../assets/jss/material-dashboard-react/components/tableStyle';
 
 const useStyles = makeStyles(styles);
 
@@ -36,10 +34,10 @@ export default function CustomTable(props) {
           {tableData.map((prop, key) => {
             return (
               <TableRow key={key} className={classes.tableBodyRow}>
-                {prop.map((prop, key) => {
+                {prop.map((p, k) => {
                   return (
-                    <TableCell className={classes.tableCell} key={key}>
-                      {prop}
+                    <TableCell className={classes.tableCell} key={k}>
+                      {p}
                     </TableCell>
                   );
                 })}

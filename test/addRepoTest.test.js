@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 // Import the dependencies for testing
 const chai = require('chai');
 const chaiHttp = require('chai-http');

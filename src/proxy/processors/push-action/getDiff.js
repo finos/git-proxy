@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 const child = require('child_process');
 const Step = require('../../actions').Step;
 
@@ -12,13 +11,10 @@ const exec = async (req, action) => {
     let cmd = `git diff 4b825dc642cb6eb9a060e54bf8d69288fbee4904 ${action.commitTo}`;
 
     if (action.commitFrom === '0000000000000000000000000000000000000000') {
-      if (
-        action.commitData[0].parent !==
-        '0000000000000000000000000000000000000000'
-      ) {
-        cmd = `git diff ${
-          action.commitData[action.commitData.length - 1].parent
-        } ${action.commitTo}`;
+      if (action.commitData[0].parent !== '0000000000000000000000000000000000000000') {
+        cmd = `git diff ${action.commitData[action.commitData.length - 1].parent} ${
+          action.commitTo
+        }`;
       }
     } else {
       cmd = `git diff ${action.commitFrom} ${action.commitTo}`;

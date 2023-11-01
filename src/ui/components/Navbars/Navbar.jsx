@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
@@ -9,9 +7,9 @@ import Toolbar from '@material-ui/core/Toolbar';
 import IconButton from '@material-ui/core/IconButton';
 import Hidden from '@material-ui/core/Hidden';
 import Menu from '@material-ui/icons/Menu';
-import AdminNavbarLinks from './AdminNavbarLinks.jsx';
-import Button from '../CustomButtons/Button.jsx';
-import styles from '../../assets/jss/material-dashboard-react/components/headerStyle.js';
+import AdminNavbarLinks from './AdminNavbarLinks';
+import Button from '../CustomButtons/Button';
+import styles from '../../assets/jss/material-dashboard-react/components/headerStyle';
 
 const useStyles = makeStyles(styles);
 

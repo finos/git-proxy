@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import * as Diff2Html from 'diff2html';
 import ReactHtmlParser from 'react-html-parser';
 

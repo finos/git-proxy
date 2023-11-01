@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import axios from 'axios';
 const baseUrl = 'http://localhost:8080/api/v1';
 
@@ -7,13 +5,7 @@ const config = {
   withCredentials: true,
 };
 
-const getRepos = async (
-  setIsLoading,
-  setData,
-  setAuth,
-  setIsError,
-  query = {},
-) => {
+const getRepos = async (setIsLoading, setData, setAuth, setIsError, query = {}) => {
   const url = new URL(`${baseUrl}/repo`);
   url.search = new URLSearchParams(query);
 

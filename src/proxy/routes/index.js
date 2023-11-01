@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 const express = require('express');
 const proxy = require('express-http-proxy');
 // eslint-disable-next-line new-cap

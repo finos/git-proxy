@@ -43,16 +43,7 @@ const configure = async () => {
   const admin = await db.findUser('admin');
 
   if (!admin) {
-    await db.createUser(
-      'admin',
-      'admin',
-      'admin@place.com',
-      'none',
-      true,
-      true,
-      true,
-      true,
-    );
+    await db.createUser('admin', 'admin', 'admin@place.com', 'none', true, true, true, true);
   }
 
   passport.type = 'local';

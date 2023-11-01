@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 // import Icon from '@material-ui/core/Icon';
-import GridItem from '../../components/Grid/GridItem.jsx';
-import GridContainer from '../../components/Grid/GridContainer.jsx';
-import Card from '../../components/Card/Card.jsx';
-import CardBody from '../../components/Card/CardBody.jsx';
+import GridItem from '../../components/Grid/GridItem';
+import GridContainer from '../../components/Grid/GridContainer';
+import Card from '../../components/Card/Card';
+import CardBody from '../../components/Card/CardBody';
 import TextField from '@material-ui/core/TextField';
 import Paper from '@material-ui/core/Paper';
 import Button from '@material-ui/core/Button';
@@ -16,7 +16,7 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import { getRepo, deleteUser } from '../../services/repo.js';
+import { getRepo, deleteUser } from '../../services/repo';
 import { makeStyles } from '@material-ui/core/styles';
 import AddUser from './Components/AddUser';
 

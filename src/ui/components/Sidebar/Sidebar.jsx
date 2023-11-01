@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
@@ -11,8 +9,8 @@ import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Icon from '@material-ui/core/Icon';
-import AdminNavbarLinks from '../Navbars/AdminNavbarLinks.jsx';
-import styles from '../../assets/jss/material-dashboard-react/components/sidebarStyle.js';
+import AdminNavbarLinks from '../Navbars/AdminNavbarLinks';
+import styles from '../../assets/jss/material-dashboard-react/components/sidebarStyle';
 
 const useStyles = makeStyles(styles);
 

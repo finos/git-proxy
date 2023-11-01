@@ -7,13 +7,7 @@ const config = {
   withCredentials: true,
 };
 
-const getUser = async (
-  setIsLoading,
-  setData,
-  setAuth,
-  setIsError,
-  id = null,
-) => {
+const getUser = async (setIsLoading, setData, setAuth, setIsError, id = null) => {
   let url = `${baseUrl}/auth/profile`;
 
   if (id) {
@@ -48,13 +42,7 @@ const createUser = async (data) => {
     });
 };
 
-const getUsers = async (
-  setIsLoading,
-  setData,
-  setAuth,
-  setIsError,
-  query = {},
-) => {
+const getUsers = async (setIsLoading, setData, setAuth, setIsError, query = {}) => {
   const url = new URL(`${baseUrl}/api/v1/user`);
   url.search = new URLSearchParams(query);
 

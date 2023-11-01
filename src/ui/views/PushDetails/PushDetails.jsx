@@ -1,25 +1,23 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import moment from 'moment';
 import { useNavigate, useParams } from 'react-router-dom';
 import Icon from '@material-ui/core/Icon';
-import GridItem from '../../components/Grid/GridItem.jsx';
-import GridContainer from '../../components/Grid/GridContainer.jsx';
-import Card from '../../components/Card/Card.jsx';
-import CardIcon from '../../components/Card/CardIcon.jsx';
-import CardBody from '../../components/Card/CardBody.jsx';
-import CardHeader from '../../components/Card/CardHeader.jsx';
-import CardFooter from '../../components/Card/CardFooter.jsx';
-import Button from '../../components/CustomButtons/Button.jsx';
+import GridItem from '../../components/Grid/GridItem';
+import GridContainer from '../../components/Grid/GridContainer';
+import Card from '../../components/Card/Card';
+import CardIcon from '../../components/Card/CardIcon';
+import CardBody from '../../components/Card/CardBody';
+import CardHeader from '../../components/Card/CardHeader';
+import CardFooter from '../../components/Card/CardFooter';
+import Button from '../../components/CustomButtons/Button';
 import Diff from './components/Diff';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
-import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/git-push.js';
+import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/git-push';
 
 export default function Dashboard() {
   // eslint-disable-next-line react/prop-types

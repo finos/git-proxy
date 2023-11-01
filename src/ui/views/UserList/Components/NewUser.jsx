@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -7,15 +5,15 @@ import Input from '@material-ui/core/Input';
 import FormControl from '@material-ui/core/FormControl';
 import Checkbox from '@material-ui/core/Checkbox';
 import FormHelperText from '@material-ui/core/FormHelperText';
-import GridItem from '../../../components/Grid/GridItem.jsx';
-import GridContainer from '../../../components/Grid/GridContainer.jsx';
-import Card from '../../../components/Card/Card.jsx';
-import CardBody from '../../../components/Card/CardBody.jsx';
-import Button from '../../../components/CustomButtons/Button.jsx';
+import GridItem from '../../../components/Grid/GridItem';
+import GridContainer from '../../../components/Grid/GridContainer';
+import Card from '../../../components/Card/Card';
+import CardBody from '../../../components/Card/CardBody';
+import Button from '../../../components/CustomButtons/Button';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Dialog from '@material-ui/core/Dialog';
 
-import { createUser } from '../../../services/user.js';
+import { createUser } from '../../../services/user';
 
 function CreateUserDialog(props) {
   const [username, setUsername] = useState('');

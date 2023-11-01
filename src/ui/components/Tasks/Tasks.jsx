@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import PropTypes from 'prop-types';
 import classnames from 'classnames';
@@ -14,7 +12,7 @@ import TableCell from '@material-ui/core/TableCell';
 import Edit from '@material-ui/icons/Edit';
 import Close from '@material-ui/icons/Close';
 import Check from '@material-ui/icons/Check';
-import styles from '../../assets/jss/material-dashboard-react/components/tasksStyle.js';
+import styles from '../../assets/jss/material-dashboard-react/components/tasksStyle';
 
 const useStyles = makeStyles(styles);
 

@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 const connect = require('./helper').connect;
 const usersCollection = 'users';
 
@@ -27,9 +26,5 @@ exports.createUser = async function (data) {
 exports.updateUser = async (user) => {
   const options = { upsert: true };
   const collection = await connect(usersCollection);
-  await collection.updateOne(
-    { username: user.username },
-    { $set: user },
-    options,
-  );
+  await collection.updateOne({ username: user.username }, { $set: user }, options);
 };
