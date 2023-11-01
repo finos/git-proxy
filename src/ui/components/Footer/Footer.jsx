@@ -1,10 +1,8 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import ListItem from '@material-ui/core/ListItem';
 import List from '@material-ui/core/List';
-import styles from '../../assets/jss/material-dashboard-react/components/footerStyle.js';
+import styles from '../../assets/jss/material-dashboard-react/components/footerStyle';
 
 const useStyles = makeStyles(styles);
 

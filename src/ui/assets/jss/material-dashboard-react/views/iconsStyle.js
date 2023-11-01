@@ -1,9 +1,4 @@
-import {
-  boxShadow,
-  whiteColor,
-  grayColor,
-  hexToRgb,
-} from '../../jss/material-dashboard-react.js';
+import { boxShadow, whiteColor, grayColor, hexToRgb } from '../../jss/material-dashboard-react.js';
 
 const iconsStyle = {
   iframe: {

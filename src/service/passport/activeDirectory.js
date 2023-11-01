@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 const configure = () => {
   const passport = require('passport');
   const ActiveDirectoryStrategy = require('passport-activedirectory');

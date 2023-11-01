@@ -1,24 +1,21 @@
-/* eslint-disable react/prop-types */
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 import FormHelperText from '@material-ui/core/FormHelperText';
-import GridItem from '../../../components/Grid/GridItem.jsx';
-import GridContainer from '../../../components/Grid/GridContainer.jsx';
-import Card from '../../../components/Card/Card.jsx';
-import CardBody from '../../../components/Card/CardBody.jsx';
+import GridItem from '../../../components/Grid/GridItem';
+import GridContainer from '../../../components/Grid/GridContainer';
+import Card from '../../../components/Card/Card';
+import CardBody from '../../../components/Card/CardBody';
 import MenuItem from '@material-ui/core/MenuItem';
-import Button from '../../../components/CustomButtons/Button.jsx';
+import Button from '../../../components/CustomButtons/Button';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import Select from '@material-ui/core/Select';
 import Dialog from '@material-ui/core/Dialog';
 import { Navigate } from 'react-router-dom';
 
-import { addUser } from '../../../services/repo.js';
-import { getUsers } from '../../../services/user.js';
+import { addUser } from '../../../services/repo';
+import { getUsers } from '../../../services/user';
 
 function AddUserDialog(props) {
   const repoName = props.repoName;

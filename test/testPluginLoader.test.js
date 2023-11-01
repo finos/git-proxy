@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 const originalEnv = process.env;
 const chai = require('chai');
 const plugin = require('../src/plugin');

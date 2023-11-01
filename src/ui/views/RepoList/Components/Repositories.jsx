@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React, { useState, useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { useNavigate } from 'react-router-dom';
@@ -12,7 +10,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import { Navigate } from 'react-router-dom';
-import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
+import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { getRepos } from '../../../services/repo';
 
 export default function Repositories(props) {

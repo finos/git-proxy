@@ -2,12 +2,12 @@
 /* eslint-disable require-jsdoc */
 import React from 'react';
 import Icon from '@material-ui/core/Icon';
-import GridItem from '../../components/Grid/GridItem.jsx';
-import GridContainer from '../../components/Grid/GridContainer.jsx';
-import Card from '../../components/Card/Card.jsx';
-import CardIcon from '../../components/Card/CardIcon.jsx';
-import CardBody from '../../components/Card/CardBody.jsx';
-import CardHeader from '../../components/Card/CardHeader.jsx';
+import GridItem from '../../components/Grid/GridItem';
+import GridContainer from '../../components/Grid/GridContainer';
+import Card from '../../components/Card/Card';
+import CardIcon from '../../components/Card/CardIcon';
+import CardBody from '../../components/Card/CardBody';
+import CardHeader from '../../components/Card/CardHeader';
 import TabList from './Components/TabList';
 
 export default function RepoList(props) {

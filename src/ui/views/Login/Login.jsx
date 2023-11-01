@@ -1,19 +1,17 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React, { useState } from 'react';
 // @material-ui/core components
 import { makeStyles } from '@material-ui/core/styles';
 import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
 // core components
-import GridItem from '../../components/Grid/GridItem.jsx';
-import GridContainer from '../../components/Grid/GridContainer.jsx';
+import GridItem from '../../components/Grid/GridItem';
+import GridContainer from '../../components/Grid/GridContainer';
 import Input from '@material-ui/core/Input';
-import Button from '../../components/CustomButtons/Button.jsx';
-import Card from '../../components/Card/Card.jsx';
-import CardHeader from '../../components/Card/CardHeader.jsx';
-import CardBody from '../../components/Card/CardBody.jsx';
-import CardFooter from '../../components/Card/CardFooter.jsx';
+import Button from '../../components/CustomButtons/Button';
+import Card from '../../components/Card/Card';
+import CardHeader from '../../components/Card/CardHeader';
+import CardBody from '../../components/Card/CardBody';
+import CardFooter from '../../components/Card/CardFooter';
 import axios from 'axios';
 import { Navigate } from 'react-router-dom';
 

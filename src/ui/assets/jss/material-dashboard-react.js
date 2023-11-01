@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 /* !
 
  =========================================================
@@ -39,13 +38,7 @@ const hexToRgb = (input) => {
   const first = input[0] + input[1];
   const second = input[2] + input[3];
   const last = input[4] + input[5];
-  return (
-    parseInt(first, 16) +
-    ', ' +
-    parseInt(second, 16) +
-    ', ' +
-    parseInt(last, 16)
-  );
+  return parseInt(first, 16) + ', ' + parseInt(second, 16) + ', ' + parseInt(last, 16);
 };
 
 // ##############################
@@ -155,33 +148,27 @@ const roseBoxShadow = {
 };
 
 const warningCardHeader = {
-  background:
-    'linear-gradient(60deg, ' + warningColor[1] + ', ' + warningColor[2] + ')',
+  background: 'linear-gradient(60deg, ' + warningColor[1] + ', ' + warningColor[2] + ')',
   ...warningBoxShadow,
 };
 const successCardHeader = {
-  background:
-    'linear-gradient(60deg, ' + successColor[1] + ', ' + successColor[2] + ')',
+  background: 'linear-gradient(60deg, ' + successColor[1] + ', ' + successColor[2] + ')',
   ...successBoxShadow,
 };
 const dangerCardHeader = {
-  background:
-    'linear-gradient(60deg, ' + dangerColor[1] + ', ' + dangerColor[2] + ')',
+  background: 'linear-gradient(60deg, ' + dangerColor[1] + ', ' + dangerColor[2] + ')',
   ...dangerBoxShadow,
 };
 const infoCardHeader = {
-  background:
-    'linear-gradient(60deg, ' + infoColor[1] + ', ' + infoColor[2] + ')',
+  background: 'linear-gradient(60deg, ' + infoColor[1] + ', ' + infoColor[2] + ')',
   ...infoBoxShadow,
 };
 const primaryCardHeader = {
-  background:
-    'linear-gradient(60deg, ' + primaryColor[1] + ', ' + primaryColor[2] + ')',
+  background: 'linear-gradient(60deg, ' + primaryColor[1] + ', ' + primaryColor[2] + ')',
   ...primaryBoxShadow,
 };
 const roseCardHeader = {
-  background:
-    'linear-gradient(60deg, ' + roseColor[1] + ', ' + roseColor[2] + ')',
+  background: 'linear-gradient(60deg, ' + roseColor[1] + ', ' + roseColor[2] + ')',
   ...roseBoxShadow,
 };
 

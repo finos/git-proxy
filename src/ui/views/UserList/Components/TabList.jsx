@@ -1,8 +1,8 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import React from 'react';
-import GridItem from '../../../components/Grid/GridItem.jsx';
-import GridContainer from '../../../components/Grid/GridContainer.jsx';
+import GridItem from '../../../components/Grid/GridItem';
+import GridContainer from '../../../components/Grid/GridContainer';
 import CustomTabs from '../../../components/CustomTabs/CustomTabs';
 import UserList from './UserList';
 
