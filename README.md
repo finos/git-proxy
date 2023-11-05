@@ -52,41 +52,26 @@ Install & run git-proxy (requires [Nodejs](https://nodejs.org/en/download/)):
 
 ```bash
 $ npx -- @finos/git-proxy
-Need to install the following packages:
-  @finos/git-proxy@1.1.0
-Ok to proceed? (y) 
-...
-creating user
-        user=admin,
-        gitAccount=none
-        email=admin@place.com,
-        admin=true
-Service Listening on 8080
-Listening on 8000
 ```
 
 Clone a repository, set the remote to the Git Proxy URL and push your changes:
 
 ```bash
 $ git clone https://github.com/octocat/Hello-World.git && cd Hello-World
+# The below command is using the GitHub official CLI to fork the repo that is cloned.
+# You can also fork on the GitHub UI. For usage details on the CLI, see https://github.com/cli/cli
+# You must fork the repo into our own account to demonstrate pushing through Git Proxy since it
+# is necessary to have write access on the repo for git-proxy to function. If you do not have push
+# access, you will receive a 403 error.
 $ gh repo fork
 ✓ Created fork yourGithubUser/Hello-World
 ...
-$ git remote set-url origin http://localhost:8000/yourGithubUser/Hello-World.git
-$ git push
-Enumerating objects: 4, done.
-Counting objects: 100% (4/4), done.
-Delta compression using up to 8 threads
-Compressing objects: 100% (2/2), done.
-Writing objects: 100% (3/3), 946 bytes | 946.00 KiB/s, done.
-Total 3 (delta 0), reused 0 (delta 0), pack-reused 0
-remote: ERR     Rejecting repo yourGithubUser/Hello-World.git not in the authorisedList
-fatal: the remote end hung up unexpectedly
-error: failed to push some refs to 'http://localhost:8000/yourGithubUser/Hello-World.git'
+$ git remote add proxy http://localhost:8000/yourGithubUser/Hello-World.git
+$ git push proxy master
 ```
 
-Git Proxy intercepts the push and _blocks_ it, as the default configuration only permits pushes
-to this repository (`github.com/finos/git-proxy`). To allow pushes to your fork, you must configure Git Proxy.
+Using the default configuration, Git Proxy intercepts the push and _blocks_ it because the forked repository 
+is not listed in the authorisedList. To allow pushes to your fork, you must configure Git Proxy.
 
 ## Documentation
 For detailed step-by-step instructions for how to install, deploy & configure Git Proxy and
