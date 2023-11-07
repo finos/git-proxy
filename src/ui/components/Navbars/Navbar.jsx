@@ -8,7 +8,6 @@ import IconButton from '@material-ui/core/IconButton';
 import Hidden from '@material-ui/core/Hidden';
 import Menu from '@material-ui/icons/Menu';
 import AdminNavbarLinks from './AdminNavbarLinks';
-import Button from '../CustomButtons/Button';
 import styles from '../../assets/jss/material-dashboard-react/components/headerStyle';
 
 const useStyles = makeStyles(styles);
@@ -30,13 +29,17 @@ export default function Header(props) {
     [' ' + classes[color]]: color,
   });
   return (
-    <AppBar className={classes.appBar + appBarClasses}>
+    <AppBar style={{ borderRadius: '0px', zIndex: 10 }} className={classes.appBar + appBarClasses}>
       <Toolbar className={classes.container}>
         <div className={classes.flex}>
           {/* Here we create navbar brand, based on route name */}
-          <Button color='transparent' href='#' className={classes.title}>
+          <h2
+            style={{ marginLeft: '15px', fontSize: '19px', fontWeight: 400 }}
+            color='transparent'
+            className={classes.title}
+          >
             {makeBrand()}
-          </Button>
+          </h2>
         </div>
         <Hidden smDown implementation='css'>
           <AdminNavbarLinks />
