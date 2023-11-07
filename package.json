@@ -50,6 +50,7 @@
     "passport-activedirectory": "^1.0.4",
     "passport-local": "^1.0.0",
     "password-hash": "^1.2.2",
+    "perfect-scrollbar": "^1.5.5",
     "prop-types": "15.8.1",
     "react": "^16.13.1",
     "react-chartist": "0.14.4",
