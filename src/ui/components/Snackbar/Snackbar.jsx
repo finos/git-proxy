@@ -29,12 +29,21 @@ export default function Snackbar(props) {
       </IconButton>,
     ];
   }
+
+  const calculateHorizontal = () => {
+    if (place.indexOf('l') !== -1) {
+      return 'left';
+    } else if (place.indexOf('c') !== -1) {
+      return 'center';
+    }
+    return 'right';
+  };
+
   return (
     <Snack
       anchorOrigin={{
         vertical: place.indexOf('t') === -1 ? 'bottom' : 'top',
-        horizontal:
-          place.indexOf('l') !== -1 ? 'left' : place.indexOf('c') !== -1 ? 'center' : 'right',
+        horizontal: calculateHorizontal(),
       }}
       open={open}
       message={

@@ -3,6 +3,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import ListItem from '@material-ui/core/ListItem';
 import List from '@material-ui/core/List';
 import styles from '../../assets/jss/material-dashboard-react/components/footerStyle';
+import { MarkGithubIcon } from '@primer/octicons-react';
 
 const useStyles = makeStyles(styles);
 
@@ -15,12 +16,12 @@ export default function Footer(props) {
           <List className={classes.list}>
             <ListItem className={classes.inlineBlock}>
               <a
-                href='https://github.com/pGrovesy/git-proxy'
+                href='https://github.com/finos/git-proxy'
                 className={classes.block}
                 target='_blank'
                 rel='noopener noreferrer'
               >
-                Github
+                <MarkGithubIcon />
               </a>
             </ListItem>
           </List>

@@ -27,6 +27,17 @@ export default function CustomInput(props) {
   const marginTop = classNames({
     [classes.marginTop]: labelText === undefined,
   });
+
+  const generateIcon = () => {
+    if (error) {
+      return <Clear className={classes.feedback + ' ' + classes.labelRootError} />;
+    }
+    if (success) {
+      return <Check className={classes.feedback + ' ' + classes.labelRootSuccess} />;
+    }
+    return null;
+  };
+
   return (
     <FormControl
       {...formControlProps}
@@ -46,11 +57,7 @@ export default function CustomInput(props) {
         id={id}
         {...inputProps}
       />
-      {error ? (
-        <Clear className={classes.feedback + ' ' + classes.labelRootError} />
-      ) : success ? (
-        <Check className={classes.feedback + ' ' + classes.labelRootSuccess} />
-      ) : null}
+      {generateIcon()}
     </FormControl>
   );
 }
