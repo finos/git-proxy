@@ -11,16 +11,16 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-import { Navigate } from 'react-router-dom';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { getUsers } from '../../../services/user';
-import NewUser from './NewUser';
+
+import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
 
 export default function UserList(props) {
   const useStyles = makeStyles(styles);
   const classes = useStyles();
   const [data, setData] = useState([]);
-  const [auth, setAuth] = useState(true);
+  const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const navigate = useNavigate();
@@ -37,43 +37,59 @@ export default function UserList(props) {
     getUsers(setIsLoading, setData, setAuth, setIsError, query);
   }, [props]);
 
-  if (isLoading) return <div>Loading ...</div>;
-  if (isError) return <div>Something went wrong ...</div>;
-  if (!auth) return <Navigate to={{ pathname: '/login' }} />;
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) return <div>Something went wrong...</div>;
 
   return (
     <GridContainer>
-      <GridItem xs={12} sm={12} md={12}>
-        <NewUser />
-      </GridItem>
       <GridItem xs={12} sm={12} md={12}>
         <TableContainer component={Paper}>
           <Table className={classes.table} aria-label='simple table'>
             <TableHead>
               <TableRow>
-                <TableCell>Actions</TableCell>
-                <TableCell align='left'>Username</TableCell>
-                <TableCell align='left'>email</TableCell>
-                <TableCell align='left'>Git Account</TableCell>
-                <TableCell align='left'>Admin</TableCell>
+                <TableCell align='left'>Name</TableCell>
+                <TableCell align='left'>Role</TableCell>
+                <TableCell align='left'>E-mail</TableCell>
+                <TableCell align='left'>GitHub Username</TableCell>
+                <TableCell align='left'>Administrator</TableCell>
+                <TableCell align='left'></TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {data.map((row) => (
                 <TableRow key={row.username}>
+                  <TableCell align='left'>{row.displayName}</TableCell>
+                  <TableCell align='left'>{row.title}</TableCell>
+                  <TableCell align='left'>
+                    <a href={`mailto:${row.email}`}>{row.email}</a>
+                  </TableCell>
+                  <TableCell align='left'>
+                    <a
+                      href={`https://github.com/${row.gitAccount}`}
+                      rel='noreferrer'
+                      target='_blank'
+                    >
+                      {row.gitAccount}
+                    </a>
+                  </TableCell>
+                  <TableCell align='left'>
+                    {row.admin ? (
+                      <span style={{ color: 'green' }}>
+                        <Check fontSize='small' />
+                      </span>
+                    ) : (
+                      <CloseRounded color='error' />
+                    )}
+                  </TableCell>
                   <TableCell component='th' scope='row'>
                     <Button
                       variant='contained'
                       color='primary'
                       onClick={() => openUser(row.username)}
                     >
-                      Open
+                      <KeyboardArrowRight />
                     </Button>
                   </TableCell>
-                  <TableCell align='left'>{row.username}</TableCell>
-                  <TableCell align='left'>{row.email}</TableCell>
-                  <TableCell align='left'>{row.gitAccount}</TableCell>
-                  <TableCell align='left'>{row.admin.toString()}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
