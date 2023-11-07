@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 // @material-ui/core components
-import { makeStyles } from '@material-ui/core/styles';
 import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
 // core components
@@ -14,45 +13,30 @@ import CardBody from '../../components/Card/CardBody';
 import CardFooter from '../../components/Card/CardFooter';
 import axios from 'axios';
 import { Navigate } from 'react-router-dom';
+import logo from '../../assets/img/git-proxy.png';
+import { Badge, CircularProgress, Snackbar } from '@material-ui/core';
 
-const styles = {
-  cardCategoryWhite: {
-    color: 'rgba(255,255,255,.62)',
-    margin: '0',
-    fontSize: '14px',
-    marginTop: '0',
-    marginBottom: '0',
-  },
-  cardTitleWhite: {
-    color: '#FFFFFF',
-    marginTop: '0px',
-    minHeight: 'auto',
-    fontWeight: '300',
-    // eslint-disable-next-line quotes
-    fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
-    marginBottom: '3px',
-    textDecoration: 'none',
-  },
-};
-
-const useStyles = makeStyles(styles);
+const loginUrl = `${import.meta.env.VITE_API_URI}/api/auth/login`;
 
 export default function UserProfile() {
-  const classes = useStyles();
-
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [success, setSuccess] = useState(false);
+  const [gitAccountError, setGitAccountError] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   function validateForm() {
-    return username.length > 0 && password.length > 0;
+    return (
+      username.length > 0 && username.length < 100 && password.length > 0 && password.length < 200
+    );
   }
 
   function handleSubmit(event) {
+    setIsLoading(true);
     axios
       .post(
-        'http://localhost:8080/auth/login',
+        loginUrl,
         {
           username: username,
           password: password,
@@ -60,38 +44,70 @@ export default function UserProfile() {
         {
           withCredentials: true,
           headers: {
-            'Access-Control-Allow-Origin': '*',
             'Content-Type': 'application/json',
           },
         },
       )
-      .then(function (response) {
+      .then(function () {
+        window.sessionStorage.setItem('git.proxy.login', 'success');
         setMessage('Success!');
         setSuccess(true);
+        setIsLoading(false);
       })
       .catch(function (error) {
-        setMessage('Incorrect username of password');
+        if (error.response.status === 307) {
+          window.sessionStorage.setItem('git.proxy.login', 'success');
+          setGitAccountError(true);
+        } else if (error.response.status === 403) {
+          setMessage('You do not have the correct access permissions...');
+        } else {
+          setMessage('You entered an invalid username or password...');
+        }
+        setIsLoading(false);
       });
 
     event.preventDefault();
   }
 
+  if (gitAccountError) {
+    return <Navigate to={{ pathname: '/admin/profile' }} />;
+  }
   if (success) {
-    return <Navigate to={{ pathname: '/admin', state: { authed: true } }} />;
+    return <Navigate to={{ pathname: '/admin/profile', state: { authed: true } }} />;
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      <GridContainer>
-        <GridItem xs={12} sm={6} md={4}>
+      <Snackbar
+        open={message}
+        message={message}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        autoHideDuration={5000}
+        onClose={() => setMessage('')}
+      />
+      <GridContainer justify='center' style={{ minHeight: '100vh' }} alignItems='center'>
+        <GridItem xs={12} sm={10} md={6} lg={4} xl={3}>
           <Card>
             <CardHeader color='primary'>
-              <h4 className={classes.cardTitleWhite}>Login</h4>
-              <p>{message}</p>
+              <div
+                style={{
+                  textAlign: 'center',
+                  marginRight: '10px',
+                  marginTop: '12px',
+                  marginBottom: '12px',
+                }}
+              >
+                <img
+                  style={{ verticalAlign: 'middle', filter: 'brightness(0) invert(1)' }}
+                  width={'150px'}
+                  src={logo}
+                  alt='logo'
+                />
+              </div>
             </CardHeader>
             <CardBody>
               <GridContainer>
-                <GridItem xs={12} sm={12} md={3}>
+                <GridItem xs={6} sm={6} md={6}>
                   <FormControl>
                     <InputLabel>Username</InputLabel>
                     <Input
@@ -99,16 +115,17 @@ export default function UserProfile() {
                       type='username'
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
+                      autoFocus={true}
                     />
                   </FormControl>
                 </GridItem>
               </GridContainer>
               <GridContainer>
-                <GridItem xs={12} sm={12} md={3}>
+                <GridItem xs={6} sm={6} md={6}>
                   <FormControl>
                     <InputLabel>Password</InputLabel>
                     <Input
-                      id='username'
+                      id='password'
                       type='password'
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -118,11 +135,24 @@ export default function UserProfile() {
               </GridContainer>
             </CardBody>
             <CardFooter>
-              <Button block disabled={!validateForm()} type='submit'>
-                Login
-              </Button>
+              {!isLoading ? (
+                <Button color='success' block disabled={!validateForm()} type='submit'>
+                  Login
+                </Button>
+              ) : (
+                <div style={{ textAlign: 'center', width: '100%', opacity: 0.5, color: 'green' }}>
+                  <CircularProgress color='inherit' />
+                </div>
+              )}
             </CardFooter>
           </Card>
+          <div style={{ textAlign: 'center', opacity: 0.9, fontSize: '12px' }}>
+            <Badge color='error' badgeContent={'NEW'} />{' '}
+            <span style={{ paddingLeft: '20px' }}>
+              View our <a href='/admin/push'>open source activity feed</a> or{' '}
+              <a href='/admin/repo'>scroll through projects</a> we contribute to
+            </span>
+          </div>
         </GridItem>
       </GridContainer>
     </form>
