@@ -10,7 +10,6 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-import { Navigate } from 'react-router-dom';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { getPushes } from '../../../services/git-push';
 import { KeyboardArrowRight } from '@material-ui/icons';
