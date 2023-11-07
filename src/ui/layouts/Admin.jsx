@@ -39,7 +39,7 @@ export default function Admin({ ...rest }) {
   // states and functions
   const [color] = React.useState('blue');
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [user, setUser] = useState([]);
+  const [user, setUser] = useState({});
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
