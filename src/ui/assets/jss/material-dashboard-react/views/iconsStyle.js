@@ -27,7 +27,6 @@ const iconsStyle = {
     marginTop: '0px',
     minHeight: 'auto',
     fontWeight: '300',
-    // eslint-disable-next-line quotes
     fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
     marginBottom: '3px',
     textDecoration: 'none',
