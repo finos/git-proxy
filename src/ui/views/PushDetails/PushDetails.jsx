@@ -26,7 +26,7 @@ export default function Dashboard() {
   const [auth, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  const history = useNavigate();
+  const navigate = useNavigate();
 
   useEffect(() => {
     getPush(id, setIsLoading, setData, setAuth, setIsError);
@@ -34,17 +34,17 @@ export default function Dashboard() {
 
   const authorise = async () => {
     await authorisePush(id, setAuth, setIsError);
-    history.push(`/admin/push/`);
+    navigate(`/admin/push/`, { replace: true });
   };
 
   const reject = async () => {
     await rejectPush(id, setAuth, setIsError);
-    history.push(`/admin/push/`);
+    navigate(`/admin/push/`, { replace: true });
   };
 
   const cancel = async () => {
     await cancelPush(id, setAuth, setIsError);
-    history.push(`/admin/push/`);
+    navigate(`/admin/push/`, { replace: true });
   };
 
   if (isLoading) return <div>Loading ...</div>;

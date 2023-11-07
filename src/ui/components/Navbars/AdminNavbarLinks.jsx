@@ -43,13 +43,13 @@ export default function AdminNavbarLinks() {
   };
 
   const showProfile = () => {
-    navigate('/admin/profile');
+    navigate('/admin/profile', { replace: true });
   };
 
   const logout = () => {
     axios.post('/api/auth/logout').then((res) => {
       if (res.status === 204) {
-        navigate('/admin/profile');
+        navigate('/admin/profile', { replace: true });
       }
     });
   };

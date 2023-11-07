@@ -20,9 +20,9 @@ export default function Repositories(props) {
   const [auth, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
-  const history = useNavigate();
+  const navigate = useNavigate();
 
-  const openRepo = (repo) => history.push(`/admin/repo/${repo}`);
+  const openRepo = (repo) => navigate(`/admin/repo/${repo}`, { replace: true });
 
   useEffect(() => {
     const query = {};
