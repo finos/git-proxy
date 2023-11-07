@@ -1,6 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
-
 /* !
 
 =========================================================
@@ -18,9 +15,8 @@
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 */
-import Dashboard from '@material-ui/icons/Dashboard';
+
 import Person from '@material-ui/icons/Person';
-import DashboardPage from './ui/views/Dashboard/Dashboard';
 import OpenPushRequests from './ui/views/OpenPushRequests/OpenPushRequests';
 import PushDetails from './ui/views/PushDetails/PushDetails';
 import User from './ui/views/User/User';
@@ -28,19 +24,23 @@ import UserList from './ui/views/UserList/UserList';
 import RepoDetails from './ui/views/RepoDetails/RepoDetails';
 import RepoList from './ui/views/RepoList/RepoList';
 
+import { RepoIcon } from '@primer/octicons-react';
+
+import { Group, AccountCircle, Dashboard } from '@material-ui/icons';
+
 const dashboardRoutes = [
   {
-    path: '/dashboard',
-    name: 'Dashboard',
-    icon: Dashboard,
-    component: DashboardPage,
+    path: '/repo',
+    name: 'Repositories',
+    icon: RepoIcon,
+    component: RepoList,
     layout: '/admin',
     visible: true,
   },
   {
     path: '/push',
-    name: 'Open Push Requests',
-    icon: Person,
+    name: 'Dashboard',
+    icon: Dashboard,
     component: OpenPushRequests,
     layout: '/admin',
     visible: true,
@@ -55,15 +55,15 @@ const dashboardRoutes = [
   },
   {
     path: '/profile',
-    name: 'My Profile',
-    icon: Person,
+    name: 'My Account',
+    icon: AccountCircle,
     component: User,
     layout: '/admin',
     visible: true,
   },
   {
     path: '/user/:id',
-    name: 'User Details',
+    name: 'User',
     icon: Person,
     component: User,
     layout: '/admin',
@@ -78,17 +78,9 @@ const dashboardRoutes = [
     visible: false,
   },
   {
-    path: '/repo',
-    name: 'Repositories',
-    icon: Person,
-    component: RepoList,
-    layout: '/admin',
-    visible: true,
-  },
-  {
     path: '/user',
-    name: 'User List',
-    icon: Person,
+    name: 'Users',
+    icon: Group,
     component: UserList,
     layout: '/admin',
     visible: true,

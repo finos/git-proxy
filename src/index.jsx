@@ -15,7 +15,7 @@ ReactDOM.render(
     <Routes>
       <Route exact path='/admin/*' element={<Admin />} />
       <Route exact path='/login' element={<Login />} />
-      <Route exact path='/' element={<Navigate from='/' to='/login' />} />
+      <Route exact path='/' element={<Navigate from='/' to='/admin/repo' />} />
     </Routes>
   </Router>,
   document.getElementById('root'),
