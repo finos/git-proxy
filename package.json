@@ -76,7 +76,7 @@
     "husky": "^8.0.3",
     "mocha": "^10.2.0",
     "prettier": "^3.0.0",
-    "vite": "^4.4.2"
+    "vite": "^5.0.0"
   },
   "browserslist": {
     "production": [
