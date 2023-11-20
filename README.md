@@ -60,9 +60,6 @@ Clone a repository, set the remote to the Git Proxy URL and push your changes:
 $ git clone https://github.com/octocat/Hello-World.git && cd Hello-World
 # The below command is using the GitHub official CLI to fork the repo that is cloned.
 # You can also fork on the GitHub UI. For usage details on the CLI, see https://github.com/cli/cli
-# You must fork the repo into our own account to demonstrate pushing through Git Proxy since it
-# is necessary to have write access on the repo for git-proxy to function. If you do not have push
-# access, you will receive a 403 error.
 $ gh repo fork
 ✓ Created fork yourGithubUser/Hello-World
 ...
@@ -71,7 +68,7 @@ $ git push proxy master
 ```
 
 Using the default configuration, Git Proxy intercepts the push and _blocks_ it because the forked repository 
-is not listed in the authorisedList. To allow pushes to your fork, you must configure Git Proxy.
+is not listed in the `authorisedList` of repos allowed through the proxy. To allow pushes to your fork, you must configure Git Proxy.
 
 ## Documentation
 For detailed step-by-step instructions for how to install, deploy & configure Git Proxy and
