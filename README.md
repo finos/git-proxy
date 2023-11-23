@@ -67,7 +67,7 @@ $ git remote add proxy http://localhost:8000/yourGithubUser/Hello-World.git
 $ git push proxy master
 ```
 
-Using the default configuration, Git Proxy intercepts the push and _blocks_ it. To enable code pushing to your fork via Git Proxy, add your repository URL into the Git Proxy config file (`proxy.config.json`). For more information, refer to [Documentation](##Documentation).
+Using the default configuration, Git Proxy intercepts the push and _blocks_ it. To enable code pushing to your fork via Git Proxy, add your repository URL into the Git Proxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
 
 ## Documentation
 For detailed step-by-step instructions for how to install, deploy & configure Git Proxy and
