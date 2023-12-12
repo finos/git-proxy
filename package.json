@@ -13,7 +13,8 @@
     "server-test": "mocha --exit",
     "test": "mocha --exit",
     "prepare": "node ./scripts/prepare.js",
-    "lint": "eslint --fix . --ext .js,.jsx"
+    "lint": "eslint --fix . --ext .js,.jsx",
+    "gen-schema-doc": "node ./scripts/doc-schema.js"
   },
   "bin": "./index.js",
   "author": "Paul Groves",
