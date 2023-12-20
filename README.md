@@ -38,10 +38,6 @@
 
 ## About Git Proxy
 
-<style>
-div[class^="mermaid"] { min-width: 20px; max-width: 20px; }
-</style>
-
 ```mermaid
 sequenceDiagram
     actor Developer
