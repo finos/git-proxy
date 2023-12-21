@@ -6,7 +6,7 @@
     "debug.console.wordWrap": false,
     "editor.wordWrap": "off",
     "editor.codeActionsOnSave": {
-        "source.fixAll": true
+        "source.fixAll": "explicit"
     },
     "eslint.validate": [
         "javascript",
