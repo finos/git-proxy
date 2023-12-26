@@ -1,0 +1,7 @@
+{
+  "template_name": "md_nested",
+  "show_toc": false,
+  "template_md_options": {
+    "show_array_restrictions": false
+  }
+}
