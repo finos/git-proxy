@@ -11,6 +11,9 @@ Before making a contribution, please take the following steps:
 4. Fork the project repository and prepare your proposed contribution.
 5. Submit a pull request.
 
+If this is your first time contributing to open source projects on GitHub, it's recommended that you
+follow the [contribution guide for first-time contributors](https://github.com/firstcontributions/first-contributions#first-contributions).
+
 NOTE: All contributors must have a contributor license agreement (CLA) on file with FINOS before their pull requests will be merged. Please review the FINOS [contribution requirements](https://finosfoundation.atlassian.net/wiki/spaces/FINOS/pages/75530375/Contribution+Compliance+Requirements) and submit (or have your employer submit) the required CLA before submitting a pull request.
 
 ## Governance
