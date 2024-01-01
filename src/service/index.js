@@ -3,7 +3,7 @@ const session = require('express-session');
 const http = require('http');
 const cors = require('cors');
 const app = express();
-const port = 8080;
+const port = process.env.GIT_PROXY_UI_PORT || 8080;
 
 const _httpServer = http.createServer(app);
 
