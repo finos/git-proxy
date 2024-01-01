@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const routes = require('./routes');
 const config = require('../config');
 const db = require('../db');
-const proxyHttpPort = 8000;
+const proxyHttpPort = process.env.GIT_PROXY_SERVER_PORT || 8000;
 
 const options = {
   inflate: true,

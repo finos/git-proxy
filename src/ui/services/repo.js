@@ -1,7 +1,8 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import axios from 'axios';
-const baseUrl = 'http://localhost:8080/api/v1';
+const uiPort = process.env.GIT_PROXY_UI_PORT || 8080;
+const baseUrl = `http://localhost:${uiPort}/api/v1`;
 
 const config = {
   withCredentials: true,
