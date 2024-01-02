@@ -1,6 +1,6 @@
 const Step = require('../../actions').Step;
 
-const uiPort = process.env.GIT_PROXY_UI_PORT || 8080;
+const { GIT_PROXY_UI_PORT: uiPort } = require('../../../config/env').Vars;
 
 const exec = async (req, action) => {
   const step = new Step('authBlock');

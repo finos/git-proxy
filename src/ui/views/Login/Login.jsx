@@ -37,7 +37,7 @@ const styles = {
   },
 };
 
-const uiPort = process.env.GIT_PROXY_UI_PORT || 8080;
+const { GIT_PROXY_UI_PORT: uiPort } = require('../../config/env').Vars;
 const baseUrl = `http://localhost:${uiPort}`;
 
 const useStyles = makeStyles(styles);
