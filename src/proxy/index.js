@@ -4,7 +4,7 @@ const bodyParser = require('body-parser');
 const routes = require('./routes');
 const config = require('../config');
 const db = require('../db');
-const proxyHttpPort = process.env.GIT_PROXY_SERVER_PORT || 8000;
+const { GIT_PROXY_SERVER_PORT: proxyHttpPort } = require('../config/env').Vars;
 
 const options = {
   inflate: true,
@@ -33,7 +33,7 @@ const start = async () => {
   });
 
   proxyApp.listen(proxyHttpPort, () => {
-    console.log(`Listening on ${proxyHttpPort}`);
+    console.log(`!Listening on ${proxyHttpPort}`);
   });
 
   return proxyApp;
