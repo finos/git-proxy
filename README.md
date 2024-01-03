@@ -38,7 +38,7 @@
 
 ## What is Git Proxy
 
-Git Proxy is a server application that stands in the middle between a developer and a Git remote endpoint, which applies rules and workflows (configurable as `plugins`) to all incoming `git push` operations.
+Git Proxy is an application that stands between developers and a Git remote endpoint (e.g., `github.com`). It applies rules and workflows (configurable as `plugins`) to all outgoing `git push` operations to ensure they are compliant.
 
 The main goal of Git Proxy is to marry the defacto standard Open Source developer experience (git-based workflow of branching out, submitting changes and merging back) with security and legal requirements that firms have to comply with, when operating in highly regulated industries like financial services.
 
