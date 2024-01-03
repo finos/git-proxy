@@ -33,7 +33,7 @@ const start = async () => {
   });
 
   proxyApp.listen(proxyHttpPort, () => {
-    console.log(`!Listening on ${proxyHttpPort}`);
+    console.log(`Listening on ${proxyHttpPort}`);
   });
 
   return proxyApp;
