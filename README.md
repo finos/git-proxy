@@ -50,11 +50,10 @@ sequenceDiagram
     Developer->>+Git Server: git clone
     Developer->>Workstation: git remote add proxy <proxy-server>
     Developer->>+Git Proxy: git push proxy
-    Git Proxy-->>-Developer: Pending review
-    Developer->>Workstation: git commit -m 'fixing Git Proxy issues'
+    Git Proxy-->>-Developer: Failed license check
+    Developer->>Workstation: git commit -m 'fix license issue'
     Developer->>+Git Proxy: git push
-    Git Proxy-->>-Developer: Approved
-```
+    Git Proxy-->>-Git Server: Approved
 
 ## Getting Started 🚀
 
