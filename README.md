@@ -54,6 +54,7 @@ sequenceDiagram
     Developer->>Workstation: git commit -m 'fix license issue'
     Developer->>+Git Proxy: git push
     Git Proxy-->>-Git Server: Approved
+```
 
 ## Getting Started 🚀
 
