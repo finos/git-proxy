@@ -17,6 +17,19 @@ module.exports = {
     },
     'installation',
     'usage',
-    'configuration',
+    {
+      type: 'category',
+      label: 'Configuration',
+      link: {
+        type: 'generated-index',
+        title: 'Configuration',
+        slug: '/category/configuration',
+        keywords: ['config', 'configuration'],
+        image: '/img/github-mark.png',
+      },
+      collapsible: true,
+      collapsed: false,
+      items: ['configuration/overview', 'configuration/reference'],
+    },
   ],
 };

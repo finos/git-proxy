@@ -46,234 +46,40 @@ Git Proxy deploys custom push protections and policies on top of Git. It is a hi
 Git Proxy is built with a developer-first mindset. By presenting simple-to-follow remediation instructions in the CLI/Terminal, it minimises the friction of use and adoption, and keeps developers focused on what matters; committing and pushing code.
 
 
-## Installation
+## Getting Started 🚀
 
-To install Git Proxy, you must first install [Node.js](https://nodejs.org/en/download). Then, use the [npm](https://www.npmjs.com/) package manager:
-
-```bash
-npm install -g @finos/git-proxy
-```
-
-To install a specific version of Git Proxy, append the version to the end of the `install` command:
+Install & run git-proxy (requires [Nodejs](https://nodejs.org/en/download/)):
 
 ```bash
-npm install -g @finos/git-proxy@1.1.0
+$ npx -- @finos/git-proxy
 ```
 
-## Run Git Proxy ⚡
-
-Once you have followed the [installation](#installation) steps, run Git Proxy with:
+Clone a repository, set the remote to the Git Proxy URL and push your changes:
 
 ```bash
-git-proxy
+$ git clone https://github.com/octocat/Hello-World.git && cd Hello-World
+# The below command is using the GitHub official CLI to fork the repo that is cloned.
+# You can also fork on the GitHub UI. For usage details on the CLI, see https://github.com/cli/cli
+$ gh repo fork
+✓ Created fork yourGithubUser/Hello-World
+...
+$ git remote add proxy http://localhost:8000/yourGithubUser/Hello-World.git
+$ git push proxy master
 ```
 
-Alternatively, if you prefer the magic of [npx over npm](https://www.freecodecamp.org/news/npm-vs-npx-whats-the-difference/), you can run Git Proxy with:
+Using the default configuration, Git Proxy intercepts the push and _blocks_ it. To enable code pushing to your fork via Git Proxy, add your repository URL into the Git Proxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
 
-```bash
-npx --package=@finos/git-proxy@1.1.0 -- git-proxy # No installation required...
-```
+## Documentation
+For detailed step-by-step instructions for how to install, deploy & configure Git Proxy and
+customize for your environment, see the [project's documentation](https://git-proxy.finos.org/docs/):
 
-## Quickstart 🚀
-
-#### 1. Run Git Proxy with simple config
-
-Create a `proxy.config.json` in a workspace with the following:
-
-```json
-{
-    "authorisedList": [
-    {
-      "project": "<YOUR-GITHUB-USERNAME>",
-      "name": "git-proxy",
-      "url": "https://github.com/<YOUR-GITHUB-USERNAME>/git-proxy.git"
-    }
-  ],
-}
-```
-
-Then run Git Proxy and load your `proxy.config.json` configuration file from your workspace:
-
-```bash
-npx --package=@finos/git-proxy@1.1.0 -- git-proxy --config ./proxy.config.json
-```
-
-#### 2. Pick a repository
-
-Git Proxy sits between the local clone of your repository and its remote upstream. Essentially, instead of communicating directly with the **live** version of your repository, you configure your local clone to speak with Git Proxy first.
-
-For demonstration purposes, we recommend 👉 [forking Git Proxy](https://github.com/finos/git-proxy/fork) and cloning the repository to your PC:
-
-```bash
-git clone https://github.com/<YOUR-GITHUB-USERNAME>/git-proxy.git
-```
-
-Pretty meta, huh? Testing Git Proxy on Git Proxy...
-
-#### 3. Introduce Git Proxy to your clone
-
-Navigate into your test-bed repository on your PC:
-
-```bash
-cd ./git-proxy
-```
-
-By default the clone of your repository will communicate with GitHub. To change this, so that your local copy of the repository speaks with Git Proxy, run:
-
-```bash
-git remote set-url origin http://localhost:8000/<YOUR-GITHUB-USERNAME>/git-proxy.git
-```
-
-#### 4. Make some changes to the codebase
-
-Open up the `README.md` and turn this frown upside-down: ☹️
-
-Once you've cheered up our friend above, run:
-
-```bash
-git add README.md
-git commit -m "fix: turn frown upside-down"
-```
-
-####  5. Push your changes via Git Proxy
-
-```bash
-git push
-```
-
-Git Proxy will prompt the entry of your git credentials. These credentials are your GitHub username and a [Personal Access Token](https://github.com/settings/tokens). For the ability to push and pull code through Git Proxy, you will only require the `public_repo` scope.
-
-Git Proxy will reprompt you for credentials each time you push. To automatically re-use your credentials, you can run:
-
-```bash
-git config --global credential.helper osxkeychain # MacOS
-
-git config --global credential.helper manager # Windows
-
-git config --global credential.helper store # Linux
-```
-
-#### 6. Success
-
-Immediately after a push, you should receive the following message in your terminal:
-
-```bash
-remote:
-remote: Git Proxy has received your push:
-remote: 
-remote: http://localhost:8080/requests/000000__b12557    
-remote:
-```
-
-## Configuring Git Proxy ⚙️
-
-By default, Git Proxy ships with an out-of-the-box configuration.
-
-To customise your Git Proxy configuration, create a `proxy.config.json` in your directory.
-
-To specify a different file name for your Git Proxy configuration, use:
-
-```bash
-git-proxy --config ./config.json
-```
-
-Or with npx:
-
-```bash
-npx -- @finos/git-proxy --config ./config.json
-```
-
-## Know Your Configuration (KYC) ✅
-
-To check that your Git Proxy configuration is valid, run:
-
-```bash
-git-proxy --validate
-```
-
-To validate your configuration at a custom file location, run:
-
-```bash
-git-proxy --validate --config ./config.json
-```
+- [Quickstart](https://git-proxy.finos.org/docs/category/quickstart/)
+- [Installation](https://git-proxy.finos.org/docs/installation)
+- [Configuration](https://git-proxy.finos.org/docs/configuration)
 
 ## Contributing
 
-Your contributions are at the core of making this a true open source project. Any contributions you make are **greatly appreciated**.
-
-<br />
-
-<a src="https://github.com/finos/git-proxy/fork">
-<img align="right" width="300" src="https://firstcontributions.github.io/assets/Readme/fork.png" alt="fork this repository" />
-</a>
-
-#### Fork the repository
-
-Click on the **fork** button at the top of the page. This will create a copy of this repository under your GitHub account.
-
-<br />
-<br />
-
-#### Clone the repository
-
-<img align="right" width="300" src="https://firstcontributions.github.io/assets/Readme/copy-to-clipboard.png" alt="copy URL to clipboard" />
-
-**Clone** the repository to your machine. Go to the repository via your GitHub account and click on the **Code** button.
-
-Run the following command in your CLI/Terminal:
-
-```bash
-git clone https://github.com/YOUR_GITHUB_USRERNAME/git-proxy.git
-```
-
-<br />
-<br />
-
-#### Branch, code, commit and push
-
-<br />
-
-##### Branch
-
-You can start coding on the default branch on your fork of the project, commonly `master` or `main`. If you want to create a branch to clearly identify your work, run:
-
-```bash
-git checkout -b feature/name-of-the-feature-you-are-creating
-```
-
-<br />
-
-##### Code
-
-This part is up to you. Be creative and write some magical code! 🧙🪄
-
-<br />
-
-##### Commit
-
-Once you have finished making all of your improvements and changes, run the following:
-
-```bash
-git commit -m "YOUR COMMIT MESSAGE"
-```
-
-<br />
-
-##### Push
-
-Now that you've created a commit with your changes, it's time to push to GitHub:
-
-```bash
-git push
-```
-
-<br />
-
-##### Open a pull request
-
-With your changes applied to your fork of the project, it's time to [open a pull request from your repository](https://github.com/finos/git-proxy/compare)...
-
-<br />
+Your contributions are at the core of making this a true open source project. Any contributions you make are **greatly appreciated**. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more information.
 
 ## Security
 
@@ -290,4 +96,3 @@ This project is distributed under the Apache-2.0 license. See <a href="./LICENSE
 ## Contact
 
 If you have a query or require support with this project, [raise an issue](https://github.com/finos/git-proxy/issues). Otherwise, reach out to [help@finos.org](mailto:help@finos.org).
-

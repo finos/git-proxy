@@ -1,0 +1,61 @@
+---
+title: Overview
+description: How to customise push protections and policies
+---
+
+### Default configuration
+
+On installation, Git Proxy ships with an [out-of-the-box configuration](https://github.com/finos/git-proxy/blob/main/proxy.config.json). This is fine for
+demonstration purposes but is likely not what you want to deploy into your environment.
+### Customise configuration
+
+To customise your Git Proxy configuration, create a `proxy.config.json` in your current
+working directory. Git Proxy will load this file and set the values you have specified. Any
+missing sections will use the default configuration values.
+
+Here is a minimal example:
+
+```json
+{
+  "authorisedList": [
+    {
+      "project": "octocat",
+      "repo": "Hello-World",
+      "url": "https://github.com/octocat/Hello-World"
+    }
+  ]
+}
+```
+
+The full configuration reference can be found at the [Reference page](/docs/configuration/reference/).
+
+### Alter the configuration path
+
+To specify a different file name for your Git Proxy configuration, use:
+
+```bash
+git-proxy --config ./config.json
+```
+
+Or with npx:
+
+```bash
+npx -- @finos/git-proxy --config ./config.json
+```
+
+### Validate configuration
+
+To validate your Git Proxy configuration, run:
+
+```bash
+git-proxy --validate
+```
+
+To validate your configuration at a custom file location, run:
+
+```bash
+git-proxy --validate --config ./config.json
+```
+
+
+
