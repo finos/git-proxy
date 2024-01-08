@@ -36,15 +36,25 @@
 </div>
 <br />
 
-## About Git Proxy
+## What is Git Proxy
 
-<img align="right" width="550" src="./docs/img/demo.png" alt="Git Proxy Demonstration" />
+Git Proxy is an application that stands between developers and a Git remote endpoint (e.g., `github.com`). It applies rules and workflows (configurable as `plugins`) to all outgoing `git push` operations to ensure they are compliant.
 
+The main goal of Git Proxy is to marry the defacto standard Open Source developer experience (git-based workflow of branching out, submitting changes and merging back) with security and legal requirements that firms have to comply with, when operating in highly regulated industries like financial services.
 
-Git Proxy deploys custom push protections and policies on top of Git. It is a highly configurable framework allowing developers and organizations to enforce push protections relevant to their developer workflow, security posture and risk appetite.
+That said, Git Proxy can also be used on a local environment to enforce a single developer's best practices, which tends to be the easiest setup to start with and the most comfortable one to build new Git Proxy plugins.
 
-Git Proxy is built with a developer-first mindset. By presenting simple-to-follow remediation instructions in the CLI/Terminal, it minimises the friction of use and adoption, and keeps developers focused on what matters; committing and pushing code.
-
+```mermaid
+sequenceDiagram
+    actor Developer
+    Developer->>+Git Server: git clone
+    Developer->>Workstation: git remote add proxy <proxy-server>
+    Developer->>+Git Proxy: git push proxy
+    Git Proxy-->>-Developer: Failed license check
+    Developer->>Workstation: git commit -m 'fix license issue'
+    Developer->>+Git Proxy: git push
+    Git Proxy-->>-Git Server: Approved
+```
 
 ## Getting Started 🚀
 
