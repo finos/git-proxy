@@ -63,14 +63,14 @@ module.exports = {
         height: 50,
       },
     },
-    announcementBar: {
-      id: 'osff',
-      content:
-        '<a style="text-decoration: none" href="https://sched.co/1PzH1">Join us at Open Source in Finance Forum (OSFF) on November 1st in New York 🇺🇸</a>',
-      backgroundColor: '#3578E5',
-      textColor: 'white',
-      isCloseable: true,
-    },
+    // announcementBar: {
+    //   id: 'osff',
+    //   content:
+    //     '<a style="text-decoration: none" href="https://sched.co/1PzH1">Join us at Open Source in Finance Forum (OSFF) on November 1st in New York 🇺🇸</a>',
+    //   backgroundColor: '#3578E5',
+    //   textColor: 'white',
+    //   isCloseable: true,
+    // },
   },
   presets: [
     [
