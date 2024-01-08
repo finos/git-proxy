@@ -1,6 +1,7 @@
 const pushes = require('./pushes');
 const users = require('./users');
 const repo = require('./repo');
+const helper = require('./helper');
 
 module.exports.getPushes = pushes.getPushes;
 module.exports.writeAudit = pushes.writeAudit;
@@ -23,3 +24,8 @@ module.exports.removeUserCanPush = repo.removeUserCanPush;
 module.exports.removeUserCanAuthorise = repo.removeUserCanAuthorise;
 
 module.exports.deleteRepo = repo.deleteRepo;
+module.exports.isUserPushAllowed = repo.isUserPushAllowed;
+module.exports.canUserApproveRejectPushRepo = repo.canUserApproveRejectPushRepo;
+module.exports.canUserApproveRejectPush = pushes.canUserApproveRejectPush;
+module.exports.canUserCancelPush = pushes.canUserCancelPush;
+module.exports.getSessionStore = helper.getSessionStore;
