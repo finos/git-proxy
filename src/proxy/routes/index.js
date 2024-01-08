@@ -1,16 +1,21 @@
 const express = require('express');
 const proxy = require('express-http-proxy');
-// eslint-disable-next-line new-cap
-const router = express.Router();
+const router = new express.Router();
 const chain = require('../chain');
+const config = require('../../config');
+
+if (config.getAllowSelfSignedCert()) {
+  process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
+}
 
 router.use(
   '/',
-  proxy('https://github.com', {
+  proxy(config.getProxyUrl(), {
+    preserveHostHdr: false,
     filter: async function (req, res) {
       try {
-        console.log(req.url);
         console.log('recieved');
+        console.log(req.hostname);
         if (req.body && req.body.length) {
           req.rawBody = req.body.toString('utf8');
         }
@@ -45,6 +50,8 @@ router.use(
           const prefix = len.toString(16);
           const packetMessage = `00${prefix}\x02${errorMessage}\n0000`;
 
+          console.log(req.headers);
+
           res.status(200).send(packetMessage);
 
           return false;
@@ -56,14 +63,25 @@ router.use(
         return false;
       }
     },
-    userResDecorator: function (proxyRes, proxyResData) {
-      // const data = proxyResData;
-      // const ts = Date.now();
-      // fs.writeFileSync(`./.logs/responses/${ts}.${proxyRes.statusCode}.status`, proxyRes.statusCode);
-      // fs.writeFileSync(`./.logs/responses/${ts}.headers.json`, JSON.stringify(proxyRes.headers));
-      // fs.writeFileSync(`./.logs/responses/${ts}.raw`, data);
-      // fs.writeFileSync(`./.logs/responses/${ts}.txt`, data.toString('utf-8'));
-      return proxyResData;
+    proxyReqPathResolver: (req) => {
+      const url = config.getProxyUrl() + req.originalUrl;
+      console.log('Sending request to ' + url);
+      return url;
+    },
+    proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
+      return proxyReqOpts;
+    },
+
+    proxyReqBodyDecorator: function (bodyContent, srcReq) {
+      if (srcReq.method === 'GET') {
+        return '';
+      }
+      return bodyContent;
+    },
+
+    proxyErrorHandler: function (err, res, next) {
+      console.log(`ERROR=${err}`);
+      next(err);
     },
   }),
 );
