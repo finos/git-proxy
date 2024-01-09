@@ -3,7 +3,7 @@ const config = require('../../config');
 const dbConfig = config.getDatabase();
 const options = dbConfig.options;
 const connectionString = dbConfig.connectionString;
-const mognoSession = require('express-mongodb-session');
+const mongoSession = require('express-mongodb-session');
 
 let _db;
 
@@ -18,7 +18,7 @@ exports.connect = async (collectionName) => {
 };
 
 exports.getSessionStore = (session) => {
-  const MongoDBStore = mognoSession(session);
+  const MongoDBStore = mongoSession(session);
   return new MongoDBStore({
     uri: connectionString,
     collection: 'user_session',
