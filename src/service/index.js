@@ -3,28 +3,38 @@ const session = require('express-session');
 const http = require('http');
 const cors = require('cors');
 const app = express();
-const port = 8080;
+const port = 8081;
+const os = require('os');
+const osHostname = os.hostname();
+const path = require('path');
+const config = require('../config');
+const db = require('../db');
 
 const _httpServer = http.createServer(app);
 
 const corsOptions = {
-  origin: 'http://localhost:3000',
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  preflightContinue: false,
   credentials: true,
+  origin: true,
 };
 
 const start = async () => {
-  // confiugraiton of passport is async
-  // Before we can bind the routes - we need the passport
+  // configuration of passport is async
+  // Before we can bind the routes - we need the passport strategy
   const passport = await require('./passport').configure();
   const routes = require('./routes');
+  const absBuildPath = path.join(__dirname, '../../dist');
   app.use(cors(corsOptions));
+  app.set('trust proxy', 1);
   app.use(
     session({
-      secret: 'keyboard cat',
+      store: db.getSessionStore(session),
+      secret: config.getCookieSecret(),
       resave: false,
       saveUninitialized: false,
+      cookie: {
+        secure: true,
+        maxAge: config.getSessionMaxAgeHours() * 60 * 60 * 1000,
+      },
     }),
   );
   app.use(passport.initialize());
@@ -32,10 +42,15 @@ const start = async () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use('/', routes);
+  app.use('/', express.static(absBuildPath));
+  app.get('/*', (req, res) => {
+    res.sendFile(path.join(`${absBuildPath}/index.html`));
+  });
 
-  await _httpServer.listen(port);
+  _httpServer.listen(port);
 
-  console.log(`Service Listening on ${port}`);
+  // eslint-disable-next-line max-len
+  console.log(`Service Listening on os.host ${osHostname} ${port} ${__dirname} ${absBuildPath}`);
   app.emit('ready');
 
   return app;
