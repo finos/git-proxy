@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Redirect, useHistory } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
 import Card from '../../components/Card/Card';
@@ -32,7 +32,7 @@ export default function Dashboard(props) {
   const [isProfile, setIsProfile] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [gitAccount, setGitAccount] = useState('');
-  const history = useHistory();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const id = props.match.params.id;
@@ -53,14 +53,14 @@ export default function Dashboard(props) {
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
   if (!auth && window.location.pathname === '/admin/profile') {
-    return <Redirect to={{ pathname: '/login' }} />;
+    return <Navigate to='/login' />;
   }
 
   const updateProfile = async () => {
     try {
       data.gitAccount = gitAccount;
       await updateUser(data);
-      history.push(`/admin/user/${data.username}`);
+      navigate(`/admin/user/${data.username}`);
     } catch {
       setIsError(true);
     }
