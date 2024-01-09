@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
-import { useHistory } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Icon from '@material-ui/core/Icon';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
@@ -31,7 +31,7 @@ export default function Dashboard(props) {
   const [isError, setIsError] = useState(false);
   const [message, setMessage] = useState('');
   const [attestation, setAttestation] = useState(false);
-  const history = useHistory();
+  const navigate = useNavigate();
   let isUserAllowedToApprove = true;
   let isUserAllowedToReject = true;
   function setUserAllowedToApprove(userAllowedToApprove) {
@@ -48,20 +48,20 @@ export default function Dashboard(props) {
   const authorise = async (attestationData) => {
     await authorisePush(id, setMessage, setUserAllowedToApprove, attestationData);
     if (isUserAllowedToApprove) {
-      history.push('/admin/push/');
+      navigate('/admin/push/');
     }
   };
 
   const reject = async () => {
     await rejectPush(id, setMessage, setUserAllowedToReject);
     if (isUserAllowedToReject) {
-      history.push('/admin/push/');
+      navigate('/admin/push/');
     }
   };
 
   const cancel = async () => {
     await cancelPush(id, setAuth, setIsError);
-    history.push(`/admin/push/`);
+    navigate(`/admin/push/`);
   };
 
   if (isLoading) return <div>Loading...</div>;
