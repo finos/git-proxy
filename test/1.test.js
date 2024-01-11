@@ -8,6 +8,7 @@ chai.should();
 
 // Use this test as a template
 describe('init', async () => {
+  let app;
   before(async function () {
     app = await service.start();
   });

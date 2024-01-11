@@ -17,7 +17,6 @@ const configure = () => {
         ad.isUserMemberOf(profile._json.dn, 'proxy_users', (err, isMember) => {
           if (isMember) {
             profile.id = profile._json.userPrincipalName;
-          } else {
           }
           if (err) {
             return done(err);
