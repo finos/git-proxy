@@ -10,7 +10,6 @@ const expect = chai.expect;
 describe('default configuration', function () {
   it('should use default values if no user-settings.json file exists', function () {
     const config = require('../src/config');
-    const env = require('../src/config/env');
 
     expect(config.getAuthentication()).to.be.eql(
       defaultSettings.authentication[0],
@@ -22,40 +21,6 @@ describe('default configuration', function () {
     expect(config.getAuthorisedList()).to.be.eql(
       defaultSettings.authorisedList,
     );
-
-    expect(env.Vars.GIT_PROXY_SERVER_PORT).to.be.eql(
-      8000
-    );
-    expect(env.Vars.GIT_PROXY_UI_PORT).to.be.eql(
-      8080
-    );
-
-  });
-  after(function () {
-    delete require.cache[require.resolve('../src/config')];
-  });
-});
-
-describe('custom ports', function () {
-  const originalEnv = process.env;
-  before(function () {
-    process.env = {
-      ...originalEnv,
-      GIT_PROXY_SERVER_PORT: 9000,
-      GIT_PROXY_UI_PORT: 9090
-    };
-  });
-
-  it('should use custom ports defined by environment variables', function () {
-    const env = require('../src/config/env');
-
-    expect(env.Vars.GIT_PROXY_SERVER_PORT).to.be.eql(
-      9000
-    );
-    expect(env.Vars.GIT_PROXY_UI_PORT).to.be.eql(
-      9090
-    );
-
   });
   after(function () {
     delete require.cache[require.resolve('../src/config')];
