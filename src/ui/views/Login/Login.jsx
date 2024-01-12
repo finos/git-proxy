@@ -37,6 +37,9 @@ const styles = {
   },
 };
 
+const { GIT_PROXY_UI_PORT: uiPort } = require('../../config/env').Vars;
+const baseUrl = `http://localhost:${uiPort}`;
+
 const useStyles = makeStyles(styles);
 
 export default function UserProfile() {
@@ -54,7 +57,7 @@ export default function UserProfile() {
   function handleSubmit(event) {
     axios
       .post(
-        'http://localhost:8080/auth/login',
+        `${baseUrl}/auth/login`,
         {
           username: username,
           password: password,

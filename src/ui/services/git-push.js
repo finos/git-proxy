@@ -1,14 +1,15 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import axios from 'axios';
-const baseUrl = 'http://localhost:8080/api/v1';
+const { GIT_PROXY_UI_PORT: uiPort } = require('../../config/env').Vars;
+const baseUrl = `http://localhost:${uiPort}/api/v1`;
 
 const config = {
   withCredentials: true,
 };
 
 const getUser = async (setIsLoading, setData, setAuth, setIsError) => {
-  const url = new URL(`http://localhost:8080/auth/success`);
+  const url = new URL(`http://localhost:${uiPort}/auth/success`);
   await axios(url.toString(), config)
     .then((response) => {
       const data = response.data;
