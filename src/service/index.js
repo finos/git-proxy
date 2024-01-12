@@ -3,7 +3,8 @@ const session = require('express-session');
 const http = require('http');
 const cors = require('cors');
 const app = express();
-const port = 8080;
+
+const { GIT_PROXY_UI_PORT: uiPort } = require('../config/env').Vars;
 
 const _httpServer = http.createServer(app);
 
@@ -33,9 +34,9 @@ const start = async () => {
   app.use(express.urlencoded({ extended: true }));
   app.use('/', routes);
 
-  await _httpServer.listen(port);
+  await _httpServer.listen(uiPort);
 
-  console.log(`Service Listening on ${port}`);
+  console.log(`Service Listening on ${uiPort}`);
   app.emit('ready');
 
   return app;

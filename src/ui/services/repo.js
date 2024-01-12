@@ -1,7 +1,8 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import axios from 'axios';
-const baseUrl = 'http://localhost:8080/api/v1';
+const { GIT_PROXY_UI_PORT: uiPort } = require('../../config/env').Vars;
+const baseUrl = `http://localhost:${uiPort}/api/v1`;
 
 const config = {
   withCredentials: true,
