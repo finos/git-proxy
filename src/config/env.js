@@ -1,0 +1,3 @@
+const { GIT_PROXY_SERVER_PORT = 8000, GIT_PROXY_UI_PORT = 8080 } = process.env;
+
+exports.Vars = { GIT_PROXY_SERVER_PORT, GIT_PROXY_UI_PORT };
