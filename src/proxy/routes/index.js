@@ -41,10 +41,10 @@ router.use(
 
           // ERROR PCT LINE -- MOVE THIS TO HELPER
           const errorMessage = `ERR\t${message}`;
-          const len = 6 + errorMessage.length;
+          const len = 6 + (new TextEncoder().encode(errorMessage)).length;
 
           const prefix = len.toString(16);
-          const packetMessage = `00${prefix}\x02${errorMessage}\n0000`;
+          const packetMessage = `${prefix.padStart(4, "0")}\x02${errorMessage}\n0000`;
 
           res.status(200).send(packetMessage);
 
