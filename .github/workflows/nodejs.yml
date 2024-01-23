@@ -45,11 +45,24 @@ jobs:
       run: |
         npm run test-coverage-ci || echo "Silently ignoring coverage threshold limit..."
 
+    - name: Check if a valid lcov.info file is generated
+      id: check-lcov-non-empty
+      run: |
+        if [ -s "./coverage/lcov.info" ]; then
+          echo "lcov.info is not empty."
+          echo "::set-output name=isNotEmpty::true"
+        else
+          echo "lcov.info is empty."
+          echo "::set-output name=isNotEmpty::false"
+        fi
+
     - name: Install LCOV
+      if: ${{ steps.check-lcov-non-empty.outputs.isNotEmpty == 'true'}}
       run: |
         sudo apt-get update && sudo apt-get install --assume-yes lcov
 
     - name: Report code coverage
+      if: ${{ steps.check-lcov-non-empty.outputs.isNotEmpty == 'true' }}
       uses: zgosalvez/github-actions-report-lcov@v3
       with:
         coverage-files: ./coverage/lcov.info
