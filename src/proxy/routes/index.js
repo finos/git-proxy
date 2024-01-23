@@ -5,6 +5,48 @@ const proxy = require('express-http-proxy');
 const router = express.Router();
 const chain = require('../chain');
 
+/**
+ * Check whether an HTTP request matches the list of permitted User-Agent strings.
+ * @param {string} agent the User-Agent string from the http request
+ * @return {boolean} whether the User-Agent is allowed
+ */
+const allowedUserAgent = (agent) => {
+  return agent.startsWith('git/');
+};
+
+/**
+ * As part of content negotiation, the client sends an Accept header to indicate
+ * the media types it understands. This function checks whether the media type
+ * is allowed.
+ * @param {string} contentType Received media type from the request Accept header
+ * @return {boolean} Whether the media type is allowed
+ */
+const allowedContentType = (contentType) => {
+  return contentType.startsWith('application/x-git-');
+};
+
+/**
+ * Test whether the request URL is allowed for proxying.
+ * @param {string} url the request URL (path)
+ * @return {boolean} whether the URL is allowed
+ */
+const allowedUrl = (url) => {
+  const safePaths = [
+    '/info/refs?service=git-upload-pack',
+    '/info/refs?service=git-receive-pack',
+    '/git-upload-pack',
+    '/git-receive-pack',
+  ];
+  const parts = url.split('/');
+  if (
+    (parts.length === 4 || parts.length === 5) &&
+    Boolean(safePaths.find((path) => url.endsWith(path)))
+  ) {
+    return true;
+  }
+  return false;
+};
+
 router.use(
   '/',
   proxy('https://github.com', {
@@ -12,6 +54,16 @@ router.use(
       try {
         console.log(req.url);
         console.log('recieved');
+        if (
+          !(
+            allowedUserAgent(req.headers['user-agent']) &&
+            allowedUrl(req.url) &&
+            allowedContentType(req.headers['content-type'])
+          )
+        ) {
+          res.status(400).send('Invalid request received');
+          return false;
+        }
         if (req.body && req.body.length) {
           req.rawBody = req.body.toString('utf8');
         }
@@ -73,4 +125,10 @@ const handleMessage = async (message) => {
   return packetMessage;
 };
 
-module.exports = { router, handleMessage };
+module.exports = {
+  router,
+  handleMessage,
+  allowedContentType,
+  allowedUrl,
+  allowedUserAgent,
+};
