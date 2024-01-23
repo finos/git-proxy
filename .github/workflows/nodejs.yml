@@ -50,10 +50,10 @@ jobs:
       run: |
         if [ -s "./coverage/lcov.info" ]; then
           echo "lcov.info is not empty."
-          echo "::set-output name=isNotEmpty::true"
+          echo "isNotEmpty=true" >> $GITHUB_OUTPUT
         else
           echo "lcov.info is empty."
-          echo "::set-output name=isNotEmpty::false"
+          echo "isNotEmpty=false" >> $GITHUB_OUTPUT
         fi
 
     - name: Install LCOV
