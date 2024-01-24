@@ -6,43 +6,38 @@ const router = express.Router();
 const chain = require('../chain');
 
 /**
- * Check whether an HTTP request matches the list of permitted User-Agent strings.
- * @param {string} agent the User-Agent string from the http request
- * @return {boolean} whether the User-Agent is allowed
+ * Check whether an HTTP request is a Git request. It is a Git request if it
+ * matches one of the following:
+ * - the URL path is a well-known Git endpoint
+ * - the User-Agent starts with "git/"
+ * - the Accept header starts with "application/x-git-" (for specific paths)
+ * @param {express.Request} req Raw HTTP request
+ * @return {boolean} Whether the request is a Git request
  */
-const allowedUserAgent = (agent) => {
-  return agent.startsWith('git/');
-};
-
-/**
- * As part of content negotiation, the client sends an Accept header to indicate
- * the media types it understands. This function checks whether the media type
- * is allowed.
- * @param {string} contentType Received media type from the request Accept header
- * @return {boolean} Whether the media type is allowed
- */
-const allowedContentType = (contentType) => {
-  return contentType.startsWith('application/x-git-');
-};
-
-/**
- * Test whether the request URL is allowed for proxying.
- * @param {string} url the request URL (path)
- * @return {boolean} whether the URL is allowed
- */
-const allowedUrl = (url) => {
-  const safePaths = [
-    '/info/refs?service=git-upload-pack',
-    '/info/refs?service=git-receive-pack',
-    '/git-upload-pack',
-    '/git-receive-pack',
-  ];
+const validGitRequest = (req) => {
+  const { 'user-agent': agent, accept } = req.headers;
+  const { url } = req;
   const parts = url.split('/');
+  // only valid GitHub URLs are supported.
+  // url = '/{owner}/{repo}.git/{git-path}'
+  // url.split('/') = ['', '{owner}', '{repo}.git', '{git-path}']
+  if (parts.length !== 4 && parts.length !== 5) {
+    return false;
+  }
+  parts.splice(1, 2); // remove the {owner} and {repo} from the array
+  const gitPath = parts.join('/');
   if (
-    (parts.length === 4 || parts.length === 5) &&
-    Boolean(safePaths.find((path) => url.endsWith(path)))
+    gitPath === '/info/refs?service=git-upload-pack' ||
+    gitPath === '/info/refs?service=git-receive-pack'
   ) {
-    return true;
+    // https://www.git-scm.com/docs/http-protocol#_discovering_references
+    // We can only filter based on User-Agent since the Accept header is not
+    // sent in this request
+    return agent.startsWith('git/');
+  }
+  if (gitPath === '/git-upload-pack' || gitPath === '/git-receive-pack') {
+    // https://www.git-scm.com/docs/http-protocol#_uploading_data
+    return agent.startsWith('git/') && accept.startsWith('application/x-git-');
   }
   return false;
 };
@@ -52,15 +47,10 @@ router.use(
   proxy('https://github.com', {
     filter: async function (req, res) {
       try {
-        console.log(req.url);
-        console.log('recieved');
-        if (
-          !(
-            allowedUserAgent(req.headers['user-agent']) &&
-            allowedUrl(req.url) &&
-            allowedContentType(req.headers['content-type'])
-          )
-        ) {
+        console.log('request url: ', req.url);
+        console.log('host: ', req.headers.host);
+        console.log('user-agent: ', req.headers['user-agent']);
+        if (!validGitRequest(req)) {
           res.status(400).send('Invalid request received');
           return false;
         }
@@ -128,7 +118,5 @@ const handleMessage = async (message) => {
 module.exports = {
   router,
   handleMessage,
-  allowedContentType,
-  allowedUrl,
-  allowedUserAgent,
+  validGitRequest,
 };

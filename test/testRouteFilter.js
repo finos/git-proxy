@@ -1,43 +1,68 @@
 /* eslint-disable max-len */
 const chai = require('chai');
-const allowedContentType = require('../src/proxy/routes').allowedContentType;
-const allowedUrl = require('../src/proxy/routes').allowedUrl;
-const allowedUserAgent = require('../src/proxy/routes').allowedUserAgent;
+const validGitRequest = require('../src/proxy/routes').validGitRequest;
 
 chai.should();
 
 const expect = chai.expect;
 
 describe('url filters for proxying ', function () {
-  it('allowedUrls should return true for safe URLs', function () {
-    expect(
-      allowedUrl('/octocat/hello-world.git/info/refs?service=git-upload-pack'),
-    ).true;
-    expect(allowedUrl('/octocat/hello-world.git/git-upload-pack')).true;
-    expect(allowedUrl('/octocat/hello-world/info/refs?service=git-upload-pack'))
-      .true;
-    expect(allowedUrl('/octocat/hello-world/git-upload-pack')).true;
+  it('validGitRequest should return true for safe requests on expected URLs', function () {
+    [
+      '/octocat/hello-world.git/info/refs?service=git-upload-pack',
+      '/octocat/hello-world.git/info/refs?service=git-receive-pack',
+      '/octocat/hello-world.git/git-upload-pack',
+      '/octocat/hello-world.git/git-receive-pack',
+    ]
+      .map((url) => {
+        return {
+          headers: {
+            'user-agent': 'git/2.30.0',
+            accept: 'application/x-git-upload-pack-request',
+          },
+          url: url,
+        };
+      })
+      .forEach((req) => {
+        expect(validGitRequest(req)).true;
+      });
   });
 
-  it('allowedUrls should return false for unsafe URLs', function () {
-    expect(allowedUrl('/octocat/hello-world.git/foo/bar/baz')).false;
+  it('validGitRequest should return false for unsafe URLs', function () {
+    const req = {
+      headers: {
+        'user-agent': 'Mozilla/5.0',
+        accept: '*/*',
+      },
+      url: '/',
+    };
+    expect(validGitRequest(req)).false;
   });
 
-  it('allowedUserAgent should return true for safe user-agent', function () {
-    expect(allowedUserAgent('git/2.40.0')).true;
+  it('validGitRequest should return false for other user-agents', function () {
+    const req = {
+      headers: {
+        'user-agent': 'Mozilla/5.0',
+        accept: '*/*',
+      },
+      url: '/octocat/hello-world',
+    };
+    expect(validGitRequest(req)).false;
   });
 
-  it('allowedUserAgent should return false for other user-agents', function () {
-    expect(allowedUserAgent('Mozilla/5.0')).true;
-  });
-
-  it('allowedContentType should return true for safe content-type', function () {
-    expect(allowedContentType('application/x-git-upload-pack-request')).true;
-    expect(allowedContentType('application/x-git-receive-pack-request')).true;
-  });
-
-  it('allowedContentType should return false for other content-type', function () {
-    expect(allowedContentType('application/json')).false;
-    expect(allowedContentType('text/html')).true;
+  it('validGitRequest should return false for unexpected content-type on certain URLs', function () {
+    ['application/json', 'text/html', '*/*']
+      .map((accept) => {
+        return {
+          headers: {
+            'user-agent': 'git/2.30.0',
+            accept: accept,
+          },
+          url: '/octocat/hello-world.git/git-upload-pack',
+        };
+      })
+      .forEach((req) => {
+        expect(validGitRequest(req)).false;
+      });
   });
 });
