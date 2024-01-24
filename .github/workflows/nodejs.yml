@@ -63,7 +63,7 @@ jobs:
 
     - name: Report code coverage
       if: ${{ steps.check-lcov-non-empty.outputs.isNotEmpty == 'true' }}
-      uses: zgosalvez/github-actions-report-lcov@v3
+      uses: zgosalvez/github-actions-report-lcov@v4
       with:
         coverage-files: ./coverage/lcov.info
         github-token: ${{ secrets.GITHUB_TOKEN }}
