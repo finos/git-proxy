@@ -24,7 +24,6 @@ exports.createUser = async function (data) {
 };
 
 exports.updateUser = async (user) => {
-  console.log(`db.mongo.users: updating user, details->${JSON.stringify(user)}`);
   user.username = user.username.toLowerCase();
   const options = { upsert: true };
   const collection = await connect(usersCollection);
