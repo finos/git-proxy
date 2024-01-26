@@ -3,7 +3,6 @@ const plugin = require('../plugin');
 
 const pushActionChain = [
   proc.push.parsePush,
-  proc.push.checkTraining,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
   proc.push.checkAuthorEmails,
