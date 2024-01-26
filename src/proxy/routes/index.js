@@ -14,7 +14,7 @@ router.use(
     preserveHostHdr: false,
     filter: async function (req, res) {
       try {
-        console.log('recieved');
+        console.log('received');
         console.log(req.hostname);
         if (req.body && req.body.length) {
           req.rawBody = req.body.toString('utf8');
