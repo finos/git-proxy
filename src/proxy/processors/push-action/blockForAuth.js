@@ -2,9 +2,11 @@ const Step = require('../../actions').Step;
 
 const exec = async (req, action) => {
   const step = new Step('authBlock');
-  step.setAsyncBlock(
-    `\n\n\nSuccessfully pushed to Git Proxy: ${req.protocol}://${req.hostname}/admin/push/${action.id}\n\n\n`,
-  );
+
+  const message =
+    '\n\n\n' + `Git Proxy has received your push:\n\n` + `/admin/push/${action.id}` + '\n\n\n';
+  step.setAsyncBlock(message);
+
   action.addStep(step);
   return action;
 };

@@ -3,12 +3,11 @@ const session = require('express-session');
 const http = require('http');
 const cors = require('cors');
 const app = express();
-const port = 8081;
-const os = require('os');
-const osHostname = os.hostname();
 const path = require('path');
 const config = require('../config');
 const db = require('../db');
+
+const { GIT_PROXY_UI_PORT: uiPort } = require('../config/env').Vars;
 
 const _httpServer = http.createServer(app);
 
@@ -47,10 +46,9 @@ const start = async () => {
     res.sendFile(path.join(`${absBuildPath}/index.html`));
   });
 
-  _httpServer.listen(port);
+  _httpServer.listen(uiPort);
 
-  // eslint-disable-next-line max-len
-  console.log(`Service Listening on os.host ${osHostname} ${port} ${__dirname} ${absBuildPath}`);
+  console.log(`Service Listening on ${uiPort}`);
   app.emit('ready');
 
   return app;
