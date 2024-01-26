@@ -6,36 +6,45 @@ const router = express.Router();
 const chain = require('../chain');
 
 /**
- * Check whether an HTTP request is a Git request. It is a Git request if it
- * matches one of the following:
- * - the URL path is a well-known Git endpoint
- * - the User-Agent starts with "git/"
- * - the Accept header starts with "application/x-git-" (for specific paths)
- * @param {express.Request} req Raw HTTP request
- * @return {boolean} Whether the request is a Git request
+ * For a given Git HTTP request destined for a GitHub repo,
+ * remove the GitHub specific components of the URL.
+ * @param {string} url URL path of the request
+ * @return {string} Modified path which removes the {owner}/{repo} parts
  */
-const validGitRequest = (req) => {
-  const { 'user-agent': agent, accept } = req.headers;
-  const { url } = req;
+const stripGitHubFromGitPath = (url) => {
   const parts = url.split('/');
-  // only valid GitHub URLs are supported.
   // url = '/{owner}/{repo}.git/{git-path}'
   // url.split('/') = ['', '{owner}', '{repo}.git', '{git-path}']
   if (parts.length !== 4 && parts.length !== 5) {
-    return false;
+    console.error('unexpected url received: ', url);
+    return undefined;
   }
   parts.splice(1, 2); // remove the {owner} and {repo} from the array
-  const gitPath = parts.join('/');
+  return parts.join('/');
+};
+
+/**
+ * Check whether an HTTP request has the expected properties of a
+ * Git HTTP request. The URL is expected to be "sanitized", stripped of
+ * specific paths such as the GitHub {owner}/{repo}.git parts.
+ * @param {string} url Sanitized URL which only includes the path specific to git
+ * @param {*} headers Request headers (TODO: Fix JSDoc linting and refer to node:http.IncomingHttpHeaders)
+ * @return {boolean} If true, this is a valid and expected git request. Otherwise, false.
+ */
+const validGitRequest = (url, headers) => {
+  const { 'user-agent': agent, accept } = headers;
   if (
-    gitPath === '/info/refs?service=git-upload-pack' ||
-    gitPath === '/info/refs?service=git-receive-pack'
+    [
+      '/info/refs?service=git-upload-pack',
+      '/info/refs?service=git-receive-pack',
+    ].includes(url)
   ) {
     // https://www.git-scm.com/docs/http-protocol#_discovering_references
     // We can only filter based on User-Agent since the Accept header is not
     // sent in this request
     return agent.startsWith('git/');
   }
-  if (gitPath === '/git-upload-pack' || gitPath === '/git-receive-pack') {
+  if (['/git-upload-pack', '/git-receive-pack'].includes(url)) {
     // https://www.git-scm.com/docs/http-protocol#_uploading_data
     return agent.startsWith('git/') && accept.startsWith('application/x-git-');
   }
@@ -50,7 +59,8 @@ router.use(
         console.log('request url: ', req.url);
         console.log('host: ', req.headers.host);
         console.log('user-agent: ', req.headers['user-agent']);
-        if (!validGitRequest(req)) {
+        const gitPath = stripGitHubFromGitPath(req.url);
+        if (gitPath === undefined || !validGitRequest(gitPath, req.headers)) {
           res.status(400).send('Invalid request received');
           return false;
         }
@@ -119,4 +129,5 @@ module.exports = {
   router,
   handleMessage,
   validGitRequest,
+  stripGitHubFromGitPath,
 };
