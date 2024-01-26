@@ -1,7 +1,7 @@
 const proxyApp = require('express')();
 const bodyParser = require('body-parser');
 const routes = require('./routes');
-const proxyHttpPort = 8082;
+const { GIT_PROXY_SERVER_PORT: proxyHttpPort } = require('../config/env').Vars;
 
 const options = {
   inflate: true,
