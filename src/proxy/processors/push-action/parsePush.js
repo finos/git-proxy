@@ -29,7 +29,7 @@ const exec = async (req, action) => {
     }
 
     const user = action.commitData[action.commitData.length - 1].committer;
-    console.log(`Push Request recevied from user ${user}`);
+    console.log(`Push Request received from user ${user}`);
     action.user = user;
 
     step.content = {
