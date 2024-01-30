@@ -56,19 +56,12 @@ jobs:
           echo "isNotEmpty=false" >> $GITHUB_OUTPUT
         fi
 
-    - name: Install LCOV
+    - name: Upload test coverage report
       if: ${{ steps.check-lcov-non-empty.outputs.isNotEmpty == 'true'}}
-      run: |
-        sudo apt-get update && sudo apt-get install --assume-yes lcov
-
-    - name: Report code coverage
-      if: ${{ steps.check-lcov-non-empty.outputs.isNotEmpty == 'true' }}
-      uses: zgosalvez/github-actions-report-lcov@v4
+      uses: codecov/codecov-action@v3.1.5
       with:
-        coverage-files: ./coverage/lcov.info
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        update-comment: true
-
+        files: ./coverage/lcov.info
+        flags: unittests
     # - name: Exit if coverage condition not met
     #   if: ${{ steps.test.outputs.exit_code }} != 0
     #   run: exit ${{ steps.test.outputs.exit_code }}
