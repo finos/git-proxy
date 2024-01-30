@@ -9,6 +9,9 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  pull-requests: write
+
 jobs:
   build:
 
@@ -18,9 +21,6 @@ jobs:
       matrix:
         node-version: [18.x]
         mongodb-version: [4.4]
-
-    permissions:
-      pull-requests: write
 
     steps:
     - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
