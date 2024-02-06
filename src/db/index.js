@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer');
 const generator = require('generate-password');
 const passwordHash = require('password-hash');
 const validator = require('email-validator');
+
 const config = require('../config');
 
 if (config.getDatabase().type === 'fs') {
