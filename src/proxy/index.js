@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 const proxyApp = require('express')();
 const bodyParser = require('body-parser');
-const routes = require('./routes');
+const routes = require('./routes').router;
 const config = require('../config');
 const db = require('../db');
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort } = require('../config/env').Vars;
