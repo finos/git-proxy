@@ -58,7 +58,7 @@ jobs:
 
     - name: Upload test coverage report
       if: ${{ steps.check-lcov-non-empty.outputs.isNotEmpty == 'true'}}
-      uses: codecov/codecov-action@v3.1.5
+      uses: codecov/codecov-action@v4.0.1
       with:
         files: ./coverage/lcov.info
         flags: unittests
