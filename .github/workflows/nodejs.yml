@@ -61,7 +61,7 @@ jobs:
       uses: codecov/codecov-action@v4.0.1
       with:
         files: ./coverage/lcov.info
-        flags: unittests
+        token: ${{ secrets.CODECOV_TOKEN }}
     # - name: Exit if coverage condition not met
     #   if: ${{ steps.test.outputs.exit_code }} != 0
     #   run: exit ${{ steps.test.outputs.exit_code }}
