@@ -45,19 +45,7 @@ jobs:
       run: |
         npm run test-coverage-ci || echo "Silently ignoring coverage threshold limit..."
 
-    - name: Check if a valid lcov.info file is generated
-      id: check-lcov-non-empty
-      run: |
-        if [ -s "./coverage/lcov.info" ]; then
-          echo "lcov.info is not empty."
-          echo "isNotEmpty=true" >> $GITHUB_OUTPUT
-        else
-          echo "lcov.info is empty."
-          echo "isNotEmpty=false" >> $GITHUB_OUTPUT
-        fi
-
     - name: Upload test coverage report
-      if: ${{ steps.check-lcov-non-empty.outputs.isNotEmpty == 'true'}}
       uses: codecov/codecov-action@v4.0.1
       with:
         files: ./coverage/lcov.info
@@ -65,4 +53,3 @@ jobs:
     # - name: Exit if coverage condition not met
     #   if: ${{ steps.test.outputs.exit_code }} != 0
     #   run: exit ${{ steps.test.outputs.exit_code }}
-
