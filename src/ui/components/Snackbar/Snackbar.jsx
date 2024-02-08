@@ -39,8 +39,8 @@ export default function Snackbar(props) {
           place.indexOf('l') !== -1
             ? 'left'
             : place.indexOf('c') !== -1
-            ? 'center'
-            : 'right',
+              ? 'center'
+              : 'right',
       }}
       open={open}
       message={
