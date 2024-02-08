@@ -39,7 +39,7 @@ router.use(
             message = action.blockedMessage;
           }
 
-          packetMessage = handleMessage(message);
+          const packetMessage = handleMessage(message);
 
           res.status(200).send(packetMessage);
 
@@ -64,13 +64,13 @@ router.use(
   }),
 );
 
-const handleMessage = async(message) => {
+const handleMessage = async (message) => {
   const errorMessage = `ERR\t${message}`;
   const len = 6 + new TextEncoder().encode(errorMessage).length;
 
   const prefix = len.toString(16);
   const packetMessage = `${prefix.padStart(4, '0')}\x02${errorMessage}\n0000`;
-  return packetMessage
-}
+  return packetMessage;
+};
 
-module.exports = {router, handleMessage};
+module.exports = { router, handleMessage };
