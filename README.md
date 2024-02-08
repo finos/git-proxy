@@ -26,6 +26,7 @@
 [![FINOS - Incubating](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-incubating.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/incubating)
 [![NPM](https://img.shields.io/npm/v/@finos/git-proxy?colorA=00C586&colorB=000000)](https://www.npmjs.com/package/@finos/git-proxy)
 [![Build](https://img.shields.io/github/actions/workflow/status/finos/git-proxy/nodejs.yml?branch=main&label=CI&logo=github&colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/actions/workflows/nodejs.yml)
+[![codecov](https://codecov.io/gh/finos/git-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/finos/git-proxy)
 [![Documentation](https://img.shields.io/badge/_-documentation-000000?colorA=00C586&logo=docusaurus&logoColor=FFFFFF&)](https://git-proxy.finos.org)
 <br />
 [![License](https://img.shields.io/github/license/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/blob/main/LICENSE)
