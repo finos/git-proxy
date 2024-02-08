@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 const proxyApp = require('express')();
 const bodyParser = require('body-parser');
-const routes = require('./routes').router;
+const router = require('./routes').router;
 const config = require('../config');
 const db = require('../db');
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort } = require('../config/env').Vars;
@@ -14,7 +14,7 @@ const options = {
 
 // Setup the proxy middleware
 proxyApp.use(bodyParser.raw(options));
-proxyApp.use('/', routes);
+proxyApp.use('/', router);
 
 const start = async () => {
   // Check to see if the default repos are in the repo list
