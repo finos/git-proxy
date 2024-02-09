@@ -1,6 +1,6 @@
 const proxyApp = require('express')();
 const bodyParser = require('body-parser');
-const routes = require('./routes').router;
+const router = require('./routes').router;
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort } = require('../config/env').Vars;
 
 const options = {
@@ -11,7 +11,7 @@ const options = {
 
 // Setup the proxy middleware
 proxyApp.use(bodyParser.raw(options));
-proxyApp.use('/', routes);
+proxyApp.use('/', router);
 
 const start = async () => {
   proxyApp.listen(proxyHttpPort, () => {
