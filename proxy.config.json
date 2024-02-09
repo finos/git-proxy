@@ -1,8 +1,8 @@
 {
+  "proxyUrl": "https://github.com",
   "tempPassword": {
     "sendEmail": false,
-    "emailConfig": {
-    }
+    "emailConfig": {}
   },
   "authorisedList": [
     {
@@ -22,9 +22,12 @@
     {
       "type": "mongo",
       "connectionString": "mongodb://localhost:27017/gitproxy",
-      "options": {        
-        "useUnifiedTopology": true
-      },      
+      "options": {
+        "useNewUrlParser": true,
+        "useUnifiedTopology": true,
+        "sslValidate": false,
+        "ssl": true
+      },
       "enabled": false
     }
   ],
@@ -32,6 +35,56 @@
     {
       "type": "local",
       "enabled": true
+    },
+    {
+      "type": "ActiveDirectory",
+      "enabled": false,
+      "adminGroup": "",
+      "userGroup": "",
+      "adConfig": {
+        "url": "",
+        "baseDN": "",
+        "searchBase": ""
+      }
     }
-  ]
+  ],
+  "commitConfig": {
+    "author": {
+      "email": {
+        "local": {
+          "block": ""
+        }
+      },
+      "domain": {
+        "allow": ".*"
+      }
+    },
+    "message": {
+      "block": {
+        "literals": [],
+        "patterns": []
+      }
+    },
+    "diff": {
+      "block": {
+        "literals": [],
+        "patterns": [],
+        "providers": {}
+      }
+    }
+  },
+  "attestationConfig": {
+    "questions": [
+      {
+        "label": "Do you approve this contribution?",
+        "tooltip": {
+          "text": "Are you happy for this contribution to be pushed upstream?",
+          "links": []
+        }
+      }
+    ]
+  },
+  "privateOrganizations": [],
+  "urlShortener": "",
+  "contactEmail": ""
 }
