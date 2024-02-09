@@ -4,10 +4,6 @@ const router = new express.Router();
 const chain = require('../chain');
 const config = require('../../config');
 
-if (config.getAllowSelfSignedCert()) {
-  process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
-}
-
 /**
  * For a given Git HTTP request destined for a GitHub repo,
  * remove the GitHub specific components of the URL.
