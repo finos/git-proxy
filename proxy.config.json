@@ -1,5 +1,7 @@
 {
   "proxyUrl": "https://github.com",
+  "cookieSecret": "cookie secret",
+  "sessionMaxAgeHours": 12,
   "tempPassword": {
     "sendEmail": false,
     "emailConfig": {}
@@ -25,7 +27,7 @@
       "options": {
         "useNewUrlParser": true,
         "useUnifiedTopology": true,
-        "sslValidate": false,
+        "tlsAllowInvalidCertificates": false,
         "ssl": true
       },
       "enabled": false
@@ -48,6 +50,11 @@
       }
     }
   ],
+  "api": {
+    "github": {
+      "baseUrl": "https://api.github.com"
+    }
+  },
   "commitConfig": {
     "author": {
       "email": {
