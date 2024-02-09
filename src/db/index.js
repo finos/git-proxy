@@ -2,6 +2,8 @@ const config = require('../config');
 let sink;
 if (config.getDatabase().type === 'mongo') {
   sink = require('../db/mongo');
+} else if (config.getDatabase().type === 'fs') {
+  sink = require('../db/file');
 }
 
 module.exports.createUser = async (username, password, email, gitAccount, admin = false) => {
