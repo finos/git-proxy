@@ -21,7 +21,7 @@ const start = async () => {
   // Before we can bind the routes - we need the passport strategy
   const passport = await require('./passport').configure();
   const routes = require('./routes');
-  const absBuildPath = path.join(__dirname, '../../dist');
+  const absBuildPath = path.join(__dirname, '../../build');
   app.use(cors(corsOptions));
   app.set('trust proxy', 1);
   app.use(
