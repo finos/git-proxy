@@ -1,5 +1,5 @@
 const axios = require('axios');
-const thirdpartyApiConfig = require('../../config').getThirdPartyApi();
+const thirdpartyApiConfig = require('../../config').getAPIs();
 const client = axios.create({
   responseType: 'json',
   headers: {
