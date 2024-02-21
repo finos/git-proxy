@@ -32,7 +32,7 @@ describe('add new repo', async () => {
   });
 
   it('login', async function () {
-    const res = await chai.request(app).post('/auth/login').send({
+    const res = await chai.request(app).post('/api/auth/login').send({
       username: 'admin',
       password: 'admin',
     });
@@ -166,6 +166,20 @@ describe('add new repo', async () => {
     res.should.have.status(200);
     const repo = await db.getRepo('test-repo');
     repo.users.canAuthorise.length.should.equal(1);
+  });
+
+  it('Valid user push permission on repo', async function () {
+    const res = (await chai.request(app).patch('/api/v1/repo/test-repo/user/authorise'))
+      .setEncoding('Cookie', `${cookie}`)
+      .send({ username: 'u2' });
+    res.should.have.status(200);
+    const isAllowed = await db.isUserPushAllowed('test-repo', 'u2');
+    expect(isAllowed).to.be.true;
+  });
+
+  it('Invalid user push permission on repo', async function () {
+    const isAllowed = await db.isUserPushAllowed('test-repo', 'test');
+    expect(isAllowed).to.be.false;
   });
 
   after(async function () {
