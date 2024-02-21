@@ -14,7 +14,7 @@ describe('init', async () => {
   });
 
   it('should not be logged in', async function () {
-    const res = await chai.request(app).get('/auth/profile');
+    const res = await chai.request(app).get('/api/auth/profile');
 
     res.should.have.status(401);
   });
