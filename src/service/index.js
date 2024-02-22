@@ -26,7 +26,7 @@ const start = async () => {
   app.set('trust proxy', 1);
   app.use(
     session({
-      store: db.getSessionStore(session),
+      store: config.getDatabase().type === 'mongo' ? db.getSessionStore(session) : null,
       secret: config.getCookieSecret(),
       resave: false,
       saveUninitialized: false,
