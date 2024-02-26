@@ -35,9 +35,11 @@ export default function Dashboard(props) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const id = props.match.params.id;
-    if (id == null) {
+    let id = null;
+    if (!props.match) {
       setIsProfile(true);
+    } else {
+      id = props.match.params.id;
     }
 
     if (id) {
