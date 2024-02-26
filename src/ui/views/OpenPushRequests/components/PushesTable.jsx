@@ -23,7 +23,7 @@ export default function PushesTable(props) {
   const [isError, setIsError] = useState(false);
   const navigate = useNavigate();
 
-  const openPush = (push) => navigate(`admin/push/${push}`, { replace: true });
+  const openPush = (push) => navigate(`/admin/push/${push}`, { replace: true });
 
   useEffect(() => {
     const query = {};
