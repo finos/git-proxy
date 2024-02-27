@@ -33,7 +33,7 @@
 [![Contributors](https://img.shields.io/github/contributors/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/graphs/contributors)
 [![Stars](https://img.shields.io/github/stars/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/stargazers)
 [![Forks](https://img.shields.io/github/forks/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/forks)
-
+[![slack](https://img.shields.io/badge/slack-gitproxy-brightgreen.svg?logo=slack)](https://app.slack.com/client/T01E7QRQH97/C06LXNW0W76)
 </div>
 <br />
 
