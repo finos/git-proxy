@@ -1,3 +1,4 @@
+const passwordHash = require('password-hash');
 const config = require('../config');
 let sink;
 if (config.getDatabase().type === 'mongo') {
@@ -17,6 +18,7 @@ module.exports.createUser = async (username, password, email, gitAccount, admin 
 
   const data = {
     username: username,
+    password: passwordHash.generate(password),
     gitAccount: gitAccount,
     email: email,
     admin: admin,
