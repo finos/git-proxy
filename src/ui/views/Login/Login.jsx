@@ -79,13 +79,13 @@ export default function UserProfile() {
   return (
     <form onSubmit={handleSubmit}>
       <Snackbar
-        open={message}
+        open={true}
         message={message}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         autoHideDuration={5000}
         onClose={() => setMessage('')}
       />
-      <GridContainer justify='center' style={{ minHeight: '100vh' }} alignItems='center'>
+      <GridContainer justifyContent='center' style={{ minHeight: '100vh' }} alignItems='center'>
         <GridItem xs={12} sm={10} md={6} lg={4} xl={3}>
           <Card>
             <CardHeader color='primary'>
@@ -147,7 +147,7 @@ export default function UserProfile() {
             </CardFooter>
           </Card>
           <div style={{ textAlign: 'center', opacity: 0.9, fontSize: '12px' }}>
-            <Badge color='error' badgeContent={'NEW'} />{' '}
+            <Badge overlap='rectangular' color='error' badgeContent={'NEW'} />{' '}
             <span style={{ paddingLeft: '20px' }}>
               View our <a href='/admin/push'>open source activity feed</a> or{' '}
               <a href='/admin/repo'>scroll through projects</a> we contribute to

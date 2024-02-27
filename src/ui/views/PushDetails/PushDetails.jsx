@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Icon from '@material-ui/core/Icon';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
@@ -23,8 +23,8 @@ import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
 
-export default function Dashboard(props) {
-  const id = props.match.params.id;
+export default function Dashboard() {
+  const { id } = useParams();
   const [data, setData] = useState([]);
   const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
