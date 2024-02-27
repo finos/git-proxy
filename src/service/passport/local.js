@@ -1,4 +1,4 @@
-const passwordHash = require('password-hash');
+const bcrypt = require('bcrypt');
 /* eslint-disable max-len */
 const configure = async () => {
   const passport = require('passport');
@@ -13,12 +13,12 @@ const configure = async () => {
             return cb(null, false);
           }
 
-          const passwordCorrect = passwordHash.verify(password, user.password);
-
-          if (!passwordCorrect) {
-            return cb(null, false);
-          }
-          return cb(null, user);
+          bcrypt.compare(password, user.password, function (err, result) {
+            if (!result) {
+              return cb(null, false);
+            }
+            return cb(null, user);
+          });
         })
         .catch((err) => {
           return cb(err);

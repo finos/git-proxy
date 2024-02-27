@@ -5,9 +5,9 @@ name: License Validation
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   validate:
@@ -16,14 +16,14 @@ jobs:
       matrix:
         node-version: [18.x]
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: Install node-license-validator
-      run: npm i -g node-license-validator
-    - name: Validate Server
-      run: |        
-        npm install --prod
-        node-license-validator . --allow-licenses MIT Apache-2.0 BSD BSD-3-Clause ISC BSD-2-Clause Unlicense CC0-1.0 0BSD MIT/X11 MPL --allow-packages spdx-exceptions spdx-license-ids underscore precond password-hash
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Install node-license-validator
+        run: npm i -g node-license-validator
+      - name: Validate Server
+        run: |
+          npm install --prod
+          node-license-validator . --allow-licenses MIT Apache-2.0 BSD BSD-3-Clause ISC BSD-2-Clause Unlicense CC0-1.0 0BSD MIT/X11 MPL --allow-packages spdx-exceptions spdx-license-ids underscore precond
