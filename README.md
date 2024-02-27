@@ -11,8 +11,6 @@
     Deploy custom push protections and policies<br />on top of Git
     <br />
     <br />
-    <a href="https://www.npmjs.com/package/@finos/git-proxy"><strong><code>npm install @finos/git-proxy</code></strong></a>
-    <br />
     <br />
     <a href="https://git-proxy.finos.org">Docs</a>
     ·
