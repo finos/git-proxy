@@ -35,6 +35,12 @@ module.exports = {
           'aria-label': 'Read our Docs',
         },
         {
+          href: 'https://app.slack.com/client/T01E7QRQH97/C06LXNW0W76',
+          position: 'right',
+          className: 'header-slack-link',
+          'aria-label': 'Join Slack Channel',
+        },
+        {
           href: 'https://github.com/finos/git-proxy',
           position: 'right',
           className: 'header-star-link',
