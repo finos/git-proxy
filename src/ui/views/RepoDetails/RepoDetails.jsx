@@ -16,7 +16,7 @@ import { getRepo, deleteUser, deleteRepo } from '../../services/repo';
 import { makeStyles } from '@material-ui/core/styles';
 import AddUser from './Components/AddUser';
 import { Code, Delete, RemoveCircle, Visibility } from '@material-ui/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { UserContext } from '../../../context';
 
 const useStyles = makeStyles((theme) => ({
@@ -28,7 +28,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function RepoDetails(props) {
+export default function RepoDetails() {
   const navigate = useNavigate();
   const classes = useStyles();
   const [data, setData] = useState([]);
@@ -36,12 +36,11 @@ export default function RepoDetails(props) {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const { user } = useContext(UserContext);
-  const repoName = props.match.params.id;
+  const { id: repoName } = useParams();
 
   useEffect(() => {
-    const id = props.match.params.id;
-    getRepo(setIsLoading, setData, setAuth, setIsError, id);
-  }, [props]);
+    getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
+  }, []);
 
   const removeUser = async (userToRemove, action) => {
     await deleteUser(userToRemove, repoName, action);
