@@ -33,9 +33,9 @@ export default function Dashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [gitAccount, setGitAccount] = useState('');
   const navigate = useNavigate();
+  const { id } = useParams();
 
   useEffect(() => {
-    const { id } = useParams();
     if (id == null) {
       setIsProfile(true);
     }
