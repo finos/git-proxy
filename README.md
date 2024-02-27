@@ -106,4 +106,6 @@ This project is distributed under the Apache-2.0 license. See <a href="./LICENSE
 
 ## Contact
 
+Join the [Git Proxy Slack Channel on finos-lf.slack.com](https://app.slack.com/client/T01E7QRQH97/C06LXNW0W76).
+
 If you have a query or require support with this project, [raise an issue](https://github.com/finos/git-proxy/issues). Otherwise, reach out to [help@finos.org](mailto:help@finos.org).
