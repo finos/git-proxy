@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
 import Card from '../../components/Card/Card';
@@ -23,7 +23,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function Dashboard(props) {
+export default function Dashboard() {
   const classes = useStyles();
   const [data, setData] = useState([]);
   const [auth, setAuth] = useState(true);
@@ -33,9 +33,9 @@ export default function Dashboard(props) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [gitAccount, setGitAccount] = useState('');
   const navigate = useNavigate();
+  const { id } = useParams();
 
   useEffect(() => {
-    const id = props.match.params.id;
     if (id == null) {
       setIsProfile(true);
     }
@@ -48,7 +48,7 @@ export default function Dashboard(props) {
       setIsProfile(true);
       getUser(setIsLoading, setData, setAuth, setIsError);
     }
-  }, [props]);
+  }, []);
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
