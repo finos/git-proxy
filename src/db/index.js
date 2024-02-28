@@ -1,6 +1,8 @@
 const bcrypt = require('bcrypt');
 const config = require('../config');
 let sink;
+const saltRounds = 10;
+
 if (config.getDatabase().type === 'mongo') {
   sink = require('../db/mongo');
 } else if (config.getDatabase().type === 'fs') {
@@ -16,38 +18,36 @@ module.exports.createUser = async (username, password, email, gitAccount, admin 
         admin=${admin}`,
   );
 
-  await bcrypt.hash(password, 10, async function (err, hash) {
-    const data = {
-      username: username,
-      password: hash,
-      gitAccount: gitAccount,
-      email: email,
-      admin: admin,
-    };
+  if (username === undefined || username === null || username === '') {
+    const errorMessage = `username ${username} cannot be empty`;
+    throw new Error(errorMessage);
+  }
 
-    if (username === undefined || username === null || username === '') {
-      const errorMessage = `username ${username} cannot be empty`;
-      throw new Error(errorMessage);
-    }
+  if (gitAccount === undefined || gitAccount === null || gitAccount === '') {
+    const errorMessage = `GitAccount ${gitAccount} cannot be empty`;
+    throw new Error(errorMessage);
+  }
 
-    if (gitAccount === undefined || gitAccount === null || gitAccount === '') {
-      const errorMessage = `GitAccount ${gitAccount} cannot be empty`;
-      throw new Error(errorMessage);
-    }
+  if (email === undefined || email === null || email === '') {
+    const errorMessage = `Email ${email} cannot be empty`;
+    throw new Error(errorMessage);
+  }
+  const existingUser = await sink.findUser(username);
 
-    if (email === undefined || email === null || email === '') {
-      const errorMessage = `Email ${email} cannot be empty`;
-      throw new Error(errorMessage);
-    }
-    const existingUser = await sink.findUser(username);
+  if (existingUser) {
+    const errorMessage = `user ${username} already exists`;
+    throw new Error(errorMessage);
+  }
 
-    if (existingUser) {
-      const errorMessage = `user ${username} already exists`;
-      throw new Error(errorMessage);
-    }
+  const data = {
+    username: username,
+    password: await bcrypt.hash(password, saltRounds),
+    gitAccount: gitAccount,
+    email: email,
+    admin: admin,
+  };
 
-    await sink.createUser(data);
-  });
+  await sink.createUser(data);
 };
 
 // The module exports
