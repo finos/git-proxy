@@ -4,10 +4,10 @@ const http = require('http');
 const cors = require('cors');
 const app = express();
 require('dotenv').config();
-const RateLimit = require('express-rate-limit');
+const rateLimit = require('express-rate-limit');
 const csrf = require('lusca').csrf;
 
-const limiter = new RateLimit({
+const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
 });
@@ -23,6 +23,12 @@ const corsOptions = {
   credentials: true,
 };
 
+const SESSION_SECRET = process.env.SESSION_SECRET;
+
+if (!SESSION_SECRET) {
+  throw new Error('Missing SESSION_SECRET environment variable.');
+}
+
 const start = async () => {
   // configuration of passport is async
   // Before we can bind the routes - we need the passport
@@ -32,9 +38,10 @@ const start = async () => {
   app.use(limiter);
   app.use(
     session({
-      secret: process.env.SESSION_SECRET,
+      secret: SESSION_SECRET,
       resave: false,
       saveUninitialized: false,
+      cookie: { secure: true },
     }),
   );
   app.use(csrf());
