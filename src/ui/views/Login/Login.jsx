@@ -79,7 +79,7 @@ export default function UserProfile() {
   return (
     <form onSubmit={handleSubmit}>
       <Snackbar
-        open={message}
+        open={!!message}
         message={message}
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         autoHideDuration={5000}

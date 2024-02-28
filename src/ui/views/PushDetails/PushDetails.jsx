@@ -114,7 +114,7 @@ export default function Dashboard() {
   return (
     <div>
       <Snackbar
-        open={message}
+        open={!!message}
         message={message}
         anchorOrigin={{
           vertical: 'top',
