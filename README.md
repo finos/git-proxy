@@ -73,7 +73,8 @@ $ gh repo fork
 ✓ Created fork yourGithubUser/Hello-World
 ...
 $ git remote add proxy http://localhost:8000/yourGithubUser/Hello-World.git
-$ git push proxy master
+# This fetches the repository's default branch and pushes it (https://stackoverflow.com/a/44750379).
+$ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
 ```
 
 Using the default configuration, Git Proxy intercepts the push and _blocks_ it. To enable code pushing to your fork via Git Proxy, add your repository URL into the Git Proxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
