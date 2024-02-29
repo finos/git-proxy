@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import PerfectScrollbar from 'perfect-scrollbar';
 import 'perfect-scrollbar/css/perfect-scrollbar.css';
 import { makeStyles } from '@material-ui/core/styles';
@@ -51,6 +51,8 @@ export default function Admin({ ...rest }) {
     }
   };
   // initialize and destroy the PerfectScrollbar plugin
+
+  const { id } = useParams();
   React.useEffect(() => {
     async function loadUser() {
       if (navigator.platform.indexOf('Win') > -1) {
@@ -79,7 +81,7 @@ export default function Admin({ ...rest }) {
       }
       window.removeEventListener('resize', resizeFunction);
     };
-  }, [mainPanel]);
+  }, [id]);
   return (
     <UserContext.Provider value={{ user, setUser }}>
       <div className={classes.wrapper}>
