@@ -23,12 +23,6 @@ const corsOptions = {
   credentials: true,
 };
 
-const SESSION_SECRET = process.env.SESSION_SECRET;
-
-if (!SESSION_SECRET) {
-  throw new Error('Missing SESSION_SECRET environment variable.');
-}
-
 const start = async () => {
   // configuration of passport is async
   // Before we can bind the routes - we need the passport
@@ -38,10 +32,9 @@ const start = async () => {
   app.use(limiter);
   app.use(
     session({
-      secret: SESSION_SECRET,
+      secret: 'keyboard cat',
       resave: false,
       saveUninitialized: false,
-      cookie: { secure: true },
     }),
   );
   app.use(csrf());
