@@ -8,17 +8,17 @@ const configure = async () => {
   passport.use(
     new Strategy((username, password, cb) => {
       db.findUser(username)
-        .then((user) => {
+        .then(async (user) => {
           if (!user) {
             return cb(null, false);
           }
 
-          bcrypt.compare(password, user.password, function (err, result) {
-            if (!result) {
-              return cb(null, false);
-            }
-            return cb(null, user);
-          });
+          const passwordCorrect = await bcrypt.compare(password, user.password);
+          if (!passwordCorrect) {
+            return cb(null, false);
+          }
+
+          return cb(null, user);
         })
         .catch((err) => {
           return cb(err);

@@ -13,41 +13,39 @@ module.exports.createUser = async (username, password, email, gitAccount, admin 
         user=${username},
         gitAccount=${gitAccount}
         email=${email},
-        admin=${admin}`,
+        admin=${admin}`
   );
 
-  await bcrypt.hash(password, 10, async function (err, hash) {
-    const data = {
-      username: username,
-      password: hash,
-      gitAccount: gitAccount,
-      email: email,
-      admin: admin,
-    };
+  const data = {
+    username: username,
+    password: bcrypt.hash(password, 10),
+    gitAccount: gitAccount,
+    email: email,
+    admin: admin,
+  };
 
-    if (username === undefined || username === null || username === '') {
-      const errorMessage = `username ${username} cannot be empty`;
-      throw new Error(errorMessage);
-    }
+  if (username === undefined || username === null || username === '') {
+    const errorMessage = `username ${username} cannot be empty`;
+    throw new Error(errorMessage);
+  }
 
-    if (gitAccount === undefined || gitAccount === null || gitAccount === '') {
-      const errorMessage = `GitAccount ${gitAccount} cannot be empty`;
-      throw new Error(errorMessage);
-    }
+  if (gitAccount === undefined || gitAccount === null || gitAccount === '') {
+    const errorMessage = `GitAccount ${gitAccount} cannot be empty`;
+    throw new Error(errorMessage);
+  }
 
-    if (email === undefined || email === null || email === '') {
-      const errorMessage = `Email ${email} cannot be empty`;
-      throw new Error(errorMessage);
-    }
-    const existingUser = await sink.findUser(username);
+  if (email === undefined || email === null || email === '') {
+    const errorMessage = `Email ${email} cannot be empty`;
+    throw new Error(errorMessage);
+  }
+  const existingUser = await sink.findUser(username);
 
-    if (existingUser) {
-      const errorMessage = `user ${username} already exists`;
-      throw new Error(errorMessage);
-    }
+  if (existingUser) {
+    const errorMessage = `user ${username} already exists`;
+    throw new Error(errorMessage);
+  }
 
-    await sink.createUser(data);
-  });
+  await sink.createUser(data);
 };
 
 // The module exports
