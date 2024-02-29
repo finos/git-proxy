@@ -1,8 +1,0 @@
-{
-  "ignore": [
-    {
-      "id": "CVE-2023-42282",
-      "reason": "The version used for the ip library is 2.0.0, and CVE affects version 1.1.8 or earlier; false positive"
-    }
-  ]
-}
