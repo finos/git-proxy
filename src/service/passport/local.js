@@ -1,4 +1,4 @@
-const passwordHash = require('password-hash');
+const bcrypt = require('bcrypt');
 /* eslint-disable max-len */
 const configure = async () => {
   const passport = require('passport');
@@ -8,12 +8,12 @@ const configure = async () => {
   passport.use(
     new Strategy((username, password, cb) => {
       db.findUser(username)
-        .then((user) => {
+        .then(async (user) => {
           if (!user) {
             return cb(null, false);
           }
 
-          const passwordCorrect = passwordHash.verify(password, user.password);
+          const passwordCorrect = await bcrypt.compare(password, user.password);
 
           if (!passwordCorrect) {
             return cb(null, false);

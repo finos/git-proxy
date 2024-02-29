@@ -1,7 +1,7 @@
 // Import the dependencies for testing
 const chai = require('chai');
+const bcrypt = require('bcrypt');
 const chaiHttp = require('chai-http');
-const passwordHash = require('password-hash');
 const db = require('../src/db');
 const service = require('../src/service');
 
@@ -63,17 +63,21 @@ describe('user creation', async () => {
     // we don't know the users tempoary password - so force update a
     // pasword
     const user = await db.findUser('login-test-user');
-    user.password = passwordHash.generate('test1234');
-    await db.updateUser(user);
 
-    const res = await chai.request(app).post('/api/auth/login').send({
-      username: 'login-test-user',
-      password: 'test1234',
+    await bcrypt.hash('test1234', 10, async function (err, hash) {
+      user.password = hash;
+
+      await db.updateUser(user);
+
+      const res = await chai.request(app).post('/api/auth/login').send({
+        username: 'login-test-user',
+        password: 'test1234',
+      });
+
+      expect(res).to.have.cookie('connect.sid');
+      res.should.have.status(200);
+      setCookie(res);
     });
-
-    expect(res).to.have.cookie('connect.sid');
-    res.should.have.status(200);
-    setCookie(res);
   });
 
   it('change the password', async function () {
