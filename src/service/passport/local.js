@@ -14,6 +14,7 @@ const configure = async () => {
           }
 
           const passwordCorrect = await bcrypt.compare(password, user.password);
+
           if (!passwordCorrect) {
             return cb(null, false);
           }
