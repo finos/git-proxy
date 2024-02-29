@@ -70,6 +70,7 @@ GetGridContainerLayOut.propTypes = {
 function GetGridContainerLayOut(props) {
   return (
     <GridContainer>
+      {props.repoButton}
       <GridItem xs={12} sm={12} md={12}>
         <TableContainer
           style={{ background: 'transparent', borderRadius: '5px', border: '1px solid #d0d7de' }}
@@ -84,9 +85,6 @@ function GetGridContainerLayOut(props) {
             </TableBody>
           </Table>
         </TableContainer>
-      </GridItem>
-      <GridItem xs={12} sm={12} md={12}>
-        {props.repoButton}
       </GridItem>
     </GridContainer>
   );
