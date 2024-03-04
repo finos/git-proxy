@@ -1,6 +1,7 @@
 const express = require('express');
 const router = new express.Router();
 const db = require('../../db');
+const logger = require("/src/logs/logger");
 
 router.get('/', async (req, res) => {
   if (req.user) {
@@ -29,7 +30,7 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   const username = req.params.id;
-  console.log(`Retrieving details for user: ${username}`);
+  logger.info(`Retrieving details for user: ${username}`);
   if (!req.user) {
     res.status(401).send({
       message: 'not logged in',

@@ -1,5 +1,6 @@
 const proc = require('./processors');
 const plugin = require('../plugin');
+const logger = require("/src/logs/logger");
 
 const pushActionChain = [
   proc.push.parsePush,
@@ -51,10 +52,10 @@ const getChain = async (action) => {
     const loader = await plugin.defaultLoader;
     const pluginActions = loader.plugins;
     if (!pluginsLoaded && pluginActions.length > 0) {
-      console.log(`Found ${pluginActions.length}, inserting into proxy chain`);
+      logger.info(`Found ${pluginActions.length}, inserting into proxy chain`);
       for (const pluginAction of pluginActions) {
         if (pluginAction instanceof plugin.ActionPlugin) {
-          console.log(`Inserting plugin ${pluginAction} into chain`);
+          logger.info(`Inserting plugin ${pluginAction} into chain`);
           // insert custom functions after parsePush but before other actions
           pushActionChain.splice(1, 0, pluginAction.exec);
         }

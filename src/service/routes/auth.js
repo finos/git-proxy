@@ -5,6 +5,7 @@ const db = require('../../db');
 const passportType = passport.type;
 const generator = require('generate-password');
 const passwordHash = require('password-hash');
+const logger = require("/src/logs/logger");
 
 router.post('/login', passport.authenticate(passportType), (req, res) => {
   res.send({
@@ -78,7 +79,7 @@ router.post('/profile', async (req, res) => {
         numbers: true,
       });
 
-      console.log(JSON.stringify(req.body));
+      logger.info(JSON.stringify(req.body));
 
       const newUser = await db.createUser(
         req.body.username,
@@ -90,7 +91,7 @@ router.post('/profile', async (req, res) => {
 
       res.send(newUser);
     } catch (e) {
-      console.log(e);
+      logger.error(e);
       res
         .status(500)
         .send({

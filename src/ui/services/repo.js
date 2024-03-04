@@ -1,6 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import axios from 'axios';
+import logger from "/src/logs/logger";
 const { GIT_PROXY_UI_PORT: uiPort } = require('../../config/env').Vars;
 const baseUrl = `http://localhost:${uiPort}/api/v1`;
 
@@ -61,7 +62,7 @@ const addUser = async (repoName, user, action) => {
     .patch(url, data, { withCredentials: true })
     .then(() => {})
     .catch((error) => {
-      console.log(error.response.data.message);
+      logger.error(error.response.data.message);
       throw error;
     });
 };
@@ -73,7 +74,7 @@ const deleteUser = async (user, repoName, action) => {
     .delete(url, { withCredentials: true })
     .then(() => {})
     .catch((error) => {
-      console.log(error.response.data.message);
+      logger.error(error.response.data.message);
       throw error;
     });
 };

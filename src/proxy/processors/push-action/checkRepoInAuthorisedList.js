@@ -1,33 +1,35 @@
 const Step = require('../../actions').Step;
 const db = require('../../../db');
+const logger = require("/src/logs/logger");
 
 // Execute if the repo is approved
 const exec = async (req, action, authorisedList = db.getRepos) => {
   const step = new Step('checkRepoInAuthorisedList');
 
   const list = await authorisedList();
-  console.log(list);
+  logger.info(list);
 
   const found = list.find((x) => {
     const targetName = action.repo.replace('.git', '');
     const allowedName = `${x.project}/${x.name}`.replace('.git', '');
-    console.log(`${targetName} = ${allowedName}`);
+    logger.info(`${targetName} = ${allowedName}`);
     return targetName === allowedName;
   });
 
-  console.log(found);
+  logger.info(found);
 
   if (!found) {
-    console.log('not found');
+    logger.info('not found');
     step.error = true;
     step.log(`repo ${action.repo} is not in the authorisedList, ending`);
-    console.log('setting error');
+    logger.info('setting error');
     step.setError(`Rejecting repo ${action.repo} not in the authorisedList`);
+    logger.error(`Rejecting repo ${action.repo} not in the authorisedList`);
     action.addStep(step);
     return action;
   }
 
-  console.log('found');
+  logger.info('found');
   step.log(`repo ${action.repo} is in the authorisedList`);
   action.addStep(step);
   return action;

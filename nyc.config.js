@@ -1,3 +1,4 @@
+const logger = require("/src/logs/logger");
 const opts = {
   branches: 80,
   lines: 80,
@@ -5,5 +6,5 @@ const opts = {
   statements: 80,
 };
 
-console.log('nyc config: ', opts);
+logger.info('nyc config: ', opts);
 module.exports = opts;

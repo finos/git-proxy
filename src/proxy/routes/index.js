@@ -5,6 +5,8 @@ const proxy = require('express-http-proxy');
 const router = express.Router();
 const chain = require('../chain');
 
+const logger = require('/src/logs/logger');
+
 /**
  * For a given Git HTTP request destined for a GitHub repo,
  * remove the GitHub specific components of the URL.
@@ -56,9 +58,9 @@ router.use(
   proxy('https://github.com', {
     filter: async function (req, res) {
       try {
-        console.log('request url: ', req.url);
-        console.log('host: ', req.headers.host);
-        console.log('user-agent: ', req.headers['user-agent']);
+        logger.info('request url: ', req.url);
+        logger.log('host: ', req.headers.host);
+        logger.info('user-agent: ', req.headers['user-agent']);
         const gitPath = stripGitHubFromGitPath(req.url);
         if (gitPath === undefined || !validGitRequest(gitPath, req.headers)) {
           res.status(400).send('Invalid request received');
@@ -69,7 +71,7 @@ router.use(
         }
 
         const action = await chain.exec(req, res);
-        console.log('action processed');
+        logger.info('action processed');
 
         if (action.error || action.blocked) {
           res.set('content-type', 'application/x-git-receive-pack-result');
@@ -85,7 +87,7 @@ router.use(
 
           if (action.error) {
             message = action.errorMessage;
-            console.error(message);
+            logger.error(message);
           }
           if (action.blocked) {
             message = action.blockedMessage;
@@ -100,7 +102,7 @@ router.use(
 
         return true;
       } catch (e) {
-        console.error(e);
+        logger.error(e);
         return false;
       }
     },

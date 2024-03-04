@@ -1,10 +1,11 @@
+const logger = require("/src/logs/logger");
 const connect = require('./helper').connect;
 const cnName = 'repos';
 
 exports.getRepos = async (query = {}) => {
   const collection = await connect(cnName);
   const result = await collection.find().toArray();
-  console.log(JSON.stringify(result));
+  logger.info(JSON.stringify(result));
   return result;
 };
 

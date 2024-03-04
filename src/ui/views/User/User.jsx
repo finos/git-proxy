@@ -18,6 +18,7 @@ import Checkbox from '@material-ui/core/Checkbox';
 import FormLabel from '@material-ui/core/FormLabel';
 import { getUser } from '../../services/user.js';
 import { makeStyles } from '@material-ui/core/styles';
+import logger from "/src/logs/logger";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -41,7 +42,7 @@ export default function Dashboard() {
     if (id) {
       getUser(setIsLoading, setData, setAuth, setIsError, id);
     } else {
-      console.log('getting user data');
+      logger.info('getting user data');
       getUser(setIsLoading, setData, setAuth, setIsError);
     }
   }, [id]);
@@ -50,7 +51,7 @@ export default function Dashboard() {
   if (isError) return <div>Something went wrong ...</div>;
   if (!auth) return <Navigate to={{ pathname: '/login' }} />;
 
-  console.log(data);
+  logger.info(data);
 
   return (
     <form className={classes.root} noValidate autoComplete="off">

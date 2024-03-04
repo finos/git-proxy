@@ -1,6 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import axios from 'axios';
+import logger from "/src/logs/logger";
 const { GIT_PROXY_UI_PORT: uiPort } = require('../../config/env').Vars;
 const baseUrl = `http://localhost:${uiPort}/api/v1`;
 
@@ -21,13 +22,13 @@ const getUser = async (
     url = `${baseUrl}/api/v1/user/${id}`;
   }
 
-  console.log(url);
+  logger.info(url);
 
   await axios(url, config)
     .then((response) => {
       const data = response.data;
       setData(data);
-      console.log(data);
+      logger.info(data);
       setIsLoading(false);
     })
     .catch((error) => {
@@ -38,13 +39,13 @@ const getUser = async (
 };
 
 const createUser = async (data) => {
-  console.log(data);
+  logger.info(data);
   const url = new URL(`${baseUrl}/auth/profile`);
-  await await axios
+  await axios
     .post(url, data, { withCredentials: true })
     .then(() => {})
     .catch((error) => {
-      console.log(error.response.data.message);
+      logger.log(error.response.data.message);
       throw error;
     });
 };

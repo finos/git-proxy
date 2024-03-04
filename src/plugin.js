@@ -1,3 +1,4 @@
+const logger = require("/src/logs/logger");
 const path = require('path');
 const lpModule = import('load-plugin');
 ('use strict');
@@ -36,7 +37,7 @@ class PluginLoader {
     }
     Promise.all(modulePromises).then((vals) => {
       const modules = vals;
-      console.log(`Found ${modules.length} plugin modules`);
+      logger.info(`Found ${modules.length} plugin modules`);
       const pluginObjPromises = [];
       for (const mod of modules) {
         pluginObjPromises.push(this._castToPluginObjects(mod));
@@ -45,7 +46,7 @@ class PluginLoader {
         for (const pluginObjs of vals) {
           this.plugins = this.plugins.concat(pluginObjs);
         }
-        console.log(`Loaded ${this.plugins.length} plugins`);
+        logger.info(`Loaded ${this.plugins.length} plugins`);
       });
     });
   }

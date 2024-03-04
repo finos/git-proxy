@@ -1,6 +1,7 @@
 const fs = require('fs');
 
 const defaultSettings = require('../../proxy.config.json');
+const logger = require("/src/logs/logger");
 const userSettingsPath = require('./file').configFile;
 
 let _userSettings = null;
@@ -65,9 +66,9 @@ const getAuthentication = () => {
 
 // Log configuration to console
 const logConfiguration = () => {
-  console.log(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
-  console.log(`data sink = ${JSON.stringify(getDatabase())}`);
-  console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
+  logger.info(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
+  logger.info(`data sink = ${JSON.stringify(getDatabase())}`);
+  logger.info(`authentication = ${JSON.stringify(getAuthentication())}`);
 };
 
 // logConfiguration();

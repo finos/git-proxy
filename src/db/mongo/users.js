@@ -1,4 +1,5 @@
 /* eslint-disable max-len */
+const logger = require("/src/logs/logger");
 const connect = require('./helper').connect;
 const usersCollection = 'users';
 
@@ -18,7 +19,7 @@ exports.deleteUser = async function (username) {
 };
 
 exports.createUser = async function (data) {
-  console.log(JSON.stringify(data));
+  logger.info(JSON.stringify(data));
   const collection = await connect(usersCollection);
   const result = await collection.insertOne(data);
   return result;

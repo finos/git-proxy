@@ -4,6 +4,7 @@ const passwordHash = require('password-hash');
 const validator = require('email-validator');
 
 const config = require('../config');
+const logger = require("/src/logs/logger");
 
 if (config.getDatabase().type === 'fs') {
   sink = require('../db/file');
@@ -20,7 +21,7 @@ module.exports.createUser = async (
   gitAccount,
   admin = false,
 ) => {
-  console.log(
+  logger.info(
     `creating user
         user=${username},
         gitAccount=${gitAccount}
@@ -75,10 +76,10 @@ const wrapedSendMail = function (data, password) {
 
     transporter.sendMail(mailOptions, function (error, info) {
       if (error) {
-        console.log(`error is ${error}`);
+        logger.error(error);
         reject(error);
       } else {
-        console.log('Email sent: ' + info.response);
+        logger.info('Email sent: ' + info.response);
         resolve(true);
       }
     });

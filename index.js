@@ -39,12 +39,13 @@ if (argv.v) {
 
   validate(config, schema, { required: true, throwError: true });
 
-  console.log(`${configFile} is valid`);
+  logger.info(`${configFile} is valid`);
   process.exit(0);
 }
 
 const proxy = require('./src/proxy');
 const service = require('./src/service');
+const logger = require("/src/logs/logger");
 
 proxy.start();
 service.start();
