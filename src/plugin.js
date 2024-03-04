@@ -1,4 +1,4 @@
-const logger = require("/src/logs/logger");
+const logger = require('/src/logs/logger');
 const path = require('path');
 const lpModule = import('load-plugin');
 ('use strict');

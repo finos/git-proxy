@@ -1,6 +1,6 @@
 const Step = require('../../actions').Step;
 const db = require('../../../db');
-const logger = require("/src/logs/logger");
+const logger = require('/src/logs/logger');
 
 // Execute if the repo is approved
 const exec = async (req, action, authorisedList = db.getRepos) => {

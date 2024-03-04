@@ -5,7 +5,7 @@ const db = require('../../db');
 const passportType = passport.type;
 const generator = require('generate-password');
 const passwordHash = require('password-hash');
-const logger = require("/src/logs/logger");
+const logger = require('/src/logs/logger');
 
 router.post('/login', passport.authenticate(passportType), (req, res) => {
   res.send({

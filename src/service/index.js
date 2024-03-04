@@ -2,7 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const http = require('http');
 const cors = require('cors');
-const logger = require("/src/logs/logger");
+const logger = require('/src/logs/logger');
 const app = express();
 
 const { GIT_PROXY_UI_PORT: uiPort } = require('../config/env').Vars;

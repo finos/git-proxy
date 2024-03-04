@@ -45,7 +45,7 @@ if (argv.v) {
 
 const proxy = require('./src/proxy');
 const service = require('./src/service');
-const logger = require("/src/logs/logger");
+const logger = require('/src/logs/logger');
 
 proxy.start();
 service.start();

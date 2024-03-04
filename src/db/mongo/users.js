@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-const logger = require("/src/logs/logger");
+const logger = require('/src/logs/logger');
 const connect = require('./helper').connect;
 const usersCollection = 'users';
 

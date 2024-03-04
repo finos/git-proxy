@@ -1,7 +1,7 @@
 const express = require('express');
 const router = new express.Router();
 const db = require('../../db');
-const logger = require("/src/logs/logger");
+const logger = require('/src/logs/logger');
 
 router.get('/', async (req, res) => {
   if (req.user) {
