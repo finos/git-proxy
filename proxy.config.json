@@ -60,10 +60,10 @@
       "email": {
         "local": {
           "block": ""
+        },
+        "domain": {
+          "allow": ".*"
         }
-      },
-      "domain": {
-        "allow": ".*"
       }
     },
     "message": {
