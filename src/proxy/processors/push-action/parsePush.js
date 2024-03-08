@@ -91,17 +91,17 @@ const getCommitData = (contents) => {
         .join(' ');
       console.log({ message });
 
-      const commitTimestamp = committer.split(' ')[2];
+      const commitTimestamp = committer.split(' ').reverse()[1];
       console.log({ commitTimestamp });
 
-      const authorEmail = author.split(' ')[1].slice(1, -1);
+      const authorEmail = author.split(' ').reverse()[2].slice(1, -1);
       console.log({ authorEmail });
 
       console.log({
         tree,
         parent,
-        author: author.split(' ')[0],
-        committer: committer.split(' ')[0],
+        author: author.split('<')[0].trim(),
+        committer: committer.split('<')[0].trim(),
         commitTimestamp,
         message,
         authorEmail,
