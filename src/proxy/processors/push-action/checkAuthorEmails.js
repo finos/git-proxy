@@ -8,13 +8,19 @@ function isEmailAllowed(email) {
   console.log({ emailLocal, emailDomain });
 
   // E-mail address is not a permissible domain name
-  if (!emailDomain.match(new RegExp(commitConfig.author.email.domain.allow, 'g'))) {
+  if (
+    commitConfig.author.email.domain.allow &&
+    !emailDomain.match(new RegExp(commitConfig.author.email.domain.allow, 'g'))
+  ) {
     console.log('Bad e-mail address domain...');
     return false;
   }
 
   // E-mail username is not a permissible form
-  if (emailLocal.match(new RegExp(commitConfig.author.email.local.block, 'g'))) {
+  if (
+    commitConfig.author.email.local.block &&
+    emailLocal.match(new RegExp(commitConfig.author.email.local.block, 'g'))
+  ) {
     console.log('Bad e-mail address username...');
     return false;
   }
