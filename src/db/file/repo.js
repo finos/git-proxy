@@ -139,3 +139,18 @@ exports.deleteRepo = async (name) => {
     });
   });
 };
+
+exports.isUserPushAllowed = async (name, user) => {
+  name = name.toLowerCase();
+  return new Promise(async (resolve, reject) => {
+    const repo = await exports.getRepo(name);
+    console.log(repo.users.canPush);
+    console.log(repo.users.canAuthorise);
+
+    if (repo.users.canPush.includes(user) || repo.users.canAuthorise.includes(user)) {
+      resolve(true);
+    } else {
+      resolve(false);
+    }
+  });
+};
