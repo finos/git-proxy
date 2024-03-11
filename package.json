@@ -58,15 +58,15 @@
     "react-chartist": "0.14.4",
     "react-dom": "^16.13.1",
     "react-html-parser": "^2.0.2",
-    "react-router-dom": "6.22.2",
+    "react-router-dom": "6.22.3",
     "uuid": "^9.0.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.22.9",
     "@babel/preset-react": "^7.22.5",
-    "@commitlint/cli": "^18.0.0",
-    "@commitlint/config-conventional": "^18.0.0",
+    "@commitlint/cli": "^19.0.0",
+    "@commitlint/config-conventional": "^19.0.0",
     "@vitejs/plugin-react": "^4.0.2",
     "chai": "^4.2.0",
     "eslint": "^8.0.0",
