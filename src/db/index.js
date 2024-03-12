@@ -18,7 +18,7 @@ module.exports.createUser = async (username, password, email, gitAccount, admin 
 
   const data = {
     username: username,
-    password: bcrypt.hash(password, 10),
+    password: await bcrypt.hash(password, 10),
     gitAccount: gitAccount,
     email: email,
     admin: admin,
