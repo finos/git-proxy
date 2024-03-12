@@ -63,12 +63,11 @@ router.get('failed', (req, res) => {
 });
 
 router.post('/logout', (req, res, next) => {
-  req.logout(function (err) {
+  req.logout(req.user, (err) => {
     if (err) return next(err);
   });
-  req.session.destroy();
   res.clearCookie('connect.sid');
-  res.status(204).end();
+  res.send({ isAuth: req.isAuthenticated(), user: req.user });
 });
 
 router.get('/profile', async (req, res) => {

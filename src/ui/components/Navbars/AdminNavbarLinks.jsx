@@ -47,11 +47,14 @@ export default function AdminNavbarLinks() {
   };
 
   const logout = () => {
-    axios.post('/api/auth/logout').then((res) => {
-      if (res.status === 204) {
-        navigate('/admin/profile', { replace: true });
-      }
-    });
+    axios
+      .post(`${import.meta.env.VITE_API_URI}/api/auth/logout`, {}, { withCredentials: true })
+      .then((res) => {
+        if (!res.data.isAuth && !res.data.user) {
+          setAuth(false);
+          navigate('/login', { replace: true });
+        }
+      });
   };
 
   return (
