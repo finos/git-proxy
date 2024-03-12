@@ -137,7 +137,7 @@ export default function RepoDetails() {
                     </TableHead>
                     <TableBody>
                       {data.users.canAuthorise.map((row) => {
-                        if (row !== 'admin')
+                        if (row)
                           return (
                             <TableRow key={row}>
                               <TableCell align='left'>
@@ -182,7 +182,7 @@ export default function RepoDetails() {
                     </TableHead>
                     <TableBody>
                       {data.users.canPush.map((row) => {
-                        if (row !== 'admin') {
+                        if (row) {
                           return (
                             <TableRow key={row}>
                               <TableCell align='left'>
