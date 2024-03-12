@@ -110,8 +110,8 @@ const getCommitData = (contents) => {
       return {
         tree,
         parent,
-        author: author.split(' ')[0],
-        committer: committer.split(' ')[0],
+        author,
+        committer,
         commitTimestamp,
         message,
         authorEmail,
