@@ -3,7 +3,6 @@ const session = require('express-session');
 const http = require('http');
 const cors = require('cors');
 const app = express();
-require('dotenv').config();
 const rateLimit = require('express-rate-limit');
 const csrf = require('lusca').csrf;
 
