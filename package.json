@@ -34,7 +34,6 @@
     "concurrently": "^8.0.0",
     "cors": "^2.8.5",
     "diff2html": "^3.4.33",
-    "dotenv": "^16.4.5",
     "email-validator": "^2.0.4",
     "express": "^4.18.2",
     "express-http-proxy": "^2.0.0",
