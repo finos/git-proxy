@@ -27,8 +27,8 @@ describe('add new repo', async () => {
     await db.deleteRepo('test-repo');
     await db.deleteUser('u1');
     await db.deleteUser('u2');
-    await db.createUser('u1', 'abc', '', 'test', true, true, true, false);
-    await db.createUser('u2', 'abc', '', 'test', true, true, true, false);
+    await db.createUser('u1', 'abc', 'test@test.com', 'test', true);
+    await db.createUser('u2', 'abc', 'test@test.com', 'test', true);
   });
 
   it('login', async function () {
