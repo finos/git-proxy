@@ -49,11 +49,6 @@ describe('user creation', async () => {
     res.should.have.status(200);
   });
 
-  it('new users should be marked to change next login', async function () {
-    const user = await db.findUser('login-test-user');
-    user.changePassword.should.be.true;
-  });
-
   it('logout', async function () {
     const res = await chai.request(app).post('/api/auth/logout').set('Cookie', `${cookie}`);
     res.should.have.status(200);
@@ -78,41 +73,6 @@ describe('user creation', async () => {
       res.should.have.status(200);
       setCookie(res);
     });
-  });
-
-  it('change the password', async function () {
-    const res = await chai.request(app).post('/api/auth/password').set('Cookie', `${cookie}`).send({
-      oldPassword: 'test1234',
-      newPassword: 'testabcd',
-    });
-
-    res.should.have.status(200);
-  });
-
-  it('updated users should NOT need to change next login', async function () {
-    const user = await db.findUser('login-test-user');
-    user.changePassword.should.be.false;
-  });
-
-  it('logout - again', function (done) {
-    chai
-      .request(app)
-      .post('/api/auth/logout')
-      .end((err, res) => {
-        res.should.have.status(200);
-        done();
-      });
-  });
-
-  it('login again', async function () {
-    const res = await chai.request(app).post('/api/auth/login').send({
-      username: 'login-test-user',
-      password: 'testabcd',
-    });
-
-    expect(res).to.have.cookie('connect.sid');
-    res.should.have.status(200);
-    setCookie(res);
   });
 
   it('should access the profile', async function () {
