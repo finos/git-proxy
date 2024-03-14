@@ -169,9 +169,12 @@ describe('add new repo', async () => {
   });
 
   it('Valid user push permission on repo', async function () {
-    const res = (await chai.request(app).patch('/api/v1/repo/test-repo/user/authorise'))
-      .setEncoding('Cookie', `${cookie}`)
+    const res = await chai
+      .request(app)
+      .patch('/api/v1/repo/test-repo/user/authorise')
+      .set('Cookie', `${cookie}`)
       .send({ username: 'u2' });
+
     res.should.have.status(200);
     const isAllowed = await db.isUserPushAllowed('test-repo', 'u2');
     expect(isAllowed).to.be.true;
