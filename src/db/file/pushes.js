@@ -63,11 +63,12 @@ const writeAudit = async (action, logger) => {
   });
 };
 
-const authorise = async (id, logger) => {
-  const action = await getPush(id, logger);
+const authorise = async (id, attestation) => {
+  const action = await getPush(id);
   action.authorised = true;
   action.canceled = false;
   action.rejected = false;
+  action.attestation = attestation;
   await writeAudit(action);
   return { message: `authorised ${id}` };
 };
