@@ -604,9 +604,7 @@ export default function Repositories(props) {
     setAnchorEl(event.currentTarget);
     setOpen((prev) => placement !== newPlacement || !prev);
     setPlacement(newPlacement);
-    setCloneURL(
-      `${window.location.origin}/${org}/${name}.git`,
-    );
+    setCloneURL(`${import.meta.env.VITE_SERVER_URI}/${org}/${name}.git`);
   };
 
   return (
