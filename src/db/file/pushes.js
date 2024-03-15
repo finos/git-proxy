@@ -3,6 +3,7 @@ const _ = require('lodash');
 const Datastore = require('@seald-io/nedb');
 const Action = require('../../proxy/actions/Action').Action;
 const toClass = require('../helper').toClass;
+const repo = require('./repo');
 
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
@@ -89,9 +90,24 @@ const cancel = async (id, logger) => {
   return { message: `cancel ${id}` };
 };
 
+const canUserCancelPush = async (id, user) => {
+  return new Promise(async (resolve) => {
+    const pushDetail = await getPush(id);
+    const repoName = pushDetail.repoName.replace('.git', '');
+    const isAllowed = await repo.isUserPushAllowed(repoName, user);
+
+    if (isAllowed) {
+      resolve(true);
+    } else {
+      resolve(false);
+    }
+  });
+};
+
 module.exports.getPushes = getPushes;
 module.exports.writeAudit = writeAudit;
 module.exports.getPush = getPush;
 module.exports.authorise = authorise;
 module.exports.reject = reject;
 module.exports.cancel = cancel;
+module.exports.canUserCancelPush = canUserCancelPush;
