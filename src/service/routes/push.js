@@ -47,7 +47,7 @@ router.post('/:id/reject', async (req, res) => {
       return;
     }
 
-    if (list[0].username.toLowerCase() === req.user.username.toLowerCase()) {
+    if (list[0].username.toLowerCase() === req.user.username.toLowerCase() && !list[0].admin) {
       res.status(401).send({
         message: `Cannot reject your own changes`,
       });
@@ -102,7 +102,7 @@ router.post('/:id/authorise', async (req, res) => {
       return;
     }
 
-    if (list[0].username.toLowerCase() === req.user.username.toLowerCase()) {
+    if (list[0].username.toLowerCase() === req.user.username.toLowerCase() && !list[0].admin) {
       res.status(401).send({
         message: `Cannot approve your own changes`,
       });
