@@ -104,6 +104,16 @@ const canUserCancelPush = async (id, user) => {
   });
 };
 
+const canUserApproveRejectPush = async (id, user) => {
+  return new Promise(async (resolve) => {
+    const action = await getPush(id);
+    const repoName = action.repoName.replace('.git', '');
+    const isAllowed = await repo.canUserApproveRejectPushRepo(repoName, user);
+
+    resolve(isAllowed);
+  });
+};
+
 module.exports.getPushes = getPushes;
 module.exports.writeAudit = writeAudit;
 module.exports.getPush = getPush;
@@ -111,3 +121,4 @@ module.exports.authorise = authorise;
 module.exports.reject = reject;
 module.exports.cancel = cancel;
 module.exports.canUserCancelPush = canUserCancelPush;
+module.exports.canUserApproveRejectPush = canUserApproveRejectPush;
