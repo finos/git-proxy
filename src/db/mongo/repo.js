@@ -82,7 +82,7 @@ exports.isUserPushAllowed = async (name, user) => {
   });
 };
 
-exports.canUserApproveRejectPushRepo = async (name, user, id) => {
+exports.canUserApproveRejectPushRepo = async (name, user) => {
   name = name.toLowerCase();
   console.log(`checking if user ${user} can approve/reject for ${name}`);
   return new Promise(async (resolve, reject) => {

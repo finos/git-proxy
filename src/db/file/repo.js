@@ -154,3 +154,18 @@ exports.isUserPushAllowed = async (name, user) => {
     }
   });
 };
+
+exports.canUserApproveRejectPushRepo = async (name, user) => {
+  name = name.toLowerCase();
+  console.log(`checking if user ${user} can approve/reject for ${name}`);
+  return new Promise(async (resolve, reject) => {
+    const repo = await exports.getRepo(name);
+    if (repo.users.canAuthorise.includes(user)) {
+      console.log(`user ${user} can approve/reject to repo ${name}`);
+      resolve(true);
+    } else {
+      console.log(`user ${user} cannot approve/reject to repo ${name}`);
+      resolve(false);
+    }
+  });
+};
