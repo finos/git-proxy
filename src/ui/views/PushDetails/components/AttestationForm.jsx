@@ -42,7 +42,11 @@ export default function AttestationForm(props) {
             <Grid item xs={11}>
               <FormControlLabel
                 control={
-                  <GreenCheckbox checked={question.checked} onChange={handleChange} name={index} />
+                  <GreenCheckbox
+                    checked={question.checked}
+                    onChange={handleChange}
+                    name={`Check ${index}`}
+                  />
                 }
                 label={question.label}
               />
