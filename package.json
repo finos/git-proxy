@@ -3,6 +3,7 @@
   "version": "1.1.0",
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
+    "cli": "node ./src/cli/git-proxy-cli.js",
     "client": "vite --config vite.config.js",
     "clientinstall": "npm install --prefix client",
     "server": "node index.js",
