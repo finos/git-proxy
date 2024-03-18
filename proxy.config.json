@@ -43,6 +43,7 @@
       "enabled": false,
       "adminGroup": "",
       "userGroup": "",
+      "domain": "",
       "adConfig": {
         "url": "",
         "baseDN": "",
