@@ -10,4 +10,3 @@ exports.checkIfWaitingAuth = require('./checkIfWaitingAuth').exec;
 exports.checkCommitMessages = require('./checkCommitMessages').exec;
 exports.checkAuthorEmails = require('./checkAuthorEmails').exec;
 exports.checkUserPushPermission = require('./checkUserPushPermission').exec;
-exports.sendNotificationForAuth = require('./sendNotificationForAuth').exec;
