@@ -124,7 +124,7 @@ router.use(
   }),
 );
 
-const handleMessage = async (message) => {
+const handleMessage = (message) => {
   const errorMessage = `ERR\t${message}`;
   const len = 6 + new TextEncoder().encode(errorMessage).length;
 
