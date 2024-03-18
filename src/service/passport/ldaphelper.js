@@ -7,7 +7,7 @@ const client = axios.create({
   },
 });
 
-const isUserInAdGroup = (id, domain, name) => { // TODO - needs reconsideration for parsing string
+const isUserInAdGroup = (id, domain, name) => {
   const url = String(thirdpartyApiConfig.ls.userInADGroup)
     .replace('<domain>', domain)
     .replace('<name>', name)
