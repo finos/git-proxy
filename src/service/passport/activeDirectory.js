@@ -6,7 +6,7 @@ const configure = () => {
   const db = require('../../db');
   const userGroup = config.userGroup;
   const adminGroup = config.adminGroup;
-  const domain = 'xxx'; // TODO - should come from configuration
+  const domain = config.domain;
 
   console.log(`AD User Group: ${userGroup}, AD Admin Group: ${adminGroup}`);
 
