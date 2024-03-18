@@ -46,7 +46,6 @@ Listening on 8000
 Service Listening on 8080
 ```
 
-
 ### Introduce Git Proxy to your clone
 
 Navigate into your test-bed repository (where you cloned your Git Proxy fork) on your PC:
@@ -90,14 +89,14 @@ Immediately after a push, you should receive a message in your terminal:
 
 ```bash
 remote:
-remote: Git Proxy has received your push:
-remote: 
-remote: http://localhost:8080/requests/000000__b12557    
+remote: Git Proxy has received your push ✅
+remote:
+remote: 🔗 Shareable Link
+remote: http://localhost:8080/admin/push/000000__b12557
 remote:
 ```
 
 The push is now held in a suspended state by Git Proxy and requires [approval](/docs/quickstart/approve) before it can be pushed to the upstream repository on GitHub.
-
 
 #### Managing credentials
 
@@ -118,6 +117,3 @@ git config --global credential.helper store # Linux
 Git Proxy **does not** use your Personal Access Token other than to authenticate with GitHub when pushing code. This is identical to the process of pushing code to a repository without Git Proxy installed.
 
 :::
-
-
-
