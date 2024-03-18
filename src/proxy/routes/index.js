@@ -125,7 +125,7 @@ router.use(
 );
 
 const handleMessage = (message) => {
-  const errorMessage = `ERR\t${message}`;
+  const errorMessage = `\t${message}`;
   const len = 6 + new TextEncoder().encode(errorMessage).length;
 
   const prefix = len.toString(16);
