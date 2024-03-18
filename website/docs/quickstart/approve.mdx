@@ -9,16 +9,16 @@ All pushes that flow through Git Proxy require an approval (authorisation). Unti
 
 ### Prerequisites
 
-- Proxy and REST API are running ([default behaviour](https://github.com/finos/git-proxy/blob/main/index.js))
-- Proxy and REST API are running on `localhost:8000` and `localhost:8080`, respectively
-- [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy)
-- [`curl`](https://curl.se/) is installed
+- [x] Proxy and REST API are running ([default behaviour](https://github.com/finos/git-proxy/blob/main/index.js))
+- [x] Proxy and REST API are running on `localhost:8000` and `localhost:8080`, respectively
+- [x] [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy)
+- [x] [`curl`](https://curl.se/) is installed
 
 ### Instructions
 
 #### 1. Find the tracking `ID`
 
-Following on from [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy), you'll receive a unique URL:
+Following on from [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy), a unique & shareable link is generated:
 
 ```
 http://localhost:8080/admin/push/0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
@@ -60,7 +60,7 @@ curl -b ./git-proxy-cookie \
 
 #### 5. Re-push your code
 
-Execute `git push` to send your approved code through Git Proxy to the upstream repository:
+Execute `git push` to send your approved code to the upstream repository:
 
 ```bash
 $ git push
@@ -75,8 +75,61 @@ remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
 
 ## Using the UI
 
-:::note
+### Prerequisites
 
-The web UI is under active development. Keep an eye out for updates in our latest [releases](https://github.com/finos/git-proxy/releases).
+- [x] Proxy and REST API are running ([default behaviour](https://github.com/finos/git-proxy/blob/main/index.js))
+- [x] Proxy and REST API are running on `localhost:8000` and `localhost:8080`, respectively
+- [x] UI is running on `localhost:3000`
 
-:::
+### Instructions
+
+#### 1. Login as administrator
+
+[Login](http://localhost:3000/login) to the dashboard. As the UI is running on port `3000`, the URL is:
+
+```bash
+http://localhost:3000/login
+```
+
+Fill in the form using the following credentials:
+
+```
+Username: admin
+Password: admin
+```
+
+Once submitted, you should be logged in as administrator 💪
+
+#### 2. Visit the shareable link
+
+Following on from [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy), a unique & shareable link is generated:
+
+```bash
+remote: Git Proxy has received your push ✅
+remote:
+remote: 🔗 Shareable Link
+remote: http://localhost:8080/admin/push/000000__b12557
+```
+
+Insert the URL directly into your web browser.
+
+#### 3. Approve the push using the dashboard
+
+Press the approve button and a modal will appear. Happy with the contents of the push? 🤗
+
+In the modal, check the tickbox ✅ and press the approve button.
+
+#### 4. Re-push your code
+
+Execute `git push` to send your approved code to the upstream repository:
+
+```bash
+$ git push
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 10 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 470 bytes | 470.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+```
