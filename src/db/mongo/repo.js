@@ -12,7 +12,7 @@ exports.getRepos = async (query = {}) => {
 
 exports.getRepo = async (name) => {
   const collection = await connect(cnName);
-  return collection.findOne({ name: name });
+  return collection.findOne({ name: { $eq: name } });
 };
 
 exports.createRepo = async (repo) => {

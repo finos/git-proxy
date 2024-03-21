@@ -3,7 +3,7 @@ const usersCollection = 'users';
 
 exports.findUser = async function (username) {
   const collection = await connect(usersCollection);
-  return collection.findOne({ username: username });
+  return collection.findOne({ username: { $eq: username } });
 };
 
 exports.getUsers = async function (query) {
