@@ -6,6 +6,13 @@ const app = express();
 const path = require('path');
 const config = require('../config');
 const db = require('../db');
+const rateLimit = require('express-rate-limit');
+const csrf = require('lusca').csrf;
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
 
 const { GIT_PROXY_UI_PORT: uiPort } = require('../config/env').Vars;
 
@@ -24,6 +31,7 @@ const start = async () => {
   const absBuildPath = path.join(__dirname, '../../build');
   app.use(cors(corsOptions));
   app.set('trust proxy', 1);
+  app.use(limiter);
   app.use(
     session({
       store: config.getDatabase().type === 'mongo' ? db.getSessionStore(session) : null,
@@ -36,6 +44,7 @@ const start = async () => {
       },
     }),
   );
+  app.use(csrf());
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(express.json());
