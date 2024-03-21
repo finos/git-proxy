@@ -97,7 +97,12 @@ router.post('/gitAccount', async (req, res) => {
       db.updateUser(user);
       res.status(200).end();
     } catch (e) {
-      res.status(500).send(e).end();
+      res
+        .status(500)
+        .send({
+          message: 'An error occurred',
+        })
+        .end();
     }
   } else {
     res.status(401).end();
