@@ -58,7 +58,7 @@ export default function Dashboard() {
 
   const updateProfile = async () => {
     try {
-      data.gitAccount = gitAccount;
+      data.gitAccount = escapeHTML(gitAccount);
       await updateUser(data);
       navigate(`/admin/user/${data.username}`);
     } catch {
@@ -71,6 +71,17 @@ export default function Dashboard() {
       <Save></Save>Update
     </Button>
   );
+
+  const escapeHTML = (str) => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+      .replace(/\\/g, '&#39;')
+      .replace(/\//g, '&#x2F;');
+  };
 
   return (
     <form className={classes.root} noValidate autoComplete='off'>
