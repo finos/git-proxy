@@ -4,6 +4,7 @@ const http = require('http');
 const cors = require('cors');
 const app = express();
 const rateLimit = require('express-rate-limit');
+const lusca = require('lusca');
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -40,6 +41,7 @@ const start = async () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use('/', routes);
+  app.use(lusca.csrf());
 
   await _httpServer.listen(uiPort);
 
