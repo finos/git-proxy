@@ -7,7 +7,6 @@ const path = require('path');
 const config = require('../config');
 const db = require('../db');
 const rateLimit = require('express-rate-limit');
-const csrf = require('lusca').csrf;
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -44,7 +43,6 @@ const start = async () => {
       },
     }),
   );
-  app.use(csrf());
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(express.json());
