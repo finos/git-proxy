@@ -5,16 +5,15 @@ name: Node.js CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   pull-requests: write
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -23,33 +22,33 @@ jobs:
         mongodb-version: [4.4]
 
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+        with:
+          fetch-depth: 0
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
 
-    - name: Start MongoDB
-      uses: supercharge/mongodb-github-action@v1.10.0
-      with:
-        mongodb-version: ${{ matrix.mongodb-version }}
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@v1.10.0
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
 
-    - name: Install dependencies
-      run: npm i
+      - name: Install dependencies
+        run: npm i
 
-    - name: Test
-      id: test
-      run: |
-        npm run test-coverage-ci || echo "Silently ignoring coverage threshold limit..."
+      - name: Test
+        id: test
+        run: |
+          npm run test-coverage-ci
 
-    - name: Upload test coverage report
-      uses: codecov/codecov-action@v4.1.0
-      with:
-        files: ./coverage/lcov.info
-        token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Upload test coverage report
+        uses: codecov/codecov-action@v4.1.0
+        with:
+          files: ./coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
     # - name: Exit if coverage condition not met
     #   if: ${{ steps.test.outputs.exit_code }} != 0
     #   run: exit ${{ steps.test.outputs.exit_code }}
