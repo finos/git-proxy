@@ -1,4 +1,4 @@
-name: Lint Code Base
+name: Code Cleanliness
 
 on: [pull_request]
 
