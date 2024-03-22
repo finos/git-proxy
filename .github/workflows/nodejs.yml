@@ -43,13 +43,13 @@ jobs:
     - name: Test
       id: test
       run: |
-        npm run test-coverage-ci || echo "Silently ignoring coverage threshold limit..."
+        npm run test
 
-    - name: Upload test coverage report
-      uses: codecov/codecov-action@v4.1.0
-      with:
-        files: ./coverage/lcov.info
-        token: ${{ secrets.CODECOV_TOKEN }}
+    # - name: Upload test coverage report
+    #   uses: codecov/codecov-action@v4.1.0
+    #   with:
+    #     files: ./coverage/lcov.info
+    #     token: ${{ secrets.CODECOV_TOKEN }}
     # - name: Exit if coverage condition not met
     #   if: ${{ steps.test.outputs.exit_code }} != 0
     #   run: exit ${{ steps.test.outputs.exit_code }}
