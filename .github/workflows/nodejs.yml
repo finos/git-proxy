@@ -43,7 +43,7 @@ jobs:
     - name: Test
       id: test
       run: |
-        npm run test-coverage-ci || echo "Silently ignoring coverage threshold limit..."
+        npm run test-coverage-ci
 
     - name: Upload test coverage report
       uses: codecov/codecov-action@v4.1.0
