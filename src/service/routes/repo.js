@@ -130,8 +130,8 @@ router.post('/', async (req, res) => {
       try {
         await db.createRepo(req.body);
         res.send({ message: 'created' });
-      } catch (e) {
-        res.send(e);
+      } catch {
+        res.send('Failed to create repository');
       }
     }
   } else {
