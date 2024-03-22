@@ -30,7 +30,7 @@ router.post('/login', passport.authenticate(passportType), async (req, res) => {
     );
   } catch (e) {
     console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
-    res.status(500).send(JSON.stringify(e)).end();
+    res.status(500).send('Failed to login').end();
     return;
   }
   res.send({
