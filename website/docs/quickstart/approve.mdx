@@ -79,7 +79,7 @@ remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
 ### Prerequisites
 
 - Proxy and REST API are running ([default behaviour](https://github.com/finos/git-proxy/blob/main/index.js))
-- The Git Proxy URL is configured via the GIT_PROXY_UI_URL environment variable (defaults to `http://localhost:8080`). Note: this documentation assumes that Git Proxy UI is running on `http://git-proxy.com:8080`.
+- The Git Proxy URL is configured via the GIT_PROXY_UI_HOST (defaults to `http://localhost`) and GIT_PROXY_UI_PORT (defaults to `8080`) environment variables. Note: this documentation assumes that Git Proxy UI is running on `http://git-proxy.com:8080`.
 - [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy)
 
 ### Instructions
@@ -103,7 +103,7 @@ The `ID` for your push corresponds to the last part of the URL:
 Use the default & auto-generated Git Proxy username & password credentials to authenticate and obtain a cookie. The cookie value is saved to a file (`git-proxy-cookie`):
 
 ```bash
-$ npm run-script cli -- login --username admin --password admin
+$ npx -- @finos/git-proxy-cli login --username admin --password admin
 Git-Proxy URL: http://git-proxy.com:8080
 Auth 'admin': OK
 ```
@@ -113,7 +113,7 @@ Auth 'admin': OK
 Use the commit `ID` to approve your push with the CLI:
 
 ```bash
-$ npm run-script cli -- approve --commitId 0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
+$ npx -- @finos/git-proxy-cli approve --commitId 0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
 Git-Proxy URL: http://git-proxy.com:8080
 Approve: ID: '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f': OK
 ```
@@ -138,7 +138,7 @@ remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
 Clean up your connect cookie via logging out:
 
 ```bash
-$ npm run-script cli -- logout
+$ npx -- @finos/git-proxy-cli logout
 Git-Proxy URL: http://git-proxy.com:8080
 Logout: OK
 ```

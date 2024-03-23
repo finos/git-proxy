@@ -19,6 +19,9 @@
     "lint": "eslint --fix . --ext .js,.jsx",
     "gen-schema-doc": "node ./scripts/doc-schema.js"
   },
+  "workspaces": [
+    "./packages/git-proxy-cli"
+  ],
   "bin": "./index.js",
   "author": "Paul Groves",
   "license": "Apache-2.0",

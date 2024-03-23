@@ -1,20 +1,27 @@
+#!/usr/bin/env node
 const axios = require('axios');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 const fs = require('fs');
 
-// Git-Proxy UI URL (configurable via environment variable)
-const { GIT_PROXY_UI_URL = 'http://localhost:8080' } = process.env;
+// Git-Proxy UI HOST and PORT (configurable via environment variable)
+const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost' } = process.env;
+const { GIT_PROXY_UI_PORT: uiPort } =
+  require('@finos/git-proxy/src/config/env').Vars;
+const GIT_PROXY_UI_URL = `${uiHost}:${uiPort}`;
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 
+// Set default timeout to 5 seconds
+axios.defaults.timeout = 5000; 
+
 /**
- * Function to login to Git Proxy
+ * Log in to Git Proxy
  * @param {*} username The user name to login with
  * @param {*} password The password to use for the login
  */
 async function login(username, password) {
   try {
-    const response = await axios.post(
+    let response = await axios.post(
       `${GIT_PROXY_UI_URL}/auth/login`,
       {
         username,
@@ -25,31 +32,38 @@ async function login(username, password) {
         withCredentials: true,
       },
     );
+    const cookies = response.headers['set-cookie'];
 
-    fs.writeFileSync(
-      GIT_PROXY_COOKIE_FILE,
-      JSON.stringify(response.headers['set-cookie']),
-      'utf8',
-    );
-    console.log(`Auth '${username}': OK`);
+    response = await axios.get(`${GIT_PROXY_UI_URL}/auth/profile`, {
+      headers: { Cookie: cookies },
+      withCredentials: true,
+    });
+
+    fs.writeFileSync(GIT_PROXY_COOKIE_FILE, JSON.stringify(cookies), 'utf8');
+
+    const user = `"${response.data.username}" <${response.data.email}>`;
+    const isAdmin = response.data.admin ? ' (admin)' : '';
+    console.log(`Login ${user}${isAdmin}: OK`);
   } catch (error) {
     if (error.response) {
-      console.error(`Error: Auth '${username}': '${error.response.status}'`);
+      console.error(`Error: Login '${username}': '${error.response.status}'`);
+      process.exitCode = 2;
     } else {
-      console.error(`Error: Auth '${username}': '${error.message}'`);
+      console.error(`Error: Login '${username}': '${error.message}'`);
+      process.exitCode = 1;
     }
-    process.exit(1);
   }
 }
 
 /**
- * Function to approve commit
+ * Approve commit by ID
  * @param {*} commitId The ID of the commit to approve
  */
 async function approveCommit(commitId) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     console.error('Error: Authentication required');
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   try {
@@ -72,20 +86,23 @@ async function approveCommit(commitId) {
     if (error.response) {
       if (error.response.status == 401) {
         console.log(`Approve: Authentication required`);
+        process.exitCode = 2;
       } else if (error.response.status == 404) {
         console.log(`Approve: ID: '${commitId}': Not Found`);
+        process.exitCode = 3;
       } else {
         console.error(`Error: Approve: '${error.response.status}'`);
+        process.exitCode = 4;
       }
     } else {
       console.error(`Error: Approve: '${error.message}'`);
+      process.exitCode = 1;
     }
-    process.exit(1);
   }
 }
 
 /**
- * Function to log out
+ * Log out (and clean up)
  */
 async function logout() {
   try {
@@ -96,6 +113,7 @@ async function logout() {
     console.log('Logout: OK');
   } catch (error) {
     console.error(`Error: Logout: ${error.message}`);
+    process.exitCode = 1;
   }
 }
 
