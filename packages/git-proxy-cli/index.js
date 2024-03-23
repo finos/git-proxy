@@ -4,15 +4,14 @@ const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 const fs = require('fs');
 
+const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // Git-Proxy UI HOST and PORT (configurable via environment variable)
 const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost' } = process.env;
 const { GIT_PROXY_UI_PORT: uiPort } =
   require('@finos/git-proxy/src/config/env').Vars;
-const GIT_PROXY_UI_URL = `${uiHost}:${uiPort}`;
-const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
+const baseUrl = `${uiHost}:${uiPort}`;
 
-// Set default timeout to 5 seconds
-axios.defaults.timeout = 5000; 
+axios.defaults.timeout = 30000;
 
 /**
  * Log in to Git Proxy
@@ -22,7 +21,7 @@ axios.defaults.timeout = 5000;
 async function login(username, password) {
   try {
     let response = await axios.post(
-      `${GIT_PROXY_UI_URL}/auth/login`,
+      `${baseUrl}/auth/login`,
       {
         username,
         password,
@@ -34,7 +33,7 @@ async function login(username, password) {
     );
     const cookies = response.headers['set-cookie'];
 
-    response = await axios.get(`${GIT_PROXY_UI_URL}/auth/profile`, {
+    response = await axios.get(`${baseUrl}/auth/profile`, {
       headers: { Cookie: cookies },
       withCredentials: true,
     });
@@ -47,10 +46,10 @@ async function login(username, password) {
   } catch (error) {
     if (error.response) {
       console.error(`Error: Login '${username}': '${error.response.status}'`);
-      process.exitCode = 2;
+      process.exitCode = 1;
     } else {
       console.error(`Error: Login '${username}': '${error.message}'`);
-      process.exitCode = 1;
+      process.exitCode = 2;
     }
   }
 }
@@ -69,12 +68,12 @@ async function approveCommit(commitId) {
   try {
     const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
 
-    response = await axios.get(`${GIT_PROXY_UI_URL}/api/v1/push/${commitId}`, {
+    response = await axios.get(`${baseUrl}/api/v1/push/${commitId}`, {
       headers: { Cookie: cookies },
     });
 
     response = await axios.post(
-      `${GIT_PROXY_UI_URL}/api/v1/push/${commitId}/authorise`,
+      `${baseUrl}/api/v1/push/${commitId}/authorise`,
       {},
       {
         headers: { Cookie: cookies },
@@ -96,7 +95,7 @@ async function approveCommit(commitId) {
       }
     } else {
       console.error(`Error: Approve: '${error.message}'`);
-      process.exitCode = 1;
+      process.exitCode = 5;
     }
   }
 }
@@ -105,19 +104,44 @@ async function approveCommit(commitId) {
  * Log out (and clean up)
  */
 async function logout() {
+  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
+    console.error('Error: Authentication required');
+    process.exitCode = 1;
+    return;
+  }
+
   try {
+    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
+
+    response = await axios.post(
+      `${baseUrl}/auth/logout`,
+      {},
+      {
+        headers: { Cookie: cookies },
+      },
+    );
     if (fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
       fs.writeFileSync(GIT_PROXY_COOKIE_FILE, '*** logged out ***', 'utf8');
       fs.unlinkSync(GIT_PROXY_COOKIE_FILE);
     }
     console.log('Logout: OK');
   } catch (error) {
-    console.error(`Error: Logout: ${error.message}`);
-    process.exitCode = 1;
+    if (error.response) {
+      if (error.response.status == 401) {
+        console.log(`Logout: Authentication required`);
+        process.exitCode = 2;
+      } else {
+        console.error(`Error: Logout: '${error.response.status}'`);
+        process.exitCode = 3;
+      }
+    } else {
+      console.error(`Error: Logout: '${error.message}'`);
+      process.exitCode = 4;
+    }
   }
 }
 
-console.log(`Git-Proxy URL: ${GIT_PROXY_UI_URL}`);
+console.log(`Git-Proxy URL: ${baseUrl}`);
 
 // Parsing command line arguments
 yargs(hideBin(process.argv))
