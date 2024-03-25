@@ -7,6 +7,7 @@ const path = require('path');
 const config = require('../config');
 const db = require('../db');
 const rateLimit = require('express-rate-limit');
+const lusca = require('lusca');
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -52,6 +53,7 @@ const start = async () => {
   app.get('/*', (req, res) => {
     res.sendFile(path.join(`${absBuildPath}/index.html`));
   });
+  app.use(lusca.csrf());
 
   _httpServer.listen(uiPort);
 
