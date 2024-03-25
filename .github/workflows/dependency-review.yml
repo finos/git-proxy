@@ -1,0 +1,20 @@
+name: 'Dependency Review'
+on: [pull_request]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+     - name: 'Checkout Repository'
+       uses: actions/checkout@v4
+     - name: Dependency Review
+       uses: actions/dependency-review-action@v4
+       with:
+        comment-summary-in-pr: always
+        fail-on-severity: high
+        allow-licenses: MIT, Apache-2.0, BSD-3-Clause, ISC, BSD-2-Clause, Unlicense, CC0-1.0, 0BSD, X11, MPL-2.0, MPL-1.0, MPL-1.1, MPL-2.0
+        fail-on-scopes: development, runtime
