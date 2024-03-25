@@ -1,9 +1,9 @@
-name: Lint Code Base
+name: Code Cleanliness
 
 on: [pull_request]
 
 env: # environment variables (available in any part of the action)
-  NODE_VERSION: 16
+  NODE_VERSION: 18
 
 jobs:
   linting:
