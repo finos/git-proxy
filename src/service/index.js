@@ -49,8 +49,8 @@ const start = async () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use('/', routes);
-  app.use('/', express.static(absBuildPath));
   app.use(lusca.csrf());
+  app.use('/', express.static(absBuildPath));
   app.get('/*', (req, res) => {
     res.sendFile(path.join(`${absBuildPath}/index.html`));
   });
