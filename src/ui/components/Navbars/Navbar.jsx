@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
@@ -9,9 +7,8 @@ import Toolbar from '@material-ui/core/Toolbar';
 import IconButton from '@material-ui/core/IconButton';
 import Hidden from '@material-ui/core/Hidden';
 import Menu from '@material-ui/icons/Menu';
-import AdminNavbarLinks from './AdminNavbarLinks.jsx';
-import Button from '../CustomButtons/Button.jsx';
-import styles from '../../assets/jss/material-dashboard-react/components/headerStyle.js';
+import AdminNavbarLinks from './AdminNavbarLinks';
+import styles from '../../assets/jss/material-dashboard-react/components/headerStyle';
 
 const useStyles = makeStyles(styles);
 
@@ -32,23 +29,23 @@ export default function Header(props) {
     [' ' + classes[color]]: color,
   });
   return (
-    <AppBar className={classes.appBar + appBarClasses}>
+    <AppBar style={{ borderRadius: '0px', zIndex: 10 }} className={classes.appBar + appBarClasses}>
       <Toolbar className={classes.container}>
         <div className={classes.flex}>
           {/* Here we create navbar brand, based on route name */}
-          <Button color="transparent" href="#" className={classes.title}>
+          <h2
+            style={{ marginLeft: '15px', fontSize: '19px', fontWeight: 400 }}
+            color='transparent'
+            className={classes.title}
+          >
             {makeBrand()}
-          </Button>
+          </h2>
         </div>
-        <Hidden smDown implementation="css">
+        <Hidden smDown implementation='css'>
           <AdminNavbarLinks />
         </Hidden>
-        <Hidden mdUp implementation="css">
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            onClick={props.handleDrawerToggle}
-          >
+        <Hidden mdUp implementation='css'>
+          <IconButton color='inherit' aria-label='open drawer' onClick={props.handleDrawerToggle}>
             <Menu />
           </IconButton>
         </Hidden>

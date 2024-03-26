@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
@@ -11,8 +9,7 @@ import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Icon from '@material-ui/core/Icon';
-import AdminNavbarLinks from '../Navbars/AdminNavbarLinks.jsx';
-import styles from '../../assets/jss/material-dashboard-react/components/sidebarStyle.js';
+import styles from '../../assets/jss/material-dashboard-react/components/sidebarStyle';
 
 const useStyles = makeStyles(styles);
 
@@ -22,8 +19,7 @@ export default function Sidebar(props) {
   function activeRoute(routeName) {
     return window.location.href.indexOf(routeName) > -1 ? true : false;
   }
-  // eslint-disable-next-line react/prop-types
-  const { color, logo, image, logoText, routes } = props;
+  const { color, logo, routes, background } = props;
   const links = (
     <List className={classes.list}>
       {routes.map((prop, key) => {
@@ -43,8 +39,8 @@ export default function Sidebar(props) {
           <NavLink
             to={prop.layout + prop.path}
             className={activePro + classes.item}
-            activeClassName="active"
             key={key}
+            style={{ textDecoration: 'none' }}
           >
             <ListItem button className={classes.itemLink + listItemClasses}>
               {typeof prop.icon === 'string' ? (
@@ -77,25 +73,23 @@ export default function Sidebar(props) {
   );
   const brand = (
     <div className={classes.logo}>
-      <a
-        href="/"
-        className={classNames(classes.logoLink, {
-          [classes.logoLinkRTL]: props.rtlActive,
-        })}
-        target="_blank"
-      >
-        <div className={classes.logoImage}>
-          <img src={logo} alt="logo" className={classes.img} />
+      <a style={{ textDecoration: 'none' }} href='/admin/repo'>
+        <div style={{ textAlign: 'center' }}>
+          <img
+            style={{ verticalAlign: 'middle', filter: 'brightness(0) invert(1)' }}
+            width={'105px'}
+            src={logo}
+            alt='logo'
+          />
         </div>
-        {logoText}
       </a>
     </div>
   );
   return (
-    <div>
-      <Hidden mdUp implementation="css">
+    <div style={{ borderRight: '1px solid #d3d3d3' }}>
+      <Hidden mdUp implementation='css'>
         <Drawer
-          variant="temporary"
+          variant='temporary'
           anchor={props.rtlActive ? 'left' : 'right'}
           open={props.open}
           classes={{
@@ -109,22 +103,14 @@ export default function Sidebar(props) {
           }}
         >
           {brand}
-          <div className={classes.sidebarWrapper}>
-            <AdminNavbarLinks />
-            {links}
-          </div>
-          {image !== undefined ? (
-            <div
-              className={classes.background}
-              style={{ backgroundImage: 'url(' + image + ')' }}
-            />
-          ) : null}
+          <div className={classes.sidebarWrapper}>{links}</div>
+          <div className={classes.background} style={{ backgroundColor: background }} />
         </Drawer>
       </Hidden>
-      <Hidden smDown implementation="css">
+      <Hidden smDown implementation='css'>
         <Drawer
           anchor={props.rtlActive ? 'right' : 'left'}
-          variant="permanent"
+          variant='permanent'
           open
           classes={{
             paper: classNames(classes.drawerPaper, {
@@ -134,12 +120,7 @@ export default function Sidebar(props) {
         >
           {brand}
           <div className={classes.sidebarWrapper}>{links}</div>
-          {image !== undefined ? (
-            <div
-              className={classes.background}
-              style={{ backgroundImage: 'url(' + image + ')' }}
-            />
-          ) : null}
+          <div className={classes.background} style={{ backgroundColor: background }} />
         </Drawer>
       </Hidden>
     </div>
@@ -152,7 +133,6 @@ Sidebar.propTypes = {
   bgColor: PropTypes.oneOf(['purple', 'blue', 'green', 'orange', 'red']),
   logo: PropTypes.string,
   image: PropTypes.string,
-  logoText: PropTypes.string,
   routes: PropTypes.arrayOf(PropTypes.object),
   open: PropTypes.bool,
 };

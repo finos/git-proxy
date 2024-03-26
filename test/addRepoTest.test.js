@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 // Import the dependencies for testing
 const chai = require('chai');
 const chaiHttp = require('chai-http');
@@ -28,12 +27,12 @@ describe('add new repo', async () => {
     await db.deleteRepo('test-repo');
     await db.deleteUser('u1');
     await db.deleteUser('u2');
-    await db.createUser('u1', 'abc', '', 'test', true, true, true, false);
-    await db.createUser('u2', 'abc', '', 'test', true, true, true, false);
+    await db.createUser('u1', 'abc', 'test@test.com', 'test', true);
+    await db.createUser('u2', 'abc', 'test@test.com', 'test', true);
   });
 
   it('login', async function () {
-    const res = await chai.request(app).post('/auth/login').send({
+    const res = await chai.request(app).post('/api/auth/login').send({
       username: 'admin',
       password: 'admin',
     });
@@ -42,15 +41,11 @@ describe('add new repo', async () => {
   });
 
   it('create a new repo', async function () {
-    const res = await chai
-      .request(app)
-      .post('/api/v1/repo')
-      .set('Cookie', `${cookie}`)
-      .send({
-        project: 'finos',
-        name: 'test-repo',
-        url: 'https://github.com/finos/test-repo.git',
-      });
+    const res = await chai.request(app).post('/api/v1/repo').set('Cookie', `${cookie}`).send({
+      project: 'finos',
+      name: 'test-repo',
+      url: 'https://github.com/finos/test-repo.git',
+    });
     res.should.have.status(200);
 
     const repo = await db.getRepo('test-repo');
@@ -171,6 +166,23 @@ describe('add new repo', async () => {
     res.should.have.status(200);
     const repo = await db.getRepo('test-repo');
     repo.users.canAuthorise.length.should.equal(1);
+  });
+
+  it('Valid user push permission on repo', async function () {
+    const res = await chai
+      .request(app)
+      .patch('/api/v1/repo/test-repo/user/authorise')
+      .set('Cookie', `${cookie}`)
+      .send({ username: 'u2' });
+
+    res.should.have.status(200);
+    const isAllowed = await db.isUserPushAllowed('test-repo', 'u2');
+    expect(isAllowed).to.be.true;
+  });
+
+  it('Invalid user push permission on repo', async function () {
+    const isAllowed = await db.isUserPushAllowed('test-repo', 'test');
+    expect(isAllowed).to.be.false;
   });
 
   after(async function () {

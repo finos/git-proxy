@@ -1,8 +1,4 @@
-import {
-  defaultFont,
-  dangerColor,
-  whiteColor,
-} from '../../material-dashboard-react.js';
+import { defaultFont, dangerColor, whiteColor } from '../../material-dashboard-react.js';
 
 // eslint-disable-next-line max-len
 import dropdownStyle from '../dropdownStyle.js';

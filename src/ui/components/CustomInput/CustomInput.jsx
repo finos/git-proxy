@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
@@ -9,21 +7,13 @@ import InputLabel from '@material-ui/core/InputLabel';
 import Input from '@material-ui/core/Input';
 import Clear from '@material-ui/icons/Clear';
 import Check from '@material-ui/icons/Check';
-import styles from '../../assets/jss/material-dashboard-react/components/customInputStyle.js';
+import styles from '../../assets/jss/material-dashboard-react/components/customInputStyle';
 
 const useStyles = makeStyles(styles);
 
 export default function CustomInput(props) {
   const classes = useStyles();
-  const {
-    formControlProps,
-    labelText,
-    id,
-    labelProps,
-    inputProps,
-    error,
-    success,
-  } = props;
+  const { formControlProps, labelText, id, labelProps, inputProps, error, success } = props;
 
   const labelClasses = classNames({
     [' ' + classes.labelRootError]: error,
@@ -37,17 +27,24 @@ export default function CustomInput(props) {
   const marginTop = classNames({
     [classes.marginTop]: labelText === undefined,
   });
+
+  const generateIcon = () => {
+    if (error) {
+      return <Clear className={classes.feedback + ' ' + classes.labelRootError} />;
+    }
+    if (success) {
+      return <Check className={classes.feedback + ' ' + classes.labelRootSuccess} />;
+    }
+    return null;
+  };
+
   return (
     <FormControl
       {...formControlProps}
       className={formControlProps.className + ' ' + classes.formControl}
     >
       {labelText !== undefined ? (
-        <InputLabel
-          className={classes.labelRoot + labelClasses}
-          htmlFor={id}
-          {...labelProps}
-        >
+        <InputLabel className={classes.labelRoot + labelClasses} htmlFor={id} {...labelProps}>
           {labelText}
         </InputLabel>
       ) : null}
@@ -60,11 +57,7 @@ export default function CustomInput(props) {
         id={id}
         {...inputProps}
       />
-      {error ? (
-        <Clear className={classes.feedback + ' ' + classes.labelRootError} />
-      ) : success ? (
-        <Check className={classes.feedback + ' ' + classes.labelRootSuccess} />
-      ) : null}
+      {generateIcon()}
     </FormControl>
   );
 }

@@ -1,23 +1,18 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React, { useState, useEffect } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
-import Icon from '@material-ui/core/Icon';
-import GridItem from '../../components/Grid/GridItem.jsx';
-import GridContainer from '../../components/Grid/GridContainer.jsx';
-import Card from '../../components/Card/Card.jsx';
-import CardIcon from '../../components/Card/CardIcon.jsx';
-import CardBody from '../../components/Card/CardBody.jsx';
-import CardHeader from '../../components/Card/CardHeader.jsx';
-// import Button from '../../components/CustomButtons/Button.js';
-// import PropTypes from 'prop-types';
-import TextField from '@material-ui/core/TextField';
-import Checkbox from '@material-ui/core/Checkbox';
-// import FormControlLabel from '@material-ui/core/FormControlLabel';
-// import FormControl from '@material-ui/core/FormControl';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import GridItem from '../../components/Grid/GridItem';
+import GridContainer from '../../components/Grid/GridContainer';
+import Card from '../../components/Card/Card';
+import CardBody from '../../components/Card/CardBody';
+import Button from '../../components/CustomButtons/Button';
 import FormLabel from '@material-ui/core/FormLabel';
-import { getUser } from '../../services/user.js';
+import { getUser, updateUser, getUserLoggedIn } from '../../services/user';
 import { makeStyles } from '@material-ui/core/styles';
+
+import { LogoGithubIcon } from '@primer/octicons-react';
+import CloseRounded from '@material-ui/icons/CloseRounded';
+import { Check, Save } from '@material-ui/icons';
+import { TextField } from '@material-ui/core';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -34,74 +29,140 @@ export default function Dashboard() {
   const [auth, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [isProfile, setIsProfile] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [gitAccount, setGitAccount] = useState('');
+  const navigate = useNavigate();
   const { id } = useParams();
 
   useEffect(() => {
-    // eslint-disable-next-line react/prop-types
+    if (id == null) {
+      setIsProfile(true);
+    }
+
     if (id) {
       getUser(setIsLoading, setData, setAuth, setIsError, id);
+      getUserLoggedIn(setIsLoading, setIsAdmin, setIsError, setAuth);
     } else {
       console.log('getting user data');
+      setIsProfile(true);
       getUser(setIsLoading, setData, setAuth, setIsError);
     }
-  }, [id]);
+  }, []);
 
-  if (isLoading) return <div>Loading ...</div>;
+  if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
-  if (!auth) return <Navigate to={{ pathname: '/login' }} />;
+  if (!auth && window.location.pathname === '/admin/profile') {
+    return <Navigate to='/login' />;
+  }
 
-  console.log(data);
+  const updateProfile = async () => {
+    try {
+      data.gitAccount = escapeHTML(gitAccount);
+      await updateUser(data);
+      navigate(`/admin/user/${data.username}`);
+    } catch {
+      setIsError(true);
+    }
+  };
+
+  const UpdateButton = () => (
+    <Button variant='outlined' color='success' onClick={updateProfile}>
+      <Save></Save>Update
+    </Button>
+  );
+
+  const escapeHTML = (str) => {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;')
+      .replace(/\\/g, '&#39;')
+      .replace(/\//g, '&#x2F;');
+  };
 
   return (
-    <form className={classes.root} noValidate autoComplete="off">
+    <form className={classes.root} noValidate autoComplete='off'>
       <GridContainer>
         <GridItem xs={12} sm={12} md={12}>
           <Card>
-            <CardHeader color="success" stats icon>
-              <CardIcon color="success">
-                <Icon>content_copy</Icon>
-                <h3>User Details</h3>
-              </CardIcon>
-            </CardHeader>
-            <br />
-            <br />
-            <CardBody>
-              <GridContainer>
-                <GridItem xs={4} sm={4} md={4}>
-                  <TextField
-                    id="username"
-                    label="Username"
-                    aria-describedby="username-helper-text"
-                    InputProps={{
-                      readOnly: true,
-                    }}
-                    variant="outlined"
-                    value={data.username}
-                  />
+            <CardBody
+              style={{
+                padding: '20px',
+              }}
+            >
+              <GridContainer
+                style={{
+                  paddingTop: '10px',
+                }}
+              >
+                {data.gitAccount && (
+                  <GridItem xs={1} sm={1} md={1}>
+                    <img
+                      width={'75px'}
+                      style={{ borderRadius: '5px' }}
+                      src={`https://github.com/${data.gitAccount}.png`}
+                    ></img>
+                  </GridItem>
+                )}
+                <GridItem xs={2} sm={2} md={2}>
+                  <FormLabel component='legend'>Name</FormLabel>
+                  {data.displayName}
                 </GridItem>
-                <GridItem xs={4} sm={4} md={4}>
-                  <TextField
-                    id="gitAccount"
-                    label="Git Account"
-                    aria-describedby="gitAccount-helper-text"
-                    variant="outlined"
-                    value={data.gitAccount}
-                  />
+                <GridItem xs={2} sm={2} md={2}>
+                  <FormLabel component='legend'>Role</FormLabel>
+                  {data.title}
                 </GridItem>
-                <GridItem xs={4} sm={4} md={4}>
-                  <FormLabel component="legend">Admin</FormLabel>
-                  <Checkbox id="admin" variant="outlined" value={data.admin} />
+                <GridItem xs={2} sm={2} md={2}>
+                  <FormLabel component='legend'>E-mail</FormLabel>
+                  <a href={`mailto:${data.email}`}>{data.email}</a>
                 </GridItem>
-                <GridItem xs={4} sm={4} md={4}>
-                  <TextField
-                    id="email"
-                    label="Email Address"
-                    aria-describedby="email-helper-text"
-                    variant="outlined"
-                    value={data.email}
-                  />
+                {data.gitAccount && (
+                  <GridItem xs={2} sm={2} md={2}>
+                    <FormLabel component='legend'>GitHub Username</FormLabel>
+                    <a
+                      href={`https://github.com/${data.gitAccount}`}
+                      rel='noreferrer'
+                      target='_blank'
+                    >
+                      {data.gitAccount}
+                    </a>
+                  </GridItem>
+                )}
+                <GridItem xs={2} sm={2} md={2}>
+                  <FormLabel component='legend'>Administrator</FormLabel>
+                  {data.admin ? (
+                    <span style={{ color: 'green' }}>
+                      <Check fontSize='small' />
+                    </span>
+                  ) : (
+                    <CloseRounded color='error'></CloseRounded>
+                  )}
                 </GridItem>
               </GridContainer>
+              {isProfile || isAdmin ? (
+                <div style={{ marginTop: '50px' }}>
+                  <hr style={{ opacity: 0.2 }} />
+                  <div style={{ marginTop: '25px' }}>
+                    <FormLabel component='legend'>
+                      What is your <LogoGithubIcon></LogoGithubIcon> username?
+                    </FormLabel>
+                    <div style={{ textAlign: 'right' }}>
+                      <TextField
+                        id='gitAccount'
+                        aria-describedby='gitAccount-helper-text'
+                        variant='outlined'
+                        placeholder='Enter a new GitHub username...'
+                        value={gitAccount}
+                        onChange={(e) => setGitAccount(e.target.value)}
+                      />
+                      <UpdateButton />
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </CardBody>
           </Card>
         </GridItem>

@@ -1,10 +1,4 @@
-/* eslint-disable quotes */
-import {
-  successColor,
-  whiteColor,
-  grayColor,
-  hexToRgb,
-} from '../../material-dashboard-react.js';
+import { successColor, whiteColor, grayColor, hexToRgb } from '../../material-dashboard-react.js';
 
 const rtlStyle = {
   successText: {

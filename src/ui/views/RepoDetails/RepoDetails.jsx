@@ -1,13 +1,9 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
-import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
-// import Icon from '@material-ui/core/Icon';
-import GridItem from '../../components/Grid/GridItem.jsx';
-import GridContainer from '../../components/Grid/GridContainer.jsx';
-import Card from '../../components/Card/Card.jsx';
-import CardBody from '../../components/Card/CardBody.jsx';
-import TextField from '@material-ui/core/TextField';
+import React, { useState, useEffect, useContext } from 'react';
+import GridItem from '../../components/Grid/GridItem';
+import GridContainer from '../../components/Grid/GridContainer';
+import Card from '../../components/Card/Card';
+import CardBody from '../../components/Card/CardBody';
+import FormLabel from '@material-ui/core/FormLabel';
 import Paper from '@material-ui/core/Paper';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
@@ -16,9 +12,12 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import { getRepo, deleteUser } from '../../services/repo.js';
+import { getRepo, deleteUser, deleteRepo } from '../../services/repo';
 import { makeStyles } from '@material-ui/core/styles';
 import AddUser from './Components/AddUser';
+import { Code, Delete, RemoveCircle, Visibility } from '@material-ui/icons';
+import { useNavigate, useParams } from 'react-router-dom';
+import { UserContext } from '../../../context';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -29,138 +28,181 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function RepoDetails(props) {
+export default function RepoDetails() {
+  const navigate = useNavigate();
   const classes = useStyles();
   const [data, setData] = useState([]);
-  const [auth, setAuth] = useState(true);
+  const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
-  // eslint-disable-next-line react/prop-types
-  const repoName = props.match.params.id;
+  const { user } = useContext(UserContext);
+  const { id: repoName } = useParams();
 
   useEffect(() => {
-    // eslint-disable-next-line react/prop-types
-    const id = props.match.params.id;
-    getRepo(setIsLoading, setData, setAuth, setIsError, id);
-  }, [props]);
+    getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
+  }, []);
 
-  const removeUser = async (user, action) => {
-    await deleteUser(user, repoName, action);
+  const removeUser = async (userToRemove, action) => {
+    await deleteUser(userToRemove, repoName, action);
     getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
   };
 
-  const refresh = () =>
-    getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
+  const removeRepository = async (name) => {
+    await deleteRepo(name);
+    navigate('/admin/repo', { replace: true });
+  };
 
-  if (isLoading) return <div>Loading ...</div>;
+  const refresh = () => getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
+
+  if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
-  if (!auth) return <Navigate to={{ pathname: '/login' }} />;
 
   return (
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
         <Card>
           <CardBody>
-            <form className={classes.root} noValidate autoComplete="off">
+            {user.admin && (
+              <div style={{ textAlign: 'right' }}>
+                <Button
+                  variant='contained'
+                  color='secondary'
+                  onClick={() => removeRepository(data.name)}
+                >
+                  <Delete></Delete>
+                </Button>
+              </div>
+            )}
+            <form className={classes.root} noValidate autoComplete='off'>
               <GridContainer>
-                <GridItem xs={4} sm={4} md={4}>
-                  <TextField
-                    id="project"
-                    label="Project"
-                    InputProps={{
-                      readOnly: true,
-                    }}
-                    variant="outlined"
-                    value={data.project}
-                  />
+                <GridItem xs={1} sm={1} md={1}>
+                  <img
+                    width={'75px'}
+                    style={{ borderRadius: '5px' }}
+                    src={`https://github.com/${data.project}.png`}
+                  ></img>
                 </GridItem>
-                <GridItem xs={4} sm={4} md={4}>
-                  <TextField
-                    id="repoName"
-                    label="Repo Name"
-                    variant="outlined"
-                    value={data.name}
-                  />
+                <GridItem xs={2} sm={2} md={2}>
+                  <FormLabel component='legend'>Organization</FormLabel>
+                  <h4>
+                    <a
+                      href={`https://github.com/${data.project}`}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                    >
+                      {data.project}
+                    </a>
+                  </h4>
                 </GridItem>
-                <GridItem xs={4} sm={4} md={4}>
-                  <TextField
-                    id="gitUrl"
-                    label="Url"
-                    variant="outlined"
-                    value={data.url}
-                  />
+                <GridItem xs={2} sm={2} md={2}>
+                  <FormLabel component='legend'>Name</FormLabel>
+                  <h4>
+                    <a
+                      href={`https://github.com/${data.project}/${data.name}`}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                    >
+                      {data.name}
+                    </a>
+                  </h4>
+                </GridItem>
+                <GridItem xs={3} sm={3} md={3}>
+                  <FormLabel component='legend'>URL</FormLabel>
+                  <h4>
+                    <a href={data.url} target='_blank' rel='noopener noreferrer'>
+                      {data.url.replace('.git', '')}
+                    </a>
+                  </h4>
                 </GridItem>
               </GridContainer>
             </form>
+            <hr style={{ opacity: 0.2 }} />
             <GridContainer>
-              <GridItem xs={6} sm={6} md={6}>
-                <h2>Can Authorise Push</h2>
-                <AddUser
-                  repoName={repoName}
-                  type="authorise"
-                  refreshFn={refresh}
-                ></AddUser>
-                <br />
-                <br />
+              <GridItem xs={12} sm={12} md={12}>
+                <h3>
+                  <Visibility></Visibility> Reviewers
+                </h3>
+                {user.admin && (
+                  <div style={{ textAlign: 'right' }}>
+                    <AddUser repoName={repoName} type='authorise' refreshFn={refresh}></AddUser>
+                  </div>
+                )}
                 <TableContainer component={Paper}>
-                  <Table className={classes.table} aria-label="simple table">
+                  <Table className={classes.table} aria-label='simple table'>
                     <TableHead>
                       <TableRow>
-                        <TableCell>Actions</TableCell>
-                        <TableCell align="left">Username</TableCell>
+                        <TableCell align='left'>Username</TableCell>
+                        {user.admin && <TableCell align='right'></TableCell>}
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {data.users.canAuthorise.map((row) => (
-                        <TableRow key={row}>
-                          <TableCell component="th" scope="row">
-                            <Button
-                              variant="contained"
-                              color="secondary"
-                              onClick={() => removeUser(row, 'authorise')}
-                            >
-                              Remove
-                            </Button>
-                          </TableCell>
-                          <TableCell align="left">{row}</TableCell>
-                        </TableRow>
-                      ))}
+                      {data.users.canAuthorise.map((row) => {
+                        if (row)
+                          return (
+                            <TableRow key={row}>
+                              <TableCell align='left'>
+                                <a href={`/admin/user/${row}`}>{row}</a>
+                              </TableCell>
+                              {user.admin && (
+                                <TableCell align='right' component='th' scope='row'>
+                                  <Button
+                                    variant='contained'
+                                    color='secondary'
+                                    onClick={() => removeUser(row, 'authorise')}
+                                  >
+                                    <RemoveCircle></RemoveCircle>
+                                  </Button>
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          );
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>
               </GridItem>
-              <GridItem xs={6} sm={6} md={6}>
-                <h2>Can Push</h2>
-                <AddUser
-                  repoName={repoName}
-                  type="push"
-                  refreshFn={refresh}
-                ></AddUser>
-                <br />
-                <br />
+            </GridContainer>
+            <GridContainer>
+              <GridItem xs={12} sm={12} md={12}>
+                <h3>
+                  <Code></Code> Contributors
+                </h3>
+                {user.admin && (
+                  <div style={{ textAlign: 'right' }}>
+                    <AddUser repoName={repoName} type='push' refreshFn={refresh} />
+                  </div>
+                )}
                 <TableContainer component={Paper}>
-                  <Table className={classes.table} aria-label="simple table">
+                  <Table className={classes.table} aria-label='simple table'>
                     <TableHead>
                       <TableRow>
-                        <TableCell>Actions</TableCell>
-                        <TableCell align="left">Username</TableCell>
+                        <TableCell align='left'>Username</TableCell>
+                        {user.admin && <TableCell align='right'></TableCell>}
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {data.users.canPush.map((row) => (
-                        <TableRow key={row}>
-                          <TableCell component="th" scope="row">
-                            <Button
-                              variant="contained"
-                              color="secondary"
-                              onClick={() => removeUser(row, 'push')}
-                            >
-                              Remove
-                            </Button>
-                          </TableCell>
-                          <TableCell align="left">{row}</TableCell>
-                        </TableRow>
-                      ))}
+                      {data.users.canPush.map((row) => {
+                        if (row) {
+                          return (
+                            <TableRow key={row}>
+                              <TableCell align='left'>
+                                <a href={`/admin/user/${row}`}>{row}</a>
+                              </TableCell>
+                              {user.admin && (
+                                <TableCell align='right' component='th' scope='row'>
+                                  <Button
+                                    variant='contained'
+                                    color='secondary'
+                                    onClick={() => removeUser(row, 'push')}
+                                  >
+                                    <RemoveCircle></RemoveCircle>
+                                  </Button>
+                                </TableCell>
+                              )}
+                            </TableRow>
+                          );
+                        }
+                      })}
                     </TableBody>
                   </Table>
                 </TableContainer>

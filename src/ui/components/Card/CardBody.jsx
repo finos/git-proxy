@@ -1,10 +1,8 @@
-/* eslint-disable require-jsdoc */
-/* eslint-disable max-len */
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
-import styles from '../../assets/jss/material-dashboard-react/components/cardBodyStyle.js';
+import styles from '../../assets/jss/material-dashboard-react/components/cardBodyStyle';
 
 const useStyles = makeStyles(styles);
 

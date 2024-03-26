@@ -1,34 +1,31 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { useNavigate } from 'react-router-dom';
-import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
-import { Navigate } from 'react-router-dom';
-import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle.js';
+import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { getRepos } from '../../../services/repo';
+import GridContainer from '../../../components/Grid/GridContainer';
+import GridItem from '../../../components/Grid/GridItem';
+import NewRepo from './NewRepo';
+import RepoOverview from './RepoOverview';
+import { UserContext } from '../../../../context';
+import PropTypes from 'prop-types';
 
 export default function Repositories(props) {
   const useStyles = makeStyles(styles);
   const classes = useStyles();
   const [data, setData] = useState([]);
-  const [auth, setAuth] = useState(true);
+  const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
-  const history = useNavigate();
-
-  const openRepo = (repo) => history.push(`/admin/repo/${repo}`);
+  const navigate = useNavigate();
+  const openRepo = (repo) => navigate(`/admin/repo/${repo}`, { replace: true });
+  const { user } = useContext(UserContext);
 
   useEffect(() => {
     const query = {};
-
     for (const k in props) {
       if (!k) continue;
       query[k] = props[k];
@@ -36,40 +33,59 @@ export default function Repositories(props) {
     getRepos(setIsLoading, setData, setAuth, setIsError, query);
   }, [props]);
 
-  if (isLoading) return <div>Loading ...</div>;
+  const refresh = async (repo) => {
+    console.log('refresh:', repo);
+    setData([...data, repo]);
+  };
+
+  if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
-  if (!auth) return <Navigate to={{ pathname: '/login' }} />;
+
+  const addrepoButton = user.admin ? (
+    <GridItem>
+      <NewRepo onSuccess={refresh} />
+    </GridItem>
+  ) : (
+    <GridItem />
+  );
 
   return (
-    <TableContainer component={Paper}>
-      <Table className={classes.table} aria-label="simple table">
-        <TableHead>
-          <TableRow>
-            <TableCell>Actions</TableCell>
-            <TableCell align="left">Project</TableCell>
-            <TableCell align="left">Name</TableCell>
-            <TableCell align="left">Url</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {data.map((row) => (
-            <TableRow key={row.id}>
-              <TableCell component="th" scope="row">
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => openRepo(row.name)}
-                >
-                  Open
-                </Button>
-              </TableCell>
-              <TableCell align="left">{row.project}</TableCell>
-              <TableCell align="left">{row.name}</TableCell>
-              <TableCell align="left">{row.url}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <GetGridContainerLayOut
+      key='x'
+      classes={classes}
+      openRepo={openRepo}
+      data={data}
+      repoButton={addrepoButton}
+    />
+  );
+}
+
+GetGridContainerLayOut.propTypes = {
+  classes: PropTypes.object,
+  openRepo: PropTypes.func.isRequired,
+  data: PropTypes.array,
+  repoButton: PropTypes.object,
+};
+
+function GetGridContainerLayOut(props) {
+  return (
+    <GridContainer>
+      {props.repoButton}
+      <GridItem xs={12} sm={12} md={12}>
+        <TableContainer
+          style={{ background: 'transparent', borderRadius: '5px', border: '1px solid #d0d7de' }}
+        >
+          <Table className={props.classes.table} aria-label='simple table'>
+            <TableBody>
+              {props.data.map((row) => {
+                if (row.project && row.name) {
+                  return <RepoOverview data={row} key={row._id} />;
+                }
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </GridItem>
+    </GridContainer>
   );
 }
