@@ -66,6 +66,7 @@ $ npx -- @finos/git-proxy
 Clone a repository, set the remote to the Git Proxy URL and push your changes:
 
 ```bash
+# Only HTTPS cloning is supported at the moment, see https://github.com/finos/git-proxy/issues/27.
 $ git clone https://github.com/octocat/Hello-World.git && cd Hello-World
 # The below command is using the GitHub official CLI to fork the repo that is cloned.
 # You can also fork on the GitHub UI. For usage details on the CLI, see https://github.com/cli/cli
@@ -73,7 +74,8 @@ $ gh repo fork
 ✓ Created fork yourGithubUser/Hello-World
 ...
 $ git remote add proxy http://localhost:8000/yourGithubUser/Hello-World.git
-$ git push proxy master
+# This fetches the repository's default branch and pushes it (https://stackoverflow.com/a/44750379).
+$ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
 ```
 
 Using the default configuration, Git Proxy intercepts the push and _blocks_ it. To enable code pushing to your fork via Git Proxy, add your repository URL into the Git Proxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
