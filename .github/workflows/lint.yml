@@ -21,9 +21,9 @@ jobs:
           fetch-depth: 0
 
       - name: Install Dependencies
-        run: npm i
+        run: npm install --workspaces
   
       - name: Code Linting
         run: |
           npm run lint
-          npm run lint --workspaces
+          npm run lint --workspaces --if-present
