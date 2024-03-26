@@ -15,8 +15,8 @@ axios.defaults.timeout = 30000;
 
 /**
  * Log in to Git Proxy
- * @param {*} username The user name to login with
- * @param {*} password The password to use for the login
+ * @param {string} username The user name to login with
+ * @param {string} password The password to use for the login
  */
 async function login(username, password) {
   try {
@@ -56,7 +56,7 @@ async function login(username, password) {
 
 /**
  * Approve commit by ID
- * @param {*} commitId The ID of the commit to approve
+ * @param {string} commitId The ID of the commit to approve
  */
 async function approveCommit(commitId) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
