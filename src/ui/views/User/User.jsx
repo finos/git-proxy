@@ -18,7 +18,7 @@ import Checkbox from '@material-ui/core/Checkbox';
 import FormLabel from '@material-ui/core/FormLabel';
 import { getUser } from '../../services/user.js';
 import { makeStyles } from '@material-ui/core/styles';
-import logger from '/src/logs/logger';
+import logger from '../../../logging/logger.js';
 
 const useStyles = makeStyles((theme) => ({
   root: {
