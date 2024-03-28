@@ -10,7 +10,7 @@ describe('test git-proxy-cli', async () => {
     await service.start();
   });
 
-  describe('test git-proxy-cli :: login', function () {
+  describe('test git-proxy-cli :: login', async function () {
     it('login shoud fail with invalid credentials', async function () {
       const username = 'unkn0wn';
       const password = 'p4ssw0rd';
