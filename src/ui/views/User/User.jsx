@@ -19,8 +19,6 @@ import FormLabel from '@material-ui/core/FormLabel';
 import { getUser } from '../../services/user.js';
 import { makeStyles } from '@material-ui/core/styles';
 
-const logger = require('../../../logging/logger.js');
-
 const useStyles = makeStyles((theme) => ({
   root: {
     '& .MuiTextField-root': {
@@ -43,7 +41,7 @@ export default function Dashboard() {
     if (id) {
       getUser(setIsLoading, setData, setAuth, setIsError, id);
     } else {
-      logger.info('getting user data');
+      console.log('getting user data');
       getUser(setIsLoading, setData, setAuth, setIsError);
     }
   }, [id]);
@@ -52,7 +50,7 @@ export default function Dashboard() {
   if (isError) return <div>Something went wrong ...</div>;
   if (!auth) return <Navigate to={{ pathname: '/login' }} />;
 
-  logger.info(data);
+  console.log(data);
 
   return (
     <form className={classes.root} noValidate autoComplete="off">

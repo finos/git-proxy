@@ -20,8 +20,6 @@ import { Navigate } from 'react-router-dom';
 import { addUser } from '../../../services/repo.js';
 import { getUsers } from '../../../services/user.js';
 
-const logger = require('../../../../logging/logger.js');
-
 function AddUserDialog(props) {
   const repoName = props.repoName;
   const type = props.type;
@@ -64,7 +62,7 @@ function AddUserDialog(props) {
   if (isError) return <div>Something went wrong ...</div>;
   if (!auth) return <Navigate to={{ pathname: '/login' }} />;
 
-  logger.info(JSON.stringify(props));
+  console.log(JSON.stringify(props));
 
   return (
     <Dialog
