@@ -4,6 +4,13 @@ const http = require('http');
 const cors = require('cors');
 const { logger } = require('../logging/logger');
 const app = express();
+const rateLimit = require('express-rate-limit');
+const lusca = require('lusca');
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 requests per windowMs
+});
 
 const { GIT_PROXY_UI_PORT: uiPort } = require('../config/env').Vars;
 
@@ -17,11 +24,12 @@ const corsOptions = {
 };
 
 const start = async () => {
-  // confiugraiton of passport is async
+  // configuration of passport is async
   // Before we can bind the routes - we need the passport
   const passport = await require('./passport').configure();
   const routes = require('./routes');
   app.use(cors(corsOptions));
+  app.use(limiter);
   app.use(
     session({
       secret: 'keyboard cat',
@@ -34,6 +42,7 @@ const start = async () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use('/', routes);
+  app.use(lusca.csrf());
 
   await _httpServer.listen(uiPort);
 

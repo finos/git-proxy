@@ -118,7 +118,12 @@ router.post('/password', async (req, res) => {
         throw new Error('current password did not match the given');
       }
     } catch (e) {
-      res.status(500).send(e).end();
+      res
+        .status(500)
+        .send({
+          message: 'An error occurred',
+        })
+        .end();
     }
   } else {
     res.status(401).end();

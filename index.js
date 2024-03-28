@@ -15,7 +15,8 @@ const argv = require('yargs/yargs')(process.argv.slice(2))
       required: false,
       alias: 'c',
     },
-  }).argv;
+  })
+  .strict().argv;
 
 require('./src/config/file').configFile = argv.c ? argv.c : undefined;
 
