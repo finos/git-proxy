@@ -4,7 +4,7 @@
 
 const { execSync } = require('child_process');
 const { existsSync } = require('fs');
-const logger = require('/src/logs/logger');
+const logger = require('../src/logging/logger');
 
 // ===========
 // File paths.

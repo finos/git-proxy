@@ -19,7 +19,8 @@ import { Navigate } from 'react-router-dom';
 
 import { addUser } from '../../../services/repo.js';
 import { getUsers } from '../../../services/user.js';
-import logger from '../../../../logging/logger.js';
+
+const logger = require('../../../../logging/logger.js');
 
 function AddUserDialog(props) {
   const repoName = props.repoName;
