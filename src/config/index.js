@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 const defaultSettings = require('../../proxy.config.json');
-const logger = require('../../src/logging/logger');
+const { logger } = require('../logging/index');
 const userSettingsPath = require('./file').configFile;
 
 let _userSettings = null;

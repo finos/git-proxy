@@ -4,7 +4,7 @@ const passwordHash = require('password-hash');
 const validator = require('email-validator');
 
 const config = require('../config');
-const logger = require('../../src/logging/logger');
+const { logger } = require('../logging/index');
 
 if (config.getDatabase().type === 'fs') {
   sink = require('../db/file');

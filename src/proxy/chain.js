@@ -1,6 +1,6 @@
 const proc = require('./processors');
 const plugin = require('../plugin');
-const logger = require('../../src/logging/logger');
+const { logger } = require('../logging/index');
 
 const pushActionChain = [
   proc.push.parsePush,

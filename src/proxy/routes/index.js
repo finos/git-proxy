@@ -5,7 +5,7 @@ const proxy = require('express-http-proxy');
 const router = express.Router();
 const chain = require('../chain');
 
-const logger = require('../../../src/logging/logger');
+const { logger } = require('../../logging/index');
 
 /**
  * For a given Git HTTP request destined for a GitHub repo,

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable max-len */
+const { logger } = require('./src/logging/index');
+
 const argv = require('yargs/yargs')(process.argv.slice(2))
   .usage('Usage: $0 [options]')
   .options({
@@ -46,7 +48,6 @@ if (argv.v) {
 
 const proxy = require('./src/proxy');
 const service = require('./src/service');
-const logger = require('./src/logging/logger');
 
 proxy.start();
 service.start();

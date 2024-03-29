@@ -2,10 +2,10 @@ const express = require('express');
 const session = require('express-session');
 const http = require('http');
 const cors = require('cors');
-const { logger } = require('../logging/logger');
 const app = express();
 const rateLimit = require('express-rate-limit');
 const lusca = require('lusca');
+const { logger } = require('../logging/index');
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
