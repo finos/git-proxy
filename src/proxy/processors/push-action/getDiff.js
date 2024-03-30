@@ -24,7 +24,7 @@ const exec = async (req, action) => {
       cmd = `git diff ${action.commitFrom} ${action.commitTo}`;
     }
 
-    step.log(`executing "${cmd}" in foler ${path}`);
+    step.log(`executing "${cmd}" in folder ${path}`);
 
     // Get the diff
     const content = child
