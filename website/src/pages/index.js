@@ -153,6 +153,16 @@ function Home() {
               />
             </div>
           </div>
+          <div className="col col--4">
+            <div className="col-demo">
+              {' '}
+              <Avatar
+                name="Miklos Sagi"
+                description="OSPO Engineering Lead at NatWest Group"
+                username="msagi"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </Layout>
