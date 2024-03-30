@@ -14,7 +14,7 @@ const logger = createLogger({
       dirname: './src/logging',
     }),
     new transports.File({
-      filename: 'combined.log',
+      filename: 'git-proxy.log',
       dirname: './src/logging',
     }),
   ],
