@@ -6,10 +6,7 @@ const cleanFormat = printf(({ level, message, timestamp }) => {
 });
 
 const logger = createLogger({
-  format: combine(
-    timestamp(),
-    cleanFormat
-  ),
+  format: combine(timestamp(), cleanFormat),
   transports: [
     new transports.File({
       filename: 'error.log',

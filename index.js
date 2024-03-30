@@ -29,7 +29,9 @@ if (argv.v) {
   const configFile = require('./src/config/file').configFile;
 
   if (!fs.existsSync(configFile)) {
-    logger.error(`Config file ${configFile} doesn't exist, nothing to validate! Did you forget -c/--config?`);
+    logger.error(
+      `Config file ${configFile} doesn't exist, nothing to validate! Did you forget -c/--config?`,
+    );
     process.exit(1);
   }
 
