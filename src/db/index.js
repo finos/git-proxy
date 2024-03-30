@@ -79,7 +79,7 @@ const wrapedSendMail = function (data, password) {
         logger.error(error);
         reject(error);
       } else {
-        logger.info('Email sent: ' + info.response);
+        logger.info(`Email sent: ${info.response}`);
         resolve(true);
       }
     });

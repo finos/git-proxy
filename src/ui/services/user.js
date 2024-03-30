@@ -45,7 +45,7 @@ const createUser = async (data) => {
     .post(url, data, { withCredentials: true })
     .then(() => {})
     .catch((error) => {
-      logger.log(error.response.data.message);
+      logger.error(error.response.data.message);
       throw error;
     });
 };

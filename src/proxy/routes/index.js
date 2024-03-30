@@ -58,9 +58,9 @@ router.use(
   proxy('https://github.com', {
     filter: async function (req, res) {
       try {
-        logger.info('request url: ', req.url);
-        logger.log('host: ', req.headers.host);
-        logger.info('user-agent: ', req.headers['user-agent']);
+        logger.info(`request url: ${req.url}`);
+        logger.info(`host: ${req.headers.host}`);
+        logger.info(`user-agent: ${req.headers['user-agent']}`);
         const gitPath = stripGitHubFromGitPath(req.url);
         if (gitPath === undefined || !validGitRequest(gitPath, req.headers)) {
           res.status(400).send('Invalid request received');

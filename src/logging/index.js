@@ -9,11 +9,12 @@ const logger = createLogger({
   format: combine(timestamp(), cleanFormat),
   transports: [
     new transports.File({
-      filename: 'error.log',
       level: 'error',
+      filename: 'error.log',
       dirname: './src/logging',
     }),
     new transports.File({
+      level: 'info',
       filename: 'git-proxy.log',
       dirname: './src/logging',
     }),

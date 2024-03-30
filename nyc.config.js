@@ -6,5 +6,5 @@ const opts = {
   statements: 80,
 };
 
-logger.info('nyc config: ', opts);
+logger.info(`nyc config: ${opts}`);
 module.exports = opts;
