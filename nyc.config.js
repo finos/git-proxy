@@ -1,4 +1,4 @@
-const { logger } = require('./src/logs/index');
+const { logger } = require('./src/logging/index');
 const opts = {
   branches: 80,
   lines: 80,

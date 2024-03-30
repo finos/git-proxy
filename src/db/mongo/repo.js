@@ -1,4 +1,4 @@
-const logger = require('/src/logs/logger');
+const { logger } = require('/src/logging/index');
 const connect = require('./helper').connect;
 const cnName = 'repos';
 
