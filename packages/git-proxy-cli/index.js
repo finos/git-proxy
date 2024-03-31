@@ -3,9 +3,10 @@ const axios = require('axios');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 const fs = require('fs');
+const util = require('util');
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
-// Git-Proxy UI HOST and PORT (configurable via environment variable)
+// GitProxy UI HOST and PORT (configurable via environment variable)
 const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost' } = process.env;
 const { GIT_PROXY_UI_PORT: uiPort } =
   require('@finos/git-proxy/src/config/env').Vars;
@@ -55,12 +56,29 @@ async function login(username, password) {
 }
 
 /**
- * Approve commit by ID
- * @param {string} commitId The ID of the commit to approve
+ * Prints a JSON list of git pushes filtered based on specified criteria.
+ * The function filters the pushes based on various statuses such as whether
+ * the push is allowed, authorised, blocked, canceled, encountered an error,
+ * or was rejected.
+ *
+ * @param {Object} filters - An object containing filter criteria for Git
+ *          pushes.
+ * @param {boolean} filters.allowPush - If not null, filters for pushes with
+ *          given attribute and status.
+ * @param {boolean} filters.authorised - If not null, filters for pushes with
+ *          given attribute and status.
+ * @param {boolean} filters.blocked - If not null, filters for pushes with
+ *          given attribute and status.
+ * @param {boolean} filters.canceled - If not null, filters for pushes with
+ *          given attribute and status.
+ * @param {boolean} filters.error - If not null, filters for pushes with given
+ *          attribute and status.
+ * @param {boolean} filters.rejected - If not null, filters for pushes with
+ *          given attribute and status.
  */
-async function approveCommit(commitId) {
+async function getGitPushes(filters) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: Authentication required');
+    console.error('Error: List: Authentication required');
     process.exitCode = 1;
     return;
   }
@@ -68,35 +86,195 @@ async function approveCommit(commitId) {
   try {
     const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
 
-    response = await axios.get(`${baseUrl}/api/v1/push/${commitId}`, {
+    const response = await axios.get(`${baseUrl}/api/v1/push/`, {
+      headers: { Cookie: cookies },
+      params: filters,
+    });
+
+    const records = [];
+    response.data?.forEach((push) => {
+      const record = {};
+      record.id = push.id;
+      record.timestamp = push.timestamp;
+      record.url = push.url;
+      record.allowPush = push.allowPush;
+      record.authorised = push.authorised;
+      record.blocked = push.blocked;
+      record.canceled = push.canceled;
+      record.error = push.error;
+      record.rejected = push.rejected;
+
+      record.lastStep = {
+        stepName: push.lastStep?.stepName,
+        error: push.lastStep?.error,
+        errorMessage: push.lastStep?.errorMessage,
+        blocked: push.lastStep?.blocked,
+        blockedMessage: push.lastStep?.blockedMessage,
+      };
+
+      record.commitData = [];
+      push.commitData?.forEach((pushCommitDataRecord) => {
+        record.commitData.push({
+          message: pushCommitDataRecord.message,
+          committer: pushCommitDataRecord.committer,
+        });
+      });
+
+      records.push(record);
+    });
+
+    console.log(`${util.inspect(records, false, null, false)}`);
+  } catch (error) {
+    // default error
+    let errorMessage = `Error: List: '${error.message}'`;
+    process.exitCode = 2;
+
+    if (error.response && error.response.status == 401) {
+      errorMessage = 'Error: List: Authentication required';
+      process.exitCode = 3;
+    }
+    console.error(errorMessage);
+  }
+}
+
+/**
+ * Authorise git push by ID
+ * @param {string} id The ID of the git push to authorise
+ */
+async function authoriseGitPush(id) {
+  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
+    console.error('Error: Authorise: Authentication required');
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
+
+    response = await axios.get(`${baseUrl}/api/v1/push/${id}`, {
       headers: { Cookie: cookies },
     });
 
     response = await axios.post(
-      `${baseUrl}/api/v1/push/${commitId}/authorise`,
+      `${baseUrl}/api/v1/push/${id}/authorise`,
       {},
       {
         headers: { Cookie: cookies },
       },
     );
 
-    console.log(`Approve: ID: '${commitId}': OK`);
+    console.log(`Authorise: ID: '${id}': OK`);
   } catch (error) {
+    // default error
+    let errorMessage = `Error: Authorise: '${error.message}'`;
+    process.exitCode = 2;
+
     if (error.response) {
-      if (error.response.status == 401) {
-        console.log(`Approve: Authentication required`);
-        process.exitCode = 2;
-      } else if (error.response.status == 404) {
-        console.log(`Approve: ID: '${commitId}': Not Found`);
-        process.exitCode = 3;
-      } else {
-        console.error(`Error: Approve: '${error.response.status}'`);
-        process.exitCode = 4;
+      switch (error.response.status) {
+        case 401:
+          errorMessage = 'Error: Authorise: Authentication required';
+          process.exitCode = 3;
+          break;
+        case 404:
+          errorMessage = `Error: Authorise: ID: '${id}': Not Found`;
+          process.exitCode = 4;
       }
-    } else {
-      console.error(`Error: Approve: '${error.message}'`);
-      process.exitCode = 5;
     }
+    console.error(errorMessage);
+  }
+}
+
+/**
+ * Reject git push by ID
+ * @param {string} id The ID of the git push to reject
+ */
+async function rejectGitPush(id) {
+  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
+    console.error('Error: Reject: Authentication required');
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
+
+    response = await axios.get(`${baseUrl}/api/v1/push/${id}`, {
+      headers: { Cookie: cookies },
+    });
+
+    response = await axios.post(
+      `${baseUrl}/api/v1/push/${id}/reject`,
+      {},
+      {
+        headers: { Cookie: cookies },
+      },
+    );
+
+    console.log(`Reject: ID: '${id}': OK`);
+  } catch (error) {
+    // default error
+    let errorMessage = `Error: Reject: '${error.message}'`;
+    process.exitCode = 2;
+
+    if (error.response) {
+      switch (error.response.status) {
+        case 401:
+          errorMessage = 'Error: Reject: Authentication required';
+          process.exitCode = 3;
+          break;
+        case 404:
+          errorMessage = `Error: Reject: ID: '${id}': Not Found`;
+          process.exitCode = 4;
+      }
+    }
+    console.error(errorMessage);
+  }
+}
+
+/**
+ * Cancel git push by ID
+ * @param {string} id The ID of the git push to cancel
+ */
+async function cancelGitPush(id) {
+  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
+    console.error('Error: Cancel: Authentication required');
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
+
+    response = await axios.get(`${baseUrl}/api/v1/push/${id}`, {
+      headers: { Cookie: cookies },
+    });
+
+    response = await axios.post(
+      `${baseUrl}/api/v1/push/${id}/cancel`,
+      {},
+      {
+        headers: { Cookie: cookies },
+      },
+    );
+
+    console.log(`Cancel: ID: '${id}': OK`);
+  } catch (error) {
+    // default error
+    let errorMessage = `Error: Cancel: '${error.message}'`;
+    process.exitCode = 2;
+
+    if (error.response) {
+      switch (error.response.status) {
+        case 401:
+          errorMessage = 'Error: Cancel: Authentication required';
+          process.exitCode = 3;
+          break;
+        case 404:
+          errorMessage = `Error: Cancel: ID: '${id}': Not Found`;
+          process.exitCode = 4;
+      }
+    }
+    console.error(errorMessage);
   }
 }
 
@@ -104,47 +282,66 @@ async function approveCommit(commitId) {
  * Log out (and clean up)
  */
 async function logout() {
-  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: Authentication required');
-    process.exitCode = 1;
-    return;
-  }
-
-  try {
-    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
-
-    response = await axios.post(
-      `${baseUrl}/auth/logout`,
-      {},
-      {
-        headers: { Cookie: cookies },
-      },
-    );
-    if (fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
+  if (fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
+    try {
+      const cookies = JSON.parse(
+        fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'),
+      );
       fs.writeFileSync(GIT_PROXY_COOKIE_FILE, '*** logged out ***', 'utf8');
       fs.unlinkSync(GIT_PROXY_COOKIE_FILE);
-    }
-    console.log('Logout: OK');
-  } catch (error) {
-    if (error.response) {
-      if (error.response.status == 401) {
-        console.log(`Logout: Authentication required`);
-        process.exitCode = 2;
-      } else {
-        console.error(`Error: Logout: '${error.response.status}'`);
-        process.exitCode = 3;
-      }
-    } else {
-      console.error(`Error: Logout: '${error.message}'`);
-      process.exitCode = 4;
+
+      response = await axios.post(
+        `${baseUrl}/auth/logout`,
+        {},
+        {
+          headers: { Cookie: cookies },
+        },
+      );
+    } catch (error) {
+      console.log(`Warning: Logout: '${error.message}'`);
     }
   }
-}
 
-console.log(`Git-Proxy URL: ${baseUrl}`);
+  console.log('Logout: OK');
+}
 
 // Parsing command line arguments
 yargs(hideBin(process.argv))
+  .command({
+    command: 'authorise',
+    describe: 'Authorise git push by ID',
+    builder: {
+      id: {
+        describe: 'Push ID',
+        demandOption: true,
+        type: 'string',
+      },
+    },
+    handler(argv) {
+      authoriseGitPush(argv.id);
+    },
+  })
+  .command({
+    command: 'cancel',
+    describe: 'Cancel git push by ID',
+    builder: {
+      id: {
+        describe: 'Push ID',
+        demandOption: true,
+        type: 'string',
+      },
+    },
+    handler(argv) {
+      cancelGitPush(argv.id);
+    },
+  })
+  .command({
+    command: 'config',
+    describe: 'Print configuration',
+    handler(argv) {
+      console.log(`GitProxy URL: ${baseUrl}`);
+    },
+  })
   .command({
     command: 'login',
     describe: 'Log in by username/password',
@@ -165,24 +362,77 @@ yargs(hideBin(process.argv))
     },
   })
   .command({
-    command: 'approve',
-    describe: 'Approve commit by ID',
+    command: 'logout',
+    describe: 'Log out',
+    handler(argv) {
+      logout();
+    },
+  })
+  .command({
+    command: 'ls',
+    describe: 'Get list of git pushes',
     builder: {
-      commitId: {
-        describe: 'Commit ID',
+      allowPush: {
+        describe: `Filter for the "allowPush" flag of the git push on the list`,
+        demandOption: false,
+        type: 'boolean',
+        default: null,
+      },
+      authorised: {
+        describe: `Filter for the "authorised" flag of the git push on the list`, // eslint-disable-line max-len
+        demandOption: false,
+        type: 'boolean',
+        default: null,
+      },
+      blocked: {
+        describe: `Filter for the "blocked" flag of the git push on the list`,
+        demandOption: false,
+        type: 'boolean',
+        default: null,
+      },
+      canceled: {
+        describe: `Filter for the "canceled" flag of the git push on the list`,
+        demandOption: false,
+        type: 'boolean',
+        default: null,
+      },
+      error: {
+        describe: `Filter for the "error" flag of the git push on the list`,
+        demandOption: false,
+        type: 'boolean',
+        default: null,
+      },
+      rejected: {
+        describe: `Filter for the "rejected" flag of the git push on the list`,
+        demandOption: false,
+        type: 'boolean',
+        default: null,
+      },
+    },
+    handler(argv) {
+      const filters = {
+        allowPush: argv.allowPush,
+        authorised: argv.authorised,
+        blocked: argv.blocked,
+        canceled: argv.canceled,
+        error: argv.error,
+        rejected: argv.rejected,
+      };
+      getGitPushes(filters);
+    },
+  })
+  .command({
+    command: 'reject',
+    describe: 'Reject git push by ID',
+    builder: {
+      id: {
+        describe: 'Push ID',
         demandOption: true,
         type: 'string',
       },
     },
     handler(argv) {
-      approveCommit(argv.commitId);
-    },
-  })
-  .command({
-    command: 'logout',
-    describe: 'Log out',
-    handler(argv) {
-      logout();
+      rejectGitPush(argv.id);
     },
   })
   .demandCommand(1, 'You need at least one command before moving on')
