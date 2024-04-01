@@ -44,6 +44,7 @@ jobs:
       id: test
       run: |
         npm run test-coverage-ci
+        npm run test-coverage-ci --workspaces --if-present
 
     - name: Upload test coverage report
       uses: codecov/codecov-action@v4.1.1
