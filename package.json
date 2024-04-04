@@ -20,7 +20,10 @@
     "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,md,json,scss} test/**/*.{js,jsx,ts,tsx,json} --config ./.prettierrc",
     "gen-schema-doc": "node ./scripts/doc-schema.js"
   },
-  "bin": "./index.js",
+  "bin": {
+    "git-proxy": "./index.js",
+    "fullstack": "concurrently 'npm run server' 'npm run client'"
+  },
   "author": "Paul Groves",
   "license": "Apache-2.0",
   "dependencies": {
