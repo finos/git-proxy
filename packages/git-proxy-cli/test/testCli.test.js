@@ -889,6 +889,7 @@ describe('test git-proxy-cli', function () {
         );
       } finally {
         await helper.closeServer(service.httpServer);
+        await helper.removeCookiesFile();
       }
     });
   });
