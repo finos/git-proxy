@@ -44,11 +44,10 @@ curl -H "Content-Type: application/json" -c git-proxy-cookie -X POST \
 Using the [cookie](/docs/quickstart/approve#2-authenticate-with-the-api) generated, execute a `GET` request to confirm that your push with `ID` exists in the database:
 
 ```bash
-curl -b ./git-proxy-cookie \
-  -X GET http://localhost:8080/api/v1/push/${ID}
+curl -I -b ./git-proxy-cookie http://localhost:8080/api/v1/push/${ID}
 ```
 
-You should receive a `200 OK` in the response. Note: if given `ID` does not exist then you receive a `404 not found`.
+You should receive a `200 OK` in the response. If `ID` does not exist then you'll receive a `404` error.
 
 #### 4. Approve the push with `ID`
 
@@ -104,8 +103,7 @@ Use the default & auto-generated Git Proxy username & password credentials to au
 
 ```bash
 $ npx -- @finos/git-proxy-cli login --username admin --password admin
-Git-Proxy URL: http://git-proxy.com:8080
-Login 'admin': OK
+Login "admin" <admin@place.com> (admin): OK
 ```
 
 #### 3. Approve the push with `ID`
@@ -113,9 +111,8 @@ Login 'admin': OK
 Use the commit `ID` to approve your push with the CLI:
 
 ```bash
-$ npx -- @finos/git-proxy-cli approve --commitId 0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
-Git-Proxy URL: http://git-proxy.com:8080
-Approve: ID: '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f': OK
+$ npx -- @finos/git-proxy-cli authorise --id 0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
+Authorise: ID: '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f': OK
 ```
 
 #### 4. Re-push your code
@@ -139,7 +136,6 @@ Clean up your connect cookie via logging out:
 
 ```bash
 $ npx -- @finos/git-proxy-cli logout
-Git-Proxy URL: http://git-proxy.com:8080
 Logout: OK
 ```
 

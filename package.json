@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
-    "cli": "node ./src/cli/git-proxy-cli.js",
+    "cli": "node ./packages/git-proxy-cli/index.js",
     "client": "vite --config vite.config.js",
     "clientinstall": "npm install --prefix client",
     "server": "node index.js",
@@ -77,7 +77,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-config-standard": "^17.0.0",
     "eslint-plugin-import": "^2.22.1",
-    "eslint-plugin-n": "^16.6.2",
+    "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-promise": "^6.0.0",
     "eslint-plugin-react": "^7.21.5",
