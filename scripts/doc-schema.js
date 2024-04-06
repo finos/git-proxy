@@ -18,7 +18,7 @@ try {
     SCHEMA_FILE,
     `${tempdir}${sep}schema.md`,
   ]).toString('utf-8');
-  logger.info(genDocOutput);
+  console.log(genDocOutput);
 
   const schemaDoc = readFileSync(`${tempdir}${sep}schema.md`, 'utf-8')
     .replace(/\n\n<\/summary>/g, '</summary>')
@@ -31,7 +31,7 @@ description: JSON schema reference documentation for Git Proxy
 ${schemaDoc}
 `;
   writeFileSync(OUTPUT_PATH, docString);
-  logger.info(`Wrote schema reference to ${OUTPUT_PATH}`);
+  console.info(`Wrote schema reference to ${OUTPUT_PATH}`);
 } catch (err) {
-  logger.error(err);
+  console.error(err);
 }
