@@ -9,8 +9,9 @@ const { logger } = require('../src/logging/index');
 const assert = chai.assert;
 
 const gitProxyLogFilePath = './src/logging/git-proxy.log';
+const errorLogFilePath = './src/logging/error.log';
 
-const findLogLineInFile = async (filePath, loggerTestLine) => {
+const isLogLineInFile = async (filePath, loggerTestLine) => {
   return new Promise((resolve) => {
     const stream = fs.createReadStream(filePath);
     const rl = readline.createInterface({
@@ -40,29 +41,41 @@ const findLogLineInFile = async (filePath, loggerTestLine) => {
 };
 
 describe('logger file functionality', () => {
-  it('startup creates a generic git-proxy.log file', async () => {
-    // Assert file exists
-    const fileExists = fs.existsSync(gitProxyLogFilePath);
-    assert.isTrue(fileExists);
-  });
 
-  it('logger functions correctly', async () => {
-    // create test log line and ensure it is the last line logged
-    const loggerTestLine = `**logging functionality test: ${crypto.randomBytes(20).toString('hex')}**`;
+  it('logging info hits git-proxy.log file & not error.log file', async () => {
+    const loggerTestLine = `**logging functionality info test: ${crypto.randomBytes(20).toString('hex')}**`;
 
     logger.info(loggerTestLine);
-    const isLogLineInFile = await findLogLineInFile(
+    const isLogLineInGitProxyLog = await isLogLineInFile(
       gitProxyLogFilePath,
       loggerTestLine,
     );
-    assert.isTrue(isLogLineInFile);
+
+    const isLogLineInErrorLog = await isLogLineInFile(
+      errorLogFilePath,
+      loggerTestLine,
+    );
+
+    assert.isTrue(isLogLineInGitProxyLog);
+    assert.isFalse(isLogLineInErrorLog);
   });
 
-  it('creates an error specific error.log file', async () => {
-    // does error.log exist && only error logs
-    // trigger some error and check error is in log e.g. `error: Rejecting repo thisproject/repo-is-not-ok not in the authorisedList`
-    // fs.readFile('./src/logging/git-proxy.log', 'utf8', (err, data) => {
-    //   console.log(data);
-    // });
+  it('logging error hits error.log & git-proxy.log file', async () => {
+    const loggerTestLine = `**logging functionality error test: ${crypto.randomBytes(20).toString('hex')}**`;
+
+    logger.error(loggerTestLine);
+    const isLogLineInErrorLog = await isLogLineInFile(
+      errorLogFilePath,
+      loggerTestLine,
+    );
+
+    const isLogLineInGitProxyLog = await isLogLineInFile(
+      gitProxyLogFilePath,
+      loggerTestLine,
+    );
+
+    assert.isTrue(isLogLineInErrorLog);
+    assert.isTrue(isLogLineInGitProxyLog);
   });
+
 });
