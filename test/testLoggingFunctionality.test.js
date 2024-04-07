@@ -41,7 +41,6 @@ const isLogLineInFile = async (filePath, loggerTestLine) => {
 };
 
 describe('logger file functionality', () => {
-
   it('logging info hits git-proxy.log file & not error.log file', async () => {
     const loggerTestLine = `**logging functionality info test: ${crypto.randomBytes(20).toString('hex')}**`;
 
@@ -77,5 +76,4 @@ describe('logger file functionality', () => {
     assert.isTrue(isLogLineInErrorLog);
     assert.isTrue(isLogLineInGitProxyLog);
   });
-
 });
