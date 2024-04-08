@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
+const { logger } = require('../../logging/index');
 
 /** Class representing a Push. */
 class Step {
