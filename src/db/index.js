@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 const nodemailer = require('nodemailer');
 const generator = require('generate-password');
 const passwordHash = require('password-hash');
@@ -22,11 +23,7 @@ module.exports.createUser = async (
   admin = false,
 ) => {
   logger.info(
-    `creating user
-        user=${username},
-        gitAccount=${gitAccount}
-        email=${email},
-        admin=${admin}`,
+    `creating user: user=${username}, gitAccount=${gitAccount} email=${email}, admin=${admin}`,
   );
 
   const data = {

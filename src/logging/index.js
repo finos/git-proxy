@@ -6,7 +6,7 @@ const cleanFormat = printf(({ level, message, timestamp }) => {
 });
 
 const logger = createLogger({
-  format: combine(timestamp(), cleanFormat),
+  format: combine(timestamp(), format.errors({ stack: true }), cleanFormat),
   transports: [
     new transports.File({
       level: 'error',
@@ -18,6 +18,7 @@ const logger = createLogger({
       filename: 'git-proxy.log',
       dirname: './src/logging',
     }),
+    new transports.Console(),
   ],
 });
 

@@ -23,18 +23,14 @@ const exec = async (req, action, authorisedList = db.getRepos) => {
     step.error = true;
 
     step.log(`repo ${action.repo} is not in the authorisedList, ending`);
-    logger.info('setting error');
-
     step.setError(`Rejecting repo ${action.repo} not in the authorisedList`);
-    logger.error(`Rejecting repo ${action.repo} not in the authorisedList`);
-
     action.addStep(step);
+
     return action;
   }
 
   logger.info('found');
   step.log(`repo ${action.repo} is in the authorisedList`);
-  logger.info(`repo ${action.repo} is in the authorisedList`);
 
   action.addStep(step);
   return action;
