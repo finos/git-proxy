@@ -40,6 +40,7 @@ const start = async () => {
       saveUninitialized: false,
       cookie: {
         secure: 'auto',
+        httpOnly: true,
         maxAge: config.getSessionMaxAgeHours() * 60 * 60 * 1000,
       },
     }),
