@@ -17,5 +17,6 @@ jobs:
         comment-summary-in-pr: always
         fail-on-severity: high
         allow-licenses: MIT, Apache-2.0, BSD-3-Clause, ISC, BSD-2-Clause, Unlicense, CC0-1.0, 0BSD, X11, MPL-2.0, MPL-1.0, MPL-1.1, MPL-2.0
+        deny-licenses: AFL-3.0, AGPL-1.0, AGPL-2.0, AGPL-3.0, ASL, APSL-1.0, APSL-1.1, APSL-1.2, APSL-2.0, BCL, CPOL-1.02, BSD-4-Clause, CC-BY-2.5, CC-BY-3.0, CC-BY-4.0, EUPL-1.0, EUPL-1.1, GPL-1.0, GPL-2.0, GPL-3.0, LGPL-2.1, LGPL-3.0, JSON, MS-LPL, NPL-1.0, NPL-1.1, OSL-3.0, QPL-1.0, Sleepycat
         fail-on-scopes: development, runtime
         allow-dependencies-licenses: 'pkg:npm/caniuse-lite'
