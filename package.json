@@ -22,7 +22,7 @@
   },
   "bin": {
     "git-proxy": "./index.js",
-    "fullstack": "concurrently 'npm run server' 'npm run client'"
+     "git-proxy-all": "concurrently 'npm run server' 'npm run client'"
   },
   "author": "Paul Groves",
   "license": "Apache-2.0",
