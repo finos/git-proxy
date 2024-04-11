@@ -1,7 +1,7 @@
 /* eslint-disable max-len */
 /* eslint-disable require-jsdoc */
 import axios from 'axios';
-const { logger } = require('../../logging/index');
+const { logger, winstonLogger } = require('../../logging/index');
 const { GIT_PROXY_UI_PORT: uiPort } = require('../../config/env').Vars;
 const baseUrl = `http://localhost:${uiPort}/api/v1`;
 
@@ -28,7 +28,7 @@ const getUser = async (
     .then((response) => {
       const data = response.data;
       setData(data);
-      logger.info(data);
+      winstonLogger('info', 'user.js', data);
       setIsLoading(false);
     })
     .catch((error) => {
@@ -45,7 +45,7 @@ const createUser = async (data) => {
     .post(url, data, { withCredentials: true })
     .then(() => {})
     .catch((error) => {
-      logger.error(error.response.data.message);
+      winstonLogger('error', 'user.js', error.response.data.message);
       throw error;
     });
 };

@@ -5,7 +5,7 @@ const cors = require('cors');
 const app = express();
 const rateLimit = require('express-rate-limit');
 const lusca = require('lusca');
-const { logger } = require('../logging/index');
+const { winstonLogger } = require('../logging/index');
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -46,7 +46,7 @@ const start = async () => {
 
   await _httpServer.listen(uiPort);
 
-  logger.info(`Service Listening on ${uiPort}`);
+  winstonLogger('info', 'service/index.js', `Service Listening on ${uiPort}`);
   app.emit('ready');
 
   return app;

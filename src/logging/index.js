@@ -22,4 +22,18 @@ const logger = createLogger({
   ],
 });
 
+/**
+ * @param {string} logLevel
+ * @param {string} filename
+ * @param {string} message
+ */
+function winstonLogger(logLevel, filename, message) {
+  if (logLevel === 'error') {
+    logger.error(`${filename}: ${message}`);
+  } else {
+    logger.info(`${filename}: ${message}`);
+  }
+}
+
 module.exports.logger = logger;
+module.exports.winstonLogger = winstonLogger;
