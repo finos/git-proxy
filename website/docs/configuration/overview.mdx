@@ -56,6 +56,14 @@ export GIT_PROXY_SERVER_PORT="9090"
 Note that `GIT_PROXY_UI_PORT` is needed for both server and UI Node processes, 
 whereas `GIT_PROXY_SERVER_PORT` is only needed by the server process.
 
+By default, Git Proxy CLI connects to Git Proxy running on localhost and default port. This can be 
+changed by setting the `GIT_PROXY_UI_HOST` and `GIT_PROXY_UI_PORT` environment variables:
+
+```
+export GIT_PROXY_UI_HOST="http://www.git-proxy.com"
+export GIT_PROXY_UI_PORT="5000"
+```
+
 ### Validate configuration
 
 To validate your Git Proxy configuration, run:

@@ -30,7 +30,14 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   if (req.user) {
     const id = req.params.id;
-    res.send(await db.getPush(id));
+    push = await db.getPush(id);
+    if (push) {
+      res.send(push);
+    } else {
+      res.status(404).send({
+        message: 'not found',
+      });
+    }
   } else {
     res.status(401).send({
       message: 'not logged in',

@@ -27,8 +27,8 @@ const start = async () => {
     );
     if (!found) {
       await db.createRepo(x);
-      await db.addUserCanPush('git-proxy', 'admin');
-      await db.addUserCanAuthorise('git-proxy', 'admin');
+      await db.addUserCanPush(x.name, 'admin');
+      await db.addUserCanAuthorise(x.name, 'admin');
     }
   });
 

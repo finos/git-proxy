@@ -47,7 +47,7 @@ Using the [cookie](/docs/quickstart/approve#2-authenticate-with-the-api) generat
 curl -I -b ./git-proxy-cookie http://localhost:8080/api/v1/push/${ID}
 ```
 
-You should receive a `200 OK` in the response.
+You should receive a `200 OK` in the response. If `ID` does not exist then you'll receive a `404` error.
 
 #### 4. Approve the push with `ID`
 
@@ -71,6 +71,72 @@ Compressing objects: 100% (3/3), done.
 Writing objects: 100% (3/3), 470 bytes | 470.00 KiB/s, done.
 Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
 remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+```
+
+## Using the CLI
+
+### Prerequisites
+
+- Proxy and REST API are running ([default behaviour](https://github.com/finos/git-proxy/blob/main/index.js))
+- The Git Proxy URL is configured via the GIT_PROXY_UI_HOST (defaults to `http://localhost`) and GIT_PROXY_UI_PORT (defaults to `8080`) environment variables. Note: this documentation assumes that Git Proxy UI is running on `http://git-proxy.com:8080`.
+- [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy)
+
+### Instructions
+
+#### 1. Find the tracking `ID`
+
+Following on from [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy), you'll receive a unique URL:
+
+```
+http://localhost:8080/requests/0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
+```
+
+The `ID` for your push corresponds to the last part of the URL:
+
+```
+0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
+```
+
+#### 2. Authenticate with the CLI
+
+Use the default & auto-generated Git Proxy username & password credentials to authenticate and obtain a cookie. The cookie value is saved to a file (`git-proxy-cookie`):
+
+```bash
+$ npx -- @finos/git-proxy-cli login --username admin --password admin
+Login "admin" <admin@place.com> (admin): OK
+```
+
+#### 3. Approve the push with `ID`
+
+Use the commit `ID` to approve your push with the CLI:
+
+```bash
+$ npx -- @finos/git-proxy-cli authorise --id 0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
+Authorise: ID: '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f': OK
+```
+
+#### 4. Re-push your code
+
+Execute `git push` to send your approved code through Git Proxy to the upstream repository:
+
+```bash
+$ git push
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 10 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 470 bytes | 470.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+```
+
+#### 5. Log out
+
+Clean up your connect cookie via logging out:
+
+```bash
+$ npx -- @finos/git-proxy-cli logout
+Logout: OK
 ```
 
 ## Using the UI
