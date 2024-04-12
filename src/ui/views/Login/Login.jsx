@@ -15,6 +15,7 @@ import axios from 'axios';
 import { Navigate } from 'react-router-dom';
 import logo from '../../assets/img/git-proxy.png';
 import { Badge, CircularProgress, Snackbar } from '@material-ui/core';
+import { getCookie } from '../../utils';
 
 const loginUrl = `${import.meta.env.VITE_API_URI}/api/auth/login`;
 
@@ -45,6 +46,7 @@ export default function UserProfile() {
           withCredentials: true,
           headers: {
             'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': getCookie('csrf'),
           },
         },
       )
