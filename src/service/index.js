@@ -45,12 +45,23 @@ const start = async () => {
       },
     }),
   );
+  app.use(
+    lusca({
+      csrf: {
+        cookie: { name: 'csrf' },
+      },
+      hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+      nosniff: true,
+      referrerPolicy: 'same-origin',
+      xframe: 'SAMEORIGIN',
+      xssProtection: true,
+    }),
+  );
   app.use(passport.initialize());
   app.use(passport.session());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use('/', routes);
-  app.use(lusca.csrf());
   app.use('/', express.static(absBuildPath));
   app.get('/*', (req, res) => {
     res.sendFile(path.join(`${absBuildPath}/index.html`));
