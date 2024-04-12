@@ -44,9 +44,10 @@ jobs:
       id: test
       run: |
         npm run test-coverage-ci
+        npm run test-coverage-ci --workspaces --if-present
 
     - name: Upload test coverage report
-      uses: codecov/codecov-action@v4.2.0
+      uses: codecov/codecov-action@v4.3.0
       with:
         files: ./coverage/lcov.info
         token: ${{ secrets.CODECOV_TOKEN }}

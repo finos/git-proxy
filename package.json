@@ -3,6 +3,7 @@
   "version": "1.1.0",
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
+    "cli": "node ./packages/git-proxy-cli/index.js",
     "client": "vite --config vite.config.js",
     "clientinstall": "npm install --prefix client",
     "server": "node index.js",
@@ -22,8 +23,11 @@
   },
   "bin": {
     "git-proxy": "./index.js",
-     "git-proxy-all": "concurrently 'npm run server' 'npm run client'"
+    "git-proxy-all": "concurrently 'npm run server' 'npm run client'"
   },
+  "workspaces": [
+    "./packages/git-proxy-cli"
+  ],
   "author": "Paul Groves",
   "license": "Apache-2.0",
   "dependencies": {
