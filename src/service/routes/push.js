@@ -23,7 +23,14 @@ router.get('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
   const id = req.params.id;
-  res.send(await db.getPush(id));
+  const push = await db.getPush(id);
+  if (push) {
+    res.send(push);
+  } else {
+    res.status(404).send({
+      message: 'not found',
+    });
+  }
 });
 
 router.post('/:id/reject', async (req, res) => {
