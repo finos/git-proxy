@@ -113,3 +113,34 @@ describe('user configuration', function () {
     delete require.cache[require.resolve('../src/config')];
   });
 });
+
+describe('validate config files', function () {
+  const config = require('../src/config/file');
+
+  it('all valid config files should pass validation', function () {
+    const validConfigFiles = [
+      'proxy.config.valid-1.json',
+      'proxy.config.valid-2.json',
+    ];
+    for (const testConfigFile of validConfigFiles) {
+      expect(config.validate(path.join(__dirname, testConfigFile))).to.be.true;
+    }
+  });
+
+  it('all invalid config files should fail validation', function () {
+    const invalidConfigFiles = [
+      'proxy.config.invalid-1.json',
+      'proxy.config.invalid-2.json',
+    ];
+    for (const testConfigFile of invalidConfigFiles) {
+      const test = function () {
+        config.validate(path.join(__dirname, testConfigFile));
+      };
+      expect(test).to.throw();
+    }
+  });
+
+  after(function () {
+    delete require.cache[require.resolve('../src/config')];
+  });
+});
