@@ -22,25 +22,17 @@ require('./src/config/file').configFile = argv.c ? argv.c : undefined;
 
 if (argv.v) {
   const fs = require('fs');
-  const path = require('path');
-  const validate = require('jsonschema').validate;
-  const configFile = require('./src/config/file').configFile;
+  const config = require('./src/config/file');
 
-  if (!fs.existsSync(configFile)) {
+  if (!fs.existsSync(config.configFile)) {
     console.error(
-      `Config file ${configFile} doesn't exist, nothing to validate! Did you forget -c/--config?`,
+      `Config file ${config.configFile} doesn't exist, nothing to validate! Did you forget -c/--config?`,
     );
     process.exit(1);
   }
 
-  const config = JSON.parse(fs.readFileSync(configFile));
-  const schema = JSON.parse(
-    fs.readFileSync(path.join(__dirname, 'config.schema.json')),
-  );
-
-  validate(config, schema, { required: true, throwError: true });
-
-  console.log(`${configFile} is valid`);
+  config.validate();
+  console.log(`${config.configFile} is valid`);
   process.exit(0);
 }
 
