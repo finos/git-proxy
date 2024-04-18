@@ -94,5 +94,6 @@
   },
   "privateOrganizations": [],
   "urlShortener": "",
-  "contactEmail": ""
+  "contactEmail": "",
+  "csrfProtection": true
 }
