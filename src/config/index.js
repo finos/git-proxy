@@ -20,6 +20,7 @@ const _attestationConfig = defaultSettings.attestationConfig;
 const _privateOrganizations = defaultSettings.privateOrganizations;
 const _urlShortener = defaultSettings.urlShortener;
 const _contactEmail = defaultSettings.contactEmail;
+const _csrfProtection = defaultSettings.csrfProtection;
 
 // Get configured proxy URL
 const getProxyUrl = () => {
@@ -134,6 +135,11 @@ const getContactEmail = () => {
   return _contactEmail;
 };
 
+// Get CSRF protection flag
+const getCSRFProtection = () => {
+  return _csrfProtection;
+};
+
 exports.getAPIs = getAPIs;
 exports.getProxyUrl = getProxyUrl;
 exports.getAuthorisedList = getAuthorisedList;
@@ -148,3 +154,4 @@ exports.getAttestationConfig = getAttestationConfig;
 exports.getPrivateOrganizations = getPrivateOrganizations;
 exports.getURLShortener = getURLShortener;
 exports.getContactEmail = getContactEmail;
+exports.getCSRFProtection = getCSRFProtection;
