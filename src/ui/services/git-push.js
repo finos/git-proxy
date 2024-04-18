@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getCookie } from '../utils.jsx';
 
 const baseUrl = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}/api/v1`
@@ -84,7 +85,7 @@ const authorisePush = async (id, setMessage, setUserAllowedToApprove, attestatio
           attestation,
         },
       },
-      { withCredentials: true },
+      { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } },
     )
     .catch((error) => {
       if (error.response && error.response.status === 401) {
@@ -100,25 +101,29 @@ const rejectPush = async (id, setMessage, setUserAllowedToReject) => {
   const url = `${baseUrl}/push/${id}/reject`;
   let errorMsg = '';
   let isUserAllowedToReject = true;
-  await axios.post(url, {}, { withCredentials: true }).catch((error) => {
-    if (error.response && error.response.status === 401) {
-      errorMsg = 'You are not authorised to reject...';
-      isUserAllowedToReject = false;
-    }
-  });
+  await axios
+    .post(url, {}, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
+    .catch((error) => {
+      if (error.response && error.response.status === 401) {
+        errorMsg = 'You are not authorised to reject...';
+        isUserAllowedToReject = false;
+      }
+    });
   await setMessage(errorMsg);
   await setUserAllowedToReject(isUserAllowedToReject);
 };
 
 const cancelPush = async (id, setAuth, setIsError) => {
   const url = `${baseUrl}/push/${id}/cancel`;
-  await axios.post(url, {}, { withCredentials: true }).catch((error) => {
-    if (error.response && error.response.status === 401) {
-      setAuth(false);
-    } else {
-      setIsError(true);
-    }
-  });
+  await axios
+    .post(url, {}, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
+    .catch((error) => {
+      if (error.response && error.response.status === 401) {
+        setAuth(false);
+      } else {
+        setIsError(true);
+      }
+    });
 };
 
 export { getPush, getPushes, authorisePush, rejectPush, cancelPush, getUser };
