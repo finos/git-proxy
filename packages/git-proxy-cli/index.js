@@ -33,7 +33,7 @@ async function login(username, password) {
     );
     const cookies = response.headers['set-cookie'];
 
-    response = await axios.get(`${baseUrl}/auth/profile`, {
+    response = await axios.get(`${baseUrl}/api/auth/profile`, {
       headers: { Cookie: cookies },
       withCredentials: true,
     });
