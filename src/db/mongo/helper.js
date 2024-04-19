@@ -3,7 +3,7 @@ const config = require('../../config');
 const dbConfig = config.getDatabase();
 const options = dbConfig.options;
 const connectionString = dbConfig.connectionString;
-const mongoSession = require('express-mongodb-session');
+const mongoSession = require('connect-mongodb-session');
 
 let _db;
 
