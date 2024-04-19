@@ -3,7 +3,7 @@ const config = require('../../config');
 const dbConfig = config.getDatabase();
 const options = dbConfig.options;
 const connectionString = dbConfig.connectionString;
-const mongoSession = require('connect-mongodb-session');
+const MongoDBStore = require('connect-mongo');
 
 let _db;
 
@@ -18,10 +18,9 @@ exports.connect = async (collectionName) => {
 };
 
 exports.getSessionStore = (session) => {
-  const MongoDBStore = mongoSession(session);
   return new MongoDBStore({
-    uri: connectionString,
-    collection: 'user_session',
-    connectionOptions: options,
+    mongoUrl: connectionString,
+    collectionName: 'user_session',
+    mongoOptions: options,
   });
 };
