@@ -21,7 +21,7 @@ axios.defaults.timeout = 30000;
 async function login(username, password) {
   try {
     let response = await axios.post(
-      `${baseUrl}/auth/login`,
+      `${baseUrl}/api/auth/login`,
       {
         username,
         password,
@@ -288,7 +288,7 @@ async function logout() {
       fs.unlinkSync(GIT_PROXY_COOKIE_FILE);
 
       await axios.post(
-        `${baseUrl}/auth/logout`,
+        `${baseUrl}/api/auth/logout`,
         {},
         {
           headers: { Cookie: cookies },
