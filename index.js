@@ -18,11 +18,11 @@ const argv = require('yargs/yargs')(process.argv.slice(2))
   })
   .strict().argv;
 
-require('./src/config/file').configFile = argv.c ? argv.c : undefined;
+const config = require('./src/config/file');
+config.configFile = argv.c ? argv.c : undefined;
 
 if (argv.v) {
   const fs = require('fs');
-  const config = require('./src/config/file');
 
   if (!fs.existsSync(config.configFile)) {
     console.error(
@@ -35,6 +35,8 @@ if (argv.v) {
   console.log(`${config.configFile} is valid`);
   process.exit(0);
 }
+
+config.validate();
 
 const proxy = require('./src/proxy');
 const service = require('./src/service');
