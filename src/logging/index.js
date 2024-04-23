@@ -1,7 +1,8 @@
 const { createLogger, format, transports } = require('winston');
 const { combine, timestamp, printf } = format;
 
-const cleanFormat = printf(({ level, message, timestamp }) => {
+const cleanFormat = printf(({ level, message, timestamp, ...meta }) => {
+  if (meta?.filename) return `${timestamp} ${level}: ${meta.filename} ${message}`;
   return `${timestamp} ${level}: ${message}`;
 });
 
@@ -22,18 +23,4 @@ const logger = createLogger({
   ],
 });
 
-/**
- * @param {string} logLevel
- * @param {string} filename
- * @param {string} message
- */
-function winstonLogger(logLevel, filename, message) {
-  if (logLevel === 'error') {
-    logger.error(`${filename}: ${message}`);
-  } else {
-    logger.info(`${filename}: ${message}`);
-  }
-}
-
 module.exports.logger = logger;
-module.exports.winstonLogger = winstonLogger;
