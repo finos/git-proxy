@@ -4,44 +4,40 @@
   "title": "Git Proxy configuration file",
   "description": "Configuration for customizing git-proxy",
   "type": "object",
-  "oneOf": [
-    {
+  "properties": {
+    "authorisedList": {
+      "description": "List of repositories that are authorised to be pushed to through the proxy.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/authorisedRepo"
+      }
+    },
+    "sink": {
+      "description": "List of database sources. The first source in the configuration with enabled=true will be used.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/database"
+      }
+    },
+    "authentication": {
+      "description": "List of authentication sources. The first source in the configuration with enabled=true will be used.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/authentication"
+      }
+    },
+    "tempPassword": {
+      "description": "Toggle the generation of temporary password for git-proxy admin user",
+      "type": "object",
       "properties": {
-        "authorisedList": {
-          "description": "List of repositories that are authorised to be pushed to through the proxy.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/authorisedRepo"
-          }
-        },
-        "sink": {
-          "description": "List of database sources. The first source in the configuration with enabled=true will be used.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/database"
-          }
-        },
-        "authentication": {
-          "description": "List of authentication sources. The first source in the configuration with enabled=true will be used.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/authentication"
-          }
-        },
-        "tempPassword": {
-          "description": "Toggle the generation of temporary password for git-proxy admin user",
-          "type": "object",
-          "properties": {
-            "sendEmail": { "type": "boolean" },
-            "emailConfig": {
-              "description": "Generic object to configure nodemailer. For full type information, please see https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/nodemailer",
-              "type": "object"
-            }
-          }
+        "sendEmail": { "type": "boolean" },
+        "emailConfig": {
+          "description": "Generic object to configure nodemailer. For full type information, please see https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/nodemailer",
+          "type": "object"
         }
       }
     }
-  ],
+  },
   "definitions": {
     "authorisedRepo": {
       "type": "object",

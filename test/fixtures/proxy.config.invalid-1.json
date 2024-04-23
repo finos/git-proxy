@@ -1,0 +1,9 @@
+{
+  "invalidProperty": [
+    {
+      "project": "finos",
+      "name": "git-proxy",
+      "url": "https://www.github.com/finos/git-proxy.git"
+    }
+  ]
+}
