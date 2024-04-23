@@ -46,7 +46,9 @@ const start = async () => {
 
   await _httpServer.listen(uiPort);
 
-  logger.info(`Service Listening on ${uiPort}`, { filename: 'service/index.js' });
+  logger.info(`Service Listening on ${uiPort}`, {
+    filename: 'service/index.js',
+  });
   app.emit('ready');
 
   return app;

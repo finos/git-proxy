@@ -2,7 +2,9 @@ const { createLogger, format, transports } = require('winston');
 const { combine, timestamp, printf } = format;
 
 const cleanFormat = printf(({ level, message, timestamp, ...meta }) => {
-  if (meta?.filename) return `${timestamp} ${level}: ${meta.filename} ${message}`;
+  if (meta?.filename) {
+    return `${timestamp} ${level}: ${meta.filename} ${message}`;
+  }
   return `${timestamp} ${level}: ${message}`;
 });
 
