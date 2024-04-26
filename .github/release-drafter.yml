@@ -7,7 +7,7 @@ template: |
   $CHANGES
   
   ---
-  
+
   See details of [all code changes](https://github.com/finos/git-proxy/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION) since previous release
 
 categories:
@@ -52,7 +52,10 @@ autolabeler:
       - '/^(docs).*/i'
   - label: 'feature'
     title:
-      - '/^(feat|break).*/i'
+      - '/^(feat).*/i'
+  - label: 'breaking'
+    title:
+      - '/^(break).*/i'
   - label: 'fix'
     title:
       - '/^(fix).*/i'
