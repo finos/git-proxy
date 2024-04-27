@@ -339,7 +339,7 @@ describe('test git-proxy-cli', function () {
     it('attempt to authorise should fail when not authenticated (server restarted)', async function () {
       try {
         await helper.createCookiesFileWithExpiredCookie();
-        await helper.startServer(service);  
+        await helper.startServer(service);
         const id = pushId;
         const cli = `npx -- @finos/git-proxy-cli authorise --id ${id}`;
         const expectedExitCode = 3;
@@ -381,7 +381,7 @@ describe('test git-proxy-cli', function () {
       } finally {
         await helper.closeServer(service.httpServer);
       }
-    }); 
+    });
   });
 
   // *** cancel ***
