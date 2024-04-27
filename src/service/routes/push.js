@@ -82,11 +82,11 @@ router.post('/:id/reject', async (req, res) => {
 
 router.post('/:id/authorise', async (req, res) => {
   console.log({ req });
-
-  const questions = req.body.params.attestation;
+  
+  const questions = req.body.params?.attestation;
   console.log({ questions });
 
-  const attestationComplete = questions.every((question) => !!question.checked);
+  const attestationComplete = questions?.every((question) => !!question.checked);
   console.log({ attestationComplete });
 
   if (req.user && attestationComplete) {
