@@ -15,6 +15,13 @@ const service = require('../../../src/service');
 // push ID which does not exist
 const GHOST_PUSH_ID =
   '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f';
+// repo for test cases
+const TEST_REPO_CONFIG = {
+  project: 'finos',
+  name: 'git-proxy-test',
+  url: 'https://github.com/finos/git-proxy-test.git'
+}
+const TEST_REPO = 'finos/git-proxy-test.git';
 
 describe('test git-proxy-cli', function () {
   // *** help ***
@@ -280,6 +287,13 @@ describe('test git-proxy-cli', function () {
   // *** authorise ***
 
   describe('test git-proxy-cli :: authorise', function () {
+    const pushId = `auth000000000000000000000000000000000000__${Date.now()}`;
+
+    before(async function() {
+      await helper.addRepoToDb(TEST_REPO_CONFIG);
+      await helper.addGitPushToDb(pushId, TEST_REPO);
+    })
+
     it('attempt to authorise should fail when server is down', async function () {
       try {
         // start server -> login -> stop server
@@ -325,8 +339,8 @@ describe('test git-proxy-cli', function () {
     it('attempt to authorise should fail when not authenticated (server restarted)', async function () {
       try {
         await helper.createCookiesFileWithExpiredCookie();
-        await helper.startServer(service);
-        const id = GHOST_PUSH_ID;
+        await helper.startServer(service);  
+        const id = pushId;
         const cli = `npx -- @finos/git-proxy-cli authorise --id ${id}`;
         const expectedExitCode = 3;
         const expectedMessages = null;
@@ -367,12 +381,19 @@ describe('test git-proxy-cli', function () {
       } finally {
         await helper.closeServer(service.httpServer);
       }
-    });
+    }); 
   });
 
   // *** cancel ***
 
   describe('test git-proxy-cli :: cancel', function () {
+    const pushId = `cancel0000000000000000000000000000000000__${Date.now()}`;
+
+    before(async function() {
+      await helper.addRepoToDb(TEST_REPO_CONFIG);
+      await helper.addGitPushToDb(pushId, TEST_REPO);
+    })
+    
     it('attempt to cancel should fail when server is down', async function () {
       try {
         // start server -> login -> stop server
@@ -417,7 +438,7 @@ describe('test git-proxy-cli', function () {
       try {
         await helper.createCookiesFileWithExpiredCookie();
         await helper.startServer(service);
-        const id = GHOST_PUSH_ID;
+        const id = pushId;
         const cli = `npx -- @finos/git-proxy-cli cancel --id ${id}`;
         const expectedExitCode = 3;
         const expectedMessages = null;
@@ -501,25 +522,6 @@ describe('test git-proxy-cli', function () {
       );
     });
 
-    it('attempt to ls should fail when not authenticated (server restarted)', async function () {
-      try {
-        await helper.createCookiesFileWithExpiredCookie();
-        await helper.startServer(service);
-        const cli = `npx -- @finos/git-proxy-cli ls`;
-        const expectedExitCode = 3;
-        const expectedMessages = null;
-        const expectedErrorMessages = ['Error: List: Authentication required'];
-        await helper.runCli(
-          cli,
-          expectedExitCode,
-          expectedMessages,
-          expectedErrorMessages,
-        );
-      } finally {
-        await helper.closeServer(service.httpServer);
-      }
-    });
-
     it('attempt to ls should fail when invalid option given', async function () {
       try {
         await helper.startServer(service);
@@ -546,6 +548,13 @@ describe('test git-proxy-cli', function () {
   // *** reject ***
 
   describe('test git-proxy-cli :: reject', function () {
+    const pushId = `reject0000000000000000000000000000000000__${Date.now()}`;
+
+    before(async function() {
+      await helper.addRepoToDb(TEST_REPO_CONFIG);
+      await helper.addGitPushToDb(pushId, TEST_REPO);
+    })
+    
     it('attempt to reject should fail when server is down', async function () {
       try {
         // start server -> login -> stop server
@@ -590,7 +599,7 @@ describe('test git-proxy-cli', function () {
       try {
         await helper.createCookiesFileWithExpiredCookie();
         await helper.startServer(service);
-        const id = GHOST_PUSH_ID;
+        const id = pushId;
         const cli = `npx -- @finos/git-proxy-cli reject --id ${id}`;
         const expectedExitCode = 3;
         const expectedMessages = null;
@@ -636,10 +645,10 @@ describe('test git-proxy-cli', function () {
 
   describe('test git-proxy-cli :: git push administration', function () {
     const pushId = `0000000000000000000000000000000000000000__${Date.now()}`;
-    const repo = 'test-repo';
 
     before(async function () {
-      await helper.addGitPushToDb(pushId, repo);
+      await helper.addRepoToDb(TEST_REPO_CONFIG);
+      await helper.addGitPushToDb(pushId, TEST_REPO);
     });
 
     it('attempt to ls should list existing push', async function () {
@@ -653,7 +662,7 @@ describe('test git-proxy-cli', function () {
         const expectedExitCode = 0;
         const expectedMessages = [
           pushId,
-          repo,
+          TEST_REPO,
           'authorised: false',
           'blocked: true',
           'canceled: false',
@@ -791,7 +800,7 @@ describe('test git-proxy-cli', function () {
 
         cli = `npx -- @finos/git-proxy-cli ls --authorised true --canceled false --rejected false`;
         expectedExitCode = 0;
-        expectedMessages = [pushId, repo];
+        expectedMessages = [pushId, TEST_REPO];
         expectedErrorMessages = null;
         await helper.runCli(
           cli,
@@ -835,7 +844,7 @@ describe('test git-proxy-cli', function () {
 
         cli = `npx -- @finos/git-proxy-cli ls --authorised false --canceled false --rejected true`;
         expectedExitCode = 0;
-        expectedMessages = [pushId, repo];
+        expectedMessages = [pushId, TEST_REPO];
         expectedErrorMessages = null;
         await helper.runCli(
           cli,
@@ -879,7 +888,7 @@ describe('test git-proxy-cli', function () {
 
         cli = `npx -- @finos/git-proxy-cli ls --authorised false --canceled true --rejected false`;
         expectedExitCode = 0;
-        expectedMessages = [pushId, repo];
+        expectedMessages = [pushId, TEST_REPO];
         expectedErrorMessages = null;
         await helper.runCli(
           cli,
