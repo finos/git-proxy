@@ -125,13 +125,8 @@ async function getGitPushes(filters) {
     console.log(`${util.inspect(records, false, null, false)}`);
   } catch (error) {
     // default error
-    let errorMessage = `Error: List: '${error.message}'`;
+    const errorMessage = `Error: List: '${error.message}'`;
     process.exitCode = 2;
-
-    if (error.response && error.response.status == 401) {
-      errorMessage = 'Error: List: Authentication required';
-      process.exitCode = 3;
-    }
     console.error(errorMessage);
   }
 }
@@ -156,7 +151,16 @@ async function authoriseGitPush(id) {
 
     await axios.post(
       `${baseUrl}/api/v1/push/${id}/authorise`,
-      {},
+      {
+        params: {
+          attestation: [
+            {
+              label: "Authorising via GitProxy CLI",
+              checked: true
+            }
+          ]
+        }
+      },
       {
         headers: { Cookie: cookies },
       },
