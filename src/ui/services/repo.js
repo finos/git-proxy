@@ -118,10 +118,12 @@ const deleteUser = async (user, repoName, action) => {
 const deleteRepo = async (repoName) => {
   const url = new URL(`${baseUrl}/repo/${repoName}/delete`);
 
-  await axios.delete(url, { withCredentials: true }).catch((error) => {
-    console.log(error.response.data.message);
-    throw error;
-  });
+  await axios
+    .delete(url, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
+    .catch((error) => {
+      console.log(error.response.data.message);
+      throw error;
+    });
 };
 
 export { addUser, deleteUser, getRepos, getRepo, addRepo, deleteRepo };
