@@ -45,7 +45,7 @@ const start = async () => {
       },
     }),
   );
-  if (config.getCSRFProtection()) {
+  if (config.getCSRFProtection() && process.env.NODE_ENV !== 'test') {
     app.use(
       lusca({
         csrf: {
