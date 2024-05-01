@@ -8,8 +8,7 @@ const util = require('util');
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
 const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost' } = process.env;
-const { GIT_PROXY_UI_PORT: uiPort } =
-  require('@finos/git-proxy/src/config/env').Vars;
+const { GIT_PROXY_UI_PORT: uiPort } = require('@finos/git-proxy/src/config/env').Vars;
 const baseUrl = `${uiHost}:${uiPort}`;
 
 axios.defaults.timeout = 30000;
@@ -22,7 +21,7 @@ axios.defaults.timeout = 30000;
 async function login(username, password) {
   try {
     let response = await axios.post(
-      `${baseUrl}/auth/login`,
+      `${baseUrl}/api/auth/login`,
       {
         username,
         password,
@@ -34,7 +33,7 @@ async function login(username, password) {
     );
     const cookies = response.headers['set-cookie'];
 
-    response = await axios.get(`${baseUrl}/auth/profile`, {
+    response = await axios.get(`${baseUrl}/api/auth/profile`, {
       headers: { Cookie: cookies },
       withCredentials: true,
     });
@@ -126,13 +125,8 @@ async function getGitPushes(filters) {
     console.log(`${util.inspect(records, false, null, false)}`);
   } catch (error) {
     // default error
-    let errorMessage = `Error: List: '${error.message}'`;
+    const errorMessage = `Error: List: '${error.message}'`;
     process.exitCode = 2;
-
-    if (error.response && error.response.status == 401) {
-      errorMessage = 'Error: List: Authentication required';
-      process.exitCode = 3;
-    }
     console.error(errorMessage);
   }
 }
@@ -151,13 +145,22 @@ async function authoriseGitPush(id) {
   try {
     const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
 
-    response = await axios.get(`${baseUrl}/api/v1/push/${id}`, {
+    await axios.get(`${baseUrl}/api/v1/push/${id}`, {
       headers: { Cookie: cookies },
     });
 
-    response = await axios.post(
+    await axios.post(
       `${baseUrl}/api/v1/push/${id}/authorise`,
-      {},
+      {
+        params: {
+          attestation: [
+            {
+              label: "Authorising via GitProxy CLI",
+              checked: true
+            }
+          ]
+        }
+      },
       {
         headers: { Cookie: cookies },
       },
@@ -198,11 +201,11 @@ async function rejectGitPush(id) {
   try {
     const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
 
-    response = await axios.get(`${baseUrl}/api/v1/push/${id}`, {
+    await axios.get(`${baseUrl}/api/v1/push/${id}`, {
       headers: { Cookie: cookies },
     });
 
-    response = await axios.post(
+    await axios.post(
       `${baseUrl}/api/v1/push/${id}/reject`,
       {},
       {
@@ -245,11 +248,11 @@ async function cancelGitPush(id) {
   try {
     const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
 
-    response = await axios.get(`${baseUrl}/api/v1/push/${id}`, {
+    await axios.get(`${baseUrl}/api/v1/push/${id}`, {
       headers: { Cookie: cookies },
     });
 
-    response = await axios.post(
+    await axios.post(
       `${baseUrl}/api/v1/push/${id}/cancel`,
       {},
       {
@@ -284,14 +287,12 @@ async function cancelGitPush(id) {
 async function logout() {
   if (fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     try {
-      const cookies = JSON.parse(
-        fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'),
-      );
+      const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
       fs.writeFileSync(GIT_PROXY_COOKIE_FILE, '*** logged out ***', 'utf8');
       fs.unlinkSync(GIT_PROXY_COOKIE_FILE);
 
-      response = await axios.post(
-        `${baseUrl}/auth/logout`,
+      await axios.post(
+        `${baseUrl}/api/auth/logout`,
         {},
         {
           headers: { Cookie: cookies },

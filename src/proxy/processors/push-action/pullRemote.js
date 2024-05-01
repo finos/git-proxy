@@ -1,4 +1,4 @@
-const execSync = require('child_process').execSync;
+const spawnSync = require('child_process').spawnSync;
 const Step = require('../../actions').Step;
 const fs = require('fs');
 const dir = './.remote';
@@ -20,22 +20,43 @@ const exec = async (req, action) => {
     }
 
     const cmd = `git clone ${action.url} --bare`;
-    step.log(`Exectuting ${cmd}`);
 
-    // eslint-disable-next-line max-len
-    const response = execSync(`git clone ${action.url} --bare`, {
+    // Retrieve authorization headers
+    const authorizationHeader = req.headers?.authorization;
+
+    // Validate the authorization headers
+    const authorizationValid =
+      authorizationHeader &&
+      typeof authorizationHeader === 'string' &&
+      authorizationHeader.includes('Basic ');
+
+    // Construct clone URL depending on presence of authorization headers
+    const cloneUrl = authorizationValid
+      ? `https://${Buffer.from(authorizationHeader.split(' ')[1], 'base64')}@${action.url.replace(
+          /https*:\/\//,
+          '',
+        )}`
+      : action.url;
+
+    step.log(`Exectuting ${cmd}${authorizationValid ? ' with credentials' : ''}`);
+
+    const response = spawnSync('git', ['clone', cloneUrl, '--bare', '--progress'], {
       cwd: action.proxyGitPath,
-    }).toString('utf-8');
+      encoding: 'utf-8',
+    });
+
+    const cloneOutput = response?.stderr;
+    step.log(cloneOutput);
 
     step.log(`Completed ${cmd}`);
-    step.setContent(response);
+    step.setContent(cloneOutput);
   } catch (e) {
     step.setError(e.toString('utf-8'));
     throw e;
   } finally {
     action.addStep(step);
-    return action;
   }
+  return action;
 };
 
 exec.displayName = 'pullRemote.exec';

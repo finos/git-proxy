@@ -8,7 +8,6 @@ import {
   warningColor,
   dangerColor,
   whiteColor,
-  grayColor,
 } from '../../material-dashboard-react.js';
 
 const headerStyle = () => ({
@@ -19,9 +18,9 @@ const headerStyle = () => ({
     marginBottom: '0',
     position: 'absolute',
     width: '100%',
-    paddingTop: '10px',
+    paddingTop: '27px',
     zIndex: '1029',
-    color: grayColor[7],
+    color: 'black',
     border: '0',
     borderRadius: '3px',
     padding: '10px 0',

@@ -8,6 +8,9 @@ module.exports.getPush = pushes.getPush;
 module.exports.authorise = pushes.authorise;
 module.exports.cancel = pushes.cancel;
 module.exports.reject = pushes.reject;
+module.exports.canUserCancelPush = pushes.canUserCancelPush;
+module.exports.canUserApproveRejectPush = pushes.canUserApproveRejectPush;
+
 module.exports.findUser = users.findUser;
 module.exports.getUsers = users.getUsers;
 module.exports.createUser = users.createUser;
@@ -21,5 +24,6 @@ module.exports.addUserCanPush = repo.addUserCanPush;
 module.exports.addUserCanAuthorise = repo.addUserCanAuthorise;
 module.exports.removeUserCanPush = repo.removeUserCanPush;
 module.exports.removeUserCanAuthorise = repo.removeUserCanAuthorise;
-
 module.exports.deleteRepo = repo.deleteRepo;
+module.exports.isUserPushAllowed = repo.isUserPushAllowed;
+module.exports.canUserApproveRejectPushRepo = repo.canUserApproveRejectPushRepo;

@@ -3,60 +3,37 @@ const router = new express.Router();
 const db = require('../../db');
 
 router.get('/', async (req, res) => {
-  if (req.user) {
-    const query = {
-      type: 'push',
-    };
+  const query = {
+    type: 'push',
+  };
 
-    for (const k in req.query) {
-      if (!k) continue;
+  for (const k in req.query) {
+    if (!k) continue;
 
-      if (k === 'limit') continue;
-      if (k === 'skip') continue;
-      let v = req.query[k];
-      if (v === 'false') v = false;
-      if (v === 'true') v = true;
-      query[k] = v;
-    }
-
-    res.send(await db.getRepos(query));
-  } else {
-    res.status(401).send({
-      message: 'not logged in',
-    });
+    if (k === 'limit') continue;
+    if (k === 'skip') continue;
+    let v = req.query[k];
+    if (v === 'false') v = false;
+    if (v === 'true') v = true;
+    query[k] = v;
   }
+
+  res.send(await db.getRepos(query));
 });
 
 router.get('/:name', async (req, res) => {
-  if (req.user) {
-    const name = req.params.name;
-    res.send(await db.getRepo(name));
-  } else {
-    res.status(401).send({
-      message: 'not logged in',
-    });
-  }
-});
-
-router.post('/', async (req, res) => {
-  if (req.user) {
-    await db.createRepo(req.body);
-    res.send({ message: 'created' });
-  } else {
-    res.status(401).send({
-      message: 'not logged in',
-    });
-  }
+  const name = req.params.name;
+  res.send(await db.getRepo(name));
 });
 
 router.patch('/:name/user/push', async (req, res) => {
-  if (req.user) {
+  if (req.user && req.user.admin) {
     const repoName = req.params.name;
-    const username = req.body.username;
+    const username = req.body.username.toLowerCase();
     const user = await db.findUser(username);
 
     if (!user) {
-      res.status(400).send({ error: `user ${username} does not exist` });
+      res.status(400).send({ error: 'User does not exist' });
       return;
     }
 
@@ -64,19 +41,19 @@ router.patch('/:name/user/push', async (req, res) => {
     res.send({ message: 'created' });
   } else {
     res.status(401).send({
-      message: 'not logged in',
+      message: 'You are not authorised to perform this action...',
     });
   }
 });
 
 router.patch('/:name/user/authorise', async (req, res) => {
-  if (req.user) {
+  if (req.user && req.user.admin) {
     const repoName = req.params.name;
     const username = req.body.username;
     const user = await db.findUser(username);
 
     if (!user) {
-      res.status(400).send({ error: `user ${username} does not exist` });
+      res.status(400).send({ error: 'User does not exist' });
       return;
     }
 
@@ -84,19 +61,19 @@ router.patch('/:name/user/authorise', async (req, res) => {
     res.send({ message: 'created' });
   } else {
     res.status(401).send({
-      message: 'not logged in',
+      message: 'You are not authorised to perform this action...',
     });
   }
 });
 
 router.delete('/:name/user/authorise/:username', async (req, res) => {
-  if (req.user) {
+  if (req.user && req.user.admin) {
     const repoName = req.params.name;
     const username = req.params.username;
     const user = await db.findUser(username);
 
     if (!user) {
-      res.status(400).send({ error: `user ${username} does not exist` });
+      res.status(400).send({ error: 'User does not exist' });
       return;
     }
 
@@ -104,19 +81,19 @@ router.delete('/:name/user/authorise/:username', async (req, res) => {
     res.send({ message: 'created' });
   } else {
     res.status(401).send({
-      message: 'not logged in',
+      message: 'You are not authorised to perform this action...',
     });
   }
 });
 
 router.delete('/:name/user/push/:username', async (req, res) => {
-  if (req.user) {
+  if (req.user && req.user.admin) {
     const repoName = req.params.name;
     const username = req.params.username;
     const user = await db.findUser(username);
 
     if (!user) {
-      res.status(400).send({ error: `user ${username} does not exist` });
+      res.status(400).send({ error: 'User does not exist' });
       return;
     }
 
@@ -124,7 +101,42 @@ router.delete('/:name/user/push/:username', async (req, res) => {
     res.send({ message: 'created' });
   } else {
     res.status(401).send({
-      message: 'not logged in',
+      message: 'You are not authorised to perform this action...',
+    });
+  }
+});
+
+router.delete('/:name/delete', async (req, res) => {
+  if (req.user.admin) {
+    const repoName = req.params.name;
+
+    await db.deleteRepo(repoName);
+    res.send({ message: 'deleted' });
+  } else {
+    res.status(401).send({
+      message: 'You are not authorised to perform this action...',
+    });
+  }
+});
+
+router.post('/', async (req, res) => {
+  if (req.user && req.user.admin) {
+    const repo = await db.getRepo(req.body.name);
+    if (repo) {
+      res.status(409).send({
+        message: 'Repository already exists!',
+      });
+    } else {
+      try {
+        await db.createRepo(req.body);
+        res.send({ message: 'created' });
+      } catch {
+        res.send('Failed to create repository');
+      }
+    }
+  } else {
+    res.status(401).send({
+      message: 'You are not authorised to perform this action...',
     });
   }
 });

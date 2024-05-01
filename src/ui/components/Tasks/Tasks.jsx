@@ -1,5 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import PropTypes from 'prop-types';
 import classnames from 'classnames';
@@ -14,7 +12,7 @@ import TableCell from '@material-ui/core/TableCell';
 import Edit from '@material-ui/icons/Edit';
 import Close from '@material-ui/icons/Close';
 import Check from '@material-ui/icons/Check';
-import styles from '../../assets/jss/material-dashboard-react/components/tasksStyle.js';
+import styles from '../../assets/jss/material-dashboard-react/components/tasksStyle';
 
 const useStyles = makeStyles(styles);
 
@@ -56,37 +54,23 @@ export default function Tasks(props) {
             <TableCell className={tableCellClasses}>{tasks[value]}</TableCell>
             <TableCell className={classes.tableActions}>
               <Tooltip
-                id="tooltip-top"
-                title="Edit Task"
-                placement="top"
+                id='tooltip-top'
+                title='Edit Task'
+                placement='top'
                 classes={{ tooltip: classes.tooltip }}
               >
-                <IconButton
-                  aria-label="Edit"
-                  className={classes.tableActionButton}
-                >
-                  <Edit
-                    className={
-                      classes.tableActionButtonIcon + ' ' + classes.edit
-                    }
-                  />
+                <IconButton aria-label='Edit' className={classes.tableActionButton}>
+                  <Edit className={classes.tableActionButtonIcon + ' ' + classes.edit} />
                 </IconButton>
               </Tooltip>
               <Tooltip
-                id="tooltip-top-start"
-                title="Remove"
-                placement="top"
+                id='tooltip-top-start'
+                title='Remove'
+                placement='top'
                 classes={{ tooltip: classes.tooltip }}
               >
-                <IconButton
-                  aria-label="Close"
-                  className={classes.tableActionButton}
-                >
-                  <Close
-                    className={
-                      classes.tableActionButtonIcon + ' ' + classes.close
-                    }
-                  />
+                <IconButton aria-label='Close' className={classes.tableActionButton}>
+                  <Close className={classes.tableActionButtonIcon + ' ' + classes.close} />
                 </IconButton>
               </Tooltip>
             </TableCell>
