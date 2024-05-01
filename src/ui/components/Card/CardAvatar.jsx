@@ -1,10 +1,8 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
-import styles from '../../assets/jss/material-dashboard-react/components/cardAvatarStyle.js';
+import styles from '../../assets/jss/material-dashboard-react/components/cardAvatarStyle';
 
 const useStyles = makeStyles(styles);
 

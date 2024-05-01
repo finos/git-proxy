@@ -1,33 +1,13 @@
 import React from 'react';
-import Icon from '@material-ui/core/Icon';
-import GridItem from '../../components/Grid/GridItem.jsx';
-import GridContainer from '../../components/Grid/GridContainer.jsx';
-import Card from '../../components/Card/Card.jsx';
-import CardIcon from '../../components/Card/CardIcon.jsx';
-import CardBody from '../../components/Card/CardBody.jsx';
-import CardHeader from '../../components/Card/CardHeader.jsx';
+import GridItem from '../../components/Grid/GridItem';
+import GridContainer from '../../components/Grid/GridContainer';
 import TabList from './Components/TabList';
 
-/**
- * Renders a list of users.
- *
- * @return {JSX.Element} The rendered component.
- */
 export default function UserList() {
   return (
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
-        <Card>
-          <CardHeader color="success" stats icon>
-            <CardIcon color="success">
-              <Icon>content_copy</Icon>
-              <h3>Admin</h3>
-            </CardIcon>
-          </CardHeader>
-          <CardBody>
-            <TabList />
-          </CardBody>
-        </Card>
+        <TabList />
       </GridItem>
     </GridContainer>
   );

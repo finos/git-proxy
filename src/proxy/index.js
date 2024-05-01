@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 const proxyApp = require('express')();
 const bodyParser = require('body-parser');
 const router = require('./routes').router;
@@ -22,9 +21,7 @@ const start = async () => {
   const allowedList = await db.getRepos();
 
   defaultAuthorisedRepoList.forEach(async (x) => {
-    const found = allowedList.find(
-      (y) => y.project == x.project && x.name == y.name,
-    );
+    const found = allowedList.find((y) => y.project === x.project && x.name === y.name);
     if (!found) {
       await db.createRepo(x);
       await db.addUserCanPush(x.name, 'admin');
@@ -33,9 +30,8 @@ const start = async () => {
   });
 
   proxyApp.listen(proxyHttpPort, () => {
-    console.log(`Listening on ${proxyHttpPort}`);
+    console.log(`Proxy Listening on ${proxyHttpPort}`);
   });
-
   return proxyApp;
 };
 

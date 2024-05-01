@@ -1,22 +1,5 @@
 /** Class representing a Push. */
-
-/**
- *
- * @param {string} str1
- * @param {string} str2
- * @param {boolean} ignore
- * @return {string}
- */
-// eslint-disable-next-line no-extend-native
-String.prototype.replaceAll = function (str1, str2, ignore) {
-  return this.replace(
-    new RegExp(
-      str1.replace(/([\/\,\!\\\^\$\{\}\[\]\(\)\.\*\+\?\|\<\>\-\&])/g, '\\$&'),
-      ignore ? 'gi' : 'g',
-    ),
-    typeof str2 == 'string' ? str2.replace(/\$/g, '$$$$') : str2,
-  );
-};
+const config = require('../../config');
 
 /**
  * Create a new action
@@ -37,6 +20,7 @@ class Action {
   message;
   author;
   user;
+  attestation;
 
   /**
    *
@@ -53,7 +37,7 @@ class Action {
     this.timestamp = timestamp;
     this.project = repo.split('/')[0];
     this.repoName = repo.split('/')[1];
-    this.url = `https://github.com/${repo}`;
+    this.url = `${config.getProxyUrl()}/${repo}`;
     this.repo = repo;
   }
 
@@ -113,30 +97,6 @@ class Action {
   }
 
   /**
-   *
-   * @param {*} branch
-   */
-  setBranch(branch) {
-    this.branch = branch;
-  }
-
-  /**
-   *
-   * @param {*} branch
-   */
-  setAuthor(branch) {
-    this.author = author;
-  }
-
-  /**
-   *
-   * @param {*} branch
-   */
-  setUser(branch) {
-    this.user = user;
-  }
-
-  /**
    *`
    */
   setAllowPush() {
@@ -148,8 +108,7 @@ class Action {
    * @return {bool}
    */
   continue() {
-    const cont = !(this.error || this.blocked);
-    return cont;
+    return !(this.error || this.blocked);
   }
 }
 
