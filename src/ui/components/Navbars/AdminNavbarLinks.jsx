@@ -62,7 +62,7 @@ export default function AdminNavbarLinks() {
       .then((res) => {
         if (!res.data.isAuth && !res.data.user) {
           setAuth(false);
-          navigate('/login', { replace: true });
+          navigate(0);
         }
       });
   };
