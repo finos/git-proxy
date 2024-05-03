@@ -1,8 +1,10 @@
 {
+  "proxyUrl": "https://github.com",
+  "cookieSecret": "cookie secret",
+  "sessionMaxAgeHours": 12,
   "tempPassword": {
     "sendEmail": false,
-    "emailConfig": {
-    }
+    "emailConfig": {}
   },
   "authorisedList": [
     {
@@ -22,9 +24,12 @@
     {
       "type": "mongo",
       "connectionString": "mongodb://localhost:27017/gitproxy",
-      "options": {        
-        "useUnifiedTopology": true
-      },      
+      "options": {
+        "useNewUrlParser": true,
+        "useUnifiedTopology": true,
+        "tlsAllowInvalidCertificates": false,
+        "ssl": true
+      },
       "enabled": false
     }
   ],
@@ -32,6 +37,63 @@
     {
       "type": "local",
       "enabled": true
+    },
+    {
+      "type": "ActiveDirectory",
+      "enabled": false,
+      "adminGroup": "",
+      "userGroup": "",
+      "domain": "",
+      "adConfig": {
+        "url": "",
+        "baseDN": "",
+        "searchBase": ""
+      }
     }
-  ]
+  ],
+  "api": {
+    "github": {
+      "baseUrl": "https://api.github.com"
+    }
+  },
+  "commitConfig": {
+    "author": {
+      "email": {
+        "local": {
+          "block": ""
+        },
+        "domain": {
+          "allow": ".*"
+        }
+      }
+    },
+    "message": {
+      "block": {
+        "literals": [],
+        "patterns": []
+      }
+    },
+    "diff": {
+      "block": {
+        "literals": [],
+        "patterns": [],
+        "providers": {}
+      }
+    }
+  },
+  "attestationConfig": {
+    "questions": [
+      {
+        "label": "I am happy for this to be pushed to the upstream repository",
+        "tooltip": {
+          "text": "Are you happy for this contribution to be pushed upstream?",
+          "links": []
+        }
+      }
+    ]
+  },
+  "privateOrganizations": [],
+  "urlShortener": "",
+  "contactEmail": "",
+  "csrfProtection": true
 }

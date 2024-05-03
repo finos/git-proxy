@@ -1,9 +1,8 @@
-/* eslint-disable max-len */
 const express = require('express');
 const proxy = require('express-http-proxy');
-// eslint-disable-next-line new-cap
-const router = express.Router();
+const router = new express.Router();
 const chain = require('../chain');
+const config = require('../../config');
 
 /**
  * For a given Git HTTP request destined for a GitHub repo,
@@ -33,12 +32,7 @@ const stripGitHubFromGitPath = (url) => {
  */
 const validGitRequest = (url, headers) => {
   const { 'user-agent': agent, accept } = headers;
-  if (
-    [
-      '/info/refs?service=git-upload-pack',
-      '/info/refs?service=git-receive-pack',
-    ].includes(url)
-  ) {
+  if (['/info/refs?service=git-upload-pack', '/info/refs?service=git-receive-pack'].includes(url)) {
     // https://www.git-scm.com/docs/http-protocol#_discovering_references
     // We can only filter based on User-Agent since the Accept header is not
     // sent in this request
@@ -53,7 +47,8 @@ const validGitRequest = (url, headers) => {
 
 router.use(
   '/',
-  proxy('https://github.com', {
+  proxy(config.getProxyUrl(), {
+    preserveHostHdr: false,
     filter: async function (req, res) {
       try {
         console.log('request url: ', req.url);
@@ -93,6 +88,8 @@ router.use(
 
           const packetMessage = handleMessage(message);
 
+          console.log(req.headers);
+
           res.status(200).send(packetMessage);
 
           return false;
@@ -104,20 +101,31 @@ router.use(
         return false;
       }
     },
-    userResDecorator: function (proxyRes, proxyResData) {
-      // const data = proxyResData;
-      // const ts = Date.now();
-      // fs.writeFileSync(`./.logs/responses/${ts}.${proxyRes.statusCode}.status`, proxyRes.statusCode);
-      // fs.writeFileSync(`./.logs/responses/${ts}.headers.json`, JSON.stringify(proxyRes.headers));
-      // fs.writeFileSync(`./.logs/responses/${ts}.raw`, data);
-      // fs.writeFileSync(`./.logs/responses/${ts}.txt`, data.toString('utf-8'));
-      return proxyResData;
+    proxyReqPathResolver: (req) => {
+      const url = config.getProxyUrl() + req.originalUrl;
+      console.log('Sending request to ' + url);
+      return url;
+    },
+    proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
+      return proxyReqOpts;
+    },
+
+    proxyReqBodyDecorator: function (bodyContent, srcReq) {
+      if (srcReq.method === 'GET') {
+        return '';
+      }
+      return bodyContent;
+    },
+
+    proxyErrorHandler: function (err, res, next) {
+      console.log(`ERROR=${err}`);
+      next(err);
     },
   }),
 );
 
-const handleMessage = async (message) => {
-  const errorMessage = `ERR\t${message}`;
+const handleMessage = (message) => {
+  const errorMessage = `\t${message}`;
   const len = 6 + new TextEncoder().encode(errorMessage).length;
 
   const prefix = len.toString(16);

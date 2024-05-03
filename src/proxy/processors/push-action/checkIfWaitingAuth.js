@@ -19,8 +19,8 @@ const exec = async (req, action) => {
     throw e;
   } finally {
     action.addStep(step);
-    return action;
   }
+  return action;
 };
 
 exec.displayName = 'checkIfWaitingAuth.exec';

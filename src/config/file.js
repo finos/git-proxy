@@ -23,9 +23,7 @@ function validate(configFilePath = configFile) {
 
 module.exports = {
   get configFile() {
-    return configFile
-      ? configFile
-      : path.join(process.cwd(), 'proxy.config.json');
+    return configFile ? configFile : path.join(process.cwd(), 'proxy.config.json');
   },
   set configFile(file) {
     configFile = file;

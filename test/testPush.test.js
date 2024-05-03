@@ -16,7 +16,7 @@ describe('auth', async () => {
     app = await service.start();
     await db.deleteUser('login-test-user');
 
-    const res = await chai.request(app).post('/auth/login').send({
+    const res = await chai.request(app).post('/api/auth/login').send({
       username: 'admin',
       password: 'admin',
     });
@@ -45,10 +45,7 @@ describe('auth', async () => {
   });
 
   after(async function () {
-    const res = await chai
-      .request(app)
-      .post('/auth/logout')
-      .set('Cookie', `${cookie}`);
+    const res = await chai.request(app).post('/api/auth/logout').set('Cookie', `${cookie}`);
     res.should.have.status(200);
 
     await service.httpServer.close();

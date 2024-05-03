@@ -1,15 +1,16 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import axios from 'axios';
-const { GIT_PROXY_UI_PORT: uiPort } = require('../../config/env').Vars;
-const baseUrl = `http://localhost:${uiPort}/api/v1`;
+import { getCookie } from '../utils.jsx';
+
+const baseUrl = import.meta.env.VITE_API_URI
+  ? `${import.meta.env.VITE_API_URI}/api/v1`
+  : `${location.origin}/api/v1`;
 
 const config = {
   withCredentials: true,
 };
 
 const getUser = async (setIsLoading, setData, setAuth, setIsError) => {
-  const url = new URL(`http://localhost:${uiPort}/auth/success`);
+  const url = new URL(`${location.origin}/api/auth/success`);
   await axios(url.toString(), config)
     .then((response) => {
       const data = response.data;
@@ -24,8 +25,8 @@ const getUser = async (setIsLoading, setData, setAuth, setIsError) => {
 };
 
 const getPush = async (id, setIsLoading, setData, setAuth, setIsError) => {
-  const url = new URL(`${baseUrl}/push/${id}`);
-  await axios(url.toString(), config)
+  const url = `${baseUrl}/push/${id}`;
+  await axios(url, config)
     .then((response) => {
       const data = response.data;
       data.diff = data.steps.find((x) => x.stepName === 'diff');
@@ -54,6 +55,7 @@ const getPushes = async (
   const url = new URL(`${baseUrl}/push`);
   url.search = new URLSearchParams(query);
 
+  setIsLoading(true);
   await axios(url.toString(), { withCredentials: true })
     .then((response) => {
       const data = response.data;
@@ -71,39 +73,50 @@ const getPushes = async (
     });
 };
 
-const authorisePush = async (id, setAuth, setIsError) => {
+const authorisePush = async (id, setMessage, setUserAllowedToApprove, attestation) => {
   const url = `${baseUrl}/push/${id}/authorise`;
+  let errorMsg = '';
+  let isUserAllowedToApprove = true;
   await axios
-    .post(url, {}, { withCredentials: true })
-    .then(() => {})
+    .post(
+      url,
+      {
+        params: {
+          attestation,
+        },
+      },
+      { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } },
+    )
     .catch((error) => {
       if (error.response && error.response.status === 401) {
-        setAuth(false);
-      } else {
-        setIsError(true);
+        errorMsg = 'You are not authorised to approve...';
+        isUserAllowedToApprove = false;
       }
     });
+  await setMessage(errorMsg);
+  await setUserAllowedToApprove(isUserAllowedToApprove);
 };
 
-const rejectPush = async (id, setAuth, setIsError) => {
+const rejectPush = async (id, setMessage, setUserAllowedToReject) => {
   const url = `${baseUrl}/push/${id}/reject`;
+  let errorMsg = '';
+  let isUserAllowedToReject = true;
   await axios
-    .post(url, {}, { withCredentials: true })
-    .then(() => {})
+    .post(url, {}, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
     .catch((error) => {
       if (error.response && error.response.status === 401) {
-        setAuth(false);
-      } else {
-        setIsError(true);
+        errorMsg = 'You are not authorised to reject...';
+        isUserAllowedToReject = false;
       }
     });
+  await setMessage(errorMsg);
+  await setUserAllowedToReject(isUserAllowedToReject);
 };
 
 const cancelPush = async (id, setAuth, setIsError) => {
   const url = `${baseUrl}/push/${id}/cancel`;
   await axios
-    .post(url, {}, { withCredentials: true })
-    .then((response) => {})
+    .post(url, {}, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
     .catch((error) => {
       if (error.response && error.response.status === 401) {
         setAuth(false);
