@@ -3,6 +3,7 @@ const _ = require('lodash');
 const Datastore = require('@seald-io/nedb');
 const Action = require('../../proxy/actions/Action').Action;
 const toClass = require('../helper').toClass;
+const repo = require('./repo');
 
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
@@ -62,11 +63,12 @@ const writeAudit = async (action, logger) => {
   });
 };
 
-const authorise = async (id, logger) => {
-  const action = await getPush(id, logger);
+const authorise = async (id, attestation) => {
+  const action = await getPush(id);
   action.authorised = true;
   action.canceled = false;
   action.rejected = false;
+  action.attestation = attestation;
   await writeAudit(action);
   return { message: `authorised ${id}` };
 };
@@ -89,9 +91,35 @@ const cancel = async (id, logger) => {
   return { message: `cancel ${id}` };
 };
 
+const canUserCancelPush = async (id, user) => {
+  return new Promise(async (resolve) => {
+    const pushDetail = await getPush(id);
+    const repoName = pushDetail.repoName.replace('.git', '');
+    const isAllowed = await repo.isUserPushAllowed(repoName, user);
+
+    if (isAllowed) {
+      resolve(true);
+    } else {
+      resolve(false);
+    }
+  });
+};
+
+const canUserApproveRejectPush = async (id, user) => {
+  return new Promise(async (resolve) => {
+    const action = await getPush(id);
+    const repoName = action.repoName.replace('.git', '');
+    const isAllowed = await repo.canUserApproveRejectPushRepo(repoName, user);
+
+    resolve(isAllowed);
+  });
+};
+
 module.exports.getPushes = getPushes;
 module.exports.writeAudit = writeAudit;
 module.exports.getPush = getPush;
 module.exports.authorise = authorise;
 module.exports.reject = reject;
 module.exports.cancel = cancel;
+module.exports.canUserCancelPush = canUserCancelPush;
+module.exports.canUserApproveRejectPush = canUserApproveRejectPush;

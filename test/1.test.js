@@ -8,12 +8,13 @@ chai.should();
 
 // Use this test as a template
 describe('init', async () => {
+  let app;
   before(async function () {
     app = await service.start();
   });
 
   it('should not be logged in', async function () {
-    const res = await chai.request(app).get('/auth/profile');
+    const res = await chai.request(app).get('/api/auth/profile');
 
     res.should.have.status(401);
   });

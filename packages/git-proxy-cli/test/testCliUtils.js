@@ -33,7 +33,7 @@ async function runCli(
   debug = false,
 ) {
   try {
-    console.log(`cli: ${cli}`);
+    console.log(`cli: '${cli}'`);
     const { stdout, stderr } = await execAsync(cli);
     if (debug) {
       console.log(`stdout: ${stdout}`);
@@ -71,6 +71,10 @@ async function runCli(
       expectedErrorMessages.forEach((expectedErrorMessage) => {
         expect(error.stderr).to.include(expectedErrorMessage);
       });
+    }
+  } finally {
+    if (debug) {
+      console.log(`cli: '${cli}': done`);
     }
   }
 }
@@ -135,6 +139,28 @@ async function createCookiesFileWithExpiredCookie() {
 async function removeCookiesFile() {
   if (fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     fs.unlinkSync(GIT_PROXY_COOKIE_FILE);
+  }
+}
+
+/**
+ * Add a new repo to the database.
+ * @param {object} newRepo The new repo attributes.
+ * @param {boolean} debug Print debug messages to console if true.
+ */
+async function addRepoToDb(newRepo, debug = false) {
+  const repos = await db.getRepos();
+  const found = repos.find((y) => y.project === newRepo.project && newRepo.name === y.name);
+  if (!found) {
+    await db.createRepo(newRepo);
+    await db.addUserCanPush(newRepo.name, 'admin');
+    await db.addUserCanAuthorise(newRepo.name, 'admin');
+    if (debug) {
+      console.log(`New repo added to database: ${newRepo}`);
+    }
+  } else {
+    if (debug) {
+      console.log(`New repo already found in database: ${newRepo}`);
+    }
   }
 }
 
@@ -210,6 +236,7 @@ module.exports = {
   runCli: runCli,
   startServer: startServer,
   closeServer: closeServer,
+  addRepoToDb: addRepoToDb,
   addGitPushToDb: addGitPushToDb,
   addUserToDb: addUserToDb,
   createCookiesFileWithExpiredCookie: createCookiesFileWithExpiredCookie,
