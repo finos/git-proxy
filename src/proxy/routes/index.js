@@ -5,22 +5,28 @@ const chain = require('../chain');
 const config = require('../../config');
 
 /**
- * For a given Git HTTP request destined for a GitHub repo,
- * remove the GitHub specific components of the URL.
- * @param {string} url URL path of the request
- * @return {string} Modified path which removes the {owner}/{repo} parts
+ * Get git path from URL path.
+ * @param {string} urlPath URL path in GitLab or GitHub format.
+ * @return {string} The git path or undefined if given url path is invalid.
  */
-const stripGitHubFromGitPath = (url) => {
-  const parts = url.split('/');
-  // url = '/{owner}/{repo}.git/{git-path}'
-  // url.split('/') = ['', '{owner}', '{repo}.git', '{git-path}']
-  if (parts.length !== 4 && parts.length !== 5) {
-    console.error('unexpected url received: ', url);
-    return undefined;
+const getGitPathFromUrlPath = (urlPath) => {
+  // urlPath = '/{namespace}/{repo}.git/{git-path}' 
+  // where {namespace} can be a path structure with multiple path segments
+  // GitLab -> https://docs.gitlab.com/ee/user/namespace/index.html
+  // GitHub -> https://docs.github.com/en/get-started/getting-started-with-git/about-remote-repositories  
+  const gitPathSegments = [''];
+  let repoSegmentFound = false;
+  for (const urlPathSegment of urlPath.split('/')) {
+    if (repoSegmentFound) {
+      gitPathSegments.push(urlPathSegment);
+    }
+    // eslint-disable-next-line no-useless-escape
+    if (urlPathSegment.match(/[a-zA-Z0-9\-]+\.git/)) {
+      repoSegmentFound = true;
+    }
   }
-  parts.splice(1, 2); // remove the {owner} and {repo} from the array
-  return parts.join('/');
-};
+  return repoSegmentFound ? gitPathSegments.join('/') : undefined;
+}
 
 /**
  * Check whether an HTTP request has the expected properties of a
@@ -45,84 +51,97 @@ const validGitRequest = (url, headers) => {
   return false;
 };
 
-router.use(
-  '/',
-  proxy(config.getProxyUrl(), {
-    preserveHostHdr: false,
-    filter: async function (req, res) {
-      try {
-        console.log('request url: ', req.url);
-        console.log('host: ', req.headers.host);
-        console.log('user-agent: ', req.headers['user-agent']);
-        const gitPath = stripGitHubFromGitPath(req.url);
-        if (gitPath === undefined || !validGitRequest(gitPath, req.headers)) {
-          res.status(400).send('Invalid request received');
-          return false;
-        }
-        if (req.body && req.body.length) {
-          req.rawBody = req.body.toString('utf8');
-        }
+const proxyFilter = async function (req, res) {
+  try {
+    console.log('request url: ', req.url);
+    console.log('host: ', req.headers.host);
+    console.log('user-agent: ', req.headers['user-agent']);
+    const gitPath = getGitPathFromUrlPath(req.url);
+    if (gitPath === undefined || !validGitRequest(gitPath, req.headers)) {
+      res.status(400).send('Invalid request received');
+      return false;
+    }
+    if (req.body && req.body.length) {
+      req.rawBody = req.body.toString('utf8');
+    }
 
-        const action = await chain.exec(req, res);
-        console.log('action processed');
+    const action = await chain.exec(req, res);
+    console.log('action processed');
 
-        if (action.error || action.blocked) {
-          res.set('content-type', 'application/x-git-receive-pack-result');
-          res.set('transfer-encoding', 'chunked');
-          res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
-          res.set('pragma', 'no-cache');
-          res.set('cache-control', 'no-cache, max-age=0, must-revalidate');
-          res.set('vary', 'Accept-Encoding');
-          res.set('x-frame-options', 'DENY');
-          res.set('connection', 'close');
+    if (action.error || action.blocked) {
+      res.set('content-type', 'application/x-git-receive-pack-result');
+      res.set('transfer-encoding', 'chunked');
+      res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
+      res.set('pragma', 'no-cache');
+      res.set('cache-control', 'no-cache, max-age=0, must-revalidate');
+      res.set('vary', 'Accept-Encoding');
+      res.set('x-frame-options', 'DENY');
+      res.set('connection', 'close');
 
-          let message;
+      let message;
 
-          if (action.error) {
-            message = action.errorMessage;
-            console.error(message);
-          }
-          if (action.blocked) {
-            message = action.blockedMessage;
-          }
-
-          const packetMessage = handleMessage(message);
-
-          console.log(req.headers);
-
-          res.status(200).send(packetMessage);
-
-          return false;
-        }
-
-        return true;
-      } catch (e) {
-        console.error(e);
-        return false;
+      if (action.error) {
+        message = action.errorMessage;
+        console.error(message);
       }
-    },
-    proxyReqPathResolver: (req) => {
-      const url = config.getProxyUrl() + req.originalUrl;
+      if (action.blocked) {
+        message = action.blockedMessage;
+      }
+
+      const packetMessage = handleMessage(message);
+
+      console.log(req.headers);
+
+      res.status(200).send(packetMessage);
+
+      return false;
+    }
+
+    return true;
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
+};
+
+const proxyReqOptDecorator = function (proxyReqOpts, srcReq) {
+    return proxyReqOpts;
+};
+
+const proxyReqBodyDecorator = function (bodyContent, srcReq) {
+  if (srcReq.method === 'GET') {
+    return '';
+  }
+  return bodyContent;
+};
+
+const proxyErrorHandler = function (err, res, next) {
+  console.log(`ERROR=${err}`);
+  next(err);
+};
+
+for (const proxyConfig of config.getProxyConfigList()) {
+  if (proxyConfig.enabled) {
+    const proxyReqPathResolver = (req) => {
+      const url = req.originalUrl.replace(proxyConfig.path, proxyConfig.url);
       console.log('Sending request to ' + url);
       return url;
-    },
-    proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
-      return proxyReqOpts;
-    },
-
-    proxyReqBodyDecorator: function (bodyContent, srcReq) {
-      if (srcReq.method === 'GET') {
-        return '';
-      }
-      return bodyContent;
-    },
-
-    proxyErrorHandler: function (err, res, next) {
-      console.log(`ERROR=${err}`);
-      next(err);
-    },
-  }),
-);
+    };
+    const proxyOptions = {
+      preserveHostHdr: false,
+      filter: proxyFilter,
+      proxyReqPathResolver: proxyReqPathResolver,
+      proxyReqOptDecorator: proxyReqOptDecorator,        
+      proxyReqBodyDecorator: proxyReqBodyDecorator,
+      proxyErrorHandler: proxyErrorHandler,
+    };
+    router.use(
+      proxyConfig.path,
+      proxy(proxyConfig.url, proxyOptions)
+    );
+    console.log(`Proxy route: ${proxyConfig.path} -> ${proxyConfig.url}`);
+  } 
+}
 
 const handleMessage = (message) => {
   const errorMessage = `\t${message}`;
@@ -137,5 +156,5 @@ module.exports = {
   router,
   handleMessage,
   validGitRequest,
-  stripGitHubFromGitPath,
+  getGitPathFromUrlPath,
 };

@@ -102,8 +102,8 @@ const canUserApproveRejectPush = async (id, user) => {
 const canUserCancelPush = async (id, user) => {
   return new Promise(async (resolve) => {
     const pushDetail = await getPush(id);
-    const repoName = pushDetail.repoName.replace('.git', '');
-    const isAllowed = await repo.isUserPushAllowed(repoName, user);
+    const repoUrl = pushDetail.repo.url;
+    const isAllowed = await repo.isUserPushAllowed(repoUrl, user);
 
     if (isAllowed) {
       resolve(true);

@@ -1,5 +1,16 @@
 {
-  "proxyUrl": "https://github.com",
+  "proxyConfig": [
+    {
+      "path": "/github.com",
+      "url": "https://github.com",
+      "enabled": true
+    },
+    {
+      "path": "/gitlab.com",
+      "url": "https://gitlab.com",
+      "enabled": true
+    }
+  ],
   "cookieSecret": "cookie secret",
   "sessionMaxAgeHours": 12,
   "tempPassword": {

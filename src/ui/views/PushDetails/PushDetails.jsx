@@ -93,7 +93,8 @@ export default function Dashboard() {
     };
   }
 
-  const repoFullName = data.repo.replace('.git', '');
+  const repoFullName = data.repo.name.replace('.git', '');
+  const repoBaseUrl = data.repo.url.replace('.git', '');
   const repoBranch = data.branch.replace('refs/heads/', '');
 
   const generateIcon = (title) => {
@@ -225,7 +226,7 @@ export default function Dashboard() {
                   <h3>Remote Head</h3>
                   <p>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${data.commitFrom}`}
+                      href={`${repoBaseUrl}/commit/${data.commitFrom}`}
                       rel='noreferrer'
                       target='_blank'
                     >
@@ -237,7 +238,7 @@ export default function Dashboard() {
                   <h3>Commit SHA</h3>
                   <p>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${data.commitTo}`}
+                      href={`${repoBaseUrl}/commit/${data.commitTo}`}
                       rel='noreferrer'
                       target='_blank'
                     >
@@ -248,7 +249,7 @@ export default function Dashboard() {
                 <GridItem xs={2} sm={2} md={2}>
                   <h3>Repository</h3>
                   <p>
-                    <a href={`https://github.com/${repoFullName}`} rel='noreferrer' target='_blank'>
+                    <a href={`${repoBaseUrl}`} rel='noreferrer' target='_blank'>
                       {repoFullName}
                     </a>
                   </p>
@@ -257,7 +258,7 @@ export default function Dashboard() {
                   <h3>Branch</h3>
                   <p>
                     <a
-                      href={`https://github.com/${repoFullName}/tree/${repoBranch}`}
+                      href={`${repoBaseUrl}/tree/${repoBranch}`}
                       rel='noreferrer'
                       target='_blank'
                     >

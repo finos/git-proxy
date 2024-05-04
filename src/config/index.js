@@ -11,7 +11,7 @@ let _authorisedList = defaultSettings.authorisedList;
 let _database = defaultSettings.sink;
 let _authentication = defaultSettings.authentication;
 let _tempPassword = defaultSettings.tempPassword;
-let _proxyUrl = defaultSettings.proxyUrl;
+let _proxyConfig = defaultSettings.proxyConfig;
 let _api = defaultSettings.api;
 let _cookieSecret = defaultSettings.cookieSecret;
 let _sessionMaxAgeHours = defaultSettings.sessionMaxAgeHours;
@@ -22,14 +22,14 @@ const _urlShortener = defaultSettings.urlShortener;
 const _contactEmail = defaultSettings.contactEmail;
 const _csrfProtection = defaultSettings.csrfProtection;
 
-// Get configured proxy URL
-const getProxyUrl = () => {
-  if (_userSettings !== null && _userSettings.proxyUrl) {
-    _proxyUrl = _userSettings.proxyUrl;
+// Gets a list of configured proxies
+const getProxyConfigList = () => {
+  if (_userSettings !== null && _userSettings.proxyConfig) {
+    _proxyConfig = _userSettings.proxyConfig;
   }
 
-  return _proxyUrl;
-};
+  return _proxyConfig;
+}
 
 // Gets a list of authorised repositories
 const getAuthorisedList = () => {
@@ -141,7 +141,7 @@ const getCSRFProtection = () => {
 };
 
 exports.getAPIs = getAPIs;
-exports.getProxyUrl = getProxyUrl;
+exports.getProxyConfigList = getProxyConfigList;
 exports.getAuthorisedList = getAuthorisedList;
 exports.getDatabase = getDatabase;
 exports.logConfiguration = logConfiguration;

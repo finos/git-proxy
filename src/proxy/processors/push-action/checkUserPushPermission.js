@@ -5,7 +5,7 @@ const db = require('../../../db');
 const exec = async (req, action) => {
   const step = new Step('checkUserPushPermission');
 
-  const repoName = action.repo.split('/')[1].replace('.git', '');
+  const repoUrl = action.repo.url;
   let isUserAllowed = false;
   let user = action.user;
 
@@ -16,28 +16,28 @@ const exec = async (req, action) => {
 
   if (list.length == 1) {
     user = list[0].username;
-    isUserAllowed = await db.isUserPushAllowed(repoName, user);
+    isUserAllowed = await db.isUserPushAllowed(repoUrl, user);
   }
 
-  console.log(`User ${user} permission on Repo ${repoName} : ${isUserAllowed}`);
+  console.log(`User '${user}' permission on Repo '${repoUrl}' : '${isUserAllowed}'`);
 
   if (!isUserAllowed) {
     console.log('User not allowed to Push');
     step.error = true;
-    step.log(`User ${user} is not allowed to push on repo ${action.repo}, ending`);
+    step.log(`User '${user}' is not allowed to push on repo '${action.repo.url}', ending`);
 
     console.log('setting error');
 
     step.setError(
-      `Rejecting push as user ${action.user} ` +
+      `Rejecting push as user '${action.user}' ` +
         `is not allowed to push on repo ` +
-        `${action.repo}`,
+        `'${action.repo.url}'`,
     );
     action.addStep(step);
     return action;
   }
 
-  step.log(`User ${user} is allowed to push on repo ${action.repo}`);
+  step.log(`User '${user}' is allowed to push on repo '${action.repo.url}'`);
   action.addStep(step);
   return action;
 };

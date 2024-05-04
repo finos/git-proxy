@@ -9,8 +9,8 @@ const exec = async (req, action, authorisedList = db.getRepos) => {
   console.log(list);
 
   const found = list.find((x) => {
-    const targetName = action.repo.replace('.git', '').toLowerCase();
-    const allowedName = `${x.project}/${x.name}`.replace('.git', '').toLowerCase();
+    const targetName = action.repo.url.toLowerCase();
+    const allowedName = x.url.toLowerCase();
     console.log(`${targetName} = ${allowedName}`);
     return targetName === allowedName;
   });
@@ -20,15 +20,15 @@ const exec = async (req, action, authorisedList = db.getRepos) => {
   if (!found) {
     console.log('not found');
     step.error = true;
-    step.log(`repo ${action.repo} is not in the authorisedList, ending`);
+    step.log(`repo '${action.repo.url}' is not in the authorisedList, ending`);
     console.log('setting error');
-    step.setError(`Rejecting repo ${action.repo} not in the authorisedList`);
+    step.setError(`Rejecting repo '${action.repo.url}' not in the authorisedList`);
     action.addStep(step);
     return action;
   }
 
   console.log('found');
-  step.log(`repo ${action.repo} is in the authorisedList`);
+  step.log(`repo '${action.repo.url}' is in the authorisedList`);
   action.addStep(step);
   return action;
 };
