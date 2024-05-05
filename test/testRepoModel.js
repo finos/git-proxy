@@ -34,6 +34,8 @@ describe('model', async () => {
         null,
         "https://github.com/finos/proxy",
         "http://github.com/finos/git-proxy.git",
+        "https://github..com/finos/git-proxy.git",
+        "https://github.com/finos/git-proxy..git",
         "https://bitbucket.com/finos/git-proxy.git",
         "https://github/Citi/citi-ospo.git",
         "https://github.com/RBC/finos-traderX.git//"

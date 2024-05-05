@@ -1,6 +1,5 @@
 // Regex inspector - https://www.debuggex.com/
-// eslint-disable-next-line no-useless-escape
-const GIT_URL_REGEX = new RegExp("^(https)://(github\.com|gitlab\.com)/([a-zA-Z0-9\-\.]+)/([a-zA-Z0-9\-]+)(\.git)(/)?$");
+const GIT_URL_REGEX = new RegExp("^(https)://(github\\.com|gitlab\\.com)/([a-zA-Z0-9\\-\\.]+)/([a-zA-Z0-9\\-]+)(\\.git)(/)?$");
 
 /** Class representing a Repo. */
 class Repo {
