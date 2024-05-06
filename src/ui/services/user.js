@@ -67,7 +67,7 @@ const getUsers = async (setIsLoading, setData, setAuth, setIsError, query = {}) 
 };
 
 const updateUser = async (data) => {
-  console.log(data);
+  logger.info(data);
   const url = new URL(`${baseUrl}/api/auth/gitAccount`);
   await axios
     .post(url, data, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })

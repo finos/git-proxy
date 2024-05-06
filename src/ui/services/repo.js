@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { getCookie } from '../utils.jsx';
-const { logger } = require('../../../logging/index');
+const { logger } = require('../../logging/index');
 
 const baseUrl = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}/api/v1`
@@ -100,7 +100,7 @@ const addUser = async (repoName, user, action) => {
         throw error;
       });
   } else {
-    console.log('Duplicate user can not be added');
+    logger.info('Duplicate user can not be added');
     throw new DupUserValidationError();
   }
 };

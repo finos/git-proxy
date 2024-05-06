@@ -4,6 +4,7 @@ const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 const fs = require('fs');
 const util = require('util');
+const { logger } = require('../../src/logging/index');
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
@@ -42,13 +43,13 @@ async function login(username, password) {
 
     const user = `"${response.data.username}" <${response.data.email}>`;
     const isAdmin = response.data.admin ? ' (admin)' : '';
-    console.log(`Login ${user}${isAdmin}: OK`);
+    logger.info(`Login ${user}${isAdmin}: OK`);
   } catch (error) {
     if (error.response) {
-      console.error(`Error: Login '${username}': '${error.response.status}'`);
-      process.exitCode = 1;
+      logger.error(`Error: Login '${username}': '${error.response.status}'`);
+      logger.exitCode = 1;
     } else {
-      console.error(`Error: Login '${username}': '${error.message}'`);
+      logger.error(`Error: Login '${username}': '${error.message}'`);
       process.exitCode = 2;
     }
   }
@@ -77,7 +78,7 @@ async function login(username, password) {
  */
 async function getGitPushes(filters) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: List: Authentication required');
+    logger.error('Error: List: Authentication required');
     process.exitCode = 1;
     return;
   }
@@ -122,12 +123,12 @@ async function getGitPushes(filters) {
       records.push(record);
     });
 
-    console.log(`${util.inspect(records, false, null, false)}`);
+    logger.info(`${util.inspect(records, false, null, false)}`);
   } catch (error) {
     // default error
     const errorMessage = `Error: List: '${error.message}'`;
     process.exitCode = 2;
-    console.error(errorMessage);
+    logger.error(errorMessage);
   }
 }
 
@@ -137,7 +138,7 @@ async function getGitPushes(filters) {
  */
 async function authoriseGitPush(id) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: Authorise: Authentication required');
+    logger.error('Error: Authorise: Authentication required');
     process.exitCode = 1;
     return;
   }
@@ -166,7 +167,7 @@ async function authoriseGitPush(id) {
       },
     );
 
-    console.log(`Authorise: ID: '${id}': OK`);
+    logger.info(`Authorise: ID: '${id}': OK`);
   } catch (error) {
     // default error
     let errorMessage = `Error: Authorise: '${error.message}'`;
@@ -183,7 +184,7 @@ async function authoriseGitPush(id) {
           process.exitCode = 4;
       }
     }
-    console.error(errorMessage);
+    logger.error(errorMessage);
   }
 }
 
@@ -193,7 +194,7 @@ async function authoriseGitPush(id) {
  */
 async function rejectGitPush(id) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: Reject: Authentication required');
+    logger.error('Error: Reject: Authentication required');
     process.exitCode = 1;
     return;
   }
@@ -213,7 +214,7 @@ async function rejectGitPush(id) {
       },
     );
 
-    console.log(`Reject: ID: '${id}': OK`);
+    logger.info(`Reject: ID: '${id}': OK`);
   } catch (error) {
     // default error
     let errorMessage = `Error: Reject: '${error.message}'`;
@@ -230,7 +231,7 @@ async function rejectGitPush(id) {
           process.exitCode = 4;
       }
     }
-    console.error(errorMessage);
+    logger.error(errorMessage);
   }
 }
 
@@ -240,7 +241,7 @@ async function rejectGitPush(id) {
  */
 async function cancelGitPush(id) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: Cancel: Authentication required');
+    logger.error('Error: Cancel: Authentication required');
     process.exitCode = 1;
     return;
   }
@@ -260,7 +261,7 @@ async function cancelGitPush(id) {
       },
     );
 
-    console.log(`Cancel: ID: '${id}': OK`);
+    logger.log(`Cancel: ID: '${id}': OK`);
   } catch (error) {
     // default error
     let errorMessage = `Error: Cancel: '${error.message}'`;
@@ -277,7 +278,7 @@ async function cancelGitPush(id) {
           process.exitCode = 4;
       }
     }
-    console.error(errorMessage);
+    logger.error(errorMessage);
   }
 }
 
@@ -299,11 +300,11 @@ async function logout() {
         },
       );
     } catch (error) {
-      console.log(`Warning: Logout: '${error.message}'`);
+      logger.info(`Warning: Logout: '${error.message}'`);
     }
   }
 
-  console.log('Logout: OK');
+  logger.info('Logout: OK');
 }
 
 // Parsing command line arguments
@@ -340,7 +341,7 @@ yargs(hideBin(process.argv))
     command: 'config',
     describe: 'Print configuration',
     handler(argv) {
-      console.log(`GitProxy URL: ${baseUrl}`);
+      logger.info(`GitProxy URL: ${baseUrl}`);
     },
   })
   .command({

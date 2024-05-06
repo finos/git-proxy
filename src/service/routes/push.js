@@ -1,6 +1,7 @@
 const express = require('express');
 const router = new express.Router();
 const db = require('../../db');
+const { logger } = require('../../logging/index');
 
 router.get('/', async (req, res) => {
   const query = {
@@ -36,16 +37,16 @@ router.get('/:id', async (req, res) => {
 router.post('/:id/reject', async (req, res) => {
   if (req.user) {
     const id = req.params.id;
-    console.log({ id });
+    logger.info({ id });
 
     // Get the push request
     const push = await db.getPush(id);
-    console.log({ push });
+    logger.info({ push });
 
     // Get the Internal Author of the push via their Git Account name
     const gitAccountauthor = push.user;
     const list = await db.getUsers({ gitAccount: gitAccountauthor });
-    console.log({ list });
+    logger.info({ list });
 
     if (list.length === 0) {
       res.status(401).send({
@@ -62,11 +63,11 @@ router.post('/:id/reject', async (req, res) => {
     }
 
     const isAllowed = await db.canUserApproveRejectPush(id, req.user.username);
-    console.log({ isAllowed });
+    logger.info({ isAllowed });
 
     if (isAllowed) {
       const result = await db.reject(id);
-      console.log(`user ${req.user.username} rejected push request for ${id}`);
+      logger.info(`user ${req.user.username} rejected push request for ${id}`);
       res.send(result);
     } else {
       res.status(401).send({
@@ -81,26 +82,26 @@ router.post('/:id/reject', async (req, res) => {
 });
 
 router.post('/:id/authorise', async (req, res) => {
-  console.log({ req });
+  logger.info({ req });
 
   const questions = req.body.params?.attestation;
-  console.log({ questions });
+  logger.info({ questions });
 
   const attestationComplete = questions?.every((question) => !!question.checked);
-  console.log({ attestationComplete });
+  logger.info({ attestationComplete });
 
   if (req.user && attestationComplete) {
     const id = req.params.id;
-    console.log({ id });
+    logger.info({ id });
 
     // Get the push request
     const push = await db.getPush(id);
-    console.log({ push });
+    logger.info({ push });
 
     // Get the Internal Author of the push via their Git Account name
     const gitAccountauthor = push.user;
     const list = await db.getUsers({ gitAccount: gitAccountauthor });
-    console.log({ list });
+    logger.info({ list });
 
     if (list.length === 0) {
       res.status(401).send({
@@ -120,13 +121,13 @@ router.post('/:id/authorise', async (req, res) => {
     // repo
     const isAllowed = await db.canUserApproveRejectPush(id, req.user.username);
     if (isAllowed) {
-      console.log(`user ${req.user.username} approved push request for ${id}`);
+      logger.info(`user ${req.user.username} approved push request for ${id}`);
 
       const reviewerList = await db.getUsers({ username: req.user.username });
-      console.log({ reviewerList });
+      logger.info({ reviewerList });
 
       const reviewerGitAccount = reviewerList[0].gitAccount;
-      console.log({ reviewerGitAccount });
+      logger.info({ reviewerGitAccount });
 
       if (!reviewerGitAccount) {
         res.status(401).send({
@@ -165,10 +166,10 @@ router.post('/:id/cancel', async (req, res) => {
 
     if (isAllowed) {
       const result = await db.cancel(id);
-      console.log(`user ${req.user.username} canceled push request for ${id}`);
+      logger.info(`user ${req.user.username} canceled push request for ${id}`);
       res.send(result);
     } else {
-      console.log(`user ${req.user.username} not authorised to cancel push request for ${id}`);
+      logger.info(`user ${req.user.username} not authorised to cancel push request for ${id}`);
       res.status(401).send({
         message:
           'User ${req.user.username)} not authorised to cancel push requests on this project.',
