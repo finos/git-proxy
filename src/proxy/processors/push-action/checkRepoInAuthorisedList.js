@@ -10,8 +10,8 @@ const exec = async (req, action, authorisedList = db.getRepos) => {
   logger.info(list);
 
   const found = list.find((x) => {
-    const targetName = action.repo.replace('.git', '');
-    const allowedName = `${x.project}/${x.name}`.replace('.git', '');
+    const targetName = action.repo.replace('.git', '').toLowerCase();
+    const allowedName = `${x.project}/${x.name}`.replace('.git', '').toLowerCase();
     logger.info(`${targetName} = ${allowedName}`);
     return targetName === allowedName;
   });

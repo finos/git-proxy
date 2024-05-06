@@ -1,0 +1,37 @@
+{
+  "tempPassword": {
+    "sendEmail": false,
+    "emailConfig": {
+    }
+  },
+  "authorisedList": [
+    {
+      "project": "msagi",
+      "name": "git-proxy-test",
+      "url": "https://github.com/msagi/git-proxy-test.git"
+    }
+  ],
+  "sink": [
+    {
+      "type": "fs",
+      "params": {
+        "filepath": "./."
+      },
+      "enabled": true
+    },
+    {
+      "type": "mongo",
+      "connectionString": "mongodb://localhost:27017/gitproxy",
+      "options": {        
+        "useUnifiedTopology": true
+      },      
+      "enabled": false
+    }
+  ],
+  "authentication": [
+    {
+      "type": "local",
+      "enabled": true
+    }
+  ]
+}

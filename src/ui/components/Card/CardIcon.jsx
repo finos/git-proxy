@@ -1,10 +1,8 @@
-/* eslint-disable max-len */
-/* eslint-disable require-jsdoc */
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
-import styles from '../../assets/jss/material-dashboard-react/components/cardIconStyle.js';
+import styles from '../../assets/jss/material-dashboard-react/components/cardIconStyle';
 
 const useStyles = makeStyles(styles);
 
@@ -25,13 +23,6 @@ export default function CardIcon(props) {
 
 CardIcon.propTypes = {
   className: PropTypes.string,
-  color: PropTypes.oneOf([
-    'warning',
-    'success',
-    'danger',
-    'info',
-    'primary',
-    'rose',
-  ]),
+  color: PropTypes.oneOf(['warning', 'success', 'danger', 'info', 'primary', 'rose']),
   children: PropTypes.node,
 };

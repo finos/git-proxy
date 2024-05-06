@@ -23,7 +23,7 @@ jobs:
         mongodb-version: [4.4]
 
     steps:
-    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+    - uses: actions/checkout@0ad4b8fadaa221de15dcec353f45205ec38ea70b # v4
       with:
         fetch-depth: 0
 
@@ -44,9 +44,10 @@ jobs:
       id: test
       run: |
         npm run test-coverage-ci
+        npm run test-coverage-ci --workspaces --if-present
 
     - name: Upload test coverage report
-      uses: codecov/codecov-action@v4.2.0
+      uses: codecov/codecov-action@v4.3.1
       with:
         files: ./coverage/lcov.info
         token: ${{ secrets.CODECOV_TOKEN }}

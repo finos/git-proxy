@@ -1,0 +1,22 @@
+{
+  "name": "@finos/git-proxy-cli",
+  "version": "0.1.0",
+  "description": "Command line interface tool for FINOS Git Proxy.",
+  "bin": "./index.js",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "yargs": "^17.7.2",
+    "@finos/git-proxy": "file:../.."
+  },
+  "devDependencies": {
+    "chai": "^4.2.0"
+  },
+  "scripts": {
+    "lint": "eslint --fix . --ext .js,.jsx",
+    "test": "NODE_ENV=test mocha --exit --timeout 10000",
+    "test-coverage": "nyc npm run test",
+    "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text --reporter=html npm run test"
+  },
+  "author": "Miklos Sagi",
+  "license": "Apache-2.0"
+}

@@ -4,44 +4,71 @@
   "title": "Git Proxy configuration file",
   "description": "Configuration for customizing git-proxy",
   "type": "object",
-  "oneOf": [
-    {
+  "properties": {
+    "proxyUrl": { "type": "string" },
+    "cookieSecret": { "type": "string" },
+    "sessionMaxAgeHours": { "type": "number" },
+    "api": {
+      "description": "Third party APIs",
+      "type": "object"
+    },
+    "commitConfig": {
+      "description": "Enforce rules and patterns on commits including e-mail and message",
+      "type": "object"
+    },
+    "attestationConfig": {
+      "description": "Customisable questions to add to attestation form",
+      "type": "object"
+    },
+    "privateOrganizations": {
+      "description": "Pattern searches for listed private organizations are disabled",
+      "type": "array"
+    },
+    "urlShortener": {
+      "description": "Customisable URL shortener to share in proxy responses and warnings",
+      "type": "string"
+    },
+    "contactEmail": {
+      "description": "Customisable e-mail address to share in proxy responses and warnings",
+      "type": "string"
+    },
+    "csrfProtection": {
+      "description": "Flag to enable CSRF protections for UI",
+      "type": "boolean"
+    },
+    "authorisedList": {
+      "description": "List of repositories that are authorised to be pushed to through the proxy.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/authorisedRepo"
+      }
+    },
+    "sink": {
+      "description": "List of database sources. The first source in the configuration with enabled=true will be used.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/database"
+      }
+    },
+    "authentication": {
+      "description": "List of authentication sources. The first source in the configuration with enabled=true will be used.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/authentication"
+      }
+    },
+    "tempPassword": {
+      "description": "Toggle the generation of temporary password for git-proxy admin user",
+      "type": "object",
       "properties": {
-        "authorisedList": {
-          "description": "List of repositories that are authorised to be pushed to through the proxy.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/authorisedRepo"
-          }
-        },
-        "sink": {
-          "description": "List of database sources. The first source in the configuration with enabled=true will be used.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/database"
-          }
-        },
-        "authentication": {
-          "description": "List of authentication sources. The first source in the configuration with enabled=true will be used.",
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/authentication"
-          }
-        },
-        "tempPassword": {
-          "description": "Toggle the generation of temporary password for git-proxy admin user",
-          "type": "object",
-          "properties": {
-            "sendEmail": { "type": "boolean" },
-            "emailConfig": {
-              "description": "Generic object to configure nodemailer. For full type information, please see https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/nodemailer",
-              "type": "object"
-            }
-          }
+        "sendEmail": { "type": "boolean" },
+        "emailConfig": {
+          "description": "Generic object to configure nodemailer. For full type information, please see https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/nodemailer",
+          "type": "object"
         }
       }
     }
-  ],
+  },
   "definitions": {
     "authorisedRepo": {
       "type": "object",
@@ -50,7 +77,7 @@
         "name": { "type": "string" },
         "url": { "type": "string" }
       },
-      "required": [ "project", "name", "url" ]
+      "required": ["project", "name", "url"]
     },
     "database": {
       "type": "object",
@@ -61,7 +88,7 @@
         "options": { "type": "object" },
         "params": { "type": "object" }
       },
-      "required": [ "type", "enabled" ]
+      "required": ["type", "enabled"]
     },
     "authentication": {
       "type": "object",
@@ -70,7 +97,7 @@
         "enabled": { "type": "boolean" },
         "options": { "type": "object" }
       },
-      "required": [ "type", "enabled" ]
+      "required": ["type", "enabled"]
     }
   },
   "additionalProperties": false

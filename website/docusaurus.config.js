@@ -11,12 +11,10 @@ module.exports = {
   projectName: `${projectName}`,
   organizationName: 'FINOS',
   customFields: {
-    version: '1.1.0',
+    version: '1.2.0',
   },
   scripts: ['https://buttons.github.io/buttons.js'],
-  stylesheets: [
-    'https://fonts.googleapis.com/css?family=Overpass:400,400i,700',
-  ],
+  stylesheets: ['https://fonts.googleapis.com/css?family=Overpass:400,400i,700'],
   themeConfig: {
     colorMode: {
       disableSwitch: false,

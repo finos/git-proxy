@@ -1,0 +1,41 @@
+{
+  "parser": "@babel/eslint-parser",
+  "env": {
+    "node": true,
+    "browser": true,
+    "commonjs": true,
+    "es2021": true,
+    "mocha": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "google",
+    "prettier",
+    "plugin:json/recommended"
+  ],
+  "overrides": [],
+  "parserOptions": {
+    "requireConfigFile": false,
+    "ecmaVersion": 12,
+    "sourceType": "module",
+    "ecmaFeatures": {
+      "jsx": true,
+      "modules": true
+    },
+    "babelOptions": {
+      "presets": ["@babel/preset-react"]
+    }
+  },
+  "plugins": ["react", "prettier"],
+  "rules": {
+    "react/prop-types": "off",
+    "require-jsdoc": "off",
+    "no-async-promise-executor": "off"
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  }
+}
