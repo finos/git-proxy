@@ -33,7 +33,6 @@ jobs:
           short_tag=$(echo ${{ steps.release-drafter.outputs.tag_name }} | cut -d. -f1)
           echo "SHORT_TAG=$short_tag" >> $GITHUB_OUTPUT
   create_npm_release:
-    if: github.event.pull_request.head.repo.full_name == github.repository # Everything but this step can be tested on a fork
     needs: create_github_release
     runs-on: ubuntu-latest
     permissions:
