@@ -1,14 +1,15 @@
 ---
-name-template: 'v$RESOLVED_VERSION'
+name-template: 'Version $RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 template: |
-  # Changelog
+  ### What's Changed
+
   $CHANGES
-  
+
   ---
 
-  See details of [all code changes](https://github.com/finos/git-proxy/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION) since previous release
+  *Full Changelog**: https://github.com/finos/git-proxy/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
 
 categories:
   - title: '🚀 Features'
