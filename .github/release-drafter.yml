@@ -1,0 +1,70 @@
+---
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+template: |
+  # Changelog
+  $CHANGES
+  
+  ---
+
+  See details of [all code changes](https://github.com/finos/git-proxy/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION) since previous release
+
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'enhancement'
+      - 'feature'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'fix'
+  - title: '🧰 Maintenance'
+    labels:
+      - 'infrastructure'
+      - 'automation'
+      - 'documentation'
+      - 'dependencies'
+      - 'maintenance'
+      - 'revert'
+version-resolver:
+  major:
+    labels:
+      - 'breaking'
+  minor:
+    labels:
+      - 'enhancement'
+      - 'feature'
+  patch:
+    labels:
+      - 'fix'
+      - 'documentation'
+      - 'maintenance'
+  default: patch
+autolabeler:
+  - label: 'automation'
+    title:
+      - '/^(ci|perf|refactor|test).*/i'
+  - label: 'enhancement'
+    title:
+      - '/^(style).*/i'
+  - label: 'documentation'
+    title:
+      - '/^(docs).*/i'
+  - label: 'feature'
+    title:
+      - '/^(feat).*/i'
+  - label: 'breaking'
+    title:
+      - '/^(break).*/i'
+  - label: 'fix'
+    title:
+      - '/^(fix).*/i'
+  - label: 'infrastructure'
+    title:
+      - '/^(infrastructure).*/i'
+  - label: 'maintenance'
+    title:
+      - '/^(chore|maintenance).*/i'
+  - label: 'revert'
+    title:
+      - '/^(revert).*/i'
