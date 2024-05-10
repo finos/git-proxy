@@ -21,26 +21,9 @@ const exec = async (req, action) => {
 
     const cmd = `git clone ${action.url} --bare`;
 
-    // Retrieve authorization headers
-    const authorizationHeader = req.headers?.authorization;
+    step.log(`Exectuting ${cmd}`);
 
-    // Validate the authorization headers
-    const authorizationValid =
-      authorizationHeader &&
-      typeof authorizationHeader === 'string' &&
-      authorizationHeader.includes('Basic ');
-
-    // Construct clone URL depending on presence of authorization headers
-    const cloneUrl = authorizationValid
-      ? `https://${Buffer.from(authorizationHeader.split(' ')[1], 'base64')}@${action.url.replace(
-          /https*:\/\//,
-          '',
-        )}`
-      : action.url;
-
-    step.log(`Exectuting ${cmd}${authorizationValid ? ' with credentials' : ''}`);
-
-    const response = spawnSync('git', ['clone', cloneUrl, '--bare', '--progress'], {
+    const response = spawnSync('git', ['clone', action.url, '--bare', '--progress'], {
       cwd: action.proxyGitPath,
       encoding: 'utf-8',
     });
