@@ -11,7 +11,7 @@ module.exports = {
   projectName: `${projectName}`,
   organizationName: 'FINOS',
   customFields: {
-    version: '1.2.0',
+    version: '1.2.1',
   },
   scripts: ['https://buttons.github.io/buttons.js'],
   stylesheets: ['https://fonts.googleapis.com/css?family=Overpass:400,400i,700'],
