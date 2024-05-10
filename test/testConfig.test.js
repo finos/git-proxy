@@ -16,6 +16,8 @@ describe('default configuration', function () {
     expect(config.getDatabase()).to.be.eql(defaultSettings.sink[0]);
     expect(config.getTempPasswordConfig()).to.be.eql(defaultSettings.tempPassword);
     expect(config.getAuthorisedList()).to.be.eql(defaultSettings.authorisedList);
+    expect(config.getSSLKeyPath()).to.be.eql("../../certs/key.pem");
+    expect(config.getSSLCertPath()).to.be.eql("../../certs/cert.pem");
   });
   after(function () {
     delete require.cache[require.resolve('../src/config')];
@@ -88,6 +90,19 @@ describe('user configuration', function () {
     expect(config.getDatabase()).to.not.be.eql(defaultSettings.sink[0]);
     expect(config.getAuthentication()).to.be.eql(defaultSettings.authentication[0]);
     expect(config.getTempPasswordConfig()).to.be.eql(defaultSettings.tempPassword);
+  });
+
+  it('should override default settings for SSL certificate', function () {
+    const user = {
+      sslKeyPemPath: "my-key.pem",
+      sslCertPemPath: "my-cert.pem"
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = require('../src/config');
+
+    expect(config.getSSLKeyPath()).to.be.eql(user.sslKeyPemPath);
+    expect(config.getSSLCertPath()).to.be.eql(user.sslCertPemPath);
   });
 
   afterEach(function () {
