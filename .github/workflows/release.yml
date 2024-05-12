@@ -12,7 +12,8 @@ on:
       - 'scripts/**'
       - 'public/**'
       - 'packages/**'
-
+      - 'package.json'
+      - 'package-lock.json'
 
 permissions:
   contents: read
