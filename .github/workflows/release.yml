@@ -19,6 +19,15 @@ permissions:
   contents: read
 
 jobs:
+  update_version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@8459bc0 # v4
+      - uses: actions/setup-node@c2ac33f # v4, Setup .npmrc file to publish to npm
+      - run: npm version minor
   create_github_release:
     outputs:
       full-tag: ${{ steps.release-drafter.outputs.tag_name }}
