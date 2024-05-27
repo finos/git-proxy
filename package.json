@@ -16,7 +16,8 @@
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx,json}\" \"test/**/*.{js,jsx,ts,tsx,json}\"",
     "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx,json}\" \"test/**/*.{js,jsx,ts,tsx,json}\"",
     "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,md,json,scss} test/**/*.{js,jsx,ts,tsx,json} --config ./.prettierrc",
-    "gen-schema-doc": "node ./scripts/doc-schema.js"
+    "gen-schema-doc": "node ./scripts/doc-schema.js",
+    "cypress:run": "cypress run"
   },
   "bin": {
     "git-proxy": "./index.js",
