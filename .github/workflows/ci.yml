@@ -55,10 +55,18 @@ jobs:
     #   if: ${{ steps.test.outputs.exit_code }} != 0
     #   run: exit ${{ steps.test.outputs.exit_code }}
 
-    - name: Cypress run
-      uses: cypress-io/github-action@v6
-      with:
-        build: npm run build
-        start: npm start
+    - name: Cypress checkout
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+    
+    - name: Install dependencies
+      run: npm i
+    
+    - name: Run Cypress tests
+      run: npm run cypress:run
+      env:
+        CI: true
 
 
