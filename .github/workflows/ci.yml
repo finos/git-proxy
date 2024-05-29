@@ -53,16 +53,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
     # - name: Exit if coverage condition not met
     #   if: ${{ steps.test.outputs.exit_code }} != 0
-    #   run: exit ${{ steps.test.outputs.exit_code }}
-
-    - name: Cypress checkout
-      uses: actions/checkout@v2
-
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-    
-    - name: Install dependencies
-      run: npm i
+    #   run: exit ${{ steps.test.outputs.exit_code }
     
     - name: Run Cypress tests
       run: npm run cypress:run
