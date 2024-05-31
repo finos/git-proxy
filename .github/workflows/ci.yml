@@ -16,6 +16,10 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      PORT: 3000
+      SERVER_URL: http://localhost:3000
+
 
     strategy:
       matrix:
@@ -54,10 +58,29 @@ jobs:
     # - name: Exit if coverage condition not met
     #   if: ${{ steps.test.outputs.exit_code }} != 0
     #   run: exit ${{ steps.test.outputs.exit_code }}
+
+    - name: Start application
+      run: npm start &
+      env: 
+        CI: true
+    
+    - name: Cypress install
+      uses: cypress-io/github-action@v6
+      with:
+        runTests: false
+    - name: Start application
+      run: npm start &
+      env:
+        CI: true
+        PORT: ${{ env.PORT }}
+
+    - name: Wait for application to be ready
+      run: npx wait-on ${{ env.SERVER_URL }}
     
     - name: Run Cypress tests
       run: npm run cypress:run
       env:
         CI: true
+        CYPRESS_BASE_URL: ${{ env.SERVER_URL }}
 
 
