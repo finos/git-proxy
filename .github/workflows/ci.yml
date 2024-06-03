@@ -58,11 +58,6 @@ jobs:
     # - name: Exit if coverage condition not met
     #   if: ${{ steps.test.outputs.exit_code }} != 0
     #   run: exit ${{ steps.test.outputs.exit_code }}
-
-    - name: Start application
-      run: npm start &
-      env: 
-        CI: true
     
     - name: Cypress install
       uses: cypress-io/github-action@v6
