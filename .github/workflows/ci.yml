@@ -16,10 +16,6 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
-    env:
-      PORT: 3000
-      SERVER_URL: http://localhost:3000
-
 
     strategy:
       matrix:
@@ -63,19 +59,27 @@ jobs:
       uses: cypress-io/github-action@v6
       with:
         runTests: false
-    - name: Start application
-      run: npm start &
-      env:
-        CI: true
-        PORT: ${{ env.PORT }}
+        build: npm run build
 
-    - name: Wait for application to be ready
-      run: npx wait-on ${{ env.SERVER_URL }}
-    
-    - name: Run Cypress tests
-      run: npm run cypress:run
-      env:
-        CI: true
-        CYPRESS_BASE_URL: ${{ env.SERVER_URL }}
+    - name: Save build folder
+      uses: actions/upload-artifact@v4
+      with:
+        name: build
+        if-no-files-found: error
+        path: build
+
+    - name: Download the build folders
+      uses: actions/download-artifact@v4
+      with:
+        name: build
+        path: build
+
+    - name: Run cypress test
+      uses: cypress-io/github-action@v6
+      with: 
+        start: npm start &
+        wait-on: "http://localhost:3000"
+        wait-on-timeout: 120
+        run: npm run cypress:run
 
 
