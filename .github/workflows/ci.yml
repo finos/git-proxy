@@ -55,11 +55,8 @@ jobs:
     #   if: ${{ steps.test.outputs.exit_code }} != 0
     #   run: exit ${{ steps.test.outputs.exit_code }}
     
-    - name: Cypress install
-      uses: cypress-io/github-action@v6
-      with:
-        runTests: false
-        build: npm run build
+    - name: Build application
+      run: npm run build
 
     - name: Save build folder
       uses: actions/upload-artifact@v4
