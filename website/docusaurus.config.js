@@ -2,6 +2,8 @@
 
 const projectName = 'Git Proxy';
 
+const { version } = require('../package.json');
+
 module.exports = {
   title: `${projectName}`,
   tagline: `Deploy custom push protections and policies on top of Git`,
@@ -11,7 +13,7 @@ module.exports = {
   projectName: `${projectName}`,
   organizationName: 'FINOS',
   customFields: {
-    version: '1.2.1',
+    version,
   },
   scripts: ['https://buttons.github.io/buttons.js'],
   stylesheets: ['https://fonts.googleapis.com/css?family=Overpass:400,400i,700'],
