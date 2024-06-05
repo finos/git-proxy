@@ -19,3 +19,21 @@ jobs:
         allow-licenses: MIT, Apache-2.0, BSD-3-Clause, ISC, BSD-2-Clause, Unlicense, CC0-1.0, 0BSD, X11, MPL-2.0, MPL-1.0, MPL-1.1, MPL-2.0
         fail-on-scopes: development, runtime
         allow-dependencies-licenses: 'pkg:npm/caniuse-lite'
+     - name: 'Setup Node.js'
+       uses: actions/setup-node@v4
+       with:
+        node-version: '18.x'
+    
+     - name: 'Install depcheck globally'
+       run: npm install -g depcheck
+     - name: 'Run depcheck'
+       run: |
+        depcheck_result=$(depcheck --oneline --skip-missing)
+        if [[ $depcheck_result == *"Unused dependencies"* ]] || [[ $depcheck_result == *"Unused devDependencies"* ]] 
+        then
+          echo "Unused dependencies or devDependencies found."
+          echo "$depcheck_result"
+          exit 1
+        fi
+    
+      
