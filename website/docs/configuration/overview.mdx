@@ -45,16 +45,17 @@ npx -- @finos/git-proxy --config ./config.json
 
 ### Set ports with ENV variables
 By default, Git Proxy uses port 8000 to expose the Git Server and 8080 for the frontend application.
-The ports can be changed by setting the `GIT_PROXY_SERVER_PORT` and `GIT_PROXY_UI_PORT` 
+The ports can be changed by setting the `GIT_PROXY_SERVER_PORT`, `GIT_PROXY_HTTPS_SERVER_PORT` (optional) and `GIT_PROXY_UI_PORT` 
 environment variables:
 
 ```
 export GIT_PROXY_UI_PORT="5000"
 export GIT_PROXY_SERVER_PORT="9090"
+export GIT_PROXY_HTTPS_SERVER_PORT="9443"
 ```
 
 Note that `GIT_PROXY_UI_PORT` is needed for both server and UI Node processes, 
-whereas `GIT_PROXY_SERVER_PORT` is only needed by the server process.
+whereas `GIT_PROXY_SERVER_PORT` (and `GIT_PROXY_HTTPS_SERVER_PORT`) is only needed by the server process.
 
 By default, Git Proxy CLI connects to Git Proxy running on localhost and default port. This can be 
 changed by setting the `GIT_PROXY_UI_HOST` and `GIT_PROXY_UI_PORT` environment variables:

@@ -15,6 +15,8 @@ let _proxyUrl = defaultSettings.proxyUrl;
 let _api = defaultSettings.api;
 let _cookieSecret = defaultSettings.cookieSecret;
 let _sessionMaxAgeHours = defaultSettings.sessionMaxAgeHours;
+let _sslKeyPath = defaultSettings.sslKeyPemPath;
+let _sslCertPath = defaultSettings.sslCertPemPath;
 const _commitConfig = defaultSettings.commitConfig;
 const _attestationConfig = defaultSettings.attestationConfig;
 const _privateOrganizations = defaultSettings.privateOrganizations;
@@ -140,6 +142,26 @@ const getCSRFProtection = () => {
   return _csrfProtection;
 };
 
+const getSSLKeyPath = () => {
+  if (_userSettings && _userSettings.sslKeyPemPath) {
+    _sslKeyPath = _userSettings.sslKeyPemPath;
+  }
+  if (!_sslKeyPath) {
+    return "../../certs/key.pem";
+  }
+  return _sslKeyPath;
+};
+
+const getSSLCertPath = () => {
+  if (_userSettings && _userSettings.sslCertPemPath) {
+    _sslCertPath = _userSettings.sslCertPemPath;
+  }
+  if (!_sslCertPath) {
+    return "../../certs/cert.pem";
+  }
+  return _sslCertPath;
+};
+
 exports.getAPIs = getAPIs;
 exports.getProxyUrl = getProxyUrl;
 exports.getAuthorisedList = getAuthorisedList;
@@ -155,3 +177,5 @@ exports.getPrivateOrganizations = getPrivateOrganizations;
 exports.getURLShortener = getURLShortener;
 exports.getContactEmail = getContactEmail;
 exports.getCSRFProtection = getCSRFProtection;
+exports.getSSLKeyPath = getSSLKeyPath;
+exports.getSSLCertPath = getSSLCertPath;
