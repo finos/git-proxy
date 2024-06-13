@@ -23,8 +23,6 @@ jobs:
        uses: actions/setup-node@v4
        with:
         node-version: '18.x'
-     - name: 'Install depcheck globally'
-       run: npm install -g depcheck
      - name: 'Run depcheck'
        run: |
         npx depcheck --skip-missing --ignores="@babel/*,@commitlint/*,eslint-*,husky,mocha"
