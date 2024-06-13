@@ -62,6 +62,7 @@ git remote set-url origin http://localhost:8000/<YOUR-GITHUB-USERNAME>/git-proxy
 git remote -v
 ```
 
+You can also try HTTPS with `git -c http.sslVerify=false remote set-url origin https://localhost:8443/<YOUR-GITHUB-USERNAME>/git-proxy.git`
 :::note
 
 SSH protocol is currently not supported, see [#27](https://github.com/finos/git-proxy/issues/27).
