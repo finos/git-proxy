@@ -54,3 +54,29 @@ jobs:
     # - name: Exit if coverage condition not met
     #   if: ${{ steps.test.outputs.exit_code }} != 0
     #   run: exit ${{ steps.test.outputs.exit_code }}
+    
+    - name: Build application
+      run: npm run build
+
+    - name: Save build folder
+      uses: actions/upload-artifact@v4
+      with:
+        name: build
+        if-no-files-found: error
+        path: build
+
+    - name: Download the build folders
+      uses: actions/download-artifact@v4
+      with:
+        name: build
+        path: build
+
+    - name: Run cypress test
+      uses: cypress-io/github-action@v6
+      with: 
+        start: npm start &
+        wait-on: "http://localhost:3000"
+        wait-on-timeout: 120
+        run: npm run cypress:run
+
+
