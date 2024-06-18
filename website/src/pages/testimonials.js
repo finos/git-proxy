@@ -2,7 +2,6 @@ import React from 'react';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import { LinkedInEmbed } from 'react-social-media-embed';
 import Slider from 'react-slick';
-import { useColorMode } from '@docusaurus/theme-common';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 
@@ -14,7 +13,6 @@ function Testimonials() {
   const context = useDocusaurusContext();
   const { siteConfig = {} } = context;
   const { posts } = siteConfig.customFields;
-  const { colorMode } = useColorMode();
   const settings = {
     infinite: true,
     speed: 500,
@@ -41,8 +39,8 @@ function Testimonials() {
         },
       },
     ],
-    dots: colorMode === 'light' ? true : false,
-    arrows: colorMode === 'dark' ? true : false,
+    dots: true,
+    arrows: true,
   };
 
   return (
