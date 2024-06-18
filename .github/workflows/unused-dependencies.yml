@@ -1,4 +1,4 @@
-name: 'Unused Dependencies Check'
+name: 'Unused Dependencies'
 on: [pull_request]
 
 permissions: 
