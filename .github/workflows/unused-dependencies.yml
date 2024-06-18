@@ -1,0 +1,25 @@
+name: 'Unused Dependencies'
+on: [pull_request]
+
+permissions: 
+  contents: read 
+
+jobs:
+  unused-dependecies:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Checkout Repository'
+        uses: actions/checkout@v4
+      - name: 'Setup Node.js'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+      - name: 'Run depcheck'
+        run: | 
+          npx depcheck --skip-missing --ignores="@babel/*,@commitlint/*,eslint,eslint-*,husky,mocha,concurrently,nyc,prettier"
+          echo $?
+          if [[ $? == 1 ]]; then
+            echo "Unused dependencies or devDependencies found"
+            exit 1
+          fi
+
