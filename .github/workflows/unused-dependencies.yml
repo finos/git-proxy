@@ -17,7 +17,7 @@ jobs:
           node-version: '18.x'
       - name: 'Run depcheck'
         run: | 
-          npx depcheck --skip-missing --ignores="@babel/*,@commitlint/*,@eslint-*,husky,mocha"
+          npx depcheck --skip-missing --ignores="@babel/*,@commitlint/*,eslint,eslint-*,husky,mocha,concurrently,nyc,prettier"
           echo $?
           if [[ $? == 1 ]]; then
             echo "Unused dependencies or devDependencies found"
