@@ -14,6 +14,56 @@ module.exports = {
   organizationName: 'FINOS',
   customFields: {
     version,
+    posts: [
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:share:7092203565380722688',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7181933362339549184',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7175490880689057792',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:share:7201603784194629633',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:share:7184554793741230080',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:share:7189253601540624385',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7077564318463995904',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7189256993470099456',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7181643315405033472',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:share:7196479535876325377',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7167196087143899136',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7196479537872859137',
+      },
+    ],
   },
   scripts: ['https://buttons.github.io/buttons.js'],
   stylesheets: ['https://fonts.googleapis.com/css?family=Overpass:400,400i,700'],
