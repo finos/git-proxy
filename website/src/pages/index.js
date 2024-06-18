@@ -2,6 +2,7 @@ import React from 'react';
 import Layout from '@theme/Layout';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Avatar from '../components/avatar';
+import Testimonials from './testimonials';
 
 /**
  * Home page component
@@ -107,7 +108,7 @@ function Home() {
         </div>
       </div>
       <div className='container text--center margin-top--xl'>
-        <h2 className='margin-top--md'>Meet the Team</h2>
+        <h1 className='margin-top--md'>Meet the Team 👋</h1>
         <div className='row margin-top--xl margin-bottom--xl'>
           <div className='col col--4'>
             <div className='col-demo'>
@@ -140,18 +141,19 @@ function Home() {
               />
             </div>
           </div>
-          <div className="col col--4">
-            <div className="col-demo">
+          <div className='col col--4'>
+            <div className='col-demo'>
               {' '}
               <Avatar
-                name="Miklos Sagi"
-                description="OSPO Engineering Lead at NatWest Group"
-                username="msagi"
+                name='Miklos Sagi'
+                description='OSPO Engineering Lead at NatWest Group'
+                username='msagi'
               />
             </div>
           </div>
         </div>
       </div>
+      <Testimonials />
     </Layout>
   );
 }
