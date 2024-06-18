@@ -15,7 +15,7 @@ function Home() {
     <Layout title={`${siteConfig.title}`} description={`${siteConfig.tagline}`}>
       <div className='hero hero--secondary'>
         <div className='container text--center'>
-          <h1 className='hero__title'>Git Proxy v{siteConfig.customFields.version} is out! 🥳</h1>
+          <h1 className='hero__title'>GitProxy v{siteConfig.customFields.version} is out! 🥳</h1>
           <p style={{ fontSize: '20px' }}>{siteConfig.tagline}</p>
           <div className='margin-top--lg'>
             <a

@@ -1,9 +1,9 @@
 ---
 title: Approving a push
-description: How to approve a push in Git Proxy
+description: How to approve a push in GitProxy
 ---
 
-All pushes that flow through Git Proxy require an approval (authorisation). Until a push is approved, Git Proxy will block the commits from being sent to the upstream repository. To approve a push, you can use the REST API or web UI.
+All pushes that flow through GitProxy require an approval (authorisation). Until a push is approved, GitProxy will block the commits from being sent to the upstream repository. To approve a push, you can use the REST API or web UI.
 
 ## Using the REST API
 
@@ -11,14 +11,14 @@ All pushes that flow through Git Proxy require an approval (authorisation). Unti
 
 - [x] Proxy and REST API are running ([default behaviour](https://github.com/finos/git-proxy/blob/main/index.js))
 - [x] Proxy and REST API are running on `localhost:8000` and `localhost:8080`, respectively
-- [x] [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy)
+- [x] [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via GitProxy](/docs/quickstart/intercept#push-via-git-proxy)
 - [x] [`curl`](https://curl.se/) is installed
 
 ### Instructions
 
 #### 1. Find the tracking `ID`
 
-Following on from [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy), a unique & shareable link is generated:
+Following on from [Push via GitProxy](/docs/quickstart/intercept#push-via-git-proxy), a unique & shareable link is generated:
 
 ```
 http://localhost:8080/admin/push/0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
@@ -32,7 +32,7 @@ The `ID` for your push corresponds to the last part of the URL:
 
 #### 2. Authenticate with the API
 
-Use the default & auto-generated Git Proxy username & password credentials to obtain a cookie. The cookie value is saved to a file (`git-proxy-cookie`):
+Use the default & auto-generated GitProxy username & password credentials to obtain a cookie. The cookie value is saved to a file (`git-proxy-cookie`):
 
 ```bash
 curl -H "Content-Type: application/json" -c git-proxy-cookie -X POST \
@@ -78,14 +78,14 @@ remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
 ### Prerequisites
 
 - Proxy and REST API are running ([default behaviour](https://github.com/finos/git-proxy/blob/main/index.js))
-- The Git Proxy URL is configured via the GIT_PROXY_UI_HOST (defaults to `http://localhost`) and GIT_PROXY_UI_PORT (defaults to `8080`) environment variables. Note: this documentation assumes that Git Proxy UI is running on `http://git-proxy.com:8080`.
-- [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy)
+- The GitProxy URL is configured via the GIT_PROXY_UI_HOST (defaults to `http://localhost`) and GIT_PROXY_UI_PORT (defaults to `8080`) environment variables. Note: this documentation assumes that GitProxy UI is running on `http://git-proxy.com:8080`.
+- [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via GitProxy](/docs/quickstart/intercept#push-via-git-proxy)
 
 ### Instructions
 
 #### 1. Find the tracking `ID`
 
-Following on from [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy), you'll receive a unique URL:
+Following on from [Push via GitProxy](/docs/quickstart/intercept#push-via-git-proxy), you'll receive a unique URL:
 
 ```
 http://localhost:8080/requests/0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
@@ -99,7 +99,7 @@ The `ID` for your push corresponds to the last part of the URL:
 
 #### 2. Authenticate with the CLI
 
-Use the default & auto-generated Git Proxy username & password credentials to authenticate and obtain a cookie. The cookie value is saved to a file (`git-proxy-cookie`):
+Use the default & auto-generated GitProxy username & password credentials to authenticate and obtain a cookie. The cookie value is saved to a file (`git-proxy-cookie`):
 
 ```bash
 $ npx -- @finos/git-proxy-cli login --username admin --password admin
@@ -117,7 +117,7 @@ Authorise: ID: '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb5
 
 #### 4. Re-push your code
 
-Execute `git push` to send your approved code through Git Proxy to the upstream repository:
+Execute `git push` to send your approved code through GitProxy to the upstream repository:
 
 ```bash
 $ git push
@@ -168,10 +168,10 @@ Once submitted, you should be logged in as administrator 💪
 
 #### 2. Visit the shareable link
 
-Following on from [Push via Git Proxy](/docs/quickstart/intercept#push-via-git-proxy), a unique & shareable link is generated:
+Following on from [Push via GitProxy](/docs/quickstart/intercept#push-via-git-proxy), a unique & shareable link is generated:
 
 ```bash
-remote: Git Proxy has received your push ✅
+remote: GitProxy has received your push ✅
 remote:
 remote: 🔗 Shareable Link
 remote: http://localhost:8080/admin/push/000000__b12557
