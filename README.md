@@ -14,6 +14,8 @@
     <br />
     <a href="https://git-proxy.finos.org">Docs</a>
     ·
+    <a href="https://www.finos.org/hubfs/Projects%20%2B%20SIGs/Open%20Source%20Readiness%20OSR/OSR%20Meeting_%20GitProxy%20Jamie%20Slome%20Citi%20Presentation.mp4#t=496">Demo</a>
+    ·
     <a href="https://github.com/finos/git-proxy/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=">Report a bug</a>
     ·
     <a href="https://github.com/finos/git-proxy/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=">Suggest a new feature</a>
@@ -89,12 +91,6 @@ customize for your environment, see the [project's documentation](https://git-pr
 - [Quickstart](https://git-proxy.finos.org/docs/category/quickstart/)
 - [Installation](https://git-proxy.finos.org/docs/installation)
 - [Configuration](https://git-proxy.finos.org/docs/category/configuration)
-
-## Demo 🎬
-
-<video width="1000" controls>
-  <source src="https://www.finos.org/hubfs/Projects%20%2B%20SIGs/Open%20Source%20Readiness%20OSR/OSR%20Meeting_%20GitProxy%20Jamie%20Slome%20Citi%20Presentation.mp4#t=496" type="video/mp4">
-</video>
 
 ## Contributing
 
