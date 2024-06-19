@@ -92,7 +92,9 @@ customize for your environment, see the [project's documentation](https://git-pr
 
 ## Demo 🎬
 
-![Demo](https://www.finos.org/hubfs/Projects%20%2B%20SIGs/Open%20Source%20Readiness%20OSR/OSR%20Meeting_%20GitProxy%20Jamie%20Slome%20Citi%20Presentation.mp4#t=496)
+<video width="1000" controls>
+  <source src="https://www.finos.org/hubfs/Projects%20%2B%20SIGs/Open%20Source%20Readiness%20OSR/OSR%20Meeting_%20GitProxy%20Jamie%20Slome%20Citi%20Presentation.mp4#t=496" type="video/mp4">
+</video>
 
 ## Contributing
 
