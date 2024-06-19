@@ -32,6 +32,7 @@
 [![Slack](https://img.shields.io/badge/_-Chat_on_Slack-000000.svg?logo=slack&colorA=00C586)](https://app.slack.com/client/T01E7QRQH97/C06LXNW0W76)
 [![Stars](https://img.shields.io/github/stars/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/stargazers)
 [![Forks](https://img.shields.io/github/forks/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/forks)
+
 </div>
 <br />
 
@@ -81,12 +82,17 @@ $ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remo
 Using the default configuration, Git Proxy intercepts the push and _blocks_ it. To enable code pushing to your fork via Git Proxy, add your repository URL into the Git Proxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
 
 ## Documentation
+
 For detailed step-by-step instructions for how to install, deploy & configure Git Proxy and
 customize for your environment, see the [project's documentation](https://git-proxy.finos.org/docs/):
 
 - [Quickstart](https://git-proxy.finos.org/docs/category/quickstart/)
 - [Installation](https://git-proxy.finos.org/docs/installation)
 - [Configuration](https://git-proxy.finos.org/docs/category/configuration)
+
+## Demo 🎬
+
+<video src='https://www.finos.org/hubfs/Projects%20%2B%20SIGs/Open%20Source%20Readiness%20OSR/OSR%20Meeting_%20GitProxy%20Jamie%20Slome%20Citi%20Presentation.mp4#t=496' width=1000 />
 
 ## Contributing
 
