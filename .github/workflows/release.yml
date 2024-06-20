@@ -19,7 +19,57 @@ permissions:
   contents: read
 
 jobs:
+  update_version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Run Release Drafter
+        uses: release-drafter/release-drafter@v6
+        id: release-drafter
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract Version
+        id: extract_version
+        run: |
+          version="${{ steps.release-drafter.outputs.tag_name }}"
+          version=$(echo "$version" || sed 's/^v//')
+          if [ -z "$version"]; then
+            echo "Version is empty. Exiting"
+            exit 1
+          fi
+          echo "$version" > version.txt
+          echo ::set-output name=version::$version
+      - name: Update package.json and package-lock.json version
+        run: 
+          VERSION=${{ steps.extract_version.outputs.version }}
+          if [ -z "$version"]; then
+            echo "Version is empty. Exiting"
+            exit 1
+          fi
+          jq --arg version "$VERSION" '.version = $version' package.json > package_tmp.json && mv package_tmp.json package.json
+          jq --arg version "$VERSION" '.version = $version' package-lock.json > package_lock_tmp.json && mv package_lock_tmp.json package-lock.json
+      - name: Update docusaurus.config.js version 
+        run: |
+          VERSION=${{ steps.extract_version.outputs.version }}
+          if [ -z "$version"]; then
+            echo "Version is empty. Exiting"
+            exit 1
+          fi
+          sed -i "s/version: '.*'/version: '$VERSION'/" website/docusaurus.config.js
+      - name: Commit version change
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package.json package-lock.json website/docusaurus.config.js
+          git commit -m "chore: update version to ${{ steps.extract_version.outputs.version }}"
+  
+      - name: Push Changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
   create_github_release:
+    needs: update_version
     outputs:
       full-tag: ${{ steps.release-drafter.outputs.tag_name }}
       short-tag: ${{ steps.get_tag_name.outputs.SHORT_TAG }}
@@ -58,35 +108,3 @@ jobs:
       - run: npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-  update_version:
-    needs: create_npm_release
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@8459bc0 # v4
-      - uses: release-drafter/release-drafter@v6
-        id: release-drafter
-        with:
-          publish: true
-      - name: Extract version
-        id: extract_version
-        run: |
-          echo "${{ steps.release-drafter.outputs.tag_name }}" | sed 's/^v//' > version.txt
-          echo ::set-output name=version::$(cat version.txt)
-      - name: Update package.json and package-lock version
-        run : |
-          jq --arg version "${{ steps.extract_version.outputs.version }}" '.version = $version' package.json > package_tmp.json && mv package_tmp.json package.json
-          jq --arg version "${{ steps.extract_version.outputs.version }}" '.version = $version' package-lock.json > package_lock_tmp.json && mv package_lock_tmp.json  package-lock.json
-      - name: Update docusaurus.config.js version
-        run: |
-          sed -i "s/version: '.*'/version: '${{ steps.extract_version.outputs.version }}'/" website/docusaurus.config.js
-      - name : Commit version change
-        run : |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git config --global push.default current
-          git add package.json package-lock.json 
-          git commit -m "chore: update version to ${{ steps.extract_version.outputs.version }}" 
-      - name: Push Changes 
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
