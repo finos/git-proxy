@@ -14,6 +14,8 @@
     <br />
     <a href="https://git-proxy.finos.org">Docs</a>
     ·
+    <a href="https://www.finos.org/hubfs/Projects%20%2B%20SIGs/Open%20Source%20Readiness%20OSR/OSR%20Meeting_%20GitProxy%20Jamie%20Slome%20Citi%20Presentation.mp4#t=496">Demo</a>
+    ·
     <a href="https://github.com/finos/git-proxy/issues/new?assignees=&labels=&projects=&template=bug_report.md&title=">Report a bug</a>
     ·
     <a href="https://github.com/finos/git-proxy/issues/new?assignees=&labels=&projects=&template=feature_request.md&title=">Suggest a new feature</a>
@@ -32,6 +34,7 @@
 [![Slack](https://img.shields.io/badge/_-Chat_on_Slack-000000.svg?logo=slack&colorA=00C586)](https://app.slack.com/client/T01E7QRQH97/C06LXNW0W76)
 [![Stars](https://img.shields.io/github/stars/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/stargazers)
 [![Forks](https://img.shields.io/github/forks/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/forks)
+
 </div>
 <br />
 
