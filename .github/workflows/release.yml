@@ -62,7 +62,7 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add package.json package-lock.json website/docusaurus.config.js
-          git commit -m "chore: update version to ${{ steps.extract_version.outputs.version }}"
+          git commit -m "chore: update version to ${{ steps.extract_version.outputs.version }} [skip ci]"
   
       - name: Push Changes
         uses: ad-m/github-push-action@master
