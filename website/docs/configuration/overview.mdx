@@ -5,12 +5,12 @@ description: How to customise push protections and policies
 
 ### Default configuration
 
-On installation, Git Proxy ships with an [out-of-the-box configuration](https://github.com/finos/git-proxy/blob/main/proxy.config.json). This is fine for
+On installation, GitProxy ships with an [out-of-the-box configuration](https://github.com/finos/git-proxy/blob/main/proxy.config.json). This is fine for
 demonstration purposes but is likely not what you want to deploy into your environment.
 ### Customise configuration
 
-To customise your Git Proxy configuration, create a `proxy.config.json` in your current
-working directory. Git Proxy will load this file and set the values you have specified. Any
+To customise your GitProxy configuration, create a `proxy.config.json` in your current
+working directory. GitProxy will load this file and set the values you have specified. Any
 missing sections will use the default configuration values.
 
 Here is a minimal example:
@@ -31,7 +31,7 @@ The full configuration reference can be found at the [Reference page](/docs/conf
 
 ### Alter the configuration path
 
-To specify a different file name for your Git Proxy configuration, use:
+To specify a different file name for your GitProxy configuration, use:
 
 ```bash
 git-proxy --config ./config.json
@@ -44,7 +44,7 @@ npx -- @finos/git-proxy --config ./config.json
 ```
 
 ### Set ports with ENV variables
-By default, Git Proxy uses port 8000 to expose the Git Server and 8080 for the frontend application.
+By default, GitProxy uses port 8000 to expose the Git Server and 8080 for the frontend application.
 The ports can be changed by setting the `GIT_PROXY_SERVER_PORT`, `GIT_PROXY_HTTPS_SERVER_PORT` (optional) and `GIT_PROXY_UI_PORT` 
 environment variables:
 
@@ -57,7 +57,7 @@ export GIT_PROXY_HTTPS_SERVER_PORT="9443"
 Note that `GIT_PROXY_UI_PORT` is needed for both server and UI Node processes, 
 whereas `GIT_PROXY_SERVER_PORT` (and `GIT_PROXY_HTTPS_SERVER_PORT`) is only needed by the server process.
 
-By default, Git Proxy CLI connects to Git Proxy running on localhost and default port. This can be 
+By default, GitProxy CLI connects to GitProxy running on localhost and default port. This can be 
 changed by setting the `GIT_PROXY_UI_HOST` and `GIT_PROXY_UI_PORT` environment variables:
 
 ```
@@ -67,7 +67,7 @@ export GIT_PROXY_UI_PORT="5000"
 
 ### Validate configuration
 
-To validate your Git Proxy configuration, run:
+To validate your GitProxy configuration, run:
 
 ```bash
 git-proxy --validate
