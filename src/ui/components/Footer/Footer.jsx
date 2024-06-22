@@ -27,7 +27,7 @@ export default function Footer(props) {
           </List>
         </div>
         <p className={classes.right}>
-          <span>&copy; {1900 + new Date().getYear()} Git Proxy</span>
+          <span>&copy; {1900 + new Date().getYear()} GitProxy</span>
         </p>
       </div>
     </footer>

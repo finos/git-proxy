@@ -58,9 +58,7 @@ class PluginLoader {
    */
   async _loadFilePlugin(filepath) {
     const lp = await lpModule;
-    const resolvedModuleFile = await lp.resolvePlugin(
-      path.join(process.cwd(), filepath),
-    );
+    const resolvedModuleFile = await lp.resolvePlugin(path.join(process.cwd(), filepath));
     return await lp.loadPlugin(resolvedModuleFile);
   }
 
@@ -100,7 +98,7 @@ class PluginLoader {
 }
 
 /**
- * Parent class for all Git Proxy plugins. New plugin types must inherit from
+ * Parent class for all GitProxy plugins. New plugin types must inherit from
  * ProxyPlugin to be loaded by PluginLoader.
  */
 class ProxyPlugin {}
