@@ -1,6 +1,6 @@
 // Docs at https://v2.docusaurus.io/docs/configuration
 
-const projectName = 'Git Proxy';
+const projectName = 'GitProxy';
 
 const { version } = require('../package.json');
 
@@ -73,7 +73,7 @@ module.exports = {
     },
     navbar: {
       logo: {
-        alt: 'Git Proxy Logo',
+        alt: 'GitProxy Logo',
         src: 'img/logo.png',
         height: 50,
       },
@@ -106,7 +106,7 @@ module.exports = {
           href: 'https://github.com/finos/git-proxy',
           position: 'right',
           className: 'header-github-link',
-          'aria-label': 'Git Proxy on GitHub',
+          'aria-label': 'GitProxy on GitHub',
         },
       ],
     },

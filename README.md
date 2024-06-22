@@ -38,24 +38,24 @@
 </div>
 <br />
 
-## What is Git Proxy
+## What is GitProxy
 
-Git Proxy is an application that stands between developers and a Git remote endpoint (e.g., `github.com`). It applies rules and workflows (configurable as `plugins`) to all outgoing `git push` operations to ensure they are compliant.
+GitProxy is an application that stands between developers and a Git remote endpoint (e.g., `github.com`). It applies rules and workflows (configurable as `plugins`) to all outgoing `git push` operations to ensure they are compliant.
 
-The main goal of Git Proxy is to marry the defacto standard Open Source developer experience (git-based workflow of branching out, submitting changes and merging back) with security and legal requirements that firms have to comply with, when operating in highly regulated industries like financial services.
+The main goal of GitProxy is to marry the defacto standard Open Source developer experience (git-based workflow of branching out, submitting changes and merging back) with security and legal requirements that firms have to comply with, when operating in highly regulated industries like financial services.
 
-That said, Git Proxy can also be used on a local environment to enforce a single developer's best practices, which tends to be the easiest setup to start with and the most comfortable one to build new Git Proxy plugins.
+That said, GitProxy can also be used on a local environment to enforce a single developer's best practices, which tends to be the easiest setup to start with and the most comfortable one to build new GitProxy plugins.
 
 ```mermaid
 sequenceDiagram
     actor Developer
     Developer->>+Git Server: git clone
     Developer->>Workstation: git remote add proxy <proxy-server>
-    Developer->>+Git Proxy: git push proxy
-    Git Proxy-->>-Developer: Failed license check
+    Developer->>+GitProxy: git push proxy
+    GitProxy-->>-Developer: Failed license check
     Developer->>Workstation: git commit -m 'fix license issue'
-    Developer->>+Git Proxy: git push
-    Git Proxy-->>-Git Server: Approved
+    Developer->>+GitProxy: git push
+    GitProxy-->>-Git Server: Approved
 ```
 
 ## Getting Started 🚀
@@ -66,7 +66,7 @@ Install & run git-proxy (requires [Nodejs](https://nodejs.org/en/download/)):
 $ npx -- @finos/git-proxy
 ```
 
-Clone a repository, set the remote to the Git Proxy URL and push your changes:
+Clone a repository, set the remote to the GitProxy URL and push your changes:
 
 ```bash
 # Only HTTPS cloning is supported at the moment, see https://github.com/finos/git-proxy/issues/27.
@@ -81,11 +81,10 @@ $ git remote add proxy http://localhost:8000/yourGithubUser/Hello-World.git
 $ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
 ```
 
-Using the default configuration, Git Proxy intercepts the push and _blocks_ it. To enable code pushing to your fork via Git Proxy, add your repository URL into the Git Proxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
+Using the default configuration, GitProxy intercepts the push and _blocks_ it. To enable code pushing to your fork via GitProxy, add your repository URL into the GitProxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
 
 ## Documentation
-
-For detailed step-by-step instructions for how to install, deploy & configure Git Proxy and
+For detailed step-by-step instructions for how to install, deploy & configure GitProxy and
 customize for your environment, see the [project's documentation](https://git-proxy.finos.org/docs/):
 
 - [Quickstart](https://git-proxy.finos.org/docs/category/quickstart/)
