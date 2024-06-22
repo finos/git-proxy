@@ -81,7 +81,7 @@ async function runCli(
 
 /**
  * Starts the server.
- * @param {Object} service - The Git Proxy API service to be started.
+ * @param {Object} service - The GitProxy API service to be started.
  * @return {Promise<void>} A promise that resolves when the service has
  * successfully started. Does not return any value upon resolution.
  */
@@ -183,7 +183,7 @@ async function addGitPushToDb(id, repo, debug = false) {
     false, // error
     null, // errorMessage
     true, // blocked
-    `\n\n\nGit Proxy has received your push:\n\nhttp://localhost:8080/requests/${id}\n\n\n`, // blockedMessage
+    `\n\n\nGitProxy has received your push:\n\nhttp://localhost:8080/requests/${id}\n\n\n`, // blockedMessage
     null, // content
   );
   const commitData = [];
@@ -212,21 +212,8 @@ async function addGitPushToDb(id, repo, debug = false) {
  * @param {boolean} admin Flag to make the user administrator.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
-async function addUserToDb(
-  username,
-  password,
-  email,
-  gitAccount,
-  admin = false,
-  debug = false,
-) {
-  const result = await db.createUser(
-    username,
-    password,
-    email,
-    gitAccount,
-    admin,
-  );
+async function addUserToDb(username, password, email, gitAccount, admin = false, debug = false) {
+  const result = await db.createUser(username, password, email, gitAccount, admin);
   if (debug) {
     console.log(`New user added to DB: ${util.inspect(result)}`);
   }

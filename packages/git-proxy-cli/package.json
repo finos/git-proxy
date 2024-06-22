@@ -1,7 +1,7 @@
 {
   "name": "@finos/git-proxy-cli",
   "version": "0.1.0",
-  "description": "Command line interface tool for FINOS Git Proxy.",
+  "description": "Command line interface tool for FINOS GitProxy.",
   "bin": "./index.js",
   "dependencies": {
     "axios": "^1.6.0",
