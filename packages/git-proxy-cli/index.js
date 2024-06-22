@@ -14,7 +14,7 @@ const baseUrl = `${uiHost}:${uiPort}`;
 axios.defaults.timeout = 30000;
 
 /**
- * Log in to Git Proxy
+ * Log in to GitProxy
  * @param {string} username The user name to login with
  * @param {string} password The password to use for the login
  */
@@ -155,11 +155,11 @@ async function authoriseGitPush(id) {
         params: {
           attestation: [
             {
-              label: "Authorising via GitProxy CLI",
-              checked: true
-            }
-          ]
-        }
+              label: 'Authorising via GitProxy CLI',
+              checked: true,
+            },
+          ],
+        },
       },
       {
         headers: { Cookie: cookies },
