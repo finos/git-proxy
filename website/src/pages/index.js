@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Layout from '@theme/Layout';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Avatar from '../components/avatar';
 import Testimonials from './testimonials';
 import ReactPlayer from 'react-player';
+import axios from 'axios';
 
 /**
  * Home page component
@@ -14,6 +15,13 @@ function Home() {
   const { siteConfig = {} } = context;
 
   const [showDemo, setShowDemo] = React.useState(false);
+  const [contributors, setContributors] = React.useState([]);
+
+  useEffect(() => {
+    axios.get('https://api.github.com/repos/finos/git-proxy/contributors').then((res) => {
+      setContributors(res.data);
+    });
+  }, []);
 
   return (
     <Layout title={`${siteConfig.title}`} description={`${siteConfig.tagline}`}>
@@ -132,8 +140,25 @@ function Home() {
           )}
         </div>
       </div>
+      <Testimonials />
       <div className='container text--center margin-top--xl'>
-        <h1 className='margin-top--md'>Meet the Team 👋</h1>
+        <h1 className='margin-top--md'>
+          Our{' '}
+          <span
+            style={{
+              color: 'purple',
+              border: '2px solid purple',
+              paddingTop: '5px',
+              paddingBottom: '5px',
+              paddingLeft: '10px',
+              paddingRight: '10px',
+              borderRadius: '30px',
+              backgroundColor: 'rgba(90, 34, 139, 0.1)',
+            }}
+          >
+            Maintainers
+          </span>
+        </h1>
         <div className='row margin-top--xl margin-bottom--xl'>
           <div className='col col--4'>
             <div className='col-demo'>
@@ -178,7 +203,41 @@ function Home() {
           </div>
         </div>
       </div>
-      <Testimonials />
+      <div className='container text--center'>
+        <h1 className='margin-top--md'>
+          Our{' '}
+          <span
+            style={{
+              color: '#30d5c8',
+              border: '2px solid #30d5c8',
+              paddingTop: '5px',
+              paddingBottom: '5px',
+              paddingLeft: '10px',
+              paddingRight: '10px',
+              borderRadius: '30px',
+              backgroundColor: 'rgba(48, 213, 200, 0.1)',
+            }}
+          >
+            Contributors
+          </span>
+        </h1>
+        <div className='row margin-top--xl margin-bottom--xl'>
+          {contributors.map((contributor) => {
+            if (![29139614, 49699333].includes(contributor.id))
+              return (
+                <div key={contributor.id} className='col col--4'>
+                  <div className='col-demo'>
+                    <Avatar
+                      name={contributor.login}
+                      description={`${contributor.contributions} ${contributor.contributions > 1 ? 'contributions' : 'contribution'}`}
+                      username={contributor.login}
+                    />
+                  </div>
+                </div>
+              );
+          })}
+        </div>
+      </div>
     </Layout>
   );
 }
