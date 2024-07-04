@@ -49,7 +49,8 @@ jobs:
             exit 1
           fi
           jq --arg version "$VERSION" '.version = $version' package.json > package_tmp.json && mv package_tmp.json package.json
-          jq --arg version "$VERSION" '.version = $version' package-lock.json > package_lock_tmp.json && mv package_lock_tmp.json package-lock.json
+      - name: NPM Install
+        run: npm install
       - name: Update docusaurus.config.js version 
         run: |
           VERSION=${{ steps.extract_version.outputs.version }}
