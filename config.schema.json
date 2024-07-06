@@ -36,6 +36,13 @@
       "description": "Flag to enable CSRF protections for UI",
       "type": "boolean"
     },
+    "pushPlugins": {
+      "type": "array",
+      "description": "List of plugins to run on push. Each value is either a file path or a module name.",
+      "items": {
+        "type": "string"
+      }
+    },
     "authorisedList": {
       "description": "List of repositories that are authorised to be pushed to through the proxy.",
       "type": "array",

@@ -95,6 +95,9 @@ customize for your environment, see the [project's documentation](https://git-pr
 
 Your contributions are at the core of making this a true open source project. Any contributions you make are **greatly appreciated**. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more information.
 
+## Extensibility
+Git Proxy exposes the ability to add custom functionality in the form of plugins which run during a git push. Plugins are loaded via configuration and can be added to a git-proxy deployment via a npm package or loaded from JavaScript files on disk. See [plugin documentation for details](./plugins/README.md).
+
 ## Security
 
 If you identify a security vulnerability in the codebase, please follow the steps in [`SECURITY.md`](https://github.com/finos/git-proxy/security/policy). This includes logic-based vulnerabilities and sensitive information or secrets found in code.

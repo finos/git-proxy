@@ -23,6 +23,7 @@ const _privateOrganizations = defaultSettings.privateOrganizations;
 const _urlShortener = defaultSettings.urlShortener;
 const _contactEmail = defaultSettings.contactEmail;
 const _csrfProtection = defaultSettings.csrfProtection;
+const _pushPlugins = defaultSettings.pushPlugins;
 
 // Get configured proxy URL
 const getProxyUrl = () => {
@@ -142,6 +143,11 @@ const getCSRFProtection = () => {
   return _csrfProtection;
 };
 
+// Get loadable push plugins
+const getPushPlugins = () => {
+  return _pushPlugins;
+}
+
 const getSSLKeyPath = () => {
   if (_userSettings && _userSettings.sslKeyPemPath) {
     _sslKeyPath = _userSettings.sslKeyPemPath;
@@ -177,5 +183,6 @@ exports.getPrivateOrganizations = getPrivateOrganizations;
 exports.getURLShortener = getURLShortener;
 exports.getContactEmail = getContactEmail;
 exports.getCSRFProtection = getCSRFProtection;
+exports.getPushPlugins = getPushPlugins;
 exports.getSSLKeyPath = getSSLKeyPath;
 exports.getSSLCertPath = getSSLCertPath;

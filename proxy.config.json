@@ -95,5 +95,6 @@
   "privateOrganizations": [],
   "urlShortener": "",
   "contactEmail": "",
-  "csrfProtection": true
+  "csrfProtection": true,
+  "pushPlugins": []
 }

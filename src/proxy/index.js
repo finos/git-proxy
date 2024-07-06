@@ -7,6 +7,7 @@ const path = require("path");
 const router = require('./routes').router;
 const config = require('../config');
 const db = require('../db');
+const plugin = require('../plugin');
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort } = require('../config/env').Vars;
 const { GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } = require('../config/env').Vars;
 
@@ -26,7 +27,7 @@ const start = async () => {
   // Check to see if the default repos are in the repo list
   const defaultAuthorisedRepoList = config.getAuthorisedList();
   const allowedList = await db.getRepos();
-
+  plugin.defaultLoader = plugin.createLoader();
   defaultAuthorisedRepoList.forEach(async (x) => {
     const found = allowedList.find((y) => y.project === x.project && x.name === y.name);
     if (!found) {

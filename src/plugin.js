@@ -1,42 +1,34 @@
-const path = require('path');
+const config = require('./config');
 const lpModule = import('load-plugin');
 ('use strict');
 
 /**
- * Finds, registers and loads plugins used by git-proxy
+ * Registers and loads plugins used by git-proxy
  */
 class PluginLoader {
   /**
    * Initialize PluginLoader with candidates modules (node_modules or relative
    * file paths).
-   * @param {Array.<string>} names List of Node module/package names to load.
-   * @param {Array.<string>} paths List of file paths to load modules from.
+   * @param {Array.<string>} targets List of Node module package names or files to load.
    */
-  constructor(names, paths) {
-    this.names = names;
-    this.paths = paths;
+  constructor(targets) {
+    this.targets = targets;
     /**
-     * @type {Array.<ProxyPlugin>} List of ProxyPlugin objects loaded.
+     * @type {ProxyPlugin[]} List of loaded ProxyPlugins
      * @public
      */
     this.plugins = [];
-  }
-
-  /**
-   * Load configured plugins as modules and set each concrete ProxyPlugin
-   * to this.plugins for use in proxying.
-   */
-  load() {
-    const modulePromises = [];
-    for (const path of this.paths) {
-      modulePromises.push(this._loadFilePlugin(path));
+    if (this.targets.length === 0) {
+      console.log('No plugins configured'); // TODO: log.debug()
+      return;
     }
-    for (const name of this.names) {
-      modulePromises.push(this._loadPackagePlugin(name));
+    const modulePromises = [];
+    for (const target of this.targets) {
+      modulePromises.push(this._loadPlugin(target));
     }
     Promise.all(modulePromises).then((vals) => {
       const modules = vals;
-      console.log(`Found ${modules.length} plugin modules`);
+      console.log(`Found ${modules.length} plugin modules`); // TODO: log.debug()
       const pluginObjPromises = [];
       for (const mod of modules) {
         pluginObjPromises.push(this._castToPluginObjects(mod));
@@ -45,45 +37,37 @@ class PluginLoader {
         for (const pluginObjs of vals) {
           this.plugins = this.plugins.concat(pluginObjs);
         }
-        console.log(`Loaded ${this.plugins.length} plugins`);
+        console.log(`Loaded ${this.plugins.length} plugins`); // TODO: log.debug()
       });
     });
   }
 
   /**
-   * Load a plugin module from a relative file path to the
-   * current working directory.
-   * @param {string} filepath
+   * Load a plugin module from either a file path or a Node module.
+   * @param {string} target
    * @return {Module}
    */
-  async _loadFilePlugin(filepath) {
+  async _loadPlugin(target) {
     const lp = await lpModule;
-    const resolvedModuleFile = await lp.resolvePlugin(path.join(process.cwd(), filepath));
-    return await lp.loadPlugin(resolvedModuleFile);
-  }
-
-  /**
-   * Load a plugin module from the specified Node module. Only
-   * modules with the prefix "@finos" are supported.
-   * @param {string} packageName
-   * @return {Module}
-   */
-  async _loadPackagePlugin(packageName) {
-    const lp = await lpModule;
-    const resolvedPackageFile = await lp.resolvePlugin(packageName, {
-      prefix: '@finos',
-    });
-    return await lp.loadPlugin(resolvedPackageFile);
+    try {
+      const resolvedModuleFile = await lp.resolvePlugin(target);
+      return await lp.loadPlugin(resolvedModuleFile);  
+    } catch (err) {
+      return Promise.reject(err);
+    }
   }
 
   /**
    * Set a list of ProxyPlugin objects to this.plugins
    * from the keys exported by the passed in module.
-   * @param {Module} pluginModule
+   * @param {object} pluginModule
    * @return {ProxyPlugin}
    */
   async _castToPluginObjects(pluginModule) {
     const plugins = [];
+    if (pluginModule instanceof ProxyPlugin) {
+      return [pluginModule];
+    }
     // iterate over the module.exports keys
     for (const key of Object.keys(pluginModule)) {
       if (
@@ -106,39 +90,70 @@ class ProxyPlugin {}
 /**
  * A plugin which executes a function when receiving a proxy request.
  */
-class ActionPlugin extends ProxyPlugin {
-  /**
-   * Custom function executed as part of the action chain. The function
-   * must take in two parameters, an {@link https://expressjs.com/en/4x/api.html#req Express Request}
-   * and the current Action executed in the chain.
-   * @param {Promise<Action>} exec A Promise that returns an Action &
-   *                               executes when a push is proxied.
-   */
+class PushActionPlugin extends ProxyPlugin {
+/**
+ * Custom function executed as part of the action chain. The function
+ * must take in two parameters: an Express Request and the current Action
+ * executed in the chain. This function should return a Promise that resolves
+ * to an Action.
+ * 
+ * @param {function} exec - A function that:
+ *   - Takes in an Express Request object as the first parameter (`req`).
+ *   - Takes in an Action object as the second parameter (`action`).
+ *   - Returns a Promise that resolves to an Action.
+ */
   constructor(exec) {
     super();
     this.exec = exec;
   }
 }
 
+class ActionPlugin extends ProxyPlugin {
+  constructor(exec) {
+    super();
+    this.exec = exec;
+  }
+}
+
+/**
+ * 
+ * @param {Array<string>} targets A list of loadable targets for plugin modules. 
+ * @return {PluginLoader}
+ */
 const createLoader = async () => {
-  // Auto-register plugins that are part of git-proxy core
-  let names = [];
-  let files = [];
-  if (process.env.GITPROXY_PLUGIN_PACKAGES !== undefined) {
-    names = process.env.GITPROXY_PLUGIN_PACKAGES.split(',');
+  const loadTargets = [...config.getPushPlugins()]
+  if (process.env.GITPROXY_PLUGIN_FILES) {
+    console.log('Note: GITPROXY_PLUGIN_FILES is deprecated. Please configure plugins to load via configuration (proxy.config.json).')
+    const pluginFiles = process.env.GITPROXY_PLUGIN_FILES.split(',');
+    loadTargets.push(...pluginFiles);
   }
-  if (process.env.GITPROXY_PLUGIN_FILES !== undefined) {
-    files = process.env.GITPROXY_PLUGIN_FILES.split(',');
+  if (process.env.GITPROXY_PLUGIN_PACKAGES) {
+    console.log('Note: GITPROXY_PLUGIN_PACKAGES is deprecated. Please configure plugins to load via configuration (proxy.config.json).')
+    const pluginPackages = process.env.GITPROXY_PLUGIN_PACKAGES.split(',');
+    loadTargets.push(...pluginPackages);
   }
-  const loader = new PluginLoader(names, files);
-  if (names.length + files.length > 0) {
-    loader.load();
-  }
+  const loader = new PluginLoader(loadTargets);
   return loader;
 };
 
-module.exports.defaultLoader = createLoader();
-module.exports.ProxyPlugin = ProxyPlugin;
-module.exports.ActionPlugin = ActionPlugin;
-// exported for testing only
-module.exports.createLoader = createLoader;
+/**
+ * Default PluginLoader used by the proxy chain. This is a singleton.
+ * @type {PluginLoader}
+ */
+let _defaultLoader;
+
+module.exports = {
+  get defaultLoader() {
+    if (!_defaultLoader) {
+      _defaultLoader = createLoader();
+    }
+    return _defaultLoader;
+  },
+  set defaultLoader(loader) {
+    _defaultLoader = loader;
+  },
+  ProxyPlugin,
+  ActionPlugin, // deprecated
+  PushActionPlugin,
+  createLoader
+}

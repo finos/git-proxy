@@ -53,7 +53,7 @@ const getChain = async (action) => {
     if (!pluginsLoaded && pluginActions.length > 0) {
       console.log(`Found ${pluginActions.length}, inserting into proxy chain`);
       for (const pluginAction of pluginActions) {
-        if (pluginAction instanceof plugin.ActionPlugin) {
+        if (pluginAction instanceof plugin.PushActionPlugin || pluginAction instanceof plugin.ActionPlugin) {
           console.log(`Inserting plugin ${pluginAction} into chain`);
           // insert custom functions after parsePush but before other actions
           pushActionChain.splice(1, 0, pluginAction.exec);
