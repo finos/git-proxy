@@ -1,8 +1,6 @@
 import React, { useEffect } from 'react';
 import TableCell from '@material-ui/core/TableCell';
-import Popper from '@material-ui/core/Popper';
 import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
 import GridContainer from '../../../components/Grid/GridContainer';
 import GridItem from '../../../components/Grid/GridItem';
 import { CodeReviewIcon, LawIcon, PeopleIcon } from '@primer/octicons-react';
