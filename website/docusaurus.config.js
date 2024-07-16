@@ -21,6 +21,10 @@ module.exports = {
       },
       {
         platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7211986423942385664',
+      },
+      {
+        platform: 'linkedin',
         url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7181933362339549184',
       },
       {
