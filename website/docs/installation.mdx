@@ -30,3 +30,17 @@ To install a specific version of the GitProxy CLI, append the version to the end
 ```bash
 npm install -g @finos/git-proxy-cli@1.0.0
 ```
+
+### Install a local checkout
+
+To test a personal fork, or the latest version of the main branch:
+
+```bash
+git clone git@github.com:finos/git-proxy.git
+cd git-proxy
+npm pack
+npm i -g finos-git-proxy-<version>.tar.gz
+git-proxy --version
+```
+
+To make sure that the `git-proxy` command is using your checked out version, update the `version` in `package.json` before running `npm pack`, then verify that the same version is returned when running `git-proxy --version`.
