@@ -111,4 +111,8 @@ This project is distributed under the Apache-2.0 license. See <a href="./LICENSE
 
 Drop a note, ask a question or just say hello in our [community Slack channel](https://app.slack.com/client/T01E7QRQH97/C06LXNW0W76) 👋
 
-Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues). You can also reach out to [help@finos.org](mailto:help@finos.org).
+If you can't access Slack, you can also [subscribe to our mailing list](mailto:git-proxy+subscribe@lists.finos.org).
+
+Join our [fortnightly Zoom meeting](https://zoom.us/j/97235277537?pwd=aDJsaE8zcDJpYW1vZHJmSTJ0RXNZUT09) on Monday, 11AM EST (odd week numbers). Send an e-mail to [help@finos.org](mailto:help@finos.org) to get a calendar invitation.
+
+Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues). 
