@@ -18,6 +18,8 @@ import AddUser from './Components/AddUser';
 import { Code, Delete, RemoveCircle, Visibility } from '@material-ui/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { UserContext } from '../../../context';
+import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
+import { Box } from '@material-ui/core';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -57,6 +59,9 @@ export default function RepoDetails() {
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
 
+  const { project: org, name } = data || {};
+  const cloneURL = `${import.meta.env.VITE_SERVER_URI}/${org}/${name}.git`;
+
   return (
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
@@ -73,6 +78,10 @@ export default function RepoDetails() {
                 </Button>
               </div>
             )}
+
+            <Box mb={2} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <CodeActionButton cloneURL={cloneURL} />
+            </Box>
             <form className={classes.root} noValidate autoComplete='off'>
               <GridContainer>
                 <GridItem xs={1} sm={1} md={1}>
@@ -117,6 +126,7 @@ export default function RepoDetails() {
               </GridContainer>
             </form>
             <hr style={{ opacity: 0.2 }} />
+
             <GridContainer>
               <GridItem xs={12} sm={12} md={12}>
                 <h3>
