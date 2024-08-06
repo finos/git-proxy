@@ -58,7 +58,8 @@ export default function PushesTable(props) {
           </TableHead>
           <TableBody>
             {[...data].reverse().map((row) => {
-              const repoFullName = row.repo.replace('.git', '');
+              const repoFullName = row.repo.name.replace('.git', '');
+              const repoBaseUrl = row.repo.url.replace('.git', '');
               const repoBranch = row.branch.replace('refs/heads/', '');
 
               return (
@@ -69,13 +70,13 @@ export default function PushesTable(props) {
                       .toString()}
                   </TableCell>
                   <TableCell align='left'>
-                    <a href={`https://github.com/${row.repo}`} rel='noreferrer' target='_blank'>
+                    <a href={`${repoBaseUrl}`} rel='noreferrer' target='_blank'>
                       {repoFullName}
                     </a>
                   </TableCell>
                   <TableCell align='left'>
                     <a
-                      href={`https://github.com/${repoFullName}/tree/${repoBranch}`}
+                      href={`${repoBaseUrl}/tree/${repoBranch}`}
                       rel='noreferrer'
                       target='_blank'
                     >
@@ -84,7 +85,7 @@ export default function PushesTable(props) {
                   </TableCell>
                   <TableCell align='left'>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${row.commitTo}`}
+                      href={`${repoBaseUrl}/commit/${row.commitTo}`}
                       rel='noreferrer'
                       target='_blank'
                     >

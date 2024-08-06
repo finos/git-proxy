@@ -15,6 +15,11 @@ exports.getRepo = async (name) => {
   return collection.findOne({ name: { $eq: name } });
 };
 
+exports.getRepoByUrl = async (url) => {
+  const collection = await connect(cnName);
+  return collection.findOne({ url: { $eq: url}});
+}
+
 exports.createRepo = async (repo) => {
   console.log(`creating new repo ${JSON.stringify(repo)}`);
 
@@ -67,10 +72,9 @@ exports.deleteRepo = async (name) => {
   await collection.deleteMany({ name: name });
 };
 
-exports.isUserPushAllowed = async (name, user) => {
-  name = name.toLowerCase();
+exports.isUserPushAllowed = async (url, user) => {
   return new Promise(async (resolve, reject) => {
-    const repo = await exports.getRepo(name);
+    const repo = await exports.getRepoByUrl(url);
     console.log(repo.users.canPush);
     console.log(repo.users.canAuthorise);
 

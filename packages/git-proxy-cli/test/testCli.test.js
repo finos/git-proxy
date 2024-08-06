@@ -21,7 +21,6 @@ const TEST_REPO_CONFIG = {
   name: 'git-proxy-test',
   url: 'https://github.com/finos/git-proxy-test.git'
 }
-const TEST_REPO = 'finos/git-proxy-test.git';
 
 describe('test git-proxy-cli', function () {
   // *** help ***
@@ -291,7 +290,7 @@ describe('test git-proxy-cli', function () {
 
     before(async function() {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url);
     })
 
     it('attempt to authorise should fail when server is down', async function () {
@@ -391,7 +390,7 @@ describe('test git-proxy-cli', function () {
 
     before(async function() {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url);
     })
     
     it('attempt to cancel should fail when server is down', async function () {
@@ -552,7 +551,7 @@ describe('test git-proxy-cli', function () {
 
     before(async function() {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url);
     })
     
     it('attempt to reject should fail when server is down', async function () {
@@ -648,7 +647,7 @@ describe('test git-proxy-cli', function () {
 
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url);
     });
 
     it('attempt to ls should list existing push', async function () {
@@ -662,7 +661,7 @@ describe('test git-proxy-cli', function () {
         const expectedExitCode = 0;
         const expectedMessages = [
           pushId,
-          TEST_REPO,
+          TEST_REPO_CONFIG.url,
           'authorised: false',
           'blocked: true',
           'canceled: false',
@@ -800,7 +799,7 @@ describe('test git-proxy-cli', function () {
 
         cli = `npx -- @finos/git-proxy-cli ls --authorised true --canceled false --rejected false`;
         expectedExitCode = 0;
-        expectedMessages = [pushId, TEST_REPO];
+        expectedMessages = [pushId, TEST_REPO_CONFIG.url];
         expectedErrorMessages = null;
         await helper.runCli(
           cli,
@@ -844,7 +843,7 @@ describe('test git-proxy-cli', function () {
 
         cli = `npx -- @finos/git-proxy-cli ls --authorised false --canceled false --rejected true`;
         expectedExitCode = 0;
-        expectedMessages = [pushId, TEST_REPO];
+        expectedMessages = [pushId, TEST_REPO_CONFIG.url];
         expectedErrorMessages = null;
         await helper.runCli(
           cli,
@@ -888,7 +887,7 @@ describe('test git-proxy-cli', function () {
 
         cli = `npx -- @finos/git-proxy-cli ls --authorised false --canceled true --rejected false`;
         expectedExitCode = 0;
-        expectedMessages = [pushId, TEST_REPO];
+        expectedMessages = [pushId, TEST_REPO_CONFIG.url];
         expectedErrorMessages = null;
         await helper.runCli(
           cli,

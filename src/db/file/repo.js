@@ -34,6 +34,22 @@ exports.getRepo = async (name) => {
   });
 };
 
+exports.getRepoByUrl = async (url) => {
+  return new Promise((resolve, reject) => {
+    db.findOne({ url: url }, (err, doc) => {
+      if (err) {
+        reject(err);
+      } else {
+        if (!doc) {
+          resolve(null);
+        } else {
+          resolve(doc);
+        }
+      }
+    });
+  });
+};
+
 exports.createRepo = async (repo) => {
   repo.users = {
     canPush: [],
@@ -140,10 +156,9 @@ exports.deleteRepo = async (name) => {
   });
 };
 
-exports.isUserPushAllowed = async (name, user) => {
-  name = name.toLowerCase();
+exports.isUserPushAllowed = async (url, user) => {
   return new Promise(async (resolve, reject) => {
-    const repo = await exports.getRepo(name);
+    const repo = await exports.getRepoByUrl(url);
     console.log(repo.users.canPush);
     console.log(repo.users.canAuthorise);
 
