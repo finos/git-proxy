@@ -1,3 +1,7 @@
-exports.Action = require('./Action').Action;
-exports.PushAction = require('./Action').PushAction;
-exports.Step = require('./Step').Step;
+const { Action } = require('./Action');
+const { Step } = require('./Step');
+
+module.exports = {
+  Action,
+  Step,
+}

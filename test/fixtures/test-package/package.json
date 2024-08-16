@@ -1,0 +1,7 @@
+{
+  "name": "test-package",
+  "version": "0.0.0",
+  "dependencies": {
+    "@osp0/finos-git-proxy": "file:../../.."
+  }
+}
