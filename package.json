@@ -23,6 +23,10 @@
     "git-proxy": "./index.js",
     "git-proxy-all": "concurrently 'npm run server' 'npm run client'"
   },
+  "exports": {
+    "./plugin": "./src/plugin.js",
+    "./proxy/actions": "./src/proxy/actions/index.js"
+  },
   "workspaces": [
     "./packages/git-proxy-cli"
   ],

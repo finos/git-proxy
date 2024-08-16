@@ -17,6 +17,7 @@ let _cookieSecret = defaultSettings.cookieSecret;
 let _sessionMaxAgeHours = defaultSettings.sessionMaxAgeHours;
 let _sslKeyPath = defaultSettings.sslKeyPemPath;
 let _sslCertPath = defaultSettings.sslCertPemPath;
+let _plugins = defaultSettings.plugins;
 const _commitConfig = defaultSettings.commitConfig;
 const _attestationConfig = defaultSettings.attestationConfig;
 const _privateOrganizations = defaultSettings.privateOrganizations;
@@ -142,6 +143,14 @@ const getCSRFProtection = () => {
   return _csrfProtection;
 };
 
+// Get loadable push plugins
+const getPlugins = () => {
+  if (_userSettings && _userSettings.plugins) {
+    _plugins = _userSettings.plugins;
+  }
+  return _plugins;
+}
+
 const getSSLKeyPath = () => {
   if (_userSettings && _userSettings.sslKeyPemPath) {
     _sslKeyPath = _userSettings.sslKeyPemPath;
@@ -177,5 +186,6 @@ exports.getPrivateOrganizations = getPrivateOrganizations;
 exports.getURLShortener = getURLShortener;
 exports.getContactEmail = getContactEmail;
 exports.getCSRFProtection = getCSRFProtection;
+exports.getPlugins = getPlugins;
 exports.getSSLKeyPath = getSSLKeyPath;
 exports.getSSLCertPath = getSSLCertPath;
