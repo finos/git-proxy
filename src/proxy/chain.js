@@ -1,12 +1,11 @@
 const proc = require('./processors');
-const plugin = require('../plugin');
 
 const pushActionChain = [
   proc.push.parsePush,
-  proc.push.checkRepoInAuthorisedList,
+  proc.push.checkIfOnboardedRepo,
   proc.push.checkCommitMessages,
   proc.push.checkAuthorEmails,
-  proc.push.checkUserPushPermission,
+  // proc.push.checkIfPullRequestApproved,
   proc.push.checkIfWaitingAuth,
   proc.push.pullRemote,
   proc.push.writePack,
@@ -16,9 +15,13 @@ const pushActionChain = [
   proc.push.blockForAuth,
 ];
 
+const pullActionChain = [
+  proc.push.checkIfOnboardedRepo,
+];
+
 let pluginsLoaded = false;
 
-const chain = async (req) => {
+const executeChain = async (req) => {
   let action;
   try {
     action = await proc.pre.parseAction(req);
@@ -43,27 +46,48 @@ const chain = async (req) => {
   return action;
 };
 
+/**
+ * The plugin loader used for the Git Proxy chain.
+ *
+ * @type {import('../plugin').PluginLoader}
+ */
+let chainPluginLoader;
+
 const getChain = async (action) => {
-  if (action.type === 'pull') return [proc.push.checkRepoInAuthorisedList];
-  if (action.type === 'push') {
-    // insert loaded plugins as actions
-    // this probably isn't the place to insert these functions
-    const loader = await plugin.defaultLoader;
-    const pluginActions = loader.plugins;
-    if (!pluginsLoaded && pluginActions.length > 0) {
-      console.log(`Found ${pluginActions.length}, inserting into proxy chain`);
-      for (const pluginAction of pluginActions) {
-        if (pluginAction instanceof plugin.ActionPlugin) {
-          console.log(`Inserting plugin ${pluginAction} into chain`);
-          // insert custom functions after parsePush but before other actions
-          pushActionChain.splice(1, 0, pluginAction.exec);
-        }
-      }
-      pluginsLoaded = true;
+  if (chainPluginLoader === undefined) {
+    console.error('Plugin loader was not initialized! Skipping any plugins...');
+    pluginsLoaded = true;
+  }
+  if (!pluginsLoaded) {
+    console.log(`Inserting loaded plugins (${chainPluginLoader.pushPlugins.length} push, ${chainPluginLoader.pullPlugins.length} pull) into proxy chains`);
+    for (const pluginObj of chainPluginLoader.pushPlugins) {
+      console.log(`Inserting push plugin ${pluginObj.constructor.name} into chain`);
+      // insert custom functions after parsePush but before other actions
+      pushActionChain.splice(1, 0, pluginObj.exec);
     }
+    for (const pluginObj of chainPluginLoader.pullPlugins) {
+      console.log(`Inserting pull plugin ${pluginObj.constructor.name} into chain`);
+      // insert custom functions before other pull actions
+      pullActionChain.splice(0, 0, pluginObj.exec);
+    }
+    // This is set to true so that we don't re-insert the plugins into the chain
+    pluginsLoaded = true;
+  }
+  if (action.type === 'pull') {
+    return pullActionChain;
+  };
+  if (action.type === 'push') {
     return pushActionChain;
   }
   if (action.type === 'default') return [];
 };
 
-exports.exec = chain;
+module.exports = {
+  set chainPluginLoader(loader) {
+    chainPluginLoader = loader;
+  },
+  get chainPluginLoader() {
+    return chainPluginLoader;
+  },
+  executeChain,
+}
