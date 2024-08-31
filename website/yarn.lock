@@ -1443,7 +1443,7 @@
     "@docusaurus/utils-validation" "3.5.2"
     tslib "^2.6.0"
 
-"@docusaurus/plugin-google-gtag@3.5.2":
+"@docusaurus/plugin-google-gtag@3.5.2", "@docusaurus/plugin-google-gtag@^3.0.0":
   version "3.5.2"
   resolved "https://registry.yarnpkg.com/@docusaurus/plugin-google-gtag/-/plugin-google-gtag-3.5.2.tgz#60b5a9e1888c4fa16933f7c5cb5f2f2c31caad3a"
   integrity sha512-lm8XL3xLkTPHFKKjLjEEAHUrW0SZBSHBE1I+i/tmYMBsjCcUB5UJ52geS5PSiOCFVR74tbPGcPHEV/gaaxFeSA==
@@ -2779,9 +2779,9 @@ available-typed-arrays@^1.0.7:
     possible-typed-array-names "^1.0.0"
 
 axios@^1.7.2:
-  version "1.7.5"
-  resolved "https://registry.yarnpkg.com/axios/-/axios-1.7.5.tgz#21eed340eb5daf47d29b6e002424b3e88c8c54b1"
-  integrity sha512-fZu86yCo+svH3uqJ/yTdQ0QHpQu5oL+/QE+QPSv6BZSkDAoky9vytxp7u5qk83OJFS3kEBcesWni9WTZAv3tSw==
+  version "1.7.6"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-1.7.6.tgz#34f338182f6802fd3824a6511d6ddf99dd5ae0b5"
+  integrity sha512-Ekur6XDwhnJ5RgOCaxFnXyqlPALI3rVeukZMwOdfghW7/wGz784BYKiQq+QD8NPcr91KRo30KfHOchyijwWw7g==
   dependencies:
     follow-redirects "^1.15.6"
     form-data "^4.0.0"
