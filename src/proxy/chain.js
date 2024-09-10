@@ -2,10 +2,10 @@ const proc = require('./processors');
 
 const pushActionChain = [
   proc.push.parsePush,
-  proc.push.checkIfOnboardedRepo,
+  proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
   proc.push.checkAuthorEmails,
-  // proc.push.checkIfPullRequestApproved,
+  proc.push.checkUserPushPermission,
   proc.push.checkIfWaitingAuth,
   proc.push.pullRemote,
   proc.push.writePack,
@@ -16,7 +16,7 @@ const pushActionChain = [
 ];
 
 const pullActionChain = [
-  proc.push.checkIfOnboardedRepo,
+  proc.push.checkRepoInAuthorisedList,
 ];
 
 let pluginsLoaded = false;
