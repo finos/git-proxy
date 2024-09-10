@@ -25,7 +25,8 @@
   },
   "exports": {
     "./plugin": "./src/plugin.js",
-    "./proxy/actions": "./src/proxy/actions/index.js"
+    "./proxy/actions": "./src/proxy/actions/index.js",
+    "./src/config/env": "./src/config/env.js"
   },
   "workspaces": [
     "./packages/git-proxy-cli"
