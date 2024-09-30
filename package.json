@@ -34,7 +34,7 @@
     "@primer/octicons-react": "^19.8.0",
     "@seald-io/nedb": "^4.0.2",
     "axios": "^1.6.0",
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "bit-mask": "^1.0.2",
     "body-parser": "^1.20.1",
     "chai-http": "^4.3.0",
