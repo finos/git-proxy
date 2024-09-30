@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 /* eslint-disable max-len */
 const configure = async () => {
   const passport = require('passport');
