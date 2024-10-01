@@ -30,6 +30,7 @@ export default function Footer() {
           <span>&copy; {1900 + new Date().getYear()} GitProxy</span>
         </p>
       </div>
+      <img referrerPolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=afd0e5de-d4dc-42e3-bb72-6fc64323c5d0" />
     </footer>
   );
 }
