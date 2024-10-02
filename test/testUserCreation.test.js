@@ -1,6 +1,6 @@
 // Import the dependencies for testing
 const chai = require('chai');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const chaiHttp = require('chai-http');
 const db = require('../src/db');
 const service = require('../src/service');
