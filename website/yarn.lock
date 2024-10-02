@@ -7772,9 +7772,9 @@ react-slick@^0.30.2:
     resize-observer-polyfill "^1.5.0"
 
 react-social-media-embed@^2.5.13:
-  version "2.5.13"
-  resolved "https://registry.yarnpkg.com/react-social-media-embed/-/react-social-media-embed-2.5.13.tgz#a81801d6654908d4e2364f56ae9a905f257ca369"
-  integrity sha512-9udbyUZpG8lXhDzDHH6ceDZfhW7QGg2WoVjJD6F8PTOXJoULZTkvLV7vYpqeWthqP33iwagLEHo7goJVDuL7ug==
+  version "2.5.14"
+  resolved "https://registry.yarnpkg.com/react-social-media-embed/-/react-social-media-embed-2.5.14.tgz#7a45def45d6ee05bf5b1cb0e0a8dbaf93e56c34c"
+  integrity sha512-Ao/3qTjCqYKuUAIDxwdf9pJfXFKPiYfWvJowQSvv/FxBQz1V/w9YsNqBnukHhWlfERSck0qwr6MNM0zx1U99uQ==
   dependencies:
     "@types/youtube-player" "^5.5.5"
     classnames "^2.5.1"
