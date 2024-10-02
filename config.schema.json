@@ -38,7 +38,7 @@
     },
     "plugins": {
       "type": "array",
-      "description": "List of plugins to integrate on Git Proxy's push or pull actions. Each value is either a file path or a module name.",
+      "description": "List of plugins to integrate on GitProxy's push or pull actions. Each value is either a file path or a module name.",
       "items": {
         "type": "string"
       }

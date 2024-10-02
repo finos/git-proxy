@@ -47,7 +47,7 @@ const executeChain = async (req) => {
 };
 
 /**
- * The plugin loader used for the Git Proxy chain.
+ * The plugin loader used for the GitProxy chain.
  *
  * @type {import('../plugin').PluginLoader}
  */

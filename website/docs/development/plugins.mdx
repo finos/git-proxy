@@ -3,24 +3,24 @@ title: Plugins
 ---
 
 ## How plugins work
-Git Proxy supports extensibility in the form of plugins. These plugins are specified via [configuration](/docs/category/configuration) as NPM packages or JavaScript code on disk. For each plugin configured, Git Proxy will attempt to load each package or file as a standard [Node module](https://nodejs.org/api/modules.html). Plugin authors will create instances of the extension classes exposed by Git Proxy and use these objects to implement custom functionality.
+GitProxy supports extensibility in the form of plugins. These plugins are specified via [configuration](/docs/category/configuration) as NPM packages or JavaScript code on disk. For each plugin configured, GitProxy will attempt to load each package or file as a standard [Node module](https://nodejs.org/api/modules.html). Plugin authors will create instances of the extension classes exposed by GitProxy and use these objects to implement custom functionality.
 
-For each loaded "plugin object", it is inserted into Git Proxy's chain of actions which are triggered on a given Git action received by Git Proxy such as `git push` or `git fetch`.
+For each loaded "plugin object", it is inserted into GitProxy's chain of actions which are triggered on a given Git action received by GitProxy such as `git push` or `git fetch`.
 
 :::caution
-The order that plugins are configured matters! Plugins execute _before_ Git Proxy's builtin steps and in the order that they are configured in `proxy.config.json`. If you wish to use a combination of features, ensure that your custom plugins do not conflict or interfere with later steps in the processing chain.
+The order that plugins are configured matters! Plugins execute _before_ GitProxy's builtin steps and in the order that they are configured in `proxy.config.json`. If you wish to use a combination of features, ensure that your custom plugins do not conflict or interfere with later steps in the processing chain.
 :::
 
-Git Proxy uses the [load-plugin package](https://www.npmjs.com/package/load-plugin) to provide the Node module resolution.
+GitProxy uses the [load-plugin package](https://www.npmjs.com/package/load-plugin) to provide the Node module resolution.
 
 ## Limitations
 - Plugins are only supported on the Git HTTP proxy server. There is no similar extensibility today for the dashboard UI or its backing API.
-- Extensions are defined as JavaScript classes which are [quite limited](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain#inheritance_with_the_prototype_chain). Git Proxy has a rather naive system for determining if a provided module has any objects which it recognizes as "Git Proxy plugin types". A conversion of the project to TypeScript will provide more flexible options for enforcing API contracts via strict interfaces & types in a future release. [Use of TypeScript is a roadmap item](https://github.com/finos/git-proxy/issues/276).
+- Extensions are defined as JavaScript classes which are [quite limited](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Inheritance_and_the_prototype_chain#inheritance_with_the_prototype_chain). GitProxy has a rather naive system for determining if a provided module has any objects which it recognizes as "GitProxy plugin types". A conversion of the project to TypeScript will provide more flexible options for enforcing API contracts via strict interfaces & types in a future release. [Use of TypeScript is a roadmap item](https://github.com/finos/git-proxy/issues/276).
 
 ## Using plugins
 The primary goals of the plugin system is to:
 
-- Allow users deploying Git Proxy to do so via the distributed binary package. ie. `npx -- @finos/git-proxy`
+- Allow users deploying GitProxy to do so via the distributed binary package. ie. `npx -- @finos/git-proxy`
 - Allow users to consume plugins that packaged using standard tools (npm) and optionally distributed via npm themselves.
 - Reuse as much native Node functionality as possible for calling 3rd-party code (plugins) from the main application (git-proxy).
 
@@ -32,7 +32,7 @@ The below instructions are using the [`@finos/git-proxy-plugin-samples`](https:/
 1. Install both `@finos/git-proxy` and the `@finos/git-proxy-plugin-samples` package to the local `node_modules/` directory using the following command:
 
 ```bash
-$ npm install -g @finos/git-proxy@1.3.5 @finos/git-proxy-plugin-samples@0.1.0
+$ npm install -g @finos/git-proxy@latest @finos/git-proxy-plugin-samples@0.1.0
 ```
 
 Alternatively, you can create local packages from source and install those instead.
@@ -71,10 +71,10 @@ Loaded plugin: LogRequestPlugin
 
 ### via JavaScript file(s)
 :::caution
-This section is considered highly experimental and not recommended for general use. Even when authoring local plugins that are not distributed, it is best to use `node_modules/` and not rely on bespoke system setup or layout of files. Use `npm pack` and `npm install path/to/plugin.tgz` if you must use local plugin code to ensure Git Proxy's plugin manager can properly load your plugins.
+This section is considered highly experimental and not recommended for general use. Even when authoring local plugins that are not distributed, it is best to use `node_modules/` and not rely on bespoke system setup or layout of files. Use `npm pack` and `npm install path/to/plugin.tgz` if you must use local plugin code to ensure GitProxy's plugin manager can properly load your plugins.
 :::
 
-Plugins written as standalone JavaScript files are used similarly to npm packages. The main difference is that file-based module loading requires additional steps to ensure that the given JavaScript files (written as Node CommonJS or ES modules) have all the necessary dependencies to be imported. Since Git Proxy plugin system relies on class-based inheritence, the module will require at least a dependency to `@finos/git-proxy` to be able to import the required classes. Plugins do not have to be distributed by NPM to be used in this fashion which may be advantageous in certain environments.
+Plugins written as standalone JavaScript files are used similarly to npm packages. The main difference is that file-based module loading requires additional steps to ensure that the given JavaScript files (written as Node CommonJS or ES modules) have all the necessary dependencies to be imported. Since GitProxy plugin system relies on class-based inheritence, the module will require at least a dependency to `@finos/git-proxy` to be able to import the required classes. Plugins do not have to be distributed by NPM to be used in this fashion which may be advantageous in certain environments.
 
 1. To use a plugin that is written as a standalone JavaScript file, ensure that the JS code has all its necessary dependencies:
 
@@ -128,7 +128,7 @@ To develop a new plugin, you must add `@finos/git-proxy` as a [peer dependency](
 - `@finos/git-proxy/plugin/PullActionPlugin`: execute as an action in the proxy chain during a `git fetch`
 - `@finos/git-proxy/proxy/actions/Step` and `@finos/git-proxy/proxy/actions/Action`: internal classes which act as carriers for `git` state during proxying. Plugins should modify the passed in `action` for affecting any global state of the git operation and add its own custom `Step` object to capture the plugin's own internal state (logs, errored/blocked status, etc.)
 
-Git Proxy will load your plugin only if it extends one of the two plugin classes above. It is also important that your package has [`exports`](https://nodejs.org/api/packages.html#exports) defined for the plugin loader to properly load your module(s).
+GitProxy will load your plugin only if it extends one of the two plugin classes above. It is also important that your package has [`exports`](https://nodejs.org/api/packages.html#exports) defined for the plugin loader to properly load your module(s).
 
 Please see the [sample plugin package included in the repo](https://github.com/finos/git-proxy/tree/main/plugins/git-proxy-plugin-samples) for details on how to structure your plugin package.
 
@@ -141,7 +141,7 @@ class FooPlugin extends PushActionPlugin {
   constructor() {
     super(); // don't pass any function to the parent class - let the parent's this.exec function be undefined
     this.displayName = 'FooPlugin';
-    // overwrite the parent's exec function which is executed as part of Git Proxy's action chain.
+    // overwrite the parent's exec function which is executed as part of GitProxy's action chain.
     // use an arrow function if you require access to the instances's state (properties, methods, etc.)
     this.exec = async (req, action) => {
       console.log(this.displayName);
@@ -162,7 +162,7 @@ class FooPlugin extends PushActionPlugin {
 ```bash
 $ npm init
 # ...
-$ npm install --save-peer @finos/git-proxy@1.3.5
+$ npm install --save-peer @finos/git-proxy@latest
 ```
 
 `package.json`
@@ -182,7 +182,7 @@ $ npm install --save-peer @finos/git-proxy@1.3.5
     ".": "./bar.js"
   },
   "peerDependencies": {
-    "@finos/git-proxy": "^1.3.5-alpha.0"
+    "@finos/git-proxy": "^1.3.5"
   }
 }
 ```
