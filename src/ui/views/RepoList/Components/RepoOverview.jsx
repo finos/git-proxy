@@ -585,7 +585,7 @@ export default function Repositories(props) {
   };
 
   const { project: org, name } = props?.data || {};
-  const cloneURL = `${import.meta.env.VITE_SERVER_URI}/${org}/${name}.git`;
+  const cloneURL = `${window.location.origin.toString()}/${org}/${name}.git`;
 
   return (
     <TableRow>
