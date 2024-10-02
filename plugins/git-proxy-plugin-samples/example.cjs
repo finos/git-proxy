@@ -11,7 +11,7 @@ const { Step } = require('@finos/git-proxy/proxy/actions');
 /**
  * 
  * @param {object} req Express Request object
- * @param {Action} action Git Proxy Action
+ * @param {Action} action GitProxy Action
  * @return {Promise<Action>} Promise that resolves to an Action
  */
 async function logMessage(req, action) {
