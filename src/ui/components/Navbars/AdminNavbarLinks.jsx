@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import classNames from 'classnames';
+import { useNavigate } from 'react-router-dom';
+import { AccountCircle } from '@mui/icons-material';
 import makeStyles from '@mui/styles/makeStyles';
 import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
@@ -8,14 +10,12 @@ import Paper from '@mui/material/Paper';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 import Poppers from '@mui/material/Popper';
 import Divider from '@mui/material/Divider';
+import { Box } from '@mui/material';
 import Button from '../CustomButtons/Button';
 import styles from '../../assets/jss/material-dashboard-react/components/headerLinksStyle';
-import { useNavigate } from 'react-router-dom';
-import { AccountCircle } from '@mui/icons-material';
 import { getUser } from '../../services/user';
 import axios from 'axios';
 import { getCookie } from '../../utils';
-import { Box } from '@mui/material';
 
 const useStyles = makeStyles(styles);
 

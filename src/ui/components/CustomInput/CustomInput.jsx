@@ -15,9 +15,10 @@ export default function CustomInput(props) {
   const { formControlProps, labelText, id, labelProps, inputProps, error, success } = props;
 
   const labelClasses = classNames({
-    [' ' + classes.labelRootError]: error,
-    [' ' + classes.labelRootSuccess]: success && !error,
+    [classes.labelRootError]: error,
+    [classes.labelRootSuccess]: success && !error,
   });
+
   const underlineClasses = classNames({
     [classes.underlineError]: error,
     [classes.underlineSuccess]: success && !error,
@@ -29,10 +30,10 @@ export default function CustomInput(props) {
 
   const generateIcon = () => {
     if (error) {
-      return <Clear className={classes.feedback + ' ' + classes.labelRootError} />;
+      return <Clear className={classNames(classes.feedback, classes.labelRootError)} />;
     }
     if (success) {
-      return <Check className={classes.feedback + ' ' + classes.labelRootSuccess} />;
+      return <Check className={classNames(classes.feedback, classes.labelRootSuccess)} />;
     }
     return null;
   };
@@ -40,10 +41,14 @@ export default function CustomInput(props) {
   return (
     <FormControl
       {...formControlProps}
-      className={formControlProps.className + ' ' + classes.formControl}
+      className={classNames(formControlProps.className, classes.formControl)}
     >
       {labelText !== undefined ? (
-        <InputLabel className={classes.labelRoot + labelClasses} htmlFor={id} {...labelProps}>
+        <InputLabel
+          className={classNames(classes.labelRoot, labelClasses)}
+          htmlFor={id}
+          {...labelProps}
+        >
           {labelText}
         </InputLabel>
       ) : null}

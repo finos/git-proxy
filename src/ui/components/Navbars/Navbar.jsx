@@ -25,11 +25,15 @@ export default function Header(props) {
     return name;
   }
   const { color } = props;
-  const appBarClasses = classNames({
-    [' ' + classes[color]]: color,
-  });
+  const appBarClasses = classNames(
+    {
+      [classes[color]]: color,
+    },
+    classes.appBar,
+  );
+
   return (
-    <AppBar style={{ borderRadius: '0px', zIndex: 10 }} className={classes.appBar + appBarClasses}>
+    <AppBar style={{ borderRadius: '0px', zIndex: 10 }} className={appBarClasses}>
       <Toolbar className={classes.container}>
         <div className={classes.flex}>
           {/* Here we create navbar brand, based on route name */}

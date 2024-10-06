@@ -9,10 +9,11 @@ import {
   whiteColor,
   blackColor,
   hexToRgb,
+  increaseSpecificity,
 } from '../../material-dashboard-react.js';
 
 const buttonStyle = {
-  button: {
+  button: increaseSpecificity({
     minHeight: 'auto',
     minWidth: 'auto',
     backgroundColor: grayColor[0],
@@ -88,14 +89,14 @@ const buttonStyle = {
         fontSize: '20px',
       },
     },
-  },
-  white: {
+  }),
+  white: increaseSpecificity({
     '&,&:focus,&:hover': {
       backgroundColor: whiteColor,
       color: grayColor[0],
     },
-  },
-  rose: {
+  }),
+  rose: increaseSpecificity({
     backgroundColor: roseColor[0],
     boxShadow:
       '0 2px 2px 0 rgba(' +
@@ -116,8 +117,8 @@ const buttonStyle = {
         hexToRgb(roseColor[0]) +
         ', 0.2)',
     },
-  },
-  primary: {
+  }),
+  primary: increaseSpecificity({
     backgroundColor: primaryColor[0],
     boxShadow:
       '0 2px 2px 0 rgba(' +
@@ -138,8 +139,8 @@ const buttonStyle = {
         hexToRgb(primaryColor[0]) +
         ', 0.2)',
     },
-  },
-  info: {
+  }),
+  info: increaseSpecificity({
     backgroundColor: infoColor[0],
     boxShadow:
       '0 2px 2px 0 rgba(' +
@@ -160,8 +161,8 @@ const buttonStyle = {
         hexToRgb(infoColor[0]) +
         ', 0.2)',
     },
-  },
-  success: {
+  }),
+  success: increaseSpecificity({
     backgroundColor: successColor[0],
     boxShadow:
       '0 2px 2px 0 rgba(' +
@@ -182,8 +183,8 @@ const buttonStyle = {
         hexToRgb(successColor[0]) +
         ', 0.2)',
     },
-  },
-  warning: {
+  }),
+  warning: increaseSpecificity({
     backgroundColor: warningColor[0],
     boxShadow:
       '0 2px 2px 0 rgba(' +
@@ -204,8 +205,8 @@ const buttonStyle = {
         hexToRgb(warningColor[0]) +
         ', 0.2)',
     },
-  },
-  danger: {
+  }),
+  danger: increaseSpecificity({
     backgroundColor: dangerColor[0],
     boxShadow:
       '0 2px 2px 0 rgba(' +
@@ -226,8 +227,8 @@ const buttonStyle = {
         hexToRgb(dangerColor[0]) +
         ', 0.2)',
     },
-  },
-  simple: {
+  }),
+  simple: increaseSpecificity({
     '&,&:focus,&:hover': {
       color: whiteColor,
       background: 'transparent',
@@ -263,44 +264,45 @@ const buttonStyle = {
         color: dangerColor[0],
       },
     },
-  },
-  transparent: {
+  }),
+
+  transparent: increaseSpecificity({
     '&,&:focus,&:hover': {
       color: 'inherit',
       background: 'transparent',
       boxShadow: 'none',
     },
-  },
-  disabled: {
+  }),
+  disabled: increaseSpecificity({
     opacity: '0.65',
     pointerEvents: 'none',
-  },
-  lg: {
+  }),
+  lg: increaseSpecificity({
     padding: '1.125rem 2.25rem',
     fontSize: '0.875rem',
     lineHeight: '1.333333',
     borderRadius: '0.2rem',
-  },
-  sm: {
+  }),
+  sm: increaseSpecificity({
     padding: '0.40625rem 1.25rem',
     fontSize: '0.6875rem',
     lineHeight: '1.5',
     borderRadius: '0.2rem',
-  },
-  round: {
+  }),
+  round: increaseSpecificity({
     borderRadius: '30px',
-  },
-  block: {
+  }),
+  block: increaseSpecificity({
     width: '100% !important',
-  },
-  link: {
+  }),
+  link: increaseSpecificity({
     '&,&:hover,&:focus': {
       backgroundColor: 'transparent',
       color: grayColor[0],
       boxShadow: 'none',
     },
-  },
-  justIcon: {
+  }),
+  justIcon: increaseSpecificity({
     paddingLeft: '12px',
     paddingRight: '12px',
     fontSize: '20px',
@@ -337,7 +339,7 @@ const buttonStyle = {
         height: '17px',
       },
     },
-  },
+  }),
 };
 
 export default buttonStyle;

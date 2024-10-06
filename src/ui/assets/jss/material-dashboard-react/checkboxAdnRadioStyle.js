@@ -1,47 +1,52 @@
-import { primaryColor, blackColor, hexToRgb } from '../material-dashboard-react.js';
+import {
+  primaryColor,
+  blackColor,
+  hexToRgb,
+  increaseSpecificity,
+} from '../material-dashboard-react.js';
 
 const checkboxAdnRadioStyle = {
-  root: {
+  root: increaseSpecificity({
     padding: '13px',
     '&:hover': {
       backgroundColor: 'unset',
     },
-  },
-  labelRoot: {
+  }),
+  labelRoot: increaseSpecificity({
     marginLeft: '-14px',
-  },
-  checked: {
+  }),
+  checked: increaseSpecificity({
     color: primaryColor[0] + '!important',
-  },
-  checkedIcon: {
+  }),
+  checkedIcon: increaseSpecificity({
     width: '20px',
     height: '20px',
     border: '1px solid rgba(' + hexToRgb(blackColor) + ', .54)',
     borderRadius: '3px',
-  },
-  uncheckedIcon: {
+  }),
+  uncheckedIcon: increaseSpecificity({
     width: '0px',
     height: '0px',
     padding: '10px',
     border: '1px solid rgba(' + hexToRgb(blackColor) + ', .54)',
     borderRadius: '3px',
-  },
-  radio: {
+  }),
+  radio: increaseSpecificity({
     color: primaryColor[0] + '!important',
-  },
-  radioChecked: {
+  }),
+  radioChecked: increaseSpecificity({
     width: '20px',
     height: '20px',
     border: '1px solid ' + primaryColor[0],
     borderRadius: '50%',
-  },
-  radioUnchecked: {
+  }),
+  radioUnchecked: increaseSpecificity({
     width: '0px',
     height: '0px',
     padding: '10px',
     border: '1px solid rgba(' + hexToRgb(blackColor) + ', .54)',
     borderRadius: '50%',
-  },
+  }),
 };
 
 export default checkboxAdnRadioStyle;

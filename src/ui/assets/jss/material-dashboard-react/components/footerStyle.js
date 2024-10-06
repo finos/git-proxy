@@ -1,4 +1,10 @@
-import { defaultFont, container, primaryColor, grayColor } from '../../material-dashboard-react.js';
+import {
+  defaultFont,
+  container,
+  primaryColor,
+  grayColor,
+  increaseSpecificity,
+} from '../../material-dashboard-react.js';
 
 const footerStyle = {
   block: {
@@ -35,15 +41,15 @@ const footerStyle = {
     textDecoration: 'none',
     backgroundColor: 'transparent',
   },
-  list: {
+  list: increaseSpecificity({
     marginBottom: '0',
     padding: '0',
     marginTop: '0',
-  },
-  inlineBlock: {
+  }),
+  inlineBlock: increaseSpecificity({
     display: 'inline-block',
     padding: '0px',
     width: 'auto',
-  },
+  }),
 };
 export default footerStyle;

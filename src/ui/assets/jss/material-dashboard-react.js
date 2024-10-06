@@ -251,8 +251,15 @@ const cardLink = {
   },
 };
 
+function increaseSpecificity(styles) {
+  return {
+    '&&': styles,
+  };
+}
+
 export {
   hexToRgb,
+  increaseSpecificity,
   // variables
   drawerWidth,
   transition,

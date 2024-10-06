@@ -4,15 +4,16 @@ import {
   successColor,
   grayColor,
   defaultFont,
+  increaseSpecificity,
 } from '../../material-dashboard-react.js';
 
 const customInputStyle = {
-  disabled: {
+  disabled: increaseSpecificity({
     '&:before': {
       backgroundColor: 'transparent !important',
     },
-  },
-  underline: {
+  }),
+  underline: increaseSpecificity({
     '&:hover:not($disabled):before,&:before': {
       borderColor: grayColor[4] + ' !important',
       borderWidth: '1px !important',
@@ -20,32 +21,32 @@ const customInputStyle = {
     '&:after': {
       borderColor: primaryColor[0],
     },
-  },
-  underlineError: {
+  }),
+  underlineError: increaseSpecificity({
     '&:after': {
       borderColor: dangerColor[0],
     },
-  },
-  underlineSuccess: {
+  }),
+  underlineSuccess: increaseSpecificity({
     '&:after': {
       borderColor: successColor[0],
     },
-  },
-  labelRoot: {
+  }),
+  labelRoot: increaseSpecificity({
     ...defaultFont,
     color: grayColor[3] + ' !important',
     fontWeight: '400',
     fontSize: '14px',
     lineHeight: '1.42857',
     letterSpacing: 'unset',
-  },
-  labelRootError: {
+  }),
+  labelRootError: increaseSpecificity({
     color: dangerColor[0],
-  },
-  labelRootSuccess: {
+  }),
+  labelRootSuccess: increaseSpecificity({
     color: successColor[0],
-  },
-  feedback: {
+  }),
+  feedback: increaseSpecificity({
     position: 'absolute',
     top: '18px',
     right: '0',
@@ -55,16 +56,16 @@ const customInputStyle = {
     height: '24px',
     textAlign: 'center',
     pointerEvents: 'none',
-  },
-  marginTop: {
+  }),
+  marginTop: increaseSpecificity({
     marginTop: '16px',
-  },
-  formControl: {
+  }),
+  formControl: increaseSpecificity({
     paddingBottom: '10px',
     margin: '27px 0 0 0',
     position: 'relative',
     verticalAlign: 'unset',
-  },
+  }),
 };
 
 export default customInputStyle;

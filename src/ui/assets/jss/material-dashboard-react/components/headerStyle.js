@@ -8,10 +8,11 @@ import {
   warningColor,
   dangerColor,
   whiteColor,
+  increaseSpecificity,
 } from '../../material-dashboard-react.js';
 
 const headerStyle = () => ({
-  appBar: {
+  appBar: increaseSpecificity({
     backgroundColor: 'transparent',
     boxShadow: 'none',
     borderBottom: '0',
@@ -27,7 +28,7 @@ const headerStyle = () => ({
     transition: 'all 150ms ease 0s',
     minHeight: '50px',
     display: 'block',
-  },
+  }),
   container: {
     ...container,
     minHeight: '50px',
