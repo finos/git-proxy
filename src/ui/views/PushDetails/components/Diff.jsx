@@ -1,5 +1,5 @@
 import * as Diff2Html from 'diff2html';
-import ReactHtmlParser from 'react-html-parser';
+import ReactHtmlParser from 'html-react-parser';
 
 export default function Diff(props) {
   const { diff } = props;
