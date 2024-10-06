@@ -9,7 +9,7 @@ exports.findUser = async function (username) {
 exports.getUsers = async function (query) {
   console.log(`Getting users for query= ${JSON.stringify(query)}`);
   const collection = await connect(usersCollection);
-  return collection.find(query).toArray();
+  return collection.find(query, { password: 0 }).toArray();
 };
 
 exports.deleteUser = async function (username) {
