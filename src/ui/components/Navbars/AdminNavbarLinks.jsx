@@ -6,7 +6,6 @@ import MenuList from '@mui/material/MenuList';
 import Grow from '@mui/material/Grow';
 import Paper from '@mui/material/Paper';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
-import Hidden from '@mui/material/Hidden';
 import Poppers from '@mui/material/Popper';
 import Divider from '@mui/material/Divider';
 import Button from '../CustomButtons/Button';
@@ -16,6 +15,7 @@ import { AccountCircle } from '@mui/icons-material';
 import { getUser } from '../../services/user';
 import axios from 'axios';
 import { getCookie } from '../../utils';
+import { Box } from '@mui/material';
 
 const useStyles = makeStyles(styles);
 
@@ -80,9 +80,9 @@ export default function AdminNavbarLinks() {
           className={classes.buttonLink}
         >
           <AccountCircle />
-          <Hidden mdUp implementation='css'>
+          <Box sx={{ display: { md: 'none', xs: 'block' } }} implementation='css'>
             <p className={classes.linkText}>Profile</p>
-          </Hidden>
+          </Box>
         </Button>
         <Poppers
           open={Boolean(openProfile)}
