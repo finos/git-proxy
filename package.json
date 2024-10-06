@@ -33,8 +33,11 @@
     "url": "https://github.com/finos/git-proxy"
   },
   "dependencies": {
-    "@material-ui/core": "^4.11.0",
-    "@material-ui/icons": "4.11.3",
+    "@emotion/react": "^11.13.3",
+    "@emotion/styled": "^11.13.0",
+    "@mui/icons-material": "^6.1.2",
+    "@mui/material": "^6.1.2",
+    "@mui/styles": "^6.1.2",
     "@primer/octicons-react": "^19.8.0",
     "@seald-io/nedb": "^4.0.2",
     "axios": "^1.6.0",
@@ -66,8 +69,8 @@
     "passport-local": "^1.0.0",
     "perfect-scrollbar": "^1.5.5",
     "prop-types": "15.8.1",
-    "react": "^16.13.1",
-    "react-dom": "^16.13.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
     "react-router-dom": "6.26.2",
     "uuid": "^10.0.0",
     "yargs": "^17.7.2"

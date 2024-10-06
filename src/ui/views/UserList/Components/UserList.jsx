@@ -1,20 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import makeStyles from '@mui/styles/makeStyles';
 import GridItem from '../../../components/Grid/GridItem';
 import GridContainer from '../../../components/Grid/GridContainer';
 import { useNavigate } from 'react-router-dom';
-import Button from '@material-ui/core/Button';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
+import Button from '@mui/material/Button';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { getUsers } from '../../../services/user';
 
-import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
+import { CloseRounded, Check, KeyboardArrowRight } from '@mui/icons-material';
 
 export default function UserList(props) {
   const useStyles = makeStyles(styles);

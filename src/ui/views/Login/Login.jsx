@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-// @material-ui/core components
-import FormControl from '@material-ui/core/FormControl';
-import InputLabel from '@material-ui/core/InputLabel';
+// @mui/material components
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
 // core components
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
-import Input from '@material-ui/core/Input';
+import Input from '@mui/material/Input';
 import Button from '../../components/CustomButtons/Button';
 import Card from '../../components/Card/Card';
 import CardHeader from '../../components/Card/CardHeader';
@@ -14,7 +14,7 @@ import CardFooter from '../../components/Card/CardFooter';
 import axios from 'axios';
 import { Navigate } from 'react-router-dom';
 import logo from '../../assets/img/git-proxy.png';
-import { Badge, CircularProgress, Snackbar } from '@material-ui/core';
+import { Badge, CircularProgress, Snackbar } from '@mui/material';
 import { getCookie } from '../../utils';
 
 const loginUrl = `${import.meta.env.VITE_API_URI}/api/auth/login`;

@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import InputLabel from '@material-ui/core/InputLabel';
-import FormControl from '@material-ui/core/FormControl';
-import FormHelperText from '@material-ui/core/FormHelperText';
+import InputLabel from '@mui/material/InputLabel';
+import FormControl from '@mui/material/FormControl';
+import FormHelperText from '@mui/material/FormHelperText';
 import GridItem from '../../../components/Grid/GridItem';
 import GridContainer from '../../../components/Grid/GridContainer';
-import CircularProgress from '@material-ui/core/CircularProgress';
+import CircularProgress from '@mui/material/CircularProgress';
 import Card from '../../../components/Card/Card';
 import CardBody from '../../../components/Card/CardBody';
-import MenuItem from '@material-ui/core/MenuItem';
+import MenuItem from '@mui/material/MenuItem';
 import Button from '../../../components/CustomButtons/Button';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import Select from '@material-ui/core/Select';
-import Dialog from '@material-ui/core/Dialog';
-import Snackbar from '@material-ui/core/Snackbar';
+import DialogTitle from '@mui/material/DialogTitle';
+import Select from '@mui/material/Select';
+import Dialog from '@mui/material/Dialog';
+import Snackbar from '@mui/material/Snackbar';
 import { addUser } from '../../../services/repo';
 import { getUsers } from '../../../services/user';
-import { PersonAdd } from '@material-ui/icons';
+import { PersonAdd } from '@mui/icons-material';
 
 function AddUserDialog(props) {
   const repoName = props.repoName;

@@ -1,12 +1,11 @@
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/core/styles';
-import FormControl from '@material-ui/core/FormControl';
-import InputLabel from '@material-ui/core/InputLabel';
-import Input from '@material-ui/core/Input';
-import Clear from '@material-ui/icons/Clear';
-import Check from '@material-ui/icons/Check';
+import makeStyles from '@mui/styles/makeStyles';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Input from '@mui/material/Input';
+import { Clear, Check } from '@mui/icons-material';
 import styles from '../../assets/jss/material-dashboard-react/components/customInputStyle';
 
 const useStyles = makeStyles(styles);

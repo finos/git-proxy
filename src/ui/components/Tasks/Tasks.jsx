@@ -1,17 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import classnames from 'classnames';
-import { makeStyles } from '@material-ui/core/styles';
-import Checkbox from '@material-ui/core/Checkbox';
-import Tooltip from '@material-ui/core/Tooltip';
-import IconButton from '@material-ui/core/IconButton';
-import Table from '@material-ui/core/Table';
-import TableRow from '@material-ui/core/TableRow';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import Edit from '@material-ui/icons/Edit';
-import Close from '@material-ui/icons/Close';
-import Check from '@material-ui/icons/Check';
+import makeStyles from '@mui/styles/makeStyles';
+import Checkbox from '@mui/material/Checkbox';
+import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton';
+import Table from '@mui/material/Table';
+import TableRow from '@mui/material/TableRow';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import { Edit, Close, Check } from '@mui/icons-material';
 import styles from '../../assets/jss/material-dashboard-react/components/tasksStyle';
 
 const useStyles = makeStyles(styles);
@@ -34,7 +32,7 @@ export default function Tasks(props) {
     [classes.tableCellRTL]: rtlActive,
   });
   return (
-    <Table className={classes.table}>
+    (<Table className={classes.table}>
       <TableBody>
         {tasksIndexes.map((value) => (
           <TableRow key={value} className={classes.tableRow}>
@@ -59,7 +57,7 @@ export default function Tasks(props) {
                 placement='top'
                 classes={{ tooltip: classes.tooltip }}
               >
-                <IconButton aria-label='Edit' className={classes.tableActionButton}>
+                <IconButton aria-label='Edit' className={classes.tableActionButton} size="large">
                   <Edit className={classes.tableActionButtonIcon + ' ' + classes.edit} />
                 </IconButton>
               </Tooltip>
@@ -69,7 +67,7 @@ export default function Tasks(props) {
                 placement='top'
                 classes={{ tooltip: classes.tooltip }}
               >
-                <IconButton aria-label='Close' className={classes.tableActionButton}>
+                <IconButton aria-label='Close' className={classes.tableActionButton} size="large">
                   <Close className={classes.tableActionButtonIcon + ' ' + classes.close} />
                 </IconButton>
               </Tooltip>
@@ -77,7 +75,7 @@ export default function Tasks(props) {
           </TableRow>
         ))}
       </TableBody>
-    </Table>
+    </Table>)
   );
 }
 

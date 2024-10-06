@@ -10,7 +10,7 @@ import {
 
 const dropdownStyle = (theme) => ({
   buttonLink: {
-    [theme.breakpoints.down('md')]: {
+    [theme.breakpoints.down('lg')]: {
       display: 'flex',
       marginLeft: '30px',
       width: 'auto',
@@ -20,7 +20,7 @@ const dropdownStyle = (theme) => ({
     width: '20px',
     height: '20px',
     zIndex: '4',
-    [theme.breakpoints.down('md')]: {
+    [theme.breakpoints.down('lg')]: {
       display: 'block',
       width: '30px',
       height: '30px',
@@ -37,7 +37,7 @@ const dropdownStyle = (theme) => ({
     pointerEvents: 'none',
   },
   popperResponsive: {
-    [theme.breakpoints.down('md')]: {
+    [theme.breakpoints.down('lg')]: {
       zIndex: '1640',
       position: 'static',
       float: 'none',
@@ -51,7 +51,7 @@ const dropdownStyle = (theme) => ({
     },
   },
   popperNav: {
-    [theme.breakpoints.down('sm')]: {
+    [theme.breakpoints.down('md')]: {
       position: 'static !important',
       left: 'unset !important',
       top: 'unset !important',

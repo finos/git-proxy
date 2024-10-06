@@ -4,7 +4,7 @@ import GridContainer from '../../components/Grid/GridContainer';
 import PushesTable from './components/PushesTable';
 import CustomTabs from '../../components/CustomTabs/CustomTabs';
 
-import { Visibility, CheckCircle, Cancel, Block } from '@material-ui/icons';
+import { Visibility, CheckCircle, Cancel, Block } from '@mui/icons-material';
 
 export default function Dashboard() {
   return (

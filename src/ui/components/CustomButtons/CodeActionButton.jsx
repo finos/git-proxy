@@ -1,5 +1,5 @@
-import Popper from '@material-ui/core/Popper';
-import Paper from '@material-ui/core/Paper';
+import Popper from '@mui/material/Popper';
+import Paper from '@mui/material/Paper';
 import {
   CheckIcon,
   ChevronDownIcon,

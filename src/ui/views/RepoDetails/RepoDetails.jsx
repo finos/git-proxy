@@ -3,23 +3,23 @@ import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
 import Card from '../../components/Card/Card';
 import CardBody from '../../components/Card/CardBody';
-import FormLabel from '@material-ui/core/FormLabel';
-import Paper from '@material-ui/core/Paper';
-import Button from '@material-ui/core/Button';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
+import FormLabel from '@mui/material/FormLabel';
+import Paper from '@mui/material/Paper';
+import Button from '@mui/material/Button';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
 import { getRepo, deleteUser, deleteRepo } from '../../services/repo';
-import { makeStyles } from '@material-ui/core/styles';
+import makeStyles from '@mui/styles/makeStyles';
 import AddUser from './Components/AddUser';
-import { Code, Delete, RemoveCircle, Visibility } from '@material-ui/icons';
+import { Code, Delete, RemoveCircle, Visibility } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { UserContext } from '../../../context';
 import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
-import { Box } from '@material-ui/core';
+import { Box } from '@mui/material';
 
 const useStyles = makeStyles((theme) => ({
   root: {

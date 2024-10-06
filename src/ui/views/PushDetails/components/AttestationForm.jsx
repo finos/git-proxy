@@ -1,8 +1,8 @@
 import React from 'react';
-import { withStyles } from '@material-ui/core/styles';
-import { green } from '@material-ui/core/colors';
-import { Help } from '@material-ui/icons';
-import { Grid, Tooltip, Checkbox, FormGroup, FormControlLabel } from '@material-ui/core';
+import withStyles from '@mui/styles/withStyles';
+import { green } from '@mui/material/colors';
+import { Help } from '@mui/icons-material';
+import { Grid, Tooltip, Checkbox, FormGroup, FormControlLabel } from '@mui/material';
 
 const GreenCheckbox = withStyles({
   root: {
