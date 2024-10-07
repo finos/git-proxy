@@ -32,7 +32,7 @@ export default function Tasks(props) {
     [classes.tableCellRTL]: rtlActive,
   });
   return (
-    (<Table className={classes.table}>
+    <Table className={classes.table}>
       <TableBody>
         {tasksIndexes.map((value) => (
           <TableRow key={value} className={classes.tableRow}>
@@ -57,7 +57,7 @@ export default function Tasks(props) {
                 placement='top'
                 classes={{ tooltip: classes.tooltip }}
               >
-                <IconButton aria-label='Edit' className={classes.tableActionButton} size="large">
+                <IconButton aria-label='Edit' className={classes.tableActionButton} size='large'>
                   <Edit className={classes.tableActionButtonIcon + ' ' + classes.edit} />
                 </IconButton>
               </Tooltip>
@@ -67,7 +67,7 @@ export default function Tasks(props) {
                 placement='top'
                 classes={{ tooltip: classes.tooltip }}
               >
-                <IconButton aria-label='Close' className={classes.tableActionButton} size="large">
+                <IconButton aria-label='Close' className={classes.tableActionButton} size='large'>
                   <Close className={classes.tableActionButtonIcon + ' ' + classes.close} />
                 </IconButton>
               </Tooltip>
@@ -75,7 +75,7 @@ export default function Tasks(props) {
           </TableRow>
         ))}
       </TableBody>
-    </Table>)
+    </Table>
   );
 }
 
