@@ -15,9 +15,9 @@ let _proxyUrl = defaultSettings.proxyUrl;
 let _api = defaultSettings.api;
 let _cookieSecret = defaultSettings.cookieSecret;
 let _sessionMaxAgeHours = defaultSettings.sessionMaxAgeHours;
-let _sslKeyPath = defaultSettings.sslKeyPemPath;
-let _sslCertPath = defaultSettings.sslCertPemPath;
-let _plugins = defaultSettings.plugins;
+let _tlsEnabled = defaultSettings.tls.enabled;
+let _tlsKeyPath = defaultSettings.tls.key;
+let _tlsCertPath = defaultSettings.tls.cert;
 let _commitConfig = defaultSettings.commitConfig;
 let _attestationConfig = defaultSettings.attestationConfig;
 let _privateOrganizations = defaultSettings.privateOrganizations;
@@ -162,39 +162,40 @@ const getCSRFProtection = () => {
   return _csrfProtection;
 };
 
-// Get loadable push plugins
-const getPlugins = () => {
-  if (_userSettings && _userSettings.plugins) {
-    _plugins = _userSettings.plugins;
+const getTLSKeyPath = () => {
+  if (_userSettings && _userSettings.tlsKeyPemPath) {
+    console.log(
+      'Warning: tlsKeyPemPath setting is replaced with tls.key setting in proxy.config.json & will be deprecated in a future release',
+    );
+    _tlsKeyPath = _userSettings.tlsKeyPemPath;
   }
-  return _plugins;
-}
-
-const getSSLKeyPath = () => {
-  if (_userSettings && _userSettings.sslKeyPemPath) {
-    _sslKeyPath = _userSettings.sslKeyPemPath;
-  }
-  if (!_sslKeyPath) {
+  if (!_tlsKeyPath) {
     return '../../certs/key.pem';
   }
-  return _sslKeyPath;
+  return _tlsKeyPath;
 };
 
-const getSSLCertPath = () => {
-  if (_userSettings && _userSettings.sslCertPemPath) {
-    _sslCertPath = _userSettings.sslCertPemPath;
+const getTLSCertPath = () => {
+  if (_userSettings && _userSettings.tlsCertPemPath) {
+    console.log(
+      'Warning: tlsCertPemPath setting is replaced with tls.cert setting in proxy.config.json & will be deprecated in a future release',
+    );
+    _tlsCertPath = _userSettings.tlsCertPemPath;
   }
-  if (!_sslCertPath) {
+  if (!_tlsCertPath) {
     return '../../certs/cert.pem';
   }
-  return _sslCertPath;
+  return _tlsCertPath;
 };
 
-const getDomains = () => {
-  if (_userSettings && _userSettings.domains) {
-    _domains = _userSettings.domains;
+const getTLSEnabled = () => {
+  if (_userSettings && _userSettings.tls.enabled) {
+    _tlsEnabled = _userSettings.tls.enabled;
   }
-  return _domains;
+  if (!_tlsEnabled) {
+    return false;
+  }
+  return _tlsEnabled;
 };
 
 exports.getAPIs = getAPIs;
@@ -212,7 +213,6 @@ exports.getPrivateOrganizations = getPrivateOrganizations;
 exports.getURLShortener = getURLShortener;
 exports.getContactEmail = getContactEmail;
 exports.getCSRFProtection = getCSRFProtection;
-exports.getPlugins = getPlugins;
-exports.getSSLKeyPath = getSSLKeyPath;
-exports.getSSLCertPath = getSSLCertPath;
-exports.getDomains = getDomains;
+exports.getTLSKeyPath = getTLSKeyPath;
+exports.getTLSCertPath = getTLSCertPath;
+exports.getTLSEnabled = getTLSEnabled;

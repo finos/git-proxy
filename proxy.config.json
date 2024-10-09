@@ -97,5 +97,9 @@
   "urlShortener": "",
   "contactEmail": "",
   "csrfProtection": true,
-  "plugins": []
+  "tls": {
+    "enabled": false,
+    "key": "certs/key.pem",
+    "cert": "certs/cert.pem"
+  }
 }
