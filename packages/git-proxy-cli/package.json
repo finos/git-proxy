@@ -18,5 +18,10 @@
     "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text --reporter=html npm run test"
   },
   "author": "Miklos Sagi",
-  "license": "Apache-2.0"
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/finos/git-proxy",
+    "path": "packages/git-proxy-cli"
+  }
 }
