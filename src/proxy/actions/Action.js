@@ -1,5 +1,4 @@
 /** Class representing a Push. */
-const config = require('../../config');
 
 /**
  * Create a new action
@@ -35,9 +34,9 @@ class Action {
     this.type = type;
     this.method = method;
     this.timestamp = timestamp;
-    this.project = repo.split('/')[0];
-    this.repoName = repo.split('/')[1];
-    this.url = `${config.getProxyUrl()}/${repo}`;
+    this.project = repo.project;
+    this.repoName = repo.name;
+    this.url = repo.url;
     this.repo = repo;
   }
 
@@ -97,7 +96,7 @@ class Action {
   }
 
   /**
-   *`
+   *
    */
   setAllowPush() {
     this.allowPush = true;

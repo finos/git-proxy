@@ -8,6 +8,7 @@ const actions = require('../../../src/proxy/actions/Action');
 const steps = require('../../../src/proxy/actions/Step');
 const processor = require('../../../src/proxy/processors/push-action/audit');
 const db = require('../../../src/db');
+const { Repo } = require('../../../src/model');
 
 // cookie file name
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
@@ -167,16 +168,16 @@ async function addRepoToDb(newRepo, debug = false) {
 /**
  * Add a new git push record to the database.
  * @param {string} id The ID of the git push.
- * @param {string} repo The repository of the git push.
+ * @param {string} repoUrl The repository url of the git push.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
-async function addGitPushToDb(id, repo, debug = false) {
+async function addGitPushToDb(id, repoUrl, debug = false) {
   const action = new actions.Action(
     id,
     'push', // type
     'get', // method
     Date.now(), // timestamp
-    repo,
+    new Repo(repoUrl),
   );
   const step = new steps.Step(
     'authBlock', // stepName

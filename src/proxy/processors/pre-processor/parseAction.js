@@ -1,9 +1,11 @@
 const actions = require('../../actions');
+const config = require('../../../config');
+const { Repo } = require('../../../model');
 
 const exec = async (req) => {
   const id = Date.now();
   const timestamp = id;
-  const repoName = getRepoNameFromUrl(req.originalUrl);
+  const repo = getRepoFromUrlPath(req.originalUrl);
   const paths = req.originalUrl.split('/');
 
   let type = 'default';
@@ -18,16 +20,29 @@ const exec = async (req) => {
   ) {
     type = 'push';
   }
-  return new actions.Action(id, type, req.method, timestamp, repoName);
+  return new actions.Action(id, type, req.method, timestamp, repo);
 };
 
-const getRepoNameFromUrl = (url) => {
-  const parts = url.split('/');
-  for (let i = 0, len = parts.length; i < len; i++) {
-    const part = parts[i];
-    if (part.endsWith('.git')) {
-      const repo = `${parts[i - 1]}/${part}`;
-      return repo.trim();
+// Get repo from URL path
+const getRepoFromUrlPath = (urlPath) => {
+  const urlPathSegments = urlPath.split('/');
+  const proxyPath = [ urlPathSegments[0], urlPathSegments[1]].join('/');
+  for (const proxyConfig of config.getProxyConfigList()) {
+    if (proxyConfig.path == proxyPath) {
+      // replace '/proxyPath' -> 'proxyUrl' from proxy config
+      urlPathSegments.shift(); // remove first '/' item
+      urlPathSegments[0] = proxyConfig.url; // replace proxy path with proxy url
+      // build repo url without git path
+      const repoUrlSegments = [];
+      for (const urlPathSegment of urlPathSegments) {
+        repoUrlSegments.push(urlPathSegment);
+        // eslint-disable-next-line no-useless-escape
+        if (urlPathSegment.match(/[a-zA-Z0-9\-]+\.git/)) {
+          break;
+        }
+      }
+      const repoUrl = repoUrlSegments.join('/');
+      return new Repo(repoUrl); 
     }
   }
   return 'NOT-FOUND';
@@ -35,3 +50,4 @@ const getRepoNameFromUrl = (url) => {
 
 exec.displayName = 'parseAction.exec';
 exports.exec = exec;
+exports.getRepoFromUrlPath = getRepoFromUrlPath;

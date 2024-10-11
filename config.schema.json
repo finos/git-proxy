@@ -5,7 +5,13 @@
   "description": "Configuration for customizing git-proxy",
   "type": "object",
   "properties": {
-    "proxyUrl": { "type": "string" },
+    "proxyConfig": { 
+      "description": "Proxy configuration",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/proxy"
+      }
+    },
     "cookieSecret": { "type": "string" },
     "sessionMaxAgeHours": { "type": "number" },
     "api": {
@@ -70,6 +76,15 @@
     }
   },
   "definitions": {
+    "proxy": {
+      "type": "object",
+      "properties": {
+        "path": { "type": "string"},
+        "url": { "type": "string"},
+        "enabled": { "type": "boolean" }
+      },
+      "required": ["path", "url", "enabled"]
+    },
     "authorisedRepo": {
       "type": "object",
       "properties": {
