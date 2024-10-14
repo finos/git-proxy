@@ -42,6 +42,11 @@ describe('auth', async () => {
       });
     });
 
+    it('should now be able to access the user login metadata', async function () {
+      const res = await chai.request(app).get('/api/auth/userLoggedIn').set('Cookie', `${cookie}`);
+      res.should.have.status(200);
+    });
+
     it('should now be able to access the profile', async function () {
       const res = await chai.request(app).get('/api/auth/profile').set('Cookie', `${cookie}`);
       res.should.have.status(200);
