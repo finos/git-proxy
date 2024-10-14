@@ -23,20 +23,22 @@ router.get('/', (req, res) => {
 
 router.post('/login', passport.authenticate(passportType), async (req, res) => {
   try {
+    const currentUser = { ...req.user };
+    delete currentUser.password;
     console.log(
       `serivce.routes.auth.login: user logged in, username=${
-        req.user.username
-      } profile=${JSON.stringify(req.user)}`,
+        currentUser.username
+      } profile=${JSON.stringify(currentUser)}`,
     );
+    res.send({
+      message: 'success',
+      user: currentUser,
+    });
   } catch (e) {
     console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
     res.status(500).send('Failed to login').end();
     return;
   }
-  res.send({
-    message: 'success',
-    user: req.user,
-  });
 });
 
 // when login is successful, retrieve user info
@@ -115,6 +117,7 @@ router.get('/userLoggedIn', async (req, res) => {
     delete user.password;
     const login = user.username;
     const userVal = await db.findUser(login);
+    delete userVal.password;
     res.send(userVal);
   } else {
     res.status(401).end();
