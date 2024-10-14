@@ -2,6 +2,7 @@
 <div align="center">
   <a href="https://github.com/finos/git-proxy">
     <img src="./docs/img/logo.png" alt="Logo" height="95">
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=a51b8999-4347-442c-bc98-bfcc380ee280" />
   </a>
 
   <br />
