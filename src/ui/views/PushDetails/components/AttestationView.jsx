@@ -1,16 +1,16 @@
 import React, { useEffect } from 'react';
-import Dialog from '@material-ui/core/Dialog';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogActions from '@material-ui/core/DialogActions';
-import FormGroup from '@material-ui/core/FormGroup';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import { CheckCircle } from '@material-ui/icons';
-import Tooltip from '@material-ui/core/Tooltip';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import FormGroup from '@mui/material/FormGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import { CheckCircle } from '@mui/icons-material';
+import Tooltip from '@mui/material/Tooltip';
 import moment from 'moment';
 
-import Checkbox from '@material-ui/core/Checkbox';
-import { withStyles } from '@material-ui/core/styles';
-import { green } from '@material-ui/core/colors';
+import Checkbox from '@mui/material/Checkbox';
+import withStyles from '@mui/styles/withStyles';
+import { green } from '@mui/material/colors';
 
 import { getURLShortener } from '../../../services/config';
 

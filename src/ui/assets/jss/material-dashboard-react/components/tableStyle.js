@@ -7,71 +7,72 @@ import {
   roseColor,
   grayColor,
   defaultFont,
+  increaseSpecificity,
 } from '../../material-dashboard-react.js';
 
 const tableStyle = (theme) => ({
-  warningTableHeader: {
+  warningTableHeader: increaseSpecificity({
     color: warningColor[0],
-  },
-  primaryTableHeader: {
+  }),
+  primaryTableHeader: increaseSpecificity({
     color: primaryColor[0],
-  },
-  dangerTableHeader: {
+  }),
+  dangerTableHeader: increaseSpecificity({
     color: dangerColor[0],
-  },
-  successTableHeader: {
+  }),
+  successTableHeader: increaseSpecificity({
     color: successColor[0],
-  },
-  infoTableHeader: {
+  }),
+  infoTableHeader: increaseSpecificity({
     color: infoColor[0],
-  },
-  roseTableHeader: {
+  }),
+  roseTableHeader: increaseSpecificity({
     color: roseColor[0],
-  },
-  grayTableHeader: {
+  }),
+  grayTableHeader: increaseSpecificity({
     color: grayColor[0],
-  },
-  table: {
+  }),
+  table: increaseSpecificity({
     marginBottom: '0',
     width: '100%',
     maxWidth: '100%',
     backgroundColor: 'transparent',
     borderSpacing: '0',
     borderCollapse: 'collapse',
-  },
-  tableHeadCell: {
+  }),
+  tableHeadCell: increaseSpecificity({
     color: 'inherit',
     ...defaultFont,
     '&, &$tableCell': {
       fontSize: '1em',
     },
-  },
-  tableCell: {
+  }),
+  tableCell: increaseSpecificity({
     ...defaultFont,
     lineHeight: '1.42857143',
     padding: '12px 8px',
     verticalAlign: 'middle',
     fontSize: '0.8125rem',
-  },
-  tableResponsive: {
+  }),
+  tableResponsive: increaseSpecificity({
     width: '100%',
     marginTop: theme.spacing(3),
     overflowX: 'auto',
-  },
-  tableHeadRow: {
+  }),
+  tableHeadRow: increaseSpecificity({
     height: '56px',
     color: 'inherit',
     display: 'table-row',
     outline: 'none',
     verticalAlign: 'middle',
-  },
-  tableBodyRow: {
+  }),
+  tableBodyRow: increaseSpecificity({
     height: '48px',
     color: 'inherit',
     display: 'table-row',
     outline: 'none',
     verticalAlign: 'middle',
-  },
+  }),
 });
 
 export default tableStyle;

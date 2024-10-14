@@ -1,13 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/core/styles';
-import Grid from '@material-ui/core/Grid';
+import makeStyles from '@mui/styles/makeStyles';
+import Grid from '@mui/material/Grid';
+import { increaseSpecificity } from '../../assets/jss/material-dashboard-react';
 
 const styles = {
-  grid: {
+  grid: increaseSpecificity({
     margin: '0 -15px !important',
     width: 'unset',
-  },
+  }),
 };
 
 const useStyles = makeStyles(styles);

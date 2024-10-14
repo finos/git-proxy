@@ -1,7 +1,7 @@
-import { blackColor, hexToRgb } from '../material-dashboard-react.js';
+import { blackColor, hexToRgb, increaseSpecificity } from '../material-dashboard-react.js';
 
 const tooltipStyle = {
-  tooltip: {
+  tooltip: increaseSpecificity({
     padding: '10px 15px',
     minWidth: '130px',
     lineHeight: '1.7em',
@@ -29,6 +29,6 @@ const tooltipStyle = {
     wordWrap: 'normal',
     whiteSpace: 'normal',
     lineBreak: 'auto',
-  },
+  }),
 };
 export default tooltipStyle;

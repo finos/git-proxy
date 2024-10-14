@@ -6,38 +6,39 @@ import {
   blackColor,
   grayColor,
   hexToRgb,
+  increaseSpecificity as increaseSpecificity,
 } from '../material-dashboard-react.js';
 
 const dropdownStyle = (theme) => ({
-  buttonLink: {
-    [theme.breakpoints.down('md')]: {
+  buttonLink: increaseSpecificity({
+    [theme.breakpoints.down('lg')]: {
       display: 'flex',
       marginLeft: '30px',
       width: 'auto',
     },
-  },
-  links: {
+  }),
+  links: increaseSpecificity({
     width: '20px',
     height: '20px',
     zIndex: '4',
-    [theme.breakpoints.down('md')]: {
+    [theme.breakpoints.down('lg')]: {
       display: 'block',
       width: '30px',
       height: '30px',
       color: grayColor[9],
       marginRight: '15px',
     },
-  },
-  linkText: {
+  }),
+  linkText: increaseSpecificity({
     zIndex: '4',
     ...defaultFont,
     fontSize: '14px',
-  },
-  popperClose: {
+  }),
+  popperClose: increaseSpecificity({
     pointerEvents: 'none',
-  },
-  popperResponsive: {
-    [theme.breakpoints.down('md')]: {
+  }),
+  popperResponsive: increaseSpecificity({
+    [theme.breakpoints.down('lg')]: {
       zIndex: '1640',
       position: 'static',
       float: 'none',
@@ -49,9 +50,9 @@ const dropdownStyle = (theme) => ({
       boxShadow: 'none',
       color: 'black',
     },
-  },
-  popperNav: {
-    [theme.breakpoints.down('sm')]: {
+  }),
+  popperNav: increaseSpecificity({
+    [theme.breakpoints.down('md')]: {
       position: 'static !important',
       left: 'unset !important',
       top: 'unset !important',
@@ -77,8 +78,8 @@ const dropdownStyle = (theme) => ({
         },
       },
     },
-  },
-  dropdown: {
+  }),
+  dropdown: increaseSpecificity({
     borderRadius: '3px',
     border: '0',
     boxShadow: '0 2px 5px 0 rgba(' + hexToRgb(blackColor) + ', 0.26)',
@@ -93,8 +94,8 @@ const dropdownStyle = (theme) => ({
     backgroundColor: whiteColor,
     WebkitBackgroundClip: 'padding-box',
     backgroundClip: 'padding-box',
-  },
-  dropdownItem: {
+  }),
+  dropdownItem: increaseSpecificity({
     ...defaultFont,
     fontSize: '13px',
     padding: '10px 20px',
@@ -118,7 +119,7 @@ const dropdownStyle = (theme) => ({
       color: whiteColor,
       ...primaryBoxShadow,
     },
-  },
+  }),
 });
 
 export default dropdownStyle;

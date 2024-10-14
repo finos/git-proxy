@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import moment from 'moment';
 import { useNavigate, useParams } from 'react-router-dom';
-import Icon from '@material-ui/core/Icon';
+import Icon from '@mui/material/Icon';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
 import Card from '../../components/Card/Card';
@@ -13,15 +13,15 @@ import Button from '../../components/CustomButtons/Button';
 import Diff from './components/Diff';
 import Attestation from './components/Attestation';
 import AttestationView from './components/AttestationView';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import TableCell from '@material-ui/core/TableCell';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
 import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/git-push';
-import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
-import Snackbar from '@material-ui/core/Snackbar';
-import Tooltip from '@material-ui/core/Tooltip';
+import { CheckCircle, Visibility, Cancel, Block } from '@mui/icons-material';
+import Snackbar from '@mui/material/Snackbar';
+import Tooltip from '@mui/material/Tooltip';
 
 export default function Dashboard() {
   const { id } = useParams();

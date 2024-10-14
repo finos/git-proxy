@@ -6,10 +6,11 @@ import {
   primaryCardHeader,
   roseCardHeader,
   grayColor,
+  increaseSpecificity,
 } from '../../material-dashboard-react.js';
 
 const cardIconStyle = {
-  cardIcon: {
+  cardIcon: increaseSpecificity({
     '&$warningCardHeader,&$successCardHeader,&$dangerCardHeader,&$infoCardHeader,&$primaryCardHeader,&$roseCardHeader':
       {
         borderRadius: '3px',
@@ -19,7 +20,7 @@ const cardIconStyle = {
         marginRight: '15px',
         float: 'left',
       },
-  },
+  }),
   warningCardHeader,
   successCardHeader,
   dangerCardHeader,
