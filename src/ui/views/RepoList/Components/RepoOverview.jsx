@@ -584,8 +584,8 @@ export default function Repositories(props) {
       });
   };
 
-  const { project: org, name } = props?.data || {};
-  const cloneURL = `${window.location.origin.toString()}/${org}/${name}.git`;
+  const { project: org, name, proxyURL } = props?.data || {};
+  const cloneURL = `${proxyURL}/${org}/${name}.git`;
 
   return (
     <TableRow>

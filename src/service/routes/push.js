@@ -1,8 +1,10 @@
 const express = require('express');
 const router = new express.Router();
 const db = require('../../db');
+const { getProxyURL } = require('../proxyURL');
 
 router.get('/', async (req, res) => {
+  const proxyURL = getProxyURL(req);
   const query = {
     type: 'push',
   };
@@ -18,7 +20,8 @@ router.get('/', async (req, res) => {
     query[k] = v;
   }
 
-  res.send(await db.getPushes(query));
+  const qd = await db.getPushes(query);
+  res.send(qd.map((d) => ({ ...d, proxyURL })));
 });
 
 router.get('/:id', async (req, res) => {
