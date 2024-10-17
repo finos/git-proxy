@@ -59,8 +59,8 @@ export default function RepoDetails() {
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
 
-  const { project: org, name } = data || {};
-  const cloneURL = `${import.meta.env.VITE_SERVER_URI}/${org}/${name}.git`;
+  const { project: org, name, proxyURL } = data || {};
+  const cloneURL = `${proxyURL}/${org}/${name}.git`;
 
   return (
     <GridContainer>
