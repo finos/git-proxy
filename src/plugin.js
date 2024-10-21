@@ -1,96 +1,158 @@
-const path = require('path');
 const lpModule = import('load-plugin');
 ('use strict');
 
 /**
- * Finds, registers and loads plugins used by git-proxy
+ * Checks if the given object or any of its prototypes has the 'isGitProxyPlugin' property set to true.
+ * @param {Object} obj - The object to check.
+ * @param {string} propertyName - The property name to check for. Default is 'isGitProxyPlugin'.
+ * @return {boolean} - True if the object or any of its prototypes has the 'isGitProxyPlugin' property set to true, false otherwise.
+ */
+function isCompatiblePlugin(obj, propertyName = 'isGitProxyPlugin') {
+  // loop through the prototype chain to check if the object is a ProxyPlugin
+  // valid plugin objects will have the appropriate property set to true
+  // if the prototype chain is exhausted, return false
+  while (obj != null) {
+    if (Object.prototype.hasOwnProperty.call(obj, propertyName) &&
+      obj.isGitProxyPlugin &&
+      Object.keys(obj).includes('exec')) {
+      return true;
+    }
+    obj = Object.getPrototypeOf(obj);
+  }
+  return false;
+}
+
+/**
+ * @typedef PluginTypeResult
+ * @property {PushActionPlugin[]} pushAction - List of push action plugins
+ * @property {PullActionPlugin[]} pullAction - List of pull action plugins
+ */
+
+/**
+ * Registers and loads plugins used by git-proxy
  */
 class PluginLoader {
-  /**
-   * Initialize PluginLoader with candidates modules (node_modules or relative
-   * file paths).
-   * @param {Array.<string>} names List of Node module/package names to load.
-   * @param {Array.<string>} paths List of file paths to load modules from.
-   */
-  constructor(names, paths) {
-    this.names = names;
-    this.paths = paths;
+  constructor(targets) {
     /**
-     * @type {Array.<ProxyPlugin>} List of ProxyPlugin objects loaded.
+     * List of Node module specifiers to load as plugins. It can be a relative path, an 
+     * absolute path, or a module name (which can include scoped packages like '@bar/baz').
+     * @type {string[]}
      * @public
      */
-    this.plugins = [];
+    this.targets = targets;
+    /**
+     * List of loaded PushActionPlugin objects.
+     * @type {PushActionPlugin[]}
+     * @public
+     */
+    this.pushPlugins = [];
+    /**
+     * List of loaded PullActionPlugin objects.
+     * @type {PullActionPlugin[]}
+     * @public
+     */
+    this.pullPlugins = [];
+    if (this.targets.length === 0) {
+      console.log('No plugins configured'); // TODO: log.debug()
+    }
   }
 
   /**
-   * Load configured plugins as modules and set each concrete ProxyPlugin
-   * to this.plugins for use in proxying.
+   * Load all plugins specified in the `targets` property. This method must complete before a PluginLoader instance
+   * can be used to retrieve plugins.
+   * @return {Promise<void>} A Promise that resolves when all plugins have been loaded.
    */
-  load() {
-    const modulePromises = [];
-    for (const path of this.paths) {
-      modulePromises.push(this._loadFilePlugin(path));
-    }
-    for (const name of this.names) {
-      modulePromises.push(this._loadPackagePlugin(name));
-    }
-    Promise.all(modulePromises).then((vals) => {
-      const modules = vals;
-      console.log(`Found ${modules.length} plugin modules`);
-      const pluginObjPromises = [];
-      for (const mod of modules) {
-        pluginObjPromises.push(this._castToPluginObjects(mod));
+  async load() {
+    try {
+      const modulePromises = this.targets.map(target =>
+        this._loadPluginModule(target).catch(error => {
+          console.error(`Failed to load plugin: ${error}`); // TODO: log.error()
+          return Promise.reject(error); // Or return an error object to handle it later
+        })
+      );
+
+      const moduleResults = await Promise.allSettled(modulePromises);
+      const loadedModules = moduleResults
+        .filter(result => result.status === 'fulfilled' && result.value !== null)
+        .map(result => result.value);
+
+      console.log(`Found ${loadedModules.length} plugin modules`); // TODO: log.debug()
+
+      const pluginTypeResultPromises = loadedModules.map(mod =>
+        this._getPluginObjects(mod).catch(error => {
+          console.error(`Failed to cast plugin objects: ${error}`); // TODO: log.error()
+          return Promise.reject(error); // Or return an error object to handle it later
+        })
+      );
+
+      const settledPluginTypeResults = await Promise.allSettled(pluginTypeResultPromises);
+      /**
+       * @type {PluginTypeResult[]} List of resolved PluginTypeResult objects
+       */
+      const pluginTypeResults = settledPluginTypeResults
+        .filter(result => result.status === 'fulfilled' && result.value !== null)
+        .map(result => result.value);
+
+      for (const result of pluginTypeResults) {
+        this.pushPlugins.push(...result.pushAction)
+        this.pullPlugins.push(...result.pullAction)
       }
-      Promise.all(pluginObjPromises).then((vals) => {
-        for (const pluginObjs of vals) {
-          this.plugins = this.plugins.concat(pluginObjs);
-        }
-        console.log(`Loaded ${this.plugins.length} plugins`);
+
+      const combinedPlugins = [...this.pushPlugins, ...this.pullPlugins];
+      combinedPlugins.forEach(plugin => {
+        console.log(`Loaded plugin: ${plugin.constructor.name}`);
       });
-    });
+    } catch (error) {
+      console.error(`Error loading plugins: ${error}`);
+    }
   }
 
   /**
-   * Load a plugin module from a relative file path to the
-   * current working directory.
-   * @param {string} filepath
-   * @return {Module}
+   * Resolve & load a Node module from either a given specifier (file path, import specifier or package name) using load-plugin.
+   * @param {string} target The module specifier to load
+   * @return {Promise<Module>} A resolved & loaded Module
    */
-  async _loadFilePlugin(filepath) {
+  async _loadPluginModule(target) {
     const lp = await lpModule;
-    const resolvedModuleFile = await lp.resolvePlugin(path.join(process.cwd(), filepath));
+    const resolvedModuleFile = await lp.resolvePlugin(target);
     return await lp.loadPlugin(resolvedModuleFile);
   }
 
   /**
-   * Load a plugin module from the specified Node module. Only
-   * modules with the prefix "@finos" are supported.
-   * @param {string} packageName
-   * @return {Module}
+   * Checks for known compatible plugin objects in a Module and returns them classified by their type.
+   * @param {Module} pluginModule The module to extract plugins from
+   * @return {Promise<PluginTypeResult>} An object containing the loaded plugins classified by their type.
    */
-  async _loadPackagePlugin(packageName) {
-    const lp = await lpModule;
-    const resolvedPackageFile = await lp.resolvePlugin(packageName, {
-      prefix: '@finos',
-    });
-    return await lp.loadPlugin(resolvedPackageFile);
-  }
+  async _getPluginObjects(pluginModule) {
+    const plugins = {
+      pushAction: [],
+      pullAction: [],
+    };
 
-  /**
-   * Set a list of ProxyPlugin objects to this.plugins
-   * from the keys exported by the passed in module.
-   * @param {Module} pluginModule
-   * @return {ProxyPlugin}
-   */
-  async _castToPluginObjects(pluginModule) {
-    const plugins = [];
-    // iterate over the module.exports keys
-    for (const key of Object.keys(pluginModule)) {
-      if (
-        Object.prototype.hasOwnProperty.call(pluginModule, key) &&
-        pluginModule[key] instanceof ProxyPlugin
-      ) {
-        plugins.push(pluginModule[key]);
+    function handlePlugin(potentialModule) {
+      if (isCompatiblePlugin(potentialModule, 'isGitProxyPushActionPlugin')) {
+        console.log('found push plugin', potentialModule.constructor.name);
+        plugins.pushAction.push(potentialModule);
+      } else if (isCompatiblePlugin(potentialModule, 'isGitProxyPullActionPlugin')) {
+        console.log('found pull plugin', potentialModule.constructor.name);
+        plugins.pullAction.push(potentialModule);
+      } else {
+        console.error(`Error: Object ${potentialModule.constructor.name} does not seem to be a compatible plugin type`);
+      }
+    }
+
+    // handles the default export case
+    // `module.exports = new ProxyPlugin()` in CJS or `exports default new ProxyPlugin()` in ESM
+    // the "module" is a single object that could be a plugin
+    if (isCompatiblePlugin(pluginModule)) {
+      handlePlugin(pluginModule)
+    } else {
+      // handle the typical case of a module which exports multiple objects
+      // module.exports = { x, y } (CJS) or multiple `export ...` statements (ESM)
+      for (const key of Object.keys(pluginModule)) {
+        if (isCompatiblePlugin(pluginModule[key])) {
+          handlePlugin(pluginModule[key]);
+        }
       }
     }
     return plugins;
@@ -101,44 +163,65 @@ class PluginLoader {
  * Parent class for all GitProxy plugins. New plugin types must inherit from
  * ProxyPlugin to be loaded by PluginLoader.
  */
-class ProxyPlugin {}
+class ProxyPlugin {
+  constructor() {
+    this.isGitProxyPlugin = true;
+  }
+}
 
 /**
- * A plugin which executes a function when receiving a proxy request.
+ * A plugin which executes a function when receiving a git push request.
  */
-class ActionPlugin extends ProxyPlugin {
-  /**
-   * Custom function executed as part of the action chain. The function
-   * must take in two parameters, an {@link https://expressjs.com/en/4x/api.html#req Express Request}
-   * and the current Action executed in the chain.
-   * @param {Promise<Action>} exec A Promise that returns an Action &
-   *                               executes when a push is proxied.
-   */
+class PushActionPlugin extends ProxyPlugin {
+/**
+ * Wrapper class which contains at least one function executed as part of the action chain for git push operations.
+ * The function must be called `exec` and take in two parameters: an Express Request (req) and the current Action
+ * executed in the chain (action). This function should return a Promise that resolves to an Action.
+ * 
+ * Optionally, child classes which extend this can simply define the `exec` function as their own property.
+ * This is the preferred implementation when a custom plugin (subclass) has its own state or additional methods
+ * that are required.
+ * 
+ * @param {function} exec - A function that:
+ *   - Takes in an Express Request object as the first parameter (`req`).
+ *   - Takes in an Action object as the second parameter (`action`).
+ *   - Returns a Promise that resolves to an Action.
+ */
   constructor(exec) {
     super();
+    this.isGitProxyPushActionPlugin = true;
     this.exec = exec;
   }
 }
 
-const createLoader = async () => {
-  // Auto-register plugins that are part of git-proxy core
-  let names = [];
-  let files = [];
-  if (process.env.GITPROXY_PLUGIN_PACKAGES !== undefined) {
-    names = process.env.GITPROXY_PLUGIN_PACKAGES.split(',');
+/**
+ * A plugin which executes a function when receiving a git fetch request.
+ */
+class PullActionPlugin extends ProxyPlugin {
+  /**
+   * Wrapper class which contains at least one function executed as part of the action chain for git pull operations.
+   * The function must be called `exec` and take in two parameters: an Express Request (req) and the current Action
+   * executed in the chain (action). This function should return a Promise that resolves to an Action.
+   * 
+   * Optionally, child classes which extend this can simply define the `exec` function as their own property.
+   * This is the preferred implementation when a custom plugin (subclass) has its own state or additional methods
+   * that are required.
+   * 
+   * @param {function} exec - A function that:
+   *   - Takes in an Express Request object as the first parameter (`req`).
+   *   - Takes in an Action object as the second parameter (`action`).
+   *   - Returns a Promise that resolves to an Action.
+   */
+  constructor(exec) {
+    super();
+    this.isGitProxyPullActionPlugin = true;
+    this.exec = exec;
   }
-  if (process.env.GITPROXY_PLUGIN_FILES !== undefined) {
-    files = process.env.GITPROXY_PLUGIN_FILES.split(',');
-  }
-  const loader = new PluginLoader(names, files);
-  if (names.length + files.length > 0) {
-    loader.load();
-  }
-  return loader;
-};
+}
 
-module.exports.defaultLoader = createLoader();
-module.exports.ProxyPlugin = ProxyPlugin;
-module.exports.ActionPlugin = ActionPlugin;
-// exported for testing only
-module.exports.createLoader = createLoader;
+module.exports = {
+  PluginLoader,
+  PushActionPlugin,
+  PullActionPlugin,
+  isCompatiblePlugin,
+}
