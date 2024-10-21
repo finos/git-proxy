@@ -15,11 +15,9 @@ const pushActionChain = [
   proc.push.blockForAuth,
 ];
 
-const pullActionChain = [
-  proc.push.checkRepoInAuthorisedList,
-];
+const pullActionChain = [proc.push.checkRepoInAuthorisedList];
 
-let pluginsLoaded = false;
+let pluginsInserted = false;
 
 const executeChain = async (req) => {
   let action;
@@ -48,18 +46,21 @@ const executeChain = async (req) => {
 
 /**
  * The plugin loader used for the GitProxy chain.
- *
  * @type {import('../plugin').PluginLoader}
  */
 let chainPluginLoader;
 
 const getChain = async (action) => {
   if (chainPluginLoader === undefined) {
-    console.error('Plugin loader was not initialized! Skipping any plugins...');
-    pluginsLoaded = true;
+    console.error(
+      'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',
+    );
+    pluginsInserted = true;
   }
-  if (!pluginsLoaded) {
-    console.log(`Inserting loaded plugins (${chainPluginLoader.pushPlugins.length} push, ${chainPluginLoader.pullPlugins.length} pull) into proxy chains`);
+  if (!pluginsInserted) {
+    console.log(
+      `Inserting loaded plugins (${chainPluginLoader.pushPlugins.length} push, ${chainPluginLoader.pullPlugins.length} pull) into proxy chains`,
+    );
     for (const pluginObj of chainPluginLoader.pushPlugins) {
       console.log(`Inserting push plugin ${pluginObj.constructor.name} into chain`);
       // insert custom functions after parsePush but before other actions
@@ -71,11 +72,11 @@ const getChain = async (action) => {
       pullActionChain.splice(0, 0, pluginObj.exec);
     }
     // This is set to true so that we don't re-insert the plugins into the chain
-    pluginsLoaded = true;
+    pluginsInserted = true;
   }
   if (action.type === 'pull') {
     return pullActionChain;
-  };
+  }
   if (action.type === 'push') {
     return pushActionChain;
   }
@@ -89,5 +90,15 @@ module.exports = {
   get chainPluginLoader() {
     return chainPluginLoader;
   },
+  get pluginsInserted() {
+    return pluginsInserted;
+  },
+  get pushActionChain() {
+    return pushActionChain;
+  },
+  get pullActionChain() {
+    return pullActionChain;
+  },
   executeChain,
-}
+  getChain,
+};
