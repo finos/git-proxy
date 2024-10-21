@@ -7,7 +7,7 @@ const path = require("path");
 const router = require('./routes').router;
 const config = require('../config');
 const db = require('../db');
-const { createLoader } = require('../plugin');
+const { PluginLoader } = require('../plugin');
 const chain = require('./chain');
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort } = require('../config/env').Vars;
 const { GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } = require('../config/env').Vars;
@@ -26,8 +26,8 @@ proxyApp.use('/', router);
 
 const start = async () => {
    const plugins = config.getPlugins();
-   const pluginLoader = await createLoader(plugins);
-   await pluginLoader.load;
+   const pluginLoader = new PluginLoader(plugins);
+   await pluginLoader.load();
    chain.chainPluginLoader = pluginLoader;
   // Check to see if the default repos are in the repo list
   const defaultAuthorisedRepoList = config.getAuthorisedList();
