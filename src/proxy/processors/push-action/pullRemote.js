@@ -3,10 +3,6 @@ const Step = require('../../actions').Step;
 const fs = require('fs');
 const dir = './.remote';
 
-if (!fs.existsSync(dir)) {
-  fs.mkdirSync(dir);
-}
-
 const exec = async (req, action) => {
   const step = new Step('pullRemote');
 
@@ -14,6 +10,10 @@ const exec = async (req, action) => {
     action.proxyGitPath = `${dir}/${action.timestamp}`;
 
     step.log(`Creating folder ${action.proxyGitPath}`);
+
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir);
+    }
 
     if (!fs.existsSync(action.proxyGitPath)) {
       fs.mkdirSync(action.proxyGitPath, '0777', true);
