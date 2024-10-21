@@ -1,26 +1,26 @@
-import { hexToRgb, whiteColor } from '../../material-dashboard-react.js';
+import { hexToRgb, increaseSpecificity, whiteColor } from '../../material-dashboard-react.js';
 
 const customTabsStyle = {
-  cardTitle: {
+  cardTitle: increaseSpecificity({
     float: 'left',
     padding: '10px 10px 10px 0px',
     lineHeight: '24px',
-  },
-  cardTitleRTL: {
+  }),
+  cardTitleRTL: increaseSpecificity({
     float: 'right',
     padding: '10px 0px 10px 10px !important',
-  },
-  displayNone: {
+  }),
+  displayNone: increaseSpecificity({
     display: 'none !important',
-  },
-  tabsRoot: {
+  }),
+  tabsRoot: increaseSpecificity({
     minHeight: 'unset !important',
     overflowX: 'visible',
     '& $tabRootButton': {
       fontSize: '0.875rem',
     },
-  },
-  tabRootButton: {
+  }),
+  tabRootButton: increaseSpecificity({
     minHeight: 'unset !important',
     minWidth: 'unset !important',
     width: 'unset !important',
@@ -36,12 +36,12 @@ const customTabsStyle = {
     '&:last-child': {
       marginLeft: '0px',
     },
-  },
-  tabSelected: {
+  }),
+  tabSelected: increaseSpecificity({
     backgroundColor: 'rgba(' + hexToRgb(whiteColor) + ', 0.2)',
     transition: '0.2s background-color 0.1s',
-  },
-  tabWrapper: {
+  }),
+  tabWrapper: increaseSpecificity({
     display: 'inline-block',
     minHeight: 'unset !important',
     minWidth: 'unset !important',
@@ -56,7 +56,7 @@ const customTabsStyle = {
       verticalAlign: 'middle',
       margin: '-1px 5px 0 0 !important',
     },
-  },
+  }),
 };
 
 export default customTabsStyle;

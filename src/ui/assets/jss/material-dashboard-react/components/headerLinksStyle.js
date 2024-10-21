@@ -1,15 +1,20 @@
-import { defaultFont, dangerColor, whiteColor } from '../../material-dashboard-react.js';
+import {
+  defaultFont,
+  dangerColor,
+  whiteColor,
+  increaseSpecificity,
+} from '../../material-dashboard-react.js';
 
 // eslint-disable-next-line max-len
 import dropdownStyle from '../dropdownStyle.js';
 
 const headerLinksStyle = (theme) => ({
   ...dropdownStyle(theme),
-  search: {
+  search: increaseSpecificity({
     '& > div': {
       marginTop: '0',
     },
-    [theme.breakpoints.down('sm')]: {
+    [theme.breakpoints.down('md')]: {
       margin: '10px 15px !important',
       float: 'none !important',
       paddingTop: '1px',
@@ -21,15 +26,15 @@ const headerLinksStyle = (theme) => ({
         color: whiteColor,
       },
     },
-  },
-  linkText: {
+  }),
+  linkText: increaseSpecificity({
     zIndex: '4',
     ...defaultFont,
     fontSize: '14px',
     margin: '0px',
-  },
-  buttonLink: {
-    [theme.breakpoints.down('sm')]: {
+  }),
+  buttonLink: increaseSpecificity({
+    [theme.breakpoints.down('md')]: {
       display: 'flex',
       margin: '10px 15px 0',
       width: '-webkit-fill-available',
@@ -52,23 +57,23 @@ const headerLinksStyle = (theme) => ({
         width: '100%',
       },
     },
-  },
-  searchButton: {
-    [theme.breakpoints.down('sm')]: {
+  }),
+  searchButton: increaseSpecificity({
+    [theme.breakpoints.down('md')]: {
       top: '-50px !important',
       marginRight: '22px',
       float: 'right',
     },
-  },
-  margin: {
+  }),
+  margin: increaseSpecificity({
     zIndex: '4',
     margin: '0',
-  },
-  searchIcon: {
+  }),
+  searchIcon: increaseSpecificity({
     width: '17px',
     zIndex: '4',
-  },
-  notifications: {
+  }),
+  notifications: increaseSpecificity({
     zIndex: '4',
     [theme.breakpoints.up('md')]: {
       position: 'absolute',
@@ -86,25 +91,25 @@ const headerLinksStyle = (theme) => ({
       verticalAlign: 'middle',
       display: 'block',
     },
-    [theme.breakpoints.down('sm')]: {
+    [theme.breakpoints.down('md')]: {
       ...defaultFont,
       fontSize: '14px',
       marginRight: '8px',
     },
-  },
-  manager: {
-    [theme.breakpoints.down('sm')]: {
+  }),
+  manager: increaseSpecificity({
+    [theme.breakpoints.down('md')]: {
       width: '100%',
     },
     display: 'inline-block',
-  },
-  searchWrapper: {
-    [theme.breakpoints.down('sm')]: {
+  }),
+  searchWrapper: increaseSpecificity({
+    [theme.breakpoints.down('md')]: {
       width: '-webkit-fill-available',
       margin: '10px 15px 0',
     },
     display: 'inline-block',
-  },
+  }),
 });
 
 export default headerLinksStyle;
