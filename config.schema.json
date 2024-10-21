@@ -36,6 +36,13 @@
       "description": "Flag to enable CSRF protections for UI",
       "type": "boolean"
     },
+    "plugins": {
+      "type": "array",
+      "description": "List of plugins to integrate on GitProxy's push or pull actions. Each value is either a file path or a module name.",
+      "items": {
+        "type": "string"
+      }
+    },
     "authorisedList": {
       "description": "List of repositories that are authorised to be pushed to through the proxy.",
       "type": "array",
