@@ -65,10 +65,12 @@ const getCommitData = (contents) => {
         .trim();
       console.log({ tree });
 
-      const parent = parts
-        .find((t) => t.split(' ')[0] === 'parent')
-        .replace('parent', '')
-        .trim();
+      const parentValue = parts.find((t) => t.split(' ')[0] === 'parent');
+      console.log({ parentValue });
+
+      const parent = parentValue
+        ? parentValue.replace('parent', '').trim()
+        : '0000000000000000000000000000000000000000';
       console.log({ parent });
 
       const author = parts

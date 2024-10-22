@@ -1,0 +1,43 @@
+---
+title: Contributing
+---
+
+Here's how to get setup for contributing to GitProxy.
+
+## Setup
+The GitProxy project relies on the following pre-requisites:
+
+- [Node](https://nodejs.org/en/download) (16+)
+- [npm](https://npmjs.com/) (8+)
+- [git](https://git-scm.com/downloads) or equivalent Git client. It must support HTTP/S.
+
+Once you have the above tools installed & setup, clone the repository and run:
+
+```bash
+$ npm install
+```
+
+This will install the full project's dependencies. Once complete, you can run the app locally:
+
+```bash
+$ npm run start  # Run both proxy server & dashboard UI
+$ npm run server # Run only the proxy server
+$ npm run client # Run only the UI
+```
+
+## Testing
+<!-- Notes about testing methodology -->
+
+## Configuration schema
+The configuration for GitProxy includes a JSON Schema ([`config.schema.json`](https://github.com/finos/git-proxy/blob/main/config.schema.json)) to define the expected properties used by the application. When adding new configuration properties to GitProxy, ensure that the schema is updated with any new, removed or changed properties. See [JSON Schema docs for specific syntax](https://json-schema.org/docs).
+
+When updating the configuration schema, you must also re-generate the reference doc used here on the site. To generate the reference documentation, [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) is used to output the Markdown.
+
+1. Install [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans?tab=readme-ov-file#installation) (requires Python)
+2. Run `npm run gen-schema-doc`.
+
+## Submitting a pull request
+<!-- Instructions for forking and PRs + note about FINOS CLA as a pre-req before merging -->
+
+## About FINOS contributions
+<!-- Notes around signing the CLA. See existing CONTRIBUTING.md -->

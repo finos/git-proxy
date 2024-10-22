@@ -1,7 +1,7 @@
 const express = require('express');
 const proxy = require('express-http-proxy');
 const router = new express.Router();
-const chain = require('../chain');
+const { executeChain } = require('../chain');
 const config = require('../../config');
 
 /**
@@ -63,7 +63,7 @@ router.use(
           req.rawBody = req.body.toString('utf8');
         }
 
-        const action = await chain.exec(req, res);
+        const action = await executeChain(req, res);
         console.log('action processed');
 
         if (action.error || action.blocked) {

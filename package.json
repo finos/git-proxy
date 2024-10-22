@@ -1,6 +1,6 @@
 {
   "name": "@finos/git-proxy",
-  "version": "1.3.8",
+  "version": "1.3.10",
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
     "cli": "node ./packages/git-proxy-cli/index.js",
@@ -22,6 +22,11 @@
   "bin": {
     "git-proxy": "./index.js",
     "git-proxy-all": "concurrently 'npm run server' 'npm run client'"
+  },
+  "exports": {
+    "./plugin": "./src/plugin.js",
+    "./proxy/actions": "./src/proxy/actions/index.js",
+    "./src/config/env": "./src/config/env.js"
   },
   "workspaces": [
     "./packages/git-proxy-cli"
@@ -91,6 +96,7 @@
     "mocha": "^10.2.0",
     "nyc": "^17.0.0",
     "prettier": "^3.0.0",
+    "sinon": "^19.0.2",
     "vite": "^4.4.2"
   },
   "optionalDependencies": {
