@@ -31,5 +31,19 @@ module.exports = {
       collapsed: false,
       items: ['configuration/overview', 'configuration/reference'],
     },
+    {
+      type: 'category',
+      label: 'Development',
+      link: {
+        type: 'generated-index',
+        title: 'Development',
+        slug: '/category/development',
+        keywords: ['dev', 'development'],
+        image: '/img/github-mark.png',
+      },
+      collapsible: true,
+      collapsed: false,
+      items: ['development/contributing', 'development/plugins'],
+    }
   ],
 };
