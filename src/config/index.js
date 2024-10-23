@@ -13,7 +13,7 @@ let _authentication = defaultSettings.authentication;
 let _tempPassword = defaultSettings.tempPassword;
 let _proxyUrl = defaultSettings.proxyUrl;
 let _api = defaultSettings.api;
-let _cookieSecret = defaultSettings.cookieSecret;
+let _cookieSecret = process.env.COOKIE_SECRET || 'cookie secret';
 let _sessionMaxAgeHours = defaultSettings.sessionMaxAgeHours;
 let _sslKeyPath = defaultSettings.sslKeyPemPath;
 let _sslCertPath = defaultSettings.sslCertPemPath;
@@ -100,8 +100,8 @@ const getAPIs = () => {
 };
 
 const getCookieSecret = () => {
-  if (_userSettings && _userSettings.cookieSecret) {
-    _cookieSecret = _userSettings.cookieSecret;
+  if (!_cookieSecret) {
+    throw new Error('COOKIE_SECRET is not defined in the environment variables.');
   }
   return _cookieSecret;
 };
@@ -167,7 +167,7 @@ const getPlugins = () => {
     _plugins = _userSettings.plugins;
   }
   return _plugins;
-}
+};
 
 const getSSLKeyPath = () => {
   if (_userSettings && _userSettings.sslKeyPemPath) {

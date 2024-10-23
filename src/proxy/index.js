@@ -1,9 +1,9 @@
 const proxyApp = require('express')();
 const bodyParser = require('body-parser');
-const http = require("http");
-const https = require("https");
+const http = require('http');
+const https = require('https');
 const fs = require('fs');
-const path = require("path");
+const path = require('path');
 const router = require('./routes').router;
 const config = require('../config');
 const db = require('../db');
@@ -17,7 +17,7 @@ const options = {
   limit: '100000kb',
   type: '*/*',
   key: fs.readFileSync(path.join(__dirname, config.getSSLKeyPath())),
-  cert: fs.readFileSync(path.join(__dirname, config.getSSLCertPath()))
+  cert: fs.readFileSync(path.join(__dirname, config.getSSLCertPath())),
 };
 
 // Setup the proxy middleware
@@ -25,10 +25,10 @@ proxyApp.use(bodyParser.raw(options));
 proxyApp.use('/', router);
 
 const start = async () => {
-   const plugins = config.getPlugins();
-   const pluginLoader = new PluginLoader(plugins);
-   await pluginLoader.load();
-   chain.chainPluginLoader = pluginLoader;
+  const plugins = config.getPlugins();
+  const pluginLoader = new PluginLoader(plugins);
+  await pluginLoader.load();
+  chain.chainPluginLoader = pluginLoader;
   // Check to see if the default repos are in the repo list
   const defaultAuthorisedRepoList = config.getAuthorisedList();
   const allowedList = await db.getRepos();
