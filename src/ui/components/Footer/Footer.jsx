@@ -1,7 +1,7 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import ListItem from '@material-ui/core/ListItem';
-import List from '@material-ui/core/List';
+import makeStyles from '@mui/styles/makeStyles';
+import ListItem from '@mui/material/ListItem';
+import List from '@mui/material/List';
 import styles from '../../assets/jss/material-dashboard-react/components/footerStyle';
 import { MarkGithubIcon } from '@primer/octicons-react';
 
