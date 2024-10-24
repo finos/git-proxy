@@ -4,4 +4,4 @@ const { Step } = require('./Step');
 module.exports = {
   Action,
   Step,
-}
+};

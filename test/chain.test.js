@@ -63,7 +63,7 @@ describe('proxy chain', function () {
     // Re-require the chain module after stubbing processors
     chain = require('../src/proxy/chain');
 
-    chain.chainPluginLoader = new PluginLoader([])
+    chain.chainPluginLoader = new PluginLoader([]);
   });
 
   afterEach(() => {
@@ -108,7 +108,11 @@ describe('proxy chain', function () {
     mockPushProcessors.checkUserPushPermission.resolves(continuingAction);
 
     // this stops the chain from further execution
-    mockPushProcessors.checkIfWaitingAuth.resolves({ type: 'push', continue: () => false, allowPush: false });
+    mockPushProcessors.checkIfWaitingAuth.resolves({
+      type: 'push',
+      continue: () => false,
+      allowPush: false,
+    });
     const result = await chain.executeChain(req);
 
     expect(mockPreProcessors.parseAction.called).to.be.true;
@@ -136,7 +140,11 @@ describe('proxy chain', function () {
     mockPushProcessors.checkAuthorEmails.resolves(continuingAction);
     mockPushProcessors.checkUserPushPermission.resolves(continuingAction);
     // this stops the chain from further execution
-    mockPushProcessors.checkIfWaitingAuth.resolves({ type: 'push', continue: () => true, allowPush: true });
+    mockPushProcessors.checkIfWaitingAuth.resolves({
+      type: 'push',
+      continue: () => true,
+      allowPush: true,
+    });
     const result = await chain.executeChain(req);
 
     expect(mockPreProcessors.parseAction.called).to.be.true;
@@ -232,5 +240,5 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.checkRepoInAuthorisedList.called).to.be.false;
     expect(mockPushProcessors.parsePush.called).to.be.false;
     expect(result).to.deep.equal(action);
-  })
+  });
 });

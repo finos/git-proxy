@@ -6,7 +6,6 @@
   "type": "object",
   "properties": {
     "proxyUrl": { "type": "string" },
-    "cookieSecret": { "type": "string" },
     "sessionMaxAgeHours": { "type": "number" },
     "api": {
       "description": "Third party APIs",

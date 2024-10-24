@@ -104,7 +104,7 @@ export default function UserProfile() {
                   width={'150px'}
                   src={logo}
                   alt='logo'
-                  data-test ="git-proxy-logo"
+                  data-test='git-proxy-logo'
                 />
               </div>
             </CardHeader>
@@ -119,7 +119,7 @@ export default function UserProfile() {
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       autoFocus={true}
-                      data-test ='username'
+                      data-test='username'
                     />
                   </FormControl>
                 </GridItem>
@@ -133,7 +133,7 @@ export default function UserProfile() {
                       type='password'
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      data-test ='password'
+                      data-test='password'
                     />
                   </FormControl>
                 </GridItem>
@@ -141,7 +141,13 @@ export default function UserProfile() {
             </CardBody>
             <CardFooter>
               {!isLoading ? (
-                <Button color='success' block disabled={!validateForm()} type='submit' data-test="login">
+                <Button
+                  color='success'
+                  block
+                  disabled={!validateForm()}
+                  type='submit'
+                  data-test='login'
+                >
                   Login
                 </Button>
               ) : (
