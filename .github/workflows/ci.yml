@@ -10,7 +10,10 @@ on:
     branches: [ main ]
 
 permissions:
+  contents: read
   pull-requests: write
+  actions: read
+  statuses: write
 
 jobs:
   build:
@@ -78,5 +81,3 @@ jobs:
         wait-on: "http://localhost:3000"
         wait-on-timeout: 120
         run: npm run cypress:run
-
-
