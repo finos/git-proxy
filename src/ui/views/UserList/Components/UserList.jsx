@@ -15,6 +15,7 @@ import styles from '../../../assets/jss/material-dashboard-react/views/dashboard
 import { getUsers } from '../../../services/user';
 
 import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
+// import Pagination from '../../../components/Pagination/Pagination';
 
 export default function UserList(props) {
   const useStyles = makeStyles(styles);
