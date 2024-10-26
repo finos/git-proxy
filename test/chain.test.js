@@ -1,7 +1,7 @@
 const chai = require('chai');
 const sinon = require('sinon');
 const { PluginLoader } = require('../src/plugin');
-const { checkSensitiveData } = require('../src/proxy/processors/push-action');
+
 
 chai.should();
 const expect = chai.expect;
