@@ -2,6 +2,12 @@ name: Publish to NPM
 on:
   release:
     types: [published]
+
+permissions:
+  contents: read
+  packages: write
+  actions: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
