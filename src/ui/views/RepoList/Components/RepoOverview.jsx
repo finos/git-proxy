@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import TableCell from '@material-ui/core/TableCell';
 import TableRow from '@material-ui/core/TableRow';
 import GridContainer from '../../../components/Grid/GridContainer';
 import GridItem from '../../../components/Grid/GridItem';
 import { CodeReviewIcon, LawIcon, PeopleIcon } from '@primer/octicons-react';
+
 
 const colors = {
   '1C Enterprise': '#814CCC',
@@ -565,110 +566,128 @@ const colors = {
   Zimpl: '#d67711',
 };
 
-import axios from 'axios';
+// import axios from 'axios';
 import moment from 'moment';
 import CodeActionButton from '../../../components/CustomButtons/CodeActionButton';
+import Pagination from '../../../components/Pagination/Pagination';
 
 export default function Repositories(props) {
-  const [github, setGitHub] = React.useState({});
+  // const [github, setGitHub] = React.useState({});
+  // const [repositories, setRepositories] = useState([]); // To hold all repositories
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
 
-  useEffect(() => {
-    getGitHubRepository();
-  }, [props.data.project, props.data.name]);
 
-  const getGitHubRepository = async () => {
-    await axios
-      .get(`https://api.github.com/repos/${props.data.project}/${props.data.name}`)
-      .then((res) => {
-        setGitHub(res.data);
-      });
+  // Dummy repository data
+  const dummyRepositories = [
+    { project: 'Org1', name: 'Repo1', description: 'Description for Repo 1' },
+    { project: 'Org2', name: 'Repo2', description: 'Description for Repo 2' },
+    { project: 'Org3', name: 'Repo3', description: 'Description for Repo 3' },
+    { project: 'Org4', name: 'Repo4', description: 'Description for Repo 4' },
+    { project: 'Org5', name: 'Repo5', description: 'Description for Repo 5' },
+    { project: 'Org6', name: 'Repo6', description: 'Description for Repo 6' },
+    // Add more dummy repositories as needed
+  ];
+
+
+  // useEffect(() => {
+  //   getGitHubRepository();
+  // }, [props.data.project, props.data.name]);
+
+  // const getGitHubRepository = async () => {
+  //   try {
+  //     const res = await axios.get(
+  //       `https://api.github.com/repos/${props.data.project}/${props.data.name}`
+  //     );
+  //     setRepositories([res.data]);  // Store the single repository in an array
+  //   } catch (error) {
+  //     console.error("Failed to fetch repository", error);
+  //   }
+  // };
+
+
+  // Pagination logic to get current items for the page
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = dummyRepositories.slice(indexOfFirstItem, indexOfLastItem);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
   };
 
   const { project: org, name } = props?.data || {};
   const cloneURL = `${window.location.origin.toString()}/${org}/${name}.git`;
 
   return (
-    <TableRow>
-      <TableCell>
-        <div style={{ padding: '15px' }}>
-          <a href={`/admin/repo/${props.data.name}`}>
-            <span style={{ fontSize: '17px' }}>
-              {props.data.project}/{props.data.name}
-            </span>
-          </a>
-          {github.parent && (
-            <span
-              style={{
-                fontSize: '11.5px',
-                display: 'block',
-                opacity: 0.8,
-              }}
-            >
-              Forked from{' '}
-              <a
-                style={{
-                  fontWeight: 'normal',
-                  color: 'inherit',
-                }}
-                href={github.parent.html_url}
-              >
-                {github.parent.full_name}
+     <>
+      {currentItems.map((repo, index) => (
+        <TableRow key={index}>
+          <TableCell>
+            <div style={{ padding: '15px' }}>
+              <a href={`/admin/repo/${props.data.name}`}>
+                <span style={{ fontSize: '17px' }}>
+                  {repo.project}/{repo.name}
+                </span>
               </a>
-            </span>
-          )}
-          {github.description && <p style={{ maxWidth: '80%' }}>{github.description}</p>}
-          <GridContainer>
-            {github.language && (
-              <GridItem>
-                <span
-                  style={{
-                    height: '12px',
-                    width: '12px',
-                    backgroundColor: `${colors[github.language]}`,
-                    borderRadius: '50px',
-                    display: 'inline-block',
-                    marginRight: '5px',
-                  }}
-                ></span>
-                {github.language}
-              </GridItem>
-            )}
-            {github.license && (
-              <GridItem>
-                <LawIcon size='small' />{' '}
-                <span style={{ marginLeft: '5px' }}>{github.license.spdx_id}</span>
-              </GridItem>
-            )}
-            <GridItem>
-              <PeopleIcon size='small' />{' '}
-              <span style={{ marginLeft: '5px' }}>{props.data.users?.canPush?.length || 0}</span>
-            </GridItem>
-            <GridItem>
-              <CodeReviewIcon size='small' />{' '}
-              <span style={{ marginLeft: '5px' }}>
-                {props.data.users?.canAuthorise?.length || 0}
-              </span>
-            </GridItem>
-            {(github.created_at || github.updated_at || github.pushed_at) && (
-              <GridItem>
-                Last updated{' '}
-                {moment
-                  .max([
-                    moment(github.created_at),
-                    moment(github.updated_at),
-                    moment(github.pushed_at),
-                  ])
-                  .fromNow()}
-              </GridItem>
-            )}
-          </GridContainer>
-        </div>
-      </TableCell>
-      <TableCell align='right'>
-        <div style={{ padding: '15px' }}>
-          <CodeActionButton cloneURL={cloneURL} />
-        </div>
-      </TableCell>
-    </TableRow>
+              {repo.parent && (
+                <span style={{ fontSize: '11.5px', display: 'block', opacity: 0.8 }}>
+                  Forked from{' '}
+                  <a style={{ fontWeight: 'normal', color: 'inherit' }} href={repo.parent.html_url}>
+                    {repo.parent.full_name}
+                  </a>
+                </span>
+              )}
+              {repo.description && <p style={{ maxWidth: '80%' }}>{repo.description}</p>}
+              <GridContainer>
+                {repo.language && (
+                  <GridItem>
+                    <span
+                      style={{
+                        height: '12px',
+                        width: '12px',
+                        backgroundColor: `${colors[repo.language]}`,
+                        borderRadius: '50px',
+                        display: 'inline-block',
+                        marginRight: '5px',
+                      }}
+                    ></span>
+                    {repo.language}
+                  </GridItem>
+                )}
+                {repo.license && (
+                  <GridItem>
+                    <LawIcon size="small" /> <span style={{ marginLeft: '5px' }}>{repo.license.spdx_id}</span>
+                  </GridItem>
+                )}
+                <GridItem>
+                  <PeopleIcon size="small" /> <span style={{ marginLeft: '5px' }}>{props.data.users?.canPush?.length || 0}</span>
+                </GridItem>
+                <GridItem>
+                  <CodeReviewIcon size="small" /> <span style={{ marginLeft: '5px' }}>{props.data.users?.canAuthorise?.length || 0}</span>
+                </GridItem>
+                {(repo.created_at || repo.updated_at || repo.pushed_at) && (
+                  <GridItem>
+                    Last updated {moment.max([moment(repo.created_at), moment(repo.updated_at), moment(repo.pushed_at)]).fromNow()}
+                  </GridItem>
+                )}
+              </GridContainer>
+            </div>
+          </TableCell>
+          <TableCell align="right">
+            <div style={{ padding: '15px' }}>
+              <CodeActionButton cloneURL={cloneURL} />
+            </div>
+          </TableCell>
+        </TableRow>
+      ))}
+
+      {/* Render the Pagination component */}
+      <Pagination
+        currentPage={currentPage}
+        totalItems={dummyRepositories.length}
+        itemsPerPage={itemsPerPage}
+        onPageChange={handlePageChange}
+      />
+    </>
   );
 }
