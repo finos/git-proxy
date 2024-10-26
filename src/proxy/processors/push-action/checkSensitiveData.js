@@ -2,8 +2,7 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const XLSX = require('xlsx');
 const path = require('path');
-const { exec: getDiffExec } = require('./getDiff');
-
+// const { exec: getDiffExec } = require('./getDiff');
 // Function to check for sensitive data patterns
 const checkForSensitiveData = (cell) => {
     const sensitivePatterns = [
@@ -20,12 +19,10 @@ const checkForSensitiveData = (cell) => {
         return false;
     });
 };
-
 // Function to process CSV files
 const processCSV = async (filePath) => {
     return new Promise((resolve, reject) => {
         let sensitiveDataFound = false;
-
         fs.createReadStream(filePath)
             .pipe(csv())
             .on('data', (row) => {
@@ -48,18 +45,15 @@ const processCSV = async (filePath) => {
             });
     });
 };
-
 // Function to process XLSX files
 const processXLSX = async (filePath) => {
     return new Promise((resolve, reject) => {
         let sensitiveDataFound = false;
-
         try {
             const workbook = XLSX.readFile(filePath);
             const sheetName = workbook.SheetNames[0];
             const sheet = workbook.Sheets[sheetName];
             const jsonData = XLSX.utils.sheet_to_json(sheet);
-
             jsonData.forEach((row) => {
                 for (const [key, value] of Object.entries(row)) {
                     if (checkForSensitiveData(value)) {
@@ -68,7 +62,6 @@ const processXLSX = async (filePath) => {
                     }
                 }
             });
-
             if (!sensitiveDataFound) {
                 console.log('No sensitive data found in XLSX.');
             }
@@ -79,7 +72,23 @@ const processXLSX = async (filePath) => {
         }
     });
 };
-
+// Function to check for sensitive data in .log and .json files
+const checkLogJsonFiles = async (filePath) => {
+    return new Promise((resolve, reject) => {
+        let sensitiveDataFound = false;
+        fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+                console.error(`Error reading file ${filePath}: ${err.message}`);
+                return reject(err);
+            }
+            if (checkForSensitiveData(data)) {
+                console.log(`\x1b[33mSensitive data found in ${filePath}\x1b[0m`);
+                sensitiveDataFound = true;
+            }
+            resolve(sensitiveDataFound);
+        });
+    });
+};
 // Function to parse the file based on its extension
 const parseFile = async (filePath) => {
     const ext = path.extname(filePath).toLowerCase();
@@ -89,28 +98,26 @@ const parseFile = async (filePath) => {
             return await processCSV(filePath);
         case '.xlsx':
             return await processXLSX(filePath);
+        case '.log':
+            return await checkLogJsonFiles(filePath);
+        case '.json':
+            return await checkLogJsonFiles(filePath);
         default:
-            console.log(`Unsupported file type: ${ext} for file: ${filePath}`);
+            // Skip unsupported file types without logging
             return false; // Indicate that no sensitive data was found for unsupported types
     }
 };
-
 // Async exec function to handle actions
 const exec = async (req, action) => {
     // getDiffExec(req, action); // Call to getDiffExec if necessary
-
     const diffStep = action.steps.find((s) => s.stepName === 'diff');
-
     if (diffStep && diffStep.content) {
         console.log('Diff content:', diffStep.content);
-
         const filePaths = diffStep.content.filePaths || [];
-
         if (filePaths.length > 0) {
             // Check for sensitive data in all files
             const sensitiveDataFound = await Promise.all(filePaths.map(parseFile));
             const anySensitiveDataDetected = sensitiveDataFound.some(found => found); // Check if any file reported sensitive data
-
             if (anySensitiveDataDetected) {
                 action.pushBlocked = true; // Block the push
                 action.error = true; // Set error flag
@@ -123,9 +130,7 @@ const exec = async (req, action) => {
     } else {
         console.log('No diff content available.');
     }
-
     return action; // Returning action for testing purposes
 };
-
 exec.displayName = 'logFileChanges.exec';
 exports.exec = exec;
