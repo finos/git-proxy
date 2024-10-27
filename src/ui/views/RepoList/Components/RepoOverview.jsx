@@ -6,6 +6,8 @@ import GridItem from '../../../components/Grid/GridItem';
 import { CodeReviewIcon, LawIcon, PeopleIcon } from '@primer/octicons-react';
 
 
+
+
 const colors = {
   '1C Enterprise': '#814CCC',
   '2-Dimensional Array': '#38761D',
@@ -570,11 +572,13 @@ const colors = {
 import moment from 'moment';
 import CodeActionButton from '../../../components/CustomButtons/CodeActionButton';
 import Pagination from '../../../components/Pagination/Pagination';
+import Search from '../../../components/Search/Search'; 
 
 export default function Repositories(props) {
   // const [github, setGitHub] = React.useState({});
   // const [repositories, setRepositories] = useState([]); // To hold all repositories
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
   const itemsPerPage = 5;
 
 
@@ -606,10 +610,23 @@ export default function Repositories(props) {
   // };
 
 
+// Handle search functionality
+const handleSearch = (query) => {
+  setSearchQuery(query);
+  setCurrentPage(1); // Reset to first page when searching
+};
+
+// Filter repositories based on search query
+const filteredRepositories = dummyRepositories.filter(repo =>
+  repo.name.toLowerCase().includes(searchQuery.toLowerCase())
+);
+
+
+
   // Pagination logic to get current items for the page
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = dummyRepositories.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = filteredRepositories.slice(indexOfFirstItem, indexOfLastItem);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -620,6 +637,10 @@ export default function Repositories(props) {
 
   return (
      <>
+   
+     <Search onSearch={handleSearch} placeholder="Search repositories..." />
+
+
       {currentItems.map((repo, index) => (
         <TableRow key={index}>
           <TableCell>
@@ -684,10 +705,12 @@ export default function Repositories(props) {
       {/* Render the Pagination component */}
       <Pagination
         currentPage={currentPage}
-        totalItems={dummyRepositories.length}
+         totalItems={filteredRepositories.length} // Use filtered repositories for pagination
         itemsPerPage={itemsPerPage}
         onPageChange={handlePageChange}
       />
+      
     </>
+  
   );
 }

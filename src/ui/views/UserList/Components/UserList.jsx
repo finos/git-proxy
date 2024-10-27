@@ -12,6 +12,8 @@ import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
 import Pagination from '../../../components/Pagination/Pagination';
+import Search from '../../../components/Search/Search';
+
 
 const useStyles = makeStyles({
   table: {
@@ -38,19 +40,40 @@ export default function UserList() {
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5; // Set the number of items per page
+  const itemsPerPage = 5; 
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Calculate the items for the current page
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = dummyUsers.slice(indexOfFirstItem, indexOfLastItem);
-  const totalItems = dummyUsers.length;
 
-  const handlePageChange = (page) => setCurrentPage(page);
+ // Filter users based on the search query
+ const filteredUsers = dummyUsers.filter(user =>
+  user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  user.username.toLowerCase().includes(searchQuery.toLowerCase())
+);
+
+const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+const totalItems = filteredUsers.length;
+  // Function to handle page change
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+
+  // Function to handle search
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    setCurrentPage(1); // Reset to the first page when searching
+  };
 
   return (
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
+
+        {/* Search Component */}
+        <Search onSearch={handleSearch} placeholder="Search users..." />
+
         <TableContainer component={Paper}>
           <Table className={classes.table} aria-label='simple table'>
             <TableHead>
