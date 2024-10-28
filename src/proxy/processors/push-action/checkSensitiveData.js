@@ -2,6 +2,7 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const XLSX = require('xlsx');
 const path = require('path');
+const Step = require('../../actions').Step;
 // const { exec: getDiffExec } = require('./getDiff');
 // Function to check for sensitive data patterns
 const checkForSensitiveData = (cell) => {
@@ -125,6 +126,7 @@ const extractFilePathsFromDiff = (diffContent) => {
 
 const exec = async (req, action) => {
     const diffStep = action.steps.find((s) => s.stepName === 'diff');
+    const step = new Step('checksensitiveData');
 
     if (diffStep && diffStep.content) {
         console.log('Diff content:', diffStep.content);
@@ -138,10 +140,10 @@ const exec = async (req, action) => {
             const anySensitiveDataDetected = sensitiveDataFound.some(found => found);
 
             if (anySensitiveDataDetected) {
-                action.pushBlocked = true;
-                action.error = true;
-                action.errorMessage = 'Your push has been blocked due to sensitive data detection.';
-                console.log(action.errorMessage);
+                step.blocked= true;
+                step.error = true;
+                step.errorMessage = 'Your push has been blocked due to sensitive data detection.';
+                console.log(step.errorMessage);
             }
         } else {
             console.log('No file paths provided in the diff step.');
@@ -149,7 +151,7 @@ const exec = async (req, action) => {
     } else {
         console.log('No diff content available.');
     }
-    
+    action.addStep(step);
     return action; // Returning action for testing purposes
 };
 
