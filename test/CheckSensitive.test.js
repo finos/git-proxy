@@ -1,4 +1,4 @@
-const path = require('path');
+// const path = require('path');
 const { exec } = require('../src/proxy/processors/push-action/checkSensitiveData.js'); // Adjust path as necessary
 const sinon = require('sinon');
 
@@ -13,13 +13,16 @@ describe('Sensitive Data Detection', () => {
         logStub.restore(); // Restore console.log after each test
     });
 
+    const createDiffContent = (filePaths) => {
+        // Format file paths in diff format
+        return filePaths.map(filePath => `diff --git a/${filePath} b/${filePath}`).join('\n');
+    };
+
     it('should detect sensitive data in CSV file and block execution', async () => {
         const action = {
             steps: [{
                 stepName: 'diff',
-                content: {
-                    filePaths: [path.join(__dirname, 'test_data/sensitive_data.csv')] // Ensure this path is correct
-                }
+                content: createDiffContent(['test/test_data/sensitive_data.csv']) // Ensure this path is correct
             }]
         };
         await exec(null, action);
@@ -30,9 +33,7 @@ describe('Sensitive Data Detection', () => {
         const action = {
             steps: [{
                 stepName: 'diff',
-                content: {
-                    filePaths: [path.join(__dirname, 'test_data/sensitive_data2.xlsx')] // Ensure this path is correct
-                }
+                content: createDiffContent(['test/test_data/sensitive_data2.xlsx']) // Ensure this path is correct
             }]
         };
         await exec(null, action);
@@ -43,9 +44,7 @@ describe('Sensitive Data Detection', () => {
         const action = {
             steps: [{
                 stepName: 'diff',
-                content: {
-                    filePaths: [path.join(__dirname, 'test_data/sensitive_data3.log')] // Ensure this path is correct
-                }
+                content: createDiffContent(['test/test_data/sensitive_data3.log']) // Ensure this path is correct
             }]
         };
         await exec(null, action);
@@ -56,9 +55,7 @@ describe('Sensitive Data Detection', () => {
         const action = {
             steps: [{
                 stepName: 'diff',
-                content: {
-                    filePaths: [path.join(__dirname, 'test_data/sensitive_data4.json')] // Ensure this path is correct
-                }
+                content: createDiffContent(['test/test_data/sensitive_data4.json']) // Ensure this path is correct
             }]
         };
         await exec(null, action);
@@ -69,9 +66,7 @@ describe('Sensitive Data Detection', () => {
         const action = {
             steps: [{
                 stepName: 'diff',
-                content: {
-                    filePaths: [path.join(__dirname, 'test_data/no_sensitive_data.txt')] // Ensure this path is correct
-                }
+                content: createDiffContent(['test_data/no_sensitive_data.txt']) // Ensure this path is correct
             }]
         };
         await exec(null, action);
@@ -82,9 +77,7 @@ describe('Sensitive Data Detection', () => {
         const action = {
             steps: [{
                 stepName: 'diff',
-                content: {
-                    filePaths: [path.join(__dirname, 'test_data/empty_file.txt')] // Ensure this path is correct
-                }
+                content: createDiffContent(['test_data/empty_file.txt']) // Ensure this path is correct
             }]
         };
         await exec(null, action);
@@ -95,9 +88,7 @@ describe('Sensitive Data Detection', () => {
         const action = {
             steps: [{
                 stepName: 'diff',
-                content: {
-                    filePaths: [path.join(__dirname, 'test_data/non_existent_file.txt')] // Ensure this path is correct
-                }
+                content: createDiffContent(['test_data/non_existent_file.txt']) // Ensure this path is correct
             }]
         };
         try {

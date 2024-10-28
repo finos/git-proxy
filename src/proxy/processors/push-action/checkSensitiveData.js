@@ -108,20 +108,39 @@ const parseFile = async (filePath) => {
     }
 };
 // Async exec function to handle actions
+// Function to parse file paths from git diff content
+const extractFilePathsFromDiff = (diffContent) => {
+    const filePaths = [];
+    const lines = diffContent.split('\n');
+    
+    lines.forEach(line => {
+        const match = line.match(/^diff --git a\/(.+?) b\/(.+?)$/);
+        if (match) {
+            filePaths.push(match[1]); // Extract the file path from "a/" in the diff line
+        }
+    });
+    
+    return filePaths;
+};
+
 const exec = async (req, action) => {
-    // getDiffExec(req, action); // Call to getDiffExec if necessary
     const diffStep = action.steps.find((s) => s.stepName === 'diff');
+
     if (diffStep && diffStep.content) {
         console.log('Diff content:', diffStep.content);
-        const filePaths = diffStep.content.filePaths || [];
+
+        // Use the parsing function to get file paths
+        const filePaths = extractFilePathsFromDiff(diffStep.content);
+
         if (filePaths.length > 0) {
             // Check for sensitive data in all files
             const sensitiveDataFound = await Promise.all(filePaths.map(parseFile));
-            const anySensitiveDataDetected = sensitiveDataFound.some(found => found); // Check if any file reported sensitive data
+            const anySensitiveDataDetected = sensitiveDataFound.some(found => found);
+
             if (anySensitiveDataDetected) {
-                action.pushBlocked = true; // Block the push
-                action.error = true; // Set error flag
-                action.errorMessage = 'Your push has been blocked due to sensitive data detection.'; // Set error message
+                action.pushBlocked = true;
+                action.error = true;
+                action.errorMessage = 'Your push has been blocked due to sensitive data detection.';
                 console.log(action.errorMessage);
             }
         } else {
@@ -130,7 +149,11 @@ const exec = async (req, action) => {
     } else {
         console.log('No diff content available.');
     }
+    
     return action; // Returning action for testing purposes
 };
+
+
+
 exec.displayName = 'logFileChanges.exec';
 exports.exec = exec;
