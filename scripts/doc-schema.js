@@ -19,8 +19,10 @@ try {
   ]).toString('utf-8');
   console.log(genDocOutput);
 
-  const schemaDoc = readFileSync(`${tempdir}${sep}schema.md`, 'utf-8')
-    .replace(/# GitProxy configuration file/g, '# Schema Reference'); // https://github.com/finos/git-proxy/pull/327#discussion_r1377343213
+  const schemaDoc = readFileSync(`${tempdir}${sep}schema.md`, 'utf-8').replace(
+    /# GitProxy configuration file/g,
+    '# Schema Reference',
+  ); // https://github.com/finos/git-proxy/pull/327#discussion_r1377343213
   const docString = `---
 title: Schema Reference
 description: JSON schema reference documentation for GitProxy
