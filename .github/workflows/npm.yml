@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@v4
         with:
@@ -15,5 +15,9 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm publish --access=public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm install --include peer && npm publish --access=public || echo "Ignoring error"
+        working-directory: plugins/git-proxy-plugin-samples
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
