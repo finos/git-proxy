@@ -20,6 +20,10 @@
       "description": "Customisable questions to add to attestation form",
       "type": "object"
     },
+    "domains": {
+      "description": "Provide domains to use alternative to the defaults",
+      "type": "object"
+    },
     "privateOrganizations": {
       "description": "Pattern searches for listed private organizations are disabled",
       "type": "array"
