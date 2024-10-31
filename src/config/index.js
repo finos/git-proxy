@@ -17,12 +17,14 @@ let _cookieSecret = defaultSettings.cookieSecret;
 let _sessionMaxAgeHours = defaultSettings.sessionMaxAgeHours;
 let _sslKeyPath = defaultSettings.sslKeyPemPath;
 let _sslCertPath = defaultSettings.sslCertPemPath;
+let _plugins = defaultSettings.plugins;
 let _commitConfig = defaultSettings.commitConfig;
 let _attestationConfig = defaultSettings.attestationConfig;
 let _privateOrganizations = defaultSettings.privateOrganizations;
 let _urlShortener = defaultSettings.urlShortener;
 let _contactEmail = defaultSettings.contactEmail;
 let _csrfProtection = defaultSettings.csrfProtection;
+let _domains = defaultSettings.domains;
 
 // Get configured proxy URL
 const getProxyUrl = () => {
@@ -160,6 +162,14 @@ const getCSRFProtection = () => {
   return _csrfProtection;
 };
 
+// Get loadable push plugins
+const getPlugins = () => {
+  if (_userSettings && _userSettings.plugins) {
+    _plugins = _userSettings.plugins;
+  }
+  return _plugins;
+}
+
 const getSSLKeyPath = () => {
   if (_userSettings && _userSettings.sslKeyPemPath) {
     _sslKeyPath = _userSettings.sslKeyPemPath;
@@ -180,6 +190,13 @@ const getSSLCertPath = () => {
   return _sslCertPath;
 };
 
+const getDomains = () => {
+  if (_userSettings && _userSettings.domains) {
+    _domains = _userSettings.domains;
+  }
+  return _domains;
+};
+
 exports.getAPIs = getAPIs;
 exports.getProxyUrl = getProxyUrl;
 exports.getAuthorisedList = getAuthorisedList;
@@ -195,5 +212,7 @@ exports.getPrivateOrganizations = getPrivateOrganizations;
 exports.getURLShortener = getURLShortener;
 exports.getContactEmail = getContactEmail;
 exports.getCSRFProtection = getCSRFProtection;
+exports.getPlugins = getPlugins;
 exports.getSSLKeyPath = getSSLKeyPath;
 exports.getSSLCertPath = getSSLCertPath;
+exports.getDomains = getDomains;
