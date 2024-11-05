@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "@finos/git-proxy": "file:.."
+  }
+}
