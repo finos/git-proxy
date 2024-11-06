@@ -24,6 +24,7 @@ let _privateOrganizations = defaultSettings.privateOrganizations;
 let _urlShortener = defaultSettings.urlShortener;
 let _contactEmail = defaultSettings.contactEmail;
 let _csrfProtection = defaultSettings.csrfProtection;
+let _domains = defaultSettings.domains;
 
 // Get configured proxy URL
 const getProxyUrl = () => {
@@ -189,6 +190,13 @@ const getSSLCertPath = () => {
   return _sslCertPath;
 };
 
+const getDomains = () => {
+  if (_userSettings && _userSettings.domains) {
+    _domains = _userSettings.domains;
+  }
+  return _domains;
+};
+
 exports.getAPIs = getAPIs;
 exports.getProxyUrl = getProxyUrl;
 exports.getAuthorisedList = getAuthorisedList;
@@ -207,3 +215,4 @@ exports.getCSRFProtection = getCSRFProtection;
 exports.getPlugins = getPlugins;
 exports.getSSLKeyPath = getSSLKeyPath;
 exports.getSSLCertPath = getSSLCertPath;
+exports.getDomains = getDomains;
