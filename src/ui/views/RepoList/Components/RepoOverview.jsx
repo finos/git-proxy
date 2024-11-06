@@ -5,6 +5,7 @@ import GridContainer from '../../../components/Grid/GridContainer';
 import GridItem from '../../../components/Grid/GridItem';
 import { CodeReviewIcon, LawIcon, PeopleIcon } from '@primer/octicons-react';
 
+
 const colors = {
   '1C Enterprise': '#814CCC',
   '2-Dimensional Array': '#38761D',
