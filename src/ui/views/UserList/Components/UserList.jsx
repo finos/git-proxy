@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import GridItem from '../../../components/Grid/GridItem';
 import GridContainer from '../../../components/Grid/GridContainer';
+
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -10,51 +11,72 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
+import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
+import { getUsers } from '../../../services/user';
 import Pagination from '../../../components/Pagination/Pagination';
+import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
+
 import Search from '../../../components/Search/Search';
 
 
-const useStyles = makeStyles({
-  table: {
-    minWidth: 650,
-  },
-});
+// const useStyles = makeStyles({
+//   table: {
+//     minWidth: 650,
+//   },
+// });
 
-export default function UserList() {
+const useStyles = makeStyles(styles);
+
+export default function UserList(props) {
+  
   const classes = useStyles();
+  const [data, setData] = useState([]);
+  const [, setAuth] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
 
-  // Dummy user data
-  const dummyUsers = [
-    { username: 'johnDoe', displayName: 'John Doe', title: 'Developer', email: 'john@example.com', gitAccount: 'johnDoeGit', admin: true },
-    { username: 'janeDoe', displayName: 'Jane Doe', title: 'Designer', email: 'jane@example.com', gitAccount: 'janeDoeGit', admin: false },
-    { username: 'markSmith', displayName: 'Mark Smith', title: 'Project Manager', email: 'mark@example.com', gitAccount: 'markSmithGit', admin: true },
-    { username: 'lucasBrown', displayName: 'Lucas Brown', title: 'Data Scientist', email: 'lucas@example.com', gitAccount: 'lucasBrownGit', admin: false },
-    { username: 'emilyWhite', displayName: 'Emily White', title: 'Backend Engineer', email: 'emily@example.com', gitAccount: 'emilyWhiteGit', admin: true },
-    { username: 'oliviaGreen', displayName: 'Olivia Green', title: 'Frontend Developer', email: 'olivia@example.com', gitAccount: 'oliviaGreenGit', admin: false },
-    { username: 'noahBlue', displayName: 'Noah Blue', title: 'DevOps Engineer', email: 'noah@example.com', gitAccount: 'noahBlueGit', admin: true },
-    { username: 'miaBlack', displayName: 'Mia Black', title: 'Quality Analyst', email: 'mia@example.com', gitAccount: 'miaBlackGit', admin: false },
-    { username: 'willGray', displayName: 'Will Gray', title: 'HR Manager', email: 'will@example.com', gitAccount: 'willGrayGit', admin: false },
-    { username: 'avaYellow', displayName: 'Ava Yellow', title: 'UX Designer', email: 'ava@example.com', gitAccount: 'avaYellowGit', admin: true },
-  ];
 
-  // Pagination states
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5; 
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 5; 
+    
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Calculate the items for the current page
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
+
+
+  // const openUser = (username) => navigate(`/admin/user/${username}`, { replace: true });
+
+
+
+  useEffect(() => {
+    const query = {};
+
+    for (const k in props) {
+      if (!k) continue;
+      query[k] = props[k];
+    }
+    getUsers(setIsLoading, setData, setAuth, setIsError, query);
+  }, [props]);
+
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) return <div>Something went wrong...</div>;
+
+
+
+
 
  // Filter users based on the search query
- const filteredUsers = dummyUsers.filter(user =>
-  user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  user.username.toLowerCase().includes(searchQuery.toLowerCase())
+ const filteredUsers = data.filter(user =>
+  user.displayName && user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase())
 );
-
+  // Calculate the items for the current page
+const indexOfLastItem = currentPage * itemsPerPage;
+const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
 const totalItems = filteredUsers.length;
+
   // Function to handle page change
   const handlePageChange = (page) => {
     setCurrentPage(page);
