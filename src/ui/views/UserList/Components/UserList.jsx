@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import GridItem from '../../../components/Grid/GridItem';
 import GridContainer from '../../../components/Grid/GridContainer';
-
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -17,8 +16,6 @@ import Pagination from '../../../components/Pagination/Pagination';
 import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
 
-
-
 const useStyles = makeStyles(styles);
 
 export default function UserList(props) {
@@ -31,7 +28,6 @@ export default function UserList(props) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5; 
   const [searchQuery, setSearchQuery] = useState('');
-
 
 
   useEffect(() => {
@@ -72,10 +68,7 @@ export default function UserList(props) {
   return (
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
-
-  
         <Search onSearch={handleSearch} placeholder="Search users..." />
-
         <TableContainer component={Paper}>
           <Table className={classes.table} aria-label='simple table'>
             <TableHead>
@@ -114,8 +107,6 @@ export default function UserList(props) {
             </TableBody>
           </Table>
         </TableContainer>
-
-      
         <Pagination
           currentPage={currentPage}
           totalItems={totalItems}
