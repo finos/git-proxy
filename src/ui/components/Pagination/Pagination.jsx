@@ -2,7 +2,7 @@ import React from 'react';
 import './Pagination.css'; 
 
 export default function Pagination({ currentPage, totalItems = 0, itemsPerPage, onPageChange }) {
-  // Calculate the total number of pages
+
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const handlePageClick = (page) => {

@@ -15,15 +15,9 @@ import styles from '../../../assets/jss/material-dashboard-react/views/dashboard
 import { getUsers } from '../../../services/user';
 import Pagination from '../../../components/Pagination/Pagination';
 import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
-
 import Search from '../../../components/Search/Search';
 
 
-// const useStyles = makeStyles({
-//   table: {
-//     minWidth: 650,
-//   },
-// });
 
 const useStyles = makeStyles(styles);
 
@@ -34,18 +28,9 @@ export default function UserList(props) {
   const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
-
-
-    // Pagination states
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5; 
-    
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5; 
   const [searchQuery, setSearchQuery] = useState('');
-
-
-
-
-  // const openUser = (username) => navigate(`/admin/user/${username}`, { replace: true });
 
 
 
@@ -63,37 +48,32 @@ export default function UserList(props) {
   if (isError) return <div>Something went wrong...</div>;
 
 
-
-
-
- // Filter users based on the search query
- const filteredUsers = data.filter(user =>
+  const filteredUsers = data.filter(user =>
   user.displayName && user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
   user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase())
 );
-  // Calculate the items for the current page
-const indexOfLastItem = currentPage * itemsPerPage;
-const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
-const totalItems = filteredUsers.length;
 
-  // Function to handle page change
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalItems = filteredUsers.length;
+
+
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
 
 
-  // Function to handle search
   const handleSearch = (query) => {
     setSearchQuery(query);
-    setCurrentPage(1); // Reset to the first page when searching
+    setCurrentPage(1); 
   };
 
   return (
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
 
-        {/* Search Component */}
+  
         <Search onSearch={handleSearch} placeholder="Search users..." />
 
         <TableContainer component={Paper}>
@@ -135,7 +115,7 @@ const totalItems = filteredUsers.length;
           </Table>
         </TableContainer>
 
-        {/* Pagination Component */}
+      
         <Pagination
           currentPage={currentPage}
           totalItems={totalItems}

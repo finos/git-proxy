@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import './Search.css'; // Import the CSS file
+import './Search.css';
 
 export default function Search({ placeholder = 'Search...', onSearch }) {
   const [query, setQuery] = useState('');
@@ -15,7 +15,7 @@ export default function Search({ placeholder = 'Search...', onSearch }) {
 
   const handleKeyDown = (event) => {
     if (event.key === 'Enter') {
-      handleSearch(); // Trigger search on Enter
+      handleSearch(); 
     }
   };
 
@@ -26,8 +26,8 @@ export default function Search({ placeholder = 'Search...', onSearch }) {
         placeholder={placeholder}
         value={query}
         onChange={handleInputChange}
-        onKeyDown={handleKeyDown} // Add keydown event
-        className="search-input" // Apply the class
+        onKeyDown={handleKeyDown} 
+        className="search-input" 
       />
       <button onClick={handleSearch} className="search-button">
         Search
