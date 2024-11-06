@@ -24,11 +24,10 @@ export default function Repositories(props) {
   const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1); // Pagination state
-  const itemsPerPage = 5; // Set items per page
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5; 
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
-
   const openRepo = (repo) => navigate(`/admin/repo/${repo}`, { replace: true });
 
   useEffect(() => {
@@ -39,7 +38,7 @@ export default function Repositories(props) {
     }
     getRepos(setIsLoading, (data) => {
       setData(data);
-      setFilteredData(data); // Set both data and filteredData
+      setFilteredData(data); 
     }, setAuth, setIsError, query);
   }, [props]);
 
@@ -50,7 +49,7 @@ export default function Repositories(props) {
   };
 
   const handleSearch = (query) => {
-    setCurrentPage(1); // Reset to page 1 on new search
+    setCurrentPage(1); 
     if (!query) {
       setFilteredData(data);
     } else {
@@ -63,10 +62,7 @@ export default function Repositories(props) {
       );
     }
   };
-  const handlePageChange = (page) => setCurrentPage(page); // Update current page
-
-
-  // Calculate items for the current page
+  const handlePageChange = (page) => setCurrentPage(page); 
   const startIdx = (currentPage - 1) * itemsPerPage;
   const paginatedData = filteredData.slice(startIdx, startIdx + itemsPerPage);
 
@@ -86,13 +82,13 @@ export default function Repositories(props) {
       key='x'
       classes={classes}
       openRepo={openRepo}
-      data={paginatedData} // Use filteredData here
+      data={paginatedData} 
       repoButton={addrepoButton}
-      onSearch={handleSearch} // Pass handleSearch
-      currentPage={currentPage} // Pass current page
-      totalItems={filteredData.length} // Pass total items for pagination
-      itemsPerPage={itemsPerPage} // Pass items per page
-      onPageChange={handlePageChange} // Pass page change handler
+      onSearch={handleSearch} 
+      currentPage={currentPage} 
+      totalItems={filteredData.length} 
+      itemsPerPage={itemsPerPage} 
+      onPageChange={handlePageChange} 
     />
   );
 }
@@ -114,7 +110,7 @@ function GetGridContainerLayOut(props) {
     <GridContainer>
       {props.repoButton}
       <GridItem xs={12} sm={12} md={12}>
-        {/* Add Search component */}
+       
         <Search onSearch={props.onSearch} />
 
         <TableContainer
