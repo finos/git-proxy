@@ -11,6 +11,7 @@ const pushActionChain = [
   proc.push.writePack,
   proc.push.getDiff,
   proc.push.clearBareClone,
+  proc.push.checkCryptoImplementation,
   proc.push.scanDiff,
   proc.push.blockForAuth,
 ];
