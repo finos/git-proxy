@@ -4,6 +4,7 @@ const sinon = require('sinon');
 const {Action}=require('../src/proxy/actions/Action.js')
 const {Step}=require('../src/proxy/actions/Step.js')
 
+
 describe('Sensitive Data Detection', () => {
     let logStub;
 
@@ -19,7 +20,7 @@ describe('Sensitive Data Detection', () => {
         // Format file paths in diff format
         return filePaths.map(filePath => `diff --git a/${filePath} b/${filePath}`).join('\n');
     };
-
+// make sure the file types are added in proxyfiletypes in proxy.config.json
     it('should detect sensitive data in CSV file and block execution', async () => {
         const action = new Action('action_id', 'push', 'create', Date.now(), 'owner/repo');
         const step = new Step('diff');

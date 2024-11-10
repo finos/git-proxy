@@ -3,8 +3,11 @@ const csv = require('csv-parser');
 const XLSX = require('xlsx');
 const path = require('path');
 const Step = require('../../actions').Step;
+const config = require('../../../config');
+
 // const { exec: getDiffExec } = require('./getDiff');
 // Function to check for sensitive data patterns
+const commitConfig = config.getCommitConfig();
 const checkForSensitiveData = (cell) => {
     const sensitivePatterns = [
         /\d{3}-\d{2}-\d{4}/, // Social Security Number (SSN)
@@ -83,7 +86,7 @@ const checkLogJsonFiles = async (filePath) => {
                 return reject(err);
             }
             if (checkForSensitiveData(data)) {
-                console.log(`\x1b[33mSensitive data found in ${filePath}\x1b[0m`);
+                console.log(`\x1b[Sensitive data found in ${filePath}\x1b[0m`);
                 sensitiveDataFound = true;
             }
             resolve(sensitiveDataFound);
@@ -92,7 +95,14 @@ const checkLogJsonFiles = async (filePath) => {
 };
 // Function to parse the file based on its extension
 const parseFile = async (filePath) => {
+  
     const ext = path.extname(filePath).toLowerCase();
+    const FilestoCheck = commitConfig.diff.block.proxyFileTypes;
+    if(!FilestoCheck.includes(ext)){
+      
+        console.log(`${ext} should be included in CommitConfig for proxy Check!`);
+        return false;
+    }
     
     switch (ext) {
         case '.csv':
