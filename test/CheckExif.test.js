@@ -23,7 +23,7 @@ describe('Check EXIF Data From Images', () => {
     };
 
     const createDiffContentForFolder = async (folderPath) => {
-        let filePaths = [];
+        const filePaths = [];
         
         // Recursively read all files in the folder and subfolders
         const readFolder = async (dir) => {

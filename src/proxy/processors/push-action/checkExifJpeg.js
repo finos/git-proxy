@@ -1,6 +1,6 @@
-const fs = require('fs');
+// const fs = require('fs');
 const { ExifTool } = require('exiftool-vendored');
-const path = require('path');
+// const path = require('path');
 const Step = require('../../actions').Step;
 // const { exec: getDiffExec } = require('./getDiff');
 
@@ -62,8 +62,8 @@ const exec = async (req, action) => {
         if (filteredPaths.length > 0) {
             // Check for sensitive data in all files
             const sensitiveDataFound = await Promise.all(filePaths.map(getExifData));
-            const anySensitiveDataDetected = sensitiveDataFound.some(found => found);
-            const ExifDataBlock = false;
+            // const anySensitiveDataDetected = sensitiveDataFound.some(found => found);
+            const ExifDataBlock = !sensitiveDataFound;
 
             if (ExifDataBlock) {
                 step.blocked= true;
