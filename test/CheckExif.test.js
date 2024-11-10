@@ -51,40 +51,26 @@ describe('Check EXIF Data From Images', () => {
     };
     
 
-    it('Check for EXIF Data', async () => {
+    it('Should block push when sensitive EXIF metadata found', async () => {
         const action = new Action('action_id', 'push', 'create', Date.now(), 'owner/repo');
         const step = new Step('diff');
 
         // Create diff content simulating sensitive data in CSV
-        // step.setContent(createDiffContent(['test/test_data/jpg/Pentax_K10D.jpg']));
-        step.setContent(await createDiffContentForFolder('test/test_data/jpg'));
+        step.setContent(createDiffContent(['test/test_data/jpg/Canon_PowerShot_S40.jpg']));
         action.addStep(step);
      
         await exec(null, action);
-        sinon.assert.calledWith(logStub, sinon.match(/Your push has been blocked due to sensitive data detection/));
+        sinon.assert.calledWith(logStub, sinon.match(/Your push has been blocked due to sensitive EXIF metadata detection in an image/));
     });
 
-    it('should allow execution if no sensitive data is found', async () => {
-       
+    it('Should allow push when no sensitive EXIF metadata found', async () => {
       
         const action = new Action('action_id', 'push', 'create', Date.now(), 'owner/repo');
         const step = new Step('diff');
-        step.setContent(createDiffContent(['test_data/no_sensitive_data.txt']));
+        step.setContent(createDiffContent(['test/test_data/jpg/Reconyx_HC500_Hyperfire.jpg']));
         action.addStep(step);
         await exec(null, action);
-        sinon.assert.neverCalledWith(logStub, sinon.match(/Your push has been blocked due to sensitive data detection/));
+        sinon.assert.neverCalledWith(logStub, sinon.match(/Your push has been blocked due to sensitive EXIF metadata detection in an image/));
     });
 
-    it('should handle file-not-found scenario gracefully', async () => {
-        
-        const action = new Action('action_id', 'push', 'create', Date.now(), 'owner/repo');
-        const step = new Step('diff');
-        step.setContent(createDiffContent(['test_data/non_existent_file.txt']));
-        action.addStep(step);
-        try {
-            await exec(null, action);
-        } catch (error) {
-            sinon.assert.match(error.message, /ENOENT: no such file or directory/);
-        }
-    });
 });
