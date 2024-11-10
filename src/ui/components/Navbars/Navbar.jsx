@@ -1,12 +1,12 @@
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/core/styles';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
-import IconButton from '@material-ui/core/IconButton';
-import Hidden from '@material-ui/core/Hidden';
-import Menu from '@material-ui/icons/Menu';
+import makeStyles from '@mui/styles/makeStyles';
+import AppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import IconButton from '@mui/material/IconButton';
+import { Box } from '@mui/material';
+import { Menu } from '@mui/icons-material';
 import AdminNavbarLinks from './AdminNavbarLinks';
 import styles from '../../assets/jss/material-dashboard-react/components/headerStyle';
 
@@ -25,11 +25,15 @@ export default function Header(props) {
     return name;
   }
   const { color } = props;
-  const appBarClasses = classNames({
-    [' ' + classes[color]]: color,
-  });
+  const appBarClasses = classNames(
+    {
+      [classes[color]]: color,
+    },
+    classes.appBar,
+  );
+
   return (
-    <AppBar style={{ borderRadius: '0px', zIndex: 10 }} className={classes.appBar + appBarClasses}>
+    <AppBar style={{ borderRadius: '0px', zIndex: 10 }} className={appBarClasses}>
       <Toolbar className={classes.container}>
         <div className={classes.flex}>
           {/* Here we create navbar brand, based on route name */}
@@ -41,14 +45,18 @@ export default function Header(props) {
             {makeBrand()}
           </h2>
         </div>
-        <Hidden smDown implementation='css'>
+        <Box sx={{ display: { xs: 'none', md: 'block' } }} implementation='css'>
           <AdminNavbarLinks />
-        </Hidden>
-        <Hidden mdUp implementation='css'>
-          <IconButton color='inherit' aria-label='open drawer' onClick={props.handleDrawerToggle}>
-            <Menu />
-          </IconButton>
-        </Hidden>
+        </Box>
+        <IconButton
+          sx={{ display: { xs: 'inline-block', md: 'none' } }}
+          color='inherit'
+          aria-label='open drawer'
+          onClick={props.handleDrawerToggle}
+          size='large'
+        >
+          <Menu />
+        </IconButton>
       </Toolbar>
     </AppBar>
   );

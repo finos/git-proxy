@@ -2,13 +2,12 @@ import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
 import { NavLink } from 'react-router-dom';
-import { makeStyles } from '@material-ui/core/styles';
-import Drawer from '@material-ui/core/Drawer';
-import Hidden from '@material-ui/core/Hidden';
-import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
-import Icon from '@material-ui/core/Icon';
+import makeStyles from '@mui/styles/makeStyles';
+import Drawer from '@mui/material/Drawer';
+import List from '@mui/material/List';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import Icon from '@mui/material/Icon';
 import styles from '../../assets/jss/material-dashboard-react/components/sidebarStyle';
 
 const useStyles = makeStyles(styles);
@@ -87,42 +86,41 @@ export default function Sidebar(props) {
   );
   return (
     <div style={{ borderRight: '1px solid #d3d3d3' }}>
-      <Hidden mdUp implementation='css'>
-        <Drawer
-          variant='temporary'
-          anchor={props.rtlActive ? 'left' : 'right'}
-          open={props.open}
-          classes={{
-            paper: classNames(classes.drawerPaper, {
-              [classes.drawerPaperRTL]: props.rtlActive,
-            }),
-          }}
-          onClose={props.handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
-          }}
-        >
-          {brand}
-          <div className={classes.sidebarWrapper}>{links}</div>
-          <div className={classes.background} style={{ backgroundColor: background }} />
-        </Drawer>
-      </Hidden>
-      <Hidden smDown implementation='css'>
-        <Drawer
-          anchor={props.rtlActive ? 'right' : 'left'}
-          variant='permanent'
-          open
-          classes={{
-            paper: classNames(classes.drawerPaper, {
-              [classes.drawerPaperRTL]: props.rtlActive,
-            }),
-          }}
-        >
-          {brand}
-          <div className={classes.sidebarWrapper}>{links}</div>
-          <div className={classes.background} style={{ backgroundColor: background }} />
-        </Drawer>
-      </Hidden>
+      <Drawer
+        sx={{ display: { md: 'none', xs: 'block' } }}
+        variant='temporary'
+        anchor={props.rtlActive ? 'left' : 'right'}
+        open={props.open}
+        classes={{
+          paper: classNames(classes.drawerPaper, {
+            [classes.drawerPaperRTL]: props.rtlActive,
+          }),
+        }}
+        onClose={props.handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true, // Better open performance on mobile.
+        }}
+      >
+        {brand}
+        <div className={classes.sidebarWrapper}>{links}</div>
+        <div className={classes.background} style={{ backgroundColor: background }} />
+      </Drawer>
+
+      <Drawer
+        sx={{ display: { xs: 'none', md: 'block' } }}
+        anchor={props.rtlActive ? 'right' : 'left'}
+        variant='permanent'
+        open
+        classes={{
+          paper: classNames(classes.drawerPaper, {
+            [classes.drawerPaperRTL]: props.rtlActive,
+          }),
+        }}
+      >
+        {brand}
+        <div className={classes.sidebarWrapper}>{links}</div>
+        <div className={classes.background} style={{ backgroundColor: background }} />
+      </Drawer>
     </div>
   );
 }

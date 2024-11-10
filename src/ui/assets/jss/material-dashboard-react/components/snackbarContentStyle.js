@@ -16,10 +16,11 @@ import {
   primaryColor,
   warningColor,
   hexToRgb,
+  increaseSpecificity,
 } from '../../material-dashboard-react.js';
 
 const snackbarContentStyle = {
-  root: {
+  root: increaseSpecificity({
     ...defaultFont,
     flexWrap: 'unset',
     position: 'relative',
@@ -40,58 +41,58 @@ const snackbarContentStyle = {
       ', 0.12), 0 7px 8px -5px rgba(' +
       hexToRgb(whiteColor) +
       ', 0.2)',
-  },
-  top20: {
+  }),
+  top20: increaseSpecificity({
     top: '20px',
-  },
-  top40: {
+  }),
+  top40: increaseSpecificity({
     top: '40px',
-  },
-  info: {
+  }),
+  info: increaseSpecificity({
     backgroundColor: infoColor[3],
     color: whiteColor,
     ...infoBoxShadow,
-  },
-  success: {
+  }),
+  success: increaseSpecificity({
     backgroundColor: successColor[3],
     color: whiteColor,
     ...successBoxShadow,
-  },
-  warning: {
+  }),
+  warning: increaseSpecificity({
     backgroundColor: warningColor[3],
     color: whiteColor,
     ...warningBoxShadow,
-  },
-  danger: {
+  }),
+  danger: increaseSpecificity({
     backgroundColor: dangerColor[3],
     color: whiteColor,
     ...dangerBoxShadow,
-  },
-  primary: {
+  }),
+  primary: increaseSpecificity({
     backgroundColor: primaryColor[3],
     color: whiteColor,
     ...primaryBoxShadow,
-  },
-  rose: {
+  }),
+  rose: increaseSpecificity({
     backgroundColor: roseColor[3],
     color: whiteColor,
     ...roseBoxShadow,
-  },
-  message: {
+  }),
+  message: increaseSpecificity({
     padding: '0',
     display: 'block',
     maxWidth: '89%',
-  },
-  close: {
+  }),
+  close: increaseSpecificity({
     width: '11px',
     height: '11px',
-  },
-  iconButton: {
+  }),
+  iconButton: increaseSpecificity({
     width: '24px',
     height: '24px',
     padding: '0px',
-  },
-  icon: {
+  }),
+  icon: increaseSpecificity({
     display: 'block',
     left: '15px',
     position: 'absolute',
@@ -99,33 +100,33 @@ const snackbarContentStyle = {
     marginTop: '-15px',
     width: '30px',
     height: '30px',
-  },
-  infoIcon: {
+  }),
+  infoIcon: increaseSpecificity({
     color: infoColor[3],
-  },
-  successIcon: {
+  }),
+  successIcon: increaseSpecificity({
     color: successColor[3],
-  },
-  warningIcon: {
+  }),
+  warningIcon: increaseSpecificity({
     color: warningColor[3],
-  },
-  dangerIcon: {
+  }),
+  dangerIcon: increaseSpecificity({
     color: dangerColor[3],
-  },
-  primaryIcon: {
+  }),
+  primaryIcon: increaseSpecificity({
     color: primaryColor[3],
-  },
-  roseIcon: {
+  }),
+  roseIcon: increaseSpecificity({
     color: roseColor[3],
-  },
-  iconMessage: {
+  }),
+  iconMessage: increaseSpecificity({
     paddingLeft: '50px',
     display: 'block',
-  },
-  actionRTL: {
+  }),
+  actionRTL: increaseSpecificity({
     marginLeft: '-8px',
     marginRight: 'auto',
-  },
+  }),
 };
 
 export default snackbarContentStyle;

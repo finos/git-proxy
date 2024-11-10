@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
+import makeStyles from '@mui/styles/makeStyles';
 import { useNavigate } from 'react-router-dom';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableContainer from '@material-ui/core/TableContainer';
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableContainer from '@mui/material/TableContainer';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { getRepos } from '../../../services/repo';
 import GridContainer from '../../../components/Grid/GridContainer';

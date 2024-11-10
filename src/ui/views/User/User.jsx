@@ -5,14 +5,13 @@ import GridContainer from '../../components/Grid/GridContainer';
 import Card from '../../components/Card/Card';
 import CardBody from '../../components/Card/CardBody';
 import Button from '../../components/CustomButtons/Button';
-import FormLabel from '@material-ui/core/FormLabel';
+import FormLabel from '@mui/material/FormLabel';
 import { getUser, updateUser, getUserLoggedIn } from '../../services/user';
-import { makeStyles } from '@material-ui/core/styles';
+import makeStyles from '@mui/styles/makeStyles';
 
 import { LogoGithubIcon } from '@primer/octicons-react';
-import CloseRounded from '@material-ui/icons/CloseRounded';
-import { Check, Save } from '@material-ui/icons';
-import { TextField } from '@material-ui/core';
+import { Check, Save, CloseRounded } from '@mui/icons-material';
+import { TextField } from '@mui/material';
 
 const useStyles = makeStyles((theme) => ({
   root: {

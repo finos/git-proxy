@@ -1,10 +1,10 @@
 import React from 'react';
 import classNames from 'classnames';
 import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/core/styles';
-import Snack from '@material-ui/core/Snackbar';
-import IconButton from '@material-ui/core/IconButton';
-import Close from '@material-ui/icons/Close';
+import makeStyles from '@mui/styles/makeStyles';
+import Snack from '@mui/material/Snackbar';
+import IconButton from '@mui/material/IconButton';
+import { Close } from '@mui/icons-material';
 import styles from '../../assets/jss/material-dashboard-react/components/snackbarContentStyle';
 
 const useStyles = makeStyles(styles);
@@ -24,7 +24,7 @@ export default function Snackbar(props) {
         aria-label='Close'
         color='inherit'
         onClick={() => props.closeNotification()}
-      >
+        size="large">
         <Close className={classes.close} />
       </IconButton>,
     ];

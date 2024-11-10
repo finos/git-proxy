@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import Dialog from '@material-ui/core/Dialog';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogActions from '@material-ui/core/DialogActions';
-import { CheckCircle, ErrorOutline } from '@material-ui/icons';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import { CheckCircle, ErrorOutline } from '@mui/icons-material';
 import Button from '../../../components/CustomButtons/Button';
 import AttestationForm from './AttestationForm';
 
