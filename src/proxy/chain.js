@@ -10,7 +10,7 @@ const pushActionChain = [
   proc.push.pullRemote,
   proc.push.writePack,
   proc.push.getDiff,
-  proc.push.checkEXIFJpeg,
+  proc.push.checkExifJpeg,
   proc.push.clearBareClone,
   proc.push.scanDiff,
   proc.push.blockForAuth,

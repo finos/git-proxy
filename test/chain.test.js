@@ -2,6 +2,7 @@ const chai = require('chai');
 const sinon = require('sinon');
 const { PluginLoader } = require('../src/plugin');
 
+
 chai.should();
 const expect = chai.expect;
 
@@ -26,6 +27,7 @@ const mockPushProcessors = {
   writePack: sinon.stub(),
   getDiff: sinon.stub(),
   clearBareClone: sinon.stub(),
+  checkExifJpeg : sinon.stub(),
   scanDiff: sinon.stub(),
   blockForAuth: sinon.stub(),
 };
@@ -39,6 +41,7 @@ mockPushProcessors.checkIfWaitingAuth.displayName = 'checkIfWaitingAuth';
 mockPushProcessors.pullRemote.displayName = 'pullRemote';
 mockPushProcessors.writePack.displayName = 'writePack';
 mockPushProcessors.getDiff.displayName = 'getDiff';
+mockPushProcessors.checkEXIFJpeg.displayName = 'checkEXIFJpeg';
 mockPushProcessors.clearBareClone.displayName = 'clearBareClone';
 mockPushProcessors.scanDiff.displayName = 'scanDiff';
 mockPushProcessors.blockForAuth.displayName = 'blockForAuth';
@@ -104,6 +107,7 @@ describe('proxy chain', function () {
     mockPushProcessors.parsePush.resolves(continuingAction);
     mockPushProcessors.checkRepoInAuthorisedList.resolves(continuingAction);
     mockPushProcessors.checkCommitMessages.resolves(continuingAction);
+    mockPushProcessors.checkEXIFJpeg.resolves(continuingAction);
     mockPushProcessors.checkAuthorEmails.resolves(continuingAction);
     mockPushProcessors.checkUserPushPermission.resolves(continuingAction);
 
@@ -120,6 +124,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.checkIfWaitingAuth.called).to.be.true;
     expect(mockPushProcessors.pullRemote.called).to.be.false;
     expect(mockPushProcessors.audit.called).to.be.true;
+    expect(mockPushProcessors.checkEXIFJpeg.called).to.be.false;
 
     expect(result.type).to.equal('push');
     expect(result.allowPush).to.be.false;
@@ -135,7 +140,9 @@ describe('proxy chain', function () {
     mockPushProcessors.checkCommitMessages.resolves(continuingAction);
     mockPushProcessors.checkAuthorEmails.resolves(continuingAction);
     mockPushProcessors.checkUserPushPermission.resolves(continuingAction);
+    mockPushProcessors.checkEXIFJpeg.resolves(continuingAction);
     // this stops the chain from further execution
+
     mockPushProcessors.checkIfWaitingAuth.resolves({ type: 'push', continue: () => true, allowPush: true });
     const result = await chain.executeChain(req);
 
@@ -148,6 +155,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.checkIfWaitingAuth.called).to.be.true;
     expect(mockPushProcessors.pullRemote.called).to.be.false;
     expect(mockPushProcessors.audit.called).to.be.true;
+    expect(mockPushProcessors.checkEXIFJpeg.called).to.be.false;
 
     expect(result.type).to.equal('push');
     expect(result.allowPush).to.be.true;
@@ -167,9 +175,11 @@ describe('proxy chain', function () {
     mockPushProcessors.pullRemote.resolves(continuingAction);
     mockPushProcessors.writePack.resolves(continuingAction);
     mockPushProcessors.getDiff.resolves(continuingAction);
+    mockPushProcessors.checkEXIFJpeg.resolves(continuingAction);
     mockPushProcessors.clearBareClone.resolves(continuingAction);
     mockPushProcessors.scanDiff.resolves(continuingAction);
     mockPushProcessors.blockForAuth.resolves(continuingAction);
+    
 
     const result = await chain.executeChain(req);
 
@@ -183,6 +193,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.pullRemote.called).to.be.true;
     expect(mockPushProcessors.writePack.called).to.be.true;
     expect(mockPushProcessors.getDiff.called).to.be.true;
+    expect(mockPushProcessors.checkEXIFJpeg.called).to.be.true;
     expect(mockPushProcessors.clearBareClone.called).to.be.true;
     expect(mockPushProcessors.scanDiff.called).to.be.true;
     expect(mockPushProcessors.blockForAuth.called).to.be.true;
