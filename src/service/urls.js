@@ -10,4 +10,11 @@ module.exports = {
     );
     return config.getDomains().proxy ?? defaultURL;
   },
+  getServiceUIURL: (req) => {
+    const defaultURL = `${req.protocol}://${req.headers.host}`.replace(
+      `:${PROXY_HTTP_PORT}`,
+      `:${UI_PORT}`,
+    );
+    return config.getDomains().service ?? defaultURL;
+  },
 };
