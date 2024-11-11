@@ -77,7 +77,11 @@
       "block": {
         "literals": [],
         "patterns": [],
-        "providers": {}
+        "providers": {},
+        "aiMlUsage": {
+          "enabled": true,
+          "blockPatterns": ["modelWeights", "largeDatasets", "aiLibraries", "configKeys", "aiFunctions"]
+        }
       }
     }
   },
