@@ -4,13 +4,18 @@ import GridContainer from '../../components/Grid/GridContainer';
 import PushesTable from './components/PushesTable';
 import CustomTabs from '../../components/CustomTabs/CustomTabs';
 
+
 import { Visibility, CheckCircle, Cancel, Block } from '@material-ui/icons';
 
 export default function Dashboard() {
+
+
+
   return (
     <div>
       <GridContainer>
         <GridItem xs={12} sm={12} md={12}>
+        
           <CustomTabs
             headerColor='primary'
             tabs={[
@@ -23,23 +28,27 @@ export default function Dashboard() {
                     authorised={false}
                     rejected={false}
                     canceled={false}
+                    
                   />
                 ),
               },
               {
                 tabName: 'Approved',
                 tabIcon: CheckCircle,
-                tabContent: <PushesTable authorised={true} />,
+                tabContent: <PushesTable 
+                  authorised={true}
+                  
+                    />,
               },
               {
                 tabName: 'Canceled',
                 tabIcon: Cancel,
-                tabContent: <PushesTable authorised={false} rejected={false} canceled={true} />,
+                tabContent: <PushesTable authorised={false} rejected={false} canceled={true}  />,
               },
               {
                 tabName: 'Rejected',
                 tabIcon: Block,
-                tabContent: <PushesTable authorised={false} rejected={true} canceled={false} />,
+                tabContent: <PushesTable authorised={false} rejected={true} canceled={false}  />,
               },
             ]}
           />
