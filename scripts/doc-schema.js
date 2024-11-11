@@ -20,6 +20,7 @@ try {
   console.log(genDocOutput);
 
   const schemaDoc = readFileSync(`${tempdir}${sep}schema.md`, 'utf-8')
+    .replace(/\s\s\n\n<\/summary>/g, '\n</summary>')
     .replace(/# GitProxy configuration file/g, '# Schema Reference'); // https://github.com/finos/git-proxy/pull/327#discussion_r1377343213
   const docString = `---
 title: Schema Reference
