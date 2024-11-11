@@ -1,42 +1,33 @@
-import React, { useState } from 'react';
-import PropTypes from 'prop-types';
+import React from 'react';
+import { TextField } from '@material-ui/core';
 import './Search.css';
+import InputAdornment from '@material-ui/core/InputAdornment';
+import SearchIcon from '@material-ui/icons/Search'; 
 
-export default function Search({ placeholder = 'Search...', onSearch }) {
-  const [query, setQuery] = useState('');
 
-  const handleInputChange = (e) => {
-    setQuery(e.target.value);
-  };
-
-  const handleSearch = () => {
-    onSearch(query);
-  };
-
-  const handleKeyDown = (event) => {
-    if (event.key === 'Enter') {
-      handleSearch(); 
-    }
+export default function Search({ onSearch }) {
+  const handleSearchChange = (event) => {
+    const query = event.target.value;
+    onSearch(query);  
   };
 
   return (
-    <div className="search-container">
-      <input
-        type="text"
-        placeholder={placeholder}
-        value={query}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown} 
-        className="search-input" 
+    <div style={{ margin: '20px 0' }}>
+      <TextField
+        label="Search"
+        variant="outlined"
+        fullWidth
+        margin="normal"
+        onChange={handleSearchChange}  
+        placeholder="Search..."
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon />
+            </InputAdornment>
+          ),
+        }}
       />
-      <button onClick={handleSearch} className="search-button">
-        Search
-      </button>
     </div>
   );
 }
-
-Search.propTypes = {
-  placeholder: PropTypes.string,
-  onSearch: PropTypes.func.isRequired,
-};
