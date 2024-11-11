@@ -1,13 +1,13 @@
 {
   "name": "@finos/git-proxy",
-  "version": "1.4.0",
+  "version": "1.5.1",
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
     "cli": "node ./packages/git-proxy-cli/index.js",
     "client": "vite --config vite.config.js",
     "clientinstall": "npm install --prefix client",
     "server": "node index.js",
-    "start": "concurrently 'npm run server' 'npm run client'",
+    "start": "concurrently \"npm run server\" \"npm run client\"",
     "build": "vite build",
     "test": "NODE_ENV=test mocha --exit",
     "test-coverage": "nyc npm run test",
