@@ -4,7 +4,7 @@ const config = require('../../../config');
 
 const commitConfig = config.getCommitConfig();
 const validExtensions = ['.jpeg', '.png', '.jpg', '.tiff'];
-//Make sure you have modified the proxy.config.json;
+// Make sure you have modified the proxy.config.json;
 // Function to check sensitive EXIF data
 const checkSensitiveExifData = (metadata) => {
     let allSafe = true;
@@ -33,7 +33,7 @@ const getExifData = async (filePath) => {
         const metadata = await exifTool.read(filePath);
         return metadata ? checkSensitiveExifData(metadata) : true;
     } catch (error) {
-        log(`Error reading EXIF data from ${filePath}: ${error.message}`);
+        console.log(`Error reading EXIF data from ${filePath}: ${error.message}`);
         return false;
     } finally {
         await exifTool.end();
@@ -59,12 +59,12 @@ const extractFilePathsFromDiff = (diffContent) => {
 const exec = async (req, action, log = console.log) => {
 
     const diffStep = action.steps.find((s) => s.stepName === 'diff');
-    const step = new Step('checkExifDataFromImage');
-    const allowed_file_type = commitConfig.diff.block.ProxyFileTypes;
+    const step = new Step('checkExifJpeg');
+    const allowedFileType = commitConfig.diff.block.ProxyFileTypes;
 
     if (diffStep && diffStep.content) {
         const filePaths = extractFilePathsFromDiff(diffStep.content);
-        const filteredPaths = filePaths.filter(path => validExtensions.some(ext => path.endsWith(ext) && allowed_file_type.includes(ext)));
+        const filteredPaths = filePaths.filter(path => validExtensions.some(ext => path.endsWith(ext) && allowedFileType.includes(ext)));
 
         if (filteredPaths.length > 0) {
             const exifResults = await Promise.all(filteredPaths.map(filePath => getExifData(filePath)));
@@ -87,5 +87,5 @@ const exec = async (req, action, log = console.log) => {
     return action;
 };
 
-exec.displayName = 'logFileChanges.exec';
+exec.displayName = 'CheckExif.exec';
 module.exports = { exec };
