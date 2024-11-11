@@ -2,13 +2,13 @@ import React from 'react';
 import { TextField } from '@material-ui/core';
 import './Search.css';
 import InputAdornment from '@material-ui/core/InputAdornment';
-import SearchIcon from '@material-ui/icons/Search'; // Import the Search Icon
+import SearchIcon from '@material-ui/icons/Search'; 
 
 
 export default function Search({ onSearch }) {
   const handleSearchChange = (event) => {
     const query = event.target.value;
-    onSearch(query);  // Pass the search query to parent component
+    onSearch(query);  
   };
 
   return (
@@ -18,7 +18,7 @@ export default function Search({ onSearch }) {
         variant="outlined"
         fullWidth
         margin="normal"
-        onChange={handleSearchChange}  // Trigger onSearch on every change
+        onChange={handleSearchChange}  
         placeholder="Search..."
         InputProps={{
           startAdornment: (
