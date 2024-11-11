@@ -77,9 +77,12 @@
       "block": {
         "literals": [],
         "patterns": [],
-        "providers": {}
+        "providers": {},
+        "ProxyFileTypes" : [".jpg"]
+        
       }
     }
+   
   },
   "attestationConfig": {
     "questions": [
@@ -92,6 +95,7 @@
       }
     ]
   },
+  "domains": {},
   "privateOrganizations": [],
   "urlShortener": "",
   "contactEmail": "",

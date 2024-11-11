@@ -1,6 +1,7 @@
 .header-github-link:hover,
 .header-star-link:hover,
 .header-fork-link:hover,
+.header-slack-link:hover,
 .header-read-doc-link:hover {
   opacity: 0.6;
 }
