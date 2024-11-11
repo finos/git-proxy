@@ -1,39 +1,18 @@
-/* Search.css */
-
-.search-container {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-  margin-top: 10px;
-  margin-right: 10 px;
+.search-bar {
+  width: 100%;
+  max-width:100%; /* Sets a maximum width for the bar, adjust as needed */
+  margin: 0 auto 20px auto; /* Centering the search bar with margin */
 }
 
 .search-input {
+  width: 100%;
   padding: 10px;
-  margin-right: 8px;
+  font-size: 16px;
   border: 1px solid #ccc;
-  border-radius: 10px;
-  width: 200px; /* Adjust width as needed */
-  font-size: 14px;
-  transition: border-color 0.3s;
+  border-radius: 4px;
+  box-sizing: border-box; /* Ensures padding is included in the width calculation */
 }
 
 .search-input:focus {
-  border-color: #007bff; /* Change to your desired focus color */
-  outline: none; /* Remove default outline */
-}
-
-.search-button {
-  padding: 10px 16px;
-  border: none;
-  border-radius: 10px;
-  background-color: #007bff; /* Change to your desired button color */
-  color: white;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s;
-}
-
-.search-button:hover {
-  background-color: #0056b3; /* Darker shade for hover effect */
+  border-color: #007bff; /* Change border color when focused */
 }
