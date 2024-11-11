@@ -16,7 +16,7 @@ const exec = async (req, action) => {
     }
 
     if (!fs.existsSync(action.proxyGitPath)) {
-      fs.mkdirSync(action.proxyGitPath, '0777', true);
+      fs.mkdirSync(action.proxyGitPath, '0755', true);
     }
 
     const cmd = `git clone ${action.url} --bare`;
