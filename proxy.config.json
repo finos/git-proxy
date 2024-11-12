@@ -92,8 +92,10 @@
       }
     ]
   },
+  "domains": {},
   "privateOrganizations": [],
   "urlShortener": "",
   "contactEmail": "",
-  "csrfProtection": true
+  "csrfProtection": true,
+  "plugins": []
 }
