@@ -18,6 +18,7 @@ let _sessionMaxAgeHours = defaultSettings.sessionMaxAgeHours;
 let _tlsEnabled = defaultSettings.tls.enabled;
 let _tlsKeyPath = defaultSettings.tls.key;
 let _tlsCertPath = defaultSettings.tls.cert;
+let _plugins = defaultSettings.plugins;
 let _commitConfig = defaultSettings.commitConfig;
 let _attestationConfig = defaultSettings.attestationConfig;
 let _privateOrganizations = defaultSettings.privateOrganizations;
@@ -162,6 +163,14 @@ const getCSRFProtection = () => {
   return _csrfProtection;
 };
 
+// Get loadable push plugins
+const getPlugins = () => {
+  if (_userSettings && _userSettings.plugins) {
+    _plugins = _userSettings.plugins;
+  }
+  return _plugins;
+};
+
 const getTLSKeyPath = () => {
   if (_userSettings && _userSettings.tlsKeyPemPath) {
     console.log(
@@ -198,6 +207,13 @@ const getTLSEnabled = () => {
   return _tlsEnabled;
 };
 
+const getDomains = () => {
+  if (_userSettings && _userSettings.domains) {
+    _domains = _userSettings.domains;
+  }
+  return _domains;
+};
+
 exports.getAPIs = getAPIs;
 exports.getProxyUrl = getProxyUrl;
 exports.getAuthorisedList = getAuthorisedList;
@@ -213,6 +229,8 @@ exports.getPrivateOrganizations = getPrivateOrganizations;
 exports.getURLShortener = getURLShortener;
 exports.getContactEmail = getContactEmail;
 exports.getCSRFProtection = getCSRFProtection;
+exports.getPlugins = getPlugins;
 exports.getTLSKeyPath = getTLSKeyPath;
 exports.getTLSCertPath = getTLSCertPath;
 exports.getTLSEnabled = getTLSEnabled;
+exports.getDomains = getDomains;
