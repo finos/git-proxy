@@ -98,7 +98,7 @@
   "contactEmail": "",
   "csrfProtection": true,
   "tls": {
-    "enabled": false,
+    "enabled": true,
     "key": "certs/key.pem",
     "cert": "certs/cert.pem"
   }
