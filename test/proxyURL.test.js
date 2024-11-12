@@ -2,7 +2,7 @@ const chai = require('chai');
 const sinon = require('sinon');
 const express = require('express');
 const chaiHttp = require('chai-http');
-const { getProxyURL } = require('../src/service/proxyURL');
+const { getProxyURL } = require('../src/service/urls');
 const config = require('../src/config');
 
 chai.use(chaiHttp);
