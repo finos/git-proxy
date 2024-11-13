@@ -1,4 +1,4 @@
-const { PushActionPlugin } = require('@osp0/finos-git-proxy/plugin');
+const { PushActionPlugin } = require('@finos/git-proxy/src/plugin');
 
 // test default export
 module.exports = new PushActionPlugin(async (req, action) => {
