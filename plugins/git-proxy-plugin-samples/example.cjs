@@ -4,8 +4,8 @@
  */
 
 // Peer dependencies; its expected that these deps exist on Node module path if you've installed @finos/git-proxy
-const { PushActionPlugin } = require('@finos/git-proxy/plugin');
-const { Step } = require('@finos/git-proxy/proxy/actions');
+const { PushActionPlugin } = require('@finos/git-proxy/src/plugin');
+const { Step } = require('@finos/git-proxy/src/proxy/actions');
 'use strict';
 
 /**
