@@ -8,6 +8,7 @@ const service = require('../src/service');
 chai.use(chaiHttp);
 chai.should();
 const expect = chai.expect;
+const should = chai.should();
 
 describe('user creation', async () => {
   let app;
