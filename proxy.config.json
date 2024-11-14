@@ -77,9 +77,12 @@
       "block": {
         "literals": [],
         "patterns": [],
-        "providers": {}
+        "providers": {},
+        "ProxyFileTypes" : [".jpg"]
+        
       }
     }
+   
   },
   "attestationConfig": {
     "questions": [
