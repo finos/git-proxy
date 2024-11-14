@@ -1,0 +1,25 @@
+[
+ {
+  "Description": "AWS Access Key",
+  "StartLine": 2,
+  "EndLine": 2,
+  "StartColumn": 18,
+  "EndColumn": 37,
+  "Match": "AKIAIOSFODNN8EXAMPLE",
+  "Secret": "AKIAIOSFODNN8EXAMPLE",
+  "File": "C:/Users/ingle/Desktop/CitiHackthon/git-proxy/test/test_data/sensitive_data.js",
+  "SymlinkFile": "",
+  "Commit": "",
+  "Entropy": 3.6841838,
+  "Author": "",
+  "Email": "",
+  "Date": "",
+  "Message": "",
+  "Tags": [
+   "aws",
+   "access_key"
+  ],
+  "RuleID": "aws-access-key",
+  "Fingerprint": "C:/Users/ingle/Desktop/CitiHackthon/git-proxy/test/test_data/sensitive_data.js:aws-access-key:2"
+ }
+]
