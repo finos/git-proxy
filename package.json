@@ -1,13 +1,13 @@
 {
   "name": "@finos/git-proxy",
-  "version": "1.4.0",
+  "version": "1.5.2",
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
     "cli": "node ./packages/git-proxy-cli/index.js",
     "client": "vite --config vite.config.js",
     "clientinstall": "npm install --prefix client",
     "server": "node index.js",
-    "start": "concurrently 'npm run server' 'npm run client'",
+    "start": "concurrently \"npm run server\" \"npm run client\"",
     "build": "vite build",
     "test": "NODE_ENV=test mocha --exit",
     "test-coverage": "nyc npm run test",
@@ -22,11 +22,6 @@
   "bin": {
     "git-proxy": "./index.js",
     "git-proxy-all": "concurrently 'npm run server' 'npm run client'"
-  },
-  "exports": {
-    "./plugin": "./src/plugin.js",
-    "./proxy/actions": "./src/proxy/actions/index.js",
-    "./src/config/env": "./src/config/env.js"
   },
   "workspaces": [
     "./packages/git-proxy-cli"
@@ -63,6 +58,7 @@
     "moment": "^2.29.4",
     "mongodb": "^5.0.0",
     "nodemailer": "^6.6.1",
+    "parse-diff": "^0.11.1",
     "passport": "^0.7.0",
     "passport-activedirectory": "^1.0.4",
     "passport-local": "^1.0.0",
@@ -72,6 +68,7 @@
     "react-dom": "^16.13.1",
     "react-html-parser": "^2.0.2",
     "react-router-dom": "6.26.2",
+    "simple-git": "^3.25.0",
     "uuid": "^10.0.0",
     "yargs": "^17.7.2"
   },
