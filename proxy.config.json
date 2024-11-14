@@ -83,6 +83,10 @@
     },
     "checkForSecrets": {
       "enabled": false
+    },
+    "aiMlUsage": {
+          "enabled": true,
+          "blockPatterns": ["modelWeights", "largeDatasets", "aiLibraries", "configKeys", "aiFunctions"]
     }
   },
   "attestationConfig": {
