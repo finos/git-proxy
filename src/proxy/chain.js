@@ -10,6 +10,7 @@ const pushActionChain = [
   proc.push.pullRemote,
   proc.push.writePack,
   proc.push.getDiff,
+  proc.push.checkForAiMlUsage,
   proc.push.clearBareClone,
   proc.push.scanDiff,
   proc.push.blockForAuth,
