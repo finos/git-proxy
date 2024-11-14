@@ -8,6 +8,7 @@ exports.scanDiff = require('./scanDiff').exec;
 exports.blockForAuth = require('./blockForAuth').exec;
 exports.checkIfWaitingAuth = require('./checkIfWaitingAuth').exec;
 exports.checkCommitMessages = require('./checkCommitMessages').exec;
+console.log(__dirname);
 exports.checkAuthorEmails = require('./checkAuthorEmails').exec;
 exports.checkUserPushPermission = require('./checkUserPushPermission').exec;
 exports.clearBareClone = require('./clearBareClone').exec;
