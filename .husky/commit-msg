@@ -1,3 +1,2 @@
 
-
 npx --no -- commitlint --edit ${1} && npm run lint

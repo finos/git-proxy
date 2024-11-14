@@ -1,0 +1,123 @@
+version = 1
+
+# Rule for AWS Access Key
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key"
+regex = '''AKIA[A-Z0-9]{16}'''
+tags = ["aws", "access_key"]
+
+# Rule for AWS Secret Key
+[[rules]]
+id = "aws-secret-key"
+description = "AWS Secret Key"
+regex = '''(?i)aws(.{0,20})?['\"][0-9a-zA-Z/+]{40}['\"]'''
+tags = ["aws", "secret_key"]
+
+# Rule for Google Cloud API Key
+[[rules]]
+id = "google-api-key"
+description = "Google API Key"
+regex = '''AIza[0-9A-Za-z\\-_]{35}'''
+tags = ["google", "api_key"]
+
+# Rule for Slack Token
+[[rules]]
+id = "slack-api-token"
+description = "Slack API Token"
+regex = '''xox[baprs]-[0-9]{12}-[0-9]{12}-[a-zA-Z0-9]{24}'''
+tags = ["slack", "api_token"]
+
+# Rule for GitHub Token
+[[rules]]
+id = "github-token"
+description = "GitHub Personal Access Token"
+regex = '''ghp_[0-9A-Za-z]{36}'''
+tags = ["github", "token"]
+
+# Rule for Basic Authentication in URL
+[[rules]]
+id = "basic-auth-url"
+description = "Basic Authentication in URL"
+regex = '''[a-zA-Z0-9]+:[a-zA-Z0-9]+@'''
+tags = ["auth", "basic_auth", "url"]
+
+# Rule for Private Key
+[[rules]]
+id = "private-key"
+description = "Private Key"
+regex = '''-----BEGIN (EC|RSA|DSA|OPENSSH|PGP|ENCRYPTED) PRIVATE KEY-----'''
+tags = ["key", "private_key"]
+
+# Rule for Database URL
+[[rules]]
+id = "database-url"
+description = "Database Connection String"
+regex = '''(mongodb|postgres|mysql|redis|mssql|oracle|sqlite)://[^\\s:@]+:[^\\s:@]+@[^\\s:@]+:[0-9]+/[^\\s:@]+'''
+tags = ["database", "connection_string"]
+
+# Rule for Generic API Key (alphanumeric 32+ chars)
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key (alphanumeric, 32+ characters)"
+regex = '''[A-Za-z0-9_]{32,}'''
+tags = ["generic", "api_key"]
+
+# Rule for Heroku API Key
+[[rules]]
+id = "heroku-api-key"
+description = "Heroku API Key"
+regex = '''(?i)heroku(.{0,20})?['\"][0-9a-fA-F]{32}['\"]'''
+tags = ["heroku", "api_key"]
+
+# Rule for Stripe API Key
+[[rules]]
+id = "stripe-api-key"
+description = "Stripe API Key"
+regex = '''sk_live_[0-9a-zA-Z]{24}'''
+tags = ["stripe", "api_key"]
+
+# Rule for Twilio API Key
+[[rules]]
+id = "twilio-api-key"
+description = "Twilio API Key"
+regex = '''AC[a-zA-Z0-9_\\-]{32}'''
+tags = ["twilio", "api_key"]
+
+# Rule for Mailgun API Key
+[[rules]]
+id = "mailgun-api-key"
+description = "Mailgun API Key"
+regex = '''key-[0-9a-zA-Z]{32}'''
+tags = ["mailgun", "api_key"]
+
+# Rule for Passwords (generic patterns like "password=")
+[[rules]]
+id = "generic-password"
+description = "Potential Password Assignment"
+regex = '''(?i)password\\s*=\\s*['"][^'"]+['"]'''
+tags = ["password"]
+
+# Rule for Salesforce OAuth Token
+[[rules]]
+id = "salesforce-oauth-token"
+description = "Salesforce OAuth Token"
+regex = '''00D[A-Za-z0-9]{15,18}'''
+tags = ["salesforce", "oauth_token"]
+
+# Rule for PayPal Braintree Access Token
+[[rules]]
+id = "braintree-access-token"
+description = "PayPal Braintree Access Token"
+regex = '''access_token\\$production\\$[0-9a-z]{16}\\$[0-9a-f]{32}'''
+tags = ["braintree", "access_token"]
+
+# Rule for SendGrid API Key
+[[rules]]
+id = "sendgrid-api-key"
+description = "SendGrid API Key"
+regex = '''SG\\.[0-9A-Za-z\\-_]{22}\\.[0-9A-Za-z\\-_]{43}'''
+tags = ["sendgrid", "api_key"]
+
+
+# additional rules can be added here

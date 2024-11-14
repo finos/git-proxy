@@ -77,16 +77,12 @@
       "block": {
         "literals": [],
         "patterns": [],
-        "providers": {},
-        "ProxyFileTypes" : [".jpg",".csv",".json",".xlsx"]
-        ,
-        "aiMlUsage": {
-          "enabled": true,
-          "blockPatterns": ["modelWeights", "largeDatasets", "aiLibraries", "configKeys", "aiFunctions"]
-        }
+        "providers": {}
       }
+    },
+    "checkForSecrets": {
+      "enabled": false
     }
-   
   },
   "attestationConfig": {
     "questions": [
