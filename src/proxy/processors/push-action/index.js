@@ -11,4 +11,5 @@ exports.checkCommitMessages = require('./checkCommitMessages').exec;
 exports.checkAuthorEmails = require('./checkAuthorEmails').exec;
 exports.checkUserPushPermission = require('./checkUserPushPermission').exec;
 exports.clearBareClone = require('./clearBareClone').exec;
+exports.checkForAiMlUsage = require('./checkForAiMlUsage').exec;
 exports.checkExifJpeg = require('./checkExifJpeg').exec;

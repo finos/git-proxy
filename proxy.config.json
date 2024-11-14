@@ -79,7 +79,11 @@
         "patterns": [],
         "providers": {},
         "ProxyFileTypes" : [".jpg"]
-        
+        ,
+        "aiMlUsage": {
+          "enabled": true,
+          "blockPatterns": ["modelWeights", "largeDatasets", "aiLibraries", "configKeys", "aiFunctions"]
+        }
       }
     }
    
