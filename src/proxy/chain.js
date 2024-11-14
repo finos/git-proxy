@@ -11,12 +11,13 @@ const pushActionChain = [
   proc.push.writePack,
   proc.push.getDiff,
   proc.push.checkForAiMlUsage,
-  proc.push.checkExifJpeg,
-  
+  proc.push.checkExifJpeg,              
+  proc.push.checkSensitiveData,     
   proc.push.clearBareClone,
   proc.push.scanDiff,
   proc.push.blockForAuth,
 ];
+
 
 const pullActionChain = [proc.push.checkRepoInAuthorisedList];
 

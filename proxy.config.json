@@ -78,7 +78,7 @@
         "literals": [],
         "patterns": [],
         "providers": {},
-        "ProxyFileTypes" : [".jpg"]
+        "ProxyFileTypes" : [".jpg",".csv",".json",".xlsx"]
         ,
         "aiMlUsage": {
           "enabled": true,
