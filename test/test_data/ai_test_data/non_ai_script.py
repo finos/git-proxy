@@ -1,0 +1,1 @@
+print("Hello World")  # No AI/ML content
