@@ -14,8 +14,6 @@ import styles from '../../../assets/jss/material-dashboard-react/views/dashboard
 import { getPushes } from '../../../services/git-push';
 import { KeyboardArrowRight } from '@material-ui/icons';
 
-
-
 export default function PushesTable(props) {
   const useStyles = makeStyles(styles);
   const classes = useStyles();
