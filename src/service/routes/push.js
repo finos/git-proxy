@@ -171,7 +171,7 @@ router.post('/:id/cancel', async (req, res) => {
       console.log(`user ${req.user.username} not authorised to cancel push request for ${id}`);
       res.status(401).send({
         message:
-          'User ${req.user.username)} not authorised to cancel push requests on this project.',
+          `User ${req.user.username} not authorised to cancel push requests on this project.`,
       });
     }
   } else {
