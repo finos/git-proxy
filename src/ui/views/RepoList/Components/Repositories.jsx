@@ -13,7 +13,8 @@ import RepoOverview from './RepoOverview';
 import { UserContext } from '../../../../context';
 import PropTypes from 'prop-types';
 import Search from '../../../components/Search/Search';
-import Pagination from '../../../components/Pagination/Pagination'; 
+import Pagination from '../../../components/Pagination/Pagination';
+import Filtering from '../../../components/Filtering/Filtering'; 
 
 
 export default function Repositories(props) {
@@ -62,6 +63,32 @@ export default function Repositories(props) {
       );
     }
   };
+
+  // New function for handling filter changes
+  const handleFilterChange = (filterOption, sortOrder) => {
+    const sortedData = [...data];
+    switch (filterOption) {
+      case 'dateModified':
+        sortedData.sort((a, b) => new Date(a.lastModified) - new Date(b.lastModified));
+        break;
+      case 'dateCreated':
+        sortedData.sort((a, b) => new Date(a.dateCreated) - new Date(b.dateCreated));
+        break;
+      case 'alphabetical':
+        sortedData.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      default:
+        break;
+    }
+
+    if (sortOrder === 'desc') {
+      sortedData.reverse();
+    }
+
+    setFilteredData(sortedData);
+  };
+
+
   const handlePageChange = (page) => setCurrentPage(page); 
   const startIdx = (currentPage - 1) * itemsPerPage;
   const paginatedData = filteredData.slice(startIdx, startIdx + itemsPerPage);
@@ -89,6 +116,7 @@ export default function Repositories(props) {
       totalItems={filteredData.length} 
       itemsPerPage={itemsPerPage} 
       onPageChange={handlePageChange} 
+      onFilterChange={handleFilterChange}  // Pass handleFilterChange as prop
     />
   );
 }
@@ -112,7 +140,7 @@ function GetGridContainerLayOut(props) {
       <GridItem xs={12} sm={12} md={12}>
        
         <Search onSearch={props.onSearch} />
-
+        <Filtering onFilterChange={props.onFilterChange} />  {/* Include the Filtering component */}
         <TableContainer
           style={{ background: 'transparent', borderRadius: '5px', border: '1px solid #d0d7de' }}
         >
@@ -138,4 +166,5 @@ function GetGridContainerLayOut(props) {
     </GridContainer>
   );
 }
+
 
