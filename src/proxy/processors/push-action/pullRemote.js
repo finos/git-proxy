@@ -1,7 +1,8 @@
-const spawnSync = require('child_process').spawnSync;
 const Step = require('../../actions').Step;
 const fs = require('fs');
 const dir = './.remote';
+const git = require('isomorphic-git');
+const http = require('isomorphic-git/http/node');
 
 const exec = async (req, action) => {
   const step = new Step('pullRemote');
@@ -19,20 +20,33 @@ const exec = async (req, action) => {
       fs.mkdirSync(action.proxyGitPath, '0755', true);
     }
 
-    const cmd = `git clone ${action.url} --bare`;
-
+    const cmd = `git clone ${action.url}`;
     step.log(`Exectuting ${cmd}`);
 
-    const response = spawnSync('git', ['clone', action.url, '--bare', '--progress'], {
-      cwd: action.proxyGitPath,
-      encoding: 'utf-8',
-    });
+    const authHeader = req.headers?.authorization;
+    const [username, password] = Buffer.from(authHeader.split(' ')[1], 'base64')
+      .toString()
+      .split(':');
 
-    const cloneOutput = response?.stderr;
-    step.log(cloneOutput);
+    await git
+      .clone({
+        fs,
+        http,
+        url: action.url,
+        onAuth: () => {
+          return {
+            username: username,
+            password: password,
+          };
+        },
+        dir: `${action.proxyGitPath}/${action.repoName}`,
+      })
+      .then(() => {
+        console.log('Clone Success: ', action.url);
+      });
 
     step.log(`Completed ${cmd}`);
-    step.setContent(cloneOutput);
+    step.setContent(`Completed ${cmd}`);
   } catch (e) {
     step.setError(e.toString('utf-8'));
     throw e;
