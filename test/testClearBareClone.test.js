@@ -25,7 +25,7 @@ describe('clear bare and local clones', async () => {
     );
 
     expect(fs.existsSync(`./.remote/${timestamp}`)).to.be.true;
-  });
+  }).timeout(10000);
 
   it('clear bare clone function purges .remote folder and specific clone folder', async () => {
     const action = new Action('123', 'type', 'get', timestamp, 'finos/git-proxy');
