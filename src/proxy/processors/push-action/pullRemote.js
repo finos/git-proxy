@@ -2,7 +2,7 @@ const Step = require('../../actions').Step;
 const fs = require('fs');
 const dir = './.remote';
 const git = require('isomorphic-git');
-const http = require('isomorphic-git/http/node');
+const gitHttpClient = require('isomorphic-git/http/node');
 
 const exec = async (req, action) => {
   const step = new Step('pullRemote');
@@ -31,19 +31,16 @@ const exec = async (req, action) => {
     await git
       .clone({
         fs,
-        http,
+        http: gitHttpClient,
         url: action.url,
-        onAuth: () => {
-          return {
-            username: username,
-            password: password,
-          };
-        },
+        onAuth: () => ({
+          username,
+          password,
+        }),
         dir: `${action.proxyGitPath}/${action.repoName}`,
-      })
-      .then(() => {
-        console.log('Clone Success: ', action.url);
       });
+
+      console.log('Clone Success: ', action.url);
 
     step.log(`Completed ${cmd}`);
     step.setContent(`Completed ${cmd}`);
