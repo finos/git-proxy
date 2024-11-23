@@ -1,6 +1,6 @@
 {
   "name": "@finos/git-proxy",
-  "version": "1.5.2",
+  "version": "1.7.0",
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
     "cli": "node ./packages/git-proxy-cli/index.js",
@@ -51,6 +51,7 @@
     "express-rate-limit": "^7.1.5",
     "express-session": "^1.17.1",
     "history": "5.3.0",
+    "isomorphic-git": "^1.27.1",
     "jsonschema": "^1.4.1",
     "load-plugin": "^6.0.0",
     "lodash": "^4.17.21",
