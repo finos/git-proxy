@@ -29,14 +29,14 @@
     },
     {
       "type": "mongo",
-      "connectionString": "mongodb+srv://username:password@cluster0.uzjtb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
+      "connectionString": "mongodb://localhost:27017/gitproxy",
       "options": {
         "useNewUrlParser": true,
         "useUnifiedTopology": true,
         "tlsAllowInvalidCertificates": false,
         "ssl": true
       },
-      "enabled": true
+      "enabled": false
     }
   ],
   "authentication": [
@@ -94,7 +94,6 @@
       "enabled": true,
       "blockPatterns": ["modelWeights", "largeDatasets", "aiLibraries", "configKeys", "aiFunctions"]
     }
-    
   },
   "attestationConfig": {
     "questions": [

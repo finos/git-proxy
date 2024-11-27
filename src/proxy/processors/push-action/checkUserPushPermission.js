@@ -11,7 +11,6 @@ const exec = async (req, action) => {
 
   // Find the user associated with this Git Account
   const list = await db.getUsers({ gitAccount: action.user });
-  console.log('This is my List: hehe');
   console.log(JSON.stringify(list));
 
   if (list.length == 1) {

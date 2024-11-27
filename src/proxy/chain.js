@@ -5,7 +5,7 @@ const pushActionChain = [
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
   proc.push.checkAuthorEmails,
-  // proc.push.checkUserPushPermission,
+  proc.push.checkUserPushPermission,
   proc.push.checkIfWaitingAuth,
   proc.push.pullRemote,
   proc.push.writePack,
