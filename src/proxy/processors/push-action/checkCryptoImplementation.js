@@ -37,6 +37,8 @@ const CRYPTO_PATTERNS = {
 };
 
 function analyzeCodeForCrypto(diffContent) {
+  // file access
+  
   const issues = [];
   // Check for above mentioned cryto Patterns
   if(!diffContent) return issues;
@@ -87,14 +89,17 @@ function analyzeCodeForCrypto(diffContent) {
 }
 
 const exec = async (req, action) => {
+
   const step = new Step('checkCryptoImplementation');
 
   try {
     let hasIssues = false;
     const allIssues = [];
-
+    console.log("action:",action);
     for (const commit of action.commitData) {
       const diff = commit.diff || '';
+      console.log("diff",diff);
+     
       const issues = analyzeCodeForCrypto(diff);
 
       if (issues.length > 0) {
@@ -135,6 +140,6 @@ const exec = async (req, action) => {
   }
 };
 
-// exec.displayName = 'checkCryptoImplementation.exec';
+exec.displayName = 'checkCryptoImplementation.exec';
 exports.exec = exec;
 exports.analyzeCodeForCrypto = analyzeCodeForCrypto;

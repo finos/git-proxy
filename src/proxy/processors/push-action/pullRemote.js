@@ -8,6 +8,7 @@ const exec = async (req, action) => {
 
   try {
     action.proxyGitPath = `${dir}/${action.timestamp}`;
+    console.log('action.proxyGitPath', action.proxyGitPath);
 
     step.log(`Creating folder ${action.proxyGitPath}`);
 

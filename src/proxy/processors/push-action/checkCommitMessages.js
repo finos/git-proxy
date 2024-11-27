@@ -56,7 +56,9 @@ const exec = async (req, action) => {
   const step = new Step('checkCommitMessages');
 
   const uniqueCommitMessages = [...new Set(action.commitData.map((commit) => commit.message))];
-  console.log({ uniqueCommitMessages });
+  // console.log({ uniqueCommitMessages });
+  console.log('This is my commit data \n');
+  console.log(action);
 
   const illegalMessages = uniqueCommitMessages.filter((message) => !isMessageAllowed(message));
   console.log({ illegalMessages });

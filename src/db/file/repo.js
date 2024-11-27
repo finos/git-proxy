@@ -75,6 +75,8 @@ exports.addUserCanPush = async (name, user) => {
 exports.addUserCanAuthorise = async (name, user) => {
   return new Promise(async (resolve, reject) => {
     const repo = await exports.getRepo(name);
+    console.log('details');
+    console.log(JSON.stringify(repo));
 
     if (repo.users.canAuthorise.includes(user)) {
       resolve(null);

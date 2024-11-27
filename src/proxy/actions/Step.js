@@ -66,9 +66,9 @@ class Step {
    * @param {*} message
    */
   log(message) {
-    const m = `${this.stepName} - ${message}`;
-    this.logs.push(m);
-    console.info(m);
+    // const m = `${this.stepName} - ${message}`;
+    // this.logs.push(m);
+    // console.info(m);
   }
 }
 

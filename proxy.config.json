@@ -9,8 +9,14 @@
   "authorisedList": [
     {
       "project": "finos",
-      "name": "git-proxy",
-      "url": "https://github.com/finos/git-proxy.git"
+      "name": "git-proxy-test",
+      "url": "git@github.com:finos/git-proxy-test.git"
+    },
+    {
+      "project": "project name",
+      "name": "repo name",
+      "url": "repo url",
+      "LocalRepoRoot": "specify you local repository path"
     }
   ],
   "sink": [
@@ -23,14 +29,14 @@
     },
     {
       "type": "mongo",
-      "connectionString": "mongodb://localhost:27017/gitproxy",
+      "connectionString": "mongodb+srv://username:password@cluster0.uzjtb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",
       "options": {
         "useNewUrlParser": true,
         "useUnifiedTopology": true,
         "tlsAllowInvalidCertificates": false,
         "ssl": true
       },
-      "enabled": false
+      "enabled": true
     }
   ],
   "authentication": [
@@ -78,16 +84,17 @@
         "literals": [],
         "patterns": [],
         "providers": {},
-        "proxyFileTypes": [".csv", ".jpg", ".xlsx", ".log", ".json"]
+        "proxyFileTypes": [".csv", ".jpg", ".xlsx", ".log", ".json", ".jpg"]
       }
     },
     "checkForSecrets": {
-      "enabled": false
+      "enabled": true
     },
     "aiMlUsage": {
-          "enabled": true,
-          "blockPatterns": ["modelWeights", "largeDatasets", "aiLibraries", "configKeys", "aiFunctions"]
+      "enabled": true,
+      "blockPatterns": ["modelWeights", "largeDatasets", "aiLibraries", "configKeys", "aiFunctions"]
     }
+    
   },
   "attestationConfig": {
     "questions": [

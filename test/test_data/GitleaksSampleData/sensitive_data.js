@@ -1,3 +1,3 @@
 // File containing sensitive AWS Access Key
-const secret = 'AKIAIOSFODNN8EXAMPLE';  // Example AWS access key
+const secret = 'AKIAIOSFODNN9EXPLEAM';  // Example AWS access key
 console.log(secret);

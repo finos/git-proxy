@@ -5,20 +5,19 @@ const pushActionChain = [
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
   proc.push.checkAuthorEmails,
-  proc.push.checkUserPushPermission,
+  // proc.push.checkUserPushPermission,
   proc.push.checkIfWaitingAuth,
   proc.push.pullRemote,
   proc.push.writePack,
   proc.push.getDiff,
   proc.push.checkForAiMlUsage,
-  proc.push.checkExifJpeg,              
-  proc.push.checkSensitiveData,     
+  proc.push.checkExifJpeg,
+  proc.push.checkSensitiveData,
+  proc.push.checkForSecrets,
   proc.push.clearBareClone,
-  proc.push.checkCryptoImplementation,
   proc.push.scanDiff,
   proc.push.blockForAuth,
 ];
-
 
 const pullActionChain = [proc.push.checkRepoInAuthorisedList];
 

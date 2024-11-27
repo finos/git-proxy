@@ -59,7 +59,7 @@
     "lodash": "^4.17.21",
     "lusca": "^1.7.0",
     "moment": "^2.29.4",
-    "mongodb": "^5.0.0",
+    "mongodb": "^5.9.2",
     "nodemailer": "^6.6.1",
     "parse-diff": "^0.11.1",
     "passport": "^0.7.0",
