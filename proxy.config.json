@@ -77,7 +77,8 @@
       "block": {
         "literals": [],
         "patterns": [],
-        "providers": {}
+        "providers": {},
+        "proxyFileTypes":[]  
       }
     }
   },
