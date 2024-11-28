@@ -1,6 +1,7 @@
 const Step = require('../../actions').Step;
 const config = require('../../../config');
-
+const { exec: eexec } = require('./checkForSecrets');
+console.log(eexec);
 const commitConfig = config.getCommitConfig();
 
 function isMessageAllowed(commitMessage) {

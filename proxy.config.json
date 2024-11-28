@@ -87,9 +87,14 @@
       
       }
      
+    },"checkForSecrets": {
+      "enabled": false
     }
    
-  },
+    }
+    
+
+  ,
   "attestationConfig": {
     "questions": [
       {
