@@ -12,3 +12,4 @@ exports.checkAuthorEmails = require('./checkAuthorEmails').exec;
 exports.checkUserPushPermission = require('./checkUserPushPermission').exec;
 exports.clearBareClone = require('./clearBareClone').exec;
 exports.checkSensitiveData = require('./checkSensitiveData').exec;
+exports.checkExifJpeg = require('./checkExifJpeg').exec;

@@ -78,9 +78,11 @@
         "literals": [],
         "patterns": [],
         "providers": {},
-        "proxyFileTypes":[]  
+        "ProxyFileTypes" : [".jpg"]
+        
       }
     }
+   
   },
   "attestationConfig": {
     "questions": [
