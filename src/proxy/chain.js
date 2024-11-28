@@ -12,7 +12,7 @@ const pushActionChain = [
   proc.push.getDiff,               
   proc.push.checkSensitiveData,     // checkSensitiveData added
   proc.push.checkExifJpeg,
-  proc.push.checkForAiMlUsage,
+  proc.push.checkForAiMlusage,
   proc.push.clearBareClone,
   proc.push.checkCryptoImplementation,
   proc.push.scanDiff,

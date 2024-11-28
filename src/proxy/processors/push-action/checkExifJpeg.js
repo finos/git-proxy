@@ -3,6 +3,8 @@ const { Step } = require('../../actions');
 const config = require('../../../config');
 
 const commitConfig = config.getCommitConfig();
+const authorizedlist = config.getAuthorisedList();
+
 const validExtensions = ['.jpeg', '.png', '.jpg', '.tiff'];
 // Make sure you have modified the proxy.config.json;
 // Function to check sensitive EXIF data
@@ -27,8 +29,9 @@ const checkSensitiveExifData = (metadata) => {
 };
 
 // Function to retrieve EXIF data using ExifTool
-const getExifData = async (filePath) => {
+const getExifData = async (relativePath,repoRoot) => {
     const exifTool = new ExifTool();
+    const filePath = path.join(repoRoot, relativePath);
     try {
         const metadata = await exifTool.read(filePath);
         return metadata ? checkSensitiveExifData(metadata) : true;
@@ -67,7 +70,14 @@ const exec = async (req, action, log = console.log) => {
         const filteredPaths = filePaths.filter(path => validExtensions.some(ext => path.endsWith(ext) && allowedFileType.includes(ext)));
 
         if (filteredPaths.length > 0) {
-            const exifResults = await Promise.all(filteredPaths.map(filePath => getExifData(filePath)));
+            
+            const exifResults = await Promise.all(
+                filteredPaths.map((Path) => {
+                  const repo = action.url;
+                  const repoRoot = authorizedlist.find((item) => item.url === repo).LocalRepoRoot;
+                  getExifData(Path, repoRoot);
+                }),
+              );
             const isBlocked = exifResults.some(result => !result);
 
             if (isBlocked) {

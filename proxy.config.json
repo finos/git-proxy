@@ -11,6 +11,12 @@
       "project": "finos",
       "name": "git-proxy",
       "url": "https://github.com/finos/git-proxy.git"
+    },
+    {
+      "project": "project name",
+      "name": "repo name",
+      "url": "repo url",
+      "LocalRepoRoot": "specify you local repository path"
     }
   ],
   "sink": [

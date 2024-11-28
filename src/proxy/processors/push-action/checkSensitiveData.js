@@ -8,6 +8,8 @@ const config = require('../../../config');
 // const { exec: getDiffExec } = require('./getDiff');
 // Function to check for sensitive data patterns
 const commitConfig = config.getCommitConfig();
+const authorizedlist = config.getAuthorisedList();
+
 const checkForSensitiveData = (cell) => {
     const sensitivePatterns = [
         /\d{3}-\d{2}-\d{4}/, // Social Security Number (SSN)
@@ -94,8 +96,9 @@ const checkLogJsonFiles = async (filePath) => {
     });
 };
 // Function to parse the file based on its extension
-const parseFile = async (filePath) => {
-  
+const parseFile = async (repoRoot, relativePath) => {
+  const filePath = path.join(repoRoot, relativePath);
+    
     const ext = path.extname(filePath).toLowerCase();
     const FilestoCheck = commitConfig.diff.block.proxyFileTypes;
     if(!FilestoCheck.includes(ext)){
@@ -145,16 +148,27 @@ const exec = async (req, action) => {
         const filePaths = extractFilePathsFromDiff(diffStep.content);
 
         if (filePaths.length > 0) {
-            // Check for sensitive data in all files
-            const sensitiveDataFound = await Promise.all(filePaths.map(parseFile));
-            const anySensitiveDataDetected = sensitiveDataFound.some(found => found);
-
-            if (anySensitiveDataDetected) {
-                step.blocked= true;
-                step.error = true;
-                step.errorMessage = 'Your push has been blocked due to sensitive data detection.';
-                console.log(step.errorMessage);
-            }
+            try {
+                const repoUrl = action.url;
+                const repo = authorizedlist.find((item) => item.url === repoUrl);
+                // console.log(repo);
+                const repoRoot = repo.LocalRepoRoot;
+                // console.log('my reporoot is ' + repoRoot);
+        
+                const sensitiveDataFound = await Promise.all(
+                  filePaths.map((filePath) => parseFile(repoRoot, filePath)),
+                );
+                const anySensitiveDataDetected = sensitiveDataFound.some((found) => found);
+        
+                if (anySensitiveDataDetected) {
+                  step.blocked = true;
+                  step.error = true;
+                  step.errorMessage = 'Your push has been blocked due to sensitive data detection.';
+                  console.log(step.errorMessage);
+                }
+              } catch (error) {
+                console.error(`Error processing files: ${error.message}`);
+              }
         } else {
             console.log('No file paths provided in the diff step.');
         }

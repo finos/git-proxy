@@ -1,6 +1,6 @@
 const Step = require('../../actions').Step;
 const config = require('../../../config');
-const { exec: eexec } = require('./checkForSecrets');
+const { exec: eexec } = require('./checkForSecrets.js');
 console.log(eexec);
 const commitConfig = config.getCommitConfig();
 

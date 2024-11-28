@@ -135,6 +135,6 @@ const exec = async (req, action) => {
   }
 };
 
-// exec.displayName = 'checkCryptoImplementation.exec';
+exec.displayName = 'checkCryptoImplementation.exec';
 exports.exec = exec;
 exports.analyzeCodeForCrypto = analyzeCodeForCrypto;

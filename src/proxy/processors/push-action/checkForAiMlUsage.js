@@ -1,6 +1,7 @@
 const { Step } = require('../../actions');
 const config = require('../../../config');
 const commitConfig = config.getCommitConfig();
+const authorizedlist = config.getAuthorisedList();
 
 const fs = require('fs');
 
@@ -58,21 +59,23 @@ const isAiMlFileByContent = (fileContent) => {
 
 
 // Main function to detect AI/ML usage in an array of file paths
-const detectAiMlUsageFiles = async (filePaths) => {
+const detectAiMlUsageFiles = async (filePaths,repoRoot) => {
     const results = [];
     // console.log("filePaths!", filePaths);    
-    for (const filePath of filePaths) {
+    for (let filePath of filePaths) {
         try {
             const fileName = filePath.split('/').pop();
             // console.log(fileName, "!!!");
             // Check if the file name itself indicates AI/ML usage
             if (isAiMlFileByExtension(fileName)) {
-                // console.log("FOUND EXTENSION for ", fileName);
+                console.log("FOUND EXTENSION for ", fileName);
                 results.push(false); continue; 
                 // Skip content check if the file name is a match
             }
             // Check for AI/ML indicators within the file content
             // console.log("testing content for ", fileName);
+            filePath = path.join(repoRoot, filePath);
+
             const content = await fs.promises.readFile(filePath, 'utf8');
             if (isAiMlFileByContent(content)) {
                 results.push(false); continue;
@@ -118,7 +121,9 @@ const exec = async (req, action, log = console.log) => {
         // console.log(filePaths);
 
         if (filePaths.length) {
-            const aiMlDetected = await detectAiMlUsageFiles(filePaths);
+            const repoRoot = authorizedlist.find((item) => item.url === action.url).LocalRepoRoot;
+
+            const aiMlDetected = await detectAiMlUsageFiles(filePaths,repoRoot);
             // console.log(aiMlDetected);
             const isBlocked = aiMlDetected.some(found => !found);
             // const isBlocked = false;
@@ -139,5 +144,5 @@ const exec = async (req, action, log = console.log) => {
     return action;
 };
 
-exec.displayName = 'logFileChanges.exec';
+exec.displayName = 'checkForAiMlUsage.exec';
 module.exports = { exec };

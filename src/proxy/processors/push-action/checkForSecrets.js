@@ -4,6 +4,8 @@ const { exec: cexec } = require('child_process');
 const path = require('path');
 const config = require('../../../config');
 const commitConfig = config.getCommitConfig();
+const authorizedlist = config.getAuthorisedList();
+
 
 // Function to extract relevant file paths from Git diff content
 // go to proxyconfig.json and enable the feature
@@ -37,53 +39,39 @@ function extractRelevantDirectories(diffContent) {
 }
 
 // Function to run Gitleaks with directory paths
-function runGitleaks(filePaths) {
+function runGitleaks(filePaths,repoRoot) {
   return new Promise((resolve, reject) => {
     const filesToCheck = filePaths
-      .map((filePath) => `"${path.resolve(filePath).replace(/\\/g, '/')}"`)
+      .map((filePath) => `"${path.resolve(repoRoot,filePath).replace(/\\/g, '/')}"`)
       .join(' ');
+    console.log("filesToCheck:", filesToCheck);
 
     const configPath = path.resolve(__dirname, '../../../../gitleaks.toml').replace(/\\/g, '/');
-    const reportPath = path
-      .resolve(__dirname, '../../../../gitleaks_report.json')
-      .replace(/\\/g, '/');
+    const reportPath = repoRoot + '/gitleaks_report.json';
 
-    const command = `gitleaks dir ${filesToCheck}  --config="${configPath}" --report-format json --log-level error --report-path="${reportPath}"`;
+    const command = `gitleaks dir ${filesToCheck}  --config="${configPath}" --report-format json --log-level debug --report-path="${reportPath}"`;
     console.log(`Executing Gitleaks Command: ${command}`);
 
     cexec(command, (error, stdout, stderr) => {
       if (error) {
-        console.error(`Error executing gitleaks: ${error.message}`);
-        reject(new Error(`Error executing gitleaks: ${error.message}`));
-      } else if (stderr) {
-        console.error(`stderr: ${stderr}`);
-        reject(new Error(`stderr: ${stderr}`));
+        // If leaks are found, handle the warning gracefully
+        console.log("stderrrrr:",stderr);
+        if (stderr.includes("leaks found")) {
+          console.warn("Leaks were found, but execution succeeded.");
+          resolve(true); // Consider this a successful run
+        } else {
+          console.error(`Error executing gitleaks: ${error.message}`);
+          reject(new Error(`Error executing gitleaks: ${error.message}`));
+        }
       } else {
-        resolve(stdout);
+        resolve(false);
       }
     });
   });
 }
 
-// Function to check for sensitive secrets in the Gitleaks output
-function checkForSensitiveSecrets(output) {
-  try {
-    const findings = JSON.parse(output);
 
-    if (findings.length > 0) {
-      findings.forEach((finding) => {
-        console.log(`Secret found in file: ${finding.file}`);
-        console.log(`  Rule: ${finding.rule_id}`);
-        console.log(`  Secret: ${finding.secret}`);
-      });
-      return true;
-    }
-    return false;
-  } catch (error) {
-    console.error('Error parsing Gitleaks output:', error);
-    return false;
-  }
-}
+
 
 // Example usage in exec function
 const exec = async (req, action) => {
@@ -98,13 +86,14 @@ const exec = async (req, action) => {
 
   if (diffStep && diffStep.content) {
     const dirPaths = extractRelevantDirectories(diffStep.content);
-
+    const repoRoot = authorizedlist.find((item) => item.url === action.url).LocalRepoRoot;
+    
     if (dirPaths.length > 0) {
       try {
-        const result = await runGitleaks(dirPaths);
-        const hasSensitiveSecrets = checkForSensitiveSecrets(result);
+        const res = await runGitleaks(dirPaths,repoRoot);
+        
 
-        if (hasSensitiveSecrets) {
+        if (res) {
           step.blocked = true;
           step.blockedMessage = 'Sensitive secrets detected in the diff.';
           console.log('Sensitive secrets detected! Push blocked.');
@@ -126,7 +115,7 @@ const exec = async (req, action) => {
 };
 
 exec.displayName = 'checkforSecrets.exec';
-
+module.exports = { exec };
 
 
 
