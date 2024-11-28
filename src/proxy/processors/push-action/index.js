@@ -15,3 +15,4 @@ exports.clearBareClone = require('./clearBareClone').exec;
 exports.checkSensitiveData = require('./checkSensitiveData').exec;
 exports.checkExifJpeg = require('./checkExifJpeg').exec;
 exports.checkForAiMlusage = require('./checkForAiMlUsage').exec;
+exports.checkCryptoImplementation = require('./checkCryptoImplementation').exec;

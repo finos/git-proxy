@@ -20,6 +20,7 @@ const mockPushProcessors = {
   audit: sinon.stub(),
   checkRepoInAuthorisedList: sinon.stub(),
   checkCommitMessages: sinon.stub(),
+  checkCryptoImplementation: sinon.stub(),
   checkAuthorEmails: sinon.stub(),
   checkUserPushPermission: sinon.stub(),
   checkIfWaitingAuth: sinon.stub(),
@@ -28,7 +29,7 @@ const mockPushProcessors = {
   getDiff: sinon.stub(),
   checkSensitiveData : sinon.stub(),
   clearBareClone: sinon.stub(),
-  checkExifJpeg : sinon.stub(),
+  checkEXIFJpeg : sinon.stub(),
   scanDiff: sinon.stub(),
   blockForAuth: sinon.stub(),
 };
@@ -36,6 +37,7 @@ mockPushProcessors.parsePush.displayName = 'parsePush';
 mockPushProcessors.audit.displayName = 'audit';
 mockPushProcessors.checkRepoInAuthorisedList.displayName = 'checkRepoInAuthorisedList';
 mockPushProcessors.checkCommitMessages.displayName = 'checkCommitMessages';
+mockPushProcessors.checkCryptoImplementation.displayName = 'checkCryptoImplementation';
 mockPushProcessors.checkAuthorEmails.displayName = 'checkAuthorEmails';
 mockPushProcessors.checkUserPushPermission.displayName = 'checkUserPushPermission';
 mockPushProcessors.checkIfWaitingAuth.displayName = 'checkIfWaitingAuth';
@@ -113,6 +115,7 @@ describe('proxy chain', function () {
     mockPushProcessors.checkAuthorEmails.resolves(continuingAction);
     mockPushProcessors.checkUserPushPermission.resolves(continuingAction);
     mockPushProcessors.checkSensitiveData.resolves(continuingAction);
+    mockPushProcessors.checkCryptoImplementation.resolves(continuingAction);
 
     // this stops the chain from further execution
     mockPushProcessors.checkIfWaitingAuth.resolves({ type: 'push', continue: () => false, allowPush: false });
@@ -129,6 +132,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.audit.called).to.be.true;
     expect(mockPushProcessors.checkSensitiveData.called).to.be.false;
     expect(mockPushProcessors.checkEXIFJpeg.called).to.be.false;
+    expect(mockPushProcessors.checkCryptoImplementation.called).to.be.true;
 
     expect(result.type).to.equal('push');
     expect(result.allowPush).to.be.false;
@@ -140,12 +144,14 @@ describe('proxy chain', function () {
     const continuingAction = { type: 'push', continue: () => true, allowPush: false };
     mockPreProcessors.parseAction.resolves({ type: 'push' });
     mockPushProcessors.parsePush.resolves(continuingAction);
+    mockPushProcessors.checkCryptoImplementation.resolves(continuingAction);
     mockPushProcessors.checkRepoInAuthorisedList.resolves(continuingAction);
     mockPushProcessors.checkCommitMessages.resolves(continuingAction);
     mockPushProcessors.checkAuthorEmails.resolves(continuingAction);
     mockPushProcessors.checkUserPushPermission.resolves(continuingAction);
     mockPushProcessors.checkSensitiveData.resolves(continuingAction);
     mockPushProcessors.checkEXIFJpeg.resolves(continuingAction);
+
     // this stops the chain from further execution
 
     mockPushProcessors.checkIfWaitingAuth.resolves({ type: 'push', continue: () => true, allowPush: true });
@@ -162,6 +168,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.audit.called).to.be.true;
     expect(mockPushProcessors.checkSensitiveData.called).to.be.false;
     expect(mockPushProcessors.checkEXIFJpeg.called).to.be.false;
+     expect(mockPushProcessors.checkCryptoImplementation.called).to.be.true;
 
     expect(result.type).to.equal('push');
     expect(result.allowPush).to.be.true;
@@ -187,6 +194,7 @@ describe('proxy chain', function () {
     mockPushProcessors.blockForAuth.resolves(continuingAction);
     mockPushProcessors.checkSensitiveData.resolves(continuingAction);
     
+    mockPushProcessors.checkCryptoImplementation.resolves(continuingAction);
 
     const result = await chain.executeChain(req);
 
@@ -206,6 +214,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.blockForAuth.called).to.be.true;
     expect(mockPushProcessors.audit.called).to.be.true;
     expect(mockPushProcessors.checkSensitiveData.called).to.be.true;
+    expect(mockPushProcessors.checkCryptoImplementation.called).to.be.true;
 
     expect(result.type).to.equal('push');
     expect(result.allowPush).to.be.false;
