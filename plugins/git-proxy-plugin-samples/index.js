@@ -4,8 +4,8 @@
  */
 
 // Peer dependencies; its expected that these deps exist on Node module path if you've installed @finos/git-proxy
-import { PullActionPlugin } from "@finos/git-proxy/plugin";
-import { Step } from "@finos/git-proxy/proxy/actions";
+import { PullActionPlugin } from "@finos/git-proxy/src/plugin";
+import { Step } from "@finos/git-proxy/src/proxy/actions";
 
 class RunOnPullPlugin extends PullActionPlugin {
   constructor() {
