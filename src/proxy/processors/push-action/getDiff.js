@@ -1,12 +1,13 @@
-const child = require('child_process');
 const Step = require('../../actions').Step;
+const simpleGit = require('simple-git')
+
 
 const exec = async (req, action) => {
   const step = new Step('diff');
 
   try {
     const path = `${action.proxyGitPath}/${action.repoName}`;
-
+    const git = simpleGit(path);
     // https://stackoverflow.com/questions/40883798/how-to-get-git-diff-of-the-first-commit
     let commitFrom = `4b825dc642cb6eb9a060e54bf8d69288fbee4904`;
 
@@ -19,16 +20,10 @@ const exec = async (req, action) => {
     }
 
     step.log(`Executing "git diff ${commitFrom} ${action.commitTo}" in ${path}`);
-
-    // Get the diff
-    const content = child.spawnSync('git', ['diff', commitFrom, action.commitTo], {
-      cwd: path,
-      encoding: 'utf-8',
-      maxBuffer: 50 * 1024 * 1024,
-    }).stdout;
-
-    step.log(content);
-    step.setContent(content);
+    const revisionRange = `${commitFrom}..${action.commitTo}`;
+    const diff = await git.diff([revisionRange]);
+    step.log(diff);
+    step.setContent(diff);
   } catch (e) {
     step.setError(e.toString('utf-8'));
   } finally {
