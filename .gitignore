@@ -11,6 +11,7 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 package-lock.json
+/git-proxy-test
 
 
 # Diagnostic reports (https://nodejs.org/api/report.html)

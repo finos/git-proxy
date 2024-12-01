@@ -9,11 +9,16 @@ const pushActionChain = [
   proc.push.checkIfWaitingAuth,
   proc.push.pullRemote,
   proc.push.writePack,
-  proc.push.getDiff,
+  proc.push.getDiff,               
+  proc.push.checkSensitiveData,     // checkSensitiveData added
+  proc.push.checkExifJpeg,
+  proc.push.checkForAiMlusage,
   proc.push.clearBareClone,
+  proc.push.checkCryptoImplementation,
   proc.push.scanDiff,
   proc.push.blockForAuth,
 ];
+
 
 const pullActionChain = [proc.push.checkRepoInAuthorisedList];
 

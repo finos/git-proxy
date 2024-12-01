@@ -1,0 +1,4 @@
+{
+    "epochs": 100,
+    "learning_rate": 0.01
+}
