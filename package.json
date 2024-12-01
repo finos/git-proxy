@@ -100,7 +100,7 @@
   "optionalDependencies": {
     "@esbuild/darwin-arm64": "^0.18.20",
     "@esbuild/darwin-x64": "^0.23.0",
-    "@esbuild/linux-x64": "0.23.0",
+    "@esbuild/linux-x64": "0.24.0",
     "@esbuild/win32-x64": "0.23.0"
   },
   "browserslist": {
