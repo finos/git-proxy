@@ -1,7 +1,10 @@
-name: Publish to NPM
+name: Publish samples to NPM
+
 on:
-  release:
-    types: [published]
+  push:
+    tags:
+      - 'sample-*'
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -12,8 +15,8 @@ jobs:
         with:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
-      - run: npm ci
-      - run: npm run build
-      - run: npm publish --access=public
+      - name: publish sample package
+        run: npm install --include peer && npm publish --access=public
+        working-directory: plugins/git-proxy-plugin-samples
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
