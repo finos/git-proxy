@@ -78,7 +78,7 @@
         "literals": [],
         "patterns": [],
         "providers": {},
-        "proxyFileTypes":[]  
+        "sensitiveFileTypes":[]  
       }
     }
   },
