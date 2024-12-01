@@ -32,7 +32,7 @@ The below instructions are using the [`@finos/git-proxy-plugin-samples`](https:/
 1. Install both `@finos/git-proxy` and the `@finos/git-proxy-plugin-samples` package to the local `node_modules/` directory using the following command:
 
 ```bash
-$ npm install -g @finos/git-proxy@latest @finos/git-proxy-plugin-samples@0.1.0
+$ npm install -g @finos/git-proxy @finos/git-proxy-plugin-samples
 ```
 
 Alternatively, you can create local packages from source and install those instead.
@@ -40,9 +40,10 @@ Alternatively, you can create local packages from source and install those inste
 $ git clone https://github.com/finos/git-proxy
 $ cd git-proxy
 $ npm pack
-$ npm install -g ./finos-git-proxy-1.3.5.tgz
 $ (cd plugins/git-proxy-plugin-samples && npm pack)
-$ npm install -g plugins/git-proxy-plugin-samples/finos-git-proxy-plugin-samples-0.1.0.tgz
+$ npm install -g \
+  ./finos-git-proxy-1.7.0.tgz \
+  ./plugins/git-proxy-plugin-samples/finos-git-proxy-plugin-samples-0.1.1.tgz
 ```
 
 2. Create or edit an existing `proxy.config.json` file to configure the plugin(s) to load. You must include the full import path that would typically be used in a `import {}` (ESM) or `require()` (CJS) statement:
