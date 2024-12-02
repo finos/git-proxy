@@ -32,12 +32,6 @@
     "type": "git",
     "url": "https://github.com/finos/git-proxy"
   },
-  "exports": {
-    "./plugin": "./src/plugin.js",
-    "./proxy/actions": "./src/proxy/actions/index.js",
-    "./src/config/env": "./src/config/env.js",
-    "./config/file": "./src/config/file.js"
-  },
   "dependencies": {
     "@finos/check-dependency-vulnerabilities": "file:plugins/check-dependency-vulnerabilities/finos-check-dependency-vulnerabilities-0.1.0-alpha.0.tgz",
     "@finos/git-proxy-plugin-samples": "file:plugins/git-proxy-plugin-samples/finos-git-proxy-plugin-samples-0.1.0.tgz",
