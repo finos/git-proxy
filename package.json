@@ -39,6 +39,8 @@
     "./config/file": "./src/config/file.js"
   },
   "dependencies": {
+    "@finos/check-dependency-vulnerabilities": "file:plugins/check-dependency-vulnerabilities/finos-check-dependency-vulnerabilities-0.1.0-alpha.0.tgz",
+    "@finos/git-proxy-plugin-samples": "file:plugins/git-proxy-plugin-samples/finos-git-proxy-plugin-samples-0.1.0.tgz",
     "@material-ui/core": "^4.11.0",
     "@material-ui/icons": "4.11.3",
     "@primer/octicons-react": "^19.8.0",

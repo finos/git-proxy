@@ -8,3 +8,8 @@ https://jeremylong.github.io/DependencyCheck/analyzers/index.html
 
 ## Pre Requisites
 This plugin expects dependency-check to be installed and in the path environment variable
+Command `dependency-check --updateonly` has to be run once in the terminal after dependency-check installation
+
+## Limitations
+dependency-check is using an argument --noupdate to avoid the execution time overhead(~20-30 minutes), which comes with automatic updation of NVD (National Vulnerability Database). This means user has to manually run the update command atleast once during the initial set-up and later whenever user wants to use the latest data. 
+

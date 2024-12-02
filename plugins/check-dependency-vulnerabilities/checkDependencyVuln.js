@@ -11,9 +11,9 @@
 **       path environment variable
 */
 
-import { PushActionPlugin } from "@finos/git-proxy/plugin";
-import { Step } from "@finos/git-proxy/proxy/actions";
-import pkg from "@finos/git-proxy/config/file";
+import { PushActionPlugin } from "@finos/git-proxy/src/plugin.js";
+import { Step } from "@finos/git-proxy/src/proxy/actions/index.js";
+import pkg from "@finos/git-proxy/src/config/file.js";
 
 import child from "child_process";
 import { createTempRepo, deleteTempRepo } from "./temporaryRepo.js";
@@ -42,7 +42,9 @@ class checkDependencyVulnPlugin extends PushActionPlugin {
         const configPath = configFile;
         const configData = fs.readFileSync(configPath, 'utf8');
         const config = JSON.parse(configData);
-        configMinSeverity = config["dependencyVulnThreshold"];
+        if (config["dependencyVulnThreshold"]) {
+          configMinSeverity = config["dependencyVulnThreshold"];
+        }
       }
       catch (error) {
         console.warn("Failed to read vulnerability config file. Going with default options");
@@ -101,7 +103,7 @@ class checkDependencyVulnPlugin extends PushActionPlugin {
 
       const dependencyCheckRes =
         child.spawnSync(
-          'dependency-check', ['--project', 'Git-Proxy-Dependency-Check',
+          'dependency-check', ['--noupdate', '--project', 'Git-Proxy-Dependency-Check',
           '--scan', outputdirPath, '--format', 'JSON', '--out', dirPath], {
           cwd: './',
           shell: true,
