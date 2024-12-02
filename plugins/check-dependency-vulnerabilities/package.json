@@ -1,0 +1,20 @@
+{
+  "name": "@finos/check-dependency-vulnerabilities",
+  "version": "0.1.0-alpha.0",
+  "description": "Plugin to check dependencies for vulnerable packages",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Kavya",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./checkDependencyVuln.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "peerDependencies": {
+    "@finos/git-proxy": "1.4.0"
+  }
+}
