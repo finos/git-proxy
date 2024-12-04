@@ -21,7 +21,7 @@
     "importHelpers": true,
     "baseUrl": "src",
     "paths": {
-      "@/*": ["*"],
+      "@/*": ["*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.json", ".env"],

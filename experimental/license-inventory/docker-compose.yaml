@@ -22,7 +22,6 @@ services:
       OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
       OTEL_SERVICE_NAME: license-inventory
       OTEL_RESOURCE_ATTRIBUTES: service.version=0.0.0
-      NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register
     ports:
       - 3000:3000
     working_dir: /usr/src/app

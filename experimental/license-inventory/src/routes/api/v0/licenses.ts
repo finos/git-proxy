@@ -3,7 +3,7 @@ import { License } from '@/db/collections';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod';
 import { licenseValidation } from '@/db/schemas/license/license';
-import opentelemetry, { SpanStatusCode } from '@opentelemetry/api';
+import { trace } from '@opentelemetry/api';
 
 const router = express.Router();
 
@@ -72,8 +72,6 @@ router.patch('/:id', async (req, res) => {
   } = data;
   await License.findOneAndUpdate({ _id: id }, updateLicense);
   res.status(204).json({ status: 'ok' }).end();
-  const activeSpan = opentelemetry.trace.getActiveSpan();
-  activeSpan.setStatus({ code: SpanStatusCode.OK });
 });
 
 // DELETE
@@ -96,10 +94,22 @@ router.delete('/:id', async (req, res) => {
 
 // LIST
 router.get('/', async (req, res) => {
+  const tracer = trace.getTracer('licenses-list');
   // TODO: pagination
-  // lean forces raw objects, not UUID buffers
-  const result = await License.find().lean(true).exec();
-  res.status(200).json(result).end();
+  const results = await License.find().exec();
+  const jsonifyResultsSpan = tracer.startSpan('jsonify-results');
+  const jsonResults = await Promise.allSettled(results.map(async (doc) => doc.toJSON()));
+  const jsonOutput = jsonResults
+    .filter(<T>(r: PromiseSettledResult<T>): r is PromiseFulfilledResult<T> => {
+      if (r.status === 'rejected') {
+        res.log.warn('failed to convert an object', r.reason);
+        return false;
+      }
+      return true;
+    })
+    .map((r) => r.value);
+  jsonifyResultsSpan.end();
+  res.status(200).json(jsonOutput).end();
 });
 
 export default router;

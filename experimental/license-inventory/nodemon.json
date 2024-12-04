@@ -2,5 +2,5 @@
   "watch": ["src", ".env"],
   "ext": "js,ts,json",
   "ignore": ["src/**/*.{spec,test}.ts"],
-  "exec": "ts-node -r tsconfig-paths/register --transpile-only src/server.ts | pino-pretty"
+  "exec": "ts-node -r tsconfig-paths/register -r @opentelemetry/auto-instrumentations-node/register --transpile-only src/server.ts | pino-pretty"
 }
