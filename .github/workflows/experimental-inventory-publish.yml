@@ -1,0 +1,27 @@
+name: experimental-inventory - Publish to NPM
+on:
+  push:
+    tags:
+      - 'license-inventory-*'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+        working-directory: ./experimental/license-inventory
+
+      - run: npm run build
+        working-directory: ./experimental/license-inventory
+
+      - run: npm publish --access=public
+        working-directory: ./experimental/license-inventory
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
