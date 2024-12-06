@@ -23,8 +23,10 @@ import User from './ui/views/User/User';
 import UserList from './ui/views/UserList/UserList';
 import RepoDetails from './ui/views/RepoDetails/RepoDetails';
 import RepoList from './ui/views/RepoList/RepoList';
+import LicenseList from './ui/views/LicenseList/LicenseList';
+import LicenseDetails from './ui/views/LicenseDetails/LicenseDetails';
 
-import { RepoIcon } from '@primer/octicons-react';
+import { RepoIcon, LawIcon } from '@primer/octicons-react';
 
 import { Group, AccountCircle, Dashboard } from '@material-ui/icons';
 
@@ -84,6 +86,22 @@ const dashboardRoutes = [
     component: UserList,
     layout: '/admin',
     visible: true,
+  },
+  {
+    path: '/licenses',
+    name: 'Licenses',
+    icon: LawIcon,
+    component: LicenseList,
+    layout: '/admin',
+    visible: true,
+  },
+  {
+    path: '/license/:id',
+    name: 'License',
+    icon: Person,
+    component: LicenseDetails,
+    layout: '/admin',
+    visible: false,
   },
 ];
 
