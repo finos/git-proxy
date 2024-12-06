@@ -42,7 +42,7 @@
     "bit-mask": "^1.0.2",
     "body-parser": "^1.20.1",
     "classnames": "2.5.1",
-    "concurrently": "^8.0.0",
+    "concurrently": "^9.0.0",
     "connect-mongo": "^5.1.0",
     "cors": "^2.8.5",
     "diff2html": "^3.4.33",
