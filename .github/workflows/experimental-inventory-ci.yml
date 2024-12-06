@@ -1,0 +1,47 @@
+name: CI - experimental - inventory
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - experimental/license-inventory/**
+  pull_request:
+    branches: [main]
+    paths:
+      - experimental/license-inventory/**
+
+permissions:
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+        mongodb-version: [4.4]
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.11.0
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
+
+      - name: Install dependencies
+        working-directory: ./experimental/license-inventory
+        run: npm ci
+
+      - name: Test
+        working-directory: ./experimental/license-inventory
+        run: |
+          MONGO_URI="mongodb://localhost:27017/inventory" npm run test
