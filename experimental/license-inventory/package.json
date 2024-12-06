@@ -19,11 +19,11 @@
     "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
-    "express": "^4.21.1",
+    "express": "^4.21.2",
     "express-rate-limit": "^7.4.1",
     "helmet": "^8.0.0",
     "http-status-codes": "^2.3.0",
-    "mongoose": "^8.8.3",
+    "mongoose": "^8.8.4",
     "pino": "^9.5.0",
     "pino-caller": "^3.4.0",
     "pino-http": "^10.3.0",
@@ -31,7 +31,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "@eslint/compat": "^1.2.3",
+    "@eslint/compat": "^1.2.4",
     "@eslint/js": "^9.16.0",
     "@jest/globals": "^29.7.0",
     "@types/cors": "^2.8.17",
@@ -62,6 +62,6 @@
     "typescript-eslint": "^8.17.0"
   },
   "optionalDependencies": {
-    "@opentelemetry/auto-instrumentations-node": "^0.53.0"
+    "@opentelemetry/auto-instrumentations-node": "^0.54.0"
   }
 }
