@@ -35,7 +35,7 @@ services:
       - otel-collector
 
   mongo:
-    image: mongo:8.0.3
+    image: mongo:8.0.4
     command: --logpath=/var/log/mongo.log
     ports:
       - 27017:27017
