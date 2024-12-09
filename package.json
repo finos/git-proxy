@@ -81,7 +81,7 @@
     "@commitlint/config-conventional": "^19.0.0",
     "@vitejs/plugin-react": "^4.0.2",
     "chai": "^4.2.0",
-    "chai-http": "^4.3.0",
+    "chai-http": "^5.0.0",
     "cypress": "^13.11.0",
     "eslint": "^8.57.0",
     "eslint-config-google": "^0.14.0",
