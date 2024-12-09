@@ -78,6 +78,16 @@
           "type": "object"
         }
       }
+    },
+    "tls": {
+      "description": "TLS configuration for secure connections",
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "key": { "type": "string" },
+        "cert": { "type": "string" }
+      },
+      "required": ["enabled", "key", "cert"]
     }
   },
   "definitions": {
