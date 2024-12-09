@@ -95,7 +95,7 @@
     "nyc": "^17.0.0",
     "prettier": "^3.0.0",
     "sinon": "^19.0.2",
-    "vite": "^4.4.2"
+    "vite": "^6.0.0"
   },
   "optionalDependencies": {
     "@esbuild/darwin-arm64": "^0.18.20",
