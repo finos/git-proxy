@@ -1,0 +1,131 @@
+services:
+  init:
+    image: alpine:3.21
+    init: true
+    volumes:
+      - mongo-logs:/var/log-mongo
+      - tempo-data:/var/tempo
+    command: >
+      chmod 777 /var/log-mongo && chown -R 10001:10001 /var/tempo
+
+  app:
+    container_name: license-inventory
+    image: node:23-alpine
+    # ensure colours show
+    tty: true
+    command: >
+      sh -c "npm install --include=optional && npm run dev"
+    environment:
+      MONGO_URI: mongodb://mongo:27017/inventory
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: license-inventory
+      OTEL_RESOURCE_ATTRIBUTES: service.version=0.0.0
+    ports:
+      - 3000:3000
+    working_dir: /usr/src/app
+    volumes:
+      - .:/usr/src/app
+      # have a separate node dependencies
+      # avoids permissions conflicts
+      - node-deps:/usr/src/app/node_modules
+    depends_on:
+      - mongo
+      - otel-collector
+
+  mongo:
+    image: mongo:8.0.3
+    command: --logpath=/var/log/mongo.log
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo-data:/data/db
+      - mongo-logs:/var/log
+    depends_on:
+      - init
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.115.1
+    volumes:
+      - ./dev/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    depends_on:
+      - loki
+      - tempo
+
+  promtail:
+    image: grafana/promtail:3.3.1
+    command:
+      - -config.file=/etc/promtail/config.yaml
+      - -log.level=warn
+    volumes:
+      - ./dev/promtail.yaml:/etc/promtail/config.yaml
+      - mongo-logs:/var/log-mongo
+    depends_on:
+      - loki
+
+  # traces
+  tempo:
+    image: grafana/tempo:2.6.1
+    command:
+      - -config.file=/etc/tempo.yaml
+      - -log.level=warn
+    volumes:
+      - ./dev/tempo.yaml:/etc/tempo.yaml
+      - tempo-data:/var/tempo
+    depends_on:
+      - init
+      - prometheus
+
+  # metrics
+  prometheus:
+    image: prom/prometheus:v3.0.1
+    command:
+      - --config.file=/etc/prometheus.yaml
+      - --enable-feature=exemplar-storage
+      - --enable-feature=native-histograms
+      - --web.enable-remote-write-receiver
+      - --enable-feature=otlp-write-receive
+      - --web.enable-otlp-receiver
+      - --log.level=warn
+    volumes:
+      - ./dev/prometheus.yaml:/etc/prometheus.yaml
+    ports:
+      - 9090:9090
+
+  # logs
+  loki:
+    image: grafana/loki:3.3.1
+    command:
+      - -config.file=/etc/loki/loki.yaml
+      - -log.level=warn
+    ports:
+      - 3100:3100
+    volumes:
+      - ./dev/loki.yaml:/etc/loki/loki.yaml
+
+  # everything dashboard
+  grafana:
+    image: grafana/grafana:11.4.0
+    ports:
+      - 3001:3000
+    volumes:
+      - ./dev/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+      - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor metricsSummary
+      - GF_INSTALL_PLUGINS=grafana-lokiexplore-app,grafana-exploretraces-app
+      # seem to get auth warnings even though we're on anonymous auth
+      - GF_LOG_LEVEL=error
+    depends_on:
+      - loki
+      - tempo
+      - prometheus
+
+volumes:
+  mongo-logs:
+  mongo-data:
+  tempo-data:
+  node-deps:
