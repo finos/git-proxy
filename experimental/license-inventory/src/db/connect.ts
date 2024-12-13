@@ -1,10 +1,10 @@
 import { AsyncResult } from '@/types';
-import mongoose from 'mongoose';
+import mongoose, { type Mongoose } from 'mongoose';
 
-export const connectDB = async (dbURI: string): AsyncResult<void> => {
+export const connectDB = async (dbURI: string): AsyncResult<Mongoose> => {
   try {
-    await mongoose.connect(dbURI);
-    return { error: null, data: null };
+    const connection = await mongoose.connect(dbURI);
+    return { error: null, data: connection };
   } catch (e: unknown) {
     if (e instanceof Error) {
       return { error: e, data: null };
