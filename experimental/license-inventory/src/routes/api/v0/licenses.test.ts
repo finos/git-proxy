@@ -40,12 +40,13 @@ describe(basePath, () => {
     const testID = '157c0c6a-5c99-4298-9529-95816da2255a';
     it('invalid id - not uuid', async () => {
       const mockLDS = genMockLicenseDataService();
-      mockLDS.getByUUID.mockResolvedValueOnce({ error: null, data: null });
+      mockLDS.getByUUID.mockRejectedValueOnce(null);
       const app = createApp(mockLDS);
       await request(app)
         .get(genRoute('/' + 'apache-2_0'))
         .expect('Content-Type', /json/)
         .expect(500);
+      expect(mockLDS.getByUUID.mock.lastCall).toBeUndefined();
     });
 
     it('valid id - no data', async () => {

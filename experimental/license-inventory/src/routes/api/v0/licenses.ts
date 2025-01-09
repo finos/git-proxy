@@ -25,7 +25,7 @@ const createRouter = (licenseService: LicenseDataService) => {
       res.status(500).json({ error: 'failed to create' }).end();
       return;
     }
-    res.status(200).json({ created: data }).end();
+    res.status(201).json(data).end();
   });
 
   // READ
@@ -69,13 +69,13 @@ const createRouter = (licenseService: LicenseDataService) => {
       params: { id },
     } = parseData;
 
-    const { error } = await licenseService.patchByUUID(id, licenseData);
+    const { error, data } = await licenseService.patchByUUID(id, licenseData);
     if (error) {
       req.log.error(error);
       res.status(500).json({ error: 'failed to update' }).end();
       return;
     }
-    res.status(204).json({ status: 'ok' }).end();
+    res.status(204).json(data).end();
   });
 
   // DELETE

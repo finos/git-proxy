@@ -2,7 +2,7 @@ import { logger } from '@/logger';
 import { connectDB } from './db/connect';
 import env from '@/env';
 import { createApp } from './app';
-import { MongoLicenseDataService } from './services/data/mongoose';
+import { MongooseLicenseDataService } from './services/data/mongoose';
 import { Database } from './db';
 
 const port = env.PORT;
@@ -21,7 +21,7 @@ const run = async () => {
     logger.info('started server', { port });
   };
 
-  const lds = new MongoLicenseDataService(db);
+  const lds = new MongooseLicenseDataService(db);
   const app = createApp(lds);
   app.listen(port, running);
 };

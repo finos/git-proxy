@@ -41,5 +41,8 @@ export const license = z.object({
 });
 export type License = z.infer<typeof license>;
 
-export const licenseCreateUpdate = license.omit({ id: true });
-export type LicenseCreateUpdate = z.infer<typeof licenseCreateUpdate>;
+export const licenseNoID = license.omit({ id: true });
+export type LicenseNoID = z.infer<typeof licenseNoID>;
+
+export const licenseNoIDPartial = licenseNoID.partial();
+export type LicenseNoIDPartial = z.infer<typeof licenseNoIDPartial>;
