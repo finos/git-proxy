@@ -1,7 +1,12 @@
 import express from 'express';
-import v0Router from './v0';
-const router = express.Router();
+import createV0Router from './v0';
+import { LicenseDataService } from '@/services/data';
 
-router.use('/v0', v0Router);
+const createRouter = (lds: LicenseDataService) => {
+  const router = express.Router();
 
-export default router;
+  router.use('/v0', createV0Router(lds));
+  return router;
+};
+
+export default createRouter;
