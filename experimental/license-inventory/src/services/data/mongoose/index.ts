@@ -1,18 +1,18 @@
-import { LicenseDataService } from '../';
-import { Database } from '@/db';
+import { type LicenseDataService } from '../';
+import { type Database } from '@/db';
 import { v4 as uuidv4 } from 'uuid';
-import { type LicenseCreateUpdate } from '../license';
+import type { License, LicenseNoID, LicenseNoIDPartial } from '../license';
 import { trace } from '@opentelemetry/api';
 import { logger } from '@/logger';
 
-export class MongoLicenseDataService implements LicenseDataService {
+export class MongooseLicenseDataService implements LicenseDataService {
   db: Database;
 
   constructor(db: Database) {
     this.db = db;
   }
 
-  async create(licenseData: LicenseCreateUpdate) {
+  async create(licenseData: LicenseNoID) {
     try {
       if (licenseData.spdxID) {
         const spdxMatch = await this.db.License.findOne({ spdxID: licenseData.spdxID })
@@ -24,11 +24,18 @@ export class MongoLicenseDataService implements LicenseDataService {
         }
       }
       const _id = uuidv4();
-      await this.db.License.create({
-        _id,
-        ...licenseData,
-      });
-      return { error: null, data: null };
+      const insertedData = await (
+        await this.db.License.create({
+          _id,
+          ...licenseData,
+        })
+      ).toJSON();
+      const res: License = {
+        id: _id,
+        ...insertedData,
+      };
+      return { error: null, data: res };
+      // return { error: null, data: null };
     } catch (err: unknown) {
       return { error: new Error("couldn't register", { cause: err }), data: null };
     }
@@ -36,17 +43,40 @@ export class MongoLicenseDataService implements LicenseDataService {
 
   async getByUUID(id: string) {
     try {
-      const data = await (await this.db.License.findOne({ _id: id }).exec()).toJSON();
+      const dbRes = await this.db.License.findOne({ _id: id }).lean().exec();
+      if (dbRes === null) {
+        return { error: null, data: dbRes };
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { _id, __v, ...dbData } = dbRes;
+      const data: License = {
+        id: _id.toJSON(),
+        ...dbData,
+      };
       return { error: null, data };
     } catch (err: unknown) {
       return { error: new Error("couldn't find", { cause: err }), data: null };
     }
   }
 
-  async patchByUUID(id: string, details: LicenseCreateUpdate) {
+  async patchByUUID(id: string, details: LicenseNoIDPartial) {
     try {
-      await this.db.License.findOneAndUpdate({ _id: id }, details);
-      return { error: null, data: null };
+      const dbRes = await this.db.License.findOneAndUpdate({ _id: id }, details, {
+        // return new data
+        returnOriginal: false,
+      })
+        .lean()
+        .exec();
+      if (dbRes === null) {
+        return { error: new Error('no matching license'), data: null };
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { _id, __v, ...dbData } = dbRes;
+      const data: License = {
+        id: _id.toJSON(),
+        ...dbData,
+      };
+      return { error: null, data: data };
     } catch (err: unknown) {
       return { error: new Error("couldn't find and update", { cause: err }), data: null };
     }
@@ -67,7 +97,17 @@ export class MongoLicenseDataService implements LicenseDataService {
     // TODO: pagination
     const results = await this.db.License.find().exec();
     const jsonifyResultsSpan = tracer.startSpan('jsonify-results');
-    const jsonResults = await Promise.allSettled(results.map(async (doc) => doc.toJSON()));
+    const jsonResults = await Promise.allSettled(
+      results.map(async (doc) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { _id, __v, ...dbData } = doc;
+        const data: License = {
+          id: _id.toJSON(),
+          ...dbData,
+        };
+        return data;
+      }),
+    );
     const jsonOutput = jsonResults
       .filter(<T>(r: PromiseSettledResult<T>): r is PromiseFulfilledResult<T> => {
         if (r.status === 'rejected') {

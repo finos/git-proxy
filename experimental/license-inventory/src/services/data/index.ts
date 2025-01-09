@@ -1,12 +1,12 @@
 import type { AsyncResult } from '@/types';
-import type { License, LicenseCreateUpdate } from './license';
+import type { License, LicenseNoID, LicenseNoIDPartial } from './license';
 
 export interface LicenseDataService {
-  create: (licenseData: LicenseCreateUpdate) => AsyncResult<null>;
+  create: (licenseData: LicenseNoID) => AsyncResult<License>;
 
   getByUUID: (id: string) => AsyncResult<License | null>;
 
-  patchByUUID: (id: string, licenseData: LicenseCreateUpdate) => AsyncResult<null>;
+  patchByUUID: (id: string, licenseData: LicenseNoIDPartial) => AsyncResult<License>;
 
   deleteByUUID: (id: string) => AsyncResult<null>;
 
