@@ -1,7 +1,12 @@
 import express from 'express';
-import licensesRouter from './licenses';
-const router = express.Router();
+import createLicensesRouter from './licenses';
+import { LicenseDataService } from '@/services/data';
 
-router.use('/licenses', licensesRouter);
+const createRouter = (lds: LicenseDataService) => {
+  const router = express.Router();
 
-export default router;
+  router.use('/licenses', createLicensesRouter(lds));
+  return router;
+};
+
+export default createRouter;

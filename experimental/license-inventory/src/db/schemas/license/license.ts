@@ -24,27 +24,6 @@ export const licenseSchema = new Schema<LicenseSchema>(
   {
     // automatic createdAt updatedAt
     timestamps: true,
-    toObject: {
-      virtuals: true,
-      versionKey: false,
-      transform: (doc, ret) => {
-        delete ret._id;
-      },
-    },
-    toJSON: {
-      virtuals: true,
-      versionKey: false,
-      transform: (doc, ret) => {
-        delete ret._id;
-      },
-    },
-    virtuals: {
-      id: {
-        get() {
-          return this._id.toString();
-        },
-      },
-    },
   },
 );
 
