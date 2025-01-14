@@ -95,7 +95,7 @@ services:
 
   # logs
   loki:
-    image: grafana/loki:3.3.1
+    image: grafana/loki:3.3.2
     command:
       - -config.file=/etc/loki/loki.yaml
       - -log.level=warn
