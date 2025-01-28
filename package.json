@@ -82,7 +82,7 @@
     "@vitejs/plugin-react": "^4.0.2",
     "chai": "^4.2.0",
     "chai-http": "^4.3.0",
-    "cypress": "^13.11.0",
+    "cypress": "^14.0.0",
     "eslint": "^8.57.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^9.0.0",
