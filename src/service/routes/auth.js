@@ -145,10 +145,10 @@ router.post('/gitAccount', async (req, res) => {
 router.get('/userLoggedIn', async (req, res) => {
   if (req.user) {
     const user = JSON.parse(JSON.stringify(req.user));
-    delete user.password;
+    if (user && user.password) delete user.password;
     const login = user.username;
     const userVal = await db.findUser(login);
-    delete userVal.password;
+    if (userVal && userVal.password) delete userVal.password;
     res.send(userVal);
   } else {
     res.status(401).end();
