@@ -64,10 +64,16 @@ const createApp = async () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use('/', routes);
-  app.use('/', express.static(absBuildPath));
-  app.get('/*', (req, res) => {
-    res.sendFile(path.join(`${absBuildPath}/index.html`));
-  });
+
+  // In production, serves the static files from the build directory
+  if (process.env.NODE_ENV === 'production') {
+    app.use('/', express.static(absBuildPath));
+    app.get('/*', (req, res) => {
+      res.sendFile(path.join(`${absBuildPath}/index.html`));
+    });
+  } else {
+    console.log('Not serving static files');
+  }
 
   return app;
 };
