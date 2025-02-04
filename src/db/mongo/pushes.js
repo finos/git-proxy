@@ -57,6 +57,9 @@ const writeAudit = async (action) => {
   const options = { upsert: true };
   const collection = await connect(cnName);
   delete data._id;
+  if (typeof data.id !== 'string') {
+    throw new Error('Invalid id');
+  }
   await collection.updateOne({ id: { $eq: data.id } }, { $set: data }, options);
   return action;
 };
