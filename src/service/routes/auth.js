@@ -142,7 +142,7 @@ router.post('/gitAccount', async (req, res) => {
   }
 });
 
-router.get('/userLoggedIn', async (req, res) => {
+router.get('/me', async (req, res) => {
   if (req.user) {
     const user = JSON.parse(JSON.stringify(req.user));
     if (user && user.password) delete user.password;
