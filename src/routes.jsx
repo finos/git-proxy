@@ -16,6 +16,8 @@
 
 */
 
+import React from 'react';
+import PrivateRoute from './ui/components/PrivateRoute/PrivateRoute';
 import Person from '@material-ui/icons/Person';
 import OpenPushRequests from './ui/views/OpenPushRequests/OpenPushRequests';
 import PushDetails from './ui/views/PushDetails/PushDetails';
@@ -33,15 +35,23 @@ const dashboardRoutes = [
     path: '/repo',
     name: 'Repositories',
     icon: RepoIcon,
-    component: RepoList,
+    component: (props) => <PrivateRoute component={RepoList} />,
     layout: '/admin',
     visible: true,
+  },
+  {
+    path: '/repo/:id',
+    name: 'Repo Details',
+    icon: Person,
+    component: (props) => <PrivateRoute component={RepoDetails} />,
+    layout: '/admin',
+    visible: false,
   },
   {
     path: '/push',
     name: 'Dashboard',
     icon: Dashboard,
-    component: OpenPushRequests,
+    component: (props) => <PrivateRoute component={OpenPushRequests} />,
     layout: '/admin',
     visible: true,
   },
@@ -49,7 +59,7 @@ const dashboardRoutes = [
     path: '/push/:id',
     name: 'Open Push Requests',
     icon: Person,
-    component: PushDetails,
+    component: (props) => <PrivateRoute component={PushDetails} />,
     layout: '/admin',
     visible: false,
   },
@@ -57,7 +67,15 @@ const dashboardRoutes = [
     path: '/profile',
     name: 'My Account',
     icon: AccountCircle,
-    component: User,
+    component: (props) => <PrivateRoute component={User} />,
+    layout: '/admin',
+    visible: true,
+  },
+  {
+    path: '/user',
+    name: 'Users',
+    icon: Group,
+    component: (props) => <PrivateRoute adminOnly component={UserList} />,
     layout: '/admin',
     visible: true,
   },
@@ -65,25 +83,9 @@ const dashboardRoutes = [
     path: '/user/:id',
     name: 'User',
     icon: Person,
-    component: User,
+    component: (props) => <PrivateRoute adminOnly component={User} />,
     layout: '/admin',
     visible: false,
-  },
-  {
-    path: '/repo/:id',
-    name: 'Repo Details',
-    icon: Person,
-    component: RepoDetails,
-    layout: '/admin',
-    visible: false,
-  },
-  {
-    path: '/user',
-    name: 'Users',
-    icon: Group,
-    component: UserList,
-    layout: '/admin',
-    visible: true,
   },
 ];
 
