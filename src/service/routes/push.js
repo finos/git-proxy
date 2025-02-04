@@ -91,6 +91,10 @@ router.post('/:id/authorise', async (req, res) => {
 
   if (req.user && attestationComplete) {
     const id = req.params.id;
+    if (typeof id !== "string") {
+      res.status(400).send({ message: "Invalid ID format" });
+      return;
+    }
     console.log({ id });
 
     // Get the push request

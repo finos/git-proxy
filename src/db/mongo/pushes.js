@@ -57,7 +57,7 @@ const writeAudit = async (action) => {
   const options = { upsert: true };
   const collection = await connect(cnName);
   delete data._id;
-  await collection.updateOne({ id: data.id }, { $set: data }, options);
+  await collection.updateOne({ id: { $eq: data.id } }, { $set: data }, options);
   return action;
 };
 
