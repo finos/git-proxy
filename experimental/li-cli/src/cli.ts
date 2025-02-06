@@ -6,19 +6,6 @@ import addLicenseCMD from './cmds/add-license';
 import process from 'node:process';
 
 yargs(hideBin(process.argv))
-  // .command(
-  //   'serve [port]',
-  //   'start the server',
-  //   (yargs) => {
-  //     return yargs.positional('port', {
-  //       describe: 'port to bind on',
-  //       default: 5000,
-  //     });
-  //   },
-  //   (argv) => {
-  //     addLicenseCMD();
-  //   },
-  // )
   .option('li-url', {
     type: 'string',
     describe: 'The url of the license inventory instance',
