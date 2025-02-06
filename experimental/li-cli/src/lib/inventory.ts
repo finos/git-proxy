@@ -51,6 +51,7 @@ export async function pushLicense(liURL: string, data: InventoryLicense): Promis
   }
   const resObj = await res.json();
   const { data: resData, error } = pushLicenseSchema.safeParse(resObj);
+  // TODO: account for already exists
   if (error) {
     throw new Error("couldn't process data", { cause: error });
   }
