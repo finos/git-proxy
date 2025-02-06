@@ -21,7 +21,7 @@ const createRouter = (licenseService: LicenseDataService) => {
     const { body: submittedLicense } = parseData;
     const { error, data } = await licenseService.create(submittedLicense);
     if (error) {
-      req.log.error(parseErr);
+      req.log.error(error);
       res.status(500).json({ error: 'failed to create' }).end();
       return;
     }

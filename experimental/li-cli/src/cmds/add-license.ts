@@ -37,6 +37,7 @@ async function promptForSPDXID(licenseList: LicensesMap): Promise<string> {
   return selectedLicenseID;
 }
 
+// TODO: add multiple licenses at the same time
 async function addLicenseCMD(liURL: string, options?: AddLicenseCMDOptions) {
   console.info('fetching license list from `spdx.org`');
   const licenseList = await getLicenseList();
