@@ -16,7 +16,7 @@ const PrivateRoute = ({ component: Component, adminOnly = false }) => {
     return <Navigate to="/login" />;
   }
 
-  if (adminOnly && !user.isAdmin) {
+  if (adminOnly && !user.admin) {
     console.debug('User is not an admin, redirecting to not authorized page');
     return <Navigate to="/not-authorized" />;
   }
