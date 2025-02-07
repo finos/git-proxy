@@ -2,7 +2,6 @@ const proc = require('./processors');
 
 const pushActionChain = [
   proc.push.parsePush,
-  proc.push.preReceive,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
   proc.push.checkAuthorEmails,
@@ -10,6 +9,7 @@ const pushActionChain = [
   proc.push.checkIfWaitingAuth,
   proc.push.pullRemote,
   proc.push.writePack,
+  proc.push.preReceive,
   proc.push.getDiff,
   proc.push.clearBareClone,
   proc.push.scanDiff,
