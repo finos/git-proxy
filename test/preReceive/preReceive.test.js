@@ -1,8 +1,6 @@
 const { expect } = require('chai');
 const sinon = require('sinon');
-const fs = require('fs');
 const path = require('path');
-const { spawnSync } = require('child_process');
 const { exec } = require('../../src/proxy/processors/push-action/preReceive');
 
 describe('Pre-Receive Hook Execution', function () {
@@ -29,7 +27,6 @@ describe('Pre-Receive Hook Execution', function () {
   });
 
   it('should execute hook successfully', async () => {
-    const path = require('path');
     const scriptPath = path.resolve(__dirname, 'pre-receive-hooks/always-allow.sh');
 
     const result = await exec(req, action, scriptPath);
@@ -42,7 +39,6 @@ describe('Pre-Receive Hook Execution', function () {
   });
 
   it('should fail when hook file does not exist', async () => {
-    const path = require('path');
     const scriptPath = path.resolve(__dirname, 'pre-receive-hooks/missing-hook.sh');
 
     const result = await exec(req, action, scriptPath);
@@ -55,7 +51,6 @@ describe('Pre-Receive Hook Execution', function () {
   });
 
   it('should fail when hook execution returns an error', async () => {
-    const path = require('path');
     const scriptPath = path.resolve(__dirname, 'pre-receive-hooks/always-reject.sh');
 
     const result = await exec(req, action, scriptPath);
