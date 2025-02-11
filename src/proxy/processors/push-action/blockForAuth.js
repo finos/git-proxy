@@ -10,7 +10,7 @@ const exec = async (req, action) => {
     '\n\n\n' +
     `\x1B[32mGitProxy has received your push ✅\x1B[0m\n\n` +
     '🔗 Shareable Link\n\n' +
-    `\x1B[34m${url}/admin/push/${action.id}\x1B[0m` +
+    `\x1B[34m${url}/dashboard/push/${action.id}\x1B[0m` +
     '\n\n\n';
   step.setAsyncBlock(message);
 

@@ -25,7 +25,7 @@ export default function UserList(props) {
   const [isError, setIsError] = useState(false);
   const navigate = useNavigate();
 
-  const openUser = (username) => navigate(`/admin/user/${username}`, { replace: true });
+  const openUser = (username) => navigate(`/dashboard/admin/user/${username}`, { replace: true });
 
   useEffect(() => {
     const query = {};

@@ -67,7 +67,7 @@ router.get('/oidc/callback', (req, res, next) => {
         return res.status(401).end();
       }
       console.log('Logged in successfully. User:', user);
-      return res.redirect(`${uiHost}:${uiPort}/admin/profile`);
+      return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
     });
   })(req, res, next);
 });
