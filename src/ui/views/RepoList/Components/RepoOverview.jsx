@@ -581,6 +581,9 @@ export default function Repositories(props) {
       .get(`https://api.github.com/repos/${props.data.project}/${props.data.name}`)
       .then((res) => {
         setGitHub(res.data);
+      })
+      .catch((err) => {
+        console.error(`Error fetching GitHub repository ${props.data.project}/${props.data.name}: ${err}`);
       });
   };
 
