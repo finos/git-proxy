@@ -1,5 +1,16 @@
 describe('Repo', () => {
   beforeEach(() => {
+    // Log in with default admin user
+    cy.visit('/login');
+
+    cy.intercept('GET', '**/api/auth/me').as('getUser');
+
+    cy.get('[data-test="username"]').type('admin');
+    cy.get('[data-test="password"]').type('admin');
+    cy.get('[data-test="login"]').click();
+
+    cy.wait('@getUser');
+
     cy.visit('/dashboard/repo');
 
     // prevent failures on 404 request and uncaught promises
