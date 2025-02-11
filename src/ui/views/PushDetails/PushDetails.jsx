@@ -48,20 +48,20 @@ export default function Dashboard() {
   const authorise = async (attestationData) => {
     await authorisePush(id, setMessage, setUserAllowedToApprove, attestationData);
     if (isUserAllowedToApprove) {
-      navigate('/admin/push/');
+      navigate('/dashboard/push/');
     }
   };
 
   const reject = async () => {
     await rejectPush(id, setMessage, setUserAllowedToReject);
     if (isUserAllowedToReject) {
-      navigate('/admin/push/');
+      navigate('/dashboard/push/');
     }
   };
 
   const cancel = async () => {
     await cancelPush(id, setAuth, setIsError);
-    navigate(`/admin/push/`);
+    navigate(`/dashboard/push/`);
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -178,7 +178,7 @@ export default function Dashboard() {
                       htmlColor='green'
                     />
                   </span>
-                  <a href={`/admin/user/${data.attestation.reviewer.username}`}>
+                  <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
                     <img
                       style={{ width: '45px', borderRadius: '20px' }}
                       src={`https://github.com/${data.attestation.reviewer.gitAccount}.png`}
@@ -186,7 +186,7 @@ export default function Dashboard() {
                   </a>
                   <div>
                     <p>
-                      <a href={`/admin/user/${data.attestation.reviewer.username}`}>
+                      <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
                         {data.attestation.reviewer.gitAccount}
                       </a>{' '}
                       approved this contribution

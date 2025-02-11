@@ -1,6 +1,6 @@
 describe('Repo', () => {
   beforeEach(() => {
-    cy.visit('/admin/repo');
+    cy.visit('/dashboard/repo');
 
     // prevent failures on 404 request and uncaught promises
     cy.on('uncaught:exception', () => false);
@@ -18,7 +18,7 @@ describe('Repo', () => {
 
       cy
         // find the entry for finos/test-repo
-        .get('a[href="/admin/repo/test-repo"]')
+        .get('a[href="/dashboard/repo/test-repo"]')
         // take it's parent row
         .closest('tr')
         // find the nearby span containing Code we can click to open the tooltip

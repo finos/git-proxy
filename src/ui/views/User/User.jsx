@@ -52,7 +52,7 @@ export default function Dashboard() {
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
-  if (!auth && window.location.pathname === '/admin/profile') {
+  if (!auth && window.location.pathname === '/dashboard/profile') {
     return <Navigate to='/login' />;
   }
 
@@ -60,7 +60,7 @@ export default function Dashboard() {
     try {
       data.gitAccount = escapeHTML(gitAccount);
       await updateUser(data);
-      navigate(`/admin/profile`);
+      navigate(`/dashboard/profile`);
     } catch {
       setIsError(true);
     }

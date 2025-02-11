@@ -21,7 +21,7 @@ export default function Repositories(props) {
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const navigate = useNavigate();
-  const openRepo = (repo) => navigate(`/admin/repo/${repo}`, { replace: true });
+  const openRepo = (repo) => navigate(`/dashboard/repo/${repo}`, { replace: true });
   const { user } = useContext(UserContext);
 
   useEffect(() => {

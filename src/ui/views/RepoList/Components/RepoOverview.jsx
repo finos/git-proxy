@@ -591,7 +591,7 @@ export default function Repositories(props) {
     <TableRow>
       <TableCell>
         <div style={{ padding: '15px' }}>
-          <a href={`/admin/repo/${props.data.name}`}>
+          <a href={`/dashboard/repo/${props.data.name}`}>
             <span style={{ fontSize: '17px' }}>
               {props.data.project}/{props.data.name}
             </span>

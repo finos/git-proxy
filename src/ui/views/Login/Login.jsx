@@ -76,10 +76,10 @@ export default function UserProfile() {
   }
 
   if (gitAccountError) {
-    return <Navigate to={{ pathname: '/admin/profile' }} />;
+    return <Navigate to={{ pathname: '/dashboard/profile' }} />;
   }
   if (success) {
-    return <Navigate to={{ pathname: '/admin/profile', state: { authed: true } }} />;
+    return <Navigate to={{ pathname: '/dashboard/profile', state: { authed: true } }} />;
   }
 
   return (
@@ -169,8 +169,8 @@ export default function UserProfile() {
           <div style={{ textAlign: 'center', opacity: 0.9, fontSize: '12px' }}>
             <Badge overlap='rectangular' color='error' badgeContent={'NEW'} />{' '}
             <span style={{ paddingLeft: '20px' }}>
-              View our <a href='/admin/push'>open source activity feed</a> or{' '}
-              <a href='/admin/repo'>scroll through projects</a> we contribute to
+              View our <a href='/dashboard/push'>open source activity feed</a> or{' '}
+              <a href='/dashboard/repo'>scroll through projects</a> we contribute to
             </span>
           </div>
         </GridItem>
