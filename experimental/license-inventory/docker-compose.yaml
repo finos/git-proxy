@@ -1,6 +1,6 @@
 services:
   init:
-    image: alpine:3.21
+    image: alpine:3.21@sha256:56fa17d2a7e7f168a043a2712e63aed1f8543aeafdcee47c58dcffe38ed51099
     init: true
     volumes:
       - mongo-logs:/var/log-mongo
@@ -10,7 +10,7 @@ services:
 
   app:
     container_name: license-inventory
-    image: node:23-alpine
+    image: node:23-alpine@sha256:70eca392e3d52cb7d133b52d52e8600d8c410a5eaee6105c11324b28868f9ac9
     # ensure colours show
     tty: true
     command: >
@@ -35,7 +35,7 @@ services:
       - otel-collector
 
   mongo:
-    image: mongo:8.0.4
+    image: mongo:8.0.4@sha256:b5725ac74a0d00d2bb48af997535f4eb4e87df61a2054306ae06f258b6c6b337
     command: --logpath=/var/log/mongo.log
     ports:
       - 27017:27017
@@ -46,7 +46,7 @@ services:
       - init
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.115.1
+    image: otel/opentelemetry-collector-contrib:0.119.0@sha256:36c35cc213c0f3b64d6e8a3e844dc90822f00725e0e518eaed5b08bcc2231e72
     volumes:
       - ./dev/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
     depends_on:
@@ -54,7 +54,7 @@ services:
       - tempo
 
   promtail:
-    image: grafana/promtail:3.3.2
+    image: grafana/promtail:3.4.0@sha256:5a9c3491f52675913905b466c966eaee26bb40c3a4d5ff0aee848f4834ac1997
     command:
       - -config.file=/etc/promtail/config.yaml
       - -log.level=warn
@@ -66,7 +66,7 @@ services:
 
   # traces
   tempo:
-    image: grafana/tempo:2.6.1
+    image: grafana/tempo:2.7.0@sha256:12e904cc509a8e0bd87815e0bc719b6167933bc3f2532716a85811af967780f6
     command:
       - -config.file=/etc/tempo.yaml
       - -log.level=warn
@@ -79,7 +79,7 @@ services:
 
   # metrics
   prometheus:
-    image: prom/prometheus:v3.0.1
+    image: prom/prometheus:v3.1.0@sha256:6559acbd5d770b15bb3c954629ce190ac3cbbdb2b7f1c30f0385c4e05104e218
     command:
       - --config.file=/etc/prometheus.yaml
       - --enable-feature=exemplar-storage
@@ -95,7 +95,7 @@ services:
 
   # logs
   loki:
-    image: grafana/loki:3.3.2
+    image: grafana/loki:3.4.0@sha256:74b8ccbd6e4b4932874742cf3997389592389ea721b3f210aad266486b985a4c
     command:
       - -config.file=/etc/loki/loki.yaml
       - -log.level=warn
@@ -106,7 +106,7 @@ services:
 
   # everything dashboard
   grafana:
-    image: grafana/grafana:11.4.0
+    image: grafana/grafana:11.5.1@sha256:5781759b3d27734d4d548fcbaf60b1180dbf4290e708f01f292faa6ae764c5e6
     ports:
       - 3001:3000
     volumes:
