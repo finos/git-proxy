@@ -1,9 +1,9 @@
-const proxyApp = require('express')();
+const express = require('express');
 const bodyParser = require('body-parser');
-const http = require("http");
-const https = require("https");
+const http = require('http');
+const https = require('https');
 const fs = require('fs');
-const path = require("path");
+const path = require('path');
 const router = require('./routes').router;
 const config = require('../config');
 const db = require('../db');
@@ -17,18 +17,14 @@ const options = {
   limit: '100000kb',
   type: '*/*',
   key: fs.readFileSync(path.join(__dirname, config.getSSLKeyPath())),
-  cert: fs.readFileSync(path.join(__dirname, config.getSSLCertPath()))
+  cert: fs.readFileSync(path.join(__dirname, config.getSSLCertPath())),
 };
 
-// Setup the proxy middleware
-proxyApp.use(bodyParser.raw(options));
-proxyApp.use('/', router);
-
-const start = async () => {
-   const plugins = config.getPlugins();
-   const pluginLoader = new PluginLoader(plugins);
-   await pluginLoader.load();
-   chain.chainPluginLoader = pluginLoader;
+const proxyPreparations = async () => {
+  const plugins = config.getPlugins();
+  const pluginLoader = new PluginLoader(plugins);
+  await pluginLoader.load();
+  chain.chainPluginLoader = pluginLoader;
   // Check to see if the default repos are in the repo list
   const defaultAuthorisedRepoList = config.getAuthorisedList();
   const allowedList = await db.getRepos();
@@ -41,15 +37,30 @@ const start = async () => {
       await db.addUserCanAuthorise(x.name, 'admin');
     }
   });
+};
 
-  http.createServer(options, proxyApp).listen(proxyHttpPort, () => {
+// just keep this async incase it needs async stuff in the future
+const createApp = async () => {
+  const app = express();
+  // Setup the proxy middleware
+  app.use(bodyParser.raw(options));
+  app.use('/', router);
+  return app;
+};
+
+const start = async () => {
+  const app = await createApp();
+  await proxyPreparations();
+  http.createServer(options, app).listen(proxyHttpPort, () => {
     console.log(`HTTP Proxy Listening on ${proxyHttpPort}`);
   });
-  https.createServer(options, proxyApp).listen(proxyHttpsPort, () => {
+  https.createServer(options, app).listen(proxyHttpsPort, () => {
     console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
   });
 
-  return proxyApp;
+  return app;
 };
 
+module.exports.proxyPreparations = proxyPreparations;
+module.exports.createApp = createApp;
 module.exports.start = start;
