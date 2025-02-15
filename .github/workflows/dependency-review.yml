@@ -9,13 +9,18 @@ jobs:
   dependency-review:
     runs-on: ubuntu-latest
     steps:
-     - name: 'Checkout Repository'
-       uses: actions/checkout@v4
-     - name: Dependency Review
-       uses: actions/dependency-review-action@v4
-       with:
-        comment-summary-in-pr: always
-        fail-on-severity: high
-        allow-licenses: MIT, Apache-2.0, BSD-3-Clause, ISC, BSD-2-Clause, Unlicense, CC0-1.0, 0BSD, X11, MPL-2.0, MPL-1.0, MPL-1.1, MPL-2.0
-        fail-on-scopes: development, runtime
-        allow-dependencies-licenses: 'pkg:npm/caniuse-lite'
+      - name: Harden Runner
+        uses: step-security/harden-runner@cb605e52c26070c328afc4562f0b4ada7618a84e # v2
+        with:
+          egress-policy: audit
+
+      - name: 'Checkout Repository'
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - name: Dependency Review
+        uses: actions/dependency-review-action@3b139cfc5fae8b618d3eae3675e383bb1769c019 # v4
+        with:
+          comment-summary-in-pr: always
+          fail-on-severity: high
+          allow-licenses: MIT, Apache-2.0, BSD-3-Clause, ISC, BSD-2-Clause, Unlicense, CC0-1.0, 0BSD, X11, MPL-2.0, MPL-1.0, MPL-1.1, MPL-2.0, Zlib
+          fail-on-scopes: development, runtime
+          allow-dependencies-licenses: 'pkg:npm/caniuse-lite'

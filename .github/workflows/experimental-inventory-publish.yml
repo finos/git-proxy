@@ -1,0 +1,35 @@
+name: experimental-inventory - Publish to NPM
+on:
+  push:
+    tags:
+      - 'license-inventory-*'
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@cb605e52c26070c328afc4562f0b4ada7618a84e # v2.10.4
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      # Setup .npmrc file to publish to npm
+      - uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
+        with:
+          node-version: '18.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+        working-directory: ./experimental/license-inventory
+
+      - run: npm run build
+        working-directory: ./experimental/license-inventory
+
+      - run: npm publish --access=public
+        working-directory: ./experimental/license-inventory
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

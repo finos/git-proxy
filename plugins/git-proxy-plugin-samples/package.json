@@ -1,6 +1,6 @@
 {
   "name": "@finos/git-proxy-plugin-samples",
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.1",
   "description": "A set of sample (dummy) plugins for GitProxy to demonstrate how plugins are authored.",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -13,9 +13,9 @@
     "./example": "./example.cjs"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.21.2"
   },
   "peerDependencies": {
-    "@finos/git-proxy": "1.3.5-alpha.5"
+    "@finos/git-proxy": "^1.7.1"
   }
 }
