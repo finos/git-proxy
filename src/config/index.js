@@ -70,27 +70,29 @@ const getDatabase = () => {
   throw Error('No database cofigured!');
 };
 
-// Gets the configuared data sink, defaults to filesystem
-const getAuthentication = () => {
+/**
+ * Get the list of enabled authentication methods
+ * @returns {Array} List of enabled authentication methods
+ */
+const getAuthMethods = () => {
   if (_userSettings !== null && _userSettings.authentication) {
     _authentication = _userSettings.authentication;
   }
-  for (const ix in _authentication) {
-    if (!ix) continue;
-    const auth = _authentication[ix];
-    if (auth.enabled) {
-      return auth;
-    }
+
+  const enabledAuthMethods = _authentication.filter(auth => auth.enabled);
+
+  if (enabledAuthMethods.length === 0) {
+    throw new Error("No authentication method enabled.");
   }
 
-  throw Error('No authentication cofigured!');
+  return enabledAuthMethods;
 };
 
 // Log configuration to console
 const logConfiguration = () => {
   console.log(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
   console.log(`data sink = ${JSON.stringify(getDatabase())}`);
-  console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
+  console.log(`authentication = ${JSON.stringify(getAuthMethods())}`);
 };
 
 const getAPIs = () => {
@@ -202,7 +204,7 @@ exports.getProxyUrl = getProxyUrl;
 exports.getAuthorisedList = getAuthorisedList;
 exports.getDatabase = getDatabase;
 exports.logConfiguration = logConfiguration;
-exports.getAuthentication = getAuthentication;
+exports.getAuthMethods = getAuthMethods;
 exports.getTempPasswordConfig = getTempPasswordConfig;
 exports.getCookieSecret = getCookieSecret;
 exports.getSessionMaxAgeHours = getSessionMaxAgeHours;
