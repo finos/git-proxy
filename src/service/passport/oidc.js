@@ -1,20 +1,22 @@
-const configure = async () => {
-  const passport = require('passport');
-  const { Strategy: OIDCStrategy } = require('passport-openidconnect');
+const { Strategy: OIDCStrategy } = require('passport-openidconnect');
+
+const configure = async (passport) => {
   const db = require('../../db');
 
-  const config = require('../../config').getAuthentication();
-  const oidcConfig = config.oidcConfig;
+  // We can refactor this by normalizing auth strategy config and pass it directly into the configure() function,
+  // ideally when we convert this to TS.
+  const authMethods = require('../../config').getAuthMethods();
+  const oidcConfig = authMethods.find((method) => method.type.toLowerCase() === "openidconnect")?.oidcConfig;
 
   passport.use(
-    new OIDCStrategy(oidcConfig, async function verify(issuer, profile, cb) {
+    new OIDCStrategy(oidcConfig, async function verify(issuer, profile, done) {
       try {
         const user = await db.findUserByOIDC(profile.id);
 
         if (!user) {
           const email = safelyExtractEmail(profile);
           if (!email) {
-            return cb(new Error('No email found in OIDC profile'));
+            return done(new Error('No email found in OIDC profile'));
           }
 
           const username = getUsername(email);
@@ -33,25 +35,25 @@ const configure = async () => {
             newUser.oidcId,
           );
 
-          return cb(null, newUser);
+          return done(null, newUser);
         }
-        return cb(null, user);
+        return done(null, user);
       } catch (err) {
-        return cb(err);
+        return done(err);
       }
     }),
   );
 
-  passport.serializeUser((user, cb) => {
-    cb(null, user.oidcId || user.username);
+  passport.serializeUser((user, done) => {
+    done(null, user.oidcId || user.username);
   });
 
-  passport.deserializeUser(async (id, cb) => {
+  passport.deserializeUser(async (id, done) => {
     try {
       const user = (await db.findUserByOIDC(id)) || (await db.findUser(id));
-      cb(null, user);
+      done(null, user);
     } catch (err) {
-      cb(err);
+      done(err);
     }
   });
 
@@ -59,7 +61,7 @@ const configure = async () => {
   return passport;
 };
 
-module.exports.configure = configure;
+module.exports = { configure };
 
 /**
  * Extracts email from OIDC profile.

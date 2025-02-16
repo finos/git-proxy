@@ -28,7 +28,7 @@ router.get('/', (req, res) => {
   });
 });
 
-router.post('/login', passport.authenticate(passportType), async (req, res) => {
+router.post('/login', passport.authenticate('local'), async (req, res) => {
   try {
     const currentUser = { ...req.user };
     delete currentUser.password;
@@ -48,7 +48,7 @@ router.post('/login', passport.authenticate(passportType), async (req, res) => {
   }
 });
 
-router.get('/oidc', passport.authenticate(passportType));
+router.get('/oidc', passport.authenticate('openidconnect'));
 
 router.get('/oidc/callback', (req, res, next) => {
   passport.authenticate(passportType, (err, user, info) => {
