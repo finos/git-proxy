@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 /* eslint-disable max-len */
-const argv = require('yargs/yargs')(process.argv.slice(2))
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
+import * as fs from 'fs';
+import config from './src/config/file';
+import proxy from './src/proxy';
+import service from './src/service';
+
+const argv = yargs(hideBin(process.argv))
   .usage('Usage: $0 [options]')
   .options({
     validate: {
@@ -8,23 +15,23 @@ const argv = require('yargs/yargs')(process.argv.slice(2))
         'Check the proxy.config.json file in the current working directory for validation errors.',
       required: false,
       alias: 'v',
+      type: 'boolean',
     },
     config: {
       description: 'Path to custom git-proxy configuration file.',
       default: 'proxy.config.json',
       required: false,
       alias: 'c',
+      type: 'string',
     },
   })
-  .strict().argv;
+  .strict()
+  .parseSync();
 
-const config = require('./src/config/file');
 config.configFile = argv.c ? argv.c : undefined;
 
 if (argv.v) {
-  const fs = require('fs');
-
-  if (!fs.existsSync(config.configFile)) {
+  if (!fs.existsSync(config.configFile as string)) {
     console.error(
       `Config file ${config.configFile} doesn't exist, nothing to validate! Did you forget -c/--config?`,
     );
@@ -38,11 +45,7 @@ if (argv.v) {
 
 config.validate();
 
-const proxy = require('./src/proxy');
-const service = require('./src/service');
-
 proxy.start();
 service.start();
 
-module.exports.proxy = proxy;
-module.exports.service = service;
+export { proxy, service };
