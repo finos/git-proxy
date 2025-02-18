@@ -1,4 +1,4 @@
-name: experimental-inventory - Publish to NPM
+name: experimental-inventory-cli - Publish to NPM
 on:
   workflow_dispatch:
     inputs:
@@ -29,15 +29,15 @@ jobs:
       - name: check version matches input
         run: |
           grep "\"version\": \"${{ github.event.inputs.version }}\"," package.json
-        working-directory: ./experimental/license-inventory
+        working-directory: ./experimental/li-cli
 
       - run: npm ci
-        working-directory: ./experimental/license-inventory
+        working-directory: ./experimental/li-cli
 
       - run: npm run build
-        working-directory: ./experimental/license-inventory
+        working-directory: ./experimental/li-cli
 
       - run: npm publish --access=public
-        working-directory: ./experimental/license-inventory
+        working-directory: ./experimental/li-cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
