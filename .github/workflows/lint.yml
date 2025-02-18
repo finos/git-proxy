@@ -10,9 +10,6 @@ permissions:
 env: # environment variables (available in any part of the action)
   NODE_VERSION: 18
 
-permissions:
-  contents: read
-
 jobs:
   linting:
     name: Linting
