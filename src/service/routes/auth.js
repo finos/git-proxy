@@ -46,7 +46,6 @@ router.get('/oidc', passport.authenticate(passportType));
 
 router.get('/oidc/callback', (req, res, next) => {
   passport.authenticate(passportType, (err, user, info) => {
-    console.log('authenticate callback executed');
     if (err) {
       console.error('Authentication error:', err);
       return res.status(401).end();
