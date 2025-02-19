@@ -1,65 +1,94 @@
+const openIdClient = require('openid-client');
+const { Strategy } = require('openid-client/passport');
+const passport = require('passport');
+const db = require('../../db');
+
 const configure = async () => {
-  const passport = require('passport');
-  const { Strategy: OIDCStrategy } = require('passport-openidconnect');
-  const db = require('../../db');
-
   const config = require('../../config').getAuthentication();
-  const oidcConfig = config.oidcConfig;
+  const { oidcConfig } = config;
+  const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
 
-  passport.use(
-    new OIDCStrategy(oidcConfig, async function verify(issuer, profile, cb) {
+  if (!oidcConfig || !oidcConfig.issuer) {
+    throw new Error('Missing OIDC issuer in configuration')
+  }
+
+  const server = new URL(issuer);
+
+  try {
+    const config = await openIdClient.discovery(server, clientID, clientSecret);
+
+    const strategy = new Strategy({ callbackURL, config, scope }, async (tokenSet, done) => {
+      // Validate token sub for added security
+      const idTokenClaims = tokenSet.claims();
+      const expectedSub = idTokenClaims.sub;
+      const userInfo = await openIdClient.fetchUserInfo(config, tokenSet.access_token, expectedSub);
+      handleUserAuthentication(userInfo, done);
+    });
+    
+    // currentUrl must be overridden to match the callback URL
+    strategy.currentUrl = (request) => {
+      const callbackUrl = new URL(callbackURL);
+      const currentUrl = Strategy.prototype.currentUrl.call(this, request);
+      currentUrl.host = callbackUrl.host;
+      currentUrl.protocol = callbackUrl.protocol;
+      return currentUrl;
+    };
+
+    passport.use(strategy);
+
+    passport.serializeUser((user, done) => {
+      done(null, user.oidcId || user.username);
+    })
+
+    passport.deserializeUser(async (id, done) => {
       try {
-        const user = await db.findUserByOIDC(profile.id);
-
-        if (!user) {
-          const email = safelyExtractEmail(profile);
-          if (!email) {
-            return cb(new Error('No email found in OIDC profile'));
-          }
-
-          const username = getUsername(email);
-          const newUser = {
-            username: username,
-            email: email,
-            oidcId: profile.id,
-          };
-
-          await db.createUser(
-            newUser.username,
-            null,
-            newUser.email,
-            'Edit me',
-            false,
-            newUser.oidcId,
-          );
-
-          return cb(null, newUser);
-        }
-        return cb(null, user);
+        const user = await db.findUserByOIDC(id);
+        done(null, user);
       } catch (err) {
-        return cb(err);
+        done(err);
       }
-    }),
-  );
+    })
+    passport.type = server.host;
 
-  passport.serializeUser((user, cb) => {
-    cb(null, user.oidcId || user.username);
-  });
+    return passport;
+  } catch (error) {
+    console.error('OIDC configuration failed:', error);
+    throw error;
+  }
+}
 
-  passport.deserializeUser(async (id, cb) => {
-    try {
-      const user = (await db.findUserByOIDC(id)) || (await db.findUser(id));
-      cb(null, user);
-    } catch (err) {
-      cb(err);
-    }
-  });
-
-  passport.type = 'openidconnect';
-  return passport;
-};
 
 module.exports.configure = configure;
+
+/**
+ * Handles user authentication with OIDC.
+ * @param userInfo the OIDC user info object 
+ * @param done the callback function
+ * @returns a promise with the authenticated user or an error
+ */
+const handleUserAuthentication = async (userInfo, done) => {
+  try {
+    let user = await db.findUserByOIDC(userInfo.sub);
+
+    if (!user) {
+      const email = safelyExtractEmail(userInfo);
+      if (!email) return done(new Error('No email found in OIDC profile'));
+
+      const newUser = {
+        username: getUsername(email),
+        email,
+        oidcId: userInfo.sub,
+      };
+
+      await db.createUser(newUser.username, null, newUser.email, 'Edit me', false, newUser.oidcId);
+      return done(null, newUser);
+    }
+
+    return done(null, user);
+  } catch (err) {
+    return done(err);
+  }
+};
 
 /**
  * Extracts email from OIDC profile.
@@ -68,14 +97,7 @@ module.exports.configure = configure;
  * @return {string | null} the email address
  */
 const safelyExtractEmail = (profile) => {
-  if (profile.emails && profile.emails.length > 0) {
-    return profile.emails[0].value;
-  }
-
-  if (profile.email) {
-    return profile.email;
-  }
-  return null;
+  return profile.email || (profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null);
 };
 
 /**
