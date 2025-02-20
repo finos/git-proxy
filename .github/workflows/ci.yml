@@ -24,7 +24,7 @@ jobs:
 
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@cb605e52c26070c328afc4562f0b4ada7618a84e # v2.10.4
+      uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
       with:
         egress-policy: audit
 
@@ -77,7 +77,7 @@ jobs:
         path: build
 
     - name: Run cypress test
-      uses: cypress-io/github-action@7271bed2a170d73c0b08939cd192db51a1c46c50 # v6.7.10
+      uses: cypress-io/github-action@18a6541367f4580a515371905f499a27a44e8dbe # v6.7.12
       with: 
         start: npm start &
         wait-on: "http://localhost:3000"
