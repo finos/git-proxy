@@ -4,6 +4,8 @@ const activeDirectory = require('./activeDirectory');
 const oidc = require('./oidc');
 const config = require('../../config');
 
+// Allows obtaining strategy config function and type
+// Keep in mind to add AuthStrategy enum when refactoring this to TS
 const authStrategies = {
   local: local,
   activedirectory: activeDirectory,
@@ -20,6 +22,7 @@ const configure = async () => {
     if (strategy && typeof strategy.configure === "function") {
       await strategy.configure(passport);
     }
+    console.log(`strategy type for ${auth.type}: ${strategy.type}`);
   }
 
   if (authMethods.some(auth => auth.type.toLowerCase() === "local")) {
@@ -29,5 +32,6 @@ const configure = async () => {
   return passport;
 };
 
-module.exports.configure = configure;
-module.exports.getPassport = () => passport;
+const getPassport = () => passport;
+
+module.exports = { authStrategies, configure, getPassport };
