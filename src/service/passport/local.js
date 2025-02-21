@@ -2,6 +2,8 @@ const bcrypt = require("bcryptjs");
 const LocalStrategy = require("passport-local").Strategy;
 const db = require("../../db");
 
+const type = "local";
+
 const configure = async (passport) => {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
@@ -36,7 +38,6 @@ const configure = async (passport) => {
     }
   });
 
-  passport.type = "local";
   return passport;
 };
 
@@ -50,4 +51,4 @@ const createDefaultAdmin = async () => {
   }
 };
 
-module.exports = { configure, createDefaultAdmin };
+module.exports = { configure, createDefaultAdmin, type };
