@@ -3,13 +3,7 @@ const router = new express.Router();
 const passport = require('../passport').getPassport();
 const db = require('../../db');
 const passportType = passport.type;
-const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', NODE_ENV } = process.env;
-
-// TODO: Refactor this through proper .env loading. This handles redirects in dev.
-let uiPort = 3000;
-if (NODE_ENV === 'production') {
-  uiPort = process.env.GIT_PROXY_UI_PORT;
-}
+const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } = process.env;
 
 router.get('/', (req, res) => {
   res.status(200).json({
@@ -52,7 +46,6 @@ router.get('/oidc', passport.authenticate('openidconnect'));
 
 router.get('/oidc/callback', (req, res, next) => {
   passport.authenticate(passportType, (err, user, info) => {
-    console.log('authenticate callback executed');
     if (err) {
       console.error('Authentication error:', err);
       return res.status(401).end();
