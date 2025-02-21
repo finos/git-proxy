@@ -1,8 +1,8 @@
 const express = require('express');
 const router = new express.Router();
 const passport = require('../passport').getPassport();
+const authStrategies = require('../passport').authStrategies;
 const db = require('../../db');
-const passportType = passport.type;
 const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } = process.env;
 
 router.get('/', (req, res) => {
@@ -22,7 +22,7 @@ router.get('/', (req, res) => {
   });
 });
 
-router.post('/login', passport.authenticate('local'), async (req, res) => {
+router.post('/login', passport.authenticate(authStrategies['local'].type), async (req, res) => {
   try {
     const currentUser = { ...req.user };
     delete currentUser.password;
@@ -42,10 +42,10 @@ router.post('/login', passport.authenticate('local'), async (req, res) => {
   }
 });
 
-router.get('/oidc', passport.authenticate('openidconnect'));
+router.get('/oidc', passport.authenticate(authStrategies['openidconnect'].type));
 
 router.get('/oidc/callback', (req, res, next) => {
-  passport.authenticate(passportType, (err, user, info) => {
+  passport.authenticate(authStrategies['openidconnect'].type, (err, user, info) => {
     if (err) {
       console.error('Authentication error:', err);
       return res.status(401).end();
