@@ -1,26 +1,27 @@
-const fs = require('fs');
-const _ = require('lodash');
-const Datastore = require('@seald-io/nedb');
-const Action = require('../../proxy/actions/Action').Action;
-const toClass = require('../helper').toClass;
-const repo = require('./repo');
+import fs from 'fs';
+import _ from 'lodash';
+import Datastore from '@seald-io/nedb';
+import { Action } from '../../proxy/actions/Action';
+import { toClass } from '../helper';
+import * as repo from './repo';
+import { PushQuery } from '../types'
 
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
 
-const defaultPushQuery = {
+const defaultPushQuery: PushQuery = {
   error: false,
   blocked: true,
   allowPush: false,
   authorised: false,
 };
 
-const getPushes = (query, logger) => {
+export const getPushes = (query: PushQuery) => {
   if (!query) query = defaultPushQuery;
   return new Promise((resolve, reject) => {
-    db.find(query, (err, docs) => {
+    db.find(query, (err: Error, docs: Action[]) => {
       if (err) {
         reject(err);
       } else {
@@ -34,8 +35,8 @@ const getPushes = (query, logger) => {
   });
 };
 
-const getPush = async (id, logger) => {
-  return new Promise((resolve, reject) => {
+export const getPush = async (id: string) => {
+  return new Promise<Action | null>((resolve, reject) => {
     db.findOne({ id: id }, (err, doc) => {
       if (err) {
         reject(err);
@@ -50,7 +51,7 @@ const getPush = async (id, logger) => {
   });
 };
 
-const writeAudit = async (action, logger) => {
+export const writeAudit = async (action: Action) => {
   return new Promise((resolve, reject) => {
     const options = { multi: false, upsert: true };
     db.update({ id: action.id }, action, options, (err) => {
@@ -63,8 +64,12 @@ const writeAudit = async (action, logger) => {
   });
 };
 
-const authorise = async (id, attestation) => {
+export const authorise = async (id: string, attestation: any) => {
   const action = await getPush(id);
+  if (!action) {
+    throw new Error(`push ${id} not found`);
+  }
+
   action.authorised = true;
   action.canceled = false;
   action.rejected = false;
@@ -73,8 +78,12 @@ const authorise = async (id, attestation) => {
   return { message: `authorised ${id}` };
 };
 
-const reject = async (id, logger) => {
-  const action = await getPush(id, logger);
+export const reject = async (id: string) => {
+  const action = await getPush(id);
+  if (!action) {
+    throw new Error(`push ${id} not found`);
+  }
+
   action.authorised = false;
   action.canceled = false;
   action.rejected = true;
@@ -82,8 +91,11 @@ const reject = async (id, logger) => {
   return { message: `reject ${id}` };
 };
 
-const cancel = async (id, logger) => {
-  const action = await getPush(id, logger);
+export const cancel = async (id: string) => {
+  const action = await getPush(id);
+  if (!action) {
+    throw new Error(`push ${id} not found`);
+  }
   action.authorised = false;
   action.canceled = true;
   action.rejected = false;
@@ -91,10 +103,14 @@ const cancel = async (id, logger) => {
   return { message: `cancel ${id}` };
 };
 
-const canUserCancelPush = async (id, user) => {
-  return new Promise(async (resolve) => {
+export const canUserCancelPush = async (id: string, user: any) => {
+  return new Promise<boolean>(async (resolve) => {
     const pushDetail = await getPush(id);
-    const repoName = pushDetail.repoName.replace('.git', '');
+    if (!pushDetail) {
+      resolve(false);
+    }
+
+    const repoName = pushDetail?.repoName.replace('.git', '');
     const isAllowed = await repo.isUserPushAllowed(repoName, user);
 
     if (isAllowed) {
@@ -105,21 +121,15 @@ const canUserCancelPush = async (id, user) => {
   });
 };
 
-const canUserApproveRejectPush = async (id, user) => {
-  return new Promise(async (resolve) => {
+export const canUserApproveRejectPush = async (id: string, user: any) => {
+  return new Promise<boolean>(async (resolve) => {
     const action = await getPush(id);
-    const repoName = action.repoName.replace('.git', '');
+    if (!action) {
+      resolve(false);
+    }
+    const repoName = action?.repoName.replace('.git', '');
     const isAllowed = await repo.canUserApproveRejectPushRepo(repoName, user);
 
     resolve(isAllowed);
   });
 };
-
-module.exports.getPushes = getPushes;
-module.exports.writeAudit = writeAudit;
-module.exports.getPush = getPush;
-module.exports.authorise = authorise;
-module.exports.reject = reject;
-module.exports.cancel = cancel;
-module.exports.canUserCancelPush = canUserCancelPush;
-module.exports.canUserApproveRejectPush = canUserApproveRejectPush;

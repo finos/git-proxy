@@ -1,14 +1,15 @@
-const fs = require('fs');
-const Datastore = require('@seald-io/nedb');
+import fs from 'fs';
+import Datastore from '@seald-io/nedb';
+import { User } from '../types';
 
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/users.db', autoload: true });
 
-exports.findUser = function (username) {
-  return new Promise((resolve, reject) => {
-    db.findOne({ username: username }, (err, doc) => {
+export const findUser = (username: string) => {
+  return new Promise<User | null>((resolve, reject) => {
+    db.findOne({ username: username }, (err: Error | null, doc: User) => {
       if (err) {
         reject(err);
       } else {
@@ -22,20 +23,20 @@ exports.findUser = function (username) {
   });
 };
 
-exports.createUser = function (data) {
-  return new Promise((resolve, reject) => {
-    db.insert(data, (err) => {
+export const createUser = (user: User) => {
+  return new Promise<User>((resolve, reject) => {
+    db.insert(user, (err) => {
       if (err) {
         reject(err);
       } else {
-        resolve(data);
+        resolve(user);
       }
     });
   });
 };
 
-exports.deleteUser = function (username) {
-  return new Promise((resolve, reject) => {
+export const deleteUser = (username: string) => {
+  return new Promise<void>((resolve, reject) => {
     db.remove({ username: username }, (err) => {
       if (err) {
         reject(err);
@@ -46,7 +47,7 @@ exports.deleteUser = function (username) {
   });
 };
 
-exports.updateUser = function (user) {
+export const updateUser = (user: User) => {
   return new Promise((resolve, reject) => {
     const options = { multi: false, upsert: false };
     db.update({ username: user.username }, user, options, (err) => {
@@ -59,10 +60,10 @@ exports.updateUser = function (user) {
   });
 };
 
-exports.getUsers = function (query) {
+export const getUsers = (query: any) => {
   if (!query) query = {};
-  return new Promise((resolve, reject) => {
-    db.find({}, (err, docs) => {
+  return new Promise<User[]>((resolve, reject) => {
+    db.find({}, (err: Error, docs: User[]) => {
       if (err) {
         reject(err);
       } else {
