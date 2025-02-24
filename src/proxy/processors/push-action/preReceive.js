@@ -31,10 +31,13 @@ const exec = async (req, action, hookFilePath = './hooks/pre-receive.sh') => {
 
     const { stdout, stderr, status } = hookProcess;
 
+    const stderrTrimmed = stderr ? stderr.trim() : '';
+    const stdoutTrimmed = stdout ? stdout.trim() : '';
+
     if (status !== 0) {
       step.error = true;
-      step.log(`Hook stderr: ${stderr.trim()}`);
-      step.setError(stdout.trim());
+      step.log(`Hook stderr: ${stderrTrimmed}`);
+      step.setError(stdoutTrimmed);
       action.addStep(step);
       return action;
     }

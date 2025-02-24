@@ -56,7 +56,14 @@ describe('Pre-Receive Hook Execution', function () {
     const result = await exec(req, action, scriptPath);
 
     expect(result.steps).to.have.lengthOf(1);
-    expect(result.steps[0].error).to.be.true;
-    expect(result.steps[0].logs.some((log) => log.includes('Hook execution error:'))).to.be.true;
+
+    const step = result.steps[0];
+
+    expect(step.error).to.be.true;
+    expect(step.logs.some((log) => log.includes('Hook stderr:'))).to.be.true;
+
+    expect(step.errorMessage).to.exist;
+
+    expect(action.steps).to.deep.include(step);
   });
 });
