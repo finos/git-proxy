@@ -1,14 +1,16 @@
-const fs = require('fs');
-const Datastore = require('@seald-io/nedb');
+import fs from 'fs';
+import Datastore from '@seald-io/nedb'
+import { Action } from '../../proxy/actions/Action';
+import { Repo } from '../types';
 
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
 
-exports.getRepos = async (query = {}) => {
-  return new Promise((resolve, reject) => {
-    db.find({}, (err, docs) => {
+export const getRepos = async (query = {}) => {
+  return new Promise<Repo[]>((resolve, reject) => {
+    db.find({}, (err: Error, docs: Repo[]) => {
       if (err) {
         reject(err);
       } else {
@@ -18,29 +20,26 @@ exports.getRepos = async (query = {}) => {
   });
 };
 
-exports.getRepo = async (name) => {
-  return new Promise((resolve, reject) => {
-    db.findOne({ name: name }, (err, doc) => {
+export const getRepo = async (name: string) => {
+  return new Promise<Repo | null>((resolve, reject) => {
+    db.findOne({ name }, (err: Error | null, doc: Repo) => {
       if (err) {
         reject(err);
       } else {
-        if (!doc) {
-          resolve(null);
-        } else {
-          resolve(doc);
-        }
+        resolve(doc);
       }
     });
   });
 };
 
-exports.createRepo = async (repo) => {
+
+export const createRepo = async (repo: Repo) => {
   repo.users = {
     canPush: [],
     canAuthorise: [],
   };
 
-  return new Promise((resolve, reject) => {
+  return new Promise<Repo>((resolve, reject) => {
     db.insert(repo, (err, doc) => {
       if (err) {
         reject(err);
@@ -51,9 +50,13 @@ exports.createRepo = async (repo) => {
   });
 };
 
-exports.addUserCanPush = async (name, user) => {
+export const addUserCanPush = async (name: string, user: string) => {
   return new Promise(async (resolve, reject) => {
-    const repo = await exports.getRepo(name);
+    const repo = await getRepo(name);
+    if (!repo) {
+      reject(new Error('Repo not found'));
+      return;
+    }
 
     if (repo.users.canPush.includes(user)) {
       resolve(null);
@@ -72,9 +75,13 @@ exports.addUserCanPush = async (name, user) => {
   });
 };
 
-exports.addUserCanAuthorise = async (name, user) => {
+export const addUserCanAuthorise = async (name: string, user: string) => {
   return new Promise(async (resolve, reject) => {
-    const repo = await exports.getRepo(name);
+    const repo = await getRepo(name);
+    if (!repo) {
+      reject(new Error('Repo not found'));
+      return;
+    }
 
     if (repo.users.canAuthorise.includes(user)) {
       resolve(null);
@@ -94,11 +101,15 @@ exports.addUserCanAuthorise = async (name, user) => {
   });
 };
 
-exports.removeUserCanAuthorise = async (name, user) => {
+export const removeUserCanAuthorise = async (name: string, user: string) => {
   return new Promise(async (resolve, reject) => {
-    const repo = await exports.getRepo(name);
+    const repo = await getRepo(name);
+    if (!repo) {
+      reject(new Error('Repo not found'));
+      return;
+    }
 
-    repo.users.canAuthorise = repo.users.canAuthorise.filter((x) => x != user);
+    repo.users.canAuthorise = repo.users.canAuthorise.filter((x: string) => x != user);
 
     const options = { multi: false, upsert: false };
     db.update({ name: name }, repo, options, (err) => {
@@ -111,9 +122,13 @@ exports.removeUserCanAuthorise = async (name, user) => {
   });
 };
 
-exports.removeUserCanPush = async (name, user) => {
+export const removeUserCanPush = async (name: string, user: string) => {
   return new Promise(async (resolve, reject) => {
-    const repo = await exports.getRepo(name);
+    const repo = await getRepo(name);
+    if (!repo) {
+      reject(new Error('Repo not found'));
+      return;
+    }
 
     repo.users.canPush = repo.users.canPush.filter((x) => x != user);
 
@@ -128,8 +143,8 @@ exports.removeUserCanPush = async (name, user) => {
   });
 };
 
-exports.deleteRepo = async (name) => {
-  return new Promise((resolve, reject) => {
+export const deleteRepo = async (name: string) => {
+  return new Promise<void>((resolve, reject) => {
     db.remove({ name: name }, (err) => {
       if (err) {
         reject(err);
@@ -140,9 +155,9 @@ exports.deleteRepo = async (name) => {
   });
 };
 
-exports.isUserPushAllowed = async (name, user) => {
+export const isUserPushAllowed = async (name: string, user: string) => {
   name = name.toLowerCase();
-  return new Promise(async (resolve, reject) => {
+  return new Promise<boolean>(async (resolve, reject) => {
     const repo = await exports.getRepo(name);
     console.log(repo.users.canPush);
     console.log(repo.users.canAuthorise);
@@ -155,10 +170,10 @@ exports.isUserPushAllowed = async (name, user) => {
   });
 };
 
-exports.canUserApproveRejectPushRepo = async (name, user) => {
+export const canUserApproveRejectPushRepo = async (name: string, user: string) => {
   name = name.toLowerCase();
   console.log(`checking if user ${user} can approve/reject for ${name}`);
-  return new Promise(async (resolve, reject) => {
+  return new Promise<boolean>(async (resolve, reject) => {
     const repo = await exports.getRepo(name);
     if (repo.users.canAuthorise.includes(user)) {
       console.log(`user ${user} can approve/reject to repo ${name}`);
