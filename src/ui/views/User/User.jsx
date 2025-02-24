@@ -60,7 +60,7 @@ export default function Dashboard() {
     try {
       data.gitAccount = escapeHTML(gitAccount);
       await updateUser(data);
-      navigate(`/admin/user/${data.username}`);
+      navigate(`/admin/profile`);
     } catch {
       setIsError(true);
     }
