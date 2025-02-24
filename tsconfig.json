@@ -10,7 +10,9 @@
     "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "esModuleInterop": true
+    "module": "CommonJS",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
   },
   "include": ["src"]
 }
