@@ -12,9 +12,12 @@ const exec = async (req, action, hookFilePath = './hooks/pre-receive.sh') => {
 
   try {
     const resolvedPath = path.resolve(hookFilePath);
+    const hookDir = path.dirname(resolvedPath);
 
-    if (!fs.existsSync(resolvedPath)) {
-      throw new Error(`Hook file not found: ${resolvedPath}`);
+    if (!fs.existsSync(hookDir) || !fs.existsSync(resolvedPath)) {
+      step.log('Pre-receive hook not found, skipping execution.');
+      action.addStep(step);
+      return action;
     }
 
     const repoPath = `${action.proxyGitPath}/${action.repoName}`;

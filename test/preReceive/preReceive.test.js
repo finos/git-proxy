@@ -38,15 +38,31 @@ describe('Pre-Receive Hook Execution', function () {
     ).to.be.true;
   });
 
-  it('should fail when hook file does not exist', async () => {
+  it('should skip execution when hook file does not exist', async () => {
     const scriptPath = path.resolve(__dirname, 'pre-receive-hooks/missing-hook.sh');
 
     const result = await exec(req, action, scriptPath);
 
     expect(result.steps).to.have.lengthOf(1);
-    expect(result.steps[0].error).to.be.true;
+    expect(result.steps[0].error).to.be.false;
     expect(
-      result.steps[0].logs.some((log) => log.includes('Hook execution error: Hook file not found')),
+      result.steps[0].logs.some((log) =>
+        log.includes('Pre-receive hook not found, skipping execution.'),
+      ),
+    ).to.be.true;
+  });
+
+  it('should skip execution when hook directory does not exist', async () => {
+    const scriptPath = path.resolve(__dirname, 'non-existent-directory/pre-receive.sh');
+
+    const result = await exec(req, action, scriptPath);
+
+    expect(result.steps).to.have.lengthOf(1);
+    expect(result.steps[0].error).to.be.false;
+    expect(
+      result.steps[0].logs.some((log) =>
+        log.includes('Pre-receive hook not found, skipping execution.'),
+      ),
     ).to.be.true;
   });
 
@@ -65,5 +81,19 @@ describe('Pre-Receive Hook Execution', function () {
     expect(step.errorMessage).to.exist;
 
     expect(action.steps).to.deep.include(step);
+  });
+
+  it('should catch and handle unexpected errors', async () => {
+    const scriptPath = path.resolve(__dirname, 'pre-receive-hooks/always-allow.sh');
+
+    sinon.stub(require('fs'), 'existsSync').throws(new Error('Unexpected FS error'));
+
+    const result = await exec(req, action, scriptPath);
+
+    expect(result.steps).to.have.lengthOf(1);
+    expect(result.steps[0].error).to.be.true;
+    expect(
+      result.steps[0].logs.some((log) => log.includes('Hook execution error: Unexpected FS error')),
+    ).to.be.true;
   });
 });
