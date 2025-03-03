@@ -12,7 +12,8 @@
     "isolatedModules": true,
     "module": "CommonJS",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true
   },
   "include": ["src"]
 }

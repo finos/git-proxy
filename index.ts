@@ -3,7 +3,7 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import * as fs from 'fs';
-import config from './src/config/file';
+import { configFile, setConfigFile, validate } from './src/config/file';
 import proxy from './src/proxy';
 import service from './src/service';
 
@@ -28,22 +28,22 @@ const argv = yargs(hideBin(process.argv))
   .strict()
   .parseSync();
 
-config.configFile = argv.c ? argv.c : undefined;
+setConfigFile(argv.c as string || "");
 
 if (argv.v) {
-  if (!fs.existsSync(config.configFile as string)) {
+  if (!fs.existsSync(configFile)) {
     console.error(
-      `Config file ${config.configFile} doesn't exist, nothing to validate! Did you forget -c/--config?`,
+      `Config file ${configFile} doesn't exist, nothing to validate! Did you forget -c/--config?`,
     );
     process.exit(1);
   }
 
-  config.validate();
-  console.log(`${config.configFile} is valid`);
+  validate();
+  console.log(`${configFile} is valid`);
   process.exit(0);
 }
 
-config.validate();
+validate();
 
 proxy.start();
 service.start();

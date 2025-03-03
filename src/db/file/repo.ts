@@ -1,6 +1,5 @@
 import fs from 'fs';
 import Datastore from '@seald-io/nedb'
-import { Action } from '../../proxy/actions/Action';
 import { Repo } from '../types';
 
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
