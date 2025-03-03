@@ -9,8 +9,8 @@ const config = require('../config');
 const db = require('../db');
 const { PluginLoader } = require('../plugin');
 const chain = require('./chain');
-const { GIT_PROXY_SERVER_PORT: proxyHttpPort } = require('../config/env').Vars;
-const { GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } = require('../config/env').Vars;
+const { GIT_PROXY_SERVER_PORT: proxyHttpPort, GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } =
+  require('../config/env').serverConfig;
 
 const options = {
   inflate: true,
