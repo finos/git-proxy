@@ -12,6 +12,7 @@ module.exports.canUserCancelPush = pushes.canUserCancelPush;
 module.exports.canUserApproveRejectPush = pushes.canUserApproveRejectPush;
 
 module.exports.findUser = users.findUser;
+module.exports.findUserByOIDC = users.findUserByOIDC;
 module.exports.getUsers = users.getUsers;
 module.exports.createUser = users.createUser;
 module.exports.deleteUser = users.deleteUser;
