@@ -7,8 +7,8 @@ const util = require('util');
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
-const { GIT_PROXY_UI_HOST: uiHost, GIT_PROXY_UI_PORT: uiPort } =
-  require('@finos/git-proxy/src/config/env').serverConfig;
+const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 8080 } = process.env;
+
 const baseUrl = `${uiHost}:${uiPort}`;
 
 axios.defaults.timeout = 30000;
