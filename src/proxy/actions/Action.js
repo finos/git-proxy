@@ -14,6 +14,7 @@ class Action {
   authorised = false;
   canceled = false;
   rejected = false;
+  autoApproved = false;
   commitFrom;
   commitTo;
   branch;
@@ -102,6 +103,13 @@ class Action {
   setAllowPush() {
     this.allowPush = true;
     this.blocked = false;
+  }
+
+  /**
+   *`
+   */
+  setAllowAutoApprover() {
+    this.autoApproved = true;
   }
 
   /**
