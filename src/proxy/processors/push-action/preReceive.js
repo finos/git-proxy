@@ -37,17 +37,31 @@ const exec = async (req, action, hookFilePath = './hooks/pre-receive.sh') => {
     const stderrTrimmed = stderr ? stderr.trim() : '';
     const stdoutTrimmed = stdout ? stdout.trim() : '';
 
-    if (status !== 0) {
+    step.log(`Hook exited with status ${status}`);
+
+    if (status === 1) {
+      step.log('Push requires manual approval.');
+      action.addStep(step);
+      return action;
+    } else if (status === 2) {
       step.error = true;
+      step.log('Push rejected by pre-receive hook.');
       step.log(`Hook stderr: ${stderrTrimmed}`);
-      step.setError(stdoutTrimmed);
+      step.setError(stdoutTrimmed || 'Pre-receive hook rejected the push.');
+      action.addStep(step);
+      return action;
+    } else if (status === 0) {
+      step.log('Push automatically approved by pre-receive hook.');
+      action.addStep(step);
+      action.setAllowAutoApprover();
+      return action;
+    } else {
+      step.error = true;
+      step.log(`Unexpected hook status: ${status}`);
+      step.setError(stdoutTrimmed || 'Unknown pre-receive hook error.');
       action.addStep(step);
       return action;
     }
-
-    step.log('Pre-receive hook executed successfully');
-    action.addStep(step);
-    return action;
   } catch (error) {
     step.error = true;
     step.setError(`Hook execution error: ${error.message}`);
