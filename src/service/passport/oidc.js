@@ -63,7 +63,7 @@ const configure = async (passport) => {
  * Handles user authentication with OIDC.
  * @param userInfo the OIDC user info object 
  * @param done the callback function
- * @returns a promise with the authenticated user or an error
+ * @return a promise with the authenticated user or an error
  */
 const handleUserAuthentication = async (userInfo, done) => {
   try {

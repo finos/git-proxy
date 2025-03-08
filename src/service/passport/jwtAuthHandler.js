@@ -5,7 +5,7 @@ const jwkToPem = require("jwk-to-pem");
 /**
  * Obtain the JSON Web Key Set (JWKS) from the OIDC authority.
  * @param {string} authorityUrl the OIDC authority URL. e.g. https://login.microsoftonline.com/{tenantId}
- * @returns {Promise<object[]>} the JWKS keys
+ * @return {Promise<object[]>} the JWKS keys
  */
 async function getJwks(authorityUrl) {
   try {
@@ -26,7 +26,7 @@ async function getJwks(authorityUrl) {
  * @param {*} authorityUrl the OIDC authority URL
  * @param {*} clientID the OIDC client ID 
  * @param {*} expectedAudience the expected audience for the token
- * @returns {Promise<object>} the verified payload or an error
+ * @return {Promise<object>} the verified payload or an error
  */
 async function validateJwt(token, authorityUrl, clientID, expectedAudience) {
   try {
