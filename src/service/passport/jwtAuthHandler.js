@@ -81,8 +81,8 @@ const jwtAuthHandler = () => {
           return res.status(401).send("No token provided");
       }
 
-      const { clientID, authorityURL, expectedAudience } = jwtAuthMethod?.jwtConfig;
-      let audience = expectedAudience || clientID;
+      const { clientID, authorityURL, expectedAudience } = jwtAuthMethod.jwtConfig;
+      const audience = expectedAudience || clientID;
 
       if (!authorityURL) {
           return res.status(500).send("OIDC authority URL is not configured");
