@@ -51,7 +51,7 @@
       }
     },
     {
-      "type": "oidc",
+      "type": "openidconnect",
       "enabled": false,
       "oidcConfig": {
         "issuer": "",
