@@ -65,7 +65,11 @@ async function validateJwt(token, authorityUrl, clientID, expectedAudience) {
 
 const jwtAuthHandler = () => {
   return async (req, res, next) => {
-      if (process.env.OIDC_AUTH_ENABLED !== "true") {
+    const authMethods = require('../../config').getAuthMethods();
+    const jwtAuthMethod = authMethods.find((method) => method.type.toLowerCase() === "jwt");
+    const { clientID, authorityURL, expectedAudience } = jwtAuthMethod?.jwtConfig;
+
+      if (jwtAuthMethod.enabled) {
           return next();
       }
 
@@ -79,11 +83,9 @@ const jwtAuthHandler = () => {
           return res.status(401).send("No token provided");
       }
 
-      const clientID = process.env.OIDC_CLIENT_ID;
-      const authorityUrl = process.env.OIDC_AUTHORITY;
-      const expectedAudience = process.env.OIDC_AUDIENCE || clientID;
+      let audience = expectedAudience || clientID;
 
-      if (!authorityUrl) {
+      if (!authorityURL) {
           return res.status(500).send("OIDC authority URL is not configured");
       }
 
@@ -92,13 +94,12 @@ const jwtAuthHandler = () => {
       }
 
       const tokenParts = token.split(" ");
-      const { verifiedPayload, error } = await validateJwt(tokenParts[1], authorityUrl, expectedAudience, clientID);
+      const { verifiedPayload, error } = await validateJwt(tokenParts[1], authorityURL, audience, clientID);
       if (error) {
           return res.status(401).send(error);
       }
 
       req.user = verifiedPayload;
-      console.log('request authenticated through JWT')
       return next();
   }
 }
