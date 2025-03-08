@@ -2,9 +2,8 @@ const express = require('express');
 const router = new express.Router();
 const db = require('../../db');
 const { getProxyURL } = require('../urls');
-const dynamicAuthHandler = require('../passport/dynamicAuthHandler');
 
-router.get('/', dynamicAuthHandler(), async (req, res) => {
+router.get('/', async (req, res) => {
   const proxyURL = getProxyURL(req);
   const query = {
     type: 'push',
