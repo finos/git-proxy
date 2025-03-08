@@ -67,9 +67,7 @@ const jwtAuthHandler = () => {
   return async (req, res, next) => {
     const authMethods = require('../../config').getAuthMethods();
     const jwtAuthMethod = authMethods.find((method) => method.type.toLowerCase() === "jwt");
-    const { clientID, authorityURL, expectedAudience } = jwtAuthMethod?.jwtConfig;
-
-      if (jwtAuthMethod.enabled) {
+      if (!jwtAuthMethod) {
           return next();
       }
 
@@ -83,6 +81,7 @@ const jwtAuthHandler = () => {
           return res.status(401).send("No token provided");
       }
 
+      const { clientID, authorityURL, expectedAudience } = jwtAuthMethod?.jwtConfig;
       let audience = expectedAudience || clientID;
 
       if (!authorityURL) {

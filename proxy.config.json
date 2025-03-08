@@ -51,7 +51,7 @@
       }
     },
     {
-      "type": "",
+      "type": "oidc",
       "enabled": false,
       "oidcConfig": {
         "issuer": "",
