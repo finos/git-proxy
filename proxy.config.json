@@ -49,6 +49,29 @@
         "baseDN": "",
         "searchBase": ""
       }
+    },
+    {
+      "type": "",
+      "enabled": false,
+      "oidcConfig": {
+        "issuer": "",
+        "clientID": "",
+        "clientSecret": "",
+        "authorizationURL": "",
+        "tokenURL": "",
+        "userInfoURL": "",
+        "callbackURL": "",
+        "scope": ""
+      }
+    },
+    {
+      "type": "jwt",
+      "enabled": false,
+      "jwtConfig": {
+        "clientID": "",
+        "authorityURL": "",
+        "expecetedAudience": ""
+      }
     }
   ],
   "api": {
