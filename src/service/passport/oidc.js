@@ -28,7 +28,7 @@ const configure = async () => {
     });
     
     // currentUrl must be overridden to match the callback URL
-    strategy.currentUrl = (request) => {
+    strategy.currentUrl = function (request) {
       const callbackUrl = new URL(callbackURL);
       const currentUrl = Strategy.prototype.currentUrl.call(this, request);
       currentUrl.host = callbackUrl.host;
@@ -62,13 +62,13 @@ const configure = async () => {
 
 /**
  * Handles user authentication with OIDC.
- * @param userInfo the OIDC user info object 
- * @param done the callback function
- * @returns a promise with the authenticated user or an error
+ * @param {*} userInfo the OIDC user info object 
+ * @param {*} done the callback function
+ * @return {Promise<void>} a promise with the authenticated user or an error
  */
 const handleUserAuthentication = async (userInfo, done) => {
   try {
-    let user = await db.findUserByOIDC(userInfo.sub);
+    const user = await db.findUserByOIDC(userInfo.sub);
 
     if (!user) {
       const email = safelyExtractEmail(userInfo);

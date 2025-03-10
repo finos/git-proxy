@@ -72,7 +72,7 @@ const getDatabase = () => {
 
 /**
  * Get the list of enabled authentication methods
- * @returns {Array} List of enabled authentication methods
+ * @return {Array} List of enabled authentication methods
  */
 const getAuthMethods = () => {
   if (_userSettings !== null && _userSettings.authentication) {
