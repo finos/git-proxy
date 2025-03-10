@@ -24,8 +24,7 @@ export default function UserProfile() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [gitAccountError, setGitAccountError] = useState(false);
+  const [, setGitAccountError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
