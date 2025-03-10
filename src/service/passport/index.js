@@ -22,7 +22,6 @@ const configure = async () => {
     if (strategy && typeof strategy.configure === "function") {
       await strategy.configure(passport);
     }
-    console.log(`strategy type for ${auth.type}: ${strategy.type}`);
   }
 
   if (authMethods.some(auth => auth.type.toLowerCase() === "local")) {

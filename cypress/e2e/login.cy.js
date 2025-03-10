@@ -38,8 +38,10 @@ describe('Login page', () => {
 
     // Validates that OIDC is configured correctly
     it('should redirect to /oidc', () => {
+      // Set intercept first, since redirect on click can be quick
+      cy.intercept('GET', '/api/auth/oidc').as('oidcRedirect');
       cy.get('[data-test="oidc-login"]').click();
-      cy.url().should('include', '/oidc');
+      cy.wait('@oidcRedirect');
     });
   });
 });
