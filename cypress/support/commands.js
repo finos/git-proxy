@@ -32,6 +32,6 @@ Cypress.Commands.add('login', (username, password) => {
     cy.get('[data-test=username]').type(username);
     cy.get('[data-test=password]').type(password);
     cy.get('[data-test=login]').click();
-    cy.url().should('contain', '/admin/profile');
+    cy.url().should('contain', '/admin/repo');
   });
 });
