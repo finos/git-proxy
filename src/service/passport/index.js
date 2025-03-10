@@ -21,7 +21,9 @@ const configure = async () => {
     default:
       throw Error(`uknown authentication type ${type}`);
   }
-  _passport.type = authenticationConfig.type;
+  if (!_passport.type) {
+    _passport.type = type;
+  }
   return _passport;
 };
 

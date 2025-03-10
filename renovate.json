@@ -1,6 +1,28 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:best-practices",
+    ":separateMultipleMajorReleases",
+    "group:allNonMajor",
+    "group:allDigest",
+    "group:jsTest",
+    "group:linters",
+    "group:nodeJs"
+  ],
+  "additionalBranchPrefix": "{{parentDir}}-",
+  "commitMessageSuffix": "- {{parentDir}} - {{packageFile}}",
+  "packageRules": [
+    {
+      "matchDatasources": ["npm"],
+      "rangeStrategy": "bump"
+    },
+    {
+      "matchPackageNames": ["*"],
+      "groupName": "{{manager}}"
+    },
+    {
+      "semanticCommitScope": "experimental",
+      "matchFileNames": ["experimental/*"]
+    }
   ]
 }
