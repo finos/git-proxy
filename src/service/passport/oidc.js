@@ -1,9 +1,10 @@
-const openIdClient = require('openid-client');
-const { Strategy } = require('openid-client/passport');
 const passport = require('passport');
 const db = require('../../db');
 
 const configure = async () => {
+  // Temp fix for ERR_REQUIRE_ESM, will be changed when we refactor to ESM
+  const { discovery, fetchUserInfo } = await import('openid-client');
+  const { Strategy } = await import('openid-client/passport');
   const config = require('../../config').getAuthentication();
   const { oidcConfig } = config;
   const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
@@ -15,18 +16,18 @@ const configure = async () => {
   const server = new URL(issuer);
 
   try {
-    const config = await openIdClient.discovery(server, clientID, clientSecret);
+    const config = await discovery(server, clientID, clientSecret);
 
     const strategy = new Strategy({ callbackURL, config, scope }, async (tokenSet, done) => {
       // Validate token sub for added security
       const idTokenClaims = tokenSet.claims();
       const expectedSub = idTokenClaims.sub;
-      const userInfo = await openIdClient.fetchUserInfo(config, tokenSet.access_token, expectedSub);
+      const userInfo = await fetchUserInfo(config, tokenSet.access_token, expectedSub);
       handleUserAuthentication(userInfo, done);
     });
     
     // currentUrl must be overridden to match the callback URL
-    strategy.currentUrl = (request) => {
+    strategy.currentUrl = function (request) {
       const callbackUrl = new URL(callbackURL);
       const currentUrl = Strategy.prototype.currentUrl.call(this, request);
       currentUrl.host = callbackUrl.host;
@@ -62,13 +63,13 @@ module.exports.configure = configure;
 
 /**
  * Handles user authentication with OIDC.
- * @param userInfo the OIDC user info object 
- * @param done the callback function
- * @returns a promise with the authenticated user or an error
+ * @param {Object} userInfo the OIDC user info object 
+ * @param {Function} done the callback function
+ * @return {Promise} a promise with the authenticated user or an error
  */
 const handleUserAuthentication = async (userInfo, done) => {
   try {
-    let user = await db.findUserByOIDC(userInfo.sub);
+    const user = await db.findUserByOIDC(userInfo.sub);
 
     if (!user) {
       const email = safelyExtractEmail(userInfo);
