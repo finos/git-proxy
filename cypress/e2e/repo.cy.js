@@ -1,5 +1,7 @@
 describe('Repo', () => {
   beforeEach(() => {
+    cy.login('admin', 'admin');
+
     cy.visit('/admin/repo');
 
     // prevent failures on 404 request and uncaught promises
