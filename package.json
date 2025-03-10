@@ -55,7 +55,6 @@
     "isomorphic-git": "^1.27.1",
     "jsonschema": "^1.4.1",
     "load-plugin": "^6.0.0",
-    "lodash": "^4.17.21",
     "lusca": "^1.7.0",
     "moment": "^2.29.4",
     "mongodb": "^5.0.0",
