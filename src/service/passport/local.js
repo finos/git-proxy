@@ -38,6 +38,13 @@ const configure = async (passport) => {
     }
   });
 
+  const admin = await db.findUser('admin');
+
+  if (!admin) {
+    await db.createUser('admin', 'admin', 'admin@place.com', 'none', true);
+  }
+
+  passport.type = 'local';
   return passport;
 };
 
