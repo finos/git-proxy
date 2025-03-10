@@ -70,11 +70,10 @@ export class MongooseLicenseDataService implements LicenseDataService {
       if (dbRes === null) {
         return { error: new Error('no matching license'), data: null };
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { _id, __v, ...dbData } = dbRes;
       const data: License = {
-        id: _id.toJSON(),
-        ...dbData,
+        id: dbRes._id.toJSON(),
+        name: dbRes.name,
+        chooseALicenseInfo: dbRes.chooseALicenseInfo,
       };
       return { error: null, data: data };
     } catch (err: unknown) {
@@ -95,15 +94,14 @@ export class MongooseLicenseDataService implements LicenseDataService {
   async list() {
     const tracer = trace.getTracer('licenses-list');
     // TODO: pagination
-    const results = await this.db.License.find().exec();
+    const results = await this.db.License.find().lean().exec();
     const jsonifyResultsSpan = tracer.startSpan('jsonify-results');
     const jsonResults = await Promise.allSettled(
       results.map(async (doc) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { _id, __v, ...dbData } = doc;
         const data: License = {
-          id: _id.toJSON(),
-          ...dbData,
+          id: doc._id.toJSON(),
+          name: doc.name,
+          chooseALicenseInfo: doc.chooseALicenseInfo,
         };
         return data;
       }),
@@ -111,7 +109,8 @@ export class MongooseLicenseDataService implements LicenseDataService {
     const jsonOutput = jsonResults
       .filter(<T>(r: PromiseSettledResult<T>): r is PromiseFulfilledResult<T> => {
         if (r.status === 'rejected') {
-          logger.warn('failed to convert an object', r.reason);
+          logger.warn('failed to convert an object');
+          logger.warn(r.reason);
           return false;
         }
         return true;
