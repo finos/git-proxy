@@ -4,7 +4,19 @@ const config = require('../../../config');
 const commitConfig = config.getCommitConfig();
 
 function isEmailAllowed(email) {
+  if (!email) {
+    console.log('Invalid email address...');
+    return false; // If the email is null, undefined, or an empty string, return false
+  }
+
   const [emailLocal, emailDomain] = email.split('@');
+  
+  // Check if split was successful
+  if (!emailLocal || !emailDomain) {
+    console.log('Invalid email format (missing local or domain part)...');
+    return false; // If either part is missing, return false
+  }
+
   console.log({ emailLocal, emailDomain });
 
   // E-mail address is not a permissible domain name
