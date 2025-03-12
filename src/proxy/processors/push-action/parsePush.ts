@@ -35,9 +35,10 @@ async function exec(req: any, action: Action): Promise<Action> {
       action.commitFrom = action.commitData[action.commitData.length - 1].parent;
     }
 
-    const user = action.commitData[action.commitData.length - 1].committer;
-    console.log(`Push Request received from user ${user}`);
-    action.user = user;
+    const {committer, committerEmail} = action.commitData[action.commitData.length - 1].committer;
+    console.log(`Push Request received from user ${committer} with email ${committerEmail}`);
+    action.user = committer;
+    action.userEmail = committerEmail;
 
     step.content = {
       meta: meta,
@@ -110,6 +111,9 @@ const getCommitData = (contents: CommitContent[]) => {
       const authorEmail = author?.split(' ').reverse()[2].slice(1, -1);
       console.log({ authorEmail });
 
+      const committerEmail = committer.split(' ').reverse()[2].slice(1, -1);
+      console.log({ committerEmail });
+
       console.log({
         tree,
         parent,
@@ -118,6 +122,7 @@ const getCommitData = (contents: CommitContent[]) => {
         commitTimestamp,
         message,
         authorEmail,
+        committerEmail
       });
 
       if (!tree || !parent || !author || !committer || !commitTimestamp || !message || !authorEmail) {
@@ -131,7 +136,8 @@ const getCommitData = (contents: CommitContent[]) => {
         committer: committer.split('<')[0].trim(),
         commitTimestamp,
         message,
-        authorEmail: authorEmail,
+        authorEmail,
+        committerEmail
       };
     })
     .value();
