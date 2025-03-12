@@ -1,7 +1,7 @@
 import { connect, findDocuments, findOneDocument } from './helper';
 import { Action } from '../../proxy/actions';
 import { toClass } from '../helper';
-import * as repo from   './repo';
+import * as repo from './repo';
 import { Push, PushQuery } from '../types';
 
 const collectionName = 'pushes';
@@ -52,6 +52,9 @@ export const writeAudit = async (action: Action): Promise<Action> => {
   const options = { upsert: true };
   const collection = await connect(collectionName);
   delete data._id;
+  if (typeof data.id !== 'string') {
+    throw new Error('Invalid id');
+  }
   await collection.updateOne({ id: data.id }, { $set: data }, options);
   return action;
 };
