@@ -35,7 +35,7 @@ async function exec(req: any, action: Action): Promise<Action> {
       action.commitFrom = action.commitData[action.commitData.length - 1].parent;
     }
 
-    const {committer, committerEmail} = action.commitData[action.commitData.length - 1].committer;
+    const {committer, committerEmail} = action.commitData[action.commitData.length - 1];
     console.log(`Push Request received from user ${committer} with email ${committerEmail}`);
     action.user = committer;
     action.userEmail = committerEmail;
