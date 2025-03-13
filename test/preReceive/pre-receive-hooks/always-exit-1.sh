@@ -1,5 +1,5 @@
 #!/bin/bash
 while read oldrev newrev refname; do
-  echo "Push rejected to $refname"
+  echo "Push need manual approve to $refname"
 done
-exit 2
+exit 1

@@ -19,6 +19,7 @@ describe('Pre-Receive Hook Execution', function () {
       addStep: function (step) {
         this.steps.push(step);
       },
+      setAllowAutoApprover: sinon.stub(),
     };
   });
 
@@ -26,16 +27,16 @@ describe('Pre-Receive Hook Execution', function () {
     sinon.restore();
   });
 
-  it('should execute hook successfully', async () => {
-    const scriptPath = path.resolve(__dirname, 'pre-receive-hooks/always-allow.sh');
+  it('should execute hook successfully and require manual approval', async () => {
+    const scriptPath = path.resolve(__dirname, 'pre-receive-hooks/always-exit-1.sh');
 
     const result = await exec(req, action, scriptPath);
 
     expect(result.steps).to.have.lengthOf(1);
     expect(result.steps[0].error).to.be.false;
-    expect(
-      result.steps[0].logs.some((log) => log.includes('Pre-receive hook executed successfully')),
-    ).to.be.true;
+    expect(result.steps[0].logs.some((log) => log.includes('Push requires manual approval.'))).to.be
+      .true;
+    expect(action.setAllowAutoApprover.called).to.be.false;
   });
 
   it('should skip execution when hook file does not exist', async () => {
@@ -50,6 +51,7 @@ describe('Pre-Receive Hook Execution', function () {
         log.includes('Pre-receive hook not found, skipping execution.'),
       ),
     ).to.be.true;
+    expect(action.setAllowAutoApprover.called).to.be.false;
   });
 
   it('should skip execution when hook directory does not exist', async () => {
@@ -64,6 +66,7 @@ describe('Pre-Receive Hook Execution', function () {
         log.includes('Pre-receive hook not found, skipping execution.'),
       ),
     ).to.be.true;
+    expect(action.setAllowAutoApprover.called).to.be.false;
   });
 
   it('should fail when hook execution returns an error', async () => {
@@ -76,11 +79,13 @@ describe('Pre-Receive Hook Execution', function () {
     const step = result.steps[0];
 
     expect(step.error).to.be.true;
+    expect(step.logs.some((log) => log.includes('Push rejected by pre-receive hook.'))).to.be.true;
     expect(step.logs.some((log) => log.includes('Hook stderr:'))).to.be.true;
 
     expect(step.errorMessage).to.exist;
 
     expect(action.steps).to.deep.include(step);
+    expect(action.setAllowAutoApprover.called).to.be.false;
   });
 
   it('should catch and handle unexpected errors', async () => {
@@ -95,5 +100,21 @@ describe('Pre-Receive Hook Execution', function () {
     expect(
       result.steps[0].logs.some((log) => log.includes('Hook execution error: Unexpected FS error')),
     ).to.be.true;
+    expect(action.setAllowAutoApprover.called).to.be.false;
+  });
+
+  it('should approve push automatically when hook returns status 0', async () => {
+    const scriptPath = path.resolve(__dirname, 'pre-receive-hooks/always-allow.sh');
+
+    const result = await exec(req, action, scriptPath);
+
+    expect(result.steps).to.have.lengthOf(1);
+    expect(result.steps[0].error).to.be.false;
+    expect(
+      result.steps[0].logs.some((log) =>
+        log.includes('Push automatically approved by pre-receive hook.'),
+      ),
+    ).to.be.true;
+    expect(action.setAllowAutoApprover.calledOnce).to.be.true;
   });
 });
