@@ -7,21 +7,30 @@ if (config.getDatabase().type === 'mongo') {
   sink = require('../db/file');
 }
 
-module.exports.createUser = async (username, password, email, gitAccount, admin = false) => {
+module.exports.createUser = async (
+  username,
+  password,
+  email,
+  gitAccount,
+  admin = false,
+  oidcId = null,
+) => {
   console.log(
     `creating user
         user=${username},
         gitAccount=${gitAccount}
         email=${email},
-        admin=${admin}`,
+        admin=${admin}
+        oidcId=${oidcId}`,
   );
 
   const data = {
     username: username,
-    password: await bcrypt.hash(password, 10),
+    password: oidcId ? null : await bcrypt.hash(password, 10),
     gitAccount: gitAccount,
     email: email,
     admin: admin,
+    oidcId: oidcId,
   };
 
   if (username === undefined || username === null || username === '') {
@@ -56,6 +65,7 @@ module.exports.getPushes = sink.getPushes;
 module.exports.writeAudit = sink.writeAudit;
 module.exports.getPush = sink.getPush;
 module.exports.findUser = sink.findUser;
+module.exports.findUserByOIDC = sink.findUserByOIDC;
 module.exports.getUsers = sink.getUsers;
 module.exports.deleteUser = sink.deleteUser;
 module.exports.updateUser = sink.updateUser;
