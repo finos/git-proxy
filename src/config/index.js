@@ -1,4 +1,6 @@
 const fs = require('fs');
+const ConfigLoader = require('./ConfigLoader');
+const { validate } = require('./file'); // Import the validate function
 
 const defaultSettings = require('../../proxy.config.json');
 const userSettingsPath = require('./file').configFile;
@@ -7,84 +9,60 @@ let _userSettings = null;
 if (fs.existsSync(userSettingsPath)) {
   _userSettings = JSON.parse(fs.readFileSync(userSettingsPath));
 }
-let _authorisedList = defaultSettings.authorisedList;
-let _database = defaultSettings.sink;
-let _authentication = defaultSettings.authentication;
-let _tempPassword = defaultSettings.tempPassword;
-let _proxyUrl = defaultSettings.proxyUrl;
-let _api = defaultSettings.api;
-let _cookieSecret = defaultSettings.cookieSecret;
-let _sessionMaxAgeHours = defaultSettings.sessionMaxAgeHours;
-let _sslKeyPath = defaultSettings.sslKeyPemPath;
-let _sslCertPath = defaultSettings.sslCertPemPath;
-let _plugins = defaultSettings.plugins;
-let _commitConfig = defaultSettings.commitConfig;
-let _attestationConfig = defaultSettings.attestationConfig;
-let _privateOrganizations = defaultSettings.privateOrganizations;
-let _urlShortener = defaultSettings.urlShortener;
-let _contactEmail = defaultSettings.contactEmail;
-let _csrfProtection = defaultSettings.csrfProtection;
-let _domains = defaultSettings.domains;
 
-// Get configured proxy URL
-const getProxyUrl = () => {
-  if (_userSettings !== null && _userSettings.proxyUrl) {
-    _proxyUrl = _userSettings.proxyUrl;
-  }
+// Initialize configuration with defaults and user settings
+let _config = { ...defaultSettings, ...(_userSettings || {}) };
 
-  return _proxyUrl;
+// Create config loader instance
+const configLoader = new ConfigLoader(_config);
+
+// Helper function to get current config value
+const getConfig = (key) => {
+  return _config[key];
 };
 
-// Gets a list of authorised repositories
-const getAuthorisedList = () => {
-  if (_userSettings !== null && _userSettings.authorisedList) {
-    _authorisedList = _userSettings.authorisedList;
-  }
-
-  return _authorisedList;
-};
-
-// Gets a list of authorised repositories
-const getTempPasswordConfig = () => {
-  if (_userSettings !== null && _userSettings.tempPassword) {
-    _tempPassword = _userSettings.tempPassword;
-  }
-
-  return _tempPassword;
-};
-
-// Gets the configuared data sink, defaults to filesystem
+// Update existing getter functions to use the new config object
+const getProxyUrl = () => getConfig('proxyUrl');
+const getAuthorisedList = () => getConfig('authorisedList');
+const getTempPasswordConfig = () => getConfig('tempPassword');
 const getDatabase = () => {
-  if (_userSettings !== null && _userSettings.sink) {
-    _database = _userSettings.sink;
-  }
-  for (const ix in _database) {
+  const sinks = getConfig('sink');
+  for (const ix in sinks) {
     if (ix) {
-      const db = _database[ix];
+      const db = sinks[ix];
       if (db.enabled) {
         return db;
       }
     }
   }
-
-  throw Error('No database cofigured!');
+  throw Error('No database configured!');
 };
 
-// Gets the configuared data sink, defaults to filesystem
 const getAuthentication = () => {
-  if (_userSettings !== null && _userSettings.authentication) {
-    _authentication = _userSettings.authentication;
-  }
-  for (const ix in _authentication) {
+  const auths = getConfig('authentication');
+  for (const ix in auths) {
     if (!ix) continue;
-    const auth = _authentication[ix];
+    const auth = auths[ix];
     if (auth.enabled) {
       return auth;
     }
   }
-
-  throw Error('No authentication cofigured!');
+  throw Error('No authentication configured!');
 };
+
+const getAPIs = () => getConfig('api');
+const getCookieSecret = () => getConfig('cookieSecret');
+const getSessionMaxAgeHours = () => getConfig('sessionMaxAgeHours');
+const getCommitConfig = () => getConfig('commitConfig');
+const getAttestationConfig = () => getConfig('attestationConfig');
+const getPrivateOrganizations = () => getConfig('privateOrganizations');
+const getURLShortener = () => getConfig('urlShortener');
+const getContactEmail = () => getConfig('contactEmail');
+const getCSRFProtection = () => getConfig('csrfProtection');
+const getPlugins = () => getConfig('plugins');
+const getSSLKeyPath = () => getConfig('sslKeyPemPath') || '../../certs/key.pem';
+const getSSLCertPath = () => getConfig('sslCertPemPath') || '../../certs/cert.pem';
+const getDomains = () => getConfig('domains');
 
 // Log configuration to console
 const logConfiguration = () => {
@@ -93,110 +71,56 @@ const logConfiguration = () => {
   console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
 };
 
-const getAPIs = () => {
-  if (_userSettings && _userSettings.api) {
-    _api = _userSettings.api;
+// Function to handle configuration updates
+const handleConfigUpdate = async (newConfig) => {
+  console.log('Configuration updated from external source');
+  try {
+    // 1. Get proxy module dynamically to avoid circular dependency
+    const proxy = require('../proxy');
+
+    // 2. Stop existing services
+    await proxy.stop();
+
+    // 3. Update config
+    _config = newConfig;
+
+    // 4. Validate new configuration
+    validate();
+
+    // 5. Restart services with new config
+    await proxy.start();
+
+    console.log('Services restarted with new configuration');
+  } catch (error) {
+    console.error('Failed to apply new configuration:', error);
+    // Attempt to restart with previous config
+    try {
+      const proxy = require('../proxy');
+      await proxy.start();
+    } catch (startError) {
+      console.error('Failed to restart services:', startError);
+    }
   }
-  return _api;
 };
 
-const getCookieSecret = () => {
-  if (_userSettings && _userSettings.cookieSecret) {
-    _cookieSecret = _userSettings.cookieSecret;
-  }
-  return _cookieSecret;
+// Handle configuration updates
+configLoader.on('configurationChanged', handleConfigUpdate);
+
+configLoader.on('configurationError', (error) => {
+  console.error('Error loading external configuration:', error);
+});
+
+// Start the config loader if external sources are enabled
+configLoader.start().catch((error) => {
+  console.error('Failed to start configuration loader:', error);
+});
+
+// Force reload of configuration
+const reloadConfiguration = async () => {
+  await configLoader.reloadConfiguration();
 };
 
-const getSessionMaxAgeHours = () => {
-  if (_userSettings && _userSettings.sessionMaxAgeHours) {
-    _sessionMaxAgeHours = _userSettings.sessionMaxAgeHours;
-  }
-  return _sessionMaxAgeHours;
-};
-
-// Get commit related configuration
-const getCommitConfig = () => {
-  if (_userSettings && _userSettings.commitConfig) {
-    _commitConfig = _userSettings.commitConfig;
-  }
-  return _commitConfig;
-};
-
-// Get attestation related configuration
-const getAttestationConfig = () => {
-  if (_userSettings && _userSettings.attestationConfig) {
-    _attestationConfig = _userSettings.attestationConfig;
-  }
-  return _attestationConfig;
-};
-
-// Get private organizations related configuration
-const getPrivateOrganizations = () => {
-  if (_userSettings && _userSettings.privateOrganizations) {
-    _privateOrganizations = _userSettings.privateOrganizations;
-  }
-  return _privateOrganizations;
-};
-
-// Get URL shortener
-const getURLShortener = () => {
-  if (_userSettings && _userSettings.urlShortener) {
-    _urlShortener = _userSettings.urlShortener;
-  }
-  return _urlShortener;
-};
-
-// Get contact e-mail address
-const getContactEmail = () => {
-  if (_userSettings && _userSettings.contactEmail) {
-    _contactEmail = _userSettings.contactEmail;
-  }
-  return _contactEmail;
-};
-
-// Get CSRF protection flag
-const getCSRFProtection = () => {
-  if (_userSettings && _userSettings.csrfProtection) {
-    _csrfProtection = _userSettings.csrfProtection;
-  }
-  return _csrfProtection;
-};
-
-// Get loadable push plugins
-const getPlugins = () => {
-  if (_userSettings && _userSettings.plugins) {
-    _plugins = _userSettings.plugins;
-  }
-  return _plugins;
-}
-
-const getSSLKeyPath = () => {
-  if (_userSettings && _userSettings.sslKeyPemPath) {
-    _sslKeyPath = _userSettings.sslKeyPemPath;
-  }
-  if (!_sslKeyPath) {
-    return '../../certs/key.pem';
-  }
-  return _sslKeyPath;
-};
-
-const getSSLCertPath = () => {
-  if (_userSettings && _userSettings.sslCertPemPath) {
-    _sslCertPath = _userSettings.sslCertPemPath;
-  }
-  if (!_sslCertPath) {
-    return '../../certs/cert.pem';
-  }
-  return _sslCertPath;
-};
-
-const getDomains = () => {
-  if (_userSettings && _userSettings.domains) {
-    _domains = _userSettings.domains;
-  }
-  return _domains;
-};
-
+// Export all the functions
 exports.getAPIs = getAPIs;
 exports.getProxyUrl = getProxyUrl;
 exports.getAuthorisedList = getAuthorisedList;
@@ -216,3 +140,4 @@ exports.getPlugins = getPlugins;
 exports.getSSLKeyPath = getSSLKeyPath;
 exports.getSSLCertPath = getSSLCertPath;
 exports.getDomains = getDomains;
+exports.reloadConfiguration = reloadConfiguration;

@@ -14,34 +14,44 @@ const mockLoader = {
   ],
 };
 
-const mockPushProcessors = {
-  parsePush: sinon.stub(),
-  audit: sinon.stub(),
-  checkRepoInAuthorisedList: sinon.stub(),
-  checkCommitMessages: sinon.stub(),
-  checkAuthorEmails: sinon.stub(),
-  checkUserPushPermission: sinon.stub(),
-  checkIfWaitingAuth: sinon.stub(),
-  pullRemote: sinon.stub(),
-  writePack: sinon.stub(),
-  getDiff: sinon.stub(),
-  clearBareClone: sinon.stub(),
-  scanDiff: sinon.stub(),
-  blockForAuth: sinon.stub(),
+const clearCache = (sinon) => {
+  delete require.cache[require.resolve('../src/proxy/processors')];
+  delete require.cache[require.resolve('../src/proxy/chain')];
+  sinon.restore();
 };
-mockPushProcessors.parsePush.displayName = 'parsePush';
-mockPushProcessors.audit.displayName = 'audit';
-mockPushProcessors.checkRepoInAuthorisedList.displayName = 'checkRepoInAuthorisedList';
-mockPushProcessors.checkCommitMessages.displayName = 'checkCommitMessages';
-mockPushProcessors.checkAuthorEmails.displayName = 'checkAuthorEmails';
-mockPushProcessors.checkUserPushPermission.displayName = 'checkUserPushPermission';
-mockPushProcessors.checkIfWaitingAuth.displayName = 'checkIfWaitingAuth';
-mockPushProcessors.pullRemote.displayName = 'pullRemote';
-mockPushProcessors.writePack.displayName = 'writePack';
-mockPushProcessors.getDiff.displayName = 'getDiff';
-mockPushProcessors.clearBareClone.displayName = 'clearBareClone';
-mockPushProcessors.scanDiff.displayName = 'scanDiff';
-mockPushProcessors.blockForAuth.displayName = 'blockForAuth';
+
+const initMockPushProcessors = (sinon) => {
+  const mockPushProcessors = {
+    parsePush: sinon.stub(),
+    audit: sinon.stub(),
+    checkRepoInAuthorisedList: sinon.stub(),
+    checkCommitMessages: sinon.stub(),
+    checkAuthorEmails: sinon.stub(),
+    checkUserPushPermission: sinon.stub(),
+    checkIfWaitingAuth: sinon.stub(),
+    pullRemote: sinon.stub(),
+    writePack: sinon.stub(),
+    getDiff: sinon.stub(),
+    clearBareClone: sinon.stub(),
+    scanDiff: sinon.stub(),
+    blockForAuth: sinon.stub(),
+  };
+  mockPushProcessors.parsePush.displayName = 'parsePush';
+  mockPushProcessors.audit.displayName = 'audit';
+  mockPushProcessors.checkRepoInAuthorisedList.displayName = 'checkRepoInAuthorisedList';
+  mockPushProcessors.checkCommitMessages.displayName = 'checkCommitMessages';
+  mockPushProcessors.checkAuthorEmails.displayName = 'checkAuthorEmails';
+  mockPushProcessors.checkUserPushPermission.displayName = 'checkUserPushPermission';
+  mockPushProcessors.checkIfWaitingAuth.displayName = 'checkIfWaitingAuth';
+  mockPushProcessors.pullRemote.displayName = 'pullRemote';
+  mockPushProcessors.writePack.displayName = 'writePack';
+  mockPushProcessors.getDiff.displayName = 'getDiff';
+  mockPushProcessors.clearBareClone.displayName = 'clearBareClone';
+  mockPushProcessors.scanDiff.displayName = 'scanDiff';
+  mockPushProcessors.blockForAuth.displayName = 'blockForAuth';
+
+  return mockPushProcessors;
+};
 
 const mockPreProcessors = {
   parseAction: sinon.stub(),
@@ -50,27 +60,30 @@ const mockPreProcessors = {
 describe('proxy chain', function () {
   let processors;
   let chain;
+  let sandboxSinon;
+  let mockPushProcessors;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    sandboxSinon = sinon.createSandbox();
+
+    // Init mock processors
+    mockPushProcessors = initMockPushProcessors(sandboxSinon);
+
     // Re-require the processors module after clearing the cache
     processors = require('../src/proxy/processors');
 
     // Mock the processors module
-    sinon.stub(processors, 'pre').value(mockPreProcessors);
-
-    sinon.stub(processors, 'push').value(mockPushProcessors);
+    sandboxSinon.stub(processors, 'pre').value(mockPreProcessors);
+    sandboxSinon.stub(processors, 'push').value(mockPushProcessors);
 
     // Re-require the chain module after stubbing processors
     chain = require('../src/proxy/chain');
 
-    chain.chainPluginLoader = new PluginLoader([])
+    chain.chainPluginLoader = new PluginLoader([]);
   });
 
   afterEach(() => {
-    // Clear the module from the cache after each test
-    delete require.cache[require.resolve('../src/proxy/processors')];
-    delete require.cache[require.resolve('../src/proxy/chain')];
-    sinon.reset();
+    clearCache(sandboxSinon);
   });
 
   it('getChain should set pluginLoaded if loader is undefined', async function () {
@@ -108,7 +121,11 @@ describe('proxy chain', function () {
     mockPushProcessors.checkUserPushPermission.resolves(continuingAction);
 
     // this stops the chain from further execution
-    mockPushProcessors.checkIfWaitingAuth.resolves({ type: 'push', continue: () => false, allowPush: false });
+    mockPushProcessors.checkIfWaitingAuth.resolves({
+      type: 'push',
+      continue: () => false,
+      allowPush: false,
+    });
     const result = await chain.executeChain(req);
 
     expect(mockPreProcessors.parseAction.called).to.be.true;
@@ -136,7 +153,11 @@ describe('proxy chain', function () {
     mockPushProcessors.checkAuthorEmails.resolves(continuingAction);
     mockPushProcessors.checkUserPushPermission.resolves(continuingAction);
     // this stops the chain from further execution
-    mockPushProcessors.checkIfWaitingAuth.resolves({ type: 'push', continue: () => true, allowPush: true });
+    mockPushProcessors.checkIfWaitingAuth.resolves({
+      type: 'push',
+      continue: () => true,
+      allowPush: true,
+    });
     const result = await chain.executeChain(req);
 
     expect(mockPreProcessors.parseAction.called).to.be.true;
@@ -232,5 +253,5 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.checkRepoInAuthorisedList.called).to.be.false;
     expect(mockPushProcessors.parsePush.called).to.be.false;
     expect(result).to.deep.equal(action);
-  })
+  });
 });
