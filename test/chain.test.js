@@ -1,6 +1,7 @@
 const chai = require('chai');
 const sinon = require('sinon');
 const { PluginLoader } = require('../src/plugin');
+const db = require('../src/db');
 
 chai.should();
 const expect = chai.expect;
@@ -244,5 +245,53 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.checkRepoInAuthorisedList.called).to.be.false;
     expect(mockPushProcessors.parsePush.called).to.be.false;
     expect(result).to.deep.equal(action);
+  });
+
+  it('should approve push automatically and record in the database', async function () {
+    const req = {};
+    const action = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      setAllowAutoApprover: sinon.stub(),
+      repoName: 'test-repo',
+      commitTo: 'newCommitHash',
+      autoApproved: false,
+    };
+
+    mockPreProcessors.parseAction.resolves(action);
+    mockPushProcessors.parsePush.resolves(action);
+    mockPushProcessors.checkRepoInAuthorisedList.resolves(action);
+    mockPushProcessors.checkCommitMessages.resolves(action);
+    mockPushProcessors.checkAuthorEmails.resolves(action);
+    mockPushProcessors.checkUserPushPermission.resolves(action);
+    mockPushProcessors.checkIfWaitingAuth.resolves(action);
+    mockPushProcessors.pullRemote.resolves(action);
+    mockPushProcessors.writePack.resolves(action);
+
+    mockPushProcessors.preReceive.resolves({
+      ...action,
+      steps: [{ error: false, logs: ['Push automatically approved by pre-receive hook.'] }],
+      allowPush: true,
+      autoApproved: true,
+    });
+
+    mockPushProcessors.getDiff.resolves(action);
+    mockPushProcessors.clearBareClone.resolves(action);
+    mockPushProcessors.scanDiff.resolves(action);
+    mockPushProcessors.blockForAuth.resolves(action);
+
+    const dbStub = sinon.stub(db, 'authorise').resolves(true);
+
+    const result = await chain.executeChain(req);
+
+    expect(result.type).to.equal('push');
+    expect(result.allowPush).to.be.true;
+    expect(result.continue).to.be.a('function');
+
+    expect(dbStub.calledOnce).to.be.true;
+    expect(dbStub.calledWith(action.id, sinon.match({ autoApproved: true }))).to.be.true;
+
+    dbStub.restore();
   });
 });
