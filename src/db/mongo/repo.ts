@@ -7,7 +7,7 @@ const isBlank = (str: string) => {
   return !str || /^\s*$/.test(str);
 };
 
-export const getRepos = async (query = {}) => {
+export const getRepos = async () => {
   const collection = await connect(collectionName);
   return collection.find().toArray();
 };
@@ -71,7 +71,7 @@ export const deleteRepo = async (name: string) => {
 
 export const isUserPushAllowed = async (name: string, user: string) => {
   name = name.toLowerCase();
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async (resolve) => {
     const repo = await exports.getRepo(name);
     console.log(repo.users.canPush);
     console.log(repo.users.canAuthorise);
@@ -87,7 +87,7 @@ export const isUserPushAllowed = async (name: string, user: string) => {
 export const canUserApproveRejectPushRepo = async (name: string, user: string) => {
   name = name.toLowerCase();
   console.log(`checking if user ${user} can approve/reject for ${name}`);
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async (resolve) => {
     const repo = await exports.getRepo(name);
     if (repo.users.canAuthorise.includes(user)) {
       console.log(`user ${user} can approve/reject to repo ${name}`);

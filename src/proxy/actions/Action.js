@@ -62,10 +62,9 @@ class Action {
 
   /**
    *
-   * @param {*} step
    * @return {Step}
    */
-  getLastStep(step) {
+  getLastStep() {
     return this.lastStep;
   }
 
