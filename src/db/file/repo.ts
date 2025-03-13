@@ -1,6 +1,5 @@
 import fs from 'fs';
 import Datastore from '@seald-io/nedb'
-import { Action } from '../../proxy/actions/Action';
 import { Repo } from '../types';
 
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
@@ -8,7 +7,7 @@ if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
 
-export const getRepos = async (query = {}) => {
+export const getRepos = async () => {
   return new Promise<Repo[]>((resolve, reject) => {
     db.find({}, (err: Error, docs: Repo[]) => {
       if (err) {
@@ -157,7 +156,7 @@ export const deleteRepo = async (name: string) => {
 
 export const isUserPushAllowed = async (name: string, user: string) => {
   name = name.toLowerCase();
-  return new Promise<boolean>(async (resolve, reject) => {
+  return new Promise<boolean>(async (resolve) => {
     const repo = await exports.getRepo(name);
     console.log(repo.users.canPush);
     console.log(repo.users.canAuthorise);
@@ -173,7 +172,7 @@ export const isUserPushAllowed = async (name: string, user: string) => {
 export const canUserApproveRejectPushRepo = async (name: string, user: string) => {
   name = name.toLowerCase();
   console.log(`checking if user ${user} can approve/reject for ${name}`);
-  return new Promise<boolean>(async (resolve, reject) => {
+  return new Promise<boolean>(async (resolve) => {
     const repo = await exports.getRepo(name);
     if (repo.users.canAuthorise.includes(user)) {
       console.log(`user ${user} can approve/reject to repo ${name}`);

@@ -98,7 +98,7 @@ router.post('/gitAccount', async (req, res) => {
       user.gitAccount = req.body.gitAccount;
       db.updateUser(user);
       res.status(200).end();
-    } catch (e) {
+    } catch {
       res
         .status(500)
         .send({
