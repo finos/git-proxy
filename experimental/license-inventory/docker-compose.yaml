@@ -10,7 +10,7 @@ services:
 
   app:
     container_name: license-inventory
-    image: node:23-alpine@sha256:0a29d8a047149079bf48dab598f287815e39867d547e8f3935cfdece0a4379cc
+    image: node:23-alpine@sha256:6eae672406a2bc8ed93eab6f9f76a02eb247e06ba82b2f5032c0a4ae07e825ba
     # ensure colours show
     tty: true
     command: >
@@ -35,7 +35,7 @@ services:
       - otel-collector
 
   mongo:
-    image: mongo:8.0.4@sha256:aaad67f2dca93148e5343c03210bcfc89a0107516a4756bfa018acd6579e5b18
+    image: mongo:8.0.5@sha256:7bd28e5eea1c5766a084d5818254046f3ebe3b8f20a65e3a274640189e296667
     command: --logpath=/var/log/mongo.log
     ports:
       - 27017:27017
@@ -46,7 +46,7 @@ services:
       - init
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.120.0@sha256:85ac41c2db88d0df9bd6145e608a3cb023f5d8443868adbfbbf66efb51087917
+    image: otel/opentelemetry-collector-contrib:0.121.0@sha256:789689988e379c58ac12b07718dbcf4b23c2214bd804173c1c77af346d381c15
     volumes:
       - ./dev/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
     depends_on:
@@ -79,7 +79,7 @@ services:
 
   # metrics
   prometheus:
-    image: prom/prometheus:v3.2.0@sha256:5888c188cf09e3f7eebc97369c3b2ce713e844cdbd88ccf36f5047c958aea120
+    image: prom/prometheus:v3.2.1@sha256:6927e0919a144aa7616fd0137d4816816d42f6b816de3af269ab065250859a62
     command:
       - --config.file=/etc/prometheus.yaml
       - --enable-feature=exemplar-storage
