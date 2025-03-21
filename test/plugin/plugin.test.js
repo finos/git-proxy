@@ -4,7 +4,7 @@ const {
   PullActionPlugin,
   PushActionPlugin,
   PluginLoader,
-} = require('../src/plugin');
+} = require('../../src/plugin');
 const { spawnSync } = require('child_process');
 const { rmSync } = require('fs');
 const { join } = require('path');
@@ -13,7 +13,7 @@ chai.should();
 
 const expect = chai.expect;
 
-const testPackagePath = join(__dirname, 'fixtures', 'test-package');
+const testPackagePath = join(__dirname, '../fixtures', 'test-package');
 
 describe('loading plugins from packages', function () {
   // eslint-disable-next-line no-invalid-this
