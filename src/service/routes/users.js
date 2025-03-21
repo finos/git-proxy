@@ -25,7 +25,7 @@ router.get('/:id', async (req, res) => {
   console.log(`Retrieving details for user: ${username}`);
   const data = await db.findUser(username);
   const user = JSON.parse(JSON.stringify(data));
-  delete user.password;
+  if (user && user.password) delete user.password;
   res.send(user);
 });
 

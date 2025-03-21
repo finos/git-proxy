@@ -23,8 +23,24 @@ export const findUser = (username: string) => {
   });
 };
 
-export const createUser = (user: User) => {
-  return new Promise<User>((resolve, reject) => {
+export const findUserByOIDC = function (oidcId: string) {
+  return new Promise((resolve, reject) => {
+    db.findOne({ oidcId: oidcId }, (err, doc) => {
+      if (err) {
+        reject(err);
+      } else {
+        if (!doc) {
+          resolve(null);
+        } else {
+          resolve(doc);
+        }
+      }
+    });
+  });
+};
+
+export const createUser = function (user: User) {
+  return new Promise((resolve, reject) => {
     db.insert(user, (err) => {
       if (err) {
         reject(err);
