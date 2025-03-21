@@ -168,6 +168,7 @@ async function addRepoToDb(newRepo, debug = false) {
  * Add a new git push record to the database.
  * @param {string} id The ID of the git push.
  * @param {string} repo The repository of the git push.
+ * @param {string} user The user who pushed the git push.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
 async function addGitPushToDb(id, repo, user = null, debug = false) {
