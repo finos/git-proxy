@@ -170,7 +170,7 @@ async function addRepoToDb(newRepo, debug = false) {
  * @param {string} repo The repository of the git push.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
-async function addGitPushToDb(id, repo, debug = false) {
+async function addGitPushToDb(id, repo, user = null, debug = false) {
   const action = new actions.Action(
     id,
     'push', // type
@@ -178,6 +178,7 @@ async function addGitPushToDb(id, repo, debug = false) {
     Date.now(), // timestamp
     repo,
   );
+  action.user = user;
   const step = new steps.Step(
     'authBlock', // stepName
     false, // error
