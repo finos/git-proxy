@@ -10,7 +10,7 @@
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "build": "vite build",
     "build-ts": "tsc",
-    "test": "NODE_ENV=test mocha './test/**/*.js --exit",
+    "test": "NODE_ENV=test ts-mocha './test/*.js' --exit; mocha './test/plugin/*.js' --exit",
     "test-coverage": "nyc npm run test",
     "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text npm run test",
     "prepare": "node ./scripts/prepare.js",
