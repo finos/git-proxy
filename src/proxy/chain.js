@@ -9,6 +9,7 @@ const pushActionChain = [
   proc.push.checkIfWaitingAuth,
   proc.push.pullRemote,
   proc.push.writePack,
+  proc.push.preReceive,
   proc.push.getDiff,
   proc.push.clearBareClone,
   proc.push.scanDiff,

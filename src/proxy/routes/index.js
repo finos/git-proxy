@@ -106,7 +106,7 @@ router.use(
       console.log('Sending request to ' + url);
       return url;
     },
-    proxyReqOptDecorator: function (proxyReqOpts, srcReq) {
+    proxyReqOptDecorator: function (proxyReqOpts) {
       return proxyReqOpts;
     },
 

@@ -65,7 +65,7 @@ function AddRepositoryDialog(props) {
 
     try {
       new URL(data.url);
-    } catch (e) {
+    } catch {
       setError('Invalid URL');
       return;
     }

@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/usr/bin/env tsx
 /* eslint-disable max-len */
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';

@@ -12,19 +12,21 @@ export const createUser = async (
   password: string,
   email: string,
   gitAccount: string,
-  admin: boolean = false
+  admin: boolean = false,
+  oidcId: string = '',
 ) => {
   console.log(
     `creating user
         user=${username},
         gitAccount=${gitAccount}
         email=${email},
-        admin=${admin}`,
+        admin=${admin}
+        oidcId=${oidcId}`,
   );
 
   const data = {
     username: username,
-    password: await bcrypt.hash(password, 10),
+    password: oidcId ? null : await bcrypt.hash(password, 10),
     gitAccount: gitAccount,
     email: email,
     admin: admin,
@@ -62,6 +64,7 @@ export const {
   writeAudit,
   getPush,
   findUser,
+  findUserByOIDC,
   getUsers,
   deleteUser,
   updateUser,

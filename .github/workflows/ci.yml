@@ -23,17 +23,22 @@ jobs:
         mongodb-version: [4.4]
 
     steps:
+    - name: Harden Runner
+      uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+      with:
+        egress-policy: audit
+
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       with:
         fetch-depth: 0
 
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
       with:
         node-version: ${{ matrix.node-version }}
 
     - name: Start MongoDB
-      uses: supercharge/mongodb-github-action@1.11.0
+      uses: supercharge/mongodb-github-action@90004df786821b6308fb02299e5835d0dae05d0d # 1.12.0
       with:
         mongodb-version: ${{ matrix.mongodb-version }}
 
@@ -47,7 +52,7 @@ jobs:
         npm run test-coverage-ci --workspaces --if-present
 
     - name: Upload test coverage report
-      uses: codecov/codecov-action@v5.1.2
+      uses: codecov/codecov-action@0565863a31f2c772f9f0395002a31e3f06189574 # v5.4.0
       with:
         files: ./coverage/lcov.info
         token: ${{ secrets.CODECOV_TOKEN }}
@@ -59,20 +64,20 @@ jobs:
       run: npm run build
 
     - name: Save build folder
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4
       with:
         name: build
         if-no-files-found: error
         path: build
 
     - name: Download the build folders
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@cc203385981b70ca67e1cc392babf9cc229d5806 # v4
       with:
         name: build
         path: build
 
     - name: Run cypress test
-      uses: cypress-io/github-action@v6
+      uses: cypress-io/github-action@108b8684ae52e735ff7891524cbffbcd4be5b19f # v6.7.16
       with: 
         start: npm start &
         wait-on: "http://localhost:3000"
