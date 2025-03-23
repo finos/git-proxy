@@ -1,5 +1,6 @@
 const local = require('./local');
 const activeDirectory = require('./activeDirectory');
+const oidc = require('./oidc');
 const config = require('../../config');
 const authenticationConfig = config.getAuthentication();
 let _passport;
@@ -14,10 +15,15 @@ const configure = async () => {
     case 'local':
       _passport = await local.configure();
       break;
+    case 'openidconnect':
+      _passport = await oidc.configure();
+      break;
     default:
       throw Error(`uknown authentication type ${type}`);
   }
-  _passport.type = authenticationConfig.type;
+  if (!_passport.type) {
+    _passport.type = type;
+  }
   return _passport;
 };
 

@@ -1,4 +1,5 @@
 const lpModule = import('load-plugin');
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 ('use strict');
 
 /**

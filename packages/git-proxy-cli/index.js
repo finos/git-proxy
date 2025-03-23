@@ -307,7 +307,7 @@ async function logout() {
 }
 
 // Parsing command line arguments
-yargs(hideBin(process.argv))
+yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused-expressions
   .command({
     command: 'authorise',
     describe: 'Authorise git push by ID',
@@ -339,7 +339,7 @@ yargs(hideBin(process.argv))
   .command({
     command: 'config',
     describe: 'Print configuration',
-    handler(argv) {
+    handler() {
       console.log(`GitProxy URL: ${baseUrl}`);
     },
   })
@@ -365,7 +365,7 @@ yargs(hideBin(process.argv))
   .command({
     command: 'logout',
     describe: 'Log out',
-    handler(argv) {
+    handler() {
       logout();
     },
   })

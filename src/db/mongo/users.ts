@@ -8,7 +8,7 @@ export const findUser = async function (username: string) {
   return collection.findOne({ username: { $eq: username } });
 };
 
-export const getUsers = async function (query: string) {
+export const getUsers = async function (query: any = {}) {
   console.log(`Getting users for query= ${JSON.stringify(query)}`);
   const collection = await connect(collectionName);
   return collection.find(query, { password: 0 }).toArray();
