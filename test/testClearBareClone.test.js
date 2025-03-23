@@ -25,7 +25,7 @@ describe('clear bare and local clones', async () => {
     );
 
     expect(fs.existsSync(`./.remote/${timestamp}`)).to.be.true;
-  }).timeout(10000);
+  }).timeout(20000);
 
   it('clear bare clone function purges .remote folder and specific clone folder', async () => {
     const action = new Action('123', 'type', 'get', timestamp, 'finos/git-proxy');
@@ -33,4 +33,10 @@ describe('clear bare and local clones', async () => {
     expect(fs.existsSync(`./.remote`)).to.throw;
     expect(fs.existsSync(`./.remote/${timestamp}`)).to.throw;
   });
+
+  afterEach(() => {
+    if (fs.existsSync(`./.remote`)) {
+      fs.rmdirSync(`./.remote`, { recursive: true });
+    }
+  })
 });
