@@ -253,7 +253,7 @@ describe('proxy chain', function () {
       type: 'push',
       continue: () => true,
       allowPush: false,
-      setAllowAutoApprover: sinon.stub(),
+      setAutoApproval: sinon.stub(),
       repoName: 'test-repo',
       commitTo: 'newCommitHash',
       autoApproved: false,
