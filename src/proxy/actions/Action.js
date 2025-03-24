@@ -15,6 +15,7 @@ class Action {
   canceled = false;
   rejected = false;
   autoApproved = false;
+  autoRejected = false;
   commitFrom;
   commitTo;
   branch;
@@ -108,10 +109,16 @@ class Action {
   /**
    *`
    */
-  setAllowAutoApprover() {
+  setAutoApproval() {
     this.autoApproved = true;
   }
 
+  /**
+   *`
+   */
+  setAutoRejection() {
+    this.autoRejected = true;
+  }
   /**
    * @return {bool}
    */
