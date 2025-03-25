@@ -4,12 +4,16 @@ import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
 import * as repo from './repo';
-import { PushQuery } from '../types'
+import { PushQuery } from '../types';
+
+const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
+db.ensureIndex({ fieldName: 'id', unique: true });
+db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
 const defaultPushQuery: PushQuery = {
   error: false,
