@@ -44,9 +44,6 @@ export default function PushesTable(props) {
   }, [props]);
 
 
-  // useEffect(() => {
-  //   setFilteredData(data); // Initialize filtered data with full data on load
-  // }, [data]);
 
   useEffect(() => {
     // Initialize filtered data with full data on load
