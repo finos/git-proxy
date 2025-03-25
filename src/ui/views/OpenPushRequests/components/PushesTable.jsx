@@ -13,21 +13,21 @@ import Paper from '@material-ui/core/Paper';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { getPushes } from '../../../services/git-push';
 import { KeyboardArrowRight } from '@material-ui/icons';
-import Search from '../../../components/Search/Search'; // Import the Search component
-import Pagination from '../../../components/Pagination/Pagination'; // Import Pagination component
+import Search from '../../../components/Search/Search';
+import Pagination from '../../../components/Pagination/Pagination';
 
 export default function PushesTable(props) {
   const useStyles = makeStyles(styles);
   const classes = useStyles();
   const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]); // State for filtered data
+  const [filteredData, setFilteredData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const navigate = useNavigate();
   const [, setAuth] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1); // State for current page
+  const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
-  const [searchTerm, setSearchTerm] = useState(''); // Define searchTerm state
+  const [searchTerm, setSearchTerm] = useState('');
   const openPush = (push) => navigate(`/admin/push/${push}`, { replace: true });
 
   useEffect(() => {
@@ -56,19 +56,16 @@ export default function PushesTable(props) {
     setCurrentPage(1);
   }, [searchTerm, data]);
 
-  // Handler function for search input
   const handleSearch = (term) => setSearchTerm(term.trim());
 
   const handlePageChange = (page) => {
-    setCurrentPage(page); // Update current page
+    setCurrentPage(page);
   };
 
-  // Logic for pagination (getting items for the current page)
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
-  // Change page
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   if (isLoading) return <div>Loading...</div>;
@@ -76,7 +73,7 @@ export default function PushesTable(props) {
 
   return (
     <div>
-      <Search onSearch={handleSearch} /> {/* Use the Search component */}
+      <Search onSearch={handleSearch} /> {}
       <TableContainer component={Paper}>
         <Table className={classes.table} aria-label='simple table'>
           <TableHead>
