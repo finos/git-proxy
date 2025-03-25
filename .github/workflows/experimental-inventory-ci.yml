@@ -1,0 +1,52 @@
+name: CI - experimental - inventory
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - experimental/license-inventory/**
+  pull_request:
+    branches: [main]
+    paths:
+      - experimental/license-inventory/**
+
+permissions:
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+        mongodb-version: [4.4]
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@90004df786821b6308fb02299e5835d0dae05d0d # 1.12.0
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
+
+      - name: Install dependencies
+        working-directory: ./experimental/license-inventory
+        run: npm ci
+
+      - name: Test
+        working-directory: ./experimental/license-inventory
+        run: |
+          MONGO_URI="mongodb://localhost:27017/inventory" npm run test
