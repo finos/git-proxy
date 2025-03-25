@@ -38,6 +38,7 @@ export const getRepos = async (query: any = {}): Promise<Repo[]> => {
 };
 
 export const getRepo = async (name: string): Promise<Repo | null> => {
+  name = name.toLowerCase();
   return new Promise<Repo | null>((resolve, reject) => {
     db.findOne({ name: name.toLowerCase() }, (err: Error | null, doc: Repo) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
