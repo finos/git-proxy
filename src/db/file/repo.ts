@@ -8,7 +8,7 @@ if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
-db.ensureIndex({ fieldName: 'name', unique: true });
+db.ensureIndex({ fieldName: 'name', unique: false });
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
 const isBlank = (str: string) => {
