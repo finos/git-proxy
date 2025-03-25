@@ -8,6 +8,7 @@ import Button from '../../components/CustomButtons/Button';
 import FormLabel from '@material-ui/core/FormLabel';
 import { getUser, updateUser, getUserLoggedIn } from '../../services/user';
 import { makeStyles } from '@material-ui/core/styles';
+
 import { LogoGithubIcon } from '@primer/octicons-react';
 import CloseRounded from '@material-ui/icons/CloseRounded';
 import { Check, Save } from '@material-ui/icons';
