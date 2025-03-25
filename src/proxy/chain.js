@@ -1,5 +1,5 @@
 const proc = require('./processors');
-const db = require('../db');
+const { attemptAutoApproval, attemptAutoRejection } = require('./actions/autoActions');
 
 const pushActionChain = [
   proc.push.parsePush,
@@ -20,22 +20,6 @@ const pushActionChain = [
 const pullActionChain = [proc.push.checkRepoInAuthorisedList];
 
 let pluginsInserted = false;
-
-const attemptAutoApproval = async (req, action) => {
-  try {
-    const attestation = {
-      timestamp: new Date(),
-      autoApproved: true,
-    };
-    await db.authorise(action.id, attestation);
-    console.log('Push automatically approved by system.');
-
-    return true;
-  } catch (error) {
-    console.error('Error during auto-approval:', error.message);
-    return false;
-  }
-};
 
 const executeChain = async (req) => {
   let action;
@@ -58,7 +42,9 @@ const executeChain = async (req) => {
   } finally {
     await proc.push.audit(req, action);
     if (action.autoApproved) {
-      attemptAutoApproval(req, action);
+      attemptAutoApproval(action);
+    } else if (action.autoRejected) {
+      attemptAutoRejection(action);
     }
   }
 
