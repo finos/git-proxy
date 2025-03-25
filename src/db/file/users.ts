@@ -16,7 +16,7 @@ db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
 export const findUser = (username: string) => {
   return new Promise<User | null>((resolve, reject) => {
-    db.findOne({ username: username }, (err: Error | null, doc: User) => {
+    db.findOne({ username: username.toLowerCase() }, (err: Error | null, doc: User) => {
       if (err) {
         reject(err);
       } else {
