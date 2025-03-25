@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import GridItem from '../../../components/Grid/GridItem';
 import GridContainer from '../../../components/Grid/GridContainer';
+import { useNavigate } from 'react-router-dom';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -25,9 +26,12 @@ export default function UserList(props) {
   const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5; 
   const [searchQuery, setSearchQuery] = useState('');
+
+  const openUser = (username) => navigate(`/admin/user/${username}`, { replace: true });
 
 
   useEffect(() => {
@@ -98,7 +102,11 @@ export default function UserList(props) {
                     {row.admin ? <Check fontSize='small' color='primary' /> : <CloseRounded color='error' />}
                   </TableCell>
                   <TableCell component='th' scope='row'>
-                    <Button variant='contained' color='primary'>
+                    <Button
+                      variant='contained'
+                      color='primary'
+                      onClick={() => openUser(row.username)}
+                    >
                       <KeyboardArrowRight />
                     </Button>
                   </TableCell>
