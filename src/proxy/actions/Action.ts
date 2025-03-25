@@ -2,6 +2,20 @@ import { getProxyUrl } from "../../config";
 import { Step } from "./Step";
 
 /**
+ * Represents a commit.
+ */
+export interface Commit {
+  message: string;
+  committer: string;
+  tree: string;
+  parent: string;
+  author: string;
+  authorEmail: string;
+  commitTS?: string; // TODO: Normalize this to commitTimestamp
+  commitTimestamp?: string;
+}
+
+/**
  * Class representing a Push.
  */
 class Action {
@@ -14,6 +28,7 @@ class Action {
   authorised: boolean = false;
   canceled: boolean = false;
   rejected: boolean = false;
+  commitData?: Commit[] = [];
   commitFrom?: string;
   commitTo?: string;
   branch?: string;
