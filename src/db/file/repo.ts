@@ -7,7 +7,7 @@ if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
 
-export const getRepos = async (query: any = {}) => {
+export  const getRepos = async (query: any = {}) => {
   return new Promise<Repo[]>((resolve, reject) => {
     db.find({}, (err: Error, docs: Repo[]) => {
       if (err) {
