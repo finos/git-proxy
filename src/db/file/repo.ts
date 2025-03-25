@@ -8,7 +8,11 @@ if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
+<<<<<<< HEAD
 db.ensureIndex({ fieldName: 'name', unique: false });
+=======
+db.ensureIndex({ fieldName: 'name', unique: true });
+>>>>>>> a7c80f0 (fix: add indexes, compaction and consistent lowercasing of inputs in file-based DB implementation)
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
 const isBlank = (str: string) => {
