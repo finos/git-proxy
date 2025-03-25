@@ -33,6 +33,10 @@ export default function UserProfile() {
     );
   }
 
+  function handleOIDCLogin() {
+    window.location.href = `${import.meta.env.VITE_API_URI}/api/auth/oidc`;
+  }
+
   function handleSubmit(event) {
     setIsLoading(true);
     axios
@@ -104,7 +108,7 @@ export default function UserProfile() {
                   width={'150px'}
                   src={logo}
                   alt='logo'
-                  data-test ="git-proxy-logo"
+                  data-test='git-proxy-logo'
                 />
               </div>
             </CardHeader>
@@ -119,7 +123,7 @@ export default function UserProfile() {
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                       autoFocus={true}
-                      data-test ='username'
+                      data-test='username'
                     />
                   </FormControl>
                 </GridItem>
@@ -133,7 +137,7 @@ export default function UserProfile() {
                       type='password'
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      data-test ='password'
+                      data-test='password'
                     />
                   </FormControl>
                 </GridItem>
@@ -141,9 +145,20 @@ export default function UserProfile() {
             </CardBody>
             <CardFooter>
               {!isLoading ? (
-                <Button color='success' block disabled={!validateForm()} type='submit' data-test="login">
-                  Login
-                </Button>
+                <>
+                  <Button
+                    color='success'
+                    block
+                    disabled={!validateForm()}
+                    type='submit'
+                    data-test='login'
+                  >
+                    Login
+                  </Button>
+                  <Button color='warning' block onClick={handleOIDCLogin} data-test='oidc-login'>
+                    Login with OIDC
+                  </Button>
+                </>
               ) : (
                 <div style={{ textAlign: 'center', width: '100%', opacity: 0.5, color: 'green' }}>
                   <CircularProgress color='inherit' />

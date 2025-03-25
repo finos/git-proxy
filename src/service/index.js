@@ -23,7 +23,7 @@ const corsOptions = {
   origin: true,
 };
 
-const start = async () => {
+const createApp = async () => {
   // configuration of passport is async
   // Before we can bind the routes - we need the passport strategy
   const passport = await require('./passport').configure();
@@ -69,6 +69,12 @@ const start = async () => {
     res.sendFile(path.join(`${absBuildPath}/index.html`));
   });
 
+  return app;
+};
+
+const start = async () => {
+  const app = await createApp();
+
   _httpServer.listen(uiPort);
 
   console.log(`Service Listening on ${uiPort}`);
@@ -77,5 +83,6 @@ const start = async () => {
   return app;
 };
 
+module.exports.createApp = createApp;
 module.exports.start = start;
 module.exports.httpServer = _httpServer;
