@@ -39,6 +39,13 @@ class ConfigLoader extends EventEmitter {
     this.config = initialConfig;
     this.reloadTimer = null;
     this.isReloading = false;
+    this.cacheDir = null;
+  }
+
+  async initialize() {
+    // Initialize cache directory using env-paths
+    const paths = envPaths('git-proxy', { suffix: '' });
+    this.cacheDir = paths.cache;
   }
 
   async start() {
