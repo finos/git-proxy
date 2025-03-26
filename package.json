@@ -81,8 +81,8 @@
     "@commitlint/cli": "^19.0.0",
     "@commitlint/config-conventional": "^19.0.0",
     "@vitejs/plugin-react": "^4.0.2",
-    "chai": "^4.2.0",
-    "chai-http": "^4.3.0",
+    "chai": "^5.2.0",
+    "chai-http": "^5.1.1",
     "cypress": "^14.0.0",
     "eslint": "^8.57.0",
     "eslint-config-google": "^0.14.0",
@@ -96,7 +96,7 @@
     "nyc": "^17.0.0",
     "prettier": "^3.0.0",
     "sinon": "^19.0.2",
-    "vite": "^4.4.2"
+    "vite": "^5.4.15"
   },
   "optionalDependencies": {
     "@esbuild/darwin-arm64": "^0.18.20",
