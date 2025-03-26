@@ -1,14 +1,19 @@
-const Step = require('../../actions').Step;
-const db = require('../../../db');
+import { Action, Step } from '../../actions';
+import { getRepos } from '../../../db';
+import { Repo } from '../../../db/types';
 
 // Execute if the repo is approved
-const exec = async (req, action, authorisedList = db.getRepos) => {
+const exec = async (
+  req: any,
+  action: Action,
+  authorisedList: () => Promise<Repo[]> = getRepos,
+): Promise<Action> => {
   const step = new Step('checkRepoInAuthorisedList');
 
   const list = await authorisedList();
   console.log(list);
 
-  const found = list.find((x) => {
+  const found = list.find((x: Repo) => {
     const targetName = action.repo.replace('.git', '').toLowerCase();
     const allowedName = `${x.project}/${x.name}`.replace('.git', '').toLowerCase();
     console.log(`${targetName} = ${allowedName}`);
@@ -34,4 +39,5 @@ const exec = async (req, action, authorisedList = db.getRepos) => {
 };
 
 exec.displayName = 'checkRepoInAuthorisedList.exec';
-exports.exec = exec;
+
+export { exec };

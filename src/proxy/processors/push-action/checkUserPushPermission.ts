@@ -1,8 +1,8 @@
-const Step = require('../../actions').Step;
-const db = require('../../../db');
+import { Action, Step } from '../../actions';
+import { getUsers, isUserPushAllowed } from '../../../db';
 
 // Execute if the repo is approved
-const exec = async (req, action) => {
+const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('checkUserPushPermission');
 
   const repoName = action.repo.split('/')[1].replace('.git', '');
@@ -10,13 +10,13 @@ const exec = async (req, action) => {
   let user = action.user;
 
   // Find the user associated with this Git Account
-  const list = await db.getUsers({ gitAccount: action.user });
+  const list = await getUsers({ gitAccount: action.user });
 
   console.log(JSON.stringify(list));
 
   if (list.length == 1) {
     user = list[0].username;
-    isUserAllowed = await db.isUserPushAllowed(repoName, user);
+    isUserAllowed = await isUserPushAllowed(repoName, user);
   }
 
   console.log(`User ${user} permission on Repo ${repoName} : ${isUserAllowed}`);
@@ -30,8 +30,8 @@ const exec = async (req, action) => {
 
     step.setError(
       `Rejecting push as user ${action.user} ` +
-        `is not allowed to push on repo ` +
-        `${action.repo}`,
+      `is not allowed to push on repo ` +
+      `${action.repo}`,
     );
     action.addStep(step);
     return action;
@@ -43,4 +43,5 @@ const exec = async (req, action) => {
 };
 
 exec.displayName = 'checkUserPushPermission.exec';
-exports.exec = exec;
+
+export { exec };

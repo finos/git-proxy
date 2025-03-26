@@ -1,9 +1,10 @@
-const Step = require('../../actions').Step;
-const config = require('../../../config');
+import { Action, Step } from '../../actions';
+import { getCommitConfig } from '../../../config';
+import { Commit } from '../../actions/Action';
 
-const commitConfig = config.getCommitConfig();
+const commitConfig = getCommitConfig();
 
-function isEmailAllowed(email) {
+const isEmailAllowed = (email: string): boolean => {
   const [emailLocal, emailDomain] = email.split('@');
   console.log({ emailLocal, emailDomain });
 
@@ -28,13 +29,12 @@ function isEmailAllowed(email) {
   return true;
 }
 
-// Execute if the repo is approved
-const exec = async (req, action) => {
+const exec = async (req: any, action: Action): Promise<Action> => {
   console.log({ req, action });
 
   const step = new Step('checkAuthorEmails');
 
-  const uniqueAuthorEmails = [...new Set(action.commitData.map((commit) => commit.authorEmail))];
+  const uniqueAuthorEmails = [...new Set(action.commitData?.map((commit: Commit) => commit.authorEmail))];
   console.log({ uniqueAuthorEmails });
 
   const illegalEmails = uniqueAuthorEmails.filter((email) => !isEmailAllowed(email));
@@ -62,4 +62,5 @@ const exec = async (req, action) => {
 };
 
 exec.displayName = 'checkAuthorEmails.exec';
-exports.exec = exec;
+
+export { exec };

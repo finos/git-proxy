@@ -1,9 +1,9 @@
-const Step = require('../../actions').Step;
-const config = require('../../../config');
+import { Action, Step } from '../../actions';
+import { getCommitConfig } from '../../../config';
 
-const commitConfig = config.getCommitConfig();
+const commitConfig = getCommitConfig();
 
-function isMessageAllowed(commitMessage) {
+const isMessageAllowed = (commitMessage: string): boolean => {
   console.log(`isMessageAllowed(${commitMessage})`);
 
   // Commit message is empty, i.e. '', null or undefined
@@ -19,18 +19,18 @@ function isMessageAllowed(commitMessage) {
   }
 
   // Configured blocked literals
-  const blockedLiterals = commitConfig.message.block.literals;
+  const blockedLiterals: string[] = commitConfig.message.block.literals;
 
   // Configured blocked patterns
-  const blockedPatterns = commitConfig.message.block.patterns;
+  const blockedPatterns: string[] = commitConfig.message.block.patterns;
 
   // Find all instances of blocked literals in commit message...
-  const positiveLiterals = blockedLiterals.map((literal) =>
+  const positiveLiterals = blockedLiterals.map((literal: string) =>
     commitMessage.toLowerCase().includes(literal.toLowerCase()),
   );
 
   // Find all instances of blocked patterns in commit message...
-  const positivePatterns = blockedPatterns.map((pattern) =>
+  const positivePatterns = blockedPatterns.map((pattern: string) =>
     commitMessage.match(new RegExp(pattern, 'gi')),
   );
 
@@ -50,12 +50,12 @@ function isMessageAllowed(commitMessage) {
 }
 
 // Execute if the repo is approved
-const exec = async (req, action) => {
+const exec = async (req: any, action: Action): Promise<Action> => {
   console.log({ req, action });
 
   const step = new Step('checkCommitMessages');
 
-  const uniqueCommitMessages = [...new Set(action.commitData.map((commit) => commit.message))];
+  const uniqueCommitMessages = [...new Set(action.commitData?.map((commit) => commit.message))];
   console.log({ uniqueCommitMessages });
 
   const illegalMessages = uniqueCommitMessages.filter((message) => !isMessageAllowed(message));
@@ -83,4 +83,5 @@ const exec = async (req, action) => {
 };
 
 exec.displayName = 'checkCommitMessages.exec';
-exports.exec = exec;
+
+export { exec };
