@@ -645,10 +645,12 @@ describe('test git-proxy-cli', function () {
 
   describe('test git-proxy-cli :: git push administration', function () {
     const pushId = `0000000000000000000000000000000000000000__${Date.now()}`;
+    const gitAccount = 'testGitAccount1';
 
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addUserToDb('testuser1', 'testpassword', 'test@email.com', gitAccount);
+      await helper.addGitPushToDb(pushId, TEST_REPO, gitAccount);
     });
 
     it('attempt to ls should list existing push', async function () {
