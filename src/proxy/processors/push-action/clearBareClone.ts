@@ -1,7 +1,7 @@
-const Step = require('../../actions').Step;
-const fs = require('node:fs');
+import { Action, Step } from '../../actions';
+import fs from 'node:fs';
 
-const exec = async (req, action) => {
+const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('clearBareClone');
 
   // Recursively remove the contents of ./.remote and ignore exceptions
@@ -17,4 +17,5 @@ const exec = async (req, action) => {
 };
 
 exec.displayName = 'clearBareClone.exec';
-exports.exec = exec;
+
+export { exec };

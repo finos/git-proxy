@@ -19,6 +19,14 @@ export interface Commit {
  * Class representing a Push.
  */
 class Action {
+  id: string;
+  type: string;
+  method: string;
+  timestamp: number;
+  project: string;
+  repoName: string;
+  url: string;
+  repo: string;
   steps: Step[] = [];
   error: boolean = false;
   errorMessage?: string | null;
@@ -37,14 +45,7 @@ class Action {
   user?: string;
   attestation?: string;
   lastStep?: Step;
-  id: string;
-  type: string;
-  method: string;
-  timestamp: number;
-  project: string;
-  repoName: string;
-  url: string;
-  repo: string;
+  proxyGitPath?: string;
 
   /**
    * Create an action.

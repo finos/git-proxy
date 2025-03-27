@@ -1,8 +1,7 @@
-const { getServiceUIURL } = require('../../../service/urls');
+import { Action, Step } from '../../actions';
+import { getServiceUIURL } from '../../../service/urls';
 
-const Step = require('../../actions').Step;
-
-const exec = async (req, action) => {
+const exec = async (req: any, action: Action) => {
   const step = new Step('authBlock');
   const url = getServiceUIURL(req);
 
@@ -19,4 +18,5 @@ const exec = async (req, action) => {
 };
 
 exec.displayName = 'blockForAuth.exec';
-exports.exec = exec;
+
+export { exec };

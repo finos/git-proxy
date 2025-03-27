@@ -12,7 +12,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   // Find the user associated with this Git Account
   const list = await getUsers({ gitAccount: action.user });
 
-  console.log(JSON.stringify(list));
+  console.log(`Users for this git account: ${JSON.stringify(list)}`);
 
   if (list.length == 1) {
     user = list[0].username;
