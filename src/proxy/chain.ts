@@ -1,3 +1,5 @@
+import { PluginLoader } from '../plugin';
+import { Action } from './actions';
 import * as proc from './processors';
 
 const pushActionChain = [
@@ -20,14 +22,14 @@ const pullActionChain = [proc.push.checkRepoInAuthorisedList];
 
 let pluginsInserted = false;
 
-const executeChain = async (req) => {
-  let action;
+export const executeChain = async (req: any, res: any): Promise<Action> => {
+  let action: Action;
   try {
     action = await proc.pre.parseAction(req);
     const actions = await getChain(action);
     for (const i in actions) {
       if (!i) continue;
-      const fn = actions[i];
+      const fn = actions[i as any];
 
       action = await fn(req, action);
       if (!action.continue()) {
@@ -39,7 +41,7 @@ const executeChain = async (req) => {
       }
     }
   } finally {
-    await proc.push.audit(req, action);
+    await proc.push.audit(req, action!!);
   }
 
   return action;
@@ -49,9 +51,9 @@ const executeChain = async (req) => {
  * The plugin loader used for the GitProxy chain.
  * @type {import('../plugin').PluginLoader}
  */
-let chainPluginLoader;
+let chainPluginLoader: PluginLoader;
 
-const getChain = async (action) => {
+const getChain = async (action: Action) => {
   if (chainPluginLoader === undefined) {
     console.error(
       'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',
@@ -65,12 +67,12 @@ const getChain = async (action) => {
     for (const pluginObj of chainPluginLoader.pushPlugins) {
       console.log(`Inserting push plugin ${pluginObj.constructor.name} into chain`);
       // insert custom functions after parsePush but before other actions
-      pushActionChain.splice(1, 0, pluginObj.exec);
+      pushActionChain.splice(1, 0, pluginObj.exec as any);
     }
     for (const pluginObj of chainPluginLoader.pullPlugins) {
       console.log(`Inserting pull plugin ${pluginObj.constructor.name} into chain`);
       // insert custom functions before other pull actions
-      pullActionChain.splice(0, 0, pluginObj.exec);
+      pullActionChain.splice(0, 0, pluginObj.exec as any);
     }
     // This is set to true so that we don't re-insert the plugins into the chain
     pluginsInserted = true;
@@ -84,7 +86,7 @@ const getChain = async (action) => {
   if (action.type === 'default') return [];
 };
 
-module.exports = {
+export default {
   set chainPluginLoader(loader) {
     chainPluginLoader = loader;
   },

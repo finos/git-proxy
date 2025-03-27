@@ -1,8 +1,9 @@
-const express = require('express');
-const proxy = require('express-http-proxy');
-const router = new express.Router();
-const { executeChain } = require('../chain');
-const config = require('../../config');
+import { Router } from 'express';
+import proxy from 'express-http-proxy';
+import { executeChain } from '../chain';
+import { getProxyUrl } from '../../config';
+
+const router = Router();
 
 /**
  * For a given Git HTTP request destined for a GitHub repo,
@@ -10,7 +11,7 @@ const config = require('../../config');
  * @param {string} url URL path of the request
  * @return {string} Modified path which removes the {owner}/{repo} parts
  */
-const stripGitHubFromGitPath = (url) => {
+const stripGitHubFromGitPath = (url: string): string | undefined => {
   const parts = url.split('/');
   // url = '/{owner}/{repo}.git/{git-path}'
   // url.split('/') = ['', '{owner}', '{repo}.git', '{git-path}']
@@ -30,7 +31,7 @@ const stripGitHubFromGitPath = (url) => {
  * @param {*} headers Request headers (TODO: Fix JSDoc linting and refer to node:http.IncomingHttpHeaders)
  * @return {boolean} If true, this is a valid and expected git request. Otherwise, false.
  */
-const validGitRequest = (url, headers) => {
+const validGitRequest = (url: string, headers: any): boolean => {
   const { 'user-agent': agent, accept } = headers;
   if (['/info/refs?service=git-upload-pack', '/info/refs?service=git-receive-pack'].includes(url)) {
     // https://www.git-scm.com/docs/http-protocol#_discovering_references
@@ -47,7 +48,7 @@ const validGitRequest = (url, headers) => {
 
 router.use(
   '/',
-  proxy(config.getProxyUrl(), {
+  proxy(getProxyUrl(), {
     preserveHostHdr: false,
     filter: async function (req, res) {
       try {
@@ -58,9 +59,6 @@ router.use(
         if (gitPath === undefined || !validGitRequest(gitPath, req.headers)) {
           res.status(400).send('Invalid request received');
           return false;
-        }
-        if (req.body && req.body.length) {
-          req.rawBody = req.body.toString('utf8');
         }
 
         const action = await executeChain(req, res);
@@ -76,14 +74,14 @@ router.use(
           res.set('x-frame-options', 'DENY');
           res.set('connection', 'close');
 
-          let message;
+          let message = '';
 
           if (action.error) {
-            message = action.errorMessage;
+            message = action.errorMessage!;
             console.error(message);
           }
           if (action.blocked) {
-            message = action.blockedMessage;
+            message = action.blockedMessage!;
           }
 
           const packetMessage = handleMessage(message);
@@ -102,7 +100,7 @@ router.use(
       }
     },
     proxyReqPathResolver: (req) => {
-      const url = config.getProxyUrl() + req.originalUrl;
+      const url = getProxyUrl() + req.originalUrl;
       console.log('Sending request to ' + url);
       return url;
     },
@@ -124,7 +122,7 @@ router.use(
   }),
 );
 
-const handleMessage = (message) => {
+const handleMessage = (message: string): string => {
   const errorMessage = `\t${message}`;
   const len = 6 + new TextEncoder().encode(errorMessage).length;
 
@@ -133,7 +131,7 @@ const handleMessage = (message) => {
   return packetMessage;
 };
 
-module.exports = {
+export {
   router,
   handleMessage,
   validGitRequest,
