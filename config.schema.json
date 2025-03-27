@@ -5,6 +5,18 @@
   "description": "Configuration for customizing git-proxy",
   "type": "object",
   "properties": {
+    "configurationSources": {
+      "enabled": { "type": "boolean" },
+      "reloadIntervalSeconds": { "type": "number" },
+      "merge": { "type": "boolean" },
+      "sources": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "description": "Configuration source"
+        }
+      }
+    },
     "proxyUrl": { "type": "string" },
     "cookieSecret": { "type": "string" },
     "sessionMaxAgeHours": { "type": "number" },

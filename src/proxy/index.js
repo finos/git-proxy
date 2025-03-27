@@ -48,19 +48,60 @@ const createApp = async () => {
   return app;
 };
 
+let httpServer = null;
+let httpsServer = null;
+
 const start = async () => {
   const app = await createApp();
   await proxyPreparations();
-  http.createServer(options, app).listen(proxyHttpPort, () => {
+
+  // Start HTTP server
+  httpServer = http.createServer(options, app);
+  httpServer.listen(proxyHttpPort, () => {
     console.log(`HTTP Proxy Listening on ${proxyHttpPort}`);
   });
-  https.createServer(options, app).listen(proxyHttpsPort, () => {
-    console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
-  });
+
+  // Start HTTPS server if SSL certificates exist
+  const sslKeyPath = config.getSSLKeyPath();
+  const sslCertPath = config.getSSLCertPath();
+
+  if (fs.existsSync(sslKeyPath) && fs.existsSync(sslCertPath)) {
+    httpsServer = https.createServer(options, app);
+    httpsServer.listen(proxyHttpsPort, () => {
+      console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
+    });
+  }
 
   return app;
+};
+
+const stop = () => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Close HTTP server if it exists
+      if (httpServer) {
+        httpServer.close(() => {
+          console.log('HTTP server closed');
+          httpServer = null;
+        });
+      }
+
+      // Close HTTPS server if it exists
+      if (httpsServer) {
+        httpsServer.close(() => {
+          console.log('HTTPS server closed');
+          httpsServer = null;
+        });
+      }
+
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
 };
 
 module.exports.proxyPreparations = proxyPreparations;
 module.exports.createApp = createApp;
 module.exports.start = start;
+module.exports.stop = stop;
