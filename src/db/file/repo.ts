@@ -157,7 +157,12 @@ export const deleteRepo = async (name: string) => {
 export const isUserPushAllowed = async (name: string, user: string) => {
   name = name.toLowerCase();
   return new Promise<boolean>(async (resolve) => {
-    const repo = await exports.getRepo(name);
+    const repo = await getRepo(name);
+    if (!repo) {
+      resolve(false);
+      return;
+    }
+
     console.log(repo.users.canPush);
     console.log(repo.users.canAuthorise);
 
@@ -173,7 +178,12 @@ export const canUserApproveRejectPushRepo = async (name: string, user: string) =
   name = name.toLowerCase();
   console.log(`checking if user ${user} can approve/reject for ${name}`);
   return new Promise<boolean>(async (resolve) => {
-    const repo = await exports.getRepo(name);
+    const repo = await getRepo(name);
+    if (!repo) {
+      resolve(false);
+      return;
+    }
+
     if (repo.users.canAuthorise.includes(user)) {
       console.log(`user ${user} can approve/reject to repo ${name}`);
       resolve(true);

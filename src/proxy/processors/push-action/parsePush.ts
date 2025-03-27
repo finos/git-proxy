@@ -16,7 +16,11 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('parsePackFile');
 
   try {
-    const messageParts = req.rawBody.split(' ');
+    if (!req.body || req.body.length === 0) {
+      throw new Error('No body found in request');
+    }
+    const messageParts = req.body.toString('utf8').split(' ');
+
     action.branch = messageParts[2].trim().replace('\u0000', '');
     action.setCommit(messageParts[0].substr(4), messageParts[1]);
 
