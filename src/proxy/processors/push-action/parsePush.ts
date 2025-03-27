@@ -1,15 +1,18 @@
-const zlib = require('zlib');
-const fs = require('fs');
-const lod = require('lodash');
-const BitMask = require('bit-mask');
-const Step = require('../../actions').Step;
-const dir = './.tmp/';
+import { Action, Step } from '../../actions';
+import zlib from 'zlib';
+import fs from 'fs';
+import path from 'path';
+import lod from 'lodash';
+import { CommitContent } from '../types';
+const BitMask = require('bit-mask') as any;
+
+const dir = path.resolve(__dirname, './.tmp');
 
 if (!fs.existsSync(dir)) {
-  fs.mkdirSync(dir);
+  fs.mkdirSync(dir, { recursive: true });
 }
 
-const exec = async (req, action) => {
+const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('parsePackFile');
 
   try {
@@ -20,9 +23,9 @@ const exec = async (req, action) => {
     const index = req.body.lastIndexOf('PACK');
     const buf = req.body.slice(index);
     const [meta, contentBuff] = getPackMeta(buf);
-    const contents = getContents(contentBuff, meta.entries);
+    const contents = getContents(contentBuff as any, meta.entries as number);
 
-    action.commitData = getCommitData(contents);
+    action.commitData = getCommitData(contents as any);
 
     if (action.commitFrom === '0000000000000000000000000000000000000000') {
       action.commitFrom = action.commitData[action.commitData.length - 1].parent;
@@ -35,7 +38,7 @@ const exec = async (req, action) => {
     step.content = {
       meta: meta,
     };
-  } catch (e) {
+  } catch (e: any) {
     step.setError(
       `Unable to parse push. Please contact an administrator for support: ${e.toString('utf-8')}`,
     );
@@ -45,7 +48,7 @@ const exec = async (req, action) => {
   return action;
 };
 
-const getCommitData = (contents) => {
+const getCommitData = (contents: CommitContent[]) => {
   console.log({ contents });
   return lod
     .chain(contents)
@@ -59,9 +62,13 @@ const getCommitData = (contents) => {
       const parts = formattedContent.filter((part) => part.length > 0);
       console.log({ parts });
 
+      if (!parts || parts.length < 5) {
+        throw new Error('Invalid commit data');
+      }
+
       const tree = parts
         .find((t) => t.split(' ')[0] === 'tree')
-        .replace('tree', '')
+        ?.replace('tree', '')
         .trim();
       console.log({ tree });
 
@@ -75,13 +82,13 @@ const getCommitData = (contents) => {
 
       const author = parts
         .find((t) => t.split(' ')[0] === 'author')
-        .replace('author', '')
+        ?.replace('author', '')
         .trim();
       console.log({ author });
 
       const committer = parts
         .find((t) => t.split(' ')[0] === 'committer')
-        .replace('committer', '')
+        ?.replace('committer', '')
         .trim();
       console.log({ committer });
 
@@ -93,21 +100,25 @@ const getCommitData = (contents) => {
         .join(' ');
       console.log({ message });
 
-      const commitTimestamp = committer.split(' ').reverse()[1];
+      const commitTimestamp = committer?.split(' ').reverse()[1];
       console.log({ commitTimestamp });
 
-      const authorEmail = author.split(' ').reverse()[2].slice(1, -1);
+      const authorEmail = author?.split(' ').reverse()[2].slice(1, -1);
       console.log({ authorEmail });
 
       console.log({
         tree,
         parent,
-        author: author.split('<')[0].trim(),
-        committer: committer.split('<')[0].trim(),
+        author: author?.split('<')[0].trim(),
+        committer: committer?.split('<')[0].trim(),
         commitTimestamp,
         message,
         authorEmail,
       });
+
+      if (!tree || !parent || !author || !committer || !commitTimestamp || !message || !authorEmail) {
+        throw new Error('Invalid commit data');
+      }
 
       return {
         tree,
@@ -116,13 +127,13 @@ const getCommitData = (contents) => {
         committer: committer.split('<')[0].trim(),
         commitTimestamp,
         message,
-        authorEmail,
+        authorEmail: authorEmail,
       };
     })
     .value();
 };
 
-const getPackMeta = (buffer) => {
+const getPackMeta = (buffer: Buffer) => {
   const sig = buffer.slice(0, 4).toString('utf-8');
   const version = buffer.readUIntBE(4, 4);
   const entries = buffer.readUIntBE(8, 4);
@@ -136,13 +147,13 @@ const getPackMeta = (buffer) => {
   return [meta, buffer.slice(12)];
 };
 
-const getContents = (buffer, entries) => {
+const getContents = (buffer: Buffer | CommitContent[], entries: number) => {
   const contents = [];
 
   for (let i = 0; i < entries; i++) {
     try {
-      const [content, nextBuffer] = getContent(i, buffer);
-      buffer = nextBuffer;
+      const [content, nextBuffer] = getContent(i, buffer as Buffer);
+      buffer = nextBuffer as Buffer;
       contents.push(content);
     } catch (e) {
       console.log(e);
@@ -151,7 +162,7 @@ const getContents = (buffer, entries) => {
   return contents;
 };
 
-const getInt = (bits) => {
+const getInt = (bits: boolean[]) => {
   let strBits = '';
 
   // eslint-disable-next-line guard-for-in
@@ -162,7 +173,7 @@ const getInt = (bits) => {
   return parseInt(strBits, 2);
 };
 
-const getContent = (item, buffer) => {
+const getContent = (item: number, buffer: Buffer) => {
   // FIRST byte contains the type and some of the size of the file
   // a MORE flag -8th byte tells us if there is a subsequent byte
   // which holds the file size
@@ -175,7 +186,7 @@ const getContent = (item, buffer) => {
   const type = getInt([m.getBit(4), m.getBit(5), m.getBit(6)]);
 
   // Object IDs if this is a deltatfied blob
-  let objectRef = null;
+  let objectRef: string | null = null;
 
   // If we have a more flag get the next
   // 8 bytes
@@ -199,7 +210,7 @@ const getContent = (item, buffer) => {
   }
 
   // NOTE Size is the unziped size, not the zipped size
-  size = getInt(size);
+  const intSize = getInt(size);
 
   // Deltafied objectives have a 20 byte identifer
   if (type == 7 || type == 6) {
@@ -216,19 +227,19 @@ const getContent = (item, buffer) => {
     item: item,
     value: byte,
     type: type,
-    size: size,
+    size: intSize,
     deflatedSize: deflatedSize,
     objectRef: objectRef,
     content: content,
   };
 
   // Move on by the zipped content size.
-  const nextBuffer = contentBuffer.slice(deflatedSize);
+  const nextBuffer = contentBuffer.slice(deflatedSize as number);
 
   return [result, nextBuffer];
 };
 
-const unpack = (buf) => {
+const unpack = (buf: Buffer) => {
   // Unzip the content
   const inflated = zlib.inflateSync(buf);
 
@@ -240,6 +251,9 @@ const unpack = (buf) => {
 };
 
 exec.displayName = 'parsePush.exec';
-exports.exec = exec;
-exports.getPackMeta = getPackMeta;
-exports.unpack = unpack;
+
+export {
+  exec,
+  getPackMeta,
+  unpack
+};
