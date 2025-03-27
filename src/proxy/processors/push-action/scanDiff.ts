@@ -1,9 +1,9 @@
-const Step = require('../../actions').Step;
-const config = require('../../../config');
-const parseDiff = require('parse-diff')
+import { Action, Step } from '../../actions';
+import { getCommitConfig, getPrivateOrganizations } from '../../../config';
+import parseDiff, { AddChange, Change, File } from 'parse-diff';
 
-const commitConfig = config.getCommitConfig();
-const privateOrganizations = config.getPrivateOrganizations();
+const commitConfig = getCommitConfig();
+const privateOrganizations = getPrivateOrganizations();
 
 const BLOCK_TYPE = {
   LITERAL: 'Offending Literal',
@@ -11,8 +11,28 @@ const BLOCK_TYPE = {
   PROVIDER: 'PROVIDER'
 }
 
+type CombinedMatch = {
+  type: string;
+  match: RegExp;
+}
 
-const getDiffViolations = (diff, organization) => {
+type RawMatch = {
+  type: string;
+  literal: string;
+  file?: string;
+  lines: number[];
+  content: string;
+}
+
+type Match = {
+  type: string;
+  literal: string;
+  file?: string;
+  lines: string;
+  content: string;
+}
+
+const getDiffViolations = (diff: string, organization: string): Match[] | string | null => {
   // Commit diff is empty, i.e. '', null or undefined
   if (!diff) {
     console.log('No commit diff...');
@@ -28,7 +48,6 @@ const getDiffViolations = (diff, organization) => {
   const parsedDiff = parseDiff(diff);
   const combinedMatches = combineMatches(organization);
 
-
   const res = collectMatches(parsedDiff, combinedMatches);
   // Diff matches configured block pattern(s)
   if (res.length > 0) {
@@ -40,16 +59,15 @@ const getDiffViolations = (diff, organization) => {
   return null;
 };
 
-const combineMatches = (organization) => {
-
+const combineMatches = (organization: string) => {
   // Configured blocked literals
-  const blockedLiterals = commitConfig.diff.block.literals;
+  const blockedLiterals: string[] = commitConfig.diff.block.literals;
 
   // Configured blocked patterns
-  const blockedPatterns = commitConfig.diff.block.patterns;
+  const blockedPatterns: string[] = commitConfig.diff.block.patterns;
 
   // Configured blocked providers
-  const blockedProviders = organization && privateOrganizations.includes(organization) ? [] :
+  const blockedProviders: [string, string][] = organization && privateOrganizations.includes(organization) ? [] :
     Object.entries(commitConfig.diff.block.providers);
 
   // Combine all matches (literals, paterns)
@@ -70,15 +88,19 @@ const combineMatches = (organization) => {
   return combinedMatches;
 }
 
-const collectMatches = (parsedDiff, combinedMatches) => {
-  const allMatches = {};
+const collectMatches = (
+  parsedDiff: File[],
+  combinedMatches: CombinedMatch[]
+): Match[] => {
+  const allMatches: Record<string, RawMatch> = {};
   parsedDiff.forEach(file => {
     const fileName = file.to || file.from;
     console.log("CHANGE", file.chunks)
 
     file.chunks.forEach(chunk => {
       chunk.changes.forEach(change => {
-        if (change.add) {
+        console.log("CHANGE", change)
+        if (change.type === 'add') {
           // store line number
           const lineNumber = change.ln;
           // Iterate through each match types - literal, patterns, providers
@@ -117,11 +139,10 @@ const collectMatches = (parsedDiff, combinedMatches) => {
     lines: match.lines.join(',') // join the line numbers into a comma-separated string
   }))
 
-  console.log("RESULT", result)
   return result;
 }
 
-const formatMatches = (matches) => {
+const formatMatches = (matches: Match[]) => {
   return matches.map((match, index) => {
     return `---------------------------------- #${index + 1} ${match.type} ------------------------------
     Policy Exception Type: ${match.type}
@@ -131,7 +152,7 @@ const formatMatches = (matches) => {
   });
 }
 
-const exec = async (req, action) => {
+const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('scanDiff');
 
   const { steps, commitFrom, commitTo } = action;
@@ -158,7 +179,6 @@ const exec = async (req, action) => {
       errorMsg.join('\n')
     );
 
-
     action.addStep(step);
     return action;
   }
@@ -168,4 +188,5 @@ const exec = async (req, action) => {
 };
 
 exec.displayName = 'scanDiff.exec';
-exports.exec = exec;
+
+export { exec };
