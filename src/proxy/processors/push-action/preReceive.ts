@@ -1,13 +1,17 @@
-const fs = require('fs');
-const path = require('path');
-const Step = require('../../actions').Step;
-const { spawnSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { Action, Step } from '../../actions';
+import { spawnSync } from 'child_process';
 
-const sanitizeInput = (_req, action) => {
+const sanitizeInput = (_req: any, action: Action): string => {
   return `${action.commitFrom} ${action.commitTo} ${action.branch} \n`;
 };
 
-const exec = async (req, action, hookFilePath = './hooks/pre-receive.sh') => {
+const exec = async (
+  req: any,
+  action: Action,
+  hookFilePath: string = './hooks/pre-receive.sh'
+): Promise<Action> => {
   const step = new Step('executeExternalPreReceiveHook');
 
   try {
@@ -48,7 +52,7 @@ const exec = async (req, action, hookFilePath = './hooks/pre-receive.sh') => {
     step.log('Pre-receive hook executed successfully');
     action.addStep(step);
     return action;
-  } catch (error) {
+  } catch (error: any) {
     step.error = true;
     step.setError(`Hook execution error: ${error.message}`);
     action.addStep(step);
@@ -57,4 +61,5 @@ const exec = async (req, action, hookFilePath = './hooks/pre-receive.sh') => {
 };
 
 exec.displayName = 'executeExternalPreReceiveHook.exec';
-exports.exec = exec;
+
+export { exec };

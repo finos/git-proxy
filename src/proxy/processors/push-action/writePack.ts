@@ -1,7 +1,7 @@
-const spawnSync = require('child_process').spawnSync;
-const Step = require('../../actions').Step;
+import { Action, Step } from '../../actions';
+import { spawnSync } from 'child_process';
 
-const exec = async (req, action) => {
+const exec = async (req: any, action: Action) => {
   const step = new Step('writePack');
   try {
     const cmd = `git receive-pack ${action.repoName}`;
@@ -15,7 +15,7 @@ const exec = async (req, action) => {
 
     step.log(content);
     step.setContent(content);
-  } catch (e) {
+  } catch (e: any) {
     step.setError(e.toString('utf-8'));
     throw e;
   } finally {
@@ -25,4 +25,5 @@ const exec = async (req, action) => {
 };
 
 exec.displayName = 'writePack.exec';
-exports.exec = exec;
+
+export { exec };

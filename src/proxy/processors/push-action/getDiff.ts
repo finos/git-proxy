@@ -1,8 +1,7 @@
-const Step = require('../../actions').Step;
-const simpleGit = require('simple-git')
+import { Action, Step } from '../../actions';
+import simpleGit from 'simple-git';
 
-
-const exec = async (req, action) => {
+const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('diff');
 
   try {
@@ -10,6 +9,10 @@ const exec = async (req, action) => {
     const git = simpleGit(path);
     // https://stackoverflow.com/questions/40883798/how-to-get-git-diff-of-the-first-commit
     let commitFrom = `4b825dc642cb6eb9a060e54bf8d69288fbee4904`;
+
+    if (!action.commitData) {
+      throw new Error('No commit data found');
+    }
 
     if (action.commitFrom === '0000000000000000000000000000000000000000') {
       if (action.commitData[0].parent !== '0000000000000000000000000000000000000000') {
@@ -24,7 +27,7 @@ const exec = async (req, action) => {
     const diff = await git.diff([revisionRange]);
     step.log(diff);
     step.setContent(diff);
-  } catch (e) {
+  } catch (e: any) {
     step.setError(e.toString('utf-8'));
   } finally {
     action.addStep(step);
@@ -33,4 +36,5 @@ const exec = async (req, action) => {
 };
 
 exec.displayName = 'getDiff.exec';
-exports.exec = exec;
+
+export { exec };

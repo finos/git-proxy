@@ -1,4 +1,4 @@
-const proc = require('./processors');
+import * as proc from './processors';
 
 const pushActionChain = [
   proc.push.parsePush,
