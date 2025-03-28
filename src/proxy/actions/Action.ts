@@ -95,8 +95,8 @@ class Action {
 
   /**
    * Set the commit range for the action.
-   * @param commitFrom the starting commit
-   * @param commitTo the ending commit
+   * @param {string} commitFrom the starting commit
+   * @param {string} commitTo the ending commit
    */
   setCommit(commitFrom: string, commitTo: string): void {
     this.commitFrom = commitFrom;
@@ -106,7 +106,7 @@ class Action {
 
   /**
    * Set the branch for the action.
-   * @param branch the branch
+   * @param {string} branch the branch
    */
   setBranch(branch: string): void {
     this.branch = branch;
@@ -114,7 +114,7 @@ class Action {
 
   /**
    * Set the message for the action.
-   * @param message the message
+   * @param {string} message the message
    */
   setMessage(message: string): void {
     this.message = message;
