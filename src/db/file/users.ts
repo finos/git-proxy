@@ -78,8 +78,8 @@ export const updateUser = (user: User) => {
 
 export const getUsers = (query: any) => {
   if (!query) query = {};
-  return new Promise<User[]>((resolve, reject) => {
-    db.find({}, (err: Error, docs: User[]) => {
+  return new Promise((resolve, reject) => {
+    db.find(query, (err: Error, docs: User[]) => {
       if (err) {
         reject(err);
       } else {
