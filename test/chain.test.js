@@ -226,7 +226,7 @@ describe('proxy chain', function () {
 
     try {
       await chain.executeChain(req);
-    } catch (e) {
+    } catch {
       // Ignore the error
     }
 
