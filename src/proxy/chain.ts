@@ -41,7 +41,7 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
       }
     }
   } finally {
-    await proc.push.audit(req, action!!);
+    await proc.push.audit(req, action!);
   }
 
   return action;

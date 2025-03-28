@@ -1,6 +1,6 @@
 import { Action, Step } from '../../actions';
 import { getCommitConfig, getPrivateOrganizations } from '../../../config';
-import parseDiff, { AddChange, Change, File } from 'parse-diff';
+import parseDiff, { File } from 'parse-diff';
 
 const commitConfig = getCommitConfig();
 const privateOrganizations = getPrivateOrganizations();

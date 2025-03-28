@@ -3,6 +3,7 @@ import proxy from 'express-http-proxy';
 import { executeChain } from '../chain';
 import { getProxyUrl } from '../../config';
 
+// eslint-disable-next-line new-cap
 const router = Router();
 
 /**
