@@ -1,8 +1,8 @@
 import { MongoClient, Db, Collection, Filter, Document, FindOptions } from 'mongodb';
-import config from '../../config';
+import { getDatabase } from '../../config';
 import MongoDBStore from 'connect-mongo';
 
-const dbConfig = config.getDatabase();
+const dbConfig = getDatabase();
 const connectionString = dbConfig.connectionString;
 const options = dbConfig.options;
 
@@ -10,6 +10,10 @@ let _db: Db | null = null;
 
 export const connect = async (collectionName: string): Promise<Collection> => {
   if (!_db) {
+    if (!connectionString) {
+      throw new Error('MongoDB connection string is not provided');
+    }
+
     const client = new MongoClient(connectionString, options);
     await client.connect();
     _db = client.db();

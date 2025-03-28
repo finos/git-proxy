@@ -73,7 +73,7 @@ const start = async () => {
   return app;
 };
 
-export {
+export default {
   proxyPreparations,
   createApp,
   start
