@@ -10,7 +10,7 @@ services:
 
   app:
     container_name: license-inventory
-    image: node:23-alpine@sha256:0a29d8a047149079bf48dab598f287815e39867d547e8f3935cfdece0a4379cc
+    image: node:23-alpine@sha256:6eae672406a2bc8ed93eab6f9f76a02eb247e06ba82b2f5032c0a4ae07e825ba
     # ensure colours show
     tty: true
     command: >
@@ -35,7 +35,7 @@ services:
       - otel-collector
 
   mongo:
-    image: mongo:8.0.4@sha256:aaad67f2dca93148e5343c03210bcfc89a0107516a4756bfa018acd6579e5b18
+    image: mongo:8.0.6@sha256:1cb283500219e8fc0b61b328ea5a199a395a753d88b17351c58874fb425223cb
     command: --logpath=/var/log/mongo.log
     ports:
       - 27017:27017
@@ -46,7 +46,7 @@ services:
       - init
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.120.0@sha256:85ac41c2db88d0df9bd6145e608a3cb023f5d8443868adbfbbf66efb51087917
+    image: otel/opentelemetry-collector-contrib:0.122.1@sha256:0076e6c250bef16968e29e8f94177b87b5a851c79ce14b270e657f5f655b9e04
     volumes:
       - ./dev/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
     depends_on:
@@ -66,7 +66,7 @@ services:
 
   # traces
   tempo:
-    image: grafana/tempo:2.7.1@sha256:4443be217c396b065ee34845534199c36fdba4dc619cb96550e228d73fba6e69
+    image: grafana/tempo:2.7.2@sha256:4b0277a9b572a4b1fa43b01468e58911ec214dd69d033f2cd476596d14de9fe3
     command:
       - -config.file=/etc/tempo.yaml
       - -log.level=warn
@@ -79,7 +79,7 @@ services:
 
   # metrics
   prometheus:
-    image: prom/prometheus:v3.2.0@sha256:5888c188cf09e3f7eebc97369c3b2ce713e844cdbd88ccf36f5047c958aea120
+    image: prom/prometheus:v3.2.1@sha256:6927e0919a144aa7616fd0137d4816816d42f6b816de3af269ab065250859a62
     command:
       - --config.file=/etc/prometheus.yaml
       - --enable-feature=exemplar-storage
@@ -106,7 +106,7 @@ services:
 
   # everything dashboard
   grafana:
-    image: grafana/grafana:11.5.2@sha256:8b37a2f028f164ce7b9889e1765b9d6ee23fec80f871d156fbf436d6198d32b7
+    image: grafana/grafana:11.6.0@sha256:62d2b9d20a19714ebfe48d1bb405086081bc602aa053e28cf6d73c7537640dfb
     ports:
       - 3001:3000
     volumes:
