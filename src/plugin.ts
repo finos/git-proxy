@@ -1,3 +1,5 @@
+import { Action } from './proxy/actions';
+
 const lpModule = import('load-plugin');
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 ('use strict');
@@ -8,7 +10,7 @@ const lpModule = import('load-plugin');
  * @param {string} propertyName - The property name to check for. Default is 'isGitProxyPlugin'.
  * @return {boolean} - True if the object or any of its prototypes has the 'isGitProxyPlugin' property set to true, false otherwise.
  */
-function isCompatiblePlugin(obj, propertyName = 'isGitProxyPlugin') {
+function isCompatiblePlugin(obj: any, propertyName: string = 'isGitProxyPlugin'): boolean {
   // loop through the prototype chain to check if the object is a ProxyPlugin
   // valid plugin objects will have the appropriate property set to true
   // if the prototype chain is exhausted, return false
@@ -23,36 +25,24 @@ function isCompatiblePlugin(obj, propertyName = 'isGitProxyPlugin') {
   return false;
 }
 
-/**
- * @typedef PluginTypeResult
- * @property {PushActionPlugin[]} pushAction - List of push action plugins
- * @property {PullActionPlugin[]} pullAction - List of pull action plugins
- */
+interface PluginTypeResult {
+  pushAction: PushActionPlugin[];
+  pullAction: PullActionPlugin[];
+}
 
 /**
  * Registers and loads plugins used by git-proxy
  */
 class PluginLoader {
-  constructor(targets) {
-    /**
-     * List of Node module specifiers to load as plugins. It can be a relative path, an 
-     * absolute path, or a module name (which can include scoped packages like '@bar/baz').
-     * @type {string[]}
-     * @public
-     */
+  targets: string[];
+  pushPlugins: PushActionPlugin[];
+  pullPlugins: PullActionPlugin[];
+
+  constructor(targets: string[]) {
     this.targets = targets;
-    /**
-     * List of loaded PushActionPlugin objects.
-     * @type {PushActionPlugin[]}
-     * @public
-     */
     this.pushPlugins = [];
-    /**
-     * List of loaded PullActionPlugin objects.
-     * @type {PullActionPlugin[]}
-     * @public
-     */
     this.pullPlugins = [];
+
     if (this.targets.length === 0) {
       console.log('No plugins configured'); // TODO: log.debug()
     }
@@ -63,7 +53,7 @@ class PluginLoader {
    * can be used to retrieve plugins.
    * @return {Promise<void>} A Promise that resolves when all plugins have been loaded.
    */
-  async load() {
+  async load(): Promise<void> {
     try {
       const modulePromises = this.targets.map(target =>
         this._loadPluginModule(target).catch(error => {
@@ -74,7 +64,7 @@ class PluginLoader {
 
       const moduleResults = await Promise.allSettled(modulePromises);
       const loadedModules = moduleResults
-        .filter(result => result.status === 'fulfilled' && result.value !== null)
+        .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled' && result.value !== null)
         .map(result => result.value);
 
       console.log(`Found ${loadedModules.length} plugin modules`); // TODO: log.debug()
@@ -91,7 +81,7 @@ class PluginLoader {
        * @type {PluginTypeResult[]} List of resolved PluginTypeResult objects
        */
       const pluginTypeResults = settledPluginTypeResults
-        .filter(result => result.status === 'fulfilled' && result.value !== null)
+        .filter((result): result is PromiseFulfilledResult<any> => result.status === 'fulfilled' && result.value !== null)
         .map(result => result.value);
 
       for (const result of pluginTypeResults) {
@@ -113,7 +103,7 @@ class PluginLoader {
    * @param {string} target The module specifier to load
    * @return {Promise<Module>} A resolved & loaded Module
    */
-  async _loadPluginModule(target) {
+  private async _loadPluginModule(target: string): Promise<any> {
     const lp = await lpModule;
     const resolvedModuleFile = await lp.resolvePlugin(target);
     return await lp.loadPlugin(resolvedModuleFile);
@@ -124,13 +114,13 @@ class PluginLoader {
    * @param {Module} pluginModule The module to extract plugins from
    * @return {Promise<PluginTypeResult>} An object containing the loaded plugins classified by their type.
    */
-  async _getPluginObjects(pluginModule) {
-    const plugins = {
+  private async _getPluginObjects(pluginModule: any): Promise<PluginTypeResult> {
+    const plugins: PluginTypeResult = {
       pushAction: [],
       pullAction: [],
     };
 
-    function handlePlugin(potentialModule) {
+    function handlePlugin(potentialModule: any) {
       if (isCompatiblePlugin(potentialModule, 'isGitProxyPushActionPlugin')) {
         console.log('found push plugin', potentialModule.constructor.name);
         plugins.pushAction.push(potentialModule);
@@ -165,6 +155,8 @@ class PluginLoader {
  * ProxyPlugin to be loaded by PluginLoader.
  */
 class ProxyPlugin {
+  isGitProxyPlugin: boolean;
+
   constructor() {
     this.isGitProxyPlugin = true;
   }
@@ -174,21 +166,24 @@ class ProxyPlugin {
  * A plugin which executes a function when receiving a git push request.
  */
 class PushActionPlugin extends ProxyPlugin {
-/**
- * Wrapper class which contains at least one function executed as part of the action chain for git push operations.
- * The function must be called `exec` and take in two parameters: an Express Request (req) and the current Action
- * executed in the chain (action). This function should return a Promise that resolves to an Action.
- * 
- * Optionally, child classes which extend this can simply define the `exec` function as their own property.
- * This is the preferred implementation when a custom plugin (subclass) has its own state or additional methods
- * that are required.
- * 
- * @param {function} exec - A function that:
- *   - Takes in an Express Request object as the first parameter (`req`).
- *   - Takes in an Action object as the second parameter (`action`).
- *   - Returns a Promise that resolves to an Action.
- */
-  constructor(exec) {
+  isGitProxyPushActionPlugin: boolean;
+  exec: (req: any, action: Action) => Promise<any>;
+
+  /**
+   * Wrapper class which contains at least one function executed as part of the action chain for git push operations.
+   * The function must be called `exec` and take in two parameters: an Express Request (req) and the current Action
+   * executed in the chain (action). This function should return a Promise that resolves to an Action.
+   * 
+   * Optionally, child classes which extend this can simply define the `exec` function as their own property.
+   * This is the preferred implementation when a custom plugin (subclass) has its own state or additional methods
+   * that are required.
+   * 
+   * @param {function} exec - A function that:
+   *   - Takes in an Express Request object as the first parameter (`req`).
+   *   - Takes in an Action object as the second parameter (`action`).
+   *   - Returns a Promise that resolves to an Action.
+   */
+  constructor(exec: (req: any, action: Action) => Promise<any>) {
     super();
     this.isGitProxyPushActionPlugin = true;
     this.exec = exec;
@@ -199,6 +194,9 @@ class PushActionPlugin extends ProxyPlugin {
  * A plugin which executes a function when receiving a git fetch request.
  */
 class PullActionPlugin extends ProxyPlugin {
+  isGitProxyPullActionPlugin: boolean;
+  exec: (req: any, action: Action) => Promise<any>;
+
   /**
    * Wrapper class which contains at least one function executed as part of the action chain for git pull operations.
    * The function must be called `exec` and take in two parameters: an Express Request (req) and the current Action
@@ -213,14 +211,14 @@ class PullActionPlugin extends ProxyPlugin {
    *   - Takes in an Action object as the second parameter (`action`).
    *   - Returns a Promise that resolves to an Action.
    */
-  constructor(exec) {
+  constructor(exec: (req: any, action: Action) => Promise<any>) {
     super();
     this.isGitProxyPullActionPlugin = true;
     this.exec = exec;
   }
 }
 
-module.exports = {
+export {
   PluginLoader,
   PushActionPlugin,
   PullActionPlugin,
