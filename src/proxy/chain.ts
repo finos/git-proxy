@@ -65,12 +65,12 @@ const getChain = async (action: Action): Promise<((req: any, action: Action) => 
     for (const pluginObj of chainPluginLoader.pushPlugins) {
       console.log(`Inserting push plugin ${pluginObj.constructor.name} into chain`);
       // insert custom functions after parsePush but before other actions
-      pushActionChain.splice(1, 0, pluginObj.exec as any);
+      pushActionChain.splice(1, 0, pluginObj.exec);
     }
     for (const pluginObj of chainPluginLoader.pullPlugins) {
       console.log(`Inserting pull plugin ${pluginObj.constructor.name} into chain`);
       // insert custom functions before other pull actions
-      pullActionChain.splice(0, 0, pluginObj.exec as any);
+      pullActionChain.splice(0, 0, pluginObj.exec);
     }
     // This is set to true so that we don't re-insert the plugins into the chain
     pluginsInserted = true;
