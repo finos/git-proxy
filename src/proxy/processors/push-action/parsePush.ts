@@ -12,7 +12,7 @@ if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+async function exec(req: any, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
 
   try {
