@@ -2,7 +2,7 @@ import { PluginLoader } from '../plugin';
 import { Action } from './actions';
 import * as proc from './processors';
 
-const pushActionChain = [
+const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.parsePush,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
@@ -18,7 +18,7 @@ const pushActionChain = [
   proc.push.blockForAuth,
 ];
 
-const pullActionChain = [proc.push.checkRepoInAuthorisedList];
+const pullActionChain: ((req: any, action: Action) => Promise<Action>)[] = [proc.push.checkRepoInAuthorisedList];
 
 let pluginsInserted = false;
 
@@ -26,11 +26,9 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
   let action: Action;
   try {
     action = await proc.pre.parseAction(req);
-    const actions = await getChain(action);
-    for (const i in actions) {
-      if (!i) continue;
-      const fn = actions[i as any];
+    const actionFns = await getChain(action);
 
+    for (const fn of actionFns) {
       action = await fn(req, action);
       if (!action.continue()) {
         return action;
@@ -53,7 +51,7 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
  */
 let chainPluginLoader: PluginLoader;
 
-const getChain = async (action: Action) => {
+const getChain = async (action: Action): Promise<((req: any, action: Action) => Promise<Action>)[]> => {
   if (chainPluginLoader === undefined) {
     console.error(
       'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',
@@ -77,13 +75,9 @@ const getChain = async (action: Action) => {
     // This is set to true so that we don't re-insert the plugins into the chain
     pluginsInserted = true;
   }
-  if (action.type === 'pull') {
-    return pullActionChain;
-  }
-  if (action.type === 'push') {
-    return pushActionChain;
-  }
-  if (action.type === 'default') return [];
+  if (action.type === 'pull') return pullActionChain;
+  if (action.type === 'push') return pushActionChain;
+  return [];
 };
 
 export default {
