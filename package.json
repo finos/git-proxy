@@ -69,6 +69,7 @@
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-html-parser": "^2.0.2",
+    "react-icons": "^5.5.0",
     "react-router-dom": "6.28.2",
     "simple-git": "^3.25.0",
     "uuid": "^11.0.0",
