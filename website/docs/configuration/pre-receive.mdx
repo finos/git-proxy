@@ -1,8 +1,10 @@
-# Pre-Receive Hook Documentation
+---
+title: 'Pre-Receive Hook'
+---
 
 ## Overview
 
-The `pre-receive` hook is a critical component of the Git Proxy system. It is executed before changes are accepted into a repository. This hook allows for custom logic to validate or reject incoming changes based on specific criteria, ensuring that only valid and authorized changes are pushed to the repository.
+The `pre-receive` hook is a critical component of the GitProxy system. It is executed before changes are accepted into a repository. This hook allows for custom logic to validate or reject incoming changes based on specific criteria, ensuring that only valid and authorized changes are pushed to the repository.
 
 ## Functionality
 
@@ -17,18 +19,21 @@ The `pre-receive` hook determines the outcome of a push based on the exit status
 
 To use the `pre-receive` hook, follow these steps:
 
-- **Create a Hook Script**:  
-  Write a shell script or executable file that implements your custom validation logic. The script must accept input in the format: `<old_commit_hash> <new_commit_hash> <branch_name>`.
+### Create a Hook Script
 
-- **Place the Script**:  
-  Save the script in the appropriate directory, such as `hooks/pre-receive.sh`.
+Write a shell script or executable file that implements your custom validation logic. The script must accept input in the format: `<old_commit_hash> <new_commit_hash> <branch_name>`.
 
-- **Make the Script Executable**:  
-  Ensure the script has executable permissions. You can do this by running the following command:
+### Place the Script
 
-  ```bash
-  chmod +x hooks/pre-receive.sh
-  ```
+Save the script in the appropriate directory, such as `hooks/pre-receive.sh`.
+
+### Make the Script Executable
+
+Ensure the script has executable permissions. You can do this by running the following command:
+
+```bash
+chmod +x hooks/pre-receive.sh
+```
 
 > **Note**: If the `pre-receive` script does not exist, the hook will not be executed, and the push will proceed without validation.
 
