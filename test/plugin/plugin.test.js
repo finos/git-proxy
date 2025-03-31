@@ -1,13 +1,13 @@
-const chai = require('chai');
-const {
+import chai from 'chai';
+import { spawnSync } from 'child_process';
+import { rmSync } from 'fs';
+import { join } from 'path';
+import {
   isCompatiblePlugin,
   PullActionPlugin,
   PushActionPlugin,
   PluginLoader,
-} = require('../../src/plugin');
-const { spawnSync } = require('child_process');
-const { rmSync } = require('fs');
-const { join } = require('path');
+} from '../../src/plugin.ts';
 
 chai.should();
 
