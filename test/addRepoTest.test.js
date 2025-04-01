@@ -187,10 +187,8 @@ describe('add new repo', async () => {
 
   after(async function () {
     await service.httpServer.close();
-
-    // don't clean up data as cypress tests rely on it being present
-    // await db.deleteRepo('test-repo');
-    // await db.deleteUser('u1');
-    // await db.deleteUser('u2');
+    await db.deleteRepo('test-repo');
+    await db.deleteUser('u1');
+    await db.deleteUser('u2');
   });
 });
