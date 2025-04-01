@@ -55,8 +55,7 @@ describe('user creation', async () => {
   });
 
   it('login as new user', async function () {
-    // we don't know the users tempoary password - so force update a
-    // pasword
+    // we don't know the users temporary password - so force update a password
     const user = await db.findUser('login-test-user');
 
     await bcrypt.hash('test1234', 10, async function (err, hash) {
