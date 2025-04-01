@@ -28,7 +28,7 @@ describe('add new repo', async () => {
     await db.deleteUser('u1');
     await db.deleteUser('u2');
     await db.createUser('u1', 'abc', 'test@test.com', 'test', true);
-    await db.createUser('u2', 'abc', 'test@test.com', 'test', true);
+    await db.createUser('u2', 'abc', 'test2@test.com', 'test', true);
   });
 
   it('login', async function () {
@@ -187,5 +187,8 @@ describe('add new repo', async () => {
 
   after(async function () {
     await service.httpServer.close();
+    await db.deleteRepo('test-repo');
+    await db.deleteUser('u1');
+    await db.deleteUser('u2');
   });
 });
