@@ -57,9 +57,21 @@ class ConfigLoader extends EventEmitter {
   }
 
   async initialize() {
-    // Initialize cache directory using env-paths
-    const paths = envPaths('git-proxy', { suffix: '' });
+    // Get cache directory path
+    const paths = envPaths('git-proxy');
     this.cacheDir = paths.cache;
+
+    // Create cache directory if it doesn't exist
+    if (!fs.existsSync(this.cacheDir)) {
+      try {
+        fs.mkdirSync(this.cacheDir, { recursive: true });
+        return true;
+      } catch (err) {
+        console.error('Failed to create cache directory:', err);
+        return false;
+      }
+    }
+    return true;
   }
 
   async start() {
