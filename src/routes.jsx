@@ -16,6 +16,8 @@
 
 */
 
+import React from 'react';
+import PrivateRoute from './ui/components/PrivateRoute/PrivateRoute';
 import Person from '@material-ui/icons/Person';
 import OpenPushRequests from './ui/views/OpenPushRequests/OpenPushRequests';
 import PushDetails from './ui/views/PushDetails/PushDetails';
@@ -33,57 +35,57 @@ const dashboardRoutes = [
     path: '/repo',
     name: 'Repositories',
     icon: RepoIcon,
-    component: RepoList,
-    layout: '/admin',
+    component: (props) => <PrivateRoute component={RepoList} />,
+    layout: '/dashboard',
     visible: true,
+  },
+  {
+    path: '/repo/:id',
+    name: 'Repo Details',
+    icon: Person,
+    component: (props) => <PrivateRoute component={RepoDetails} />,
+    layout: '/dashboard',
+    visible: false,
   },
   {
     path: '/push',
     name: 'Dashboard',
     icon: Dashboard,
-    component: OpenPushRequests,
-    layout: '/admin',
+    component: (props) => <PrivateRoute component={OpenPushRequests} />,
+    layout: '/dashboard',
     visible: true,
   },
   {
     path: '/push/:id',
     name: 'Open Push Requests',
     icon: Person,
-    component: PushDetails,
-    layout: '/admin',
+    component: (props) => <PrivateRoute component={PushDetails} />,
+    layout: '/dashboard',
     visible: false,
   },
   {
     path: '/profile',
     name: 'My Account',
     icon: AccountCircle,
-    component: User,
-    layout: '/admin',
+    component: (props) => <PrivateRoute component={User} />,
+    layout: '/dashboard',
     visible: true,
   },
   {
-    path: '/user/:id',
-    name: 'User',
-    icon: Person,
-    component: User,
-    layout: '/admin',
-    visible: false,
-  },
-  {
-    path: '/repo/:id',
-    name: 'Repo Details',
-    icon: Person,
-    component: RepoDetails,
-    layout: '/admin',
-    visible: false,
-  },
-  {
-    path: '/user',
+    path: '/admin/user',
     name: 'Users',
     icon: Group,
-    component: UserList,
-    layout: '/admin',
+    component: (props) => <PrivateRoute adminOnly component={UserList} />,
+    layout: '/dashboard',
     visible: true,
+  },
+  {
+    path: '/admin/user/:id',
+    name: 'User',
+    icon: Person,
+    component: (props) => <PrivateRoute adminOnly component={User} />,
+    layout: '/dashboard',
+    visible: false,
   },
 ];
 

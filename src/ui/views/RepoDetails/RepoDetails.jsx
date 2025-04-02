@@ -51,7 +51,7 @@ export default function RepoDetails() {
 
   const removeRepository = async (name) => {
     await deleteRepo(name);
-    navigate('/admin/repo', { replace: true });
+    navigate('/dashboard/repo', { replace: true });
   };
 
   const refresh = () => getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
@@ -151,7 +151,7 @@ export default function RepoDetails() {
                           return (
                             <TableRow key={row}>
                               <TableCell align='left'>
-                                <a href={`/admin/user/${row}`}>{row}</a>
+                                <a href={`/dashboard/admin/user/${row}`}>{row}</a>
                               </TableCell>
                               {user.admin && (
                                 <TableCell align='right' component='th' scope='row'>
@@ -196,7 +196,7 @@ export default function RepoDetails() {
                           return (
                             <TableRow key={row}>
                               <TableCell align='left'>
-                                <a href={`/admin/user/${row}`}>{row}</a>
+                                <a href={`/dashboard/admin/user/${row}`}>{row}</a>
                               </TableCell>
                               {user.admin && (
                                 <TableCell align='right' component='th' scope='row'>
