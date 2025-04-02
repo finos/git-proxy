@@ -33,6 +33,7 @@ export const {
 
 export const {
   findUser,
+  findUserByOIDC,
   getUsers,
   createUser,
   deleteUser,

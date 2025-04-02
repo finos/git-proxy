@@ -23,6 +23,22 @@ export const findUser = (username: string) => {
   });
 };
 
+export const findUserByOIDC = (oidcId: string) => {
+  return new Promise<User | null>((resolve, reject) => {
+    db.findOne<User>({ oidcId: oidcId }, (err, doc) => {
+      if (err) {
+        reject(err);
+      } else {
+        if (!doc) {
+          resolve(null);
+        } else {
+          resolve(doc);
+        }
+      }
+    });
+  });
+};
+
 export const createUser = (user: User) => {
   return new Promise<User>((resolve, reject) => {
     db.insert(user, (err) => {
@@ -63,7 +79,7 @@ export const updateUser = (user: User) => {
 export const getUsers = (query: any) => {
   if (!query) query = {};
   return new Promise<User[]>((resolve, reject) => {
-    db.find({}, (err: Error, docs: User[]) => {
+    db.find<User[]>(query, (err: Error, docs: User[]) => {
       if (err) {
         reject(err);
       } else {

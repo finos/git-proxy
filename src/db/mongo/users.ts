@@ -8,6 +8,11 @@ export const findUser = async function (username: string) {
   return collection.findOne({ username: { $eq: username } });
 };
 
+export const findUserByOIDC = async function (oidcId: string) {
+  const collection = await connect(collectionName);
+  return collection.findOne({ oidcId: { $eq: oidcId } });
+}
+
 export const getUsers = async function (query: string) {
   console.log(`Getting users for query= ${JSON.stringify(query)}`);
   const collection = await connect(collectionName);

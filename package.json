@@ -1,6 +1,6 @@
 {
   "name": "@finos/git-proxy",
-  "version": "1.7.1",
+  "version": "1.9.3",
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
     "cli": "node ./packages/git-proxy-cli/index.js",
@@ -39,7 +39,7 @@
     "@primer/octicons-react": "^19.8.0",
     "@seald-io/nedb": "^4.0.2",
     "axios": "^1.6.0",
-    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^3.0.2",
     "bit-mask": "^1.0.2",
     "body-parser": "^1.20.1",
     "classnames": "2.5.1",
@@ -61,6 +61,7 @@
     "moment": "^2.29.4",
     "mongodb": "^5.0.0",
     "nodemailer": "^6.6.1",
+    "openid-client": "^6.2.0",
     "parse-diff": "^0.11.1",
     "passport": "^0.7.0",
     "passport-activedirectory": "^1.0.4",
@@ -93,7 +94,7 @@
     "cypress": "^14.0.0",
     "eslint": "^8.57.0",
     "eslint-config-google": "^0.14.0",
-    "eslint-config-prettier": "^9.0.0",
+    "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-json": "^3.1.0",
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-react": "^7.21.5",

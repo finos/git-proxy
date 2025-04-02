@@ -52,7 +52,10 @@ export const writeAudit = async (action: Action): Promise<Action> => {
   const options = { upsert: true };
   const collection = await connect(collectionName);
   delete data._id;
-  await collection.updateOne({ id: data.id }, { $set: data }, options);
+  if (typeof data.id !== 'string') {
+    throw new Error('Invalid id');
+  }
+  await collection.updateOne({ id: { $eq: data.id } }, { $set: data }, options);
   return action;
 };
 
@@ -75,6 +78,7 @@ export const reject = async (id: string) => {
   if (!action) {
     throw new Error(`push ${id} not found`);
   }
+
   action.authorised = false;
   action.canceled = false;
   action.rejected = true;
