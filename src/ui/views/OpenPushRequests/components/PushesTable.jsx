@@ -13,33 +13,67 @@ import Paper from '@material-ui/core/Paper';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { getPushes } from '../../../services/git-push';
 import { KeyboardArrowRight } from '@material-ui/icons';
+import Search from '../../../components/Search/Search';
+import Pagination from '../../../components/Pagination/Pagination';
 
 export default function PushesTable(props) {
   const useStyles = makeStyles(styles);
   const classes = useStyles();
   const [data, setData] = useState([]);
-  const [, setAuth] = useState(true);
+  const [filteredData, setFilteredData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const navigate = useNavigate();
-
-  const openPush = (push) => navigate(`/dashboard/push/${push}`, { replace: true });
+  const [, setAuth] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const [searchTerm, setSearchTerm] = useState('');
+  const openPush = (push) => navigate(`/admin/push/${push}`, { replace: true });
 
   useEffect(() => {
     const query = {};
-
     for (const k in props) {
-      if (!k) continue;
-      query[k] = props[k];
+      if (k) query[k] = props[k];
     }
     getPushes(setIsLoading, setData, setAuth, setIsError, query);
   }, [props]);
+
+  useEffect(() => {
+    setFilteredData(data);
+  }, [data]);
+
+  useEffect(() => {
+    const lowerCaseTerm = searchTerm.toLowerCase();
+    const filtered = searchTerm
+      ? data.filter(
+          (item) =>
+            item.repo.toLowerCase().includes(lowerCaseTerm) ||
+            item.commitTo.toLowerCase().includes(lowerCaseTerm) ||
+            item.commitData[0].message.toLowerCase().includes(lowerCaseTerm),
+        )
+      : data;
+    setFilteredData(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, data]);
+
+  const handleSearch = (term) => setSearchTerm(term.trim());
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
 
   return (
     <div>
+      <Search onSearch={handleSearch} /> {}
       <TableContainer component={Paper}>
         <Table className={classes.table} aria-label='simple table'>
           <TableHead>
@@ -57,7 +91,7 @@ export default function PushesTable(props) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {[...data].reverse().map((row) => {
+            {currentItems.reverse().map((row) => {
               const repoFullName = row.repo.replace('.git', '');
               const repoBranch = row.branch.replace('refs/heads/', '');
 
@@ -116,13 +150,13 @@ export default function PushesTable(props) {
                       </a>
                     ) : (
                       'No data...'
-                    )}{' '}
+                    )}
                   </TableCell>
                   <TableCell align='left'>{row.commitData[0].message}</TableCell>
                   <TableCell align='left'>{row.commitData.length}</TableCell>
                   <TableCell component='th' scope='row'>
                     <Button variant='contained' color='primary' onClick={() => openPush(row.id)}>
-                      <KeyboardArrowRight></KeyboardArrowRight>
+                      <KeyboardArrowRight />
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -131,6 +165,14 @@ export default function PushesTable(props) {
           </TableBody>
         </Table>
       </TableContainer>
+      {/* Pagination Component */}
+      <Pagination
+        itemsPerPage={itemsPerPage}
+        totalItems={filteredData.length}
+        paginate={paginate}
+        currentPage={currentPage}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }
