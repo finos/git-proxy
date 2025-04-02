@@ -70,7 +70,7 @@
       "jwtConfig": {
         "clientID": "",
         "authorityURL": "",
-        "expecetedAudience": ""
+        "expectedAudience": ""
       }
     }
   ],
