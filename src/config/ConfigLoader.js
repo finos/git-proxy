@@ -9,9 +9,17 @@ const envPaths = require('env-paths');
 
 // Add path validation helper
 function isValidPath(filePath) {
-  const resolvedPath = path.resolve(filePath);
-  const cwd = process.cwd();
-  return resolvedPath.startsWith(cwd);
+  if (!filePath || typeof filePath !== 'string') return false;
+
+  // Check for null bytes and other control characters
+  if (/[\0]/.test(filePath)) return false;
+
+  try {
+    path.resolve(filePath);
+    return true;
+  } catch (error) {
+    return false;
+  }
 }
 
 // Add URL validation helper
@@ -25,12 +33,18 @@ function isValidGitUrl(url) {
 
 // Add branch name validation helper
 function isValidBranchName(branch) {
+  if (typeof branch !== 'string') return false;
+
+  // Check for consecutive dots
+  if (branch.includes('..')) return false;
+
+  // Check other branch name rules
   // Branch names can contain alphanumeric, -, _, /, and .
   // Cannot start with - or .
   // Cannot contain consecutive dots
   // Cannot contain control characters or spaces
-  const validBranchPattern = /^[a-zA-Z0-9][a-zA-Z0-9\-_/.]*$/;
-  return typeof branch === 'string' && validBranchPattern.test(branch);
+  const validBranchPattern = /^[a-zA-Z0-9][a-zA-Z0-9_/.-]*$/;
+  return validBranchPattern.test(branch);
 }
 
 class ConfigLoader extends EventEmitter {
@@ -161,6 +175,7 @@ class ConfigLoader extends EventEmitter {
     // Use OS-specific cache directory
     const paths = envPaths('git-proxy', { suffix: '' });
     const tempDir = path.join(paths.cache, 'git-config-cache');
+
     if (!isValidPath(tempDir)) {
       throw new Error('Invalid temporary directory path');
     }
@@ -227,3 +242,6 @@ function isObject(item) {
 }
 
 module.exports = ConfigLoader;
+module.exports.isValidGitUrl = isValidGitUrl;
+module.exports.isValidPath = isValidPath;
+module.exports.isValidBranchName = isValidBranchName;
