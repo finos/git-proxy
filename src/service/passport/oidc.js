@@ -1,10 +1,11 @@
-const openIdClient = require('openid-client');
-const { Strategy } = require('openid-client/passport');
 const db = require('../../db');
 
 let type;
 
 const configure = async (passport) => {
+  const openIdClient = await import('openid-client');
+  const { Strategy } = await import('openid-client/passport');
+  
   const authMethods = require('../../config').getAuthMethods();
   const oidcConfig = authMethods.find((method) => method.type.toLowerCase() === "openidconnect")?.oidcConfig;
   const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
@@ -27,7 +28,7 @@ const configure = async (passport) => {
     });
 
     // currentUrl must be overridden to match the callback URL
-    strategy.currentUrl = function(request) {
+    strategy.currentUrl = function (request) {
       const callbackUrl = new URL(callbackURL);
       const currentUrl = Strategy.prototype.currentUrl.call(this, request);
       currentUrl.host = callbackUrl.host;
@@ -61,9 +62,9 @@ const configure = async (passport) => {
 
 /**
  * Handles user authentication with OIDC.
- * @param {*} userInfo the OIDC user info object 
- * @param {*} done the callback function
- * @return {*} a promise with the authenticated user or an error
+ * @param {Object} userInfo the OIDC user info object 
+ * @param {Function} done the callback function
+ * @return {Promise} a promise with the authenticated user or an error
  */
 const handleUserAuthentication = async (userInfo, done) => {
   try {
