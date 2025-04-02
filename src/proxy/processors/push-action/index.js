@@ -1,4 +1,5 @@
 exports.parsePush = require('./parsePush').exec;
+exports.preReceive = require('./preReceive').exec;
 exports.checkRepoInAuthorisedList = require('./checkRepoInAuthorisedList').exec;
 exports.audit = require('./audit').exec;
 exports.pullRemote = require('./pullRemote').exec;
