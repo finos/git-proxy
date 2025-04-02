@@ -120,4 +120,19 @@ describe('Pre-Receive Hook Execution', function () {
     expect(action.setAutoApproval.called).to.be.false;
     expect(action.setAutoRejection.called).to.be.false;
   });
+
+  it('should handle unexpected hook status codes', async () => {
+    const scriptPath = path.resolve(__dirname, 'pre-receive-hooks/always-exit-99.sh');
+
+    const result = await exec(req, action, scriptPath);
+
+    expect(result.steps).to.have.lengthOf(1);
+    expect(result.steps[0].error).to.be.true;
+    expect(result.steps[0].logs.some((log) => log.includes('Unexpected hook status: 99'))).to.be
+      .true;
+    expect(result.steps[0].logs.some((log) => log.includes('Unknown pre-receive hook error.'))).to
+      .be.true;
+    expect(action.setAutoApproval.called).to.be.false;
+    expect(action.setAutoRejection.called).to.be.false;
+  });
 });
