@@ -1,5 +1,5 @@
 const { GIT_PROXY_SERVER_PORT: PROXY_HTTP_PORT, GIT_PROXY_UI_PORT: UI_PORT } =
-  require('../config/env').Vars;
+  require('../config/env').serverConfig;
 const config = require('../config');
 
 module.exports = {
