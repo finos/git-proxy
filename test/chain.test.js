@@ -338,4 +338,96 @@ describe('proxy chain', function () {
 
     dbStub.restore();
   });
+
+  it('executeChain should handle exceptions in attemptAutoApproval', async function () {
+    const req = {};
+    const action = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      setAutoApproval: sinon.stub(),
+      repoName: 'test-repo',
+      commitTo: 'newCommitHash',
+    };
+
+    mockPreProcessors.parseAction.resolves(action);
+    mockPushProcessors.parsePush.resolves(action);
+    mockPushProcessors.checkRepoInAuthorisedList.resolves(action);
+    mockPushProcessors.checkCommitMessages.resolves(action);
+    mockPushProcessors.checkAuthorEmails.resolves(action);
+    mockPushProcessors.checkUserPushPermission.resolves(action);
+    mockPushProcessors.checkIfWaitingAuth.resolves(action);
+    mockPushProcessors.pullRemote.resolves(action);
+    mockPushProcessors.writePack.resolves(action);
+
+    mockPushProcessors.preReceive.resolves({
+      ...action,
+      steps: [{ error: false, logs: ['Push automatically approved by pre-receive hook.'] }],
+      allowPush: true,
+      autoApproved: true,
+    });
+
+    mockPushProcessors.getDiff.resolves(action);
+    mockPushProcessors.clearBareClone.resolves(action);
+    mockPushProcessors.scanDiff.resolves(action);
+    mockPushProcessors.blockForAuth.resolves(action);
+
+    const error = new Error('Database error');
+
+    const consoleErrorStub = sinon.stub(console, 'error');
+    sinon.stub(db, 'authorise').rejects(error);
+    await chain.executeChain(req);
+    expect(consoleErrorStub.calledOnceWith('Error during auto-approval:', error.message)).to.be
+      .true;
+    db.authorise.restore();
+    consoleErrorStub.restore();
+  });
+
+  it('executeChain should handle exceptions in attemptAutoRejection', async function () {
+    const req = {};
+    const action = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      setAutoRejection: sinon.stub(),
+      repoName: 'test-repo',
+      commitTo: 'newCommitHash',
+      autoRejected: true,
+    };
+
+    mockPreProcessors.parseAction.resolves(action);
+    mockPushProcessors.parsePush.resolves(action);
+    mockPushProcessors.checkRepoInAuthorisedList.resolves(action);
+    mockPushProcessors.checkCommitMessages.resolves(action);
+    mockPushProcessors.checkAuthorEmails.resolves(action);
+    mockPushProcessors.checkUserPushPermission.resolves(action);
+    mockPushProcessors.checkIfWaitingAuth.resolves(action);
+    mockPushProcessors.pullRemote.resolves(action);
+    mockPushProcessors.writePack.resolves(action);
+
+    mockPushProcessors.preReceive.resolves({
+      ...action,
+      steps: [{ error: false, logs: ['Push automatically rejected by pre-receive hook.'] }],
+      allowPush: false,
+      autoRejected: true,
+    });
+
+    mockPushProcessors.getDiff.resolves(action);
+    mockPushProcessors.clearBareClone.resolves(action);
+    mockPushProcessors.scanDiff.resolves(action);
+    mockPushProcessors.blockForAuth.resolves(action);
+
+    const error = new Error('Database error');
+
+    const consoleErrorStub = sinon.stub(console, 'error');
+    sinon.stub(db, 'reject').rejects(error);
+
+    await chain.executeChain(req);
+
+    expect(consoleErrorStub.calledOnceWith('Error during auto-rejection:', error.message)).to.be
+      .true;
+
+    db.reject.restore();
+    consoleErrorStub.restore();
+  });
 });
