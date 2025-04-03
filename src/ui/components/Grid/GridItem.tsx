@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
-import Grid from '@material-ui/core/Grid';
+import Grid, { GridProps } from '@material-ui/core/Grid';
 
 const styles = {
   grid: {
@@ -11,7 +11,11 @@ const styles = {
 
 const useStyles = makeStyles(styles);
 
-export default function GridItem(props) {
+interface GridItemProps extends GridProps {
+  children?: ReactNode;
+}
+
+export default function GridItem(props: GridItemProps) {
   const classes = useStyles();
   const { children, ...rest } = props;
   return (
