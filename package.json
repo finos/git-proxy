@@ -4,7 +4,7 @@
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
     "cli": "node ./packages/git-proxy-cli/index.js",
-    "client": "vite --config vite.config.js",
+    "client": "vite --config vite.config.ts",
     "clientinstall": "npm install --prefix client",
     "server": "tsx index.ts",
     "start": "concurrently \"npm run server\" \"npm run client\"",
