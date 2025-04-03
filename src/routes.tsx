@@ -27,19 +27,23 @@ import RepoDetails from './ui/views/RepoDetails/RepoDetails';
 import RepoList from './ui/views/RepoList/RepoList';
 
 import { RepoIcon } from '@primer/octicons-react';
-
 import { Group, AccountCircle, Dashboard } from '@material-ui/icons';
 
-const dashboardRoutes = [
+interface RouteType {
+  path: string;
+  name: string;
+  icon: React.ComponentType<any>;
+  component: React.ComponentType<any>;
+  layout: string;
+  visible: boolean;
+}
+
+const dashboardRoutes: RouteType[] = [
   {
     path: '/repo',
     name: 'Repositories',
     icon: RepoIcon,
-    component: (props) => 
-      <RouteGuard
-        component={RepoList}
-        fullRoutePath={`/dashboard/repo`}
-      />,
+    component: (props) => <RouteGuard component={RepoList} fullRoutePath={`/dashboard/repo`} />,
     layout: '/dashboard',
     visible: true,
   },
@@ -47,11 +51,9 @@ const dashboardRoutes = [
     path: '/repo/:id',
     name: 'Repo Details',
     icon: Person,
-    component: (props) => 
-      <RouteGuard
-        component={RepoDetails}
-        fullRoutePath={`/dashboard/repo/:id`}
-      />,
+    component: (props) => (
+      <RouteGuard component={RepoDetails} fullRoutePath={`/dashboard/repo/:id`} />
+    ),
     layout: '/dashboard',
     visible: false,
   },
@@ -59,11 +61,9 @@ const dashboardRoutes = [
     path: '/push',
     name: 'Dashboard',
     icon: Dashboard,
-    component: (props) =>
-      <RouteGuard
-        component={OpenPushRequests}
-        fullRoutePath={`/dashboard/push`}
-      />,
+    component: (props) => (
+      <RouteGuard component={OpenPushRequests} fullRoutePath={`/dashboard/push`} />
+    ),
     layout: '/dashboard',
     visible: true,
   },
@@ -71,11 +71,9 @@ const dashboardRoutes = [
     path: '/push/:id',
     name: 'Open Push Requests',
     icon: Person,
-    component: (props) =>
-      <RouteGuard
-        component={PushDetails}
-        fullRoutePath={`/dashboard/push/:id`}
-      />,
+    component: (props) => (
+      <RouteGuard component={PushDetails} fullRoutePath={`/dashboard/push/:id`} />
+    ),
     layout: '/dashboard',
     visible: false,
   },
@@ -83,11 +81,7 @@ const dashboardRoutes = [
     path: '/profile',
     name: 'My Account',
     icon: AccountCircle,
-    component: (props) =>
-      <RouteGuard
-        component={User}
-        fullRoutePath={`/dashboard/profile`}
-      />,
+    component: (props) => <RouteGuard component={User} fullRoutePath={`/dashboard/profile`} />,
     layout: '/dashboard',
     visible: true,
   },
@@ -95,11 +89,9 @@ const dashboardRoutes = [
     path: '/admin/user',
     name: 'Users',
     icon: Group,
-    component: (props) =>
-      <RouteGuard
-        component={UserList}
-        fullRoutePath={`/dashboard/admin/user`}
-      />,
+    component: (props) => (
+      <RouteGuard component={UserList} fullRoutePath={`/dashboard/admin/user`} />
+    ),
     layout: '/dashboard',
     visible: true,
   },
@@ -107,11 +99,9 @@ const dashboardRoutes = [
     path: '/admin/user/:id',
     name: 'User',
     icon: Person,
-    component: (props) =>
-      <RouteGuard
-        component={User}
-        fullRoutePath={`/dashboard/admin/user/:id`}
-      />,
+    component: (props) => (
+      <RouteGuard component={User} fullRoutePath={`/dashboard/admin/user/:id`} />
+    ),
     layout: '/dashboard',
     visible: false,
   },
