@@ -72,7 +72,6 @@ const jwtAuthHandler = () => {
       }
 
       if (req.isAuthenticated()) {
-          console.log('request is already authenticated');
           return next();
       }
 

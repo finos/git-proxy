@@ -31,13 +31,6 @@ describe('auth', async () => {
         password: 'admin',
       });
 
-      // Debug CI
-      console.log("DEBUG testLogin.test.js: ");
-      console.log(`res.body: ${JSON.stringify(res.body)}`);
-      console.log(`res.headers: ${JSON.stringify(res.headers)}`);
-      console.log(`res.status: ${res.status}`);
-      console.log(`res.text: ${res.text}`);
-
       expect(res).to.have.cookie('connect.sid');
       res.should.have.status(200);
 
