@@ -1,4 +1,5 @@
 const proc = require('./processors');
+const { attemptAutoApproval, attemptAutoRejection } = require('./actions/autoActions');
 
 const pushActionChain = [
   proc.push.parsePush,
@@ -40,6 +41,11 @@ const executeChain = async (req) => {
     }
   } finally {
     await proc.push.audit(req, action);
+    if (action.autoApproved) {
+      attemptAutoApproval(action);
+    } else if (action.autoRejected) {
+      attemptAutoRejection(action);
+    }
   }
 
   return action;

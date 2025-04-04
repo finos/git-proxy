@@ -9,6 +9,7 @@ const sanitizeInput = (_req, action) => {
 
 const exec = async (req, action, hookFilePath = './hooks/pre-receive.sh') => {
   const step = new Step('executeExternalPreReceiveHook');
+  let stderrTrimmed = '';
 
   try {
     const resolvedPath = path.resolve(hookFilePath);
@@ -34,23 +35,33 @@ const exec = async (req, action, hookFilePath = './hooks/pre-receive.sh') => {
 
     const { stdout, stderr, status } = hookProcess;
 
-    const stderrTrimmed = stderr ? stderr.trim() : '';
+    stderrTrimmed = stderr ? stderr.trim() : '';
     const stdoutTrimmed = stdout ? stdout.trim() : '';
 
-    if (status !== 0) {
-      step.error = true;
-      step.log(`Hook stderr: ${stderrTrimmed}`);
-      step.setError(stdoutTrimmed);
-      action.addStep(step);
-      return action;
-    }
+    step.log(`Hook exited with status ${status}`);
 
-    step.log('Pre-receive hook executed successfully');
-    action.addStep(step);
+    if (status === 0) {
+      step.log('Push automatically approved by pre-receive hook.');
+      action.addStep(step);
+      action.setAutoApproval();
+    } else if (status === 1) {
+      step.log('Push automatically rejected by pre-receive hook.');
+      action.addStep(step);
+      action.setAutoRejection();
+    } else if (status === 2) {
+      step.log('Push requires manual approval.');
+      action.addStep(step);
+    } else {
+      step.error = true;
+      step.log(`Unexpected hook status: ${status}`);
+      step.setError(stdoutTrimmed || 'Unknown pre-receive hook error.');
+      action.addStep(step);
+    }
     return action;
   } catch (error) {
     step.error = true;
-    step.setError(`Hook execution error: ${error.message}`);
+    step.log('Push failed, pre-receive hook returned an error.');
+    step.setError(`Hook execution error: ${stderrTrimmed || error.message}`);
     action.addStep(step);
     return action;
   }
