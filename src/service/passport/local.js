@@ -13,6 +13,8 @@ const configure = async (passport) => {
           return done(null, false, { message: "Incorrect username." });
         }
 
+        console.log(`Before bcrypt compare: user.password: ${user.password}`);
+        console.log(`Before bcrypt compare: password: ${password}`);
         const passwordCorrect = await bcrypt.compare(password, user.password);
         if (!passwordCorrect) {
           return done(null, false, { message: "Incorrect password." });
@@ -47,7 +49,8 @@ const configure = async (passport) => {
 const createDefaultAdmin = async () => {
   const admin = await db.findUser("admin");
   if (!admin) {
-    await db.createUser("admin", "admin", "admin@place.com", "none", true, true, true, true);
+    console.log("No admin user found. Creating default admin user...");
+    await db.createUser("admin", "admin", "admin@place.com", "none", true);
   }
 };
 
