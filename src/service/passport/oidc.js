@@ -50,7 +50,7 @@ const configure = async (passport) => {
         done(err);
       }
     })
-    console.log(`setting type to ${server.host}`)
+
     type = server.host;
 
     return passport;
