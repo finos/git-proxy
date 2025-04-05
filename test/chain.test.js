@@ -1,6 +1,7 @@
 const chai = require('chai');
 const sinon = require('sinon');
 const { PluginLoader } = require('../src/plugin');
+const db = require('../src/db');
 
 chai.should();
 const expect = chai.expect;
@@ -24,6 +25,7 @@ const mockPushProcessors = {
   checkIfWaitingAuth: sinon.stub(),
   pullRemote: sinon.stub(),
   writePack: sinon.stub(),
+  preReceive: sinon.stub(),
   getDiff: sinon.stub(),
   clearBareClone: sinon.stub(),
   scanDiff: sinon.stub(),
@@ -38,6 +40,7 @@ mockPushProcessors.checkUserPushPermission.displayName = 'checkUserPushPermissio
 mockPushProcessors.checkIfWaitingAuth.displayName = 'checkIfWaitingAuth';
 mockPushProcessors.pullRemote.displayName = 'pullRemote';
 mockPushProcessors.writePack.displayName = 'writePack';
+mockPushProcessors.preReceive.displayName = 'preReceive';
 mockPushProcessors.getDiff.displayName = 'getDiff';
 mockPushProcessors.clearBareClone.displayName = 'clearBareClone';
 mockPushProcessors.scanDiff.displayName = 'scanDiff';
@@ -63,7 +66,7 @@ describe('proxy chain', function () {
     // Re-require the chain module after stubbing processors
     chain = require('../src/proxy/chain');
 
-    chain.chainPluginLoader = new PluginLoader([])
+    chain.chainPluginLoader = new PluginLoader([]);
   });
 
   afterEach(() => {
@@ -108,7 +111,11 @@ describe('proxy chain', function () {
     mockPushProcessors.checkUserPushPermission.resolves(continuingAction);
 
     // this stops the chain from further execution
-    mockPushProcessors.checkIfWaitingAuth.resolves({ type: 'push', continue: () => false, allowPush: false });
+    mockPushProcessors.checkIfWaitingAuth.resolves({
+      type: 'push',
+      continue: () => false,
+      allowPush: false,
+    });
     const result = await chain.executeChain(req);
 
     expect(mockPreProcessors.parseAction.called).to.be.true;
@@ -136,7 +143,11 @@ describe('proxy chain', function () {
     mockPushProcessors.checkAuthorEmails.resolves(continuingAction);
     mockPushProcessors.checkUserPushPermission.resolves(continuingAction);
     // this stops the chain from further execution
-    mockPushProcessors.checkIfWaitingAuth.resolves({ type: 'push', continue: () => true, allowPush: true });
+    mockPushProcessors.checkIfWaitingAuth.resolves({
+      type: 'push',
+      continue: () => true,
+      allowPush: true,
+    });
     const result = await chain.executeChain(req);
 
     expect(mockPreProcessors.parseAction.called).to.be.true;
@@ -166,6 +177,7 @@ describe('proxy chain', function () {
     mockPushProcessors.checkIfWaitingAuth.resolves(continuingAction);
     mockPushProcessors.pullRemote.resolves(continuingAction);
     mockPushProcessors.writePack.resolves(continuingAction);
+    mockPushProcessors.preReceive.resolves(continuingAction);
     mockPushProcessors.getDiff.resolves(continuingAction);
     mockPushProcessors.clearBareClone.resolves(continuingAction);
     mockPushProcessors.scanDiff.resolves(continuingAction);
@@ -182,6 +194,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.checkIfWaitingAuth.called).to.be.true;
     expect(mockPushProcessors.pullRemote.called).to.be.true;
     expect(mockPushProcessors.writePack.called).to.be.true;
+    expect(mockPushProcessors.preReceive.called).to.be.true;
     expect(mockPushProcessors.getDiff.called).to.be.true;
     expect(mockPushProcessors.clearBareClone.called).to.be.true;
     expect(mockPushProcessors.scanDiff.called).to.be.true;
@@ -232,5 +245,189 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.checkRepoInAuthorisedList.called).to.be.false;
     expect(mockPushProcessors.parsePush.called).to.be.false;
     expect(result).to.deep.equal(action);
-  })
+  });
+
+  it('should approve push automatically and record in the database', async function () {
+    const req = {};
+    const action = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      setAutoApproval: sinon.stub(),
+      repoName: 'test-repo',
+      commitTo: 'newCommitHash',
+    };
+
+    mockPreProcessors.parseAction.resolves(action);
+    mockPushProcessors.parsePush.resolves(action);
+    mockPushProcessors.checkRepoInAuthorisedList.resolves(action);
+    mockPushProcessors.checkCommitMessages.resolves(action);
+    mockPushProcessors.checkAuthorEmails.resolves(action);
+    mockPushProcessors.checkUserPushPermission.resolves(action);
+    mockPushProcessors.checkIfWaitingAuth.resolves(action);
+    mockPushProcessors.pullRemote.resolves(action);
+    mockPushProcessors.writePack.resolves(action);
+
+    mockPushProcessors.preReceive.resolves({
+      ...action,
+      steps: [{ error: false, logs: ['Push automatically approved by pre-receive hook.'] }],
+      allowPush: true,
+      autoApproved: true,
+    });
+
+    mockPushProcessors.getDiff.resolves(action);
+    mockPushProcessors.clearBareClone.resolves(action);
+    mockPushProcessors.scanDiff.resolves(action);
+    mockPushProcessors.blockForAuth.resolves(action);
+
+    const dbStub = sinon.stub(db, 'authorise').resolves(true);
+
+    const result = await chain.executeChain(req);
+
+    expect(result.type).to.equal('push');
+    expect(result.allowPush).to.be.true;
+    expect(result.continue).to.be.a('function');
+
+    expect(dbStub.calledOnce).to.be.true;
+
+    dbStub.restore();
+  });
+
+  it('should reject push automatically and record in the database', async function () {
+    const req = {};
+    const action = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      setAutoRejection: sinon.stub(),
+      repoName: 'test-repo',
+      commitTo: 'newCommitHash',
+    };
+
+    mockPreProcessors.parseAction.resolves(action);
+    mockPushProcessors.parsePush.resolves(action);
+    mockPushProcessors.checkRepoInAuthorisedList.resolves(action);
+    mockPushProcessors.checkCommitMessages.resolves(action);
+    mockPushProcessors.checkAuthorEmails.resolves(action);
+    mockPushProcessors.checkUserPushPermission.resolves(action);
+    mockPushProcessors.checkIfWaitingAuth.resolves(action);
+    mockPushProcessors.pullRemote.resolves(action);
+    mockPushProcessors.writePack.resolves(action);
+
+    mockPushProcessors.preReceive.resolves({
+      ...action,
+      steps: [{ error: false, logs: ['Push automatically rejected by pre-receive hook.'] }],
+      allowPush: true,
+      autoRejected: true,
+    });
+
+    mockPushProcessors.getDiff.resolves(action);
+    mockPushProcessors.clearBareClone.resolves(action);
+    mockPushProcessors.scanDiff.resolves(action);
+    mockPushProcessors.blockForAuth.resolves(action);
+
+    const dbStub = sinon.stub(db, 'reject').resolves(true);
+
+    const result = await chain.executeChain(req);
+
+    expect(result.type).to.equal('push');
+    expect(result.allowPush).to.be.true;
+    expect(result.continue).to.be.a('function');
+
+    expect(dbStub.calledOnce).to.be.true;
+
+    dbStub.restore();
+  });
+
+  it('executeChain should handle exceptions in attemptAutoApproval', async function () {
+    const req = {};
+    const action = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      setAutoApproval: sinon.stub(),
+      repoName: 'test-repo',
+      commitTo: 'newCommitHash',
+    };
+
+    mockPreProcessors.parseAction.resolves(action);
+    mockPushProcessors.parsePush.resolves(action);
+    mockPushProcessors.checkRepoInAuthorisedList.resolves(action);
+    mockPushProcessors.checkCommitMessages.resolves(action);
+    mockPushProcessors.checkAuthorEmails.resolves(action);
+    mockPushProcessors.checkUserPushPermission.resolves(action);
+    mockPushProcessors.checkIfWaitingAuth.resolves(action);
+    mockPushProcessors.pullRemote.resolves(action);
+    mockPushProcessors.writePack.resolves(action);
+
+    mockPushProcessors.preReceive.resolves({
+      ...action,
+      steps: [{ error: false, logs: ['Push automatically approved by pre-receive hook.'] }],
+      allowPush: true,
+      autoApproved: true,
+    });
+
+    mockPushProcessors.getDiff.resolves(action);
+    mockPushProcessors.clearBareClone.resolves(action);
+    mockPushProcessors.scanDiff.resolves(action);
+    mockPushProcessors.blockForAuth.resolves(action);
+
+    const error = new Error('Database error');
+
+    const consoleErrorStub = sinon.stub(console, 'error');
+    sinon.stub(db, 'authorise').rejects(error);
+    await chain.executeChain(req);
+    expect(consoleErrorStub.calledOnceWith('Error during auto-approval:', error.message)).to.be
+      .true;
+    db.authorise.restore();
+    consoleErrorStub.restore();
+  });
+
+  it('executeChain should handle exceptions in attemptAutoRejection', async function () {
+    const req = {};
+    const action = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      setAutoRejection: sinon.stub(),
+      repoName: 'test-repo',
+      commitTo: 'newCommitHash',
+      autoRejected: true,
+    };
+
+    mockPreProcessors.parseAction.resolves(action);
+    mockPushProcessors.parsePush.resolves(action);
+    mockPushProcessors.checkRepoInAuthorisedList.resolves(action);
+    mockPushProcessors.checkCommitMessages.resolves(action);
+    mockPushProcessors.checkAuthorEmails.resolves(action);
+    mockPushProcessors.checkUserPushPermission.resolves(action);
+    mockPushProcessors.checkIfWaitingAuth.resolves(action);
+    mockPushProcessors.pullRemote.resolves(action);
+    mockPushProcessors.writePack.resolves(action);
+
+    mockPushProcessors.preReceive.resolves({
+      ...action,
+      steps: [{ error: false, logs: ['Push automatically rejected by pre-receive hook.'] }],
+      allowPush: false,
+      autoRejected: true,
+    });
+
+    mockPushProcessors.getDiff.resolves(action);
+    mockPushProcessors.clearBareClone.resolves(action);
+    mockPushProcessors.scanDiff.resolves(action);
+    mockPushProcessors.blockForAuth.resolves(action);
+
+    const error = new Error('Database error');
+
+    const consoleErrorStub = sinon.stub(console, 'error');
+    sinon.stub(db, 'reject').rejects(error);
+
+    await chain.executeChain(req);
+
+    expect(consoleErrorStub.calledOnceWith('Error during auto-rejection:', error.message)).to.be
+      .true;
+
+    db.reject.restore();
+    consoleErrorStub.restore();
+  });
 });

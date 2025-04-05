@@ -22,6 +22,22 @@ exports.findUser = function (username) {
   });
 };
 
+exports.findUserByOIDC = function (oidcId) {
+  return new Promise((resolve, reject) => {
+    db.findOne({ oidcId: oidcId }, (err, doc) => {
+      if (err) {
+        reject(err);
+      } else {
+        if (!doc) {
+          resolve(null);
+        } else {
+          resolve(doc);
+        }
+      }
+    });
+  });
+};
+
 exports.createUser = function (data) {
   return new Promise((resolve, reject) => {
     db.insert(data, (err) => {
@@ -62,7 +78,7 @@ exports.updateUser = function (user) {
 exports.getUsers = function (query) {
   if (!query) query = {};
   return new Promise((resolve, reject) => {
-    db.find({}, (err, docs) => {
+    db.find(query, (err, docs) => {
       if (err) {
         reject(err);
       } else {

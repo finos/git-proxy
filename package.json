@@ -1,6 +1,6 @@
 {
   "name": "@finos/git-proxy",
-  "version": "1.8.0",
+  "version": "1.10.0",
   "description": "Deploy custom push protections and policies on top of Git.",
   "scripts": {
     "cli": "node ./packages/git-proxy-cli/index.js",
@@ -9,7 +9,7 @@
     "server": "node index.js",
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "build": "vite build",
-    "test": "NODE_ENV=test mocha --exit",
+    "test": "NODE_ENV=test mocha './test/**/*.js' --exit",
     "test-coverage": "nyc npm run test",
     "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text npm run test",
     "prepare": "node ./scripts/prepare.js",
@@ -38,7 +38,7 @@
     "@primer/octicons-react": "^19.8.0",
     "@seald-io/nedb": "^4.0.2",
     "axios": "^1.6.0",
-    "bcryptjs": "^2.4.3",
+    "bcryptjs": "^3.0.2",
     "bit-mask": "^1.0.2",
     "body-parser": "^1.20.1",
     "classnames": "2.5.1",
@@ -59,6 +59,7 @@
     "moment": "^2.29.4",
     "mongodb": "^5.0.0",
     "nodemailer": "^6.6.1",
+    "openid-client": "^6.2.0",
     "parse-diff": "^0.11.1",
     "passport": "^0.7.0",
     "passport-activedirectory": "^1.0.4",
