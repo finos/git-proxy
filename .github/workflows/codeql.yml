@@ -20,7 +20,10 @@ on:
     - cron: '25 10 * * 1'
 
 permissions:
+  security-events: write
   contents: read
+  actions: read
+  statuses: write
 
 jobs:
   analyze:
