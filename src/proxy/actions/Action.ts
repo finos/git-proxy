@@ -36,6 +36,8 @@ class Action {
   authorised: boolean = false;
   canceled: boolean = false;
   rejected: boolean = false;
+  autoApproved: boolean = false;
+  autoRejected: boolean = false;
   commitData?: Commit[] = [];
   commitFrom?: string;
   commitTo?: string;
@@ -126,6 +128,20 @@ class Action {
   setAllowPush(): void {
     this.allowPush = true;
     this.blocked = false;
+  }
+
+  /**
+   * Set auto approval for the action.
+   */
+  setAutoApproval(): void {
+    this.autoApproved = true;
+  }
+
+  /**
+   * Set auto rejection for the action.
+   */
+  setAutoRejection(): void {
+    this.autoRejected = true;
   }
 
   /**
