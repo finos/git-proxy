@@ -1,6 +1,7 @@
 import { PluginLoader } from '../plugin';
 import { Action } from './actions';
 import * as proc from './processors';
+import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 
 const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.parsePush,
@@ -23,7 +24,7 @@ const pullActionChain: ((req: any, action: Action) => Promise<Action>)[] = [proc
 let pluginsInserted = false;
 
 export const executeChain = async (req: any, res: any): Promise<Action> => {
-  let action: Action;
+  let action: Action = {} as Action;
   try {
     action = await proc.pre.parseAction(req);
     const actionFns = await getChain(action);
@@ -39,7 +40,12 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
       }
     }
   } finally {
-    await proc.push.audit(req, action!);
+    await proc.push.audit(req, action);
+    if (action.autoApproved) {
+      attemptAutoApproval(action);
+    } else if (action.autoRejected) {
+      attemptAutoRejection(action);
+    }
   }
 
   return action;
