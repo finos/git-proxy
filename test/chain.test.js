@@ -54,17 +54,17 @@ describe('proxy chain', function () {
   let processors;
   let chain;
 
-  beforeEach(() => {
-    // Re-require the processors module after clearing the cache
-    processors = require('../src/proxy/processors');
+  beforeEach(async () => {
+    // Re-import the processors module after clearing the cache
+    processors = await import('../src/proxy/processors');
 
     // Mock the processors module
     sinon.stub(processors, 'pre').value(mockPreProcessors);
 
     sinon.stub(processors, 'push').value(mockPushProcessors);
 
-    // Re-require the chain module after stubbing processors
-    chain = require('../src/proxy/chain');
+    // Re-import the chain module after stubbing processors
+    chain = (await import('../src/proxy/chain')).default;
 
     chain.chainPluginLoader = new PluginLoader([]);
   });
@@ -227,7 +227,7 @@ describe('proxy chain', function () {
 
     try {
       await chain.executeChain(req);
-    } catch (e) {
+    } catch {
       // Ignore the error
     }
 
