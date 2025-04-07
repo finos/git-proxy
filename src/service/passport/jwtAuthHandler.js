@@ -57,7 +57,7 @@ async function validateJwt(token, authorityUrl, clientID, expectedAudience) {
 
       return { verifiedPayload };
   } catch (error) {
-      const errorMessage = `JWT validation failed: ${error.message}`;
+      const errorMessage = `JWT validation failed: ${error.message}\n`;
       console.error(errorMessage);
       return { error: errorMessage };
   }
@@ -77,18 +77,18 @@ const jwtAuthHandler = () => {
 
       const token = req.header("Authorization");
       if (!token) {
-          return res.status(401).send("No token provided");
+          return res.status(401).send("No token provided\n");
       }
 
       const { clientID, authorityURL, expectedAudience } = jwtAuthMethod.jwtConfig;
       const audience = expectedAudience || clientID;
 
       if (!authorityURL) {
-          return res.status(500).send("OIDC authority URL is not configured");
+          return res.status(500).send("OIDC authority URL is not configured\n");
       }
 
       if (!clientID) {
-          return res.status(500).send("OIDC client ID is not configured");
+          return res.status(500).send("OIDC client ID is not configured\n");
       }
 
       const tokenParts = token.split(" ");
