@@ -1,33 +1,36 @@
-const fs = require('fs');
+import { existsSync, readFileSync } from 'fs';
 
-const defaultSettings = require('../../proxy.config.json');
-const userSettingsPath = require('./file').configFile;
+import defaultSettings from '../../proxy.config.json';
+import { configFile } from './file';
+import { Authentication, AuthorisedRepo, Database, TempPasswordConfig, UserSettings } from './types';
 
-let _userSettings = null;
-if (fs.existsSync(userSettingsPath)) {
-  _userSettings = JSON.parse(fs.readFileSync(userSettingsPath));
+
+let _userSettings: UserSettings | null = null;
+if (existsSync(configFile)) {
+  _userSettings = JSON.parse(readFileSync(configFile, 'utf-8'));
 }
-let _authorisedList = defaultSettings.authorisedList;
-let _database = defaultSettings.sink;
-let _authentication = defaultSettings.authentication;
-let _tempPassword = defaultSettings.tempPassword;
+let _authorisedList: AuthorisedRepo[] = defaultSettings.authorisedList;
+let _database: Database[] = defaultSettings.sink;
+let _authentication: Authentication[] = defaultSettings.authentication;
+let _tempPassword: TempPasswordConfig = defaultSettings.tempPassword;
 let _proxyUrl = defaultSettings.proxyUrl;
-let _api = defaultSettings.api;
-let _cookieSecret = defaultSettings.cookieSecret;
-let _sessionMaxAgeHours = defaultSettings.sessionMaxAgeHours;
-let _sslKeyPath = defaultSettings.sslKeyPemPath;
-let _sslCertPath = defaultSettings.sslCertPemPath;
-let _plugins = defaultSettings.plugins;
-let _commitConfig = defaultSettings.commitConfig;
-let _attestationConfig = defaultSettings.attestationConfig;
-let _privateOrganizations = defaultSettings.privateOrganizations;
-let _urlShortener = defaultSettings.urlShortener;
-let _contactEmail = defaultSettings.contactEmail;
-let _csrfProtection = defaultSettings.csrfProtection;
-let _domains = defaultSettings.domains;
+let _api: Record<string, unknown> = defaultSettings.api;
+let _cookieSecret: string = defaultSettings.cookieSecret;
+let _sessionMaxAgeHours: number = defaultSettings.sessionMaxAgeHours;
+let _plugins: any[] = defaultSettings.plugins;
+let _commitConfig: Record<string, unknown> = defaultSettings.commitConfig;
+let _attestationConfig: Record<string, unknown> = defaultSettings.attestationConfig;
+let _privateOrganizations: string[] = defaultSettings.privateOrganizations;
+let _urlShortener: string = defaultSettings.urlShortener;
+let _contactEmail: string = defaultSettings.contactEmail;
+let _csrfProtection: boolean = defaultSettings.csrfProtection;
+let _domains: Record<string, unknown> = defaultSettings.domains;
+// These are not always present in the default config file, so casting is required
+let _sslKeyPath: string = (defaultSettings as any).sslKeyPemPath;
+let _sslCertPath: string = (defaultSettings as any).sslCertPemPath;
 
 // Get configured proxy URL
-const getProxyUrl = () => {
+export const getProxyUrl = () => {
   if (_userSettings !== null && _userSettings.proxyUrl) {
     _proxyUrl = _userSettings.proxyUrl;
   }
@@ -36,16 +39,15 @@ const getProxyUrl = () => {
 };
 
 // Gets a list of authorised repositories
-const getAuthorisedList = () => {
+export const getAuthorisedList = () => {
   if (_userSettings !== null && _userSettings.authorisedList) {
     _authorisedList = _userSettings.authorisedList;
   }
-
   return _authorisedList;
 };
 
 // Gets a list of authorised repositories
-const getTempPasswordConfig = () => {
+export const getTempPasswordConfig = () => {
   if (_userSettings !== null && _userSettings.tempPassword) {
     _tempPassword = _userSettings.tempPassword;
   }
@@ -53,8 +55,8 @@ const getTempPasswordConfig = () => {
   return _tempPassword;
 };
 
-// Gets the configuared data sink, defaults to filesystem
-const getDatabase = () => {
+// Gets the configured data sink, defaults to filesystem
+export const getDatabase = () => {
   if (_userSettings !== null && _userSettings.sink) {
     _database = _userSettings.sink;
   }
@@ -70,8 +72,8 @@ const getDatabase = () => {
   throw Error('No database cofigured!');
 };
 
-// Gets the configuared data sink, defaults to filesystem
-const getAuthentication = () => {
+// Gets the configured authentication method, defaults to local
+export const getAuthentication = () => {
   if (_userSettings !== null && _userSettings.authentication) {
     _authentication = _userSettings.authentication;
   }
@@ -87,27 +89,27 @@ const getAuthentication = () => {
 };
 
 // Log configuration to console
-const logConfiguration = () => {
+export const logConfiguration = () => {
   console.log(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
   console.log(`data sink = ${JSON.stringify(getDatabase())}`);
   console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
 };
 
-const getAPIs = () => {
+export const getAPIs = () => {
   if (_userSettings && _userSettings.api) {
     _api = _userSettings.api;
   }
   return _api;
 };
 
-const getCookieSecret = () => {
+export const getCookieSecret = () => {
   if (_userSettings && _userSettings.cookieSecret) {
     _cookieSecret = _userSettings.cookieSecret;
   }
   return _cookieSecret;
 };
 
-const getSessionMaxAgeHours = () => {
+export const getSessionMaxAgeHours = () => {
   if (_userSettings && _userSettings.sessionMaxAgeHours) {
     _sessionMaxAgeHours = _userSettings.sessionMaxAgeHours;
   }
@@ -115,7 +117,7 @@ const getSessionMaxAgeHours = () => {
 };
 
 // Get commit related configuration
-const getCommitConfig = () => {
+export const getCommitConfig = () => {
   if (_userSettings && _userSettings.commitConfig) {
     _commitConfig = _userSettings.commitConfig;
   }
@@ -123,7 +125,7 @@ const getCommitConfig = () => {
 };
 
 // Get attestation related configuration
-const getAttestationConfig = () => {
+export const getAttestationConfig = () => {
   if (_userSettings && _userSettings.attestationConfig) {
     _attestationConfig = _userSettings.attestationConfig;
   }
@@ -131,7 +133,7 @@ const getAttestationConfig = () => {
 };
 
 // Get private organizations related configuration
-const getPrivateOrganizations = () => {
+export const getPrivateOrganizations = () => {
   if (_userSettings && _userSettings.privateOrganizations) {
     _privateOrganizations = _userSettings.privateOrganizations;
   }
@@ -139,7 +141,7 @@ const getPrivateOrganizations = () => {
 };
 
 // Get URL shortener
-const getURLShortener = () => {
+export const getURLShortener = () => {
   if (_userSettings && _userSettings.urlShortener) {
     _urlShortener = _userSettings.urlShortener;
   }
@@ -147,7 +149,7 @@ const getURLShortener = () => {
 };
 
 // Get contact e-mail address
-const getContactEmail = () => {
+export const getContactEmail = () => {
   if (_userSettings && _userSettings.contactEmail) {
     _contactEmail = _userSettings.contactEmail;
   }
@@ -155,7 +157,7 @@ const getContactEmail = () => {
 };
 
 // Get CSRF protection flag
-const getCSRFProtection = () => {
+export const getCSRFProtection = () => {
   if (_userSettings && _userSettings.csrfProtection) {
     _csrfProtection = _userSettings.csrfProtection;
   }
@@ -163,14 +165,14 @@ const getCSRFProtection = () => {
 };
 
 // Get loadable push plugins
-const getPlugins = () => {
+export const getPlugins = () => {
   if (_userSettings && _userSettings.plugins) {
     _plugins = _userSettings.plugins;
   }
   return _plugins;
 }
 
-const getSSLKeyPath = () => {
+export const getSSLKeyPath = () => {
   if (_userSettings && _userSettings.sslKeyPemPath) {
     _sslKeyPath = _userSettings.sslKeyPemPath;
   }
@@ -180,7 +182,7 @@ const getSSLKeyPath = () => {
   return _sslKeyPath;
 };
 
-const getSSLCertPath = () => {
+export const getSSLCertPath = () => {
   if (_userSettings && _userSettings.sslCertPemPath) {
     _sslCertPath = _userSettings.sslCertPemPath;
   }
@@ -190,29 +192,9 @@ const getSSLCertPath = () => {
   return _sslCertPath;
 };
 
-const getDomains = () => {
+export const getDomains = () => {
   if (_userSettings && _userSettings.domains) {
     _domains = _userSettings.domains;
   }
   return _domains;
 };
-
-exports.getAPIs = getAPIs;
-exports.getProxyUrl = getProxyUrl;
-exports.getAuthorisedList = getAuthorisedList;
-exports.getDatabase = getDatabase;
-exports.logConfiguration = logConfiguration;
-exports.getAuthentication = getAuthentication;
-exports.getTempPasswordConfig = getTempPasswordConfig;
-exports.getCookieSecret = getCookieSecret;
-exports.getSessionMaxAgeHours = getSessionMaxAgeHours;
-exports.getCommitConfig = getCommitConfig;
-exports.getAttestationConfig = getAttestationConfig;
-exports.getPrivateOrganizations = getPrivateOrganizations;
-exports.getURLShortener = getURLShortener;
-exports.getContactEmail = getContactEmail;
-exports.getCSRFProtection = getCSRFProtection;
-exports.getPlugins = getPlugins;
-exports.getSSLKeyPath = getSSLKeyPath;
-exports.getSSLCertPath = getSSLCertPath;
-exports.getDomains = getDomains;
