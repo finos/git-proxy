@@ -65,20 +65,28 @@ class ConfigLoader extends EventEmitter {
     if (!fs.existsSync(this.cacheDir)) {
       try {
         fs.mkdirSync(this.cacheDir, { recursive: true });
+        console.log(`Created cache directory at ${this.cacheDir}`);
         return true;
       } catch (err) {
         console.error('Failed to create cache directory:', err);
         return false;
       }
     }
+    console.log(`Using cache directory at ${this.cacheDir}`);
     return true;
   }
 
   async start() {
     const { configurationSources } = this.config;
     if (!configurationSources?.enabled) {
+      console.log('Configuration sources are disabled');
       return;
     }
+
+    console.log('Configuration sources are enabled');
+    console.log(
+      `Sources: ${JSON.stringify(configurationSources.sources.filter((s) => s.enabled).map((s) => s.type))}`,
+    );
 
     // Clear any existing interval before starting a new one
     if (this.reloadTimer) {
@@ -88,6 +96,9 @@ class ConfigLoader extends EventEmitter {
 
     // Start periodic reload if interval is set
     if (configurationSources.reloadIntervalSeconds > 0) {
+      console.log(
+        `Setting reload interval to ${configurationSources.reloadIntervalSeconds} seconds`,
+      );
       this.reloadTimer = setInterval(
         () => this.reloadConfiguration(),
         configurationSources.reloadIntervalSeconds * 1000,
@@ -106,34 +117,63 @@ class ConfigLoader extends EventEmitter {
   }
 
   async reloadConfiguration() {
-    if (this.isReloading) return;
+    if (this.isReloading) {
+      console.log('Configuration reload already in progress, skipping');
+      return;
+    }
     this.isReloading = true;
+    console.log('Starting configuration reload');
 
     try {
       const { configurationSources } = this.config;
-      if (!configurationSources?.enabled) return;
+      if (!configurationSources?.enabled) {
+        console.log('Configuration sources are disabled, skipping reload');
+        return;
+      }
+
+      const enabledSources = configurationSources.sources.filter((source) => source.enabled);
+      console.log(`Found ${enabledSources.length} enabled configuration sources`);
 
       const configs = await Promise.all(
-        configurationSources.sources
-          .filter((source) => source.enabled)
-          .map((source) => this.loadFromSource(source)),
+        enabledSources.map(async (source) => {
+          try {
+            console.log(`Loading configuration from ${source.type} source`);
+            return await this.loadFromSource(source);
+          } catch (error) {
+            console.error(`Error loading from ${source.type} source:`, error.message);
+            return null;
+          }
+        }),
       );
+
+      // Filter out null results from failed loads
+      const validConfigs = configs.filter((config) => config !== null);
+
+      if (validConfigs.length === 0) {
+        console.log('No valid configurations loaded from any source');
+        return;
+      }
 
       // Use merge strategy based on configuration
       const shouldMerge = configurationSources.merge ?? true; // Default to true for backward compatibility
+      console.log(`Using ${shouldMerge ? 'merge' : 'override'} strategy for configuration`);
+
       const newConfig = shouldMerge
-        ? configs.reduce(
+        ? validConfigs.reduce(
             (acc, curr) => {
               return this.deepMerge(acc, curr);
             },
             { ...this.config },
           )
-        : { ...this.config, ...configs[configs.length - 1] }; // Use last config for override
+        : { ...this.config, ...validConfigs[validConfigs.length - 1] }; // Use last config for override
 
       // Emit change event if config changed
       if (JSON.stringify(newConfig) !== JSON.stringify(this.config)) {
+        console.log('Configuration has changed, updating and emitting change event');
         this.config = newConfig;
         this.emit('configurationChanged', this.config);
+      } else {
+        console.log('Configuration has not changed, no update needed');
       }
     } catch (error) {
       console.error('Error reloading configuration:', error);
@@ -161,11 +201,13 @@ class ConfigLoader extends EventEmitter {
     if (!isValidPath(configPath)) {
       throw new Error('Invalid configuration file path');
     }
+    console.log(`Loading configuration from file: ${configPath}`);
     const content = await fs.promises.readFile(configPath, 'utf8');
     return JSON.parse(content);
   }
 
   async loadFromHttp(source) {
+    console.log(`Loading configuration from HTTP: ${source.url}`);
     const headers = {
       ...source.headers,
       ...(source.auth?.type === 'bearer' ? { Authorization: `Bearer ${source.auth.token}` } : {}),
@@ -176,6 +218,8 @@ class ConfigLoader extends EventEmitter {
   }
 
   async loadFromGit(source) {
+    console.log(`Loading configuration from Git: ${source.repository}`);
+
     // Validate inputs
     if (!source.repository || !isValidGitUrl(source.repository)) {
       throw new Error('Invalid repository URL format');
@@ -191,15 +235,25 @@ class ConfigLoader extends EventEmitter {
     if (!isValidPath(tempDir)) {
       throw new Error('Invalid temporary directory path');
     }
+
+    console.log(`Creating git cache directory at ${tempDir}`);
     await fs.promises.mkdir(tempDir, { recursive: true });
 
-    const repoDir = path.join(tempDir, Buffer.from(source.repository).toString('base64'));
+    // Create a safe directory name from the repository URL
+    const repoDirName = Buffer.from(source.repository)
+      .toString('base64')
+      .replace(/[^a-zA-Z0-9]/g, '_');
+    const repoDir = path.join(tempDir, repoDirName);
+
     if (!isValidPath(repoDir)) {
       throw new Error('Invalid repository directory path');
     }
 
+    console.log(`Using repository directory: ${repoDir}`);
+
     // Clone or pull repository
     if (!fs.existsSync(repoDir)) {
+      console.log(`Cloning repository ${source.repository} to ${repoDir}`);
       const execOptions = {
         cwd: process.cwd(),
         env: {
@@ -211,14 +265,35 @@ class ConfigLoader extends EventEmitter {
             : {}),
         },
       };
-      await execFileAsync('git', ['clone', source.repository, repoDir], execOptions);
+
+      try {
+        await execFileAsync('git', ['clone', source.repository, repoDir], execOptions);
+        console.log('Repository cloned successfully');
+      } catch (error) {
+        console.error('Failed to clone repository:', error.message);
+        throw new Error(`Failed to clone repository: ${error.message}`);
+      }
     } else {
-      await execFileAsync('git', ['pull'], { cwd: repoDir });
+      console.log(`Pulling latest changes from ${source.repository}`);
+      try {
+        await execFileAsync('git', ['pull'], { cwd: repoDir });
+        console.log('Repository pulled successfully');
+      } catch (error) {
+        console.error('Failed to pull repository:', error.message);
+        throw new Error(`Failed to pull repository: ${error.message}`);
+      }
     }
 
     // Checkout specific branch if specified
     if (source.branch) {
-      await execFileAsync('git', ['checkout', source.branch], { cwd: repoDir });
+      console.log(`Checking out branch: ${source.branch}`);
+      try {
+        await execFileAsync('git', ['checkout', source.branch], { cwd: repoDir });
+        console.log(`Branch ${source.branch} checked out successfully`);
+      } catch (error) {
+        console.error(`Failed to checkout branch ${source.branch}:`, error.message);
+        throw new Error(`Failed to checkout branch ${source.branch}: ${error.message}`);
+      }
     }
 
     // Read and parse config file
@@ -226,8 +301,21 @@ class ConfigLoader extends EventEmitter {
     if (!isValidPath(configPath)) {
       throw new Error('Invalid configuration file path in repository');
     }
-    const content = await fs.promises.readFile(configPath, 'utf8');
-    return JSON.parse(content);
+
+    console.log(`Reading configuration file: ${configPath}`);
+    if (!fs.existsSync(configPath)) {
+      throw new Error(`Configuration file not found at ${configPath}`);
+    }
+
+    try {
+      const content = await fs.promises.readFile(configPath, 'utf8');
+      const config = JSON.parse(content);
+      console.log('Configuration loaded successfully from Git');
+      return config;
+    } catch (error) {
+      console.error('Failed to read or parse configuration file:', error.message);
+      throw new Error(`Failed to read or parse configuration file: ${error.message}`);
+    }
   }
 
   deepMerge(target, source) {
@@ -249,6 +337,7 @@ class ConfigLoader extends EventEmitter {
   }
 }
 
+// Helper function to check if a value is an object
 function isObject(item) {
   return item && typeof item === 'object' && !Array.isArray(item);
 }

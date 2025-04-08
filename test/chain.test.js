@@ -79,7 +79,7 @@ describe('proxy chain', function () {
     sandboxSinon.stub(processors, 'push').value(mockPushProcessors);
 
     // Re-require the chain module after stubbing processors
-    chain = require('../src/proxy/chain');
+    chain = require('../src/proxy/chain').default;
 
     chain.chainPluginLoader = new PluginLoader([]);
   });

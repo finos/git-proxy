@@ -1,12 +1,16 @@
 import { existsSync, readFileSync } from 'fs';
-const fs = require('fs');
 const ConfigLoader = require('./ConfigLoader');
 const { validate } = require('./file'); // Import the validate function
 
 import defaultSettings from '../../proxy.config.json';
 import { configFile } from './file';
-import { Authentication, AuthorisedRepo, Database, TempPasswordConfig, UserSettings } from './types';
-
+import {
+  Authentication,
+  AuthorisedRepo,
+  Database,
+  TempPasswordConfig,
+  UserSettings,
+} from './types';
 
 let _userSettings: UserSettings | null = null;
 if (existsSync(configFile)) {
@@ -37,6 +41,9 @@ export const getProxyUrl = () => {
   if (_userSettings !== null && _userSettings.proxyUrl) {
     _proxyUrl = _userSettings.proxyUrl;
   }
+  return _proxyUrl;
+};
+
 // Initialize configuration with defaults and user settings
 let _config = { ...defaultSettings, ...(_userSettings || {}) };
 
@@ -49,9 +56,6 @@ export const getAuthorisedList = () => {
     _authorisedList = _userSettings.authorisedList;
   }
   return _authorisedList;
-// Helper function to get current config value
-const getConfig = (key) => {
-  return _config[key];
 };
 
 // Gets a list of authorised repositories
@@ -69,15 +73,8 @@ export const getDatabase = () => {
     _database = _userSettings.sink;
   }
   for (const ix in _database) {
-// Update existing getter functions to use the new config object
-const getProxyUrl = () => getConfig('proxyUrl');
-const getAuthorisedList = () => getConfig('authorisedList');
-const getTempPasswordConfig = () => getConfig('tempPassword');
-const getDatabase = () => {
-  const sinks = getConfig('sink');
-  for (const ix in sinks) {
     if (ix) {
-      const db = sinks[ix];
+      const db = _database[ix];
       if (db.enabled) {
         return db;
       }
@@ -92,11 +89,8 @@ export const getAuthentication = () => {
     _authentication = _userSettings.authentication;
   }
   for (const ix in _authentication) {
-const getAuthentication = () => {
-  const auths = getConfig('authentication');
-  for (const ix in auths) {
     if (!ix) continue;
-    const auth = auths[ix];
+    const auth = _authentication[ix];
     if (auth.enabled) {
       return auth;
     }
@@ -104,19 +98,115 @@ const getAuthentication = () => {
   throw Error('No authentication configured!');
 };
 
-const getAPIs = () => getConfig('api');
-const getCookieSecret = () => getConfig('cookieSecret');
-const getSessionMaxAgeHours = () => getConfig('sessionMaxAgeHours');
-const getCommitConfig = () => getConfig('commitConfig');
-const getAttestationConfig = () => getConfig('attestationConfig');
-const getPrivateOrganizations = () => getConfig('privateOrganizations');
-const getURLShortener = () => getConfig('urlShortener');
-const getContactEmail = () => getConfig('contactEmail');
-const getCSRFProtection = () => getConfig('csrfProtection');
-const getPlugins = () => getConfig('plugins');
-const getSSLKeyPath = () => getConfig('sslKeyPemPath') || '../../certs/key.pem';
-const getSSLCertPath = () => getConfig('sslCertPemPath') || '../../certs/cert.pem';
-const getDomains = () => getConfig('domains');
+// Get API configuration
+export const getAPIs = () => {
+  if (_userSettings && _userSettings.api) {
+    _api = _userSettings.api;
+  }
+  return _api;
+};
+
+// Get cookie secret
+export const getCookieSecret = () => {
+  if (_userSettings && _userSettings.cookieSecret) {
+    _cookieSecret = _userSettings.cookieSecret;
+  }
+  return _cookieSecret;
+};
+
+// Get session max age hours
+export const getSessionMaxAgeHours = () => {
+  if (_userSettings && _userSettings.sessionMaxAgeHours) {
+    _sessionMaxAgeHours = _userSettings.sessionMaxAgeHours;
+  }
+  return _sessionMaxAgeHours;
+};
+
+// Get commit config
+export const getCommitConfig = () => {
+  if (_userSettings && _userSettings.commitConfig) {
+    _commitConfig = _userSettings.commitConfig;
+  }
+  return _commitConfig;
+};
+
+// Get attestation config
+export const getAttestationConfig = () => {
+  if (_userSettings && _userSettings.attestationConfig) {
+    _attestationConfig = _userSettings.attestationConfig;
+  }
+  return _attestationConfig;
+};
+
+// Get private organizations
+export const getPrivateOrganizations = () => {
+  if (_userSettings && _userSettings.privateOrganizations) {
+    _privateOrganizations = _userSettings.privateOrganizations;
+  }
+  return _privateOrganizations;
+};
+
+// Get URL shortener
+export const getURLShortener = () => {
+  if (_userSettings && _userSettings.urlShortener) {
+    _urlShortener = _userSettings.urlShortener;
+  }
+  return _urlShortener;
+};
+
+// Get contact email
+export const getContactEmail = () => {
+  if (_userSettings && _userSettings.contactEmail) {
+    _contactEmail = _userSettings.contactEmail;
+  }
+  return _contactEmail;
+};
+
+// Get CSRF protection
+export const getCSRFProtection = () => {
+  if (_userSettings && _userSettings.csrfProtection) {
+    _csrfProtection = _userSettings.csrfProtection;
+  }
+  return _csrfProtection;
+};
+
+// Get plugins
+export const getPlugins = () => {
+  if (_userSettings && _userSettings.plugins) {
+    _plugins = _userSettings.plugins;
+  }
+  return _plugins;
+};
+
+// Get SSL key path
+export const getSSLKeyPath = () => {
+  if (_userSettings && _userSettings.sslKeyPemPath) {
+    _sslKeyPath = _userSettings.sslKeyPemPath;
+  }
+  if (!_sslKeyPath) {
+    return '../../certs/key.pem';
+  }
+  return _sslKeyPath;
+};
+
+// Get SSL cert path
+export const getSSLCertPath = () => {
+  if (_userSettings && _userSettings.sslCertPemPath) {
+    _sslCertPath = _userSettings.sslCertPemPath;
+  }
+  if (!_sslCertPath) {
+    return '../../certs/cert.pem';
+  }
+  return _sslCertPath;
+};
+
+// Get domains
+export const getDomains = () => {
+  if (_userSettings && _userSettings.domains) {
+    _domains = _userSettings.domains;
+  }
+  return _domains;
+};
 
 // Log configuration to console
 export const logConfiguration = () => {
@@ -125,61 +215,25 @@ export const logConfiguration = () => {
   console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
 };
 
-export const getAPIs = () => {
-  if (_userSettings && _userSettings.api) {
-    _api = _userSettings.api;
-  }
-  return _api;
-};
 // Function to handle configuration updates
-const handleConfigUpdate = async (newConfig) => {
+const handleConfigUpdate = async (newConfig: typeof _config) => {
   console.log('Configuration updated from external source');
   try {
     // 1. Get proxy module dynamically to avoid circular dependency
     const proxy = require('../proxy');
 
-export const getCookieSecret = () => {
-  if (_userSettings && _userSettings.cookieSecret) {
-    _cookieSecret = _userSettings.cookieSecret;
-  }
-  return _cookieSecret;
-};
     // 2. Stop existing services
     await proxy.stop();
 
-export const getSessionMaxAgeHours = () => {
-  if (_userSettings && _userSettings.sessionMaxAgeHours) {
-    _sessionMaxAgeHours = _userSettings.sessionMaxAgeHours;
-  }
-  return _sessionMaxAgeHours;
-};
     // 3. Update config
     _config = newConfig;
 
-// Get commit related configuration
-export const getCommitConfig = () => {
-  if (_userSettings && _userSettings.commitConfig) {
-    _commitConfig = _userSettings.commitConfig;
-  }
-  return _commitConfig;
-};
     // 4. Validate new configuration
     validate();
 
-// Get attestation related configuration
-export const getAttestationConfig = () => {
-  if (_userSettings && _userSettings.attestationConfig) {
-    _attestationConfig = _userSettings.attestationConfig;
-  }
-  return _attestationConfig;
-};
     // 5. Restart services with new config
     await proxy.start();
 
-// Get private organizations related configuration
-export const getPrivateOrganizations = () => {
-  if (_userSettings && _userSettings.privateOrganizations) {
-    _privateOrganizations = _userSettings.privateOrganizations;
     console.log('Services restarted with new configuration');
   } catch (error) {
     console.error('Failed to apply new configuration:', error);
@@ -193,95 +247,22 @@ export const getPrivateOrganizations = () => {
   }
 };
 
-// Get URL shortener
-export const getURLShortener = () => {
-  if (_userSettings && _userSettings.urlShortener) {
-    _urlShortener = _userSettings.urlShortener;
-  }
-  return _urlShortener;
-};
 // Handle configuration updates
 configLoader.on('configurationChanged', handleConfigUpdate);
 
-// Get contact e-mail address
-export const getContactEmail = () => {
-  if (_userSettings && _userSettings.contactEmail) {
-    _contactEmail = _userSettings.contactEmail;
-  }
-  return _contactEmail;
-};
-configLoader.on('configurationError', (error) => {
+configLoader.on('configurationError', (error: Error) => {
   console.error('Error loading external configuration:', error);
 });
 
-// Get CSRF protection flag
-export const getCSRFProtection = () => {
-  if (_userSettings && _userSettings.csrfProtection) {
-    _csrfProtection = _userSettings.csrfProtection;
-  }
-  return _csrfProtection;
-};
 // Start the config loader if external sources are enabled
-configLoader.start().catch((error) => {
+configLoader.start().catch((error: Error) => {
   console.error('Failed to start configuration loader:', error);
 });
 
-// Get loadable push plugins
-export const getPlugins = () => {
-  if (_userSettings && _userSettings.plugins) {
-    _plugins = _userSettings.plugins;
-  }
-  return _plugins;
-}
-
-export const getSSLKeyPath = () => {
-  if (_userSettings && _userSettings.sslKeyPemPath) {
-    _sslKeyPath = _userSettings.sslKeyPemPath;
-  }
-  if (!_sslKeyPath) {
-    return '../../certs/key.pem';
-  }
-  return _sslKeyPath;
 // Force reload of configuration
 const reloadConfiguration = async () => {
   await configLoader.reloadConfiguration();
 };
 
-export const getSSLCertPath = () => {
-  if (_userSettings && _userSettings.sslCertPemPath) {
-    _sslCertPath = _userSettings.sslCertPemPath;
-  }
-  if (!_sslCertPath) {
-    return '../../certs/cert.pem';
-  }
-  return _sslCertPath;
-};
-
-export const getDomains = () => {
-  if (_userSettings && _userSettings.domains) {
-    _domains = _userSettings.domains;
-  }
-  return _domains;
-};
-
-// Export all the functions
-exports.getAPIs = getAPIs;
-exports.getProxyUrl = getProxyUrl;
-exports.getAuthorisedList = getAuthorisedList;
-exports.getDatabase = getDatabase;
-exports.logConfiguration = logConfiguration;
-exports.getAuthentication = getAuthentication;
-exports.getTempPasswordConfig = getTempPasswordConfig;
-exports.getCookieSecret = getCookieSecret;
-exports.getSessionMaxAgeHours = getSessionMaxAgeHours;
-exports.getCommitConfig = getCommitConfig;
-exports.getAttestationConfig = getAttestationConfig;
-exports.getPrivateOrganizations = getPrivateOrganizations;
-exports.getURLShortener = getURLShortener;
-exports.getContactEmail = getContactEmail;
-exports.getCSRFProtection = getCSRFProtection;
-exports.getPlugins = getPlugins;
-exports.getSSLKeyPath = getSSLKeyPath;
-exports.getSSLCertPath = getSSLCertPath;
-exports.getDomains = getDomains;
-exports.reloadConfiguration = reloadConfiguration;
+// Export reloadConfiguration
+export { reloadConfiguration };
