@@ -107,12 +107,8 @@ export const updateUser = (user: User) => {
 };
 
 export const getUsers = (query: any = {}) => {
-  if (query.username) {
-    query.username = query.username.toLowerCase();
-  }
-  if (query.email) {
-    query.email = query.email.toLowerCase();
-  }
+  if (query.username) { query.username = query.username.toLowerCase(); }
+  if (query.email) { query.email = query.email.toLowerCase(); }
   return new Promise<User[]>((resolve, reject) => {
     db.find(query, (err: Error, docs: User[]) => {
       if (err) {
