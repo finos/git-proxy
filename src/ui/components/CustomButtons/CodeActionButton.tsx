@@ -8,14 +8,19 @@ import {
   TerminalIcon,
 } from '@primer/octicons-react';
 import React, { useState } from 'react';
+import { PopperPlacementType } from '@material-ui/core/Popper';
 
-const CodeActionButton = ({ cloneURL }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [open, setOpen] = useState(false);
-  const [placement, setPlacement] = useState();
-  const [isCopied, setIsCopied] = useState(false);
+interface CodeActionButtonProps {
+  cloneURL: string;
+}
 
-  const handleClick = (newPlacement) => (event) => {
+const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [open, setOpen] = useState<boolean>(false);
+  const [placement, setPlacement] = useState<PopperPlacementType>();
+  const [isCopied, setIsCopied] = useState<boolean>(false);
+
+  const handleClick = (newPlacement: PopperPlacementType) => (event: React.MouseEvent<HTMLElement>) => {
     setIsCopied(false);
     setAnchorEl(event.currentTarget);
     setOpen((prev) => placement !== newPlacement || !prev);

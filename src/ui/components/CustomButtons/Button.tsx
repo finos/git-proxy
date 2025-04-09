@@ -1,21 +1,45 @@
 import React from 'react';
 import classNames from 'classnames';
-import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
-import Button from '@material-ui/core/Button';
+import Button, { ButtonProps } from '@material-ui/core/Button';
 import styles from '../../assets/jss/material-dashboard-react/components/buttonStyle';
 
 const useStyles = makeStyles(styles);
 
-export default function RegularButton(props) {
+type Color =
+  | 'primary'
+  | 'info'
+  | 'success'
+  | 'warning'
+  | 'danger'
+  | 'rose'
+  | 'white'
+  | 'transparent';
+type Size = 'sm' | 'lg';
+
+interface RegularButtonProps extends ButtonProps {
+  customColor?: Color;
+  round?: boolean;
+  disabled?: boolean;
+  simple?: boolean;
+  customSize?: Size;
+  block?: boolean;
+  link?: boolean;
+  justIcon?: boolean;
+  className?: string;
+  muiClasses?: Record<string, string>;
+  children?: React.ReactNode;
+}
+
+export default function RegularButton(props: RegularButtonProps) {
   const classes = useStyles();
   const {
-    color,
+    customColor: color,
     round,
     children,
     disabled,
     simple,
-    size,
+    customSize: size,
     block,
     link,
     justIcon,
@@ -23,45 +47,23 @@ export default function RegularButton(props) {
     muiClasses,
     ...rest
   } = props;
+
   const btnClasses = classNames({
     [classes.button]: true,
-    [classes[size]]: size,
-    [classes[color]]: color,
+    [size ? classes[size] : '']: size,
+    [color ? classes[color] : '']: color,
     [classes.round]: round,
     [classes.disabled]: disabled,
     [classes.simple]: simple,
     [classes.block]: block,
     [classes.link]: link,
     [classes.justIcon]: justIcon,
-    [className]: className,
+    [className || '']: className,
   });
+
   return (
     <Button {...rest} classes={muiClasses} className={btnClasses}>
       {children}
     </Button>
   );
 }
-
-RegularButton.propTypes = {
-  color: PropTypes.oneOf([
-    'primary',
-    'info',
-    'success',
-    'warning',
-    'danger',
-    'rose',
-    'white',
-    'transparent',
-  ]),
-  size: PropTypes.oneOf(['sm', 'lg']),
-  simple: PropTypes.bool,
-  round: PropTypes.bool,
-  disabled: PropTypes.bool,
-  block: PropTypes.bool,
-  link: PropTypes.bool,
-  justIcon: PropTypes.bool,
-  className: PropTypes.string,
-  // use this to pass the classes props from Material-UI
-  muiClasses: PropTypes.object,
-  children: PropTypes.node,
-};
