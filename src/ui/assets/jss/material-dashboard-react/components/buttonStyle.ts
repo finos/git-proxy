@@ -1,3 +1,4 @@
+import { createStyles, Theme } from '@material-ui/core/styles';
 import {
   grayColor,
   primaryColor,
@@ -9,76 +10,67 @@ import {
   whiteColor,
   blackColor,
   hexToRgb,
-} from '../../material-dashboard-react.js';
+} from '../../material-dashboard-react';
 
-const buttonStyle = {
+const buttonStyle = (theme: Theme) => createStyles({
   button: {
     minHeight: 'auto',
     minWidth: 'auto',
     backgroundColor: grayColor[0],
     color: whiteColor,
     boxShadow:
-      '0 2px 2px 0 rgba(' +
-      hexToRgb(grayColor[0]) +
-      ', 0.14), 0 3px 1px -2px rgba(' +
-      hexToRgb(grayColor[0]) +
-      ', 0.2), 0 1px 5px 0 rgba(' +
-      hexToRgb(grayColor[0]) +
-      ', 0.12)',
+      `0 2px 2px 0 rgba(${hexToRgb(grayColor[0])}, 0.14), 
+       0 3px 1px -2px rgba(${hexToRgb(grayColor[0])}, 0.2), 
+       0 1px 5px 0 rgba(${hexToRgb(grayColor[0])}, 0.12)`,
     border: 'none',
     borderRadius: '3px',
-    position: 'relative',
+    position: 'relative' as const,
     padding: '12px 30px',
     margin: '.3125rem 1px',
     fontSize: '12px',
-    fontWeight: '400',
-    textTransform: 'uppercase',
+    fontWeight: 400 as const,
+    textTransform: 'uppercase' as const,
     letterSpacing: '0',
     willChange: 'box-shadow, transform',
     transition:
-      // eslint-disable-next-line max-len
       'box-shadow 0.2s cubic-bezier(0.4, 0, 1, 1), background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
     lineHeight: '1.42857143',
-    textAlign: 'center',
-    whiteSpace: 'nowrap',
-    verticalAlign: 'middle',
-    touchAction: 'manipulation',
-    cursor: 'pointer',
+    textAlign: 'center' as const,
+    whiteSpace: 'nowrap' as const,
+    verticalAlign: 'middle' as const,
+    touchAction: 'manipulation' as const,
+    cursor: 'pointer' as const,
     '&:hover,&:focus': {
       color: whiteColor,
       backgroundColor: grayColor[0],
       boxShadow:
-        '0 14px 26px -12px rgba(' +
-        hexToRgb(grayColor[0]) +
-        ', 0.42), 0 4px 23px 0px rgba(' +
-        hexToRgb(blackColor) +
-        ', 0.12), 0 8px 10px -5px rgba(' +
-        hexToRgb(grayColor[0]) +
-        ', 0.2)',
+        `0 14px 26px -12px rgba(${hexToRgb(grayColor[0])}, 0.42), 
+         0 4px 23px 0px rgba(${hexToRgb(blackColor)}, 0.12), 
+         0 8px 10px -5px rgba(${hexToRgb(grayColor[0])}, 0.2)`,
     },
     '& .fab,& .fas,& .far,& .fal, &.material-icons': {
-      position: 'relative',
-      display: 'inline-block',
+      position: 'relative' as const,
+      display: 'inline-block' as const,
       top: '0',
       marginTop: '-1em',
       marginBottom: '-1em',
       fontSize: '1.1rem',
       marginRight: '4px',
-      verticalAlign: 'middle',
+      verticalAlign: 'middle' as const,
     },
     '& svg': {
-      position: 'relative',
-      display: 'inline-block',
+      position: 'relative' as const,
+      display: 'inline-block' as const,
       top: '0',
       width: '18px',
       height: '18px',
       marginRight: '4px',
-      verticalAlign: 'middle',
+      verticalAlign: 'middle' as const,
     },
     '&$justIcon': {
       '& .fab,& .fas,& .far,& .fal,& .material-icons': {
         marginTop: '0px',
-        position: 'absolute',
+        position: 'absolute' as const,
         width: '100%',
         transform: 'none',
         left: '0px',
@@ -98,133 +90,85 @@ const buttonStyle = {
   rose: {
     backgroundColor: roseColor[0],
     boxShadow:
-      '0 2px 2px 0 rgba(' +
-      hexToRgb(roseColor[0]) +
-      ', 0.14), 0 3px 1px -2px rgba(' +
-      hexToRgb(roseColor[0]) +
-      ', 0.2), 0 1px 5px 0 rgba(' +
-      hexToRgb(roseColor[0]) +
-      ', 0.12)',
+      `0 2px 2px 0 rgba(${hexToRgb(roseColor[0])}, 0.14), 
+       0 3px 1px -2px rgba(${hexToRgb(roseColor[0])}, 0.2), 
+       0 1px 5px 0 rgba(${hexToRgb(roseColor[0])}, 0.12)`,
     '&:hover,&:focus': {
       backgroundColor: roseColor[0],
       boxShadow:
-        '0 14px 26px -12px rgba(' +
-        hexToRgb(roseColor[0]) +
-        ', 0.42), 0 4px 23px 0px rgba(' +
-        hexToRgb(blackColor) +
-        ', 0.12), 0 8px 10px -5px rgba(' +
-        hexToRgb(roseColor[0]) +
-        ', 0.2)',
+        `0 14px 26px -12px rgba(${hexToRgb(roseColor[0])}, 0.42), 
+         0 4px 23px 0px rgba(${hexToRgb(blackColor)}, 0.12), 
+         0 8px 10px -5px rgba(${hexToRgb(roseColor[0])}, 0.2)`,
     },
   },
   primary: {
     backgroundColor: primaryColor[0],
     boxShadow:
-      '0 2px 2px 0 rgba(' +
-      hexToRgb(primaryColor[0]) +
-      ', 0.14), 0 3px 1px -2px rgba(' +
-      hexToRgb(primaryColor[0]) +
-      ', 0.2), 0 1px 5px 0 rgba(' +
-      hexToRgb(primaryColor[0]) +
-      ', 0.12)',
+      `0 2px 2px 0 rgba(${hexToRgb(primaryColor[0])}, 0.14), 
+       0 3px 1px -2px rgba(${hexToRgb(primaryColor[0])}, 0.2), 
+       0 1px 5px 0 rgba(${hexToRgb(primaryColor[0])}, 0.12)`,
     '&:hover,&:focus': {
       backgroundColor: primaryColor[0],
       boxShadow:
-        '0 14px 26px -12px rgba(' +
-        hexToRgb(primaryColor[0]) +
-        ', 0.42), 0 4px 23px 0px rgba(' +
-        hexToRgb(blackColor) +
-        ', 0.12), 0 8px 10px -5px rgba(' +
-        hexToRgb(primaryColor[0]) +
-        ', 0.2)',
+        `0 14px 26px -12px rgba(${hexToRgb(primaryColor[0])}, 0.42), 
+         0 4px 23px 0px rgba(${hexToRgb(blackColor)}, 0.12), 
+         0 8px 10px -5px rgba(${hexToRgb(primaryColor[0])}, 0.2)`,
     },
   },
   info: {
     backgroundColor: infoColor[0],
     boxShadow:
-      '0 2px 2px 0 rgba(' +
-      hexToRgb(infoColor[0]) +
-      ', 0.14), 0 3px 1px -2px rgba(' +
-      hexToRgb(infoColor[0]) +
-      ', 0.2), 0 1px 5px 0 rgba(' +
-      hexToRgb(infoColor[0]) +
-      ', 0.12)',
+      `0 2px 2px 0 rgba(${hexToRgb(infoColor[0])}, 0.14), 
+       0 3px 1px -2px rgba(${hexToRgb(infoColor[0])}, 0.2), 
+       0 1px 5px 0 rgba(${hexToRgb(infoColor[0])}, 0.12)`,
     '&:hover,&:focus': {
       backgroundColor: infoColor[0],
       boxShadow:
-        '0 14px 26px -12px rgba(' +
-        hexToRgb(infoColor[0]) +
-        ', 0.42), 0 4px 23px 0px rgba(' +
-        hexToRgb(blackColor) +
-        ', 0.12), 0 8px 10px -5px rgba(' +
-        hexToRgb(infoColor[0]) +
-        ', 0.2)',
+        `0 14px 26px -12px rgba(${hexToRgb(infoColor[0])}, 0.42), 
+         0 4px 23px 0px rgba(${hexToRgb(blackColor)}, 0.12), 
+         0 8px 10px -5px rgba(${hexToRgb(infoColor[0])}, 0.2)`,
     },
   },
   success: {
     backgroundColor: successColor[0],
     boxShadow:
-      '0 2px 2px 0 rgba(' +
-      hexToRgb(successColor[0]) +
-      ', 0.14), 0 3px 1px -2px rgba(' +
-      hexToRgb(successColor[0]) +
-      ', 0.2), 0 1px 5px 0 rgba(' +
-      hexToRgb(successColor[0]) +
-      ', 0.12)',
+      `0 2px 2px 0 rgba(${hexToRgb(successColor[0])}, 0.14), 
+       0 3px 1px -2px rgba(${hexToRgb(successColor[0])}, 0.2), 
+       0 1px 5px 0 rgba(${hexToRgb(successColor[0])}, 0.12)`,
     '&:hover,&:focus': {
       backgroundColor: successColor[0],
       boxShadow:
-        '0 14px 26px -12px rgba(' +
-        hexToRgb(successColor[0]) +
-        ', 0.42), 0 4px 23px 0px rgba(' +
-        hexToRgb(blackColor) +
-        ', 0.12), 0 8px 10px -5px rgba(' +
-        hexToRgb(successColor[0]) +
-        ', 0.2)',
+        `0 14px 26px -12px rgba(${hexToRgb(successColor[0])}, 0.42), 
+         0 4px 23px 0px rgba(${hexToRgb(blackColor)}, 0.12), 
+         0 8px 10px -5px rgba(${hexToRgb(successColor[0])}, 0.2)`,
     },
   },
   warning: {
     backgroundColor: warningColor[0],
     boxShadow:
-      '0 2px 2px 0 rgba(' +
-      hexToRgb(warningColor[0]) +
-      ', 0.14), 0 3px 1px -2px rgba(' +
-      hexToRgb(warningColor[0]) +
-      ', 0.2), 0 1px 5px 0 rgba(' +
-      hexToRgb(warningColor[0]) +
-      ', 0.12)',
+      `0 2px 2px 0 rgba(${hexToRgb(warningColor[0])}, 0.14), 
+       0 3px 1px -2px rgba(${hexToRgb(warningColor[0])}, 0.2), 
+       0 1px 5px 0 rgba(${hexToRgb(warningColor[0])}, 0.12)`,
     '&:hover,&:focus': {
       backgroundColor: warningColor[0],
       boxShadow:
-        '0 14px 26px -12px rgba(' +
-        hexToRgb(warningColor[0]) +
-        ', 0.42), 0 4px 23px 0px rgba(' +
-        hexToRgb(blackColor) +
-        ', 0.12), 0 8px 10px -5px rgba(' +
-        hexToRgb(warningColor[0]) +
-        ', 0.2)',
+        `0 14px 26px -12px rgba(${hexToRgb(warningColor[0])}, 0.42), 
+         0 4px 23px 0px rgba(${hexToRgb(blackColor)}, 0.12), 
+         0 8px 10px -5px rgba(${hexToRgb(warningColor[0])}, 0.2)`,
     },
   },
   danger: {
     backgroundColor: dangerColor[0],
     boxShadow:
-      '0 2px 2px 0 rgba(' +
-      hexToRgb(dangerColor[0]) +
-      ', 0.14), 0 3px 1px -2px rgba(' +
-      hexToRgb(dangerColor[0]) +
-      ', 0.2), 0 1px 5px 0 rgba(' +
-      hexToRgb(dangerColor[0]) +
-      ', 0.12)',
+      `0 2px 2px 0 rgba(${hexToRgb(dangerColor[0])}, 0.14), 
+       0 3px 1px -2px rgba(${hexToRgb(dangerColor[0])}, 0.2), 
+       0 1px 5px 0 rgba(${hexToRgb(dangerColor[0])}, 0.12)`,
     '&:hover,&:focus': {
       backgroundColor: dangerColor[0],
       boxShadow:
-        '0 14px 26px -12px rgba(' +
-        hexToRgb(dangerColor[0]) +
-        ', 0.42), 0 4px 23px 0px rgba(' +
-        hexToRgb(blackColor) +
-        ', 0.12), 0 8px 10px -5px rgba(' +
-        hexToRgb(dangerColor[0]) +
-        ', 0.2)',
+        `0 14px 26px -12px rgba(${hexToRgb(dangerColor[0])}, 0.42), 
+         0 4px 23px 0px rgba(${hexToRgb(blackColor)}, 0.12), 
+         0 8px 10px -5px rgba(${hexToRgb(dangerColor[0])}, 0.2)`,
     },
   },
   simple: {
@@ -273,7 +217,7 @@ const buttonStyle = {
   },
   disabled: {
     opacity: '0.65',
-    pointerEvents: 'none',
+    pointerEvents: 'none' as const,
   },
   lg: {
     padding: '1.125rem 2.25rem',
@@ -338,6 +282,6 @@ const buttonStyle = {
       },
     },
   },
-};
+});
 
 export default buttonStyle;
