@@ -49,28 +49,19 @@
         "baseDN": "",
         "searchBase": ""
       }
-    },
+    },    
     {
       "type": "openidconnect",
-      "enabled": false,
+      "enabled": true,
       "oidcConfig": {
-        "issuer": "",
-        "clientID": "",
-        "clientSecret": "",
-        "authorizationURL": "",
-        "tokenURL": "",
-        "userInfoURL": "",
-        "callbackURL": "",
-        "scope": ""
-      }
-    },
-    {
-      "type": "jwt",
-      "enabled": false,
-      "jwtConfig": {
-        "clientID": "",
-        "authorityURL": "",
-        "expectedAudience": ""
+        "issuer": "https://accounts.google.com",
+        "clientID": "1009968223893-u92qq6itk7ej5008o4174gjubs5lhorg.apps.googleusercontent.com",
+        "clientSecret": "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",
+        "authorizationURL": "https://accounts.google.com/o/oauth2/auth",
+        "tokenURL": "https://oauth2.googleapis.com/token",
+        "userInfoURL": "https://openidconnect.googleapis.com/v1/userinfo",
+        "callbackURL": "http://localhost:8080/api/auth/oidc/callback",
+        "scope": "openid email profile"
       }
     }
   ],
@@ -120,5 +111,15 @@
   "urlShortener": "",
   "contactEmail": "",
   "csrfProtection": true,
-  "plugins": []
+  "plugins": [],
+  "apiAuthentication": [
+    {
+      "type": "jwt",
+      "enabled": true,
+      "jwtConfig": {
+        "clientID": "1009968223893-u92qq6itk7ej5008o4174gjubs5lhorg.apps.googleusercontent.com",
+        "authorityURL": "https://accounts.google.com"
+      }
+    }
+  ]
 }

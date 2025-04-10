@@ -2,7 +2,6 @@ const passport = require("passport");
 const local = require('./local');
 const activeDirectory = require('./activeDirectory');
 const oidc = require('./oidc');
-const jwt = require('./jwt');
 const config = require('../../config');
 
 // Allows obtaining strategy config function and type
@@ -11,7 +10,6 @@ const authStrategies = {
   local: local,
   activedirectory: activeDirectory,
   openidconnect: oidc,
-  jwt: jwt,
 };
 
 const configure = async () => {

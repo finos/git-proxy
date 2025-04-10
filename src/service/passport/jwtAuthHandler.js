@@ -65,8 +65,8 @@ async function validateJwt(token, authorityUrl, clientID, expectedAudience) {
 
 const jwtAuthHandler = () => {
   return async (req, res, next) => {
-    const authMethods = require('../../config').getAuthMethods();
-    const jwtAuthMethod = authMethods.find((method) => method.type.toLowerCase() === "jwt");
+    const apiAuthMethods = require('../../config').getAPIAuthMethods();
+    const jwtAuthMethod = apiAuthMethods.find((method) => method.type.toLowerCase() === "jwt");
       if (!jwtAuthMethod) {
           return next();
       }
