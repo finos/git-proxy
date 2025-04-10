@@ -34,12 +34,12 @@ interface RegularButtonProps extends ButtonProps {
 export default function RegularButton(props: RegularButtonProps) {
   const classes = useStyles();
   const {
-    customColor: color,
+    color,
     round,
     children,
     disabled,
     simple,
-    customSize: size,
+    size,
     block,
     link,
     justIcon,
@@ -50,8 +50,8 @@ export default function RegularButton(props: RegularButtonProps) {
 
   const btnClasses = classNames({
     [classes.button]: true,
-    [size ? classes[size] : '']: size,
-    [color ? classes[color] : '']: color,
+    [classes[size as Size]]: size,
+    [classes[color as Color]]: color,
     [classes.round]: round,
     [classes.disabled]: disabled,
     [classes.simple]: simple,
