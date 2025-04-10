@@ -10,6 +10,7 @@ if (fs.existsSync(userSettingsPath)) {
 let _authorisedList = defaultSettings.authorisedList;
 let _database = defaultSettings.sink;
 let _authentication = defaultSettings.authentication;
+let _apiAuthentication = defaultSettings.apiAuthentication;
 let _tempPassword = defaultSettings.tempPassword;
 let _proxyUrl = defaultSettings.proxyUrl;
 let _api = defaultSettings.api;
@@ -80,6 +81,24 @@ const getAuthMethods = () => {
   }
 
   const enabledAuthMethods = _authentication.filter(auth => auth.enabled);
+
+  if (enabledAuthMethods.length === 0) {
+    throw new Error("No authentication method enabled.");
+  }
+
+  return enabledAuthMethods;
+};
+
+/**
+ * Get the list of enabled authentication methods for API endpoints
+ * @return {Array} List of enabled authentication methods
+ */
+const getAPIAuthMethods = () => {
+  if (_userSettings !== null && _userSettings.apiAuthentication) {
+    _apiAuthentication = _userSettings.apiAuthentication;
+  }
+
+  const enabledAuthMethods = _apiAuthentication.filter(auth => auth.enabled);
 
   if (enabledAuthMethods.length === 0) {
     throw new Error("No authentication method enabled.");
@@ -205,6 +224,7 @@ exports.getAuthorisedList = getAuthorisedList;
 exports.getDatabase = getDatabase;
 exports.logConfiguration = logConfiguration;
 exports.getAuthMethods = getAuthMethods;
+exports.getAPIAuthMethods = getAPIAuthMethods;
 exports.getTempPasswordConfig = getTempPasswordConfig;
 exports.getCookieSecret = getCookieSecret;
 exports.getSessionMaxAgeHours = getSessionMaxAgeHours;

@@ -78,6 +78,13 @@
           "type": "object"
         }
       }
+    },
+    "apiAuthentication": {
+      "description": "List of authentication sources for API endpoints. May be empty, in which case all endpoints are public.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/authentication"
+      }
     }
   },
   "definitions": {
