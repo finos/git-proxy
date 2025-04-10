@@ -10,7 +10,32 @@
     "sessionMaxAgeHours": { "type": "number" },
     "api": {
       "description": "Third party APIs",
-      "type": "object"
+      "type": "object",
+      "properties": {
+        "ls": {
+          "type": "object",
+          "description": "Configuration used in conjunction with ActiveDirectory auth, which relates to a REST API used to check user group membership, as opposed to direct querying via LDAP.<br />If this configuration is set direct querying of group membership via LDAP will be disabled.",
+          "properties": {
+            "userInADGroup": {
+              "type": "string",
+              "description": "URL template for a GET request that confirms a user's membership of a specific group. Should respond with a non-empty 200 status if the user is a member of the group, an empty response or non-200 status indicates that the user is not a group member. If set, this URL will be queried and direct queries via LDAP will be disabled. The template should contain the following string placeholders, which will be replaced to produce the final URL:<ul><li>\"&lt;domain&gt;\": AD domain,</li><li>\"&lt;name&gt;\": The group name to check membership of.</li><li>\"&lt;id&gt;\": The username to check group membership for.</li></ul>",
+              "examples": [
+                "https://somedomain.com/some/path/checkUserGroups?domain=<domain>&name=<name>&id=<id>"
+              ]
+            }
+          }
+        },
+        "github": {
+          "type": "object",
+          "properties": {
+            "baseUrl": {
+              "type": "string",
+              "format": "uri",
+              "examples": ["https://api.github.com"]
+            }
+          }
+        }
+      }
     },
     "commitConfig": {
       "description": "Enforce rules and patterns on commits including e-mail and message",
@@ -103,10 +128,39 @@
     },
     "authentication": {
       "type": "object",
+      "description": "Configuration for an authentication source",
       "properties": {
-        "type": { "type": "string" },
+        "type": { "type": "string", "enum": ["local", "ActiveDirectory", "OpenIdConnect"] },
         "enabled": { "type": "boolean" },
-        "options": { "type": "object" }
+        "adminGroup": {
+          "type": "string",
+          "description": "Group that indicates that a user is an admin"
+        },
+        "userGroup": {
+          "type": "string",
+          "description": "Group that indicates that a user should be able to login to the Git Proxy UI and can work as a reviewer"
+        },
+        "domain": { "type": "string", "description": "Active Directory domain" },
+        "adConfig": {
+          "type": "object",
+          "description": "Additional Active Directory configuration supporting LDAP connection which can be used to confirm group membership. For the full set of available options see the activedirectory 2 NPM module docs at https://www.npmjs.com/package/activedirectory2#activedirectoryoptions <br /><br />Please note that if the Third Party APIs config `api.ls.userInADGroup` is set then the REST API it represents is used in preference to direct querying of group memebership via LDAP.",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "Active Directory server to connect to, e.g. `ldap://ad.example.com`."
+            },
+            "baseDN": {
+              "type": "string",
+              "description": "The root DN from which all searches will be performed, e.g. `dc=example,dc=com`."
+            },
+            "username": {
+              "type": "string",
+              "description": "An account name capable of performing the operations desired."
+            },
+            "password": { "type": "string", "description": "Password for the given `username`." }
+          },
+          "required": ["url", "baseDN", "username", "password"]
+        }
       },
       "required": ["type", "enabled"]
     }

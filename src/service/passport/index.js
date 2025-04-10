@@ -19,7 +19,7 @@ const configure = async () => {
       _passport = await oidc.configure();
       break;
     default:
-      throw Error(`uknown authentication type ${type}`);
+      throw Error(`unknown authentication type ${type}`);
   }
   if (!_passport.type) {
     _passport.type = type;
