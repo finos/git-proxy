@@ -1,6 +1,5 @@
 import React from 'react';
 import classNames from 'classnames';
-import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import Snack from '@material-ui/core/Snackbar';
 import IconButton from '@material-ui/core/IconButton';
@@ -9,31 +8,47 @@ import styles from '../../assets/jss/material-dashboard-react/components/snackba
 
 const useStyles = makeStyles(styles);
 
-export default function Snackbar(props) {
+type Color = 'info' | 'success' | 'warning' | 'danger' | 'primary';
+type Placement = 'tl' | 'tr' | 'tc' | 'br' | 'bl' | 'bc';
+
+interface SnackbarProps {
+  message: React.ReactNode;
+  color?: Color;
+  close?: boolean;
+  icon?: React.ComponentType<{ className: string }>;
+  place?: Placement;
+  open: boolean;
+  rtlActive?: boolean;
+  closeNotification: () => void;
+}
+
+const Snackbar: React.FC<SnackbarProps> = (props) => {
   const classes = useStyles();
-  const { message, color, close, icon, place, open, rtlActive } = props;
-  let action = [];
+  const { message, color = 'info', close, icon: Icon, place = 'tr', open, rtlActive } = props;
+
+  let action: React.ReactNode[] = [];
   const messageClasses = classNames({
-    [classes.iconMessage]: icon !== undefined,
+    [classes.iconMessage]: Icon !== undefined,
   });
-  if (close !== undefined) {
+
+  if (close) {
     action = [
       <IconButton
         className={classes.iconButton}
         key='close'
         aria-label='Close'
         color='inherit'
-        onClick={() => props.closeNotification()}
+        onClick={props.closeNotification}
       >
         <Close className={classes.close} />
       </IconButton>,
     ];
   }
 
-  const calculateHorizontal = () => {
-    if (place.indexOf('l') !== -1) {
+  const calculateHorizontal = (): 'left' | 'center' | 'right' => {
+    if (place.includes('l')) {
       return 'left';
-    } else if (place.indexOf('c') !== -1) {
+    } else if (place.includes('c')) {
       return 'center';
     }
     return 'right';
@@ -42,35 +57,26 @@ export default function Snackbar(props) {
   return (
     <Snack
       anchorOrigin={{
-        vertical: place.indexOf('t') === -1 ? 'bottom' : 'top',
+        vertical: place.includes('t') ? 'top' : 'bottom',
         horizontal: calculateHorizontal(),
       }}
       open={open}
       message={
         <div>
-          {icon !== undefined ? <props.icon className={classes.icon} /> : null}
+          {Icon && <Icon className={classes.icon} />}
           <span className={messageClasses}>{message}</span>
         </div>
       }
       action={action}
       ContentProps={{
         classes: {
-          root: classes.root + ' ' + classes[color],
+          root: `${classes.root} ${classes[color]}`,
           message: classes.message,
           action: classNames({ [classes.actionRTL]: rtlActive }),
         },
       }}
     />
   );
-}
-
-Snackbar.propTypes = {
-  message: PropTypes.node.isRequired,
-  color: PropTypes.oneOf(['info', 'success', 'warning', 'danger', 'primary']),
-  close: PropTypes.bool,
-  icon: PropTypes.object,
-  place: PropTypes.oneOf(['tl', 'tr', 'tc', 'br', 'bl', 'bc']),
-  open: PropTypes.bool,
-  rtlActive: PropTypes.bool,
-  closeNotification: PropTypes.func,
 };
+
+export default Snackbar;
