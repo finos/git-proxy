@@ -3,7 +3,6 @@ import bodyParser from 'body-parser';
 import http from 'http';
 import https from 'https';
 import fs from 'fs';
-import path from 'path';
 import { router } from './routes';
 import {
   getAuthorisedList,
@@ -24,8 +23,8 @@ const options = {
   inflate: true,
   limit: '100000kb',
   type: '*/*',
-  key: getTLSEnabled() ? fs.readFileSync(path.join(__dirname, getTLSKeyPemPath())) : undefined,
-  cert: getTLSEnabled() ? fs.readFileSync(path.join(__dirname, getTLSCertPemPath())) : undefined,
+  key: getTLSEnabled() ? fs.readFileSync(getTLSKeyPemPath()) : undefined,
+  cert: getTLSEnabled() ? fs.readFileSync(getTLSCertPemPath()) : undefined,
 };
 
 const proxyPreparations = async () => {
