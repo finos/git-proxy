@@ -22,6 +22,11 @@ const TEST_REPO_CONFIG = {
   url: 'https://github.com/finos/git-proxy-test.git',
 };
 const TEST_REPO = 'finos/git-proxy-test.git';
+//user for test cases
+const TEST_USER = 'testuser';
+const TEST_PASSWORD = 'testpassword';
+const TEST_EMAIL = 'jane.doe@email.com';
+const TEST_GIT_ACCOUNT = 'testGitAccount';
 
 describe('test git-proxy-cli', function () {
   // *** help ***
@@ -87,16 +92,12 @@ describe('test git-proxy-cli', function () {
   // *** login ***
 
   describe('test git-proxy-cli :: login', function () {
-    const testUser = 'testuser';
-    const testPassword = 'testpassword';
-    const testEmail = 'jane.doe@email.com';
-
     before(async function () {
-      await helper.addUserToDb(testUser, testPassword, testEmail, 'testGitAccount');
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
     });
 
     after(async function () {
-      await helper.removeUserFromDb(testUser);
+      await helper.removeUserFromDb(TEST_USER);
     });
 
     it('login shoud fail when server is down', async function () {
@@ -140,9 +141,9 @@ describe('test git-proxy-cli', function () {
     });
 
     it('login shoud be successful with valid credentials (non-admin)', async function () {
-      const cli = `npx -- @finos/git-proxy-cli login --username ${testUser} --password ${testPassword}`;
+      const cli = `npx -- @finos/git-proxy-cli login --username ${TEST_USER} --password ${TEST_PASSWORD}`;
       const expectedExitCode = 0;
-      const expectedMessages = [`Login "${testUser}" <${testEmail}>: OK`];
+      const expectedMessages = [`Login "${TEST_USER}" <${TEST_EMAIL}>: OK`];
       const expectedErrorMessages = null;
       try {
         await helper.startServer(service);
@@ -219,11 +220,13 @@ describe('test git-proxy-cli', function () {
 
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
+      await helper.addGitPushToDb(pushId, TEST_USER, TEST_EMAIL, TEST_REPO);
     });
 
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
+      await helper.removeUserFromDb(TEST_USER);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
     });
 
@@ -294,11 +297,13 @@ describe('test git-proxy-cli', function () {
 
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
+      await helper.addGitPushToDb(pushId, TEST_USER, TEST_EMAIL, TEST_REPO);
     });
 
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
+      await helper.removeUserFromDb(TEST_USER);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
     });
 
@@ -415,11 +420,13 @@ describe('test git-proxy-cli', function () {
 
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
+      await helper.addGitPushToDb(pushId, TEST_USER, TEST_EMAIL, TEST_REPO);
     });
 
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
+      await helper.removeUserFromDb(TEST_USER);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
     });
 
@@ -487,17 +494,16 @@ describe('test git-proxy-cli', function () {
 
   describe('test git-proxy-cli :: git push administration', function () {
     const pushId = `0000000000000000000000000000000000000000__${Date.now()}`;
-    const gitAccount = 'testGitAccount1';
 
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addUserToDb('testuser1', 'testpassword', 'test@email.com', gitAccount);
-      await helper.addGitPushToDb(pushId, TEST_REPO, gitAccount);
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
+      await helper.addGitPushToDb(pushId, TEST_REPO, TEST_USER, TEST_EMAIL);
     });
 
     after(async function () {
-      await helper.removeUserFromDb('testuser1');
       await helper.removeGitPushFromDb(pushId);
+      await helper.removeUserFromDb(TEST_USER);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
     });
 

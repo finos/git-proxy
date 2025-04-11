@@ -49,7 +49,7 @@ router.post('/:id/reject', async (req, res) => {
 
     if (list.length === 0) {
       res.status(401).send({
-        message: `The user with email ${committerEmail} could not be found`,
+        message: `There was no registered user with the committer's email address: ${committerEmail}`,
       });
       return;
     }
@@ -104,7 +104,7 @@ router.post('/:id/authorise', async (req, res) => {
 
     if (list.length === 0) {
       res.status(401).send({
-        message: `The email address ${committerEmail} could not be found`,
+        message: `There was no registered user with the committer's email address: ${committerEmail}`,
       });
       return;
     }
