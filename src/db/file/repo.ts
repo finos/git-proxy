@@ -15,7 +15,7 @@ const isBlank = (str: string) => {
   return !str || /^\s*$/.test(str);
 };
 
-export const getRepos = async (query: any = {}) => {
+export  const getRepos = async (query: any = {}) => {
   return new Promise<Repo[]>((resolve, reject) => {
     db.find(query, (err: Error, docs: Repo[]) => {
       if (err) {
