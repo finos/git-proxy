@@ -1,9 +1,16 @@
 import { existsSync, readFileSync } from 'fs';
+const ConfigLoader = require('./ConfigLoader');
+const { validate } = require('./file'); // Import the validate function
 
 import defaultSettings from '../../proxy.config.json';
 import { configFile } from './file';
-import { Authentication, AuthorisedRepo, Database, TempPasswordConfig, UserSettings } from './types';
-
+import {
+  Authentication,
+  AuthorisedRepo,
+  Database,
+  TempPasswordConfig,
+  UserSettings,
+} from './types';
 
 let _userSettings: UserSettings | null = null;
 if (existsSync(configFile)) {
@@ -34,9 +41,14 @@ export const getProxyUrl = () => {
   if (_userSettings !== null && _userSettings.proxyUrl) {
     _proxyUrl = _userSettings.proxyUrl;
   }
-
   return _proxyUrl;
 };
+
+// Initialize configuration with defaults and user settings
+let _config = { ...defaultSettings, ...(_userSettings || {}) };
+
+// Create config loader instance
+const configLoader = new ConfigLoader(_config);
 
 // Gets a list of authorised repositories
 export const getAuthorisedList = () => {
@@ -68,8 +80,7 @@ export const getDatabase = () => {
       }
     }
   }
-
-  throw Error('No database cofigured!');
+  throw Error('No database configured!');
 };
 
 // Gets the configured authentication method, defaults to local
@@ -84,17 +95,10 @@ export const getAuthentication = () => {
       return auth;
     }
   }
-
-  throw Error('No authentication cofigured!');
+  throw Error('No authentication configured!');
 };
 
-// Log configuration to console
-export const logConfiguration = () => {
-  console.log(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
-  console.log(`data sink = ${JSON.stringify(getDatabase())}`);
-  console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
-};
-
+// Get API configuration
 export const getAPIs = () => {
   if (_userSettings && _userSettings.api) {
     _api = _userSettings.api;
@@ -102,6 +106,7 @@ export const getAPIs = () => {
   return _api;
 };
 
+// Get cookie secret
 export const getCookieSecret = () => {
   if (_userSettings && _userSettings.cookieSecret) {
     _cookieSecret = _userSettings.cookieSecret;
@@ -109,6 +114,7 @@ export const getCookieSecret = () => {
   return _cookieSecret;
 };
 
+// Get session max age hours
 export const getSessionMaxAgeHours = () => {
   if (_userSettings && _userSettings.sessionMaxAgeHours) {
     _sessionMaxAgeHours = _userSettings.sessionMaxAgeHours;
@@ -116,7 +122,7 @@ export const getSessionMaxAgeHours = () => {
   return _sessionMaxAgeHours;
 };
 
-// Get commit related configuration
+// Get commit config
 export const getCommitConfig = () => {
   if (_userSettings && _userSettings.commitConfig) {
     _commitConfig = _userSettings.commitConfig;
@@ -124,7 +130,7 @@ export const getCommitConfig = () => {
   return _commitConfig;
 };
 
-// Get attestation related configuration
+// Get attestation config
 export const getAttestationConfig = () => {
   if (_userSettings && _userSettings.attestationConfig) {
     _attestationConfig = _userSettings.attestationConfig;
@@ -132,7 +138,7 @@ export const getAttestationConfig = () => {
   return _attestationConfig;
 };
 
-// Get private organizations related configuration
+// Get private organizations
 export const getPrivateOrganizations = () => {
   if (_userSettings && _userSettings.privateOrganizations) {
     _privateOrganizations = _userSettings.privateOrganizations;
@@ -148,7 +154,7 @@ export const getURLShortener = () => {
   return _urlShortener;
 };
 
-// Get contact e-mail address
+// Get contact email
 export const getContactEmail = () => {
   if (_userSettings && _userSettings.contactEmail) {
     _contactEmail = _userSettings.contactEmail;
@@ -156,7 +162,7 @@ export const getContactEmail = () => {
   return _contactEmail;
 };
 
-// Get CSRF protection flag
+// Get CSRF protection
 export const getCSRFProtection = () => {
   if (_userSettings && _userSettings.csrfProtection) {
     _csrfProtection = _userSettings.csrfProtection;
@@ -164,14 +170,15 @@ export const getCSRFProtection = () => {
   return _csrfProtection;
 };
 
-// Get loadable push plugins
+// Get plugins
 export const getPlugins = () => {
   if (_userSettings && _userSettings.plugins) {
     _plugins = _userSettings.plugins;
   }
   return _plugins;
-}
+};
 
+// Get SSL key path
 export const getSSLKeyPath = () => {
   if (_userSettings && _userSettings.sslKeyPemPath) {
     _sslKeyPath = _userSettings.sslKeyPemPath;
@@ -182,6 +189,7 @@ export const getSSLKeyPath = () => {
   return _sslKeyPath;
 };
 
+// Get SSL cert path
 export const getSSLCertPath = () => {
   if (_userSettings && _userSettings.sslCertPemPath) {
     _sslCertPath = _userSettings.sslCertPemPath;
@@ -192,9 +200,69 @@ export const getSSLCertPath = () => {
   return _sslCertPath;
 };
 
+// Get domains
 export const getDomains = () => {
   if (_userSettings && _userSettings.domains) {
     _domains = _userSettings.domains;
   }
   return _domains;
 };
+
+// Log configuration to console
+export const logConfiguration = () => {
+  console.log(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
+  console.log(`data sink = ${JSON.stringify(getDatabase())}`);
+  console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
+};
+
+// Function to handle configuration updates
+const handleConfigUpdate = async (newConfig: typeof _config) => {
+  console.log('Configuration updated from external source');
+  try {
+    // 1. Get proxy module dynamically to avoid circular dependency
+    const proxy = require('../proxy');
+
+    // 2. Stop existing services
+    await proxy.stop();
+
+    // 3. Update config
+    _config = newConfig;
+
+    // 4. Validate new configuration
+    validate();
+
+    // 5. Restart services with new config
+    await proxy.start();
+
+    console.log('Services restarted with new configuration');
+  } catch (error) {
+    console.error('Failed to apply new configuration:', error);
+    // Attempt to restart with previous config
+    try {
+      const proxy = require('../proxy');
+      await proxy.start();
+    } catch (startError) {
+      console.error('Failed to restart services:', startError);
+    }
+  }
+};
+
+// Handle configuration updates
+configLoader.on('configurationChanged', handleConfigUpdate);
+
+configLoader.on('configurationError', (error: Error) => {
+  console.error('Error loading external configuration:', error);
+});
+
+// Start the config loader if external sources are enabled
+configLoader.start().catch((error: Error) => {
+  console.error('Failed to start configuration loader:', error);
+});
+
+// Force reload of configuration
+const reloadConfiguration = async () => {
+  await configLoader.reloadConfiguration();
+};
+
+// Export reloadConfiguration
+export { reloadConfiguration };

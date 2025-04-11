@@ -19,11 +19,13 @@ const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.blockForAuth,
 ];
 
-const pullActionChain: ((req: any, action: Action) => Promise<Action>)[] = [proc.push.checkRepoInAuthorisedList];
+const pullActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
+  proc.push.checkRepoInAuthorisedList,
+];
 
 let pluginsInserted = false;
 
-export const executeChain = async (req: any, res: any): Promise<Action> => {
+const executeChain = async (req: any, res: any): Promise<Action> => {
   let action: Action = {} as Action;
   try {
     action = await proc.pre.parseAction(req);
@@ -52,12 +54,14 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
 };
 
 /**
- * The plugin loader used for the GitProxy chain.
+ * The plugin loader used for GitProxy chain.
  * @type {import('../plugin').PluginLoader}
  */
 let chainPluginLoader: PluginLoader;
 
-const getChain = async (action: Action): Promise<((req: any, action: Action) => Promise<Action>)[]> => {
+const getChain = async (
+  action: Action,
+): Promise<((req: any, action: Action) => Promise<Action>)[]> => {
   if (chainPluginLoader === undefined) {
     console.error(
       'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',
@@ -105,3 +109,5 @@ export default {
   executeChain,
   getChain,
 };
+
+export { executeChain, getChain, chainPluginLoader, pushActionChain, pullActionChain };
