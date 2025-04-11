@@ -99,9 +99,9 @@ const getCommitData = (contents: CommitContent[]) => {
       const indexOfMessages = formattedContent.indexOf('');
       console.log({ indexOfMessages });
 
-      const message = formattedContent
-        .slice(indexOfMessages + 1, formattedContent.length - 1)
-        .join(' ');
+      const message = formattedContent 
+        .slice(indexOfMessages + 1) 
+        .join(' ').trim(); 
       console.log({ message });
 
       const commitTimestamp = committer?.split(' ').reverse()[1];
