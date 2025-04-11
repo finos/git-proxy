@@ -55,6 +55,18 @@ export const getPush = async (id: string) => {
   });
 };
 
+export const deletePush = async (id: string) => {
+  return new Promise<void>((resolve, reject) => {
+    db.remove({ id }, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+};
+
 export const writeAudit = async (action: Action) => {
   return new Promise((resolve, reject) => {
     const options = { multi: false, upsert: true };
