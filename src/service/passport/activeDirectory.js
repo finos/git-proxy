@@ -29,16 +29,27 @@ const configure = () => {
             profile._json.userPrincipalName
           }, profile=${JSON.stringify(profile)}`,
         );
-        // First check to see if the user is in the usergroups
-        const isUser = await ldaphelper.isUserInAdGroup(profile.username, domain, userGroup);
-
-        if (!isUser) {
-          const message = `User it not a member of ${userGroup}`;
+        // First check to see if the user is in the AD user group
+        try {
+          const isUser = await ldaphelper.isUserInAdGroup(req, profile, ad, domain, userGroup);
+          if (!isUser) {
+            const message = `User it not a member of ${userGroup}`;
+            return done(message, null);
+          }
+        } catch (e) {
+          const message = `An error occurred while checking if the user is a member of the user group: ${JSON.stringify(e)}`;
           return done(message, null);
         }
-
+        
         // Now check if the user is an admin
-        const isAdmin = await ldaphelper.isUserInAdGroup(profile.username, domain, adminGroup);
+        let isAdmin = false;
+        try {
+          isAdmin = await ldaphelper.isUserInAdGroup(req, profile, ad, domain, adminGroup);
+
+        } catch (e) {
+          const message = `An error occurred while checking if the user is a member of the admin group: ${JSON.stringify(e)}`;
+          console.error(message, e);
+        }
 
         profile.admin = isAdmin;
         console.log(`passport.activeDirectory: ${profile.username} admin=${isAdmin}`);
@@ -65,6 +76,7 @@ const configure = () => {
   passport.deserializeUser(function (user, done) {
     done(null, user);
   });
+  passport.type = "ActiveDirectory";
 
   return passport;
 };
