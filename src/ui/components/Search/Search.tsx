@@ -4,8 +4,12 @@ import './Search.css';
 import InputAdornment from '@material-ui/core/InputAdornment';
 import SearchIcon from '@material-ui/icons/Search';
 
-export default function Search({ onSearch }) {
-  const handleSearchChange = (event) => {
+interface SearchProps {
+  onSearch: (query: string) => void;
+}
+
+const Search: React.FC<SearchProps> = ({ onSearch }) => {
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const query = event.target.value;
     onSearch(query);
   };
@@ -29,4 +33,6 @@ export default function Search({ onSearch }) {
       />
     </div>
   );
-}
+};
+
+export default Search;
