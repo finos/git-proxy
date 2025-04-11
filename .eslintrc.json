@@ -42,7 +42,7 @@
     "react/prop-types": "off",
     "require-jsdoc": "off",
     "no-async-promise-executor": "off",
-    "@typescript-eslint/no-explicit-any": "off", // temporary until TS refactor is complete
+    "@typescript-eslint/no-explicit-any": "warn", // temporary until TS refactor is complete
     "@typescript-eslint/no-unused-vars": "off", // temporary until TS refactor is complete
     "@typescript-eslint/no-require-imports": "off", // prevents error on old "require" imports
     "@typescript-eslint/no-unused-expressions": "off" // prevents error on test "expect" expressions

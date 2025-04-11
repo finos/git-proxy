@@ -29,7 +29,7 @@ module.exports = {
       },
       collapsible: true,
       collapsed: false,
-      items: ['configuration/overview', 'configuration/reference'],
+      items: ['configuration/overview', 'configuration/reference', 'configuration/pre-receive'],
     },
     {
       type: 'category',
@@ -44,6 +44,6 @@ module.exports = {
       collapsible: true,
       collapsed: false,
       items: ['development/contributing', 'development/plugins'],
-    }
+    },
   ],
 };
