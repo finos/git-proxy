@@ -42,14 +42,14 @@ router.post('/:id/reject', async (req, res) => {
     const push = await db.getPush(id);
     console.log({ push });
 
-    // Get the Internal Author of the push via their Git Account name
-    const gitAccountauthor = push.user;
-    const list = await db.getUsers({ gitAccount: gitAccountauthor });
+    // Get the committer of the push via their email
+    const committerEmail = push.userEmail;
+    const list = await db.getUsers({ email: committerEmail });
     console.log({ list });
 
     if (list.length === 0) {
       res.status(401).send({
-        message: `The git account ${gitAccountauthor} could not be found`,
+        message: `The user with email ${committerEmail} could not be found`,
       });
       return;
     }
@@ -97,14 +97,14 @@ router.post('/:id/authorise', async (req, res) => {
     const push = await db.getPush(id);
     console.log({ push });
 
-    // Get the Internal Author of the push via their Git Account name
-    const gitAccountauthor = push.user;
-    const list = await db.getUsers({ gitAccount: gitAccountauthor });
+    // Get the committer of the push via their email address
+    const committerEmail = push.userEmail;
+    const list = await db.getUsers({ email: committerEmail });
     console.log({ list });
 
     if (list.length === 0) {
       res.status(401).send({
-        message: `The git account ${gitAccountauthor} could not be found`,
+        message: `The email address ${committerEmail} could not be found`,
       });
       return;
     }
