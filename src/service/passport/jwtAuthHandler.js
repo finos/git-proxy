@@ -63,6 +63,28 @@ async function validateJwt(token, authorityUrl, clientID, expectedAudience) {
   }
 }
 
+/**
+ * Assign roles to the user based on the role mappings provided in the jwtConfig.
+ * 
+ * If no role mapping is provided, the user will not have any roles assigned (i.e. user.admin = false).
+ * @param {*} roleMapping the role mapping configuration
+ * @param {*} payload the JWT payload
+ * @param {*} user the req.user object to assign roles to
+ */
+function assignRoles(roleMapping, payload, user) {
+    if (roleMapping) {
+        for (const role of Object.keys(roleMapping)) {
+            const claimValuePair = roleMapping[role];
+            const claim = Object.keys(claimValuePair)[0];
+            const value = claimValuePair[claim];
+
+            if (payload[claim] && payload[claim] === value) {
+                user[role] = true;
+            } 
+        }
+    }
+}
+
 const jwtAuthHandler = () => {
   return async (req, res, next) => {
     const apiAuthMethods = require('../../config').getAPIAuthMethods();
@@ -80,7 +102,7 @@ const jwtAuthHandler = () => {
           return res.status(401).send("No token provided\n");
       }
 
-      const { clientID, authorityURL, expectedAudience } = jwtAuthMethod.jwtConfig;
+      const { clientID, authorityURL, expectedAudience, roleMapping } = jwtAuthMethod.jwtConfig;
       const audience = expectedAudience || clientID;
 
       if (!authorityURL) {
@@ -98,6 +120,8 @@ const jwtAuthHandler = () => {
       }
 
       req.user = verifiedPayload;
+      assignRoles(roleMapping, verifiedPayload, req.user);
+
       return next();
   }
 }
