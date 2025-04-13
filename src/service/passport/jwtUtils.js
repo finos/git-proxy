@@ -26,11 +26,12 @@ async function getJwks(authorityUrl) {
  * @param {*} authorityUrl the OIDC authority URL
  * @param {*} clientID the OIDC client ID 
  * @param {*} expectedAudience the expected audience for the token
+ * @param {*} getJwksInject the getJwks function to use (for dependency injection). Defaults to the built-in getJwks function.
  * @return {Promise<object>} the verified payload or an error
  */
-async function validateJwt(token, authorityUrl, clientID, expectedAudience) {
+async function validateJwt(token, authorityUrl, clientID, expectedAudience, getJwksInject = getJwks) {
   try {
-      const jwks = await getJwks(authorityUrl);
+      const jwks = await getJwksInject(authorityUrl);
 
       const decodedHeader = await jwt.decode(token, { complete: true });
       if (!decodedHeader || !decodedHeader.header || !decodedHeader.header.kid) {

@@ -111,3 +111,76 @@ describe('assignRoles', () => {
   });
 });
 
+describe('jwtAuthHandler', () => {
+  let req, res, next, jwtConfig, validVerifyResponse;
+
+  beforeEach(() => {
+    req = { header: sinon.stub(), isAuthenticated: sinon.stub(), user: {} };
+    res = { status: sinon.stub().returnsThis(), send: sinon.stub() };
+    next = sinon.stub();
+
+    jwtConfig = {
+      clientID: 'client-id',
+      authorityURL: 'https://accounts.google.com',
+      expectedAudience: 'expected-audience',
+      roleMapping: { 'admin': { 'admin': 'admin' } }
+    };
+
+    validVerifyResponse = {
+      header: { kid: '123' },
+      azp: 'client-id',
+      sub: 'user123',
+      admin: 'admin'
+    };
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should call next if user is authenticated', async () => {
+    req.isAuthenticated.returns(true);
+    await jwtAuthHandler()(req, res, next);
+    expect(next.calledOnce).to.be.true;
+  });
+
+  it('should return 401 if no token provided', async () => {
+    req.header.returns(null);
+    await jwtAuthHandler()(req, res, next);
+
+    expect(res.status.calledWith(401)).to.be.true;
+    expect(res.send.calledWith('No token provided\n')).to.be.true;
+  });
+
+  it('should return 500 if authorityURL not configured', async () => {
+    req.header.returns('Bearer fake-token');
+    jwtConfig.authorityURL = null;
+    sinon.stub(jwt, 'verify').returns(validVerifyResponse);
+
+    await jwtAuthHandler(jwtConfig)(req, res, next);
+
+    expect(res.status.calledWith(500)).to.be.true;
+    expect(res.send.calledWith('OIDC authority URL is not configured\n')).to.be.true;
+  });
+
+  it('should return 500 if clientID not configured', async () => {
+    req.header.returns('Bearer fake-token');
+    jwtConfig.clientID = null;
+    sinon.stub(jwt, 'verify').returns(validVerifyResponse);
+
+    await jwtAuthHandler(jwtConfig)(req, res, next);
+
+    expect(res.status.calledWith(500)).to.be.true;
+    expect(res.send.calledWith('OIDC client ID is not configured\n')).to.be.true;
+  });
+
+  it('should return 401 if JWT validation fails', async () => {
+    req.header.returns('Bearer fake-token');
+    sinon.stub(jwt, 'verify').throws(new Error('Invalid token'));
+
+    await jwtAuthHandler(jwtConfig)(req, res, next);
+
+    expect(res.status.calledWith(401)).to.be.true;
+    expect(res.send.calledWithMatch(/JWT validation failed:/)).to.be.true;
+  });
+});

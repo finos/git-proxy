@@ -1,6 +1,17 @@
-const jwtAuthHandler = () => {
+const { assignRoles, validateJwt } = require('./jwtUtils');
+
+/**
+ * Middleware function to handle JWT authentication.
+ * @param {*} overrideConfig optional configuration to override the default JWT configuration (e.g. for testing)
+ * @returns {Function} the middleware function 
+ */
+const jwtAuthHandler = (overrideConfig = null) => {
   return async (req, res, next) => {
-    const apiAuthMethods = require('../../config').getAPIAuthMethods();
+    const apiAuthMethods = 
+        overrideConfig
+          ? [{ type: "jwt", jwtConfig: overrideConfig }]
+          : require('../../config').getAPIAuthMethods();
+
     const jwtAuthMethod = apiAuthMethods.find((method) => method.type.toLowerCase() === "jwt");
       if (!jwtAuthMethod) {
           return next();
