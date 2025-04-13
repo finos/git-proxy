@@ -4,8 +4,8 @@ const axios = require('axios');
 const jwt = require('jsonwebtoken');
 const { jwkToBuffer } = require('jwk-to-pem');
 
-const { getJwks, validateJwt } = require('../src/service/passport/jwtUtils');
-const { jwtAuthHandler } = require('../src/service/passport/jwtAuthHandler');
+const { assignRoles, getJwks, validateJwt } = require('../src/service/passport/jwtUtils');
+const jwtAuthHandler = require('../src/service/passport/jwtAuthHandler');
 
 describe('getJwks', () => {
   it('should fetch JWKS keys from authority', async () => {
@@ -70,6 +70,44 @@ describe('validateJwt', () => {
 
     const { error } = await validateJwt('bad.token', 'https://issuer.com', 'client-id', 'client-id', getJwksStub);
     expect(error).to.include('Invalid JWT');
+  });
+});
+
+describe('assignRoles', () => {
+  it('should assign admin role based on claim', () => {
+    const user = { username: 'admin-user' };
+    const payload = { admin: 'admin' };
+    const mapping = { admin: { 'admin': 'admin' } };
+
+    assignRoles(mapping, payload, user);
+    expect(user.admin).to.be.true;
+  });
+
+  it('should assign multiple roles based on claims', () => {
+    const user = { username: 'multi-role-user' };
+    const payload = { 'custom-claim-admin': 'custom-value', 'editor': 'editor' };
+    const mapping = { admin: { 'custom-claim-admin': 'custom-value' }, editor: { 'editor': 'editor' } };
+
+    assignRoles(mapping, payload, user);
+    expect(user.admin).to.be.true;
+    expect(user.editor).to.be.true;
+  });
+
+  it('should not assign role if claim mismatch', () => {
+    const user = { username: 'basic-user' };
+    const payload = { admin: 'nope' };
+    const mapping = { admin: { admin: 'admin' } };
+
+    assignRoles(mapping, payload, user);
+    expect(user.admin).to.be.undefined;
+  });
+
+  it('should not assign role if no mapping provided', () => {
+    const user = { username: 'no-role-user' };
+    const payload = { admin: 'admin' };
+
+    assignRoles(null, payload, user);
+    expect(user.admin).to.be.undefined;
   });
 });
 
