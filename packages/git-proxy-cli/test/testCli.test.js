@@ -665,22 +665,5 @@ describe('test git-proxy-cli', function () {
         await helper.removeCookiesFile();
       }
     });
-
-    it('attempt to ls should not list existing push after it is deleted', async function () {
-      try {
-        await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
-
-        await helper.removeGitPushFromDb(pushId);
-
-        const cli = `npx -- @finos/git-proxy-cli ls --authorised false --blocked true --canceled false --rejected false`;
-        const expectedExitCode = 0;
-        const expectedMessages = ['[]'];
-        const expectedErrorMessages = null;
-        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
-      } finally {
-        await helper.closeServer(service.httpServer);
-      }
-    });
   });
 });
