@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import classNames from 'classnames';
 import { makeStyles } from '@material-ui/core/styles';
 import MenuItem from '@material-ui/core/MenuItem';
@@ -7,7 +7,7 @@ import Grow from '@material-ui/core/Grow';
 import Paper from '@material-ui/core/Paper';
 import ClickAwayListener from '@material-ui/core/ClickAwayListener';
 import Hidden from '@material-ui/core/Hidden';
-import Poppers from '@material-ui/core/Popper';
+import Popper from '@material-ui/core/Popper';
 import Divider from '@material-ui/core/Divider';
 import Button from '../CustomButtons/Button';
 import styles from '../../assets/jss/material-dashboard-react/components/headerLinksStyle';
@@ -18,27 +18,33 @@ import axios from 'axios';
 import { getCookie } from '../../utils';
 
 const useStyles = makeStyles(styles);
+interface UserData {
+  id: string;
+  name: string;
+  email: string;
+}
 
 export default function DashboardNavbarLinks() {
   const classes = useStyles();
   const navigate = useNavigate();
-  const [openProfile, setOpenProfile] = React.useState(null);
-  const [, setAuth] = React.useState(true);
-  const [, setIsLoading] = React.useState(true);
-  const [, setIsError] = React.useState(false);
-  const [data, setData] = React.useState(false);
+  const [openProfile, setOpenProfile] = useState<HTMLElement | null>(null);
+  const [, setAuth] = useState<boolean>(true);
+  const [, setIsLoading] = useState<boolean>(true);
+  const [, setIsError] = useState<boolean>(false);
+  const [data, setData] = useState<UserData | null>(null);
 
   useEffect(() => {
     getUser(setIsLoading, setData, setAuth, setIsError);
   }, []);
 
-  const handleClickProfile = (event) => {
-    if (openProfile && openProfile.contains(event.target)) {
+  const handleClickProfile = (event: React.MouseEvent<HTMLElement>) => {
+    if (openProfile && openProfile.contains(event.target as Node)) {
       setOpenProfile(null);
     } else {
       setOpenProfile(event.currentTarget);
     }
   };
+
   const handleCloseProfile = () => {
     setOpenProfile(null);
   };
@@ -47,10 +53,10 @@ export default function DashboardNavbarLinks() {
     navigate('/dashboard/profile', { replace: true });
   };
 
-  const logout = () => {
-    axios
-      .post(
-        `${import.meta.env.VITE_API_URI}/api/auth/logout`,
+  const logout = async () => {
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URI || 'http://localhost:3000'}/api/auth/logout`,
         {},
         {
           withCredentials: true,
@@ -58,13 +64,15 @@ export default function DashboardNavbarLinks() {
             'X-CSRF-TOKEN': getCookie('csrf'),
           },
         },
-      )
-      .then((res) => {
-        if (!res.data.isAuth && !res.data.user) {
-          setAuth(false);
-          navigate(0);
-        }
-      });
+      );
+
+      if (!response.data.isAuth && !response.data.user) {
+        setAuth(false);
+        navigate(0);
+      }
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
@@ -74,7 +82,7 @@ export default function DashboardNavbarLinks() {
           color={window.innerWidth > 959 ? 'transparent' : 'white'}
           justIcon={window.innerWidth > 959}
           simple={window.innerWidth <= 959}
-          aria-owns={openProfile ? 'profile-menu-list-grow' : null}
+          aria-owns={openProfile ? 'profile-menu-list-grow' : undefined}
           aria-haspopup='true'
           onClick={handleClickProfile}
           className={classes.buttonLink}
@@ -84,7 +92,7 @@ export default function DashboardNavbarLinks() {
             <p className={classes.linkText}>Profile</p>
           </Hidden>
         </Button>
-        <Poppers
+        <Popper
           open={Boolean(openProfile)}
           anchorEl={openProfile}
           transition
@@ -94,7 +102,6 @@ export default function DashboardNavbarLinks() {
           {({ TransitionProps, placement }) => (
             <Grow
               {...TransitionProps}
-              id='profile-menu-list-grow'
               style={{
                 transformOrigin: placement === 'bottom' ? 'center top' : 'center bottom',
               }}
@@ -116,7 +123,7 @@ export default function DashboardNavbarLinks() {
               </Paper>
             </Grow>
           )}
-        </Poppers>
+        </Popper>
       </div>
     </div>
   );

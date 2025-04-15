@@ -8,9 +8,24 @@ import {
   warningColor,
   dangerColor,
   whiteColor,
-} from '../../material-dashboard-react.js';
+} from '../../material-dashboard-react';
 
-const headerStyle = () => ({
+interface StyleProps {
+  appBar: React.CSSProperties;
+  container: React.CSSProperties;
+  flex: React.CSSProperties;
+  title: React.CSSProperties & {
+    '&:hover,&:focus': React.CSSProperties;
+  };
+  appResponsive: React.CSSProperties;
+  primary: React.CSSProperties;
+  info: React.CSSProperties;
+  success: React.CSSProperties;
+  warning: React.CSSProperties;
+  danger: React.CSSProperties;
+}
+
+const headerStyle = (): StyleProps => ({
   appBar: {
     backgroundColor: 'transparent',
     boxShadow: 'none',

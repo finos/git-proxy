@@ -1,6 +1,5 @@
 import React from 'react';
 import classNames from 'classnames';
-import PropTypes from 'prop-types';
 import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -12,22 +11,41 @@ import styles from '../../assets/jss/material-dashboard-react/components/headerS
 
 const useStyles = makeStyles(styles);
 
-export default function Header(props) {
+interface Route {
+  component: any;
+  icon: any;
+  layout: string;
+  name: string;
+  rtlName?: string;
+  path: string;
+  visible: boolean;
+}
+
+interface HeaderProps {
+  color?: 'primary' | 'info' | 'success' | 'warning' | 'danger';
+  rtlActive?: boolean;
+  handleDrawerToggle: () => void;
+  routes: Route[];
+}
+
+const Header: React.FC<HeaderProps> = (props) => {
   const classes = useStyles();
-  function makeBrand() {
-    let name;
-    props.routes.map((prop) => {
+
+  const makeBrand = (): string => {
+    let name = '';
+    props.routes.forEach((prop) => {
       if (window.location.href.indexOf(prop.layout + prop.path) !== -1) {
-        name = props.rtlActive ? prop.rtlName : prop.name;
+        name = props.rtlActive ? prop.rtlName || prop.name : prop.name;
       }
-      return null;
     });
     return name;
-  }
-  const { color } = props;
+  };
+
+  const { color = 'primary' } = props;
   const appBarClasses = classNames({
-    [' ' + classes[color]]: color,
+    [` ${classes[color]}`]: color,
   });
+
   return (
     <AppBar style={{ borderRadius: '0px', zIndex: 10 }} className={classes.appBar + appBarClasses}>
       <Toolbar className={classes.container}>
@@ -35,7 +53,6 @@ export default function Header(props) {
           {/* Here we create navbar brand, based on route name */}
           <h2
             style={{ marginLeft: '15px', fontSize: '19px', fontWeight: 400 }}
-            color='transparent'
             className={classes.title}
           >
             {makeBrand()}
@@ -52,11 +69,6 @@ export default function Header(props) {
       </Toolbar>
     </AppBar>
   );
-}
-
-Header.propTypes = {
-  color: PropTypes.oneOf(['primary', 'info', 'success', 'warning', 'danger']),
-  rtlActive: PropTypes.bool,
-  handleDrawerToggle: PropTypes.func,
-  routes: PropTypes.arrayOf(PropTypes.object),
 };
+
+export default Header;
