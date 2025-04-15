@@ -41,7 +41,7 @@ const Header: React.FC<HeaderProps> = (props) => {
     return name;
   };
 
-  const { color = 'primary' } = props;
+  const { color } = props;
   const appBarClasses = classNames({
     [` ${classes[color]}`]: color,
   });

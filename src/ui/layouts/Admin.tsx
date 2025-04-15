@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import PerfectScrollbar from 'perfect-scrollbar';
 import 'perfect-scrollbar/css/perfect-scrollbar.css';
@@ -12,76 +12,90 @@ import logo from '../assets/img/git-proxy.png';
 import { UserContext } from '../../context';
 import { getUser } from '../services/user';
 
-let ps;
-let refresh = false;
+interface RouteType {
+  layout: string;
+  path: string;
+  component: React.ComponentType;
+}
 
-const switchRoutes = (
-  <Routes>
-    {routes.map((prop, key) => {
-      if (prop.layout === '/admin') {
-        return <Route exact path={prop.path} element={<prop.component />} key={key} />;
-      }
-      return null;
-    })}
-    <Route exact path='/admin' element={<Navigate to='/admin/repo' />} />
-  </Routes>
-);
+interface AdminProps {
+  [key: string]: any;
+}
+
+interface UserType {
+  id?: string;
+  name?: string;
+  email?: string;
+}
+
+let ps: PerfectScrollbar | undefined;
+let refresh = false;
 
 const useStyles = makeStyles(styles);
 
-export default function Admin({ ...rest }) {
-  // styles
+const Admin: React.FC<AdminProps> = ({ ...rest }) => {
   const classes = useStyles();
-  // ref to help us initialize PerfectScrollbar on windows devices
-  const mainPanel = React.createRef();
-  // states and functions
-  const [color] = React.useState('blue');
-  const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [user, setUser] = useState({});
+  const mainPanel = useRef<HTMLDivElement>(null);
+  const [color] = useState<string>('blue');
+  const [mobileOpen, setMobileOpen] = useState<boolean>(false);
+  const [user, setUser] = useState<UserType>({});
+  const { id } = useParams();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
-  const getRoute = () => {
+
+  const getRoute = (): boolean => {
     return window.location.pathname !== '/admin/maps';
   };
+
   const resizeFunction = () => {
     if (window.innerWidth >= 960) {
       setMobileOpen(false);
     }
   };
-  // initialize and destroy the PerfectScrollbar plugin
 
-  const { id } = useParams();
-  React.useEffect(() => {
+  const switchRoutes = (
+    <Routes>
+      {routes.map((prop: RouteType, key: number) => {
+        if (prop.layout === '/admin') {
+          const Component = prop.component;
+          return <Route path={prop.path} element={<Component />} key={key} />;
+        }
+        return null;
+      })}
+      <Route path='/admin' element={<Navigate to='/admin/repo' />} />
+    </Routes>
+  );
+
+  useEffect(() => {
     async function loadUser() {
-      if (navigator.platform.indexOf('Win') > -1) {
+      if (navigator.platform.indexOf('Win') > -1 && mainPanel.current) {
         ps = new PerfectScrollbar(mainPanel.current, {
           suppressScrollX: true,
           suppressScrollY: false,
         });
         document.body.style.overflow = 'hidden';
-        if (!refresh) {
-          refresh = true;
-          await getUser(null, setUser, null, null, null);
-        }
       }
-      window.addEventListener('resize', resizeFunction);
+
       if (!refresh) {
         refresh = true;
         await getUser(null, setUser, null, null, null);
       }
+
+      window.addEventListener('resize', resizeFunction);
     }
+
     loadUser();
 
-    // Specify how to clean up after this effect:
-    return function cleanup() {
+    return () => {
       if (navigator.platform.indexOf('Win') > -1 && ps) {
         ps.destroy();
       }
       window.removeEventListener('resize', resizeFunction);
     };
   }, [id]);
+
   return (
     <UserContext.Provider value={{ user, setUser }}>
       <div className={classes.wrapper}>
@@ -96,7 +110,6 @@ export default function Admin({ ...rest }) {
         />
         <div className={classes.mainPanel} ref={mainPanel}>
           <Navbar routes={routes} handleDrawerToggle={handleDrawerToggle} {...rest} />
-          {/* On the /maps route we want the map to be on full screen - this is not possible if the content and conatiner classes are present because they have some paddings which would make the map smaller */}
           {getRoute() ? (
             <div className={classes.content}>
               <div className={classes.container}>{switchRoutes}</div>
@@ -109,4 +122,6 @@ export default function Admin({ ...rest }) {
       </div>
     </UserContext.Provider>
   );
-}
+};
+
+export default Admin;
