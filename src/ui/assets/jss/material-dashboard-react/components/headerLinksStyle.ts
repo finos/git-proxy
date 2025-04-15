@@ -1,9 +1,50 @@
-import { defaultFont, dangerColor, whiteColor } from '../../material-dashboard-react.js';
+import { Theme } from '@material-ui/core/styles';
+import { defaultFont, dangerColor, whiteColor } from '../../material-dashboard-react';
+import dropdownStyle from '../dropdownStyle';
 
-// eslint-disable-next-line max-len
-import dropdownStyle from '../dropdownStyle.js';
+interface HeaderLinksStyle {
+  [key: string]: any;
+  search: {
+    '& > div': {
+      marginTop: string;
+    };
+    [themeBreakpoint: string]: any;
+  };
+  linkText: {
+    zIndex: string;
+    fontSize: string;
+    margin: string;
+    [key: string]: any;
+  };
+  buttonLink: {
+    [themeBreakpoint: string]: any;
+  };
+  searchButton: {
+    [themeBreakpoint: string]: any;
+  };
+  margin: {
+    zIndex: string;
+    margin: string;
+  };
+  searchIcon: {
+    width: string;
+    zIndex: string;
+  };
+  notifications: {
+    zIndex: string;
+    [themeBreakpoint: string]: any;
+  };
+  manager: {
+    [themeBreakpoint: string]: any;
+    display: string;
+  };
+  searchWrapper: {
+    [themeBreakpoint: string]: any;
+    display: string;
+  };
+}
 
-const headerLinksStyle = (theme) => ({
+const headerLinksStyle = (theme: Theme): HeaderLinksStyle => ({
   ...dropdownStyle(theme),
   search: {
     '& > div': {
