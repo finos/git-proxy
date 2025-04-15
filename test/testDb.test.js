@@ -91,14 +91,34 @@ describe('Database client', async () => {
       TEST_USER.admin,
     );
     const users = await db.getUsers();
-    console.log('TEST USER:', JSON.stringify(TEST_USER, null, 2));
-    console.log('USERS:', JSON.stringify(users, null, 2));
     // remove password as it will have been hashed
     // eslint-disable-next-line no-unused-vars
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
-    console.log('CLEAN USERS:', JSON.stringify(cleanUsers, null, 2));
     expect(cleanUsers).to.deep.include(TEST_USER_CLEAN);
+  });
+
+  it('should be able to find a user', async function () {
+    const user = await db.findUser(TEST_USER.username);
+    // eslint-disable-next-line no-unused-vars
+    const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
+    // eslint-disable-next-line no-unused-vars
+    const { password: _2, _id: _3, ...DB_USER_CLEAN } = user;
+
+    expect(DB_USER_CLEAN).to.eql(TEST_USER_CLEAN);
+  });
+
+  it('should be able to filter getUsers', async function () {
+    // uppercase the filter value to confirm db client is lowercasing inputs
+    const users = await db.getUsers({ username: TEST_USER.username.toUpperCase() });
+    // eslint-disable-next-line no-unused-vars
+    const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
+    const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
+    expect(cleanUsers[0]).to.eql(TEST_USER_CLEAN);
+
+    const users2 = await db.getUsers({ email: TEST_USER.email.toUpperCase() });
+    const cleanUsers2 = cleanResponseData(TEST_USER_CLEAN, users2);
+    expect(cleanUsers2[0]).to.eql(TEST_USER_CLEAN);
   });
 
   it('should be able to delete a user', async function () {
@@ -106,6 +126,39 @@ describe('Database client', async () => {
     const users = await db.getUsers();
     const cleanUsers = cleanResponseData(TEST_USER, users);
     expect(cleanUsers).to.not.deep.include(TEST_USER);
+  });
+
+  it('should be able to update a user', async function () {
+    await db.createUser(
+      TEST_USER.username,
+      TEST_USER.password,
+      TEST_USER.email,
+      TEST_USER.gitAccount,
+      TEST_USER.admin,
+    );
+
+    // has less properties to prove that records are merged
+    const updateToApply = {
+      username: TEST_USER.username,
+      gitAccount: 'updatedGitAccount',
+      admin: false,
+    };
+
+    const updatedUser = {
+      // remove password as it will have been hashed
+      username: TEST_USER.username,
+      email: TEST_USER.email,
+      gitAccount: 'updatedGitAccount',
+      admin: false,
+    };
+    await db.updateUser(updateToApply);
+
+    const users = await db.getUsers();
+    console.log('TEST USER:', JSON.stringify(TEST_USER, null, 2));
+    console.log('USERS:', JSON.stringify(users, null, 2));
+    const cleanUsers = cleanResponseData(updatedUser, users);
+    console.log('CLEAN USERS:', JSON.stringify(cleanUsers, null, 2));
+    expect(cleanUsers).to.deep.include(updatedUser);
   });
 
   it('should be able to create a push', async function () {
@@ -122,5 +175,9 @@ describe('Database client', async () => {
     expect(cleanPushes).to.not.deep.include(TEST_PUSH);
   });
 
-  after(async function () {});
+  after(async function () {
+    await db.deleteRepo(TEST_REPO.name);
+    await db.deleteUser(TEST_USER.username);
+    await db.deletePush(TEST_PUSH.id);
+  });
 });
