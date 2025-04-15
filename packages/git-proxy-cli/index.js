@@ -330,6 +330,59 @@ async function reloadConfig() {
   }
 }
 
+/**
+ * Create a new user
+ * @param {string} username The username for the new user
+ * @param {string} password The password for the new user
+ * @param {string} email The email for the new user
+ * @param {string} gitAccount The git account for the new user
+ * @param {boolean} [admin=false] Whether the user should be an admin (optional)
+ */
+async function createUser(username, password, email, gitAccount, admin = false) {
+  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
+    console.error('Error: Create User: Authentication required');
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
+
+    const response = await axios.post(
+      `${baseUrl}/api/auth/create-user`,
+      {
+        username,
+        password,
+        email,
+        gitAccount,
+        admin,
+      },
+      {
+        headers: { Cookie: cookies },
+      },
+    );
+
+    console.log(`User '${username}' created successfully`);
+  } catch (error) {
+    let errorMessage = `Error: Create User: '${error.message}'`;
+    process.exitCode = 2;
+
+    if (error.response) {
+      switch (error.response.status) {
+        case 401:
+          errorMessage = 'Error: Create User: Authentication required';
+          process.exitCode = 3;
+          break;
+        case 400:
+          errorMessage = `Error: Create User: ${error.response.data.message}`;
+          process.exitCode = 4;
+          break;
+      }
+    }
+    console.error(errorMessage);
+  }
+}
+
 // Parsing command line arguments
 yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused-expressions
   .command({
@@ -464,6 +517,41 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
     command: 'reload-config',
     description: 'Reload GitProxy configuration without restarting',
     action: reloadConfig,
+  })
+  .command({
+    command: 'create-user',
+    describe: 'Create a new user',
+    builder: {
+      username: {
+        describe: 'Username for the new user',
+        demandOption: true,
+        type: 'string',
+      },
+      password: {
+        describe: 'Password for the new user',
+        demandOption: true,
+        type: 'string',
+      },
+      email: {
+        describe: 'Email for the new user',
+        demandOption: true,
+        type: 'string',
+      },
+      gitAccount: {
+        describe: 'Git account for the new user',
+        demandOption: true,
+        type: 'string',
+      },
+      admin: {
+        describe: 'Whether the user should be an admin (optional)',
+        demandOption: false,
+        type: 'boolean',
+        default: false,
+      },
+    },
+    handler(argv) {
+      createUser(argv.username, argv.password, argv.email, argv.gitAccount, argv.admin);
+    },
   })
   .demandCommand(1, 'You need at least one command before moving on')
   .strict()

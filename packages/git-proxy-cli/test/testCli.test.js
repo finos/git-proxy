@@ -483,6 +483,114 @@ describe('test git-proxy-cli', function () {
     });
   });
 
+  // *** create user ***
+
+  describe('test git-proxy-cli :: create-user', function () {
+    it('attempt to create user should fail when server is down', async function () {
+      try {
+        // start server -> login -> stop server
+        await helper.startServer(service);
+        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+      } finally {
+        await helper.closeServer(service.httpServer);
+      }
+
+      const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+      const expectedExitCode = 2;
+      const expectedMessages = null;
+      const expectedErrorMessages = ['Error: Create User:'];
+      await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+    });
+
+    it('attempt to create user should fail when not authenticated', async function () {
+      await helper.removeCookiesFile();
+
+      const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+      const expectedExitCode = 1;
+      const expectedMessages = null;
+      const expectedErrorMessages = ['Error: Create User: Authentication required'];
+      await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+    });
+
+    it('attempt to create user should fail when not admin', async function () {
+      try {
+        await helper.startServer(service);
+        await helper.runCli(
+          `npx -- @finos/git-proxy-cli login --username testuser --password testpassword`,
+        );
+
+        const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+        const expectedExitCode = 3;
+        const expectedMessages = null;
+        const expectedErrorMessages = ['Error: Create User: Authentication required'];
+        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+      } finally {
+        await helper.closeServer(service.httpServer);
+      }
+    });
+
+    it('attempt to create user should fail with missing required fields', async function () {
+      try {
+        await helper.startServer(service);
+        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+
+        const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --email new@email.com --gitAccount newgit`;
+        const expectedExitCode = 4;
+        const expectedMessages = null;
+        const expectedErrorMessages = ['Error: Create User: Missing required fields'];
+        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+      } finally {
+        await helper.closeServer(service.httpServer);
+      }
+    });
+
+    it('should successfully create a new user', async function () {
+      try {
+        await helper.startServer(service);
+        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+
+        const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+        const expectedExitCode = 0;
+        const expectedMessages = ["User 'newuser' created successfully"];
+        const expectedErrorMessages = null;
+        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+
+        // Verify we can login with the new user
+        await helper.runCli(
+          `npx -- @finos/git-proxy-cli login --username newuser --password newpass`,
+          0,
+          [`Login "newuser" <new@email.com>: OK`],
+          null,
+        );
+      } finally {
+        await helper.closeServer(service.httpServer);
+      }
+    });
+
+    it('should successfully create a new admin user', async function () {
+      try {
+        await helper.startServer(service);
+        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+
+        const cli = `npx -- @finos/git-proxy-cli create-user --username newadmin --password newpass --email newadmin@email.com --gitAccount newgit --admin`;
+        const expectedExitCode = 0;
+        const expectedMessages = ["User 'newadmin' created successfully"];
+        const expectedErrorMessages = null;
+        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+
+        // Verify we can login with the new admin user
+        await helper.runCli(
+          `npx -- @finos/git-proxy-cli login --username newadmin --password newpass`,
+          0,
+          [`Login "newadmin" <newadmin@email.com> (admin): OK`],
+          null,
+        );
+      } finally {
+        await helper.closeServer(service.httpServer);
+      }
+    });
+  });
+
   // *** tests require push in db ***
 
   describe('test git-proxy-cli :: git push administration', function () {
