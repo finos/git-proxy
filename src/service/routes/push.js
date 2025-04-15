@@ -36,16 +36,13 @@ router.get('/:id', async (req, res) => {
 router.post('/:id/reject', async (req, res) => {
   if (req.user) {
     const id = req.params.id;
-    console.log({ id });
 
     // Get the push request
     const push = await db.getPush(id);
-    console.log({ push });
 
     // Get the committer of the push via their email
     const committerEmail = push.userEmail;
     const list = await db.getUsers({ email: committerEmail });
-    console.log({ list });
 
     if (list.length === 0) {
       res.status(401).send({
@@ -86,6 +83,8 @@ router.post('/:id/authorise', async (req, res) => {
   const questions = req.body.params?.attestation;
   console.log({ questions });
 
+  // TODO: compare attestation to configuration and ensure all questions are answered
+  // - we shouldn't go on the definition in the request!
   const attestationComplete = questions?.every((question) => !!question.checked);
   console.log({ attestationComplete });
 
