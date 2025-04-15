@@ -168,6 +168,37 @@ router.get('/me', async (req, res) => {
   }
 });
 
+router.post('/create-user', async (req, res) => {
+  if (!req.user || !req.user.admin) {
+    return res.status(401).send({
+      message: 'You are not authorized to perform this action...',
+    });
+  }
+
+  try {
+    const { username, password, email, gitAccount, admin: isAdmin = false } = req.body;
+
+    if (!username || !password || !email || !gitAccount) {
+      return res.status(400).send({
+        message: 'Missing required fields: username, password, email, and gitAccount are required',
+      });
+    }
+
+    await db.createUser(username, password, email, gitAccount, isAdmin);
+    res.status(201).send({
+      message: 'User created successfully',
+      username,
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(400).send({
+      message: error.message || 'Failed to create user',
+    });
+  }
+});
+
+module.exports = router;
+
 module.exports = {
   router,
   loginSuccessHandler
