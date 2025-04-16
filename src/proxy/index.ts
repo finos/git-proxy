@@ -3,20 +3,15 @@ import bodyParser from 'body-parser';
 import http from 'http';
 import https from 'https';
 import fs from 'fs';
-import path from 'path';
 import { router } from './routes';
 import {
   getAuthorisedList,
   getPlugins,
-  getSSLCertPath,
-  getSSLKeyPath
+  getTLSKeyPemPath,
+  getTLSCertPemPath,
+  getTLSEnabled,
 } from '../config';
-import {
-  addUserCanAuthorise,
-  addUserCanPush,
-  createRepo,
-  getRepos
-} from '../db';
+import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos } from '../db';
 import { PluginLoader } from '../plugin';
 import chain from './chain';
 import { Repo } from '../db/types';
@@ -28,8 +23,8 @@ const options = {
   inflate: true,
   limit: '100000kb',
   type: '*/*',
-  key: fs.readFileSync(path.join(__dirname, getSSLKeyPath())),
-  cert: fs.readFileSync(path.join(__dirname, getSSLCertPath())),
+  key: getTLSEnabled() ? fs.readFileSync(getTLSKeyPemPath()) : undefined,
+  cert: getTLSEnabled() ? fs.readFileSync(getTLSCertPemPath()) : undefined,
 };
 
 const proxyPreparations = async () => {
@@ -66,15 +61,17 @@ const start = async () => {
   http.createServer(options as any, app).listen(proxyHttpPort, () => {
     console.log(`HTTP Proxy Listening on ${proxyHttpPort}`);
   });
-  https.createServer(options, app).listen(proxyHttpsPort, () => {
-    console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
-  });
-
+  // Start HTTPS server only if TLS is enabled
+  if (getTLSEnabled()) {
+    https.createServer(options, app).listen(proxyHttpsPort, () => {
+      console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
+    });
+  }
   return app;
 };
 
 export default {
   proxyPreparations,
   createApp,
-  start
+  start,
 };
