@@ -4,7 +4,10 @@ import { Repo } from '../types';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
+// these don't get coverage in tests as they have already been run once before the test
+/* istanbul ignore if */
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
+/* istanbul ignore if */
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
@@ -15,9 +18,14 @@ const isBlank = (str: string) => {
   return !str || /^\s*$/.test(str);
 };
 
-export  const getRepos = async (query: any = {}) => {
+export const getRepos = async (query: any = {}) => {
+  if (query?.name) {
+    query.name = query.name.toLowerCase();
+  }
   return new Promise<Repo[]>((resolve, reject) => {
     db.find(query, (err: Error, docs: Repo[]) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -28,9 +36,10 @@ export  const getRepos = async (query: any = {}) => {
 };
 
 export const getRepo = async (name: string) => {
-  name = name.toLowerCase();
   return new Promise<Repo | null>((resolve, reject) => {
-    db.findOne({ name }, (err: Error | null, doc: Repo) => {
+    db.findOne({ name: name.toLowerCase() }, (err: Error | null, doc: Repo) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -42,7 +51,6 @@ export const getRepo = async (name: string) => {
 
 export const createRepo = async (repo: Repo) => {
   repo.name = repo.name.toLowerCase();
-  console.log(`creating new repo ${JSON.stringify(repo)}`);
 
   if (isBlank(repo.project)) {
     throw new Error('Project name cannot be empty');
@@ -61,10 +69,11 @@ export const createRepo = async (repo: Repo) => {
 
   return new Promise<Repo>((resolve, reject) => {
     db.insert(repo, (err, doc) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
-        console.log(`created new repo ${JSON.stringify(repo)}`);
         resolve(doc);
       }
     });
@@ -89,6 +98,8 @@ export const addUserCanPush = async (name: string, user: string) => {
 
     const options = { multi: false, upsert: false };
     db.update({ name: name }, repo, options, (err) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -117,6 +128,8 @@ export const addUserCanAuthorise = async (name: string, user: string) => {
 
     const options = { multi: false, upsert: false };
     db.update({ name: name }, repo, options, (err) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -176,6 +189,8 @@ export const deleteRepo = async (name: string) => {
   name = name.toLowerCase();
   return new Promise<void>((resolve, reject) => {
     db.remove({ name: name }, (err) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
