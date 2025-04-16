@@ -2,6 +2,7 @@ export interface UserSettings {
   authorisedList: AuthorisedRepo[];
   sink: Database[];
   authentication: Authentication[];
+  apiAuthentication: Authentication[];
   tempPassword?: TempPasswordConfig;
   proxyUrl: string;
   api: Record<string, any>;

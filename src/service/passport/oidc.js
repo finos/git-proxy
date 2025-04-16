@@ -1,12 +1,10 @@
-const passport = require('passport');
 const db = require('../../db');
 
-const configure = async () => {
-  // Temp fix for ERR_REQUIRE_ESM, will be changed when we refactor to ESM
-  const { discovery, fetchUserInfo } = await import('openid-client');
-  const { Strategy } = await import('openid-client/passport');
-  const config = require('../../config').getAuthentication();
-  const { oidcConfig } = config;
+let type;
+
+const configure = async (passport) => {
+  const authMethods = require('../../config').getAuthMethods();
+  const oidcConfig = authMethods.find((method) => method.type.toLowerCase() === "openidconnect")?.oidcConfig;
   const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
 
   if (!oidcConfig || !oidcConfig.issuer) {
@@ -14,18 +12,20 @@ const configure = async () => {
   }
 
   const server = new URL(issuer);
+  const openIdClient = await import('openid-client');
+  const { Strategy } = await import('openid-client/passport');
 
   try {
-    const config = await discovery(server, clientID, clientSecret);
+    const config = await openIdClient.discovery(server, clientID, clientSecret);
 
     const strategy = new Strategy({ callbackURL, config, scope }, async (tokenSet, done) => {
       // Validate token sub for added security
       const idTokenClaims = tokenSet.claims();
       const expectedSub = idTokenClaims.sub;
-      const userInfo = await fetchUserInfo(config, tokenSet.access_token, expectedSub);
+      const userInfo = await openIdClient.fetchUserInfo(config, tokenSet.access_token, expectedSub);
       handleUserAuthentication(userInfo, done);
     });
-    
+
     // currentUrl must be overridden to match the callback URL
     strategy.currentUrl = function (request) {
       const callbackUrl = new URL(callbackURL);
@@ -49,17 +49,15 @@ const configure = async () => {
         done(err);
       }
     })
-    passport.type = server.host;
+
+    type = server.host;
 
     return passport;
   } catch (error) {
     console.error('OIDC configuration failed:', error);
     throw error;
   }
-}
-
-
-module.exports.configure = configure;
+};
 
 /**
  * Handles user authentication with OIDC.
@@ -111,4 +109,11 @@ const safelyExtractEmail = (profile) => {
  */
 const getUsername = (email) => {
   return email ? email.split('@')[0] : '';
+};
+
+module.exports = {
+  configure,
+  get type() {
+    return type;
+  }
 };

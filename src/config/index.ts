@@ -14,9 +14,11 @@ let _userSettings: UserSettings | null = null;
 if (existsSync(configFile)) {
   _userSettings = JSON.parse(readFileSync(configFile, 'utf-8'));
 }
+
 let _authorisedList: AuthorisedRepo[] = defaultSettings.authorisedList;
 let _database: Database[] = defaultSettings.sink;
 let _authentication: Authentication[] = defaultSettings.authentication;
+let _apiAuthentication: Authentication[] = defaultSettings.apiAuthentication;
 let _tempPassword: TempPasswordConfig = defaultSettings.tempPassword;
 let _proxyUrl = defaultSettings.proxyUrl;
 let _api: Record<string, unknown> = defaultSettings.api;
@@ -78,27 +80,47 @@ export const getDatabase = () => {
   throw Error('No database cofigured!');
 };
 
-// Gets the configured authentication method, defaults to local
-export const getAuthentication = () => {
+/**
+ * Get the list of enabled authentication methods
+ * @return {Authentication[]} List of enabled authentication methods
+ */
+export const getAuthMethods = (): Authentication[] => {
   if (_userSettings !== null && _userSettings.authentication) {
     _authentication = _userSettings.authentication;
   }
-  for (const ix in _authentication) {
-    if (!ix) continue;
-    const auth = _authentication[ix];
-    if (auth.enabled) {
-      return auth;
-    }
+
+  const enabledAuthMethods = _authentication.filter(auth => auth.enabled);
+
+  if (enabledAuthMethods.length === 0) {
+    throw new Error("No authentication method enabled.");
   }
 
-  throw Error('No authentication cofigured!');
+  return enabledAuthMethods;
+};
+
+/**
+ * Get the list of enabled authentication methods for API endpoints
+ * @return {Authentication[]} List of enabled authentication methods
+ */
+export const getAPIAuthMethods = (): Authentication[] => {
+  if (_userSettings !== null && _userSettings.apiAuthentication) {
+    _apiAuthentication = _userSettings.apiAuthentication;
+  }
+
+  const enabledAuthMethods = _apiAuthentication.filter(auth => auth.enabled);
+
+  if (enabledAuthMethods.length === 0) {
+    console.log("Warning: No authentication method enabled for API endpoints.");
+  }
+
+  return enabledAuthMethods;
 };
 
 // Log configuration to console
 export const logConfiguration = () => {
   console.log(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
   console.log(`data sink = ${JSON.stringify(getDatabase())}`);
-  console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
+  console.log(`authentication = ${JSON.stringify(getAuthMethods())}`);
 };
 
 export const getAPIs = () => {

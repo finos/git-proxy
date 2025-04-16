@@ -49,6 +49,17 @@
         "baseDN": "",
         "searchBase": ""
       }
+    },    
+    {
+      "type": "openidconnect",
+      "enabled": false,
+      "oidcConfig": {
+        "issuer": "",
+        "clientID": "",
+        "clientSecret": "",
+        "callbackURL": "",
+        "scope": ""
+      }
     }
   ],
   "api": {
@@ -98,6 +109,22 @@
   "contactEmail": "",
   "csrfProtection": true,
   "plugins": [],
+  "apiAuthentication": [
+    {
+      "type": "jwt",
+      "enabled": false,
+      "jwtConfig": {
+        "authorityURL": "",
+        "clientID": "",
+        "expectedAudience": "",
+        "roleMapping": {
+          "admin": {
+            "": ""
+          }
+        }
+      }
+    }
+  ],
   "tls": {
     "enabled": true,
     "key": "certs/key.pem",
