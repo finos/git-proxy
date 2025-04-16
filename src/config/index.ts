@@ -110,7 +110,7 @@ export const getAPIAuthMethods = (): Authentication[] => {
   const enabledAuthMethods = _apiAuthentication.filter(auth => auth.enabled);
 
   if (enabledAuthMethods.length === 0) {
-    throw new Error("No authentication method enabled.");
+    console.log("Warning: No authentication method enabled for API endpoints.");
   }
 
   return enabledAuthMethods;

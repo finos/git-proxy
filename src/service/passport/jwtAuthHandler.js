@@ -13,7 +13,7 @@ const jwtAuthHandler = (overrideConfig = null) => {
           : require('../../config').getAPIAuthMethods();
 
     const jwtAuthMethod = apiAuthMethods.find((method) => method.type.toLowerCase() === "jwt");
-      if (!jwtAuthMethod) {
+      if (!overrideConfig && (!jwtAuthMethod || !jwtAuthMethod.enabled)) {
           return next();
       }
 
