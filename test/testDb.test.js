@@ -128,6 +128,7 @@ describe('Database clients', async () => {
     const repo = await db.getRepoByUrl(TEST_REPO.url);
     await db.deleteRepo(repo._id);
     const repos = await db.getRepos();
+
     const cleanRepos = cleanResponseData(TEST_REPO, repos);
     expect(cleanRepos).to.not.deep.include(TEST_REPO);
   });
