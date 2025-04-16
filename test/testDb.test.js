@@ -50,22 +50,33 @@ const TEST_PUSH = {
  * Clean up response data from the DB by removing an extraneous properties,
  * allowing comparison with expect.
  * @param {object} example Example element from which columns to retain are extracted
- * @param {array} responses Array of responses to clean.
+ * @param {array | object} responses Array of responses to clean.
  * @return {array}  Array of cleaned up responses.
  */
 const cleanResponseData = (example, responses) => {
   const columns = Object.keys(example);
-  return responses.map((response) => {
+
+  if (Array.isArray(responses)) {
+    return responses.map((response) => {
+      const cleanResponse = {};
+      columns.forEach((col) => {
+        cleanResponse[col] = response[col];
+      });
+      return cleanResponse;
+    });
+  } else if (typeof responses === 'object') {
     const cleanResponse = {};
     columns.forEach((col) => {
-      cleanResponse[col] = response[col];
+      cleanResponse[col] = responses[col];
     });
     return cleanResponse;
-  });
+  } else {
+    throw new Error(`Can only clean arrays or objects, but a ${typeof responses}  was passed`);
+  }
 };
 
 // Use this test as a template
-describe('Database client', async () => {
+describe('Database clients', async () => {
   before(async function () {});
 
   it('should be able to create a repo', async function () {
@@ -75,11 +86,99 @@ describe('Database client', async () => {
     expect(cleanRepos).to.deep.include(TEST_REPO);
   });
 
+  it('should be able to filter repos', async function () {
+    // uppercase the filter value to confirm db client is lowercasing inputs
+    const repos = await db.getRepos({ name: TEST_REPO.name.toUpperCase() });
+    const cleanRepos = cleanResponseData(TEST_REPO, repos);
+    expect(cleanRepos[0]).to.eql(TEST_REPO);
+
+    const repos2 = await db.getRepos({ url: TEST_REPO.url });
+    const cleanRepos2 = cleanResponseData(TEST_REPO, repos2);
+    expect(cleanRepos2[0]).to.eql(TEST_REPO);
+  });
+
+  it('should be able to retrieve a repo by name', async function () {
+    // uppercase the filter value to confirm db client is lowercasing inputs
+    const repo = await db.getRepo(TEST_REPO.name);
+    const cleanRepo = cleanResponseData(TEST_REPO, repo);
+    expect(cleanRepo).to.eql(TEST_REPO);
+  });
+
   it('should be able to delete a repo', async function () {
     await db.deleteRepo(TEST_REPO.name);
     const repos = await db.getRepos();
+
     const cleanRepos = cleanResponseData(TEST_REPO, repos);
     expect(cleanRepos).to.not.deep.include(TEST_REPO);
+  });
+
+  it('should NOT be able to create a repo with blank project, name or url', async function () {
+    // test with a null value
+    let threwError = false;
+    let testRepo = {
+      project: null,
+      name: TEST_REPO.name,
+      url: TEST_REPO.url,
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+
+    // test with an empty string
+    threwError = false;
+    testRepo = {
+      project: '',
+      name: TEST_REPO.name,
+      url: TEST_REPO.url,
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+
+    // test with an undefined property
+    threwError = false;
+    testRepo = {
+      name: TEST_REPO.name,
+      url: TEST_REPO.url,
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+
+    // repeat tests for other fields, but don't both with all variations as they go through same fn
+    threwError = false;
+    testRepo = {
+      project: TEST_REPO.project,
+      name: null,
+      url: TEST_REPO.url,
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+
+    testRepo = {
+      project: TEST_REPO.project,
+      name: TEST_REPO.name,
+      url: null,
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
   });
 
   it('should be able to create a user', async function () {
@@ -154,11 +253,148 @@ describe('Database client', async () => {
     await db.updateUser(updateToApply);
 
     const users = await db.getUsers();
-    console.log('TEST USER:', JSON.stringify(TEST_USER, null, 2));
-    console.log('USERS:', JSON.stringify(users, null, 2));
     const cleanUsers = cleanResponseData(updatedUser, users);
-    console.log('CLEAN USERS:', JSON.stringify(cleanUsers, null, 2));
     expect(cleanUsers).to.deep.include(updatedUser);
+    await db.deleteUser(TEST_USER.username);
+  });
+
+  it('should be able to create a user via updateUser', async function () {
+    await db.updateUser(TEST_USER);
+
+    const users = await db.getUsers();
+    // remove password as it will have been hashed
+    // eslint-disable-next-line no-unused-vars
+    const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
+    const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
+    expect(cleanUsers).to.deep.include(TEST_USER_CLEAN);
+    // leave user in place for next test(s)
+  });
+
+  it('should be able to authorise a user to push and confirm that they can', async function () {
+    let threwError = false;
+    try {
+      // first create the repo and check that user is not allowed to push
+      await db.createRepo(TEST_REPO);
+      let allowed = await db.isUserPushAllowed(TEST_REPO.name, TEST_USER.username);
+      expect(allowed).to.be.false;
+
+      // uppercase the filter value to confirm db client is lowercasing inputs
+      await db.addUserCanPush(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+
+      // repeat, should not throw an error if already set
+      await db.addUserCanPush(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+
+      // confirm the setting exists
+      allowed = await db.isUserPushAllowed(TEST_REPO.name, TEST_USER.username);
+      expect(allowed).to.be.true;
+
+      // confirm that casing doesn't matter
+      allowed = await db.isUserPushAllowed(
+        TEST_REPO.name.toUpperCase(),
+        TEST_USER.username.toUpperCase(),
+      );
+      expect(allowed).to.be.true;
+    } catch (e) {
+      console.error('Error thrown ', e);
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
+  });
+
+  it("should be able to de-authorise a user to push and confirm that they can't", async function () {
+    let threwError = false;
+    try {
+      // repo should already exist with user able to push after previous test
+      let allowed = await db.isUserPushAllowed(TEST_REPO.name, TEST_USER.username);
+      expect(allowed).to.be.true;
+
+      // uppercase the filter value to confirm db client is lowercasing inputs
+      await db.removeUserCanPush(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+
+      // repeat, should not throw an error if already unset
+      await db.removeUserCanPush(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+
+      // confirm the setting exists
+      allowed = await db.isUserPushAllowed(TEST_REPO.name, TEST_USER.username);
+      expect(allowed).to.be.false;
+
+      // confirm that casing doesn't matter
+      allowed = await db.isUserPushAllowed(
+        TEST_REPO.name.toUpperCase(),
+        TEST_USER.username.toUpperCase(),
+      );
+      expect(allowed).to.be.false;
+    } catch (e) {
+      console.error('Error thrown ', e);
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
+  });
+
+  it('should be able to authorise a user to authorise and confirm that they can', async function () {
+    let threwError = false;
+    try {
+      // repo should already exist after a previous test
+      let allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.name, TEST_USER.username);
+      expect(allowed).to.be.false;
+
+      // uppercase the filter value to confirm db client is lowercasing inputs
+      await db.addUserCanAuthorise(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+
+      // repeat, should not throw an error if already set
+      await db.addUserCanAuthorise(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+
+      // confirm the setting exists
+      allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.name, TEST_USER.username);
+      expect(allowed).to.be.true;
+
+      // confirm that casing doesn't matter
+      allowed = await db.canUserApproveRejectPushRepo(
+        TEST_REPO.name.toUpperCase(),
+        TEST_USER.username.toUpperCase(),
+      );
+      expect(allowed).to.be.true;
+    } catch (e) {
+      console.error('Error thrown ', e);
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
+  });
+
+  it("should be able to de-authorise a user to authorise and confirm that they can't", async function () {
+    let threwError = false;
+    try {
+      // repo should already exist after a previous test and user should be an authoriser
+      let allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.name, TEST_USER.username);
+      expect(allowed).to.be.true;
+
+      // uppercase the filter value to confirm db client is lowercasing inputs
+      await db.removeUserCanAuthorise(
+        TEST_REPO.name.toUpperCase(),
+        TEST_USER.username.toUpperCase(),
+      );
+
+      // repeat, should not throw an error if already set
+      await db.removeUserCanAuthorise(
+        TEST_REPO.name.toUpperCase(),
+        TEST_USER.username.toUpperCase(),
+      );
+
+      // confirm the setting was removed
+      allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.name, TEST_USER.username);
+      expect(allowed).to.be.false;
+
+      // confirm that casing doesn't matter
+      allowed = await db.canUserApproveRejectPushRepo(
+        TEST_REPO.name.toUpperCase(),
+        TEST_USER.username.toUpperCase(),
+      );
+      expect(allowed).to.be.false;
+    } catch (e) {
+      console.error('Error thrown ', e);
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
   });
 
   it('should be able to create a push', async function () {
