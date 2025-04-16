@@ -45,7 +45,7 @@ describe('Auto-Approved Push Test', () => {
   });
 
   it('should display auto-approved message and verify tooltip contains the expected timestamp', () => {
-    cy.visit('/admin/push/123');
+    cy.visit('/dashboard/push/123');
 
     cy.wait('@getPush');
 
