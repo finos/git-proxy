@@ -7,8 +7,8 @@ const util = require('util');
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
-const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost' } = process.env;
-const { GIT_PROXY_UI_PORT: uiPort } = require('@finos/git-proxy/src/config/env').Vars;
+const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 8080 } = process.env;
+
 const baseUrl = `${uiHost}:${uiPort}`;
 
 axios.defaults.timeout = 30000;
@@ -307,7 +307,7 @@ async function logout() {
 }
 
 // Parsing command line arguments
-yargs(hideBin(process.argv))
+yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused-expressions
   .command({
     command: 'authorise',
     describe: 'Authorise git push by ID',
@@ -339,7 +339,7 @@ yargs(hideBin(process.argv))
   .command({
     command: 'config',
     describe: 'Print configuration',
-    handler(argv) {
+    handler() {
       console.log(`GitProxy URL: ${baseUrl}`);
     },
   })
@@ -365,7 +365,7 @@ yargs(hideBin(process.argv))
   .command({
     command: 'logout',
     describe: 'Log out',
-    handler(argv) {
+    handler() {
       logout();
     },
   })

@@ -117,6 +117,8 @@
       "type": "jwt",
       "enabled": false,
       "jwtConfig": {
+        "authorityURL": "",
+        "clientID": "",
         "expectedAudience": "",
         "roleMapping": {
           "admin": {
@@ -125,5 +127,10 @@
         }
       }
     }
-  ]
+  ],
+  "tls": {
+    "enabled": true,
+    "key": "certs/key.pem",
+    "cert": "certs/cert.pem"
+  }
 }

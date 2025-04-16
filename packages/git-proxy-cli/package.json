@@ -13,7 +13,7 @@
   },
   "scripts": {
     "lint": "eslint --fix . --ext .js,.jsx",
-    "test": "NODE_ENV=test mocha --exit --timeout 10000",
+    "test": "NODE_ENV=test ts-mocha --exit --timeout 10000",
     "test-coverage": "nyc npm run test",
     "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text --reporter=html npm run test"
   },
