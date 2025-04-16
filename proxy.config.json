@@ -117,8 +117,7 @@
       "type": "jwt",
       "enabled": false,
       "jwtConfig": {
-        "clientID": "",
-        "authorityURL": "",
+        "expectedAudience": "",
         "roleMapping": {
           "admin": {
             "": ""
