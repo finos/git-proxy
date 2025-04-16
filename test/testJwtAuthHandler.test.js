@@ -146,7 +146,7 @@ describe('jwtAuthHandler', () => {
 
   it('should return 401 if no token provided', async () => {
     req.header.returns(null);
-    await jwtAuthHandler()(req, res, next);
+    await jwtAuthHandler(jwtConfig)(req, res, next);
 
     expect(res.status.calledWith(401)).to.be.true;
     expect(res.send.calledWith('No token provided\n')).to.be.true;
