@@ -33,7 +33,10 @@ describe('getJwks', () => {
 });
 
 describe('validateJwt', () => {
-  let decodeStub, verifyStub, pemStub, getJwksStub;
+  let decodeStub;
+  let verifyStub;
+  let pemStub;
+  let getJwksStub;
 
   beforeEach(() => {
     const jwksResponse = { keys: [{ kid: 'test-key', kty: 'RSA', n: 'abc', e: 'AQAB' }] };
@@ -112,7 +115,11 @@ describe('assignRoles', () => {
 });
 
 describe('jwtAuthHandler', () => {
-  let req, res, next, jwtConfig, validVerifyResponse;
+  let req;
+  let res;
+  let next;
+  let jwtConfig;
+  let validVerifyResponse;
 
   beforeEach(() => {
     req = { header: sinon.stub(), isAuthenticated: sinon.stub(), user: {} };

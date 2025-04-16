@@ -3,9 +3,6 @@ const db = require('../../db');
 let type;
 
 const configure = async (passport) => {
-  const openIdClient = await import('openid-client');
-  const { Strategy } = await import('openid-client/passport');
-  
   const authMethods = require('../../config').getAuthMethods();
   const oidcConfig = authMethods.find((method) => method.type.toLowerCase() === "openidconnect")?.oidcConfig;
   const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
@@ -15,6 +12,8 @@ const configure = async (passport) => {
   }
 
   const server = new URL(issuer);
+  const openIdClient = await import('openid-client');
+  const { Strategy } = await import('openid-client/passport');
 
   try {
     const config = await openIdClient.discovery(server, clientID, clientSecret);

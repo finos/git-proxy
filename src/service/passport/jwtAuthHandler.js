@@ -3,7 +3,7 @@ const { assignRoles, validateJwt } = require('./jwtUtils');
 /**
  * Middleware function to handle JWT authentication.
  * @param {*} overrideConfig optional configuration to override the default JWT configuration (e.g. for testing)
- * @returns {Function} the middleware function 
+ * @return {Function} the middleware function 
  */
 const jwtAuthHandler = (overrideConfig = null) => {
   return async (req, res, next) => {
