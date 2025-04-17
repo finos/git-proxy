@@ -336,6 +336,16 @@ describe('Database clients', async () => {
     expect(threwError).to.be.true;
   });
 
+  it('should throw an error when de-authorising a user to push on non-existent repo', async function () {
+    let threwError = false;
+    try {
+      await db.removeUserCanPush('non-existent-repo', TEST_USER.username);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+  });
+
   it("should be able to de-authorise a user to push and confirm that they can't", async function () {
     let threwError = false;
     try {
@@ -389,6 +399,33 @@ describe('Database clients', async () => {
   it('should NOT throw an error when checking whether a user can push on non-existent repo', async function () {
     const allowed = await db.isUserPushAllowed(TEST_NONEXISTENT_REPO.url, TEST_USER.username);
     expect(allowed).to.be.false;
+  });
+
+  it('should NOT throw an error when checking whether a user can push on non-existent repo', async function () {
+    let threwError = false;
+    try {
+      // uppercase the filter value to confirm db client is lowercasing inputs
+      const allowed = await db.isUserPushAllowed('non-existent-repo', TEST_USER.username);
+      expect(allowed).to.be.false;
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
+  });
+
+  it('should NOT throw an error when checking whether a user can authorise on non-existent repo', async function () {
+    let threwError = false;
+    try {
+      // uppercase the filter value to confirm db client is lowercasing inputs
+      const allowed = await db.canUserApproveRejectPushRepo(
+        'non-existent-repo',
+        TEST_USER.username,
+      );
+      expect(allowed).to.be.false;
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
   });
 
   it('should be able to create a push', async function () {
