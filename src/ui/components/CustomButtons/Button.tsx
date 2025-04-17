@@ -17,12 +17,12 @@ type Color =
   | 'transparent';
 type Size = 'sm' | 'lg';
 
-interface RegularButtonProps extends ButtonProps {
-  customColor?: Color;
+interface RegularButtonProps extends Omit<ButtonProps, 'color' | 'size'> {
+  color?: Color;
   round?: boolean;
   disabled?: boolean;
   simple?: boolean;
-  customSize?: Size;
+  size?: Size;
   block?: boolean;
   link?: boolean;
   justIcon?: boolean;
