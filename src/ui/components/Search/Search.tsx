@@ -6,9 +6,10 @@ import SearchIcon from '@material-ui/icons/Search';
 
 interface SearchProps {
   onSearch: (query: string) => void;
+  placeholder?: string;
 }
 
-const Search: React.FC<SearchProps> = ({ onSearch }) => {
+const Search: React.FC<SearchProps> = ({ onSearch, placeholder = 'Search...' }) => {
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const query = event.target.value;
     onSearch(query);
@@ -22,7 +23,7 @@ const Search: React.FC<SearchProps> = ({ onSearch }) => {
         fullWidth
         margin='normal'
         onChange={handleSearchChange}
-        placeholder='Search...'
+        placeholder={placeholder}
         InputProps={{
           startAdornment: (
             <InputAdornment position='start'>
