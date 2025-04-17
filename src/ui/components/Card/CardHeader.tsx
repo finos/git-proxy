@@ -5,7 +5,7 @@ import styles from '../../assets/jss/material-dashboard-react/components/cardHea
 
 const useStyles = makeStyles(styles);
 
-type CardHeaderColor = 'warning' | 'success' | 'danger' | 'info' | 'primary' | 'rose';
+export type CardHeaderColor = 'warning' | 'success' | 'danger' | 'info' | 'primary' | 'rose';
 
 interface CardHeaderProps extends React.ComponentProps<'div'> {
   className?: string;
