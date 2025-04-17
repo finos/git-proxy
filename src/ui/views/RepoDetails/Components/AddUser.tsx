@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 import FormHelperText from '@material-ui/core/FormHelperText';
@@ -18,18 +17,33 @@ import { addUser } from '../../../services/repo';
 import { getUsers } from '../../../services/user';
 import { PersonAdd } from '@material-ui/icons';
 
-function AddUserDialog(props) {
-  const repoName = props.repoName;
-  const type = props.type;
-  const refreshFn = props.refreshFn;
-  const [username, setUsername] = useState('');
-  const [data, setData] = useState([]);
-  const [, setAuth] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [error, setError] = useState('');
-  const [tip, setTip] = useState(false);
-  const { onClose, open } = props;
+interface User {
+  username: string;
+  gitAccount: string;
+}
+
+interface AddUserDialogProps {
+  repoName: string;
+  type: string;
+  refreshFn: () => void;
+  open: boolean;
+  onClose: () => void;
+}
+
+const AddUserDialog: React.FC<AddUserDialogProps> = ({
+  repoName,
+  type,
+  refreshFn,
+  open,
+  onClose,
+}) => {
+  const [username, setUsername] = useState<string>('');
+  const [data, setData] = useState<User[]>([]);
+  const [, setAuth] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  const [tip, setTip] = useState<boolean>(false);
 
   const handleClose = () => {
     setError('');
@@ -41,8 +55,8 @@ function AddUserDialog(props) {
     refreshFn();
   };
 
-  const handleChange = (event) => {
-    setUsername(event.target.value);
+  const handleChange = (event: React.ChangeEvent<{ value: unknown }>) => {
+    setUsername(event.target.value as string);
   };
 
   const add = async () => {
@@ -53,28 +67,23 @@ function AddUserDialog(props) {
       handleClose();
     } catch (e) {
       setIsLoading(false);
-      if (e.message) {
-        setError(JSON.stringify(e));
+      if (e instanceof Error) {
+        setError(e.message);
       } else {
-        setError(e.toString());
+        setError('An unknown error occurred');
       }
     }
   };
 
-  const inputStyle = {
+  const inputStyle: React.CSSProperties = {
     width: '100%',
   };
 
   useEffect(() => {
     getUsers(setIsLoading, setData, setAuth, setIsError, {});
-  }, [props]);
+  }, []);
 
   if (isError) return <div>Something went wrong ...</div>;
-
-  let spinner;
-  if (isLoading) {
-    spinner = <CircularProgress />;
-  }
 
   return (
     <>
@@ -96,7 +105,9 @@ function AddUserDialog(props) {
         maxWidth='md'
       >
         <DialogTitle id='simple-dialog-title'>
-          Add a user...<p>{error}</p> {spinner}
+          Add a user...
+          <p>{error}</p>
+          {isLoading && <CircularProgress />}
         </DialogTitle>
         <Card>
           <CardBody>
@@ -134,20 +145,16 @@ function AddUserDialog(props) {
       </Dialog>
     </>
   );
-}
-
-AddUserDialog.propTypes = {
-  onClose: PropTypes.func.isRequired,
-  open: PropTypes.bool.isRequired,
-  refreshFn: PropTypes.func.isRequired,
 };
 
-export default function AddUser(props) {
-  const [open, setOpen] = React.useState(false);
+interface AddUserProps {
+  repoName: string;
+  type: string;
+  refreshFn: () => void;
+}
 
-  const repoName = props.repoName;
-  const type = props.type;
-  const refreshFn = props.refreshFn;
+const AddUser: React.FC<AddUserProps> = ({ repoName, type, refreshFn }) => {
+  const [open, setOpen] = useState<boolean>(false);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -160,7 +167,7 @@ export default function AddUser(props) {
   return (
     <>
       <Button variant='outlined' color='success' onClick={handleClickOpen}>
-        <PersonAdd></PersonAdd>
+        <PersonAdd />
       </Button>
       <AddUserDialog
         repoName={repoName}
@@ -171,4 +178,6 @@ export default function AddUser(props) {
       />
     </>
   );
-}
+};
+
+export default AddUser;
