@@ -1,6 +1,5 @@
 import React from 'react';
 import classNames from 'classnames';
-import PropTypes from 'prop-types';
 import { NavLink } from 'react-router-dom';
 import { makeStyles } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
@@ -11,30 +10,53 @@ import ListItemText from '@material-ui/core/ListItemText';
 import Icon from '@material-ui/core/Icon';
 import styles from '../../assets/jss/material-dashboard-react/components/sidebarStyle';
 
-const useStyles = makeStyles(styles);
+const useStyles = makeStyles(styles as any);
 
-export default function Sidebar(props) {
+interface Route {
+  path: string;
+  layout: string;
+  name: string;
+  icon: string | React.ComponentType;
+  visible?: boolean;
+  rtlName?: string;
+  component: React.ComponentType;
+}
+
+interface SidebarProps {
+  color: 'purple' | 'blue' | 'green' | 'orange' | 'red';
+  logo: string;
+  routes: Route[];
+  background: string;
+  rtlActive?: boolean;
+  handleDrawerToggle: () => void;
+  open: boolean;
+}
+
+const Sidebar: React.FC<SidebarProps> = (props) => {
   const classes = useStyles();
-  // verifies if routeName is the one active (in browser input)
-  function activeRoute(routeName) {
-    return window.location.href.indexOf(routeName) > -1 ? true : false;
-  }
-  const { color, logo, routes, background } = props;
+
+  const activeRoute = (routeName: string): boolean => {
+    return window.location.href.indexOf(routeName) > -1;
+  };
+
+  const { color, logo, routes, background, rtlActive, open, handleDrawerToggle } = props;
+
   const links = (
     <List className={classes.list}>
       {routes.map((prop, key) => {
         const activePro = ' ';
         const listItemClasses = classNames({
-          [' ' + classes[color]]: activeRoute(prop.layout + prop.path),
+          [` ${classes[color]}`]: activeRoute(prop.layout + prop.path),
         });
 
         const whiteFontClasses = classNames({
-          [' ' + classes.whiteFont]: activeRoute(prop.layout + prop.path),
+          [` ${classes.whiteFont}`]: activeRoute(prop.layout + prop.path),
         });
 
         if (!prop.visible) {
           return <div key={key}></div>;
         }
+
         return (
           <NavLink
             to={prop.layout + prop.path}
@@ -46,7 +68,7 @@ export default function Sidebar(props) {
               {typeof prop.icon === 'string' ? (
                 <Icon
                   className={classNames(classes.itemIcon, whiteFontClasses, {
-                    [classes.itemIconRTL]: props.rtlActive,
+                    [classes.itemIconRTL]: rtlActive,
                   })}
                 >
                   {prop.icon}
@@ -54,14 +76,14 @@ export default function Sidebar(props) {
               ) : (
                 <prop.icon
                   className={classNames(classes.itemIcon, whiteFontClasses, {
-                    [classes.itemIconRTL]: props.rtlActive,
+                    [classes.itemIconRTL]: rtlActive,
                   })}
                 />
               )}
               <ListItemText
-                primary={props.rtlActive ? prop.rtlName : prop.name}
+                primary={rtlActive ? prop.rtlName : prop.name}
                 className={classNames(classes.itemText, whiteFontClasses, {
-                  [classes.itemTextRTL]: props.rtlActive,
+                  [classes.itemTextRTL]: rtlActive,
                 })}
                 disableTypography={true}
               />
@@ -71,6 +93,7 @@ export default function Sidebar(props) {
       })}
     </List>
   );
+
   const brand = (
     <div className={classes.logo}>
       <a style={{ textDecoration: 'none' }} href='/dashboard/repo'>
@@ -85,21 +108,22 @@ export default function Sidebar(props) {
       </a>
     </div>
   );
+
   return (
     <div style={{ borderRight: '1px solid #d3d3d3' }}>
       <Hidden mdUp implementation='css'>
         <Drawer
           variant='temporary'
-          anchor={props.rtlActive ? 'left' : 'right'}
-          open={props.open}
+          anchor={rtlActive ? 'left' : 'right'}
+          open={open}
           classes={{
             paper: classNames(classes.drawerPaper, {
-              [classes.drawerPaperRTL]: props.rtlActive,
+              [classes.drawerPaperRTL]: rtlActive,
             }),
           }}
-          onClose={props.handleDrawerToggle}
+          onClose={handleDrawerToggle}
           ModalProps={{
-            keepMounted: true, // Better open performance on mobile.
+            keepMounted: true,
           }}
         >
           {brand}
@@ -109,12 +133,12 @@ export default function Sidebar(props) {
       </Hidden>
       <Hidden smDown implementation='css'>
         <Drawer
-          anchor={props.rtlActive ? 'right' : 'left'}
+          anchor={rtlActive ? 'right' : 'left'}
           variant='permanent'
           open
           classes={{
             paper: classNames(classes.drawerPaper, {
-              [classes.drawerPaperRTL]: props.rtlActive,
+              [classes.drawerPaperRTL]: rtlActive,
             }),
           }}
         >
@@ -125,14 +149,6 @@ export default function Sidebar(props) {
       </Hidden>
     </div>
   );
-}
-
-Sidebar.propTypes = {
-  rtlActive: PropTypes.bool,
-  handleDrawerToggle: PropTypes.func,
-  bgColor: PropTypes.oneOf(['purple', 'blue', 'green', 'orange', 'red']),
-  logo: PropTypes.string,
-  image: PropTypes.string,
-  routes: PropTypes.arrayOf(PropTypes.object),
-  open: PropTypes.bool,
 };
+
+export default Sidebar;
