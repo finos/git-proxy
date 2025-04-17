@@ -1,47 +1,44 @@
 import React, { useState } from 'react';
 import './Filtering.css';
 
-const Filtering = ({ onFilterChange }) => {
-  const [isOpen, setIsOpen] = useState(false); // State to toggle dropdown open/close
-  const [selectedOption, setSelectedOption] = useState('Sort by'); // Initial state
-  const [sortOrder, setSortOrder] = useState('asc'); // Track sort order (asc/desc)
+export type FilterOption = 'Date Modified' | 'Date Created' | 'Alphabetical' | 'Sort by';
+export type SortOrder = 'asc' | 'desc';
+
+interface FilteringProps {
+  onFilterChange: (option: FilterOption, order: SortOrder) => void;
+}
+
+const Filtering: React.FC<FilteringProps> = ({ onFilterChange }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<FilterOption>('Sort by');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
   const toggleDropdown = () => {
-    setIsOpen(!isOpen); // Toggle dropdown open/close state
+    setIsOpen(!isOpen);
   };
 
-  const toggleSortOrder = () => {
-    // Toggle sort order only if an option is selected
+  const toggleSortOrder = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (selectedOption !== 'Sort by') {
       const newSortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
       setSortOrder(newSortOrder);
-      onFilterChange(selectedOption, newSortOrder); // Trigger filtering with new order
+      onFilterChange(selectedOption, newSortOrder);
     }
   };
 
-  const handleOptionClick = (option) => {
-    // Handle filter option selection
+  const handleOptionClick = (option: FilterOption) => {
     setSelectedOption(option);
-    onFilterChange(option, sortOrder); // Call the parent function with selected filter and order
-    setIsOpen(false); // Collapse the dropdown after selection
+    onFilterChange(option, sortOrder);
+    setIsOpen(false);
   };
 
   return (
     <div className='filtering-container'>
       <div className='dropdown'>
-        {/* Make the entire button clickable for toggling dropdown */}
         <button onClick={toggleDropdown} className='dropdown-toggle'>
           {selectedOption}
-          {/* Render the up/down arrow next to selected option */}
           {selectedOption !== 'Sort by' && (
-            <span
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleSortOrder();
-              }}
-            >
-              {sortOrder === 'asc' ? ' ↑' : ' ↓'}
-            </span>
+            <span onClick={toggleSortOrder}>{sortOrder === 'asc' ? ' ↑' : ' ↓'}</span>
           )}
           <span className='dropdown-arrow'>▼</span>
         </button>

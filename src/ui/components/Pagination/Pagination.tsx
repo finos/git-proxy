@@ -1,10 +1,22 @@
 import React from 'react';
 import './Pagination.css';
 
-export default function Pagination({ currentPage, totalItems = 0, itemsPerPage, onPageChange }) {
+interface PaginationProps {
+  currentPage: number;
+  totalItems?: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+}
+
+const Pagination: React.FC<PaginationProps> = ({
+  currentPage,
+  totalItems = 0,
+  itemsPerPage,
+  onPageChange,
+}) => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  const handlePageClick = (page) => {
+  const handlePageClick = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       onPageChange(page);
     }
@@ -27,10 +39,12 @@ export default function Pagination({ currentPage, totalItems = 0, itemsPerPage, 
       <button
         className='pageButton'
         onClick={() => handlePageClick(currentPage + 1)}
-        disabled={currentPage === totalPages}
+        disabled={currentPage === totalPages || totalPages === 0}
       >
         Next
       </button>
     </div>
   );
-}
+};
+
+export default Pagination;
