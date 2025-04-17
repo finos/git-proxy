@@ -95,6 +95,11 @@ describe('Database clients', async () => {
     const repos2 = await db.getRepos({ url: TEST_REPO.url });
     const cleanRepos2 = cleanResponseData(TEST_REPO, repos2);
     expect(cleanRepos2[0]).to.eql(TEST_REPO);
+
+    // passing an empty query should produce same results as no query
+    const repos3 = await db.getRepos();
+    const repos4 = await db.getRepos({});
+    expect(repos3).to.have.same.deep.members(repos4);
   });
 
   it('should be able to retrieve a repo by name', async function () {
@@ -270,6 +275,17 @@ describe('Database clients', async () => {
     // leave user in place for next test(s)
   });
 
+  it('should throw an error when authorising a user to push on non-existent repo', async function () {
+    let threwError = false;
+    try {
+      // uppercase the filter value to confirm db client is lowercasing inputs
+      await db.addUserCanPush('non-existent-repo', TEST_USER.username);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+  });
+
   it('should be able to authorise a user to push and confirm that they can', async function () {
     let threwError = false;
     try {
@@ -299,6 +315,16 @@ describe('Database clients', async () => {
       threwError = true;
     }
     expect(threwError).to.be.false;
+  });
+
+  it('should throw an error when de-authorising a user to push on non-existent repo', async function () {
+    let threwError = false;
+    try {
+      await db.removeUserCanPush('non-existent-repo', TEST_USER.username);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
   });
 
   it("should be able to de-authorise a user to push and confirm that they can't", async function () {
@@ -331,6 +357,16 @@ describe('Database clients', async () => {
     expect(threwError).to.be.false;
   });
 
+  it('should throw an error when authorising a user to authorise on non-existent repo', async function () {
+    let threwError = false;
+    try {
+      await db.addUserCanAuthorise('non-existent-repo', TEST_USER.username);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+  });
+
   it('should be able to authorise a user to authorise and confirm that they can', async function () {
     let threwError = false;
     try {
@@ -359,6 +395,17 @@ describe('Database clients', async () => {
       threwError = true;
     }
     expect(threwError).to.be.false;
+  });
+
+  it('should throw an error when de-authorising a user to push on non-existent repo', async function () {
+    let threwError = false;
+    try {
+      // uppercase the filter value to confirm db client is lowercasing inputs
+      await db.removeUserCanAuthorise('non-existent-repo', TEST_USER.username);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
   });
 
   it("should be able to de-authorise a user to authorise and confirm that they can't", async function () {
@@ -397,6 +444,33 @@ describe('Database clients', async () => {
     expect(threwError).to.be.false;
   });
 
+  it('should NOT throw an error when checking whether a user can push on non-existent repo', async function () {
+    let threwError = false;
+    try {
+      // uppercase the filter value to confirm db client is lowercasing inputs
+      const allowed = await db.isUserPushAllowed('non-existent-repo', TEST_USER.username);
+      expect(allowed).to.be.false;
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
+  });
+
+  it('should NOT throw an error when checking whether a user can authorise on non-existent repo', async function () {
+    let threwError = false;
+    try {
+      // uppercase the filter value to confirm db client is lowercasing inputs
+      const allowed = await db.canUserApproveRejectPushRepo(
+        'non-existent-repo',
+        TEST_USER.username,
+      );
+      expect(allowed).to.be.false;
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
+  });
+
   it('should be able to create a push', async function () {
     await db.writeAudit(TEST_PUSH);
     const pushes = await db.getPushes();
@@ -409,6 +483,134 @@ describe('Database clients', async () => {
     const pushes = await db.getPushes();
     const cleanPushes = cleanResponseData(TEST_PUSH, pushes);
     expect(cleanPushes).to.not.deep.include(TEST_PUSH);
+  });
+
+  it('should be able to authorise a push', async function () {
+    // first create the push
+    await db.writeAudit(TEST_PUSH);
+    let threwError = false;
+    try {
+      const msg = await db.authorise(TEST_PUSH.id);
+      expect(msg).to.have.property('message');
+    } catch (e) {
+      console.error('Error: ', e);
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
+    // clean up
+    await db.deletePush(TEST_PUSH.id);
+  });
+
+  it('should throw an error when authorising a non-existent a push', async function () {
+    let threwError = false;
+    try {
+      await db.authorise(TEST_PUSH.id);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+  });
+
+  it('should be able to reject a push', async function () {
+    // first create the push
+    await db.writeAudit(TEST_PUSH);
+    let threwError = false;
+    try {
+      const msg = await db.reject(TEST_PUSH.id);
+      expect(msg).to.have.property('message');
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
+    // clean up
+    await db.deletePush(TEST_PUSH.id);
+  });
+
+  it('should throw an error when rejecting a non-existent a push', async function () {
+    let threwError = false;
+    try {
+      await db.reject(TEST_PUSH.id);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+  });
+
+  it('should be able to cancel a push', async function () {
+    // first create the push
+    await db.writeAudit(TEST_PUSH);
+    let threwError = false;
+    try {
+      const msg = await db.cancel(TEST_PUSH.id);
+      expect(msg).to.have.property('message');
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
+    // clean up
+    await db.deletePush(TEST_PUSH.id);
+  });
+
+  it('should throw an error when cancelling a non-existent a push', async function () {
+    let threwError = false;
+    try {
+      await db.cancel(TEST_PUSH.id);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+  });
+
+  it('should be able to check if a user can cancel push', async function () {
+    let threwError = false;
+    const repoName = TEST_PUSH.repoName.replace('.git', '');
+    try {
+      // push does not exist yet, should return false
+      let allowed = await db.canUserCancelPush(TEST_PUSH.id, TEST_USER.username);
+      expect(allowed).to.be.false;
+
+      // create the push - user should already exist and not authorised to push
+      await db.writeAudit(TEST_PUSH);
+      allowed = await db.canUserCancelPush(TEST_PUSH.id, TEST_USER.username);
+      expect(allowed).to.be.false;
+
+      // authorise user and recheck
+      await db.addUserCanPush(repoName, TEST_USER.username);
+      allowed = await db.canUserCancelPush(TEST_PUSH.id, TEST_USER.username);
+      expect(allowed).to.be.true;
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
+    // clean up
+    await db.deletePush(TEST_PUSH.id);
+    await db.removeUserCanPush(repoName, TEST_USER.username);
+  });
+
+  it('should be able to check if a user can approve/reject push', async function () {
+    let threwError = false;
+    const repoName = TEST_PUSH.repoName.replace('.git', '');
+    try {
+      // push does not exist yet, should return false
+      let allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
+      expect(allowed).to.be.false;
+
+      // create the push - user should already exist and not authorised to push
+      await db.writeAudit(TEST_PUSH);
+      allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
+      expect(allowed).to.be.false;
+
+      // authorise user and recheck
+      await db.addUserCanAuthorise(repoName, TEST_USER.username);
+      allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
+      expect(allowed).to.be.true;
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.false;
+    // clean up
+    await db.deletePush(TEST_PUSH.id);
+    await db.removeUserCanAuthorise(repoName, TEST_USER.username);
   });
 
   after(async function () {
