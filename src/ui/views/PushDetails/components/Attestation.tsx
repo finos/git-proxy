@@ -1,18 +1,21 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
 import { CheckCircle, ErrorOutline } from '@material-ui/icons';
 import Button from '../../../components/CustomButtons/Button';
-import AttestationForm from './AttestationForm';
-
+import AttestationForm, { FormQuestion } from './AttestationForm';
 import { getAttestationConfig, getURLShortener, getEmailContact } from '../../../services/config';
 
-export default function Attestation(props) {
-  const [open, setOpen] = React.useState(false);
-  const [formData, setFormData] = React.useState([]);
-  const [urlShortener, setURLShortener] = React.useState('');
-  const [contactEmail, setContactEmail] = React.useState('');
+interface AttestationProps {
+  approveFn: (data: { label: string; checked: boolean }[]) => void;
+}
+
+const Attestation: React.FC<AttestationProps> = ({ approveFn }) => {
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState<FormQuestion[]>([]);
+  const [urlShortener, setURLShortener] = useState<string>('');
+  const [contactEmail, setContactEmail] = useState<string>('');
 
   useEffect(() => {
     if (!open) {
@@ -27,7 +30,7 @@ export default function Attestation(props) {
         getEmailContact(setContactEmail);
       }
     }
-  }, [open]);
+  }, [open, urlShortener, contactEmail]);
 
   const handleClickOpen = () => {
     setOpen(true);
@@ -38,13 +41,11 @@ export default function Attestation(props) {
   };
 
   const handleApprove = () => {
-    const data = formData.map((question) => {
-      return {
-        label: question.label,
-        checked: question.checked,
-      };
-    });
-    props.approveFn(data);
+    const data = formData.map((question) => ({
+      label: question.label,
+      checked: question.checked,
+    }));
+    approveFn(data);
   };
 
   return (
@@ -95,7 +96,7 @@ export default function Attestation(props) {
             color='success'
             onClick={handleApprove}
             autoFocus
-            disabled={!formData.every((question) => !!question.checked)}
+            disabled={!formData.every((question) => question.checked)}
           >
             <CheckCircle /> Approve
           </Button>
@@ -103,4 +104,6 @@ export default function Attestation(props) {
       </Dialog>
     </div>
   );
-}
+};
+
+export default Attestation;

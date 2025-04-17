@@ -7,7 +7,7 @@ import GridContainer from '../../components/Grid/GridContainer';
 import Card from '../../components/Card/Card';
 import CardIcon from '../../components/Card/CardIcon';
 import CardBody from '../../components/Card/CardBody';
-import CardHeader from '../../components/Card/CardHeader';
+import CardHeader, { CardHeaderColor } from '../../components/Card/CardHeader';
 import CardFooter from '../../components/Card/CardFooter';
 import Button from '../../components/CustomButtons/Button';
 import Diff from './components/Diff';
@@ -23,29 +23,75 @@ import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
 
-export default function Dashboard() {
-  const { id } = useParams();
-  const [data, setData] = useState([]);
+interface CommitData {
+  commitTs?: number;
+  commitTimestamp?: number;
+  committer: string;
+  author: string;
+  authorEmail?: string;
+  message: string;
+}
+
+interface Reviewer {
+  username: string;
+  gitAccount: string;
+}
+
+interface AttestationData {
+  reviewer: Reviewer;
+  timestamp: string | Date;
+  questions: Array<{ label: string; checked: boolean }>;
+}
+
+interface PushData {
+  id: string;
+  repo: string;
+  branch: string;
+  commitFrom: string;
+  commitTo: string;
+  commitData: CommitData[];
+  diff: {
+    content: string;
+  };
+  canceled?: boolean;
+  rejected?: boolean;
+  authorised?: boolean;
+  attestation?: AttestationData;
+  autoApproved?: boolean;
+  timestamp: string | Date;
+}
+
+const Dashboard: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const [data, setData] = useState<PushData | null>(null);
   const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [message, setMessage] = useState('');
   const [attestation, setAttestation] = useState(false);
   const navigate = useNavigate();
+
   let isUserAllowedToApprove = true;
   let isUserAllowedToReject = true;
-  function setUserAllowedToApprove(userAllowedToApprove) {
+
+  const setUserAllowedToApprove = (userAllowedToApprove: boolean) => {
     isUserAllowedToApprove = userAllowedToApprove;
     console.log('isUserAllowedToApprove:' + isUserAllowedToApprove);
-  }
-  function setUserAllowedToReject(userAllowedToReject) {
+  };
+
+  const setUserAllowedToReject = (userAllowedToReject: boolean) => {
     isUserAllowedToReject = userAllowedToReject;
     console.log({ isUserAllowedToReject });
-  }
+  };
+
   useEffect(() => {
-    getPush(id, setIsLoading, setData, setAuth, setIsError);
+    if (id) {
+      getPush(id, setIsLoading, setData, setAuth, setIsError);
+    }
   }, [id]);
-  const authorise = async (attestationData) => {
+
+  const authorise = async (attestationData: Array<{ label: string; checked: boolean }>) => {
+    if (!id) return;
     await authorisePush(id, setMessage, setUserAllowedToApprove, attestationData);
     if (isUserAllowedToApprove) {
       navigate('/dashboard/push/');
@@ -53,6 +99,7 @@ export default function Dashboard() {
   };
 
   const reject = async () => {
+    if (!id) return;
     await rejectPush(id, setMessage, setUserAllowedToReject);
     if (isUserAllowedToReject) {
       navigate('/dashboard/push/');
@@ -60,14 +107,16 @@ export default function Dashboard() {
   };
 
   const cancel = async () => {
+    if (!id) return;
     await cancelPush(id, setAuth, setIsError);
     navigate(`/dashboard/push/`);
   };
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
+  if (!data) return <div>No data found</div>;
 
-  let headerData = {
+  let headerData: { title: string; color: CardHeaderColor } = {
     title: 'Pending',
     color: 'warning',
   };
@@ -96,18 +145,18 @@ export default function Dashboard() {
   const repoFullName = data.repo.replace('.git', '');
   const repoBranch = data.branch.replace('refs/heads/', '');
 
-  const generateIcon = (title) => {
+  const generateIcon = (title: string) => {
     switch (title) {
       case 'Approved':
-        return <CheckCircle></CheckCircle>;
+        return <CheckCircle />;
       case 'Pending':
-        return <Visibility></Visibility>;
+        return <Visibility />;
       case 'Canceled':
-        return <Cancel></Cancel>;
+        return <Cancel />;
       case 'Rejected':
-        return <Block></Block>;
+        return <Block />;
       default:
-        return <Icon></Icon>;
+        return <Icon />;
     }
   };
 
@@ -131,28 +180,18 @@ export default function Dashboard() {
                 {generateIcon(headerData.title)}
                 <h3>{headerData.title}</h3>
               </CardIcon>
-              {!(data.canceled || data.rejected || data.authorised) ? (
+              {!(data.canceled || data.rejected || data.authorised) && (
                 <div style={{ display: 'inline-flex', padding: '20px' }}>
-                  <Button
-                    color='warning'
-                    onClick={async () => {
-                      await cancel();
-                    }}
-                  >
+                  <Button color='warning' onClick={cancel}>
                     Cancel
                   </Button>
-                  <Button
-                    color='danger'
-                    onClick={async () => {
-                      await reject();
-                    }}
-                  >
+                  <Button color='danger' onClick={reject}>
                     Reject
                   </Button>
-                  <Attestation approveFn={authorise}></Attestation>
+                  <Attestation approveFn={authorise} />
                 </div>
-              ) : null}
-              {data.attestation && data.authorised ? (
+              )}
+              {data.attestation && data.authorised && (
                 <div
                   style={{
                     background: '#eee',
@@ -165,13 +204,7 @@ export default function Dashboard() {
                     textAlign: 'left',
                   }}
                 >
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      right: 0,
-                    }}
-                  >
+                  <span style={{ position: 'absolute', top: 0, right: 0 }}>
                     <CheckCircle
                       style={{
                         cursor: data.autoApproved ? 'default' : 'pointer',
@@ -188,19 +221,18 @@ export default function Dashboard() {
                   </span>
 
                   {data.autoApproved ? (
-                    <>
-                      <div style={{ paddingTop: '15px' }}>
-                        <p>
-                          <strong>Auto-approved by system</strong>
-                        </p>
-                      </div>
-                    </>
+                    <div style={{ paddingTop: '15px' }}>
+                      <p>
+                        <strong>Auto-approved by system</strong>
+                      </p>
+                    </div>
                   ) : (
                     <>
                       <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
                         <img
                           style={{ width: '45px', borderRadius: '20px' }}
                           src={`https://github.com/${data.attestation.reviewer.gitAccount}.png`}
+                          alt='Reviewer'
                         />
                       </a>
                       <div>
@@ -225,9 +257,7 @@ export default function Dashboard() {
                     </kbd>
                   </Tooltip>
 
-                  {data.autoApproved ? (
-                    <></>
-                  ) : (
+                  {!data.autoApproved && (
                     <AttestationView
                       data={data.attestation}
                       attestation={attestation}
@@ -235,7 +265,7 @@ export default function Dashboard() {
                     />
                   )}
                 </div>
-              ) : null}
+              )}
             </CardHeader>
             <CardBody>
               <GridContainer>
@@ -297,17 +327,19 @@ export default function Dashboard() {
             <CardBody>
               <Table>
                 <TableHead>
-                  <TableCell>Timestamp</TableCell>
-                  <TableCell>Committer</TableCell>
-                  <TableCell>Author</TableCell>
-                  <TableCell>Author E-mail</TableCell>
-                  <TableCell>Message</TableCell>
+                  <TableRow>
+                    <TableCell>Timestamp</TableCell>
+                    <TableCell>Committer</TableCell>
+                    <TableCell>Author</TableCell>
+                    <TableCell>Author E-mail</TableCell>
+                    <TableCell>Message</TableCell>
+                  </TableRow>
                 </TableHead>
                 <TableBody>
                   {data.commitData.map((c) => (
-                    <TableRow key={c.commitTimestamp}>
+                    <TableRow key={c.commitTimestamp || c.commitTs}>
                       <TableCell>
-                        {moment.unix(c.commitTs || c.commitTimestamp).toString()}
+                        {moment.unix(c.commitTs || c.commitTimestamp || 0).toString()}
                       </TableCell>
                       <TableCell>
                         <a
@@ -340,14 +372,16 @@ export default function Dashboard() {
         </GridItem>
         <GridItem xs={12} sm={12} md={12}>
           <Card>
-            <CardHeader></CardHeader>
+            <CardHeader />
             <CardBody>
               <Diff diff={data.diff.content} />
             </CardBody>
-            <CardFooter></CardFooter>
+            <CardFooter />
           </Card>
         </GridItem>
       </GridContainer>
     </div>
   );
-}
+};
+
+export default Dashboard;
