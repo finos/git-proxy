@@ -1,6 +1,22 @@
-import { hexToRgb, whiteColor } from '../../material-dashboard-react.js';
+import { hexToRgb, whiteColor } from '../../material-dashboard-react';
 
-const customTabsStyle = {
+interface CustomTabsStyle {
+  cardTitle: React.CSSProperties;
+  cardTitleRTL: React.CSSProperties;
+  displayNone: React.CSSProperties;
+  tabsRoot: React.CSSProperties & {
+    '& $tabRootButton': React.CSSProperties;
+  };
+  tabRootButton: React.CSSProperties & {
+    '&:last-child': React.CSSProperties;
+  };
+  tabSelected: React.CSSProperties;
+  tabWrapper: React.CSSProperties & {
+    '& > svg, & > .material-icons': React.CSSProperties;
+  };
+}
+
+const customTabsStyle: CustomTabsStyle = {
   cardTitle: {
     float: 'left',
     padding: '10px 10px 10px 0px',
@@ -31,14 +47,14 @@ const customTabsStyle = {
     borderRadius: '3px',
     lineHeight: '24px',
     border: '0 !important',
-    color: whiteColor + ' !important',
+    color: `${whiteColor} !important`,
     marginLeft: '4px',
     '&:last-child': {
       marginLeft: '0px',
     },
   },
   tabSelected: {
-    backgroundColor: 'rgba(' + hexToRgb(whiteColor) + ', 0.2)',
+    backgroundColor: `rgba(${hexToRgb(whiteColor)}, 0.2)`,
     transition: '0.2s background-color 0.1s',
   },
   tabWrapper: {
@@ -52,7 +68,7 @@ const customTabsStyle = {
     fontWeight: '500',
     fontSize: '12px',
     marginTop: '1px',
-    '& > svg,& > .material-icons': {
+    '& > svg, & > .material-icons': {
       verticalAlign: 'middle',
       margin: '-1px 5px 0 0 !important',
     },
