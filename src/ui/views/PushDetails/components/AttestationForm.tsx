@@ -3,6 +3,44 @@ import { withStyles } from '@material-ui/core/styles';
 import { green } from '@material-ui/core/colors';
 import { Help } from '@material-ui/icons';
 import { Grid, Tooltip, Checkbox, FormGroup, FormControlLabel } from '@material-ui/core';
+import { Theme } from '@material-ui/core/styles';
+
+interface TooltipLink {
+  text: string;
+  url: string;
+}
+
+interface TooltipContent {
+  text: string;
+  links?: TooltipLink[];
+}
+
+export interface FormQuestion {
+  label: string;
+  checked: boolean;
+  tooltip: TooltipContent;
+}
+
+interface AttestationFormProps {
+  formData: FormQuestion[];
+  passFormData: (data: FormQuestion[]) => void;
+}
+
+const styles = (theme: Theme) => ({
+  tooltip: {
+    backgroundColor: '#f5f5f9',
+    color: 'rgba(0, 0, 0, 0.87)',
+    maxWidth: 220,
+    fontSize: theme.typography.pxToRem(12),
+    border: '1px solid #dadde9',
+  },
+});
+
+interface GreenCheckboxProps {
+  checked: boolean;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  name: string;
+}
 
 const GreenCheckbox = withStyles({
   root: {
@@ -13,36 +51,32 @@ const GreenCheckbox = withStyles({
     paddingRight: '35px',
   },
   checked: {},
-})((props) => <Checkbox color='default' {...props} />);
+})((props: GreenCheckboxProps) => <Checkbox color='default' {...props} />);
 
-const HTMLTooltip = withStyles((theme) => ({
-  tooltip: {
-    backgroundColor: '#f5f5f9',
-    color: 'rgba(0, 0, 0, 0.87)',
-    maxWidth: 220,
-    fontSize: theme.typography.pxToRem(12),
-    border: '1px solid #dadde9',
-  },
-}))(Tooltip);
+const HTMLTooltip = withStyles(styles)(Tooltip);
 
-export default function AttestationForm(props) {
-  const handleChange = (event) => {
-    const name = event.target.name;
+const AttestationForm: React.FC<AttestationFormProps> = ({ formData, passFormData }) => {
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const name = parseInt(event.target.name);
     const checked = event.target.checked;
-    const clone = [...props.formData];
+    const clone = [...formData];
     clone[name] = { ...clone[name], checked };
-    props.passFormData(clone);
+    passFormData(clone);
   };
 
   return (
     <FormGroup style={{ margin: '0px 15px 0px 35px', rowGap: '20px', padding: '20px' }} row={false}>
-      {props.formData.map((question, index) => {
+      {formData.map((question, index) => {
         return (
           <Grid key={index} container spacing={2} direction='row' alignItems='center'>
             <Grid item xs={11}>
               <FormControlLabel
                 control={
-                  <GreenCheckbox checked={question.checked} onChange={handleChange} name={index} />
+                  <GreenCheckbox
+                    checked={question.checked}
+                    onChange={handleChange}
+                    name={index.toString()}
+                  />
                 }
                 label={question.label}
               />
@@ -72,7 +106,7 @@ export default function AttestationForm(props) {
                   </React.Fragment>
                 }
               >
-                <Help style={{ cursor: 'help' }} fontSize='small' htmlColor='#87a2bd'></Help>
+                <Help style={{ cursor: 'help' }} fontSize='small' htmlColor='#87a2bd' />
               </HTMLTooltip>
             </Grid>
           </Grid>
@@ -80,4 +114,6 @@ export default function AttestationForm(props) {
       })}
     </FormGroup>
   );
-}
+};
+
+export default AttestationForm;
