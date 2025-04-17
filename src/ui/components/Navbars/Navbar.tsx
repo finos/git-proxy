@@ -9,7 +9,7 @@ import Menu from '@material-ui/icons/Menu';
 import AdminNavbarLinks from './AdminNavbarLinks';
 import styles from '../../assets/jss/material-dashboard-react/components/headerStyle';
 
-const useStyles = makeStyles(styles);
+const useStyles = makeStyles(styles as any);
 
 interface Route {
   component: any;
@@ -41,7 +41,7 @@ const Header: React.FC<HeaderProps> = (props) => {
     return name;
   };
 
-  const { color } = props;
+  const { color = 'primary' } = props;
   const appBarClasses = classNames({
     [` ${classes[color]}`]: color,
   });

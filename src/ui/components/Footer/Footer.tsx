@@ -7,8 +7,9 @@ import { MarkGithubIcon } from '@primer/octicons-react';
 
 const useStyles = makeStyles(styles);
 
-export default function Footer() {
+const Footer: React.FC = () => {
   const classes = useStyles();
+
   return (
     <footer className={classes.footer}>
       <div className={classes.container}>
@@ -27,9 +28,11 @@ export default function Footer() {
           </List>
         </div>
         <p className={classes.right}>
-          <span>&copy; {1900 + new Date().getYear()} GitProxy</span>
+          <span>&copy; {new Date().getFullYear()} GitProxy</span>
         </p>
       </div>
     </footer>
   );
-}
+};
+
+export default Footer;
