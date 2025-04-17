@@ -16,11 +16,33 @@ import { KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
 
-export default function PushesTable(props) {
-  const useStyles = makeStyles(styles);
+interface CommitData {
+  commitTs?: number;
+  commitTimestamp?: number;
+  message: string;
+  committer: string;
+  author: string;
+  authorEmail?: string;
+}
+
+interface PushData {
+  id: string;
+  repo: string;
+  branch: string;
+  commitTo: string;
+  commitData: CommitData[];
+}
+
+interface PushesTableProps {
+  [key: string]: any;
+}
+
+const useStyles = makeStyles(styles as any);
+
+const PushesTable: React.FC<PushesTableProps> = (props) => {
   const classes = useStyles();
-  const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
+  const [data, setData] = useState<PushData[]>([]);
+  const [filteredData, setFilteredData] = useState<PushData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
   const navigate = useNavigate();
@@ -28,13 +50,16 @@ export default function PushesTable(props) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [searchTerm, setSearchTerm] = useState('');
-  const openPush = (push) => navigate(`/dashboard/push/${push}`, { replace: true });
+
+  const openPush = (pushId: string) => navigate(`/dashboard/push/${pushId}`, { replace: true });
 
   useEffect(() => {
-    const query = {};
-    for (const k in props) {
-      if (k) query[k] = props[k];
-    }
+    const query = {
+      blocked: props.blocked ?? false,
+      canceled: props.canceled ?? false,
+      authorised: props.authorised ?? false,
+      rejected: props.rejected ?? false,
+    };
     getPushes(setIsLoading, setData, setAuth, setIsError, query);
   }, [props]);
 
@@ -49,16 +74,16 @@ export default function PushesTable(props) {
           (item) =>
             item.repo.toLowerCase().includes(lowerCaseTerm) ||
             item.commitTo.toLowerCase().includes(lowerCaseTerm) ||
-            item.commitData[0].message.toLowerCase().includes(lowerCaseTerm),
+            item.commitData[0]?.message.toLowerCase().includes(lowerCaseTerm),
         )
       : data;
     setFilteredData(filtered);
     setCurrentPage(1);
   }, [searchTerm, data]);
 
-  const handleSearch = (term) => setSearchTerm(term.trim());
+  const handleSearch = (term: string) => setSearchTerm(term.trim());
 
-  const handlePageChange = (page) => {
+  const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
@@ -66,14 +91,12 @@ export default function PushesTable(props) {
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
 
   return (
     <div>
-      <Search onSearch={handleSearch} /> {}
+      <Search onSearch={handleSearch} />
       <TableContainer component={Paper}>
         <Table className={classes.table} aria-label='simple table'>
           <TableHead>
@@ -91,16 +114,16 @@ export default function PushesTable(props) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {currentItems.reverse().map((row) => {
+            {[...currentItems].reverse().map((row) => {
               const repoFullName = row.repo.replace('.git', '');
               const repoBranch = row.branch.replace('refs/heads/', '');
+              const commitTimestamp =
+                row.commitData[0]?.commitTs || row.commitData[0]?.commitTimestamp;
 
               return (
                 <TableRow key={row.id}>
                   <TableCell align='left'>
-                    {moment
-                      .unix(row.commitData[0].commitTs || row.commitData[0].commitTimestamp)
-                      .toString()}
+                    {commitTimestamp ? moment.unix(commitTimestamp).toString() : 'N/A'}
                   </TableCell>
                   <TableCell align='left'>
                     <a href={`https://github.com/${row.repo}`} rel='noreferrer' target='_blank'>
@@ -126,25 +149,33 @@ export default function PushesTable(props) {
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    <a
-                      href={`https://github.com/${row.commitData[0].committer}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
-                      {row.commitData[0].committer}
-                    </a>
+                    {row.commitData[0]?.committer ? (
+                      <a
+                        href={`https://github.com/${row.commitData[0].committer}`}
+                        rel='noreferrer'
+                        target='_blank'
+                      >
+                        {row.commitData[0].committer}
+                      </a>
+                    ) : (
+                      'N/A'
+                    )}
                   </TableCell>
                   <TableCell align='left'>
-                    <a
-                      href={`https://github.com/${row.commitData[0].author}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
-                      {row.commitData[0].author}
-                    </a>
+                    {row.commitData[0]?.author ? (
+                      <a
+                        href={`https://github.com/${row.commitData[0].author}`}
+                        rel='noreferrer'
+                        target='_blank'
+                      >
+                        {row.commitData[0].author}
+                      </a>
+                    ) : (
+                      'N/A'
+                    )}
                   </TableCell>
                   <TableCell align='left'>
-                    {row.commitData[0].authorEmail ? (
+                    {row.commitData[0]?.authorEmail ? (
                       <a href={`mailto:${row.commitData[0].authorEmail}`}>
                         {row.commitData[0].authorEmail}
                       </a>
@@ -152,7 +183,7 @@ export default function PushesTable(props) {
                       'No data...'
                     )}
                   </TableCell>
-                  <TableCell align='left'>{row.commitData[0].message}</TableCell>
+                  <TableCell align='left'>{row.commitData[0]?.message || 'N/A'}</TableCell>
                   <TableCell align='left'>{row.commitData.length}</TableCell>
                   <TableCell component='th' scope='row'>
                     <Button variant='contained' color='primary' onClick={() => openPush(row.id)}>
@@ -165,14 +196,14 @@ export default function PushesTable(props) {
           </TableBody>
         </Table>
       </TableContainer>
-      {/* Pagination Component */}
       <Pagination
         itemsPerPage={itemsPerPage}
         totalItems={filteredData.length}
-        paginate={paginate}
         currentPage={currentPage}
         onPageChange={handlePageChange}
       />
     </div>
   );
-}
+};
+
+export default PushesTable;
