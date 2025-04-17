@@ -130,7 +130,7 @@ export const cancel = async (id: string) => {
   return { message: `cancel ${id}` };
 };
 
-export const canUserCancelPush = async (id: string, user: any) => {
+export const canUserCancelPush = async (id: string, user: string) => {
   return new Promise<boolean>(async (resolve) => {
     const pushDetail = await getPush(id);
     if (!pushDetail) {
@@ -149,14 +149,14 @@ export const canUserCancelPush = async (id: string, user: any) => {
   });
 };
 
-export const canUserApproveRejectPush = async (id: string, user: any) => {
+export const canUserApproveRejectPush = async (id: string, user: string) => {
   return new Promise<boolean>(async (resolve) => {
     const action = await getPush(id);
     if (!action) {
       resolve(false);
       return;
     }
-    const repoName = action?.repoName.replace('.git', '');
+    const repoName = action.repoName.replace('.git', '');
     const isAllowed = await repo.canUserApproveRejectPushRepo(repoName, user);
 
     resolve(isAllowed);

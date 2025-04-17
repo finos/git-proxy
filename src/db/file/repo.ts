@@ -50,13 +50,13 @@ export const getRepo = async (name: string) => {
 };
 
 export const createRepo = async (repo: Repo) => {
-  repo.name = repo.name.toLowerCase();
-
   if (isBlank(repo.project)) {
     throw new Error('Project name cannot be empty');
   }
   if (isBlank(repo.name)) {
     throw new Error('Repository name cannot be empty');
+  } else {
+    repo.name = repo.name.toLowerCase();
   }
   if (isBlank(repo.url)) {
     throw new Error('URL cannot be empty');
@@ -153,6 +153,8 @@ export const removeUserCanAuthorise = async (name: string, user: string) => {
 
     const options = { multi: false, upsert: false };
     db.update({ name: name }, repo, options, (err) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -176,6 +178,8 @@ export const removeUserCanPush = async (name: string, user: string) => {
 
     const options = { multi: false, upsert: false };
     db.update({ name: name }, repo, options, (err) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
