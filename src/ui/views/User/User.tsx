@@ -6,15 +6,15 @@ import Card from '../../components/Card/Card';
 import CardBody from '../../components/Card/CardBody';
 import Button from '../../components/CustomButtons/Button';
 import FormLabel from '@material-ui/core/FormLabel';
-import { getUser, updateUser, getUserLoggedIn } from '../../services/user';
+import { getUser, updateUser, getUserLoggedIn, UserData } from '../../services/user';
 import { makeStyles } from '@material-ui/core/styles';
 
 import { LogoGithubIcon } from '@primer/octicons-react';
 import CloseRounded from '@material-ui/icons/CloseRounded';
 import { Check, Save } from '@material-ui/icons';
-import { TextField } from '@material-ui/core';
+import { TextField, Theme } from '@material-ui/core';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   root: {
     '& .MuiTextField-root': {
       margin: theme.spacing(1),
@@ -23,17 +23,17 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function Dashboard() {
+export default function UserProfile(): React.ReactElement {
   const classes = useStyles();
-  const [data, setData] = useState([]);
-  const [auth, setAuth] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
-  const [isProfile, setIsProfile] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [gitAccount, setGitAccount] = useState('');
+  const [data, setData] = useState<UserData | null>(null);
+  const [auth, setAuth] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [isProfile, setIsProfile] = useState<boolean>(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [gitAccount, setGitAccount] = useState<string>('');
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { id } = useParams<{ id?: string }>();
 
   useEffect(() => {
     if (id == null) {
@@ -41,38 +41,60 @@ export default function Dashboard() {
     }
 
     if (id) {
-      getUser(setIsLoading, setData, setAuth, setIsError, id);
+      getUser(
+        setIsLoading,
+        (userData: UserData) => {
+          setData(userData);
+          setGitAccount(userData.gitAccount || '');
+        },
+        setAuth,
+        setIsError,
+        id,
+      );
       getUserLoggedIn(setIsLoading, setIsAdmin, setIsError, setAuth);
     } else {
       console.log('getting user data');
       setIsProfile(true);
-      getUser(setIsLoading, setData, setAuth, setIsError);
+      getUser(
+        setIsLoading,
+        (userData: UserData) => {
+          setData(userData);
+          setGitAccount(userData.gitAccount || '');
+        },
+        setAuth,
+        setIsError,
+      );
     }
-  }, []);
+  }, [id]);
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
   if (!auth && window.location.pathname === '/dashboard/profile') {
     return <Navigate to='/login' />;
   }
+  if (!data) return <div>No user data available</div>;
 
-  const updateProfile = async () => {
+  const updateProfile = async (): Promise<void> => {
     try {
-      data.gitAccount = escapeHTML(gitAccount);
-      await updateUser(data);
+      const updatedData = {
+        ...data,
+        gitAccount: escapeHTML(gitAccount),
+      };
+      await updateUser(updatedData);
       navigate(`/dashboard/profile`);
     } catch {
       setIsError(true);
     }
   };
 
-  const UpdateButton = () => (
+  const UpdateButton = (): React.ReactElement => (
     <Button variant='outlined' color='success' onClick={updateProfile}>
-      <Save></Save>Update
+      <Save />
+      Update
     </Button>
   );
 
-  const escapeHTML = (str) => {
+  const escapeHTML = (str: string): string => {
     return str
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
@@ -104,7 +126,8 @@ export default function Dashboard() {
                       width={'75px'}
                       style={{ borderRadius: '5px' }}
                       src={`https://github.com/${data.gitAccount}.png`}
-                    ></img>
+                      alt={`${data.displayName}'s GitHub avatar`}
+                    />
                   </GridItem>
                 )}
                 <GridItem xs={2} sm={2} md={2}>
@@ -138,7 +161,7 @@ export default function Dashboard() {
                       <Check fontSize='small' />
                     </span>
                   ) : (
-                    <CloseRounded color='error'></CloseRounded>
+                    <CloseRounded color='error' />
                   )}
                 </GridItem>
               </GridContainer>
@@ -147,7 +170,7 @@ export default function Dashboard() {
                   <hr style={{ opacity: 0.2 }} />
                   <div style={{ marginTop: '25px' }}>
                     <FormLabel component='legend'>
-                      What is your <LogoGithubIcon></LogoGithubIcon> username?
+                      What is your <LogoGithubIcon /> username?
                     </FormLabel>
                     <div style={{ textAlign: 'right' }}>
                       <TextField
@@ -156,7 +179,9 @@ export default function Dashboard() {
                         variant='outlined'
                         placeholder='Enter a new GitHub username...'
                         value={gitAccount}
-                        onChange={(e) => setGitAccount(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                          setGitAccount(e.target.value)
+                        }
                       />
                       <UpdateButton />
                     </div>
