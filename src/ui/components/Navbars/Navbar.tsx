@@ -9,7 +9,7 @@ import Menu from '@material-ui/icons/Menu';
 import DashboardNavbarLinks from './DashboardNavbarLinks';
 import styles from '../../assets/jss/material-dashboard-react/components/headerStyle';
 
-const useStyles = makeStyles(styles);
+const useStyles = makeStyles(styles as any);
 
 interface Route {
   component: any;
