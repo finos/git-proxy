@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import PropTypes from 'prop-types';
 import InputLabel from '@material-ui/core/InputLabel';
 import Input from '@material-ui/core/Input';
 import FormControl from '@material-ui/core/FormControl';
@@ -17,15 +16,35 @@ import { makeStyles } from '@material-ui/core/styles';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { RepoIcon } from '@primer/octicons-react';
 
-const useStyles = makeStyles(styles);
+interface AddRepositoryDialogProps {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: (data: RepositoryData) => void;
+}
 
-function AddRepositoryDialog(props) {
+export interface RepositoryData {
+  _id?: string;
+  project: string;
+  name: string;
+  url: string;
+  maxUser: number;
+  lastModified?: string;
+  dateCreated?: string;
+  proxyURL?: string;
+}
+
+interface NewRepoProps {
+  onSuccess: (data: RepositoryData) => void;
+}
+
+const useStyles = makeStyles(styles as any);
+
+const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose, onSuccess }) => {
   const [project, setProject] = useState('');
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [error, setError] = useState('');
   const [tip, setTip] = useState(false);
-  const { onClose, open, onSuccess } = props;
   const classes = useStyles();
 
   const handleClose = () => {
@@ -34,7 +53,7 @@ function AddRepositoryDialog(props) {
     onClose();
   };
 
-  const handleSuccess = (data) => {
+  const handleSuccess = (data: RepositoryData) => {
     onSuccess(data);
     setTip(true);
   };
@@ -46,27 +65,27 @@ function AddRepositoryDialog(props) {
   };
 
   const add = async () => {
-    const data = {
-      project: project,
-      name: name,
-      url: url,
+    const data: RepositoryData = {
+      project: project.trim(),
+      name: name.trim(),
+      url: url.trim(),
       maxUser: 1,
     };
 
-    if (data.project.trim().length == 0 || data.project.length > 100) {
-      setError('project name length unexpected');
+    if (data.project.length === 0 || data.project.length > 100) {
+      setError('Project name length must be between 1 and 100 characters');
       return;
     }
 
-    if (data.name.trim().length == 0 || data.name.length > 100) {
-      setError('Repo name length unexpected');
+    if (data.name.length === 0 || data.name.length > 100) {
+      setError('Repository name length must be between 1 and 100 characters');
       return;
     }
 
     try {
       new URL(data.url);
     } catch {
-      setError('Invalid URL');
+      setError('Invalid URL format');
       return;
     }
 
@@ -75,15 +94,15 @@ function AddRepositoryDialog(props) {
       handleSuccess(data);
       handleClose();
     } catch (e) {
-      if (e.message) {
+      if (e instanceof Error) {
         setError(e.message);
       } else {
-        setError(e.toString());
+        setError('An unexpected error occurred');
       }
     }
   };
 
-  const inputStyle = {
+  const inputStyle: React.CSSProperties = {
     width: '100%',
   };
 
@@ -106,9 +125,11 @@ function AddRepositoryDialog(props) {
         fullWidth
         maxWidth='md'
       >
-        <DialogTitle style={{ color: 'red' }} id='simple-dialog-title'>
-          {error}
-        </DialogTitle>
+        {error && (
+          <DialogTitle style={{ color: 'red' }} id='simple-dialog-title'>
+            {error}
+          </DialogTitle>
+        )}
         <DialogTitle style={{ textAlign: 'left' }} className={classes.cardTitle}>
           Add a repository...
         </DialogTitle>
@@ -123,6 +144,7 @@ function AddRepositoryDialog(props) {
                     inputProps={{ maxLength: 200, minLength: 3 }}
                     aria-describedby='project-helper-text'
                     onChange={(e) => setProject(e.target.value)}
+                    value={project}
                   />
                   <FormHelperText id='project-helper-text'>GitHub Organization</FormHelperText>
                 </FormControl>
@@ -135,6 +157,7 @@ function AddRepositoryDialog(props) {
                     id='name'
                     aria-describedby='name-helper-text'
                     onChange={(e) => setName(e.target.value)}
+                    value={name}
                   />
                   <FormHelperText id='name-helper-text'>GitHub Repository Name</FormHelperText>
                 </FormControl>
@@ -148,6 +171,7 @@ function AddRepositoryDialog(props) {
                     id='url'
                     aria-describedby='url-helper-text'
                     onChange={(e) => setUrl(e.target.value)}
+                    value={url}
                   />
                   <FormHelperText id='url-helper-text'>GitHub Repository URL</FormHelperText>
                 </FormControl>
@@ -168,20 +192,11 @@ function AddRepositoryDialog(props) {
       </Dialog>
     </>
   );
-}
-
-AddRepositoryDialog.propTypes = {
-  onClose: PropTypes.func.isRequired,
-  open: PropTypes.bool.isRequired,
-  onSuccess: PropTypes.func.isRequired,
 };
 
-NewRepo.propTypes = {
-  onSuccess: PropTypes.func.isRequired,
-};
+const NewRepo: React.FC<NewRepoProps> = ({ onSuccess }) => {
+  const [open, setOpen] = useState(false);
 
-export default function NewRepo(props) {
-  const [open, setOpen] = React.useState(false);
   const handleClickOpen = () => {
     setOpen(true);
   };
@@ -193,9 +208,11 @@ export default function NewRepo(props) {
   return (
     <div>
       <Button color='success' onClick={handleClickOpen}>
-        <RepoIcon></RepoIcon>Add repository
+        <RepoIcon /> Add repository
       </Button>
-      <AddRepositoryDialog open={open} onClose={handleClose} onSuccess={props.onSuccess} />
+      <AddRepositoryDialog open={open} onClose={handleClose} onSuccess={onSuccess} />
     </div>
   );
-}
+};
+
+export default NewRepo;
