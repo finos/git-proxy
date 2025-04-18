@@ -3,7 +3,7 @@ import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
 import TabList from './Components/TabList';
 
-export default function UserList() {
+const UserList: React.FC = () => {
   return (
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
@@ -11,4 +11,6 @@ export default function UserList() {
       </GridItem>
     </GridContainer>
   );
-}
+};
+
+export default UserList;

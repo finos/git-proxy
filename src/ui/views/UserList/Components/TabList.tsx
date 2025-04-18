@@ -3,7 +3,7 @@ import GridItem from '../../../components/Grid/GridItem';
 import GridContainer from '../../../components/Grid/GridContainer';
 import UserList from './UserList';
 
-export default function Dashboard() {
+const Dashboard: React.FC = () => {
   return (
     <div>
       <GridContainer>
@@ -13,4 +13,6 @@ export default function Dashboard() {
       </GridContainer>
     </div>
   );
-}
+};
+
+export default Dashboard;
