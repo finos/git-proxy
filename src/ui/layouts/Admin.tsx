@@ -31,12 +31,12 @@ interface UserType {
 let ps: PerfectScrollbar | undefined;
 let refresh = false;
 
-const useStyles = makeStyles(styles);
+const useStyles = makeStyles(styles as any);
 
 const Admin: React.FC<AdminProps> = ({ ...rest }) => {
   const classes = useStyles();
   const mainPanel = useRef<HTMLDivElement>(null);
-  const [color] = useState<string>('blue');
+  const [color] = useState<'purple' | 'blue' | 'green' | 'orange' | 'red'>('blue');
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
   const [user, setUser] = useState<UserType>({});
   const { id } = useParams();
@@ -97,7 +97,7 @@ const Admin: React.FC<AdminProps> = ({ ...rest }) => {
   }, [id]);
 
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <UserContext.Provider value={{ user, setUser } as any}>
       <div className={classes.wrapper}>
         <Sidebar
           background='#1a1a1a'
