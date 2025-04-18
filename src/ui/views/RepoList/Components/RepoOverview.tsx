@@ -1,10 +1,40 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Snackbar, TableCell, TableRow } from '@material-ui/core';
 import GridContainer from '../../../components/Grid/GridContainer';
 import GridItem from '../../../components/Grid/GridItem';
 import { CodeReviewIcon, LawIcon, PeopleIcon } from '@primer/octicons-react';
+import axios from 'axios';
+import moment from 'moment';
+import CodeActionButton from '../../../components/CustomButtons/CodeActionButton';
 
-const colors = {
+interface RepositoriesProps {
+  data: {
+    project: string;
+    name: string;
+    proxyURL: string;
+    users?: {
+      canPush?: string[];
+      canAuthorise?: string[];
+    };
+  };
+}
+
+interface GitHubRepository {
+  description?: string;
+  language?: string;
+  license?: {
+    spdx_id: string;
+  };
+  parent?: {
+    full_name: string;
+    html_url: string;
+  };
+  created_at?: string;
+  updated_at?: string;
+  pushed_at?: string;
+}
+
+const colors: Record<string, string> = {
   '1C Enterprise': '#814CCC',
   '2-Dimensional Array': '#38761D',
   '4D': '#004289',
@@ -564,12 +594,8 @@ const colors = {
   Zimpl: '#d67711',
 };
 
-import axios from 'axios';
-import moment from 'moment';
-import CodeActionButton from '../../../components/CustomButtons/CodeActionButton';
-
-export default function Repositories(props) {
-  const [github, setGitHub] = React.useState({});
+const Repositories: React.FC<RepositoriesProps> = (props) => {
+  const [github, setGitHub] = useState<GitHubRepository>({});
 
   const [errorMessage, setErrorMessage] = React.useState('');
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
@@ -585,7 +611,9 @@ export default function Repositories(props) {
         setGitHub(res.data);
       })
       .catch((error) => {
-        setErrorMessage(`Error fetching GitHub repository ${props.data.project}/${props.data.name}: ${error}`);
+        setErrorMessage(
+          `Error fetching GitHub repository ${props.data.project}/${props.data.name}: ${error}`,
+        );
         setSnackbarOpen(true);
       });
   };
@@ -630,7 +658,7 @@ export default function Repositories(props) {
                   style={{
                     height: '12px',
                     width: '12px',
-                    backgroundColor: `${colors[github.language]}`,
+                    backgroundColor: `${colors[github.language] || '#ccc'}`,
                     borderRadius: '50px',
                     display: 'inline-block',
                     marginRight: '5px',
@@ -660,9 +688,9 @@ export default function Repositories(props) {
                 Last updated{' '}
                 {moment
                   .max([
-                    moment(github.created_at),
-                    moment(github.updated_at),
-                    moment(github.pushed_at),
+                    moment(github.created_at || 0),
+                    moment(github.updated_at || 0),
+                    moment(github.pushed_at || 0),
                   ])
                   .fromNow()}
               </GridItem>
@@ -684,4 +712,6 @@ export default function Repositories(props) {
       />
     </TableRow>
   );
-}
+};
+
+export default Repositories;

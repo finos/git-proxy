@@ -8,37 +8,61 @@ import styles from '../../../assets/jss/material-dashboard-react/views/dashboard
 import { getRepos } from '../../../services/repo';
 import GridContainer from '../../../components/Grid/GridContainer';
 import GridItem from '../../../components/Grid/GridItem';
-import NewRepo from './NewRepo';
+import NewRepo, { RepositoryData } from './NewRepo';
 import RepoOverview from './RepoOverview';
 import { UserContext } from '../../../../context';
-import PropTypes from 'prop-types';
 import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
-import Filtering from '../../../components/Filtering/Filtering';
+import Filtering, { FilterOption, SortOrder } from '../../../components/Filtering/Filtering';
 
-export default function Repositories(props) {
-  const useStyles = makeStyles(styles);
+interface RepositoriesProps {
+  [key: string]: any;
+}
+
+interface GridContainerLayoutProps {
+  classes: any;
+  openRepo: (repo: string) => void;
+  data: RepositoryData[];
+  repoButton: React.ReactNode;
+  onSearch: (query: string) => void;
+  currentPage: number;
+  totalItems: number;
+  itemsPerPage: number;
+  onPageChange: (page: number) => void;
+  onFilterChange: (filterOption: FilterOption, sortOrder: SortOrder) => void;
+}
+
+interface UserContextType {
+  user: {
+    admin: boolean;
+    [key: string]: any;
+  };
+}
+
+export default function Repositories(props: RepositoriesProps): React.ReactElement {
+  const useStyles = makeStyles(styles as any);
   const classes = useStyles();
-  const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
-  const [, setAuth] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [data, setData] = useState<RepositoryData[]>([]);
+  const [filteredData, setFilteredData] = useState<RepositoryData[]>([]);
+  const [, setAuth] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage: number = 5;
   const navigate = useNavigate();
-  const { user } = useContext(UserContext);
-  const openRepo = (repo) => navigate(`/dashboard/repo/${repo}`, { replace: true });
+  const { user } = useContext<UserContextType>(UserContext);
+
+  const openRepo = (repo: string): void => navigate(`/dashboard/repo/${repo}`, { replace: true });
 
   useEffect(() => {
-    const query = {};
+    const query: Record<string, any> = {};
     for (const k in props) {
       if (!k) continue;
       query[k] = props[k];
     }
     getRepos(
       setIsLoading,
-      (data) => {
+      (data: RepositoryData[]) => {
         setData(data);
         setFilteredData(data);
       },
@@ -48,13 +72,13 @@ export default function Repositories(props) {
     );
   }, [props]);
 
-  const refresh = async (repo) => {
+  const refresh = async (repo: RepositoryData): Promise<void> => {
     const updatedData = [...data, repo];
     setData(updatedData);
     setFilteredData(updatedData);
   };
 
-  const handleSearch = (query) => {
+  const handleSearch = (query: string): void => {
     setCurrentPage(1);
     if (!query) {
       setFilteredData(data);
@@ -70,23 +94,26 @@ export default function Repositories(props) {
     }
   };
 
-  // New function for handling filter changes
-  const handleFilterChange = (filterOption, sortOrder) => {
+  const handleFilterChange = (filterOption: FilterOption, sortOrder: SortOrder): void => {
     const sortedData = [...data];
     switch (filterOption) {
-      case 'dateModified':
-        sortedData.sort((a, b) => new Date(a.lastModified) - new Date(b.lastModified));
+      case 'Date Modified':
+        sortedData.sort(
+          (a, b) =>
+            new Date(a.lastModified || 0).getTime() - new Date(b.lastModified || 0).getTime(),
+        );
         break;
-      case 'dateCreated':
-        sortedData.sort((a, b) => new Date(a.dateCreated) - new Date(b.dateCreated));
+      case 'Date Created':
+        sortedData.sort(
+          (a, b) => new Date(a.dateCreated || 0).getTime() - new Date(b.dateCreated || 0).getTime(),
+        );
         break;
-      case 'alphabetical':
+      case 'Alphabetical':
         sortedData.sort((a, b) => a.name.localeCompare(b.name));
         break;
       default:
         break;
     }
-
     if (sortOrder === 'desc') {
       sortedData.reverse();
     }
@@ -94,7 +121,7 @@ export default function Repositories(props) {
     setFilteredData(sortedData);
   };
 
-  const handlePageChange = (page) => setCurrentPage(page);
+  const handlePageChange = (page: number): void => setCurrentPage(page);
   const startIdx = (currentPage - 1) * itemsPerPage;
   const paginatedData = filteredData.slice(startIdx, startIdx + itemsPerPage);
 
@@ -121,30 +148,18 @@ export default function Repositories(props) {
       totalItems={filteredData.length}
       itemsPerPage={itemsPerPage}
       onPageChange={handlePageChange}
-      onFilterChange={handleFilterChange} // Pass handleFilterChange as prop
+      onFilterChange={handleFilterChange}
     />
   );
 }
 
-GetGridContainerLayOut.propTypes = {
-  classes: PropTypes.object,
-  openRepo: PropTypes.func.isRequired,
-  data: PropTypes.array,
-  repoButton: PropTypes.object,
-  onSearch: PropTypes.func.isRequired,
-  currentPage: PropTypes.number.isRequired,
-  totalItems: PropTypes.number.isRequired,
-  itemsPerPage: PropTypes.number.isRequired,
-  onPageChange: PropTypes.func.isRequired,
-};
-
-function GetGridContainerLayOut(props) {
+function GetGridContainerLayOut(props: GridContainerLayoutProps): React.ReactElement {
   return (
     <GridContainer>
       {props.repoButton}
       <GridItem xs={12} sm={12} md={12}>
         <Search onSearch={props.onSearch} />
-        <Filtering onFilterChange={props.onFilterChange} /> {/* Include the Filtering component */}
+        <Filtering onFilterChange={props.onFilterChange} />
         <TableContainer
           style={{ background: 'transparent', borderRadius: '5px', border: '1px solid #d0d7de' }}
         >
@@ -152,8 +167,11 @@ function GetGridContainerLayOut(props) {
             <TableBody>
               {props.data.map((row) => {
                 if (row.project && row.name) {
-                  return <RepoOverview data={row} key={row._id} />;
+                  return (
+                    <RepoOverview data={{ ...row, proxyURL: row.proxyURL || '' }} key={row._id} />
+                  );
                 }
+                return null;
               })}
             </TableBody>
           </Table>
