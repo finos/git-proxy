@@ -3,7 +3,7 @@ import GridItem from '../../../components/Grid/GridItem';
 import GridContainer from '../../../components/Grid/GridContainer';
 import Repositories from './Repositories';
 
-export default function Dashboard() {
+export default function Dashboard(): React.ReactElement {
   return (
     <div>
       <GridContainer>
