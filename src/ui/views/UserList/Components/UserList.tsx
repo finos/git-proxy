@@ -17,23 +17,37 @@ import Pagination from '../../../components/Pagination/Pagination';
 import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
 
-const useStyles = makeStyles(styles);
+interface User {
+  username: string;
+  displayName?: string;
+  title?: string;
+  email?: string;
+  gitAccount?: string;
+  admin?: boolean;
+}
 
-export default function UserList(props) {
+interface UserListProps {
+  [key: string]: any;
+}
+
+const useStyles = makeStyles(styles as any);
+
+const UserList: React.FC<UserListProps> = (props) => {
   const classes = useStyles();
-  const [data, setData] = useState([]);
-  const [, setAuth] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
+  const [data, setData] = useState<User[]>([]);
+  const [, setAuth] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isError, setIsError] = useState<boolean>(false);
   const navigate = useNavigate();
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 5;
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const openUser = (username) => navigate(`/dashboard/admin/user/${username}`, { replace: true });
+  const openUser = (username: string) =>
+    navigate(`/dashboard/admin/user/${username}`, { replace: true });
 
   useEffect(() => {
-    const query = {};
+    const query: Record<string, any> = {};
 
     for (const k in props) {
       if (!k) continue;
@@ -56,11 +70,11 @@ export default function UserList(props) {
   const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
   const totalItems = filteredUsers.length;
 
-  const handlePageChange = (page) => {
+  const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
 
-  const handleSearch = (query) => {
+  const handleSearch = (query: string) => {
     setSearchQuery(query);
     setCurrentPage(1);
   };
@@ -128,4 +142,6 @@ export default function UserList(props) {
       </GridItem>
     </GridContainer>
   );
-}
+};
+
+export default UserList;
