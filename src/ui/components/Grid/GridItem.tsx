@@ -1,30 +1,24 @@
 import React, { ReactNode } from 'react';
-import PropTypes from 'prop-types';
-import { makeStyles } from '@material-ui/core/styles';
+import { makeStyles, Theme } from '@material-ui/core/styles';
 import Grid, { GridProps } from '@material-ui/core/Grid';
 
-const styles = {
+const useStyles = makeStyles((theme: Theme) => ({
   grid: {
     padding: '0 15px !important',
   },
-};
+}));
 
-const useStyles = makeStyles(styles);
-
-interface GridItemProps extends GridProps {
+export interface GridItemProps extends GridProps {
   children?: ReactNode;
 }
 
-export default function GridItem(props: GridItemProps) {
+const GridItem: React.FC<GridItemProps> = ({ children, ...rest }) => {
   const classes = useStyles();
-  const { children, ...rest } = props;
   return (
     <Grid item {...rest} className={classes.grid}>
       {children}
     </Grid>
   );
-}
-
-GridItem.propTypes = {
-  children: PropTypes.node,
 };
+
+export default GridItem;
