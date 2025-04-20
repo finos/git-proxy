@@ -22,10 +22,22 @@ async function exec(req: any, action: Action): Promise<Action> {
       action.addStep(step);
       return action;
     }
-    const messageParts = req.body.toString('utf8').split(' ');
+    const packetLines = parsePacketLines(req.body);
+    const refUpdates = packetLines.filter((line) => line.includes('refs/heads/'));
 
-    action.branch = messageParts[2].trim().replace('\u0000', '');
-    action.setCommit(messageParts[0].substr(4), messageParts[1]);
+    if (refUpdates.length !== 1) {
+      step.log('Invalid number of branch updates.');
+      step.log(`Expected 1, but got ${refUpdates.length}`);
+      step.setError('Your push has been blocked. Please make sure you are pushing to a single branch.');
+      action.addStep(step);
+      return action;
+    }
+
+    const parts = refUpdates[0].split(' ');
+    const [oldCommit, newCommit, ref] = parts;
+
+    action.branch = ref.replace(/\0.*/, '').trim();
+    action.setCommit(oldCommit, newCommit);
 
     const index = req.body.lastIndexOf('PACK');
     const buf = req.body.slice(index);
@@ -256,6 +268,26 @@ const unpack = (buf: Buffer) => {
 
   return [inflated.toString('utf8'), deflated.length];
 };
+
+const parsePacketLines = (buffer: Buffer): string[] => {
+  const lines: string[] = [];
+  let offset = 0;
+
+  while (offset + 4 <= buffer.length) {
+    const lengthHex = buffer.toString('utf8', offset, offset + 4);
+    const length = parseInt(lengthHex, 16);
+
+    if (length === 0) {
+      // Flush packet ("0000") marks the end of the ref section
+      break;
+    }
+
+    const line = buffer.toString('utf8', offset + 4, offset + length);
+    lines.push(line);
+    offset += length;
+  }
+  return lines;
+}
 
 exec.displayName = 'parsePush.exec';
 
