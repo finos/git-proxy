@@ -9,6 +9,13 @@ const {
   unpack
 } = require('../src/proxy/processors/push-action/parsePush');
 
+/**
+ * Creates a simplified sample PACK buffer for testing.
+ * @param {number} numEntries - Number of entries in the PACK file.
+ * @param {string} commitContent - Content of the commit object.
+ * @param {number} type - Type of the object (1 for commit).
+ * @return {Buffer} - The generated PACK buffer.
+ */ 
 function createSamplePackBuffer(numEntries = 1, commitContent = 'tree 123\nparent 456\nauthor A <a@a> 123 +0000\ncommitter C <c@c> 456 +0000\n\nmessage', type = 1) {
   const header = Buffer.alloc(12);
   header.write('PACK', 0, 4, 'utf-8'); // Signature
@@ -36,6 +43,12 @@ function createSamplePackBuffer(numEntries = 1, commitContent = 'tree 123\nparen
   return Buffer.concat([header, packContent, checksum]);
 }
 
+/**
+ * Creates a packet line buffer from an array of lines.
+ * Each line is prefixed with its length in hex format, and the last line is a flush packet.
+ * @param {string[]} lines - Array of lines to be included in the buffer.
+ * @return {Buffer} - The generated buffer containing the packet lines.
+ */
 function createPacketLineBuffer(lines) {
   let buffer = Buffer.alloc(0);
   lines.forEach(line => {

@@ -12,6 +12,12 @@ if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
+/**
+ * Executes the parsing of a push request.
+ * @param {*} req - The request object containing the push data.
+ * @param {Action} action - The action object to be modified.
+ * @return {Promise<Action>} The modified action object.
+ */
 async function exec(req: any, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
 
@@ -67,6 +73,11 @@ async function exec(req: any, action: Action): Promise<Action> {
   return action;
 };
 
+/**
+ * Parses the commit data from the contents of a pack file.
+ * @param {CommitContent[]} contents - The contents of the pack file.
+ * @return {*} An array of commit data objects.
+ */
 const getCommitData = (contents: CommitContent[]) => {
   console.log({ contents });
   return lod
@@ -167,6 +178,11 @@ const getCommitData = (contents: CommitContent[]) => {
     .value();
 };
 
+/**
+ * Gets the metadata from a pack file.
+ * @param {Buffer} buffer - The buffer containing the pack file data.
+ * @return {Array} An array containing the metadata and the remaining buffer.
+ */
 const getPackMeta = (buffer: Buffer) => {
   const sig = buffer.slice(0, 4).toString('utf-8');
   const version = buffer.readUIntBE(4, 4);
@@ -181,6 +197,12 @@ const getPackMeta = (buffer: Buffer) => {
   return [meta, buffer.slice(12)];
 };
 
+/**
+ * Gets the contents of a pack file.
+ * @param {Buffer} buffer - The buffer containing the pack file data.
+ * @param {number} entries - The number of entries in the pack file.
+ * @return {CommitContent[]} An array of commit content objects.
+ */
 const getContents = (buffer: Buffer | CommitContent[], entries: number) => {
   const contents = [];
 
@@ -196,6 +218,11 @@ const getContents = (buffer: Buffer | CommitContent[], entries: number) => {
   return contents;
 };
 
+/**
+ * Converts an array of bits to an integer.
+ * @param {boolean[]} bits - The array of bits.
+ * @return {number} The integer value.
+ */
 const getInt = (bits: boolean[]) => {
   let strBits = '';
 
@@ -207,6 +234,12 @@ const getInt = (bits: boolean[]) => {
   return parseInt(strBits, 2);
 };
 
+/**
+ * Gets the content of a pack file entry.
+ * @param {number} item - The index of the entry.
+ * @param {Buffer} buffer - The buffer containing the pack file data.
+ * @return {Array} An array containing the content object and the next buffer.
+ */
 const getContent = (item: number, buffer: Buffer) => {
   // FIRST byte contains the type and some of the size of the file
   // a MORE flag -8th byte tells us if there is a subsequent byte
@@ -273,6 +306,11 @@ const getContent = (item: number, buffer: Buffer) => {
   return [result, nextBuffer];
 };
 
+/**
+ * Unzips the content of a buffer.
+ * @param {Buffer} buf - The buffer containing the zipped content.
+ * @return {Array} An array containing the unzipped content and the size of the deflated content.
+ */
 const unpack = (buf: Buffer) => {
   // Unzip the content
   const inflated = zlib.inflateSync(buf);
@@ -284,6 +322,11 @@ const unpack = (buf: Buffer) => {
   return [inflated.toString('utf8'), deflated.length];
 };
 
+/**
+ * Parses the packet lines from a buffer into an array of strings.
+ * @param {Buffer} buffer - The buffer containing the packet data.
+ * @return {string[]} An array of parsed lines.
+ */
 const parsePacketLines = (buffer: Buffer): string[] => {
   const lines: string[] = [];
   let offset = 0;
