@@ -72,17 +72,26 @@ const getCommitData = (contents: CommitContent[]) => {
   return lod
     .chain(contents)
     .filter({ type: 1 })
-    .map((x) => {
+    .map((x: CommitContent) => {
       console.log({ x });
 
-      const formattedContent = x.content.split('\n');
-      console.log({ formattedContent });
+      const allLines = x.content.split('\n');
+      const trimmedLines = allLines.map((line) => line.trim());
+      console.log({ trimmedLines });
 
-      const parts = formattedContent.filter((part) => part.length > 0);
+      const parts = trimmedLines.filter((part) => part.length > 0);
       console.log({ parts });
 
-      if (!parts || parts.length < 5) {
-        throw new Error('Invalid commit data');
+      if (!parts || parts.length < 4) {
+        throw new Error(
+          `Invalid commit structure: Expected at least 4 non-empty lines (tree, author, committer, message), found ${parts.length}`
+        );
+      }
+
+      const indexOfMessages = trimmedLines.indexOf('');
+
+      if (indexOfMessages === -1) {
+        throw new Error('Invalid commit data: Missing message separator');
       }
 
       const tree = parts
@@ -111,12 +120,10 @@ const getCommitData = (contents: CommitContent[]) => {
         .trim();
       console.log({ committer });
 
-      const indexOfMessages = formattedContent.indexOf('');
-      console.log({ indexOfMessages });
-
-      const message = formattedContent
-        .slice(indexOfMessages + 1, formattedContent.length - 1)
-        .join(' ');
+      const message = trimmedLines
+        .slice(indexOfMessages + 1)
+        .join('\n')
+        .trim();
       console.log({ message });
 
       const commitTimestamp = committer?.split(' ').reverse()[1];
@@ -136,7 +143,15 @@ const getCommitData = (contents: CommitContent[]) => {
       });
 
       if (!tree || !parent || !author || !committer || !commitTimestamp || !message || !authorEmail) {
-        throw new Error('Invalid commit data');
+        const missing = [];
+        if (!tree) missing.push('tree');
+        if (!parent) missing.push('parent');
+        if (!author) missing.push('author');
+        if (!committer) missing.push('committer');
+        if (!commitTimestamp) missing.push('commitTimestamp');
+        if (!message) missing.push('message');
+        if (!authorEmail) missing.push('authorEmail');
+        throw new Error(`Invalid commit data: Missing ${missing.join(', ')}`);
       }
 
       return {
@@ -293,6 +308,7 @@ exec.displayName = 'parsePush.exec';
 
 export {
   exec,
+  getCommitData,
   getPackMeta,
   unpack
 };

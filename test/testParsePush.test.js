@@ -321,4 +321,95 @@ describe('parsePackFile', () => {
     });
   });
 
+
+  describe('getCommitData', () => {
+    it('should return empty array if no type 1 contents', () => {
+      const contents = [{ type: 2, content: 'blob' }, { type: 3, content: 'tree' }];
+      expect(getCommitData(contents)).to.deep.equal([]);
+    });
+
+    it('should parse a single valid commit object', () => {
+      const commitContent = `tree 123\nparent 456\nauthor Au Thor <a@e.com> 111 +0000\ncommitter Com Itter <c@e.com> 222 +0100\n\nCommit message here`;
+      const contents = [{ type: 1, content: commitContent }];
+      const result = getCommitData(contents);
+
+      expect(result).to.be.an('array').with.lengthOf(1);
+      expect(result[0]).to.deep.equal({
+        tree: '123',
+        parent: '456',
+        author: 'Au Thor',
+        committer: 'Com Itter',
+        commitTimestamp: '222',
+        message: 'Commit message here',
+        authorEmail: 'a@e.com',
+      });
+    });
+
+    it('should parse multiple valid commit objects', () => {
+      const commit1 = `tree 111\nparent 000\nauthor A1 <a1@e.com> 1678880001 +0000\ncommitter C1 <c1@e.com> 1678880002 +0000\n\nMsg1`;
+      const commit2 = `tree 222\nparent 111\nauthor A2 <a2@e.com> 1678880003 +0100\ncommitter C2 <c2@e.com> 1678880004 +0100\n\nMsg2`;
+      const contents = [
+        { type: 1, content: commit1 },
+        { type: 3, content: 'tree data' }, // non-commit types must be ignored
+        { type: 1, content: commit2 },
+      ];
+
+      const result = getCommitData(contents);
+      expect(result).to.be.an('array').with.lengthOf(2);
+
+      // Check first commit data
+      expect(result[0].message).to.equal('Msg1');
+      expect(result[0].parent).to.equal('000');
+      expect(result[0].author).to.equal('A1');
+      expect(result[0].committer).to.equal('C1');
+      expect(result[0].authorEmail).to.equal('a1@e.com');
+      expect(result[0].commitTimestamp).to.equal('1678880002');
+
+      // Check second commit data
+      expect(result[1].message).to.equal('Msg2');
+      expect(result[1].parent).to.equal('111');
+      expect(result[1].author).to.equal('A2');
+      expect(result[1].committer).to.equal('C2');
+      expect(result[1].authorEmail).to.equal('a2@e.com');
+      expect(result[1].commitTimestamp).to.equal('1678880004');
+    });
+
+    it('should default parent to zero hash if not present', () => {
+      const commitContent = `tree 123\nauthor Au Thor <a@e.com> 111 +0000\ncommitter Com Itter <c@e.com> 222 +0100\n\nCommit message here`;
+      const contents = [{ type: 1, content: commitContent }];
+      const result = getCommitData(contents);
+      expect(result[0].parent).to.equal('0'.repeat(40));
+    });
+
+    it('should handle commit messages with multiple lines', () => {
+      const commitContent = `tree 123\nparent 456\nauthor A <a@e.com> 111 +0000 1\ncommitter C <c@e.com> 2\n\nLine one\nLine two\n\nLine four`;
+      const contents = [{ type: 1, content: commitContent }];
+      const result = getCommitData(contents);
+      expect(result[0].message).to.equal('Line one\nLine two\n\nLine four');
+    });
+
+    it('should throw error for invalid commit data (missing tree)', () => {
+      const commitContent = `parent 456\nauthor A <a@e.com> 1\ncommitter C <c@e.com> 2\n\nMsg`;
+      const contents = [{ type: 1, content: commitContent }];
+      expect(() => getCommitData(contents)).to.throw('Invalid commit data');
+    });
+
+    it('should throw error for invalid commit data (missing author)', () => {
+      const commitContent = `tree 123\nparent 456\ncommitter C <c@e.com> 2\n\nMsg`;
+      const contents = [{ type: 1, content: commitContent }];
+      expect(() => getCommitData(contents)).to.throw('Invalid commit data');
+    });
+
+    it('should throw error for invalid commit data (missing committer)', () => {
+      const commitContent = `tree 123\nparent 456\nauthor A <a@e.com> 1\n\nMsg`;
+      const contents = [{ type: 1, content: commitContent }];
+      expect(() => getCommitData(contents)).to.throw('Invalid commit data');
+    });
+
+    it('should throw error for invalid commit data (missing message separator)', () => {
+      const commitContent = `tree 123\nparent 456\nauthor A <a@e.com> 1\ncommitter C <c@e.com> 2`; // No empty line
+      const contents = [{ type: 1, content: commitContent }];
+      expect(() => getCommitData(contents)).to.throw('Invalid commit data');
+    });
+  });
 });
