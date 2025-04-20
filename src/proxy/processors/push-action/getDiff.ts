@@ -11,7 +11,11 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     let commitFrom = `4b825dc642cb6eb9a060e54bf8d69288fbee4904`;
 
     if (!action.commitData) {
-      throw new Error('No commit data found');
+      step.error = true;
+      step.log('No commitData found');
+      step.setError('Your push has been blocked because no commitData was found.');
+      action.addStep(step);
+      return action;
     }
 
     if (action.commitFrom === '0000000000000000000000000000000000000000') {
