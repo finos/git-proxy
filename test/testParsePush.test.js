@@ -321,6 +321,71 @@ describe('parsePackFile', () => {
     });
   });
 
+  describe('getPackMeta', () => {
+    it('should correctly parse PACK header', () => {
+      const buffer = createSamplePackBuffer(5); // 5 entries
+      const [meta, contentBuff] = getPackMeta(buffer);
+
+      expect(meta).to.deep.equal({
+        sig: 'PACK',
+        version: 2,
+        entries: 5,
+      });
+      expect(contentBuff).to.be.instanceOf(Buffer);
+      expect(contentBuff.length).to.equal(buffer.length - 12); // Remaining buffer after header
+    });
+
+    it('should handle buffer exactly 12 bytes long', () => {
+      const buffer = createSamplePackBuffer(1).slice(0, 12); // Only header
+        const [meta, contentBuff] = getPackMeta(buffer);
+
+        expect(meta).to.deep.equal({
+          sig: 'PACK',
+          version: 2,
+          entries: 1,
+        });
+      expect(contentBuff.length).to.equal(0); // No content left
+    });
+  });
+
+  describe('unpack', () => {
+    let deflateStub;
+
+    beforeEach(() => {
+      // Need to stub deflate for unpack tests
+      deflateStub = sandbox.stub(zlib, 'deflateSync');
+    });
+
+    it('should call zlib.inflateSync and zlib.deflateSync', () => {
+      const inputBuf = Buffer.from('compressed data');
+      const inflatedBuffer = Buffer.from('uncompressed data', 'utf8');
+      const deflatedResult = Buffer.from('re-deflated'); // Mock deflated buffer
+
+      zlibInflateStub.withArgs(inputBuf).returns(inflatedBuffer);
+      deflateStub.withArgs(inflatedBuffer).returns(deflatedResult);
+
+      const [resultString, resultLength] = unpack(inputBuf);
+
+      expect(zlibInflateStub.calledOnceWith(inputBuf)).to.be.true;
+      expect(deflateStub.calledOnceWith(inflatedBuffer)).to.be.true; // Check local stub
+      expect(resultString).to.equal(inflatedBuffer.toString('utf8'));
+      expect(resultLength).to.equal(deflatedResult.length); // unpack returns length of the deflated buffer
+    });
+
+    it('should return inflated string and deflated length', () => {
+      const inputBuf = Buffer.from('dummy compressed');
+      const inflatedBuffer = Buffer.from('real uncompressed text', 'utf8');
+      const deflatedResult = Buffer.from('tiny'); // Different length
+
+      zlibInflateStub.withArgs(inputBuf).returns(inflatedBuffer);
+      deflateStub.withArgs(inflatedBuffer).returns(deflatedResult);
+
+      const [content, size] = unpack(inputBuf);
+
+      expect(content).to.equal(inflatedBuffer.toString('utf8'));
+      expect(size).to.equal(deflatedResult.length);
+    });
+  });
 
   describe('getCommitData', () => {
     it('should return empty array if no type 1 contents', () => {
