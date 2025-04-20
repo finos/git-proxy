@@ -17,7 +17,10 @@ async function exec(req: any, action: Action): Promise<Action> {
 
   try {
     if (!req.body || req.body.length === 0) {
-      throw new Error('No body found in request');
+      step.log('No data received in request body.');
+      step.setError('Your push has been blocked. No data received in request body.');
+      action.addStep(step);
+      return action;
     }
     const messageParts = req.body.toString('utf8').split(' ');
 
