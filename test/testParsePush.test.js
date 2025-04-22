@@ -334,6 +334,119 @@ describe('parsePackFile', () => {
       expect(step.error).to.be.true;
       expect(step.errorMessage).to.include('Invalid commit data: Missing tree');
     });
+
+    it('should add error step if data after flush packet does not start with "PACK"', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/main';
+      const packetLines = [`${oldCommit} ${newCommit} ${ref}\0capa\n`];
+    
+      const packetLineBuffer = createPacketLineBuffer(packetLines);
+      const garbageData = Buffer.from('NOT PACK DATA');
+      req.body = Buffer.concat([packetLineBuffer, garbageData]);
+
+      const result = await exec(req, action);
+      expect(result).to.equal(action);
+
+      const step = action.steps[0];
+      expect(step.stepName).to.equal('parsePackFile');
+      expect(step.error).to.be.true;
+      expect(step.errorMessage).to.include('Invalid PACK data structure');
+      expect(step.errorMessage).to.not.include('PACK data is missing');
+
+      expect(action.branch).to.equal(ref);
+      expect(action.setCommit.calledOnceWith(oldCommit, newCommit)).to.be.true;
+    });
+
+    it('should correctly identify PACK data even if "PACK" appears in packet lines', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/develop';
+      const packetLines = [
+        `${oldCommit} ${newCommit} ${ref}\0capa\n`,
+        'some other data containing PACK keyword', // Include "PACK" within a packet line's content
+      ];
+
+      const commitContent = `tree 1234567890abcdef1234567890abcdef12345678
+        parent ${oldCommit}
+        author Test Author <author@example.com> 1234567890 +0000
+        committer Test Committer <committer@example.com> 1234567890 +0000
+        
+        Test commit message with PACK inside`;
+      const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
+
+      zlibInflateStub.returns(Buffer.from(commitContent, 'utf8'));
+
+      const packetLineBuffer = createPacketLineBuffer(packetLines);
+      req.body = Buffer.concat([packetLineBuffer, samplePackBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).to.equal(action);
+      expect(action.steps.length).to.equal(1);
+
+      // Check that the step was added correctly, and no error present
+      const step = action.steps[0];
+      expect(step.stepName).to.equal('parsePackFile');
+      expect(step.error).to.be.false;
+      expect(step.errorMessage).to.be.null;
+
+      // Verify action properties were parsed correctly
+      expect(action.branch).to.equal(ref);
+      expect(action.setCommit.calledOnceWith(oldCommit, newCommit)).to.be.true;
+      expect(action.commitFrom).to.equal(oldCommit);
+      expect(action.commitTo).to.equal(newCommit);
+      expect(action.commitData).to.be.an('array').with.lengthOf(1);
+      expect(action.commitData[0].message).to.equal('Test commit message with PACK inside');
+      expect(action.commitData[0].committer).to.equal('Test Committer');
+      expect(action.user).to.equal('Test Committer');
+    });
+
+    it('should handle PACK data starting immediately after flush packet', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/master';
+      const packetLines = [`${oldCommit} ${newCommit} ${ref}\0`];
+
+      const commitContent = `tree 1234567890abcdef1234567890abcdef12345678
+        parent ${oldCommit}
+        author Test Author <author@example.com> 1234567890 +0000
+        committer Test Committer <committer@example.com> 1234567890 +0000
+        
+        Commit A`;
+      const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
+      zlibInflateStub.returns(Buffer.from(commitContent, 'utf8'));
+
+      const packetLineBuffer = createPacketLineBuffer(packetLines);
+      req.body = Buffer.concat([packetLineBuffer, samplePackBuffer]);
+
+      const result = await exec(req, action);
+
+      expect(result).to.equal(action);
+      const step = action.steps[0];
+      expect(step.error).to.be.false;
+      expect(action.commitData[0].message).to.equal('Commit A');
+    });
+
+    it('should add error step if PACK header parsing fails (getPackMeta with wrong signature)', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/fix';
+      const packetLines = [`${oldCommit} ${newCommit} ${ref}\0capa\n`];
+
+      const packetLineBuffer = createPacketLineBuffer(packetLines);
+      const badPackBuffer = createSamplePackBuffer();
+      badPackBuffer.write('AAAA', 0, 4, 'utf-8'); // Invalid signature, should be 'PACK'
+
+      req.body = Buffer.concat([packetLineBuffer, badPackBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).to.equal(action);
+
+      const step = action.steps[0];
+      expect(step.stepName).to.equal('parsePackFile');
+      expect(step.error).to.be.true;
+      expect(step.errorMessage).to.include('Invalid PACK data structure');
+    });
   });
 
   describe('getPackMeta', () => {
