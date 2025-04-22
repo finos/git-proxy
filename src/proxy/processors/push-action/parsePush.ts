@@ -28,7 +28,8 @@ async function exec(req: any, action: Action): Promise<Action> {
       action.addStep(step);
       return action;
     }
-    const packetLines = parsePacketLines(req.body);
+    const [packetLines, packDataOffset] = parsePacketLines(req.body);
+
     const refUpdates = packetLines.filter((line) => line.includes('refs/heads/'));
 
     if (refUpdates.length !== 1) {
@@ -45,8 +46,24 @@ async function exec(req: any, action: Action): Promise<Action> {
     action.branch = ref.replace(/\0.*/, '').trim();
     action.setCommit(oldCommit, newCommit);
 
-    const index = req.body.lastIndexOf('PACK');
-    const buf = req.body.slice(index);
+    // Check if the offset is valid and if there's data after it
+    if (packDataOffset >= req.body.length) {
+      step.log('No PACK data found after packet lines.');
+      step.setError('Your push has been blocked. PACK data is missing.');
+      action.addStep(step);
+      return action;
+    }
+
+    const buf = req.body.slice(packDataOffset);
+
+    // Verify that data actually starts with PACK signature
+    if (buf.length < 4 || buf.toString('utf8', 0, 4) !== 'PACK') {
+      step.log(`Expected PACK signature at offset ${packDataOffset}, but found something else.`);
+      step.setError('Your push has been blocked. Invalid PACK data structure.');
+      action.addStep(step);
+      return action;
+    }
+
     const [meta, contentBuff] = getPackMeta(buf);
     const contents = getContents(contentBuff as any, meta.entries as number);
 
@@ -324,10 +341,11 @@ const unpack = (buf: Buffer) => {
 
 /**
  * Parses the packet lines from a buffer into an array of strings.
+ * Also returns the offset immediately following the parsed lines (including the flush packet).
  * @param {Buffer} buffer - The buffer containing the packet data.
- * @return {string[]} An array of parsed lines.
+ * @return {[string[], number]} An array containing the parsed lines and the offset after the last parsed line/flush packet.
  */
-const parsePacketLines = (buffer: Buffer): string[] => {
+const parsePacketLines = (buffer: Buffer): [string[], number] => {
   const lines: string[] = [];
   let offset = 0;
 
@@ -335,16 +353,27 @@ const parsePacketLines = (buffer: Buffer): string[] => {
     const lengthHex = buffer.toString('utf8', offset, offset + 4);
     const length = parseInt(lengthHex, 16);
 
+    // Prevent non-hex characters from causing issues
+    if (isNaN(length) || length < 0) {
+      throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
+    }
+
+    // length of 0 indicates flush packet (0000)
     if (length === 0) {
-      // Flush packet ("0000") marks the end of the ref section
+      offset += 4; // Include length of the flush packet
       break;
+    }
+
+    // Make sure we don't read past the end of the buffer
+    if (offset + length > buffer.length) {
+        throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
     }
 
     const line = buffer.toString('utf8', offset + 4, offset + length);
     lines.push(line);
-    offset += length;
+    offset += length; // Move offset to the start of the next line's length prefix
   }
-  return lines;
+  return [lines, offset];
 }
 
 exec.displayName = 'parsePush.exec';
@@ -353,5 +382,6 @@ export {
   exec,
   getCommitData,
   getPackMeta,
+  parsePacketLines,
   unpack
 };
