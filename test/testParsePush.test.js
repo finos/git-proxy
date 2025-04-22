@@ -6,6 +6,7 @@ const {
   exec,
   getCommitData,
   getPackMeta,
+  parsePacketLines,
   unpack
 } = require('../src/proxy/processors/push-action/parsePush');
 
@@ -16,15 +17,18 @@ const {
  * @param {number} type - Type of the object (1 for commit).
  * @return {Buffer} - The generated PACK buffer.
  */ 
-function createSamplePackBuffer(numEntries = 1, commitContent = 'tree 123\nparent 456\nauthor A <a@a> 123 +0000\ncommitter C <c@c> 456 +0000\n\nmessage', type = 1) {
+function createSamplePackBuffer(
+  numEntries = 1,
+  commitContent = 'tree 123\nparent 456\nauthor A <a@a> 123 +0000\ncommitter C <c@c> 456 +0000\n\nmessage',
+  type = 1,
+) {
   const header = Buffer.alloc(12);
   header.write('PACK', 0, 4, 'utf-8'); // Signature
   header.writeUInt32BE(2, 4); // Version
   header.writeUInt32BE(numEntries, 8); // Number of entries
 
   const originalContent = Buffer.from(commitContent, 'utf8');
-  // Actual zlib used for setup
-  const compressedContent = zlib.deflateSync(originalContent);
+  const compressedContent = zlib.deflateSync(originalContent); // actual zlib for setup
 
   // Basic type/size encoding (assumes small sizes for simplicity)
   // Real PACK files use variable-length encoding for size
@@ -34,10 +38,8 @@ function createSamplePackBuffer(numEntries = 1, commitContent = 'tree 123\nparen
   }
   const objectHeader = Buffer.from([typeAndSize]); // Placeholder, actual size encoding is complex
 
-  // Combine parts
+  // Combine parts and append checksum
   const packContent = Buffer.concat([objectHeader, compressedContent]);
-
-  // Append checksum (dummy 20 bytes)
   const checksum = Buffer.alloc(20);
 
   return Buffer.concat([header, packContent, checksum]);
@@ -164,7 +166,7 @@ describe('parsePackFile', () => {
       const step = action.steps[0];
       expect(step.stepName).to.equal('parsePackFile');
       expect(step.error).to.be.true;
-      expect(step.errorMessage).to.include('Unable to parse push');
+      expect(step.errorMessage).to.include('PACK data is missing');
 
       expect(action.branch).to.equal(ref);
       expect(action.setCommit.calledOnceWith(oldCommit, newCommit)).to.be.true;
@@ -178,8 +180,8 @@ describe('parsePackFile', () => {
 
       const commitContent = `tree 1234567890abcdef1234567890abcdef12345678
         parent abcdef1234567890abcdef1234567890abcdef12
-        author Test Author <test@example.com> 1678886400 +0000
-        committer Test Committer <committer@example.com> 1678886460 +0100
+        author Test Author <author@example.com> 1234567890 +0000
+        committer Test Committer <committer@example.com> 1234567890 +0000
 
         feat: Add new feature
 
@@ -217,9 +219,9 @@ describe('parsePackFile', () => {
       expect(parsedCommit.parent).to.equal('abcdef1234567890abcdef1234567890abcdef12');
       expect(parsedCommit.author).to.equal('Test Author');
       expect(parsedCommit.committer).to.equal('Test Committer');
-      expect(parsedCommit.commitTimestamp).to.equal('1678886460');
+      expect(parsedCommit.commitTimestamp).to.equal('1234567890');
       expect(parsedCommit.message).to.equal('feat: Add new feature\n\nThis is the commit body.');
-      expect(parsedCommit.authorEmail).to.equal('test@example.com');
+      expect(parsedCommit.authorEmail).to.equal('author@example.com');
 
       expect(step.content.meta).to.deep.equal({
         sig: 'PACK',
@@ -236,8 +238,8 @@ describe('parsePackFile', () => {
 
       // Commit content without a parent line
       const commitContent = `tree 1234567890abcdef1234567890abcdef12345678
-        author Test Author <test@example.com> 1678886400 +0000
-        committer Test Committer <committer@example.com> 1678886460 +0100
+        author Test Author <test@example.com> 1234567890 +0000
+        committer Test Committer <committer@example.com> 1234567890 +0100
 
         feat: Initial commit`;
       const parentFromCommit = '0'.repeat(40); // Expected parent hash
@@ -278,8 +280,8 @@ describe('parsePackFile', () => {
       const commitContent = `tree 1234567890abcdef1234567890abcdef12345678
         parent ${parent1}
         parent ${parent2}
-        author Test Author <test@example.com> 1678886400 +0000
-        committer Test Committer <committer@example.com> 1678886460 +0100
+        author Test Author <test@example.com> 1234567890 +0000
+        committer Test Committer <committer@example.com> 1234567890 +0100
 
         Merge branch 'feature'`;
 
@@ -314,7 +316,7 @@ describe('parsePackFile', () => {
 
       // Malformed commit content - missing tree line
       const commitContent = `parent abcdef1234567890abcdef1234567890abcdef12
-        author Test Author <test@example.com> 1678886400 +0000
+        author Test Author <author@example.com> 1678886400 +0000
         committer Test Committer <committer@example.com> 1678886460 +0100
 
         feat: Missing tree`;
