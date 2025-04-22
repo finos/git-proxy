@@ -605,4 +605,78 @@ describe('parsePackFile', () => {
       expect(() => getCommitData(contents)).to.throw('Invalid commit data');
     });
   });
+
+  describe('parsePacketLines', () => {
+    it('should parse multiple valid packet lines correctly and return the correct offset', () => {
+      const lines = [
+        'line1 content',
+        'line2 more content\nwith newline',
+        'line3',
+      ];
+      const buffer = createPacketLineBuffer(lines); // Helper adds "0000" at the end
+      const expectedOffset = buffer.length; // Should indicate the end of the buffer after flush packet
+      const [parsedLines, offset] = parsePacketLines(buffer);
+
+      expect(parsedLines).to.deep.equal(lines);
+      expect(offset).to.equal(expectedOffset);
+    });
+
+    it('should handle an empty input buffer', () => {
+      const buffer = Buffer.alloc(0);
+      const [parsedLines, offset] = parsePacketLines(buffer);
+
+      expect(parsedLines).to.deep.equal([]);
+      expect(offset).to.equal(0);
+    });
+
+    it('should handle a buffer only with a flush packet', () => {
+      const buffer = Buffer.from('0000');
+      const [parsedLines, offset] = parsePacketLines(buffer);
+
+      expect(parsedLines).to.deep.equal([]);
+      expect(offset).to.equal(4);
+    });
+
+    it('should handle lines with null characters correctly', () => {
+      const lines = ['line1\0capability=value', 'line2'];
+      const buffer = createPacketLineBuffer(lines);
+      const expectedOffset = buffer.length;
+      const [parsedLines, offset] = parsePacketLines(buffer);
+
+      expect(parsedLines).to.deep.equal(lines);
+      expect(offset).to.equal(expectedOffset);
+    });
+
+    it('should stop parsing at the first flush packet', () => {
+      const lines = ['line1', 'line2'];
+      let buffer = createPacketLineBuffer(lines);
+
+      // Add extra data after the flush packet
+      const extraData = Buffer.from('extradataafterflush');
+      buffer = Buffer.concat([buffer, extraData]);
+
+      const expectedOffset = buffer.length - extraData.length;
+      const [parsedLines, offset] = parsePacketLines(buffer);  
+
+      expect(parsedLines).to.deep.equal(lines);
+      expect(offset).to.equal(expectedOffset);
+    });
+
+    it('should throw an error if a packet line length exceeds buffer bounds', () => {
+      // 000A -> length 10, but actual line length is only 3 bytes
+      const invalidLengthBuffer = Buffer.from('000Aabc');
+      expect(() => parsePacketLines(invalidLengthBuffer)).to.throw(/Invalid packet line length 000A/);
+    });
+
+    it('should throw an error for non-hex length prefix', () => {
+      const invalidHexBuffer = Buffer.from('XXXXline');
+      expect(() => parsePacketLines(invalidHexBuffer)).to.throw(/Invalid packet line length XXXX/);
+    });
+
+     it('should handle buffer ending exactly after a valid line length without content', () => {
+      // 0008 -> length 8, but buffer ends after header (no content)
+      const incompleteBuffer = Buffer.from('0008');
+      expect(() => parsePacketLines(incompleteBuffer)).to.throw(/Invalid packet line length 0008/);
+    });
+  });
 });
