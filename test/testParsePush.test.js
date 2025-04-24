@@ -668,9 +668,15 @@ describe('parsePackFile', () => {
       expect(() => parsePacketLines(invalidLengthBuffer)).to.throw(/Invalid packet line length 000A/);
     });
 
-    it('should throw an error for non-hex length prefix', () => {
+    it('should throw an error for non-hex length prefix (all non-hex)', () => {
       const invalidHexBuffer = Buffer.from('XXXXline');
       expect(() => parsePacketLines(invalidHexBuffer)).to.throw(/Invalid packet line length XXXX/);
+    });
+
+    it('should throw an error for non-hex length prefix (non-hex at the end)', () => {
+      // Cover the quirk of parseInt returning 0 instead of NaN
+      const invalidHexBuffer = Buffer.from('000zline');
+      expect(() => parsePacketLines(invalidHexBuffer)).to.throw(/Invalid packet line length 000z/);
     });
 
      it('should handle buffer ending exactly after a valid line length without content', () => {
