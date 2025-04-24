@@ -351,7 +351,7 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
 
   while (offset + 4 <= buffer.length) {
     const lengthHex = buffer.toString('utf8', offset, offset + 4);
-    const length = parseInt(lengthHex, 16);
+    const length = Number(`0x${lengthHex}`);
 
     // Prevent non-hex characters from causing issues
     if (isNaN(length) || length < 0) {
