@@ -91,6 +91,60 @@ async function exec(req: any, action: Action): Promise<Action> {
 };
 
 /**
+ * Parses the name, email, and timestamp from an author or committer line.
+ * 
+ * Timestamp including timezone offset is required.
+ * @param {string} line - The line to parse.
+ * @return {Object} An object containing the name, email, and timestamp.
+ */
+const parsePersonLine = (line: string): { name: string; email: string; timestamp: string } | null => {
+  const personRegex = /^(.*?) <(.*?)> (\d+) ([+-]\d+)$/;
+  const match = line.match(personRegex);
+  if (!match) {
+    throw new Error(`Failed to parse person line: ${line}. Make sure to include a name, email, timestamp and timezone offset.`);
+  }
+  return { name: match[1].trim(), email: match[2], timestamp: match[3] };
+};
+
+/**
+ * Parses the header lines of a commit.
+ * @param {string[]} headerLines - The header lines of a commit.
+ * @return {Object} An object containing the parsed data.
+ */
+const getParsedData = (headerLines: string[]) => {
+  const parsedData: {
+    tree?: string;
+    parents: string[];
+    authorInfo?: ReturnType<typeof parsePersonLine>;
+    committerInfo?: ReturnType<typeof parsePersonLine>;
+  } = { parents: [] };
+
+  for (const line of headerLines) {
+    const spaceIndex = line.indexOf(' ');
+    if (spaceIndex === -1) continue;
+
+    const key = line.substring(0, spaceIndex);
+    const value = line.substring(spaceIndex + 1);
+
+    switch (key) {
+      case 'tree':
+        parsedData.tree = value.trim();
+        break;
+      case 'parent':
+        parsedData.parents.push(value.trim());
+        break;
+      case 'author':
+        parsedData.authorInfo = parsePersonLine(value);
+        break;
+      case 'committer':
+        parsedData.committerInfo = parsePersonLine(value);
+        break;
+    }
+  }
+  return parsedData;
+};
+
+/**
  * Parses the commit data from the contents of a pack file.
  * @param {CommitContent[]} contents - The contents of the pack file.
  * @return {*} An array of commit data objects.
