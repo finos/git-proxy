@@ -568,34 +568,93 @@ describe('parsePackFile', () => {
     });
 
     it('should handle commit messages with multiple lines', () => {
-      const commitContent = `tree 123\nparent 456\nauthor A <a@e.com> 111 +0000 1\ncommitter C <c@e.com> 2\n\nLine one\nLine two\n\nLine four`;
+      const commitContent = `tree 123\nparent 456\nauthor A <a@e.com> 111 +0000\ncommitter C <c@e.com> 222 +0100\n\nLine one\nLine two\n\nLine four`;
       const contents = [{ type: 1, content: commitContent }];
       const result = getCommitData(contents);
       expect(result[0].message).to.equal('Line one\nLine two\n\nLine four');
     });
 
-    it('should throw error for invalid commit data (missing tree)', () => {
-      const commitContent = `parent 456\nauthor A <a@e.com> 1\ncommitter C <c@e.com> 2\n\nMsg`;
+    it('should handle commits without a message body', () => {
+      const commitContent = `tree 123\nparent 456\nauthor A <a@e.com> 111 +0000\ncommitter C <c@e.com> 222 +0100\n`;
       const contents = [{ type: 1, content: commitContent }];
-      expect(() => getCommitData(contents)).to.throw('Invalid commit data');
+      const result = getCommitData(contents);
+      expect(result[0].message).to.equal('');
+    });
+
+    it('should throw error for invalid commit data (missing tree)', () => {
+      const commitContent = `parent 456\nauthor A <a@e.com> 1234567890 +0000\ncommitter C <c@e.com> 1234567890 +0000\n\nMsg`;
+      const contents = [{ type: 1, content: commitContent }];
+      expect(() => getCommitData(contents)).to.throw('Invalid commit data: Missing tree');
     });
 
     it('should throw error for invalid commit data (missing author)', () => {
-      const commitContent = `tree 123\nparent 456\ncommitter C <c@e.com> 2\n\nMsg`;
+      const commitContent = `tree 123\nparent 456\ncommitter C <c@e.com> 1234567890 +0000\n\nMsg`;
       const contents = [{ type: 1, content: commitContent }];
-      expect(() => getCommitData(contents)).to.throw('Invalid commit data');
+      expect(() => getCommitData(contents)).to.throw('Invalid commit data: Missing author');
     });
 
     it('should throw error for invalid commit data (missing committer)', () => {
-      const commitContent = `tree 123\nparent 456\nauthor A <a@e.com> 1\n\nMsg`;
+      const commitContent = `tree 123\nparent 456\nauthor A <a@e.com> 1234567890 +0000\n\nMsg`;
       const contents = [{ type: 1, content: commitContent }];
-      expect(() => getCommitData(contents)).to.throw('Invalid commit data');
+      expect(() => getCommitData(contents)).to.throw('Invalid commit data: Missing committer');
     });
 
-    it('should throw error for invalid commit data (missing message separator)', () => {
-      const commitContent = `tree 123\nparent 456\nauthor A <a@e.com> 1\ncommitter C <c@e.com> 2`; // No empty line
+    it('should throw error for invalid author line (missing timezone offset)', () => {
+      const commitContent = `tree 123\nparent 456\nauthor A <a@e.com> 1234567890\ncommitter C <c@e.com> 1234567890 +0000\n\nMsg`;
       const contents = [{ type: 1, content: commitContent }];
-      expect(() => getCommitData(contents)).to.throw('Invalid commit data');
+      expect(() => getCommitData(contents)).to.throw('Failed to parse person line');
+    });
+
+    it('should correctly parse a commit with a GPG signature header', () => {
+      const gpgSignedCommit = "tree b4d3c0ffee1234567890abcdef1234567890aabbcc\n" +
+        "parent 01dbeef9876543210fedcba9876543210fedcba\n" +
+        "author Test Author <test.author@example.com> 1744814600 +0100\n" +
+        "committer Test Committer <test.committer@example.com> 1744814610 +0200\n" +
+        "gpgsig -----BEGIN PGP SIGNATURE-----\n\n" +
+        " wsFcBAABCAAQBQJn/8ISCRC1aQ7uu5UhlAAAntAQACeyQd6IykNXiN6m9DfVp8DJ\n" +
+        " UsY64ws+Td0inrEee+cHXVI9uJn15RJYQkICwlM4TZsVGav7nYaVqO+gfAg2ORAH\n" +
+        " ghUnwSFFs7ucN/p0a47ItkJmt04+jQIFlZIC+wy1u2H3aKJwqaF+kGP5SA33ahgV\n" +
+        " ZWviKodXFki8/G+sKB63q1qrDw6aELtftEgeAPQUcuLzj+vu/m3dWrDbatfUXMkC\n" +
+        " JC6PbFajqrJ5pEtFwBqqRE+oIsOM9gkNAti1yDD5eoS+bNXACe0hT0+UoIzn5a34\n" +
+        " xcElXTSdAK/MRjGiLN91G2nWvlbpM5wAEqr5Bl5ealCc6BbWfPxbP46slaE5DfkD\n" +
+        " u0+RkVX06MSSPqzOmEV14ZWKap5C19FpF9o/rY8vtLlCxjWMhtUvvdR4OQfQpEDY\n" +
+        " eTqzCHRnM3+7r3ABAWt9v7cG99bIMEs3sGcMy11HMeaoBpye6vCIP4ghNnoB1hUJ\n" +
+        " D7MD77jzk4Kbf4IzS5omExyMu3AiNZecZX4+1w/527yPhv3s/HB1Gfz0oCUned+6\n" +
+        " b9Kkle+krsQ/EK/4gPcb/Kb1cTcm3HhjaOSYwA+JpApJQ0mrduH34AT5MZJuIPFe\n" +
+        " QheLzQI1d2jmFs11GRC5hc0HBk1WmGm6U8+FBuxCX0ECZPdYeQJjUeWjnNeUoE6a\n" +
+        " 5lytZU4Onk57nUhIMSrx\n" +
+        " =IxZr\n" +
+        " -----END PGP SIGNATURE-----\n\n" +
+        "This is the commit message.\n" +
+        "It can span multiple lines.\n\n" +
+        "And include blank lines internally.";
+
+      const contents = [
+        { type: 1, content: gpgSignedCommit },
+        { type: 1, content: `tree 111\nparent 000\nauthor A1 <a1@e.com> 1744814600 +0200\ncommitter C1 <c1@e.com> 1744814610 +0200\n\nMsg1` }
+      ];
+
+      const result = getCommitData(contents);
+      expect(result).to.be.an('array').with.lengthOf(2);
+  
+      // Check the GPG signed commit data
+      const gpgResult = result[0];
+      expect(gpgResult.tree).to.equal('b4d3c0ffee1234567890abcdef1234567890aabbcc');
+      expect(gpgResult.parent).to.equal('01dbeef9876543210fedcba9876543210fedcba');
+      expect(gpgResult.author).to.equal('Test Author');
+      expect(gpgResult.committer).to.equal('Test Committer');
+      expect(gpgResult.authorEmail).to.equal('test.author@example.com');
+      expect(gpgResult.commitTimestamp).to.equal('1744814610');
+      expect(gpgResult.message).to.equal(`This is the commit message.\nIt can span multiple lines.\n\nAnd include blank lines internally.`);
+  
+      // Sanity check: the second commit should be the simple commit
+      const simpleResult = result[1];
+      expect(simpleResult.message).to.equal('Msg1');
+      expect(simpleResult.parent).to.equal('000');
+      expect(simpleResult.author).to.equal('A1');
+      expect(simpleResult.committer).to.equal('C1');
+      expect(simpleResult.authorEmail).to.equal('a1@e.com');
+      expect(simpleResult.commitTimestamp).to.equal('1744814610');
     });
   });
 
