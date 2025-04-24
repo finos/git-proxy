@@ -158,92 +158,62 @@ const getCommitData = (contents: CommitContent[]) => {
       console.log({ x });
 
       const allLines = x.content.split('\n');
-      const trimmedLines = allLines.map((line) => line.trim());
-      console.log({ trimmedLines });
+      let headerEndIndex = -1;
+      let inGpgSig = false;
 
-      const parts = trimmedLines.filter((part) => part.length > 0);
-      console.log({ parts });
+      // Find index that separates headers/message since GPG sig. may contain '\n\n'
+      for (let i = 0; i < allLines.length; i++) {
+        const line = allLines[i];
 
-      if (!parts || parts.length < 4) {
-        throw new Error(
-          `Invalid commit structure: Expected at least 4 non-empty lines (tree, author, committer, message), found ${parts.length}`
-        );
+        if (line.includes('gpgsig ') && line.includes('-----BEGIN PGP SIGNATURE-----')) {
+          inGpgSig = true;
+          continue;
+        }
+        if (inGpgSig) {
+          if (line.includes('-----END PGP SIGNATURE-----')) {
+            inGpgSig = false;
+          }
+          continue;
+        }
+
+        // The first blank line NOT inside a GPG block is the real separator
+        if (line === '') {
+          headerEndIndex = i;
+          break;
+        }
       }
 
-      const indexOfMessages = trimmedLines.indexOf('');
-
-      if (indexOfMessages === -1) {
-        throw new Error('Invalid commit data: Missing message separator');
+      // Commit has no message body or may be malformed
+      if (headerEndIndex === -1) {
+        // Treat as commit with no message body, header format is checked later
+        headerEndIndex = allLines.length;
       }
 
-      const tree = parts
-        .find((t) => t.split(' ')[0] === 'tree')
-        ?.replace('tree', '')
-        .trim();
-      console.log({ tree });
+      const headerLines = allLines.slice(0, headerEndIndex);
+      const message = allLines.slice(headerEndIndex + 1).join('\n').trim();
+      console.log({ headerLines, message });
 
-      const parentValue = parts.find((t) => t.split(' ')[0] === 'parent');
-      console.log({ parentValue });
+      const { tree, parents, authorInfo, committerInfo } = getParsedData(headerLines);
+      // No parent headers -> zero hash
+      const parent = parents.length > 0 ? parents[0] : '0000000000000000000000000000000000000000';
 
-      const parent = parentValue
-        ? parentValue.replace('parent', '').trim()
-        : '0000000000000000000000000000000000000000';
-      console.log({ parent });
-
-      const author = parts
-        .find((t) => t.split(' ')[0] === 'author')
-        ?.replace('author', '')
-        .trim();
-      console.log({ author });
-
-      const committer = parts
-        .find((t) => t.split(' ')[0] === 'committer')
-        ?.replace('committer', '')
-        .trim();
-      console.log({ committer });
-
-      const message = trimmedLines
-        .slice(indexOfMessages + 1)
-        .join('\n')
-        .trim();
-      console.log({ message });
-
-      const commitTimestamp = committer?.split(' ').reverse()[1];
-      console.log({ commitTimestamp });
-
-      const authorEmail = author?.split(' ').reverse()[2].slice(1, -1);
-      console.log({ authorEmail });
-
-      console.log({
-        tree,
-        parent,
-        author: author?.split('<')[0].trim(),
-        committer: committer?.split('<')[0].trim(),
-        commitTimestamp,
-        message,
-        authorEmail,
-      });
-
-      if (!tree || !parent || !author || !committer || !commitTimestamp || !message || !authorEmail) {
+      // Validation for required attributes
+      if (!tree || !authorInfo || !committerInfo) {
         const missing = [];
         if (!tree) missing.push('tree');
-        if (!parent) missing.push('parent');
-        if (!author) missing.push('author');
-        if (!committer) missing.push('committer');
-        if (!commitTimestamp) missing.push('commitTimestamp');
-        if (!message) missing.push('message');
-        if (!authorEmail) missing.push('authorEmail');
+        if (!authorInfo) missing.push('author');
+        if (!committerInfo) missing.push('committer');
         throw new Error(`Invalid commit data: Missing ${missing.join(', ')}`);
       }
 
       return {
         tree,
         parent,
-        author: author.split('<')[0].trim(),
-        committer: committer.split('<')[0].trim(),
-        commitTimestamp,
+        author: authorInfo.name,
+        committer: committerInfo.name,
+        authorEmail: authorInfo.email,
+        commitTimestamp: committerInfo.timestamp,
         message,
-        authorEmail: authorEmail,
       };
     })
     .value();
