@@ -178,14 +178,12 @@ describe('parsePackFile', () => {
       const ref = 'refs/heads/main';
       const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
 
-      const commitContent = `tree 1234567890abcdef1234567890abcdef12345678
-        parent abcdef1234567890abcdef1234567890abcdef12
-        author Test Author <author@example.com> 1234567890 +0000
-        committer Test Committer <committer@example.com> 1234567890 +0000
-
-        feat: Add new feature
-
-        This is the commit body.`;
+      const commitContent = "tree 1234567890abcdef1234567890abcdef12345678\n" +
+        "parent abcdef1234567890abcdef1234567890abcdef12\n" +
+        "author Test Author <author@example.com> 1234567890 +0000\n" +
+        "committer Test Committer <committer@example.com> 1234567890 +0000\n\n" +
+        "feat: Add new feature\n\n" +
+        "This is the commit body.";
       const commitContentBuffer = Buffer.from(commitContent, 'utf8');
 
       zlibInflateStub.returns(commitContentBuffer);
@@ -237,11 +235,10 @@ describe('parsePackFile', () => {
       const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
 
       // Commit content without a parent line
-      const commitContent = `tree 1234567890abcdef1234567890abcdef12345678
-        author Test Author <test@example.com> 1234567890 +0000
-        committer Test Committer <committer@example.com> 1234567890 +0100
-
-        feat: Initial commit`;
+      const commitContent = "tree 1234567890abcdef1234567890abcdef12345678\n" +
+        "author Test Author <test@example.com> 1234567890 +0000\n" +
+        "committer Test Committer <committer@example.com> 1234567890 +0100\n\n" +
+        "feat: Initial commit";
       const parentFromCommit = '0'.repeat(40); // Expected parent hash
 
       const commitContentBuffer = Buffer.from(commitContent, 'utf8');
@@ -277,13 +274,12 @@ describe('parsePackFile', () => {
 
       const parent1 = 'b1'.repeat(20);
       const parent2 = 'b2'.repeat(20);
-      const commitContent = `tree 1234567890abcdef1234567890abcdef12345678
-        parent ${parent1}
-        parent ${parent2}
-        author Test Author <test@example.com> 1234567890 +0000
-        committer Test Committer <committer@example.com> 1234567890 +0100
-
-        Merge branch 'feature'`;
+      const commitContent = "tree 1234567890abcdef1234567890abcdef12345678\n" +
+        `parent ${parent1}\n` +
+        `parent ${parent2}\n` +
+        "author Test Author <test@example.com> 1234567890 +0000\n" +
+        "committer Test Committer <committer@example.com> 1234567890 +0100\n\n" +
+        "Merge branch 'feature'";
 
       const commitContentBuffer = Buffer.from(commitContent, 'utf8');
       zlibInflateStub.returns(commitContentBuffer);
@@ -315,11 +311,10 @@ describe('parsePackFile', () => {
       const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
 
       // Malformed commit content - missing tree line
-      const commitContent = `parent abcdef1234567890abcdef1234567890abcdef12
-        author Test Author <author@example.com> 1678886400 +0000
-        committer Test Committer <committer@example.com> 1678886460 +0100
-
-        feat: Missing tree`;
+      const commitContent = "parent abcdef1234567890abcdef1234567890abcdef12\n" +
+        "author Test Author <author@example.com> 1678886400 +0000\n" +
+        "committer Test Committer <committer@example.com> 1678886460 +0100\n\n" +
+        "feat: Missing tree";
       const commitContentBuffer = Buffer.from(commitContent, 'utf8');
       zlibInflateStub.returns(commitContentBuffer);
 
@@ -367,12 +362,11 @@ describe('parsePackFile', () => {
         'some other data containing PACK keyword', // Include "PACK" within a packet line's content
       ];
 
-      const commitContent = `tree 1234567890abcdef1234567890abcdef12345678
-        parent ${oldCommit}
-        author Test Author <author@example.com> 1234567890 +0000
-        committer Test Committer <committer@example.com> 1234567890 +0000
-        
-        Test commit message with PACK inside`;
+      const commitContent = "tree 1234567890abcdef1234567890abcdef12345678\n" +
+        `parent ${oldCommit}\n` +
+        "author Test Author <author@example.com> 1234567890 +0000\n" +
+        "committer Test Committer <committer@example.com> 1234567890 +0000\n\n" +
+        "Test commit message with PACK inside";
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
 
       zlibInflateStub.returns(Buffer.from(commitContent, 'utf8'));
@@ -407,12 +401,11 @@ describe('parsePackFile', () => {
       const ref = 'refs/heads/master';
       const packetLines = [`${oldCommit} ${newCommit} ${ref}\0`];
 
-      const commitContent = `tree 1234567890abcdef1234567890abcdef12345678
-        parent ${oldCommit}
-        author Test Author <author@example.com> 1234567890 +0000
-        committer Test Committer <committer@example.com> 1234567890 +0000
-        
-        Commit A`;
+      const commitContent = "tree 1234567890abcdef1234567890abcdef12345678\n" +
+        `parent ${oldCommit}\n` +
+        "author Test Author <author@example.com> 1234567890 +0000\n" +
+        "committer Test Committer <committer@example.com> 1234567890 +0000\n\n" +
+        "Commit A";
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       zlibInflateStub.returns(Buffer.from(commitContent, 'utf8'));
 
