@@ -14,7 +14,7 @@ const limiter = rateLimit({
   max: 100, // limit each IP to 100 requests per windowMs
 });
 
-const { GIT_PROXY_UI_PORT: uiPort } = require('../config/env').Vars;
+const { GIT_PROXY_UI_PORT: uiPort } = require('../config/env').serverConfig;
 
 const _httpServer = http.createServer(app);
 
