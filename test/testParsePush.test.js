@@ -610,7 +610,7 @@ describe('parsePackFile', () => {
         "parent 01dbeef9876543210fedcba9876543210fedcba\n" +
         "author Test Author <test.author@example.com> 1744814600 +0100\n" +
         "committer Test Committer <test.committer@example.com> 1744814610 +0200\n" +
-        "gpgsig -----BEGIN PGP SIGNATURE-----\n\n" +
+        "gpgsig -----BEGIN PGP SIGNATURE-----\n \n" +
         " wsFcBAABCAAQBQJn/8ISCRC1aQ7uu5UhlAAAntAQACeyQd6IykNXiN6m9DfVp8DJ\n" +
         " UsY64ws+Td0inrEee+cHXVI9uJn15RJYQkICwlM4TZsVGav7nYaVqO+gfAg2ORAH\n" +
         " ghUnwSFFs7ucN/p0a47ItkJmt04+jQIFlZIC+wy1u2H3aKJwqaF+kGP5SA33ahgV\n" +
