@@ -159,25 +159,10 @@ const getCommitData = (contents: CommitContent[]) => {
 
       const allLines = x.content.split('\n');
       let headerEndIndex = -1;
-      let inGpgSig = false;
 
-      // Find index that separates headers/message since GPG sig. may contain '\n\n'
+      // First empty line marks end of header
       for (let i = 0; i < allLines.length; i++) {
-        const line = allLines[i];
-
-        if (line.includes('gpgsig ') && line.includes('-----BEGIN PGP SIGNATURE-----')) {
-          inGpgSig = true;
-          continue;
-        }
-        if (inGpgSig) {
-          if (line.includes('-----END PGP SIGNATURE-----')) {
-            inGpgSig = false;
-          }
-          continue;
-        }
-
-        // The first blank line NOT inside a GPG block is the real separator
-        if (line === '') {
+        if (allLines[i] === '') {
           headerEndIndex = i;
           break;
         }
