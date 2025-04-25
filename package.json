@@ -2,6 +2,8 @@
   "name": "@finos/git-proxy",
   "version": "1.10.0",
   "description": "Deploy custom push protections and policies on top of Git.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "cli": "node ./packages/git-proxy-cli/index.js",
     "client": "vite --config vite.config.js",

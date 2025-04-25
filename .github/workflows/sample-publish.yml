@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
@@ -17,14 +17,27 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-      # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4
+      - name: Checkout repo
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Setup Node.js # Setup .npmrc file to publish to npm
+        uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4
         with:
           node-version: '18.x'
           registry-url: 'https://registry.npmjs.org'
-      - name: publish sample package
-        run: npm install --include peer && npm publish --access=public
+
+      - name: Install dependencies
         working-directory: plugins/git-proxy-plugin-samples
+        run: npm ci
+
+      - name: Build TypeScript
+        working-directory: plugins/git-proxy-plugin-samples
+        run: npm run build
+
+      - name: Install peers and publish
+        working-directory: plugins/git-proxy-plugin-samples
+        run: |
+          npm install --include=peer
+          npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
