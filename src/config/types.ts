@@ -20,9 +20,18 @@ export interface UserSettings {
   contactEmail: string;
   csrfProtection: boolean;
   domains: Record<string, unknown>;
+  ssh: SSHConfig;
   rateLimit: RateLimitConfig;
 }
 
+export interface SSHConfig {
+  enabled: boolean;
+  port: number;
+  hostKey: {
+    privateKeyPath: string;
+    publicKeyPath: string;
+  };
+}
 export interface TLSConfig {
   enabled?: boolean;
   cert?: string;

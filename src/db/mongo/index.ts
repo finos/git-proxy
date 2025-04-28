@@ -1,11 +1,9 @@
 import * as helper from './helper';
 import * as pushes from './pushes';
-import * as repo  from './repo';
+import * as repo from './repo';
 import * as users from './users';
 
-export const {
-  getSessionStore,
-} = helper;
+export const { getSessionStore } = helper;
 
 export const {
   getPushes,
@@ -37,4 +35,7 @@ export const {
   createUser,
   deleteUser,
   updateUser,
+  addPublicKey,
+  removePublicKey,
+  findUserBySSHKey,
 } = users;
