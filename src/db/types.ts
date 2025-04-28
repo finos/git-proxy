@@ -23,6 +23,7 @@ export type User = {
   email: string;
   admin: boolean;
   oidcId: string | null;
+  publicKeys: string[];
 };
 
 export type Push = {

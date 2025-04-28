@@ -33,6 +33,7 @@ let _urlShortener: string = defaultSettings.urlShortener;
 let _contactEmail: string = defaultSettings.contactEmail;
 let _csrfProtection: boolean = defaultSettings.csrfProtection;
 let _domains: Record<string, unknown> = defaultSettings.domains;
+let _sshConfig = defaultSettings.ssh;
 let _rateLimit: RateLimitConfig = defaultSettings.rateLimit;
 
 // These are not always present in the default config file, so casting is required
@@ -54,6 +55,17 @@ export const getProxyUrl = () => {
   }
 
   return _proxyUrl;
+};
+
+export const getSSHProxyUrl = () => {
+  return getProxyUrl().replace('https://', 'git@');
+};
+
+export const getSSHConfig = () => {
+  if (_userSettings !== null && _userSettings.ssh) {
+    _sshConfig = _userSettings.ssh;
+  }
+  return _sshConfig;
 };
 
 // Gets a list of authorised repositories
