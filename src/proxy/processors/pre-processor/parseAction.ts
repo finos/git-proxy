@@ -1,6 +1,11 @@
 import { Action } from '../../actions';
 
-const exec = async (req: { originalUrl: string; method: string; headers: Record<string, string> }) => {
+const exec = async (req: {
+  originalUrl: string;
+  method: string;
+  headers: Record<string, string>;
+  isSSH: boolean;
+}) => {
   const id = Date.now();
   const timestamp = id;
   const repoName = getRepoNameFromUrl(req.originalUrl);

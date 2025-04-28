@@ -106,5 +106,13 @@
     "enabled": true,
     "key": "certs/key.pem",
     "cert": "certs/cert.pem"
+  },
+  "ssh": {
+    "enabled": false,
+    "port": 2222,
+    "hostKey": {
+      "privateKeyPath": "./.ssh/host_key",
+      "publicKeyPath": "./.ssh/host_key.pub"
+    }
   }
 }

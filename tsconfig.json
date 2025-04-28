@@ -15,5 +15,5 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true
   },
-  "include": ["src"]
+  "include": ["src", "*.ts", "*.tsx", "*.js", "*.jsx"]
 }
