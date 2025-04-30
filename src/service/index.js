@@ -9,10 +9,7 @@ const db = require('../db');
 const rateLimit = require('express-rate-limit');
 const lusca = require('lusca');
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-});
+const limiter = rateLimit(config.getRateLimit);
 
 const { GIT_PROXY_UI_PORT: uiPort } = require('../config/env').serverConfig;
 
