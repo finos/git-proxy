@@ -3,10 +3,10 @@
   <a href="https://github.com/finos/git-proxy">
     <img src="./docs/img/logo.png" alt="Logo" height="95">
   </a>
-
+  
   <br />
   <br />
-
+  
   <p align="center">
     Deploy custom push protections and policies<br />on top of Git
     <br />
@@ -102,11 +102,11 @@ If you identify a security vulnerability in the codebase, please follow the step
 
 ## Code of Conduct
 
-We are committed to making open source an enjoyable and respectful experience for our community. See <a href="https://github.com/finos/git-proxy/blob/main/CODE_OF_CONDUCT.md"><code>CODE_OF_CONDUCT</code></a> for more information.
+We are committed to making open source an enjoyable and respectful experience for our community. See [`CODE_OF_CONDUCT`](https://github.com/finos/git-proxy/blob/main/CODE_OF_CONDUCT.md) for more information.
 
 ## License
 
-This project is distributed under the Apache-2.0 license. See <a href="./LICENSE"><code>LICENSE</code></a> for more information.
+This project is distributed under the Apache-2.0 license. See [`LICENSE`](./LICENSE) for more information.
 
 ## Contact
 
@@ -116,4 +116,4 @@ If you can't access Slack, you can also [subscribe to our mailing list](mailto:g
 
 Join our [fortnightly Zoom meeting](https://zoom.us/j/97235277537?pwd=aDJsaE8zcDJpYW1vZHJmSTJ0RXNZUT09) on Monday, 11AM EST (odd week numbers). Send an e-mail to [help@finos.org](mailto:help@finos.org) to get a calendar invitation.
 
-Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues). 
+Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues).
