@@ -2,6 +2,10 @@
   "proxyUrl": "https://github.com",
   "cookieSecret": "cookie secret",
   "sessionMaxAgeHours": 12,
+  "rateLimit": {
+    "windowMs": 600000,
+    "limit": 150
+  },
   "tempPassword": {
     "sendEmail": false,
     "emailConfig": {}
