@@ -4,7 +4,7 @@
   "sessionMaxAgeHours": 12,
   "rateLimit": {
     "windowMs": 60000,
-    "max": 150
+    "limit": 150
   },
   "tempPassword": {
     "sendEmail": false,
