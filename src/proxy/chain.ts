@@ -12,6 +12,7 @@ const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.checkIfWaitingAuth,
   proc.push.pullRemote,
   proc.push.writePack,
+  proc.push.getMissingData,
   proc.push.preReceive,
   proc.push.getDiff,
   proc.push.clearBareClone,
