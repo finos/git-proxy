@@ -16,8 +16,9 @@ describe('default configuration', function () {
     expect(config.getDatabase()).to.be.eql(defaultSettings.sink[0]);
     expect(config.getTempPasswordConfig()).to.be.eql(defaultSettings.tempPassword);
     expect(config.getAuthorisedList()).to.be.eql(defaultSettings.authorisedList);
-    expect(config.getSSLKeyPath()).to.be.eql("../../certs/key.pem");
-    expect(config.getSSLCertPath()).to.be.eql("../../certs/cert.pem");
+    expect(config.getSSLKeyPath()).to.be.eql('../../certs/key.pem');
+    expect(config.getSSLCertPath()).to.be.eql('../../certs/cert.pem');
+    expect(config.getRateLimit()).to.be.eql(defaultSettings.rateLimit);
   });
   after(function () {
     delete require.cache[require.resolve('../src/config')];
@@ -94,8 +95,8 @@ describe('user configuration', function () {
 
   it('should override default settings for SSL certificate', function () {
     const user = {
-      sslKeyPemPath: "my-key.pem",
-      sslCertPemPath: "my-cert.pem"
+      sslKeyPemPath: 'my-key.pem',
+      sslCertPemPath: 'my-cert.pem',
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
@@ -103,6 +104,21 @@ describe('user configuration', function () {
 
     expect(config.getSSLKeyPath()).to.be.eql(user.sslKeyPemPath);
     expect(config.getSSLCertPath()).to.be.eql(user.sslCertPemPath);
+  });
+
+  it('should override default settings for rate limiting', function () {
+    const limitConfig = {
+      rateLimit: {
+        windowMs: 60000,
+        limit: 1500,
+      },
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(limitConfig));
+
+    const config = require('../src/config');
+
+    expect(config.getRateLimit().windowMs).to.be.eql(limitConfig.rateLimit.windowMs);
+    expect(config.getRateLimit().limit).to.be.eql(limitConfig.rateLimit.limit);
   });
 
   afterEach(function () {
@@ -116,21 +132,14 @@ describe('validate config files', function () {
   const config = require('../src/config/file');
 
   it('all valid config files should pass validation', function () {
-    const validConfigFiles = [
-      'proxy.config.valid-1.json',
-      'proxy.config.valid-2.json',
-    ];
+    const validConfigFiles = ['proxy.config.valid-1.json', 'proxy.config.valid-2.json'];
     for (const testConfigFile of validConfigFiles) {
-      expect(config.validate(path.join(__dirname, fixtures, testConfigFile))).to
-        .be.true;
+      expect(config.validate(path.join(__dirname, fixtures, testConfigFile))).to.be.true;
     }
   });
 
   it('all invalid config files should fail validation', function () {
-    const invalidConfigFiles = [
-      'proxy.config.invalid-1.json',
-      'proxy.config.invalid-2.json',
-    ];
+    const invalidConfigFiles = ['proxy.config.invalid-1.json', 'proxy.config.invalid-2.json'];
     for (const testConfigFile of invalidConfigFiles) {
       const test = function () {
         config.validate(path.join(__dirname, fixtures, testConfigFile));

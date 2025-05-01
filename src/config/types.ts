@@ -1,4 +1,4 @@
-import { Options as RateLimitOptions } from "express-rate-limit";
+import { Options as RateLimitOptions } from 'express-rate-limit';
 
 export interface UserSettings {
   authorisedList: AuthorisedRepo[];
@@ -19,7 +19,7 @@ export interface UserSettings {
   contactEmail: string;
   csrfProtection: boolean;
   domains: Record<string, unknown>;
-  rateLimit: RateLimitOptions;
+  rateLimit: RateLimitConfig;
 }
 
 export interface AuthorisedRepo {
@@ -47,4 +47,6 @@ export interface TempPasswordConfig {
   emailConfig: Record<string, unknown>;
 }
 
-export type RateLimitConfig = Partial<Pick<RateLimitOptions, 'windowMs' | 'limit' | "message" | "statusCode">>;
+export type RateLimitConfig = Partial<
+  Pick<RateLimitOptions, 'windowMs' | 'limit' | 'message' | 'statusCode'>
+>;

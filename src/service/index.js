@@ -9,7 +9,7 @@ const db = require('../db');
 const rateLimit = require('express-rate-limit');
 const lusca = require('lusca');
 
-const limiter = rateLimit(config.getRateLimit);
+const limiter = rateLimit(config.getRateLimit());
 
 const { GIT_PROXY_UI_PORT: uiPort } = require('../config/env').serverConfig;
 
