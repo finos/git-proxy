@@ -173,45 +173,67 @@ export default function Dashboard() {
                     }}
                   >
                     <CheckCircle
-                      style={{ cursor: 'pointer', transform: 'scale(0.65)' }}
-                      onClick={() => setAttestation(true)}
+                      style={{
+                        cursor: data.autoApproved ? 'default' : 'pointer',
+                        transform: 'scale(0.65)',
+                        opacity: data.autoApproved ? 0.5 : 1,
+                      }}
+                      onClick={() => {
+                        if (!data.autoApproved) {
+                          setAttestation(true);
+                        }
+                      }}
                       htmlColor='green'
                     />
                   </span>
-                  <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
-                    <img
-                      style={{ width: '45px', borderRadius: '20px' }}
-                      src={`https://github.com/${data.attestation.reviewer.gitAccount}.png`}
-                    />
-                  </a>
-                  <div>
-                    <p>
+
+                  {data.autoApproved ? (
+                    <>
+                      <div style={{ paddingTop: '15px' }}>
+                        <p>
+                          <strong>Auto-approved by system</strong>
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
                       <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
-                        {data.attestation.reviewer.gitAccount}
-                      </a>{' '}
-                      approved this contribution
-                    </p>
-                    <Tooltip
-                      title={moment(data.attestation.timestamp).format(
-                        'dddd, MMMM Do YYYY, h:mm:ss a',
-                      )}
-                      arrow
-                    >
-                      <kbd
-                        style={{
-                          color: 'black',
-                          float: 'right',
-                        }}
-                      >
-                        {moment(data.attestation.timestamp).fromNow()}
-                      </kbd>
-                    </Tooltip>
-                  </div>
-                  <AttestationView
-                    data={data.attestation}
-                    attestation={attestation}
-                    setAttestation={setAttestation}
-                  />
+                        <img
+                          style={{ width: '45px', borderRadius: '20px' }}
+                          src={`https://github.com/${data.attestation.reviewer.gitAccount}.png`}
+                        />
+                      </a>
+                      <div>
+                        <p>
+                          <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
+                            {data.attestation.reviewer.gitAccount}
+                          </a>{' '}
+                          approved this contribution
+                        </p>
+                      </div>
+                    </>
+                  )}
+
+                  <Tooltip
+                    title={moment(data.attestation.timestamp).format(
+                      'dddd, MMMM Do YYYY, h:mm:ss a',
+                    )}
+                    arrow
+                  >
+                    <kbd style={{ color: 'black', float: 'right' }}>
+                      {moment(data.attestation.timestamp).fromNow()}
+                    </kbd>
+                  </Tooltip>
+
+                  {data.autoApproved ? (
+                    <></>
+                  ) : (
+                    <AttestationView
+                      data={data.attestation}
+                      attestation={attestation}
+                      setAttestation={setAttestation}
+                    />
+                  )}
                 </div>
               ) : null}
             </CardHeader>
