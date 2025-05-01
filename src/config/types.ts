@@ -9,8 +9,9 @@ export interface UserSettings {
   api: Record<string, any>;
   cookieSecret: string;
   sessionMaxAgeHours: number;
-  sslKeyPemPath?: string; // Optional (not in config.schema.json)
-  sslCertPemPath?: string; // Optional (not in config.schema.json)
+  tls?: TLSConfig;
+  sslCertPemPath?: string; // deprecated
+  sslKeyPemPath?: string; // deprecated
   plugins: any[];
   commitConfig: Record<string, unknown>;
   attestationConfig: Record<string, unknown>;
@@ -20,6 +21,12 @@ export interface UserSettings {
   csrfProtection: boolean;
   domains: Record<string, unknown>;
   rateLimit: RateLimitConfig;
+}
+
+export interface TLSConfig {
+  enabled?: boolean;
+  cert?: string;
+  key?: string;
 }
 
 export interface AuthorisedRepo {
