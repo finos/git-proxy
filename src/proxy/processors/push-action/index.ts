@@ -12,6 +12,7 @@ import { exec as checkCommitMessages } from './checkCommitMessages';
 import { exec as checkAuthorEmails } from './checkAuthorEmails';
 import { exec as checkUserPushPermission } from './checkUserPushPermission';
 import { exec as clearBareClone } from './clearBareClone';
+import { exec as getMissingData } from './getMissingData';
 
 export {
   parsePush,
@@ -28,4 +29,5 @@ export {
   checkAuthorEmails,
   checkUserPushPermission,
   clearBareClone,
+  getMissingData,
 };

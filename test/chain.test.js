@@ -30,6 +30,7 @@ const mockPushProcessors = {
   clearBareClone: sinon.stub(),
   scanDiff: sinon.stub(),
   blockForAuth: sinon.stub(),
+  getMissingData: sinon.stub(),
 };
 mockPushProcessors.parsePush.displayName = 'parsePush';
 mockPushProcessors.audit.displayName = 'audit';
@@ -45,7 +46,7 @@ mockPushProcessors.getDiff.displayName = 'getDiff';
 mockPushProcessors.clearBareClone.displayName = 'clearBareClone';
 mockPushProcessors.scanDiff.displayName = 'scanDiff';
 mockPushProcessors.blockForAuth.displayName = 'blockForAuth';
-
+mockPushProcessors.getMissingData.displayName = 'getMissingData';
 const mockPreProcessors = {
   parseAction: sinon.stub(),
 };
@@ -182,6 +183,7 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(continuingAction);
     mockPushProcessors.scanDiff.resolves(continuingAction);
     mockPushProcessors.blockForAuth.resolves(continuingAction);
+    mockPushProcessors.getMissingData.resolves(continuingAction);
 
     const result = await chain.executeChain(req);
 
@@ -200,6 +202,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.scanDiff.called).to.be.true;
     expect(mockPushProcessors.blockForAuth.called).to.be.true;
     expect(mockPushProcessors.audit.called).to.be.true;
+    expect(mockPushProcessors.getMissingData.called).to.be.true;
 
     expect(result.type).to.equal('push');
     expect(result.allowPush).to.be.false;
@@ -279,7 +282,7 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
-
+    mockPushProcessors.getMissingData.resolves(action);
     const dbStub = sinon.stub(db, 'authorise').resolves(true);
 
     const result = await chain.executeChain(req);
@@ -325,6 +328,7 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
+    mockPushProcessors.getMissingData.resolves(action);
 
     const dbStub = sinon.stub(db, 'reject').resolves(true);
 
@@ -371,6 +375,7 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
+    mockPushProcessors.getMissingData.resolves(action);
 
     const error = new Error('Database error');
 
@@ -416,6 +421,7 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
+    mockPushProcessors.getMissingData.resolves(action);
 
     const error = new Error('Database error');
 
