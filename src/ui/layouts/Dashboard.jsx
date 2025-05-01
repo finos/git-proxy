@@ -76,8 +76,8 @@ export default function Dashboard({ ...rest }) {
 
     // Specify how to clean up after this effect:
     return function cleanup() {
-      if (navigator.platform.indexOf('Win') > -1) {
-        ps && ps.destroy();
+      if (navigator.platform.indexOf('Win') > -1 && ps) {
+        ps.destroy();
       }
       window.removeEventListener('resize', resizeFunction);
     };
