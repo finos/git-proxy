@@ -1,16 +1,8 @@
 import { Action, Step } from '../../actions';
 import zlib from 'zlib';
-import fs from 'fs';
-import path from 'path';
 import lod from 'lodash';
 import { CommitContent } from '../types';
 const BitMask = require('bit-mask') as any;
-
-const dir = path.resolve(__dirname, './.tmp');
-
-if (!fs.existsSync(dir)) {
-  fs.mkdirSync(dir, { recursive: true });
-}
 
 /**
  * Executes the parsing of a push request.
@@ -29,7 +21,6 @@ async function exec(req: any, action: Action): Promise<Action> {
       return action;
     }
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
-
     const refUpdates = packetLines.filter((line) => line.includes('refs/heads/'));
 
     if (refUpdates.length !== 1) {
@@ -68,14 +59,15 @@ async function exec(req: any, action: Action): Promise<Action> {
     const contents = getContents(contentBuff as any, meta.entries as number);
 
     action.commitData = getCommitData(contents as any);
-
-    if (action.commitFrom === '0000000000000000000000000000000000000000') {
-      action.commitFrom = action.commitData[action.commitData.length - 1].parent;
+    if (action.commitData.length === 0) {
+      step.log('No commit data found when parsing push.')
+    } else {
+      if (action.commitFrom === '0000000000000000000000000000000000000000') {
+        action.commitFrom = action.commitData[action.commitData.length - 1].parent;
+      }
+      const user = action.commitData[action.commitData.length - 1].committer;
+      action.user = user;  
     }
-
-    const user = action.commitData[action.commitData.length - 1].committer;
-    console.log(`Push Request received from user ${user}`);
-    action.user = user;
 
     step.content = {
       meta: meta,
@@ -235,6 +227,7 @@ const getContents = (buffer: Buffer | CommitContent[], entries: number) => {
   for (let i = 0; i < entries; i++) {
     try {
       const [content, nextBuffer] = getContent(i, buffer as Buffer);
+      console.log({ content, nextBuffer });
       buffer = nextBuffer as Buffer;
       contents.push(content);
     } catch (e) {
