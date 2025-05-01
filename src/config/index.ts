@@ -2,7 +2,14 @@ import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
 import { configFile } from './file';
-import { Authentication, AuthorisedRepo, Database, RateLimitConfig, TempPasswordConfig, UserSettings } from './types';
+import {
+  Authentication,
+  AuthorisedRepo,
+  Database,
+  RateLimitConfig,
+  TempPasswordConfig,
+  UserSettings,
+} from './types';
 
 let _userSettings: UserSettings | null = null;
 if (existsSync(configFile)) {
@@ -94,6 +101,7 @@ export const logConfiguration = () => {
   console.log(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
   console.log(`data sink = ${JSON.stringify(getDatabase())}`);
   console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
+  console.log(`rateLimit = ${JSON.stringify(getRateLimit())}`);
 };
 
 export const getAPIs = () => {
@@ -171,7 +179,7 @@ export const getPlugins = () => {
     _plugins = _userSettings.plugins;
   }
   return _plugins;
-}
+};
 
 export const getSSLKeyPath = () => {
   if (_userSettings && _userSettings.sslKeyPemPath) {

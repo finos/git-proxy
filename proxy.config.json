@@ -3,8 +3,8 @@
   "cookieSecret": "cookie secret",
   "sessionMaxAgeHours": 12,
   "rateLimit": {
-    "windowMs": 600000,
-    "limit": 150
+    "windowMs": 60000,
+    "max": 150
   },
   "tempPassword": {
     "sendEmail": false,
