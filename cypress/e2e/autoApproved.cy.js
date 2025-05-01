@@ -2,6 +2,8 @@ import moment from 'moment';
 
 describe('Auto-Approved Push Test', () => {
   beforeEach(() => {
+    cy.login('admin', 'admin');
+
     cy.intercept('GET', '/api/v1/push/123', {
       statusCode: 200,
       body: {
@@ -45,7 +47,7 @@ describe('Auto-Approved Push Test', () => {
   });
 
   it('should display auto-approved message and verify tooltip contains the expected timestamp', () => {
-    cy.visit('/admin/push/123');
+    cy.visit('/dashboard/push/123');
 
     cy.wait('@getPush');
 
