@@ -15,4 +15,8 @@ router.get('/contactEmail', function ({ res }) {
   res.send(config.getContactEmail());
 });
 
+router.get('/uiRouteAuth', function ({ res }) {
+  res.send(config.getUIRouteAuth());
+});
+
 module.exports = router;
