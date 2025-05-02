@@ -88,6 +88,19 @@
         "cert": { "type": "string" }
       },
       "required": ["enabled", "key", "cert"]
+    },
+    "uiRouteAuth": {
+      "description": "UI routes that require authentication (logged in or admin)",
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/routeAuthRule"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -119,6 +132,14 @@
         "options": { "type": "object" }
       },
       "required": ["type", "enabled"]
+    },
+    "routeAuthRule": {
+      "type": "object",
+      "properties": {
+        "pattern": { "type": "string" },
+        "adminOnly": { "type": "boolean" },
+        "loginRequired": { "type": "boolean" }
+      }
     }
   },
   "additionalProperties": false
