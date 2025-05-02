@@ -17,7 +17,7 @@
 */
 
 import React from 'react';
-import PrivateRoute from './ui/components/PrivateRoute/PrivateRoute';
+import RouteGuard from './ui/components/RouteGuard/RouteGuard';
 import Person from '@material-ui/icons/Person';
 import OpenPushRequests from './ui/views/OpenPushRequests/OpenPushRequests';
 import PushDetails from './ui/views/PushDetails/PushDetails';
@@ -36,7 +36,7 @@ const dashboardRoutes = [
     name: 'Repositories',
     icon: RepoIcon,
     component: (props) => 
-      <PrivateRoute
+      <RouteGuard
         component={RepoList}
         fullRoutePath={`/dashboard/repo`}
       />,
@@ -48,7 +48,7 @@ const dashboardRoutes = [
     name: 'Repo Details',
     icon: Person,
     component: (props) => 
-      <PrivateRoute
+      <RouteGuard
         component={RepoDetails}
         fullRoutePath={`/dashboard/repo/:id`}
       />,
@@ -60,7 +60,7 @@ const dashboardRoutes = [
     name: 'Dashboard',
     icon: Dashboard,
     component: (props) =>
-      <PrivateRoute
+      <RouteGuard
         component={OpenPushRequests}
         fullRoutePath={`/dashboard/push`}
       />,
@@ -72,7 +72,7 @@ const dashboardRoutes = [
     name: 'Open Push Requests',
     icon: Person,
     component: (props) =>
-      <PrivateRoute
+      <RouteGuard
         component={PushDetails}
         fullRoutePath={`/dashboard/push/:id`}
       />,
@@ -84,7 +84,7 @@ const dashboardRoutes = [
     name: 'My Account',
     icon: AccountCircle,
     component: (props) =>
-      <PrivateRoute
+      <RouteGuard
         component={User}
         fullRoutePath={`/dashboard/profile`}
       />,
@@ -96,7 +96,7 @@ const dashboardRoutes = [
     name: 'Users',
     icon: Group,
     component: (props) =>
-      <PrivateRoute
+      <RouteGuard
         component={UserList}
         fullRoutePath={`/dashboard/admin/user`}
       />,
@@ -108,7 +108,7 @@ const dashboardRoutes = [
     name: 'User',
     icon: Person,
     component: (props) =>
-      <PrivateRoute
+      <RouteGuard
         component={User}
         fullRoutePath={`/dashboard/admin/user/:id`}
       />,
