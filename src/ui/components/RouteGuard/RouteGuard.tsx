@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import { getUIRouteAuth } from '../../services/config';
 
-interface PrivateRouteProps {
+interface RouteGuardProps {
   component: React.ComponentType<any>;
   fullRoutePath: string;
 }
@@ -17,7 +17,7 @@ interface UIRouteAuth {
   }[];
 }
 
-const PrivateRoute = ({ component: Component, fullRoutePath }: PrivateRouteProps) => {
+const RouteGuard = ({ component: Component, fullRoutePath }: RouteGuardProps) => {
   const { user, isLoading } = useAuth();
 
   const [loginRequired, setLoginRequired] = useState(false);
@@ -57,4 +57,4 @@ const PrivateRoute = ({ component: Component, fullRoutePath }: PrivateRouteProps
   return <Component />;
 };
 
-export default PrivateRoute;
+export default RouteGuard;
