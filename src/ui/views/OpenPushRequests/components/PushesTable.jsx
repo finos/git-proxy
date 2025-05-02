@@ -28,7 +28,7 @@ export default function PushesTable(props) {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [searchTerm, setSearchTerm] = useState('');
-  const openPush = (push) => navigate(`/admin/push/${push}`, { replace: true });
+  const openPush = (push) => navigate(`/dashboard/push/${push}`, { replace: true });
 
   useEffect(() => {
     const query = {};

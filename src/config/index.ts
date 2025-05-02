@@ -34,6 +34,7 @@ let _domains: Record<string, unknown> = defaultSettings.domains;
 let _tlsEnabled = defaultSettings.tls.enabled;
 let _tlsKeyPemPath = defaultSettings.tls.key;
 let _tlsCertPemPath = defaultSettings.tls.cert;
+let _uiRouteAuth: Record<string, unknown> = defaultSettings.uiRouteAuth;
 
 // Get configured proxy URL
 export const getProxyUrl = () => {
@@ -216,4 +217,11 @@ export const getDomains = () => {
     _domains = _userSettings.domains;
   }
   return _domains;
+};
+
+export const getUIRouteAuth = () => {
+  if (_userSettings && _userSettings.uiRouteAuth) {
+    _uiRouteAuth = _userSettings.uiRouteAuth;
+  }
+  return _uiRouteAuth;
 };

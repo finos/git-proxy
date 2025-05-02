@@ -25,4 +25,16 @@ const getEmailContact = async (setData) => {
   });
 };
 
-export { getAttestationConfig, getURLShortener, getEmailContact };
+const getUIRouteAuth = async (setData) => {
+  const url = new URL(`${baseUrl}/config/uiRouteAuth`);
+  await axios(url.toString()).then((response) => {
+    setData(response.data);
+  });
+};
+
+export {
+  getAttestationConfig,
+  getURLShortener,
+  getEmailContact,
+  getUIRouteAuth,
+};
