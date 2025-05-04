@@ -2,6 +2,24 @@ import { Action, Step } from '../../actions';
 import { validateUser } from './checkUserPushPermission';
 import simpleGit from 'simple-git';
 
+const isEmptyBranch = async (action: Action) => {
+  const git = simpleGit(`${action.proxyGitPath}/${action.repoName}`);
+
+  if (action.commitFrom === '0'.repeat(40)) {
+    try {
+      const type = await git.raw(['cat-file', '-t', action.commitTo || '']);
+      const known = type.trim() === 'commit';
+      if (known) {
+        return true;
+      }
+    } catch (err) {
+      console.log(`Commit ${action.commitTo} not found: ${err}`);
+    }
+  }
+
+  return false;
+};
+
 const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('getMissingData');
 
@@ -11,6 +29,12 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     }
 
     if (action.commitData.length === 0) {
+      if (await isEmptyBranch(action)) {
+        step.setError('Push blocked: Empty branch. Please make a commit before pushing a new branch.');
+        action.addStep(step);
+        step.error = true;
+        return action;
+      }
       console.log(`commitData not found, fetching missing commits from git...`);
       const path = `${action.proxyGitPath}/${action.repoName}`;
       const git = simpleGit(path);
