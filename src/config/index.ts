@@ -6,6 +6,7 @@ import {
   Authentication,
   AuthorisedRepo,
   Database,
+  RateLimitConfig,
   TempPasswordConfig,
   UserSettings,
 } from './types';
@@ -30,6 +31,8 @@ let _urlShortener: string = defaultSettings.urlShortener;
 let _contactEmail: string = defaultSettings.contactEmail;
 let _csrfProtection: boolean = defaultSettings.csrfProtection;
 let _domains: Record<string, unknown> = defaultSettings.domains;
+let _rateLimit: RateLimitConfig = defaultSettings.rateLimit;
+
 // These are not always present in the default config file, so casting is required
 let _tlsEnabled = defaultSettings.tls.enabled;
 let _tlsKeyPemPath = defaultSettings.tls.key;
@@ -99,6 +102,7 @@ export const logConfiguration = () => {
   console.log(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
   console.log(`data sink = ${JSON.stringify(getDatabase())}`);
   console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
+  console.log(`rateLimit = ${JSON.stringify(getRateLimit())}`);
 };
 
 export const getAPIs = () => {
@@ -216,4 +220,11 @@ export const getDomains = () => {
     _domains = _userSettings.domains;
   }
   return _domains;
+};
+
+export const getRateLimit = () => {
+  if (_userSettings && _userSettings.rateLimit) {
+    _rateLimit = _userSettings.rateLimit;
+  }
+  return _rateLimit;
 };
