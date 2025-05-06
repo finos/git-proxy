@@ -4,6 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import lod from 'lodash';
 import { CommitContent } from '../types';
+import * as util from 'util';
+
 const BitMask = require('bit-mask') as any;
 
 const dir = path.resolve(__dirname, './.tmp');
@@ -16,7 +18,11 @@ async function exec(req: any, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
   // change introduced for capturing test data and to base the test on
   console.log(
-    'Stringified push data: \nreq:\n' + JSON.stringify(req) + '\naction: ' + JSON.stringify(action),
+    'Stringified push data: \nreq.body:\n-----------------\n' +
+      JSON.stringify(req.body) +
+      '\n-----------------\naction:\n-----------------\n' +
+      JSON.stringify(action) +
+      '\n-----------------\n',
   );
 
   try {
