@@ -4,7 +4,6 @@ import fs from 'fs';
 import path from 'path';
 import lod from 'lodash';
 import { CommitContent } from '../types';
-import * as util from 'util';
 
 const BitMask = require('bit-mask') as any;
 
@@ -59,6 +58,7 @@ async function exec(req: any, action: Action): Promise<Action> {
   } finally {
     action.addStep(step);
   }
+  console.log('action: ', JSON.stringify(action, null, 2));
   return action;
 }
 
