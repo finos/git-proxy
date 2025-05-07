@@ -3,7 +3,8 @@ const router = new express.Router();
 const passport = require('../passport').getPassport();
 const authStrategies = require('../passport').authStrategies;
 const db = require('../../db');
-const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } = process.env;
+const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
+  process.env;
 
 router.get('/', (req, res) => {
   res.status(200).json({
@@ -27,7 +28,7 @@ router.post('/login', passport.authenticate(authStrategies['local'].type), async
     const currentUser = { ...req.user };
     delete currentUser.password;
     console.log(
-      `serivce.routes.auth.login: user logged in, username=${
+      `service.routes.auth.login: user logged in, username=${
         currentUser.username
       } profile=${JSON.stringify(currentUser)}`,
     );
