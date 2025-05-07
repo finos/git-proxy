@@ -15,15 +15,6 @@ if (!fs.existsSync(dir)) {
 
 async function exec(req: any, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
-  // change introduced for capturing test data and to base the test on
-  console.log(
-    'Stringified push data: \nreq.body:\n-----------------\n' +
-      JSON.stringify(req.body) +
-      '\n-----------------\naction:\n-----------------\n' +
-      JSON.stringify(action) +
-      '\n-----------------\n',
-  );
-
   try {
     if (!req.body || req.body.length === 0) {
       throw new Error('No body found in request');
@@ -58,7 +49,6 @@ async function exec(req: any, action: Action): Promise<Action> {
   } finally {
     action.addStep(step);
   }
-  console.log('action: ', JSON.stringify(action, null, 2));
   return action;
 }
 
