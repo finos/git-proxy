@@ -99,6 +99,26 @@ const actionData = {
   repo: 'kriswest/git-proxy.git',
 };
 
+const truncatedReqBody = Buffer.from([
+  48, 48, 98, 100, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
+  48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 32, 53, 56, 51,
+  101, 48, 50, 48, 57, 54, 102, 49, 99, 54, 98, 100, 100, 52, 52, 49, 48, 54, 56, 102, 101, 54, 101,
+  101, 102, 97, 53, 99, 54, 53, 52, 54, 99, 56, 57, 100, 57, 32, 114, 101, 102, 115, 47, 104, 101,
+  97, 100, 115, 47, 57, 55, 49, 45, 116, 101, 115, 116, 0, 32, 114, 101, 112, 111, 114, 116, 45,
+  115, 116, 97, 116, 117, 115, 45, 118, 50, 32, 115, 105, 100, 101, 45, 98, 97, 110, 100, 45, 54,
+  52, 107, 32, 111, 98, 106, 101, 99, 116, 45, 102, 111, 114, 109, 97, 116, 61, 115, 104, 97, 49,
+  32, 97, 103, 101, 110, 116, 61, 103, 105, 116, 47, 50, 46, 51, 57, 46, 53, 46, 40, 65, 112, 112,
+  108, 101, 46, 71, 105, 116, 45, 49, 53, 52, 41, 48, 48, 48, 48, 80, 65, 67, 75, 0, 0, 0, 2, 0, 0,
+  0, 14, 153, 17, 120, 156, 165, 77, 193, 78, 197, 48, 12, 187, 247, 43, 114, 71, 122, 106, 182,
+  116, 235, 16, 66, 220, 249, 0, 206, 33, 205, 216, 128, 173, 83, 151, 233, 253, 62, 65, 124, 2,
+  185, 56, 182, 101, 219, 154, 42, 116, 148, 211, 52, 163, 202, 76, 152, 120, 204, 154, 144, 48, 83,
+  41, 25, 123, 154, 10, 137, 223, 251, 192, 49, 28, 220, 116, 55, 96, 77, 99, 212, 161, 143, 168,
+  89, 138, 120, 14, 71, 157, 132, 138, 215, 96, 55, 105, 44, 220, 11, 117, 18, 248, 178, 165, 54,
+  120, 109, 235, 9, 111, 122, 26, 60, 125, 249, 107, 245, 88, 180, 221, 238, 46, 188, 236, 108, 191,
+  120, 147, 186, 61, 3, 142, 52, 36, 95, 78, 61, 60, 68, 140, 49, 184, 186, 173, 102, 250, 143, 138,
+  96, 238, 61, 2, 151, 207, 203, 195, 133, 141, 65, 248, 176,
+]);
+
 const reqBody2 = Buffer.from([
   48, 48, 98, 100, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
   48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 32, 56, 55, 50,
@@ -400,7 +420,33 @@ const actionData2 = {
 };
 
 describe('Check that pushes can be parsed', async () => {
-  it('No error should be reported for a valid push with a single commit and commitData should be parsed out', async () => {
+  it('Should report an error when request body is missing', async () => {
+    const action = new actions.Action(
+      actionData.id,
+      actionData.type,
+      actionData.method,
+      actionData.timestamp,
+      actionData.repo,
+    );
+    const req = {};
+    const result = await processor.exec(req, action);
+    expect(result.error).to.be.true;
+  });
+
+  it('Should report an error when request body is truncated', async () => {
+    const action = new actions.Action(
+      actionData.id,
+      actionData.type,
+      actionData.method,
+      actionData.timestamp,
+      actionData.repo,
+    );
+    const req = { body: truncatedReqBody };
+    const result = await processor.exec(req, action);
+    expect(result.error).to.be.true;
+  });
+
+  it('Should not report an error for a valid push with a single commit and commitData should be parsed out', async () => {
     const action = new actions.Action(
       actionData.id,
       actionData.type,
@@ -410,7 +456,6 @@ describe('Check that pushes can be parsed', async () => {
     );
     const req = { body: reqBody };
     const result = await processor.exec(req, action);
-    console.log('result: ', JSON.stringify(result, null, 2));
     expect(result.error).to.be.false;
     expect(result.blocked).to.be.false;
     expect(result.steps[0].stepName).to.equal('parsePackFile');
@@ -444,7 +489,6 @@ describe('Check that pushes can be parsed', async () => {
     );
     const req2 = { body: reqBody2 };
     const result = await processor.exec(req2, action2);
-    console.log('result: ', JSON.stringify(result, null, 2));
     expect(result.error).to.be.false;
     expect(result.blocked).to.be.false;
     expect(result.steps[0].stepName).to.equal('parsePackFile');
