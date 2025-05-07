@@ -132,9 +132,4 @@ const handleMessage = (message: string): string => {
   return packetMessage;
 };
 
-export {
-  router,
-  handleMessage,
-  validGitRequest,
-  stripGitHubFromGitPath,
-};
+export { router, handleMessage, validGitRequest, stripGitHubFromGitPath };

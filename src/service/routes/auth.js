@@ -3,7 +3,8 @@ const router = new express.Router();
 const passport = require('../passport').getPassport();
 const db = require('../../db');
 const passportType = passport.type;
-const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } = process.env;
+const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
+  process.env;
 
 router.get('/', (req, res) => {
   res.status(200).json({

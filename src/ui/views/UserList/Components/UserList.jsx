@@ -20,7 +20,6 @@ import Search from '../../../components/Search/Search';
 const useStyles = makeStyles(styles);
 
 export default function UserList(props) {
-  
   const classes = useStyles();
   const [data, setData] = useState([]);
   const [, setAuth] = useState(true);
@@ -28,11 +27,10 @@ export default function UserList(props) {
   const [isError, setIsError] = useState(false);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5; 
+  const itemsPerPage = 5;
   const [searchQuery, setSearchQuery] = useState('');
 
   const openUser = (username) => navigate(`/admin/user/${username}`, { replace: true });
-
 
   useEffect(() => {
     const query = {};
@@ -47,32 +45,30 @@ export default function UserList(props) {
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong...</div>;
 
-
-  const filteredUsers = data.filter(user =>
-  user.displayName && user.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase())
-);
+  const filteredUsers = data.filter(
+    (user) =>
+      (user.displayName && user.displayName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase())),
+  );
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
   const totalItems = filteredUsers.length;
 
-
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
 
-
   const handleSearch = (query) => {
     setSearchQuery(query);
-    setCurrentPage(1); 
+    setCurrentPage(1);
   };
 
   return (
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
-        <Search onSearch={handleSearch} placeholder="Search users..." />
+        <Search onSearch={handleSearch} placeholder='Search users...' />
         <TableContainer component={Paper}>
           <Table className={classes.table} aria-label='simple table'>
             <TableHead>
@@ -94,12 +90,20 @@ export default function UserList(props) {
                     <a href={`mailto:${row.email}`}>{row.email}</a>
                   </TableCell>
                   <TableCell align='left'>
-                    <a href={`https://github.com/${row.gitAccount}`} target='_blank' rel='noreferrer'>
+                    <a
+                      href={`https://github.com/${row.gitAccount}`}
+                      target='_blank'
+                      rel='noreferrer'
+                    >
                       {row.gitAccount}
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    {row.admin ? <Check fontSize='small' color='primary' /> : <CloseRounded color='error' />}
+                    {row.admin ? (
+                      <Check fontSize='small' color='primary' />
+                    ) : (
+                      <CloseRounded color='error' />
+                    )}
                   </TableCell>
                   <TableCell component='th' scope='row'>
                     <Button
@@ -125,4 +129,3 @@ export default function UserList(props) {
     </GridContainer>
   );
 }
-

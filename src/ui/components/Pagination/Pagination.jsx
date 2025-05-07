@@ -1,8 +1,7 @@
 import React from 'react';
-import './Pagination.css'; 
+import './Pagination.css';
 
 export default function Pagination({ currentPage, totalItems = 0, itemsPerPage, onPageChange }) {
-
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   const handlePageClick = (page) => {

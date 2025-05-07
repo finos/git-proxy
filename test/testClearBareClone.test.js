@@ -38,5 +38,5 @@ describe('clear bare and local clones', async () => {
     if (fs.existsSync(`./.remote`)) {
       fs.rmdirSync(`./.remote`, { recursive: true });
     }
-  })
+  });
 });

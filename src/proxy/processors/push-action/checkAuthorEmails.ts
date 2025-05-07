@@ -27,14 +27,16 @@ const isEmailAllowed = (email: string): boolean => {
   }
 
   return true;
-}
+};
 
 const exec = async (req: any, action: Action): Promise<Action> => {
   console.log({ req, action });
 
   const step = new Step('checkAuthorEmails');
 
-  const uniqueAuthorEmails = [...new Set(action.commitData?.map((commit: Commit) => commit.authorEmail))];
+  const uniqueAuthorEmails = [
+    ...new Set(action.commitData?.map((commit: Commit) => commit.authorEmail)),
+  ];
   console.log({ uniqueAuthorEmails });
 
   const illegalEmails = uniqueAuthorEmails.filter((email) => !isEmailAllowed(email));
