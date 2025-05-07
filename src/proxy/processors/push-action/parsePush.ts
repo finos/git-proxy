@@ -50,7 +50,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     action.addStep(step);
   }
   return action;
-};
+}
 
 const getCommitData = (contents: CommitContent[]) => {
   console.log({ contents });
@@ -120,7 +120,15 @@ const getCommitData = (contents: CommitContent[]) => {
         authorEmail,
       });
 
-      if (!tree || !parent || !author || !committer || !commitTimestamp || !message || !authorEmail) {
+      if (
+        !tree ||
+        !parent ||
+        !author ||
+        !committer ||
+        !commitTimestamp ||
+        !message ||
+        !authorEmail
+      ) {
         throw new Error('Invalid commit data');
       }
 
@@ -256,8 +264,4 @@ const unpack = (buf: Buffer) => {
 
 exec.displayName = 'parsePush.exec';
 
-export {
-  exec,
-  getPackMeta,
-  unpack
-};
+export { exec, getPackMeta, unpack };
