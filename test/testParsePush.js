@@ -3,6 +3,7 @@ const actions = require('../src/proxy/actions/Action');
 const processor = require('../src/proxy/processors/push-action/parsePush');
 const expect = chai.expect;
 
+// request with a single commit
 const reqBody = Buffer.from([
   48, 48, 98, 100, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
   48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 32, 53, 56, 51,
@@ -99,6 +100,7 @@ const actionData = {
   repo: 'kriswest/git-proxy.git',
 };
 
+// truncated request (should through an error and not parse)
 const truncatedReqBody = Buffer.from([
   48, 48, 98, 100, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
   48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 32, 53, 56, 51,
@@ -119,6 +121,7 @@ const truncatedReqBody = Buffer.from([
   96, 238, 61, 2, 151, 207, 203, 195, 133, 141, 65, 248, 176,
 ]);
 
+// push with multiple commits
 const reqBody2 = Buffer.from([
   48, 48, 98, 100, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
   48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 32, 56, 55, 50,
@@ -419,6 +422,61 @@ const actionData2 = {
   repo: 'kriswest/git-proxy.git',
 };
 
+// push with a commit message not terminated by a newline
+const reqBodyNoNewline = Buffer.from([
+  48, 48, 99, 56, 101, 100, 50, 48, 51, 55, 101, 52, 102, 98, 54, 102, 97, 48, 51, 54, 50, 101, 53,
+  50, 99, 101, 99, 48, 51, 102, 55, 98, 53, 48, 51, 102, 56, 49, 101, 50, 54, 48, 49, 48, 32, 101,
+  97, 55, 100, 97, 55, 98, 56, 100, 100, 49, 51, 52, 99, 97, 49, 57, 102, 100, 99, 57, 97, 55, 52,
+  55, 48, 52, 56, 48, 99, 54, 100, 57, 101, 51, 53, 99, 49, 52, 54, 32, 114, 101, 102, 115, 47, 104,
+  101, 97, 100, 115, 47, 57, 55, 49, 45, 112, 97, 114, 115, 105, 110, 103, 45, 98, 117, 103, 45,
+  102, 105, 120, 0, 32, 114, 101, 112, 111, 114, 116, 45, 115, 116, 97, 116, 117, 115, 45, 118, 50,
+  32, 115, 105, 100, 101, 45, 98, 97, 110, 100, 45, 54, 52, 107, 32, 111, 98, 106, 101, 99, 116, 45,
+  102, 111, 114, 109, 97, 116, 61, 115, 104, 97, 49, 32, 97, 103, 101, 110, 116, 61, 103, 105, 116,
+  47, 50, 46, 51, 57, 46, 53, 46, 40, 65, 112, 112, 108, 101, 46, 71, 105, 116, 45, 49, 53, 52, 41,
+  48, 48, 48, 48, 80, 65, 67, 75, 0, 0, 0, 2, 0, 0, 0, 6, 145, 18, 120, 156, 101, 143, 203, 106,
+  196, 48, 12, 69, 247, 249, 10, 237, 11, 193, 143, 196, 15, 24, 134, 46, 166, 180, 165, 80, 10, 93,
+  116, 237, 56, 50, 113, 167, 142, 131, 163, 62, 230, 239, 171, 206, 182, 90, 136, 123, 133, 238,
+  65, 162, 134, 8, 163, 182, 222, 169, 52, 57, 84, 210, 121, 107, 210, 48, 141, 209, 122, 45, 133,
+  155, 180, 84, 198, 88, 239, 189, 25, 98, 183, 133, 134, 43, 1, 206, 74, 104, 139, 67, 154, 76, 10,
+  66, 27, 133, 163, 138, 24, 133, 78, 118, 26, 185, 59, 137, 202, 8, 41, 186, 240, 73, 75, 109, 240,
+  128, 37, 112, 236, 117, 9, 173, 4, 56, 44, 87, 219, 239, 87, 43, 111, 215, 64, 223, 184, 83, 31,
+  107, 57, 130, 180, 131, 180, 140, 28, 44, 220, 8, 174, 142, 167, 37, 19, 97, 131, 167, 150, 119,
+  120, 227, 77, 56, 156, 89, 82, 221, 22, 108, 253, 95, 244, 31, 194, 24, 111, 197, 168, 24, 33, 25,
+  209, 221, 205, 153, 32, 68, 202, 95, 120, 202, 13, 35, 213, 118, 233, 223, 119, 72, 124, 219, 125,
+  166, 151, 86, 127, 46, 240, 92, 87, 96, 53, 195, 99, 217, 62, 176, 240, 159, 129, 114, 93, 127, 1,
+  25, 61, 91, 97, 240, 2, 164, 79, 73, 234, 21, 174, 135, 115, 17, 30, 139, 192, 106, 142, 44, 173,
+  216, 34, 72, 124, 120, 156, 1, 32, 0, 223, 255, 209, 12, 209, 12, 176, 169, 5, 20, 139, 208, 221,
+  207, 118, 231, 169, 95, 67, 7, 214, 241, 232, 108, 55, 226, 13, 45, 89, 224, 147, 189, 5, 148, 16,
+  197, 16, 115, 249, 3, 13, 7, 76, 69, 119, 226, 211, 188, 105, 170, 104, 199, 140, 64, 68, 33, 37,
+  254, 75, 57, 120, 156, 219, 204, 180, 153, 105, 3, 19, 163, 97, 124, 194, 180, 123, 101, 137, 81,
+  171, 213, 30, 70, 108, 62, 187, 255, 230, 227, 235, 27, 139, 67, 77, 12, 128, 64, 161, 52, 147,
+  97, 235, 211, 3, 165, 250, 39, 54, 100, 58, 157, 206, 218, 161, 249, 225, 179, 126, 79, 152, 124,
+  0, 0, 240, 135, 26, 148, 254, 1, 49, 119, 187, 89, 234, 50, 192, 75, 235, 7, 147, 84, 91, 104, 20,
+  225, 71, 237, 3, 184, 120, 156, 219, 202, 184, 149, 113, 66, 172, 72, 133, 224, 2, 246, 27, 33,
+  201, 11, 46, 45, 80, 119, 63, 119, 109, 97, 87, 127, 166, 183, 250, 196, 66, 23, 0, 196, 49, 13,
+  44, 254, 1, 135, 220, 195, 128, 128, 52, 128, 76, 108, 225, 120, 117, 124, 134, 173, 157, 134, 26,
+  70, 104, 120, 156, 59, 196, 120, 136, 113, 130, 148, 136, 129, 27, 243, 3, 127, 185, 242, 5, 181,
+  49, 63, 11, 119, 86, 239, 220, 127, 202, 51, 90, 109, 162, 222, 20, 0, 185, 11, 12, 248, 254, 10,
+  70, 111, 87, 177, 109, 10, 146, 22, 186, 250, 240, 85, 191, 249, 137, 133, 208, 176, 108, 20, 120,
+  156, 123, 41, 240, 66, 104, 67, 13, 227, 230, 106, 198, 119, 76, 76, 250, 250, 147, 51, 89, 226,
+  38, 23, 178, 152, 179, 232, 40, 36, 166, 76, 222, 200, 34, 54, 249, 20, 139, 244, 228, 151, 44,
+  54, 147, 181, 89, 101, 39, 251, 179, 26, 128, 212, 212, 179, 38, 0, 177, 3, 68, 205, 9, 214, 251,
+  44, 37, 69, 165, 169, 147, 215, 177, 117, 79, 182, 102, 151, 182, 210, 215, 87, 64, 2, 137, 229,
+  137, 153, 37, 10, 41, 73, 122, 201, 69, 169, 137, 37, 169, 161, 197, 169, 69, 26, 5, 69, 249, 105,
+  153, 57, 169, 122, 165, 64, 78, 94, 98, 110, 170, 142, 122, 98, 82, 114, 138, 186, 206, 228, 131,
+  108, 194, 18, 234, 25, 169, 185, 137, 121, 37, 197, 25, 137, 69, 185, 137, 150, 6, 234, 58, 153,
+  197, 142, 41, 185, 153, 121, 155, 131, 217, 69, 25, 1, 68, 104, 56, 92, 171, 18, 32, 137, 219,
+  241, 114, 55, 57, 171, 216, 65, 107, 36, 144, 242, 200, 130, 86, 149,
+]);
+
+const actionDataNoNewLine = {
+  id: '1746697059624',
+  type: 'push',
+  method: 'POST',
+  timestamp: 1746697059624,
+  repo: 'kriswest/git-proxy.git',
+};
+
 describe('Check that pushes can be parsed', async () => {
   it('Should report an error when request body is missing', async () => {
     const action = new actions.Action(
@@ -446,7 +504,7 @@ describe('Check that pushes can be parsed', async () => {
     expect(result.error).to.be.true;
   });
 
-  it('Should not report an error for a valid push with a single commit and commitData should be parsed out', async () => {
+  it('Should NOT report an error for a valid push with a single commit and commitData should be parsed out', async () => {
     const action = new actions.Action(
       actionData.id,
       actionData.type,
@@ -474,12 +532,39 @@ describe('Check that pushes can be parsed', async () => {
       'test: adjust data capture with commit msg from console',
     );
     expect(result.commitData[0].commitTimestamp).to.equal('1746541853');
-    expect(result.commitData[0].message).to.equal(
-      'test: adjust data capture with commit msg from console',
-    );
   });
 
-  it('No error should be reported for a valid push with 2 commits and commitData should be parsed out', async () => {
+  it('Should NOT report an error for a valid push with a single commit, but no newline at the end of the commit message, and commitData should be parsed out', async () => {
+    const action = new actions.Action(
+      actionDataNoNewLine.id,
+      actionDataNoNewLine.type,
+      actionDataNoNewLine.method,
+      actionDataNoNewLine.timestamp,
+      actionDataNoNewLine.repo,
+    );
+    const req = { body: reqBodyNoNewline };
+    const result = await processor.exec(req, action);
+    expect(result.error).to.be.false;
+    expect(result.blocked).to.be.false;
+    expect(result.steps[0].stepName).to.equal('parsePackFile');
+    expect(result.project).to.equal('kriswest');
+    expect(result.url).to.equal('https://github.com/kriswest/git-proxy.git');
+    expect(result.branch).to.equal('refs/heads/971-parsing-bug-fix');
+    expect(result.user).to.equal('Kris West');
+    expect(result.commitTo).to.equal('ea7da7b8dd134ca19fdc9a7470480c6d9e35c146');
+    expect(result.commitFrom).to.equal('ed2037e4fb6fa0362e52cec03f7b503f81e26010');
+    expect(result.commitData[0].parent).to.equal('ed2037e4fb6fa0362e52cec03f7b503f81e26010');
+    expect(result.commitData[0].tree).to.equal('537982fb8e218976f4b5c793108b31266799964c');
+    expect(result.commitData[0].author).to.equal('Hemant Sharma');
+    expect(result.commitData[0].committer).to.equal('Kris West');
+    expect(result.commitData[0].authorEmail).to.equal('hemant.sharma1@natwest.com');
+    expect(result.commitData[0].message).to.equal(
+      'Edit activeDirectory.js for GitProxy Non Prod Implementation',
+    );
+    expect(result.commitData[0].commitTimestamp).to.equal('1746697052');
+  });
+
+  it('Should NOT report an error for a valid push with 2 commits and commitData should be parsed out', async () => {
     const action2 = new actions.Action(
       actionData2.id,
       actionData2.type,
