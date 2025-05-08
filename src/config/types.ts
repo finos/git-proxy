@@ -1,3 +1,5 @@
+import { Options as RateLimitOptions } from 'express-rate-limit';
+
 export interface UserSettings {
   authorisedList: AuthorisedRepo[];
   sink: Database[];
@@ -7,8 +9,9 @@ export interface UserSettings {
   api: Record<string, any>;
   cookieSecret: string;
   sessionMaxAgeHours: number;
-  sslKeyPemPath?: string; // Optional (not in config.schema.json)
-  sslCertPemPath?: string; // Optional (not in config.schema.json)
+  tls?: TLSConfig;
+  sslCertPemPath?: string; // deprecated
+  sslKeyPemPath?: string; // deprecated
   plugins: any[];
   commitConfig: Record<string, unknown>;
   attestationConfig: Record<string, unknown>;
@@ -17,6 +20,13 @@ export interface UserSettings {
   contactEmail: string;
   csrfProtection: boolean;
   domains: Record<string, unknown>;
+  rateLimit: RateLimitConfig;
+}
+
+export interface TLSConfig {
+  enabled?: boolean;
+  cert?: string;
+  key?: string;
 }
 
 export interface AuthorisedRepo {
@@ -43,3 +53,7 @@ export interface TempPasswordConfig {
   sendEmail: boolean;
   emailConfig: Record<string, unknown>;
 }
+
+export type RateLimitConfig = Partial<
+  Pick<RateLimitOptions, 'windowMs' | 'limit' | 'message' | 'statusCode'>
+>;

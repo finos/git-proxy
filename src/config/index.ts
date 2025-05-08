@@ -2,8 +2,14 @@ import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
 import { configFile } from './file';
-import { Authentication, AuthorisedRepo, Database, TempPasswordConfig, UserSettings } from './types';
-
+import {
+  Authentication,
+  AuthorisedRepo,
+  Database,
+  RateLimitConfig,
+  TempPasswordConfig,
+  UserSettings,
+} from './types';
 
 let _userSettings: UserSettings | null = null;
 if (existsSync(configFile)) {
@@ -25,9 +31,12 @@ let _urlShortener: string = defaultSettings.urlShortener;
 let _contactEmail: string = defaultSettings.contactEmail;
 let _csrfProtection: boolean = defaultSettings.csrfProtection;
 let _domains: Record<string, unknown> = defaultSettings.domains;
+let _rateLimit: RateLimitConfig = defaultSettings.rateLimit;
+
 // These are not always present in the default config file, so casting is required
-let _sslKeyPath: string = (defaultSettings as any).sslKeyPemPath;
-let _sslCertPath: string = (defaultSettings as any).sslCertPemPath;
+let _tlsEnabled = defaultSettings.tls.enabled;
+let _tlsKeyPemPath = defaultSettings.tls.key;
+let _tlsCertPemPath = defaultSettings.tls.cert;
 
 // Get configured proxy URL
 export const getProxyUrl = () => {
@@ -93,6 +102,7 @@ export const logConfiguration = () => {
   console.log(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
   console.log(`data sink = ${JSON.stringify(getDatabase())}`);
   console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
+  console.log(`rateLimit = ${JSON.stringify(getRateLimit())}`);
 };
 
 export const getAPIs = () => {
@@ -170,26 +180,39 @@ export const getPlugins = () => {
     _plugins = _userSettings.plugins;
   }
   return _plugins;
-}
-
-export const getSSLKeyPath = () => {
-  if (_userSettings && _userSettings.sslKeyPemPath) {
-    _sslKeyPath = _userSettings.sslKeyPemPath;
-  }
-  if (!_sslKeyPath) {
-    return '../../certs/key.pem';
-  }
-  return _sslKeyPath;
 };
 
-export const getSSLCertPath = () => {
+export const getTLSKeyPemPath = () => {
+  if (_userSettings && _userSettings.sslKeyPemPath) {
+    console.log(
+      'Warning: sslKeyPemPath setting is replaced with tls.key setting in proxy.config.json & will be deprecated in a future release',
+    );
+    _tlsKeyPemPath = _userSettings.sslKeyPemPath;
+  }
+  if (_userSettings?.tls && _userSettings?.tls?.key) {
+    _tlsKeyPemPath = _userSettings.tls.key;
+  }
+  return _tlsKeyPemPath;
+};
+
+export const getTLSCertPemPath = () => {
   if (_userSettings && _userSettings.sslCertPemPath) {
-    _sslCertPath = _userSettings.sslCertPemPath;
+    console.log(
+      'Warning: sslCertPemPath setting is replaced with tls.cert setting in proxy.config.json & will be deprecated in a future release',
+    );
+    _tlsCertPemPath = _userSettings.sslCertPemPath;
   }
-  if (!_sslCertPath) {
-    return '../../certs/cert.pem';
+  if (_userSettings?.tls && _userSettings?.tls?.cert) {
+    _tlsCertPemPath = _userSettings.tls.cert;
   }
-  return _sslCertPath;
+  return _tlsCertPemPath;
+};
+
+export const getTLSEnabled = () => {
+  if (_userSettings && _userSettings.tls && _userSettings.tls.enabled) {
+    _tlsEnabled = _userSettings.tls.enabled;
+  }
+  return _tlsEnabled;
 };
 
 export const getDomains = () => {
@@ -197,4 +220,11 @@ export const getDomains = () => {
     _domains = _userSettings.domains;
   }
   return _domains;
+};
+
+export const getRateLimit = () => {
+  if (_userSettings && _userSettings.rateLimit) {
+    _rateLimit = _userSettings.rateLimit;
+  }
+  return _rateLimit;
 };

@@ -24,6 +24,30 @@
       "description": "Provide domains to use alternative to the defaults",
       "type": "object"
     },
+    "rateLimit": {
+      "description": "API Rate limiting configuration.",
+      "type": "object",
+      "properties": {
+        "windowMs": { 
+          "type": "number",
+          "description": "How long to remember requests for, in milliseconds (default 10 mins)."
+        },
+        "limit": {
+          "type": "number",
+          "description": "How many requests to allow (default 150)."
+        },
+        "statusCode": {
+          "type": "number",
+          "description": "HTTP status code after limit is reached (default is 429)."
+        },
+        "message": {
+          "type": "string",
+          "description": "Response to return after limit is reached."
+        }
+      },
+      "required": ["windowMs", "limit"],
+      "additionalProperties": false
+    },
     "privateOrganizations": {
       "description": "Pattern searches for listed private organizations are disabled",
       "type": "array"
@@ -78,6 +102,16 @@
           "type": "object"
         }
       }
+    },
+    "tls": {
+      "description": "TLS configuration for secure connections",
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "key": { "type": "string" },
+        "cert": { "type": "string" }
+      },
+      "required": ["enabled", "key", "cert"]
     }
   },
   "definitions": {
