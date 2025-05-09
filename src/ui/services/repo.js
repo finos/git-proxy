@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getCookie } from '../utils.jsx';
+import { getCookie } from '../utils.tsx';
 
 const baseUrl = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}/api/v1`
