@@ -10,7 +10,7 @@ const configure = async () => {
   const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
 
   if (!oidcConfig || !oidcConfig.issuer) {
-    throw new Error('Missing OIDC issuer in configuration')
+    throw new Error('Missing OIDC issuer in configuration');
   }
 
   const server = new URL(issuer);
@@ -25,7 +25,7 @@ const configure = async () => {
       const userInfo = await fetchUserInfo(config, tokenSet.access_token, expectedSub);
       handleUserAuthentication(userInfo, done);
     });
-    
+
     // currentUrl must be overridden to match the callback URL
     strategy.currentUrl = function (request) {
       const callbackUrl = new URL(callbackURL);
@@ -39,7 +39,7 @@ const configure = async () => {
 
     passport.serializeUser((user, done) => {
       done(null, user.oidcId || user.username);
-    })
+    });
 
     passport.deserializeUser(async (id, done) => {
       try {
@@ -48,7 +48,7 @@ const configure = async () => {
       } catch (err) {
         done(err);
       }
-    })
+    });
     passport.type = server.host;
 
     return passport;
@@ -56,14 +56,13 @@ const configure = async () => {
     console.error('OIDC configuration failed:', error);
     throw error;
   }
-}
-
+};
 
 module.exports.configure = configure;
 
 /**
  * Handles user authentication with OIDC.
- * @param {Object} userInfo the OIDC user info object 
+ * @param {Object} userInfo the OIDC user info object
  * @param {Function} done the callback function
  * @return {Promise} a promise with the authenticated user or an error
  */
@@ -98,7 +97,9 @@ const handleUserAuthentication = async (userInfo, done) => {
  * @return {string | null} the email address
  */
 const safelyExtractEmail = (profile) => {
-  return profile.email || (profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null);
+  return (
+    profile.email || (profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null)
+  );
 };
 
 /**

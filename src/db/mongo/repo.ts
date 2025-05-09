@@ -1,4 +1,4 @@
-import { Repo } from "../types";
+import { Repo } from '../types';
 
 const connect = require('./helper').connect;
 const collectionName = 'repos';
@@ -13,11 +13,13 @@ export const getRepos = async (query: any = {}) => {
 };
 
 export const getRepo = async (name: string) => {
+  name = name.toLowerCase();
   const collection = await connect(collectionName);
   return collection.findOne({ name: { $eq: name } });
 };
 
 export const createRepo = async (repo: Repo) => {
+  repo.name = repo.name.toLowerCase();
   console.log(`creating new repo ${JSON.stringify(repo)}`);
 
   if (isBlank(repo.project)) {
@@ -42,35 +44,41 @@ export const createRepo = async (repo: Repo) => {
 
 export const addUserCanPush = async (name: string, user: string) => {
   name = name.toLowerCase();
+  user = user.toLowerCase();
   const collection = await connect(collectionName);
   await collection.updateOne({ name: name }, { $push: { 'users.canPush': user } });
 };
 
 export const addUserCanAuthorise = async (name: string, user: string) => {
   name = name.toLowerCase();
+  user = user.toLowerCase();
   const collection = await connect(collectionName);
   await collection.updateOne({ name: name }, { $push: { 'users.canAuthorise': user } });
 };
 
 export const removeUserCanPush = async (name: string, user: string) => {
   name = name.toLowerCase();
+  user = user.toLowerCase();
   const collection = await connect(collectionName);
   await collection.updateOne({ name: name }, { $pull: { 'users.canPush': user } });
 };
 
 export const removeUserCanAuthorise = async (name: string, user: string) => {
   name = name.toLowerCase();
+  user = user.toLowerCase();
   const collection = await connect(collectionName);
   await collection.updateOne({ name: name }, { $pull: { 'users.canAuthorise': user } });
 };
 
 export const deleteRepo = async (name: string) => {
+  name = name.toLowerCase();
   const collection = await connect(collectionName);
   await collection.deleteMany({ name: name });
 };
 
 export const isUserPushAllowed = async (name: string, user: string) => {
   name = name.toLowerCase();
+  user = user.toLowerCase();
   return new Promise(async (resolve) => {
     const repo = await exports.getRepo(name);
     console.log(repo.users.canPush);
@@ -86,6 +94,7 @@ export const isUserPushAllowed = async (name: string, user: string) => {
 
 export const canUserApproveRejectPushRepo = async (name: string, user: string) => {
   name = name.toLowerCase();
+  user = user.toLowerCase();
   console.log(`checking if user ${user} can approve/reject for ${name}`);
   return new Promise(async (resolve) => {
     const repo = await exports.getRepo(name);
