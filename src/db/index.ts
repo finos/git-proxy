@@ -81,4 +81,7 @@ export const {
   canUserApproveRejectPush,
   canUserCancelPush,
   getSessionStore,
+  addPublicKey,
+  removePublicKey,
+  findUserBySSHKey,
 } = sink;
