@@ -77,7 +77,7 @@ jobs:
         path: build
 
     - name: Run cypress test
-      uses: cypress-io/github-action@108b8684ae52e735ff7891524cbffbcd4be5b19f # v6.7.16
+      uses: cypress-io/github-action@0ee1130f05f69098ab5c560bd198fecf5a14d75b # v6.9.0
       with: 
         start: npm start &
         wait-on: "http://localhost:3000"
