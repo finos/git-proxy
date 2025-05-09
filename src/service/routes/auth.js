@@ -3,7 +3,8 @@ const router = new express.Router();
 const passport = require('../passport').getPassport();
 const db = require('../../db');
 const passportType = passport.type;
-const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } = process.env;
+const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
+  process.env;
 
 router.get('/', (req, res) => {
   res.status(200).json({
@@ -147,4 +148,34 @@ router.get('/userLoggedIn', async (req, res) => {
     res.status(401).end();
   }
 });
+
+router.post('/create-user', async (req, res) => {
+  if (!req.user || !req.user.admin) {
+    return res.status(401).send({
+      message: 'You are not authorized to perform this action...',
+    });
+  }
+
+  try {
+    const { username, password, email, gitAccount, admin: isAdmin = false } = req.body;
+
+    if (!username || !password || !email || !gitAccount) {
+      return res.status(400).send({
+        message: 'Missing required fields: username, password, email, and gitAccount are required',
+      });
+    }
+
+    await db.createUser(username, password, email, gitAccount, isAdmin);
+    res.status(201).send({
+      message: 'User created successfully',
+      username,
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(400).send({
+      message: error.message || 'Failed to create user',
+    });
+  }
+});
+
 module.exports = router;
