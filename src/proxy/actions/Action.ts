@@ -1,5 +1,5 @@
-import { getProxyUrl } from "../../config";
-import { Step } from "./Step";
+import { getProxyUrl } from '../../config';
+import { Step } from './Step';
 
 /**
  * Represents a commit.
@@ -7,6 +7,7 @@ import { Step } from "./Step";
 export interface Commit {
   message: string;
   committer: string;
+  committerEmail: string;
   tree: string;
   parent: string;
   author: string;
@@ -45,6 +46,7 @@ class Action {
   message?: string;
   author?: string;
   user?: string;
+  userEmail?: string;
   attestation?: string;
   lastStep?: Step;
   proxyGitPath?: string;
@@ -62,15 +64,15 @@ class Action {
     this.type = type;
     this.method = method;
     this.timestamp = timestamp;
-    this.project = repo.split("/")[0];
-    this.repoName = repo.split("/")[1];
+    this.project = repo.split('/')[0];
+    this.repoName = repo.split('/')[1];
     this.url = `${getProxyUrl()}/${repo}`;
     this.repo = repo;
   }
 
   /**
    * Add a step to the action.
-   * @param {Step} step 
+   * @param {Step} step
    */
   addStep(step: Step): void {
     this.steps.push(step);
