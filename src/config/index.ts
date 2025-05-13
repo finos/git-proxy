@@ -78,7 +78,7 @@ export const getDatabase = () => {
     }
   }
 
-  throw Error('No database cofigured!');
+  throw Error('No database configured!');
 };
 
 // Gets the configured authentication method, defaults to local
@@ -94,7 +94,7 @@ export const getAuthentication = () => {
     }
   }
 
-  throw Error('No authentication cofigured!');
+  throw Error('No authentication configured!');
 };
 
 // Log configuration to console
