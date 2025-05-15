@@ -27,7 +27,7 @@ const options = {
   cert: getTLSEnabled() ? fs.readFileSync(getTLSCertPemPath()) : undefined,
 };
 
-const proxyPreparations = async () => {
+export const proxyPreparations = async () => {
   const plugins = getPlugins();
   const pluginLoader = new PluginLoader(plugins);
   await pluginLoader.load();
@@ -47,7 +47,7 @@ const proxyPreparations = async () => {
 };
 
 // just keep this async incase it needs async stuff in the future
-const createApp = async () => {
+export const createApp = async () => {
   const app = express();
   // Setup the proxy middleware
   app.use(bodyParser.raw(options));
@@ -55,7 +55,7 @@ const createApp = async () => {
   return app;
 };
 
-const start = async () => {
+export const start = async () => {
   const app = await createApp();
   await proxyPreparations();
   http.createServer(options as any, app).listen(proxyHttpPort, () => {
