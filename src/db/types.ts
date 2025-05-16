@@ -1,8 +1,8 @@
 export type PushQuery = {
   error: boolean;
-  blocked: boolean,
-  allowPush: boolean,
-  authorised: boolean
+  blocked: boolean;
+  allowPush: boolean;
+  authorised: boolean;
 };
 
 export type UserRole = 'canPush' | 'canAuthorise';
@@ -23,6 +23,7 @@ export type User = {
   email: string;
   admin: boolean;
   oidcId: string | null;
+  publicKeys: string[];
 };
 
 export type Push = {
