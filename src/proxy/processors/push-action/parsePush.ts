@@ -31,11 +31,17 @@ async function exec(req: any, action: Action): Promise<Action> {
       return action;
     }
 
-    const parts = refUpdates[0].split(' ');
-    const [oldCommit, newCommit, ref] = parts;
+    const cleanedUpdates = refUpdates.map((line) => {
+      const [oldOid, newOid, refWithNull] = line.split(' ');
+      const ref = refWithNull.replace(/\0.*/, '').trim();
+      return { oldOid, newOid, ref };
+    });
 
-    action.branch = ref.replace(/\0.*/, '').trim();
-    action.setCommit(oldCommit, newCommit);
+    action.updatedRefs = cleanedUpdates;
+
+    const { oldOid, newOid, ref } = cleanedUpdates[0];
+    action.branch = ref;
+    action.setCommit(oldOid, newOid);
 
     // Check if the offset is valid and if there's data after it
     if (packDataOffset >= req.body.length) {
