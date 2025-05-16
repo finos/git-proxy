@@ -648,5 +648,105 @@ description: JSON schema reference documentation for GitProxy
 </blockquote>
 </details>
 
-----------------------------------------------------------------------------------------------------------------------------
+<details>
+<summary>
+<strong> <a name="configurationSources"></a>19. [Optional] Property GitProxy configuration file > configurationSources</strong>
+</summary>
+<blockquote>
+
+|                           |                                                         |
+| ------------------------- | ------------------------------------------------------- |
+| **Type**                  | `object`                                                |
+| **Required**              | No                                                      |
+| **Additional properties** | [[Not allowed]](# "Additional Properties not allowed.") |
+
+**Description:** Configuration for dynamic loading from external sources
+
+<details>
+<summary>
+<strong> <a name="configurationSources_enabled"></a>19.1. [Optional] Property configurationSources > enabled</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | No        |
+
+**Description:** Enable/disable dynamic configuration loading
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="configurationSources_reloadIntervalSeconds"></a>19.2. [Optional] Property configurationSources > reloadIntervalSeconds</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** How often to check for configuration updates (in seconds)
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="configurationSources_merge"></a>19.3. [Optional] Property configurationSources > merge</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | No        |
+
+**Description:** When true, merges configurations from all enabled sources. When false, uses the last successful configuration load
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="configurationSources_sources"></a>19.4. [Optional] Property configurationSources > sources</strong>
+</summary>
+<blockquote>
+
+|              |         |
+| ------------ | ------- |
+| **Type**     | `array` |
+| **Required** | No      |
+
+**Description:** Array of configuration sources to load from
+
+Each item in the array must be an object with the following properties:
+
+- `type`: (Required) Type of configuration source (`"file"`, `"http"`, or `"git"`)
+- `enabled`: (Required) Whether this source is enabled
+- `path`: (Required for `file` type) Path to the configuration file
+- `url`: (Required for `http` type) URL of the configuration endpoint
+- `repository`: (Required for `git` type) Git repository URL
+- `branch`: (Optional for `git` type) Branch to use
+- `path`: (Required for `git` type) Path to configuration file in repository
+- `headers`: (Optional for `http` type) HTTP headers to include
+- `auth`: (Optional) Authentication configuration
+  - For `http` type:
+    - `type`: `"bearer"`
+    - `token`: Bearer token value
+  - For `git` type:
+    - `type`: `"ssh"`
+    - `privateKeyPath`: Path to SSH private key
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+---
+
 Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-05-01 at 18:17:32 +0100
