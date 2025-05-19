@@ -14,6 +14,8 @@ const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.writePack,
   proc.push.preReceive,
   proc.push.getDiff,
+  // run before clear remote
+  proc.push.gitleaks,
   proc.push.clearBareClone,
   proc.push.scanDiff,
   proc.push.blockForAuth,
