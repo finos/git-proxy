@@ -16,7 +16,7 @@ YYYYMMDD - time
 - [Register for future meetings](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595&invite=true)
 
 ## Untracked attendees
-- Fullname, Affiliation, (optional) GitHub username
+- Full Name, Affiliation, (optional) GitHub username
 - ...
 
 ## Meeting notices
