@@ -60,8 +60,8 @@ jobs:
     #   if: ${{ steps.test.outputs.exit_code }} != 0
     #   run: exit ${{ steps.test.outputs.exit_code }}
     
-    - name: Build application
-      run: npm run build
+    - name: Build frontend
+      run: npm run build-ui
 
     - name: Save build folder
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
