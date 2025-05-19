@@ -109,7 +109,7 @@ This project is distributed under the Apache-2.0 license. See <a href="./LICENSE
 
 ## Contact
 
-Drop a note, ask a question or just say hello in our [community Slack channel](https://app.slack.com/client/T01E7QRQH97/C06LXNW0W76) 👋
+Drop a note, ask a question or just say hello in our [community Slack channel](https://finos-lf.slack.com) 👋
 
 If you can't access Slack, you can also [subscribe to our mailing list](mailto:git-proxy+subscribe@lists.finos.org).
 
