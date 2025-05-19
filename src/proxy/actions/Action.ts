@@ -14,14 +14,6 @@ export interface Commit {
   commitTS?: string; // TODO: Normalize this to commitTimestamp
   commitTimestamp?: string;
 }
-/**
- * Represents an UpdatedRef in the action.
- */
-export interface UpdatedRef {
-  ref: string;
-  oldOid: string;
-  newOid: string;
-}
 
 /**
  * Class representing a Push.
@@ -56,7 +48,6 @@ class Action {
   attestation?: string;
   lastStep?: Step;
   proxyGitPath?: string;
-  updatedRefs?: UpdatedRef[];
   newIdxFiles?: string[];
 
   /**

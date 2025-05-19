@@ -28,7 +28,7 @@ const exec = async (req: any, action: Action) => {
 
     const newIdxFiles = [...after].filter((f) => !before.has(f));
     action.newIdxFiles = newIdxFiles;
-    step.log(`.idx generati da questo push: ${newIdxFiles.join(', ') || '(nessuno)'}`);
+    step.log(`new idx files: ${newIdxFiles}`);
 
     step.setContent(content);
   } catch (e: any) {
