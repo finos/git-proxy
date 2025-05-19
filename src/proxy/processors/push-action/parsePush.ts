@@ -36,9 +36,8 @@ async function exec(req: any, action: Action): Promise<Action> {
     const parts = refUpdates[0].split(' ');
     const [oldOid, newOid, rawRef] = parts;
 
-    const branch = rawRef.replace(/\0.*/, '').trim();
+    action.branch = rawRef.replace(/\0.*/, '').trim();
 
-    action.branch = branch;
     action.setCommit(oldOid, newOid);
 
     // Check if the offset is valid and if there's data after it
