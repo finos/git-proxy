@@ -1,7 +1,7 @@
 ---
-name: "\U0001F91D Git Proxy Meeting Minutes"
-about: To track Git Proxy meeting agenda and attendance
-title: DD MMM YYYY - Git Proxy Meeting Minutes
+name: "\U0001F91D GitProxy Meeting Minutes"
+about: To track GitProxy meeting agenda and attendance
+title: DD MMM YYYY - GitProxy Meeting Minutes
 labels: meeting
 assignees: 
 
