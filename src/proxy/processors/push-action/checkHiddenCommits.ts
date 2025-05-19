@@ -7,30 +7,29 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
   try {
     const repoPath = `${action.proxyGitPath}/${action.repoName}`;
-    console.log(`repoPath: ${repoPath}`);
 
     const introducedCommits = new Set<string>();
 
-    action.updatedRefs?.forEach(({ ref, oldOid, newOid }) => {
-      const revRange =
-        oldOid === '0000000000000000000000000000000000000000' ? newOid : `${oldOid}..${newOid}`;
+    // Retrieve the single ref update
+    const oldOid = action.commitFrom;
+    const newOid = action.commitTo;
+    if (!oldOid || !newOid) {
+      throw new Error('Both action.commitFrom and action.commitTo must be defined');
+    }
 
-      const result = spawnSync('git', ['rev-list', revRange], {
-        cwd: repoPath,
-        encoding: 'utf-8',
-      });
+    const revisionRange: string =
+      oldOid === '0000000000000000000000000000000000000000' ? newOid : `${oldOid}..${newOid}`;
 
-      result.stdout
-        .trim()
-        .split('\n')
-        .forEach((c) => {
-          if (c) introducedCommits.add(c);
-        });
-    });
-
+    const revListOutput = spawnSync('git', ['rev-list', revisionRange], {
+      cwd: repoPath,
+      encoding: 'utf-8',
+    }).stdout;
+    revListOutput
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .forEach((sha) => introducedCommits.add(sha));
     step.log(`Total introduced commits: ${introducedCommits.size}`);
-    step.log(`Introduced commits: ${[...introducedCommits].join(', ')}`);
-
     const packPath = path.join('.git', 'objects', 'pack');
 
     const packCommits = new Set<string>();
@@ -52,7 +51,6 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     });
     step.log(`Commits nel pack: ${packCommits.size}`);
     console.log('Pack commits:', packCommits);
-    console.log('Introduced commits:', introducedCommits);
 
     const referenced: string[] = [];
     const unreferenced: string[] = [];

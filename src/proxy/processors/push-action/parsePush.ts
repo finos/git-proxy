@@ -26,21 +26,19 @@ async function exec(req: any, action: Action): Promise<Action> {
     if (refUpdates.length !== 1) {
       step.log('Invalid number of branch updates.');
       step.log(`Expected 1, but got ${refUpdates.length}`);
-      step.setError('Your push has been blocked. Please make sure you are pushing to a single branch.');
+      step.setError(
+        'Your push has been blocked. Please make sure you are pushing to a single branch.',
+      );
       action.addStep(step);
       return action;
     }
 
-    const cleanedUpdates = refUpdates.map((line) => {
-      const [oldOid, newOid, refWithNull] = line.split(' ');
-      const ref = refWithNull.replace(/\0.*/, '').trim();
-      return { oldOid, newOid, ref };
-    });
+    const parts = refUpdates[0].split(' ');
+    const [oldOid, newOid, rawRef] = parts;
 
-    action.updatedRefs = cleanedUpdates;
+    const branch = rawRef.replace(/\0.*/, '').trim();
 
-    const { oldOid, newOid, ref } = cleanedUpdates[0];
-    action.branch = ref;
+    action.branch = branch;
     action.setCommit(oldOid, newOid);
 
     // Check if the offset is valid and if there's data after it
@@ -66,13 +64,13 @@ async function exec(req: any, action: Action): Promise<Action> {
 
     action.commitData = getCommitData(contents as any);
     if (action.commitData.length === 0) {
-      step.log('No commit data found when parsing push.')
+      step.log('No commit data found when parsing push.');
     } else {
       if (action.commitFrom === '0000000000000000000000000000000000000000') {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }
       const user = action.commitData[action.commitData.length - 1].committer;
-      action.user = user;  
+      action.user = user;
     }
 
     step.content = {
@@ -86,20 +84,24 @@ async function exec(req: any, action: Action): Promise<Action> {
     action.addStep(step);
   }
   return action;
-};
+}
 
 /**
  * Parses the name, email, and timestamp from an author or committer line.
- * 
+ *
  * Timestamp including timezone offset is required.
  * @param {string} line - The line to parse.
  * @return {Object} An object containing the name, email, and timestamp.
  */
-const parsePersonLine = (line: string): { name: string; email: string; timestamp: string } | null => {
+const parsePersonLine = (
+  line: string,
+): { name: string; email: string; timestamp: string } | null => {
   const personRegex = /^(.*?) <(.*?)> (\d+) ([+-]\d+)$/;
   const match = line.match(personRegex);
   if (!match) {
-    throw new Error(`Failed to parse person line: ${line}. Make sure to include a name, email, timestamp and timezone offset.`);
+    throw new Error(
+      `Failed to parse person line: ${line}. Make sure to include a name, email, timestamp and timezone offset.`,
+    );
   }
   return { name: match[1].trim(), email: match[2], timestamp: match[3] };
 };
@@ -173,7 +175,10 @@ const getCommitData = (contents: CommitContent[]) => {
       }
 
       const headerLines = allLines.slice(0, headerEndIndex);
-      const message = allLines.slice(headerEndIndex + 1).join('\n').trim();
+      const message = allLines
+        .slice(headerEndIndex + 1)
+        .join('\n')
+        .trim();
       console.log({ headerLines, message });
 
       const { tree, parents, authorInfo, committerInfo } = getParsedData(headerLines);
@@ -374,7 +379,7 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
 
     // Make sure we don't read past the end of the buffer
     if (offset + length > buffer.length) {
-        throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
+      throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
     }
 
     const line = buffer.toString('utf8', offset + 4, offset + length);
@@ -382,14 +387,8 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
     offset += length; // Move offset to the start of the next line's length prefix
   }
   return [lines, offset];
-}
+};
 
 exec.displayName = 'parsePush.exec';
 
-export {
-  exec,
-  getCommitData,
-  getPackMeta,
-  parsePacketLines,
-  unpack
-};
+export { exec, getCommitData, getPackMeta, parsePacketLines, unpack };
