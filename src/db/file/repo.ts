@@ -49,6 +49,20 @@ export const getRepo = async (name: string) => {
   });
 };
 
+export const getRepoByURL = async (repoURL: string) => {
+  return new Promise<Repo | null>((resolve, reject) => {
+    db.findOne({ url: repoURL.toLowerCase() }, (err: Error | null, doc: Repo) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
+      if (err) {
+        reject(err);
+      } else {
+        resolve(doc);
+      }
+    });
+  });
+};
+
 export const createRepo = async (repo: Repo) => {
   if (isBlank(repo.project)) {
     throw new Error('Project name cannot be empty');

@@ -56,6 +56,18 @@ export const createUser = async (
   await sink.createUser(data);
 };
 
+export const getRepoByUrl = async (repoUrl: string) => {
+  const response = await sink.getRepoByUrl(repoUrl);
+  // backwards compatibility
+  if (!response) {
+    // parse github URLs into org and repo names and fallback to legacy retrieval by repo name
+    const repoName = 'some regex magic goes here';
+
+    return sink.getRepo(repoName);
+  }
+  return response;
+};
+
 export const {
   authorise,
   reject,
@@ -69,8 +81,8 @@ export const {
   getUsers,
   deleteUser,
   updateUser,
-  getRepos,
   getRepo,
+  getRepos,
   createRepo,
   addUserCanPush,
   addUserCanAuthorise,
