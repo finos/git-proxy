@@ -14,10 +14,6 @@ const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
 db.ensureIndex({ fieldName: 'name', unique: false });
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
-const isBlank = (str: string) => {
-  return !str || /^\s*$/.test(str);
-};
-
 export const getRepos = async (query: any = {}) => {
   if (query?.name) {
     query.name = query.name.toLowerCase();
@@ -64,23 +60,6 @@ export const getRepoByURL = async (repoURL: string) => {
 };
 
 export const createRepo = async (repo: Repo) => {
-  if (isBlank(repo.project)) {
-    throw new Error('Project name cannot be empty');
-  }
-  if (isBlank(repo.name)) {
-    throw new Error('Repository name cannot be empty');
-  } else {
-    repo.name = repo.name.toLowerCase();
-  }
-  if (isBlank(repo.url)) {
-    throw new Error('URL cannot be empty');
-  }
-
-  repo.users = {
-    canPush: [],
-    canAuthorise: [],
-  };
-
   return new Promise<Repo>((resolve, reject) => {
     db.insert(repo, (err, doc) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query

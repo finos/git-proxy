@@ -1,3 +1,5 @@
+import { Repo } from './types';
+
 const bcrypt = require('bcryptjs');
 const config = require('../config');
 let sink: any;
@@ -6,6 +8,10 @@ if (config.getDatabase().type === 'mongo') {
 } else if (config.getDatabase().type === 'fs') {
   sink = require('./file');
 }
+
+const isBlank = (str: string) => {
+  return !str || /^\s*$/.test(str);
+};
 
 export const createUser = async (
   username: string,
@@ -32,17 +38,17 @@ export const createUser = async (
     admin: admin,
   };
 
-  if (username === undefined || username === null || username === '') {
+  if (isBlank(username)) {
     const errorMessage = `username ${username} cannot be empty`;
     throw new Error(errorMessage);
   }
 
-  if (gitAccount === undefined || gitAccount === null || gitAccount === '') {
+  if (isBlank(gitAccount)) {
     const errorMessage = `GitAccount ${gitAccount} cannot be empty`;
     throw new Error(errorMessage);
   }
 
-  if (email === undefined || email === null || email === '') {
+  if (isBlank(email)) {
     const errorMessage = `Email ${email} cannot be empty`;
     throw new Error(errorMessage);
   }
@@ -54,6 +60,28 @@ export const createUser = async (
   }
 
   await sink.createUser(data);
+};
+
+export const createRepo = async (repo: Repo) => {
+  repo.name = repo.name.toLowerCase();
+  repo.users = {
+    canPush: [],
+    canAuthorise: [],
+  };
+
+  console.log(`creating new repo ${JSON.stringify(repo)}`);
+
+  if (isBlank(repo.project)) {
+    throw new Error('Project name cannot be empty');
+  }
+  if (isBlank(repo.name)) {
+    throw new Error('Repository name cannot be empty');
+  }
+  if (isBlank(repo.url)) {
+    throw new Error('URL cannot be empty');
+  }
+
+  return sink.createRepo(repo);
 };
 
 export const getRepoByUrl = async (repoUrl: string) => {
@@ -81,9 +109,7 @@ export const {
   getUsers,
   deleteUser,
   updateUser,
-  getRepo,
   getRepos,
-  createRepo,
   addUserCanPush,
   addUserCanAuthorise,
   removeUserCanAuthorise,

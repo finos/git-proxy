@@ -3,10 +3,6 @@ import { Repo } from '../types';
 const connect = require('./helper').connect;
 const collectionName = 'repos';
 
-const isBlank = (str: string) => {
-  return !str || /^\s*$/.test(str);
-};
-
 export const getRepos = async (query: any = {}) => {
   const collection = await connect(collectionName);
   return collection.find(query).toArray();
@@ -24,24 +20,6 @@ export const getRepoByUrl = async (repoUrl: string) => {
 };
 
 export const createRepo = async (repo: Repo) => {
-  repo.name = repo.name.toLowerCase();
-  console.log(`creating new repo ${JSON.stringify(repo)}`);
-
-  if (isBlank(repo.project)) {
-    throw new Error('Project name cannot be empty');
-  }
-  if (isBlank(repo.name)) {
-    throw new Error('Repository name cannot be empty');
-  }
-  if (isBlank(repo.url)) {
-    throw new Error('URL cannot be empty');
-  }
-
-  repo.users = {
-    canPush: [],
-    canAuthorise: [],
-  };
-
   const collection = await connect(collectionName);
   await collection.insertOne(repo);
   console.log(`created new repo ${JSON.stringify(repo)}`);
