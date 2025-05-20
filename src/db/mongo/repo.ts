@@ -58,6 +58,10 @@ export const isUserPushAllowed = async (repoUrl: string, user: string) => {
   user = user.toLowerCase();
   return new Promise(async (resolve) => {
     const repo = await exports.getRepoByUrl(repoUrl);
+    if (!repo) {
+      resolve(false);
+      return;
+    }
     console.log(repo.users.canPush);
     console.log(repo.users.canAuthorise);
 
@@ -74,6 +78,10 @@ export const canUserApproveRejectPushRepo = async (repoUrl: string, user: string
   console.log(`checking if user ${user} can approve/reject for ${repoUrl}`);
   return new Promise(async (resolve) => {
     const repo = await exports.getRepoByUrl(repoUrl);
+    if (!repo) {
+      resolve(false);
+      return;
+    }
     if (repo.users.canAuthorise.includes(user)) {
       console.log(`user ${user} can approve/reject to repo ${repoUrl}`);
       resolve(true);

@@ -157,7 +157,7 @@ export const removeUserCanAuthorise = async (repoUrl: string, user: string) => {
 export const removeUserCanPush = async (repoUrl: string, user: string) => {
   user = user.toLowerCase();
   return new Promise(async (resolve, reject) => {
-    const repo = await getRepo(repoUrl);
+    const repo = await getRepoByUrl(repoUrl);
     if (!repo) {
       reject(new Error('Repo not found'));
       return;
@@ -214,7 +214,7 @@ export const isUserPushAllowed = async (repoUrl: string, user: string) => {
 
 export const canUserApproveRejectPushRepo = async (repoUrl: string, user: string) => {
   user = user.toLowerCase();
-  console.log(`checking if user ${user} can approve/reject for ${name}`);
+  console.log(`checking if user ${user} can approve/reject for ${repoUrl}`);
   return new Promise<boolean>(async (resolve) => {
     const repo = await getRepoByUrl(repoUrl);
     if (!repo) {
@@ -223,10 +223,10 @@ export const canUserApproveRejectPushRepo = async (repoUrl: string, user: string
     }
 
     if (repo.users.canAuthorise.includes(user)) {
-      console.log(`user ${user} can approve/reject to repo ${name}`);
+      console.log(`user ${user} can approve/reject to repo ${repoUrl}`);
       resolve(true);
     } else {
-      console.log(`user ${user} cannot approve/reject to repo ${name}`);
+      console.log(`user ${user} cannot approve/reject to repo ${repoUrl}`);
       resolve(false);
     }
   });
