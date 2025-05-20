@@ -11,7 +11,7 @@ if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
-db.ensureIndex({ fieldName: 'name', unique: false });
+db.ensureIndex({ fieldName: 'url', unique: true });
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
 export const getRepos = async (query: any = {}) => {
