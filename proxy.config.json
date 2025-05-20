@@ -96,6 +96,39 @@
       }
     ]
   },
+  "configurationSources": {
+    "enabled": false,
+    "reloadIntervalSeconds": 60,
+    "merge": false,
+    "sources": [
+      {
+        "type": "file",
+        "enabled": false,
+        "path": "./external-config.json"
+      },
+      {
+        "type": "http",
+        "enabled": false,
+        "url": "http://config-service/git-proxy-config",
+        "headers": {},
+        "auth": {
+          "type": "bearer",
+          "token": ""
+        }
+      },
+      {
+        "type": "git",
+        "enabled": false,
+        "repository": "https://git-server.com/project/git-proxy-config",
+        "branch": "main",
+        "path": "git-proxy/config.json",
+        "auth": {
+          "type": "ssh",
+          "privateKeyPath": "/path/to/.ssh/id_rsa"
+        }
+      }
+    ]
+  },
   "domains": {},
   "privateOrganizations": [],
   "urlShortener": "",
@@ -103,7 +136,7 @@
   "csrfProtection": true,
   "plugins": [],
   "tls": {
-    "enabled": true,
+    "enabled": false,
     "key": "certs/key.pem",
     "cert": "certs/cert.pem"
   }
