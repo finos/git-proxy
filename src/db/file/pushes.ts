@@ -3,7 +3,6 @@ import _ from 'lodash';
 import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
-import * as repo from './repo';
 import { PushQuery } from '../types';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
@@ -128,35 +127,4 @@ export const cancel = async (id: string) => {
   action.rejected = false;
   await writeAudit(action);
   return { message: `cancel ${id}` };
-};
-
-export const canUserCancelPush = async (id: string, user: string) => {
-  return new Promise<boolean>(async (resolve) => {
-    const action = await getPush(id);
-    if (!action) {
-      resolve(false);
-      return;
-    }
-
-    const isAllowed = await repo.isUserPushAllowed(action.url, user);
-
-    if (isAllowed) {
-      resolve(true);
-    } else {
-      resolve(false);
-    }
-  });
-};
-
-export const canUserApproveRejectPush = async (id: string, user: string) => {
-  return new Promise<boolean>(async (resolve) => {
-    const action = await getPush(id);
-    if (!action) {
-      resolve(false);
-      return;
-    }
-    const isAllowed = await repo.canUserApproveRejectPushRepo(action.url, user);
-
-    resolve(isAllowed);
-  });
 };

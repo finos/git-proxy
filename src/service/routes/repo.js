@@ -22,16 +22,16 @@ router.get('/', async (req, res) => {
   res.send(qd.map((d) => ({ ...d, proxyURL })));
 });
 
-router.get('/:name', async (req, res) => {
+router.get('/:id', async (req, res) => {
   const proxyURL = getProxyURL(req);
-  const name = req.params.name;
-  const qd = await db.getRepo(name);
+  const _id = req.params.id;
+  const qd = await db.getRepoById(_id);
   res.send({ ...qd, proxyURL });
 });
 
-router.patch('/:name/user/push', async (req, res) => {
+router.patch('/:id/user/push', async (req, res) => {
   if (req.user && req.user.admin) {
-    const repoName = req.params.name;
+    const _id = req.params.id;
     const username = req.body.username.toLowerCase();
     const user = await db.findUser(username);
 
@@ -40,7 +40,7 @@ router.patch('/:name/user/push', async (req, res) => {
       return;
     }
 
-    await db.addUserCanPush(repoName, username);
+    await db.addUserCanPush(_id, username);
     res.send({ message: 'created' });
   } else {
     res.status(401).send({
@@ -49,9 +49,9 @@ router.patch('/:name/user/push', async (req, res) => {
   }
 });
 
-router.patch('/:name/user/authorise', async (req, res) => {
+router.patch('/:id/user/authorise', async (req, res) => {
   if (req.user && req.user.admin) {
-    const repoName = req.params.name;
+    const _id = req.params.id;
     const username = req.body.username;
     const user = await db.findUser(username);
 
@@ -60,7 +60,7 @@ router.patch('/:name/user/authorise', async (req, res) => {
       return;
     }
 
-    await db.addUserCanAuthorise(repoName, username);
+    await db.addUserCanAuthorise(_id, username);
     res.send({ message: 'created' });
   } else {
     res.status(401).send({
@@ -69,9 +69,9 @@ router.patch('/:name/user/authorise', async (req, res) => {
   }
 });
 
-router.delete('/:name/user/authorise/:username', async (req, res) => {
+router.delete('/:id/user/authorise/:username', async (req, res) => {
   if (req.user && req.user.admin) {
-    const repoName = req.params.name;
+    const _id = req.params.id;
     const username = req.params.username;
     const user = await db.findUser(username);
 
@@ -80,7 +80,7 @@ router.delete('/:name/user/authorise/:username', async (req, res) => {
       return;
     }
 
-    await db.removeUserCanAuthorise(repoName, username);
+    await db.removeUserCanAuthorise(_id, username);
     res.send({ message: 'created' });
   } else {
     res.status(401).send({
@@ -89,9 +89,9 @@ router.delete('/:name/user/authorise/:username', async (req, res) => {
   }
 });
 
-router.delete('/:name/user/push/:username', async (req, res) => {
+router.delete('/:id/user/push/:username', async (req, res) => {
   if (req.user && req.user.admin) {
-    const repoName = req.params.name;
+    const _id = req.params.id;
     const username = req.params.username;
     const user = await db.findUser(username);
 
@@ -100,7 +100,7 @@ router.delete('/:name/user/push/:username', async (req, res) => {
       return;
     }
 
-    await db.removeUserCanPush(repoName, username);
+    await db.removeUserCanPush(_id, username);
     res.send({ message: 'created' });
   } else {
     res.status(401).send({
@@ -109,11 +109,11 @@ router.delete('/:name/user/push/:username', async (req, res) => {
   }
 });
 
-router.delete('/:name/delete', async (req, res) => {
+router.delete('/:id/delete', async (req, res) => {
   if (req.user.admin) {
-    const repoName = req.params.name;
+    const _id = req.params.id;
 
-    await db.deleteRepo(repoName);
+    await db.deleteRepo(_id);
     res.send({ message: 'deleted' });
   } else {
     res.status(401).send({
@@ -124,7 +124,7 @@ router.delete('/:name/delete', async (req, res) => {
 
 router.post('/', async (req, res) => {
   if (req.user && req.user.admin) {
-    const repo = await db.getRepo(req.body.name);
+    const repo = await db.getRepoByUrl(req.body.url);
     if (repo) {
       res.status(409).send({
         message: 'Repository already exists!',
