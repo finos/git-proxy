@@ -8,6 +8,12 @@ chai.use(chaiHttp);
 chai.should();
 const expect = chai.expect;
 
+const TEST_REPO = {
+  url: 'https://github.com/finos/test-repo.git',
+  name: 'test-repo',
+  project: 'finos',
+};
+
 describe('add new repo', async () => {
   let app;
   let cookie;
@@ -24,7 +30,7 @@ describe('add new repo', async () => {
   before(async function () {
     app = await service.start();
     // Prepare the data.
-    await db.deleteRepo('test-repo');
+    await db.deleteRepo(TEST_REPO.url);
     await db.deleteUser('u1');
     await db.deleteUser('u2');
     await db.createUser('u1', 'abc', 'test@test.com', 'test', true);
@@ -41,17 +47,17 @@ describe('add new repo', async () => {
   });
 
   it('create a new repo', async function () {
-    const res = await chai.request(app).post('/api/v1/repo').set('Cookie', `${cookie}`).send({
-      project: 'finos',
-      name: 'test-repo',
-      url: 'https://github.com/finos/test-repo.git',
-    });
+    const res = await chai
+      .request(app)
+      .post('/api/v1/repo')
+      .set('Cookie', `${cookie}`)
+      .send(TEST_REPO);
     res.should.have.status(200);
 
-    const repo = await db.getRepo('test-repo');
-    repo.project.should.equal('finos');
-    repo.name.should.equal('test-repo');
-    repo.url.should.equal('https://github.com/finos/test-repo.git');
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
+    repo.project.should.equal(TEST_REPO.project);
+    repo.name.should.equal(TEST_REPO.name);
+    repo.url.should.equal(TEST_REPO.url);
     repo.users.canPush.length.should.equal(0);
     repo.users.canAuthorise.length.should.equal(0);
   });
@@ -61,24 +67,24 @@ describe('add new repo', async () => {
       .request(app)
       .get('/api/v1/repo')
       .set('Cookie', `${cookie}`)
-      .query({ name: 'test-repo' });
+      .query({ url: TEST_REPO.url });
     res.should.have.status(200);
-    res.body[0].project.should.equal('finos');
-    res.body[0].name.should.equal('test-repo');
-    res.body[0].url.should.equal('https://github.com/finos/test-repo.git');
+    res.body[0].project.should.equal(TEST_REPO.project);
+    res.body[0].name.should.equal(TEST_REPO.name);
+    res.body[0].url.should.equal(TEST_REPO.url);
   });
 
   it('add 1st can push user', async function () {
     const res = await chai
       .request(app)
-      .patch('/api/v1/repo/test-repo/user/push')
+      .patch(`/api/v1/repo/${TEST_REPO.url}/user/push`)
       .set('Cookie', `${cookie}`)
       .send({
         username: 'u1',
       });
 
     res.should.have.status(200);
-    const repo = await db.getRepo('test-repo');
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
     repo.users.canPush.length.should.equal(1);
     repo.users.canPush[0].should.equal('u1');
   });
@@ -93,7 +99,7 @@ describe('add new repo', async () => {
       });
 
     res.should.have.status(200);
-    const repo = await db.getRepo('test-repo');
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
     repo.users.canPush.length.should.equal(2);
     repo.users.canPush[1].should.equal('u2');
   });
@@ -101,40 +107,40 @@ describe('add new repo', async () => {
   it('add push user that does not exist', async function () {
     const res = await chai
       .request(app)
-      .patch('/api/v1/repo/test-repo/user/push')
+      .patch(`/api/v1/repo/${TEST_REPO.url}/user/push`)
       .set('Cookie', `${cookie}`)
       .send({
         username: 'u3',
       });
 
     res.should.have.status(400);
-    const repo = await db.getRepo('test-repo');
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
     repo.users.canPush.length.should.equal(2);
   });
 
   it('delete user u2 from push', async function () {
     const res = await chai
       .request(app)
-      .delete('/api/v1/repo/test-repo/user/push/u2')
+      .delete(`/api/v1/repo/${TEST_REPO.url}/user/push/u2`)
       .set('Cookie', `${cookie}`)
       .send({});
 
     res.should.have.status(200);
-    const repo = await db.getRepo('test-repo');
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
     repo.users.canPush.length.should.equal(1);
   });
 
   it('add 1st can authorise user', async function () {
     const res = await chai
       .request(app)
-      .patch('/api/v1/repo/test-repo/user/authorise')
+      .patch(`/api/v1/repo/${TEST_REPO.url}/user/authorise`)
       .set('Cookie', `${cookie}`)
       .send({
         username: 'u1',
       });
 
     res.should.have.status(200);
-    const repo = await db.getRepo('test-repo');
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
     repo.users.canAuthorise.length.should.equal(1);
     repo.users.canAuthorise[0].should.equal('u1');
   });
@@ -142,14 +148,14 @@ describe('add new repo', async () => {
   it('add 2nd can authorise user', async function () {
     const res = await chai
       .request(app)
-      .patch('/api/v1/repo/test-repo/user/authorise')
+      .patch(`/api/v1/repo/${TEST_REPO.url}/user/authorise`)
       .set('Cookie', `${cookie}`)
       .send({
         username: 'u2',
       });
 
     res.should.have.status(200);
-    const repo = await db.getRepo('test-repo');
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
     repo.users.canAuthorise.length.should.equal(2);
     repo.users.canAuthorise[1].should.equal('u2');
   });
@@ -157,43 +163,43 @@ describe('add new repo', async () => {
   it('add authorise user that does not exist', async function () {
     const res = await chai
       .request(app)
-      .patch('/api/v1/repo/test-repo/user/authorise')
+      .patch(`/api/v1/repo/${TEST_REPO.url}/user/authorise`)
       .set('Cookie', `${cookie}`)
       .send({
         username: 'u3',
       });
 
     res.should.have.status(400);
-    const repo = await db.getRepo('test-repo');
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
     repo.users.canAuthorise.length.should.equal(2);
   });
 
   it('Can delete u2 user', async function () {
     const res = await chai
       .request(app)
-      .delete('/api/v1/repo/test-repo/user/authorise/u2')
+      .delete(`/api/v1/repo/${TEST_REPO.url}/user/authorise/u2`)
       .set('Cookie', `${cookie}`)
       .send({});
 
     res.should.have.status(200);
-    const repo = await db.getRepo('test-repo');
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
     repo.users.canAuthorise.length.should.equal(1);
   });
 
   it('Valid user push permission on repo', async function () {
     const res = await chai
       .request(app)
-      .patch('/api/v1/repo/test-repo/user/authorise')
+      .patch(`/api/v1/repo/${TEST_REPO.url}/user/authorise`)
       .set('Cookie', `${cookie}`)
       .send({ username: 'u2' });
 
     res.should.have.status(200);
-    const isAllowed = await db.isUserPushAllowed('test-repo', 'u2');
+    const isAllowed = await db.isUserPushAllowed(TEST_REPO.url, 'u2');
     expect(isAllowed).to.be.true;
   });
 
   it('Invalid user push permission on repo', async function () {
-    const isAllowed = await db.isUserPushAllowed('test-repo', 'test');
+    const isAllowed = await db.isUserPushAllowed(TEST_REPO.url, 'test');
     expect(isAllowed).to.be.false;
   });
 
