@@ -605,7 +605,7 @@ describe('Database clients', async () => {
   });
 
   after(async function () {
-    await db.deleteRepo(TEST_REPO.url);
+    await db.deleteRepo(TEST_REPO.url, true);
     await db.deleteUser(TEST_USER.username);
     await db.deletePush(TEST_PUSH.id);
   });
