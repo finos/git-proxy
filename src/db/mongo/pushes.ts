@@ -1,7 +1,6 @@
 import { connect, findDocuments, findOneDocument } from './helper';
 import { Action } from '../../proxy/actions';
 import { toClass } from '../helper';
-import * as repo from './repo';
 import { Push, PushQuery } from '../types';
 
 const collectionName = 'pushes';
@@ -98,36 +97,4 @@ export const cancel = async (id: string) => {
   action.rejected = false;
   await writeAudit(action);
   return { message: `canceled ${id}` };
-};
-
-export const canUserApproveRejectPush = async (id: string, user: string) => {
-  return new Promise(async (resolve) => {
-    const action = await getPush(id);
-    if (!action) {
-      resolve(false);
-      return;
-    }
-
-    const isAllowed = await repo.canUserApproveRejectPushRepo(action.url, user);
-
-    resolve(isAllowed);
-  });
-};
-
-export const canUserCancelPush = async (id: string, user: string) => {
-  return new Promise(async (resolve) => {
-    const action = await getPush(id);
-    if (!action) {
-      resolve(false);
-      return;
-    }
-
-    const isAllowed = await repo.isUserPushAllowed(action.url, user);
-
-    if (isAllowed) {
-      resolve(true);
-    } else {
-      resolve(false);
-    }
-  });
 };
