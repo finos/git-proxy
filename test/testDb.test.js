@@ -10,6 +10,12 @@ const TEST_REPO = {
   url: 'https://github.com/finos/db-test-repo.git',
 };
 
+const TEST_NONEXISTENT_REPO = {
+  project: 'MegaCorp',
+  name: 'repo',
+  url: 'https://example.com/MegaCorp/MegaGroup/repo.git',
+};
+
 const TEST_USER = {
   username: 'db-u1',
   password: 'abc',
@@ -102,13 +108,6 @@ describe('Database clients', async () => {
     expect(repos3).to.have.same.deep.members(repos4);
   });
 
-  it('should be able to retrieve a repo by name', async function () {
-    // uppercase the filter value to confirm db client is lowercasing inputs
-    const repo = await db.getRepo(TEST_REPO.name);
-    const cleanRepo = cleanResponseData(TEST_REPO, repo);
-    expect(cleanRepo).to.eql(TEST_REPO);
-  });
-
   it('should be able to retrieve a repo by url', async function () {
     const repo = await db.getRepoByUrl(TEST_REPO.url);
     const cleanRepo = cleanResponseData(TEST_REPO, repo);
@@ -116,7 +115,7 @@ describe('Database clients', async () => {
   });
 
   it('should be able to delete a repo', async function () {
-    await db.deleteRepo(TEST_REPO.name);
+    await db.deleteRepo(TEST_REPO.url);
     const repos = await db.getRepos();
 
     const cleanRepos = cleanResponseData(TEST_REPO, repos);
@@ -285,7 +284,7 @@ describe('Database clients', async () => {
     let threwError = false;
     try {
       // uppercase the filter value to confirm db client is lowercasing inputs
-      await db.addUserCanPush('non-existent-repo', TEST_USER.username);
+      await db.addUserCanPush(TEST_NONEXISTENT_REPO.url, TEST_USER.username);
     } catch (e) {
       threwError = true;
     }
@@ -297,24 +296,21 @@ describe('Database clients', async () => {
     try {
       // first create the repo and check that user is not allowed to push
       await db.createRepo(TEST_REPO);
-      let allowed = await db.isUserPushAllowed(TEST_REPO.name, TEST_USER.username);
+      let allowed = await db.isUserPushAllowed(TEST_REPO.url, TEST_USER.username);
       expect(allowed).to.be.false;
 
       // uppercase the filter value to confirm db client is lowercasing inputs
-      await db.addUserCanPush(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+      await db.addUserCanPush(TEST_REPO.url, TEST_USER.username.toUpperCase());
 
       // repeat, should not throw an error if already set
-      await db.addUserCanPush(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+      await db.addUserCanPush(TEST_REPO.url, TEST_USER.username.toUpperCase());
 
       // confirm the setting exists
-      allowed = await db.isUserPushAllowed(TEST_REPO.name, TEST_USER.username);
+      allowed = await db.isUserPushAllowed(TEST_REPO.url, TEST_USER.username);
       expect(allowed).to.be.true;
 
       // confirm that casing doesn't matter
-      allowed = await db.isUserPushAllowed(
-        TEST_REPO.name.toUpperCase(),
-        TEST_USER.username.toUpperCase(),
-      );
+      allowed = await db.isUserPushAllowed(TEST_REPO.url, TEST_USER.username.toUpperCase());
       expect(allowed).to.be.true;
     } catch (e) {
       console.error('Error thrown ', e);
@@ -326,7 +322,7 @@ describe('Database clients', async () => {
   it('should throw an error when de-authorising a user to push on non-existent repo', async function () {
     let threwError = false;
     try {
-      await db.removeUserCanPush('non-existent-repo', TEST_USER.username);
+      await db.removeUserCanPush(TEST_NONEXISTENT_REPO.url, TEST_USER.username);
     } catch (e) {
       threwError = true;
     }
@@ -337,27 +333,24 @@ describe('Database clients', async () => {
     let threwError = false;
     try {
       // repo should already exist with user able to push after previous test
-      let allowed = await db.isUserPushAllowed(TEST_REPO.name, TEST_USER.username);
+      let allowed = await db.isUserPushAllowed(TEST_REPO.url, TEST_USER.username);
       expect(allowed).to.be.true;
 
       // uppercase the filter value to confirm db client is lowercasing inputs
-      await db.removeUserCanPush(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+      await db.removeUserCanPush(TEST_REPO.url, TEST_USER.username.toUpperCase());
 
       // repeat, should not throw an error if already unset
-      await db.removeUserCanPush(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+      await db.removeUserCanPush(TEST_REPO.url, TEST_USER.username.toUpperCase());
 
       // confirm the setting exists
-      allowed = await db.isUserPushAllowed(TEST_REPO.name, TEST_USER.username);
+      allowed = await db.isUserPushAllowed(TEST_REPO.url, TEST_USER.username);
       expect(allowed).to.be.false;
 
       // confirm that casing doesn't matter
-      allowed = await db.isUserPushAllowed(
-        TEST_REPO.name.toUpperCase(),
-        TEST_USER.username.toUpperCase(),
-      );
+      allowed = await db.isUserPushAllowed(TEST_REPO.url, TEST_USER.username.toUpperCase());
       expect(allowed).to.be.false;
     } catch (e) {
-      console.error('Error thrown ', e);
+      console.error('Error thrown at: ' + e.stack, e);
       threwError = true;
     }
     expect(threwError).to.be.false;
@@ -366,7 +359,7 @@ describe('Database clients', async () => {
   it('should throw an error when authorising a user to authorise on non-existent repo', async function () {
     let threwError = false;
     try {
-      await db.addUserCanAuthorise('non-existent-repo', TEST_USER.username);
+      await db.addUserCanAuthorise(TEST_NONEXISTENT_REPO.url, TEST_USER.username);
     } catch (e) {
       threwError = true;
     }
@@ -377,22 +370,22 @@ describe('Database clients', async () => {
     let threwError = false;
     try {
       // repo should already exist after a previous test
-      let allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.name, TEST_USER.username);
+      let allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.url, TEST_USER.username);
       expect(allowed).to.be.false;
 
       // uppercase the filter value to confirm db client is lowercasing inputs
-      await db.addUserCanAuthorise(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+      await db.addUserCanAuthorise(TEST_REPO.url, TEST_USER.username.toUpperCase());
 
       // repeat, should not throw an error if already set
-      await db.addUserCanAuthorise(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+      await db.addUserCanAuthorise(TEST_REPO.url, TEST_USER.username.toUpperCase());
 
       // confirm the setting exists
-      allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.name, TEST_USER.username);
+      allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.url, TEST_USER.username);
       expect(allowed).to.be.true;
 
       // confirm that casing doesn't matter
       allowed = await db.canUserApproveRejectPushRepo(
-        TEST_REPO.name.toUpperCase(),
+        TEST_REPO.url,
         TEST_USER.username.toUpperCase(),
       );
       expect(allowed).to.be.true;
@@ -407,7 +400,7 @@ describe('Database clients', async () => {
     let threwError = false;
     try {
       // uppercase the filter value to confirm db client is lowercasing inputs
-      await db.removeUserCanAuthorise('non-existent-repo', TEST_USER.username);
+      await db.removeUserCanAuthorise(TEST_NONEXISTENT_REPO.url, TEST_USER.username);
     } catch (e) {
       threwError = true;
     }
@@ -418,28 +411,22 @@ describe('Database clients', async () => {
     let threwError = false;
     try {
       // repo should already exist after a previous test and user should be an authoriser
-      let allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.name, TEST_USER.username);
+      let allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.url, TEST_USER.username);
       expect(allowed).to.be.true;
 
       // uppercase the filter value to confirm db client is lowercasing inputs
-      await db.removeUserCanAuthorise(
-        TEST_REPO.name.toUpperCase(),
-        TEST_USER.username.toUpperCase(),
-      );
+      await db.removeUserCanAuthorise(TEST_REPO.url, TEST_USER.username.toUpperCase());
 
       // repeat, should not throw an error if already set
-      await db.removeUserCanAuthorise(
-        TEST_REPO.name.toUpperCase(),
-        TEST_USER.username.toUpperCase(),
-      );
+      await db.removeUserCanAuthorise(TEST_REPO.url, TEST_USER.username.toUpperCase());
 
       // confirm the setting was removed
-      allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.name, TEST_USER.username);
+      allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.url, TEST_USER.username);
       expect(allowed).to.be.false;
 
       // confirm that casing doesn't matter
       allowed = await db.canUserApproveRejectPushRepo(
-        TEST_REPO.name.toUpperCase(),
+        TEST_REPO.url,
         TEST_USER.username.toUpperCase(),
       );
       expect(allowed).to.be.false;
@@ -453,8 +440,7 @@ describe('Database clients', async () => {
   it('should NOT throw an error when checking whether a user can push on non-existent repo', async function () {
     let threwError = false;
     try {
-      // uppercase the filter value to confirm db client is lowercasing inputs
-      const allowed = await db.isUserPushAllowed('non-existent-repo', TEST_USER.username);
+      const allowed = await db.isUserPushAllowed(TEST_NONEXISTENT_REPO.url, TEST_USER.username);
       expect(allowed).to.be.false;
     } catch (e) {
       threwError = true;
@@ -467,7 +453,7 @@ describe('Database clients', async () => {
     try {
       // uppercase the filter value to confirm db client is lowercasing inputs
       const allowed = await db.canUserApproveRejectPushRepo(
-        'non-existent-repo',
+        TEST_NONEXISTENT_REPO.url,
         TEST_USER.username,
       );
       expect(allowed).to.be.false;
@@ -569,7 +555,6 @@ describe('Database clients', async () => {
 
   it('should be able to check if a user can cancel push', async function () {
     let threwError = false;
-    const repoName = TEST_PUSH.repoName.replace('.git', '');
     try {
       // push does not exist yet, should return false
       let allowed = await db.canUserCancelPush(TEST_PUSH.id, TEST_USER.username);
@@ -581,21 +566,21 @@ describe('Database clients', async () => {
       expect(allowed).to.be.false;
 
       // authorise user and recheck
-      await db.addUserCanPush(repoName, TEST_USER.username);
+      await db.addUserCanPush(TEST_PUSH.url, TEST_USER.username);
       allowed = await db.canUserCancelPush(TEST_PUSH.id, TEST_USER.username);
       expect(allowed).to.be.true;
     } catch (e) {
+      console.error(e);
       threwError = true;
     }
     expect(threwError).to.be.false;
     // clean up
     await db.deletePush(TEST_PUSH.id);
-    await db.removeUserCanPush(repoName, TEST_USER.username);
+    await db.removeUserCanPush(TEST_PUSH.url, TEST_USER.username);
   });
 
   it('should be able to check if a user can approve/reject push', async function () {
     let threwError = false;
-    const repoName = TEST_PUSH.repoName.replace('.git', '');
     try {
       // push does not exist yet, should return false
       let allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
@@ -607,7 +592,7 @@ describe('Database clients', async () => {
       expect(allowed).to.be.false;
 
       // authorise user and recheck
-      await db.addUserCanAuthorise(repoName, TEST_USER.username);
+      await db.addUserCanAuthorise(TEST_PUSH.url, TEST_USER.username);
       allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
       expect(allowed).to.be.true;
     } catch (e) {
@@ -616,11 +601,11 @@ describe('Database clients', async () => {
     expect(threwError).to.be.false;
     // clean up
     await db.deletePush(TEST_PUSH.id);
-    await db.removeUserCanAuthorise(repoName, TEST_USER.username);
+    await db.removeUserCanAuthorise(TEST_PUSH.url, TEST_USER.username);
   });
 
   after(async function () {
-    await db.deleteRepo(TEST_REPO.name);
+    await db.deleteRepo(TEST_REPO.url);
     await db.deleteUser(TEST_USER.username);
     await db.deletePush(TEST_PUSH.id);
   });
