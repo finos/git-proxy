@@ -136,7 +136,7 @@
   "csrfProtection": true,
   "plugins": [],
   "tls": {
-    "enabled": true,
+    "enabled": false,
     "key": "certs/key.pem",
     "cert": "certs/cert.pem"
   }

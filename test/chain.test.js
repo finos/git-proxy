@@ -15,7 +15,7 @@ const mockLoader = {
   ],
 };
 
-const initMockPushProcessors = () => {
+const initMockPushProcessors = (sinon) => {
   const mockPushProcessors = {
     parsePush: sinon.stub(),
     audit: sinon.stub(),
