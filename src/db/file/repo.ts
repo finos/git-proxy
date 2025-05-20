@@ -178,9 +178,9 @@ export const removeUserCanPush = async (repoUrl: string, user: string) => {
   });
 };
 
-export const deleteRepo = async (repoUrl: string) => {
+export const deleteRepo = async (repoUrl: string, multi: boolean = false) => {
   return new Promise<void>((resolve, reject) => {
-    db.remove({ url: repoUrl }, (err) => {
+    db.remove({ url: repoUrl }, { multi }, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {
