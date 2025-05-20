@@ -6,8 +6,6 @@ import fs from 'fs';
 const exec = async (req: any, action: Action) => {
   const step = new Step('writePack');
   try {
-    const cmd = `git receive-pack ${action.repoName}`;
-    step.log(`executing ${cmd}`);
     if (!action.proxyGitPath || !action.repoName) {
       throw new Error('proxyGitPath and repoName must be defined');
     }

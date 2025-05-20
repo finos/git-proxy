@@ -32,28 +32,46 @@ describe('checkHiddenCommits.exec', () => {
     sandbox.restore();
   });
 
-  it('reports all commits unreferenced and sets error=true', async () => {
+  it.only('reports all commits unreferenced and sets error=true', async () => {
+    const COMMIT_1 = 'deadbeef';
+    const COMMIT_2 = 'cafebabe';
+
     // 1) rev-list → no introduced commits
     // 2) verify-pack → two commits in pack
-    spawnSyncStub.onFirstCall().returns({ stdout: '' }).onSecondCall().returns({
-      stdout: 'deadbeef commit 100 1\ncafebabe commit 100 2\n',
-    });
+    spawnSyncStub
+      .onFirstCall()
+      .returns({ stdout: '' })
+      .onSecondCall()
+      .returns({
+        stdout: `${COMMIT_1} commit 100 1\n${COMMIT_2} commit 100 2\n`,
+      });
 
     readdirSyncStub.returns(['pack-test.idx']);
 
     await checkHidden({ body: '' }, action);
 
     const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
-    expect(step.logs).to.include('checkHiddenCommits - ❌ Unreferenced commits: 2');
+    expect(step.logs).to.include(`checkHiddenCommits - ✅ Referenced commits: 0`);
+    expect(step.logs).to.include(`checkHiddenCommits - ❌ Unreferenced commits: 2`);
+    expect(step.logs).to.include(
+      `checkHiddenCommits - Unreferenced commits in pack (2): ${COMMIT_1}, ${COMMIT_2}`,
+    );
     expect(action.error).to.be.true;
   });
 
-  it('mixes referenced & unreferenced correctly', async () => {
+  it.only('mixes referenced & unreferenced correctly', async () => {
+    const COMMIT_1 = 'deadbeef';
+    const COMMIT_2 = 'cafebabe';
+
     // 1) git rev-list → introduces one commit “deadbeef”
     // 2) git verify-pack → the pack contains two commits
-    spawnSyncStub.onFirstCall().returns({ stdout: 'deadbeef\n' }).onSecondCall().returns({
-      stdout: 'deadbeef commit 100 1\ncafebabe commit 100 2\n',
-    });
+    spawnSyncStub
+      .onFirstCall()
+      .returns({ stdout: `${COMMIT_1}\n` })
+      .onSecondCall()
+      .returns({
+        stdout: `${COMMIT_1} commit 100 1\n${COMMIT_2} commit 100 2\n`,
+      });
 
     readdirSyncStub.returns(['pack-test.idx']);
 
@@ -62,6 +80,9 @@ describe('checkHiddenCommits.exec', () => {
     const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
     expect(step.logs).to.include('checkHiddenCommits - ✅ Referenced commits: 1');
     expect(step.logs).to.include('checkHiddenCommits - ❌ Unreferenced commits: 1');
+    expect(step.logs).to.include(
+      `checkHiddenCommits - Unreferenced commits in pack (1): ${COMMIT_2}`,
+    );
     expect(action.error).to.be.true;
   });
 
@@ -75,14 +96,17 @@ describe('checkHiddenCommits.exec', () => {
     readdirSyncStub.returns(['pack-test.idx']);
 
     await checkHidden({ body: '' }, action);
-
     const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
-    expect(step.logs).to.include('checkHiddenCommits - ✅ Referenced commits: 2');
-    expect(step.logs).to.include('checkHiddenCommits - ❌ Unreferenced commits: 0');
+
+    expect(step.logs).to.include('checkHiddenCommits - Total introduced commits: 2');
+    expect(step.logs).to.include('checkHiddenCommits - Total commits in the pack: 2');
+    expect(step.logs).to.include(
+      'checkHiddenCommits - All pack commits are referenced in the introduced range.',
+    );
     expect(action.error).to.be.false;
   });
 
-  it('throws if commitFrom or commitTo is missing', async () => {
+  it.only('throws if commitFrom or commitTo is missing', async () => {
     delete action.commitFrom;
 
     try {
