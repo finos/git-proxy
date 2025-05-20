@@ -109,6 +109,12 @@ describe('Database clients', async () => {
     expect(cleanRepo).to.eql(TEST_REPO);
   });
 
+  it('should be able to retrieve a repo by url', async function () {
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
+    const cleanRepo = cleanResponseData(TEST_REPO, repo);
+    expect(cleanRepo).to.eql(TEST_REPO);
+  });
+
   it('should be able to delete a repo', async function () {
     await db.deleteRepo(TEST_REPO.name);
     const repos = await db.getRepos();

@@ -89,7 +89,16 @@ export const getRepoByUrl = async (repoUrl: string) => {
   // backwards compatibility
   if (!response) {
     // parse github URLs into org and repo names and fallback to legacy retrieval by repo name
-    const repoName = 'some regex magic goes here';
+    const regex = /.*\/([\w_.-]+?)(\.git)?$/m;
+    const match = regex.exec(repoUrl);
+    let repoName = '';
+
+    if (match && match[1]) {
+      repoName = match[1];
+    } else {
+      const errorMessage = `Cannot parse repository name from ${repoUrl}`;
+      throw new Error(errorMessage);
+    }
 
     return sink.getRepo(repoName);
   }
