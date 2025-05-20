@@ -59,6 +59,20 @@ export const getRepoByUrl = async (repoURL: string) => {
   });
 };
 
+export const getRepoById = async (_id: string) => {
+  return new Promise<Repo | null>((resolve, reject) => {
+    db.findOne({ _id: _id }, (err: Error | null, doc: Repo) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
+      if (err) {
+        reject(err);
+      } else {
+        resolve(doc);
+      }
+    });
+  });
+};
+
 export const createRepo = async (repo: Repo) => {
   return new Promise<Repo>((resolve, reject) => {
     db.insert(repo, (err, doc) => {
@@ -73,10 +87,10 @@ export const createRepo = async (repo: Repo) => {
   });
 };
 
-export const addUserCanPush = async (repoUrl: string, user: string) => {
+export const addUserCanPush = async (_id: string, user: string) => {
   user = user.toLowerCase();
   return new Promise(async (resolve, reject) => {
-    const repo = await getRepoByUrl(repoUrl);
+    const repo = await getRepoById(_id);
     if (!repo) {
       reject(new Error('Repo not found'));
       return;
@@ -89,7 +103,7 @@ export const addUserCanPush = async (repoUrl: string, user: string) => {
     repo.users.canPush.push(user);
 
     const options = { multi: false, upsert: false };
-    db.update({ url: repoUrl }, repo, options, (err) => {
+    db.update({ _id: _id }, repo, options, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {
@@ -101,10 +115,10 @@ export const addUserCanPush = async (repoUrl: string, user: string) => {
   });
 };
 
-export const addUserCanAuthorise = async (repoUrl: string, user: string) => {
+export const addUserCanAuthorise = async (_id: string, user: string) => {
   user = user.toLowerCase();
   return new Promise(async (resolve, reject) => {
-    const repo = await getRepoByUrl(repoUrl);
+    const repo = await getRepoById(_id);
     if (!repo) {
       reject(new Error('Repo not found'));
       return;
@@ -118,7 +132,7 @@ export const addUserCanAuthorise = async (repoUrl: string, user: string) => {
     repo.users.canAuthorise.push(user);
 
     const options = { multi: false, upsert: false };
-    db.update({ url: repoUrl }, repo, options, (err) => {
+    db.update({ _id: _id }, repo, options, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {
@@ -130,10 +144,10 @@ export const addUserCanAuthorise = async (repoUrl: string, user: string) => {
   });
 };
 
-export const removeUserCanAuthorise = async (repoUrl: string, user: string) => {
+export const removeUserCanAuthorise = async (_id: string, user: string) => {
   user = user.toLowerCase();
   return new Promise(async (resolve, reject) => {
-    const repo = await getRepoByUrl(repoUrl);
+    const repo = await getRepoById(_id);
     if (!repo) {
       reject(new Error('Repo not found'));
       return;
@@ -142,7 +156,7 @@ export const removeUserCanAuthorise = async (repoUrl: string, user: string) => {
     repo.users.canAuthorise = repo.users.canAuthorise.filter((x: string) => x != user);
 
     const options = { multi: false, upsert: false };
-    db.update({ url: repoUrl }, repo, options, (err) => {
+    db.update({ _id: _id }, repo, options, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {
@@ -154,10 +168,10 @@ export const removeUserCanAuthorise = async (repoUrl: string, user: string) => {
   });
 };
 
-export const removeUserCanPush = async (repoUrl: string, user: string) => {
+export const removeUserCanPush = async (_id: string, user: string) => {
   user = user.toLowerCase();
   return new Promise(async (resolve, reject) => {
-    const repo = await getRepoByUrl(repoUrl);
+    const repo = await getRepoById(_id);
     if (!repo) {
       reject(new Error('Repo not found'));
       return;
@@ -166,7 +180,7 @@ export const removeUserCanPush = async (repoUrl: string, user: string) => {
     repo.users.canPush = repo.users.canPush.filter((x) => x != user);
 
     const options = { multi: false, upsert: false };
-    db.update({ url: repoUrl }, repo, options, (err) => {
+    db.update({ _id: _id }, repo, options, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {
@@ -178,9 +192,9 @@ export const removeUserCanPush = async (repoUrl: string, user: string) => {
   });
 };
 
-export const deleteRepo = async (repoUrl: string, multi: boolean = false) => {
+export const deleteRepo = async (_id: string) => {
   return new Promise<void>((resolve, reject) => {
-    db.remove({ url: repoUrl }, { multi }, (err) => {
+    db.remove({ _id: _id }, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {
@@ -189,45 +203,5 @@ export const deleteRepo = async (repoUrl: string, multi: boolean = false) => {
         resolve();
       }
     });
-  });
-};
-
-export const isUserPushAllowed = async (repoUrl: string, user: string) => {
-  user = user.toLowerCase();
-  return new Promise<boolean>(async (resolve) => {
-    const repo = await getRepoByUrl(repoUrl);
-    if (!repo) {
-      resolve(false);
-      return;
-    }
-
-    console.log(repo.users.canPush);
-    console.log(repo.users.canAuthorise);
-
-    if (repo.users.canPush.includes(user) || repo.users.canAuthorise.includes(user)) {
-      resolve(true);
-    } else {
-      resolve(false);
-    }
-  });
-};
-
-export const canUserApproveRejectPushRepo = async (repoUrl: string, user: string) => {
-  user = user.toLowerCase();
-  console.log(`checking if user ${user} can approve/reject for ${repoUrl}`);
-  return new Promise<boolean>(async (resolve) => {
-    const repo = await getRepoByUrl(repoUrl);
-    if (!repo) {
-      resolve(false);
-      return;
-    }
-
-    if (repo.users.canAuthorise.includes(user)) {
-      console.log(`user ${user} can approve/reject to repo ${repoUrl}`);
-      resolve(true);
-    } else {
-      console.log(`user ${user} cannot approve/reject to repo ${repoUrl}`);
-      resolve(false);
-    }
   });
 };

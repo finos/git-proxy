@@ -105,6 +105,64 @@ export const getRepoByUrl = async (repoUrl: string) => {
   return response;
 };
 
+export const isUserPushAllowed = async (url: string, user: string) => {
+  user = user.toLowerCase();
+  return new Promise<boolean>(async (resolve) => {
+    const repo = await getRepoByUrl(url);
+    if (!repo) {
+      resolve(false);
+      return;
+    }
+
+    console.log(repo.users.canPush);
+    console.log(repo.users.canAuthorise);
+
+    if (repo.users.canPush.includes(user) || repo.users.canAuthorise.includes(user)) {
+      resolve(true);
+    } else {
+      resolve(false);
+    }
+  });
+};
+
+export const canUserApproveRejectPush = async (id: string, user: string) => {
+  return new Promise(async (resolve) => {
+    const action = await getPush(id);
+    if (!action) {
+      resolve(false);
+      return;
+    }
+
+    const theRepo = await sink.getRepoByUrl(action.url);
+
+    if (theRepo.users.canAuthorise.includes(user)) {
+      console.log(`user ${user} can approve/reject for repo ${action.url}`);
+      resolve(true);
+    } else {
+      console.log(`user ${user} cannot approve/reject for repo ${action.url}`);
+      resolve(false);
+    }
+  });
+};
+
+export const canUserCancelPush = async (id: string, user: string) => {
+  return new Promise(async (resolve) => {
+    const action = await getPush(id);
+    if (!action) {
+      resolve(false);
+      return;
+    }
+
+    const isAllowed = await isUserPushAllowed(action.url, user);
+
+    if (isAllowed) {
+      resolve(true);
+    } else {
+      resolve(false);
+    }
+  });
+};
+
 export const {
   authorise,
   reject,
@@ -119,14 +177,11 @@ export const {
   deleteUser,
   updateUser,
   getRepos,
+  getRepoById,
   addUserCanPush,
   addUserCanAuthorise,
   removeUserCanAuthorise,
   removeUserCanPush,
   deleteRepo,
-  isUserPushAllowed,
-  canUserApproveRejectPushRepo,
-  canUserApproveRejectPush,
-  canUserCancelPush,
   getSessionStore,
 } = sink;
