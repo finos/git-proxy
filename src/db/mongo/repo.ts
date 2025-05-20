@@ -25,45 +25,39 @@ export const createRepo = async (repo: Repo) => {
   console.log(`created new repo ${JSON.stringify(repo)}`);
 };
 
-export const addUserCanPush = async (name: string, user: string) => {
-  name = name.toLowerCase();
+export const addUserCanPush = async (repoUrl: string, user: string) => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
-  await collection.updateOne({ name: name }, { $push: { 'users.canPush': user } });
+  await collection.updateOne({ url: repoUrl }, { $push: { 'users.canPush': user } });
 };
 
-export const addUserCanAuthorise = async (name: string, user: string) => {
-  name = name.toLowerCase();
+export const addUserCanAuthorise = async (repoUrl: string, user: string) => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
-  await collection.updateOne({ name: name }, { $push: { 'users.canAuthorise': user } });
+  await collection.updateOne({ url: repoUrl }, { $push: { 'users.canAuthorise': user } });
 };
 
-export const removeUserCanPush = async (name: string, user: string) => {
-  name = name.toLowerCase();
+export const removeUserCanPush = async (repoUrl: string, user: string) => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
-  await collection.updateOne({ name: name }, { $pull: { 'users.canPush': user } });
+  await collection.updateOne({ url: repoUrl }, { $pull: { 'users.canPush': user } });
 };
 
-export const removeUserCanAuthorise = async (name: string, user: string) => {
-  name = name.toLowerCase();
+export const removeUserCanAuthorise = async (repoUrl: string, user: string) => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
-  await collection.updateOne({ name: name }, { $pull: { 'users.canAuthorise': user } });
+  await collection.updateOne({ url: repoUrl }, { $pull: { 'users.canAuthorise': user } });
 };
 
-export const deleteRepo = async (name: string) => {
-  name = name.toLowerCase();
+export const deleteRepo = async (repoUrl: string) => {
   const collection = await connect(collectionName);
-  await collection.deleteMany({ name: name });
+  await collection.deleteMany({ url: repoUrl });
 };
 
-export const isUserPushAllowed = async (name: string, user: string) => {
-  name = name.toLowerCase();
+export const isUserPushAllowed = async (repoUrl: string, user: string) => {
   user = user.toLowerCase();
   return new Promise(async (resolve) => {
-    const repo = await exports.getRepo(name);
+    const repo = await exports.getRepoByUrl(repoUrl);
     console.log(repo.users.canPush);
     console.log(repo.users.canAuthorise);
 
@@ -75,17 +69,16 @@ export const isUserPushAllowed = async (name: string, user: string) => {
   });
 };
 
-export const canUserApproveRejectPushRepo = async (name: string, user: string) => {
-  name = name.toLowerCase();
+export const canUserApproveRejectPushRepo = async (repoUrl: string, user: string) => {
   user = user.toLowerCase();
-  console.log(`checking if user ${user} can approve/reject for ${name}`);
+  console.log(`checking if user ${user} can approve/reject for ${repoUrl}`);
   return new Promise(async (resolve) => {
-    const repo = await exports.getRepo(name);
+    const repo = await exports.getRepoByUrl(repoUrl);
     if (repo.users.canAuthorise.includes(user)) {
-      console.log(`user ${user} can approve/reject to repo ${name}`);
+      console.log(`user ${user} can approve/reject to repo ${repoUrl}`);
       resolve(true);
     } else {
-      console.log(`user ${user} cannot approve/reject to repo ${name}`);
+      console.log(`user ${user} cannot approve/reject to repo ${repoUrl}`);
       resolve(false);
     }
   });
