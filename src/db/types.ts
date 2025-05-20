@@ -12,11 +12,11 @@ export type Repo = {
   name: string;
   url: string;
   users: Record<UserRole, string[]>;
-  _id: string;
+  _id?: string;
 };
 
 export type User = {
-  _id: string;
+  _id?: string;
   username: string;
   password: string | null; // null if oidcId is set
   gitAccount: string;
@@ -42,7 +42,8 @@ export type Push = {
   rejected: boolean;
   repo: string;
   repoName: string;
-  timepstamp: string;
+  timestamp: string;
   type: string;
   url: string;
+  _id?: string;
 };
