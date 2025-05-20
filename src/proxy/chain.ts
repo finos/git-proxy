@@ -61,7 +61,7 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
  */
 let chainPluginLoader: PluginLoader;
 
-const getChain = async (
+export const getChain = async (
   action: Action,
 ): Promise<((req: any, action: Action) => Promise<Action>)[]> => {
   if (chainPluginLoader === undefined) {
