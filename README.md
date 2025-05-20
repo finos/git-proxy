@@ -93,7 +93,7 @@ customize for your environment, see the [project's documentation](https://git-pr
 
 ## Contributing
 
-Your contributions are at the core of making this a true open source project. Any contributions you make are **greatly appreciated**. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more information.
+Your contributions are at the core of making this a truly open source project. Any contributions you make are **greatly appreciated**. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more information.
 
 ## Security
 
@@ -109,10 +109,10 @@ This project is distributed under the Apache-2.0 license. See <a href="./LICENSE
 
 ## Contact
 
-Drop a note, ask a question or just say hello in our [community Slack channel](https://finos-lf.slack.com) 👋
+Drop a note, ask a question or just say hello in our community Slack channel, which is accessible via the [FINOS Slack Workspace](https://finos-lf.slack.com) 👋
 
-If you can't access Slack, you can also [subscribe to our mailing list](mailto:git-proxy+subscribe@lists.finos.org).
+If you can't access Slack, you can also [subscribe to our mailing list](mailto:git-proxy+subscribe@lists.finos.org). 📨
 
-Join our [fortnightly Zoom meeting](https://zoom.us/j/97235277537?pwd=aDJsaE8zcDJpYW1vZHJmSTJ0RXNZUT09) on Monday, 11AM EST (odd week numbers). Send an e-mail to [help@finos.org](mailto:help@finos.org) to get a calendar invitation.
+Join our [fortnightly Zoom meeting](https://zoom.us/j/97235277537?pwd=aDJsaE8zcDJpYW1vZHJmSTJ0RXNZUT09) on Monday, 11AM EST (odd week numbers). Send an e-mail to [help@finos.org](mailto:help@finos.org) to get a calendar invitation. 🤝
 
-Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues). 
+Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues). 🧵
