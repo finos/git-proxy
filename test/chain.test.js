@@ -28,6 +28,7 @@ const initMockPushProcessors = (sinon) => {
     writePack: sinon.stub(),
     preReceive: sinon.stub(),
     getDiff: sinon.stub(),
+    gitleaks: sinon.stub(),
     clearBareClone: sinon.stub(),
     scanDiff: sinon.stub(),
     blockForAuth: sinon.stub(),
@@ -43,6 +44,7 @@ const initMockPushProcessors = (sinon) => {
   mockPushProcessors.writePack.displayName = 'writePack';
   mockPushProcessors.preReceive.displayName = 'preReceive';
   mockPushProcessors.getDiff.displayName = 'getDiff';
+  mockPushProcessors.gitleaks.displayName = 'gitleaks';
   mockPushProcessors.clearBareClone.displayName = 'clearBareClone';
   mockPushProcessors.scanDiff.displayName = 'scanDiff';
   mockPushProcessors.blockForAuth.displayName = 'blockForAuth';
@@ -69,7 +71,7 @@ describe('proxy chain', function () {
     // Create a new sandbox for each test
     sandboxSinon = sinon.createSandbox();
     // Initialize the mock push processors
-    mockPushProcessors = initMockPushProcessors();
+    mockPushProcessors = initMockPushProcessors(sandboxSinon);
 
     // Re-import the processors module after clearing the cache
     processors = await import('../src/proxy/processors');
