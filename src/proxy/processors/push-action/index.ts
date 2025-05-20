@@ -5,6 +5,7 @@ import { exec as audit } from './audit';
 import { exec as pullRemote } from './pullRemote';
 import { exec as writePack } from './writePack';
 import { exec as getDiff } from './getDiff';
+import { exec as gitleaks } from './gitleaks';
 import { exec as scanDiff } from './scanDiff';
 import { exec as blockForAuth } from './blockForAuth';
 import { exec as checkIfWaitingAuth } from './checkIfWaitingAuth';
@@ -21,6 +22,7 @@ export {
   pullRemote,
   writePack,
   getDiff,
+  gitleaks,
   scanDiff,
   blockForAuth,
   checkIfWaitingAuth,

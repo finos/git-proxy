@@ -27,6 +27,7 @@ const mockPushProcessors = {
   writePack: sinon.stub(),
   preReceive: sinon.stub(),
   getDiff: sinon.stub(),
+  gitleaks: sinon.stub(),
   clearBareClone: sinon.stub(),
   scanDiff: sinon.stub(),
   blockForAuth: sinon.stub(),
@@ -42,6 +43,7 @@ mockPushProcessors.pullRemote.displayName = 'pullRemote';
 mockPushProcessors.writePack.displayName = 'writePack';
 mockPushProcessors.preReceive.displayName = 'preReceive';
 mockPushProcessors.getDiff.displayName = 'getDiff';
+mockPushProcessors.gitleaks.displayName = 'gitleaks';
 mockPushProcessors.clearBareClone.displayName = 'clearBareClone';
 mockPushProcessors.scanDiff.displayName = 'scanDiff';
 mockPushProcessors.blockForAuth.displayName = 'blockForAuth';
@@ -179,6 +181,7 @@ describe('proxy chain', function () {
     mockPushProcessors.writePack.resolves(continuingAction);
     mockPushProcessors.preReceive.resolves(continuingAction);
     mockPushProcessors.getDiff.resolves(continuingAction);
+    mockPushProcessors.gitleaks.resolves(continuingAction);
     mockPushProcessors.clearBareClone.resolves(continuingAction);
     mockPushProcessors.scanDiff.resolves(continuingAction);
     mockPushProcessors.blockForAuth.resolves(continuingAction);
@@ -196,6 +199,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.writePack.called).to.be.true;
     expect(mockPushProcessors.preReceive.called).to.be.true;
     expect(mockPushProcessors.getDiff.called).to.be.true;
+    expect(mockPushProcessors.gitleaks.called).to.be.true;
     expect(mockPushProcessors.clearBareClone.called).to.be.true;
     expect(mockPushProcessors.scanDiff.called).to.be.true;
     expect(mockPushProcessors.blockForAuth.called).to.be.true;
@@ -276,6 +280,7 @@ describe('proxy chain', function () {
     });
 
     mockPushProcessors.getDiff.resolves(action);
+    mockPushProcessors.gitleaks.resolves(action);
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
@@ -322,6 +327,7 @@ describe('proxy chain', function () {
     });
 
     mockPushProcessors.getDiff.resolves(action);
+    mockPushProcessors.gitleaks.resolves(action);
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
@@ -368,6 +374,7 @@ describe('proxy chain', function () {
     });
 
     mockPushProcessors.getDiff.resolves(action);
+    mockPushProcessors.gitleaks.resolves(action);
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
@@ -413,6 +420,7 @@ describe('proxy chain', function () {
     });
 
     mockPushProcessors.getDiff.resolves(action);
+    mockPushProcessors.gitleaks.resolves(action);
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);

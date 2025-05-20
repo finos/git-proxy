@@ -18,10 +18,12 @@ jobs:
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: '18.x'
+          node-version: '20.x'
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
       - run: npm run build
+        env:
+          IS_PUBLISHING: 'YES'
       - run: npm publish --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
