@@ -152,8 +152,9 @@ async function addRepoToDb(newRepo, debug = false) {
   const found = repos.find((y) => y.project === newRepo.project && newRepo.name === y.name);
   if (!found) {
     await db.createRepo(newRepo);
-    await db.addUserCanPush(newRepo.name, 'admin');
-    await db.addUserCanAuthorise(newRepo.name, 'admin');
+    const repo = await db.getRepoByUrl(newRepo.url);
+    await db.addUserCanPush(repo._id, 'admin');
+    await db.addUserCanAuthorise(repo._id, 'admin');
     if (debug) {
       console.log(`New repo added to database: ${newRepo}`);
     }
@@ -166,10 +167,11 @@ async function addRepoToDb(newRepo, debug = false) {
 
 /**
  * Removes a repo from the DB.
- * @param {string} repoName  The name of the repo to remove.
+ * @param {string} repoUrl  The url of the repo to remove.
  */
-async function removeRepoFromDb(repoName) {
-  await db.deleteRepo(repoName);
+async function removeRepoFromDb(repoUrl) {
+  const repo = await db.getRepoByUrl(repoUrl);
+  await db.deleteRepo(repo._id);
 }
 
 /**
