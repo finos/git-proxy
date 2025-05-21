@@ -2,6 +2,8 @@ import moment from 'moment';
 
 describe('Auto-Approved Push Test', () => {
   beforeEach(() => {
+    cy.login('admin', 'admin');
+
     cy.intercept('GET', '/api/v1/push/123', {
       statusCode: 200,
       body: {
