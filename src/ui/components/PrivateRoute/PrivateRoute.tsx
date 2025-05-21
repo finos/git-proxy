@@ -4,7 +4,6 @@ import { useAuth } from '../../auth/AuthProvider';
 
 const PrivateRoute = ({ component: Component, adminOnly = false }) => {
   const { user, isLoading } = useAuth();
-  console.debug('PrivateRoute', { user, isLoading, adminOnly });
 
   if (isLoading) {
     return <CircularProgress />;
@@ -15,7 +14,6 @@ const PrivateRoute = ({ component: Component, adminOnly = false }) => {
   }
 
   if (adminOnly && !user.admin) {
-    console.debug('User is not an admin, redirecting to not authorized page');
     return <Navigate to="/not-authorized" />;
   }
 
