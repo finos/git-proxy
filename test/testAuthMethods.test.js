@@ -40,4 +40,8 @@ describe('auth methods', async () => {
   
     expect(() => config.getAuthMethods()).to.throw(Error, 'No authentication method enabled');
   });
+
+  after(async function () {
+    await service.httpServer.close();
+  });
 });
