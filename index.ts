@@ -49,7 +49,7 @@ if (argv.validate) {
 try {
   loadConfig();
 } catch (err: any) {
-  console.error('✖ Errore di validazione:', err.message);
+  console.error('✖ Validation Error:', err.message);
   process.exit(1);
 }
 

@@ -8,11 +8,9 @@ const TempPasswordSchema = z.object({
 const AuthorisedItemSchema = z.object({
   project: z.string(),
   name: z.string(),
-  url: z
-    .string()
-    .regex(/^(?:https?:\/\/.+\.git|git@[^:]+:[^/]+\/.+\.git)$/, {
-      message: 'Must be a Git HTTPS URL (https://... .git) or SSH URL (git@...:... .git)',
-    }),
+  url: z.string().regex(/^(?:https?:\/\/.+\.git|git@[^:]+:[^/]+\/.+\.git)$/i, {
+    message: 'Must be a Git HTTPS URL (https://... .git) or SSH URL (git@...:... .git)',
+  }),
 });
 
 const FsSinkSchema = z.object({
@@ -87,11 +85,82 @@ const AttestationQuestionSchema = z.object({
   }),
 });
 
+export const RateLimitSchema = z
+  .object({
+    windowMs: z.number({ description: 'Sliding window in milliseconds' }),
+    limit: z.number({ description: 'Maximum number of requests' }),
+    statusCode: z.number().optional().default(429),
+    message: z.string().optional().default('Too many requests'),
+  })
+  .strict();
+
+const FileConfigSourceSchema = z
+  .object({
+    type: z.literal('file'),
+    enabled: z.boolean().default(false),
+    path: z.string(),
+  })
+  .strict();
+
+const HttpConfigSourceSchema = z
+  .object({
+    type: z.literal('http'),
+    enabled: z.boolean().default(false),
+    url: z.string().url(),
+    headers: z.record(z.string()).default({}),
+    auth: z
+      .object({
+        type: z.literal('bearer'),
+        token: z.string().default(''),
+      })
+      .strict()
+      .default({ type: 'bearer', token: '' }),
+  })
+  .strict();
+
+const GitConfigSourceSchema = z
+  .object({
+    type: z.literal('git'),
+    enabled: z.boolean().default(false),
+    repository: z.string(),
+    branch: z.string().default('main'),
+    path: z.string(),
+    auth: z
+      .object({
+        type: z.literal('ssh'),
+        privateKeyPath: z.string(),
+      })
+      .strict(),
+  })
+  .strict();
+
+const ConfigSourceSchema = z.discriminatedUnion('type', [
+  FileConfigSourceSchema,
+  HttpConfigSourceSchema,
+  GitConfigSourceSchema,
+]);
+
+export const ConfigurationSourcesSchema = z
+  .object({
+    enabled: z.boolean(),
+    reloadIntervalSeconds: z.number().optional().default(60),
+    merge: z.boolean().optional().default(false),
+    sources: z.array(ConfigSourceSchema).default([]),
+  })
+  .strict();
+
 export const ConfigSchema = z
   .object({
     proxyUrl: z.string().url().default('https://github.com'),
     cookieSecret: z.string().default(''),
     sessionMaxAgeHours: z.number().int().positive().default(12),
+    rateLimit: RateLimitSchema.default({ windowMs: 600000, limit: 150 }),
+    configurationSources: ConfigurationSourcesSchema.default({
+      enabled: false,
+      reloadIntervalSeconds: 60,
+      merge: false,
+      sources: [],
+    }),
     tempPassword: TempPasswordSchema.default({}),
     authorisedList: z.array(AuthorisedItemSchema).default([]),
     sink: z.array(SinkSchema).default([]),
