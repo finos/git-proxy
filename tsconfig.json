@@ -8,6 +8,7 @@
     "moduleResolution": "Node",
     "strict": true,
     "noEmit": true,
+    "declaration": true,
     "skipLibCheck": true,
     "isolatedModules": true,
     "module": "CommonJS",
@@ -15,5 +16,6 @@
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true
   },
-  "include": ["src"]
+  "include": ["."],
+  "exclude": ["experimental/**", "plugins/**"]
 }

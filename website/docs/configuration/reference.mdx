@@ -7,11 +7,11 @@ description: JSON schema reference documentation for GitProxy
 
 **Title:** GitProxy configuration file
 
-|                           |                                                         |
-| ------------------------- | ------------------------------------------------------- |
-| **Type**                  | `object`                                                |
-| **Required**              | No                                                      |
-| **Additional properties** | [[Not allowed]](# "Additional Properties not allowed.") |
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
 
 **Description:** Configuration for customizing git-proxy
 
@@ -63,11 +63,11 @@ description: JSON schema reference documentation for GitProxy
 </summary>
 <blockquote>
 
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
 
 **Description:** Third party APIs
 
@@ -80,11 +80,11 @@ description: JSON schema reference documentation for GitProxy
 </summary>
 <blockquote>
 
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
 
 **Description:** Enforce rules and patterns on commits including e-mail and message
 
@@ -97,11 +97,11 @@ description: JSON schema reference documentation for GitProxy
 </summary>
 <blockquote>
 
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
 
 **Description:** Customisable questions to add to attestation form
 
@@ -114,11 +114,11 @@ description: JSON schema reference documentation for GitProxy
 </summary>
 <blockquote>
 
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
 
 **Description:** Provide domains to use alternative to the defaults
 
@@ -127,7 +127,88 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="privateOrganizations"></a>8. [Optional] Property GitProxy configuration file > privateOrganizations</strong>
+<strong> <a name="rateLimit"></a>8. [Optional] Property GitProxy configuration file > rateLimit</strong>
+</summary>
+<blockquote>
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** API Rate limiting configuration.
+
+<details>
+<summary>
+<strong> <a name="rateLimit_windowMs"></a>8.1. [Required] Property GitProxy configuration file > rateLimit > windowMs</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | Yes      |
+
+**Description:** How long to remember requests for, in milliseconds (default 10 mins).
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="rateLimit_limit"></a>8.2. [Required] Property GitProxy configuration file > rateLimit > limit</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | Yes      |
+
+**Description:** How many requests to allow (default 150).
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="rateLimit_statusCode"></a>8.3. [Optional] Property GitProxy configuration file > rateLimit > statusCode</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** HTTP status code after limit is reached (default is 429).
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="rateLimit_message"></a>8.4. [Optional] Property GitProxy configuration file > rateLimit > message</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** Response to return after limit is reached.
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="privateOrganizations"></a>9. [Optional] Property GitProxy configuration file > privateOrganizations</strong>
 </summary>
 <blockquote>
 
@@ -143,7 +224,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="urlShortener"></a>9. [Optional] Property GitProxy configuration file > urlShortener</strong>
+<strong> <a name="urlShortener"></a>10. [Optional] Property GitProxy configuration file > urlShortener</strong>
 </summary>
 <blockquote>
 
@@ -159,7 +240,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="contactEmail"></a>10. [Optional] Property GitProxy configuration file > contactEmail</strong>
+<strong> <a name="contactEmail"></a>11. [Optional] Property GitProxy configuration file > contactEmail</strong>
 </summary>
 <blockquote>
 
@@ -175,7 +256,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="csrfProtection"></a>11. [Optional] Property GitProxy configuration file > csrfProtection</strong>
+<strong> <a name="csrfProtection"></a>12. [Optional] Property GitProxy configuration file > csrfProtection</strong>
 </summary>
 <blockquote>
 
@@ -191,7 +272,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="plugins"></a>12. [Optional] Property GitProxy configuration file > plugins</strong>
+<strong> <a name="plugins"></a>13. [Optional] Property GitProxy configuration file > plugins</strong>
 </summary>
 <blockquote>
 
@@ -206,7 +287,7 @@ description: JSON schema reference documentation for GitProxy
 | ------------------------------- | ----------- |
 | [plugins items](#plugins_items) | -           |
 
-### <a name="autogenerated_heading_2"></a>12.1. GitProxy configuration file > plugins > plugins items
+### <a name="autogenerated_heading_2"></a>13.1. GitProxy configuration file > plugins > plugins items
 
 |              |          |
 | ------------ | -------- |
@@ -218,7 +299,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="authorisedList"></a>13. [Optional] Property GitProxy configuration file > authorisedList</strong>
+<strong> <a name="authorisedList"></a>14. [Optional] Property GitProxy configuration file > authorisedList</strong>
 </summary>
 <blockquote>
 
@@ -233,18 +314,18 @@ description: JSON schema reference documentation for GitProxy
 | --------------------------------------- | ----------- |
 | [authorisedRepo](#authorisedList_items) | -           |
 
-### <a name="autogenerated_heading_3"></a>13.1. GitProxy configuration file > authorisedList > authorisedRepo
+### <a name="autogenerated_heading_3"></a>14.1. GitProxy configuration file > authorisedList > authorisedRepo
 
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Defined in**            | #/definitions/authorisedRepo                                              |
+|                           |                              |
+| ------------------------- | ---------------------------- |
+| **Type**                  | `object`                     |
+| **Required**              | No                           |
+| **Additional properties** | Any type allowed             |
+| **Defined in**            | #/definitions/authorisedRepo |
 
 <details>
 <summary>
-<strong> <a name="authorisedList_items_project"></a>13.1.1. [Required] Property GitProxy configuration file > authorisedList > authorisedList items > project</strong>
+<strong> <a name="authorisedList_items_project"></a>14.1.1. [Required] Property GitProxy configuration file > authorisedList > authorisedList items > project</strong>
 </summary>
 <blockquote>
 
@@ -258,7 +339,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="authorisedList_items_name"></a>13.1.2. [Required] Property GitProxy configuration file > authorisedList > authorisedList items > name</strong>
+<strong> <a name="authorisedList_items_name"></a>14.1.2. [Required] Property GitProxy configuration file > authorisedList > authorisedList items > name</strong>
 </summary>
 <blockquote>
 
@@ -272,7 +353,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="authorisedList_items_url"></a>13.1.3. [Required] Property GitProxy configuration file > authorisedList > authorisedList items > url</strong>
+<strong> <a name="authorisedList_items_url"></a>14.1.3. [Required] Property GitProxy configuration file > authorisedList > authorisedList items > url</strong>
 </summary>
 <blockquote>
 
@@ -289,7 +370,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="sink"></a>14. [Optional] Property GitProxy configuration file > sink</strong>
+<strong> <a name="sink"></a>15. [Optional] Property GitProxy configuration file > sink</strong>
 </summary>
 <blockquote>
 
@@ -304,18 +385,18 @@ description: JSON schema reference documentation for GitProxy
 | ------------------------------- | ----------- |
 | [database](#sink_items)         | -           |
 
-### <a name="autogenerated_heading_4"></a>14.1. GitProxy configuration file > sink > database
+### <a name="autogenerated_heading_4"></a>15.1. GitProxy configuration file > sink > database
 
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Defined in**            | #/definitions/database                                                    |
+|                           |                        |
+| ------------------------- | ---------------------- |
+| **Type**                  | `object`               |
+| **Required**              | No                     |
+| **Additional properties** | Any type allowed       |
+| **Defined in**            | #/definitions/database |
 
 <details>
 <summary>
-<strong> <a name="sink_items_type"></a>14.1.1. [Required] Property GitProxy configuration file > sink > sink items > type</strong>
+<strong> <a name="sink_items_type"></a>15.1.1. [Required] Property GitProxy configuration file > sink > sink items > type</strong>
 </summary>
 <blockquote>
 
@@ -329,7 +410,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="sink_items_enabled"></a>14.1.2. [Required] Property GitProxy configuration file > sink > sink items > enabled</strong>
+<strong> <a name="sink_items_enabled"></a>15.1.2. [Required] Property GitProxy configuration file > sink > sink items > enabled</strong>
 </summary>
 <blockquote>
 
@@ -343,7 +424,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="sink_items_connectionString"></a>14.1.3. [Optional] Property GitProxy configuration file > sink > sink items > connectionString</strong>
+<strong> <a name="sink_items_connectionString"></a>15.1.3. [Optional] Property GitProxy configuration file > sink > sink items > connectionString</strong>
 </summary>
 <blockquote>
 
@@ -357,30 +438,30 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="sink_items_options"></a>14.1.4. [Optional] Property GitProxy configuration file > sink > sink items > options</strong>
+<strong> <a name="sink_items_options"></a>15.1.4. [Optional] Property GitProxy configuration file > sink > sink items > options</strong>
 </summary>
 <blockquote>
 
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
 
 </blockquote>
 </details>
 
 <details>
 <summary>
-<strong> <a name="sink_items_params"></a>14.1.5. [Optional] Property GitProxy configuration file > sink > sink items > params</strong>
+<strong> <a name="sink_items_params"></a>15.1.5. [Optional] Property GitProxy configuration file > sink > sink items > params</strong>
 </summary>
 <blockquote>
 
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
 
 </blockquote>
 </details>
@@ -390,7 +471,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="authentication"></a>15. [Optional] Property GitProxy configuration file > authentication</strong>
+<strong> <a name="authentication"></a>16. [Optional] Property GitProxy configuration file > authentication</strong>
 </summary>
 <blockquote>
 
@@ -405,18 +486,18 @@ description: JSON schema reference documentation for GitProxy
 | --------------------------------------- | ----------- |
 | [authentication](#authentication_items) | -           |
 
-### <a name="autogenerated_heading_5"></a>15.1. GitProxy configuration file > authentication > authentication
+### <a name="autogenerated_heading_5"></a>16.1. GitProxy configuration file > authentication > authentication
 
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
-| **Defined in**            | #/definitions/authentication                                              |
+|                           |                              |
+| ------------------------- | ---------------------------- |
+| **Type**                  | `object`                     |
+| **Required**              | No                           |
+| **Additional properties** | Any type allowed             |
+| **Defined in**            | #/definitions/authentication |
 
 <details>
 <summary>
-<strong> <a name="authentication_items_type"></a>15.1.1. [Required] Property GitProxy configuration file > authentication > authentication items > type</strong>
+<strong> <a name="authentication_items_type"></a>16.1.1. [Required] Property GitProxy configuration file > authentication > authentication items > type</strong>
 </summary>
 <blockquote>
 
@@ -430,7 +511,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="authentication_items_enabled"></a>15.1.2. [Required] Property GitProxy configuration file > authentication > authentication items > enabled</strong>
+<strong> <a name="authentication_items_enabled"></a>16.1.2. [Required] Property GitProxy configuration file > authentication > authentication items > enabled</strong>
 </summary>
 <blockquote>
 
@@ -444,15 +525,15 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="authentication_items_options"></a>15.1.3. [Optional] Property GitProxy configuration file > authentication > authentication items > options</strong>
+<strong> <a name="authentication_items_options"></a>16.1.3. [Optional] Property GitProxy configuration file > authentication > authentication items > options</strong>
 </summary>
 <blockquote>
 
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
 
 </blockquote>
 </details>
@@ -462,21 +543,21 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="tempPassword"></a>16. [Optional] Property GitProxy configuration file > tempPassword</strong>
+<strong> <a name="tempPassword"></a>17. [Optional] Property GitProxy configuration file > tempPassword</strong>
 </summary>
 <blockquote>
 
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
 
 **Description:** Toggle the generation of temporary password for git-proxy admin user
 
 <details>
 <summary>
-<strong> <a name="tempPassword_sendEmail"></a>16.1. [Optional] Property GitProxy configuration file > tempPassword > sendEmail</strong>
+<strong> <a name="tempPassword_sendEmail"></a>17.1. [Optional] Property GitProxy configuration file > tempPassword > sendEmail</strong>
 </summary>
 <blockquote>
 
@@ -490,15 +571,15 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="tempPassword_emailConfig"></a>16.2. [Optional] Property GitProxy configuration file > tempPassword > emailConfig</strong>
+<strong> <a name="tempPassword_emailConfig"></a>17.2. [Optional] Property GitProxy configuration file > tempPassword > emailConfig</strong>
 </summary>
 <blockquote>
 
-|                           |                                                                           |
-| ------------------------- | ------------------------------------------------------------------------- |
-| **Type**                  | `object`                                                                  |
-| **Required**              | No                                                                        |
-| **Additional properties** | [[Any type: allowed]](# "Additional Properties of any type are allowed.") |
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
 
 **Description:** Generic object to configure nodemailer. For full type information, please see https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/nodemailer
 
@@ -508,5 +589,164 @@ description: JSON schema reference documentation for GitProxy
 </blockquote>
 </details>
 
-----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2024-10-22 at 16:45:32 +0100
+<details>
+<summary>
+<strong> <a name="tls"></a>18. [Optional] Property GitProxy configuration file > tls</strong>
+</summary>
+<blockquote>
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
+
+**Description:** TLS configuration for secure connections
+
+<details>
+<summary>
+<strong> <a name="tls_enabled"></a>18.1. [Required] Property GitProxy configuration file > tls > enabled</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | Yes       |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="tls_key"></a>18.2. [Required] Property GitProxy configuration file > tls > key</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="tls_cert"></a>18.3. [Required] Property GitProxy configuration file > tls > cert</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="configurationSources"></a>19. [Optional] Property GitProxy configuration file > configurationSources</strong>
+</summary>
+<blockquote>
+
+|                           |                                                         |
+| ------------------------- | ------------------------------------------------------- |
+| **Type**                  | `object`                                                |
+| **Required**              | No                                                      |
+| **Additional properties** | [[Not allowed]](# "Additional Properties not allowed.") |
+
+**Description:** Configuration for dynamic loading from external sources
+
+<details>
+<summary>
+<strong> <a name="configurationSources_enabled"></a>19.1. [Optional] Property configurationSources > enabled</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | No        |
+
+**Description:** Enable/disable dynamic configuration loading
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="configurationSources_reloadIntervalSeconds"></a>19.2. [Optional] Property configurationSources > reloadIntervalSeconds</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** How often to check for configuration updates (in seconds)
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="configurationSources_merge"></a>19.3. [Optional] Property configurationSources > merge</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | No        |
+
+**Description:** When true, merges configurations from all enabled sources. When false, uses the last successful configuration load
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="configurationSources_sources"></a>19.4. [Optional] Property configurationSources > sources</strong>
+</summary>
+<blockquote>
+
+|              |         |
+| ------------ | ------- |
+| **Type**     | `array` |
+| **Required** | No      |
+
+**Description:** Array of configuration sources to load from
+
+Each item in the array must be an object with the following properties:
+
+- `type`: (Required) Type of configuration source (`"file"`, `"http"`, or `"git"`)
+- `enabled`: (Required) Whether this source is enabled
+- `path`: (Required for `file` type) Path to the configuration file
+- `url`: (Required for `http` type) URL of the configuration endpoint
+- `repository`: (Required for `git` type) Git repository URL
+- `branch`: (Optional for `git` type) Branch to use
+- `path`: (Required for `git` type) Path to configuration file in repository
+- `headers`: (Optional for `http` type) HTTP headers to include
+- `auth`: (Optional) Authentication configuration
+  - For `http` type:
+    - `type`: `"bearer"`
+    - `token`: Bearer token value
+  - For `git` type:
+    - `type`: `"ssh"`
+    - `privateKeyPath`: Path to SSH private key
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+---
+
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-05-01 at 18:17:32 +0100

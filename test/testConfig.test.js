@@ -16,6 +16,7 @@ describe('default configuration', function () {
     expect(config.getDatabase()).to.be.eql(defaultSettings.sink[0]);
     expect(config.getTempPasswordConfig()).to.be.eql(defaultSettings.tempPassword);
     expect(config.getAuthorisedList()).to.be.eql(defaultSettings.authorisedList);
+    expect(config.getRateLimit()).to.be.eql(defaultSettings.rateLimit);
     expect(config.getTLSKeyPemPath()).to.be.eql(defaultSettings.tls.key);
     expect(config.getTLSCertPemPath()).to.be.eql(defaultSettings.tls.cert);
   });
@@ -105,6 +106,21 @@ describe('user configuration', function () {
 
     expect(config.getTLSKeyPemPath()).to.be.eql(user.tls.key);
     expect(config.getTLSCertPemPath()).to.be.eql(user.tls.cert);
+  });
+
+  it('should override default settings for rate limiting', function () {
+    const limitConfig = {
+      rateLimit: {
+        windowMs: 60000,
+        limit: 1500,
+      },
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(limitConfig));
+
+    const config = require('../src/config');
+
+    expect(config.getRateLimit().windowMs).to.be.eql(limitConfig.rateLimit.windowMs);
+    expect(config.getRateLimit().limit).to.be.eql(limitConfig.rateLimit.limit);
   });
 
   afterEach(function () {
