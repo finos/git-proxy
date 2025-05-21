@@ -19,7 +19,7 @@ import { getCookie } from '../../utils';
 
 const useStyles = makeStyles(styles);
 
-export default function AdminNavbarLinks() {
+export default function DashboardNavbarLinks() {
   const classes = useStyles();
   const navigate = useNavigate();
   const [openProfile, setOpenProfile] = React.useState(null);
@@ -44,7 +44,7 @@ export default function AdminNavbarLinks() {
   };
 
   const showProfile = () => {
-    navigate('/admin/profile', { replace: true });
+    navigate('/dashboard/profile', { replace: true });
   };
 
   const logout = () => {

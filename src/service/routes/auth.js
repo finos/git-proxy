@@ -60,7 +60,7 @@ router.get('/oidc/callback', (req, res, next) => {
         return res.status(401).end();
       }
       console.log('Logged in successfully. User:', user);
-      return res.redirect(`${uiHost}:${uiPort}/admin/profile`);
+      return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
     });
   })(req, res, next);
 });
@@ -135,7 +135,7 @@ router.post('/gitAccount', async (req, res) => {
   }
 });
 
-router.get('/userLoggedIn', async (req, res) => {
+router.get('/me', async (req, res) => {
   if (req.user) {
     const user = JSON.parse(JSON.stringify(req.user));
     if (user && user.password) delete user.password;
