@@ -19,7 +19,8 @@
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
-import { configFile } from './file';
+import { configFile, validate } from './file';
+import { ConfigLoader, Configuration } from './ConfigLoader';
 import {
   Authentication,
   AuthorisedRepo,
@@ -55,6 +56,12 @@ let _rateLimit: RateLimitConfig = defaultSettings.rateLimit;
 let _tlsEnabled = defaultSettings.tls.enabled;
 let _tlsKeyPemPath = defaultSettings.tls.key;
 let _tlsCertPemPath = defaultSettings.tls.cert;
+
+// Initialize configuration with defaults and user settings
+let _config = { ...defaultSettings, ...(_userSettings || {}) } as Configuration;
+
+// Create config loader instance
+const configLoader = new ConfigLoader(_config);
 
 // Get configured proxy URL
 export const getProxyUrl = () => {
@@ -246,3 +253,55 @@ export const getRateLimit = () => {
   }
   return _rateLimit;
 };
+
+// Function to handle configuration updates
+const handleConfigUpdate = async (newConfig: typeof _config) => {
+  console.log('Configuration updated from external source');
+  try {
+    // 1. Get proxy module dynamically to avoid circular dependency
+    const proxy = require('../proxy');
+
+    // 2. Stop existing services
+    await proxy.stop();
+
+    // 3. Update config
+    _config = newConfig;
+
+    // 4. Validate new configuration
+    validate();
+
+    // 5. Restart services with new config
+    await proxy.start();
+
+    console.log('Services restarted with new configuration');
+  } catch (error) {
+    console.error('Failed to apply new configuration:', error);
+    // Attempt to restart with previous config
+    try {
+      const proxy = require('../proxy');
+      await proxy.start();
+    } catch (startError) {
+      console.error('Failed to restart services:', startError);
+    }
+  }
+};
+
+// Handle configuration updates
+configLoader.on('configurationChanged', handleConfigUpdate);
+
+configLoader.on('configurationError', (error: Error) => {
+  console.error('Error loading external configuration:', error);
+});
+
+// Start the config loader if external sources are enabled
+configLoader.start().catch((error: Error) => {
+  console.error('Failed to start configuration loader:', error);
+});
+
+// Force reload of configuration
+const reloadConfiguration = async () => {
+  await configLoader.reloadConfiguration();
+};
+
+// Export reloadConfiguration
+export { reloadConfiguration };
