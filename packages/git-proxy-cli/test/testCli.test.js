@@ -224,7 +224,7 @@ describe('test git-proxy-cli', function () {
 
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
     });
 
     it('attempt to authorise should fail when server is down', async function () {
@@ -299,7 +299,7 @@ describe('test git-proxy-cli', function () {
 
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
     });
 
     it('attempt to cancel should fail when server is down', async function () {
@@ -420,7 +420,7 @@ describe('test git-proxy-cli', function () {
 
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
     });
 
     it('attempt to reject should fail when server is down', async function () {
@@ -498,7 +498,7 @@ describe('test git-proxy-cli', function () {
     after(async function () {
       await helper.removeUserFromDb('testuser1');
       await helper.removeGitPushFromDb(pushId);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
     });
 
     it('attempt to ls should list existing push', async function () {
