@@ -1,5 +1,4 @@
 const chai = require('chai');
-const service = require('../src/service');
 const config = require('../src/config');
 const sinon = require('sinon');
 const proxyquire = require('proxyquire');
@@ -8,12 +7,6 @@ chai.should();
 const expect = chai.expect;
 
 describe('auth methods', async () => {
-  let app;
-
-  before(async function () {
-    app = await service.start();
-  });
-
   it('should return a local auth method by default', async function () {
     const authMethods = config.getAuthMethods();
     expect(authMethods).to.have.lengthOf(1);
@@ -41,7 +34,28 @@ describe('auth methods', async () => {
     expect(() => config.getAuthMethods()).to.throw(Error, 'No authentication method enabled');
   });
 
-  after(async function () {
-    await service.httpServer.close();
-  });
+  it('should return an array of enabled auth methods when overridden', async function () {
+    const newConfig = JSON.stringify({
+      authentication: [
+        { type: 'local', enabled: true },
+        { type: 'ActiveDirectory', enabled: true },
+        { type: 'openidconnect', enabled: true },
+      ],
+    });
+
+    const fsStub = {
+      existsSync: sinon.stub().returns(true),
+      readFileSync: sinon.stub().returns(newConfig),
+    };
+
+    const config = proxyquire('../src/config', {
+      fs: fsStub,
+    });
+
+    const authMethods = config.getAuthMethods();
+    expect(authMethods).to.have.lengthOf(3);
+    expect(authMethods[0].type).to.equal('local');
+    expect(authMethods[1].type).to.equal('ActiveDirectory');
+    expect(authMethods[2].type).to.equal('openidconnect');
+  })
 });
