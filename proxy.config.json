@@ -53,6 +53,17 @@
         "baseDN": "",
         "searchBase": ""
       }
+    },
+    {
+      "type": "openidconnect",
+      "enabled": false,
+      "oidcConfig": {
+        "issuer": "",
+        "clientID": "",
+        "clientSecret": "",
+        "callbackURL": "",
+        "scope": ""
+      }
     }
   ],
   "api": {
