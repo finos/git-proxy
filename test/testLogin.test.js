@@ -43,7 +43,7 @@ describe('auth', async () => {
     });
 
     it('should now be able to access the user login metadata', async function () {
-      const res = await chai.request(app).get('/api/auth/userLoggedIn').set('Cookie', `${cookie}`);
+      const res = await chai.request(app).get('/api/auth/me').set('Cookie', `${cookie}`);
       res.should.have.status(200);
     });
 
@@ -60,6 +60,22 @@ describe('auth', async () => {
     it('test cannot access profile page', async function () {
       const res = await chai.request(app).get('/api/auth/profile').set('Cookie', `${cookie}`);
 
+      res.should.have.status(401);
+    });
+
+    it('should fail to login with invalid username', async function () {
+      const res = await chai.request(app).post('/api/auth/login').send({
+        username: 'invalid',
+        password: 'admin',
+      });
+      res.should.have.status(401);
+    });
+
+    it('should fail to login with invalid password', async function () {
+      const res = await chai.request(app).post('/api/auth/login').send({
+        username: 'admin',
+        password: 'invalid',
+      });
       res.should.have.status(401);
     });
   });
