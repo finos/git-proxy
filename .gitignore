@@ -264,3 +264,9 @@ yarn-error.log*
 # Docusaurus website
 website/build
 website/.docusaurus
+
+# git-config-cache
+.git-config-cache
+
+# Jetbrains IDE
+.idea
