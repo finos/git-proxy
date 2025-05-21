@@ -84,6 +84,7 @@ $ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remo
 Using the default configuration, GitProxy intercepts the push and _blocks_ it. To enable code pushing to your fork via GitProxy, add your repository URL into the GitProxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
 
 ## Documentation
+
 For detailed step-by-step instructions for how to install, deploy & configure GitProxy and
 customize for your environment, see the [project's documentation](https://git-proxy.finos.org/docs/):
 
@@ -101,11 +102,11 @@ If you identify a security vulnerability in the codebase, please follow the step
 
 ## Code of Conduct
 
-We are committed to making open source an enjoyable and respectful experience for our community. See <a href="https://github.com/finos/git-proxy/blob/main/CODE_OF_CONDUCT.md"><code>CODE_OF_CONDUCT</code></a> for more information.
+We are committed to making open source an enjoyable and respectful experience for our community. See [`CODE_OF_CONDUCT`](CODE_OF_CONDUCT.md) for more information.
 
 ## License
 
-This project is distributed under the Apache-2.0 license. See <a href="./LICENSE"><code>LICENSE</code></a> for more information.
+This project is distributed under the Apache-2.0 license. See [`LICENSE`](LICENSE) for more information.
 
 ## Contact
 
@@ -116,3 +117,4 @@ If you can't access Slack, you can also [subscribe to our mailing list](mailto:g
 Join our [fortnightly Zoom meeting](https://zoom.us/j/97235277537?pwd=aDJsaE8zcDJpYW1vZHJmSTJ0RXNZUT09) on Monday, 11AM EST (odd week numbers). Send an e-mail to [help@finos.org](mailto:help@finos.org) to get a calendar invitation 🤝
 
 Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues) 🧵
+
