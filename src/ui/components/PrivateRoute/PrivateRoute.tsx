@@ -1,4 +1,4 @@
-import React from 'react';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 
@@ -7,12 +7,10 @@ const PrivateRoute = ({ component: Component, adminOnly = false }) => {
   console.debug('PrivateRoute', { user, isLoading, adminOnly });
 
   if (isLoading) {
-    console.debug('Auth is loading, waiting');
-    return <div>Loading...</div>; // TODO: Add loading spinner
+    return <CircularProgress />;
   }
 
   if (!user) {
-    console.debug('User not logged in, redirecting to login page');
     return <Navigate to="/login" />;
   }
 
