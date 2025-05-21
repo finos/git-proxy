@@ -2,6 +2,10 @@
   "proxyUrl": "https://github.com",
   "cookieSecret": "cookie secret",
   "sessionMaxAgeHours": 12,
+  "rateLimit": {
+    "windowMs": 60000,
+    "limit": 150
+  },
   "tempPassword": {
     "sendEmail": false,
     "emailConfig": {}
@@ -97,5 +101,18 @@
   "urlShortener": "",
   "contactEmail": "",
   "csrfProtection": true,
-  "plugins": []
+  "plugins": [],
+  "tls": {
+    "enabled": true,
+    "key": "certs/key.pem",
+    "cert": "certs/cert.pem"
+  },
+  "ssh": {
+    "enabled": false,
+    "port": 2222,
+    "hostKey": {
+      "privateKeyPath": "./.ssh/host_key",
+      "publicKeyPath": "./.ssh/host_key.pub"
+    }
+  }
 }

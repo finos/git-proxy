@@ -27,14 +27,13 @@
 [![NPM](https://img.shields.io/npm/v/@finos/git-proxy?colorA=00C586&colorB=000000)](https://www.npmjs.com/package/@finos/git-proxy)
 [![Build](https://img.shields.io/github/actions/workflow/status/finos/git-proxy/ci.yml?branch=main&label=CI&logo=github&colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/finos/git-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/finos/git-proxy)
-[![git-proxy](https://api.securityscorecards.dev/projects/github.com/finos/git-proxy/badge)](https://api.securityscorecards.dev/projects/github.com/finos/git-proxy)
 [![Documentation](https://img.shields.io/badge/_-documentation-000000?colorA=00C586&logo=docusaurus&logoColor=FFFFFF&)](https://git-proxy.finos.org)
 <br />
 [![License](https://img.shields.io/github/license/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/blob/main/LICENSE)
 [![Contributors](https://img.shields.io/github/contributors/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/graphs/contributors)
 [![Slack](https://img.shields.io/badge/_-Chat_on_Slack-000000.svg?logo=slack&colorA=00C586)](https://app.slack.com/client/T01E7QRQH97/C06LXNW0W76)
-[![Stars](https://img.shields.io/github/stars/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/stargazers)
-[![Forks](https://img.shields.io/github/forks/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/forks)
+[![git-proxy](https://api.securityscorecards.dev/projects/github.com/finos/git-proxy/badge)](https://api.securityscorecards.dev/projects/github.com/finos/git-proxy)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10520/badge)](https://www.bestpractices.dev/projects/10520)
 
 </div>
 <br />
@@ -85,12 +84,14 @@ $ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remo
 Using the default configuration, GitProxy intercepts the push and _blocks_ it. To enable code pushing to your fork via GitProxy, add your repository URL into the GitProxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
 
 ## Documentation
+
 For detailed step-by-step instructions for how to install, deploy & configure GitProxy and
 customize for your environment, see the [project's documentation](https://git-proxy.finos.org/docs/):
 
 - [Quickstart](https://git-proxy.finos.org/docs/category/quickstart/)
 - [Installation](https://git-proxy.finos.org/docs/installation)
 - [Configuration](https://git-proxy.finos.org/docs/category/configuration)
+- [SSH Support](docs/SSH.md) - Documentation for SSH feature and configuration
 
 ## Contributing
 
@@ -116,4 +117,4 @@ If you can't access Slack, you can also [subscribe to our mailing list](mailto:g
 
 Join our [fortnightly Zoom meeting](https://zoom.us/j/97235277537?pwd=aDJsaE8zcDJpYW1vZHJmSTJ0RXNZUT09) on Monday, 11AM EST (odd week numbers). Send an e-mail to [help@finos.org](mailto:help@finos.org) to get a calendar invitation.
 
-Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues). 
+Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues).

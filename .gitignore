@@ -246,6 +246,7 @@ dist
 
 # testing
 /coverage
+.temp
 
 # production
 /build
@@ -264,3 +265,7 @@ yarn-error.log*
 # Docusaurus website
 website/build
 website/.docusaurus
+
+
+# IDE files
+.idea

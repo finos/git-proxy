@@ -1,5 +1,5 @@
 {
-  "parser": "@babel/eslint-parser",
+  "parser": "@typescript-eslint/parser",
   "env": {
     "node": true,
     "browser": true,
@@ -9,13 +9,23 @@
   },
   "extends": [
     "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
     "plugin:react/recommended",
     "google",
     "prettier",
     "plugin:json/recommended"
   ],
-  "overrides": [],
+  "overrides": [
+    {
+      "files": ["test/**/*.js", "**/*.json"],
+      "parser": "espree",
+      "rules": {
+        "@typescript-eslint/no-unused-expressions": "off"
+      }
+    }
+  ],
   "parserOptions": {
+    "project": "./tsconfig.json",
     "requireConfigFile": false,
     "ecmaVersion": 12,
     "sourceType": "module",
@@ -27,11 +37,15 @@
       "presets": ["@babel/preset-react"]
     }
   },
-  "plugins": ["react", "prettier"],
+  "plugins": ["@typescript-eslint", "react", "prettier"],
   "rules": {
     "react/prop-types": "off",
     "require-jsdoc": "off",
-    "no-async-promise-executor": "off"
+    "no-async-promise-executor": "off",
+    "@typescript-eslint/no-explicit-any": "off", // temporary until TS refactor is complete
+    "@typescript-eslint/no-unused-vars": "off", // temporary until TS refactor is complete
+    "@typescript-eslint/no-require-imports": "off", // prevents error on old "require" imports
+    "@typescript-eslint/no-unused-expressions": "off" // prevents error on test "expect" expressions
   },
   "settings": {
     "react": {
