@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "./dist"
+  },
+  "exclude": [
+    "experimental/**",
+    "plugins/**",
+    "./dist/**",
+    "./src/ui",
+    "./src/**/*.jsx",
+    "./src/context.js"
+  ]
+}
