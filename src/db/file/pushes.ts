@@ -24,7 +24,7 @@ const defaultPushQuery: PushQuery = {
   authorised: false,
 };
 
-export const getPushes = (query: PushQuery) => {
+export const getPushes = (query: PushQuery): Promise<Action[]> => {
   if (!query) query = defaultPushQuery;
   return new Promise((resolve, reject) => {
     db.find(query, (err: Error, docs: Action[]) => {
@@ -43,7 +43,7 @@ export const getPushes = (query: PushQuery) => {
   });
 };
 
-export const getPush = async (id: string) => {
+export const getPush = async (id: string): Promise<Action | null> => {
   return new Promise<Action | null>((resolve, reject) => {
     db.findOne({ id: id }, (err, doc) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -61,7 +61,7 @@ export const getPush = async (id: string) => {
   });
 };
 
-export const deletePush = async (id: string) => {
+export const deletePush = async (id: string): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
     db.remove({ id }, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -75,7 +75,7 @@ export const deletePush = async (id: string) => {
   });
 };
 
-export const writeAudit = async (action: Action) => {
+export const writeAudit = async (action: Action): Promise<void> => {
   return new Promise((resolve, reject) => {
     const options = { multi: false, upsert: true };
     db.update({ id: action.id }, action, options, (err) => {
@@ -84,13 +84,13 @@ export const writeAudit = async (action: Action) => {
       if (err) {
         reject(err);
       } else {
-        resolve(null);
+        resolve();
       }
     });
   });
 };
 
-export const authorise = async (id: string, attestation: any) => {
+export const authorise = async (id: string, attestation: any): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -104,7 +104,7 @@ export const authorise = async (id: string, attestation: any) => {
   return { message: `authorised ${id}` };
 };
 
-export const reject = async (id: string) => {
+export const reject = async (id: string): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -117,7 +117,7 @@ export const reject = async (id: string) => {
   return { message: `reject ${id}` };
 };
 
-export const cancel = async (id: string) => {
+export const cancel = async (id: string): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);

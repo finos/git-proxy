@@ -20,4 +20,4 @@ export const {
   deleteRepo,
 } = repo;
 
-export const { findUser, getUsers, createUser, deleteUser, updateUser } = users;
+export const { findUser, findUserByOIDC, getUsers, createUser, deleteUser, updateUser } = users;

@@ -1,38 +1,50 @@
+import { OptionalId, Document } from 'mongodb';
+import { toClass } from '../helper';
 import { User } from '../types';
-
-const connect = require('./helper').connect;
+import { connect } from './helper';
+import _ from 'lodash';
 const collectionName = 'users';
 
-export const findUser = async function (username: string) {
+export const findUser = async function (username: string): Promise<User | null> {
   const collection = await connect(collectionName);
-  return collection.findOne({ username: { $eq: username.toLowerCase() } });
+  const doc = collection.findOne({ username: { $eq: username.toLowerCase() } });
+  return doc ? toClass(doc, User.prototype) : null;
 };
 
-export const getUsers = async function (query: any = {}) {
+export const findUserByOIDC = async function (oidcId: string): Promise<User | null> {
+  const collection = await connect(collectionName);
+  const doc = collection.findOne({ oidcId: { $eq: oidcId } });
+  return doc ? toClass(doc, User.prototype) : null;
+};
+
+export const getUsers = async function (query: any = {}): Promise<User[]> {
   if (query.username) {
     query.username = query.username.toLowerCase();
   }
   if (query.email) {
     query.email = query.email.toLowerCase();
   }
-  console.log(`Getting users for query= ${JSON.stringify(query)}`);
+  console.log(`Getting users for query = ${JSON.stringify(query)}`);
   const collection = await connect(collectionName);
-  return collection.find(query, { password: 0 }).toArray();
+  const docs = collection.find(query, { projection: { password: 0 } }).toArray();
+  return _.chain(docs)
+    .map((x) => toClass(x, User.prototype))
+    .value();
 };
 
-export const deleteUser = async function (username: string) {
+export const deleteUser = async function (username: string): Promise<void> {
   const collection = await connect(collectionName);
-  return collection.deleteOne({ username: username.toLowerCase() });
+  await collection.deleteOne({ username: username.toLowerCase() });
 };
 
-export const createUser = async function (user: User) {
+export const createUser = async function (user: User): Promise<void> {
   user.username = user.username.toLowerCase();
   user.email = user.email.toLowerCase();
   const collection = await connect(collectionName);
-  return collection.insertOne(user);
+  await collection.insertOne(user as OptionalId<Document>);
 };
 
-export const updateUser = async (user: User) => {
+export const updateUser = async (user: User): Promise<void> => {
   user.username = user.username.toLowerCase();
   if (user.email) {
     user.email = user.email.toLowerCase();
