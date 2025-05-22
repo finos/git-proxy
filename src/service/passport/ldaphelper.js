@@ -14,8 +14,6 @@ const isUserInAdGroup = (req, profile, ad, domain, name) => {
 };
 
 const isUserInAdGroupViaAD = (req, profile, ad, domain, name) => {
-  // TODO: Added for debugging , needs to be removed
-  console.log(`checking if id: ${profile.username}, on domain: ${domain}, is a member of group name: ${name}`);
 
   return new Promise((resolve, reject) => {
     ad.isUserMemberOf(profile.username, name, function (err, isMember) {
