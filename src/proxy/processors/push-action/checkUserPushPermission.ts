@@ -30,8 +30,8 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
     step.setError(
       `Rejecting push as user ${action.user} ` +
-      `is not allowed to push on repo ` +
-      `${action.repo}`,
+        `is not allowed to push on repo ` +
+        `${action.repo}`,
     );
     action.addStep(step);
     return action;

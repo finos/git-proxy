@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+import { v4 as uuidv4 } from 'uuid';
 
 /** Class representing a Push Step. */
 class Step {
@@ -17,7 +17,7 @@ class Step {
     errorMessage: string | null = null,
     blocked: boolean = false,
     blockedMessage: string | null = null,
-    content: any = null
+    content: any = null,
   ) {
     this.id = uuidv4();
     this.stepName = stepName;
@@ -35,12 +35,12 @@ class Step {
   }
 
   setContent(content: any): void {
-    this.log("setting content");
+    this.log('setting content');
     this.content = content;
   }
 
   setAsyncBlock(message: string): void {
-    this.log("setting blocked");
+    this.log('setting blocked');
     this.blocked = true;
     this.blockedMessage = message;
   }
