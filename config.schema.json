@@ -53,7 +53,7 @@
       "description": "API Rate limiting configuration.",
       "type": "object",
       "properties": {
-        "windowMs": { 
+        "windowMs": {
           "type": "number",
           "description": "How long to remember requests for, in milliseconds (default 10 mins)."
         },
@@ -137,6 +137,18 @@
         "cert": { "type": "string" }
       },
       "required": ["enabled", "key", "cert"]
+    },
+    "configurationSources": {
+      "enabled": { "type": "boolean" },
+      "reloadIntervalSeconds": { "type": "number" },
+      "merge": { "type": "boolean" },
+      "sources": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "description": "Configuration source"
+        }
+      }
     }
   },
   "definitions": {
