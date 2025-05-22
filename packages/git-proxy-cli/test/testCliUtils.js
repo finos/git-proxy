@@ -165,13 +165,22 @@ async function addRepoToDb(newRepo, debug = false) {
 }
 
 /**
+ * Removes a repo from the DB.
+ * @param {string} repoName  The name of the repo to remove.
+ */
+async function removeRepoFromDb(repoName) {
+  await db.deleteRepo(repoName);
+}
+
+/**
  * Add a new git push record to the database.
  * @param {string} id The ID of the git push.
  * @param {string} repo The repository of the git push.
  * @param {string} user The user who pushed the git push.
+ * @param {string} userEmail The email of the user who pushed the git push.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
-async function addGitPushToDb(id, repo, user = null, debug = false) {
+async function addGitPushToDb(id, repo, user = null, userEmail = null, debug = false) {
   const action = new actions.Action(
     id,
     'push', // type
@@ -180,6 +189,7 @@ async function addGitPushToDb(id, repo, user = null, debug = false) {
     repo,
   );
   action.user = user;
+  action.userEmail = userEmail;
   const step = new steps.Step(
     'authBlock', // stepName
     false, // error
@@ -206,6 +216,14 @@ async function addGitPushToDb(id, repo, user = null, debug = false) {
 }
 
 /**
+ * Removes a push from the DB
+ * @param {string} id
+ */
+async function removeGitPushFromDb(id) {
+  await db.deletePush(id);
+}
+
+/**
  * Add new user record to the database.
  * @param {string} username The user name.
  * @param {string} password The user password.
@@ -221,13 +239,24 @@ async function addUserToDb(username, password, email, gitAccount, admin = false,
   }
 }
 
+/**
+ * Remove a user record from the database if present.
+ * @param {string} username The user name.
+ */
+async function removeUserFromDb(username) {
+  await db.deleteUser(username);
+}
+
 module.exports = {
   runCli: runCli,
   startServer: startServer,
   closeServer: closeServer,
   addRepoToDb: addRepoToDb,
+  removeRepoFromDb: removeRepoFromDb,
   addGitPushToDb: addGitPushToDb,
+  removeGitPushFromDb: removeGitPushFromDb,
   addUserToDb: addUserToDb,
+  removeUserFromDb: removeUserFromDb,
   createCookiesFileWithExpiredCookie: createCookiesFileWithExpiredCookie,
   removeCookiesFile: removeCookiesFile,
 };

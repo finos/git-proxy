@@ -13,9 +13,7 @@ const defaultPushQuery: PushQuery = {
   authorised: false,
 };
 
-export const getPushes = async (
-  query: PushQuery = defaultPushQuery
-): Promise<Push[]> => {
+export const getPushes = async (query: PushQuery = defaultPushQuery): Promise<Push[]> => {
   return findDocuments<Push>(collectionName, query, {
     projection: {
       _id: 0,
@@ -44,7 +42,12 @@ export const getPushes = async (
 
 export const getPush = async (id: string): Promise<Action | null> => {
   const doc = await findOneDocument<any>(collectionName, { id });
-  return doc ? toClass(doc, Action.prototype) as Action : null;
+  return doc ? (toClass(doc, Action.prototype) as Action) : null;
+};
+
+export const deletePush = async function (id: string) {
+  const collection = await connect(collectionName);
+  return collection.deleteOne({ id });
 };
 
 export const writeAudit = async (action: Action): Promise<Action> => {
