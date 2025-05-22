@@ -1,60 +1,71 @@
+import _ from 'lodash';
 import { Repo } from '../types';
-
-const connect = require('./helper').connect;
+import { connect } from './helper';
+import { toClass } from '../helper';
+import { ObjectId, OptionalId, Document } from 'mongodb';
 const collectionName = 'repos';
 
-export const getRepos = async (query: any = {}) => {
+export const getRepos = async (query: any = {}): Promise<Repo[]> => {
   const collection = await connect(collectionName);
-  return collection.find(query).toArray();
+  const docs = collection.find(query).toArray();
+  return _.chain(docs)
+    .map((x) => toClass(x, Repo.prototype))
+    .value();
 };
 
-export const getRepo = async (name: string) => {
+export const getRepo = async (name: string): Promise<Repo | null> => {
   name = name.toLowerCase();
   const collection = await connect(collectionName);
-  return collection.findOne({ name: { $eq: name } });
+  const doc = collection.findOne({ name: { $eq: name } });
+  return doc ? toClass(doc, Repo.prototype) : null;
 };
 
-export const getRepoByUrl = async (repoUrl: string) => {
+export const getRepoByUrl = async (repoUrl: string): Promise<Repo | null> => {
   const collection = await connect(collectionName);
-  return collection.findOne({ name: { $eq: repoUrl.toLowerCase() } });
+  const doc = collection.findOne({ name: { $eq: repoUrl.toLowerCase() } });
+  return doc ? toClass(doc, Repo.prototype) : null;
 };
 
-export const getRepoById = async (_id: string) => {
+export const getRepoById = async (_id: string): Promise<Repo | null> => {
   const collection = await connect(collectionName);
-  return collection.findOne({ _id: { $eq: _id } });
+  const doc = collection.findOne({ _id: new ObjectId(_id) });
+  return doc ? toClass(doc, Repo.prototype) : null;
 };
 
-export const createRepo = async (repo: Repo) => {
+export const createRepo = async (repo: Repo): Promise<Repo> => {
   const collection = await connect(collectionName);
-  await collection.insertOne(repo);
+  const response = await collection.insertOne(repo as OptionalId<Document>);
   console.log(`created new repo ${JSON.stringify(repo)}`);
+  // add in the _id generated for the record
+  repo._id = response.insertedId.toString();
+  return repo;
 };
 
-export const addUserCanPush = async (_id: string, user: string) => {
+export const addUserCanPush = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
-  await collection.updateOne({ _id: _id }, { $push: { 'users.canPush': user } });
+  await collection.updateOne({ _id: new ObjectId(_id) }, { $push: { 'users.canPush': user } });
 };
 
-export const addUserCanAuthorise = async (_id: string, user: string) => {
+export const addUserCanAuthorise = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
-  await collection.updateOne({ _id: _id }, { $push: { 'users.canAuthorise': user } });
+  await collection.updateOne({ _id: new ObjectId(_id) }, { $push: { 'users.canAuthorise': user } });
 };
 
-export const removeUserCanPush = async (_id: string, user: string) => {
+export const removeUserCanPush = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
-  await collection.updateOne({ _id: _id }, { $pull: { 'users.canPush': user } });
+  await collection.updateOne({ _id: new ObjectId(_id) }, { $pull: { 'users.canPush': user } });
 };
 
-export const removeUserCanAuthorise = async (_id: string, user: string) => {
+export const removeUserCanAuthorise = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
-  await collection.updateOne({ _id: _id }, { $pull: { 'users.canAuthorise': user } });
+  await collection.updateOne({ _id: new ObjectId(_id) }, { $pull: { 'users.canAuthorise': user } });
 };
 
-export const deleteRepo = async (_id: string) => {
+export const deleteRepo = async (_id: string): Promise<void> => {
   const collection = await connect(collectionName);
-  await collection.deleteMany({ _id: _id });
+  await collection.deleteMany({ _id: new ObjectId(_id) });
 };
