@@ -10,7 +10,7 @@ services:
 
   app:
     container_name: license-inventory
-    image: node:23-alpine@sha256:0a29d8a047149079bf48dab598f287815e39867d547e8f3935cfdece0a4379cc
+    image: node:23-alpine@sha256:139be64e98a1374a1c49ee62b23a91f688a37a628422ff8bb9fba94185678ab3
     # ensure colours show
     tty: true
     command: >
@@ -35,7 +35,7 @@ services:
       - otel-collector
 
   mongo:
-    image: mongo:8.0.4@sha256:aaad67f2dca93148e5343c03210bcfc89a0107516a4756bfa018acd6579e5b18
+    image: mongo:8.0.9@sha256:9f67b6bafda002f7bcad9939e4d84c3b4e9b11ffff6c1f9fab3f77e30c646304
     command: --logpath=/var/log/mongo.log
     ports:
       - 27017:27017
@@ -46,7 +46,7 @@ services:
       - init
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.120.0@sha256:85ac41c2db88d0df9bd6145e608a3cb023f5d8443868adbfbbf66efb51087917
+    image: otel/opentelemetry-collector-contrib:0.126.0@sha256:973747f78266a8ffec428417727e6b704559e9a30e4be8c1cca2899facd68689
     volumes:
       - ./dev/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
     depends_on:
@@ -54,7 +54,7 @@ services:
       - tempo
 
   promtail:
-    image: grafana/promtail:3.4.2@sha256:c6e9a987ca086cbfef945b8ebd708eb09f98b5e78bfb659e4e5a8b3bd604d11b
+    image: grafana/promtail:3.5.1@sha256:65bfae480b572854180c78f7dc567a4ad2ba548b0c410e696baa1e0fa6381299
     command:
       - -config.file=/etc/promtail/config.yaml
       - -log.level=warn
@@ -66,7 +66,7 @@ services:
 
   # traces
   tempo:
-    image: grafana/tempo:2.7.1@sha256:4443be217c396b065ee34845534199c36fdba4dc619cb96550e228d73fba6e69
+    image: grafana/tempo:2.7.2@sha256:4b0277a9b572a4b1fa43b01468e58911ec214dd69d033f2cd476596d14de9fe3
     command:
       - -config.file=/etc/tempo.yaml
       - -log.level=warn
@@ -79,7 +79,7 @@ services:
 
   # metrics
   prometheus:
-    image: prom/prometheus:v3.2.0@sha256:5888c188cf09e3f7eebc97369c3b2ce713e844cdbd88ccf36f5047c958aea120
+    image: prom/prometheus:v3.4.0@sha256:78ed1f9050eb9eaf766af6e580230b1c4965728650e332cd1ee918c0c4699775
     command:
       - --config.file=/etc/prometheus.yaml
       - --enable-feature=exemplar-storage
@@ -95,7 +95,7 @@ services:
 
   # logs
   loki:
-    image: grafana/loki:3.4.2@sha256:58a6c186ce78ba04d58bfe2a927eff296ba733a430df09645d56cdc158f3ba08
+    image: grafana/loki:3.5.1@sha256:a74594532eec4cc313401beedc4dd2708c43674c032084b1aeb87c14a5be1745
     command:
       - -config.file=/etc/loki/loki.yaml
       - -log.level=warn
@@ -106,7 +106,7 @@ services:
 
   # everything dashboard
   grafana:
-    image: grafana/grafana:11.5.2@sha256:8b37a2f028f164ce7b9889e1765b9d6ee23fec80f871d156fbf436d6198d32b7
+    image: grafana/grafana:11.6.2@sha256:a3464c5dadc2e16aaeb813aead8c852e81cc7bbfa851c66d96f016d5257b9848
     ports:
       - 3001:3000
     volumes:
