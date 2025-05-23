@@ -19,6 +19,18 @@ describe('Login page', () => {
     cy.get('[data-test="login"]').should('exist');
   });
 
+  it('should redirect to repo list on valid login', () => {
+    cy.intercept('GET', '**/api/auth/me').as('getUser');
+
+    cy.get('[data-test="username"]').type('admin');
+    cy.get('[data-test="password"]').type('admin');
+    cy.get('[data-test="login"]').click();
+
+    cy.wait('@getUser');
+
+    cy.url().should('include', '/dashboard/repo');
+  })
+
   describe('OIDC login button', () => {
     it('should exist', () => {
       cy.get('[data-test="oidc-login"]').should('exist');
@@ -26,8 +38,10 @@ describe('Login page', () => {
 
     // Validates that OIDC is configured correctly
     it('should redirect to /oidc', () => {
+      // Set intercept first, since redirect on click can be quick
+      cy.intercept('GET', '/api/auth/oidc').as('oidcRedirect');
       cy.get('[data-test="oidc-login"]').click();
-      cy.url().should('include', '/oidc');
+      cy.wait('@oidcRedirect');
     });
   });
 });
