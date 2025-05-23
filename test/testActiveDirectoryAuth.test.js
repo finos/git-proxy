@@ -95,4 +95,53 @@ describe('ActiveDirectory auth method', () => {
     expect(dbStub.updateUser.calledOnce).to.be.true;
   });
 
+  it('should fail if user is not in user group', async () => {
+    const mockReq = {};
+    const mockProfile = {
+      _json: {
+        sAMAccountName: 'bad-user',
+        mail: 'bad@test.com',
+        userPrincipalName: 'bad@test.com',
+        title: 'Bad User'
+      },
+      displayName: 'Bad User'
+    };
+
+    ldapStub.isUserInAdGroup.onCall(0).resolves(false);
+
+    const done = sinon.spy();
+
+    await strategyCallback(mockReq, mockProfile, {}, done);
+
+    expect(done.calledOnce).to.be.true;
+    const [err, user] = done.firstCall.args;
+    expect(err).to.include('not a member');
+    expect(user).to.be.null;
+
+    expect(dbStub.updateUser.notCalled).to.be.true;
+  });
+
+  it('should handle LDAP errors gracefully', async () => {
+    const mockReq = {};
+    const mockProfile = {
+      _json: {
+        sAMAccountName: 'error-user',
+        mail: 'err@test.com',
+        userPrincipalName: 'err@test.com',
+        title: 'Whoops'
+      },
+      displayName: 'Error User'
+    };
+
+    ldapStub.isUserInAdGroup.rejects(new Error('LDAP error'));
+
+    const done = sinon.spy();
+
+    await strategyCallback(mockReq, mockProfile, {}, done);
+
+    expect(done.calledOnce).to.be.true;
+    const [err, user] = done.firstCall.args;
+    expect(err.message).to.equal('LDAP error');
+    expect(user).to.be.null;
+  });
 });
