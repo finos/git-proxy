@@ -7,7 +7,7 @@ const configure = (passport) => {
   // We can refactor this by normalizing auth strategy config and pass it directly into the configure() function,
   // ideally when we convert this to TS.
   const authMethods = require('../../config').getAuthMethods();
-  const config = authMethods.find((method) => method.type.toLowerCase() === "activeDirectory");
+  const config = authMethods.find((method) => method.type.toLowerCase() === "activedirectory");
   const adConfig = config.adConfig;
 
   const { userGroup, adminGroup, domain } = config;
