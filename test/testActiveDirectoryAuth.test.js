@@ -4,7 +4,10 @@ const proxyquire = require('proxyquire');
 const expect = chai.expect;
 
 describe('ActiveDirectory auth method', () => {
-  let ldapStub, dbStub, passportStub, strategyCallback;
+  let ldapStub;
+  let dbStub;
+  let passportStub;
+  let strategyCallback;
 
   const newConfig = JSON.stringify({
     authentication: [
