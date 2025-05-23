@@ -22,9 +22,9 @@ const exec = async (req: any, action: Action) => {
       cwd: action.proxyGitPath,
       input: req.body,
     });
-    const after = new Set(fs.readdirSync(packDir).filter((f) => f.endsWith('.idx')));
-
-    const newIdxFiles = [...after].filter((f) => !before.has(f));
+    const newIdxFiles = [
+      ...new Set(fs.readdirSync(packDir).filter((f) => f.endsWith('.idx') && !before.has(f))),
+    ];
     action.newIdxFiles = newIdxFiles;
     step.log(`new idx files: ${newIdxFiles}`);
 

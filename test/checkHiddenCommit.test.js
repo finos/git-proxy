@@ -32,7 +32,7 @@ describe('checkHiddenCommits.exec', () => {
     sandbox.restore();
   });
 
-  it.only('reports all commits unreferenced and sets error=true', async () => {
+  it('reports all commits unreferenced and sets error=true', async () => {
     const COMMIT_1 = 'deadbeef';
     const COMMIT_2 = 'cafebabe';
 
@@ -51,15 +51,15 @@ describe('checkHiddenCommits.exec', () => {
     await checkHidden({ body: '' }, action);
 
     const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
-    expect(step.logs).to.include(`checkHiddenCommits - ✅ Referenced commits: 0`);
-    expect(step.logs).to.include(`checkHiddenCommits - ❌ Unreferenced commits: 2`);
+    expect(step.logs).to.include(`checkHiddenCommits - Referenced commits: 0`);
+    expect(step.logs).to.include(`checkHiddenCommits - Unreferenced commits: 2`);
     expect(step.logs).to.include(
       `checkHiddenCommits - Unreferenced commits in pack (2): ${COMMIT_1}, ${COMMIT_2}`,
     );
     expect(action.error).to.be.true;
   });
 
-  it.only('mixes referenced & unreferenced correctly', async () => {
+  it('mixes referenced & unreferenced correctly', async () => {
     const COMMIT_1 = 'deadbeef';
     const COMMIT_2 = 'cafebabe';
 
@@ -78,15 +78,15 @@ describe('checkHiddenCommits.exec', () => {
     await checkHidden({ body: '' }, action);
 
     const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
-    expect(step.logs).to.include('checkHiddenCommits - ✅ Referenced commits: 1');
-    expect(step.logs).to.include('checkHiddenCommits - ❌ Unreferenced commits: 1');
+    expect(step.logs).to.include('checkHiddenCommits - Referenced commits: 1');
+    expect(step.logs).to.include('checkHiddenCommits - Unreferenced commits: 1');
     expect(step.logs).to.include(
       `checkHiddenCommits - Unreferenced commits in pack (1): ${COMMIT_2}`,
     );
     expect(action.error).to.be.true;
   });
 
-  it.only('reports all commits referenced and sets error=false', async () => {
+  it('reports all commits referenced and sets error=false', async () => {
     // 1) rev-list → introduces both commits
     // 2) verify-pack → the pack contains the same two commits
     spawnSyncStub.onFirstCall().returns({ stdout: 'deadbeef\ncafebabe\n' }).onSecondCall().returns({
@@ -106,7 +106,7 @@ describe('checkHiddenCommits.exec', () => {
     expect(action.error).to.be.false;
   });
 
-  it.only('throws if commitFrom or commitTo is missing', async () => {
+  it('throws if commitFrom or commitTo is missing', async () => {
     delete action.commitFrom;
 
     try {

@@ -47,11 +47,14 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     const isSubset = [...packCommits].every((sha) => introducedCommits.has(sha));
     if (!isSubset) {
       // build detailed lists
-      const unreferenced = [...packCommits].filter((sha) => !introducedCommits.has(sha));
-      const referenced = [...packCommits].filter((sha) => introducedCommits.has(sha));
+      const [referenced, unreferenced] = [...packCommits].reduce<[string[], string[]]>(
+        ([ref, unref], sha) =>
+          introducedCommits.has(sha) ? [[...ref, sha], unref] : [ref, [...unref, sha]],
+        [[], []],
+      );
 
-      step.log(`✅ Referenced commits: ${referenced.length}`);
-      step.log(`❌ Unreferenced commits: ${unreferenced.length}`);
+      step.log(`Referenced commits: ${referenced.length}`);
+      step.log(`Unreferenced commits: ${unreferenced.length}`);
 
       step.setError(
         `Unreferenced commits in pack (${unreferenced.length}): ${unreferenced.join(', ')}`,
