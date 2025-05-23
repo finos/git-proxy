@@ -63,4 +63,36 @@ describe('ActiveDirectory auth method', () => {
     configure(passportStub);
   });
 
+  it('should authenticate a valid user and mark them as admin', async () => {
+    const mockReq = {};
+    const mockProfile = {
+      _json: {
+        sAMAccountName: 'test-user',
+        mail: 'test@test.com',
+        userPrincipalName: 'test@test.com',
+        title: 'Test User',
+      },
+      displayName: 'Test User',
+    };
+
+    ldapStub.isUserInAdGroup
+      .onCall(0).resolves(true)
+      .onCall(1).resolves(true);
+
+    const done = sinon.spy();
+
+    await strategyCallback(mockReq, mockProfile, {}, done);
+
+    expect(done.calledOnce).to.be.true;
+    const [err, user] = done.firstCall.args;
+    expect(err).to.be.null;
+    expect(user).to.have.property('username', 'test-user');
+    expect(user).to.have.property('email', 'test@test.com');
+    expect(user).to.have.property('displayName', 'Test User');
+    expect(user).to.have.property('admin', true);
+    expect(user).to.have.property('title', 'Test User');
+
+    expect(dbStub.updateUser.calledOnce).to.be.true;
+  });
+
 });
