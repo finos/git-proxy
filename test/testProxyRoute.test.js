@@ -1,4 +1,4 @@
-const { handleMessage, validGitRequest } = require('../src/proxy/routes');
+const { handleMessage, validGitRequest, stripGitHubFromGitPath } = require('../src/proxy/routes');
 const chai = require('chai');
 
 const expect = chai.expect;
@@ -72,6 +72,43 @@ describe('proxy route helpers', () => {
         accept: 'application/x-git-upload-pack-request',
       });
       expect(res).to.be.false;
+    });
+  });
+
+  describe('stripGitHubFromGitPath', () => {
+    it('should strip owner and repo from a valid GitHub-style path with 4 parts', () => {
+      const res = stripGitHubFromGitPath('/foo/bar.git/info/refs');
+      expect(res).to.equal('/info/refs');
+    });
+  
+    it('should strip owner and repo from a valid GitHub-style path with 5 parts', () => {
+      const res = stripGitHubFromGitPath('/foo/bar.git/git-upload-pack');
+      expect(res).to.equal('/git-upload-pack');
+    });
+  
+    it('should return undefined for malformed path with too few segments', () => {
+      const res = stripGitHubFromGitPath('/foo/bar.git');
+      expect(res).to.be.undefined;
+    });
+  
+    it('should return undefined for malformed path with too many segments', () => {
+      const res = stripGitHubFromGitPath('/foo/bar.git/extra/path/stuff');
+      expect(res).to.be.undefined;
+    });
+  
+    it('should handle repo names that include dots correctly', () => {
+      const res = stripGitHubFromGitPath('/foo/some.repo.git/info/refs');
+      expect(res).to.equal('/info/refs');
+    });
+  
+    it('should not break if the path is just a slash', () => {
+      const res = stripGitHubFromGitPath('/');
+      expect(res).to.be.undefined;
+    });
+  
+    it('should not break if the path is empty', () => {
+      const res = stripGitHubFromGitPath('');
+      expect(res).to.be.undefined;
     });
   });
 });
