@@ -34,6 +34,9 @@ const stripGitHubFromGitPath = (url: string): string | undefined => {
  */
 const validGitRequest = (url: string, headers: any): boolean => {
   const { 'user-agent': agent, accept } = headers;
+  if (!agent) {
+    return false;
+  }
   if (['/info/refs?service=git-upload-pack', '/info/refs?service=git-receive-pack'].includes(url)) {
     // https://www.git-scm.com/docs/http-protocol#_discovering_references
     // We can only filter based on User-Agent since the Accept header is not
@@ -41,8 +44,11 @@ const validGitRequest = (url: string, headers: any): boolean => {
     return agent.startsWith('git/');
   }
   if (['/git-upload-pack', '/git-receive-pack'].includes(url)) {
+    if (!accept) {
+      return false;
+    }
     // https://www.git-scm.com/docs/http-protocol#_uploading_data
-    return agent.startsWith('git/') && accept.startsWith('application/x-git-');
+    return agent.startsWith('git/') && accept.startsWith('application/x-git-') ;
   }
   return false;
 };
