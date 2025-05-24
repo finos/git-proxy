@@ -118,6 +118,38 @@ describe('ConfigLoader', () => {
       expect(spy.firstCall.args[0]).to.deep.include(newConfig);
     });
 
+    it('should emit a single event when config changes', async () => {
+      const initialConfig = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+          reloadIntervalSeconds: 0,
+        },
+      };
+
+      const newConfig = {
+        proxyUrl: 'https://new-test.com',
+      };
+
+      fs.writeFileSync(tempConfigFile, JSON.stringify(newConfig));
+
+      configLoader = new ConfigLoader(initialConfig);
+      const spy = sinon.spy();
+      configLoader.on('configurationChanged', spy);
+
+      await configLoader.reloadConfiguration();
+      await configLoader.reloadConfiguration();
+
+      expect(spy.calledOnce).to.be.true;
+      expect(spy.firstCall.args[0]).to.deep.include(newConfig);
+    });
+
     it('should not emit event if config has not changed', async () => {
       const testConfig = {
         proxyUrl: 'https://test.com',
