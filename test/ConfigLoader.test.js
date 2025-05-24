@@ -118,38 +118,6 @@ describe('ConfigLoader', () => {
       expect(spy.firstCall.args[0]).to.deep.include(newConfig);
     });
 
-    it('should emit a single event when config changes', async () => {
-      const initialConfig = {
-        configurationSources: {
-          enabled: true,
-          sources: [
-            {
-              type: 'file',
-              enabled: true,
-              path: tempConfigFile,
-            },
-          ],
-          reloadIntervalSeconds: 0,
-        },
-      };
-
-      const newConfig = {
-        proxyUrl: 'https://new-test.com',
-      };
-
-      fs.writeFileSync(tempConfigFile, JSON.stringify(newConfig));
-
-      configLoader = new ConfigLoader(initialConfig);
-      const spy = sinon.spy();
-      configLoader.on('configurationChanged', spy);
-
-      await configLoader.reloadConfiguration();
-      await configLoader.reloadConfiguration();
-
-      expect(spy.calledOnce).to.be.true;
-      expect(spy.firstCall.args[0]).to.deep.include(newConfig);
-    });
-
     it('should not emit event if config has not changed', async () => {
       const testConfig = {
         proxyUrl: 'https://test.com',
@@ -212,9 +180,29 @@ describe('ConfigLoader', () => {
       // Check if directory exists
       expect(fs.existsSync(configLoader.cacheDir)).to.be.true;
     });
-  });
 
-  describe('loadRemoteConfig', () => {
+    it('should perform initial load on start if configurationSources is enabled', async () => {
+      const mockConfig = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+          reloadIntervalSeconds: 30,
+        },
+      };
+
+      const configLoader = new ConfigLoader(mockConfig);
+      const spy = sinon.spy(configLoader, 'reloadConfiguration');
+      await configLoader.start();
+
+      expect(spy.calledOnce).to.be.true;
+    });
+  });
     let configLoader;
     beforeEach(async () => {
       const configFilePath = path.join(__dirname, '..', 'proxy.config.json');
