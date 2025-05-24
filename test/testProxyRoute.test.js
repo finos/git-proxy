@@ -37,7 +37,7 @@ describe('proxy route filter middleware', () => {
     sinon.stub(chain, 'executeChain').resolves({
       blocked: true,
       blockedMessage: 'You shall not push!',
-      error: false,
+      error: true,
     });
 
     const res = await chai
