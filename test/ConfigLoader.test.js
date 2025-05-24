@@ -182,6 +182,30 @@ describe('ConfigLoader', () => {
     });
   });
 
+  describe('start', () => {
+    it('should perform initial load on start if configurationSources is enabled', async () => {
+      const mockConfig = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+          reloadIntervalSeconds: 30,
+        },
+      };
+
+      const configLoader = new ConfigLoader(mockConfig);
+      const spy = sinon.spy(configLoader, 'reloadConfiguration');
+      await configLoader.start();
+
+      expect(spy.calledOnce).to.be.true;
+    });
+  });
+
   describe('loadRemoteConfig', () => {
     let configLoader;
     beforeEach(async () => {
