@@ -22,6 +22,36 @@ describe('proxy route filter middleware', () => {
     sinon.restore();
   });
 
+  it('should reject invalid git requests with 400', async () => {
+    const res = await chai
+      .request(app)
+      .get('/owner/repo.git/invalid/path')
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-upload-pack-request');
+
+    expect(res).to.have.status(400);
+    expect(res.text).to.equal('Invalid request received');
+  });
+
+  it('should handle blocked requests and return custom packet message', async () => {
+    sinon.stub(chain, 'executeChain').resolves({
+      blocked: true,
+      blockedMessage: 'You shall not push!',
+      error: false,
+    });
+
+    const res = await chai
+      .request(app)
+      .get('/owner/repo.git/info/refs?service=git-upload-pack')
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-upload-pack-request')
+      .buffer();
+
+    expect(res.status).to.equal(200);
+    expect(res.text).to.contain('You shall not push!');
+    expect(res.headers['content-type']).to.include('application/x-git-receive-pack-result');
+    expect(res.headers['x-frame-options']).to.equal('DENY');
+  });
   });
 });
 
