@@ -73,7 +73,6 @@ router.use(
 
         if (action.error || action.blocked) {
           res.set('content-type', 'application/x-git-receive-pack-result');
-          res.set('transfer-encoding', 'chunked');
           res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
           res.set('pragma', 'no-cache');
           res.set('cache-control', 'no-cache, max-age=0, must-revalidate');
