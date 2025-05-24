@@ -180,7 +180,9 @@ describe('ConfigLoader', () => {
       // Check if directory exists
       expect(fs.existsSync(configLoader.cacheDir)).to.be.true;
     });
+  });
 
+  describe('start', () => {
     it('should perform initial load on start if configurationSources is enabled', async () => {
       const mockConfig = {
         configurationSources: {
@@ -203,6 +205,8 @@ describe('ConfigLoader', () => {
       expect(spy.calledOnce).to.be.true;
     });
   });
+
+  describe('loadRemoteConfig', () => {
     let configLoader;
     beforeEach(async () => {
       const configFilePath = path.join(__dirname, '..', 'proxy.config.json');
