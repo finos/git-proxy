@@ -1,7 +1,29 @@
 const { handleMessage, validGitRequest, stripGitHubFromGitPath } = require('../src/proxy/routes');
 const chai = require('chai');
+const chaiHttp = require('chai-http');
+const sinon = require('sinon');
+const express = require('express');
+const proxyRouter = require('../src/proxy/routes').router;
+const chain = require('../src/proxy/chain');
 
+chai.use(chaiHttp);
+chai.should();
 const expect = chai.expect;
+
+describe('proxy route filter middleware', () => {
+  let app;
+
+  beforeEach(() => {
+    app = express();
+    app.use('/', proxyRouter);
+  });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  });
+});
 
 describe('proxy route helpers', () => {
   describe('handleMessage', async () => {
