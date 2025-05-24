@@ -52,6 +52,43 @@ describe('proxy route filter middleware', () => {
     expect(res.headers['content-type']).to.include('application/x-git-receive-pack-result');
     expect(res.headers['x-frame-options']).to.equal('DENY');
   });
+
+  describe('when request is valid and not blocked', () => {
+    it('should return error if repo is not found', async () => {
+      sinon.stub(chain, 'executeChain').resolves({
+        blocked: false,
+        blockedMessage: '',
+        error: false,
+      });
+
+      const res = await chai
+        .request(app)
+        .get('/owner/repo.git/info/refs?service=git-upload-pack')
+        .set('user-agent', 'git/2.42.0')
+        .set('accept', 'application/x-git-upload-pack-request')
+        .buffer();
+
+      expect(res.status).to.equal(401);
+      expect(res.text).to.equal('Repository not found.');
+    });
+
+    it('should pass through if repo is found', async () => {
+      sinon.stub(chain, 'executeChain').resolves({
+        blocked: false,
+        blockedMessage: '',
+        error: false,
+      });
+
+      const res = await chai
+        .request(app)
+        .get('/finos/git-proxy.git/info/refs?service=git-upload-pack')
+        .set('user-agent', 'git/2.42.0')
+        .set('accept', 'application/x-git-upload-pack-request')
+        .buffer();
+
+      expect(res.status).to.equal(200);
+      expect(res.text).to.contain('git-upload-pack');
+    });
   });
 });
 
