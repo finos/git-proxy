@@ -204,6 +204,49 @@ describe('ConfigLoader', () => {
 
       expect(spy.calledOnce).to.be.true;
     });
+
+    it('should clear an existing reload interval if it exists', async () => {
+      const mockConfig = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+        },
+      };
+
+      const configLoader = new ConfigLoader(mockConfig);
+      configLoader.reloadTimer = setInterval(() => {}, 1000);
+      await configLoader.start();
+
+      expect(configLoader.reloadTimer).to.be.null;
+    });
+
+    it('should run reloadConfiguration multiple times on short reload interval', async () => {
+      const mockConfig = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+          reloadIntervalSeconds: 0.001,
+        },
+      };
+
+      const configLoader = new ConfigLoader(mockConfig);
+      const spy = sinon.spy(configLoader, 'reloadConfiguration');
+      await configLoader.start();
+
+      expect(spy.callCount).to.greaterThan(1);
+    });
   });
 
   describe('loadRemoteConfig', () => {
