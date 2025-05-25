@@ -253,7 +253,7 @@ describe('ConfigLoader', () => {
               path: tempConfigFile,
             },
           ],
-          reloadIntervalSeconds: 0.001,
+          reloadIntervalSeconds: 0.01,
         },
       };
 
@@ -262,7 +262,7 @@ describe('ConfigLoader', () => {
       await configLoader.start();
 
       // Make sure the reload interval is triggered
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       expect(spy.callCount).to.greaterThan(1);
     });
@@ -313,7 +313,7 @@ describe('ConfigLoader', () => {
         enabled: true,
       };
 
-      const config = await configLoader.loadFromGit(source);
+      const config = await configLoader.loadFromSource(source);
 
       // Verify the loaded config has expected structure
       expect(config).to.be.an('object');
@@ -331,7 +331,7 @@ describe('ConfigLoader', () => {
       };
 
       try {
-        await configLoader.loadFromGit(source);
+        await configLoader.loadFromSource(source);
         throw new Error('Expected error was not thrown');
       } catch (error) {
         expect(error.message).to.equal('Invalid configuration file path in repository');
@@ -348,13 +348,48 @@ describe('ConfigLoader', () => {
         enabled: true,
       };
 
-      const config = await configLoader.loadFromHttp(source);
+      const config = await configLoader.loadFromSource(source);
 
       // Verify the loaded config has expected structure
       expect(config).to.be.an('object');
       expect(config).to.have.property('proxyUrl');
       expect(config).to.have.property('cookieSecret');
     });
+
+    it('should throw error if repository is invalid', async function () {
+      const source = {
+        type: 'git',
+        repository: 'invalid-repository',
+        path: 'proxy.config.json',
+        branch: 'main',
+        enabled: true,
+      };
+      
+      try {
+        await configLoader.loadFromSource(source);
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error.message).to.equal('Invalid repository URL format');
+      }
+    });
+
+    it('should throw error if branch name is invalid', async function () {
+      const source = {
+        type: 'git',
+        repository: 'https://github.com/finos/git-proxy.git',
+        path: 'proxy.config.json',
+        branch: '..', // invalid branch pattern
+        enabled: true,
+      };
+
+      try {
+        await configLoader.loadFromSource(source);
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error.message).to.equal('Invalid branch name format');
+      }
+    });
+
   });
 
   describe('deepMerge', () => {
