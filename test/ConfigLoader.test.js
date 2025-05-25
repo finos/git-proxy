@@ -245,6 +245,9 @@ describe('ConfigLoader', () => {
       const spy = sinon.spy(configLoader, 'reloadConfiguration');
       await configLoader.start();
 
+      // Make sure the reload interval is triggered
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
       expect(spy.callCount).to.greaterThan(1);
     });
   });
