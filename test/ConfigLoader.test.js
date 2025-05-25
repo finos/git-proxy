@@ -148,6 +148,22 @@ describe('ConfigLoader', () => {
 
       expect(spy.calledOnce).to.be.true; // Should only emit once
     });
+
+    it('should not emit event if configurationSources is disabled', async () => {
+      const config = {
+        configurationSources: {
+          enabled: false,
+        },
+      };
+
+      configLoader = new ConfigLoader(config);
+      const spy = sinon.spy();
+      configLoader.on('configurationChanged', spy);
+
+      await configLoader.reloadConfiguration();
+
+      expect(spy.called).to.be.false;
+    });
   });
 
   describe('initialize', () => {
@@ -249,6 +265,28 @@ describe('ConfigLoader', () => {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       expect(spy.callCount).to.greaterThan(1);
+    });
+
+    it('should clear the interval when stop is called', async () => {
+      const mockConfig = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+        },
+      };
+
+      const configLoader = new ConfigLoader(mockConfig);
+      configLoader.reloadTimer = setInterval(() => {}, 1000);
+      expect(configLoader.reloadTimer).to.not.be.null;
+
+      await configLoader.stop();
+      expect(configLoader.reloadTimer).to.be.null;
     });
   });
 
