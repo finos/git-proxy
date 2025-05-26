@@ -65,29 +65,6 @@ router.get('/oidc/callback', (req, res, next) => {
   })(req, res, next);
 });
 
-// when login is successful, retrieve user info
-router.get('/success', (req, res) => {
-  console.log('authenticated' + JSON.stringify(req.user));
-  if (req.user) {
-    res.json({
-      success: true,
-      message: 'user has successfully authenticated',
-      user: req.user,
-      cookies: req.cookies,
-    });
-  } else {
-    res.status(401).end();
-  }
-});
-
-// when login failed, send failed msg
-router.get('failed', (req, res) => {
-  res.status(401).json({
-    success: false,
-    message: 'user failed to authenticate.',
-  });
-});
-
 router.post('/logout', (req, res, next) => {
   req.logout(req.user, (err) => {
     if (err) return next(err);
