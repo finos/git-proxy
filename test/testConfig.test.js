@@ -123,6 +123,111 @@ describe('user configuration', function () {
     expect(config.getRateLimit().limit).to.be.eql(limitConfig.rateLimit.limit);
   });
 
+  it('should override default settings for attestation config', function () {
+    const user = {
+      attestationConfig: {
+        questions: [
+          {
+            label: 'Testing Label Change',
+            tooltip: {
+              text: 'Testing Tooltip Change',
+              links: [],
+            },
+          },
+        ],
+      },
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = require('../src/config');
+
+    expect(config.getAttestationConfig()).to.be.eql(user.attestationConfig);
+  });
+
+  it('should override default settings for url shortener', function () {
+    const user = {
+      urlShortener: 'https://url-shortener.com',
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = require('../src/config');
+
+    expect(config.getURLShortener()).to.be.eql(user.urlShortener);
+  });
+
+  it('should override default settings for contact email', function () {
+    const user = {
+      contactEmail: 'test@example.com',
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = require('../src/config');
+
+    expect(config.getContactEmail()).to.be.eql(user.contactEmail);
+  });
+
+  it('should override default settings for plugins', function () {
+    const user = {
+      plugins: ['plugin1', 'plugin2'],
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = require('../src/config');
+
+    expect(config.getPlugins()).to.be.eql(user.plugins);
+  });
+
+  it('should override default settings for sslCertPemPath', function () {
+    const user = {
+      tls: {
+        enabled: true,
+        key: 'my-key.pem',
+        cert: 'my-cert.pem',
+      }
+    };
+
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = require('../src/config');
+
+    expect(config.getTLSCertPemPath()).to.be.eql(user.tls.cert);
+    expect(config.getTLSKeyPemPath()).to.be.eql(user.tls.key);
+    expect(config.getTLSEnabled()).to.be.eql(user.tls.enabled);
+  });
+
+  it('should prioritize tls.key and tls.cert over sslKeyPemPath and sslCertPemPath', function () {
+    const user = {
+      tls: {
+        enabled: true,
+        key: 'good-key.pem',
+        cert: 'good-cert.pem',
+      },
+      sslKeyPemPath: 'bad-key.pem',
+      sslCertPemPath: 'bad-cert.pem',
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+    
+    const config = require('../src/config');
+
+    expect(config.getTLSCertPemPath()).to.be.eql(user.tls.cert);
+    expect(config.getTLSKeyPemPath()).to.be.eql(user.tls.key);
+    expect(config.getTLSEnabled()).to.be.eql(user.tls.enabled);
+  });
+
+  it('should use sslKeyPemPath and sslCertPemPath if tls.key and tls.cert are not present', function () {
+    const user = {
+      sslKeyPemPath: 'good-key.pem',
+      sslCertPemPath: 'good-cert.pem',
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = require('../src/config');
+
+    expect(config.getTLSCertPemPath()).to.be.eql(user.sslCertPemPath);
+    expect(config.getTLSKeyPemPath()).to.be.eql(user.sslKeyPemPath);
+    expect(config.getTLSEnabled()).to.be.eql(false);
+  });
+
   afterEach(function () {
     fs.rmSync(tempUserFile);
     fs.rmdirSync(tempDir);
