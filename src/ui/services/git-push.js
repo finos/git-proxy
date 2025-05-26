@@ -111,4 +111,4 @@ const cancelPush = async (id, setAuth, setIsError) => {
     });
 };
 
-export { getPush, getPushes, authorisePush, rejectPush, cancelPush, getUser };
+export { getPush, getPushes, authorisePush, rejectPush, cancelPush };
