@@ -52,6 +52,27 @@ describe('auth', async () => {
       res.should.have.status(200);
     });
 
+    it('should be able to set the git account', async function () {
+      console.log(`cookie: ${cookie}`);
+      const res = await chai.request(app).post('/api/auth/gitAccount')
+        .set('Cookie', `${cookie}`)
+        .send({
+          username: 'admin',
+          gitAccount: 'new-account',
+        });
+      res.should.have.status(200);
+    });
+
+    it('should throw an error if the username is not provided when setting the git account', async function () {
+      const res = await chai.request(app).post('/api/auth/gitAccount')
+        .set('Cookie', `${cookie}`)
+        .send({
+          gitAccount: 'new-account',
+        });
+      console.log(`res: ${JSON.stringify(res)}`);
+      res.should.have.status(400);
+    });
+
     it('should now be able to logout', async function () {
       const res = await chai.request(app).post('/api/auth/logout').set('Cookie', `${cookie}`);
       res.should.have.status(200);
@@ -76,6 +97,19 @@ describe('auth', async () => {
         username: 'admin',
         password: 'invalid',
       });
+      res.should.have.status(401);
+    });
+
+    it('should fail to set the git account if the user is not logged in', async function () {
+      const res = await chai.request(app).post('/api/auth/gitAccount').send({
+        username: 'admin',
+        gitAccount: 'new-account',
+      });
+      res.should.have.status(401);
+    });
+
+    it('should fail to get the current user metadata if not logged in', async function () {
+      const res = await chai.request(app).get('/api/auth/me');
       res.should.have.status(401);
     });
   });

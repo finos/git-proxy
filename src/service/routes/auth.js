@@ -109,24 +109,28 @@ router.get('/profile', async (req, res) => {
 router.post('/gitAccount', async (req, res) => {
   if (req.user) {
     try {
-      let login =
+      let username =
         req.body.username == null || req.body.username == 'undefined'
           ? req.body.id
           : req.body.username;
+      username = username?.split('@')[0];
 
-      login = login.split('@')[0];
+      if (!username) {
+        res.status(400).send('Error: Missing username. Git account not updated').end();
+        return;
+      }
 
-      const user = await db.findUser(login);
+      const user = await db.findUser(username);
 
       console.log('Adding gitAccount' + req.body.gitAccount);
       user.gitAccount = req.body.gitAccount;
       db.updateUser(user);
       res.status(200).end();
-    } catch {
+    } catch (e) {
       res
         .status(500)
         .send({
-          message: 'An error occurred',
+          message: `Error updating git account: ${e.message}`,
         })
         .end();
     }
