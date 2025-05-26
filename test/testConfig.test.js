@@ -19,6 +19,14 @@ describe('default configuration', function () {
     expect(config.getRateLimit()).to.be.eql(defaultSettings.rateLimit);
     expect(config.getTLSKeyPemPath()).to.be.eql(defaultSettings.tls.key);
     expect(config.getTLSCertPemPath()).to.be.eql(defaultSettings.tls.cert);
+    expect(config.getTLSEnabled()).to.be.eql(defaultSettings.tls.enabled);
+    expect(config.getDomains()).to.be.eql(defaultSettings.domains);
+    expect(config.getURLShortener()).to.be.eql(defaultSettings.urlShortener);
+    expect(config.getContactEmail()).to.be.eql(defaultSettings.contactEmail);
+    expect(config.getPlugins()).to.be.eql(defaultSettings.plugins);
+    expect(config.getCSRFProtection()).to.be.eql(defaultSettings.csrfProtection);
+    expect(config.getAttestationConfig()).to.be.eql(defaultSettings.attestationConfig);
+    expect(config.getAPIs()).to.be.eql(defaultSettings.api);
   });
   after(function () {
     delete require.cache[require.resolve('../src/config')];
@@ -226,6 +234,21 @@ describe('user configuration', function () {
     expect(config.getTLSCertPemPath()).to.be.eql(user.sslCertPemPath);
     expect(config.getTLSKeyPemPath()).to.be.eql(user.sslKeyPemPath);
     expect(config.getTLSEnabled()).to.be.eql(false);
+  });
+
+  it('should override default settings for api', function () {
+    const user = {
+      api: {
+        gitlab: {
+          baseUrl: 'https://gitlab.com',
+        },
+      },
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+    
+    const config = require('../src/config');
+
+    expect(config.getAPIs()).to.be.eql(user.api);
   });
 
   afterEach(function () {
