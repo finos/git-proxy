@@ -72,7 +72,7 @@ const combineMatches = (organization: string) => {
       ? []
       : Object.entries(commitConfig.diff.block.providers);
 
-  // Combine all matches (literals, paterns)
+  // Combine all matches (literals, patterns)
   const combinedMatches = [
     ...blockedLiterals.map((literal) => ({
       type: BLOCK_TYPE.LITERAL,
@@ -104,7 +104,7 @@ const collectMatches = (parsedDiff: File[], combinedMatches: CombinedMatch[]): M
           const lineNumber = change.ln;
           // Iterate through each match types - literal, patterns, providers
           combinedMatches.forEach(({ type, match }) => {
-            // using Match all to find all occurences of the pattern in the line
+            // using Match all to find all occurrences of the pattern in the line
             const matches = [...change.content.matchAll(match)];
 
             matches.forEach((matchInstance) => {
@@ -122,7 +122,7 @@ const collectMatches = (parsedDiff: File[], combinedMatches: CombinedMatch[]): M
                 };
               }
 
-              // apend line numbers to the list of lines
+              // append line numbers to the list of lines
               allMatches[matchKey].lines.push(lineNumber);
             });
           });
@@ -131,7 +131,7 @@ const collectMatches = (parsedDiff: File[], combinedMatches: CombinedMatch[]): M
     });
   });
 
-  // convert matches into  a final result array, joining line numbers
+  // convert matches into a final result array, joining line numbers
   const result = Object.values(allMatches).map((match) => ({
     ...match,
     lines: match.lines.join(','), // join the line numbers into a comma-separated string

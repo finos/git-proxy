@@ -1,22 +1,91 @@
 /* eslint-disable max-len */
-const chai = require('chai');
-const validGitRequest = require('../src/proxy/routes').validGitRequest;
-const stripGitHubFromGitPath = require('../src/proxy/routes').stripGitHubFromGitPath;
+import * as chai from 'chai';
+import {
+  validGitRequest,
+  processUrlPath,
+  processGitUrl,
+  processGitURLForNameAndOrg,
+} from '../src/proxy/routes/helper';
 
 chai.should();
 
 const expect = chai.expect;
 
-describe('url filters for proxying ', function () {
-  it('stripGitHubFromGitPath should return the sanitized URL with owner & repo removed', function () {
-    expect(stripGitHubFromGitPath('/octocat/hello-world.git/info/refs?service=git-upload-pack')).eq(
-      '/info/refs?service=git-upload-pack',
+describe('url helpers and filter functions used in the proxy', function () {
+  it('processUrlPath should return breakdown of a proxyd path, separating the path to repository from the git operation path', function () {
+    expect(
+      processUrlPath('/github.com/octocat/hello-world.git/info/refs?service=git-upload-pack'),
+    ).to.deep.eq({
+      repoPath: '/github.com/octocat/hello-world.git',
+      gitPath: '/info/refs?service=git-upload-pack',
+    });
+  });
+
+  it('processUrlPath should return breakdown of a legacy proxy path, separating the path to repository from the git operation path', function () {
+    expect(processUrlPath('/octocat/hello-world.git/info/refs?service=git-upload-pack')).to.deep.eq(
+      { repoPath: '/octocat/hello-world.git', gitPath: '/info/refs?service=git-upload-pack' },
     );
   });
 
-  it('stripGitHubFromGitPath should return undefined if the url', function () {
-    expect(stripGitHubFromGitPath('/octocat/hello-world')).undefined;
+  it('processUrlPath should return breakdown of a legacy proxy path, separating the path to repository when git path is just /', function () {
+    expect(processUrlPath('/octocat/hello-world.git/')).to.deep.eq({
+      repoPath: '/octocat/hello-world.git',
+      gitPath: '/',
+    });
   });
+
+  it('processUrlPath should return breakdown of a legacy proxy path, separating the path to repository when no path is present', function () {
+    expect(processUrlPath('/octocat/hello-world.git')).to.deep.eq({
+      repoPath: '/octocat/hello-world.git',
+      gitPath: '/',
+    });
+  });
+
+  it("processUrlPath should return null if the url couldn't be parsed", function () {
+    expect(processUrlPath('/octocat/hello-world')).to.be.null;
+  });
+
+  it('processGitUrl should return breakdown of a git URL separating out the protocol, host and repository path', function () {
+    expect(processGitUrl('https://somegithost.com:1234/octocat/hello-world.git')).to.deep.eq({
+      protocol: 'https://',
+      host: 'somegithost.com:1234',
+      repoPath: '/octocat/hello-world.git',
+    });
+  });
+
+  it('processGitUrl should return breakdown of a git URL separating out the protocol, host and repository path and discard any git operation path', function () {
+    expect(
+      processGitUrl(
+        'https://somegithost.com:1234/octocat/hello-world.git/info/refs?service=git-upload-pack',
+      ),
+    ).to.deep.eq({
+      protocol: 'https://',
+      host: 'somegithost.com:1234',
+      repoPath: '/octocat/hello-world.git',
+    });
+  });
+
+  it('processGitURLForNameAndOrg should return breakdown of a git URL path separating out the protocol, origin and repository path', function () {
+    expect(processGitURLForNameAndOrg('github.com/octocat/hello-world.git')).to.deep.eq({
+      project: 'octocat',
+      repoName: 'hello-world.git',
+    });
+  });
+
+  it('processGitURLForNameAndOrg should return breakdown of a git repository URL separating out the project (organisation) and repository name', function () {
+    expect(processGitURLForNameAndOrg('https://github.com:80/octocat/hello-world.git')).to.deep.eq({
+      project: 'octocat',
+      repoName: 'hello-world.git',
+    });
+  });
+
+  // it('processLegacyProxyPathForNameAndOrg should return breakdown of a legacy proxy path separating out the project (organisation), repository name and a predicted github URL', function () {
+  //   expect(processLegacyProxyPathForNameAndOrg('/octocat/hello-world.git')).to.deep.eq({
+  //     project: 'octocat',
+  //     repoName: 'hello-world',
+  //     url: 'https://github.com/octocat/hello-world.git',
+  //   });
+  // });
 
   it('validGitRequest should return true for safe requests on expected URLs', function () {
     [
