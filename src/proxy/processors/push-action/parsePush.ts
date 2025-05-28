@@ -147,7 +147,7 @@ const getParsedData = (headerLines: string[]) => {
 /**
  * Parses the commit data from the contents of a pack file.
  * @param {CommitContent[]} contents - The contents of the pack file.
- * @return {*} An array of commit data objects.
+ * @return {Array} An array of commit data objects.
  */
 const getCommitData = (contents: CommitContent[]) => {
   console.log({ contents });
