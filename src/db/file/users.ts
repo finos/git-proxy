@@ -13,73 +13,52 @@ export const findUser = (username: string) => {
       if (err) {
         reject(err);
       } else {
-        if (!doc) {
-          resolve(null);
-        } else {
-          resolve(doc);
-        }
+        resolve(doc || null);
       }
     });
   });
 };
 
-export const findUserByOIDC = function (oidcId: string) {
-  return new Promise((resolve, reject) => {
-    db.findOne({ oidcId: oidcId }, (err, doc) => {
+export const findUserByOIDC = (oidcId: string) => {
+  return new Promise<User | null>((resolve, reject) => {
+    db.findOne({ oidcId }, (err, doc: User) => {
       if (err) {
         reject(err);
       } else {
-        if (!doc) {
-          resolve(null);
-        } else {
-          resolve(doc);
-        }
+        resolve(doc || null);
       }
     });
   });
 };
 
-export const createUser = function (user: User) {
+export const createUser = (user: User) => {
   if (!user.publicKeys) {
     user.publicKeys = [];
   }
-
-  return new Promise((resolve, reject) => {
+  return new Promise<User>((resolve, reject) => {
     db.insert(user, (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(user);
-      }
+      if (err) reject(err);
+      else resolve(user);
     });
   });
 };
 
 export const deleteUser = (username: string) => {
   return new Promise<void>((resolve, reject) => {
-    db.remove({ username: username }, (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve();
-      }
+    db.remove({ username }, (err) => {
+      if (err) reject(err);
+      else resolve();
     });
   });
 };
 
 export const updateUser = (user: User) => {
-  if (!user.publicKeys) {
-    user.publicKeys = [];
-  }
-
-  return new Promise((resolve, reject) => {
+  if (!user.publicKeys) user.publicKeys = [];
+  return new Promise<null>((resolve, reject) => {
     const options = { multi: false, upsert: false };
     db.update({ username: user.username }, user, options, (err) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(null);
-      }
+      if (err) reject(err);
+      else resolve(null);
     });
   });
 };
@@ -87,16 +66,13 @@ export const updateUser = (user: User) => {
 export const getUsers = (query: any = {}) => {
   return new Promise<User[]>((resolve, reject) => {
     db.find(query, (err: Error, docs: User[]) => {
-      if (err) {
-        reject(err);
-      } else {
-        resolve(docs);
-      }
+      if (err) reject(err);
+      else resolve(docs);
     });
   });
 };
 
-export const addPublicKey = function (username: string, publicKey: string) {
+export const addPublicKey = (username: string, publicKey: string) => {
   return new Promise<User>((resolve, reject) => {
     findUser(username)
       .then((user) => {
@@ -104,12 +80,10 @@ export const addPublicKey = function (username: string, publicKey: string) {
           reject(new Error('User not found'));
           return;
         }
-        if (!user.publicKeys) {
-          user.publicKeys = [];
-        }
+        if (!user.publicKeys) user.publicKeys = [];
         if (!user.publicKeys.includes(publicKey)) {
           user.publicKeys.push(publicKey);
-          exports.updateUser(user).then(resolve).catch(reject);
+          updateUser(user).then(resolve).catch(reject);
         } else {
           resolve(user);
         }
@@ -118,7 +92,7 @@ export const addPublicKey = function (username: string, publicKey: string) {
   });
 };
 
-export const removePublicKey = function (username: string, publicKey: string) {
+export const removePublicKey = (username: string, publicKey: string) => {
   return new Promise<User>((resolve, reject) => {
     findUser(username)
       .then((user) => {
@@ -131,25 +105,29 @@ export const removePublicKey = function (username: string, publicKey: string) {
           resolve(user);
           return;
         }
+        console.log('key to remove:', publicKey);
         user.publicKeys = user.publicKeys.filter((key) => key !== publicKey);
-        exports.updateUser(user).then(resolve).catch(reject);
+        console.log('publicKeys after removal:', user.publicKeys);
+        updateUser(user).then(resolve).catch(reject);
       })
       .catch(reject);
   });
 };
 
-export const findUserBySSHKey = function (sshKey: string) {
+export const findUserBySSHKey = (sshKey: string) => {
   return new Promise<User | null>((resolve, reject) => {
     db.findOne({ publicKeys: sshKey }, (err, doc) => {
-      if (err) {
-        reject(err);
-      } else {
-        if (!doc) {
-          resolve(null);
-        } else {
-          resolve(doc as User);
-        }
-      }
+      if (err) reject(err);
+      else resolve(doc || null);
     });
+  });
+};
+
+export const getPublicKeys = (username: string): Promise<string[]> => {
+  return findUser(username).then((user) => {
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return user.publicKeys || [];
   });
 };

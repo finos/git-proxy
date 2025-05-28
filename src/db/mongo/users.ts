@@ -58,3 +58,11 @@ export const findUserBySSHKey = async function (sshKey: string) {
   const collection = await connect(collectionName);
   return collection.findOne({ publicKeys: { $eq: sshKey } });
 };
+
+export const getPublicKeys = async function (username: string): Promise<string[]> {
+  const user = await findUser(username);
+  if (!user) {
+    throw new Error('User not found');
+  }
+  return user.publicKeys || [];
+};
