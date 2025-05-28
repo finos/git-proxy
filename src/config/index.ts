@@ -19,7 +19,6 @@ let _authorisedList: AuthorisedRepo[] = defaultSettings.authorisedList;
 let _database: Database[] = defaultSettings.sink;
 let _authentication: Authentication[] = defaultSettings.authentication;
 let _tempPassword: TempPasswordConfig = defaultSettings.tempPassword;
-let _proxyUrl = defaultSettings.proxyUrl;
 let _api: Record<string, unknown> = defaultSettings.api;
 let _cookieSecret: string = defaultSettings.cookieSecret;
 let _sessionMaxAgeHours: number = defaultSettings.sessionMaxAgeHours;
@@ -37,15 +36,6 @@ let _rateLimit: RateLimitConfig = defaultSettings.rateLimit;
 let _tlsEnabled = defaultSettings.tls.enabled;
 let _tlsKeyPemPath = defaultSettings.tls.key;
 let _tlsCertPemPath = defaultSettings.tls.cert;
-
-// Get configured proxy URL
-export const getProxyUrl = () => {
-  if (_userSettings !== null && _userSettings.proxyUrl) {
-    _proxyUrl = _userSettings.proxyUrl;
-  }
-
-  return _proxyUrl;
-};
 
 // Gets a list of authorised repositories
 export const getAuthorisedList = () => {
@@ -78,7 +68,7 @@ export const getDatabase = () => {
     }
   }
 
-  throw Error('No database cofigured!');
+  throw Error('No database configured!');
 };
 
 // Gets the configured authentication method, defaults to local
@@ -94,7 +84,7 @@ export const getAuthentication = () => {
     }
   }
 
-  throw Error('No authentication cofigured!');
+  throw Error('No authentication configured!');
 };
 
 // Log configuration to console
