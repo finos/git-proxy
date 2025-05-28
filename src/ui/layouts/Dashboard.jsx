@@ -7,7 +7,7 @@ import Navbar from '../components/Navbars/Navbar';
 import Footer from '../components/Footer/Footer';
 import Sidebar from '../components/Sidebar/Sidebar';
 import routes from '../../routes';
-import styles from '../assets/jss/material-dashboard-react/layouts/adminStyle';
+import styles from '../assets/jss/material-dashboard-react/layouts/dashboardStyle';
 import logo from '../assets/img/git-proxy.png';
 import { UserContext } from '../../context';
 import { getUser } from '../services/user';
@@ -18,18 +18,18 @@ let refresh = false;
 const switchRoutes = (
   <Routes>
     {routes.map((prop, key) => {
-      if (prop.layout === '/admin') {
+      if (prop.layout === '/dashboard') {
         return <Route exact path={prop.path} element={<prop.component />} key={key} />;
       }
       return null;
     })}
-    <Route exact path='/admin' element={<Navigate to='/admin/repo' />} />
+    <Route exact path='/dashboard' element={<Navigate to='/dashboard/repo' />} />
   </Routes>
 );
 
 const useStyles = makeStyles(styles);
 
-export default function Admin({ ...rest }) {
+export default function Dashboard({ ...rest }) {
   // styles
   const classes = useStyles();
   // ref to help us initialize PerfectScrollbar on windows devices
@@ -43,7 +43,7 @@ export default function Admin({ ...rest }) {
     setMobileOpen(!mobileOpen);
   };
   const getRoute = () => {
-    return window.location.pathname !== '/admin/maps';
+    return window.location.pathname !== '/dashboard/maps';
   };
   const resizeFunction = () => {
     if (window.innerWidth >= 960) {
