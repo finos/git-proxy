@@ -29,7 +29,7 @@ export default function Repositories(props) {
   const itemsPerPage = 5; 
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
-  const openRepo = (repo) => navigate(`/admin/repo/${repo}`, { replace: true });
+  const openRepo = (repo) => navigate(`/dashboard/repo/${repo}`, { replace: true });
 
   useEffect(() => {
     const query = {};

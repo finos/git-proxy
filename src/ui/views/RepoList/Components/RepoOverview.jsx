@@ -581,6 +581,9 @@ export default function Repositories(props) {
       .get(`https://api.github.com/repos/${props.data.project}/${props.data.name}`)
       .then((res) => {
         setGitHub(res.data);
+      })
+      .catch((err) => {
+        console.error(`Error fetching GitHub repository ${props.data.project}/${props.data.name}: ${err}`);
       });
   };
 
@@ -591,7 +594,7 @@ export default function Repositories(props) {
     <TableRow>
       <TableCell>
         <div style={{ padding: '15px' }}>
-          <a href={`/admin/repo/${props.data.name}`}>
+          <a href={`/dashboard/repo/${props.data.name}`}>
             <span style={{ fontSize: '17px' }}>
               {props.data.project}/{props.data.name}
             </span>
