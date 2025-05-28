@@ -131,11 +131,14 @@ const getParsedData = (headerLines: string[]) => {
   } = { parents: [] };
 
   for (const line of headerLines) {
-    const spaceIndex = line.indexOf(' ');
-    if (spaceIndex === -1) continue;
+    const firstSpaceIndex = line.indexOf(' ');
+    if (firstSpaceIndex === -1) {
+      // No spaces
+      continue;
+    }
 
-    const key = line.substring(0, spaceIndex);
-    const value = line.substring(spaceIndex + 1);
+    const key = line.substring(0, firstSpaceIndex);
+    const value = line.substring(firstSpaceIndex + 1);
 
     switch (key) {
       case 'tree':
