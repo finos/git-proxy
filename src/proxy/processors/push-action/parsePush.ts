@@ -121,7 +121,7 @@ const parsePersonLine = (line: string): PersonLine => {
   if (!match) {
     throw new Error(`Failed to parse person line: ${line}. Make sure to include a name, email, timestamp and timezone offset.`);
   }
-  return { name: match[1].trim(), email: match[2], timestamp: match[3] };
+  return { name: match[1], email: match[2], timestamp: match[3] };
 };
 
 /**
