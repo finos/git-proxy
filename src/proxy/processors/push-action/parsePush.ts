@@ -3,7 +3,7 @@ import zlib from 'zlib';
 import fs from 'fs';
 import path from 'path';
 import lod from 'lodash';
-import { CommitContent, PersonLine } from '../types';
+import { CommitContent, CommitHeader, PersonLine } from '../types';
 import {
   BRANCH_PREFIX,
   EMPTY_COMMIT_HASH,
@@ -120,15 +120,15 @@ const parsePersonLine = (line: string): PersonLine => {
 /**
  * Parses the header lines of a commit.
  * @param {string[]} headerLines - The header lines of a commit.
- * @return {Object} An object containing the parsed data.
+ * @return {CommitHeader} An object containing the parsed commit header.
  */
 const getParsedData = (headerLines: string[]) => {
-  const parsedData: {
-    tree?: string;
-    parents: string[];
-    authorInfo?: PersonLine;
-    committerInfo?: PersonLine;
-  } = { parents: [] };
+  const parsedData: CommitHeader = { 
+    parents: [],
+    tree: '',
+    author: { name: '', email: '', timestamp: '' },
+    committer: { name: '', email: '', timestamp: '' },
+  };
 
   for (const line of headerLines) {
     const firstSpaceIndex = line.indexOf(' ');
@@ -142,21 +142,53 @@ const getParsedData = (headerLines: string[]) => {
 
     switch (key) {
       case 'tree':
+        if (parsedData.tree) {
+          throw new Error('Multiple tree lines found in commit.');
+        }
         parsedData.tree = value.trim();
         break;
       case 'parent':
         parsedData.parents.push(value.trim());
         break;
       case 'author':
-        parsedData.authorInfo = parsePersonLine(value);
+        if (parsedData.author) {
+          throw new Error('Multiple author lines found in commit.');
+        }
+        parsedData.author = parsePersonLine(value);
         break;
       case 'committer':
-        parsedData.committerInfo = parsePersonLine(value);
+        if (parsedData.committer) {
+          throw new Error('Multiple committer lines found in commit.');
+        }
+        parsedData.committer = parsePersonLine(value);
         break;
     }
   }
+  validateParsedData(parsedData);
   return parsedData;
 };
+
+/**
+ * Validates the parsed commit header.
+ * @param {CommitHeader} parsedData - The parsed commit header.
+ * @return {void}
+ * @throws {Error} If the commit header is invalid.
+ */
+const validateParsedData = (parsedData: CommitHeader) => {
+  const missing = [];
+  if (!parsedData.tree) {
+    missing.push('tree');
+  }
+  if (!parsedData.author) {
+    missing.push('author');
+  }
+  if (!parsedData.committer) {
+    missing.push('committer');
+  }
+  if (missing.length > 0) {
+    throw new Error(`Invalid commit data: Missing ${missing.join(', ')}`);
+  }
+}
 
 /**
  * Parses the commit data from the contents of a pack file.
@@ -192,26 +224,17 @@ const getCommitData = (contents: CommitContent[]) => {
       const message = allLines.slice(headerEndIndex + 1).join('\n').trim();
       console.log({ headerLines, message });
 
-      const { tree, parents, authorInfo, committerInfo } = getParsedData(headerLines);
+      const { tree, parents, author, committer } = getParsedData(headerLines);
       // No parent headers -> zero hash
       const parent = parents.length > 0 ? parents[0] : EMPTY_COMMIT_HASH;
-
-      // Validation for required attributes
-      if (!tree || !authorInfo || !committerInfo) {
-        const missing = [];
-        if (!tree) missing.push('tree');
-        if (!authorInfo) missing.push('author');
-        if (!committerInfo) missing.push('committer');
-        throw new Error(`Invalid commit data: Missing ${missing.join(', ')}`);
-      }
 
       return {
         tree,
         parent,
-        author: authorInfo.name,
-        committer: committerInfo.name,
-        authorEmail: authorInfo.email,
-        commitTimestamp: committerInfo.timestamp,
+        author: author.name,
+        committer: committer.name,
+        authorEmail: author.email,
+        commitTimestamp: committer.timestamp,
         message,
       };
     })

@@ -24,3 +24,10 @@ export type PersonLine = {
   email: string;
   timestamp: string;
 }
+
+export type CommitHeader = {
+  tree: string;
+  parents: string[];
+  author: PersonLine;
+  committer: PersonLine;
+}
