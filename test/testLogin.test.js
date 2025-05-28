@@ -43,7 +43,7 @@ describe('auth', async () => {
     });
 
     it('should now be able to access the user login metadata', async function () {
-      const res = await chai.request(app).get('/api/auth/userLoggedIn').set('Cookie', `${cookie}`);
+      const res = await chai.request(app).get('/api/auth/me').set('Cookie', `${cookie}`);
       res.should.have.status(200);
     });
 
