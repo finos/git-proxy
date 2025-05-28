@@ -31,3 +31,19 @@ export type CommitHeader = {
   author: PersonLine;
   committer: PersonLine;
 }
+
+export type CommitData = {
+  tree: string;
+  parent: string;
+  author: string;
+  committer: string;
+  authorEmail: string;
+  commitTimestamp: string;
+  message: string;
+}
+
+export type PackMeta = {
+  sig: string;
+  version: number;
+  entries: number;
+}
