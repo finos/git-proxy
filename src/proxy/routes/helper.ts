@@ -183,7 +183,7 @@ export const validGitRequest = (gitPath: string, headers: any): boolean => {
 };
 
 /**
- * Collect the Set of all host (host and port if specified) that
+ * Collect the Set of all host (host and port if specified) that we
  * will be proxying requests for, to be used to initialize the proxy.
  *
  * @return {string[]} an array of origins
