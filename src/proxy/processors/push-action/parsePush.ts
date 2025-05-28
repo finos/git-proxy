@@ -142,7 +142,7 @@ const getParsedData = (headerLines: string[]) => {
 
     switch (key) {
       case 'tree':
-        if (parsedData.tree) {
+        if (parsedData.tree !== '') {
           throw new Error('Multiple tree lines found in commit.');
         }
         parsedData.tree = value.trim();
@@ -151,13 +151,13 @@ const getParsedData = (headerLines: string[]) => {
         parsedData.parents.push(value.trim());
         break;
       case 'author':
-        if (parsedData.author) {
+        if (!isBlankPersonLine(parsedData.author)) {
           throw new Error('Multiple author lines found in commit.');
         }
         parsedData.author = parsePersonLine(value);
         break;
       case 'committer':
-        if (parsedData.committer) {
+        if (!isBlankPersonLine(parsedData.committer)) {
           throw new Error('Multiple committer lines found in commit.');
         }
         parsedData.committer = parsePersonLine(value);
@@ -176,18 +176,27 @@ const getParsedData = (headerLines: string[]) => {
  */
 const validateParsedData = (parsedData: CommitHeader) => {
   const missing = [];
-  if (!parsedData.tree) {
+  if (parsedData.tree === '') {
     missing.push('tree');
   }
-  if (!parsedData.author) {
+  if (isBlankPersonLine(parsedData.author)) {
     missing.push('author');
   }
-  if (!parsedData.committer) {
+  if (isBlankPersonLine(parsedData.committer)) {
     missing.push('committer');
   }
   if (missing.length > 0) {
     throw new Error(`Invalid commit data: Missing ${missing.join(', ')}`);
   }
+}
+
+/**
+ * Checks if a person line is blank.
+ * @param {PersonLine} personLine - The person line to check.
+ * @return {boolean} True if the person line is blank, false otherwise.
+ */
+const isBlankPersonLine = (personLine: PersonLine): boolean => {
+  return personLine.name === '' && personLine.email === '' && personLine.timestamp === '';
 }
 
 /**
