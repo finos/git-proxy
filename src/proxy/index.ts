@@ -47,9 +47,9 @@ export const proxyPreparations = async () => {
   defaultAuthorisedRepoList.forEach(async (x) => {
     const found = allowedList.find((y) => y.project === x.project && x.name === y.name);
     if (!found) {
-      await createRepo(x);
-      await addUserCanPush(x.name, 'admin');
-      await addUserCanAuthorise(x.name, 'admin');
+      const repo = await createRepo(x);
+      await addUserCanPush(repo._id!, 'admin');
+      await addUserCanAuthorise(repo._id!, 'admin');
     }
   });
 };
