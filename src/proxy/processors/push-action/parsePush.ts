@@ -3,7 +3,14 @@ import zlib from 'zlib';
 import fs from 'fs';
 import path from 'path';
 import lod from 'lodash';
-import { CommitContent, CommitHeader, PersonLine } from '../types';
+
+import {
+  CommitContent,
+  CommitData,
+  CommitHeader,
+  PackMeta,
+  PersonLine,
+} from '../types';
 import {
   BRANCH_PREFIX,
   EMPTY_COMMIT_HASH,
@@ -122,7 +129,7 @@ const parsePersonLine = (line: string): PersonLine => {
  * @param {string[]} headerLines - The header lines of a commit.
  * @return {CommitHeader} An object containing the parsed commit header.
  */
-const getParsedData = (headerLines: string[]) => {
+const getParsedData = (headerLines: string[]): CommitHeader => {
   const parsedData: CommitHeader = { 
     parents: [],
     tree: '',
@@ -174,7 +181,7 @@ const getParsedData = (headerLines: string[]) => {
  * @return {void}
  * @throws {Error} If the commit header is invalid.
  */
-const validateParsedData = (parsedData: CommitHeader) => {
+const validateParsedData = (parsedData: CommitHeader): void => {
   const missing = [];
   if (parsedData.tree === '') {
     missing.push('tree');
@@ -202,9 +209,9 @@ const isBlankPersonLine = (personLine: PersonLine): boolean => {
 /**
  * Parses the commit data from the contents of a pack file.
  * @param {CommitContent[]} contents - The contents of the pack file.
- * @return {Array} An array of commit data objects.
+ * @return {CommitData[]} An array of commit data objects.
  */
-const getCommitData = (contents: CommitContent[]) => {
+const getCommitData = (contents: CommitContent[]): CommitData[] => {
   console.log({ contents });
   return lod
     .chain(contents)
@@ -253,9 +260,9 @@ const getCommitData = (contents: CommitContent[]) => {
 /**
  * Gets the metadata from a pack file.
  * @param {Buffer} buffer - The buffer containing the pack file data.
- * @return {Array} An array containing the metadata and the remaining buffer.
+ * @return {[PackMeta, Buffer]} An array containing the metadata and the remaining buffer.
  */
-const getPackMeta = (buffer: Buffer) => {
+const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
   const sig = buffer.slice(0, PACKET_SIZE).toString('utf-8');
   const version = buffer.readUIntBE(PACKET_SIZE, PACKET_SIZE);
   const entries = buffer.readUIntBE(PACKET_SIZE * 2, PACKET_SIZE);
@@ -273,9 +280,9 @@ const getPackMeta = (buffer: Buffer) => {
  * Gets the contents of a pack file.
  * @param {Buffer} buffer - The buffer containing the pack file data.
  * @param {number} entries - The number of entries in the pack file.
- * @return {CommitContent[]} An array of commit content objects.
+ * @return {Array} An array of commit content objects.
  */
-const getContents = (buffer: Buffer | CommitContent[], entries: number) => {
+const getContents = (buffer: Buffer | CommitContent[], entries: number): CommitContent[] => {
   const contents = [];
 
   for (let i = 0; i < entries; i++) {
@@ -295,7 +302,7 @@ const getContents = (buffer: Buffer | CommitContent[], entries: number) => {
  * @param {boolean[]} bits - The array of bits.
  * @return {number} The integer value.
  */
-const getInt = (bits: boolean[]) => {
+const getInt = (bits: boolean[]): number => {
   let strBits = '';
 
   // eslint-disable-next-line guard-for-in
@@ -312,7 +319,7 @@ const getInt = (bits: boolean[]) => {
  * @param {Buffer} buffer - The buffer containing the pack file data.
  * @return {Array} An array containing the content object and the next buffer.
  */
-const getContent = (item: number, buffer: Buffer) => {
+const getContent = (item: number, buffer: Buffer): [CommitContent, Buffer] => {
   // FIRST byte contains the type and some of the size of the file
   // a MORE flag -8th byte tells us if there is a subsequent byte
   // which holds the file size
@@ -383,7 +390,7 @@ const getContent = (item: number, buffer: Buffer) => {
  * @param {Buffer} buf - The buffer containing the zipped content.
  * @return {Array} An array containing the unzipped content and the size of the deflated content.
  */
-const unpack = (buf: Buffer) => {
+const unpack = (buf: Buffer): [string, number] => {
   // Unzip the content
   const inflated = zlib.inflateSync(buf);
 
