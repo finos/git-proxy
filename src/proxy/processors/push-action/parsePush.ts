@@ -4,6 +4,13 @@ import fs from 'fs';
 import path from 'path';
 import lod from 'lodash';
 import { CommitContent } from '../types';
+import {
+  BRANCH_PREFIX,
+  EMPTY_COMMIT_HASH,
+  PACK_SIGNATURE,
+  PACKET_SIZE,
+} from '../constants';
+
 const BitMask = require('bit-mask') as any;
 
 const dir = path.resolve(__dirname, './.tmp');
@@ -29,8 +36,7 @@ async function exec(req: any, action: Action): Promise<Action> {
       return action;
     }
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
-
-    const refUpdates = packetLines.filter((line) => line.includes('refs/heads/'));
+    const refUpdates = packetLines.filter((line) => line.includes(BRANCH_PREFIX));
 
     if (refUpdates.length !== 1) {
       step.log('Invalid number of branch updates.');
@@ -57,7 +63,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     const buf = req.body.slice(packDataOffset);
 
     // Verify that data actually starts with PACK signature
-    if (buf.length < 4 || buf.toString('utf8', 0, 4) !== 'PACK') {
+    if (buf.length < PACKET_SIZE || buf.toString('utf8', 0, PACKET_SIZE) !== PACK_SIGNATURE) {
       step.log(`Expected PACK signature at offset ${packDataOffset}, but found something else.`);
       step.setError('Your push has been blocked. Invalid PACK data structure.');
       action.addStep(step);
@@ -68,9 +74,14 @@ async function exec(req: any, action: Action): Promise<Action> {
     const contents = getContents(contentBuff as any, meta.entries as number);
 
     action.commitData = getCommitData(contents as any);
-
-    if (action.commitFrom === '0000000000000000000000000000000000000000') {
-      action.commitFrom = action.commitData[action.commitData.length - 1].parent;
+    if (action.commitData.length === 0) {
+      step.log('No commit data found when parsing push.')
+    } else {
+      if (action.commitFrom === EMPTY_COMMIT_HASH) {
+        action.commitFrom = action.commitData[action.commitData.length - 1].parent;
+      }
+      const user = action.commitData[action.commitData.length - 1].committer;
+      action.user = user;  
     }
 
     const user = action.commitData[action.commitData.length - 1].committer;
@@ -180,7 +191,7 @@ const getCommitData = (contents: CommitContent[]) => {
 
       const { tree, parents, authorInfo, committerInfo } = getParsedData(headerLines);
       // No parent headers -> zero hash
-      const parent = parents.length > 0 ? parents[0] : '0000000000000000000000000000000000000000';
+      const parent = parents.length > 0 ? parents[0] : EMPTY_COMMIT_HASH;
 
       // Validation for required attributes
       if (!tree || !authorInfo || !committerInfo) {
@@ -210,9 +221,9 @@ const getCommitData = (contents: CommitContent[]) => {
  * @return {Array} An array containing the metadata and the remaining buffer.
  */
 const getPackMeta = (buffer: Buffer) => {
-  const sig = buffer.slice(0, 4).toString('utf-8');
-  const version = buffer.readUIntBE(4, 4);
-  const entries = buffer.readUIntBE(8, 4);
+  const sig = buffer.slice(0, PACKET_SIZE).toString('utf-8');
+  const version = buffer.readUIntBE(PACKET_SIZE, PACKET_SIZE);
+  const entries = buffer.readUIntBE(PACKET_SIZE * 2, PACKET_SIZE);
 
   const meta = {
     sig: sig,
@@ -220,7 +231,7 @@ const getPackMeta = (buffer: Buffer) => {
     entries: entries,
   };
 
-  return [meta, buffer.slice(12)];
+  return [meta, buffer.slice(PACKET_SIZE * 3)];
 };
 
 /**
@@ -358,8 +369,8 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
   const lines: string[] = [];
   let offset = 0;
 
-  while (offset + 4 <= buffer.length) {
-    const lengthHex = buffer.toString('utf8', offset, offset + 4);
+  while (offset + PACKET_SIZE <= buffer.length) {
+    const lengthHex = buffer.toString('utf8', offset, offset + PACKET_SIZE);
     const length = Number(`0x${lengthHex}`);
 
     // Prevent non-hex characters from causing issues
@@ -369,7 +380,7 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
 
     // length of 0 indicates flush packet (0000)
     if (length === 0) {
-      offset += 4; // Include length of the flush packet
+      offset += PACKET_SIZE; // Include length of the flush packet
       break;
     }
 
@@ -378,7 +389,7 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
         throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
     }
 
-    const line = buffer.toString('utf8', offset + 4, offset + length);
+    const line = buffer.toString('utf8', offset + PACKET_SIZE, offset + length);
     lines.push(line);
     offset += length; // Move offset to the start of the next line's length prefix
   }
