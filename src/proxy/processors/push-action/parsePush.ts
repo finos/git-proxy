@@ -3,7 +3,7 @@ import zlib from 'zlib';
 import fs from 'fs';
 import path from 'path';
 import lod from 'lodash';
-import { CommitContent } from '../types';
+import { CommitContent, PersonLine } from '../types';
 import {
   BRANCH_PREFIX,
   EMPTY_COMMIT_HASH,
@@ -108,7 +108,7 @@ async function exec(req: any, action: Action): Promise<Action> {
  * @param {string} line - The line to parse.
  * @return {Object} An object containing the name, email, and timestamp.
  */
-const parsePersonLine = (line: string): { name: string; email: string; timestamp: string } | null => {
+const parsePersonLine = (line: string): PersonLine => {
   const personRegex = /^(.*?) <(.*?)> (\d+) ([+-]\d+)$/;
   const match = line.match(personRegex);
   if (!match) {
@@ -126,8 +126,8 @@ const getParsedData = (headerLines: string[]) => {
   const parsedData: {
     tree?: string;
     parents: string[];
-    authorInfo?: ReturnType<typeof parsePersonLine>;
-    committerInfo?: ReturnType<typeof parsePersonLine>;
+    authorInfo?: PersonLine;
+    committerInfo?: PersonLine;
   } = { parents: [] };
 
   for (const line of headerLines) {
