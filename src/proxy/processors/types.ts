@@ -18,3 +18,9 @@ export type CommitContent = {
   objectRef: any;
   content: string;
 }
+
+export type PersonLine = {
+  name: string;
+  email: string;
+  timestamp: string;
+}
