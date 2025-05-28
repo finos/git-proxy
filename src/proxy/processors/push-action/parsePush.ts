@@ -64,6 +64,8 @@ async function exec(req: any, action: Action): Promise<Action> {
 
     const [oldCommit, newCommit, ref] = parts;
 
+    // Strip everything after NUL, which is cap-list from
+    // https://git-scm.com/docs/http-protocol#_smart_server_response
     action.branch = ref.replace(/\0.*/, '').trim();
     action.setCommit(oldCommit, newCommit);
 
