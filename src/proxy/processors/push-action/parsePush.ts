@@ -54,6 +54,14 @@ async function exec(req: any, action: Action): Promise<Action> {
     }
 
     const parts = refUpdates[0].split(' ');
+    if (parts.length !== 3) {
+      step.log('Invalid number of parts in ref update.');
+      step.log(`Expected 3, but got ${parts.length}`);
+      step.setError('Your push has been blocked. Invalid ref update format.');
+      action.addStep(step);
+      return action;
+    }
+
     const [oldCommit, newCommit, ref] = parts;
 
     action.branch = ref.replace(/\0.*/, '').trim();
