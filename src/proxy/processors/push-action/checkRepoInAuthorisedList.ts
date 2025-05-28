@@ -1,29 +1,15 @@
 import { Action, Step } from '../../actions';
-import { getRepos } from '../../../db';
-import { Repo } from '../../../db/types';
+import { getRepoByUrl } from '../../../db';
 
 // Execute if the repo is approved
-const exec = async (
-  req: any,
-  action: Action,
-  authorisedList: () => Promise<Repo[]> = getRepos,
-): Promise<Action> => {
+const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('checkRepoInAuthorisedList');
 
-  const list = await authorisedList();
-  console.log(list);
-
-  const found = list.find((x: Repo) => {
-    const targetName = action.repo.replace('.git', '').toLowerCase();
-    const allowedName = `${x.project}/${x.name}`.replace('.git', '').toLowerCase();
-    console.log(`${targetName} = ${allowedName}`);
-    return targetName === allowedName;
-  });
-
-  console.log(found);
+  // console.log(found);
+  const found = (await getRepoByUrl(action.url)) !== null;
 
   if (!found) {
-    console.log('not found');
+    console.log(`Repository url '${action.url}' not found`);
     step.error = true;
     step.log(`repo ${action.repo} is not in the authorisedList, ending`);
     console.log('setting error');
@@ -33,7 +19,7 @@ const exec = async (
   }
 
   console.log('found');
-  step.log(`repo ${action.repo} is in the authorisedList`);
+  step.log(`repo ${action.url} is in the authorisedList`);
   action.addStep(step);
   return action;
 };
