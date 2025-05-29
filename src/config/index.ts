@@ -19,6 +19,7 @@ if (existsSync(configFile)) {
 let _authorisedList: AuthorisedRepo[] = defaultSettings.authorisedList;
 let _database: Database[] = defaultSettings.sink;
 let _authentication: Authentication[] = defaultSettings.authentication;
+let _apiAuthentication: Authentication[] = defaultSettings.apiAuthentication;
 let _tempPassword: TempPasswordConfig = defaultSettings.tempPassword;
 let _proxyUrl = defaultSettings.proxyUrl;
 let _api: Record<string, unknown> = defaultSettings.api;
@@ -91,6 +92,8 @@ export const getDatabase = () => {
 
 /**
  * Get the list of enabled authentication methods
+ * 
+ * At least one authentication method must be enabled.
  * @return {Array} List of enabled authentication methods
  */
 export const getAuthMethods = () => {
@@ -103,6 +106,22 @@ export const getAuthMethods = () => {
   if (enabledAuthMethods.length === 0) {
     throw new Error("No authentication method enabled");
   }
+
+  return enabledAuthMethods;
+};
+
+/**
+ * Get the list of enabled authentication methods for API endpoints
+ * 
+ * If no API authentication methods are enabled, all endpoints are public.
+ * @return {Array} List of enabled authentication methods
+ */
+export const getAPIAuthMethods = () => {
+  if (_userSettings !== null && _userSettings.apiAuthentication) {
+    _apiAuthentication = _userSettings.apiAuthentication;
+  }
+
+  const enabledAuthMethods = _apiAuthentication.filter(auth => auth.enabled);
 
   return enabledAuthMethods;
 };

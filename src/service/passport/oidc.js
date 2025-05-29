@@ -1,9 +1,8 @@
-const passport = require('passport');
 const db = require('../../db');
 
-let type;
+const type = 'openidconnect';
 
-const configure = async () => {
+const configure = async (passport) => {
   // Temp fix for ERR_REQUIRE_ESM, will be changed when we refactor to ESM
   const { discovery, fetchUserInfo } = await import('openid-client');
   const { Strategy } = await import('openid-client/passport');
@@ -37,7 +36,8 @@ const configure = async () => {
       return currentUrl;
     };
 
-    passport.use(strategy);
+    // Prevent default strategy name from being overridden with the server host
+    passport.use(type, strategy);
 
     passport.serializeUser((user, done) => {
       done(null, user.oidcId || user.username);
@@ -51,23 +51,22 @@ const configure = async () => {
         done(err);
       }
     })
-    console.log(`setting type to ${server.host}`)
-    type = server.host;
 
     return passport;
   } catch (error) {
     console.error('OIDC configuration failed:', error);
     throw error;
   }
-};
+}
 
 /**
  * Handles user authentication with OIDC.
- * @param {*} userInfo the OIDC user info object 
- * @param {*} done the callback function
- * @return {Promise<void>} a promise with the authenticated user or an error
+ * @param {Object} userInfo the OIDC user info object 
+ * @param {Function} done the callback function
+ * @return {Promise} a promise with the authenticated user or an error
  */
 const handleUserAuthentication = async (userInfo, done) => {
+  console.log('handleUserAuthentication called');
   try {
     const user = await db.findUserByOIDC(userInfo.sub);
 
@@ -113,9 +112,4 @@ const getUsername = (email) => {
   return email ? email.split('@')[0] : '';
 };
 
-module.exports = {
-  configure,
-  get type() {
-    return type;
-  }
-};
+module.exports = { configure, type };
