@@ -1,53 +1,55 @@
-const bcrypt = require('bcryptjs');
-/* eslint-disable max-len */
-const configure = async () => {
-  const passport = require('passport');
-  const Strategy = require('passport-local').Strategy;
-  const db = require('../../db');
+const bcrypt = require("bcryptjs");
+const LocalStrategy = require("passport-local").Strategy;
+const db = require("../../db");
 
+const type = "local";
+
+const configure = async (passport) => {
   passport.use(
-    new Strategy((username, password, cb) => {
-      db.findUser(username)
-        .then(async (user) => {
-          if (!user) {
-            return cb(null, false);
-          }
+    new LocalStrategy(async (username, password, done) => {
+      try {
+        const user = await db.findUser(username);
+        if (!user) {
+          return done(null, false, { message: "Incorrect username." });
+        }
 
-          const passwordCorrect = await bcrypt.compare(password, user.password);
+        const passwordCorrect = await bcrypt.compare(password, user.password);
+        if (!passwordCorrect) {
+          return done(null, false, { message: "Incorrect password." });
+        }
 
-          if (!passwordCorrect) {
-            return cb(null, false);
-          }
-          return cb(null, user);
-        })
-        .catch((err) => {
-          return cb(err);
-        });
-    }),
+        return done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    })
   );
 
-  passport.serializeUser(function (user, cb) {
-    cb(null, user.username);
+  passport.serializeUser((user, done) => {
+    done(null, user.username);
   });
 
-  passport.deserializeUser(function (username, cb) {
-    db.findUser(username)
-      .then((user) => {
-        cb(null, user);
-      })
-      .catch((err) => {
-        db(err, null);
-      });
+  passport.deserializeUser(async (username, done) => {
+    try {
+      const user = await db.findUser(username);
+      done(null, user);
+    } catch (err) {
+      done(err, null);
+    }
   });
-
-  const admin = await db.findUser('admin');
-
-  if (!admin) {
-    await db.createUser('admin', 'admin', 'admin@place.com', 'none', true);
-  }
 
   passport.type = 'local';
   return passport;
 };
 
-module.exports.configure = configure;
+/**
+ * Create the default admin user if it doesn't exist
+ */
+const createDefaultAdmin = async () => {
+  const admin = await db.findUser("admin");
+  if (!admin) {
+    await db.createUser("admin", "admin", "admin@place.com", "none", true);
+  }
+};
+
+module.exports = { configure, createDefaultAdmin, type };

@@ -89,27 +89,29 @@ export const getDatabase = () => {
   throw Error('No database cofigured!');
 };
 
-// Gets the configured authentication method, defaults to local
-export const getAuthentication = () => {
+/**
+ * Get the list of enabled authentication methods
+ * @return {Array} List of enabled authentication methods
+ */
+export const getAuthMethods = () => {
   if (_userSettings !== null && _userSettings.authentication) {
     _authentication = _userSettings.authentication;
   }
-  for (const ix in _authentication) {
-    if (!ix) continue;
-    const auth = _authentication[ix];
-    if (auth.enabled) {
-      return auth;
-    }
+
+  const enabledAuthMethods = _authentication.filter((auth) => auth.enabled);
+
+  if (enabledAuthMethods.length === 0) {
+    throw new Error("No authentication method enabled");
   }
 
-  throw Error('No authentication cofigured!');
+  return enabledAuthMethods;
 };
 
 // Log configuration to console
 export const logConfiguration = () => {
   console.log(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
   console.log(`data sink = ${JSON.stringify(getDatabase())}`);
-  console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
+  console.log(`authentication = ${JSON.stringify(getAuthMethods())}`);
   console.log(`rateLimit = ${JSON.stringify(getRateLimit())}`);
 };
 

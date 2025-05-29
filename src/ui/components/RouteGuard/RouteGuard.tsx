@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
 import { getUIRouteAuth } from '../../services/config';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 interface RouteGuardProps {
   component: React.ComponentType<any>;
@@ -43,7 +44,7 @@ const RouteGuard = ({ component: Component, fullRoutePath }: RouteGuardProps) =>
   }, [fullRoutePath]);
 
   if (!authChecked || isLoading) {
-    return <div>Loading...</div>; // TODO: Add a skeleton loader or spinner
+    return <CircularProgress />;
   }
 
   if (loginRequired && !user) {
