@@ -77,7 +77,7 @@ const updateUser = async (data) => {
 };
 
 const getUserLoggedIn = async (setIsLoading, setIsAdmin, setIsError, setAuth) => {
-  const url = new URL(`${baseUrl}/api/auth/userLoggedIn`);
+  const url = new URL(`${baseUrl}/api/auth/me`);
 
   await axios(url.toString(), { withCredentials: true })
     .then((response) => {
