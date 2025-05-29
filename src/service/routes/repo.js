@@ -127,7 +127,7 @@ router.post('/', async (req, res) => {
     const repo = await db.getRepoByUrl(req.body.url);
     if (repo) {
       res.status(409).send({
-        message: 'Repository already exists!',
+        message: `Repository ${req.body.url} already exists!`,
       });
     } else {
       try {

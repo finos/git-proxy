@@ -53,8 +53,8 @@ function AddRepositoryDialog(props) {
       maxUser: 1,
     };
 
-    if (data.project.trim().length == 0 || data.project.length > 100) {
-      setError('project name length unexpected');
+    if (data.project.length > 100) {
+      setError('organisation name is too long');
       return;
     }
 
@@ -64,7 +64,11 @@ function AddRepositoryDialog(props) {
     }
 
     try {
-      new URL(data.url);
+      const parsedUrl = new URL(data.url);
+      if (!parsedUrl.pathname.endsWith('.git')) {
+        setError('Invalid git URL - Git URLs should end with .git');
+        return;
+      }
     } catch {
       setError('Invalid URL');
       return;
@@ -73,6 +77,7 @@ function AddRepositoryDialog(props) {
     try {
       await addRepo(onClose, setError, data);
       handleSuccess(data);
+
       handleClose();
     } catch (e) {
       if (e.message) {
@@ -124,7 +129,7 @@ function AddRepositoryDialog(props) {
                     aria-describedby='project-helper-text'
                     onChange={(e) => setProject(e.target.value)}
                   />
-                  <FormHelperText id='project-helper-text'>GitHub Organization</FormHelperText>
+                  <FormHelperText id='project-helper-text'>Organization or path</FormHelperText>
                 </FormControl>
               </GridItem>
               <GridItem xs={12} sm={12} md={12}>
@@ -136,7 +141,7 @@ function AddRepositoryDialog(props) {
                     aria-describedby='name-helper-text'
                     onChange={(e) => setName(e.target.value)}
                   />
-                  <FormHelperText id='name-helper-text'>GitHub Repository Name</FormHelperText>
+                  <FormHelperText id='name-helper-text'>Git Repository Name</FormHelperText>
                 </FormControl>
               </GridItem>
               <GridItem xs={12} sm={12} md={12}>
@@ -149,7 +154,7 @@ function AddRepositoryDialog(props) {
                     aria-describedby='url-helper-text'
                     onChange={(e) => setUrl(e.target.value)}
                   />
-                  <FormHelperText id='url-helper-text'>GitHub Repository URL</FormHelperText>
+                  <FormHelperText id='url-helper-text'>Git Repository URL</FormHelperText>
                 </FormControl>
               </GridItem>
               <GridItem xs={12} sm={12} md={12}>

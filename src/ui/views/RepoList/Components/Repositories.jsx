@@ -28,7 +28,7 @@ export default function Repositories(props) {
   const itemsPerPage = 5;
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
-  const openRepo = (repo) => navigate(`/admin/repo/${repo}`, { replace: true });
+  const openRepo = (repoId) => navigate(`/admin/repo/${repoId}`, { replace: true });
 
   useEffect(() => {
     const query = {};
@@ -151,7 +151,7 @@ function GetGridContainerLayOut(props) {
           <Table className={props.classes.table} aria-label='simple table'>
             <TableBody>
               {props.data.map((row) => {
-                if (row.project && row.name) {
+                if (row.url) {
                   return <RepoOverview data={row} key={row._id} />;
                 }
               })}
