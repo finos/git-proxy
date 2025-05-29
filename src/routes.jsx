@@ -17,7 +17,7 @@
 */
 
 import React from 'react';
-import PrivateRoute from './ui/components/PrivateRoute/PrivateRoute';
+import RouteGuard from './ui/components/RouteGuard/RouteGuard';
 import Person from '@material-ui/icons/Person';
 import OpenPushRequests from './ui/views/OpenPushRequests/OpenPushRequests';
 import PushDetails from './ui/views/PushDetails/PushDetails';
@@ -35,7 +35,11 @@ const dashboardRoutes = [
     path: '/repo',
     name: 'Repositories',
     icon: RepoIcon,
-    component: (props) => <PrivateRoute component={RepoList} />,
+    component: (props) => 
+      <RouteGuard
+        component={RepoList}
+        fullRoutePath={`/dashboard/repo`}
+      />,
     layout: '/dashboard',
     visible: true,
   },
@@ -43,7 +47,11 @@ const dashboardRoutes = [
     path: '/repo/:id',
     name: 'Repo Details',
     icon: Person,
-    component: (props) => <PrivateRoute component={RepoDetails} />,
+    component: (props) => 
+      <RouteGuard
+        component={RepoDetails}
+        fullRoutePath={`/dashboard/repo/:id`}
+      />,
     layout: '/dashboard',
     visible: false,
   },
@@ -51,7 +59,11 @@ const dashboardRoutes = [
     path: '/push',
     name: 'Dashboard',
     icon: Dashboard,
-    component: (props) => <PrivateRoute component={OpenPushRequests} />,
+    component: (props) =>
+      <RouteGuard
+        component={OpenPushRequests}
+        fullRoutePath={`/dashboard/push`}
+      />,
     layout: '/dashboard',
     visible: true,
   },
@@ -59,7 +71,11 @@ const dashboardRoutes = [
     path: '/push/:id',
     name: 'Open Push Requests',
     icon: Person,
-    component: (props) => <PrivateRoute component={PushDetails} />,
+    component: (props) =>
+      <RouteGuard
+        component={PushDetails}
+        fullRoutePath={`/dashboard/push/:id`}
+      />,
     layout: '/dashboard',
     visible: false,
   },
@@ -67,7 +83,11 @@ const dashboardRoutes = [
     path: '/profile',
     name: 'My Account',
     icon: AccountCircle,
-    component: (props) => <PrivateRoute component={User} />,
+    component: (props) =>
+      <RouteGuard
+        component={User}
+        fullRoutePath={`/dashboard/profile`}
+      />,
     layout: '/dashboard',
     visible: true,
   },
@@ -75,7 +95,11 @@ const dashboardRoutes = [
     path: '/admin/user',
     name: 'Users',
     icon: Group,
-    component: (props) => <PrivateRoute adminOnly component={UserList} />,
+    component: (props) =>
+      <RouteGuard
+        component={UserList}
+        fullRoutePath={`/dashboard/admin/user`}
+      />,
     layout: '/dashboard',
     visible: true,
   },
@@ -83,7 +107,11 @@ const dashboardRoutes = [
     path: '/admin/user/:id',
     name: 'User',
     icon: Person,
-    component: (props) => <PrivateRoute adminOnly component={User} />,
+    component: (props) =>
+      <RouteGuard
+        component={User}
+        fullRoutePath={`/dashboard/admin/user/:id`}
+      />,
     layout: '/dashboard',
     visible: false,
   },
