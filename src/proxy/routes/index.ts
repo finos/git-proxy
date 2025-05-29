@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import proxy from 'express-http-proxy';
 import { executeChain } from '../chain';
-import { processUrlPath, validGitRequest, getAllProxiedOrigins } from './helper';
+import { processUrlPath, validGitRequest, getAllProxiedHosts } from './helper';
 import { ProxyOptions } from 'express-http-proxy';
 
 const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
@@ -18,6 +18,7 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
       !validGitRequest(urlComponents.gitPath, req.headers)
     ) {
       res.status(400).send('Invalid request received');
+      console.log('action blocked');
       return false;
     }
 
@@ -55,7 +56,7 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
 
     return true;
   } catch (e) {
-    console.error(e);
+    console.error('Error occurred in proxy filter function ', e);
     return false;
   }
 };
@@ -63,18 +64,24 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
 const handleMessage = (message: string): string => {
   const errorMessage = `\t${message}`;
   const len = 6 + new TextEncoder().encode(errorMessage).length;
-
   const prefix = len.toString(16);
   const packetMessage = `${prefix.padStart(4, '0')}\x02${errorMessage}\n0000`;
   return packetMessage;
 };
 
-const getRequestPathResolver: (origin: string) => ProxyOptions['proxyReqPathResolver'] = (
-  origin,
+const getRequestPathResolver: (prefix: string) => ProxyOptions['proxyReqPathResolver'] = (
+  prefix,
 ) => {
   return (req) => {
-    const url = origin + req.originalUrl;
-    console.log('Sending request to ' + url);
+    let url;
+    // try to prevent too many slashes in the URL
+    if (prefix.endsWith('/') && req.originalUrl.startsWith('/')) {
+      url = prefix.substring(0, prefix.length - 1) + req.originalUrl;
+    } else {
+      url = prefix + req.originalUrl;
+    }
+
+    console.log(`Sending request to ${url}`);
     return url;
   };
 };
@@ -96,18 +103,19 @@ const proxyErrorHandler: ProxyOptions['proxyErrorHandler'] = (err, res, next) =>
 // eslint-disable-next-line new-cap
 const router = Router();
 
-getAllProxiedOrigins().then((originsToProxy) => {
-  // TODO: this will only happen on startup (I think...) We'll need to add routes at runtime when new origins are added? Or force a restart for the proxy to work
+getAllProxiedHosts().then((originsToProxy) => {
+  // TODO: this will only happen on startup. We'll need to add routes at runtime when new origins are added? Or force a restart for the proxy to work
 
   // Middlewares are processed in the order that they are added, if one applies and then doesn't call `next` then subsequent ones are not applied.
   // Hence, we define known origins first, then a catch all route for backwards compatibility
   originsToProxy.forEach((origin) => {
+    console.log(`setting up origin '${origin}'`);
     router.use(
       '/' + origin,
-      proxy(origin, {
+      proxy('https://' + origin, {
         preserveHostHdr: false,
         filter: proxyFilter,
-        proxyReqPathResolver: getRequestPathResolver(origin),
+        proxyReqPathResolver: getRequestPathResolver('https://'), // no need to add host as it's in the URL
         proxyReqOptDecorator: proxyReqOptDecorator,
         proxyReqBodyDecorator: proxyReqBodyDecorator,
         proxyErrorHandler: proxyErrorHandler,
@@ -118,7 +126,7 @@ getAllProxiedOrigins().then((originsToProxy) => {
   // Catch-all route for backwards compatibility
   router.use(
     '/',
-    proxy(origin, {
+    proxy('https://github.com', {
       preserveHostHdr: false,
       filter: proxyFilter,
       proxyReqPathResolver: getRequestPathResolver('https://github.com'),
