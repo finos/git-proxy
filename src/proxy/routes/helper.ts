@@ -10,11 +10,17 @@ export type GitUrlBreakdown = { protocol: string; host: string; repoPath: string
  * git endpoint and discarding any git path (specific operation) that comes after
  * the .git element.
  *
- * E.g. Processing http://github.com/finos/git-proxy.git/info/refs?service=git-upload-pack
+ * E.g. Processing https://github.com/finos/git-proxy.git/info/refs?service=git-upload-pack
  * would produce:
  * - protocol: https://
  * - host: github.com
- * - repoPath: finos/git-proxy.git
+ * - repoPath: /finos/git-proxy.git
+ *
+ * and processing https://someOtherHost.com:8080/repo.git
+ * would produce:
+ * - protocol: https://
+ * - host: someOtherHost.com:8080
+ * - repoPath: /repo.git
  *
  * @param {string} url The URL to process
  * @return {GitUrlBreakdown | null} A breakdown of the components of the URL.
@@ -177,18 +183,18 @@ export const validGitRequest = (gitPath: string, headers: any): boolean => {
 };
 
 /**
- * Collect the Set of all origins (protocol, host and port if specified) that
+ * Collect the Set of all host (host and port if specified) that
  * will be proxying requests for, to be used to initialize the proxy.
  *
  * @return {string[]} an array of origins
  */
-export const getAllProxiedOrigins = async (): Promise<string[]> => {
+export const getAllProxiedHosts = async (): Promise<string[]> => {
   const repos = await db.getRepos();
   const origins = new Set<string>();
   repos.forEach((repo) => {
     const parsedUrl = processGitUrl(repo.url);
     if (parsedUrl) {
-      origins.add(parsedUrl.protocol + parsedUrl.host);
+      origins.add(parsedUrl.host);
     } // failures are logged by parsing util fn
   });
   return Array.from(origins);
