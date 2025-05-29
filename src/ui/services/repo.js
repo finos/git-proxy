@@ -9,8 +9,8 @@ const config = {
   withCredentials: true,
 };
 
-const canAddUser = (repoName, user, action) => {
-  const url = new URL(`${baseUrl}/repo/${repoName}`);
+const canAddUser = (repoId, user, action) => {
+  const url = new URL(`${baseUrl}/repo/${repoId}`);
   return axios
     .get(url.toString(), config)
     .then((response) => {
@@ -94,10 +94,10 @@ const addRepo = async (onClose, setError, data) => {
     });
 };
 
-const addUser = async (repoName, user, action) => {
-  const canAdd = await canAddUser(repoName, user, action);
+const addUser = async (repoId, user, action) => {
+  const canAdd = await canAddUser(repoId, user, action);
   if (canAdd) {
-    const url = new URL(`${baseUrl}/repo/${repoName}/user/${action}`);
+    const url = new URL(`${baseUrl}/repo/${repoId}/user/${action}`);
     const data = { username: user };
     await axios
       .patch(url, data, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
@@ -111,8 +111,8 @@ const addUser = async (repoName, user, action) => {
   }
 };
 
-const deleteUser = async (user, repoName, action) => {
-  const url = new URL(`${baseUrl}/repo/${repoName}/user/${action}/${user}`);
+const deleteUser = async (user, repoId, action) => {
+  const url = new URL(`${baseUrl}/repo/${repoId}/user/${action}/${user}`);
 
   await axios
     .delete(url, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
@@ -122,8 +122,8 @@ const deleteUser = async (user, repoName, action) => {
     });
 };
 
-const deleteRepo = async (repoName) => {
-  const url = new URL(`${baseUrl}/repo/${repoName}/delete`);
+const deleteRepo = async (repoId) => {
+  const url = new URL(`${baseUrl}/repo/${repoId}/delete`);
 
   await axios
     .delete(url, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
