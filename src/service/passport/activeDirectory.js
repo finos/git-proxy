@@ -1,6 +1,8 @@
 const ActiveDirectoryStrategy = require('passport-activedirectory');
 const ldaphelper = require('./ldaphelper');
 
+const type = "activedirectory";
+
 const configure = (passport) => {
   const db = require('../../db');
 
@@ -15,6 +17,7 @@ const configure = (passport) => {
   console.log(`AD User Group: ${userGroup}, AD Admin Group: ${adminGroup}`);
 
   passport.use(
+    type,
     new ActiveDirectoryStrategy(
       {
         passReqToCallback: true,
@@ -77,4 +80,4 @@ const configure = (passport) => {
   return passport;
 };
 
-module.exports = { configure };
+module.exports = { configure, type };

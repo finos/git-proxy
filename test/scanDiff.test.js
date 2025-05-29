@@ -1,6 +1,6 @@
 const chai = require('chai');
 const crypto = require('crypto');
-const processor = require('../src/proxy/processors/push-action/scanDiff.js');
+const processor = require('../src/proxy/processors/push-action/scanDiff');
 const { Action } = require('../src/proxy/actions/Action');
 const { expect } = chai;
 const config = require('../src/config');
