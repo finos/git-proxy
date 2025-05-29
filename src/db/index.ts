@@ -92,27 +92,6 @@ export const createRepo = async (repo: AuthorisedRepo) => {
   return sink.createRepo(toCreate) as Promise<Required<Repo>>;
 };
 
-export const getRepoByUrl = async (repoUrl: string) => {
-  const response = await sink.getRepoByUrl(repoUrl);
-  // backwards compatibility
-  if (!response) {
-    // parse github URLs into org and repo names and fallback to legacy retrieval by repo name
-    const regex = /.*\/([\w_.-]+?)(\.git)?$/m;
-    const match = regex.exec(repoUrl);
-    let repoName = '';
-
-    if (match && match[1]) {
-      repoName = match[1];
-    } else {
-      const errorMessage = `Cannot parse repository name from ${repoUrl}`;
-      throw new Error(errorMessage);
-    }
-
-    return sink.getRepo(repoName);
-  }
-  return response;
-};
-
 export const isUserPushAllowed = async (url: string, user: string) => {
   user = user.toLowerCase();
   return new Promise<boolean>(async (resolve) => {
@@ -183,7 +162,7 @@ export const cancel = (id: string): Promise<{ message: string }> => sink.cancel(
 export const reject = (id: string): Promise<{ message: string }> => sink.reject(id);
 export const getRepos = (query?: object): Promise<Repo[]> => sink.getRepos(query);
 export const getRepo = (name: string): Promise<Repo | null> => sink.getRepo(name);
-// export const getRepoByUrl = (url: string): Promise<Repo | null> => sink.getRepoByUrl(url);
+export const getRepoByUrl = (url: string): Promise<Repo | null> => sink.getRepoByUrl(url);
 export const getRepoById = (_id: string): Promise<Repo | null> => sink.getRepoById(_id);
 export const addUserCanPush = (_id: string, user: string): Promise<void> =>
   sink.addUserCanPush(_id, user);
