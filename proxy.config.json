@@ -1,5 +1,4 @@
 {
-  "proxyUrl": "https://github.com",
   "cookieSecret": "cookie secret",
   "sessionMaxAgeHours": 12,
   "rateLimit": {
