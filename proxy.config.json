@@ -56,13 +56,13 @@
     },
     {
       "type": "openidconnect",
-      "enabled": true,
+      "enabled": false,
       "oidcConfig": {
-        "issuer": "https://accounts.google.com/",
-        "clientID": "1009968223893-u92qq6itk7ej5008o4174gjubs5lhorg.apps.googleusercontent.com",
-        "clientSecret": "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",
-        "callbackURL": "http://localhost:8080/api/auth/oidc/callback",
-        "scope": "openid email profile"
+        "issuer": "",
+        "clientID": "",
+        "clientSecret": "",
+        "callbackURL": "",
+        "scope": ""
       }
     }
   ],
@@ -151,8 +151,8 @@
       "type": "jwt",
       "enabled": false,
       "jwtConfig": {
-        "clientID": "1009968223893-u92qq6itk7ej5008o4174gjubs5lhorg.apps.googleusercontent.com",
-        "authorityURL": "https://accounts.google.com"
+        "clientID": "",
+        "authorityURL": ""
       }
     }
   ],
