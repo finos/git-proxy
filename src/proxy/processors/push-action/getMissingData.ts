@@ -2,6 +2,8 @@ import { Action, Step } from '../../actions';
 import { validateUser } from './checkUserPushPermission';
 import simpleGit from 'simple-git';
 
+import { EMPTY_COMMIT_HASH } from '../constants';
+
 const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('getMissingData');
 
@@ -31,7 +33,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       });
       console.log(`Updated commitData:`, { commitData: action.commitData });
 
-      if (action.commitFrom === '0000000000000000000000000000000000000000') {
+    if (action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }
       const user = action.commitData[action.commitData.length - 1].committer;
