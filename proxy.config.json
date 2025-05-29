@@ -2,6 +2,10 @@
   "proxyUrl": "https://github.com",
   "cookieSecret": "cookie secret",
   "sessionMaxAgeHours": 12,
+  "rateLimit": {
+    "windowMs": 60000,
+    "limit": 150
+  },
   "tempPassword": {
     "sendEmail": false,
     "emailConfig": {}
@@ -49,17 +53,14 @@
         "baseDN": "",
         "searchBase": ""
       }
-    },    
+    },
     {
       "type": "openidconnect",
       "enabled": true,
       "oidcConfig": {
-        "issuer": "https://accounts.google.com",
+        "issuer": "https://accounts.google.com/",
         "clientID": "1009968223893-u92qq6itk7ej5008o4174gjubs5lhorg.apps.googleusercontent.com",
         "clientSecret": "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",
-        "authorizationURL": "https://accounts.google.com/o/oauth2/auth",
-        "tokenURL": "https://oauth2.googleapis.com/token",
-        "userInfoURL": "https://openidconnect.googleapis.com/v1/userinfo",
         "callbackURL": "http://localhost:8080/api/auth/oidc/callback",
         "scope": "openid email profile"
       }
@@ -106,6 +107,39 @@
       }
     ]
   },
+  "configurationSources": {
+    "enabled": false,
+    "reloadIntervalSeconds": 60,
+    "merge": false,
+    "sources": [
+      {
+        "type": "file",
+        "enabled": false,
+        "path": "./external-config.json"
+      },
+      {
+        "type": "http",
+        "enabled": false,
+        "url": "http://config-service/git-proxy-config",
+        "headers": {},
+        "auth": {
+          "type": "bearer",
+          "token": ""
+        }
+      },
+      {
+        "type": "git",
+        "enabled": false,
+        "repository": "https://git-server.com/project/git-proxy-config",
+        "branch": "main",
+        "path": "git-proxy/config.json",
+        "auth": {
+          "type": "ssh",
+          "privateKeyPath": "/path/to/.ssh/id_rsa"
+        }
+      }
+    ]
+  },
   "domains": {},
   "privateOrganizations": [],
   "urlShortener": "",
@@ -115,11 +149,31 @@
   "apiAuthentication": [
     {
       "type": "jwt",
-      "enabled": true,
+      "enabled": false,
       "jwtConfig": {
         "clientID": "1009968223893-u92qq6itk7ej5008o4174gjubs5lhorg.apps.googleusercontent.com",
         "authorityURL": "https://accounts.google.com"
       }
     }
-  ]
+  ],
+  "tls": {
+    "enabled": false,
+    "key": "certs/key.pem",
+    "cert": "certs/cert.pem"
+  },
+  "uiRouteAuth": {
+    "enabled": false,
+    "rules": [
+      {
+        "pattern": "/dashboard/*",
+        "adminOnly": false,
+        "loginRequired": true
+      },
+      {
+        "pattern": "/admin/*",
+        "adminOnly": true,
+        "loginRequired": true
+      }
+    ]
+  }
 }
