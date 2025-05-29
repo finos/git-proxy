@@ -1,8 +1,8 @@
 const express = require('express');
 const router = new express.Router();
 const passport = require('../passport').getPassport();
+const authStrategies = require('../passport').authStrategies;
 const db = require('../../db');
-const passportType = passport.type;
 const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } = process.env;
 
 router.get('/', (req, res) => {
@@ -22,7 +22,7 @@ router.get('/', (req, res) => {
   });
 });
 
-router.post('/login', passport.authenticate(passportType), async (req, res) => {
+router.post('/login', passport.authenticate(authStrategies['local'].type), async (req, res) => {
   try {
     const currentUser = { ...req.user };
     delete currentUser.password;
@@ -42,10 +42,10 @@ router.post('/login', passport.authenticate(passportType), async (req, res) => {
   }
 });
 
-router.get('/oidc', passport.authenticate(passportType));
+router.get('/oidc', passport.authenticate(authStrategies['openidconnect'].type));
 
 router.get('/oidc/callback', (req, res, next) => {
-  passport.authenticate(passportType, (err, user, info) => {
+  passport.authenticate(authStrategies['openidconnect'].type, (err, user, info) => {
     if (err) {
       console.error('Authentication error:', err);
       return res.status(401).end();
@@ -60,7 +60,7 @@ router.get('/oidc/callback', (req, res, next) => {
         return res.status(401).end();
       }
       console.log('Logged in successfully. User:', user);
-      return res.redirect(`${uiHost}:${uiPort}/admin/profile`);
+      return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
     });
   })(req, res, next);
 });
@@ -122,7 +122,7 @@ router.post('/gitAccount', async (req, res) => {
       user.gitAccount = req.body.gitAccount;
       db.updateUser(user);
       res.status(200).end();
-    } catch (e) {
+    } catch {
       res
         .status(500)
         .send({
@@ -135,7 +135,7 @@ router.post('/gitAccount', async (req, res) => {
   }
 });
 
-router.get('/userLoggedIn', async (req, res) => {
+router.get('/me', async (req, res) => {
   if (req.user) {
     const user = JSON.parse(JSON.stringify(req.user));
     if (user && user.password) delete user.password;

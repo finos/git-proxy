@@ -1,12 +1,14 @@
 const passport = require('passport');
 const db = require('../../db');
 
+let type;
+
 const configure = async () => {
   // Temp fix for ERR_REQUIRE_ESM, will be changed when we refactor to ESM
   const { discovery, fetchUserInfo } = await import('openid-client');
   const { Strategy } = await import('openid-client/passport');
-  const config = require('../../config').getAuthentication();
-  const { oidcConfig } = config;
+  const authMethods = require('../../config').getAuthMethods();
+  const oidcConfig = authMethods.find((method) => method.type.toLowerCase() === "openidconnect")?.oidcConfig;
   const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
 
   if (!oidcConfig || !oidcConfig.issuer) {
@@ -49,23 +51,21 @@ const configure = async () => {
         done(err);
       }
     })
-    passport.type = server.host;
+    console.log(`setting type to ${server.host}`)
+    type = server.host;
 
     return passport;
   } catch (error) {
     console.error('OIDC configuration failed:', error);
     throw error;
   }
-}
-
-
-module.exports.configure = configure;
+};
 
 /**
  * Handles user authentication with OIDC.
- * @param {Object} userInfo the OIDC user info object 
- * @param {Function} done the callback function
- * @return {Promise} a promise with the authenticated user or an error
+ * @param {*} userInfo the OIDC user info object 
+ * @param {*} done the callback function
+ * @return {Promise<void>} a promise with the authenticated user or an error
  */
 const handleUserAuthentication = async (userInfo, done) => {
   try {
@@ -111,4 +111,11 @@ const safelyExtractEmail = (profile) => {
  */
 const getUsername = (email) => {
   return email ? email.split('@')[0] : '';
+};
+
+module.exports = {
+  configure,
+  get type() {
+    return type;
+  }
 };
