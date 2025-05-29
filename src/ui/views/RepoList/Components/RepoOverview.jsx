@@ -578,6 +578,7 @@ export default function Repositories(props) {
     getGitHubRepository();
   }, [props.data.project, props.data.name]);
 
+  // TODO add support for GitLab API: https://docs.gitlab.com/api/projects/#get-a-single-project
   const getGitHubRepository = async () => {
     await axios
       .get(`https://api.github.com/repos/${props.data.project}/${props.data.name}`)
@@ -585,13 +586,16 @@ export default function Repositories(props) {
         setGitHub(res.data);
       })
       .catch((error) => {
-        setErrorMessage(`Error fetching GitHub repository ${props.data.project}/${props.data.name}: ${error}`);
+        setErrorMessage(
+          `Error fetching GitHub repository ${props.data.project}/${props.data.name}: ${error}`,
+        );
         setSnackbarOpen(true);
       });
   };
 
-  const { project: org, name, proxyURL } = props?.data || {};
-  const cloneURL = `${proxyURL}/${org}/${name}.git`;
+  const { url: remoteUrl, proxyURL } = props?.data || {};
+  const parsedUrl = new URL(remoteUrl);
+  const cloneURL = `${proxyURL}/${parsedUrl.host}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`;
 
   return (
     <TableRow>

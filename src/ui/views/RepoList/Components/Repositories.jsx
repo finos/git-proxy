@@ -151,7 +151,7 @@ function GetGridContainerLayOut(props) {
           <Table className={props.classes.table} aria-label='simple table'>
             <TableBody>
               {props.data.map((row) => {
-                if (row.project && row.name) {
+                if (row.url) {
                   return <RepoOverview data={row} key={row._id} />;
                 }
               })}

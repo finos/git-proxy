@@ -19,7 +19,7 @@ import { getUsers } from '../../../services/user';
 import { PersonAdd } from '@material-ui/icons';
 
 function AddUserDialog(props) {
-  const repoName = props.repoName;
+  const repoId = props.repoId;
   const type = props.type;
   const refreshFn = props.refreshFn;
   const [username, setUsername] = useState('');
@@ -48,7 +48,7 @@ function AddUserDialog(props) {
   const add = async () => {
     try {
       setIsLoading(true);
-      await addUser(repoName, username, type);
+      await addUser(repoId, username, type);
       handleSuccess();
       handleClose();
     } catch (e) {
@@ -145,7 +145,7 @@ AddUserDialog.propTypes = {
 export default function AddUser(props) {
   const [open, setOpen] = React.useState(false);
 
-  const repoName = props.repoName;
+  const repoId = props.repoId;
   const type = props.type;
   const refreshFn = props.refreshFn;
 
@@ -163,7 +163,7 @@ export default function AddUser(props) {
         <PersonAdd></PersonAdd>
       </Button>
       <AddUserDialog
-        repoName={repoName}
+        repoId={repoId}
         type={type}
         open={open}
         onClose={handleClose}

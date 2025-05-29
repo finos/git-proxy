@@ -95,6 +95,9 @@ export default function Dashboard() {
 
   const repoFullName = data.repo.replace('.git', '');
   const repoBranch = data.branch.replace('refs/heads/', '');
+  const repoUrl = data.url;
+  const repoWebUrl = repoUrl.replace('.git', '');
+  const isGitHub = repoUrl.startsWith('https://github.com');
 
   const generateIcon = (title) => {
     switch (title) {
@@ -197,17 +200,26 @@ export default function Dashboard() {
                     </>
                   ) : (
                     <>
-                      <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
-                        <img
-                          style={{ width: '45px', borderRadius: '20px' }}
-                          src={`https://github.com/${data.attestation.reviewer.gitAccount}.png`}
-                        />
-                      </a>
+                      {isGitHub && (
+                        <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
+                          <img
+                            style={{ width: '45px', borderRadius: '20px' }}
+                            src={`https://github.com/${data.attestation.reviewer.gitAccount}.png`}
+                          />
+                        </a>
+                      )}
                       <div>
                         <p>
-                          <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
-                            {data.attestation.reviewer.gitAccount}
-                          </a>{' '}
+                          {isGitHub && (
+                            <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
+                              {data.attestation.reviewer.gitAccount}
+                            </a>
+                          )}
+                          {!isGitHub && (
+                            <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
+                              {data.attestation.reviewer.username}
+                            </a>
+                          )}{' '}
                           approved this contribution
                         </p>
                       </div>
@@ -247,7 +259,7 @@ export default function Dashboard() {
                   <h3>Remote Head</h3>
                   <p>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${data.commitFrom}`}
+                      href={`${repoWebUrl}/commit/${data.commitFrom}`}
                       rel='noreferrer'
                       target='_blank'
                     >
@@ -259,7 +271,7 @@ export default function Dashboard() {
                   <h3>Commit SHA</h3>
                   <p>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${data.commitTo}`}
+                      href={`${repoWebUrl}/commit/${data.commitTo}`}
                       rel='noreferrer'
                       target='_blank'
                     >
@@ -270,7 +282,7 @@ export default function Dashboard() {
                 <GridItem xs={2} sm={2} md={2}>
                   <h3>Repository</h3>
                   <p>
-                    <a href={`https://github.com/${repoFullName}`} rel='noreferrer' target='_blank'>
+                    <a href={`${repoWebUrl}`} rel='noreferrer' target='_blank'>
                       {repoFullName}
                     </a>
                   </p>
@@ -278,11 +290,7 @@ export default function Dashboard() {
                 <GridItem xs={2} sm={2} md={2}>
                   <h3>Branch</h3>
                   <p>
-                    <a
-                      href={`https://github.com/${repoFullName}/tree/${repoBranch}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
+                    <a href={`${repoWebUrl}/tree/${repoBranch}`} rel='noreferrer' target='_blank'>
                       {repoBranch}
                     </a>
                   </p>
@@ -310,18 +318,28 @@ export default function Dashboard() {
                         {moment.unix(c.commitTs || c.commitTimestamp).toString()}
                       </TableCell>
                       <TableCell>
-                        <a
-                          href={`https://github.com/${c.committer}`}
-                          rel='noreferrer'
-                          target='_blank'
-                        >
-                          {c.committer}
-                        </a>
+                        {isGitHub && (
+                          <a
+                            href={`https://github.com/${c.committer}`}
+                            rel='noreferrer'
+                            target='_blank'
+                          >
+                            {c.committer}
+                          </a>
+                        )}
+                        {!isGitHub && <span>{c.committer}</span>}
                       </TableCell>
                       <TableCell>
-                        <a href={`https://github.com/${c.author}`} rel='noreferrer' target='_blank'>
-                          {c.author}
-                        </a>
+                        {isGitHub && (
+                          <a
+                            href={`https://github.com/${c.author}`}
+                            rel='noreferrer'
+                            target='_blank'
+                          >
+                            {c.author}
+                          </a>
+                        )}
+                        {!isGitHub && <span>{c.author}</span>}
                       </TableCell>
                       <TableCell>
                         {c.authorEmail ? (

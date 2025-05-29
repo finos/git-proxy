@@ -38,29 +38,30 @@ export default function RepoDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const { user } = useContext(UserContext);
-  const { id: repoName } = useParams();
+  const { id: repoId } = useParams();
 
   useEffect(() => {
-    getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
+    getRepo(setIsLoading, setData, setAuth, setIsError, repoId);
   }, []);
 
   const removeUser = async (userToRemove, action) => {
-    await deleteUser(userToRemove, repoName, action);
-    getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
+    await deleteUser(userToRemove, repoId, action);
+    getRepo(setIsLoading, setData, setAuth, setIsError, repoId);
   };
 
-  const removeRepository = async (name) => {
-    await deleteRepo(name);
+  const removeRepository = async (id) => {
+    await deleteRepo(id);
     navigate('/dashboard/repo', { replace: true });
   };
 
-  const refresh = () => getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
+  const refresh = () => getRepo(setIsLoading, setData, setAuth, setIsError, repoId);
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
 
-  const { project: org, name, proxyURL } = data || {};
-  const cloneURL = `${proxyURL}/${org}/${name}.git`;
+  const { url: remoteUrl, proxyURL } = data || {};
+  const parsedUrl = new URL(remoteUrl);
+  const cloneURL = `${proxyURL}/${parsedUrl.host}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`;
 
   return (
     <GridContainer>
@@ -72,7 +73,7 @@ export default function RepoDetails() {
                 <Button
                   variant='contained'
                   color='secondary'
-                  onClick={() => removeRepository(data.name)}
+                  onClick={() => removeRepository(data._id)}
                 >
                   <Delete></Delete>
                 </Button>
@@ -134,7 +135,7 @@ export default function RepoDetails() {
                 </h3>
                 {user.admin && (
                   <div style={{ textAlign: 'right' }}>
-                    <AddUser repoName={repoName} type='authorise' refreshFn={refresh}></AddUser>
+                    <AddUser repoId={repoId} type='authorise' refreshFn={refresh}></AddUser>
                   </div>
                 )}
                 <TableContainer component={Paper}>
@@ -179,7 +180,7 @@ export default function RepoDetails() {
                 </h3>
                 {user.admin && (
                   <div style={{ textAlign: 'right' }}>
-                    <AddUser repoName={repoName} type='push' refreshFn={refresh} />
+                    <AddUser repoId={repoId} type='push' refreshFn={refresh} />
                   </div>
                 )}
                 <TableContainer component={Paper}>
