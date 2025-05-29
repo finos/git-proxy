@@ -38,7 +38,6 @@ const configure = async (passport) => {
     }
   });
 
-  passport.type = 'local';
   return passport;
 };
 

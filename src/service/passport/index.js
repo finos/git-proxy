@@ -16,6 +16,7 @@ const configure = async () => {
   passport.initialize();
 
   const authMethods = config.getAuthMethods();
+  console.log(`authMethods: ${JSON.stringify(authMethods)}`);
 
   for (const auth of authMethods) {
     const strategy = authStrategies[auth.type.toLowerCase()];

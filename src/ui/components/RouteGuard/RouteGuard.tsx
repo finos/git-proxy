@@ -36,8 +36,6 @@ const RouteGuard = ({ component: Component, fullRoutePath }: RouteGuardProps) =>
             setAdminOnly(adminOnly || rule.adminOnly);
           }
         }
-      } else {
-        console.log('UI route auth is not enabled.');
       }
       setAuthChecked(true);
     });

@@ -1,6 +1,8 @@
 const ActiveDirectoryStrategy = require('passport-activedirectory');
 const ldaphelper = require('./ldaphelper');
 
+const type = "activedirectory";
+
 const configure = (passport) => {
   const db = require('../../db');
 
@@ -15,6 +17,7 @@ const configure = (passport) => {
   console.log(`AD User Group: ${userGroup}, AD Admin Group: ${adminGroup}`);
 
   passport.use(
+    type,
     new ActiveDirectoryStrategy(
       {
         passReqToCallback: true,
@@ -28,11 +31,6 @@ const configure = (passport) => {
           profile.id = profile.username;
           req.user = profile;
 
-          console.log(
-            `passport.activeDirectory: resolved login ${
-              profile._json.userPrincipalName
-            }, profile=${JSON.stringify(profile)}`,
-          );
           // First check to see if the user is in the usergroups
           const isUser = await ldaphelper.isUserInAdGroup(profile.username, domain, userGroup);
 
@@ -45,7 +43,6 @@ const configure = (passport) => {
           const isAdmin = await ldaphelper.isUserInAdGroup(profile.username, domain, adminGroup);
 
           profile.admin = isAdmin;
-          console.log(`passport.activeDirectory: ${profile.username} admin=${isAdmin}`);
 
           const user = {
             username: profile.username,
@@ -77,4 +74,4 @@ const configure = (passport) => {
   return passport;
 };
 
-module.exports = { configure };
+module.exports = { configure, type };
