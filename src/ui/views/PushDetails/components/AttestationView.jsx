@@ -62,7 +62,7 @@ export default function AttestationView(props) {
         <p style={{ fontSize: '15px', paddingLeft: '34px' }}>
           Prior to making this code contribution publicly accessible via GitHub, this code
           contribution was reviewed and approved by{' '}
-          <a href={`/admin/user/${props.data.reviewer.username}`}>
+          <a href={`/dashboard/admin/user/${props.data.reviewer.username}`}>
             {props.data.reviewer.gitAccount}
           </a>
           . As a reviewer, it was their responsibility to confirm that open sourcing this
@@ -72,7 +72,7 @@ export default function AttestationView(props) {
       <DialogContent>
         <p>
           <span>
-            <a href={`/admin/user/${props.data.reviewer.username}`}>
+            <a href={`/dashboard/admin/user/${props.data.reviewer.username}`}>
               {props.data.reviewer.gitAccount}
             </a>{' '}
             approved this contribution{' '}

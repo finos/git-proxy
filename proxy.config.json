@@ -53,6 +53,17 @@
         "baseDN": "",
         "searchBase": ""
       }
+    },
+    {
+      "type": "openidconnect",
+      "enabled": false,
+      "oidcConfig": {
+        "issuer": "",
+        "clientID": "",
+        "clientSecret": "",
+        "callbackURL": "",
+        "scope": ""
+      }
     }
   ],
   "api": {
@@ -135,9 +146,34 @@
   "contactEmail": "",
   "csrfProtection": true,
   "plugins": [],
+  "apiAuthentication": [
+    {
+      "type": "jwt",
+      "enabled": false,
+      "jwtConfig": {
+        "clientID": "",
+        "authorityURL": ""
+      }
+    }
+  ],
   "tls": {
     "enabled": false,
     "key": "certs/key.pem",
     "cert": "certs/cert.pem"
+  },
+  "uiRouteAuth": {
+    "enabled": false,
+    "rules": [
+      {
+        "pattern": "/dashboard/*",
+        "adminOnly": false,
+        "loginRequired": true
+      },
+      {
+        "pattern": "/admin/*",
+        "adminOnly": true,
+        "loginRequired": true
+      }
+    ]
   }
 }
