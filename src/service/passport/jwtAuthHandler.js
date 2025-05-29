@@ -1,6 +1,7 @@
 const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const jwkToPem = require("jwk-to-pem");
+const config = require('../../config');
 
 /**
  * Obtain the JSON Web Key Set (JWKS) from the OIDC authority.
@@ -65,7 +66,7 @@ async function validateJwt(token, authorityUrl, clientID, expectedAudience) {
 
 const jwtAuthHandler = () => {
   return async (req, res, next) => {
-    const apiAuthMethods = require('../../config').getAPIAuthMethods();
+    const apiAuthMethods = config.getAPIAuthMethods();
     const jwtAuthMethod = apiAuthMethods.find((method) => method.type.toLowerCase() === "jwt");
       if (!jwtAuthMethod) {
           return next();
