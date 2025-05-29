@@ -95,6 +95,9 @@ export default function PushesTable(props) {
             {currentItems.reverse().map((row) => {
               const repoFullName = row.repo.replace('.git', '');
               const repoBranch = row.branch.replace('refs/heads/', '');
+              const repoUrl = row.url;
+              const repoWebUrl = repoUrl.replace('.git', '');
+              const isGitHub = repoUrl.startsWith('https://github.com');
 
               return (
                 <TableRow key={row.id}>
@@ -104,22 +107,18 @@ export default function PushesTable(props) {
                       .toString()}
                   </TableCell>
                   <TableCell align='left'>
-                    <a href={`https://github.com/${row.repo}`} rel='noreferrer' target='_blank'>
+                    <a href={`${repoUrl}`} rel='noreferrer' target='_blank'>
                       {repoFullName}
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    <a
-                      href={`https://github.com/${repoFullName}/tree/${repoBranch}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
+                    <a href={`${repoWebUrl}/tree/${repoBranch}`} rel='noreferrer' target='_blank'>
                       {repoBranch}
                     </a>
                   </TableCell>
                   <TableCell align='left'>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${row.commitTo}`}
+                      href={`${repoWebUrl}/commit/${row.commitTo}`}
                       rel='noreferrer'
                       target='_blank'
                     >
@@ -127,22 +126,28 @@ export default function PushesTable(props) {
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    <a
-                      href={`https://github.com/${row.commitData[0].committer}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
-                      {row.commitData[0].committer}
-                    </a>
+                    {isGitHub && (
+                      <a
+                        href={`https://github.com/${row.commitData[0].committer}`}
+                        rel='noreferrer'
+                        target='_blank'
+                      >
+                        {row.commitData[0].committer}
+                      </a>
+                    )}
+                    {!isGitHub && <span>{row.commitData[0].committer}</span>}
                   </TableCell>
                   <TableCell align='left'>
-                    <a
-                      href={`https://github.com/${row.commitData[0].author}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
-                      {row.commitData[0].author}
-                    </a>
+                    {isGitHub && (
+                      <a
+                        href={`https://github.com/${row.commitData[0].author}`}
+                        rel='noreferrer'
+                        target='_blank'
+                      >
+                        {row.commitData[0].author}
+                      </a>
+                    )}
+                    {!isGitHub && <span>{row.commitData[0].author}</span>}
                   </TableCell>
                   <TableCell align='left'>
                     {row.commitData[0].authorEmail ? (
