@@ -30,7 +30,7 @@ async function runCli(
   expectedExitCode = 0,
   expectedMessages = null,
   expectedErrorMessages = null,
-  debug = false,
+  debug = true,
 ) {
   try {
     console.log(`cli: '${cli}'`);
@@ -177,17 +177,17 @@ async function removeRepoFromDb(repoUrl) {
 /**
  * Add a new git push record to the database.
  * @param {string} id The ID of the git push.
- * @param {string} repo The repository of the git push.
+ * @param {string} repoUrl The repository URL of the git push.
  * @param {string} user The user who pushed the git push.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
-async function addGitPushToDb(id, repo, user = null, debug = false) {
+async function addGitPushToDb(id, repoUrl, user = null, debug = false) {
   const action = new actions.Action(
     id,
     'push', // type
     'get', // method
     Date.now(), // timestamp
-    repo,
+    repoUrl,
   );
   action.user = user;
   const step = new steps.Step(

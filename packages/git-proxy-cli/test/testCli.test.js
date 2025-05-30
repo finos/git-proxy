@@ -219,7 +219,7 @@ describe('test git-proxy-cli', function () {
 
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url);
     });
 
     after(async function () {
@@ -415,7 +415,7 @@ describe('test git-proxy-cli', function () {
 
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url);
     });
 
     after(async function () {
@@ -492,7 +492,7 @@ describe('test git-proxy-cli', function () {
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
       await helper.addUserToDb('testuser1', 'testpassword', 'test@email.com', gitAccount);
-      await helper.addGitPushToDb(pushId, TEST_REPO, gitAccount);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, gitAccount);
     });
 
     after(async function () {
