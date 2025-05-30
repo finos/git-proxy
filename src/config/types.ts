@@ -1,9 +1,11 @@
 import { Options as RateLimitOptions } from 'express-rate-limit';
 
 export interface UserSettings {
+  uiRouteAuth: Record<string, unknown>;
   authorisedList: AuthorisedRepo[];
   sink: Database[];
   authentication: Authentication[];
+  apiAuthentication: Authentication[];
   tempPassword?: TempPasswordConfig;
   proxyUrl: string;
   api: Record<string, any>;

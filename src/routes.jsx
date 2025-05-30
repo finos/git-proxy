@@ -16,6 +16,8 @@
 
 */
 
+import React from 'react';
+import RouteGuard from './ui/components/RouteGuard/RouteGuard';
 import Person from '@material-ui/icons/Person';
 import OpenPushRequests from './ui/views/OpenPushRequests/OpenPushRequests';
 import PushDetails from './ui/views/PushDetails/PushDetails';
@@ -33,57 +35,85 @@ const dashboardRoutes = [
     path: '/repo',
     name: 'Repositories',
     icon: RepoIcon,
-    component: RepoList,
-    layout: '/admin',
+    component: (props) => 
+      <RouteGuard
+        component={RepoList}
+        fullRoutePath={`/dashboard/repo`}
+      />,
+    layout: '/dashboard',
     visible: true,
+  },
+  {
+    path: '/repo/:id',
+    name: 'Repo Details',
+    icon: Person,
+    component: (props) => 
+      <RouteGuard
+        component={RepoDetails}
+        fullRoutePath={`/dashboard/repo/:id`}
+      />,
+    layout: '/dashboard',
+    visible: false,
   },
   {
     path: '/push',
     name: 'Dashboard',
     icon: Dashboard,
-    component: OpenPushRequests,
-    layout: '/admin',
+    component: (props) =>
+      <RouteGuard
+        component={OpenPushRequests}
+        fullRoutePath={`/dashboard/push`}
+      />,
+    layout: '/dashboard',
     visible: true,
   },
   {
     path: '/push/:id',
     name: 'Open Push Requests',
     icon: Person,
-    component: PushDetails,
-    layout: '/admin',
+    component: (props) =>
+      <RouteGuard
+        component={PushDetails}
+        fullRoutePath={`/dashboard/push/:id`}
+      />,
+    layout: '/dashboard',
     visible: false,
   },
   {
     path: '/profile',
     name: 'My Account',
     icon: AccountCircle,
-    component: User,
-    layout: '/admin',
+    component: (props) =>
+      <RouteGuard
+        component={User}
+        fullRoutePath={`/dashboard/profile`}
+      />,
+    layout: '/dashboard',
     visible: true,
   },
   {
-    path: '/user/:id',
-    name: 'User',
-    icon: Person,
-    component: User,
-    layout: '/admin',
-    visible: false,
-  },
-  {
-    path: '/repo/:id',
-    name: 'Repo Details',
-    icon: Person,
-    component: RepoDetails,
-    layout: '/admin',
-    visible: false,
-  },
-  {
-    path: '/user',
+    path: '/admin/user',
     name: 'Users',
     icon: Group,
-    component: UserList,
-    layout: '/admin',
+    component: (props) =>
+      <RouteGuard
+        component={UserList}
+        fullRoutePath={`/dashboard/admin/user`}
+      />,
+    layout: '/dashboard',
     visible: true,
+  },
+  {
+    path: '/admin/user/:id',
+    name: 'User',
+    icon: Person,
+    component: (props) =>
+      <RouteGuard
+        component={User}
+        fullRoutePath={`/dashboard/admin/user/:id`}
+      />,
+    layout: '/dashboard',
+    visible: false,
   },
 ];
 

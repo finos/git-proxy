@@ -28,7 +28,7 @@ export default function Repositories(props) {
   const itemsPerPage = 5;
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
-  const openRepo = (repoId) => navigate(`/admin/repo/${repoId}`, { replace: true });
+  const openRepo = (repoId) => navigate(`/dashboard/repo/${repoId}`, { replace: true });
 
   useEffect(() => {
     const query = {};
