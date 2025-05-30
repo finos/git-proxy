@@ -28,7 +28,7 @@
       "description": "API Rate limiting configuration.",
       "type": "object",
       "properties": {
-        "windowMs": { 
+        "windowMs": {
           "type": "number",
           "description": "How long to remember requests for, in milliseconds (default 10 mins)."
         },
@@ -103,6 +103,13 @@
         }
       }
     },
+    "apiAuthentication": {
+      "description": "List of authentication sources for API endpoints. May be empty, in which case all endpoints are public.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/authentication"
+      }
+    },
     "tls": {
       "description": "TLS configuration for secure connections",
       "type": "object",
@@ -112,6 +119,31 @@
         "cert": { "type": "string" }
       },
       "required": ["enabled", "key", "cert"]
+    },
+    "configurationSources": {
+      "enabled": { "type": "boolean" },
+      "reloadIntervalSeconds": { "type": "number" },
+      "merge": { "type": "boolean" },
+      "sources": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "description": "Configuration source"
+        }
+      }
+    },
+    "uiRouteAuth": {
+      "description": "UI routes that require authentication (logged in or admin)",
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/routeAuthRule"
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -143,6 +175,14 @@
         "options": { "type": "object" }
       },
       "required": ["type", "enabled"]
+    },
+    "routeAuthRule": {
+      "type": "object",
+      "properties": {
+        "pattern": { "type": "string" },
+        "adminOnly": { "type": "boolean" },
+        "loginRequired": { "type": "boolean" }
+      }
     }
   },
   "additionalProperties": false

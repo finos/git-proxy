@@ -29,9 +29,13 @@
 Cypress.Commands.add('login', (username, password) => {
   cy.session([username, password], () => {
     cy.visit('/login');
+    cy.intercept('GET', '**/api/auth/me').as('getUser');
+
     cy.get('[data-test=username]').type(username);
     cy.get('[data-test=password]').type(password);
     cy.get('[data-test=login]').click();
-    cy.url().should('contain', '/admin/profile');
+
+    cy.wait('@getUser');
+    cy.url().should('include', '/dashboard/repo');
   });
 });

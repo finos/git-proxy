@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 // @material-ui/core components
 import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -12,10 +13,10 @@ import CardHeader from '../../components/Card/CardHeader';
 import CardBody from '../../components/Card/CardBody';
 import CardFooter from '../../components/Card/CardFooter';
 import axios from 'axios';
-import { Navigate } from 'react-router-dom';
 import logo from '../../assets/img/git-proxy.png';
 import { Badge, CircularProgress, Snackbar } from '@material-ui/core';
 import { getCookie } from '../../utils';
+import { useAuth } from '../../auth/AuthProvider';
 
 const loginUrl = `${import.meta.env.VITE_API_URI}/api/auth/login`;
 
@@ -23,9 +24,11 @@ export default function UserProfile() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
-  const [success, setSuccess] = useState(false);
-  const [gitAccountError, setGitAccountError] = useState(false);
+  const [, setGitAccountError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
   function validateForm() {
     return (
@@ -57,8 +60,8 @@ export default function UserProfile() {
       .then(function () {
         window.sessionStorage.setItem('git.proxy.login', 'success');
         setMessage('Success!');
-        setSuccess(true);
         setIsLoading(false);
+        refreshUser().then(() => navigate('/dashboard/repo'));
       })
       .catch(function (error) {
         if (error.response.status === 307) {
@@ -73,13 +76,6 @@ export default function UserProfile() {
       });
 
     event.preventDefault();
-  }
-
-  if (gitAccountError) {
-    return <Navigate to={{ pathname: '/admin/profile' }} />;
-  }
-  if (success) {
-    return <Navigate to={{ pathname: '/admin/profile', state: { authed: true } }} />;
   }
 
   return (
@@ -169,8 +165,8 @@ export default function UserProfile() {
           <div style={{ textAlign: 'center', opacity: 0.9, fontSize: '12px' }}>
             <Badge overlap='rectangular' color='error' badgeContent={'NEW'} />{' '}
             <span style={{ paddingLeft: '20px' }}>
-              View our <a href='/admin/push'>open source activity feed</a> or{' '}
-              <a href='/admin/repo'>scroll through projects</a> we contribute to
+              View our <a href='/dashboard/push'>open source activity feed</a> or{' '}
+              <a href='/dashboard/repo'>scroll through projects</a> we contribute to
             </span>
           </div>
         </GridItem>
