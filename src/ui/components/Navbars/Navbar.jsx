@@ -7,7 +7,7 @@ import Toolbar from '@material-ui/core/Toolbar';
 import IconButton from '@material-ui/core/IconButton';
 import Hidden from '@material-ui/core/Hidden';
 import Menu from '@material-ui/icons/Menu';
-import AdminNavbarLinks from './AdminNavbarLinks';
+import DashboardNavbarLinks from './DashboardNavbarLinks';
 import styles from '../../assets/jss/material-dashboard-react/components/headerStyle';
 
 const useStyles = makeStyles(styles);
@@ -42,7 +42,7 @@ export default function Header(props) {
           </h2>
         </div>
         <Hidden smDown implementation='css'>
-          <AdminNavbarLinks />
+          <DashboardNavbarLinks />
         </Hidden>
         <Hidden mdUp implementation='css'>
           <IconButton color='inherit' aria-label='open drawer' onClick={props.handleDrawerToggle}>

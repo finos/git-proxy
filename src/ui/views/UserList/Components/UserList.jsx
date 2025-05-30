@@ -30,7 +30,7 @@ export default function UserList(props) {
   const itemsPerPage = 5;
   const [searchQuery, setSearchQuery] = useState('');
 
-  const openUser = (username) => navigate(`/admin/user/${username}`, { replace: true });
+  const openUser = (username) => navigate(`/dashboard/admin/user/${username}`, { replace: true });
 
   useEffect(() => {
     const query = {};

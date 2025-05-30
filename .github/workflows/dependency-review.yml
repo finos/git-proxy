@@ -17,10 +17,10 @@ jobs:
       - name: 'Checkout Repository'
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - name: Dependency Review
-        uses: actions/dependency-review-action@67d4f4bd7a9b17a0db54d2a7519187c65e339de8 # v4
+        uses: actions/dependency-review-action@da24556b548a50705dd671f47852072ea4c105d9 # v4
         with:
           comment-summary-in-pr: always
           fail-on-severity: high
-          allow-licenses: MIT, MIT-0, Apache-2.0, BSD-3-Clause, BSD-3-Clause-Clear, ISC, BSD-2-Clause, Unlicense, CC0-1.0, 0BSD, X11, MPL-2.0, MPL-1.0, MPL-1.1, MPL-2.0, Zlib
+          allow-licenses: MIT, MIT-0, Apache-2.0, BSD-3-Clause, BSD-3-Clause-Clear, ISC, BSD-2-Clause, Unlicense, CC0-1.0, 0BSD, X11, MPL-2.0, MPL-1.0, MPL-1.1, MPL-2.0, OFL-1.1, Zlib
           fail-on-scopes: development, runtime
           allow-dependencies-licenses: 'pkg:npm/caniuse-lite'
