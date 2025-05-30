@@ -27,29 +27,34 @@ const Filtering = ({ onFilterChange }) => {
   };
 
   return (
-    <div className="filtering-container">
-      <div className="dropdown">
+    <div className='filtering-container'>
+      <div className='dropdown'>
         {/* Make the entire button clickable for toggling dropdown */}
-        <button onClick={toggleDropdown} className="dropdown-toggle">
+        <button onClick={toggleDropdown} className='dropdown-toggle'>
           {selectedOption}
           {/* Render the up/down arrow next to selected option */}
           {selectedOption !== 'Sort by' && (
-            <span onClick={(e) => { e.stopPropagation(); toggleSortOrder(); }}>
+            <span
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleSortOrder();
+              }}
+            >
               {sortOrder === 'asc' ? ' ↑' : ' ↓'}
             </span>
           )}
-          <span className="dropdown-arrow">▼</span>
+          <span className='dropdown-arrow'>▼</span>
         </button>
 
         {isOpen && (
-          <div className="dropdown-menu">
-            <div onClick={() => handleOptionClick('Date Modified')} className="dropdown-item">
+          <div className='dropdown-menu'>
+            <div onClick={() => handleOptionClick('Date Modified')} className='dropdown-item'>
               Date Modified
             </div>
-            <div onClick={() => handleOptionClick('Date Created')} className="dropdown-item">
+            <div onClick={() => handleOptionClick('Date Created')} className='dropdown-item'>
               Date Created
             </div>
-            <div onClick={() => handleOptionClick('Alphabetical')} className="dropdown-item">
+            <div onClick={() => handleOptionClick('Alphabetical')} className='dropdown-item'>
               Alphabetical
             </div>
           </div>
@@ -60,7 +65,3 @@ const Filtering = ({ onFilterChange }) => {
 };
 
 export default Filtering;
-
-
-
-
