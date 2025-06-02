@@ -16,14 +16,9 @@ import { AccountCircle } from '@material-ui/icons';
 import { getUser } from '../../services/user';
 import axios from 'axios';
 import { getCookie } from '../../utils';
+import { UserData } from '../../../types/models';
 
 const useStyles = makeStyles(styles);
-
-interface UserData {
-  id: string;
-  name: string;
-  email: string;
-}
 
 const AdminNavbarLinks: React.FC = () => {
   const classes = useStyles();

@@ -22,15 +22,7 @@ import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/g
 import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
-
-interface CommitData {
-  commitTs?: number;
-  commitTimestamp?: number;
-  committer: string;
-  author: string;
-  authorEmail?: string;
-  message: string;
-}
+import { CommitData } from '../../../types/models';
 
 interface Reviewer {
   username: string;

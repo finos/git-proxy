@@ -80,7 +80,7 @@ const Admin: React.FC<AdminProps> = ({ ...rest }) => {
 
       if (!refresh) {
         refresh = true;
-        await getUser(null, setUser, null, null, null);
+        await getUser(undefined, setUser);
       }
 
       window.addEventListener('resize', resizeFunction);
