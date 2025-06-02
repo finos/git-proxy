@@ -1,14 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getCookie } from '../utils';
-
-export interface UserData {
-  username: string;
-  email?: string;
-  displayName?: string;
-  title?: string;
-  gitAccount?: string;
-  admin?: boolean;
-}
+import { UserData } from '../../types/models';
 
 type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
 
