@@ -6,7 +6,9 @@ import Card from '../../components/Card/Card';
 import CardBody from '../../components/Card/CardBody';
 import Button from '../../components/CustomButtons/Button';
 import FormLabel from '@material-ui/core/FormLabel';
-import { getUser, updateUser, getUserLoggedIn, UserData } from '../../services/user';
+import { getUser, updateUser, getUserLoggedIn } from '../../services/user';
+
+import { UserData } from '../../../types/models';
 import { makeStyles } from '@material-ui/core/styles';
 
 import { LogoGithubIcon } from '@primer/octicons-react';

@@ -16,11 +16,7 @@ import Snackbar from '@material-ui/core/Snackbar';
 import { addUser } from '../../../services/repo';
 import { getUsers } from '../../../services/user';
 import { PersonAdd } from '@material-ui/icons';
-
-interface User {
-  username: string;
-  gitAccount: string;
-}
+import { UserData } from '../../../../types/models';
 
 interface AddUserDialogProps {
   repoName: string;
@@ -38,7 +34,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   onClose,
 }) => {
   const [username, setUsername] = useState<string>('');
-  const [data, setData] = useState<User[]>([]);
+  const [data, setData] = useState<UserData[]>([]);
   const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
