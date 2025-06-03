@@ -93,14 +93,14 @@ describe('test git-proxy-cli', function () {
 
   describe('test git-proxy-cli :: login', function () {
     before(async function () {
-      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
+      await helper.addUserToDb(testUser, testPassword, testEmail, 'testGitAccount');
     });
 
     after(async function () {
-      await helper.removeUserFromDb(TEST_USER);
+      await helper.removeUserFromDb(testUser);
     });
 
-    it('login shoud fail when server is down', async function () {
+    it('login should fail when server is down', async function () {
       const username = 'admin';
       const password = 'admin';
       const cli = `npx -- @finos/git-proxy-cli login --username ${username} --password ${password}`;
@@ -110,7 +110,7 @@ describe('test git-proxy-cli', function () {
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
-    it('login shoud fail with invalid credentials', async function () {
+    it('login should fail with invalid credentials', async function () {
       const username = 'unkn0wn';
       const password = 'p4ssw0rd';
       const cli = `npx -- @finos/git-proxy-cli login --username ${username} --password ${password}`;
@@ -504,6 +504,12 @@ describe('test git-proxy-cli', function () {
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+    });
+
+    after(async function () {
+      await helper.removeUserFromDb('testuser1');
+      await helper.removeGitPushFromDb(pushId);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
     });
 

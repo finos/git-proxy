@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
-import TableCell from '@material-ui/core/TableCell';
-import TableRow from '@material-ui/core/TableRow';
+import { Snackbar, TableCell, TableRow } from '@material-ui/core';
 import GridContainer from '../../../components/Grid/GridContainer';
 import GridItem from '../../../components/Grid/GridItem';
 import { CodeReviewIcon, LawIcon, PeopleIcon } from '@primer/octicons-react';
@@ -572,6 +571,9 @@ import CodeActionButton from '../../../components/CustomButtons/CodeActionButton
 export default function Repositories(props) {
   const [github, setGitHub] = React.useState({});
 
+  const [errorMessage, setErrorMessage] = React.useState('');
+  const [snackbarOpen, setSnackbarOpen] = React.useState(false);
+
   useEffect(() => {
     getGitHubRepository();
   }, [props.data.project, props.data.name]);
@@ -581,6 +583,10 @@ export default function Repositories(props) {
       .get(`https://api.github.com/repos/${props.data.project}/${props.data.name}`)
       .then((res) => {
         setGitHub(res.data);
+      })
+      .catch((error) => {
+        setErrorMessage(`Error fetching GitHub repository ${props.data.project}/${props.data.name}: ${error}`);
+        setSnackbarOpen(true);
       });
   };
 
@@ -591,7 +597,7 @@ export default function Repositories(props) {
     <TableRow>
       <TableCell>
         <div style={{ padding: '15px' }}>
-          <a href={`/admin/repo/${props.data.name}`}>
+          <a href={`/dashboard/repo/${props.data.name}`}>
             <span style={{ fontSize: '17px' }}>
               {props.data.project}/{props.data.name}
             </span>
@@ -669,6 +675,13 @@ export default function Repositories(props) {
           <CodeActionButton cloneURL={cloneURL} />
         </div>
       </TableCell>
+      <Snackbar
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={() => setSnackbarOpen(false)}
+        message={errorMessage}
+      />
     </TableRow>
   );
 }
