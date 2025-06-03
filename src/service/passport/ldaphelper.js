@@ -1,4 +1,3 @@
-const config = require('../../config').getAuthentication();
 const thirdpartyApiConfig = require('../../config').getAPIs();
 const axios = require('axios');
 
@@ -6,15 +5,12 @@ const isUserInAdGroup = (req, profile, ad, domain, name) => {
   // determine, via config, if we're using HTTP or AD directly
   if (thirdpartyApiConfig?.ls?.userInADGroup) {
     return isUserInAdGroupViaHttp(profile.username, domain, name);
-  } else if (config.adConfig) {
-    return isUserInAdGroupViaAD(req, profile, ad, domain, name);
   } else {
-    console.error('Unable to check user groups as config is incomplete or unreadable');
+    return isUserInAdGroupViaAD(req, profile, ad, domain, name);
   }
 };
 
 const isUserInAdGroupViaAD = (req, profile, ad, domain, name) => {
-
   return new Promise((resolve, reject) => {
     ad.isUserMemberOf(profile.username, name, function (err, isMember) {
       if (err) {
