@@ -73,7 +73,7 @@ export default function Sidebar(props) {
   );
   const brand = (
     <div className={classes.logo}>
-      <a style={{ textDecoration: 'none' }} href='/admin/repo'>
+      <a style={{ textDecoration: 'none' }} href='/dashboard/repo'>
         <div style={{ textAlign: 'center' }}>
           <img
             style={{ verticalAlign: 'middle', filter: 'brightness(0) invert(1)' }}
