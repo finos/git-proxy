@@ -4,7 +4,7 @@ import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
 import * as repo from './repo';
-import { PushQuery } from '../types'
+import { PushQuery } from '../types';
 
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
@@ -46,6 +46,18 @@ export const getPush = async (id: string) => {
         } else {
           resolve(toClass(doc, Action.prototype));
         }
+      }
+    });
+  });
+};
+
+export const deletePush = async (id: string) => {
+  return new Promise<void>((resolve, reject) => {
+    db.remove({ id }, (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
       }
     });
   });
