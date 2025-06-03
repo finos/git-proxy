@@ -97,7 +97,7 @@ export default function Dashboard() {
   const repoBranch = data.branch.replace('refs/heads/', '');
   const repoUrl = data.url;
   const repoWebUrl = repoUrl.replace('.git', '');
-  const isGitHub = repoUrl.startsWith('https://github.com');
+  const isGitHub = URL.parse(repoUrl).hostname === 'github.com';
 
   const generateIcon = (title) => {
     switch (title) {
