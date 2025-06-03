@@ -99,7 +99,7 @@ describe('test git-proxy-cli', function () {
       await helper.removeUserFromDb(testUser);
     });
 
-    it('login shoud fail when server is down', async function () {
+    it('login should fail when server is down', async function () {
       const username = 'admin';
       const password = 'admin';
       const cli = `npx -- @finos/git-proxy-cli login --username ${username} --password ${password}`;
@@ -109,7 +109,7 @@ describe('test git-proxy-cli', function () {
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
-    it('login shoud fail with invalid credentials', async function () {
+    it('login should fail with invalid credentials', async function () {
       const username = 'unkn0wn';
       const password = 'p4ssw0rd';
       const cli = `npx -- @finos/git-proxy-cli login --username ${username} --password ${password}`;
