@@ -565,35 +565,100 @@ description: JSON schema reference documentation for GitProxy
 
 |                           |                              |
 | ------------------------- | ---------------------------- |
-| **Type**                  | `object`                     |
+| **Type**                  | `combining`                  |
 | **Required**              | No                           |
 | **Additional properties** | Any type allowed             |
 | **Defined in**            | #/definitions/authentication |
 
 **Description:** Configuration for an authentication source
 
+<blockquote>
+
+| One of(Option)                                                 |
+| -------------------------------------------------------------- |
+| [Local Auth Config](#authentication_items_oneOf_i0)            |
+| [Active Directory Auth Config](#authentication_items_oneOf_i1) |
+| [Open ID Connect Auth Config](#authentication_items_oneOf_i2)  |
+| [JWT Auth Config](#authentication_items_oneOf_i3)              |
+
+<blockquote>
+
+#### <a name="authentication_items_oneOf_i0"></a>16.1.1. Property `GitProxy configuration file > authentication > authentication items > oneOf > Local Auth Config`
+
+**Title:** Local Auth Config
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
+
+**Description:** Configuration for the use of the local database as the authentication source.
+
 <details>
 <summary>
-<strong> <a name="authentication_items_type"></a>16.1.1. [Required] Property GitProxy configuration file > authentication > authentication items > type</strong>
+<strong> <a name="authentication_items_oneOf_i0_type"></a>16.1.1.1. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Local Auth Config > type</strong>
 </summary>
 <blockquote>
 
-|              |                    |
-| ------------ | ------------------ |
-| **Type**     | `enum (of string)` |
-| **Required** | Yes                |
+|              |         |
+| ------------ | ------- |
+| **Type**     | `const` |
+| **Required** | Yes     |
 
-Must be one of:
-* "local"
-* "ActiveDirectory"
-* "OpenIdConnect"
+Specific value: `"local"`
 
 </blockquote>
 </details>
 
 <details>
 <summary>
-<strong> <a name="authentication_items_enabled"></a>16.1.2. [Required] Property GitProxy configuration file > authentication > authentication items > enabled</strong>
+<strong> <a name="authentication_items_oneOf_i0_enabled"></a>16.1.1.2. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Local Auth Config > enabled</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | Yes       |
+
+</blockquote>
+</details>
+
+</blockquote>
+<blockquote>
+
+#### <a name="authentication_items_oneOf_i1"></a>16.1.2. Property `GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config`
+
+**Title:** Active Directory Auth Config
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
+
+**Description:** Configuration for Active Directory authentication.
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i1_type"></a>16.1.2.1. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config > type</strong>
+</summary>
+<blockquote>
+
+|              |         |
+| ------------ | ------- |
+| **Type**     | `const` |
+| **Required** | Yes     |
+
+Specific value: `"ActiveDirectory"`
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i1_enabled"></a>16.1.2.2. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config > enabled</strong>
 </summary>
 <blockquote>
 
@@ -607,14 +672,14 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="authentication_items_adminGroup"></a>16.1.3. [Optional] Property GitProxy configuration file > authentication > authentication items > adminGroup</strong>
+<strong> <a name="authentication_items_oneOf_i1_adminGroup"></a>16.1.2.3. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config > adminGroup</strong>
 </summary>
 <blockquote>
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
-| **Required** | No       |
+| **Required** | Yes      |
 
 **Description:** Group that indicates that a user is an admin
 
@@ -623,14 +688,14 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="authentication_items_userGroup"></a>16.1.4. [Optional] Property GitProxy configuration file > authentication > authentication items > userGroup</strong>
+<strong> <a name="authentication_items_oneOf_i1_userGroup"></a>16.1.2.4. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config > userGroup</strong>
 </summary>
 <blockquote>
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
-| **Required** | No       |
+| **Required** | Yes      |
 
 **Description:** Group that indicates that a user should be able to login to the Git Proxy UI and can work as a reviewer
 
@@ -639,14 +704,14 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="authentication_items_domain"></a>16.1.5. [Optional] Property GitProxy configuration file > authentication > authentication items > domain</strong>
+<strong> <a name="authentication_items_oneOf_i1_domain"></a>16.1.2.5. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config > domain</strong>
 </summary>
 <blockquote>
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
-| **Required** | No       |
+| **Required** | Yes      |
 
 **Description:** Active Directory domain
 
@@ -655,7 +720,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="authentication_items_adConfig"></a>16.1.6. [Optional] Property GitProxy configuration file > authentication > authentication items > adConfig</strong>
+<strong> <a name="authentication_items_oneOf_i1_adConfig"></a>16.1.2.6. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config > adConfig</strong>
 </summary>
 <blockquote>
 
@@ -669,7 +734,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="authentication_items_adConfig_url"></a>16.1.6.1. [Required] Property GitProxy configuration file > authentication > authentication items > adConfig > url</strong>
+<strong> <a name="authentication_items_oneOf_i1_adConfig_url"></a>16.1.2.6.1. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config > adConfig > url</strong>
 </summary>
 <blockquote>
 
@@ -685,7 +750,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="authentication_items_adConfig_baseDN"></a>16.1.6.2. [Required] Property GitProxy configuration file > authentication > authentication items > adConfig > baseDN</strong>
+<strong> <a name="authentication_items_oneOf_i1_adConfig_baseDN"></a>16.1.2.6.2. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config > adConfig > baseDN</strong>
 </summary>
 <blockquote>
 
@@ -701,7 +766,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="authentication_items_adConfig_username"></a>16.1.6.3. [Required] Property GitProxy configuration file > authentication > authentication items > adConfig > username</strong>
+<strong> <a name="authentication_items_oneOf_i1_adConfig_username"></a>16.1.2.6.3. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config > adConfig > username</strong>
 </summary>
 <blockquote>
 
@@ -717,7 +782,7 @@ Must be one of:
 
 <details>
 <summary>
-<strong> <a name="authentication_items_adConfig_password"></a>16.1.6.4. [Required] Property GitProxy configuration file > authentication > authentication items > adConfig > password</strong>
+<strong> <a name="authentication_items_oneOf_i1_adConfig_password"></a>16.1.2.6.4. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config > adConfig > password</strong>
 </summary>
 <blockquote>
 
@@ -733,6 +798,232 @@ Must be one of:
 
 </blockquote>
 </details>
+
+</blockquote>
+<blockquote>
+
+#### <a name="authentication_items_oneOf_i2"></a>16.1.3. Property `GitProxy configuration file > authentication > authentication items > oneOf > Open ID Connect Auth Config`
+
+**Title:** Open ID Connect Auth Config
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
+
+**Description:** Configuration for Open ID Connect authentication.
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i2_type"></a>16.1.3.1. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Open ID Connect Auth Config > type</strong>
+</summary>
+<blockquote>
+
+|              |         |
+| ------------ | ------- |
+| **Type**     | `const` |
+| **Required** | Yes     |
+
+Specific value: `"openidconnect"`
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i2_enabled"></a>16.1.3.2. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Open ID Connect Auth Config > enabled</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | Yes       |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i2_oidcConfig"></a>16.1.3.3. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Open ID Connect Auth Config > oidcConfig</strong>
+</summary>
+<blockquote>
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | Yes              |
+| **Additional properties** | Any type allowed |
+
+**Description:** Additional OIDC configuration.
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i2_oidcConfig_issuer"></a>16.1.3.3.1. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Open ID Connect Auth Config > oidcConfig > issuer</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i2_oidcConfig_clientID"></a>16.1.3.3.2. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Open ID Connect Auth Config > oidcConfig > clientID</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i2_oidcConfig_clientSecret"></a>16.1.3.3.3. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Open ID Connect Auth Config > oidcConfig > clientSecret</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i2_oidcConfig_callbackURL"></a>16.1.3.3.4. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Open ID Connect Auth Config > oidcConfig > callbackURL</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i2_oidcConfig_scope"></a>16.1.3.3.5. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Open ID Connect Auth Config > oidcConfig > scope</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+</blockquote>
+<blockquote>
+
+#### <a name="authentication_items_oneOf_i3"></a>16.1.4. Property `GitProxy configuration file > authentication > authentication items > oneOf > JWT Auth Config`
+
+**Title:** JWT Auth Config
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
+
+**Description:** Configuration for JWT authentication.
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i3_type"></a>16.1.4.1. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > JWT Auth Config > type</strong>
+</summary>
+<blockquote>
+
+|              |         |
+| ------------ | ------- |
+| **Type**     | `const` |
+| **Required** | Yes     |
+
+Specific value: `"jwt"`
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i3_enabled"></a>16.1.4.2. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > JWT Auth Config > enabled</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | Yes       |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i3_jwtConfig"></a>16.1.4.3. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > JWT Auth Config > jwtConfig</strong>
+</summary>
+<blockquote>
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | Yes              |
+| **Additional properties** | Any type allowed |
+
+**Description:** Additional JWT configuration.
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i3_jwtConfig_clientID"></a>16.1.4.3.1. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > JWT Auth Config > jwtConfig > clientID</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i3_jwtConfig_authorityURL"></a>16.1.4.3.2. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > JWT Auth Config > jwtConfig > authorityURL</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+</blockquote>
+
+</blockquote>
 
 </blockquote>
 </details>
@@ -806,7 +1097,7 @@ Must be one of:
 
 |                           |                                               |
 | ------------------------- | --------------------------------------------- |
-| **Type**                  | `object`                                      |
+| **Type**                  | `combining`                                   |
 | **Required**              | No                                            |
 | **Additional properties** | Any type allowed                              |
 | **Same definition as**    | [authentication_items](#authentication_items) |
@@ -991,4 +1282,4 @@ Must be one of:
 </details>
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-06-03 at 17:56:55 +0100
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-06-04 at 23:10:45 +0100
