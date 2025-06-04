@@ -10,7 +10,7 @@ const sanitizeInput = (_req: any, action: Action): string => {
 const exec = async (
   req: any,
   action: Action,
-  hookFilePath: string = './hooks/pre-receive.sh'
+  hookFilePath: string = './hooks/pre-receive.sh',
 ): Promise<Action> => {
   const step = new Step('executeExternalPreReceiveHook');
   let stderrTrimmed = '';

@@ -1,6 +1,5 @@
 const { PushActionPlugin, PullActionPlugin } = require('@finos/git-proxy/src/plugin');
 
-
 module.exports = {
   foo: new PushActionPlugin(async (req, action) => {
     console.log('PushActionPlugin: ', action);
@@ -10,4 +9,4 @@ module.exports = {
     console.log('PullActionPlugin: ', action);
     return action;
   }),
-}
+};
