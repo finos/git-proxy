@@ -244,7 +244,7 @@
         },
         {
           "properties": {
-            "type": { "type": "string", "const": "OpenIdConnect" },
+            "type": { "type": "string", "const": "openidconnect" },
             "enabled": { "type": "boolean" },
             "oidcConfig": {
               "type": "object",
