@@ -195,38 +195,90 @@
     "authentication": {
       "type": "object",
       "description": "Configuration for an authentication source",
-      "properties": {
-        "type": { "type": "string", "enum": ["local", "ActiveDirectory", "OpenIdConnect"] },
-        "enabled": { "type": "boolean" },
-        "adminGroup": {
-          "type": "string",
-          "description": "Group that indicates that a user is an admin"
-        },
-        "userGroup": {
-          "type": "string",
-          "description": "Group that indicates that a user should be able to login to the Git Proxy UI and can work as a reviewer"
-        },
-        "domain": { "type": "string", "description": "Active Directory domain" },
-        "adConfig": {
-          "type": "object",
-          "description": "Additional Active Directory configuration supporting LDAP connection which can be used to confirm group membership. For the full set of available options see the activedirectory 2 NPM module docs at https://www.npmjs.com/package/activedirectory2#activedirectoryoptions <br /><br />Please note that if the Third Party APIs config `api.ls.userInADGroup` is set then the REST API it represents is used in preference to direct querying of group memebership via LDAP.",
+      "oneOf": [
+        {
           "properties": {
-            "url": {
-              "type": "string",
-              "description": "Active Directory server to connect to, e.g. `ldap://ad.example.com`."
-            },
-            "baseDN": {
-              "type": "string",
-              "description": "The root DN from which all searches will be performed, e.g. `dc=example,dc=com`."
-            },
-            "username": {
-              "type": "string",
-              "description": "An account name capable of performing the operations desired."
-            },
-            "password": { "type": "string", "description": "Password for the given `username`." }
+            "type": { "type": "string", "const": "local" },
+            "enabled": { "type": "boolean" }
           },
-          "required": ["url", "baseDN", "username", "password"]
+          "required": ["type","enabled"]
+        },
+        {
+          "properties": {
+            "type": { "type": "string", "const": "ActiveDirectory" },
+            "enabled": { "type": "boolean" },
+            "adminGroup": {
+              "type": "string",
+              "description": "Group that indicates that a user is an admin"
+            },
+            "userGroup": {
+              "type": "string",
+              "description": "Group that indicates that a user should be able to login to the Git Proxy UI and can work as a reviewer"
+            },
+            "domain": { "type": "string", "description": "Active Directory domain" },
+            "adConfig": {
+              "type": "object",
+              "description": "Additional Active Directory configuration supporting LDAP connection which can be used to confirm group membership. For the full set of available options see the activedirectory 2 NPM module docs at https://www.npmjs.com/package/activedirectory2#activedirectoryoptions <br /><br />Please note that if the Third Party APIs config `api.ls.userInADGroup` is set then the REST API it represents is used in preference to direct querying of group memebership via LDAP.",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "description": "Active Directory server to connect to, e.g. `ldap://ad.example.com`."
+                },
+                "baseDN": {
+                  "type": "string",
+                  "description": "The root DN from which all searches will be performed, e.g. `dc=example,dc=com`."
+                },
+                "username": {
+                  "type": "string",
+                  "description": "An account name capable of performing the operations desired."
+                },
+                "password": { "type": "string", "description": "Password for the given `username`." }
+              },
+              "required": ["url", "baseDN", "username", "password"]
+            }
+          },
+          "required": ["type","enabled","adminGroup","userGroup","domain"]
+        },
+        {
+          "properties": {
+            "type": { "type": "string", "const": "openidconnect" },
+            "enabled": { "type": "boolean" },
+            "oidcConfig": {
+              "type": "object",
+              "description": "Additional OIDC configuration.",
+              "properties": {
+                "issuer": { "type": "string" },
+                "clientID": { "type": "string" },
+                "clientSecret": { "type": "string" },
+                "callbackURL": { "type": "string" },
+                "scope": { "type": "string" }
+              },
+              "required": ["issuer","clientID","clientSecret","callbackURL","scope"]
+            }
+          },
+          "required": ["type","enabled","oidcConfig"]
+        },
+        {
+          "properties": {
+            "type": { "type": "string", "const": "jwt" },
+            "enabled": { "type": "boolean" },
+            "jwtConfig": {
+              "type": "object",
+              "description": "Additional JWT configuration.",
+              "properties": {
+                "clientID": { "type": "string" },
+                "authorityURL": { "type": "string" }
+              },
+              "required": ["clientID","authorityURL"]
+            }
+          },
+          "required": ["type","enabled","jwtConfig"]
         }
+      ], 
+      "properties": {
+        "type": { "type": "string", "enum": ["local", "ActiveDirectory", "openidconnect", "jwt"] },
+        "enabled": { "type": "boolean" },
+        
       },
       "required": ["type", "enabled"]
     },
