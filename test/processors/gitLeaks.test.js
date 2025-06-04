@@ -81,5 +81,46 @@ describe('gitleaks', () => {
       expect(logStub.calledWith('gitleaks is disabled, skipping')).to.be.true;
     });
 
+    it('should handle successful scan with no findings', async () => {
+      stubs.getAPIs.returns({ gitleaks: { enabled: true } });
+
+      const gitRootCommitMock = {
+        exitCode: 0,
+        stdout: 'rootcommit123\n',
+        stderr: ''
+      };
+
+      const gitleaksMock = {
+        exitCode: 0,
+        stdout: '',
+        stderr: 'No leaks found'
+      };
+
+      stubs.spawn
+        .onFirstCall().returns({
+          on: (event, cb) => {
+            if (event === 'close') cb(gitRootCommitMock.exitCode);
+            return { stdout: { on: () => {} }, stderr: { on: () => {} } };
+          },
+          stdout: { on: (_, cb) => cb(gitRootCommitMock.stdout) },
+          stderr: { on: (_, cb) => cb(gitRootCommitMock.stderr) }
+        })
+        .onSecondCall().returns({
+          on: (event, cb) => {
+            if (event === 'close') cb(gitleaksMock.exitCode);
+            return { stdout: { on: () => {} }, stderr: { on: () => {} } };
+          },
+          stdout: { on: (_, cb) => cb(gitleaksMock.stdout) },
+          stderr: { on: (_, cb) => cb(gitleaksMock.stderr) }
+        });
+
+      const result = await exec(req, action);
+
+      expect(result.error).to.be.false;
+      expect(result.steps).to.have.lengthOf(1);
+      expect(result.steps[0].error).to.be.false;
+      expect(logStub.calledWith('succeded')).to.be.true;
+      expect(logStub.calledWith('No leaks found')).to.be.true;
+    });
   });
 });
