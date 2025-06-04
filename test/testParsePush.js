@@ -419,7 +419,7 @@ const actionData2 = {
   type: 'push',
   method: 'POST',
   timestamp: 1746612610060,
-  repo: 'https://github.com/kriswest/git-proxy.git',
+  repo: 'https://github.com/kriswest/git-proxy.git'
 };
 
 // push with a commit message not terminated by a newline
@@ -474,7 +474,7 @@ const actionDataNoNewLine = {
   type: 'push',
   method: 'POST',
   timestamp: 1746697059624,
-  repo: 'https://github.com/kriswest/git-proxy.git',
+  repo: 'https://github.com/kriswest/git-proxy.git'
 };
 
 describe('Check that pushes can be parsed', async () => {
