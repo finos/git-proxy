@@ -8,7 +8,7 @@ chai.should();
 const expect = chai.expect;
 const timestamp = Date.now();
 
-describe.skip('clear bare and local clones', async () => {
+describe('clear bare and local clones', async () => {
   it('pull remote generates a local .remote folder', async () => {
     const action = new Action('123', 'type', 'get', timestamp, 'finos/git-proxy');
     action.url = 'https://github.com/finos/git-proxy';
