@@ -69,5 +69,17 @@ describe('gitleaks', () => {
       expect(stepSpy.calledWith('failed setup gitleaks, please contact an administrator\n')).to.be.true;
       expect(errorStub.calledWith('failed to get gitleaks config, please fix the error:')).to.be.true;
     });
+
+    it('should skip scanning when plugin is disabled', async () => {
+      stubs.getAPIs.returns({ gitleaks: { enabled: false } });
+
+      const result = await exec(req, action);
+
+      expect(result.error).to.be.false;
+      expect(result.steps).to.have.lengthOf(1);
+      expect(result.steps[0].error).to.be.false;
+      expect(logStub.calledWith('gitleaks is disabled, skipping')).to.be.true;
+    });
+
   });
 });
