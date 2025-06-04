@@ -56,4 +56,64 @@ describe('getDiff', () => {
     expect(result.steps[0].content).to.include('modified content');
     expect(result.steps[0].content).to.include('initial content');
   });
+
+  it('should get diff between commits with no changes', async () => {
+    const action = new Action(
+      '1234567890',
+      'push',
+      'POST',
+      1234567890,
+      'test/repo'
+    );
+    action.proxyGitPath = __dirname; // Temp dir parent path
+    action.repoName = 'temp-test-repo';
+    action.commitFrom = 'HEAD~1';
+    action.commitTo = 'HEAD';
+    action.commitData = [
+      { parent: '0000000000000000000000000000000000000000' }
+    ];
+
+    const result = await exec({}, action);
+
+    expect(result.steps[0].error).to.be.false;
+    expect(result.steps[0].content).to.include('initial content');
+  });
+
+  it('should throw an error if no commit data is provided', async () => {
+    const action = new Action(
+      '1234567890',
+      'push',
+      'POST',
+      1234567890,
+      'test/repo'
+    );
+    action.proxyGitPath = __dirname; // Temp dir parent path
+    action.repoName = 'temp-test-repo';
+    action.commitFrom = 'HEAD~1';
+    action.commitTo = 'HEAD';
+    action.commitData = [];
+
+    const result = await exec({}, action);
+    expect(result.steps[0].error).to.be.true;
+    expect(result.steps[0].errorMessage).to.contain('No commit data found');
+  });
+
+  it('should throw an error if no commit data is provided', async () => {
+    const action = new Action(
+      '1234567890',
+      'push',
+      'POST',
+      1234567890,
+      'test/repo'
+    );
+    action.proxyGitPath = __dirname; // Temp dir parent path
+    action.repoName = 'temp-test-repo';
+    action.commitFrom = 'HEAD~1';
+    action.commitTo = 'HEAD';
+    action.commitData = undefined;
+
+    const result = await exec({}, action);
+    expect(result.steps[0].error).to.be.true;
+    expect(result.steps[0].errorMessage).to.contain('No commit data found');
+  });
 });
