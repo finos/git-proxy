@@ -197,6 +197,8 @@
       "description": "Configuration for an authentication source",
       "oneOf": [
         {
+          "title": "Local Auth Config",
+          "description": "Configuration for the use of the local database as the authentication source.",
           "properties": {
             "type": { "type": "string", "const": "local" },
             "enabled": { "type": "boolean" }
@@ -204,6 +206,8 @@
           "required": ["type", "enabled"]
         },
         {
+          "title": "Active Directory Auth Config",
+          "description": "Configuration for Active Directory authentication.",
           "properties": {
             "type": { "type": "string", "const": "ActiveDirectory" },
             "enabled": { "type": "boolean" },
@@ -243,6 +247,8 @@
           "required": ["type", "enabled", "adminGroup", "userGroup", "domain"]
         },
         {
+          "title": "Open ID Connect Auth Config",
+          "description": "Configuration for Open ID Connect authentication.",
           "properties": {
             "type": { "type": "string", "const": "openidconnect" },
             "enabled": { "type": "boolean" },
@@ -262,6 +268,8 @@
           "required": ["type", "enabled", "oidcConfig"]
         },
         {
+          "title": "JWT Auth Config",
+          "description": "Configuration for JWT authentication.",
           "properties": {
             "type": { "type": "string", "const": "jwt" },
             "enabled": { "type": "boolean" },
