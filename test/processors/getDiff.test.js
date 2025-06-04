@@ -116,4 +116,36 @@ describe('getDiff', () => {
     expect(result.steps[0].error).to.be.true;
     expect(result.steps[0].errorMessage).to.contain('No commit data found');
   });
+
+  it('should handle empty commit hash in commitFrom', async () => {
+    await fs.writeFile(path.join(tempDir, 'test.txt'), 'new content for parent test');
+    await git.add('.');
+    await git.commit('commit for parent test');
+
+    const log = await git.log();
+    const parentCommit = log.all[1].hash;
+    const headCommit = log.all[0].hash;
+
+    const action = new Action(
+      '1234567890',
+      'push',
+      'POST',
+      1234567890,
+      'test/repo'
+    );
+
+    action.proxyGitPath = path.dirname(tempDir);
+    action.repoName = path.basename(tempDir);
+    action.commitFrom = '0000000000000000000000000000000000000000';
+    action.commitTo = headCommit;
+    action.commitData = [
+      { parent: parentCommit }
+    ];
+
+    const result = await exec({}, action);
+
+    expect(result.steps[0].error).to.be.false;
+    expect(result.steps[0].content).to.not.be.null;
+    expect(result.steps[0].content.length).to.be.greaterThan(0);
+  });
 });
