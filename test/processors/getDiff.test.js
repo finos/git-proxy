@@ -1,6 +1,6 @@
 const path = require('path');
 const simpleGit = require('simple-git');
-const fs = require('fs');
+const fs = require('fs').promises;
 const { Action } = require('../../src/proxy/actions');
 const { exec } = require('../../src/proxy/processors/push-action/getDiff');
 
@@ -14,37 +14,24 @@ describe('getDiff', () => {
   before(async () => {
     // Create a temp repo to avoid mocking simple-git
     tempDir = path.join(__dirname, 'temp-test-repo');
-    await fs.mkdir(tempDir, { recursive: true }, (err) => {
-      if (err) {
-        console.error(err);
-      }
-    });
+    await fs.mkdir(tempDir, { recursive: true });
     git = simpleGit(tempDir);
     
     await git.init();
-    await fs.writeFile(path.join(tempDir, 'test.txt'), 'initial content', (err) => {
-      if (err) {
-        console.error(err);
-      }
-    });
+    await git.addConfig('user.name', 'test');
+    await git.addConfig('user.email', 'test@test.com');
+
+    await fs.writeFile(path.join(tempDir, 'test.txt'), 'initial content');
     await git.add('.');
     await git.commit('initial commit');
   });
   
   after(async () => {
-    await fs.rmdir(tempDir, { recursive: true }, (err) => {
-      if (err) {
-        console.error(err);
-      }
-    });
+    await fs.rmdir(tempDir, { recursive: true });
   });
   
   it('should get diff between commits', async () => {
-    await fs.writeFile(path.join(tempDir, 'test.txt'), 'modified content', (err) => {
-      if (err) {
-        console.error(err);
-      }
-    });
+    await fs.writeFile(path.join(tempDir, 'test.txt'), 'modified content');
     await git.add('.');
     const commit = await git.commit('second commit');
     
