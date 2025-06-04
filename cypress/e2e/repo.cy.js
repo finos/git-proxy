@@ -10,7 +10,7 @@ describe('Repo', () => {
 
   describe('Code button for repo row', () => {
     it('Opens tooltip with correct content and can copy', () => {
-      const cloneURL = 'http://localhost:8000/finos/test-repo.git';
+      const cloneURL = 'http://localhost:8000/github.com/finos/test-repo.git';
       const tooltipQuery = 'div[role="tooltip"]';
 
       cy

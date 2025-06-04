@@ -118,42 +118,6 @@ export const processGitURLForNameAndOrg = (gitUrl: string): GitNameBreakdown | n
   }
 };
 
-// /** Regex used to analyze legacy proxy paths to extract the repository name and
-//  * any path or organisation that proceeds it. */
-// const GIT_LEGACY_PATH_REGEX = /\/([^/]+)\/([^/]+)\.git/;
-
-// /** Type representing a breakdown of a legacy proxy path into repository name and organisation (project)
-//  * and a predicted GitHub URL. */
-// export type GitLegacyPathBreakdown = { project: string; repoName: string; url: string };
-
-// /** Function that processes legacy proxy path string (which assumed GitHub as the repository host) to
-//  * extract the repository name, project (organisation) and to construct a predicted GitHub URL.
-//  *
-//  * E.g. Processing finos/git-proxy.git
-//  * would produce:
-//  * - project: finos
-//  * - repoName: git-proxy
-//  * - url: https://github.com/finos/git-proxy.git
-//  *
-//  * @param {string} requestPath The proxy path to process.
-//  * @return {GitLegacyPathBreakdown | null} A breakdown of the components of the URL.
-//  */
-// export const processLegacyProxyPathForNameAndOrg = (
-//   requestPath: string,
-// ): GitLegacyPathBreakdown | null => {
-//   const components = requestPath.match(GIT_LEGACY_PATH_REGEX);
-//   if (components && components.length >= 3) {
-//     return {
-//       project: components[1],
-//       repoName: components[2],
-//       url: `https://github.com/${components[1]}/${components[2]}.git`,
-//     };
-//   } else {
-//     console.error(`Failed to parse git path: ${requestPath}`);
-//     return null;
-//   }
-// };
-
 /**
  * Check whether an HTTP request has the expected properties of a
  * Git HTTP request. The URL is expected to be "sanitized", stripped of

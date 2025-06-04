@@ -28,7 +28,7 @@ router.post('/login', passport.authenticate(authStrategies['local'].type), async
     const currentUser = { ...req.user };
     delete currentUser.password;
     console.log(
-      `serivce.routes.auth.login: user logged in, username=${
+      `service.routes.auth.login: user logged in, username=${
         currentUser.username
       } profile=${JSON.stringify(currentUser)}`,
     );
