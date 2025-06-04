@@ -33,7 +33,7 @@ describe('getDiff', () => {
   it('should get diff between commits', async () => {
     await fs.writeFile(path.join(tempDir, 'test.txt'), 'modified content');
     await git.add('.');
-    const commit = await git.commit('second commit');
+    await git.commit('second commit');
     
     const action = new Action(
       '1234567890',
@@ -54,5 +54,6 @@ describe('getDiff', () => {
     
     expect(result.steps[0].error).to.be.false;
     expect(result.steps[0].content).to.include('modified content');
+    expect(result.steps[0].content).to.include('initial content');
   });
 });
