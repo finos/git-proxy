@@ -201,7 +201,7 @@
             "type": { "type": "string", "const": "local" },
             "enabled": { "type": "boolean" }
           },
-          "required": ["type","enabled"]
+          "required": ["type", "enabled"]
         },
         {
           "properties": {
@@ -232,16 +232,19 @@
                   "type": "string",
                   "description": "An account name capable of performing the operations desired."
                 },
-                "password": { "type": "string", "description": "Password for the given `username`." }
+                "password": {
+                  "type": "string",
+                  "description": "Password for the given `username`."
+                }
               },
               "required": ["url", "baseDN", "username", "password"]
             }
           },
-          "required": ["type","enabled","adminGroup","userGroup","domain"]
+          "required": ["type", "enabled", "adminGroup", "userGroup", "domain"]
         },
         {
           "properties": {
-            "type": { "type": "string", "const": "openidconnect" },
+            "type": { "type": "string", "const": "OpenIdConnect" },
             "enabled": { "type": "boolean" },
             "oidcConfig": {
               "type": "object",
@@ -253,10 +256,10 @@
                 "callbackURL": { "type": "string" },
                 "scope": { "type": "string" }
               },
-              "required": ["issuer","clientID","clientSecret","callbackURL","scope"]
+              "required": ["issuer", "clientID", "clientSecret", "callbackURL", "scope"]
             }
           },
-          "required": ["type","enabled","oidcConfig"]
+          "required": ["type", "enabled", "oidcConfig"]
         },
         {
           "properties": {
@@ -269,18 +272,12 @@
                 "clientID": { "type": "string" },
                 "authorityURL": { "type": "string" }
               },
-              "required": ["clientID","authorityURL"]
+              "required": ["clientID", "authorityURL"]
             }
           },
-          "required": ["type","enabled","jwtConfig"]
+          "required": ["type", "enabled", "jwtConfig"]
         }
-      ], 
-      "properties": {
-        "type": { "type": "string", "enum": ["local", "ActiveDirectory", "openidconnect", "jwt"] },
-        "enabled": { "type": "boolean" },
-        
-      },
-      "required": ["type", "enabled"]
+      ]
     },
     "routeAuthRule": {
       "type": "object",
