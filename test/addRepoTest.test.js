@@ -56,6 +56,18 @@ describe('add new repo', async () => {
     repo.users.canAuthorise.length.should.equal(0);
   });
 
+  it('filter repos', async function () {
+    const res = await chai
+      .request(app)
+      .get('/api/v1/repo')
+      .set('Cookie', `${cookie}`)
+      .query({ name: 'test-repo' });
+    res.should.have.status(200);
+    res.body[0].project.should.equal('finos');
+    res.body[0].name.should.equal('test-repo');
+    res.body[0].url.should.equal('https://github.com/finos/test-repo.git');
+  });
+
   it('add 1st can push user', async function () {
     const res = await chai
       .request(app)
