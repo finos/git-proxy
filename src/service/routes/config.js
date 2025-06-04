@@ -15,4 +15,8 @@ router.get('/contactEmail', function ({ res }) {
   res.send(config.getContactEmail());
 });
 
+router.get('/ssh', (req, res) => {
+  res.send(config.getPublicSSHConfig());
+});
+
 module.exports = router;

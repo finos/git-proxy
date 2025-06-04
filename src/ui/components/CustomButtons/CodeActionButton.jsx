@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Popper from '@material-ui/core/Popper';
 import Paper from '@material-ui/core/Paper';
 import {
@@ -10,6 +11,8 @@ import {
   KeyIcon,
 } from '@primer/octicons-react';
 
+const API_BASE = import.meta.env.VITE_API_URI ?? '';
+
 const CodeActionButton = ({ cloneURL }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [open, setOpen] = useState(false);
@@ -17,13 +20,32 @@ const CodeActionButton = ({ cloneURL }) => {
   const [isCopied, setIsCopied] = useState(false);
   const [protocol, setProtocol] = useState('https');
 
+  const [sshCfg, setSshCfg] = useState({ enabled: true, port: 22 });
+  useEffect(() => {
+    axios
+      .get(`${API_BASE}/api/v1/config/ssh`, { withCredentials: true })
+      .then((res) => {
+        const { enabled = true, port = 22 } = res.data || {};
+        setSshCfg({ enabled, port });
+      })
+      .catch((err) => {
+        console.error('Failed to load SSH config:', err);
+      });
+  }, []);
+
   const getSSHUrl = () => {
     try {
       const urlObj = new URL(cloneURL);
-      const host = urlObj.host;
+      const host = urlObj.hostname; // hostname w/out any port
       let path = urlObj.pathname;
-      if (path.startsWith('/')) path = path.substring(1);
-      return `git@${host}:${path}`;
+      if (path.startsWith('/')) path = path.slice(1);
+
+      // Default port
+      if (!sshCfg.port || sshCfg.port === 22) {
+        return `git@${host}:${path}`;
+      }
+      // Custom port
+      return `ssh://git@${host}:${sshCfg.port}/${path}`;
     } catch {
       return cloneURL;
     }
@@ -49,7 +71,7 @@ const CodeActionButton = ({ cloneURL }) => {
       <span
         style={{
           background: '#2da44e',
-          borderRadius: '5px',
+          borderRadius: 5,
           color: 'white',
           padding: '8px 10px',
           fontWeight: 'bold',
@@ -71,10 +93,10 @@ const CodeActionButton = ({ cloneURL }) => {
         anchorEl={anchorEl}
         placement={placement}
         style={{
-          border: '1px solid rgba(211, 211, 211, 0.3)',
-          borderRadius: '5px',
-          minWidth: '300px',
-          maxWidth: '450px',
+          border: '1px solid rgba(211,211,211,0.3)',
+          borderRadius: 5,
+          minWidth: 300,
+          maxWidth: 450,
           zIndex: 99,
         }}
       >
@@ -126,8 +148,8 @@ const CodeActionButton = ({ cloneURL }) => {
                   flex: 1,
                   padding: '5px 8px',
                   border: '1px solid gray',
-                  borderRadius: '5px',
-                  fontSize: '12px',
+                  borderRadius: 5,
+                  fontSize: 12,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
@@ -135,7 +157,7 @@ const CodeActionButton = ({ cloneURL }) => {
               >
                 git clone {selectedUrl}
               </div>
-              <div style={{ marginLeft: '8px' }}>
+              <div style={{ marginLeft: 8 }}>
                 {!isCopied ? (
                   <span style={{ cursor: 'pointer' }} onClick={handleCopy}>
                     <CopyIcon />

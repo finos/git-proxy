@@ -58,6 +58,13 @@ export const getSSHConfig = () => {
   }
   return _sshConfig;
 };
+export const getPublicSSHConfig = () => {
+  if (_userSettings !== null && _userSettings.ssh) {
+    _sshConfig = _userSettings.ssh;
+  }
+  const { enabled = false, port = 22 } = _sshConfig;
+  return { enabled, port };
+};
 
 // Gets a list of authorised repositories
 export const getAuthorisedList = () => {
