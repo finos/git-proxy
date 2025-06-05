@@ -205,6 +205,44 @@ describe('gitleaks', () => {
       expect(stepSpy.calledWith('failed to run gitleaks, please contact an administrator\n')).to.be.true;
     });
 
+    it('should handle gitleaks spawn failure', async () => {
+      stubs.getAPIs.returns({ gitleaks: { enabled: true } });
+      stubs.spawn.onFirstCall().throws(new Error('Spawn error'));
+
+      const result = await exec(req, action);
+
+      expect(result.error).to.be.true;
+      expect(result.steps).to.have.lengthOf(1);
+      expect(result.steps[0].error).to.be.true;
+      expect(stepSpy.calledWith('failed to spawn gitleaks, please contact an administrator\n')).to.be.true;
+    });
+
+    it('should handle empty gitleaks entry in proxy.config.json', async () => {
+      stubs.getAPIs.returns({ gitleaks: {} });
+      const result = await exec(req, action);
+      expect(result.error).to.be.false;
+      expect(result.steps).to.have.lengthOf(1);
+      expect(result.steps[0].error).to.be.false;
+    });
+
+    it('should handle invalid gitleaks entry in proxy.config.json', async () => {
+      stubs.getAPIs.returns({ gitleaks: 'invalid config' });
+      stubs.spawn.onFirstCall().returns({
+        on: (event, cb) => {
+          if (event === 'close') cb(0);
+          return { stdout: { on: () => {} }, stderr: { on: () => {} } };
+        },
+        stdout: { on: (_, cb) => cb('') },
+        stderr: { on: (_, cb) => cb('') }
+      });
+
+      const result = await exec(req, action);
+
+      expect(result.error).to.be.false;
+      expect(result.steps).to.have.lengthOf(1);
+      expect(result.steps[0].error).to.be.false;
+    });
+
     it('should handle custom config path', async () => {
       stubs.getAPIs.returns({ 
         gitleaks: { 
