@@ -65,10 +65,10 @@ describe('writePack', () => {
         encoding: 'utf-8',
       });
 
-      expect(stepLogSpy.calledWith('executing git receive-pack repo')).to.be.true;
-      expect(stepLogSpy.calledWith('git receive-pack output')).to.be.true;
+      expect(stepLogSpy.getCall(-2).args[0]).to.equal('executing git receive-pack git-proxy.git');
+      expect(stepLogSpy.getCall(-1).args[0]).to.equal('git receive-pack output');
 
-      expect(stepSetContentSpy.calledWith('git receive-pack output')).to.be.true;
+      expect(stepSetContentSpy.getCall(-1).args[0]).to.equal('git receive-pack output');
 
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.false;
