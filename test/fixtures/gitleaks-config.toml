@@ -1,0 +1,25 @@
+title = "sample gitleaks config"
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(?:key|api|token|secret)[\s:=]+([a-z0-9]{32,})'''
+tags = ["key", "api-key"]
+
+[[rules]]
+id = "aws-access-key-id"
+description = "AWS Access Key ID"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["aws", "key"]
+
+[[rules]]
+id = "basic-auth"
+description = "Auth Credentials"
+regex = '''(?i)(https?://)[a-z0-9]+:[a-z0-9]+@'''
+tags = ["auth", "password"]
+
+[[rules]]
+id = "jwt-token"
+description = "JSON Web Token"
+regex = '''eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.?[A-Za-z0-9._-]*'''
+tags = ["jwt", "token"]

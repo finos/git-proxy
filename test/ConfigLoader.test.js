@@ -148,6 +148,22 @@ describe('ConfigLoader', () => {
 
       expect(spy.calledOnce).to.be.true; // Should only emit once
     });
+
+    it('should not emit event if configurationSources is disabled', async () => {
+      const config = {
+        configurationSources: {
+          enabled: false,
+        },
+      };
+
+      configLoader = new ConfigLoader(config);
+      const spy = sinon.spy();
+      configLoader.on('configurationChanged', spy);
+
+      await configLoader.reloadConfiguration();
+
+      expect(spy.called).to.be.false;
+    });
   });
 
   describe('initialize', () => {
@@ -182,6 +198,98 @@ describe('ConfigLoader', () => {
     });
   });
 
+  describe('start', () => {
+    it('should perform initial load on start if configurationSources is enabled', async () => {
+      const mockConfig = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+          reloadIntervalSeconds: 30,
+        },
+      };
+
+      const configLoader = new ConfigLoader(mockConfig);
+      const spy = sinon.spy(configLoader, 'reloadConfiguration');
+      await configLoader.start();
+
+      expect(spy.calledOnce).to.be.true;
+    });
+
+    it('should clear an existing reload interval if it exists', async () => {
+      const mockConfig = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+        },
+      };
+
+      const configLoader = new ConfigLoader(mockConfig);
+      configLoader.reloadTimer = setInterval(() => {}, 1000);
+      await configLoader.start();
+
+      expect(configLoader.reloadTimer).to.be.null;
+    });
+
+    it('should run reloadConfiguration multiple times on short reload interval', async () => {
+      const mockConfig = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+          reloadIntervalSeconds: 0.01,
+        },
+      };
+
+      const configLoader = new ConfigLoader(mockConfig);
+      const spy = sinon.spy(configLoader, 'reloadConfiguration');
+      await configLoader.start();
+
+      // Make sure the reload interval is triggered
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(spy.callCount).to.greaterThan(1);
+    });
+
+    it('should clear the interval when stop is called', async () => {
+      const mockConfig = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+        },
+      };
+
+      const configLoader = new ConfigLoader(mockConfig);
+      configLoader.reloadTimer = setInterval(() => {}, 1000);
+      expect(configLoader.reloadTimer).to.not.be.null;
+
+      await configLoader.stop();
+      expect(configLoader.reloadTimer).to.be.null;
+    });
+  });
+
   describe('loadRemoteConfig', () => {
     let configLoader;
     beforeEach(async () => {
@@ -205,7 +313,7 @@ describe('ConfigLoader', () => {
         enabled: true,
       };
 
-      const config = await configLoader.loadFromGit(source);
+      const config = await configLoader.loadFromSource(source);
 
       // Verify the loaded config has expected structure
       expect(config).to.be.an('object');
@@ -213,7 +321,7 @@ describe('ConfigLoader', () => {
       expect(config).to.have.property('cookieSecret');
     });
 
-    it('should throw error for invalid configuration file path', async function () {
+    it('should throw error for invalid configuration file path (git)', async function () {
       const source = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
@@ -223,10 +331,25 @@ describe('ConfigLoader', () => {
       };
 
       try {
-        await configLoader.loadFromGit(source);
+        await configLoader.loadFromSource(source);
         throw new Error('Expected error was not thrown');
       } catch (error) {
         expect(error.message).to.equal('Invalid configuration file path in repository');
+      }
+    });
+
+    it('should throw error for invalid configuration file path (file)', async function () {
+      const source = {
+        type: 'file',
+        path: '\0', // Invalid path
+        enabled: true,
+      };
+
+      try {
+        await configLoader.loadFromSource(source);
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error.message).to.equal('Invalid configuration file path');
       }
     });
 
@@ -240,12 +363,131 @@ describe('ConfigLoader', () => {
         enabled: true,
       };
 
-      const config = await configLoader.loadFromHttp(source);
+      const config = await configLoader.loadFromSource(source);
 
       // Verify the loaded config has expected structure
       expect(config).to.be.an('object');
       expect(config).to.have.property('proxyUrl');
       expect(config).to.have.property('cookieSecret');
+    });
+
+    it('should throw error if repository is invalid', async function () {
+      const source = {
+        type: 'git',
+        repository: 'invalid-repository',
+        path: 'proxy.config.json',
+        branch: 'main',
+        enabled: true,
+      };
+      
+      try {
+        await configLoader.loadFromSource(source);
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error.message).to.equal('Invalid repository URL format');
+      }
+    });
+
+    it('should throw error if branch name is invalid', async function () {
+      const source = {
+        type: 'git',
+        repository: 'https://github.com/finos/git-proxy.git',
+        path: 'proxy.config.json',
+        branch: '..', // invalid branch pattern
+        enabled: true,
+      };
+
+      try {
+        await configLoader.loadFromSource(source);
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error.message).to.equal('Invalid branch name format');
+      }
+    });
+
+    it('should throw error if configuration source is invalid', async function () {
+      const source = {
+        type: 'invalid',
+        repository: 'https://github.com/finos/git-proxy.git',
+        path: 'proxy.config.json',
+        branch: 'main',
+        enabled: true,
+      };
+
+      try {
+        await configLoader.loadFromSource(source);
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error.message).to.contain('Unsupported configuration source type');
+      }
+    });
+
+    it('should throw error if repository is a valid URL but not a git repository', async function () {
+      const source = {
+        type: 'git',
+        repository: 'https://github.com/test-org/test-repo.git',
+        path: 'proxy.config.json',
+        branch: 'main',
+        enabled: true,
+      };
+
+      try {
+        await configLoader.loadFromSource(source);
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error.message).to.contain('Failed to clone repository');
+      }
+    });
+
+    it('should throw error if repository is a valid git repo but the branch does not exist', async function () {
+      const source = {
+        type: 'git',
+        repository: 'https://github.com/finos/git-proxy.git',
+        path: 'proxy.config.json',
+        branch: 'branch-does-not-exist',
+        enabled: true,
+      };
+
+      try {
+        await configLoader.loadFromSource(source);
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error.message).to.contain('Failed to checkout branch');
+      }
+    });
+
+    it('should throw error if config path was not found', async function () {
+      const source = {
+        type: 'git',
+        repository: 'https://github.com/finos/git-proxy.git',
+        path: 'path-not-found.json',
+        branch: 'main',
+        enabled: true,
+      };
+
+      try {
+        await configLoader.loadFromSource(source);
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error.message).to.contain('Configuration file not found at');
+      }
+    });
+
+    it('should throw error if config file is not valid JSON', async function () {
+      const source = {
+        type: 'git',
+        repository: 'https://github.com/finos/git-proxy.git',
+        path: 'test/fixtures/baz.js',
+        branch: 'main',
+        enabled: true,
+      };
+
+      try {
+        await configLoader.loadFromSource(source);
+        throw new Error('Expected error was not thrown');
+      } catch (error) {
+        expect(error.message).to.contain('Failed to read or parse configuration file');
+      }
     });
   });
 
