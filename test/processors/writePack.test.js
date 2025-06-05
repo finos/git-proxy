@@ -17,7 +17,7 @@ describe('writePack', () => {
     spawnSyncStub = sinon.stub().returns({
       stdout: 'git receive-pack output',
       stderr: '',
-      status: 0
+      status: 0,
     });
 
     stepLogSpy = sinon.spy(Step.prototype, 'log');
@@ -25,7 +25,7 @@ describe('writePack', () => {
     stepSetErrorSpy = sinon.spy(Step.prototype, 'setError');
 
     const writePack = proxyquire('../../src/proxy/processors/push-action/writePack', {
-      'child_process': { spawnSync: spawnSyncStub }
+      child_process: { spawnSync: spawnSyncStub },
     });
 
     exec = writePack.exec;
@@ -41,14 +41,14 @@ describe('writePack', () => {
 
     beforeEach(() => {
       req = {
-        body: 'pack data'
+        body: 'pack data',
       };
       action = new Action(
         '1234567890',
         'push',
         'POST',
         1234567890,
-        'test/repo'
+        'https://github.com/finos/git-proxy.git',
       );
       action.proxyGitPath = '/path/to/repo';
     });
@@ -58,11 +58,11 @@ describe('writePack', () => {
 
       expect(spawnSyncStub.calledOnce).to.be.true;
       expect(spawnSyncStub.firstCall.args[0]).to.equal('git');
-      expect(spawnSyncStub.firstCall.args[1]).to.deep.equal(['receive-pack', 'repo']);
+      expect(spawnSyncStub.firstCall.args[1]).to.deep.equal(['receive-pack', 'git-proxy.git']);
       expect(spawnSyncStub.firstCall.args[2]).to.deep.equal({
         cwd: '/path/to/repo',
         input: 'pack data',
-        encoding: 'utf-8'
+        encoding: 'utf-8',
       });
 
       expect(stepLogSpy.calledWith('executing git receive-pack repo')).to.be.true;
