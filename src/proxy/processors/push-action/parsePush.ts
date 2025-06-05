@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import lod from 'lodash';
 import { CommitContent } from '../types';
+
 const BitMask = require('bit-mask') as any;
 
 const dir = path.resolve(__dirname, './.tmp');
@@ -14,7 +15,6 @@ if (!fs.existsSync(dir)) {
 
 async function exec(req: any, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
-
   try {
     if (!req.body || req.body.length === 0) {
       throw new Error('No body found in request');
@@ -51,7 +51,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     action.addStep(step);
   }
   return action;
-};
+}
 
 const getCommitData = (contents: CommitContent[]) => {
   console.log({ contents });
@@ -101,8 +101,9 @@ const getCommitData = (contents: CommitContent[]) => {
       console.log({ indexOfMessages });
 
       const message = formattedContent
-        .slice(indexOfMessages + 1, formattedContent.length - 1)
-        .join(' ');
+        .slice(indexOfMessages + 1)
+        .join(' ')
+        .trim();
       console.log({ message });
 
       const commitTimestamp = committer?.split(' ').reverse()[1];
@@ -125,7 +126,15 @@ const getCommitData = (contents: CommitContent[]) => {
         committerEmail
       });
 
-      if (!tree || !parent || !author || !committer || !commitTimestamp || !message || !authorEmail) {
+      if (
+        !tree ||
+        !parent ||
+        !author ||
+        !committer ||
+        !commitTimestamp ||
+        !message ||
+        !authorEmail
+      ) {
         throw new Error('Invalid commit data');
       }
 
@@ -262,8 +271,4 @@ const unpack = (buf: Buffer) => {
 
 exec.displayName = 'parsePush.exec';
 
-export {
-  exec,
-  getPackMeta,
-  unpack
-};
+export { exec, getPackMeta, unpack };

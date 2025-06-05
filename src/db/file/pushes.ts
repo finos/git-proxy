@@ -6,10 +6,17 @@ import { toClass } from '../helper';
 import * as repo from './repo';
 import { PushQuery } from '../types';
 
+const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
+
+// these don't get coverage in tests as they have already been run once before the test
+/* istanbul ignore if */
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
+/* istanbul ignore if */
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
+db.ensureIndex({ fieldName: 'id', unique: true });
+db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
 const defaultPushQuery: PushQuery = {
   error: false,
@@ -22,6 +29,8 @@ export const getPushes = (query: PushQuery) => {
   if (!query) query = defaultPushQuery;
   return new Promise((resolve, reject) => {
     db.find(query, (err: Error, docs: Action[]) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -38,6 +47,8 @@ export const getPushes = (query: PushQuery) => {
 export const getPush = async (id: string) => {
   return new Promise<Action | null>((resolve, reject) => {
     db.findOne({ id: id }, (err, doc) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -54,6 +65,8 @@ export const getPush = async (id: string) => {
 export const deletePush = async (id: string) => {
   return new Promise<void>((resolve, reject) => {
     db.remove({ id }, (err) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -67,6 +80,8 @@ export const writeAudit = async (action: Action) => {
   return new Promise((resolve, reject) => {
     const options = { multi: false, upsert: true };
     db.update({ id: action.id }, action, options, (err) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -115,7 +130,7 @@ export const cancel = async (id: string) => {
   return { message: `cancel ${id}` };
 };
 
-export const canUserCancelPush = async (id: string, user: any) => {
+export const canUserCancelPush = async (id: string, user: string) => {
   return new Promise<boolean>(async (resolve) => {
     const pushDetail = await getPush(id);
     if (!pushDetail) {
@@ -134,14 +149,14 @@ export const canUserCancelPush = async (id: string, user: any) => {
   });
 };
 
-export const canUserApproveRejectPush = async (id: string, user: any) => {
+export const canUserApproveRejectPush = async (id: string, user: string) => {
   return new Promise<boolean>(async (resolve) => {
     const action = await getPush(id);
     if (!action) {
       resolve(false);
       return;
     }
-    const repoName = action?.repoName.replace('.git', '');
+    const repoName = action.repoName.replace('.git', '');
     const isAllowed = await repo.canUserApproveRejectPushRepo(repoName, user);
 
     resolve(isAllowed);

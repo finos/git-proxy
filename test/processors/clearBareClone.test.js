@@ -1,8 +1,8 @@
 const fs = require('fs');
 const chai = require('chai');
-const clearBareClone = require('../src/proxy/processors/push-action/clearBareClone').exec;
-const pullRemote = require('../src/proxy/processors/push-action/pullRemote').exec;
-const { Action } = require('../src/proxy/actions/Action');
+const clearBareClone = require('../../src/proxy/processors/push-action/clearBareClone').exec;
+const pullRemote = require('../../src/proxy/processors/push-action/pullRemote').exec;
+const { Action } = require('../../src/proxy/actions/Action');
 chai.should();
 
 const expect = chai.expect;
@@ -38,5 +38,5 @@ describe('clear bare and local clones', async () => {
     if (fs.existsSync(`./.remote`)) {
       fs.rmdirSync(`./.remote`, { recursive: true });
     }
-  })
+  });
 });

@@ -103,6 +103,13 @@
         }
       }
     },
+    "apiAuthentication": {
+      "description": "List of authentication sources for API endpoints. May be empty, in which case all endpoints are public.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/authentication"
+      }
+    },
     "tls": {
       "description": "TLS configuration for secure connections",
       "type": "object",
@@ -122,6 +129,19 @@
         "items": {
           "type": "object",
           "description": "Configuration source"
+        }
+      }
+    },
+    "uiRouteAuth": {
+      "description": "UI routes that require authentication (logged in or admin)",
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "rules": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/routeAuthRule"
+          }
         }
       }
     }
@@ -155,6 +175,14 @@
         "options": { "type": "object" }
       },
       "required": ["type", "enabled"]
+    },
+    "routeAuthRule": {
+      "type": "object",
+      "properties": {
+        "pattern": { "type": "string" },
+        "adminOnly": { "type": "boolean" },
+        "loginRequired": { "type": "boolean" }
+      }
     }
   },
   "additionalProperties": false
