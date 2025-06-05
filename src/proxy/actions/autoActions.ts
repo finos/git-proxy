@@ -33,7 +33,4 @@ const attemptAutoRejection = async (action: Action) => {
   }
 };
 
-export {
-  attemptAutoApproval,
-  attemptAutoRejection,
-};
+export { attemptAutoApproval, attemptAutoRejection };
