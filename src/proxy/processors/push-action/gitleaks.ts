@@ -123,6 +123,12 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     return action;
   }
 
+  if (!config.enabled) {
+    console.log('gitleaks is disabled, skipping');
+    action.addStep(step);
+    return action;
+  }
+
   const { commitFrom, commitTo } = action;
   const workingDir = `${action.proxyGitPath}/${action.repoName}`;
   console.log(`Scanning range with gitleaks: ${commitFrom}:${commitTo}`, workingDir);

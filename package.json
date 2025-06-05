@@ -13,7 +13,7 @@
     "build-lib": "./scripts/build-for-publish.sh",
     "restore-lib": "./scripts/undo-build.sh",
     "check-types": "tsc",
-    "test": "NODE_ENV=test ts-mocha './test/*.js' --exit",
+    "test": "NODE_ENV=test ts-mocha './test/**/*.test.js' --exit",
     "test-coverage": "nyc npm run test",
     "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text npm run test",
     "prepare": "node ./scripts/prepare.js",
