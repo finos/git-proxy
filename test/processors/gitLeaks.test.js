@@ -162,6 +162,95 @@ describe('gitleaks', () => {
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.true;
       expect(stepSpy.calledWith('\nFound secret in file.txt\nWarning: potential leak')).to.be.true;
-    });  
+    });
+
+    it('should handle gitleaks execution failure', async () => {
+      stubs.getAPIs.returns({ gitleaks: { enabled: true } });
+
+      const gitRootCommitMock = {
+        exitCode: 0,
+        stdout: 'rootcommit123\n',
+        stderr: ''
+      };
+
+      const gitleaksMock = {
+        exitCode: 1,
+        stdout: '',
+        stderr: 'Command failed'
+      };
+
+      stubs.spawn
+        .onFirstCall().returns({
+          on: (event, cb) => {
+            if (event === 'close') cb(gitRootCommitMock.exitCode);
+            return { stdout: { on: () => {} }, stderr: { on: () => {} } };
+          },
+          stdout: { on: (_, cb) => cb(gitRootCommitMock.stdout) },
+          stderr: { on: (_, cb) => cb(gitRootCommitMock.stderr) }
+        })
+        .onSecondCall().returns({
+          on: (event, cb) => {
+            if (event === 'close') cb(gitleaksMock.exitCode);
+            return { stdout: { on: () => {} }, stderr: { on: () => {} } };
+          },
+          stdout: { on: (_, cb) => cb(gitleaksMock.stdout) },
+          stderr: { on: (_, cb) => cb(gitleaksMock.stderr) }
+        });
+
+      const result = await exec(req, action);
+
+      expect(result.error).to.be.true;
+      expect(result.steps).to.have.lengthOf(1);
+      expect(result.steps[0].error).to.be.true;
+      expect(stepSpy.calledWith('failed to run gitleaks, please contact an administrator\n')).to.be.true;
+    });
+
+    it('should handle custom config path', async () => {
+      stubs.getAPIs.returns({ 
+        gitleaks: { 
+          enabled: true,
+          configPath: `../fixtures/gitleaks-config.toml`
+        } 
+      });
+
+      stubs.fs.stat.resolves({ isFile: () => true });
+      stubs.fs.access.resolves();
+
+      const gitRootCommitMock = {
+        exitCode: 0,
+        stdout: 'rootcommit123\n',
+        stderr: ''
+      };
+
+      const gitleaksMock = {
+        exitCode: 0,
+        stdout: '',
+        stderr: 'No leaks found'
+      };
+
+      stubs.spawn
+        .onFirstCall().returns({
+          on: (event, cb) => {
+            if (event === 'close') cb(gitRootCommitMock.exitCode);
+            return { stdout: { on: () => {} }, stderr: { on: () => {} } };
+          },
+          stdout: { on: (_, cb) => cb(gitRootCommitMock.stdout) },
+          stderr: { on: (_, cb) => cb(gitRootCommitMock.stderr) }
+        })
+        .onSecondCall().returns({
+          on: (event, cb) => {
+            if (event === 'close') cb(gitleaksMock.exitCode);
+            return { stdout: { on: () => {} }, stderr: { on: () => {} } };
+          },
+          stdout: { on: (_, cb) => cb(gitleaksMock.stdout) },
+          stderr: { on: (_, cb) => cb(gitleaksMock.stderr) }
+        });
+
+      const result = await exec(req, action);
+
+      expect(result.error).to.be.false;
+      expect(result.steps[0].error).to.be.false;
+      expect(stubs.spawn.secondCall.args[1]).to.include('--config=../fixtures/gitleaks-config.toml');
+    });
   });
 });
