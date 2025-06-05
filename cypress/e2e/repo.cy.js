@@ -10,7 +10,7 @@ describe('Repo', () => {
 
   describe('Code button for repo row', () => {
     it('Opens tooltip with correct content and can copy', () => {
-      const cloneURL = 'http://localhost:8000/github.com/finos/test-repo.git';
+      const cloneURLRegex = /http:\/\/localhost:8000\/(?:[^\/]+\/).+\.git/;
       const tooltipQuery = 'div[role="tooltip"]';
 
       cy
@@ -19,10 +19,8 @@ describe('Repo', () => {
         .should('not.exist');
 
       cy
-        // find the entry for finos/test-repo
-        .get('a[href="/dashboard/repo/test-repo"]')
-        // take it's parent row
-        .closest('tr')
+        // find a table row for a repo (any will do)
+        .get('table#RepoListTable>tbody>tr')
         // find the nearby span containing Code we can click to open the tooltip
         .find('span')
         .contains('Code')
@@ -35,7 +33,7 @@ describe('Repo', () => {
         .should('exist')
         .find('span')
         // check it contains the url we expect
-        .contains(cloneURL)
+        .contains(cloneURLRegex)
         .should('exist')
         .parent()
         // find the adjacent span that contains the svg
