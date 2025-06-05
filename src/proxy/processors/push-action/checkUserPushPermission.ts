@@ -24,9 +24,6 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     console.log('User not allowed to Push');
     step.error = true;
     step.log(`User ${user} is not allowed to push on repo ${action.url}, ending`);
-
-    console.log('setting error');
-
     step.setError(
       `Rejecting push as user ${action.user} ` +
         `is not allowed to push on repo ` +
