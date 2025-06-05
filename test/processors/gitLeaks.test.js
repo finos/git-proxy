@@ -252,5 +252,23 @@ describe('gitleaks', () => {
       expect(result.steps[0].error).to.be.false;
       expect(stubs.spawn.secondCall.args[1]).to.include('--config=../fixtures/gitleaks-config.toml');
     });
+
+    it('should handle invalid custom config path', async () => {
+      stubs.getAPIs.returns({ 
+        gitleaks: { 
+          enabled: true,
+          configPath: '/invalid/path.toml'
+        } 
+      });
+
+      stubs.fs.stat.rejects(new Error('File not found'));
+
+      const result = await exec(req, action);
+
+      expect(result.error).to.be.true;
+      expect(result.steps).to.have.lengthOf(1);
+      expect(result.steps[0].error).to.be.true;
+      expect(errorStub.calledWith('could not read file at the config path provided, will not be fed to gitleaks')).to.be.true;
+    });
   });
 });
