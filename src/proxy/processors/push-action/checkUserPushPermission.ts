@@ -5,7 +5,6 @@ import { getUsers, isUserPushAllowed } from '../../../db';
 const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('checkUserPushPermission');
 
-  const repoName = action.repo.split('/')[1].replace('.git', '');
   let isUserAllowed = false;
   let user = action.user;
 
@@ -16,18 +15,15 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
   if (list.length == 1) {
     user = list[0].username;
-    isUserAllowed = await isUserPushAllowed(repoName, user);
+    isUserAllowed = await isUserPushAllowed(action.url, user!);
   }
 
-  console.log(`User ${user} permission on Repo ${repoName} : ${isUserAllowed}`);
+  console.log(`User ${user} permission on Repo ${action.url} : ${isUserAllowed}`);
 
   if (!isUserAllowed) {
     console.log('User not allowed to Push');
     step.error = true;
-    step.log(`User ${user} is not allowed to push on repo ${action.repo}, ending`);
-
-    console.log('setting error');
-
+    step.log(`User ${user} is not allowed to push on repo ${action.url}, ending`);
     step.setError(
       `Rejecting push as user ${action.user} ` +
         `is not allowed to push on repo ` +
@@ -37,7 +33,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     return action;
   }
 
-  step.log(`User ${user} is allowed to push on repo ${action.repo}`);
+  step.log(`User ${user} is allowed to push on repo ${action.url}`);
   action.addStep(step);
   return action;
 };
