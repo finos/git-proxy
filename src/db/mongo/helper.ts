@@ -25,7 +25,7 @@ export const connect = async (collectionName: string): Promise<Collection> => {
 export const findDocuments = async <T>(
   collectionName: string,
   filter: Filter<Document> = {},
-  options: FindOptions<Document> = {}
+  options: FindOptions<Document> = {},
 ): Promise<T[]> => {
   const collection = await connect(collectionName);
   return collection.find(filter, options).toArray() as Promise<T[]>;
@@ -34,7 +34,7 @@ export const findDocuments = async <T>(
 export const findOneDocument = async <T>(
   collectionName: string,
   filter: Filter<Document> = {},
-  options: FindOptions<Document> = {}
+  options: FindOptions<Document> = {},
 ): Promise<T | null> => {
   const collection = await connect(collectionName);
   return (await collection.findOne(filter, options)) as T | null;
