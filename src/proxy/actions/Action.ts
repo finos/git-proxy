@@ -1,10 +1,10 @@
-import { getProxyUrl } from "../../config";
-import { Step } from "./Step";
+import { getProxyUrl } from '../../config';
+import { Step } from './Step';
 
 /**
  * Represents a commit.
  */
-export interface Commit {
+export interface CommitData {
   message: string;
   committer: string;
   tree: string;
@@ -15,6 +15,13 @@ export interface Commit {
   commitTimestamp?: string;
 }
 
+export interface TagData {
+  object: string;
+  type: string;
+  tagName: string;
+  tagger: string;
+  message: string;
+}
 /**
  * Class representing a Push.
  */
@@ -38,7 +45,7 @@ class Action {
   rejected: boolean = false;
   autoApproved: boolean = false;
   autoRejected: boolean = false;
-  commitData?: Commit[] = [];
+  commitData?: CommitData[] = [];
   commitFrom?: string;
   commitTo?: string;
   branch?: string;
@@ -48,6 +55,8 @@ class Action {
   attestation?: string;
   lastStep?: Step;
   proxyGitPath?: string;
+  tag?: string;
+  tagData?: TagData[];
 
   /**
    * Create an action.
@@ -62,15 +71,15 @@ class Action {
     this.type = type;
     this.method = method;
     this.timestamp = timestamp;
-    this.project = repo.split("/")[0];
-    this.repoName = repo.split("/")[1];
+    this.project = repo.split('/')[0];
+    this.repoName = repo.split('/')[1];
     this.url = `${getProxyUrl()}/${repo}`;
     this.repo = repo;
   }
 
   /**
    * Add a step to the action.
-   * @param {Step} step 
+   * @param {Step} step
    */
   addStep(step: Step): void {
     this.steps.push(step);
