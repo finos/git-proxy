@@ -196,10 +196,8 @@ export class ConfigLoader extends EventEmitter {
           try {
             console.log(`Loading configuration from ${source.type} source`);
             return await this.loadFromSource(source);
-          } catch (error: unknown) {
-            if (error instanceof Error) {
-              console.error(`Error loading from ${source.type} source:`, error.message);
-            }
+          } catch (error: any) {
+            console.error(`Error loading from ${source.type} source:`, error.message);
             return null;
           }
         }),
@@ -234,7 +232,7 @@ export class ConfigLoader extends EventEmitter {
       } else {
         console.log('Configuration has not changed, no update needed');
       }
-    } catch (error: unknown) {
+    } catch (error: any) {
       console.error('Error reloading configuration:', error);
       this.emit('configurationError', error);
     } finally {
@@ -330,24 +328,18 @@ export class ConfigLoader extends EventEmitter {
       try {
         await execFileAsync('git', ['clone', source.repository, repoDir], execOptions);
         console.log('Repository cloned successfully');
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error('Failed to clone repository:', error.message);
-          throw new Error(`Failed to clone repository: ${error.message}`);
-        }
-        throw error;
+      } catch (error: any) {
+        console.error('Failed to clone repository:', error.message);
+        throw new Error(`Failed to clone repository: ${error.message}`);
       }
     } else {
       console.log(`Pulling latest changes from ${source.repository}`);
       try {
         await execFileAsync('git', ['pull'], { cwd: repoDir });
         console.log('Repository pulled successfully');
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error('Failed to pull repository:', error.message);
-          throw new Error(`Failed to pull repository: ${error.message}`);
-        }
-        throw error;
+      } catch (error: any) {
+        console.error('Failed to pull repository:', error.message);
+        throw new Error(`Failed to pull repository: ${error.message}`);
       }
     }
 
@@ -357,12 +349,9 @@ export class ConfigLoader extends EventEmitter {
       try {
         await execFileAsync('git', ['checkout', source.branch], { cwd: repoDir });
         console.log(`Branch ${source.branch} checked out successfully`);
-      } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error(`Failed to checkout branch ${source.branch}:`, error.message);
-          throw new Error(`Failed to checkout branch ${source.branch}: ${error.message}`);
-        }
-        throw error;
+      } catch (error: any) {
+        console.error(`Failed to checkout branch ${source.branch}:`, error.message);
+        throw new Error(`Failed to checkout branch ${source.branch}: ${error.message}`);
       }
     }
 
@@ -382,12 +371,9 @@ export class ConfigLoader extends EventEmitter {
       const config = JSON.parse(content);
       console.log('Configuration loaded successfully from Git');
       return config;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error('Failed to read or parse configuration file:', error.message);
-        throw new Error(`Failed to read or parse configuration file: ${error.message}`);
-      }
-      throw error;
+    } catch (error: any) {
+      console.error('Failed to read or parse configuration file:', error.message);
+      throw new Error(`Failed to read or parse configuration file: ${error.message}`);
     }
   }
 
