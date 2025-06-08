@@ -2,8 +2,8 @@ import { Action, Step } from '../../actions';
 import zlib from 'zlib';
 import fs from 'fs';
 import path from 'path';
-import lod from 'lodash';
 import { CommitContent } from '../types';
+import { CommitData, TagData } from '../../actions/Action';
 const BitMask = require('bit-mask') as any;
 
 const dir = path.resolve(__dirname, './.tmp');
@@ -20,8 +20,14 @@ async function exec(req: any, action: Action): Promise<Action> {
       throw new Error('No body found in request');
     }
     const messageParts = req.body.toString('utf8').split(' ');
+    console.log('messageParts', messageParts);
 
-    action.branch = messageParts[2].trim().replace('\u0000', '');
+    const refName = messageParts[2].replace('\u0000', '').trim();
+    const isTag = refName.startsWith('refs/tags/');
+    const isBranch = refName.startsWith('refs/heads/');
+
+    action.branch = isBranch ? refName : undefined;
+    action.tag = isTag ? refName : undefined;
     action.setCommit(messageParts[0].substr(4), messageParts[1]);
 
     const index = req.body.lastIndexOf('PACK');
@@ -29,15 +35,33 @@ async function exec(req: any, action: Action): Promise<Action> {
     const [meta, contentBuff] = getPackMeta(buf);
     const contents = getContents(contentBuff as any, meta.entries as number);
 
-    action.commitData = getCommitData(contents as any);
+    const ParsedObjects = {
+      commits: [] as CommitData[],
+      tags: [] as TagData[],
+    };
 
-    if (action.commitFrom === '0000000000000000000000000000000000000000') {
-      action.commitFrom = action.commitData[action.commitData.length - 1].parent;
+    for (const obj of contents) {
+      if (obj.type === 1) ParsedObjects.commits.push(parseCommit(obj));
+      else if (obj.type === 4) ParsedObjects.tags.push(parseTag(obj));
     }
 
-    const user = action.commitData[action.commitData.length - 1].committer;
-    console.log(`Push Request received from user ${user}`);
-    action.user = user;
+    action.commitData = ParsedObjects.commits;
+    action.tagData = ParsedObjects.tags;
+
+    if (action.commitData.length) {
+      if (action.commitFrom === '0000000000000000000000000000000000000000') {
+        action.commitFrom = action.commitData[action.commitData.length - 1].parent;
+      }
+      action.user = action.commitData.at(-1)!.committer;
+    } else if (action.tagData?.length) {
+      action.user = action.tagData.at(-1)!.tagger;
+    } else if (action.tag) {
+      // lightweight tag
+      console.log(req.body.toString('utf8'));
+      action.user = req.user.username;
+    } else {
+      action.user = 'unknown';
+    }
 
     step.content = {
       meta: meta,
@@ -50,92 +74,118 @@ async function exec(req: any, action: Action): Promise<Action> {
     action.addStep(step);
   }
   return action;
-};
+}
 
-const getCommitData = (contents: CommitContent[]) => {
-  console.log({ contents });
-  return lod
-    .chain(contents)
-    .filter({ type: 1 })
-    .map((x) => {
-      console.log({ x });
+function parseCommit(x: CommitContent): CommitData {
+  console.log({ x });
+  const lines = x.content.split('\n');
+  console.log({ lines });
 
-      const formattedContent = x.content.split('\n');
-      console.log({ formattedContent });
+  const parts = lines.filter((part) => part.length > 0);
+  console.log({ parts });
 
-      const parts = formattedContent.filter((part) => part.length > 0);
-      console.log({ parts });
+  if (!parts || parts.length < 5) {
+    throw new Error('Invalid commit data');
+  }
 
-      if (!parts || parts.length < 5) {
-        throw new Error('Invalid commit data');
-      }
+  const tree = parts
+    .find((t) => t.split(' ')[0] === 'tree')
+    ?.replace('tree', '')
+    .trim();
+  console.log({ tree });
+  const parent =
+    lines
+      .find((l) => l.startsWith('parent '))
+      ?.slice(7)
+      .trim() ?? '0000000000000000000000000000000000000000';
+  console.log({ parent });
+  const authorLine = lines
+    .find((l) => l.startsWith('author '))
+    ?.slice(7)
+    .trim();
+  console.log({ authorLine });
+  const committerLine = lines
+    .find((l) => l.startsWith('committer '))
+    ?.slice(10)
+    .trim();
+  console.log({ committerLine });
+  const msgIndex = lines.indexOf('');
+  const message = lines.slice(msgIndex + 1, lines.length - 1).join(' ');
 
-      const tree = parts
-        .find((t) => t.split(' ')[0] === 'tree')
-        ?.replace('tree', '')
-        .trim();
-      console.log({ tree });
+  console.log({ message });
 
-      const parentValue = parts.find((t) => t.split(' ')[0] === 'parent');
-      console.log({ parentValue });
+  const commitTimestamp = committerLine?.split(' ').reverse()[1];
+  console.log({ commitTimestamp });
+  const authorEmail = authorLine?.split(' ').reverse()[2].slice(1, -1);
+  console.log({ authorEmail });
 
-      const parent = parentValue
-        ? parentValue.replace('parent', '').trim()
-        : '0000000000000000000000000000000000000000';
-      console.log({ parent });
+  console.log({
+    tree,
+    parent,
+    authorLine: authorLine?.split('<')[0].trim(),
+    committerLine: committerLine?.split('<')[0].trim(),
+    commitTimestamp,
+    message,
+    authorEmail,
+  });
+  if (
+    !tree ||
+    !parent ||
+    !authorLine ||
+    !committerLine ||
+    !commitTimestamp ||
+    !message ||
+    !authorEmail
+  ) {
+    throw new Error('Invalid commit data');
+  }
 
-      const author = parts
-        .find((t) => t.split(' ')[0] === 'author')
-        ?.replace('author', '')
-        .trim();
-      console.log({ author });
+  return {
+    tree,
+    parent,
+    author: authorLine.split('<')[0].trim(),
+    committer: committerLine.split('<')[0].trim(),
+    commitTimestamp,
+    message,
+    authorEmail,
+  };
+}
 
-      const committer = parts
-        .find((t) => t.split(' ')[0] === 'committer')
-        ?.replace('committer', '')
-        .trim();
-      console.log({ committer });
+function parseTag(x: CommitContent): TagData {
+  const lines = x.content.split('\n');
+  const object = lines
+    .find((l) => l.startsWith('object '))
+    ?.slice(7)
+    .trim();
+  const typeLine = lines
+    .find((l) => l.startsWith('type '))
+    ?.slice(5)
+    .trim(); // commit | tree | blob
+  const tagName = lines
+    .find((l) => l.startsWith('tag '))
+    ?.slice(4)
+    .trim();
+  const rawTagger = lines
+    .find((l) => l.startsWith('tagger '))
+    ?.slice(7)
+    .trim();
+  if (!rawTagger) throw new Error('Invalid tag object: no tagger line');
 
-      const indexOfMessages = formattedContent.indexOf('');
-      console.log({ indexOfMessages });
+  const taggerName = rawTagger.split('<')[0].trim();
 
-      const message = formattedContent
-        .slice(indexOfMessages + 1, formattedContent.length - 1)
-        .join(' ');
-      console.log({ message });
+  const messageIndex = lines.indexOf('');
+  const message = lines.slice(messageIndex + 1).join('\n');
 
-      const commitTimestamp = committer?.split(' ').reverse()[1];
-      console.log({ commitTimestamp });
+  if (!object || !typeLine || !tagName || !taggerName) throw new Error('Invalid tag object');
 
-      const authorEmail = author?.split(' ').reverse()[2].slice(1, -1);
-      console.log({ authorEmail });
-
-      console.log({
-        tree,
-        parent,
-        author: author?.split('<')[0].trim(),
-        committer: committer?.split('<')[0].trim(),
-        commitTimestamp,
-        message,
-        authorEmail,
-      });
-
-      if (!tree || !parent || !author || !committer || !commitTimestamp || !message || !authorEmail) {
-        throw new Error('Invalid commit data');
-      }
-
-      return {
-        tree,
-        parent,
-        author: author.split('<')[0].trim(),
-        committer: committer.split('<')[0].trim(),
-        commitTimestamp,
-        message,
-        authorEmail: authorEmail,
-      };
-    })
-    .value();
-};
+  return {
+    object,
+    type: typeLine,
+    tagName,
+    tagger: taggerName,
+    message,
+  };
+}
 
 const getPackMeta = (buffer: Buffer) => {
   const sig = buffer.slice(0, 4).toString('utf-8');
@@ -151,8 +201,8 @@ const getPackMeta = (buffer: Buffer) => {
   return [meta, buffer.slice(12)];
 };
 
-const getContents = (buffer: Buffer | CommitContent[], entries: number) => {
-  const contents = [];
+const getContents = (buffer: Buffer, entries: number): CommitContent[] => {
+  const contents: CommitContent[] = [];
 
   for (let i = 0; i < entries; i++) {
     try {
@@ -177,7 +227,7 @@ const getInt = (bits: boolean[]) => {
   return parseInt(strBits, 2);
 };
 
-const getContent = (item: number, buffer: Buffer) => {
+const getContent = (item: number, buffer: Buffer): [CommitContent, Buffer] => {
   // FIRST byte contains the type and some of the size of the file
   // a MORE flag -8th byte tells us if there is a subsequent byte
   // which holds the file size
@@ -227,14 +277,14 @@ const getContent = (item: number, buffer: Buffer) => {
 
   // NOTE Size is the unziped size, not the zipped size
   // so it's kind of useless for us in terms of reading the stream
-  const result = {
-    item: item,
+  const result: CommitContent = {
+    item,
     value: byte,
-    type: type,
+    type,
     size: intSize,
-    deflatedSize: deflatedSize,
-    objectRef: objectRef,
-    content: content,
+    deflatedSize: deflatedSize as number,
+    objectRef,
+    content: content as string,
   };
 
   // Move on by the zipped content size.
@@ -256,8 +306,4 @@ const unpack = (buf: Buffer) => {
 
 exec.displayName = 'parsePush.exec';
 
-export {
-  exec,
-  getPackMeta,
-  unpack
-};
+export { exec, getPackMeta, unpack };
