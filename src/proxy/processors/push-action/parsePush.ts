@@ -14,7 +14,6 @@ if (!fs.existsSync(dir)) {
 
 async function exec(req: any, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
-
   try {
     if (!req.body || req.body.length === 0) {
       throw new Error('No body found in request');

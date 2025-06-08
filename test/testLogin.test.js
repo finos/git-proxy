@@ -62,6 +62,22 @@ describe('auth', async () => {
 
       res.should.have.status(401);
     });
+
+    it('should fail to login with invalid username', async function () {
+      const res = await chai.request(app).post('/api/auth/login').send({
+        username: 'invalid',
+        password: 'admin',
+      });
+      res.should.have.status(401);
+    });
+
+    it('should fail to login with invalid password', async function () {
+      const res = await chai.request(app).post('/api/auth/login').send({
+        username: 'admin',
+        password: 'invalid',
+      });
+      res.should.have.status(401);
+    });
   });
 
   after(async function () {

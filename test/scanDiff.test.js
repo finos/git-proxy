@@ -56,23 +56,22 @@ index 8b97e49..de18d43 100644
 `;
 };
 describe('Scan commit diff...', async () => {
-  privateOrganizations[0] = "private-org-test"
+  privateOrganizations[0] = 'private-org-test';
   commitConfig.diff = {
-      
-    "block": {
-      "literals": ["blockedTestLiteral"],
-      "patterns": [],
-      "providers": {
-        "AWS (Amazon Web Services) Access Key ID": "A(AG|CC|GP|ID|IP|KI|NP|NV|PK|RO|SC|SI)A[A-Z0-9]{16}",
-        "Google Cloud Platform API Key": "AIza[0-9A-Za-z-_]{35}",
-        "GitHub Personal Access Token": "ghp_[a-zA-Z0-9]{36}",
-        "GitHub Fine Grained Personal Access Token": "github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}",
-        "GitHub Actions Token": "ghs_[a-zA-Z0-9]{36}",
-        "JSON Web Token (JWT)": "ey[A-Za-z0-9-_=]{18,}.ey[A-Za-z0-9-_=]{18,}.[A-Za-z0-9-_.]{18,}"
-      }
-    }
-  
-}
+    block: {
+      literals: ['blockedTestLiteral'],
+      patterns: [],
+      providers: {
+        'AWS (Amazon Web Services) Access Key ID':
+          'A(AG|CC|GP|ID|IP|KI|NP|NV|PK|RO|SC|SI)A[A-Z0-9]{16}',
+        'Google Cloud Platform API Key': 'AIza[0-9A-Za-z-_]{35}',
+        'GitHub Personal Access Token': 'ghp_[a-zA-Z0-9]{36}',
+        'GitHub Fine Grained Personal Access Token': 'github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}',
+        'GitHub Actions Token': 'ghs_[a-zA-Z0-9]{36}',
+        'JSON Web Token (JWT)': 'ey[A-Za-z0-9-_=]{18,}.ey[A-Za-z0-9-_=]{18,}.[A-Za-z0-9-_.]{18,}',
+      },
+    },
+  };
   it('A diff including an AWS (Amazon Web Services) Access Key ID blocks the proxy...', async () => {
     const action = new Action('1', 'type', 'method', 1, 'project/name');
     action.steps = [
@@ -126,7 +125,6 @@ describe('Scan commit diff...', async () => {
     expect(errorMessage).to.contains('#1 AWS (Amazon Web Services) Access Key ID'); // type of error
     expect(errorMessage).to.contains('#2 AWS (Amazon Web Services) Access Key ID'); // type of error
     expect(errorMessage).to.contains('#3 Offending Literal');
-
   });
 
   it('A diff including a Google Cloud Platform API Key blocks the proxy...', async () => {
@@ -164,7 +162,9 @@ describe('Scan commit diff...', async () => {
     action.steps = [
       {
         stepName: 'diff',
-        content: generateDiff(`github_pat_1SMAGDFOYZZK3P9ndFemen_${crypto.randomBytes(59).toString('hex')}`),
+        content: generateDiff(
+          `github_pat_1SMAGDFOYZZK3P9ndFemen_${crypto.randomBytes(59).toString('hex')}`,
+        ),
       },
     ];
 
@@ -194,7 +194,9 @@ describe('Scan commit diff...', async () => {
     action.steps = [
       {
         stepName: 'diff',
-        content: generateDiff(`eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ1cm46Z21haWwuY29tOmNsaWVudElkOjEyMyIsInN1YiI6IkphbmUgRG9lIiwiaWF0IjoxNTIzOTAxMjM0LCJleHAiOjE1MjM5ODc2MzR9.s5_hA8hyIT5jXfU9PlXJ-R74m5F_aPcVEFJSV-g-_kX`),
+        content: generateDiff(
+          `eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ1cm46Z21haWwuY29tOmNsaWVudElkOjEyMyIsInN1YiI6IkphbmUgRG9lIiwiaWF0IjoxNTIzOTAxMjM0LCJleHAiOjE1MjM5ODc2MzR9.s5_hA8hyIT5jXfU9PlXJ-R74m5F_aPcVEFJSV-g-_kX`,
+        ),
       },
     ];
 
@@ -220,7 +222,7 @@ describe('Scan commit diff...', async () => {
       expect(errorMessage).to.contains('Your push has been blocked');
     }
   });
-    it('When no diff is present, the proxy is blocked...', async () => {
+  it('When no diff is present, the proxy is blocked...', async () => {
     const action = new Action('1', 'type', 'method', 1, 'project/name');
     action.steps = [
       {
@@ -276,5 +278,3 @@ describe('Scan commit diff...', async () => {
     expect(error).to.be.false;
   });
 });
-
-   
