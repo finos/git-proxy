@@ -1,6 +1,6 @@
 import { Action, Step } from '../../actions';
 import { getCommitConfig } from '../../../config';
-import { Commit } from '../../actions/Action';
+import { CommitData } from '../../actions/Action';
 
 const commitConfig = getCommitConfig();
 
@@ -27,14 +27,16 @@ const isEmailAllowed = (email: string): boolean => {
   }
 
   return true;
-}
+};
 
 const exec = async (req: any, action: Action): Promise<Action> => {
   console.log({ req, action });
 
   const step = new Step('checkAuthorEmails');
 
-  const uniqueAuthorEmails = [...new Set(action.commitData?.map((commit: Commit) => commit.authorEmail))];
+  const uniqueAuthorEmails = [
+    ...new Set(action.commitData?.map((commit: CommitData) => commit.authorEmail)),
+  ];
   console.log({ uniqueAuthorEmails });
 
   const illegalEmails = uniqueAuthorEmails.filter((email) => !isEmailAllowed(email));
