@@ -3,8 +3,7 @@ import { Action } from './actions';
 import * as proc from './processors';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 
-const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
-  proc.push.parsePush,
+const branchPushChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
   proc.push.checkAuthorEmails,
@@ -21,6 +20,17 @@ const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.blockForAuth,
 ];
 
+const tagPushChain: ((req: any, action: Action) => Promise<Action>)[] = [
+  proc.push.checkRepoInAuthorisedList,
+  proc.push.checkUserPushPermission,
+  proc.push.checkIfWaitingAuth,
+  proc.push.pullRemote,
+  proc.push.writePack,
+  proc.push.preReceive,
+  // TODO: implement tag message validation?
+  proc.push.blockForAuth,
+];
+
 const pullActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.checkRepoInAuthorisedList,
 ];
@@ -30,16 +40,19 @@ let pluginsInserted = false;
 export const executeChain = async (req: any, res: any): Promise<Action> => {
   let action: Action = {} as Action;
   try {
+    // 1) Initialize basic action fields
     action = await proc.pre.parseAction(req);
+    // 2) Parse the push payload first to detect tags/branches
+    if (action.type === 'push') {
+      action = await proc.push.parsePush(req, action);
+    }
+    // 3) Select the correct chain now that action.tag is set
     const actionFns = await getChain(action);
 
+    // 4) Execute each step in the selected chain
     for (const fn of actionFns) {
       action = await fn(req, action);
-      if (!action.continue()) {
-        return action;
-      }
-
-      if (action.allowPush) {
+      if (!action.continue() || action.allowPush) {
         return action;
       }
     }
@@ -70,6 +83,7 @@ export const getChain = async (
     );
     pluginsInserted = true;
   }
+
   if (!pluginsInserted) {
     console.log(
       `Inserting loaded plugins (${chainPluginLoader.pushPlugins.length} push, ${chainPluginLoader.pullPlugins.length} pull) into proxy chains`,
@@ -77,7 +91,8 @@ export const getChain = async (
     for (const pluginObj of chainPluginLoader.pushPlugins) {
       console.log(`Inserting push plugin ${pluginObj.constructor.name} into chain`);
       // insert custom functions after parsePush but before other actions
-      pushActionChain.splice(1, 0, pluginObj.exec);
+      branchPushChain.splice(1, 0, pluginObj.exec);
+      tagPushChain.splice(1, 0, pluginObj.exec);
     }
     for (const pluginObj of chainPluginLoader.pullPlugins) {
       console.log(`Inserting pull plugin ${pluginObj.constructor.name} into chain`);
@@ -87,8 +102,15 @@ export const getChain = async (
     // This is set to true so that we don't re-insert the plugins into the chain
     pluginsInserted = true;
   }
-  if (action.type === 'pull') return pullActionChain;
-  if (action.type === 'push') return pushActionChain;
+  if (action.type === 'pull') {
+    return pullActionChain;
+  }
+  if (action.type === 'push' && action.tag) {
+    return tagPushChain;
+  }
+  if (action.type === 'push') {
+    return branchPushChain;
+  }
   return [];
 };
 
@@ -102,8 +124,11 @@ export default {
   get pluginsInserted() {
     return pluginsInserted;
   },
-  get pushActionChain() {
-    return pushActionChain;
+  get branchPushChain() {
+    return branchPushChain;
+  },
+  get tagPushChain() {
+    return tagPushChain;
   },
   get pullActionChain() {
     return pullActionChain;
