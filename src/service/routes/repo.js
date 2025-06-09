@@ -5,9 +5,7 @@ const { getProxyURL } = require('../urls');
 
 router.get('/', async (req, res) => {
   const proxyURL = getProxyURL(req);
-  const query = {
-    type: 'push',
-  };
+  const query = {};
 
   for (const k in req.query) {
     if (!k) continue;

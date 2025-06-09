@@ -16,13 +16,10 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = async () => {
-    console.log('Refreshing user');
     try {
       const data = await getUserInfo();
       setUser(data);
-      console.log('User refreshed:', data);
     } catch (error) {
-      console.error('Error refreshing user:', error);
       setUser(null);
     } finally {
       setIsLoading(false);
