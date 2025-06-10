@@ -100,10 +100,6 @@ describe('test git-proxy-cli', function () {
       await helper.removeUserFromDb(TEST_USER);
     });
 
-    after(async function () {
-      await helper.removeUserFromDb(testUser);
-    });
-
     it('login should fail when server is down', async function () {
       const username = 'admin';
       const password = 'admin';
