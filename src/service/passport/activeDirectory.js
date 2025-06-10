@@ -1,7 +1,7 @@
 const ActiveDirectoryStrategy = require('passport-activedirectory');
 const ldaphelper = require('./ldaphelper');
 
-const type = "activedirectory";
+const type = 'activedirectory';
 
 const configure = (passport) => {
   const db = require('../../db');
@@ -9,7 +9,7 @@ const configure = (passport) => {
   // We can refactor this by normalizing auth strategy config and pass it directly into the configure() function,
   // ideally when we convert this to TS.
   const authMethods = require('../../config').getAuthMethods();
-  const config = authMethods.find((method) => method.type.toLowerCase() === "activeDirectory");
+  const config = authMethods.find((method) => method.type.toLowerCase() === type);
   const adConfig = config.adConfig;
 
   const { userGroup, adminGroup, domain } = config;
