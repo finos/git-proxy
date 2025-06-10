@@ -86,13 +86,6 @@ describe('Database clients', async () => {
     expect(cleanRepos).to.deep.include(TEST_REPO);
   });
 
-  it('should be able to delete a repo', async function () {
-    await db.deleteRepo(TEST_REPO.name);
-    const repos = await db.getRepos();
-    const cleanRepos = cleanResponseData(TEST_REPO, repos);
-    expect(cleanRepos).to.not.deep.include(TEST_REPO);
-  });
-
   it('should be able to filter repos', async function () {
     // uppercase the filter value to confirm db client is lowercasing inputs
     const repos = await db.getRepos({ name: TEST_REPO.name.toUpperCase() });
@@ -114,6 +107,13 @@ describe('Database clients', async () => {
     const repo = await db.getRepo(TEST_REPO.name);
     const cleanRepo = cleanResponseData(TEST_REPO, repo);
     expect(cleanRepo).to.eql(TEST_REPO);
+  });
+
+  it('should be able to delete a repo', async function () {
+    await db.deleteRepo(TEST_REPO.name);
+    const repos = await db.getRepos();
+    const cleanRepos = cleanResponseData(TEST_REPO, repos);
+    expect(cleanRepos).to.not.deep.include(TEST_REPO);
   });
 
   it('should NOT be able to create a repo with blank project, name or url', async function () {
