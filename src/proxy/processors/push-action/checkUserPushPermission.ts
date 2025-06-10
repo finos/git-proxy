@@ -17,7 +17,17 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   const list = await getUsers({ email: action.userEmail });
 
   if (list.length > 1) {
-    console.warn(`Multiple users found with email address ${userEmail}, using the first only`);
+    console.error(`Multiple users found with email address ${userEmail}, ending`);
+    step.error = true;
+    step.log(
+      `Multiple Users have email <${userEmail}> so we cannot uniquely identify the user, ending`,
+    );
+
+    step.setError(
+      `Your push has been blocked (there are multiple users with email ${action.userEmail})`,
+    );
+    action.addStep(step);
+    return action;
   } else if (list.length == 0) {
     console.error(`No user with email address ${userEmail} found`);
   } else {
@@ -33,8 +43,6 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     step.log(
       `User ${username} <${userEmail}> is not allowed to push on repo ${action.repo}, ending`,
     );
-
-    console.log('setting error');
 
     step.setError(
       `Your push has been blocked (${action.userEmail} ` +
