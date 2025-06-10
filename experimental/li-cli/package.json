@@ -10,7 +10,8 @@
     "start": "ts-node src/cli.ts",
     "build": "rimraf dist && tsc --project tsconfig.publish.json && tsc-alias && chmod u+x ./dist/cli.js",
     "type-check": "tsc --noEmit",
-    "test": "jest --forceExit --detectOpenHandles"
+    "test": "jest --forceExit --detectOpenHandles",
+    "update-local-licenses": "wget https://spdx.org/licenses/licenses.json -O src/lib/licenses.json"
   },
   "dependencies": {
     "@inquirer/prompts": "^7.5.0",
