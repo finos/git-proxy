@@ -7,8 +7,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   const user = action.user;
 
   if (!user) {
-    step.log('Action has no user set. This may be due to a fast-forward ref update. Deferring to getMissingData action.');
-    action.addStep(step);
+    console.log('Action has no user set. This may be due to a fast-forward ref update. Deferring to getMissingData action.');
     return action;
   }
 
