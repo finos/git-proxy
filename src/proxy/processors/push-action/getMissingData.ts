@@ -40,7 +40,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       const git = simpleGit(path);
       const log = await git.log({ from: action.commitFrom, to: action.commitTo });
 
-      action.commitData = log.all.toReversed().map((entry, i, array) => {
+      action.commitData = [...log.all].reverse().map((entry, i, array) => {
         const parent = i === 0 ? action.commitFrom : array[i - 1].hash;
         const timestamp = Math.floor(new Date(entry.date).getTime() / 1000).toString();
         return {
