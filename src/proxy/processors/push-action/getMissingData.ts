@@ -42,7 +42,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     const git = simpleGit(path);
     const log = await git.log({ from: action.commitFrom, to: action.commitTo });
 
-    action.commitData = log.all.toReversed().map((entry, i, array) => {
+    action.commitData = [...log.all].reverse().map((entry, i, array) => {
       const parent = i === 0 ? action.commitFrom : array[i - 1].hash;
       const timestamp = Math.floor(new Date(entry.date).getTime() / 1000).toString();
       return {
@@ -63,14 +63,12 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
     const user = action.commitData[action.commitData.length - 1].committer;
     action.user = user;
-
-    return await validateUser(user, action, step);
   } catch (e: any) {
     step.setError(e.toString('utf-8'));
   } finally {
     action.addStep(step);
   }
-  return action;
+  return await validateUser(action.user || '', action, step);
 };
 
 exec.displayName = 'getMissingData.exec';
