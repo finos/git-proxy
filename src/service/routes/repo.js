@@ -2,6 +2,7 @@ const express = require('express');
 const router = new express.Router();
 const db = require('../../db');
 const { getProxyURL } = require('../urls');
+const { getAllProxiedHosts } = require('../../proxy/routes/helper');
 
 router.get('/', async (req, res) => {
   const proxyURL = getProxyURL(req);
@@ -138,8 +139,37 @@ router.post('/', async (req, res) => {
       });
     } else {
       try {
+        // figure out if this represent a new domain to proxy
+        let newOrigin = true;
+
+        const existingHosts = await getAllProxiedHosts();
+        existingHosts.forEach((h) => {
+          if (req.body.url.startsWith(h)) {
+            newOrigin = false;
+          }
+        });
+
+        console.log(
+          `API request to proxy repository ${req.body.url} is for a new origin: ${newOrigin},\n\texisting origin list was: ${JSON.stringify(existingHosts)}`,
+        );
+
+        // create the repository
         await db.createRepo(req.body);
         res.send({ message: 'created' });
+
+        // restart the proxy if we're proxying a new domain
+        if (newOrigin) {
+          console.log('Restarting the proxy to handle an additional origin');
+
+          // 1. Get proxy module dynamically to avoid circular dependency
+          const proxy = require('../proxy');
+
+          // 2. Stop existing services
+          await proxy.stop();
+
+          // 3. Restart the proxy, which should set up for the new domain
+          await proxy.start();
+        }
       } catch {
         res.send('Failed to create repository');
       }
