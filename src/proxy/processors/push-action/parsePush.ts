@@ -54,10 +54,6 @@ async function exec(req: any, action: Action): Promise<Action> {
       action.user = action.commitData.at(-1)!.committer;
     } else if (action.tagData?.length) {
       action.user = action.tagData.at(-1)!.tagger;
-    } else if (action.tag) {
-      // lightweight tag
-      console.log(req.body.toString('utf8'));
-      action.user = req.user.username;
     } else {
       action.user = 'unknown';
     }
