@@ -21,7 +21,6 @@ let _database: Database[] = defaultSettings.sink;
 let _authentication: Authentication[] = defaultSettings.authentication;
 let _apiAuthentication: Authentication[] = defaultSettings.apiAuthentication;
 let _tempPassword: TempPasswordConfig = defaultSettings.tempPassword;
-let _proxyUrl = defaultSettings.proxyUrl;
 let _api: Record<string, unknown> = defaultSettings.api;
 let _cookieSecret: string = defaultSettings.cookieSecret;
 let _sessionMaxAgeHours: number = defaultSettings.sessionMaxAgeHours;
@@ -46,15 +45,6 @@ let _config = { ...defaultSettings, ...(_userSettings || {}) } as Configuration;
 
 // Create config loader instance
 const configLoader = new ConfigLoader(_config);
-
-// Get configured proxy URL
-export const getProxyUrl = () => {
-  if (_userSettings !== null && _userSettings.proxyUrl) {
-    _proxyUrl = _userSettings.proxyUrl;
-  }
-
-  return _proxyUrl;
-};
 
 // Gets a list of authorised repositories
 export const getAuthorisedList = () => {
@@ -87,12 +77,12 @@ export const getDatabase = () => {
     }
   }
 
-  throw Error('No database cofigured!');
+  throw Error('No database configured!');
 };
 
 /**
  * Get the list of enabled authentication methods
- * 
+ *
  * At least one authentication method must be enabled.
  * @return {Array} List of enabled authentication methods
  */
@@ -104,7 +94,7 @@ export const getAuthMethods = () => {
   const enabledAuthMethods = _authentication.filter((auth) => auth.enabled);
 
   if (enabledAuthMethods.length === 0) {
-    throw new Error("No authentication method enabled");
+    throw new Error('No authentication method enabled');
   }
 
   return enabledAuthMethods;
@@ -112,7 +102,7 @@ export const getAuthMethods = () => {
 
 /**
  * Get the list of enabled authentication methods for API endpoints
- * 
+ *
  * If no API authentication methods are enabled, all endpoints are public.
  * @return {Array} List of enabled authentication methods
  */
@@ -121,7 +111,7 @@ export const getAPIAuthMethods = () => {
     _apiAuthentication = _userSettings.apiAuthentication;
   }
 
-  const enabledAuthMethods = _apiAuthentication.filter(auth => auth.enabled);
+  const enabledAuthMethods = _apiAuthentication.filter((auth) => auth.enabled);
 
   return enabledAuthMethods;
 };

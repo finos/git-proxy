@@ -28,7 +28,7 @@ export default function Repositories(props) {
   const itemsPerPage = 5;
   const navigate = useNavigate();
   const { user } = useContext(UserContext);
-  const openRepo = (repo) => navigate(`/dashboard/repo/${repo}`, { replace: true });
+  const openRepo = (repoId) => navigate(`/dashboard/repo/${repoId}`, { replace: true });
 
   useEffect(() => {
     const query = {};
@@ -122,6 +122,7 @@ export default function Repositories(props) {
       itemsPerPage={itemsPerPage}
       onPageChange={handlePageChange}
       onFilterChange={handleFilterChange} // Pass handleFilterChange as prop
+      tableId='RepoListTable'
     />
   );
 }
@@ -136,6 +137,7 @@ GetGridContainerLayOut.propTypes = {
   totalItems: PropTypes.number.isRequired,
   itemsPerPage: PropTypes.number.isRequired,
   onPageChange: PropTypes.func.isRequired,
+  tableId: PropTypes.string.isRequired,
 };
 
 function GetGridContainerLayOut(props) {
@@ -148,10 +150,10 @@ function GetGridContainerLayOut(props) {
         <TableContainer
           style={{ background: 'transparent', borderRadius: '5px', border: '1px solid #d0d7de' }}
         >
-          <Table className={props.classes.table} aria-label='simple table'>
+          <Table id={props.tableId} className={props.classes.table} aria-label='simple table'>
             <TableBody>
               {props.data.map((row) => {
-                if (row.project && row.name) {
+                if (row.url) {
                   return <RepoOverview data={row} key={row._id} />;
                 }
               })}
