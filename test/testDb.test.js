@@ -90,12 +90,21 @@ describe('Database clients', async () => {
   before(async function () {});
 
   it('should be able to construct a repo instance', async function () {
-    const repo = new Repo('project', 'name', 'https://github.com/finos.git-proxy.git', {}, 'id');
+    const repo = new Repo('project', 'name', 'https://github.com/finos.git-proxy.git', null, 'id');
     expect(repo._id).to.equal('id');
     expect(repo.project).to.equal('project');
     expect(repo.name).to.equal('name');
     expect(repo.url).to.equal('https://github.com/finos.git-proxy.git');
     expect(repo.users).to.deep.equals({ canPush: [], canAuthorise: [] });
+
+    const repo2 = new Repo(
+      'project',
+      'name',
+      'https://github.com/finos.git-proxy.git',
+      { canPush: ['bill'], canAuthorise: ['ben'] },
+      'id',
+    );
+    expect(repo2.users).to.deep.equals({ canPush: ['bill'], canAuthorise: ['ben'] });
   });
 
   it('should be able to construct a user instance', async function () {
@@ -135,7 +144,7 @@ describe('Database clients', async () => {
       'type',
       'method',
       Date.now(),
-      'https://github.com/finos.git-proxy.git',
+      'https://github.com/finos/git-proxy.git',
     );
     expect(action.project).to.equal('finos');
     expect(action.repoName).to.equal('git-proxy.git');

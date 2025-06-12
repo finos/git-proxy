@@ -14,7 +14,7 @@ export class Repo {
   project: string;
   name: string;
   url: string;
-  users: Record<UserRole, string[]>;
+  users: { canPush: string[]; canAuthorise: string[] } | null;
   _id?: string;
 
   constructor(
