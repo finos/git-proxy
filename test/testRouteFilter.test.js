@@ -65,6 +65,10 @@ describe('url helpers and filter functions used in the proxy', function () {
     });
   });
 
+  it('processGitUrl should return null for a url it cannot parse', function () {
+    expect(processGitUrl('somegithost.com:1234/octocat/hello-world.git')).to.be.null;
+  });
+
   it('processGitURLForNameAndOrg should return breakdown of a git URL path separating out the protocol, origin and repository path', function () {
     expect(processGitURLForNameAndOrg('github.com/octocat/hello-world.git')).to.deep.eq({
       project: 'octocat',
@@ -79,13 +83,9 @@ describe('url helpers and filter functions used in the proxy', function () {
     });
   });
 
-  // it('processLegacyProxyPathForNameAndOrg should return breakdown of a legacy proxy path separating out the project (organisation), repository name and a predicted github URL', function () {
-  //   expect(processLegacyProxyPathForNameAndOrg('/octocat/hello-world.git')).to.deep.eq({
-  //     project: 'octocat',
-  //     repoName: 'hello-world',
-  //     url: 'https://github.com/octocat/hello-world.git',
-  //   });
-  // });
+  it('processGitURLForNameAndOrg should return null for a url it cannot parse', function () {
+    expect(processGitURLForNameAndOrg('github.com:80/octocat/hello-world')).to.be.null;
+  });
 
   it('validGitRequest should return true for safe requests on expected URLs', function () {
     [
