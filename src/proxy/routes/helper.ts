@@ -97,6 +97,11 @@ export type GitNameBreakdown = { project: string | null; repoName: string };
  * - project: null
  * - repoName: repo.git
  *
+ * Processing someGitHost.com/repo.git
+ * would produce:
+ * - project: null
+ * - repoName: repo.git
+ *
  * Processing https://anotherGitHost.com/project/subProject/subSubProject/repo.git
  * would produce:
  * - project: project/subProject/subSubProject

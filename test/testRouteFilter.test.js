@@ -65,6 +65,10 @@ describe('url helpers and filter functions used in the proxy', function () {
     });
   });
 
+  it('processGitUrl should return null for a url it cannot parse', function () {
+    expect(processGitUrl('somegithost.com:1234/octocat/hello-world.git')).to.be.null;
+  });
+
   it('processGitURLForNameAndOrg should return breakdown of a git URL path separating out the protocol, origin and repository path', function () {
     expect(processGitURLForNameAndOrg('github.com/octocat/hello-world.git')).to.deep.eq({
       project: 'octocat',
