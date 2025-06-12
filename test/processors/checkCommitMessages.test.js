@@ -19,16 +19,19 @@ describe('checkCommitMessages', () => {
       message: {
         block: {
           literals: ['secret', 'password'],
-          patterns: ['\\b\\d{4}-\\d{4}-\\d{4}-\\d{4}\\b'] // Credit card pattern
-        }
-      }
+          patterns: ['\\b\\d{4}-\\d{4}-\\d{4}-\\d{4}\\b'], // Credit card pattern
+        },
+      },
     };
 
     getCommitConfigStub = sinon.stub().returns(commitConfig);
 
-    const checkCommitMessages = proxyquire('../../src/proxy/processors/push-action/checkCommitMessages', {
-      '../../../config': { getCommitConfig: getCommitConfigStub }
-    });
+    const checkCommitMessages = proxyquire(
+      '../../src/proxy/processors/push-action/checkCommitMessages',
+      {
+        '../../../config': { getCommitConfig: getCommitConfigStub },
+      },
+    );
 
     exec = checkCommitMessages.exec;
   });
@@ -44,16 +47,10 @@ describe('checkCommitMessages', () => {
 
     beforeEach(() => {
       req = {};
-      action = new Action(
-        '1234567890',
-        'push',
-        'POST',
-        1234567890,
-        'test/repo'
-      );
+      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
       action.commitData = [
         { message: 'Fix bug', author: 'test@example.com' },
-        { message: 'Update docs', author: 'test@example.com' }
+        { message: 'Update docs', author: 'test@example.com' },
       ];
       stepSpy = sinon.spy(Step.prototype, 'log');
     });
@@ -63,7 +60,8 @@ describe('checkCommitMessages', () => {
 
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.false;
-      expect(logStub.calledWith('The following commit messages are legal: Fix bug,Update docs')).to.be.true;
+      expect(logStub.calledWith('The following commit messages are legal: Fix bug,Update docs')).to
+        .be.true;
     });
 
     it('should block commit with illegal messages', async () => {
@@ -73,32 +71,32 @@ describe('checkCommitMessages', () => {
 
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.true;
-      expect(stepSpy.calledWith(
-        'The following commit messages are illegal: secret password here'
-      )).to.be.true;
+      expect(stepSpy.calledWith('The following commit messages are illegal: secret password here'))
+        .to.be.true;
       expect(result.steps[0].errorMessage).to.include('Your push has been blocked');
-      expect(logStub.calledWith('The following commit messages are illegal: secret password here')).to.be.true;
+      expect(logStub.calledWith('The following commit messages are illegal: secret password here'))
+        .to.be.true;
     });
 
     it('should handle duplicate messages only once', async () => {
       action.commitData = [
         { message: 'secret', author: 'test@example.com' },
         { message: 'secret', author: 'test@example.com' },
-        { message: 'password', author: 'test@example.com' }
+        { message: 'password', author: 'test@example.com' },
       ];
 
       const result = await exec(req, action);
 
       expect(result.steps[0].error).to.be.true;
-      expect(stepSpy.calledWith(
-        'The following commit messages are illegal: secret,password'
-      )).to.be.true;
-      expect(logStub.calledWith('The following commit messages are illegal: secret,password')).to.be.true;
+      expect(stepSpy.calledWith('The following commit messages are illegal: secret,password')).to.be
+        .true;
+      expect(logStub.calledWith('The following commit messages are illegal: secret,password')).to.be
+        .true;
     });
 
     it('should not error when commit data is empty', async () => {
       // Empty commit data is a valid scenario that happens when making a branch from an unapproved commit
-      // This is remedied in the getMissingData.exec action  
+      // This is remedied in the getMissingData.exec action
       action.commitData = [];
       const result = await exec(req, action);
 
@@ -110,7 +108,7 @@ describe('checkCommitMessages', () => {
     it('should handle commit data with null values', async () => {
       action.commitData = [
         { message: null, author: 'test@example.com' },
-        { message: undefined, author: 'test@example.com' }
+        { message: undefined, author: 'test@example.com' },
       ];
 
       const result = await exec(req, action);
@@ -122,33 +120,33 @@ describe('checkCommitMessages', () => {
     it('should handle commit messages of incorrect type', async () => {
       action.commitData = [
         { message: 123, author: 'test@example.com' },
-        { message: {}, author: 'test@example.com' }
+        { message: {}, author: 'test@example.com' },
       ];
 
       const result = await exec(req, action);
 
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.true;
-      expect(stepSpy.calledWith(
-        'The following commit messages are illegal: 123,[object Object]'
-      )).to.be.true;
-      expect(logStub.calledWith('The following commit messages are illegal: 123,[object Object]')).to.be.true;
+      expect(stepSpy.calledWith('The following commit messages are illegal: 123,[object Object]'))
+        .to.be.true;
+      expect(logStub.calledWith('The following commit messages are illegal: 123,[object Object]'))
+        .to.be.true;
     });
 
     it('should handle a mix of valid and invalid messages', async () => {
       action.commitData = [
         { message: 'Fix bug', author: 'test@example.com' },
-        { message: 'secret password here', author: 'test@example.com' }
+        { message: 'secret password here', author: 'test@example.com' },
       ];
 
       const result = await exec(req, action);
 
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.true;
-      expect(stepSpy.calledWith(
-        'The following commit messages are illegal: secret password here'
-      )).to.be.true;
-      expect(logStub.calledWith('The following commit messages are illegal: secret password here')).to.be.true;
+      expect(stepSpy.calledWith('The following commit messages are illegal: secret password here'))
+        .to.be.true;
+      expect(logStub.calledWith('The following commit messages are illegal: secret password here'))
+        .to.be.true;
     });
   });
 });
