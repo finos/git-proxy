@@ -1,6 +1,9 @@
 // This test needs to run first
 const chai = require('chai');
 const db = require('../src/db');
+const { Repo, User } = require('../src/db/types');
+const { Action } = require('../src/proxy/actions/Action');
+const { Step } = require('../src/proxy/actions/Step');
 
 const { expect } = chai;
 
@@ -85,6 +88,91 @@ const cleanResponseData = (example, responses) => {
 // Use this test as a template
 describe('Database clients', async () => {
   before(async function () {});
+
+  it('should be able to construct a repo instance', async function () {
+    const repo = new Repo('project', 'name', 'https://github.com/finos.git-proxy.git', {}, 'id');
+    expect(repo._id).to.equal('id');
+    expect(repo.project).to.equal('project');
+    expect(repo.name).to.equal('name');
+    expect(repo.url).to.equal('https://github.com/finos.git-proxy.git');
+    expect(repo.users).to.deep.equals({ canPush: [], canAuthorise: [] });
+  });
+
+  it('should be able to construct a user instance', async function () {
+    const user = new User(
+      'username',
+      'password',
+      'gitAccount',
+      'email@domain.com',
+      true,
+      null,
+      'id',
+    );
+    expect(user.username).to.equal('username');
+    expect(user.username).to.equal('username');
+    expect(user.gitAccount).to.equal('gitAccount');
+    expect(user.email).to.equal('email@domain.com');
+    expect(user.admin).to.equal(true);
+    expect(user.oidcId).to.be.null;
+    expect(user._id).to.equal('id');
+
+    const user2 = new User(
+      'username',
+      'password',
+      'gitAccount',
+      'email@domain.com',
+      false,
+      'oidcId',
+      'id',
+    );
+    expect(user2.admin).to.equal(false);
+    expect(user2.oidcId).to.equal('oidcId');
+  });
+
+  it('should be able to construct a valid action instance', async function () {
+    const action = new Action(
+      'id',
+      'type',
+      'method',
+      Date.now(),
+      'https://github.com/finos.git-proxy.git',
+    );
+    expect(action.project).to.equal('finos');
+    expect(action.repoName).to.equal('git-proxy.git');
+  });
+
+  it('should be able to block an action by adding a blocked step', async function () {
+    const action = new Action(
+      'id',
+      'type',
+      'method',
+      Date.now(),
+      'https://github.com/finos.git-proxy.git',
+    );
+    const step = new Step('stepName', false, null, false, null);
+    step.setAsyncBlock('blockedMessage');
+    action.addStep(step);
+    expect(action.blocked).to.be.true;
+    expect(action.blockedMessage).to.equal('blockedMessage');
+    expect(action.getLastStep()).to.deep.equals(step);
+    expect(action.continue()).to.be.false;
+  });
+
+  it('should be able to error an action by adding a step with an error', async function () {
+    const action = new Action(
+      'id',
+      'type',
+      'method',
+      Date.now(),
+      'https://github.com/finos.git-proxy.git',
+    );
+    const step = new Step('stepName', true, 'errorMessage', false, null);
+    action.addStep(step);
+    expect(action.error).to.be.true;
+    expect(action.errorMessage).to.equal('errorMessage');
+    expect(action.getLastStep()).to.deep.equals(step);
+    expect(action.continue()).to.be.false;
+  });
 
   it('should be able to create a repo', async function () {
     await db.createRepo(TEST_REPO);
