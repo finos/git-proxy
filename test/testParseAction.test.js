@@ -3,10 +3,27 @@ const chai = require('chai');
 chai.should();
 const expect = chai.expect;
 const preprocessor = require('../src/proxy/processors/pre-processor/parseAction');
+const db = require('../src/db');
+let testRepo = null;
+
+const TEST_REPO = {
+  url: 'https://github.com/finos/git-proxy.git',
+  name: 'git-proxy',
+  project: 'finos',
+};
 
 describe('Pre-processor: parseAction', async () => {
-  before(async function () {});
-  after(async function () {});
+  before(async function () {
+    // make sure the test repo exists as the presence of the repo makes  a difference to handling of urls
+    testRepo = await db.getRepoByUrl(TEST_REPO.url);
+    if (!testRepo) {
+      testRepo = await db.createRepo(TEST_REPO);
+    }
+  });
+  after(async function () {
+    // clean up test DB
+    await db.deleteRepo(testRepo._id);
+  });
 
   it('should be able to parse a pull request into an action', async function () {
     const req = {
