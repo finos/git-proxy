@@ -20,7 +20,7 @@ import { UserData } from '../../../types/models';
 
 const useStyles = makeStyles(styles);
 
-export const DashboardNavbarLinks: React.FC = () => {
+const DashboardNavbarLinks: React.FC = () => {
   const classes = useStyles();
   const navigate = useNavigate();
   const [openProfile, setOpenProfile] = useState<HTMLElement | null>(null);
@@ -124,3 +124,5 @@ export const DashboardNavbarLinks: React.FC = () => {
     </div>
   );
 };
+
+export default DashboardNavbarLinks;
