@@ -186,6 +186,7 @@ export default function Dashboard() {
                       htmlColor='green'
                     />
                   </span>
+
                   {data.autoApproved ? (
                     <>
                       <div style={{ paddingTop: '15px' }}>

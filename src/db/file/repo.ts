@@ -1,15 +1,31 @@
 import fs from 'fs';
-import Datastore from '@seald-io/nedb'
+import Datastore from '@seald-io/nedb';
 import { Repo } from '../types';
 
+const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
+
+// these don't get coverage in tests as they have already been run once before the test
+/* istanbul ignore if */
 if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
+/* istanbul ignore if */
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
+db.ensureIndex({ fieldName: 'name', unique: false });
+db.setAutocompactionInterval(COMPACTION_INTERVAL);
+
+const isBlank = (str: string) => {
+  return !str || /^\s*$/.test(str);
+};
 
 export const getRepos = async (query: any = {}) => {
+  if (query?.name) {
+    query.name = query.name.toLowerCase();
+  }
   return new Promise<Repo[]>((resolve, reject) => {
-    db.find({}, (err: Error, docs: Repo[]) => {
+    db.find(query, (err: Error, docs: Repo[]) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -21,7 +37,9 @@ export const getRepos = async (query: any = {}) => {
 
 export const getRepo = async (name: string) => {
   return new Promise<Repo | null>((resolve, reject) => {
-    db.findOne({ name }, (err: Error | null, doc: Repo) => {
+    db.findOne({ name: name.toLowerCase() }, (err: Error | null, doc: Repo) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -31,8 +49,19 @@ export const getRepo = async (name: string) => {
   });
 };
 
-
 export const createRepo = async (repo: Repo) => {
+  if (isBlank(repo.project)) {
+    throw new Error('Project name cannot be empty');
+  }
+  if (isBlank(repo.name)) {
+    throw new Error('Repository name cannot be empty');
+  } else {
+    repo.name = repo.name.toLowerCase();
+  }
+  if (isBlank(repo.url)) {
+    throw new Error('URL cannot be empty');
+  }
+
   repo.users = {
     canPush: [],
     canAuthorise: [],
@@ -40,6 +69,8 @@ export const createRepo = async (repo: Repo) => {
 
   return new Promise<Repo>((resolve, reject) => {
     db.insert(repo, (err, doc) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -50,6 +81,8 @@ export const createRepo = async (repo: Repo) => {
 };
 
 export const addUserCanPush = async (name: string, user: string) => {
+  name = name.toLowerCase();
+  user = user.toLowerCase();
   return new Promise(async (resolve, reject) => {
     const repo = await getRepo(name);
     if (!repo) {
@@ -65,6 +98,8 @@ export const addUserCanPush = async (name: string, user: string) => {
 
     const options = { multi: false, upsert: false };
     db.update({ name: name }, repo, options, (err) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -75,6 +110,8 @@ export const addUserCanPush = async (name: string, user: string) => {
 };
 
 export const addUserCanAuthorise = async (name: string, user: string) => {
+  name = name.toLowerCase();
+  user = user.toLowerCase();
   return new Promise(async (resolve, reject) => {
     const repo = await getRepo(name);
     if (!repo) {
@@ -91,6 +128,8 @@ export const addUserCanAuthorise = async (name: string, user: string) => {
 
     const options = { multi: false, upsert: false };
     db.update({ name: name }, repo, options, (err) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -101,6 +140,8 @@ export const addUserCanAuthorise = async (name: string, user: string) => {
 };
 
 export const removeUserCanAuthorise = async (name: string, user: string) => {
+  name = name.toLowerCase();
+  user = user.toLowerCase();
   return new Promise(async (resolve, reject) => {
     const repo = await getRepo(name);
     if (!repo) {
@@ -112,6 +153,8 @@ export const removeUserCanAuthorise = async (name: string, user: string) => {
 
     const options = { multi: false, upsert: false };
     db.update({ name: name }, repo, options, (err) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -122,6 +165,8 @@ export const removeUserCanAuthorise = async (name: string, user: string) => {
 };
 
 export const removeUserCanPush = async (name: string, user: string) => {
+  name = name.toLowerCase();
+  user = user.toLowerCase();
   return new Promise(async (resolve, reject) => {
     const repo = await getRepo(name);
     if (!repo) {
@@ -133,6 +178,8 @@ export const removeUserCanPush = async (name: string, user: string) => {
 
     const options = { multi: false, upsert: false };
     db.update({ name: name }, repo, options, (err) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -143,8 +190,11 @@ export const removeUserCanPush = async (name: string, user: string) => {
 };
 
 export const deleteRepo = async (name: string) => {
+  name = name.toLowerCase();
   return new Promise<void>((resolve, reject) => {
     db.remove({ name: name }, (err) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
       if (err) {
         reject(err);
       } else {
@@ -156,6 +206,7 @@ export const deleteRepo = async (name: string) => {
 
 export const isUserPushAllowed = async (name: string, user: string) => {
   name = name.toLowerCase();
+  user = user.toLowerCase();
   return new Promise<boolean>(async (resolve) => {
     const repo = await getRepo(name);
     if (!repo) {
@@ -176,6 +227,7 @@ export const isUserPushAllowed = async (name: string, user: string) => {
 
 export const canUserApproveRejectPushRepo = async (name: string, user: string) => {
   name = name.toLowerCase();
+  user = user.toLowerCase();
   console.log(`checking if user ${user} can approve/reject for ${name}`);
   return new Promise<boolean>(async (resolve) => {
     const repo = await getRepo(name);

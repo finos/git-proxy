@@ -6,6 +6,7 @@ export const {
   getPushes,
   writeAudit,
   getPush,
+  deletePush,
   authorise,
   cancel,
   reject,
@@ -26,11 +27,4 @@ export const {
   canUserApproveRejectPushRepo,
 } = repo;
 
-export const {
-  findUser,
-  findUserByOIDC,
-  getUsers,
-  createUser,
-  deleteUser,
-  updateUser,
-} = users;
+export const { findUser, findUserByOIDC, getUsers, createUser, deleteUser, updateUser } = users;

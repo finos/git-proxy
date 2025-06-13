@@ -47,7 +47,7 @@ const isMessageAllowed = (commitMessage: string): boolean => {
   }
 
   return true;
-}
+};
 
 // Execute if the repo is approved
 const exec = async (req: any, action: Action): Promise<Action> => {
@@ -70,7 +70,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     step.error = true;
     step.log(`The following commit messages are illegal: ${illegalMessages}`);
     step.setError(
-      '\n\n\n\nYour push has been blocked.\nPlease ensure your commit message(s) does not contain sensitive information or URLs.\n\n\n',
+      `\n\n\nYour push has been blocked.\nPlease ensure your commit message(s) does not contain sensitive information or URLs.\n\nThe following commit messages are illegal: ${JSON.stringify(illegalMessages)}\n\n`,
     );
 
     action.addStep(step);

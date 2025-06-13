@@ -13,21 +13,21 @@
     "test": "jest --forceExit --detectOpenHandles"
   },
   "dependencies": {
-    "@inquirer/prompts": "^7.3.3",
-    "yaml": "^2.7.0",
+    "@inquirer/prompts": "^7.5.0",
+    "yaml": "^2.7.1",
     "yargs": "^17.7.2",
-    "zod": "^3.24.2"
+    "zod": "^3.24.4"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
-    "@types/node": "^22.13.10",
+    "@types/node": "^22.15.12",
     "@types/yargs": "^17.0.33",
     "jest": "^29.7.0",
     "rimraf": "^6.0.1",
-    "ts-jest": "^29.2.6",
+    "ts-jest": "^29.3.2",
     "ts-node": "^10.9.2",
-    "tsc-alias": "^1.8.11",
+    "tsc-alias": "^1.8.16",
     "tslib": "^2.8.1",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   }
 }

@@ -1,11 +1,13 @@
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
-import { configFile } from './file';
+import { configFile, validate } from './file';
+import { ConfigLoader, Configuration } from './ConfigLoader';
 import {
   Authentication,
   AuthorisedRepo,
   Database,
+  RateLimitConfig,
   TempPasswordConfig,
   UserSettings,
 } from './types';
@@ -14,7 +16,6 @@ let _userSettings: UserSettings | null = null;
 if (existsSync(configFile)) {
   _userSettings = JSON.parse(readFileSync(configFile, 'utf-8'));
 }
-
 let _authorisedList: AuthorisedRepo[] = defaultSettings.authorisedList;
 let _database: Database[] = defaultSettings.sink;
 let _authentication: Authentication[] = defaultSettings.authentication;
@@ -32,10 +33,19 @@ let _urlShortener: string = defaultSettings.urlShortener;
 let _contactEmail: string = defaultSettings.contactEmail;
 let _csrfProtection: boolean = defaultSettings.csrfProtection;
 let _domains: Record<string, unknown> = defaultSettings.domains;
+let _rateLimit: RateLimitConfig = defaultSettings.rateLimit;
+
 // These are not always present in the default config file, so casting is required
 let _tlsEnabled = defaultSettings.tls.enabled;
 let _tlsKeyPemPath = defaultSettings.tls.key;
 let _tlsCertPemPath = defaultSettings.tls.cert;
+let _uiRouteAuth: Record<string, unknown> = defaultSettings.uiRouteAuth;
+
+// Initialize configuration with defaults and user settings
+let _config = { ...defaultSettings, ...(_userSettings || {}) } as Configuration;
+
+// Create config loader instance
+const configLoader = new ConfigLoader(_config);
 
 // Get configured proxy URL
 export const getProxyUrl = () => {
@@ -82,6 +92,8 @@ export const getDatabase = () => {
 
 /**
  * Get the list of enabled authentication methods
+ * 
+ * At least one authentication method must be enabled.
  * @return {Authentication[]} List of enabled authentication methods
  */
 export const getAuthMethods = (): Authentication[] => {
@@ -89,10 +101,10 @@ export const getAuthMethods = (): Authentication[] => {
     _authentication = _userSettings.authentication;
   }
 
-  const enabledAuthMethods = _authentication.filter(auth => auth.enabled);
+  const enabledAuthMethods = _authentication.filter((auth) => auth.enabled);
 
   if (enabledAuthMethods.length === 0) {
-    throw new Error("No authentication method enabled.");
+    throw new Error("No authentication method enabled");
   }
 
   return enabledAuthMethods;
@@ -100,6 +112,8 @@ export const getAuthMethods = (): Authentication[] => {
 
 /**
  * Get the list of enabled authentication methods for API endpoints
+ * 
+ * If no API authentication methods are enabled, all endpoints are public.
  * @return {Authentication[]} List of enabled authentication methods
  */
 export const getAPIAuthMethods = (): Authentication[] => {
@@ -121,6 +135,7 @@ export const logConfiguration = () => {
   console.log(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
   console.log(`data sink = ${JSON.stringify(getDatabase())}`);
   console.log(`authentication = ${JSON.stringify(getAuthMethods())}`);
+  console.log(`rateLimit = ${JSON.stringify(getRateLimit())}`);
 };
 
 export const getAPIs = () => {
@@ -239,3 +254,69 @@ export const getDomains = () => {
   }
   return _domains;
 };
+
+export const getUIRouteAuth = () => {
+  if (_userSettings && _userSettings.uiRouteAuth) {
+    _uiRouteAuth = _userSettings.uiRouteAuth;
+  }
+  return _uiRouteAuth;
+};
+
+export const getRateLimit = () => {
+  if (_userSettings && _userSettings.rateLimit) {
+    _rateLimit = _userSettings.rateLimit;
+  }
+  return _rateLimit;
+};
+
+// Function to handle configuration updates
+const handleConfigUpdate = async (newConfig: typeof _config) => {
+  console.log('Configuration updated from external source');
+  try {
+    // 1. Get proxy module dynamically to avoid circular dependency
+    const proxy = require('../proxy');
+
+    // 2. Stop existing services
+    await proxy.stop();
+
+    // 3. Update config
+    _config = newConfig;
+
+    // 4. Validate new configuration
+    validate();
+
+    // 5. Restart services with new config
+    await proxy.start();
+
+    console.log('Services restarted with new configuration');
+  } catch (error) {
+    console.error('Failed to apply new configuration:', error);
+    // Attempt to restart with previous config
+    try {
+      const proxy = require('../proxy');
+      await proxy.start();
+    } catch (startError) {
+      console.error('Failed to restart services:', startError);
+    }
+  }
+};
+
+// Handle configuration updates
+configLoader.on('configurationChanged', handleConfigUpdate);
+
+configLoader.on('configurationError', (error: Error) => {
+  console.error('Error loading external configuration:', error);
+});
+
+// Start the config loader if external sources are enabled
+configLoader.start().catch((error: Error) => {
+  console.error('Failed to start configuration loader:', error);
+});
+
+// Force reload of configuration
+const reloadConfiguration = async () => {
+  await configLoader.reloadConfiguration();
+};
+
+// Export reloadConfiguration
+export { reloadConfiguration };
