@@ -28,17 +28,9 @@ import RepoList from './ui/views/RepoList/RepoList';
 
 import { RepoIcon } from '@primer/octicons-react';
 import { Group, AccountCircle, Dashboard } from '@material-ui/icons';
+import { Route } from './types/models';
 
-interface RouteType {
-  path: string;
-  name: string;
-  icon: React.ComponentType<any>;
-  component: React.ComponentType<any>;
-  layout: string;
-  visible: boolean;
-}
-
-const dashboardRoutes: RouteType[] = [
+const dashboardRoutes: Route[] = [
   {
     path: '/repo',
     name: 'Repositories',

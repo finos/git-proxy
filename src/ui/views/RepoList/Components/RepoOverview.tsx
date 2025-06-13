@@ -7,6 +7,7 @@ import axios from 'axios';
 import moment from 'moment';
 import CodeActionButton from '../../../components/CustomButtons/CodeActionButton';
 import { languageColors } from '../../../../constants/languageColors';
+import { RepositoriesProps } from '../repositories.types';
 
 interface GitHubRepository {
   description?: string;
