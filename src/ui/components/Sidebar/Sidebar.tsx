@@ -9,18 +9,9 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Icon from '@material-ui/core/Icon';
 import styles from '../../assets/jss/material-dashboard-react/components/sidebarStyle';
+import { Route } from '../../../types/models';
 
 const useStyles = makeStyles(styles as any);
-
-interface Route {
-  path: string;
-  layout: string;
-  name: string;
-  icon: string | React.ComponentType;
-  visible?: boolean;
-  rtlName?: string;
-  component: React.ComponentType;
-}
 
 interface SidebarProps {
   color: 'purple' | 'blue' | 'green' | 'orange' | 'red';

@@ -22,36 +22,7 @@ import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/g
 import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
-import { CommitData } from '../../../types/models';
-
-interface Reviewer {
-  username: string;
-  gitAccount: string;
-}
-
-interface AttestationData {
-  reviewer: Reviewer;
-  timestamp: string | Date;
-  questions: Array<{ label: string; checked: boolean }>;
-}
-
-interface PushData {
-  id: string;
-  repo: string;
-  branch: string;
-  commitFrom: string;
-  commitTo: string;
-  commitData: CommitData[];
-  diff: {
-    content: string;
-  };
-  canceled?: boolean;
-  rejected?: boolean;
-  authorised?: boolean;
-  attestation?: AttestationData;
-  autoApproved?: boolean;
-  timestamp: string | Date;
-}
+import { PushData } from '../../../types/models';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();

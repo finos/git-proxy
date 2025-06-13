@@ -8,18 +8,6 @@ import moment from 'moment';
 import CodeActionButton from '../../../components/CustomButtons/CodeActionButton';
 import { languageColors } from '../../../../constants/languageColors';
 
-interface RepositoriesProps {
-  data: {
-    project: string;
-    name: string;
-    proxyURL: string;
-    users?: {
-      canPush?: string[];
-      canAuthorise?: string[];
-    };
-  };
-}
-
 interface GitHubRepository {
   description?: string;
   language?: string;

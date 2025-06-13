@@ -15,23 +15,7 @@ import { getPushes } from '../../../services/git-push';
 import { KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
-
-interface CommitData {
-  commitTs?: number;
-  commitTimestamp?: number;
-  message: string;
-  committer: string;
-  author: string;
-  authorEmail?: string;
-}
-
-interface PushData {
-  id: string;
-  repo: string;
-  branch: string;
-  commitTo: string;
-  commitData: CommitData[];
-}
+import { PushData } from '../../../../types/models';
 
 interface PushesTableProps {
   [key: string]: any;
