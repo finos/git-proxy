@@ -8,11 +8,11 @@ const chooseALicenseSchema = z.object({
   permissions: z.string().array(),
 });
 
-type ChooseALicenseData = z.infer<typeof chooseALicenseSchema>;
+export type ChooseALicenseData = z.infer<typeof chooseALicenseSchema>;
 
 function extractPreamble(text: string): string {
   const lines = text.split('\n'); // Split into lines
-  let result: string[] = [];
+  const result: string[] = [];
   let insideBlock = false;
 
   for (const line of lines) {
