@@ -14,10 +14,7 @@ import { UserContext } from '../../../../context';
 import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
 import Filtering, { FilterOption, SortOrder } from '../../../components/Filtering/Filtering';
-
-interface RepositoriesProps {
-  [key: string]: any;
-}
+import { RepositoriesProps } from '../repositories.types';
 
 interface GridContainerLayoutProps {
   classes: any;

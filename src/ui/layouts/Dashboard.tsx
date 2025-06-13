@@ -11,12 +11,7 @@ import styles from '../assets/jss/material-dashboard-react/layouts/dashboardStyl
 import logo from '../assets/img/git-proxy.png';
 import { UserContext } from '../../context';
 import { getUser } from '../services/user';
-
-interface RouteType {
-  layout: string;
-  path: string;
-  component: React.ComponentType<any>;
-}
+import { Route as RouteType } from '../../types/models';
 
 interface DashboardProps {
   [key: string]: any;
