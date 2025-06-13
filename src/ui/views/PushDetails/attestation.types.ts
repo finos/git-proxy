@@ -14,7 +14,7 @@ interface AttestationData {
   questions: Question[];
 }
 
-interface AttestationViewProps {
+export interface AttestationViewProps {
   attestation: boolean;
   setAttestation: (value: boolean) => void;
   data: AttestationData;
