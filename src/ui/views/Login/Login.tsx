@@ -64,7 +64,7 @@ const Login: React.FC = () => {
         window.sessionStorage.setItem('git.proxy.login', 'success');
         setMessage('Success!');
         setSuccess(true);
-        refreshUser();
+        refreshUser().then(() => navigate('/dashboard/repo'));
       })
       .catch((error: AxiosError) => {
         if (error.response?.status === 307) {
