@@ -1,8 +1,7 @@
 /* eslint-disable max-len */
 const chai = require('chai');
 const validGitRequest = require('../src/proxy/routes').validGitRequest;
-const stripGitHubFromGitPath =
-  require('../src/proxy/routes').stripGitHubFromGitPath;
+const stripGitHubFromGitPath = require('../src/proxy/routes').stripGitHubFromGitPath;
 
 chai.should();
 
@@ -10,11 +9,9 @@ const expect = chai.expect;
 
 describe('url filters for proxying ', function () {
   it('stripGitHubFromGitPath should return the sanitized URL with owner & repo removed', function () {
-    expect(
-      stripGitHubFromGitPath(
-        '/octocat/hello-world.git/info/refs?service=git-upload-pack',
-      ),
-    ).eq('/info/refs?service=git-upload-pack');
+    expect(stripGitHubFromGitPath('/octocat/hello-world.git/info/refs?service=git-upload-pack')).eq(
+      '/info/refs?service=git-upload-pack',
+    );
   });
 
   it('stripGitHubFromGitPath should return undefined if the url', function () {
