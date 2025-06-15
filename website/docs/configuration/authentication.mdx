@@ -7,7 +7,7 @@ GitProxy allows setting up various auth methods for both UI users, and the backe
 
 ### Where to Configure Auth Methods
 
-Auth methods can be configured in [proxy.config.json](/proxy.config.json). The `authentication` array allows setting UI authentication, for user login and management purposes. The `apiAuthentication` array allows setting up an _optional_ authentication layer for extra API security.
+Auth methods can be configured in [proxy.config.json](https://github.com/finos/git-proxy/blob/main/proxy.config.json). The `authentication` array allows setting UI authentication, for user login and management purposes. The `apiAuthentication` array allows setting up an _optional_ authentication layer for extra API security.
 
 ### Default Configuration
 
@@ -32,7 +32,7 @@ GitProxy also supports protecting API endpoints with extra auth layers. Currentl
 
 #### Active Directory
 
-A default, empty setup for OIDC is already present in [proxy.config.json](/proxy.config.json):
+A default, empty setup for OIDC is already present in [proxy.config.json](https://github.com/finos/git-proxy/blob/main/proxy.config.json):
 
 ```json
 {
@@ -51,7 +51,7 @@ A default, empty setup for OIDC is already present in [proxy.config.json](/proxy
 
 #### OIDC
 
-A default, empty setup for OIDC is already present in [proxy.config.json](/proxy.config.json). You can fill this in with your required parameters. Here's an example using Google as a login provider:
+A default, empty setup for OIDC is already present in [proxy.config.json](https://github.com/finos/git-proxy/blob/main/proxy.config.json). You can fill this in with your required parameters. Here's an example using Google as a login provider:
 
 ```json
 "authentication": [
@@ -112,7 +112,7 @@ Note that if the `expectedAudience` is missing, it will be set to the client ID.
 
 ### Adding your own methods
 
-You can add new UI auth methods by extending the [passport.js configuration file](/src/service/passport/local.js) with your desired method. You'll have to define a module and then add it to the `authStrategies` map: 
+You can add new UI auth methods by extending the [passport.js configuration file](https://github.com/finos/git-proxy/blob/main/src/service/passport/local.js) with your desired method. You'll have to define a module and then add it to the `authStrategies` map: 
 
 ```js
 const local = require('./local');
@@ -126,10 +126,10 @@ const authStrategies = {
 };
 ```
 
-Check out the files in [src/service/passport](/src/service/passport) for examples on how to define the specific `configure()` functions for each method:
-- [Local](/src/service/passport/local.js)
-- [ActiveDirectory](/src/service/passport/activeDirectory.js)
-- [OIDC](/src/service/passport/oidc.js)
+Check out the files in [src/service/passport](https://github.com/finos/git-proxy/blob/main/src/service/passport) for examples on how to define the specific `configure()` functions for each method:
+- [Local](https://github.com/finos/git-proxy/blob/main/src/service/passport/local.js)
+- [ActiveDirectory](https://github.com/finos/git-proxy/blob/main/src/service/passport/activeDirectory.js)
+- [OIDC](https://github.com/finos/git-proxy/blob/main/src/service/passport/oidc.js)
 
 ### Questions?
 
