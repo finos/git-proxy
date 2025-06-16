@@ -35,7 +35,7 @@ async function exec(req: any, action: Action): Promise<Action> {
       action.commitFrom = action.commitData[action.commitData.length - 1].parent;
     }
 
-    const {committer, committerEmail} = action.commitData[action.commitData.length - 1];
+    const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
     console.log(`Push Request received from user ${committer} with email ${committerEmail}`);
     action.user = committer;
     action.userEmail = committerEmail;
@@ -123,7 +123,7 @@ const getCommitData = (contents: CommitContent[]) => {
         commitTimestamp,
         message,
         authorEmail,
-        committerEmail
+        committerEmail,
       });
 
       if (
@@ -146,7 +146,7 @@ const getCommitData = (contents: CommitContent[]) => {
         commitTimestamp,
         message,
         authorEmail,
-        committerEmail
+        committerEmail,
       };
     })
     .value();
