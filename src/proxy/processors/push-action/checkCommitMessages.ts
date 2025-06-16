@@ -47,7 +47,7 @@ const isMessageAllowed = (commitMessage: string): boolean => {
   }
 
   return true;
-}
+};
 
 // Execute if the repo is approved
 const exec = async (req: any, action: Action): Promise<Action> => {

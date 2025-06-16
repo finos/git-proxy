@@ -6,6 +6,7 @@ export const {
   getPushes,
   writeAudit,
   getPush,
+  deletePush,
   authorise,
   cancel,
   reject,

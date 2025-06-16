@@ -308,6 +308,29 @@ async function logout() {
 }
 
 /**
+ * Reloads the GitProxy configuration without restarting the process
+ */
+async function reloadConfig() {
+  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
+    console.error('Error: Reload config: Authentication required');
+    process.exitCode = 1;
+    return;
+  }
+
+  try {
+    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
+
+    await axios.post(`${baseUrl}/api/v1/admin/reload-config`, {}, { headers: { Cookie: cookies } });
+
+    console.log('Configuration reloaded successfully');
+  } catch (error) {
+    const errorMessage = `Error: Reload config: '${error.message}'`;
+    process.exitCode = 2;
+    console.error(errorMessage);
+  }
+}
+
+/**
  * Add SSH key for a user
  * @param {string} username The username to add the key for
  * @param {string} keyPath Path to the public key file
@@ -490,6 +513,11 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
     handler(argv) {
       rejectGitPush(argv.id);
     },
+  })
+  .command({
+    command: 'reload-config',
+    description: 'Reload GitProxy configuration without restarting',
+    action: reloadConfig,
   })
   .command({
     command: 'ssh-key',

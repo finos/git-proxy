@@ -3,10 +3,10 @@
   <a href="https://github.com/finos/git-proxy">
     <img src="./docs/img/logo.png" alt="Logo" height="95">
   </a>
-
+  
   <br />
   <br />
-
+  
   <p align="center">
     Deploy custom push protections and policies<br />on top of Git
     <br />
@@ -23,7 +23,7 @@
 
   <br />
 
-[![FINOS - Incubating](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-incubating.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/incubating)
+[![FINOS - Active](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-active.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/active)
 [![NPM](https://img.shields.io/npm/v/@finos/git-proxy?colorA=00C586&colorB=000000)](https://www.npmjs.com/package/@finos/git-proxy)
 [![Build](https://img.shields.io/github/actions/workflow/status/finos/git-proxy/ci.yml?branch=main&label=CI&logo=github&colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/finos/git-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/finos/git-proxy)
@@ -103,11 +103,11 @@ If you identify a security vulnerability in the codebase, please follow the step
 
 ## Code of Conduct
 
-We are committed to making open source an enjoyable and respectful experience for our community. See <a href="https://github.com/finos/git-proxy/blob/main/CODE_OF_CONDUCT.md"><code>CODE_OF_CONDUCT</code></a> for more information.
+We are committed to making open source an enjoyable and respectful experience for our community. See [`CODE_OF_CONDUCT`](CODE_OF_CONDUCT.md) for more information.
 
 ## License
 
-This project is distributed under the Apache-2.0 license. See <a href="./LICENSE"><code>LICENSE</code></a> for more information.
+This project is distributed under the Apache-2.0 license. See [`LICENSE`](LICENSE) for more information.
 
 ## Contact
 

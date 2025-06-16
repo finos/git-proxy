@@ -8,6 +8,8 @@ const config = require('../config');
 const db = require('../db');
 const rateLimit = require('express-rate-limit');
 const lusca = require('lusca');
+const configLoader = require('../config/ConfigLoader');
+const proxy = require('../proxy');
 
 const limiter = rateLimit(config.getRateLimit());
 
@@ -29,6 +31,42 @@ const createApp = async () => {
   app.use(cors(corsOptions));
   app.set('trust proxy', 1);
   app.use(limiter);
+
+  // Add new admin-only endpoint to reload config
+  app.post('/api/v1/admin/reload-config', async (req, res) => {
+    if (!req.isAuthenticated() || !req.user.admin) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    try {
+      // 1. Reload configuration
+      await configLoader.loadConfiguration();
+
+      // 2. Stop existing services
+      await proxy.stop();
+
+      // 3. Apply new configuration
+      config.validate();
+
+      // 4. Restart services with new config
+      await proxy.start();
+
+      console.log('Configuration reloaded and services restarted successfully');
+      res.json({ status: 'success', message: 'Configuration reloaded and services restarted' });
+    } catch (error) {
+      console.error('Failed to reload configuration and restart services:', error);
+
+      // Attempt to restart with existing config if reload fails
+      try {
+        await proxy.start();
+      } catch (startError) {
+        console.error('Failed to restart services:', startError);
+      }
+
+      res.status(500).json({ error: 'Failed to reload configuration' });
+    }
+  });
+
   app.use(
     session({
       store: config.getDatabase().type === 'mongo' ? db.getSessionStore(session) : null,
