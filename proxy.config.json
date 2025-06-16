@@ -50,7 +50,9 @@
       "adConfig": {
         "url": "",
         "baseDN": "",
-        "searchBase": ""
+        "searchBase": "",
+        "username": "",
+        "password": ""
       }
     },
     {
