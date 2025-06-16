@@ -92,7 +92,7 @@ export const getDatabase = () => {
 
 /**
  * Get the list of enabled authentication methods
- * 
+ *
  * At least one authentication method must be enabled.
  * @return {Array} List of enabled authentication methods
  */
@@ -104,7 +104,7 @@ export const getAuthMethods = () => {
   const enabledAuthMethods = _authentication.filter((auth) => auth.enabled);
 
   if (enabledAuthMethods.length === 0) {
-    throw new Error("No authentication method enabled");
+    throw new Error('No authentication method enabled');
   }
 
   return enabledAuthMethods;
@@ -112,7 +112,7 @@ export const getAuthMethods = () => {
 
 /**
  * Get the list of enabled authentication methods for API endpoints
- * 
+ *
  * If no API authentication methods are enabled, all endpoints are public.
  * @return {Array} List of enabled authentication methods
  */
@@ -121,7 +121,7 @@ export const getAPIAuthMethods = () => {
     _apiAuthentication = _userSettings.apiAuthentication;
   }
 
-  const enabledAuthMethods = _apiAuthentication.filter(auth => auth.enabled);
+  const enabledAuthMethods = _apiAuthentication.filter((auth) => auth.enabled);
 
   return enabledAuthMethods;
 };

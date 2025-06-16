@@ -585,7 +585,9 @@ export default function Repositories(props) {
         setGitHub(res.data);
       })
       .catch((error) => {
-        setErrorMessage(`Error fetching GitHub repository ${props.data.project}/${props.data.name}: ${error}`);
+        setErrorMessage(
+          `Error fetching GitHub repository ${props.data.project}/${props.data.name}: ${error}`,
+        );
         setSnackbarOpen(true);
       });
   };
