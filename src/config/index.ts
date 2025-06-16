@@ -87,7 +87,7 @@ export const getDatabase = () => {
     }
   }
 
-  throw Error('No database cofigured!');
+  throw Error('No database configured!');
 };
 
 /**
