@@ -1,8 +1,8 @@
 import { setTimeout } from 'node:timers/promises';
 import { search } from '@inquirer/prompts';
-import { getLicenseList, LicensesMap } from '../lib/spdx';
-import { CalInfo, InventoryLicense, pushLicense } from '../lib/inventory';
-import { getCALData } from '../lib/chooseALicense';
+import { getLicenseList, LicensesMap } from '@/lib/spdx';
+import { CalInfo, InventoryLicense, pushLicense } from '@/lib/inventory';
+import { getCALData } from '@/lib/chooseALicense';
 
 // const answer = await input({ message: 'Enter your name' });
 
@@ -14,6 +14,7 @@ type Option = {
 type AddLicenseCMDOptions = {
   spdxID?: string;
   requireCal?: boolean;
+  allowDeprecated?: boolean;
 };
 
 async function promptForSPDXID(licenseList: LicensesMap): Promise<string> {
@@ -40,7 +41,7 @@ async function promptForSPDXID(licenseList: LicensesMap): Promise<string> {
 // TODO: add multiple licenses at the same time
 async function addLicenseCMD(liURL: string, options?: AddLicenseCMDOptions) {
   console.info('fetching license list from `spdx.org`');
-  const licenseList = await getLicenseList();
+  const licenseList = await getLicenseList(options?.allowDeprecated ?? false);
   console.info('done fetching');
 
   const selectedLicenseID = options?.spdxID ?? (await promptForSPDXID(licenseList));
@@ -58,9 +59,13 @@ async function addLicenseCMD(liURL: string, options?: AddLicenseCMDOptions) {
     const cal = await getCALData(selectedLicense.licenseId.toLowerCase());
     chooseALicenseInfo = cal;
   } catch (e) {
-    console.log('failed to get info from Choose A License');
+    const errMsg = 'failed to get info from Choose A License';
+
     if (options?.requireCal) {
+      console.error(errMsg);
       throw new Error('forced the need for CAL data');
+    } else {
+      console.warn(errMsg + ', continuing...');
     }
   }
 
