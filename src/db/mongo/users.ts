@@ -11,6 +11,12 @@ export const findUser = async function (username: string): Promise<User | null> 
   return doc ? toClass(doc, User.prototype) : null;
 };
 
+export const findUserByEmail = async function (email: string): Promise<User | null> {
+  const collection = await connect(collectionName);
+  const doc = collection.findOne({ email: { $eq: email.toLowerCase() } });
+  return doc ? toClass(doc, User.prototype) : null;
+};
+
 export const findUserByOIDC = async function (oidcId: string): Promise<User | null> {
   const collection = await connect(collectionName);
   const doc = collection.findOne({ oidcId: { $eq: oidcId } });
