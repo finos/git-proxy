@@ -93,6 +93,29 @@ describe('add new repo', async () => {
     repo.users.canAuthorise.length.should.equal(0);
   });
 
+  it('get a repo', async function () {
+    const res = await chai
+      .request(app)
+      .get('/api/v1/repo/' + repoIds[0])
+      .set('Cookie', `${cookie}`)
+      .send();
+    res.should.have.status(200);
+
+    expect(res.body.url).to.equal(TEST_REPO.url);
+    expect(res.body.name).to.equal(TEST_REPO.name);
+    expect(res.body.project).to.equal(TEST_REPO.project);
+  });
+
+  it('return a 409 error if the repo already exists', async function () {
+    const res = await chai
+      .request(app)
+      .post('/api/v1/repo')
+      .set('Cookie', `${cookie}`)
+      .send(TEST_REPO);
+    res.should.have.status(409);
+    res.body.message.should.equal('Repository ' + TEST_REPO.url + ' already exists!');
+  });
+
   it('filter repos', async function () {
     const res = await chai
       .request(app)
@@ -275,6 +298,28 @@ describe('add new repo', async () => {
       TEST_REPO_NON_GITHUB.host,
       TEST_REPO_NAKED.host,
     ]);
+  });
+
+  it('delete a repo', async function () {
+    const res = await chai
+      .request(app)
+      .delete('/api/v1/repo/' + repoIds[1] + '/delete')
+      .set('Cookie', `${cookie}`)
+      .send();
+    res.should.have.status(200);
+
+    const repo = await db.getRepoByUrl(TEST_REPO_NON_GITHUB.url);
+    expect(repo).to.be.null;
+
+    const res2 = await chai
+      .request(app)
+      .delete('/api/v1/repo/' + repoIds[2] + '/delete')
+      .set('Cookie', `${cookie}`)
+      .send();
+    res2.should.have.status(200);
+
+    const repo2 = await db.getRepoByUrl(TEST_REPO_NAKED.url);
+    expect(repo2).to.be.null;
   });
 
   after(async function () {
