@@ -229,7 +229,7 @@ describe('Database clients', async () => {
     expect(cleanRepos).to.not.deep.include(TEST_REPO);
   });
 
-  it('should NOT be able to create a repo with blank project, name or url', async function () {
+  it('should be able to create a repo with a blank project', async function () {
     // test with a null value
     let threwError = false;
     let testRepo = {
@@ -238,11 +238,12 @@ describe('Database clients', async () => {
       url: TEST_REPO.url,
     };
     try {
-      await db.createRepo(testRepo);
+      const repo = await db.createRepo(testRepo);
+      await db.deleteRepo(repo._id, true);
     } catch (e) {
       threwError = true;
     }
-    expect(threwError).to.be.true;
+    expect(threwError).to.be.false;
 
     // test with an empty string
     threwError = false;
@@ -252,11 +253,12 @@ describe('Database clients', async () => {
       url: TEST_REPO.url,
     };
     try {
-      await db.createRepo(testRepo);
+      const repo = await db.createRepo(testRepo);
+      await db.deleteRepo(repo._id, true);
     } catch (e) {
       threwError = true;
     }
-    expect(threwError).to.be.true;
+    expect(threwError).to.be.false;
 
     // test with an undefined property
     threwError = false;
@@ -265,15 +267,18 @@ describe('Database clients', async () => {
       url: TEST_REPO.url,
     };
     try {
-      await db.createRepo(testRepo);
+      const repo = await db.createRepo(testRepo);
+      await db.deleteRepo(repo._id, true);
     } catch (e) {
       threwError = true;
     }
-    expect(threwError).to.be.true;
+    expect(threwError).to.be.false;
+  });
 
-    // repeat tests for other fields, but don't both with all variations as they go through same fn
-    threwError = false;
-    testRepo = {
+  it('should NOT be able to create a repo with blank name or url', async function () {
+    // null name
+    let threwError = false;
+    let testRepo = {
       project: TEST_REPO.project,
       name: null,
       url: TEST_REPO.url,
@@ -285,10 +290,63 @@ describe('Database clients', async () => {
     }
     expect(threwError).to.be.true;
 
+    // blank name
+    threwError = false;
+    testRepo = {
+      project: TEST_REPO.project,
+      name: '',
+      url: TEST_REPO.url,
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+
+    // undefined name
+    threwError = false;
+    testRepo = {
+      project: TEST_REPO.project,
+      url: TEST_REPO.url,
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+
+    // null url
     testRepo = {
       project: TEST_REPO.project,
       name: TEST_REPO.name,
       url: null,
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+
+    // blank url
+    testRepo = {
+      project: TEST_REPO.project,
+      name: TEST_REPO.name,
+      url: '',
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+
+    // undefined url
+    testRepo = {
+      project: TEST_REPO.project,
+      name: TEST_REPO.name,
     };
     try {
       await db.createRepo(testRepo);

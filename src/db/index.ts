@@ -79,8 +79,9 @@ export const createRepo = async (repo: AuthorisedRepo) => {
 
   console.log(`creating new repo ${JSON.stringify(toCreate)}`);
 
-  if (isBlank(toCreate.project)) {
-    throw new Error('Project name cannot be empty');
+  // n.b. project name may be blank but not null for non-github and non-gitlab repos
+  if (!toCreate.project) {
+    toCreate.project = '';
   }
   if (isBlank(toCreate.name)) {
     throw new Error('Repository name cannot be empty');
@@ -101,10 +102,7 @@ export const isUserPushAllowed = async (url: string, user: string) => {
       return;
     }
 
-    console.log(repo.users.canPush);
-    console.log(repo.users.canAuthorise);
-
-    if (repo.users.canPush.includes(user) || repo.users.canAuthorise.includes(user)) {
+    if (repo.users?.canPush.includes(user) || repo.users?.canAuthorise.includes(user)) {
       resolve(true);
     } else {
       resolve(false);

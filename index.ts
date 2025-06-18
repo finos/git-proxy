@@ -28,7 +28,7 @@ const argv = yargs(hideBin(process.argv))
   .strict()
   .parseSync();
 
-setConfigFile(argv.c as string || "");
+setConfigFile((argv.c as string) || '');
 
 if (argv.v) {
   if (!fs.existsSync(configFile)) {
