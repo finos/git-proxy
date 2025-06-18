@@ -33,6 +33,7 @@ let _urlShortener: string = defaultSettings.urlShortener;
 let _contactEmail: string = defaultSettings.contactEmail;
 let _csrfProtection: boolean = defaultSettings.csrfProtection;
 let _domains: Record<string, unknown> = defaultSettings.domains;
+let _sshConfig = defaultSettings.ssh;
 let _rateLimit: RateLimitConfig = defaultSettings.rateLimit;
 
 // These are not always present in the default config file, so casting is required
@@ -54,6 +55,24 @@ export const getProxyUrl = () => {
   }
 
   return _proxyUrl;
+};
+
+export const getSSHProxyUrl = () => {
+  return getProxyUrl().replace('https://', 'git@');
+};
+
+export const getSSHConfig = () => {
+  if (_userSettings !== null && _userSettings.ssh) {
+    _sshConfig = _userSettings.ssh;
+  }
+  return _sshConfig;
+};
+export const getPublicSSHConfig = () => {
+  if (_userSettings !== null && _userSettings.ssh) {
+    _sshConfig = _userSettings.ssh;
+  }
+  const { enabled = false, port = 22 } = _sshConfig;
+  return { enabled, port };
 };
 
 // Gets a list of authorised repositories
@@ -92,7 +111,7 @@ export const getDatabase = () => {
 
 /**
  * Get the list of enabled authentication methods
- * 
+ *
  * At least one authentication method must be enabled.
  * @return {Array} List of enabled authentication methods
  */
@@ -104,7 +123,7 @@ export const getAuthMethods = () => {
   const enabledAuthMethods = _authentication.filter((auth) => auth.enabled);
 
   if (enabledAuthMethods.length === 0) {
-    throw new Error("No authentication method enabled");
+    throw new Error('No authentication method enabled');
   }
 
   return enabledAuthMethods;
@@ -112,7 +131,7 @@ export const getAuthMethods = () => {
 
 /**
  * Get the list of enabled authentication methods for API endpoints
- * 
+ *
  * If no API authentication methods are enabled, all endpoints are public.
  * @return {Array} List of enabled authentication methods
  */
@@ -121,7 +140,7 @@ export const getAPIAuthMethods = () => {
     _apiAuthentication = _userSettings.apiAuthentication;
   }
 
-  const enabledAuthMethods = _apiAuthentication.filter(auth => auth.enabled);
+  const enabledAuthMethods = _apiAuthentication.filter((auth) => auth.enabled);
 
   return enabledAuthMethods;
 };
