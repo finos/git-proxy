@@ -80,6 +80,7 @@ export interface Sink {
   removeUserCanAuthorise: (_id: string, user: string) => Promise<void>;
   deleteRepo: (_id: string) => Promise<void>;
   findUser: (username: string) => Promise<User | null>;
+  findUserByEmail: (email: string) => Promise<User | null>;
   findUserByOIDC: (oidcId: string) => Promise<User | null>;
   getUsers: (query?: object) => Promise<User[]>;
   createUser: (user: User) => Promise<void>;

@@ -35,6 +35,24 @@ export const findUser = (username: string): Promise<User | null> => {
   });
 };
 
+export const findUserByEmail = (email: string): Promise<User | null> => {
+  return new Promise<User | null>((resolve, reject) => {
+    db.findOne({ email: email.toLowerCase() }, (err: Error | null, doc: User) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
+      if (err) {
+        reject(err);
+      } else {
+        if (!doc) {
+          resolve(null);
+        } else {
+          resolve(doc);
+        }
+      }
+    });
+  });
+};
+
 export const findUserByOIDC = function (oidcId: string): Promise<User | null> {
   return new Promise<User | null>((resolve, reject) => {
     db.findOne({ oidcId: oidcId }, (err: Error | null, doc: User) => {

@@ -68,13 +68,8 @@ class Action {
     if (urlBreakdown) {
       this.repo = urlBreakdown.repoPath;
       const repoBreakdown = processGitURLForNameAndOrg(urlBreakdown.repoPath);
-      if (repoBreakdown) {
-        this.project = repoBreakdown.project ?? '';
-        this.repoName = repoBreakdown.repoName;
-      } else {
-        this.project = 'UNKNOWN';
-        this.repoName = 'UNKNOWN';
-      }
+      this.project = repoBreakdown?.project ?? '';
+      this.repoName = repoBreakdown?.repoName ?? '';
     } else {
       this.repo = 'NOT-FOUND';
       this.project = 'UNKNOWN';

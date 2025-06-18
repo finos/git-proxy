@@ -356,6 +356,77 @@ describe('Database clients', async () => {
     expect(threwError).to.be.true;
   });
 
+  it('should throw an error when creating a user and username or email is not set', async function () {
+    // null username
+    let threwError = false;
+    let message = null;
+    try {
+      await db.createUser(
+        null,
+        TEST_USER.password,
+        TEST_USER.email,
+        TEST_USER.gitAccount,
+        TEST_USER.admin,
+      );
+    } catch (e) {
+      threwError = true;
+      message = e.message;
+    }
+    expect(threwError).to.be.true;
+    expect(message).to.equal('username cannot be empty');
+
+    // blank username
+    threwError = false;
+    try {
+      await db.createUser(
+        '',
+        TEST_USER.password,
+        TEST_USER.email,
+        TEST_USER.gitAccount,
+        TEST_USER.admin,
+      );
+    } catch (e) {
+      threwError = true;
+      message = e.message;
+    }
+    expect(threwError).to.be.true;
+    expect(message).to.equal('username cannot be empty');
+
+    // null email
+    threwError = false;
+    try {
+      await db.createUser(
+        TEST_USER.username,
+        TEST_USER.password,
+        null,
+        TEST_USER.gitAccount,
+        TEST_USER.admin,
+      );
+    } catch (e) {
+      threwError = true;
+      message = e.message;
+    }
+    expect(threwError).to.be.true;
+    expect(message).to.equal('email cannot be empty');
+
+    // blank username
+    threwError = false;
+    try {
+      await db.createUser(
+        TEST_USER.username,
+        TEST_USER.password,
+        '',
+        TEST_USER.gitAccount,
+        TEST_USER.admin,
+      );
+    } catch (e) {
+      threwError = true;
+      message = e.message;
+    }
+    expect(threwError).to.be.true;
+    expect(message).to.equal('email cannot be empty');
+  });
+
   it('should be able to create a user', async function () {
     await db.createUser(
       TEST_USER.username,
@@ -370,6 +441,44 @@ describe('Database clients', async () => {
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
     expect(cleanUsers).to.deep.include(TEST_USER_CLEAN);
+  });
+
+  it('should throw an error when creating a duplicate username', async function () {
+    let threwError = false;
+    let message = null;
+    try {
+      await db.createUser(
+        TEST_USER.username,
+        TEST_USER.password,
+        'prefix_' + TEST_USER.email,
+        TEST_USER.gitAccount,
+        TEST_USER.admin,
+      );
+    } catch (e) {
+      threwError = true;
+      message = e.message;
+    }
+    expect(threwError).to.be.true;
+    expect(message).to.equal(`user ${TEST_USER.username} already exists`);
+  });
+
+  it('should throw an error when creating a user with a duplicate email', async function () {
+    let threwError = false;
+    let message = null;
+    try {
+      await db.createUser(
+        'prefix_' + TEST_USER.username,
+        TEST_USER.password,
+        TEST_USER.email,
+        TEST_USER.gitAccount,
+        TEST_USER.admin,
+      );
+    } catch (e) {
+      threwError = true;
+      message = e.message;
+    }
+    expect(threwError).to.be.true;
+    expect(message).to.equal(`A user with email ${TEST_USER.email} already exists`);
   });
 
   it('should be able to find a user', async function () {

@@ -44,23 +44,28 @@ export const createUser = async (
   };
 
   if (isBlank(username)) {
-    const errorMessage = `username ${username} cannot be empty`;
+    const errorMessage = `username cannot be empty`;
     throw new Error(errorMessage);
   }
 
   if (isBlank(gitAccount)) {
-    const errorMessage = `GitAccount ${gitAccount} cannot be empty`;
+    const errorMessage = `gitAccount cannot be empty`;
     throw new Error(errorMessage);
   }
 
   if (isBlank(email)) {
-    const errorMessage = `Email ${email} cannot be empty`;
+    const errorMessage = `email cannot be empty`;
     throw new Error(errorMessage);
   }
   const existingUser = await sink.findUser(username);
-
   if (existingUser) {
     const errorMessage = `user ${username} already exists`;
+    throw new Error(errorMessage);
+  }
+
+  const existingUserWithEmail = await sink.findUserByEmail(email);
+  if (existingUserWithEmail) {
+    const errorMessage = `A user with email ${email} already exists`;
     throw new Error(errorMessage);
   }
 
@@ -172,6 +177,7 @@ export const removeUserCanAuthorise = (_id: string, user: string): Promise<void>
   sink.removeUserCanAuthorise(_id, user);
 export const deleteRepo = (_id: string): Promise<void> => sink.deleteRepo(_id);
 export const findUser = (username: string): Promise<User | null> => sink.findUser(username);
+export const findUserByEmail = (email: string): Promise<User | null> => sink.findUserByEmail(email);
 export const findUserByOIDC = (oidcId: string): Promise<User | null> => sink.findUserByOIDC(oidcId);
 export const getUsers = (query?: object): Promise<User[]> => sink.getUsers(query);
 export const deleteUser = (username: string): Promise<void> => sink.deleteUser(username);
