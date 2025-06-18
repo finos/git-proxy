@@ -1,9 +1,9 @@
-import express, { Application } from 'express';
+import express, { Application, Router } from 'express';
 import bodyParser from 'body-parser';
 import http from 'http';
 import https from 'https';
 import fs from 'fs';
-import { router } from './routes';
+import { getRouter } from './routes';
 import {
   getAuthorisedList,
   getPlugins,
@@ -54,9 +54,10 @@ export const proxyPreparations = async () => {
   });
 };
 
-// just keep this async incase it needs async stuff in the future
 const createApp = async (): Promise<Application> => {
   const app = express();
+  router = await getRouter();
+
   // Setup the proxy middleware
   app.use(bodyParser.raw(options));
   app.use('/', router);
@@ -65,6 +66,7 @@ const createApp = async (): Promise<Application> => {
 
 let httpServer: http.Server | null = null;
 let httpsServer: https.Server | null = null;
+let router: Router | null = null;
 
 const start = async (): Promise<Application> => {
   const app = await createApp();

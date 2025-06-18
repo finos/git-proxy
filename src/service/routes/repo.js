@@ -162,7 +162,7 @@ router.post('/', async (req, res) => {
           console.log('Restarting the proxy to handle an additional origin');
 
           // 1. Get proxy module dynamically to avoid circular dependency
-          const proxy = require('../proxy');
+          const { proxy } = require('../index');
 
           // 2. Stop existing services
           await proxy.stop();
@@ -170,7 +170,8 @@ router.post('/', async (req, res) => {
           // 3. Restart the proxy, which should set up for the new domain
           await proxy.start();
         }
-      } catch {
+      } catch (e) {
+        console.error('Repository creation failed due to error: ', e.message ? e.message : e);
         res.send('Failed to create repository');
       }
     }

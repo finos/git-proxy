@@ -100,16 +100,18 @@ const proxyErrorHandler: ProxyOptions['proxyErrorHandler'] = (err, res, next) =>
   next(err);
 };
 
-// eslint-disable-next-line new-cap
-const router = Router();
+const getRouter = async () => {
+  // eslint-disable-next-line new-cap
+  const router = Router();
 
-getAllProxiedHosts().then((originsToProxy) => {
-  // TODO: this will only happen on startup. We'll need to add routes at runtime when new origins are added? Or force a restart for the proxy to work
-
+  const originsToProxy = await getAllProxiedHosts();
+  console.log(
+    `Initializing proxy router for origins: '${JSON.stringify(originsToProxy, null, 2)}'`,
+  );
   // Middlewares are processed in the order that they are added, if one applies and then doesn't call `next` then subsequent ones are not applied.
   // Hence, we define known origins first, then a catch all route for backwards compatibility
   originsToProxy.forEach((origin) => {
-    console.log(`setting up origin '${origin}'`);
+    console.log(`\tsetting up origin: '${origin}'`);
     router.use(
       '/' + origin,
       proxy('https://' + origin, {
@@ -124,6 +126,7 @@ getAllProxiedHosts().then((originsToProxy) => {
   });
 
   // Catch-all route for backwards compatibility
+  console.log('\tsetting up catch-all route (github.com) for backwards compatibility');
   router.use(
     '/',
     proxy('https://github.com', {
@@ -135,6 +138,7 @@ getAllProxiedHosts().then((originsToProxy) => {
       proxyErrorHandler: proxyErrorHandler,
     }),
   );
-});
+  return router;
+};
 
-export { router, handleMessage, validGitRequest };
+export { getRouter, handleMessage, validGitRequest };
