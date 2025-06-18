@@ -12,11 +12,25 @@ chai.should();
 const expect = chai.expect;
 
 describe('url helpers and filter functions used in the proxy', function () {
-  it('processUrlPath should return breakdown of a proxyd path, separating the path to repository from the git operation path', function () {
+  it('processUrlPath should return breakdown of a proxied path, separating the path to repository from the git operation path', function () {
     expect(
       processUrlPath('/github.com/octocat/hello-world.git/info/refs?service=git-upload-pack'),
     ).to.deep.eq({
       repoPath: '/github.com/octocat/hello-world.git',
+      gitPath: '/info/refs?service=git-upload-pack',
+    });
+
+    expect(
+      processUrlPath('/gitlab.com/org/sub-org/hello-world.git/info/refs?service=git-upload-pack'),
+    ).to.deep.eq({
+      repoPath: '/gitlab.com/org/sub-org/hello-world.git',
+      gitPath: '/info/refs?service=git-upload-pack',
+    });
+
+    expect(
+      processUrlPath('/123.456.789/hello-world.git/info/refs?service=git-upload-pack'),
+    ).to.deep.eq({
+      repoPath: '/123.456.789/hello-world.git',
       gitPath: '/info/refs?service=git-upload-pack',
     });
   });
@@ -46,10 +60,16 @@ describe('url helpers and filter functions used in the proxy', function () {
   });
 
   it('processGitUrl should return breakdown of a git URL separating out the protocol, host and repository path', function () {
-    expect(processGitUrl('https://somegithost.com:1234/octocat/hello-world.git')).to.deep.eq({
+    expect(processGitUrl('https://somegithost.com/octocat/hello-world.git')).to.deep.eq({
       protocol: 'https://',
-      host: 'somegithost.com:1234',
+      host: 'somegithost.com',
       repoPath: '/octocat/hello-world.git',
+    });
+
+    expect(processGitUrl('https://123.456.789:1234/hello-world.git')).to.deep.eq({
+      protocol: 'https://',
+      host: '123.456.789:1234',
+      repoPath: '/hello-world.git',
     });
   });
 
@@ -62,6 +82,14 @@ describe('url helpers and filter functions used in the proxy', function () {
       protocol: 'https://',
       host: 'somegithost.com:1234',
       repoPath: '/octocat/hello-world.git',
+    });
+
+    expect(
+      processGitUrl('https://123.456.789/hello-world.git/info/refs?service=git-upload-pack'),
+    ).to.deep.eq({
+      protocol: 'https://',
+      host: '123.456.789',
+      repoPath: '/hello-world.git',
     });
   });
 
