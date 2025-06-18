@@ -2,6 +2,7 @@ import { Action, Step } from '../../actions';
 import fs from 'fs';
 import git from 'isomorphic-git';
 import gitHttpClient from 'isomorphic-git/http/node';
+import execSync from 'child_process';
 
 const dir = './.remote';
 
@@ -21,26 +22,42 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       fs.mkdirSync(action.proxyGitPath, 0o755);
     }
 
-    const cmd = `git clone ${action.url}`;
-    step.log(`Exectuting ${cmd}`);
+    let cloneUrl = action.url;
+    let cmd = 'git clone';
 
-    const authHeader = req.headers?.authorization;
-    const [username, password] = Buffer.from(authHeader.split(' ')[1], 'base64')
-      .toString()
-      .split(':');
+    if (action.protocol === 'ssh') {
+      // Convert HTTPS URL to SSH URL
+      cloneUrl = action.url.replace('https://', 'git@');
+      cmd += ` ${cloneUrl}`;
+      step.log(`Executing ${cmd}`);
 
-    await git.clone({
-      fs,
-      http: gitHttpClient,
-      url: action.url,
-      onAuth: () => ({
-        username,
-        password,
-      }),
-      dir: `${action.proxyGitPath}/${action.repoName}`,
-    });
+      // Use native git command with SSH
+      execSync(cmd, {
+        cwd: action.proxyGitPath,
+        stdio: 'pipe',
+      });
+    } else {
+      cmd += ` ${action.url}`;
+      step.log(`Exectuting ${cmd}`);
 
-    console.log('Clone Success: ', action.url);
+      const authHeader = req.headers?.authorization;
+      const [username, password] = Buffer.from(authHeader.split(' ')[1], 'base64')
+        .toString()
+        .split(':');
+
+      await git.clone({
+        fs,
+        http: gitHttpClient,
+        url: action.url,
+        onAuth: () => ({
+          username,
+          password,
+        }),
+        dir: `${action.proxyGitPath}/${action.repoName}`,
+      });
+    }
+
+    console.log('Clone Success: ', cloneUrl);
 
     step.log(`Completed ${cmd}`);
     step.setContent(`Completed ${cmd}`);
