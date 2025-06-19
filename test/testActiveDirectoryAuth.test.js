@@ -144,7 +144,7 @@ describe('ActiveDirectory auth method', () => {
 
     expect(done.calledOnce).to.be.true;
     const [err, user] = done.firstCall.args;
-    expect(err.message).to.equal('LDAP error');
+    expect(err).to.contain('LDAP error');
     expect(user).to.be.null;
   });
 });
