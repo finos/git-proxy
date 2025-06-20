@@ -14,7 +14,7 @@ export class Repo {
   project: string;
   name: string;
   url: string;
-  users: { canPush: string[]; canAuthorise: string[] } | null;
+  users: { canPush: string[]; canAuthorise: string[] };
   _id?: string;
 
   constructor(

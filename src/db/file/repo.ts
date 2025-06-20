@@ -104,11 +104,11 @@ export const addUserCanPush = async (_id: string, user: string): Promise<void> =
       return;
     }
 
-    if (repo.users.canPush.includes(user)) {
+    if (repo.users?.canPush.includes(user)) {
       resolve();
       return;
     }
-    repo.users.canPush.push(user);
+    repo.users?.canPush.push(user);
 
     const options = { multi: false, upsert: false };
     db.update({ _id: _id }, repo, options, (err) => {
