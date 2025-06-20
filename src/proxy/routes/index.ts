@@ -141,4 +141,4 @@ const getRouter = async () => {
   return router;
 };
 
-export { getRouter, handleMessage, validGitRequest };
+export { proxyFilter, getRouter, handleMessage, validGitRequest };
