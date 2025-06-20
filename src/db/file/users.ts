@@ -17,7 +17,7 @@ db.ensureIndex({ fieldName: 'username', unique: true });
 db.ensureIndex({ fieldName: 'email', unique: true });
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
-export const findUser = (username: string) => {
+export const findUser = (username: string): Promise<User | null> => {
   return new Promise<User | null>((resolve, reject) => {
     db.findOne({ username: username.toLowerCase() }, (err: Error | null, doc: User) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -35,9 +35,9 @@ export const findUser = (username: string) => {
   });
 };
 
-export const findUserByOIDC = function (oidcId: string) {
-  return new Promise((resolve, reject) => {
-    db.findOne({ oidcId: oidcId }, (err, doc) => {
+export const findUserByEmail = (email: string): Promise<User | null> => {
+  return new Promise<User | null>((resolve, reject) => {
+    db.findOne({ email: email.toLowerCase() }, (err: Error | null, doc: User) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {
@@ -53,7 +53,25 @@ export const findUserByOIDC = function (oidcId: string) {
   });
 };
 
-export const createUser = function (user: User) {
+export const findUserByOIDC = function (oidcId: string): Promise<User | null> {
+  return new Promise<User | null>((resolve, reject) => {
+    db.findOne({ oidcId: oidcId }, (err: Error | null, doc: User) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
+      if (err) {
+        reject(err);
+      } else {
+        if (!doc) {
+          resolve(null);
+        } else {
+          resolve(doc);
+        }
+      }
+    });
+  });
+};
+
+export const createUser = function (user: User): Promise<void> {
   user.username = user.username.toLowerCase();
   user.email = user.email.toLowerCase();
   return new Promise((resolve, reject) => {
@@ -63,13 +81,13 @@ export const createUser = function (user: User) {
       if (err) {
         reject(err);
       } else {
-        resolve(user);
+        resolve();
       }
     });
   });
 };
 
-export const deleteUser = (username: string) => {
+export const deleteUser = (username: string): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
     db.remove({ username: username.toLowerCase() }, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -83,7 +101,7 @@ export const deleteUser = (username: string) => {
   });
 };
 
-export const updateUser = (user: User) => {
+export const updateUser = (user: User): Promise<void> => {
   user.username = user.username.toLowerCase();
   if (user.email) {
     user.email = user.email.toLowerCase();
@@ -113,7 +131,7 @@ export const updateUser = (user: User) => {
           if (err) {
             reject(err);
           } else {
-            resolve(null);
+            resolve();
           }
         });
       }
@@ -121,7 +139,7 @@ export const updateUser = (user: User) => {
   });
 };
 
-export const getUsers = (query: any = {}) => {
+export const getUsers = (query: any = {}): Promise<User[]> => {
   if (query.username) {
     query.username = query.username.toLowerCase();
   }
