@@ -10,13 +10,13 @@
     "publish-gh-pages": "docusaurus deploy"
   },
   "dependencies": {
-    "@docusaurus/core": "^3.7.0",
-    "@docusaurus/preset-classic": "^3.7.0",
-    "@docusaurus/plugin-google-gtag": "^3.7.0",
-    "axios": "^1.9.0",
+    "@docusaurus/core": "^3.8.1",
+    "@docusaurus/preset-classic": "^3.8.1",
+    "@docusaurus/plugin-google-gtag": "^3.8.1",
+    "axios": "^1.10.0",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
-    "eslint": "^9.27.0",
+    "eslint": "^9.29.0",
     "eslint-plugin-react": "^7.37.5",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
