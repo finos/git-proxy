@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2
+        uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2
         with:
           egress-policy: audit
 
@@ -21,6 +21,6 @@ jobs:
         with:
           comment-summary-in-pr: always
           fail-on-severity: high
-          allow-licenses: MIT, MIT-0, Apache-2.0, BSD-3-Clause, BSD-3-Clause-Clear, ISC, BSD-2-Clause, Unlicense, CC0-1.0, 0BSD, X11, MPL-2.0, MPL-1.0, MPL-1.1, MPL-2.0, Zlib
+          allow-licenses: MIT, MIT-0, Apache-2.0, BSD-3-Clause, BSD-3-Clause-Clear, ISC, BSD-2-Clause, Unlicense, CC0-1.0, 0BSD, X11, MPL-2.0, MPL-1.0, MPL-1.1, MPL-2.0, OFL-1.1, Zlib
           fail-on-scopes: development, runtime
           allow-dependencies-licenses: 'pkg:npm/caniuse-lite'

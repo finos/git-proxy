@@ -1,16 +1,19 @@
-const passport = require('passport');
 const db = require('../../db');
 
-const configure = async () => {
+const type = 'openidconnect';
+
+const configure = async (passport) => {
   // Temp fix for ERR_REQUIRE_ESM, will be changed when we refactor to ESM
   const { discovery, fetchUserInfo } = await import('openid-client');
   const { Strategy } = await import('openid-client/passport');
-  const config = require('../../config').getAuthentication();
-  const { oidcConfig } = config;
+  const authMethods = require('../../config').getAuthMethods();
+  const oidcConfig = authMethods.find(
+    (method) => method.type.toLowerCase() === 'openidconnect',
+  )?.oidcConfig;
   const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
 
   if (!oidcConfig || !oidcConfig.issuer) {
-    throw new Error('Missing OIDC issuer in configuration')
+    throw new Error('Missing OIDC issuer in configuration');
   }
 
   const server = new URL(issuer);
@@ -25,7 +28,7 @@ const configure = async () => {
       const userInfo = await fetchUserInfo(config, tokenSet.access_token, expectedSub);
       handleUserAuthentication(userInfo, done);
     });
-    
+
     // currentUrl must be overridden to match the callback URL
     strategy.currentUrl = function (request) {
       const callbackUrl = new URL(callbackURL);
@@ -35,11 +38,12 @@ const configure = async () => {
       return currentUrl;
     };
 
-    passport.use(strategy);
+    // Prevent default strategy name from being overridden with the server host
+    passport.use(type, strategy);
 
     passport.serializeUser((user, done) => {
       done(null, user.oidcId || user.username);
-    })
+    });
 
     passport.deserializeUser(async (id, done) => {
       try {
@@ -48,26 +52,23 @@ const configure = async () => {
       } catch (err) {
         done(err);
       }
-    })
-    passport.type = server.host;
+    });
 
     return passport;
   } catch (error) {
     console.error('OIDC configuration failed:', error);
     throw error;
   }
-}
-
-
-module.exports.configure = configure;
+};
 
 /**
  * Handles user authentication with OIDC.
- * @param {Object} userInfo the OIDC user info object 
+ * @param {Object} userInfo the OIDC user info object
  * @param {Function} done the callback function
  * @return {Promise} a promise with the authenticated user or an error
  */
 const handleUserAuthentication = async (userInfo, done) => {
+  console.log('handleUserAuthentication called');
   try {
     const user = await db.findUserByOIDC(userInfo.sub);
 
@@ -98,7 +99,9 @@ const handleUserAuthentication = async (userInfo, done) => {
  * @return {string | null} the email address
  */
 const safelyExtractEmail = (profile) => {
-  return profile.email || (profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null);
+  return (
+    profile.email || (profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null)
+  );
 };
 
 /**
@@ -112,3 +115,5 @@ const safelyExtractEmail = (profile) => {
 const getUsername = (email) => {
   return email ? email.split('@')[0] : '';
 };
+
+module.exports = { configure, type };
