@@ -1,42 +1,47 @@
-const db = require('../../db');
+import * as db from '../../db';
+import { PassportStatic } from 'passport';
+import { getAuthMethods } from '../../config/index.ts';
 
-const type = 'openidconnect';
+export const type = 'openidconnect';
 
-const configure = async (passport) => {
-  // Temp fix for ERR_REQUIRE_ESM, will be changed when we refactor to ESM
+export const configure = async (passport: PassportStatic): Promise<PassportStatic> => {
+  // Use dynamic imports to avoid ESM/CommonJS issues
   const { discovery, fetchUserInfo } = await import('openid-client');
   const { Strategy } = await import('openid-client/passport');
-  const authMethods = require('../../config').getAuthMethods();
+
+  const authMethods = getAuthMethods();
   const oidcConfig = authMethods.find(
     (method) => method.type.toLowerCase() === 'openidconnect',
   )?.oidcConfig;
-  const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
 
   if (!oidcConfig || !oidcConfig.issuer) {
     throw new Error('Missing OIDC issuer in configuration');
   }
+
+  const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
 
   const server = new URL(issuer);
   let config;
 
   try {
     config = await discovery(server, clientID, clientSecret);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error during OIDC discovery:', error);
     throw new Error('OIDC setup error (discovery): ' + error.message);
   }
 
   try {
-    const strategy = new Strategy({ callbackURL, config, scope }, async (tokenSet, done) => {
-      // Validate token sub for added security
-      const idTokenClaims = tokenSet.claims();
-      const expectedSub = idTokenClaims.sub;
-      const userInfo = await fetchUserInfo(config, tokenSet.access_token, expectedSub);
-      handleUserAuthentication(userInfo, done);
-    });
+    const strategy = new Strategy(
+      { callbackURL, config, scope },
+      async (tokenSet: any, done: Function) => {
+        const idTokenClaims = tokenSet.claims();
+        const expectedSub = idTokenClaims.sub;
+        const userInfo = await fetchUserInfo(config, tokenSet.access_token, expectedSub);
+        handleUserAuthentication(userInfo, done);
+      }
+    );
 
-    // currentUrl must be overridden to match the callback URL
-    strategy.currentUrl = function (request) {
+    strategy.currentUrl = function (request: any) {
       const callbackUrl = new URL(callbackURL);
       const currentUrl = Strategy.prototype.currentUrl.call(this, request);
       currentUrl.host = callbackUrl.host;
@@ -44,24 +49,23 @@ const configure = async (passport) => {
       return currentUrl;
     };
 
-    // Prevent default strategy name from being overridden with the server host
     passport.use(type, strategy);
 
-    passport.serializeUser((user, done) => {
+    passport.serializeUser((user: any, done) => {
       done(null, user.oidcId || user.username);
     });
 
-    passport.deserializeUser(async (id, done) => {
+    passport.deserializeUser(async (id: string, done) => {
       try {
         const user = await db.findUserByOIDC(id);
         done(null, user);
       } catch (err) {
-        done(err);
+        done(err as Error);
       }
     });
 
     return passport;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error during OIDC passport setup:', error);
     throw new Error('OIDC setup error (strategy): ' + error.message);
   }
@@ -69,11 +73,8 @@ const configure = async (passport) => {
 
 /**
  * Handles user authentication with OIDC.
- * @param {Object} userInfo the OIDC user info object
- * @param {Function} done the callback function
- * @return {Promise} a promise with the authenticated user or an error
  */
-const handleUserAuthentication = async (userInfo, done) => {
+const handleUserAuthentication = async (userInfo: any, done: Function): Promise<void> => {
   console.log('handleUserAuthentication called');
   try {
     const user = await db.findUserByOIDC(userInfo.sub);
@@ -88,7 +89,14 @@ const handleUserAuthentication = async (userInfo, done) => {
         oidcId: userInfo.sub,
       };
 
-      await db.createUser(newUser.username, null, newUser.email, 'Edit me', false, newUser.oidcId);
+      await db.createUser(
+        newUser.username,
+        '',
+        newUser.email,
+        'Edit me',
+        false,
+        newUser.oidcId,
+      );
       return done(null, newUser);
     }
 
@@ -100,26 +108,20 @@ const handleUserAuthentication = async (userInfo, done) => {
 
 /**
  * Extracts email from OIDC profile.
- * This function is necessary because OIDC providers have different ways of storing emails.
- * @param {object} profile the profile object from OIDC provider
- * @return {string | null} the email address
+ * Different providers use different fields to store the email.
  */
-const safelyExtractEmail = (profile) => {
+const safelyExtractEmail = (profile: any): string | null => {
   return (
     profile.email || (profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null)
   );
 };
 
 /**
- * Generates a username from email address.
+ * Generates a username from an email address.
  * This helps differentiate users within the specific OIDC provider.
  * Note: This is incompatible with multiple providers. Ideally, users are identified by
  * OIDC ID (requires refactoring the database).
- * @param {string} email the email address
- * @return {string} the username
  */
-const getUsername = (email) => {
+const getUsername = (email: string): string => {
   return email ? email.split('@')[0] : '';
 };
-
-module.exports = { configure, type };
