@@ -93,6 +93,7 @@
     "@types/lodash": "^4.17.15",
     "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.5",
+    "@types/passport-local": "^1.0.38",
     "@types/yargs": "^17.0.33",
     "@typescript-eslint/eslint-plugin": "^8.26.1",
     "@typescript-eslint/parser": "^8.26.1",

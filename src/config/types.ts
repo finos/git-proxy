@@ -48,7 +48,38 @@ export interface Database {
 export interface Authentication {
   type: string;
   enabled: boolean;
-  options?: Record<string, unknown>;
+  oidcConfig?: OidcConfig;
+  adConfig?: AdConfig;
+  jwtConfig?: JwtConfig;
+
+  // Deprecated fields for backwards compatibility
+  // TODO: remove in future release and keep the ones in adConfig
+  userGroup?: string;
+  adminGroup?: string;
+  domain?: string;
+}
+
+export interface OidcConfig {
+  issuer: string;
+  clientID: string;
+  clientSecret: string;
+  callbackURL: string;
+  scope: string;
+}
+
+export interface AdConfig {
+  url: string;
+  baseDN: string;
+  searchBase: string;
+  userGroup?: string;
+  adminGroup?: string;
+  domain?: string;
+}
+
+export interface JwtConfig {
+  clientID: string;
+  authorityURL: string;
+  roleMapping: Record<string, unknown>;
 }
 
 export interface TempPasswordConfig {
