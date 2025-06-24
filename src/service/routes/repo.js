@@ -137,7 +137,8 @@ router.post('/', async (req, res) => {
 
         const existingHosts = await getAllProxiedHosts();
         existingHosts.forEach((h) => {
-          if (req.body.url.startsWith(h)) {
+          // assume SSL is in use and that our origins are missing the protocol
+          if (req.body.url.startsWith(`https://${h}`)) {
             newOrigin = false;
           }
         });
@@ -155,7 +156,7 @@ router.post('/', async (req, res) => {
           console.log('Restarting the proxy to handle an additional origin');
 
           // 1. Get proxy module dynamically to avoid circular dependency
-          const { proxy } = require('../index');
+          const { proxy } = require('../../proxy');
 
           // 2. Stop existing services
           await proxy.stop();
