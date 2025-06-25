@@ -80,6 +80,7 @@ export interface JwtConfig {
   clientID: string;
   authorityURL: string;
   roleMapping: Record<string, unknown>;
+  expectedAudience?: string;
 }
 
 export interface TempPasswordConfig {

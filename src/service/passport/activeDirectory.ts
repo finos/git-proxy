@@ -6,7 +6,7 @@ import { getAuthMethods } from '../../config';
 
 export const type = 'activedirectory';
 
-export const configure = (passport: PassportStatic): PassportStatic => {
+export const configure = async (passport: PassportStatic): Promise<PassportStatic> => {
   const authMethods = getAuthMethods();
   const config = authMethods.find((method) => method.type.toLowerCase() === type);
 
