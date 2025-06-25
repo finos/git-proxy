@@ -316,6 +316,8 @@ export class ConfigLoader extends EventEmitter {
       const execOptions = {
         cwd: process.cwd(),
         env: {
+          // dont wait for credentials; the command should be sufficiently authed
+          GIT_TERMINAL_PROMPT: 0,
           ...process.env,
           ...(source.auth?.type === 'ssh'
             ? {
