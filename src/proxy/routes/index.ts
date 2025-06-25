@@ -49,9 +49,9 @@ const validGitRequest = (url: string, headers: any): boolean => {
   return false;
 };
 
-// eslint-disable-next-line no-useless-escape
 const isPackPost = (req: Request) =>
   req.method === 'POST' &&
+  // eslint-disable-next-line no-useless-escape
   /^\/[^\/]+\/[^\/]+\.git\/(?:git-upload-pack|git-receive-pack)$/.test(req.url);
 
 const teeAndValidate = async (req: Request, res: Response, next: NextFunction) => {
