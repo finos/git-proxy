@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const { jwkToBuffer } = require('jwk-to-pem');
 
 const { assignRoles, getJwks, validateJwt } = require('../src/service/passport/jwtUtils');
-const jwtAuthHandler = require('../src/service/passport/jwtAuthHandler');
+const { jwtAuthHandler } = require('../src/service/passport/jwtAuthHandler');
 
 describe('getJwks', () => {
   it('should fetch JWKS keys from authority', async () => {

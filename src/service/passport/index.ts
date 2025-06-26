@@ -8,6 +8,7 @@ import { Authentication } from '../../config/types';
 type StrategyModule = {
   configure: (passport: PassportStatic) => Promise<PassportStatic>;
   createDefaultAdmin?: () => Promise<void>;
+  type: string;
 };
 
 export const authStrategies: Record<string, StrategyModule> = {
