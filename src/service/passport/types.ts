@@ -33,7 +33,4 @@ export type JwtValidationResult = {
  *   }
  * }
  */
-export type RoleMapping = Record<
-  string, // role name like "admin"
-  Record<string, string> // e.g. { "name": "John Doe" }
->;
+export type RoleMapping = Record<string, Record<string, string>>;
