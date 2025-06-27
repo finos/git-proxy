@@ -1,10 +1,6 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
 import * as db from '../../db';
-import { User } from '../../db/types';
-
-interface AuthenticatedRequest extends Request {
-  user: User;
-}
+import { AuthenticatedRequest } from './types';
 
 const router = express.Router();
 
