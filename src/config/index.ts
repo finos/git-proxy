@@ -32,7 +32,7 @@ let _privateOrganizations: string[] = defaultSettings.privateOrganizations;
 let _urlShortener: string = defaultSettings.urlShortener;
 let _contactEmail: string = defaultSettings.contactEmail;
 let _csrfProtection: boolean = defaultSettings.csrfProtection;
-let _domains: Record<string, unknown> = defaultSettings.domains;
+let _domains: Record<string, string> = defaultSettings.domains;
 let _rateLimit: RateLimitConfig = defaultSettings.rateLimit;
 
 // These are not always present in the default config file, so casting is required
