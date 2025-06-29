@@ -32,7 +32,7 @@ let _privateOrganizations: string[] = defaultSettings.privateOrganizations;
 let _urlShortener: string = defaultSettings.urlShortener;
 let _contactEmail: string = defaultSettings.contactEmail;
 let _csrfProtection: boolean = defaultSettings.csrfProtection;
-let _domains: Record<string, unknown> = defaultSettings.domains;
+let _domains: Record<string, string> = defaultSettings.domains;
 let _rateLimit: RateLimitConfig = defaultSettings.rateLimit;
 
 // These are not always present in the default config file, so casting is required
@@ -94,9 +94,9 @@ export const getDatabase = () => {
  * Get the list of enabled authentication methods
  * 
  * At least one authentication method must be enabled.
- * @return {Array} List of enabled authentication methods
+ * @return {Authentication[]} List of enabled authentication methods
  */
-export const getAuthMethods = () => {
+export const getAuthMethods = (): Authentication[] => {
   if (_userSettings !== null && _userSettings.authentication) {
     _authentication = _userSettings.authentication;
   }
@@ -114,14 +114,18 @@ export const getAuthMethods = () => {
  * Get the list of enabled authentication methods for API endpoints
  * 
  * If no API authentication methods are enabled, all endpoints are public.
- * @return {Array} List of enabled authentication methods
+ * @return {Authentication[]} List of enabled authentication methods
  */
-export const getAPIAuthMethods = () => {
+export const getAPIAuthMethods = (): Authentication[] => {
   if (_userSettings !== null && _userSettings.apiAuthentication) {
     _apiAuthentication = _userSettings.apiAuthentication;
   }
 
   const enabledAuthMethods = _apiAuthentication.filter(auth => auth.enabled);
+
+  if (enabledAuthMethods.length === 0) {
+    console.log("Warning: No authentication method enabled for API endpoints.");
+  }
 
   return enabledAuthMethods;
 };

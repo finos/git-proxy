@@ -5,7 +5,7 @@ import { hideBin } from 'yargs/helpers';
 import * as fs from 'fs';
 import { configFile, setConfigFile, validate } from './src/config/file';
 import proxy from './src/proxy';
-import service from './src/service';
+import * as service from './src/service';
 
 const argv = yargs(hideBin(process.argv))
   .usage('Usage: $0 [options]')
