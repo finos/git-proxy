@@ -25,6 +25,7 @@ export default function UserList(props) {
   const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
@@ -39,11 +40,11 @@ export default function UserList(props) {
       if (!k) continue;
       query[k] = props[k];
     }
-    getUsers(setIsLoading, setData, setAuth, setIsError, query);
+    getUsers(setIsLoading, setData, setAuth, setIsError, setErrorMessage, query);
   }, [props]);
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Something went wrong...</div>;
+  if (isError) return <div>{errorMessage}</div>;
 
   const filteredUsers = data.filter(
     (user) =>
