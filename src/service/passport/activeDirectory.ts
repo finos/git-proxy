@@ -10,7 +10,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
   const authMethods = getAuthMethods();
   const config = authMethods.find((method) => method.type.toLowerCase() === type);
 
-  if (!config) {
+  if (!config || !config.adConfig) {
     throw new Error('AD authentication method not enabled');
   }
 
@@ -20,6 +20,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
     throw new Error('Invalid Active Directory configuration');
   }
 
+  // Handle legacy config
   const userGroup = adConfig.userGroup || config.userGroup;
   const adminGroup = adConfig.adminGroup || config.adminGroup;
   const domain = adConfig.domain || config.domain;
@@ -45,15 +46,35 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
           profile.id = profile.username;
           req.user = profile;
 
-          const isUser = await ldaphelper.isUserInAdGroup(profile.username, domain, userGroup);
-
-          if (!isUser) {
-            const message = `User is not a member of ${userGroup}`;
+          console.log(
+            `passport.activeDirectory: resolved login ${
+              profile._json.userPrincipalName
+            }, profile=${JSON.stringify(profile)}`,
+          );
+          // First check to see if the user is in the AD user group
+          try {
+            const isUser = await ldaphelper.isUserInAdGroup(req, profile, ad, domain, userGroup);
+            if (!isUser) {
+              const message = `User it not a member of ${userGroup}`;
+              return done(message, null);
+            }
+          } catch (err: any) {
+            const message = `An error occurred while checking if the user is a member of the user group: ${JSON.stringify(err)}`;
             return done(message, null);
           }
+        
+          // Now check if the user is an admin
+          let isAdmin = false;
+          try {
+            isAdmin = await ldaphelper.isUserInAdGroup(req, profile, ad, domain, adminGroup);
 
-          const isAdmin = await ldaphelper.isUserInAdGroup(profile.username, domain, adminGroup);
+          } catch (err: any) {
+            const message = `An error occurred while checking if the user is a member of the admin group: ${JSON.stringify(err)}`;
+            console.error(message, err); // don't return an error for this case as you may still be a user
+          }
+
           profile.admin = isAdmin;
+          console.log(`passport.activeDirectory: ${profile.username} admin=${isAdmin}`);
 
           const user = {
             username: profile.username,
