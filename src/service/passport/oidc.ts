@@ -1,6 +1,7 @@
 import * as db from '../../db';
 import { PassportStatic } from 'passport';
 import { getAuthMethods } from '../../config/index.ts';
+import { UserInfoResponse } from 'openid-client';
 
 export const type = 'openidconnect';
 
@@ -33,7 +34,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
   try {
     const strategy = new Strategy(
       { callbackURL, config, scope },
-      async (tokenSet: any, done: Function) => {
+      async (tokenSet: any, done: (err: any, user?: any) => void) => {
         const idTokenClaims = tokenSet.claims();
         const expectedSub = idTokenClaims.sub;
         const userInfo = await fetchUserInfo(config, tokenSet.access_token, expectedSub);
@@ -73,8 +74,11 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
 
 /**
  * Handles user authentication with OIDC.
+ * @param {UserInfoResponse} userInfo - The user info response from the OIDC provider
+ * @param {Function} done - The callback function to handle the user authentication
+ * @return {Promise<void>} - A promise that resolves when the user authentication is complete
  */
-const handleUserAuthentication = async (userInfo: any, done: Function): Promise<void> => {
+const handleUserAuthentication = async (userInfo: UserInfoResponse, done: (err: any, user?: any) => void): Promise<void> => {
   console.log('handleUserAuthentication called');
   try {
     const user = await db.findUserByOIDC(userInfo.sub);
@@ -109,6 +113,8 @@ const handleUserAuthentication = async (userInfo: any, done: Function): Promise<
 /**
  * Extracts email from OIDC profile.
  * Different providers use different fields to store the email.
+ * @param {any} profile - The user profile from the OIDC provider
+ * @return {string | null} - The email address from the profile
  */
 const safelyExtractEmail = (profile: any): string | null => {
   return (
@@ -121,6 +127,8 @@ const safelyExtractEmail = (profile: any): string | null => {
  * This helps differentiate users within the specific OIDC provider.
  * Note: This is incompatible with multiple providers. Ideally, users are identified by
  * OIDC ID (requires refactoring the database).
+ * @param {string} email - The email address to generate a username from
+ * @return {string} - The username generated from the email address
  */
 const getUsername = (email: string): string => {
   return email ? email.split('@')[0] : '';

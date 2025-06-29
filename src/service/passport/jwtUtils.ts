@@ -26,8 +26,8 @@ export async function getJwks(authorityUrl: string): Promise<JwkKey[]> {
  * Validate a JWT token using the OIDC configuration.
  * @param {string} token the JWT token
  * @param {string} authorityUrl the OIDC authority URL
- * @param {string} clientID the OIDC client ID 
  * @param {string} expectedAudience the expected audience for the token
+ * @param {string} clientID the OIDC client ID 
  * @param {Function} getJwksInject the getJwks function to use (for dependency injection). Defaults to the built-in getJwks function.
  * @return {Promise<JwtValidationResult>} the verified payload or an error
  */
@@ -64,7 +64,7 @@ export async function validateJwt(
       throw new Error('JWT client ID does not match');
     }
 
-    return { verifiedPayload, error: null };
+    return { verifiedPayload };
   } catch (error: any) {
     const errorMessage = `JWT validation failed: ${error.message}\n`;
     console.error(errorMessage);

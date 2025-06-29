@@ -8,8 +8,6 @@ import lusca from 'lusca';
 
 import * as config from '../config';
 import * as db from '../db';
-import * as configLoader from '../config/ConfigLoader';
-import proxy from '../proxy';
 import { configure as configurePassport } from './passport';
 import routes from './routes';
 import { serverConfig } from '../config/env';
