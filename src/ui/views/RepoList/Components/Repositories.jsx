@@ -24,6 +24,7 @@ export default function Repositories(props) {
   const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const navigate = useNavigate();
@@ -44,6 +45,7 @@ export default function Repositories(props) {
       },
       setAuth,
       setIsError,
+      setErrorMessage,
       query,
     );
   }, [props]);
@@ -99,7 +101,7 @@ export default function Repositories(props) {
   const paginatedData = filteredData.slice(startIdx, startIdx + itemsPerPage);
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Something went wrong ...</div>;
+  if (isError) return <div>{errorMessage}</div>;
 
   const addrepoButton = user.admin ? (
     <GridItem>
