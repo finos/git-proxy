@@ -27,4 +27,15 @@ export const {
   canUserApproveRejectPushRepo,
 } = repo;
 
-export const { findUser, findUserByOIDC, getUsers, createUser, deleteUser, updateUser } = users;
+export const {
+  findUser,
+  findUserByOIDC,
+  getUsers,
+  createUser,
+  deleteUser,
+  updateUser,
+  addPublicKey,
+  removePublicKey,
+  getPublicKeys,
+  findUserBySSHKey,
+} = users;
