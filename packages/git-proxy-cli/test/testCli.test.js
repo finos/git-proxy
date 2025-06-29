@@ -23,12 +23,14 @@ const TEST_REPO_CONFIG = {
 };
 const TEST_REPO = 'finos/git-proxy-test.git';
 
+const cliPath = `node ${path.resolve(__dirname, '../dist/index.js')}`;
+
 describe('test git-proxy-cli', function () {
   // *** help ***
 
   describe(`test git-proxy-cli :: help`, function () {
     it(`print help if no command or option is given`, async function () {
-      const cli = `npx -- @finos/git-proxy-cli`;
+      const cli = `${cliPath}`;
       const expectedExitCode = 1;
       const expectedMessages = null;
       const expectedErrorMessages = [
@@ -40,7 +42,7 @@ describe('test git-proxy-cli', function () {
     });
 
     it(`print help if invalid command or option is given`, async function () {
-      const cli = `npx -- @finos/git-proxy-cli invalid --invalid`;
+      const cli = `${cliPath} invalid --invalid`;
       const expectedExitCode = 1;
       const expectedMessages = null;
       const expectedErrorMessages = [
@@ -52,7 +54,7 @@ describe('test git-proxy-cli', function () {
     });
 
     it(`print help if "--help" option is given`, async function () {
-      const cli = `npx -- @finos/git-proxy-cli invalid --help`;
+      const cli = `${cliPath} invalid --help`;
       const expectedExitCode = 0;
       const expectedMessages = ['Commands:', 'Options:'];
       const expectedErrorMessages = null;
@@ -64,7 +66,7 @@ describe('test git-proxy-cli', function () {
 
   describe(`test git-proxy-cli :: version`, function () {
     it(`"--version" option prints version details `, async function () {
-      const cli = `npx -- @finos/git-proxy-cli --version`;
+      const cli = `${cliPath} --version`;
       const expectedExitCode = 0;
       const expectedMessages = ['0.1.0'];
       const expectedErrorMessages = null;
@@ -76,7 +78,7 @@ describe('test git-proxy-cli', function () {
 
   describe('test git-proxy-cli :: configuration', function () {
     it(`"config" command prints configuration details`, async function () {
-      const cli = `npx -- @finos/git-proxy-cli config`;
+      const cli = `${cliPath} config`;
       const expectedExitCode = 0;
       const expectedMessages = ['GitProxy URL:'];
       const expectedErrorMessages = null;
