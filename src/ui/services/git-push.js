@@ -30,6 +30,7 @@ const getPushes = async (
   setData,
   setAuth,
   setIsError,
+  setErrorMessage,
   query = {
     blocked: true,
     canceled: false,
@@ -45,15 +46,16 @@ const getPushes = async (
     .then((response) => {
       const data = response.data;
       setData(data);
-      setIsLoading(false);
     })
     .catch((error) => {
-      setIsLoading(false);
+      setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
+        setErrorMessage('Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.');
       } else {
-        setIsError(true);
+        setErrorMessage(`Error fetching pushes: ${error.response.data.message}`);
       }
+    }).finally(() => {
       setIsLoading(false);
     });
 };
