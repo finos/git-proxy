@@ -171,7 +171,7 @@ describe('test git-proxy-cli', function () {
     it('logout should succeed when server is down (but logged in before)', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${cliPath} login --username admin --password admin`);
       } finally {
         await helper.closeServer(service.httpServer);
       }

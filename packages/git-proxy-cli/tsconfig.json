@@ -17,7 +17,7 @@
     "outDir": "./dist",
     "rootDir": "."
   },
-  "include": ["index.ts", "types.ts", "test/**/*"],
+  "include": ["index.ts", "types.ts"],
   "exclude": [
     "src/config/**/*",
     "src/db/**/*",
