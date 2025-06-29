@@ -2,7 +2,9 @@
   "name": "@finos/git-proxy-cli",
   "version": "0.1.0",
   "description": "Command line interface tool for FINOS GitProxy.",
-  "bin": "./index.js",
+  "bin": {
+    "git-proxy-cli": "./dist/index.js"
+  },
   "dependencies": {
     "axios": "^1.9.0",
     "yargs": "^17.7.2",
@@ -12,8 +14,9 @@
     "chai": "^4.5.0"
   },
   "scripts": {
+    "build": "tsc",
     "lint": "eslint --fix . --ext .js,.jsx",
-    "test": "NODE_ENV=test ts-mocha --exit --timeout 10000",
+    "test": "npm run build && NODE_ENV=test ts-mocha --exit --timeout 10000",
     "test-coverage": "nyc npm run test",
     "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text --reporter=html npm run test"
   },
