@@ -9,21 +9,6 @@ const config = {
   withCredentials: true,
 };
 
-const getUser = async (setIsLoading, setData, setAuth, setIsError) => {
-  const url = new URL(`${location.origin}/api/auth/success`);
-  await axios(url.toString(), config)
-    .then((response) => {
-      const data = response.data;
-      setData(data);
-      setIsLoading(false);
-    })
-    .catch((error) => {
-      if (error.response && error.response.status === 401) setAuth(false);
-      else setIsError(true);
-      setIsLoading(false);
-    });
-};
-
 const getPush = async (id, setIsLoading, setData, setAuth, setIsError) => {
   const url = `${baseUrl}/push/${id}`;
   await axios(url, config)
@@ -45,6 +30,7 @@ const getPushes = async (
   setData,
   setAuth,
   setIsError,
+  setErrorMessage,
   query = {
     blocked: true,
     canceled: false,
@@ -60,15 +46,16 @@ const getPushes = async (
     .then((response) => {
       const data = response.data;
       setData(data);
-      setIsLoading(false);
     })
     .catch((error) => {
-      setIsLoading(false);
+      setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
+        setErrorMessage('Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.');
       } else {
-        setIsError(true);
+        setErrorMessage(`Error fetching pushes: ${error.response.data.message}`);
       }
+    }).finally(() => {
       setIsLoading(false);
     });
 };
@@ -126,4 +113,4 @@ const cancelPush = async (id, setAuth, setIsError) => {
     });
 };
 
-export { getPush, getPushes, authorisePush, rejectPush, cancelPush, getUser };
+export { getPush, getPushes, authorisePush, rejectPush, cancelPush };

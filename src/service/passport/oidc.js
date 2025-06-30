@@ -17,10 +17,16 @@ const configure = async (passport) => {
   }
 
   const server = new URL(issuer);
+  let config;
 
   try {
-    const config = await discovery(server, clientID, clientSecret);
+    config = await discovery(server, clientID, clientSecret);
+  } catch (error) {
+    console.error('Error during OIDC discovery:', error);
+    throw new Error('OIDC setup error (discovery): ' + error.message);
+  }
 
+  try {
     const strategy = new Strategy({ callbackURL, config, scope }, async (tokenSet, done) => {
       // Validate token sub for added security
       const idTokenClaims = tokenSet.claims();
@@ -56,8 +62,8 @@ const configure = async (passport) => {
 
     return passport;
   } catch (error) {
-    console.error('OIDC configuration failed:', error);
-    throw error;
+    console.error('Error during OIDC passport setup:', error);
+    throw new Error('OIDC setup error (strategy): ' + error.message);
   }
 };
 

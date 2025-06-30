@@ -38,6 +38,7 @@ const UserList: React.FC<UserListProps> = (props) => {
   const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 5;
@@ -53,11 +54,11 @@ const UserList: React.FC<UserListProps> = (props) => {
       if (!k) continue;
       query[k] = props[k];
     }
-    getUsers(setIsLoading, setData, setAuth, setIsError, query);
+    getUsers(setIsLoading, setData, setAuth, setIsError, setErrorMessage, query);
   }, [props]);
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Something went wrong...</div>;
+  if (isError) return <div>{errorMessage}</div>;
 
   const filteredUsers = data.filter(
     (user) =>

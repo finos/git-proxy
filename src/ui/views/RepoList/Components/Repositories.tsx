@@ -44,6 +44,7 @@ export default function Repositories(props: RepositoriesProps): React.ReactEleme
   const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage: number = 5;
   const navigate = useNavigate();
@@ -65,6 +66,7 @@ export default function Repositories(props: RepositoriesProps): React.ReactEleme
       },
       setAuth,
       setIsError,
+      setErrorMessage,
       query,
     );
   }, [props]);
@@ -123,7 +125,7 @@ export default function Repositories(props: RepositoriesProps): React.ReactEleme
   const paginatedData = filteredData.slice(startIdx, startIdx + itemsPerPage);
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Something went wrong ...</div>;
+  if (isError) return <div>{errorMessage}</div>;
 
   const addrepoButton = user.admin ? (
     <GridItem>
