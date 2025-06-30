@@ -1,0 +1,136 @@
+---
+title: Authentication
+description: How to customize authentication methods for UI login and API
+---
+
+GitProxy allows setting up various auth methods for both UI users, and the backend API. 
+
+### Where to Configure Auth Methods
+
+Auth methods can be configured in [proxy.config.json](https://github.com/finos/git-proxy/blob/main/proxy.config.json). The `authentication` array allows setting UI authentication, for user login and management purposes. The `apiAuthentication` array allows setting up an _optional_ authentication layer for extra API security.
+
+### Default Configuration
+
+By default, GitProxy has a **local** UI authentication method enabled. Although not particularly secure, this allows logging in with simple user/password combinations for signup and login.
+
+### Supported Methods
+
+#### UI Auth
+
+Currently, GitProxy supports three differemt methods for user creation and login:
+- Local
+- ActiveDirectory
+- OIDC
+
+Each of these has its own specific config entry with necessary parameters for setting up the method.
+
+#### API Auth
+
+GitProxy also supports protecting API endpoints with extra auth layers. Currently, the only available method is JWT - but this can be easily extended to use your own methods such as GitHub login and more.
+
+### Sample Configuration - UI
+
+#### Active Directory
+
+A default, empty setup for OIDC is already present in [proxy.config.json](https://github.com/finos/git-proxy/blob/main/proxy.config.json):
+
+```json
+{
+  "type": "ActiveDirectory",
+  "enabled": false,
+  "adminGroup": "",
+  "userGroup": "",
+  "domain": "",
+  "adConfig": {
+    "url": "",
+    "baseDN": "",
+    "searchBase": ""
+  }
+},
+```
+
+#### OIDC
+
+A default, empty setup for OIDC is already present in [proxy.config.json](https://github.com/finos/git-proxy/blob/main/proxy.config.json). You can fill this in with your required parameters. Here's an example using Google as a login provider:
+
+```json
+"authentication": [
+  {
+    "type": "openidconnect",
+    "enabled": true,
+    "oidcConfig": {
+      "issuer": "https://accounts.google.com",
+      "clientID": "<client-id>",
+      "clientSecret": "<client-secret>",
+      "callbackURL": "http://localhost:8080/api/auth/oidc/callback",
+      "scope": "email profile"
+    }
+  }
+],
+```
+
+Notice that the `callbackURL` (`<ui-host-url>/api/auth/oidc/callback`) must be set both in your provider and this config file for the flow to work.
+
+### Sample Configuration - API
+
+#### JWT
+
+JWT auth is ideal for using the GitProxy API along with CI tools and automation. It allows verifying credentials and admin permissions to use GitProxy securely in scripts, CI/CD pipelines and more.
+
+You will need an existing OIDC setup to release valid JWT tokens.
+
+**Warning: GitProxy does not provide/release JWT tokens for API validation.** Your service (configured through `jwtConfig`) will have to do this on its own. For example, it could be an app that allows users to log in through Google, and releases a JWT `access_token` with a one hour expiry date.
+
+If the `jwt` auth method is enabled in the config, you'll notice that UI requests are no longer working. This is expected since the endpoints require a valid JWT to proceed. Once the `Bearer: <your-JWT>` authorization header is added, you should be able to access the endpoints as usual.
+
+##### JWT Role Mapping
+
+JWT auth also allows authenticating to specific in-app roles by using JWT `claims`. In the following sample config, Google JWT tokens that contain the following `claim` (`name: "John Doe"`) will be assigned the in-app admin role:
+
+```json
+"apiAuthentication": [
+  {
+    "type": "jwt",
+    "enabled": true,
+    "jwtConfig": {
+      "clientID": "<client-id>",
+      "authorityURL": "https://accounts.google.com",
+      "expectedAudience": "<expected-audience>",
+      "roleMapping": {
+        "admin": {
+          "name": "John Doe"
+        }
+      }
+    }
+  }
+],
+```
+
+In other words, your JWT token provider can define an arbitrary `claim` that can be mapped to any app role you want, such as `admin`, or a custom role such as `ci-only`. This allows for granular access control for automation solutions using GitProxy.
+
+Note that if the `expectedAudience` is missing, it will be set to the client ID.
+
+### Adding your own methods
+
+You can add new UI auth methods by extending the [passport.js configuration file](https://github.com/finos/git-proxy/blob/main/src/service/passport/local.js) with your desired method. You'll have to define a module and then add it to the `authStrategies` map: 
+
+```js
+const local = require('./local');
+const activeDirectory = require('./activeDirectory');
+const oidc = require('./oidc');
+
+const authStrategies = {
+  local: local,
+  activedirectory: activeDirectory,
+  openidconnect: oidc,
+};
+```
+
+Check out the files in [src/service/passport](https://github.com/finos/git-proxy/blob/main/src/service/passport) for examples on how to define the specific `configure()` functions for each method:
+- [Local](https://github.com/finos/git-proxy/blob/main/src/service/passport/local.js)
+- [ActiveDirectory](https://github.com/finos/git-proxy/blob/main/src/service/passport/activeDirectory.js)
+- [OIDC](https://github.com/finos/git-proxy/blob/main/src/service/passport/oidc.js)
+
+### Questions?
+
+If you have any questions, feel free to [open a discussion](https://github.com/finos/git-proxy/discussions).
