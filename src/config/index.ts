@@ -106,16 +106,16 @@ export const getDatabase = () => {
     }
   }
 
-  throw Error('No database cofigured!');
+  throw Error('No database configured!');
 };
 
 /**
  * Get the list of enabled authentication methods
  *
  * At least one authentication method must be enabled.
- * @return {Array} List of enabled authentication methods
+ * @return {Authentication[]} List of enabled authentication methods
  */
-export const getAuthMethods = () => {
+export const getAuthMethods = (): Authentication[] => {
   if (_userSettings !== null && _userSettings.authentication) {
     _authentication = _userSettings.authentication;
   }
@@ -133,14 +133,18 @@ export const getAuthMethods = () => {
  * Get the list of enabled authentication methods for API endpoints
  *
  * If no API authentication methods are enabled, all endpoints are public.
- * @return {Array} List of enabled authentication methods
+ * @return {Authentication[]} List of enabled authentication methods
  */
-export const getAPIAuthMethods = () => {
+export const getAPIAuthMethods = (): Authentication[] => {
   if (_userSettings !== null && _userSettings.apiAuthentication) {
     _apiAuthentication = _userSettings.apiAuthentication;
   }
 
   const enabledAuthMethods = _apiAuthentication.filter((auth) => auth.enabled);
+
+  if (enabledAuthMethods.length === 0) {
+    console.log("Warning: No authentication method enabled for API endpoints.");
+  }
 
   return enabledAuthMethods;
 };

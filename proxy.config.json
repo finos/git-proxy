@@ -51,7 +51,9 @@
       "adConfig": {
         "url": "",
         "baseDN": "",
-        "searchBase": ""
+        "searchBase": "",
+        "username": "",
+        "password": ""
       }
     },
     {
@@ -151,8 +153,14 @@
       "type": "jwt",
       "enabled": false,
       "jwtConfig": {
+        "authorityURL": "",
         "clientID": "",
-        "authorityURL": ""
+        "expectedAudience": "",
+        "roleMapping": {
+          "admin": {
+            "": ""
+          }
+        }
       }
     }
   ],
