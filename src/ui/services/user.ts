@@ -57,6 +57,7 @@ const getUsers = async (
   setData: SetStateCallback<UserData[]>,
   setAuth: SetStateCallback<boolean>,
   setIsError: SetStateCallback<boolean>,
+  setErrorMessage: SetStateCallback<string>,
   query: Record<string, string> = {},
 ): Promise<void> => {
   const url = new URL(`${baseUrl}/api/v1/user`);
@@ -70,15 +71,22 @@ const getUsers = async (
     });
     const data = response.data;
     setData(data);
-    setIsLoading(false);
   } catch (error) {
-    setIsLoading(false);
-    const axiosError = error as AxiosError;
-    if (axiosError.response && axiosError.response.status === 401) {
-      setAuth(false);
+    if (axios.isAxiosError(error)) {
+      if (error.response?.status === 401) {
+        setAuth(false);
+        setErrorMessage(
+          'Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.',
+        );
+      } else {
+        const msg = error.response?.data?.message ?? error.message;
+        setErrorMessage(`Error fetching users: ${msg}`);
+      }
     } else {
-      setIsError(true);
+      setErrorMessage(`Error fetching users: ${(error as Error).message ?? 'Unknown error'}`);
     }
+  } finally {
+    setIsLoading(false);
   }
 };
 
