@@ -2,8 +2,8 @@ name: Code Cleanliness
 
 on: [pull_request]
 
-env: # environment variables (available in any part of the action)
-  NODE_VERSION: 18
+env:
+  NODE_VERSION: 20
 
 permissions:
   contents: read
