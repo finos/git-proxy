@@ -317,7 +317,8 @@ export class ConfigLoader extends EventEmitter {
         cwd: process.cwd(),
         env: {
           // dont wait for credentials; the command should be sufficiently authed
-          GIT_TERMINAL_PROMPT: 0,
+          // https://git-scm.com/docs/git#Documentation/git.txt-codeGITTERMINALPROMPTcode
+          GIT_TERMINAL_PROMPT: 'false',
           ...process.env,
           ...(source.auth?.type === 'ssh'
             ? {
