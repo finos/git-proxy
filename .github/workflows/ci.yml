@@ -45,6 +45,12 @@ jobs:
     - name: Install dependencies
       run: npm i
 
+    # for now only check the types of the server
+    # tsconfig isn't quite set up right to respect what vite accepts
+    # for the frontend code
+    - name: Check Types (Server)
+      run: npm run check-types:server
+
     - name: Test
       id: test
       run: |
