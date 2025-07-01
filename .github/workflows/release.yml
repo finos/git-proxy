@@ -52,7 +52,7 @@
 #       - uses: actions/checkout@8459bc0 # v4
 #       - uses: actions/setup-node@c2ac33f # v4, Setup .npmrc file to publish to npm
 #         with:
-#           node-version: '18.x'
+#           node-version: '20.x'
 #           registry-url: 'https://registry.npmjs.org'
 #       - run: npm ci
 #       - run: npm publish --access=public
