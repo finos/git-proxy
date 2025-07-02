@@ -48,6 +48,7 @@ class Action {
   attestation?: string;
   lastStep?: Step;
   proxyGitPath?: string;
+  protocol: 'https' | 'ssh' = 'https';
 
   /**
    * Create an action.
