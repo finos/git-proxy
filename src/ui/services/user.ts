@@ -4,8 +4,7 @@ import { UserData } from '../../types/models';
 
 type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
 
-const baseUrl: string = process.env.VITE_API_URI || location.origin;
-
+const baseUrl = process.env.VITE_API_URI || location.origin;
 const config = {
   withCredentials: true,
 };
