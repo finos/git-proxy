@@ -1,6 +1,9 @@
 const express = require('express');
 const router = new express.Router();
 const passport = require('../passport').getPassport();
+const { getAuthMethods } = require('../../config');
+const passportLocal = require('../passport/local');
+const passportAD = require('../passport/activeDirectory');
 const authStrategies = require('../passport').authStrategies;
 const db = require('../../db');
 const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
@@ -23,25 +26,59 @@ router.get('/', (req, res) => {
   });
 });
 
-router.post('/login', passport.authenticate(authStrategies['local'].type), async (req, res) => {
-  try {
-    const currentUser = { ...req.user };
-    delete currentUser.password;
-    console.log(
-      `serivce.routes.auth.login: user logged in, username=${
-        currentUser.username
-      } profile=${JSON.stringify(currentUser)}`,
-    );
-    res.send({
-      message: 'success',
-      user: currentUser,
-    });
-  } catch (e) {
-    console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
-    res.status(500).send('Failed to login').end();
-    return;
+// login strategies that will work with /login e.g. take username and password
+const appropriateLoginStrategies = [passportLocal.type, passportAD.type];
+// getLoginStrategy fetches the enabled auth methods and identifies if there's an appropriate
+// auth method for username and password login. If there isn't it returns null, if there is it
+// returns the first.
+const getLoginStrategy = () => {
+  // returns only enabled auth methods
+  // returns at least one enabled auth method
+  const enabledAppropriateLoginStrategies = getAuthMethods().filter((am) =>
+    appropriateLoginStrategies.includes(am.type.toLowerCase()),
+  );
+  // for where no login strategies which work for /login are enabled
+  // just return null
+  if (enabledAppropriateLoginStrategies.length === 0) {
+    return null;
   }
-});
+  // return the first enabled auth method
+  return enabledAppropriateLoginStrategies[0].type.toLowerCase();
+};
+
+// TODO: provide separate auth endpoints for each auth strategy or chain compatibile auth strategies
+// TODO: if providing separate auth methods, inform the frontend so it has relevant UI elements and appropriate client-side behavior
+router.post(
+  '/login',
+  (req, res, next) => {
+    const authType = getLoginStrategy();
+    if (authType === null) {
+      res.status(403).send('Username and Password based Login is not enabled at this time').end();
+      return;
+    }
+    console.log('going to auth with', authType);
+    return passport.authenticate(authType)(req, res, next);
+  },
+  async (req, res) => {
+    try {
+      const currentUser = { ...req.user };
+      delete currentUser.password;
+      console.log(
+        `serivce.routes.auth.login: user logged in, username=${
+          currentUser.username
+        } profile=${JSON.stringify(currentUser)}`,
+      );
+      res.send({
+        message: 'success',
+        user: currentUser,
+      });
+    } catch (e) {
+      console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
+      res.status(500).send('Failed to login').end();
+      return;
+    }
+  },
+);
 
 router.get('/oidc', passport.authenticate(authStrategies['openidconnect'].type));
 
