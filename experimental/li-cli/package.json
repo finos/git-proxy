@@ -14,14 +14,14 @@
     "update-local-licenses": "wget https://spdx.org/licenses/licenses.json -O src/lib/licenses.json"
   },
   "dependencies": {
-    "@inquirer/prompts": "^7.5.3",
+    "@inquirer/prompts": "^7.6.0",
     "yaml": "^2.8.0",
     "yargs": "^17.7.2",
     "zod": "^3.25.67"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
-    "@types/node": "^22.15.34",
+    "@types/node": "^22.16.0",
     "@types/yargs": "^17.0.33",
     "jest": "^29.7.0",
     "rimraf": "^6.0.1",
