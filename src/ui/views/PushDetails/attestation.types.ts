@@ -8,7 +8,7 @@ interface Reviewer {
   gitAccount: string;
 }
 
-interface AttestationData {
+export interface AttestationData {
   reviewer: Reviewer;
   timestamp: string | Date;
   questions: Question[];

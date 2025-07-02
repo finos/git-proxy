@@ -76,7 +76,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   };
 
   useEffect(() => {
-    getUsers(setIsLoading, setData, setAuth, setIsError, {});
+    getUsers(setIsLoading, setData, setAuth, setIsError, setError, {});
   }, []);
 
   if (isError) return <div>Something went wrong ...</div>;

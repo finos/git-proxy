@@ -4,9 +4,7 @@ import { UserData } from '../../types/models';
 
 type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
 
-const baseUrl = import.meta.env.VITE_API_URI
-  ? `${import.meta.env.VITE_API_URI}`
-  : `${location.origin}`;
+const baseUrl: string = process.env.VITE_API_URI || location.origin;
 
 const config = {
   withCredentials: true,
@@ -29,26 +27,16 @@ const getUser = async (
     const response: AxiosResponse<UserData> = await axios(url, config);
     const data = response.data;
 
-    if (setData) {
-      setData(data);
-    }
-    if (setIsLoading) {
-      setIsLoading(false);
-    }
+    setData?.(data);
+    setIsLoading?.(false);
   } catch (error) {
     const axiosError = error as AxiosError;
-    if (axiosError.response && axiosError.response.status === 401) {
-      if (setAuth) {
-        setAuth(false);
-      }
+    if (axiosError.response?.status === 401) {
+      setAuth?.(false);
     } else {
-      if (setIsError) {
-        setIsError(true);
-      }
+      setIsError?.(true);
     }
-    if (setIsLoading) {
-      setIsLoading(false);
-    }
+    setIsLoading?.(false);
   }
 };
 
@@ -69,8 +57,7 @@ const getUsers = async (
     const response: AxiosResponse<UserData[]> = await axios(url.toString(), {
       withCredentials: true,
     });
-    const data = response.data;
-    setData(data);
+    setData(response.data);
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
@@ -79,7 +66,7 @@ const getUsers = async (
           'Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.',
         );
       } else {
-        const msg = error.response?.data?.message ?? error.message;
+        const msg = (error.response?.data as any)?.message ?? error.message;
         setErrorMessage(`Error fetching users: ${msg}`);
       }
     } else {
@@ -126,7 +113,7 @@ const getUserLoggedIn = async (
   } catch (error) {
     setIsLoading(false);
     const axiosError = error as AxiosError;
-    if (axiosError.response && axiosError.response.status === 401) {
+    if (axiosError.response?.status === 401) {
       setAuth(false);
     } else {
       setIsError(true);

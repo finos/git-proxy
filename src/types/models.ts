@@ -1,3 +1,5 @@
+import { AttestationData } from '../ui/views/PushDetails/attestation.types';
+
 export interface UserData {
   id: string;
   name: string;
