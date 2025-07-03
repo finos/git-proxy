@@ -1,10 +1,10 @@
 /* eslint-disable max-len */
-import * as helper from './testCliUtils.js';
+import * as helper from './testCliUtils.ts';
 import path from 'path';
 
-import { configFile, setConfigFile } from '../../../src/config/file.ts';
+import { setConfigFile } from '../../../src/config/file';
 
-import * as service from '../../../src/service/index.ts';
+import * as service from '../../../src/service/index';
 
 setConfigFile(path.join(process.cwd(), 'test', 'testCli.proxy.config.json'));
 

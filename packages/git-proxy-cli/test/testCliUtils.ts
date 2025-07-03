@@ -1,13 +1,15 @@
-const fs = require('fs');
-const util = require('util');
-const { exec } = require('child_process');
-const execAsync = util.promisify(exec);
-const { expect } = require('chai');
+import fs from 'fs';
+import util from 'util';
+import { exec } from 'child_process';
+import { expect } from 'chai';
+import http from 'http';
 
-const actions = require('../../../src/proxy/actions/Action');
-const steps = require('../../../src/proxy/actions/Step');
-const processor = require('../../../src/proxy/processors/push-action/audit');
-const db = require('../../../src/db');
+import { Action } from '../../../src/proxy/actions/Action';
+import { Step } from '../../../src/proxy/actions/Step';
+import * as processor from '../../../src/proxy/processors/push-action/audit';
+import * as db from '../../../src/db';
+
+const execAsync = util.promisify(exec);
 
 // cookie file name
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
@@ -17,21 +19,21 @@ const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
  * @param {string} cli - The CLI command to be executed.
  * @param {number} expectedExitCode - The expected exit code after the command
  *        execution. Typically, `0` for successful execution.
- * @param {string} expectedMessages - The array of expected messages included
+ * @param {string[]} expectedMessages - The array of expected messages included
  *        in the output after the command execution.
- * @param {string} expectedErrorMessages - The array of expected messages
+ * @param {string[]} expectedErrorMessages - The array of expected messages
  *        included in the error output after the command execution.
  * @param {boolean} debug - Flag to enable detailed logging for debugging.
  * @throws {AssertionError} Throws an error if the actual exit code does not
  *         match the `expectedExitCode`.
  */
 async function runCli(
-  cli,
-  expectedExitCode = 0,
-  expectedMessages = null,
-  expectedErrorMessages = null,
-  debug = false,
-) {
+  cli: string,
+  expectedExitCode: number = 0,
+  expectedMessages: string[] | undefined = undefined,
+  expectedErrorMessages: string[] | undefined = undefined,
+  debug: boolean = false,
+): Promise<void> {
   try {
     console.log(`cli: '${cli}'`);
     const { stdout, stderr } = await execAsync(cli);
@@ -50,7 +52,7 @@ async function runCli(
         expect(stderr).to.include(expectedErrorMessage);
       });
     }
-  } catch (error) {
+  } catch (error: any) {
     const exitCode = error.code;
     if (!exitCode) {
       // an AssertionError is thrown from failing some of the expectations
@@ -85,7 +87,7 @@ async function runCli(
  * @return {Promise<void>} A promise that resolves when the service has
  * successfully started. Does not return any value upon resolution.
  */
-async function startServer(service) {
+async function startServer(service: any): Promise<void> {
   await service.start();
 }
 
@@ -104,7 +106,7 @@ async function startServer(service) {
  * @throws {Error} If the server cannot be closed properly or if an error
  * occurs during the close operation.
  */
-async function closeServer(server, waitTime = 0) {
+async function closeServer(server: http.Server, waitTime: number = 0): Promise<void> {
   return new Promise((resolve, reject) => {
     server.closeAllConnections();
     server.close((err) => {
@@ -124,7 +126,7 @@ async function closeServer(server, waitTime = 0) {
 /**
  * Create local cookies file with an expired connect cookie.
  */
-async function createCookiesFileWithExpiredCookie() {
+async function createCookiesFileWithExpiredCookie(): Promise<void> {
   await removeCookiesFile();
   const cookies = [
     // eslint-disable-next-line max-len
@@ -136,7 +138,7 @@ async function createCookiesFileWithExpiredCookie() {
 /**
  * Remove local cookies file.
  */
-async function removeCookiesFile() {
+async function removeCookiesFile(): Promise<void> {
   if (fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     fs.unlinkSync(GIT_PROXY_COOKIE_FILE);
   }
@@ -144,12 +146,12 @@ async function removeCookiesFile() {
 
 /**
  * Add a new repo to the database.
- * @param {object} newRepo The new repo attributes.
+ * @param {Object} newRepo The new repo attributes.
  * @param {boolean} debug Print debug messages to console if true.
  */
-async function addRepoToDb(newRepo, debug = false) {
+async function addRepoToDb(newRepo: any, debug: boolean = false): Promise<void> {
   const repos = await db.getRepos();
-  const found = repos.find((y) => y.project === newRepo.project && newRepo.name === y.name);
+  const found = repos.find((y: any) => y.project === newRepo.project && newRepo.name === y.name);
   if (!found) {
     await db.createRepo(newRepo);
     await db.addUserCanPush(newRepo.name, 'admin');
@@ -168,7 +170,7 @@ async function addRepoToDb(newRepo, debug = false) {
  * Removes a repo from the DB.
  * @param {string} repoName  The name of the repo to remove.
  */
-async function removeRepoFromDb(repoName) {
+async function removeRepoFromDb(repoName: string): Promise<void> {
   await db.deleteRepo(repoName);
 }
 
@@ -179,8 +181,13 @@ async function removeRepoFromDb(repoName) {
  * @param {string} user The user who pushed the git push.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
-async function addGitPushToDb(id, repo, user = null, debug = false) {
-  const action = new actions.Action(
+async function addGitPushToDb(
+  id: string,
+  repo: string,
+  user: string | undefined = undefined,
+  debug: boolean = false,
+): Promise<void> {
+  const action = new Action(
     id,
     'push', // type
     'get', // method
@@ -188,7 +195,7 @@ async function addGitPushToDb(id, repo, user = null, debug = false) {
     repo,
   );
   action.user = user;
-  const step = new steps.Step(
+  const step = new Step(
     'authBlock', // stepName
     false, // error
     null, // errorMessage
@@ -204,6 +211,7 @@ async function addGitPushToDb(id, repo, user = null, debug = false) {
     committer: 'committer',
     commitTs: 'commitTs',
     message: 'message',
+    authorEmail: 'authorEmail',
   });
   action.commitData = commitData;
   action.addStep(step);
@@ -217,7 +225,7 @@ async function addGitPushToDb(id, repo, user = null, debug = false) {
  * Removes a push from the DB
  * @param {string} id
  */
-async function removeGitPushFromDb(id) {
+async function removeGitPushFromDb(id: string): Promise<void> {
   await db.deletePush(id);
 }
 
@@ -230,7 +238,14 @@ async function removeGitPushFromDb(id) {
  * @param {boolean} admin Flag to make the user administrator.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
-async function addUserToDb(username, password, email, gitAccount, admin = false, debug = false) {
+async function addUserToDb(
+  username: string,
+  password: string,
+  email: string,
+  gitAccount: string,
+  admin: boolean = false,
+  debug: boolean = false,
+): Promise<void> {
   const result = await db.createUser(username, password, email, gitAccount, admin);
   if (debug) {
     console.log(`New user added to DB: ${util.inspect(result)}`);
@@ -241,20 +256,20 @@ async function addUserToDb(username, password, email, gitAccount, admin = false,
  * Remove a user record from the database if present.
  * @param {string} username The user name.
  */
-async function removeUserFromDb(username) {
+async function removeUserFromDb(username: string): Promise<void> {
   await db.deleteUser(username);
 }
 
-module.exports = {
-  runCli: runCli,
-  startServer: startServer,
-  closeServer: closeServer,
-  addRepoToDb: addRepoToDb,
-  removeRepoFromDb: removeRepoFromDb,
-  addGitPushToDb: addGitPushToDb,
-  removeGitPushFromDb: removeGitPushFromDb,
-  addUserToDb: addUserToDb,
-  removeUserFromDb: removeUserFromDb,
-  createCookiesFileWithExpiredCookie: createCookiesFileWithExpiredCookie,
-  removeCookiesFile: removeCookiesFile,
+export {
+  runCli,
+  startServer,
+  closeServer,
+  addRepoToDb,
+  removeRepoFromDb,
+  addGitPushToDb,
+  removeGitPushFromDb,
+  addUserToDb,
+  removeUserFromDb,
+  createCookiesFileWithExpiredCookie,
+  removeCookiesFile,
 };
