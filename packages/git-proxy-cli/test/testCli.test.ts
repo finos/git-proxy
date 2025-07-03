@@ -20,7 +20,7 @@ const TEST_REPO_CONFIG = {
 };
 const TEST_REPO = 'finos/git-proxy-test.git';
 
-const cliPath = `node ${path.resolve(__dirname, '../dist/index.js')}`;
+const cliPath = `tsx ${path.resolve(__dirname, '../index.ts')}`;
 
 describe('test git-proxy-cli', function () {
   // *** help ***
