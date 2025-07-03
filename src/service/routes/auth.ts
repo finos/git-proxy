@@ -133,7 +133,7 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
           ? req.body.id
           : req.body.username;
 
-      username = username.split('@')[0];
+      username = username?.split('@')[0] ?? '';
 
       if (!username) {
         res.status(400).send('Error: Missing username. Git account not updated').end();
