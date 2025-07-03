@@ -439,7 +439,7 @@ describe('ConfigLoader', () => {
     it('should throw error if repository is a valid URL but not a git repository', async function () {
       const source = {
         type: 'git',
-        repository: 'https://github.com/test-org/test-repo.git',
+        repository: 'https://github.com/finos/made-up-test-repo.git',
         path: 'proxy.config.json',
         branch: 'main',
         enabled: true,
