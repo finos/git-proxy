@@ -48,7 +48,7 @@ const validGitRequest = (url: string, headers: any): boolean => {
       return false;
     }
     // https://www.git-scm.com/docs/http-protocol#_uploading_data
-    return agent.startsWith('git/') && accept.startsWith('application/x-git-') ;
+    return agent.startsWith('git/') && accept.startsWith('application/x-git-');
   }
   return false;
 };

@@ -64,7 +64,7 @@ export async function validateJwt(
       throw new Error('JWT client ID does not match');
     }
 
-    return { verifiedPayload };
+    return { verifiedPayload, error: null };
   } catch (error: any) {
     const errorMessage = `JWT validation failed: ${error.message}\n`;
     console.error(errorMessage);

@@ -21,7 +21,7 @@ export interface UserSettings {
   urlShortener: string;
   contactEmail: string;
   csrfProtection: boolean;
-  domains: Record<string, unknown>;
+  domains: Record<string, string>;
   rateLimit: RateLimitConfig;
 }
 
