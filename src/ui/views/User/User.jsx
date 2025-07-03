@@ -13,6 +13,7 @@ import { LogoGithubIcon } from '@primer/octicons-react';
 import CloseRounded from '@material-ui/icons/CloseRounded';
 import { Check, Save } from '@material-ui/icons';
 import { TextField } from '@material-ui/core';
+import SSHKeysManager from '../../components/SSHKeysManager/SSHKeysManager';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -160,6 +161,10 @@ export default function Dashboard() {
                       />
                       <UpdateButton />
                     </div>
+                  </div>
+                  <hr style={{ opacity: 0.2 }} />
+                  <div style={{ marginTop: '25px' }}>
+                    <SSHKeysManager username={data.username} />
                   </div>
                 </div>
               ) : null}

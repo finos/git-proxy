@@ -183,5 +183,13 @@
         "loginRequired": true
       }
     ]
+  },
+  "ssh": {
+    "enabled": false,
+    "port": 2222,
+    "hostKey": {
+      "privateKeyPath": "./.ssh/host_key",
+      "publicKeyPath": "./.ssh/host_key.pub"
+    }
   }
 }

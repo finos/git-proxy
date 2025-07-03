@@ -91,6 +91,7 @@ customize for your environment, see the [project's documentation](https://git-pr
 - [Quickstart](https://git-proxy.finos.org/docs/category/quickstart/)
 - [Installation](https://git-proxy.finos.org/docs/installation)
 - [Configuration](https://git-proxy.finos.org/docs/category/configuration)
+- [SSH Support](docs/SSH.md) - Documentation for SSH feature and configuration
 
 ## Contributing
 

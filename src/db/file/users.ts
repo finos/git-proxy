@@ -25,11 +25,7 @@ export const findUser = (username: string) => {
       if (err) {
         reject(err);
       } else {
-        if (!doc) {
-          resolve(null);
-        } else {
-          resolve(doc);
-        }
+        resolve(doc || null);
       }
     });
   });
@@ -43,17 +39,17 @@ export const findUserByOIDC = function (oidcId: string) {
       if (err) {
         reject(err);
       } else {
-        if (!doc) {
-          resolve(null);
-        } else {
-          resolve(doc);
-        }
+        resolve(doc || null);
       }
     });
   });
 };
 
 export const createUser = function (user: User) {
+  if (!user.publicKeys) {
+    user.publicKeys = [];
+  }
+
   user.username = user.username.toLowerCase();
   user.email = user.email.toLowerCase();
   return new Promise((resolve, reject) => {
@@ -84,6 +80,10 @@ export const deleteUser = (username: string) => {
 };
 
 export const updateUser = (user: User) => {
+  if (!user.publicKeys) {
+    user.publicKeys = [];
+  }
+
   user.username = user.username.toLowerCase();
   if (user.email) {
     user.email = user.email.toLowerCase();
@@ -132,10 +132,74 @@ export const getUsers = (query: any = {}) => {
     db.find(query, (err: Error, docs: User[]) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
+      if (err) reject(err);
+      else resolve(docs);
+    });
+  });
+};
+
+export const getPublicKeys = (username: string): Promise<string[]> => {
+  return findUser(username).then((user) => {
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return user.publicKeys || [];
+  });
+};
+
+export const addPublicKey = function (username: string, publicKey: string) {
+  return new Promise<User>((resolve, reject) => {
+    findUser(username)
+      .then((user) => {
+        if (!user) {
+          reject(new Error('User not found'));
+          return;
+        }
+        if (!user.publicKeys) {
+          user.publicKeys = [];
+        }
+        if (!user.publicKeys.includes(publicKey)) {
+          user.publicKeys.push(publicKey);
+          exports.updateUser(user).then(resolve).catch(reject);
+        } else {
+          resolve(user);
+        }
+      })
+      .catch(reject);
+  });
+};
+
+export const removePublicKey = function (username: string, publicKey: string) {
+  return new Promise<User>((resolve, reject) => {
+    findUser(username)
+      .then((user) => {
+        if (!user) {
+          reject(new Error('User not found'));
+          return;
+        }
+        if (!user.publicKeys) {
+          user.publicKeys = [];
+          resolve(user);
+          return;
+        }
+        user.publicKeys = user.publicKeys.filter((key) => key !== publicKey);
+        exports.updateUser(user).then(resolve).catch(reject);
+      })
+      .catch(reject);
+  });
+};
+
+export const findUserBySSHKey = function (sshKey: string) {
+  return new Promise<User | null>((resolve, reject) => {
+    db.findOne({ publicKeys: sshKey }, (err, doc) => {
       if (err) {
         reject(err);
       } else {
-        resolve(docs);
+        if (!doc) {
+          resolve(null);
+        } else {
+          resolve(doc as User);
+        }
       }
     });
   });
