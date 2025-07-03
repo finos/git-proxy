@@ -59,7 +59,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
               return done(message, null);
             }
           } catch (err: any) {
-            const message = `An error occurred while checking if the user is a member of the user group: ${JSON.stringify(err)}`;
+            const message = `An error occurred while checking if the user is a member of the user group: ${err.message}`;
             return done(message, null);
           }
         
