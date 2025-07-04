@@ -162,7 +162,8 @@ export const deletePush = (id: string): Promise<void> => sink.deletePush(id);
 export const authorise = (id: string, attestation: any): Promise<{ message: string }> =>
   sink.authorise(id, attestation);
 export const cancel = (id: string): Promise<{ message: string }> => sink.cancel(id);
-export const reject = (id: string): Promise<{ message: string }> => sink.reject(id);
+export const reject = (id: string, attestation: any): Promise<{ message: string }> =>
+  sink.reject(id, attestation);
 export const getRepos = (query?: object): Promise<Repo[]> => sink.getRepos(query);
 export const getRepo = (name: string): Promise<Repo | null> => sink.getRepo(name);
 export const getRepoByUrl = (url: string): Promise<Repo | null> => sink.getRepoByUrl(url);
