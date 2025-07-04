@@ -44,7 +44,14 @@ const getUser = async (setIsLoading, setData, setAuth, setIsError, id = null) =>
     });
 };
 
-const getUsers = async (setIsLoading, setData, setAuth, setIsError, query = {}) => {
+const getUsers = async (
+  setIsLoading,
+  setData,
+  setAuth,
+  setIsError,
+  setErrorMessage,
+  query = {},
+) => {
   const url = new URL(`${baseUrl}/api/v1/user`);
   url.search = new URLSearchParams(query);
   setIsLoading(true);
@@ -52,15 +59,16 @@ const getUsers = async (setIsLoading, setData, setAuth, setIsError, query = {}) 
     .then((response) => {
       const data = response.data;
       setData(data);
-      setIsLoading(false);
     })
     .catch((error) => {
-      setIsLoading(false);
+      setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
+        setErrorMessage('Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.');
       } else {
-        setIsError(true);
+        setErrorMessage(`Error fetching users: ${error.response.data.message}`);
       }
+    }).finally(() => {
       setIsLoading(false);
     });
 };
@@ -77,7 +85,7 @@ const updateUser = async (data) => {
 };
 
 const getUserLoggedIn = async (setIsLoading, setIsAdmin, setIsError, setAuth) => {
-  const url = new URL(`${baseUrl}/api/auth/userLoggedIn`);
+  const url = new URL(`${baseUrl}/api/auth/me`);
 
   await axios(url.toString(), { withCredentials: true })
     .then((response) => {
