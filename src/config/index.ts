@@ -16,6 +16,13 @@ import {
 let _userSettings: UserSettings | null = null;
 if (existsSync(configFile)) {
   _userSettings = JSON.parse(readFileSync(configFile, 'utf-8'));
+
+  // print warnings about deprecated config
+  if (_userSettings && _userSettings.proxyUrl) {
+    console.log(
+      'Warning: the proxyUrl is no longer used (proxy origins are extracted from the repository URLs) and should be removed from your configuration',
+    );
+  }
 }
 let _authorisedList: AuthorisedRepo[] = defaultSettings.authorisedList;
 let _database: Database[] = defaultSettings.sink;
