@@ -13,8 +13,22 @@ if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 const db = new Datastore({ filename: './.data/db/users.db', autoload: true });
 
 // Using a unique constraint with the index
-db.ensureIndex({ fieldName: 'username', unique: true });
-db.ensureIndex({ fieldName: 'email', unique: true });
+try {
+  db.ensureIndex({ fieldName: 'username', unique: true });
+} catch (e) {
+  console.error(
+    'Failed to build a unique index of usernames. Please check your database file for duplicate entries or delete the duplicate through the UI and restart. ',
+    e,
+  );
+}
+try {
+  db.ensureIndex({ fieldName: 'email', unique: true });
+} catch (e) {
+  console.error(
+    'Failed to build a unique index of user email addresses. Please check your database file for duplicate entries or delete the duplicate through the UI and restart. ',
+    e,
+  );
+}
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
 export const findUser = (username: string): Promise<User | null> => {
