@@ -26,6 +26,10 @@ export type GitUrlBreakdown = { protocol: string; host: string; repoPath: string
  * @return {GitUrlBreakdown | null} A breakdown of the components of the URL.
  */
 export const processGitUrl = (url: string): GitUrlBreakdown | null => {
+  if (url.length > 512) {
+    console.error(`The git URL is too long: ${url}`);
+    return null;
+  }
   const components = url.match(GIT_URL_REGEX);
   if (components && components.length >= 5) {
     return {
@@ -65,6 +69,10 @@ export type UrlPathBreakdown = { repoPath: string; gitPath: string };
  * @return {GitUrlBreakdown | null} A breakdown of the components of the URL path.
  */
 export const processUrlPath = (requestPath: string): UrlPathBreakdown | null => {
+  if (requestPath.length > 512) {
+    console.error(`The requestPath is too long: ${requestPath}`);
+    return null;
+  }
   const components = requestPath.match(PROXIED_URL_PATH_REGEX);
   if (components && components.length >= 3) {
     return {
@@ -111,6 +119,10 @@ export type GitNameBreakdown = { project: string | null; repoName: string };
  * @return {GitNameBreakdown | null} A breakdown of the components of the URL.
  */
 export const processGitURLForNameAndOrg = (gitUrl: string): GitNameBreakdown | null => {
+  if (gitUrl.length > 512) {
+    console.error(`The git URL is too long: ${gitUrl}`);
+    return null;
+  }
   const components = gitUrl.match(GIT_URL_NAME_ORG_REGEX);
   if (components && components.length >= 5) {
     return {
