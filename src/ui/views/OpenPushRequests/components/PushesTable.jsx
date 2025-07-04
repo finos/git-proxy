@@ -23,19 +23,20 @@ export default function PushesTable(props) {
   const [filteredData, setFilteredData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
   const [, setAuth] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [searchTerm, setSearchTerm] = useState('');
-  const openPush = (push) => navigate(`/admin/push/${push}`, { replace: true });
+  const openPush = (push) => navigate(`/dashboard/push/${push}`, { replace: true });
 
   useEffect(() => {
     const query = {};
     for (const k in props) {
       if (k) query[k] = props[k];
     }
-    getPushes(setIsLoading, setData, setAuth, setIsError, query);
+    getPushes(setIsLoading, setData, setAuth, setIsError, setErrorMessage, query);
   }, [props]);
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export default function PushesTable(props) {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Something went wrong ...</div>;
+  if (isError) return <div>{errorMessage}</div>;
 
   return (
     <div>

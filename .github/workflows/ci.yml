@@ -19,12 +19,12 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x]
+        node-version: [20.x]
         mongodb-version: [4.4]
 
     steps:
     - name: Harden Runner
-      uses: step-security/harden-runner@0634a2670c59f64b4a01f0f96f84700a4088b9f0 # v2.12.0
+      uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
       with:
         egress-policy: audit
 
@@ -44,6 +44,12 @@ jobs:
 
     - name: Install dependencies
       run: npm i
+
+    # for now only check the types of the server
+    # tsconfig isn't quite set up right to respect what vite accepts
+    # for the frontend code
+    - name: Check Types (Server)
+      run: npm run check-types:server
 
     - name: Test
       id: test
@@ -77,7 +83,7 @@ jobs:
         path: build
 
     - name: Run cypress test
-      uses: cypress-io/github-action@be1bab96b388bbd9ce3887e397d373c8557e15af # v6.9.2
+      uses: cypress-io/github-action@6c143abc292aa835d827652c2ea025d098311070 # v6.10.1
       with: 
         start: npm start &
         wait-on: "http://localhost:3000"
