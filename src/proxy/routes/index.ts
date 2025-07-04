@@ -1,5 +1,7 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import proxy from 'express-http-proxy';
+import { PassThrough } from 'stream';
+import getRawBody from 'raw-body';
 import { executeChain } from '../chain';
 import { processUrlPath, validGitRequest, getAllProxiedHosts } from './helper';
 import { ProxyOptions } from 'express-http-proxy';
@@ -61,11 +63,9 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
 };
 
 const handleMessage = (message: string): string => {
-  const errorMessage = `\t${message}`;
-  const len = 6 + new TextEncoder().encode(errorMessage).length;
-  const prefix = len.toString(16);
-  const packetMessage = `${prefix.padStart(4, '0')}\x02${errorMessage}\n0000`;
-  return packetMessage;
+  const body = `\t${message}`;
+  const len = (6 + Buffer.byteLength(body)).toString(16).padStart(4, '0');
+  return `${len}\x02${body}\n0000`;
 };
 
 const getRequestPathResolver: (prefix: string) => ProxyOptions['proxyReqPathResolver'] = (
@@ -99,9 +99,64 @@ const proxyErrorHandler: ProxyOptions['proxyErrorHandler'] = (err, res, next) =>
   next(err);
 };
 
+const isPackPost = (req: Request) =>
+  req.method === 'POST' &&
+  // eslint-disable-next-line no-useless-escape
+  /^\/[^\/]+\/[^\/]+\.git\/(?:git-upload-pack|git-receive-pack)$/.test(req.url);
+
+const teeAndValidate = async (req: Request, res: Response, next: NextFunction) => {
+  if (!isPackPost(req)) return next();
+
+  const proxyStream = new PassThrough();
+  const pluginStream = new PassThrough();
+
+  req.pipe(proxyStream);
+  req.pipe(pluginStream);
+
+  try {
+    const buf = await getRawBody(pluginStream, { limit: '1gb' });
+    (req as any).body = buf;
+    const verdict = await executeChain(req, res);
+    console.log('action processed');
+    if (verdict.error || verdict.blocked) {
+      let msg = '';
+
+      if (verdict.error) {
+        msg = verdict.errorMessage!;
+        console.error(msg);
+      }
+      if (verdict.blocked) {
+        msg = verdict.blockedMessage!;
+      }
+
+      res
+        .set({
+          'content-type': 'application/x-git-receive-pack-result',
+          expires: 'Fri, 01 Jan 1980 00:00:00 GMT',
+          pragma: 'no-cache',
+          'cache-control': 'no-cache, max-age=0, must-revalidate',
+          vary: 'Accept-Encoding',
+          'x-frame-options': 'DENY',
+          connection: 'close',
+        })
+        .status(200)
+        .send(handleMessage(msg));
+      return;
+    }
+
+    (req as any).pipe = (dest: any, opts: any) => proxyStream.pipe(dest, opts);
+    next();
+  } catch (e) {
+    console.error(e);
+    proxyStream.destroy(e as Error);
+    res.status(500).end('Proxy error');
+  }
+};
+
 const getRouter = async () => {
   // eslint-disable-next-line new-cap
   const router = Router();
+  router.use(teeAndValidate);
 
   const originsToProxy = await getAllProxiedHosts();
   console.log(
@@ -114,6 +169,7 @@ const getRouter = async () => {
     router.use(
       '/' + origin,
       proxy('https://' + origin, {
+        parseReqBody: false,
         preserveHostHdr: false,
         filter: proxyFilter,
         proxyReqPathResolver: getRequestPathResolver('https://'), // no need to add host as it's in the URL
@@ -129,6 +185,7 @@ const getRouter = async () => {
   router.use(
     '/',
     proxy('https://github.com', {
+      parseReqBody: false,
       preserveHostHdr: false,
       filter: proxyFilter,
       proxyReqPathResolver: getRequestPathResolver('https://github.com'),
@@ -140,4 +197,4 @@ const getRouter = async () => {
   return router;
 };
 
-export { proxyFilter, getRouter, handleMessage, validGitRequest };
+export { proxyFilter, getRouter, handleMessage, isPackPost, teeAndValidate, validGitRequest };

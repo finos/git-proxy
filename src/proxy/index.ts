@@ -1,5 +1,4 @@
-import express, { Application, Router } from 'express';
-import bodyParser from 'body-parser';
+import express, { Application } from 'express';
 import http from 'http';
 import https from 'https';
 import fs from 'fs';
@@ -54,19 +53,15 @@ export const proxyPreparations = async () => {
   });
 };
 
+let httpServer: http.Server | null = null;
+let httpsServer: https.Server | null = null;
+
 const createApp = async (): Promise<Application> => {
   const app = express();
-  router = await getRouter();
-
-  // Setup the proxy middleware
-  app.use(bodyParser.raw(options));
+  const router = await getRouter();
   app.use('/', router);
   return app;
 };
-
-let httpServer: http.Server | null = null;
-let httpsServer: https.Server | null = null;
-let router: Router | null = null;
 
 const start = async (): Promise<Application> => {
   const app = await createApp();
