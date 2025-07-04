@@ -1,6 +1,6 @@
 services:
   init:
-    image: alpine:3.21@sha256:a8560b36e8b8210634f77d9f7f9efd7ffa463e380b75e2e74aff4511df3ef88c
+    image: alpine:3.22@sha256:8a1f59ffb675680d47db6337b49d22281a139e9d709335b492be023728e11715
     init: true
     volumes:
       - mongo-logs:/var/log-mongo
@@ -10,7 +10,7 @@ services:
 
   app:
     container_name: license-inventory
-    image: node:23-alpine@sha256:0a29d8a047149079bf48dab598f287815e39867d547e8f3935cfdece0a4379cc
+    image: node:23-alpine@sha256:a34e14ef1df25b58258956049ab5a71ea7f0d498e41d0b514f4b8de09af09456
     # ensure colours show
     tty: true
     command: >
@@ -35,7 +35,7 @@ services:
       - otel-collector
 
   mongo:
-    image: mongo:8.0.4@sha256:aaad67f2dca93148e5343c03210bcfc89a0107516a4756bfa018acd6579e5b18
+    image: mongo:8.0.11@sha256:5941949d3887e40be5175787aade07dc052f2cddb8ce21b740c3948eba6a3ed0
     command: --logpath=/var/log/mongo.log
     ports:
       - 27017:27017
@@ -46,7 +46,7 @@ services:
       - init
 
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.120.0@sha256:85ac41c2db88d0df9bd6145e608a3cb023f5d8443868adbfbbf66efb51087917
+    image: otel/opentelemetry-collector-contrib:0.129.1@sha256:4798e3095561ac8ae13a81965088d68b943b1991bbeede91b1564e12c95372cc
     volumes:
       - ./dev/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
     depends_on:
@@ -54,7 +54,7 @@ services:
       - tempo
 
   promtail:
-    image: grafana/promtail:3.4.2@sha256:c6e9a987ca086cbfef945b8ebd708eb09f98b5e78bfb659e4e5a8b3bd604d11b
+    image: grafana/promtail:3.5.1@sha256:65bfae480b572854180c78f7dc567a4ad2ba548b0c410e696baa1e0fa6381299
     command:
       - -config.file=/etc/promtail/config.yaml
       - -log.level=warn
@@ -66,7 +66,7 @@ services:
 
   # traces
   tempo:
-    image: grafana/tempo:2.7.1@sha256:4443be217c396b065ee34845534199c36fdba4dc619cb96550e228d73fba6e69
+    image: grafana/tempo:2.8.1@sha256:bc9245fe3da4e63dc4c6862d9c2dad9bcd8be13d0ba4f7705fa6acda4c904d0e
     command:
       - -config.file=/etc/tempo.yaml
       - -log.level=warn
@@ -79,7 +79,7 @@ services:
 
   # metrics
   prometheus:
-    image: prom/prometheus:v3.2.0@sha256:5888c188cf09e3f7eebc97369c3b2ce713e844cdbd88ccf36f5047c958aea120
+    image: prom/prometheus:v3.4.2@sha256:3b1d5be5c3eef4f027665ddaa3b1a7de8a58d96a0a6de5dd45629afd267ecaf0
     command:
       - --config.file=/etc/prometheus.yaml
       - --enable-feature=exemplar-storage
@@ -95,7 +95,7 @@ services:
 
   # logs
   loki:
-    image: grafana/loki:3.4.2@sha256:58a6c186ce78ba04d58bfe2a927eff296ba733a430df09645d56cdc158f3ba08
+    image: grafana/loki:3.5.1@sha256:a74594532eec4cc313401beedc4dd2708c43674c032084b1aeb87c14a5be1745
     command:
       - -config.file=/etc/loki/loki.yaml
       - -log.level=warn
