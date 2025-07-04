@@ -46,7 +46,6 @@
     "axios": "^1.6.0",
     "bcryptjs": "^3.0.2",
     "bit-mask": "^1.0.2",
-    "body-parser": "^2.2.0",
     "classnames": "2.5.1",
     "concurrently": "^9.0.0",
     "connect-mongo": "^5.1.0",
