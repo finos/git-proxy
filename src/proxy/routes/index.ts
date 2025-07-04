@@ -74,13 +74,20 @@ const teeAndValidate = async (req: Request, res: Response, next: NextFunction) =
     (req as any).body = buf;
     const verdict = await executeChain(req, res);
     console.log('action processed');
-
     if (verdict.error || verdict.blocked) {
-      const msg = verdict.error ? verdict.errorMessage! : verdict.blockedMessage!;
+      let msg = '';
+
+      if (verdict.error) {
+        msg = verdict.errorMessage!;
+        console.error(msg);
+      }
+      if (verdict.blocked) {
+        msg = verdict.blockedMessage!;
+      }
+
       res
         .set({
           'content-type': 'application/x-git-receive-pack-result',
-          'transfer-encoding': 'chunked',
           expires: 'Fri, 01 Jan 1980 00:00:00 GMT',
           pragma: 'no-cache',
           'cache-control': 'no-cache, max-age=0, must-revalidate',
