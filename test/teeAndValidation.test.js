@@ -36,14 +36,14 @@ describe('teeAndValidate middleware', () => {
     fakeChain.executeChain.resetHistory();
   });
 
-  it.only('skips non-pack posts', async () => {
+  it('skips non-pack posts', async () => {
     req.method = 'GET';
     await teeAndValidate(req, res, next);
     expect(next.calledOnce).to.be.true;
     expect(fakeRawBody.called).to.be.false;
   });
 
-  it.only('when the chain blocks it sends a packet and does NOT call next()', async () => {
+  it('when the chain blocks it sends a packet and does NOT call next()', async () => {
     fakeChain.executeChain.resolves({ blocked: true, blockedMessage: 'denied!' });
 
     req.write('abcd');
@@ -60,7 +60,7 @@ describe('teeAndValidate middleware', () => {
     expect(res.send.calledWith(handleMessage('denied!'))).to.be.true;
   });
 
-  it.only('when the chain allow it calls next() and overrides req.pipe', async () => {
+  it('when the chain allow it calls next() and overrides req.pipe', async () => {
     fakeChain.executeChain.resolves({ blocked: false, error: false });
 
     req.write('abcd');
@@ -76,10 +76,10 @@ describe('teeAndValidate middleware', () => {
 });
 
 describe('isPackPost()', () => {
-  it.only('returns true for git-upload-pack POST', () => {
+  it('returns true for git-upload-pack POST', () => {
     expect(isPackPost({ method: 'POST', url: '/a/b.git/git-upload-pack' })).to.be.true;
   });
-  it.only('returns false for other URLs', () => {
+  it('returns false for other URLs', () => {
     expect(isPackPost({ method: 'POST', url: '/info/refs' })).to.be.false;
   });
 });
