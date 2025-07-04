@@ -43,9 +43,10 @@ describe('proxy route filter middleware', () => {
 
     const res = await chai
       .request(app)
-      .get('/owner/repo.git/info/refs?service=git-upload-pack')
+      .post('/owner/repo.git/git-upload-pack')
       .set('user-agent', 'git/2.42.0')
       .set('accept', 'application/x-git-upload-pack-request')
+      .send(Buffer.from('0000'))
       .buffer();
 
     expect(res.status).to.equal(200);
@@ -199,6 +200,10 @@ describe('proxyFilter function', async () => {
     };
   });
 
+  afterEach(() => {
+    sinon.restore();
+  });
+
   it('should return false for push requests that should be blocked', async function () {
     // mock the executeChain function
     actionToReturn = new Action(
@@ -272,9 +277,5 @@ describe('proxyFilter function', async () => {
     executeChainStub.returns(actionToReturn);
     const result = await proxyRoutes.proxyFilter(req, res);
     expect(result).to.be.true;
-  });
-
-  afterEach(() => {
-    sinon.restore();
   });
 });
