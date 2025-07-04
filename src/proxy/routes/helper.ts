@@ -136,6 +136,9 @@ export const processGitURLForNameAndOrg = (gitUrl: string): GitNameBreakdown | n
  */
 export const validGitRequest = (gitPath: string, headers: any): boolean => {
   const { 'user-agent': agent, accept } = headers;
+  if (!agent) {
+    return false;
+  }
   if (
     ['/info/refs?service=git-upload-pack', '/info/refs?service=git-receive-pack'].includes(gitPath)
   ) {
@@ -145,6 +148,9 @@ export const validGitRequest = (gitPath: string, headers: any): boolean => {
     return agent.startsWith('git/');
   }
   if (['/git-upload-pack', '/git-receive-pack'].includes(gitPath)) {
+    if (!accept) {
+      return false;
+    }
     // https://www.git-scm.com/docs/http-protocol#_uploading_data
     return agent.startsWith('git/') && accept.startsWith('application/x-git-');
   }
