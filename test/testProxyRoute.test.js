@@ -1,21 +1,22 @@
-const { handleMessage, validGitRequest, stripGitHubFromGitPath } = require('../src/proxy/routes');
+const { handleMessage, validGitRequest } = require('../src/proxy/routes');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-const sinon = require('sinon');
-const express = require('express');
-const proxyRouter = require('../src/proxy/routes').router;
-const chain = require('../src/proxy/chain');
-
 chai.use(chaiHttp);
 chai.should();
 const expect = chai.expect;
+const sinon = require('sinon');
+const express = require('express');
+const getRouter = require('../src/proxy/routes').getRouter;
+const chain = require('../src/proxy/chain');
+const proxyquire = require('proxyquire');
+const { Action, Step } = require('../src/proxy/actions');
 
 describe('proxy route filter middleware', () => {
   let app;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     app = express();
-    app.use('/', proxyRouter);
+    app.use('/', await getRouter());
   });
 
   afterEach(() => {
@@ -164,41 +165,117 @@ describe('proxy route helpers', () => {
       expect(res).to.be.false;
     });
   });
+});
 
-  describe('stripGitHubFromGitPath', () => {
-    it('should strip owner and repo from a valid GitHub-style path with 4 parts', () => {
-      const res = stripGitHubFromGitPath('/foo/bar.git/info/refs');
-      expect(res).to.equal('/info/refs');
+describe('proxyFilter function', async () => {
+  let proxyRoutes;
+  let req;
+  let res;
+  let actionToReturn;
+  let executeChainStub;
+
+  beforeEach(async () => {
+    executeChainStub = sinon.stub();
+
+    // Re-import the proxy routes module and stub executeChain
+    proxyRoutes = proxyquire('../src/proxy/routes', {
+      '../chain': { executeChain: executeChainStub },
     });
 
-    it('should strip owner and repo from a valid GitHub-style path with 5 parts', () => {
-      const res = stripGitHubFromGitPath('/foo/bar.git/git-upload-pack');
-      expect(res).to.equal('/git-upload-pack');
-    });
+    req = {
+      url: '/github.com/finos/git-proxy.git/info/refs?service=git-receive-pack',
+      headers: {
+        host: 'dummyHost',
+        'user-agent': 'git/dummy-git-client',
+        accept: 'application/x-git-receive-pack-request',
+      },
+    };
+    res = {
+      set: () => {},
+      status: () => {
+        return {
+          send: () => {},
+        };
+      },
+    };
+  });
 
-    it('should return undefined for malformed path with too few segments', () => {
-      const res = stripGitHubFromGitPath('/foo/bar.git');
-      expect(res).to.be.undefined;
-    });
+  afterEach(() => {
+    sinon.restore();
+  });
 
-    it('should return undefined for malformed path with too many segments', () => {
-      const res = stripGitHubFromGitPath('/foo/bar.git/extra/path/stuff');
-      expect(res).to.be.undefined;
-    });
+  it('should return false for push requests that should be blocked', async function () {
+    // mock the executeChain function
+    actionToReturn = new Action(
+      1234,
+      'dummy',
+      'dummy',
+      Date.now(),
+      '/github.com/finos/git-proxy.git',
+    );
+    const step = new Step('dummy', false, null, true, 'test block', null);
+    actionToReturn.addStep(step);
+    executeChainStub.returns(actionToReturn);
+    const result = await proxyRoutes.proxyFilter(req, res);
+    expect(result).to.be.false;
+  });
 
-    it('should handle repo names that include dots correctly', () => {
-      const res = stripGitHubFromGitPath('/foo/some.repo.git/info/refs');
-      expect(res).to.equal('/info/refs');
-    });
+  it('should return false for push requests that produced errors', async function () {
+    // mock the executeChain function
+    actionToReturn = new Action(
+      1234,
+      'dummy',
+      'dummy',
+      Date.now(),
+      '/github.com/finos/git-proxy.git',
+    );
+    const step = new Step('dummy', true, 'test error', false, null, null);
+    actionToReturn.addStep(step);
+    executeChainStub.returns(actionToReturn);
+    const result = await proxyRoutes.proxyFilter(req, res);
+    expect(result).to.be.false;
+  });
 
-    it('should not break if the path is just a slash', () => {
-      const res = stripGitHubFromGitPath('/');
-      expect(res).to.be.undefined;
-    });
+  it('should return false for invalid push requests', async function () {
+    // mock the executeChain function
+    actionToReturn = new Action(
+      1234,
+      'dummy',
+      'dummy',
+      Date.now(),
+      '/github.com/finos/git-proxy.git',
+    );
+    const step = new Step('dummy', true, 'test error', false, null, null);
+    actionToReturn.addStep(step);
+    executeChainStub.returns(actionToReturn);
 
-    it('should not break if the path is empty', () => {
-      const res = stripGitHubFromGitPath('');
-      expect(res).to.be.undefined;
-    });
+    // create an invalid request
+    req = {
+      url: '/github.com/finos/git-proxy.git/invalidPath',
+      headers: {
+        host: 'dummyHost',
+        'user-agent': 'git/dummy-git-client',
+        accept: 'application/x-git-receive-pack-request',
+      },
+    };
+
+    const result = await proxyRoutes.proxyFilter(req, res);
+    expect(result).to.be.false;
+  });
+
+  it('should return true for push requests that are valid and pass the chain', async function () {
+    // mock the executeChain function
+    actionToReturn = new Action(
+      1234,
+      'dummy',
+      'dummy',
+      Date.now(),
+      '/github.com/finos/git-proxy.git',
+    );
+    const step = new Step('dummy', false, null, false, null, null);
+    actionToReturn.addStep(step);
+    executeChainStub.returns(actionToReturn);
+    const result = await proxyRoutes.proxyFilter(req, res);
+    expect(result).to.be.true;
   });
 });

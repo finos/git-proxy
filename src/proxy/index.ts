@@ -2,7 +2,7 @@ import express, { Application } from 'express';
 import http from 'http';
 import https from 'https';
 import fs from 'fs';
-import { router } from './routes';
+import { getRouter } from './routes';
 import {
   getAuthorisedList,
   getPlugins,
@@ -46,22 +46,22 @@ export const proxyPreparations = async () => {
   defaultAuthorisedRepoList.forEach(async (x) => {
     const found = allowedList.find((y) => y.project === x.project && x.name === y.name);
     if (!found) {
-      await createRepo(x);
-      await addUserCanPush(x.name, 'admin');
-      await addUserCanAuthorise(x.name, 'admin');
+      const repo = await createRepo(x);
+      await addUserCanPush(repo._id!, 'admin');
+      await addUserCanAuthorise(repo._id!, 'admin');
     }
   });
 };
 
-// just keep this async incase it needs async stuff in the future
+let httpServer: http.Server | null = null;
+let httpsServer: https.Server | null = null;
+
 const createApp = async (): Promise<Application> => {
   const app = express();
+  const router = await getRouter();
   app.use('/', router);
   return app;
 };
-
-let httpServer: http.Server | null = null;
-let httpsServer: https.Server | null = null;
 
 const start = async (): Promise<Application> => {
   const app = await createApp();
