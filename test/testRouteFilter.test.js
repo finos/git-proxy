@@ -11,6 +11,9 @@ chai.should();
 
 const expect = chai.expect;
 
+const VERY_LONG_PATH =
+  '/a/very/very/very/very/very//very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/very/long/path';
+
 describe('url helpers and filter functions used in the proxy', function () {
   it('processUrlPath should return breakdown of a proxied path, separating the path to repository from the git operation path', function () {
     expect(
@@ -57,6 +60,7 @@ describe('url helpers and filter functions used in the proxy', function () {
 
   it("processUrlPath should return null if the url couldn't be parsed", function () {
     expect(processUrlPath('/octocat/hello-world')).to.be.null;
+    expect(processUrlPath(VERY_LONG_PATH)).to.be.null;
   });
 
   it('processGitUrl should return breakdown of a git URL separating out the protocol, host and repository path', function () {
@@ -95,6 +99,7 @@ describe('url helpers and filter functions used in the proxy', function () {
 
   it('processGitUrl should return null for a url it cannot parse', function () {
     expect(processGitUrl('somegithost.com:1234/octocat/hello-world.git')).to.be.null;
+    expect(processUrlPath('somegithost.com:1234' + VERY_LONG_PATH + '.git')).to.be.null;
   });
 
   it('processGitURLForNameAndOrg should return breakdown of a git URL path separating out the protocol, origin and repository path', function () {
@@ -109,6 +114,13 @@ describe('url helpers and filter functions used in the proxy', function () {
       project: 'octocat',
       repoName: 'hello-world.git',
     });
+  });
+
+  it("processGitURLForNameAndOrg should return null for a git repository URL it can't pass", function () {
+    expect(processGitURLForNameAndOrg('someGitHost.com/repo')).to.be.null;
+    expect(processGitURLForNameAndOrg('https://someGitHost.com/repo')).to.be.null;
+    expect(processGitURLForNameAndOrg('https://somegithost.com:1234' + VERY_LONG_PATH + '.git')).to
+      .be.null;
   });
 
   it('validGitRequest should return true for safe requests on expected URLs', function () {
