@@ -74,7 +74,7 @@ describe('proxy chain', function () {
     mockPushProcessors = initMockPushProcessors(sandboxSinon);
 
     // Re-import the processors module after clearing the cache
-    processors = await import('../src/proxy/processors');
+    processors = require('../src/proxy/processors/index.ts');
 
     // Mock the processors module
     sandboxSinon.stub(processors, 'pre').value(mockPreProcessors);
