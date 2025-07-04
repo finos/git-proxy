@@ -112,7 +112,7 @@ const getCommitData = (contents: CommitContent[]) => {
       const authorEmail = author?.split(' ').reverse()[2].slice(1, -1);
       console.log({ authorEmail });
 
-      const committerEmail = committer.split(' ').reverse()[2].slice(1, -1);
+      const committerEmail = committer?.split(' ').reverse()[2].slice(1, -1);
       console.log({ committerEmail });
 
       console.log({
@@ -133,7 +133,8 @@ const getCommitData = (contents: CommitContent[]) => {
         !committer ||
         !commitTimestamp ||
         !message ||
-        !authorEmail
+        !authorEmail ||
+        !committerEmail
       ) {
         throw new Error('Invalid commit data');
       }
