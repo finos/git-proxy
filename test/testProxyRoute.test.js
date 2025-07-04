@@ -1,4 +1,4 @@
-const { handleMessage, validGitRequest, stripGitHubFromGitPath } = require('../src/proxy/routes');
+const { handleMessage, validGitRequest } = require('../src/proxy/routes');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 chai.use(chaiHttp);
@@ -6,7 +6,7 @@ chai.should();
 const expect = chai.expect;
 const sinon = require('sinon');
 const express = require('express');
-const proxyRouter = require('../src/proxy/routes').router;
+const getRouter = require('../src/proxy/routes').getRouter;
 const chain = require('../src/proxy/chain');
 const proxyquire = require('proxyquire');
 const { Action, Step } = require('../src/proxy/actions');
@@ -14,9 +14,9 @@ const { Action, Step } = require('../src/proxy/actions');
 describe('proxy route filter middleware', () => {
   let app;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     app = express();
-    app.use('/', proxyRouter);
+    app.use('/', await getRouter());
   });
 
   afterEach(() => {
@@ -164,46 +164,9 @@ describe('proxy route helpers', () => {
       expect(res).to.be.false;
     });
   });
-
-  describe('stripGitHubFromGitPath', () => {
-    it('should strip owner and repo from a valid GitHub-style path with 4 parts', () => {
-      const res = stripGitHubFromGitPath('/foo/bar.git/info/refs');
-      expect(res).to.equal('/info/refs');
-    });
-
-    it('should strip owner and repo from a valid GitHub-style path with 5 parts', () => {
-      const res = stripGitHubFromGitPath('/foo/bar.git/git-upload-pack');
-      expect(res).to.equal('/git-upload-pack');
-    });
-
-    it('should return undefined for malformed path with too few segments', () => {
-      const res = stripGitHubFromGitPath('/foo/bar.git');
-      expect(res).to.be.undefined;
-    });
-
-    it('should return undefined for malformed path with too many segments', () => {
-      const res = stripGitHubFromGitPath('/foo/bar.git/extra/path/stuff');
-      expect(res).to.be.undefined;
-    });
-
-    it('should handle repo names that include dots correctly', () => {
-      const res = stripGitHubFromGitPath('/foo/some.repo.git/info/refs');
-      expect(res).to.equal('/info/refs');
-    });
-
-    it('should not break if the path is just a slash', () => {
-      const res = stripGitHubFromGitPath('/');
-      expect(res).to.be.undefined;
-    });
-
-    it('should not break if the path is empty', () => {
-      const res = stripGitHubFromGitPath('');
-      expect(res).to.be.undefined;
-    });
-  });
 });
 
-describe('proxy route filter', async () => {
+describe('proxyFilter function', async () => {
   let proxyRoutes;
   let req;
   let res;
