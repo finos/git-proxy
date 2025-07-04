@@ -1,11 +1,12 @@
 import { Action, Step } from '../../actions';
 import fs from 'fs';
-import git from 'isomorphic-git';
-import gitHttpClient from 'isomorphic-git/http/node';
 
 const dir = './.remote';
 
 const exec = async (req: any, action: Action): Promise<Action> => {
+  const git = await import('isomorphic-git');
+  const gitHttpClient = await import('isomorphic-git/http/node/index.js');
+
   const step = new Step('pullRemote');
 
   try {
