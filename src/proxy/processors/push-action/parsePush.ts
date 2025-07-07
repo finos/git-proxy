@@ -59,13 +59,13 @@ const getCommitData = (contents: CommitContent[]) => {
     .chain(contents)
     .filter({ type: 1 })
     .map((x) => {
-      console.log({ x });
+      console.debug({ x });
 
       const formattedContent = x.content.split('\n');
-      console.log({ formattedContent });
+      console.debug({ formattedContent });
 
       const parts = formattedContent.filter((part) => part.length > 0);
-      console.log({ parts });
+      console.debug({ parts });
 
       if (!parts || parts.length < 5) {
         throw new Error('Invalid commit data');
@@ -75,51 +75,50 @@ const getCommitData = (contents: CommitContent[]) => {
         .find((t) => t.split(' ')[0] === 'tree')
         ?.replace('tree', '')
         .trim();
-      console.log({ tree });
+      console.debug({ tree });
 
       const parentValue = parts.find((t) => t.split(' ')[0] === 'parent');
-      console.log({ parentValue });
+      console.debug({ parentValue });
 
       const parent = parentValue
         ? parentValue.replace('parent', '').trim()
         : '0000000000000000000000000000000000000000';
-      console.log({ parent });
+      console.debug({ parent });
 
-      const author = parts
+      const authorStr = parts
         .find((t) => t.split(' ')[0] === 'author')
         ?.replace('author', '')
         .trim();
-      console.log({ author });
+      // handle email-like author string: "UserName <user@domain.com> 1746612538 +0100"
+      const author = authorStr?.split('<')[0].trim();
+      // slice to trim start and end from `<an-email@address.whatever>`
+      const authorEmail = authorStr?.split(' ').reverse()[2].slice(1, -1);
+      console.debug({ authorStr, author, authorEmail });
 
-      const committer = parts
+      // handle email-like committer string: "UserName <user@domain.com> 1746612538 +0100"
+      const committerStr = parts
         .find((t) => t.split(' ')[0] === 'committer')
         ?.replace('committer', '')
         .trim();
-      console.log({ committer });
+      const committer = committerStr?.split('<')[0].trim();
+      const committerArr = committerStr?.split(' ').reverse() ?? [];
+      const commitTimestamp = committerArr[1];
+      // slice to trim start and end from `<an-email@address.whatever>`
+      const committerEmail = committerArr[2]?.slice(1, -1);
+      console.debug({ committerStr, committer, committerEmail, commitTimestamp });
 
       const indexOfMessages = formattedContent.indexOf('');
-      console.log({ indexOfMessages });
-
       const message = formattedContent
         .slice(indexOfMessages + 1)
         .join(' ')
         .trim();
-      console.log({ message });
-
-      const commitTimestamp = committer?.split(' ').reverse()[1];
-      console.log({ commitTimestamp });
-
-      const authorEmail = author?.split(' ').reverse()[2].slice(1, -1);
-      console.log({ authorEmail });
-
-      const committerEmail = committer?.split(' ').reverse()[2].slice(1, -1);
-      console.log({ committerEmail });
+      console.debug({ indexOfMessages, message });
 
       console.log({
         tree,
         parent,
-        author: author?.split('<')[0].trim(),
-        committer: committer?.split('<')[0].trim(),
+        author,
+        committer,
         commitTimestamp,
         message,
         authorEmail,
@@ -142,8 +141,8 @@ const getCommitData = (contents: CommitContent[]) => {
       return {
         tree,
         parent,
-        author: author.split('<')[0].trim(),
-        committer: committer.split('<')[0].trim(),
+        author,
+        committer,
         commitTimestamp,
         message,
         authorEmail,
