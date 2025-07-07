@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
+import { serverConfig } from './env';
 import { configFile, validate } from './file';
 import { ConfigLoader, Configuration } from './ConfigLoader';
 import {
@@ -23,7 +24,7 @@ let _apiAuthentication: Authentication[] = defaultSettings.apiAuthentication;
 let _tempPassword: TempPasswordConfig = defaultSettings.tempPassword;
 let _proxyUrl = defaultSettings.proxyUrl;
 let _api: Record<string, unknown> = defaultSettings.api;
-let _cookieSecret: string = defaultSettings.cookieSecret;
+let _cookieSecret: string = serverConfig.GIT_PROXY_COOKIE_SECRET || defaultSettings.cookieSecret;
 let _sessionMaxAgeHours: number = defaultSettings.sessionMaxAgeHours;
 let _plugins: any[] = defaultSettings.plugins;
 let _commitConfig: Record<string, any> = defaultSettings.commitConfig;
@@ -101,6 +102,10 @@ export const getDatabase = () => {
     if (ix) {
       const db = _database[ix];
       if (db.enabled) {
+        // if mongodb is configured and connection string unspecified, fallback to env var
+        if (db.type === 'mongo' && !db.connectionString) {
+          db.connectionString = serverConfig.GIT_PROXY_MONGO_CONNECTION_STRING;
+        }
         return db;
       }
     }
@@ -143,7 +148,7 @@ export const getAPIAuthMethods = (): Authentication[] => {
   const enabledAuthMethods = _apiAuthentication.filter((auth) => auth.enabled);
 
   if (enabledAuthMethods.length === 0) {
-    console.log("Warning: No authentication method enabled for API endpoints.");
+    console.log('Warning: No authentication method enabled for API endpoints.');
   }
 
   return enabledAuthMethods;

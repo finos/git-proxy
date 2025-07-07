@@ -48,7 +48,7 @@
     "eslint-plugin-prettier": "^5.2.3",
     "globals": "^16.0.0",
     "husky": "^9.1.7",
-    "lint-staged": "^15.4.3",
+    "lint-staged": "^16.1.2",
     "mongodb-memory-server-core": "^10.1.4",
     "nodemon": "^3.1.9",
     "pino-pretty": "^13.0.0",
