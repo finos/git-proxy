@@ -31,6 +31,7 @@ export const getAxiosConfig = () => {
   console.log('getAxiosConfig', getCookie('csrf'), localStorage.getItem('ui_jwt_token'));
   const jwtToken = localStorage.getItem('ui_jwt_token');
   return {
+    withCredentials: true,
     headers: {
       'X-CSRF-TOKEN': getCookie('csrf'),
       Authorization: jwtToken ? `Bearer ${jwtToken}` : undefined,

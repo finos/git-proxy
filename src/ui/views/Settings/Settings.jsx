@@ -70,7 +70,7 @@ export default function SettingsView() {
               {/* Title */}
               <FormLabel component='legend' style={{ fontSize: '1.2rem' }}>JWT Token for UI Authentication</FormLabel>
               <Typography variant='body2'>
-                The JWT token used to authenticate UI requests to the server when "apiAuthentication" is enabled in the config.
+                Authenticates UI requests to the server when "apiAuthentication" is enabled in the config.
               </Typography>
               <TextField
                 id='jwt-token'

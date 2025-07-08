@@ -17,10 +17,6 @@ const jwtAuthHandler = (overrideConfig = null) => {
           return next();
       }
 
-      if (req.isAuthenticated()) {
-          return next();
-      }
-
       const token = req.header("Authorization");
       if (!token) {
           return res.status(401).send("No token provided\n");
