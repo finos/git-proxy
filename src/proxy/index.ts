@@ -68,8 +68,8 @@ export default class Proxy {
   }
 
   public async start() {
-    this.expressApp = await this.createApp();
     await this.proxyPreparations();
+    this.expressApp = await this.createApp();
     this.httpServer = http
       .createServer(options as any, this.expressApp)
       .listen(proxyHttpPort, () => {
