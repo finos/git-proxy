@@ -13,3 +13,11 @@ export const trimTrailingDotGit = (str: string): string => {
   return str;
 };
 
+export const trimPrefixRefsHeads = (str: string): string => {
+  const target = 'refs/heads/';
+  if (str.startsWith(target)) {
+    // extract string from the end of the target to the end of str
+    return str.slice(target.length);
+  }
+  return str;
+};
