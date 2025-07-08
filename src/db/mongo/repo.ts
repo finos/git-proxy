@@ -79,19 +79,19 @@ export const deleteRepo = async (name: string) => {
 export const isUserPushAllowed = async (name: string, user: string) => {
   name = name.toLowerCase();
   user = user.toLowerCase();
+  console.log(`checking if user ${user} can push to ${name}`);
   return new Promise(async (resolve) => {
     const repo = await exports.getRepo(name);
-    console.log(repo.users.canPush);
-    console.log(repo.users.canAuthorise);
-
-    if (repo.users.canPush.includes(user) || repo.users.canAuthorise.includes(user)) {
-      resolve(true);
-    } else {
+    if( !repo ) {
+      console.log(`repo ${name} not found`);
       resolve(false);
+      return;
     }
+    resolve(repo.users.canPush.includes(user) || repo.users.canAuthorise.includes(user));
   });
 };
 
+// not used in the codebase, but kept for compatibility
 export const canUserApproveRejectPushRepo = async (name: string, user: string) => {
   name = name.toLowerCase();
   user = user.toLowerCase();
