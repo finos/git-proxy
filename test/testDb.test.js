@@ -47,6 +47,21 @@ const TEST_PUSH = {
   attestation: null,
 };
 
+const TEST_REPO_DOT_GIT = {
+  project: 'finos',
+  name: 'db.git-test-repo',
+  url: 'https://github.com/finos/db.git-test-repo.git',
+};
+
+// the same as TEST_PUSH but with .git somewhere valid within the name
+// to ensure a global replace isn't done when trimming, just to the end
+const TEST_PUSH_DOT_GIT = {
+  ...TEST_PUSH,
+  repoName: 'db.git-test-repo.git',
+  url: 'https://github.com/finos/db.git-test-repo.git',
+  repo: 'finos/db.git-test-repo.git',
+};
+
 /**
  * Clean up response data from the DB by removing an extraneous properties,
  * allowing comparison with expect.
@@ -623,9 +638,47 @@ describe('Database clients', async () => {
     await db.removeUserCanAuthorise(repoName, TEST_USER.username);
   });
 
+  it('should be able to check if a user can approve/reject push including .git within the repo name', async function () {
+    let allowed = undefined;
+    const repoName = trimTrailingDotGit(TEST_PUSH_DOT_GIT.repoName);
+
+    await db.createRepo(TEST_REPO_DOT_GIT);
+    try {
+      // push does not exist yet, should return false
+      allowed = await db.canUserApproveRejectPush(TEST_PUSH_DOT_GIT.id, TEST_USER.username);
+      expect(allowed).to.be.false;
+    } catch (e) {
+      expect.fail(e);
+    }
+
+    try {
+      // create the push - user should already exist and not authorised to push
+      await db.writeAudit(TEST_PUSH_DOT_GIT);
+      allowed = await db.canUserApproveRejectPush(TEST_PUSH_DOT_GIT.id, TEST_USER.username);
+      expect(allowed).to.be.false;
+    } catch (e) {
+      expect.fail(e);
+    }
+
+    try {
+      // authorise user and recheck
+      await db.addUserCanAuthorise(repoName, TEST_USER.username);
+      allowed = await db.canUserApproveRejectPush(TEST_PUSH_DOT_GIT.id, TEST_USER.username);
+      expect(allowed).to.be.true;
+    } catch (e) {
+      expect.fail(e);
+    }
+
+    // clean up
+    await db.deletePush(TEST_PUSH_DOT_GIT.id);
+    await db.removeUserCanAuthorise(repoName, TEST_USER.username);
+  });
+
   after(async function () {
     await db.deleteRepo(TEST_REPO.name);
+    await db.deleteRepo(TEST_REPO_DOT_GIT.name);
     await db.deleteUser(TEST_USER.username);
     await db.deletePush(TEST_PUSH.id);
+    await db.deletePush(TEST_PUSH_DOT_GIT.id);
   });
 });
