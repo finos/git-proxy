@@ -23,6 +23,7 @@ import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import { PushData } from '../../../types/models';
+import { trimTrailingDotGit } from '../../../db/helper';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -105,7 +106,7 @@ const Dashboard: React.FC = () => {
     };
   }
 
-  const repoFullName = data.repo.replace('.git', '');
+  const repoFullName = trimTrailingDotGit(data.repo);
   const repoBranch = data.branch.replace('refs/heads/', '');
 
   const generateIcon = (title: string) => {
