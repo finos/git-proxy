@@ -1,18 +1,15 @@
 import axios from 'axios';
 import { getCookie } from '../utils.jsx';
+import { getAxiosConfig, processAuthError } from './auth.js';
 
 const baseUrl = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}/api/v1`
   : `${location.origin}/api/v1`;
 
-const config = {
-  withCredentials: true,
-};
-
 const canAddUser = (repoName, user, action) => {
   const url = new URL(`${baseUrl}/repo/${repoName}`);
   return axios
-    .get(url.toString(), config)
+    .get(url.toString(), getAxiosConfig())
     .then((response) => {
       const data = response.data;
       if (action === 'authorise') {
@@ -44,7 +41,7 @@ const getRepos = async (
   const url = new URL(`${baseUrl}/repo`);
   url.search = new URLSearchParams(query);
   setIsLoading(true);
-  await axios(url.toString(), config)
+  await axios(url.toString(), getAxiosConfig())
     .then((response) => {
       const data = response.data;
       setData(data);
@@ -53,9 +50,9 @@ const getRepos = async (
       setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
-        setErrorMessage('Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.');
+        setErrorMessage(processAuthError(error));
       } else {
-        setErrorMessage(`Error fetching repositories: ${error.response.data.message}`);
+        setErrorMessage(`Error fetching repos: ${error.response.data.message}`);
       }
     }).finally(() => {
       setIsLoading(false);
@@ -65,7 +62,7 @@ const getRepos = async (
 const getRepo = async (setIsLoading, setData, setAuth, setIsError, id) => {
   const url = new URL(`${baseUrl}/repo/${id}`);
   setIsLoading(true);
-  await axios(url.toString(), config)
+  await axios(url.toString(), getAxiosConfig())
     .then((response) => {
       const data = response.data;
       setData(data);
@@ -84,7 +81,7 @@ const getRepo = async (setIsLoading, setData, setAuth, setIsError, id) => {
 const addRepo = async (onClose, setError, data) => {
   const url = new URL(`${baseUrl}/repo`);
   axios
-    .post(url, data, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
+    .post(url, data, getAxiosConfig())
     .then(() => {
       onClose();
     })
@@ -100,7 +97,7 @@ const addUser = async (repoName, user, action) => {
     const url = new URL(`${baseUrl}/repo/${repoName}/user/${action}`);
     const data = { username: user };
     await axios
-      .patch(url, data, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
+      .patch(url, data, getAxiosConfig())
       .catch((error) => {
         console.log(error.response.data.message);
         throw error;
@@ -115,7 +112,7 @@ const deleteUser = async (user, repoName, action) => {
   const url = new URL(`${baseUrl}/repo/${repoName}/user/${action}/${user}`);
 
   await axios
-    .delete(url, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
+    .delete(url, getAxiosConfig())
     .catch((error) => {
       console.log(error.response.data.message);
       throw error;
@@ -126,7 +123,7 @@ const deleteRepo = async (repoName) => {
   const url = new URL(`${baseUrl}/repo/${repoName}/delete`);
 
   await axios
-    .delete(url, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
+    .delete(url, getAxiosConfig())
     .catch((error) => {
       console.log(error.response.data.message);
       throw error;
