@@ -414,7 +414,7 @@ describe('proxy express application', async () => {
 
     res2.should.have.status(200);
     expect(res2.text).to.contain('git-upload-pack');
-  }).timeout(60000);
+  }).timeout(5000);
 
   it('should be restarted by the api and stop proxying requests for a host (e.g. gitlab.com) when the last project at that host is DELETED via the API', async function () {
     // We are testing that the proxy stops proxying requests for a particular origin
@@ -449,5 +449,5 @@ describe('proxy express application', async () => {
       .buffer();
 
     res2.should.have.status(404);
-  }).timeout(60000);
+  }).timeout(5000);
 });
