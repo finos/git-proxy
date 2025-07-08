@@ -589,26 +589,35 @@ describe('Database clients', async () => {
   });
 
   it('should be able to check if a user can approve/reject push', async function () {
-    let threwError = false;
+    let allowed = undefined;
     const repoName = trimTrailingDotGit(TEST_PUSH.repoName);
+
     try {
       // push does not exist yet, should return false
-      let allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
+      allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
       expect(allowed).to.be.false;
+    } catch (e) {
+      expect.fail(e);
+    }
 
+    try {
       // create the push - user should already exist and not authorised to push
       await db.writeAudit(TEST_PUSH);
       allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
       expect(allowed).to.be.false;
+    } catch (e) {
+      expect.fail(e);
+    }
 
+    try {
       // authorise user and recheck
       await db.addUserCanAuthorise(repoName, TEST_USER.username);
       allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
       expect(allowed).to.be.true;
     } catch (e) {
-      threwError = true;
+      expect.fail(e);
     }
-    expect(threwError).to.be.false;
+
     // clean up
     await db.deletePush(TEST_PUSH.id);
     await db.removeUserCanAuthorise(repoName, TEST_USER.username);
