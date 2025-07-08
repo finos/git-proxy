@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import proxy from 'express-http-proxy';
 import { PassThrough } from 'stream';
 import getRawBody from 'raw-body';
@@ -159,15 +159,19 @@ const getRouter = async () => {
   router.use(teeAndValidate);
 
   const originsToProxy = await getAllProxiedHosts();
-  console.log(
-    `Initializing proxy router for origins: '${JSON.stringify(originsToProxy, null, 2)}'`,
-  );
-  // Middlewares are processed in the order that they are added, if one applies and then doesn't call `next` then subsequent ones are not applied.
-  // Hence, we define known origins first, then a catch all route for backwards compatibility
+  const proxyKeys: string[] = [];
+  const proxies: RequestHandler[] = [];
+
+  console.log(`Initializing proxy router for origins: '${JSON.stringify(originsToProxy)}'`);
+
+  // we need to wrap multiple proxy middlewares in a custom middleware as middlewares
+  // with path are processed in descending path order (/ then /github.com etc.) and
+  // we want the fallback proxy to go last.
   originsToProxy.forEach((origin) => {
     console.log(`\tsetting up origin: '${origin}'`);
-    router.use(
-      '/' + origin,
+
+    proxyKeys.push(`/${origin}/`);
+    proxies.push(
       proxy('https://' + origin, {
         parseReqBody: false,
         preserveHostHdr: false,
@@ -180,20 +184,33 @@ const getRouter = async () => {
     );
   });
 
-  // Catch-all route for backwards compatibility
   console.log('\tsetting up catch-all route (github.com) for backwards compatibility');
-  router.use(
-    '/',
-    proxy('https://github.com', {
-      parseReqBody: false,
-      preserveHostHdr: false,
-      filter: proxyFilter,
-      proxyReqPathResolver: getRequestPathResolver('https://github.com'),
-      proxyReqOptDecorator: proxyReqOptDecorator,
-      proxyReqBodyDecorator: proxyReqBodyDecorator,
-      proxyErrorHandler: proxyErrorHandler,
-    }),
-  );
+  const fallbackProxy: RequestHandler = proxy('https://github.com', {
+    parseReqBody: false,
+    preserveHostHdr: false,
+    filter: proxyFilter,
+    proxyReqPathResolver: getRequestPathResolver('https://github.com'),
+    proxyReqOptDecorator: proxyReqOptDecorator,
+    proxyReqBodyDecorator: proxyReqBodyDecorator,
+    proxyErrorHandler: proxyErrorHandler,
+  });
+
+  console.log('proxy keys registered: ', JSON.stringify(proxyKeys));
+
+  router.use('/', (req, res, next) => {
+    console.log(`processing request URL: '${req.url}'`);
+    console.log('proxy keys registered: ', JSON.stringify(proxyKeys));
+
+    for (let i = 0; i < proxyKeys.length; i++) {
+      if (req.url.startsWith(proxyKeys[i])) {
+        console.log(`\tusing proxy ${proxyKeys[i]}`);
+        return proxies[i](req, res, next);
+      }
+    }
+    // fallback
+    console.log(`\tusing fallback`);
+    return fallbackProxy(req, res, next);
+  });
   return router;
 };
 

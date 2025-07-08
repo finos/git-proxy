@@ -10,6 +10,24 @@ const getRouter = require('../src/proxy/routes').getRouter;
 const chain = require('../src/proxy/chain');
 const proxyquire = require('proxyquire');
 const { Action, Step } = require('../src/proxy/actions');
+const service = require('../src/service');
+const db = require('../src/db');
+
+import Proxy from '../src/proxy';
+
+const TEST_DEFAULT_REPO = {
+  url: 'https://github.com/finos/git-proxy.git',
+  name: 'git-proxy',
+  project: 'finos/gitproxy',
+  host: 'github.com',
+};
+
+const TEST_GITLAB_REPO = {
+  url: 'https://gitlab.com/gitlab-org/gitlab.git',
+  name: 'gitlab',
+  project: 'gitlab-org/gitlab',
+  host: 'gitlab.com',
+};
 
 describe('proxy route filter middleware', () => {
   let app;
@@ -278,4 +296,142 @@ describe('proxyFilter function', async () => {
     const result = await proxyRoutes.proxyFilter(req, res);
     expect(result).to.be.true;
   });
+});
+
+describe('proxy express application', async () => {
+  let apiApp;
+  let cookie;
+  let proxy;
+
+  const setCookie = function (res) {
+    res.headers['set-cookie'].forEach((x) => {
+      if (x.startsWith('connect')) {
+        const value = x.split(';')[0];
+        cookie = value;
+      }
+    });
+  };
+
+  const cleanupRepo = async (url) => {
+    const repo = await db.getRepoByUrl(url);
+    if (repo) {
+      await db.deleteRepo(repo._id);
+    }
+  };
+
+  before(async () => {
+    // pass through requests
+    sinon.stub(chain, 'executeChain').resolves({
+      blocked: false,
+      blockedMessage: '',
+      error: false,
+    });
+
+    // start the API and proxy
+    proxy = new Proxy();
+    apiApp = await service.start(proxy);
+    await proxy.start();
+
+    const res = await chai.request(apiApp).post('/api/auth/login').send({
+      username: 'admin',
+      password: 'admin',
+    });
+    expect(res).to.have.cookie('connect.sid');
+    setCookie(res);
+
+    // if our default repo is not set-up, create it
+    const repo = await db.getRepoByUrl(TEST_DEFAULT_REPO.url);
+    if (!repo) {
+      const res2 = await chai
+        .request(apiApp)
+        .post('/api/v1/repo')
+        .set('Cookie', `${cookie}`)
+        .send(TEST_DEFAULT_REPO);
+      res2.should.have.status(200);
+    }
+  });
+
+  after(async () => {
+    sinon.restore();
+    await service.stop();
+    await proxy.stop();
+    await cleanupRepo(TEST_DEFAULT_REPO.url);
+    await cleanupRepo(TEST_GITLAB_REPO.url);
+  });
+
+  it('should pass-through operations for the default GitHub repository', async function () {
+    const res = await chai
+      .request(proxy.getExpressApp())
+      .get('/github.com/finos/git-proxy.git/info/refs?service=git-upload-pack')
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-upload-pack-request')
+      .buffer();
+
+    expect(res.status).to.equal(200);
+    expect(res.text).to.contain('git-upload-pack');
+  });
+
+  it('should pass-through operations for the default GitHub repository using the backwards compatibility URL', async function () {
+    const res = await chai
+      .request(proxy.getExpressApp())
+      .get('/finos/git-proxy.git/info/refs?service=git-upload-pack')
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-upload-pack-request')
+      .buffer();
+
+    expect(res.status).to.equal(200);
+    expect(res.text).to.contain('git-upload-pack');
+  });
+
+  it('should pass-through operations for a new repository on a new origin at GitLab.com', async function () {
+    let repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    expect(repo).to.be.null;
+
+    const res = await chai
+      .request(apiApp)
+      .post('/api/v1/repo')
+      .set('Cookie', `${cookie}`)
+      .send(TEST_GITLAB_REPO);
+    res.should.have.status(200);
+
+    repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    expect(repo).to.not.be.null;
+
+    const res2 = await chai
+      .request(proxy.getExpressApp())
+      .get('/gitlab.com/gitlab-org/gitlab.git/info/refs?service=git-upload-pack')
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-upload-pack-request')
+      .buffer();
+
+    res2.should.have.status(200);
+    expect(res2.text).to.contain('git-upload-pack');
+  }).timeout(60000);
+
+  it('should NOT pass-through operations after the new repository is deleted', async function () {
+    let repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    expect(repo).to.not.be.null;
+
+    const res = await chai
+      .request(apiApp)
+      .delete('/api/v1/repo/' + repo._id + '/delete')
+      .set('Cookie', `${cookie}`)
+      .send();
+    res.should.have.status(200);
+
+    repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    expect(repo).to.be.null;
+
+    // give the proxy half a second to restart
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const res2 = await chai
+      .request(proxy.getExpressApp())
+      .get('/gitlab.com/gitlab-org/gitlab.git/info/refs?service=git-upload-pack')
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-upload-pack-request')
+      .buffer();
+
+    res2.should.have.status(404);
+  }).timeout(60000);
 });
