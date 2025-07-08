@@ -1,13 +1,10 @@
 import axios from 'axios';
 import { getCookie } from '../utils.jsx';
+import { getAxiosConfig, processAuthError } from './auth.js';
 
 const baseUrl = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}`
   : `${location.origin}`;
-
-const config = {
-  withCredentials: true,
-};
 
 const getUser = async (setIsLoading, setData, setAuth, setIsError, id = null) => {
   let url = `${baseUrl}/api/auth/profile`;
@@ -18,7 +15,7 @@ const getUser = async (setIsLoading, setData, setAuth, setIsError, id = null) =>
 
   console.log(url);
 
-  await axios(url, config)
+  await axios(url, getAxiosConfig())
     .then((response) => {
       const data = response.data;
       if (setData) {
@@ -55,7 +52,7 @@ const getUsers = async (
   const url = new URL(`${baseUrl}/api/v1/user`);
   url.search = new URLSearchParams(query);
   setIsLoading(true);
-  await axios(url.toString(), { withCredentials: true })
+  await axios(url.toString(), getAxiosConfig())
     .then((response) => {
       const data = response.data;
       setData(data);
@@ -64,7 +61,7 @@ const getUsers = async (
       setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
-        setErrorMessage('Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.');
+        setErrorMessage(processAuthError(error));
       } else {
         setErrorMessage(`Error fetching users: ${error.response.data.message}`);
       }
@@ -77,7 +74,7 @@ const updateUser = async (data) => {
   console.log(data);
   const url = new URL(`${baseUrl}/api/auth/gitAccount`);
   await axios
-    .post(url, data, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
+    .post(url, data, getAxiosConfig())
     .catch((error) => {
       console.log(error.response.data.message);
       throw error;
@@ -87,7 +84,7 @@ const updateUser = async (data) => {
 const getUserLoggedIn = async (setIsLoading, setIsAdmin, setIsError, setAuth) => {
   const url = new URL(`${baseUrl}/api/auth/me`);
 
-  await axios(url.toString(), { withCredentials: true })
+  await axios(url.toString(), getAxiosConfig())
     .then((response) => {
       const data = response.data;
       setIsLoading(false);

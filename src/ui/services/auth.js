@@ -1,3 +1,5 @@
+import { getCookie } from '../utils.jsx';
+
 const baseUrl = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}`
   : `${location.origin}`;
@@ -19,4 +21,34 @@ export const getUserInfo = async () => {
     console.error('Error fetching user info:', error);
     return null;
   }
+};
+
+/**
+ * Gets the Axios config for the UI
+ * @return {Object} The Axios config
+ */
+export const getAxiosConfig = () => {
+  console.log('getAxiosConfig', getCookie('csrf'), localStorage.getItem('ui_jwt_token'));
+  const jwtToken = localStorage.getItem('ui_jwt_token');
+  return {
+    headers: {
+      'X-CSRF-TOKEN': getCookie('csrf'),
+      Authorization: jwtToken ? `Bearer ${jwtToken}` : undefined,
+    },
+  };
+};
+
+/**
+ * Processes authentication errors and returns a user-friendly error message
+ * @param {Object} error - The error object
+ * @return {string} The error message
+ */
+export const processAuthError = (error) => {
+  let errorMessage = `Failed to authorize user: ${error.response.data.trim()}. `;
+  if (!localStorage.getItem('ui_jwt_token')) {
+    errorMessage += 'Set your JWT token in the settings page or disable JWT auth in your app configuration.'
+  } else {
+    errorMessage += 'Check your JWT token or disable JWT auth in your app configuration.'
+  }
+  return errorMessage;
 };

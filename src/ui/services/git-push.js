@@ -1,17 +1,14 @@
 import axios from 'axios';
 import { getCookie } from '../utils.jsx';
+import { getAxiosConfig, processAuthError } from './auth.js';
 
 const baseUrl = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}/api/v1`
   : `${location.origin}/api/v1`;
 
-const config = {
-  withCredentials: true,
-};
-
 const getPush = async (id, setIsLoading, setData, setAuth, setIsError) => {
   const url = `${baseUrl}/push/${id}`;
-  await axios(url, config)
+  await axios(url, getAxiosConfig())
     .then((response) => {
       const data = response.data;
       data.diff = data.steps.find((x) => x.stepName === 'diff');
@@ -42,7 +39,7 @@ const getPushes = async (
   url.search = new URLSearchParams(query);
 
   setIsLoading(true);
-  await axios(url.toString(), { withCredentials: true })
+  await axios(url.toString(), getAxiosConfig())
     .then((response) => {
       const data = response.data;
       setData(data);
@@ -51,7 +48,7 @@ const getPushes = async (
       setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
-        setErrorMessage('Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.');
+        setErrorMessage(processAuthError(error));
       } else {
         setErrorMessage(`Error fetching pushes: ${error.response.data.message}`);
       }
@@ -72,7 +69,7 @@ const authorisePush = async (id, setMessage, setUserAllowedToApprove, attestatio
           attestation,
         },
       },
-      { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } },
+      getAxiosConfig(),
     )
     .catch((error) => {
       if (error.response && error.response.status === 401) {
@@ -89,7 +86,7 @@ const rejectPush = async (id, setMessage, setUserAllowedToReject) => {
   let errorMsg = '';
   let isUserAllowedToReject = true;
   await axios
-    .post(url, {}, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
+    .post(url, {}, getAxiosConfig())
     .catch((error) => {
       if (error.response && error.response.status === 401) {
         errorMsg = 'You are not authorised to reject...';
@@ -103,7 +100,7 @@ const rejectPush = async (id, setMessage, setUserAllowedToReject) => {
 const cancelPush = async (id, setAuth, setIsError) => {
   const url = `${baseUrl}/push/${id}/cancel`;
   await axios
-    .post(url, {}, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
+    .post(url, {}, getAxiosConfig())
     .catch((error) => {
       if (error.response && error.response.status === 401) {
         setAuth(false);
