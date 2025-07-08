@@ -359,7 +359,8 @@ describe('proxy express application', async () => {
     await cleanupRepo(TEST_GITLAB_REPO.url);
   });
 
-  it('should pass-through operations for the default GitHub repository', async function () {
+  it('should proxy requests for the default GitHub repository', async function () {
+    // proxy a fetch request
     const res = await chai
       .request(proxy.getExpressApp())
       .get('/github.com/finos/git-proxy.git/info/refs?service=git-upload-pack')
@@ -371,7 +372,8 @@ describe('proxy express application', async () => {
     expect(res.text).to.contain('git-upload-pack');
   });
 
-  it('should pass-through operations for the default GitHub repository using the backwards compatibility URL', async function () {
+  it('should proxy requests for the default GitHub repository using the backwards compatibility URL', async function () {
+    // proxy a fetch request using a fallback URL
     const res = await chai
       .request(proxy.getExpressApp())
       .get('/finos/git-proxy.git/info/refs?service=git-upload-pack')
@@ -383,10 +385,14 @@ describe('proxy express application', async () => {
     expect(res.text).to.contain('git-upload-pack');
   });
 
-  it('should pass-through operations for a new repository on a new origin at GitLab.com', async function () {
+  it('should be restarted by the api and proxy requests for a new host (e.g. gitlab.com) when a project at that host is ADDED via the API', async function () {
+    // Tests that the proxy restarts properly after a project with a URL at a new host is added
+
+    // check that we do not have the Gitlab test repo set up yet
     let repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
     expect(repo).to.be.null;
 
+    // create the repo through the API, which should force the proxy to restart to handle the new domain
     const res = await chai
       .request(apiApp)
       .post('/api/v1/repo')
@@ -394,9 +400,11 @@ describe('proxy express application', async () => {
       .send(TEST_GITLAB_REPO);
     res.should.have.status(200);
 
+    // confirm that the repo was created in teh DB
     repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
     expect(repo).to.not.be.null;
 
+    // proxy a fetch request to the new repo
     const res2 = await chai
       .request(proxy.getExpressApp())
       .get('/gitlab.com/gitlab-org/gitlab.git/info/refs?service=git-upload-pack')
@@ -408,10 +416,16 @@ describe('proxy express application', async () => {
     expect(res2.text).to.contain('git-upload-pack');
   }).timeout(60000);
 
-  it('should NOT pass-through operations after the new repository is deleted', async function () {
+  it('should be restarted by the api and stop proxying requests for a host (e.g. gitlab.com) when the last project at that host is DELETED via the API', async function () {
+    // We are testing that the proxy stops proxying requests for a particular origin
+    // The chain is stubbed and will always passthrough requests, hence, we are only checking what hosts are proxied.
+
+    // the gitlab test repo should already exist
     let repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
     expect(repo).to.not.be.null;
 
+    // delete the gitlab test repo, which should force the proxy to restart and stop proxying gitlab.com
+    // We assume that there are no other gitlab.com repos present
     const res = await chai
       .request(apiApp)
       .delete('/api/v1/repo/' + repo._id + '/delete')
@@ -419,12 +433,14 @@ describe('proxy express application', async () => {
       .send();
     res.should.have.status(200);
 
+    // confirm that its gone from the DB
     repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
     expect(repo).to.be.null;
 
     // give the proxy half a second to restart
     await new Promise((resolve) => setTimeout(resolve, 500));
 
+    // try (and fail) to proxy a request to gitlab.com
     const res2 = await chai
       .request(proxy.getExpressApp())
       .get('/gitlab.com/gitlab-org/gitlab.git/info/refs?service=git-upload-pack')
