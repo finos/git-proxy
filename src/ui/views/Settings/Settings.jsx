@@ -4,6 +4,7 @@ import {
   IconButton,
   InputAdornment,
   FormLabel,
+  Snackbar,
   Typography,
 } from '@material-ui/core';
 import { Visibility, VisibilityOff, Save, Clear } from '@material-ui/icons';
@@ -35,6 +36,8 @@ export default function SettingsView() {
 
   const [jwtToken, setJwtToken] = useState('');
   const [showToken, setShowToken] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('ui_jwt_token');
@@ -43,11 +46,15 @@ export default function SettingsView() {
 
   const handleSave = () => {
     localStorage.setItem('ui_jwt_token', jwtToken);
+    setSnackbarMessage('JWT token saved');
+    setSnackbarOpen(true);
   };
 
   const handleClear = () => {
     setJwtToken('');
     localStorage.removeItem('ui_jwt_token');
+    setSnackbarMessage('JWT token cleared');
+    setSnackbarOpen(true);
   };
 
   const toggleShowToken = () => {
@@ -63,7 +70,7 @@ export default function SettingsView() {
               {/* Title */}
               <FormLabel component='legend' style={{ fontSize: '1.2rem' }}>JWT Token for UI Authentication</FormLabel>
               <Typography variant='body2'>
-                The JWT token used to authenticate UI requests to the server when the "apiAuthentication" is enabled in the config.
+                The JWT token used to authenticate UI requests to the server when "apiAuthentication" is enabled in the config.
               </Typography>
               <TextField
                 id='jwt-token'
@@ -101,6 +108,12 @@ export default function SettingsView() {
           </Card>
         </GridItem>
       </GridContainer>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+      />
     </form>
   );
 }
