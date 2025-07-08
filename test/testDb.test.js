@@ -1,6 +1,7 @@
 // This test needs to run first
 const chai = require('chai');
 const db = require('../src/db');
+const { trimTrailingDotGit } = require('../src/db/helper');
 
 const { expect } = chai;
 
@@ -563,7 +564,7 @@ describe('Database clients', async () => {
 
   it('should be able to check if a user can cancel push', async function () {
     let threwError = false;
-    const repoName = TEST_PUSH.repoName.replace('.git', '');
+    const repoName = trimTrailingDotGit(TEST_PUSH.repoName);
     try {
       // push does not exist yet, should return false
       let allowed = await db.canUserCancelPush(TEST_PUSH.id, TEST_USER.username);
@@ -589,7 +590,7 @@ describe('Database clients', async () => {
 
   it('should be able to check if a user can approve/reject push', async function () {
     let threwError = false;
-    const repoName = TEST_PUSH.repoName.replace('.git', '');
+    const repoName = trimTrailingDotGit(TEST_PUSH.repoName);
     try {
       // push does not exist yet, should return false
       let allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
