@@ -59,13 +59,8 @@ const getCommitData = (contents: CommitContent[]) => {
     .chain(contents)
     .filter({ type: 1 })
     .map((x) => {
-      console.debug({ x });
-
       const formattedContent = x.content.split('\n');
-      console.debug({ formattedContent });
-
       const parts = formattedContent.filter((part) => part.length > 0);
-      console.debug({ parts });
 
       if (!parts || parts.length < 5) {
         throw new Error('Invalid commit data');
@@ -75,15 +70,12 @@ const getCommitData = (contents: CommitContent[]) => {
         .find((t) => t.split(' ')[0] === 'tree')
         ?.replace('tree', '')
         .trim();
-      console.debug({ tree });
 
       const parentValue = parts.find((t) => t.split(' ')[0] === 'parent');
-      console.debug({ parentValue });
 
       const parent = parentValue
         ? parentValue.replace('parent', '').trim()
         : '0000000000000000000000000000000000000000';
-      console.debug({ parent });
 
       const authorStr = parts
         .find((t) => t.split(' ')[0] === 'author')
@@ -93,7 +85,6 @@ const getCommitData = (contents: CommitContent[]) => {
       const author = authorStr?.split('<')[0].trim();
       // slice to trim start and end from `<an-email@address.whatever>`
       const authorEmail = authorStr?.split(' ').reverse()[2].slice(1, -1);
-      console.debug({ authorStr, author, authorEmail });
 
       // handle email-like committer string: "UserName <user@domain.com> 1746612538 +0100"
       const committerStr = parts
@@ -105,14 +96,12 @@ const getCommitData = (contents: CommitContent[]) => {
       const commitTimestamp = committerArr[1];
       // slice to trim start and end from `<an-email@address.whatever>`
       const committerEmail = committerArr[2]?.slice(1, -1);
-      console.debug({ committerStr, committer, committerEmail, commitTimestamp });
 
       const indexOfMessages = formattedContent.indexOf('');
       const message = formattedContent
         .slice(indexOfMessages + 1)
         .join(' ')
         .trim();
-      console.debug({ indexOfMessages, message });
 
       console.log({
         tree,
