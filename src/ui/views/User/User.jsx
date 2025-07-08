@@ -52,9 +52,6 @@ export default function Dashboard() {
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
-  if (!auth && window.location.pathname === '/dashboard/profile') {
-    return <Navigate to='/login' />;
-  }
 
   const updateProfile = async () => {
     try {
