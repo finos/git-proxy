@@ -162,23 +162,12 @@ function Home() {
         <div className='row margin-top--xl margin-bottom--xl'>
           <div className='col col--4'>
             <div className='col-demo'>
-              <Avatar name='Paul Groves' description='Engineering at Citi' username='grovesy' />
-            </div>
-          </div>
-          <div className='col col--4'>
-            <div className='col-demo'>
               {' '}
               <Avatar
                 name='Jamie Slome'
                 description='Open Source Operations at Citi'
                 username='JamieSlome'
               />
-            </div>
-          </div>
-          <div className='col col--4'>
-            <div className='col-demo'>
-              {' '}
-              <Avatar name='Maurizio (Mao) Pillitu' description='CTO at FINOS' username='maoo' />
             </div>
           </div>
           <div className='col col--4'>
@@ -195,7 +184,7 @@ function Home() {
             <div className='col-demo'>
               {' '}
               <Avatar
-                name='Miklos Sagi'
+                name='Juan Escalada'
                 description='OSPO Engineering Lead at NatWest Group'
                 username='msagi'
               />
