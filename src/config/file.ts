@@ -1,27 +1,43 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { validate as jsonSchemaValidate } from 'jsonschema';
+import { ConfigSchema, type Config } from '../../proxy.config.schema';
 
-export let configFile: string = join(process.cwd(), 'proxy.config.json');
+export let configFile: string = join(process.cwd(), 'config.proxy.json');
+export let config: Config;
 
 /**
- * Set the config file path.
- * @param {string} file - The path to the config file.
+ * Sets the path to the configuration file.
+ *
+ * @param {string} file - The path to the configuration file.
+ * @return {void}
  */
 export function setConfigFile(file: string) {
   configFile = file;
 }
 
 /**
- * Validate config file.
- * @param {string} configFilePath - The path to the config file.
- * @return {boolean} - Returns true if validation is successful.
- * @throws Will throw an error if the validation fails.
+ * Loads and validates the configuration file using Zod.
+ * If validation succeeds, the parsed config is stored in the exported `config`.
+ *
+ * @return {Config} The validated and default-filled configuration object.
+ * @throws {ZodError} If validation fails.
  */
-export function validate(configFilePath: string = configFile!): boolean {
-  const config = JSON.parse(readFileSync(configFilePath, 'utf-8'));
-  const schemaPath = join(process.cwd(), 'config.schema.json');
-  const schema = JSON.parse(readFileSync(schemaPath, 'utf-8'));
-  jsonSchemaValidate(config, schema, { required: true, throwError: true });
+export function loadConfig(): Config {
+  const raw = JSON.parse(readFileSync(configFile, 'utf-8'));
+  const parsed = ConfigSchema.parse(raw);
+  config = parsed;
+  return parsed;
+}
+
+/**
+ * Validates a configuration file without mutating the exported `config`.
+ *
+ * @param {string} [filePath=configFile] - Path to the configuration file to validate.
+ * @return {boolean} Returns `true` if the file passes validation.
+ * @throws {ZodError} If validation fails.
+ */
+export function validate(filePath: string = configFile): boolean {
+  const raw = JSON.parse(readFileSync(filePath, 'utf-8'));
+  ConfigSchema.parse(raw);
   return true;
 }
