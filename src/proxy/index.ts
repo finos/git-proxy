@@ -9,11 +9,13 @@ import {
   getTLSKeyPemPath,
   getTLSCertPemPath,
   getTLSEnabled,
+  getSSHConfig,
 } from '../config';
 import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos } from '../db';
 import { PluginLoader } from '../plugin';
 import chain from './chain';
 import { Repo } from '../db/types';
+import SSHServer from './ssh/server';
 
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort, GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } =
   require('../config/env').serverConfig;
@@ -51,6 +53,12 @@ export const proxyPreparations = async () => {
       await addUserCanAuthorise(x.name, 'admin');
     }
   });
+
+  // Initialize SSH server if enabled
+  if (getSSHConfig().enabled) {
+    const sshServer = new SSHServer();
+    sshServer.start();
+  }
 };
 
 // just keep this async incase it needs async stuff in the future

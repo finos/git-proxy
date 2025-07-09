@@ -246,6 +246,7 @@ dist
 
 # testing
 /coverage
+.temp
 
 # production
 /build

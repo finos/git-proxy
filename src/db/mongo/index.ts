@@ -30,4 +30,13 @@ export const {
   canUserApproveRejectPushRepo,
 } = repo;
 
-export const { findUser, getUsers, createUser, deleteUser, updateUser } = users;
+export const {
+  findUser,
+  getUsers,
+  createUser,
+  deleteUser,
+  updateUser,
+  addPublicKey,
+  removePublicKey,
+  findUserBySSHKey,
+} = users;
