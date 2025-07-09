@@ -1,17 +1,7 @@
 const express = require('express');
 const router = new express.Router();
 const db = require('../../db');
-
-const toPublicUser = (user) => {
-  return {
-    username: user.username || '',
-    displayName: user.displayName || '',
-    email: user.email || '',
-    title: user.title || '',
-    gitAccount: user.gitAccount || '',
-    admin: user.admin || false,
-  }
-}
+const { toPublicUser } = require('./publicApi');
 
 router.get('/', async (req, res) => {
   const query = {};
@@ -35,8 +25,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   const username = req.params.id.toLowerCase();
   console.log(`Retrieving details for user: ${username}`);
-  const data = await db.findUser(username);
-  const user = JSON.parse(JSON.stringify(data));
+  const user = await db.findUser(username);
   res.send(toPublicUser(user));
 });
 

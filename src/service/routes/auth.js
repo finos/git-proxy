@@ -6,6 +6,7 @@ const passportLocal = require('../passport/local');
 const passportAD = require('../passport/activeDirectory');
 const authStrategies = require('../passport').authStrategies;
 const db = require('../../db');
+const { toPublicUser } = require('./publicApi');
 const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
   process.env;
 
@@ -70,7 +71,7 @@ router.post(
       );
       res.send({
         message: 'success',
-        user: currentUser,
+        user: toPublicUser(currentUser),
       });
     } catch (e) {
       console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
@@ -114,8 +115,7 @@ router.post('/logout', (req, res, next) => {
 router.get('/profile', async (req, res) => {
   if (req.user) {
     const userVal = await db.findUser(req.user.username);
-    delete userVal.password;
-    res.send(userVal);
+    res.send(toPublicUser(userVal));
   } else {
     res.status(401).end();
   }
@@ -156,12 +156,8 @@ router.post('/gitAccount', async (req, res) => {
 
 router.get('/me', async (req, res) => {
   if (req.user) {
-    const user = JSON.parse(JSON.stringify(req.user));
-    if (user && user.password) delete user.password;
-    const login = user.username;
-    const userVal = await db.findUser(login);
-    if (userVal && userVal.password) delete userVal.password;
-    res.send(userVal);
+    const userVal = await db.findUser(req.user.username);
+    res.send(toPublicUser(userVal));
   } else {
     res.status(401).end();
   }
