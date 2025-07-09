@@ -1,5 +1,4 @@
 import axios from 'axios';
-import { getCookie } from '../utils.jsx';
 import { getAxiosConfig, processAuthError } from './auth.js';
 
 const baseUrl = import.meta.env.VITE_API_URI
