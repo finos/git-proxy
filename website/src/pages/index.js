@@ -185,8 +185,8 @@ function Home() {
               {' '}
               <Avatar
                 name='Juan Escalada'
-                description='OSPO Engineering Lead at NatWest Group'
-                username='msagi'
+                description='Open Source Software Engineer at G-Research'
+                username='jescalada'
               />
             </div>
           </div>
