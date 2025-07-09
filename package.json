@@ -41,6 +41,7 @@
   "dependencies": {
     "@material-ui/core": "^4.11.0",
     "@material-ui/icons": "4.11.3",
+    "@material-ui/lab": "^4.0.0-alpha.61",
     "@primer/octicons-react": "^19.8.0",
     "@seald-io/nedb": "^4.0.2",
     "axios": "^1.6.0",

@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Typography, Button, IconButton, Grid, Paper, Modal, TextField } from '@material-ui/core';
+import {
+  Typography,
+  Button,
+  IconButton,
+  Grid,
+  Paper,
+  Modal,
+  TextField,
+  Snackbar,
+} from '@material-ui/core';
+import Alert from '@material-ui/lab/Alert';
 import { makeStyles } from '@material-ui/core/styles';
 import DeleteIcon from '@material-ui/icons/Delete';
 import VpnKeyIcon from '@material-ui/icons/VpnKey';
@@ -31,9 +41,10 @@ export default function SSHKeysManager({ username }) {
   const classes = useStyles();
 
   const [keys, setKeys] = useState([]);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newKeyValue, setNewKeyValue] = useState('');
+
+  const [banner, setBanner] = useState(null);
 
   /* -----------------------------------------------------------
    * Helper: fetch fingerprints from backend
@@ -45,7 +56,7 @@ export default function SSHKeysManager({ username }) {
         withCredentials: true,
       });
 
-      const fingerprints = res.data.publicKeys || res.data.keys || [];
+      const fingerprints = res.data.publicKeys || [];
       setKeys(
         fingerprints.map((hash, i) => ({
           name: `key${i + 1}`,
@@ -54,6 +65,7 @@ export default function SSHKeysManager({ username }) {
       );
     } catch (err) {
       console.error('Could not fetch SSH keys:', err);
+      setBanner({ type: 'error', text: 'Failed to load SSH keys' });
     }
   }, [username]);
 
@@ -73,8 +85,13 @@ export default function SSHKeysManager({ username }) {
         withCredentials: true,
       });
       await loadKeys();
+      setBanner({ type: 'success', text: 'SSH key removed' });
     } catch (err) {
       console.error('Failed to remove SSH key:', err);
+      setBanner({
+        type: 'error',
+        text: err.response?.data?.error || 'Failed to remove SSH key',
+      });
     }
   };
 
@@ -94,16 +111,39 @@ export default function SSHKeysManager({ username }) {
           headers: { 'Content-Type': 'application/json' },
         },
       );
-      await loadKeys(); // reload full list with new fingerprint
+      await loadKeys();
+      setBanner({ type: 'success', text: 'SSH key added' });
       setNewKeyValue('');
       setIsModalOpen(false);
     } catch (err) {
       console.error('Failed to add SSH key:', err);
+      setBanner({
+        type: 'error',
+        text: err.response?.data?.error || 'Failed to add SSH key',
+      });
     }
   };
 
   return (
     <div className={classes.root}>
+      {/* -------- Snackbar banner -------- */}
+      <Snackbar
+        open={Boolean(banner)}
+        autoHideDuration={4000}
+        onClose={() => setBanner(null)}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        {banner && (
+          <Alert
+            onClose={() => setBanner(null)}
+            severity={banner.type === 'success' ? 'success' : 'error'}
+            variant='filled'
+          >
+            {banner.text}
+          </Alert>
+        )}
+      </Snackbar>
+
       <Typography variant='h4' gutterBottom>
         SSH Keys
       </Typography>
@@ -157,6 +197,7 @@ export default function SSHKeysManager({ username }) {
             className={classes.formField}
             value={newKeyValue}
             onChange={(e) => setNewKeyValue(e.target.value)}
+            placeholder='ssh-ed25519 AAAAC3Nz... user@example'
           />
 
           <Button variant='contained' color='primary' fullWidth onClick={handleAddKey}>

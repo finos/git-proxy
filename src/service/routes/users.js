@@ -1,4 +1,4 @@
-import crypto from 'node:crypto';
+const { normalisePublicKey, fingerprintSHA256 } = require('../utils/ssh-utils');
 
 const express = require('express');
 const router = new express.Router();
@@ -59,12 +59,15 @@ router.post('/:username/ssh-keys', async (req, res) => {
     return;
   }
 
-  // Strip the comment from the key (everything after the last space)
-  const keyWithoutComment = publicKey.split(' ').slice(0, 2).join(' ');
-
-  console.log('Adding SSH key', { targetUsername, keyWithoutComment });
+  let canonicalKey;
   try {
-    await db.addPublicKey(targetUsername, keyWithoutComment);
+    canonicalKey = normalisePublicKey(publicKey);
+  } catch {
+    return res.status(422).json({ error: 'Invalid SSH public key' });
+  }
+
+  try {
+    await db.addPublicKey(targetUsername, canonicalKey);
     res.status(201).json({ message: 'SSH key added successfully' });
   } catch (error) {
     console.error('Error adding SSH key:', error);
@@ -88,13 +91,17 @@ router.delete('/:username/ssh-keys', async (req, res) => {
   }
 
   const { publicKey } = req.body;
-  if (!publicKey) {
-    res.status(400).json({ error: 'Public key is required' });
-    return;
+  if (!publicKey) return res.status(400).json({ error: 'Public key is required' });
+
+  let canonicalKey;
+  try {
+    canonicalKey = normalisePublicKey(publicKey);
+  } catch {
+    return res.status(422).json({ error: 'Invalid SSH public key' });
   }
 
   try {
-    await db.removePublicKey(targetUsername, publicKey);
+    await db.removePublicKey(targetUsername, canonicalKey);
     res.status(200).json({ message: 'SSH key removed successfully' });
   } catch (error) {
     console.error('Error removing SSH key:', error);
@@ -122,7 +129,7 @@ router.delete('/:username/ssh-keys/fingerprint', async (req, res) => {
     const keys = await db.getPublicKeys(targetUsername);
     console.log(`Found ${keys} keys for user ${targetUsername}`);
     const keyToDelete = keys.find((k) => {
-      const keyFingerprint = sshFingerprintSHA256(k);
+      const keyFingerprint = fingerprintSHA256(k);
       return keyFingerprint === fingerprint;
     });
 
@@ -138,21 +145,6 @@ router.delete('/:username/ssh-keys/fingerprint', async (req, res) => {
   }
 });
 
-// Utility: compute the fingerprint "SHA256:<digest>"
-function sshFingerprintSHA256(pubKey) {
-  if (!pubKey) return '';
-
-  // OpenSSH keys are: "<algorithm> <base64-blob> [comment]"
-  const b64 = pubKey.trim().split(/\s+/)[1];
-  if (!b64) return '';
-
-  const raw = Buffer.from(b64, 'base64'); // raw key bytes
-  const hash = crypto.createHash('sha256').update(raw).digest('base64');
-
-  return 'SHA256:' + hash.replace(/=+$/, '');
-}
-
-// Return only fingerprints & metadata,
 router.get('/:username/ssh-keys', async (req, res) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Authentication required' });
@@ -167,7 +159,7 @@ router.get('/:username/ssh-keys', async (req, res) => {
 
   try {
     const keys = await db.getPublicKeys(targetUsername);
-    const result = keys.map((k) => sshFingerprintSHA256(k));
+    const result = keys.map((k) => fingerprintSHA256(k));
 
     res.status(200).json({ publicKeys: result });
   } catch (err) {
