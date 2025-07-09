@@ -23,7 +23,7 @@ router.get('/', async (req, res) => {
   for (const user of users) {
     delete user.password;
     if (user.publicKeys) {
-      user.publicKeys = user.publicKeys.map((key) => key.trim());
+      user.publicKeys = user.publicKeys.map((rec) => rec.key.trim());
     }
   }
   res.send(users);
@@ -53,7 +53,10 @@ router.post('/:username/ssh-keys', async (req, res) => {
     return;
   }
 
-  const { publicKey } = req.body;
+  const { publicKey, name } = req.body;
+
+  if (!name || typeof name !== 'string')
+    return res.status(400).json({ error: 'Key name is required' });
   if (!publicKey) {
     res.status(400).json({ error: 'Public key is required' });
     return;
@@ -67,7 +70,12 @@ router.post('/:username/ssh-keys', async (req, res) => {
   }
 
   try {
-    await db.addPublicKey(targetUsername, canonicalKey);
+    const record = {
+      key: canonicalKey,
+      name: name.trim(),
+      addedAt: new Date().toISOString(),
+    };
+    await db.addPublicKey(targetUsername, record);
     res.status(201).json({ message: 'SSH key added successfully' });
   } catch (error) {
     console.error('Error adding SSH key:', error);
@@ -127,9 +135,8 @@ router.delete('/:username/ssh-keys/fingerprint', async (req, res) => {
 
   try {
     const keys = await db.getPublicKeys(targetUsername);
-    console.log(`Found ${keys} keys for user ${targetUsername}`);
-    const keyToDelete = keys.find((k) => {
-      const keyFingerprint = fingerprintSHA256(k);
+    const keyToDelete = keys.find((rec) => {
+      const keyFingerprint = fingerprintSHA256(rec.key);
       return keyFingerprint === fingerprint;
     });
 
@@ -137,7 +144,7 @@ router.delete('/:username/ssh-keys/fingerprint', async (req, res) => {
       return res.status(404).json({ error: 'SSH key not found for supplied fingerprint' });
     }
 
-    await db.removePublicKey(targetUsername, keyToDelete);
+    await db.removePublicKey(targetUsername, keyToDelete.key);
     res.status(200).json({ message: 'SSH key removed successfully' });
   } catch (err) {
     console.error('Error removing SSH key:', err);
@@ -159,7 +166,11 @@ router.get('/:username/ssh-keys', async (req, res) => {
 
   try {
     const keys = await db.getPublicKeys(targetUsername);
-    const result = keys.map((k) => fingerprintSHA256(k));
+    const result = keys.map((rec) => ({
+      name: rec.name,
+      fingerprint: fingerprintSHA256(rec.key),
+      addedAt: rec.addedAt,
+    }));
 
     res.status(200).json({ publicKeys: result });
   } catch (err) {

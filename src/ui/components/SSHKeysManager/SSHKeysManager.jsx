@@ -14,6 +14,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import DeleteIcon from '@material-ui/icons/Delete';
 import VpnKeyIcon from '@material-ui/icons/VpnKey';
 import axios from 'axios';
+import dayjs from 'dayjs'; //   npm i dayjs
 
 const useStyles = makeStyles((theme) => ({
   root: { padding: theme.spacing(3), width: '100%' },
@@ -43,42 +44,32 @@ export default function SSHKeysManager({ username }) {
   const [keys, setKeys] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newKeyValue, setNewKeyValue] = useState('');
+  const [newKeyName, setNewKeyName] = useState('');
 
-  const [banner, setBanner] = useState(null);
+  const [banner, setBanner] = useState(null); // { type, text }
 
-  /* -----------------------------------------------------------
-   * Helper: fetch fingerprints from backend
-   * --------------------------------------------------------- */
+  /* ------------------------------------------- */
   const loadKeys = useCallback(async () => {
     if (!username) return;
     try {
       const res = await axios.get(`${API_BASE}/${username}/ssh-keys`, {
         withCredentials: true,
       });
-
-      const fingerprints = res.data.publicKeys || [];
-      setKeys(
-        fingerprints.map((hash, i) => ({
-          name: `key${i + 1}`,
-          hash,
-        })),
-      );
+      // API now returns [{name,fingerprint,addedAt}]
+      setKeys(res.data.publicKeys || []);
     } catch (err) {
-      console.error('Could not fetch SSH keys:', err);
+      console.error(err);
       setBanner({ type: 'error', text: 'Failed to load SSH keys' });
     }
   }, [username]);
 
-  /* Load keys on mount / username change */
-  useEffect(() => {
-    loadKeys();
-  }, [loadKeys]);
+  useEffect(() => void loadKeys(), [loadKeys]);
 
   /* -----------------------------------------------------------
    * Delete by fingerprint
    * --------------------------------------------------------- */
   const handleDelete = async (index) => {
-    const { hash: fingerprint } = keys[index];
+    const { fingerprint } = keys[index];
     try {
       await axios.delete(`${API_BASE}/${username}/ssh-keys/fingerprint`, {
         data: { fingerprint },
@@ -87,7 +78,7 @@ export default function SSHKeysManager({ username }) {
       await loadKeys();
       setBanner({ type: 'success', text: 'SSH key removed' });
     } catch (err) {
-      console.error('Failed to remove SSH key:', err);
+      console.error(err);
       setBanner({
         type: 'error',
         text: err.response?.data?.error || 'Failed to remove SSH key',
@@ -99,24 +90,23 @@ export default function SSHKeysManager({ username }) {
    * Add new public key, then refresh list
    * --------------------------------------------------------- */
   const handleAddKey = async () => {
-    const trimmed = newKeyValue.trim();
-    if (!trimmed) return;
+    const key = newKeyValue.trim();
+    const name = newKeyName.trim();
+    if (!key || !name) return;
 
     try {
       await axios.post(
         `${API_BASE}/${username}/ssh-keys`,
-        { publicKey: trimmed },
-        {
-          withCredentials: true,
-          headers: { 'Content-Type': 'application/json' },
-        },
+        { publicKey: key, name },
+        { withCredentials: true },
       );
       await loadKeys();
       setBanner({ type: 'success', text: 'SSH key added' });
       setNewKeyValue('');
+      setNewKeyName('');
       setIsModalOpen(false);
     } catch (err) {
-      console.error('Failed to add SSH key:', err);
+      console.error(err);
       setBanner({
         type: 'error',
         text: err.response?.data?.error || 'Failed to add SSH key',
@@ -126,7 +116,7 @@ export default function SSHKeysManager({ username }) {
 
   return (
     <div className={classes.root}>
-      {/* -------- Snackbar banner -------- */}
+      {/* ---------- Snackbar ---------- */}
       <Snackbar
         open={Boolean(banner)}
         autoHideDuration={4000}
@@ -134,11 +124,7 @@ export default function SSHKeysManager({ username }) {
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         {banner && (
-          <Alert
-            onClose={() => setBanner(null)}
-            severity={banner.type === 'success' ? 'success' : 'error'}
-            variant='filled'
-          >
+          <Alert onClose={() => setBanner(null)} severity={banner.type} variant='filled'>
             {banner.text}
           </Alert>
         )}
@@ -166,27 +152,39 @@ export default function SSHKeysManager({ username }) {
             </Grid>
           </Grid>
 
-          <Grid container alignItems='center' justifyContent='space-between'>
-            <Grid item xs>
-              <Typography variant='body2' color='textSecondary'>
-                {key.hash}
-              </Typography>
-            </Grid>
-            <Grid item>
-              <IconButton className={classes.deleteButton} onClick={() => handleDelete(idx)}>
-                <DeleteIcon />
-              </IconButton>
-            </Grid>
-          </Grid>
+          <Typography variant='body2' color='textSecondary'>
+            {key.fingerprint}
+          </Typography>
+          <Typography variant='caption' color='textSecondary'>
+            Added on&nbsp;{dayjs(key.addedAt).format('YYYY-MM-DD HH:mm')}
+          </Typography>
+
+          <IconButton
+            className={classes.deleteButton}
+            onClick={() => handleDelete(idx)}
+            style={{ float: 'right' }}
+          >
+            <DeleteIcon />
+          </IconButton>
         </Paper>
       ))}
 
-      {/* Modal for new key input */}
+      {/* ---------- Modal ---------- */}
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} className={classes.modal}>
         <div className={classes.modalContent}>
           <Typography variant='h6' gutterBottom>
             Add a new SSH key
           </Typography>
+
+          <TextField
+            label='Key name'
+            variant='outlined'
+            fullWidth
+            className={classes.formField}
+            value={newKeyName}
+            onChange={(e) => setNewKeyName(e.target.value)}
+            placeholder='e.g. MacBook Pro'
+          />
 
           <TextField
             label='Public key'

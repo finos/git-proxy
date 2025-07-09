@@ -1,4 +1,4 @@
-import { User } from '../types';
+import { PublicKeyRecord, User } from '../types';
 
 const connect = require('./helper').connect;
 const collectionName = 'users';
@@ -48,31 +48,44 @@ export const updateUser = async (user: User) => {
   await collection.updateOne({ username: user.username }, { $set: user }, options);
 };
 
-export const addPublicKey = async (username: string, publicKey: string) => {
+export const addPublicKey = async (username: string, record: PublicKeyRecord) => {
   const collection = await connect(collectionName);
+
   return collection.updateOne(
-    { username: username.toLowerCase() },
-    { $addToSet: { publicKeys: publicKey } },
+    {
+      username: username.toLowerCase(),
+      'publicKeys.key': { $ne: record.key },
+    },
+    {
+      $push: {
+        publicKeys: {
+          key: record.key,
+          name: record.name,
+          addedAt: record.addedAt ?? new Date().toISOString(),
+        },
+      },
+    },
   );
 };
 
-export const removePublicKey = async (username: string, publicKey: string) => {
+export const removePublicKey = async (username: string, canonicalKey: string) => {
   const collection = await connect(collectionName);
+
   return collection.updateOne(
     { username: username.toLowerCase() },
-    { $pull: { publicKeys: publicKey } },
+    { $pull: { publicKeys: { key: canonicalKey } } },
   );
 };
 
-export const findUserBySSHKey = async function (sshKey: string) {
+export const findUserBySSHKey = async (sshKey: string): Promise<User | null> => {
   const collection = await connect(collectionName);
-  return collection.findOne({ publicKeys: { $eq: sshKey } });
+  return collection.findOne({ 'publicKeys.key': sshKey });
 };
 
-export const getPublicKeys = async function (username: string): Promise<string[]> {
-  const user = await findUser(username);
+export const getPublicKeys = async (username: string): Promise<PublicKeyRecord[]> => {
+  const user = await findUser(username.toLowerCase());
   if (!user) {
     throw new Error('User not found');
   }
-  return user.publicKeys || [];
+  return Array.isArray(user.publicKeys) ? user.publicKeys : [];
 };

@@ -15,6 +15,12 @@ export type Repo = {
   _id: string;
 };
 
+export type PublicKeyRecord = {
+  key: string;
+  name: string;
+  addedAt: string;
+};
+
 export type User = {
   _id: string;
   username: string;
@@ -23,7 +29,7 @@ export type User = {
   email: string;
   admin: boolean;
   oidcId: string | null;
-  publicKeys: string[];
+  publicKeys: PublicKeyRecord[];
 };
 
 export type Push = {
