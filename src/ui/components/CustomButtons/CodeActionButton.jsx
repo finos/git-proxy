@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import Popper from '@material-ui/core/Popper';
 import Paper from '@material-ui/core/Paper';
 import {
@@ -10,8 +9,7 @@ import {
   TerminalIcon,
   KeyIcon,
 } from '@primer/octicons-react';
-
-const API_BASE = import.meta.env.VITE_API_URI ?? '';
+import { getSshConfig } from '../../services/ssh';
 
 const CodeActionButton = ({ cloneURL }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -22,15 +20,14 @@ const CodeActionButton = ({ cloneURL }) => {
 
   const [sshCfg, setSshCfg] = useState({ enabled: true, port: 22 });
   useEffect(() => {
-    axios
-      .get(`${API_BASE}/api/v1/config/ssh`, { withCredentials: true })
-      .then((res) => {
-        const { enabled = true, port = 22 } = res.data || {};
-        setSshCfg({ enabled, port });
-      })
-      .catch((err) => {
-        console.error('Failed to load SSH config:', err);
-      });
+    let active = true;
+    (async () => {
+      const cfg = await getSshConfig();
+      if (active) setSshCfg(cfg);
+    })();
+    return () => {
+      active = false;
+    };
   }, []);
 
   const getSSHUrl = () => {

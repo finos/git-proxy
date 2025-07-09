@@ -32,9 +32,17 @@ const getUIRouteAuth = async (setData) => {
   });
 };
 
-export {
-  getAttestationConfig,
-  getURLShortener,
-  getEmailContact,
-  getUIRouteAuth,
+const getSSHConfig = async (setData) => {
+  const url = new URL(`${baseUrl}/config/ssh`);
+  await axios(url.toString(), { withCredentials: true })
+    .then((response) => {
+      const { enabled = true, port = 22 } = response.data ?? {};
+      setData({ enabled, port });
+    })
+    .catch((err) => {
+      console.error('Failed to load SSH config:', err);
+      setData({ enabled: true, port: 22 });
+    });
 };
+
+export { getAttestationConfig, getURLShortener, getEmailContact, getUIRouteAuth, getSSHConfig };

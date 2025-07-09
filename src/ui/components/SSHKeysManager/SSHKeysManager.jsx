@@ -13,8 +13,9 @@ import Alert from '@material-ui/lab/Alert';
 import { makeStyles } from '@material-ui/core/styles';
 import DeleteIcon from '@material-ui/icons/Delete';
 import VpnKeyIcon from '@material-ui/icons/VpnKey';
-import axios from 'axios';
-import dayjs from 'dayjs'; //   npm i dayjs
+import dayjs from 'dayjs';
+
+import { getSSHKeys, deleteSSHKey, addSSHKey } from '../../services/ssh';
 
 const useStyles = makeStyles((theme) => ({
   root: { padding: theme.spacing(3), width: '100%' },
@@ -36,8 +37,6 @@ const useStyles = makeStyles((theme) => ({
   formField: { marginBottom: theme.spacing(2) },
 }));
 
-const API_BASE = `${import.meta.env.VITE_API_URI}/api/v1/user`;
-
 export default function SSHKeysManager({ username }) {
   const classes = useStyles();
 
@@ -52,11 +51,8 @@ export default function SSHKeysManager({ username }) {
   const loadKeys = useCallback(async () => {
     if (!username) return;
     try {
-      const res = await axios.get(`${API_BASE}/${username}/ssh-keys`, {
-        withCredentials: true,
-      });
-      // API now returns [{name,fingerprint,addedAt}]
-      setKeys(res.data.publicKeys || []);
+      const data = await getSSHKeys(username);
+      setKeys(data);
     } catch (err) {
       console.error(err);
       setBanner({ type: 'error', text: 'Failed to load SSH keys' });
@@ -71,10 +67,7 @@ export default function SSHKeysManager({ username }) {
   const handleDelete = async (index) => {
     const { fingerprint } = keys[index];
     try {
-      await axios.delete(`${API_BASE}/${username}/ssh-keys/fingerprint`, {
-        data: { fingerprint },
-        withCredentials: true,
-      });
+      await deleteSSHKey(username, fingerprint);
       await loadKeys();
       setBanner({ type: 'success', text: 'SSH key removed' });
     } catch (err) {
@@ -90,16 +83,12 @@ export default function SSHKeysManager({ username }) {
    * Add new public key, then refresh list
    * --------------------------------------------------------- */
   const handleAddKey = async () => {
-    const key = newKeyValue.trim();
+    const publicKey = newKeyValue.trim();
     const name = newKeyName.trim();
-    if (!key || !name) return;
+    if (!publicKey || !name) return;
 
     try {
-      await axios.post(
-        `${API_BASE}/${username}/ssh-keys`,
-        { publicKey: key, name },
-        { withCredentials: true },
-      );
+      await addSSHKey(username, { publicKey, name });
       await loadKeys();
       setBanner({ type: 'success', text: 'SSH key added' });
       setNewKeyValue('');
@@ -116,7 +105,6 @@ export default function SSHKeysManager({ username }) {
 
   return (
     <div className={classes.root}>
-      {/* ---------- Snackbar ---------- */}
       <Snackbar
         open={Boolean(banner)}
         autoHideDuration={4000}
@@ -169,7 +157,6 @@ export default function SSHKeysManager({ username }) {
         </Paper>
       ))}
 
-      {/* ---------- Modal ---------- */}
       <Modal open={isModalOpen} onClose={() => setIsModalOpen(false)} className={classes.modal}>
         <div className={classes.modalContent}>
           <Typography variant='h6' gutterBottom>
