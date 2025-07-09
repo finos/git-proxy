@@ -112,5 +112,26 @@ describe('Authentication Routes', () => {
         }),
       ).to.be.true;
     });
+    
+    it('POST /gitAccount allows non-admin user to update their own gitAccount', async () => {
+      const updateUserStub = sinon.stub(db, 'updateUser').resolves();
+
+      const res = await chai.request(newApp('bob')).post('/auth/gitAccount').send({
+        username: 'bob',
+        gitAccount: 'UPDATED_GIT_ACCOUNT',
+      });
+
+      expect(res).to.have.status(200);
+      expect(
+        updateUserStub.calledOnceWith({
+          username: 'bob',
+          displayName: 'Bob Woodward',
+          email: 'bob@example.com',
+          admin: false,
+          gitAccount: 'UPDATED_GIT_ACCOUNT',
+        }),
+      ).to.be.true;
+    });
+
   });
 });
