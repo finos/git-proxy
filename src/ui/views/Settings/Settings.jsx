@@ -64,7 +64,7 @@ export default function SettingsView() {
   return (
     <form className={classes.root} noValidate autoComplete='off'>
       <GridContainer justify='center'>
-        <GridItem xs={12} sm={12} md={6}>
+        <GridItem xs={12} sm={12} lg={6}>
           <Card>
             <CardBody>
               {/* Title */}
