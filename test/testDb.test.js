@@ -520,7 +520,7 @@ describe('Database clients', async () => {
       TEST_USER.admin,
     );
 
-    // has less properties to prove that records are merged
+    // has fewer properties to prove that records are merged
     const updateToApply = {
       username: TEST_USER.username,
       gitAccount: 'updatedGitAccount',
