@@ -32,17 +32,17 @@ const Repositories: React.FC<RepositoriesProps> = (props) => {
 
   useEffect(() => {
     getGitHubRepository();
-  }, [props.data.project, props.data.name]);
+  }, [props.data?.project, props.data?.name]);
 
   const getGitHubRepository = async () => {
     await axios
-      .get(`https://api.github.com/repos/${props.data.project}/${props.data.name}`)
+      .get(`https://api.github.com/repos/${props.data?.project}/${props.data?.name}`)
       .then((res) => {
         setGitHub(res.data);
       })
       .catch((error) => {
         setErrorMessage(
-          `Error fetching GitHub repository ${props.data.project}/${props.data.name}: ${error}`,
+          `Error fetching GitHub repository ${props.data?.project}/${props.data?.name}: ${error}`,
         );
         setSnackbarOpen(true);
       });
@@ -55,9 +55,9 @@ const Repositories: React.FC<RepositoriesProps> = (props) => {
     <TableRow>
       <TableCell>
         <div style={{ padding: '15px' }}>
-          <a href={`/dashboard/repo/${props.data.name}`}>
+          <a href={`/dashboard/repo/${props.data?.name}`}>
             <span style={{ fontSize: '17px' }}>
-              {props.data.project}/{props.data.name}
+              {props.data?.project}/{props.data?.name}
             </span>
           </a>
           {github.parent && (
@@ -105,12 +105,12 @@ const Repositories: React.FC<RepositoriesProps> = (props) => {
             )}
             <GridItem>
               <PeopleIcon size='small' />{' '}
-              <span style={{ marginLeft: '5px' }}>{props.data.users?.canPush?.length || 0}</span>
+              <span style={{ marginLeft: '5px' }}>{props.data?.users?.canPush?.length || 0}</span>
             </GridItem>
             <GridItem>
               <CodeReviewIcon size='small' />{' '}
               <span style={{ marginLeft: '5px' }}>
-                {props.data.users?.canAuthorise?.length || 0}
+                {props.data?.users?.canAuthorise?.length || 0}
               </span>
             </GridItem>
             {(github.created_at || github.updated_at || github.pushed_at) && (

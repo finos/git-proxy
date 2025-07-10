@@ -11,6 +11,7 @@ import Checkbox from '@material-ui/core/Checkbox';
 import { withStyles } from '@material-ui/core/styles';
 import { green } from '@material-ui/core/colors';
 import { getURLShortener } from '../../../services/config';
+import { AttestationViewProps } from '../attestation.types';
 
 const StyledFormControlLabel = withStyles({
   root: {

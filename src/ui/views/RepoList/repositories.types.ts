@@ -1,5 +1,5 @@
 export interface RepositoriesProps {
-  data: {
+  data?: {
     project: string;
     name: string;
     proxyURL: string;

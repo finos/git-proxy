@@ -16,15 +16,7 @@ import { getUsers } from '../../../services/user';
 import Pagination from '../../../components/Pagination/Pagination';
 import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
-
-interface User {
-  username: string;
-  displayName?: string;
-  title?: string;
-  email?: string;
-  gitAccount?: string;
-  admin?: boolean;
-}
+import { UserData } from '../../../../types/models';
 
 interface UserListProps {
   [key: string]: any;
@@ -34,7 +26,7 @@ const useStyles = makeStyles(styles as any);
 
 const UserList: React.FC<UserListProps> = (props) => {
   const classes = useStyles();
-  const [data, setData] = useState<User[]>([]);
+  const [data, setData] = useState<UserData[]>([]);
   const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
