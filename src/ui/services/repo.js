@@ -53,11 +53,14 @@ const getRepos = async (
       setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
-        setErrorMessage('Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.');
+        setErrorMessage(
+          'Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.',
+        );
       } else {
         setErrorMessage(`Error fetching repositories: ${error.response.data.message}`);
       }
-    }).finally(() => {
+    })
+    .finally(() => {
       setIsLoading(false);
     });
 };
@@ -76,17 +79,19 @@ const getRepo = async (setIsLoading, setData, setAuth, setIsError, id) => {
       } else {
         setIsError(true);
       }
-    }).finally(() => {
+    })
+    .finally(() => {
       setIsLoading(false);
     });
 };
 
 const addRepo = async (onClose, setError, data) => {
   const url = new URL(`${baseUrl}/repo`);
-  axios
+  return axios
     .post(url, data, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
-    .then(() => {
+    .then((response) => {
       onClose();
+      return response.data;
     })
     .catch((error) => {
       console.log(error.response.data.message);
