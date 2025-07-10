@@ -26,11 +26,15 @@ const jwtAuthHandler = (overrideConfig = null) => {
       const audience = expectedAudience || clientID;
 
       if (!authorityURL) {
-          return res.status(500).send("OIDC authority URL is not configured\n");
+          return res.status(500).send({
+            message: "JWT handler: authority URL is not configured\n"
+          });
       }
 
       if (!clientID) {
-          return res.status(500).send("OIDC client ID is not configured\n");
+          return res.status(500).send({
+            message: "JWT handler: client ID is not configured\n"
+          });
       }
 
       const tokenParts = token.split(" ");
