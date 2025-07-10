@@ -16,6 +16,7 @@ import { getUsers } from '../../../services/user';
 import Pagination from '../../../components/Pagination/Pagination';
 import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
+import Danger from '../../../components/Typography/Danger';
 
 const useStyles = makeStyles(styles);
 
@@ -44,7 +45,7 @@ export default function UserList(props) {
   }, [props]);
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>{errorMessage}</div>;
+  if (isError) return <Danger>{errorMessage}</Danger>;
 
   const filteredUsers = data.filter(
     (user) =>

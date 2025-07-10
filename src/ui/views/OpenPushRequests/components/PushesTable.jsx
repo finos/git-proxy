@@ -36,7 +36,7 @@ export default function PushesTable(props) {
     for (const k in props) {
       if (k) query[k] = props[k];
     }
-    getPushes(setIsLoading, setData, setAuth, setIsError, setErrorMessage, query);
+    getPushes(setIsLoading, setData, setAuth, setIsError, props.handlePushTableError, query);
   }, [props]);
 
   useEffect(() => {
@@ -70,7 +70,6 @@ export default function PushesTable(props) {
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>{errorMessage}</div>;
 
   return (
     <div>
