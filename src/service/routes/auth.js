@@ -136,8 +136,12 @@ router.post('/gitAccount', async (req, res) => {
         return;
       }
 
+      const reqUser = await db.findUser(req.user.username);
+      if (username !== reqUser.username && !reqUser.admin) {
+        res.status(403).send('Error: You must be an admin to update a different account').end();
+        return;
+      }
       const user = await db.findUser(username);
-
       console.log('Adding gitAccount' + req.body.gitAccount);
       user.gitAccount = req.body.gitAccount;
       db.updateUser(user);
