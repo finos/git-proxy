@@ -47,6 +47,25 @@ const getLoginStrategy = () => {
   return enabledAppropriateLoginStrategies[0].type.toLowerCase();
 };
 
+const loginSuccessHandler = () => async (req, res) => {
+  try {
+    const currentUser = { ...req.user };
+    delete currentUser.password;
+    console.log(
+      `serivce.routes.auth.login: user logged in, username=${
+        currentUser.username
+      } profile=${JSON.stringify(currentUser)}`,
+    );
+    res.send({
+      message: 'success',
+      user: toPublicUser(currentUser),
+    });
+  } catch (e) {
+    console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
+    res.status(500).send('Failed to login').end();
+  }
+};
+
 // TODO: provide separate auth endpoints for each auth strategy or chain compatibile auth strategies
 // TODO: if providing separate auth methods, inform the frontend so it has relevant UI elements and appropriate client-side behavior
 router.post(
@@ -60,25 +79,7 @@ router.post(
     console.log('going to auth with', authType);
     return passport.authenticate(authType)(req, res, next);
   },
-  async (req, res) => {
-    try {
-      const currentUser = { ...req.user };
-      delete currentUser.password;
-      console.log(
-        `serivce.routes.auth.login: user logged in, username=${
-          currentUser.username
-        } profile=${JSON.stringify(currentUser)}`,
-      );
-      res.send({
-        message: 'success',
-        user: toPublicUser(currentUser),
-      });
-    } catch (e) {
-      console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
-      res.status(500).send('Failed to login').end();
-      return;
-    }
-  },
+  loginSuccessHandler(),
 );
 
 router.get('/oidc', passport.authenticate(authStrategies['openidconnect'].type));
@@ -162,4 +163,8 @@ router.get('/me', async (req, res) => {
     res.status(401).end();
   }
 });
-module.exports = router;
+
+module.exports = {
+  router,
+  loginSuccessHandler
+};
