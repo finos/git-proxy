@@ -2,6 +2,17 @@ const express = require('express');
 const router = new express.Router();
 const db = require('../../db');
 
+const toPublicUser = (user) => {
+  return {
+    username: user.username || '',
+    displayName: user.displayName || '',
+    email: user.email || '',
+    title: user.title || '',
+    gitAccount: user.gitAccount || '',
+    admin: user.admin || false,
+  }
+}
+
 router.get('/', async (req, res) => {
   const query = {};
 
@@ -17,7 +28,8 @@ router.get('/', async (req, res) => {
     query[k] = v;
   }
 
-  res.send(await db.getUsers(query));
+  const users = await db.getUsers(query);
+  res.send(users.map(toPublicUser));
 });
 
 router.get('/:id', async (req, res) => {
@@ -25,8 +37,7 @@ router.get('/:id', async (req, res) => {
   console.log(`Retrieving details for user: ${username}`);
   const data = await db.findUser(username);
   const user = JSON.parse(JSON.stringify(data));
-  if (user && user.password) delete user.password;
-  res.send(user);
+  res.send(toPublicUser(user));
 });
 
 module.exports = router;
