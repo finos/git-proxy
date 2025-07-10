@@ -22,8 +22,7 @@ export default function PushesTable(props) {
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [, setIsError] = useState(false);
   const navigate = useNavigate();
   const [, setAuth] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
