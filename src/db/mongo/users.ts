@@ -17,7 +17,7 @@ export const getUsers = async function (query: any = {}) {
   }
   console.log(`Getting users for query= ${JSON.stringify(query)}`);
   const collection = await connect(collectionName);
-  return collection.find(query, { password: 0 }).toArray();
+  return collection.find(query).project({ password: 0 }).toArray();
 };
 
 export const deleteUser = async function (username: string) {
