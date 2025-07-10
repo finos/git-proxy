@@ -23,14 +23,18 @@ interface SidebarProps {
   open: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = (props) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  color,
+  logo,
+  routes,
+  background,
+  rtlActive,
+  open,
+  handleDrawerToggle,
+}) => {
   const classes = useStyles();
 
-  const activeRoute = (routeName: string): boolean => {
-    return window.location.href.indexOf(routeName) > -1;
-  };
-
-  const { color, logo, routes, background, rtlActive, open, handleDrawerToggle } = props;
+  const activeRoute = (routeName: string) => window.location.href.includes(routeName);
 
   const links = (
     <List className={classes.list}>
@@ -39,14 +43,13 @@ const Sidebar: React.FC<SidebarProps> = (props) => {
         const listItemClasses = classNames({
           [` ${classes[color]}`]: activeRoute(prop.layout + prop.path),
         });
-
         const whiteFontClasses = classNames({
           [` ${classes.whiteFont}`]: activeRoute(prop.layout + prop.path),
         });
 
-        if (!prop.visible) {
-          return <div key={key}></div>;
-        }
+        if (!prop.visible) return <div key={key} />;
+
+        const IconComponent = prop.icon as React.ElementType;
 
         return (
           <NavLink
@@ -65,7 +68,7 @@ const Sidebar: React.FC<SidebarProps> = (props) => {
                   {prop.icon}
                 </Icon>
               ) : (
-                <prop.icon
+                <IconComponent
                   className={classNames(classes.itemIcon, whiteFontClasses, {
                     [classes.itemIconRTL]: rtlActive,
                   })}
@@ -90,10 +93,10 @@ const Sidebar: React.FC<SidebarProps> = (props) => {
       <a style={{ textDecoration: 'none' }} href='/dashboard/repo'>
         <div style={{ textAlign: 'center' }}>
           <img
-            style={{ verticalAlign: 'middle', filter: 'brightness(0) invert(1)' }}
-            width={'105px'}
             src={logo}
             alt='logo'
+            width={105}
+            style={{ verticalAlign: 'middle', filter: 'brightness(0) invert(1)' }}
           />
         </div>
       </a>

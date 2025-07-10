@@ -21,7 +21,7 @@ interface LoginResponse {
   password: string;
 }
 
-const loginUrl = `${import.meta.env.VITE_API_URI}/api/auth/login`;
+const loginUrl = `${process.env.VITE_API_URI}/api/auth/login`;
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -41,7 +41,7 @@ const Login: React.FC = () => {
   }
 
   function handleOIDCLogin(): void {
-    window.location.href = `${import.meta.env.VITE_API_URI}/api/auth/oidc`;
+    window.location.href = `${process.env.VITE_API_URI}/api/auth/oidc`;
   }
 
   function handleSubmit(event: FormEvent): void {
