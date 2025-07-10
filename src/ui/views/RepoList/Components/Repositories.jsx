@@ -15,6 +15,7 @@ import PropTypes from 'prop-types';
 import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
 import Filtering from '../../../components/Filtering/Filtering';
+import Danger from '../../../components/Typography/Danger';
 
 export default function Repositories(props) {
   const useStyles = makeStyles(styles);
@@ -101,7 +102,7 @@ export default function Repositories(props) {
   const paginatedData = filteredData.slice(startIdx, startIdx + itemsPerPage);
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>{errorMessage}</div>;
+  if (isError) return <Danger>{errorMessage}</Danger>;
 
   const addrepoButton = user.admin ? (
     <GridItem>

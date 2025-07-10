@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { AccountCircle } from '@material-ui/icons';
 import { getUser } from '../../services/user';
 import axios from 'axios';
-import { getCookie } from '../../utils';
+import { getAxiosConfig } from '../../services/auth';
 
 const useStyles = makeStyles(styles);
 
@@ -52,12 +52,7 @@ export default function DashboardNavbarLinks() {
       .post(
         `${import.meta.env.VITE_API_URI}/api/auth/logout`,
         {},
-        {
-          withCredentials: true,
-          headers: {
-            'X-CSRF-TOKEN': getCookie('csrf'),
-          },
-        },
+        getAxiosConfig(),
       )
       .then((res) => {
         if (!res.data.isAuth && !res.data.user) {
