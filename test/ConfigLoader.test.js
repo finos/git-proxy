@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { configFile } from '../src/config/file';
 import { expect } from 'chai';
 import { ConfigLoader } from '../src/config/ConfigLoader';
 import { isValidGitUrl, isValidPath, isValidBranchName } from '../src/config/ConfigLoader';
@@ -23,6 +24,18 @@ describe('ConfigLoader', () => {
       fs.rmSync(tempDir, { recursive: true });
     }
     sinon.restore();
+    configLoader?.stop();
+  });
+
+  after(async () => {
+    // reset config to default after all tests have run
+    console.log(`Restoring config to defaults from file ${configFile}`);
+    configLoader = new ConfigLoader({});
+    await configLoader.loadFromFile({
+      type: 'file',
+      enabled: true,
+      path: configFile,
+    });
   });
 
   describe('loadFromFile', () => {
@@ -168,7 +181,7 @@ describe('ConfigLoader', () => {
 
   describe('initialize', () => {
     it('should initialize cache directory using env-paths', async () => {
-      const configLoader = new ConfigLoader({});
+      configLoader = new ConfigLoader({});
       await configLoader.initialize();
 
       // Check that cacheDir is set and is a string
@@ -190,7 +203,7 @@ describe('ConfigLoader', () => {
     });
 
     it('should create cache directory if it does not exist', async () => {
-      const configLoader = new ConfigLoader({});
+      configLoader = new ConfigLoader({});
       await configLoader.initialize();
 
       // Check if directory exists
@@ -214,7 +227,7 @@ describe('ConfigLoader', () => {
         },
       };
 
-      const configLoader = new ConfigLoader(mockConfig);
+      configLoader = new ConfigLoader(mockConfig);
       const spy = sinon.spy(configLoader, 'reloadConfiguration');
       await configLoader.start();
 
@@ -235,7 +248,7 @@ describe('ConfigLoader', () => {
         },
       };
 
-      const configLoader = new ConfigLoader(mockConfig);
+      configLoader = new ConfigLoader(mockConfig);
       configLoader.reloadTimer = setInterval(() => {}, 1000);
       await configLoader.start();
 
@@ -257,7 +270,7 @@ describe('ConfigLoader', () => {
         },
       };
 
-      const configLoader = new ConfigLoader(mockConfig);
+      configLoader = new ConfigLoader(mockConfig);
       const spy = sinon.spy(configLoader, 'reloadConfiguration');
       await configLoader.start();
 
@@ -281,7 +294,7 @@ describe('ConfigLoader', () => {
         },
       };
 
-      const configLoader = new ConfigLoader(mockConfig);
+      configLoader = new ConfigLoader(mockConfig);
       configLoader.reloadTimer = setInterval(() => {}, 1000);
       expect(configLoader.reloadTimer).to.not.be.null;
 
@@ -291,7 +304,6 @@ describe('ConfigLoader', () => {
   });
 
   describe('loadRemoteConfig', () => {
-    let configLoader;
     beforeEach(async () => {
       const configFilePath = path.join(__dirname, '..', 'proxy.config.json');
       const config = JSON.parse(fs.readFileSync(configFilePath, 'utf-8'));
@@ -379,7 +391,7 @@ describe('ConfigLoader', () => {
         branch: 'main',
         enabled: true,
       };
-      
+
       try {
         await configLoader.loadFromSource(source);
         throw new Error('Expected error was not thrown');
@@ -425,7 +437,7 @@ describe('ConfigLoader', () => {
     it('should throw error if repository is a valid URL but not a git repository', async function () {
       const source = {
         type: 'git',
-        repository: 'https://github.com/test-org/test-repo.git',
+        repository: 'https://github.com/finos/made-up-test-repo.git',
         path: 'proxy.config.json',
         branch: 'main',
         enabled: true,
