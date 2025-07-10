@@ -72,6 +72,34 @@ export default function PushesTable(props) {
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>{errorMessage}</div>;
 
+  const getGitProvider = (url) => {
+    const hostname = new URL(url).hostname.toLowerCase();
+    if (hostname === 'github.com') return 'github';
+    if (hostname.includes('gitlab')) return 'gitlab';
+    return 'unknown';
+  };
+
+  const getUserProfileUrl = (username, provider, hostname) => {
+    if (provider == 'github') {
+      return `https://github.com/${username}`;
+    } else if (provider == 'gitlab') {
+      return `https://${hostname}/${username}`;
+    } else {
+      return null;
+    }
+  };
+
+  const getUserProfileData = (username, provider, hostname) => {
+    let profileData = '';
+    const profileUrl = getUserProfileUrl(username, provider, hostname);
+    if (profileUrl) {
+      profileData = `<a href="${profileUrl}" rel='noreferrer' target='_blank'>${username}</a>`;
+    } else {
+      profileData = `<span>${username}</span>`;
+    }
+    return profileData;
+  };
+
   return (
     <div>
       <Search onSearch={handleSearch} /> {}
@@ -97,7 +125,8 @@ export default function PushesTable(props) {
               const repoBranch = row.branch.replace('refs/heads/', '');
               const repoUrl = row.url;
               const repoWebUrl = repoUrl.replace('.git', '');
-              const isGitHub = URL.parse(repoUrl).hostname === 'github.com';
+              const gitProvider = getGitProvider(repoUrl);
+              const hostname = new URL(repoUrl).hostname;
 
               return (
                 <TableRow key={row.id}>
@@ -126,28 +155,10 @@ export default function PushesTable(props) {
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    {isGitHub && (
-                      <a
-                        href={`https://github.com/${row.commitData[0].committer}`}
-                        rel='noreferrer'
-                        target='_blank'
-                      >
-                        {row.commitData[0].committer}
-                      </a>
-                    )}
-                    {!isGitHub && <span>{row.commitData[0].committer}</span>}
+                    {getUserProfileData(row.commitData[0].committer, gitProvider, hostname)}
                   </TableCell>
                   <TableCell align='left'>
-                    {isGitHub && (
-                      <a
-                        href={`https://github.com/${row.commitData[0].author}`}
-                        rel='noreferrer'
-                        target='_blank'
-                      >
-                        {row.commitData[0].author}
-                      </a>
-                    )}
-                    {!isGitHub && <span>{row.commitData[0].author}</span>}
+                    {getUserProfileData(row.commitData[0].author, gitProvider, hostname)}
                   </TableCell>
                   <TableCell align='left'>
                     {row.commitData[0].authorEmail ? (
