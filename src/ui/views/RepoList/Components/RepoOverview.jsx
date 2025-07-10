@@ -569,29 +569,92 @@ import moment from 'moment';
 import CodeActionButton from '../../../components/CustomButtons/CodeActionButton';
 
 export default function Repositories(props) {
-  const [github, setGitHub] = React.useState({});
-
+  const [remoteRepoData, setRemoteRepoData] = React.useState(null);
+  const [provider, setProvider] = React.useState(null);
   const [errorMessage, setErrorMessage] = React.useState('');
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 
   useEffect(() => {
-    getGitHubRepository();
-  }, [props.data.project, props.data.name]);
+    fetchRemoteRepositoryData();
+  }, [props.data.project, props.data.name, props.data.url]);
 
-  // TODO add support for GitLab API: https://docs.gitlab.com/api/projects/#get-a-single-project
-  const getGitHubRepository = async () => {
-    await axios
-      .get(`https://api.github.com/repos/${props.data.project}/${props.data.name}`)
-      .then((res) => {
-        setGitHub(res.data);
-      })
-      .catch((error) => {
-        setErrorMessage(
-          `Error fetching GitHub repository ${props.data.project}/${props.data.name}: ${error}`,
+  const fetchRemoteRepositoryData = async () => {
+    try {
+      const { url: remoteUrl } = props.data;
+      if (!remoteUrl) return;
+
+      const parsedUrl = new URL(remoteUrl);
+      const hostname = parsedUrl.hostname.toLowerCase();
+
+      if (hostname === 'github.com') {
+        setProvider('github');
+        const response = await axios.get(
+          `https://api.github.com/repos/${props.data.project}/${props.data.name}`,
         );
-        setSnackbarOpen(true);
-      });
+        setRemoteRepoData(response.data);
+      } else if (hostname.includes('gitlab')) {
+        setProvider('gitlab');
+        const projectPath = encodeURIComponent(`${props.data.project}/${props.data.name}`);
+        const apiUrl = `https://${hostname}/api/v4/projects/${projectPath}`;
+        const response = await axios.get(apiUrl);
+
+        // Make follow-up call to get languages
+        let primaryLanguage = null;
+        try {
+          const languagesResponse = await axios.get(
+            `https://${hostname}/api/v4/projects/${projectPath}/languages`,
+          );
+          const languages = languagesResponse.data;
+          // Get the first key (primary language) from the ordered hash
+          primaryLanguage = Object.keys(languages)[0] || null;
+        } catch (languageError) {
+          console.warn('Could not fetch language data:', languageError);
+        }
+
+        setRemoteRepoData({
+          ...response.data,
+          primary_language: primaryLanguage,
+        });
+      } // For other/unknown providers, don't make API calls
+    } catch (error) {
+      setErrorMessage(`Error fetching repository data: ${error.message}`);
+      setSnackbarOpen(true);
+    }
   };
+
+  // Helper function to normalize data across providers
+  const getDisplayData = () => {
+    if (!remoteRepoData) return {};
+
+    if (provider === 'github') {
+      return {
+        description: remoteRepoData.description,
+        language: remoteRepoData.language,
+        license: remoteRepoData.license?.spdx_id,
+        parent: remoteRepoData.parent,
+        lastUpdated: moment.max([
+          moment(remoteRepoData.created_at),
+          moment(remoteRepoData.updated_at),
+          moment(remoteRepoData.pushed_at),
+        ]),
+        htmlUrl: remoteRepoData.html_url,
+        parentUrl: remoteRepoData.parent?.html_url,
+      };
+    } else if (provider === 'gitlab') {
+      return {
+        description: remoteRepoData.description,
+        language: remoteRepoData.primary_language,
+        license: remoteRepoData.license?.nickname,
+        parent: remoteRepoData.forked_from_project,
+        lastUpdated: moment(remoteRepoData.last_activity_at),
+        htmlUrl: remoteRepoData.web_url,
+        parentUrl: remoteRepoData.forked_from_project?.web_url,
+      };
+    }
+    return {};
+  };
+
+  const displayData = getDisplayData();
 
   const { url: remoteUrl, proxyURL } = props?.data || {};
   const parsedUrl = new URL(remoteUrl);
@@ -606,7 +669,7 @@ export default function Repositories(props) {
               {props.data.project}/{props.data.name}
             </span>
           </a>
-          {github.parent && (
+          {displayData.parent && (
             <span
               style={{
                 fontSize: '11.5px',
@@ -620,33 +683,33 @@ export default function Repositories(props) {
                   fontWeight: 'normal',
                   color: 'inherit',
                 }}
-                href={github.parent.html_url}
+                href={displayData.parent.html_url}
               >
-                {github.parent.full_name}
+                {displayData.parent.full_name}
               </a>
             </span>
           )}
-          {github.description && <p style={{ maxWidth: '80%' }}>{github.description}</p>}
+          {displayData.description && <p style={{ maxWidth: '80%' }}>{displayData.description}</p>}
           <GridContainer>
-            {github.language && (
+            {displayData.language && (
               <GridItem>
                 <span
                   style={{
                     height: '12px',
                     width: '12px',
-                    backgroundColor: `${colors[github.language]}`,
+                    backgroundColor: `${colors[displayData.language]}`,
                     borderRadius: '50px',
                     display: 'inline-block',
                     marginRight: '5px',
                   }}
                 ></span>
-                {github.language}
+                {displayData.language}
               </GridItem>
             )}
-            {github.license && (
+            {displayData.license && (
               <GridItem>
                 <LawIcon size='small' />{' '}
-                <span style={{ marginLeft: '5px' }}>{github.license.spdx_id}</span>
+                <span style={{ marginLeft: '5px' }}>{displayData.license.spdx_id}</span>
               </GridItem>
             )}
             <GridItem>
@@ -659,14 +722,14 @@ export default function Repositories(props) {
                 {props.data.users?.canAuthorise?.length || 0}
               </span>
             </GridItem>
-            {(github.created_at || github.updated_at || github.pushed_at) && (
+            {(displayData.created_at || displayData.updated_at || displayData.pushed_at) && (
               <GridItem>
                 Last updated{' '}
                 {moment
                   .max([
-                    moment(github.created_at),
-                    moment(github.updated_at),
-                    moment(github.pushed_at),
+                    moment(displayData.created_at),
+                    moment(displayData.updated_at),
+                    moment(displayData.pushed_at),
                   ])
                   .fromNow()}
               </GridItem>
@@ -679,13 +742,15 @@ export default function Repositories(props) {
           <CodeActionButton cloneURL={cloneURL} />
         </div>
       </TableCell>
-      <Snackbar
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-        message={errorMessage}
-      />
+      <TableCell>
+        <Snackbar
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={() => setSnackbarOpen(false)}
+          message={errorMessage}
+        />
+      </TableCell>
     </TableRow>
   );
 }

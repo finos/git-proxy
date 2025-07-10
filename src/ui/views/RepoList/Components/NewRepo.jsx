@@ -75,9 +75,8 @@ function AddRepositoryDialog(props) {
     }
 
     try {
-      await addRepo(onClose, setError, data);
-      handleSuccess(data);
-
+      const repoData = await addRepo(onClose, setError, data);
+      handleSuccess(repoData);
       handleClose();
     } catch (e) {
       if (e.message) {

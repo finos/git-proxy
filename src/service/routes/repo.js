@@ -172,8 +172,11 @@ const repo = (proxy) => {
           );
 
           // create the repository
-          await db.createRepo(req.body);
-          res.send({ message: 'created' });
+          const repoDetails = await db.createRepo(req.body);
+          const proxyURL = getProxyURL(req);
+
+          // return data on the new repoistory (including it's _id and the proxyUrl)
+          res.send({ ...repoDetails, proxyURL, message: 'created' });
 
           // restart the proxy if we're proxying a new domain
           if (newOrigin) {
