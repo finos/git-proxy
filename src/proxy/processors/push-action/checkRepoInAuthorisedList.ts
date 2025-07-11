@@ -11,9 +11,9 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   if (!found) {
     console.log(`Repository url '${action.url}' not found`);
     step.error = true;
-    step.log(`repo ${action.repo} is not in the authorisedList, ending`);
+    step.log(`repo ${action.url} is not in the authorisedList, ending`);
     console.log('setting error');
-    step.setError(`Rejecting repo ${action.repo} not in the authorisedList`);
+    step.setError(`Rejecting repo ${action.url} not in the authorisedList`);
     action.addStep(step);
     return action;
   }
