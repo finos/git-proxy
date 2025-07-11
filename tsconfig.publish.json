@@ -8,8 +8,9 @@
     "experimental/**",
     "plugins/**",
     "./dist/**",
-    "./src/ui",
-    "./src/**/*.jsx",
+    "src/ui/**",
+    "**/*.tsx",
+    "**/*.jsx",
     "./src/context.js"
   ]
 }
