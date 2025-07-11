@@ -24,6 +24,7 @@ export interface CommitData {
 
 export interface PushData {
   id: string;
+  url: string;
   repo: string;
   branch: string;
   commitFrom: string;

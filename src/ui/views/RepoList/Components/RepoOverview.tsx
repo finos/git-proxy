@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Snackbar, TableCell, TableRow } from '@material-ui/core';
 import GridContainer from '../../../components/Grid/GridContainer';
 import GridItem from '../../../components/Grid/GridItem';
@@ -9,12 +9,13 @@ import CodeActionButton from '../../../components/CustomButtons/CodeActionButton
 import { languageColors } from '../../../../constants/languageColors';
 import { RepositoriesProps } from '../repositories.types';
 
-interface GitHubRepository {
+interface GitHubRepositoryMetadata {
   description?: string;
   language?: string;
   license?: {
     spdx_id: string;
   };
+  html_url: string;
   parent?: {
     full_name: string;
     html_url: string;
@@ -24,32 +25,130 @@ interface GitHubRepository {
   pushed_at?: string;
 }
 
-const Repositories: React.FC<RepositoriesProps> = (props) => {
-  const [github, setGitHub] = useState<GitHubRepository>({});
+interface GitLabRepositoryMetadata {
+  description?: string;
+  primary_language?: string;
+  license?: {
+    nickname: string;
+  };
+  web_url: string;
+  forked_from_project?: {
+    full_name: string;
+    web_url: string;
+  };
+  last_activity_at?: string;
+}
 
+interface DisplayMetadata {
+  description?: string;
+  language?: string;
+  license?: string;
+  htmlUrl?: string;
+  parentName?: string;
+  parentUrl?: string;
+  lastUpdated?: string;
+  created_at?: string;
+  updated_at?: string;
+  pushed_at?: string;
+}
+
+const Repositories: React.FC<RepositoriesProps> = (props) => {
+  const [remoteRepoData, setRemoteRepoData] = React.useState<
+    GitHubRepositoryMetadata | GitLabRepositoryMetadata | null
+  >(null);
+  const [provider, setProvider] = React.useState<'github' | 'gitlab' | 'unknown' | null>(null);
   const [errorMessage, setErrorMessage] = React.useState('');
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 
   useEffect(() => {
-    getGitHubRepository();
-  }, [props.data?.project, props.data?.name]);
+    fetchRemoteRepositoryData();
+  }, [props.data.project, props.data.name, props.data.url]);
 
-  const getGitHubRepository = async () => {
-    await axios
-      .get(`https://api.github.com/repos/${props.data?.project}/${props.data?.name}`)
-      .then((res) => {
-        setGitHub(res.data);
-      })
-      .catch((error) => {
-        setErrorMessage(
-          `Error fetching GitHub repository ${props.data?.project}/${props.data?.name}: ${error}`,
+  const fetchRemoteRepositoryData = async () => {
+    try {
+      const { url: remoteUrl } = props.data;
+      if (!remoteUrl) return;
+
+      const parsedUrl = new URL(remoteUrl);
+      const hostname = parsedUrl.hostname.toLowerCase();
+
+      if (hostname === 'github.com') {
+        setProvider('github');
+        const response = await axios.get<GitHubRepositoryMetadata>(
+          `https://api.github.com/repos/${props.data?.project}/${props.data?.name}`,
         );
-        setSnackbarOpen(true);
-      });
+        setRemoteRepoData(response.data);
+      } else if (hostname.includes('gitlab')) {
+        setProvider('gitlab');
+        const projectPath = encodeURIComponent(`${props.data?.project}/${props.data?.name}`);
+        const apiUrl = `https://${hostname}/api/v4/projects/${projectPath}`;
+        const response = await axios.get<GitLabRepositoryMetadata>(apiUrl);
+
+        // Make follow-up call to get languages
+        let primaryLanguage;
+        try {
+          const languagesResponse = await axios.get(
+            `https://${hostname}/api/v4/projects/${projectPath}/languages`,
+          );
+          const languages = languagesResponse.data;
+          // Get the first key (primary language) from the ordered hash
+          primaryLanguage = Object.keys(languages)[0];
+        } catch (languageError) {
+          console.warn('Could not fetch language data:', languageError);
+        }
+
+        setRemoteRepoData({
+          ...response.data,
+          primary_language: primaryLanguage,
+        });
+      } // For other/unknown providers, don't make API calls
+    } catch (error: any) {
+      setErrorMessage(`Error fetching repository data: ${error.message}`);
+      setSnackbarOpen(true);
+    }
   };
 
-  const { project: org, name, proxyURL } = props?.data || {};
-  const cloneURL = `${proxyURL}/${org}/${name}.git`;
+  // Helper function to normalize data across providers
+  const getDisplayData = (): DisplayMetadata => {
+    if (!remoteRepoData) return {};
+
+    if (provider === 'github') {
+      const gitHubMetadata = remoteRepoData as GitHubRepositoryMetadata;
+      return {
+        description: gitHubMetadata.description,
+        language: gitHubMetadata.language,
+        license: gitHubMetadata.license?.spdx_id,
+        lastUpdated: moment
+          .max([
+            moment(gitHubMetadata.created_at),
+            moment(gitHubMetadata.updated_at),
+            moment(gitHubMetadata.pushed_at),
+          ])
+          .fromNow(),
+        htmlUrl: gitHubMetadata.html_url,
+        parentName: gitHubMetadata.parent?.full_name,
+        parentUrl: gitHubMetadata.parent?.html_url,
+      };
+    } else if (provider === 'gitlab') {
+      const gitLabMetadata = remoteRepoData as GitLabRepositoryMetadata;
+      return {
+        description: gitLabMetadata.description,
+        language: gitLabMetadata.primary_language,
+        license: gitLabMetadata.license?.nickname,
+        lastUpdated: moment(gitLabMetadata.last_activity_at).fromNow(),
+        htmlUrl: gitLabMetadata.web_url,
+        parentName: gitLabMetadata.forked_from_project?.full_name,
+        parentUrl: gitLabMetadata.forked_from_project?.web_url,
+      };
+    }
+    return {};
+  };
+
+  const displayData = getDisplayData();
+
+  const { url: remoteUrl, proxyURL } = props?.data || {};
+  const parsedUrl = new URL(remoteUrl);
+  const cloneURL = `${proxyURL}/${parsedUrl.host}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`;
 
   return (
     <TableRow>
@@ -57,10 +156,10 @@ const Repositories: React.FC<RepositoriesProps> = (props) => {
         <div style={{ padding: '15px' }}>
           <a href={`/dashboard/repo/${props.data?.name}`}>
             <span style={{ fontSize: '17px' }}>
-              {props.data?.project}/{props.data?.name}
+              {props.data.project}/{props.data.name}
             </span>
           </a>
-          {github.parent && (
+          {displayData.parentName && (
             <span
               style={{
                 fontSize: '11.5px',
@@ -74,33 +173,33 @@ const Repositories: React.FC<RepositoriesProps> = (props) => {
                   fontWeight: 'normal',
                   color: 'inherit',
                 }}
-                href={github.parent.html_url}
+                href={displayData.parentUrl}
               >
-                {github.parent.full_name}
+                {displayData.parentName}
               </a>
             </span>
           )}
-          {github.description && <p style={{ maxWidth: '80%' }}>{github.description}</p>}
+          {displayData.description && <p style={{ maxWidth: '80%' }}>{displayData.description}</p>}
           <GridContainer>
-            {github.language && (
+            {displayData.language && (
               <GridItem>
                 <span
                   style={{
                     height: '12px',
                     width: '12px',
-                    backgroundColor: `${languageColors[github.language] || '#ccc'}`,
+                    backgroundColor: `${languageColors[displayData.language] || '#ccc'}`,
                     borderRadius: '50px',
                     display: 'inline-block',
                     marginRight: '5px',
                   }}
                 ></span>
-                {github.language}
+                {displayData.language}
               </GridItem>
             )}
-            {github.license && (
+            {displayData.license && (
               <GridItem>
                 <LawIcon size='small' />{' '}
-                <span style={{ marginLeft: '5px' }}>{github.license.spdx_id}</span>
+                <span style={{ marginLeft: '5px' }}>{displayData.license}</span>
               </GridItem>
             )}
             <GridItem>
@@ -113,18 +212,7 @@ const Repositories: React.FC<RepositoriesProps> = (props) => {
                 {props.data?.users?.canAuthorise?.length || 0}
               </span>
             </GridItem>
-            {(github.created_at || github.updated_at || github.pushed_at) && (
-              <GridItem>
-                Last updated{' '}
-                {moment
-                  .max([
-                    moment(github.created_at || 0),
-                    moment(github.updated_at || 0),
-                    moment(github.pushed_at || 0),
-                  ])
-                  .fromNow()}
-              </GridItem>
-            )}
+            {displayData.lastUpdated && <GridItem>Last updated {displayData.lastUpdated}</GridItem>}
           </GridContainer>
         </div>
       </TableCell>
