@@ -21,8 +21,11 @@ import { UserContext } from '../../../context';
 import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
 import { Box } from '@material-ui/core';
 import { trimTrailingDotGit } from '../../../db/helper';
+import { fetchRemoteRepositoryData } from '../../utils';
+import { SCMRepositoryMetadata } from '../../../types/models';
 
 interface RepoData {
+  _id: string;
   project: string;
   name: string;
   proxyURL: string;
@@ -58,29 +61,36 @@ const RepoDetails: React.FC = () => {
   const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [remoteRepoData, setRemoteRepoData] = React.useState<SCMRepositoryMetadata | null>(null);
   const { user } = useContext<UserContextType>(UserContext);
-  const { id: repoName } = useParams<{ id: string }>();
+  const { id: repoId } = useParams<{ id: string }>();
 
   useEffect(() => {
-    if (repoName) {
-      getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
+    if (repoId) {
+      getRepo(setIsLoading, setData, setAuth, setIsError, repoId);
     }
-  }, [repoName]);
+  }, [repoId]);
+
+  useEffect(() => {
+    if (data) {
+      fetchRemoteRepositoryData(data.project, data.name, data.url).then(setRemoteRepoData);
+    }
+  }, [data]);
 
   const removeUser = async (userToRemove: string, action: 'authorise' | 'push') => {
-    if (!repoName) return;
-    await deleteUser(userToRemove, repoName, action);
-    getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
+    if (!repoId) return;
+    await deleteUser(userToRemove, repoId, action);
+    getRepo(setIsLoading, setData, setAuth, setIsError, repoId);
   };
 
-  const removeRepository = async (name: string) => {
-    await deleteRepo(name);
+  const removeRepository = async (id: string) => {
+    await deleteRepo(id);
     navigate('/dashboard/repo', { replace: true });
   };
 
   const refresh = () => {
-    if (repoName) {
-      getRepo(setIsLoading, setData, setAuth, setIsError, repoName);
+    if (repoId) {
+      getRepo(setIsLoading, setData, setAuth, setIsError, repoId);
     }
   };
 
@@ -88,8 +98,9 @@ const RepoDetails: React.FC = () => {
   if (isError) return <div>Something went wrong ...</div>;
   if (!data) return <div>No repository data found</div>;
 
-  const { project: org, name, proxyURL } = data;
-  const cloneURL = `${proxyURL}/${org}/${name}.git`;
+  const { url: remoteUrl, proxyURL } = data || {};
+  const parsedUrl = new URL(remoteUrl);
+  const cloneURL = `${proxyURL}/${parsedUrl.host}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`;
 
   return (
     <GridContainer>
@@ -101,7 +112,7 @@ const RepoDetails: React.FC = () => {
                 <Button
                   variant='contained'
                   color='secondary'
-                  onClick={() => removeRepository(data.name)}
+                  onClick={() => removeRepository(data._id)}
                 >
                   <Delete />
                 </Button>
@@ -113,31 +124,33 @@ const RepoDetails: React.FC = () => {
             </Box>
             <form className={classes.root} noValidate autoComplete='off'>
               <GridContainer>
-                <GridItem xs={1} sm={1} md={1}>
-                  <img
-                    width='75px'
-                    style={{ borderRadius: '5px' }}
-                    src={`https://github.com/${data.project}.png`}
-                    alt={`${data.project} logo`}
-                  />
-                </GridItem>
+                {remoteRepoData?.avatarUrl && (
+                  <GridItem xs={1} sm={1} md={1}>
+                    <img
+                      width='75px'
+                      style={{ borderRadius: '5px' }}
+                      src={remoteRepoData.avatarUrl}
+                      alt={`${data.project} logo`}
+                    />
+                  </GridItem>
+                )}
+
                 <GridItem xs={2} sm={2} md={2}>
                   <FormLabel component='legend'>Organization</FormLabel>
                   <h4>
-                    <a
-                      href={`https://github.com/${data.project}`}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                    >
-                      {data.project}
-                    </a>
+                    {remoteRepoData?.profileUrl && (
+                      <a href={remoteRepoData.profileUrl} target='_blank' rel='noopener noreferrer'>
+                        {data.project}
+                      </a>
+                    )}
+                    {!remoteRepoData?.profileUrl && <span>{data.project}</span>}
                   </h4>
                 </GridItem>
                 <GridItem xs={2} sm={2} md={2}>
                   <FormLabel component='legend'>Name</FormLabel>
                   <h4>
                     <a
-                      href={`https://github.com/${data.project}/${data.name}`}
+                      href={trimTrailingDotGit(data.url)}
                       target='_blank'
                       rel='noopener noreferrer'
                     >
@@ -164,7 +177,7 @@ const RepoDetails: React.FC = () => {
                 </h3>
                 {user.admin && (
                   <div style={{ textAlign: 'right' }}>
-                    <AddUser repoName={repoName || ''} type='authorise' refreshFn={refresh} />
+                    <AddUser repoId={repoId || ''} type='authorise' refreshFn={refresh} />
                   </div>
                 )}
                 <TableContainer component={Paper}>
@@ -207,7 +220,7 @@ const RepoDetails: React.FC = () => {
                 </h3>
                 {user.admin && (
                   <div style={{ textAlign: 'right' }}>
-                    <AddUser repoName={repoName || ''} type='push' refreshFn={refresh} />
+                    <AddUser repoId={repoId || ''} type='push' refreshFn={refresh} />
                   </div>
                 )}
                 <TableContainer component={Paper}>
