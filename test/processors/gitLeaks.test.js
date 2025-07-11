@@ -22,9 +22,9 @@ describe('gitleaks', () => {
         fs: {
           stat: sinon.stub(),
           access: sinon.stub(),
-          constants: { R_OK: 0 }
+          constants: { R_OK: 0 },
         },
-        spawn: sinon.stub()
+        spawn: sinon.stub(),
       };
 
       logStub = sinon.stub(console, 'log');
@@ -33,19 +33,13 @@ describe('gitleaks', () => {
       const gitleaksModule = proxyquire('../../src/proxy/processors/push-action/gitleaks', {
         '../../../config': { getAPIs: stubs.getAPIs },
         'node:fs/promises': stubs.fs,
-        'node:child_process': { spawn: stubs.spawn }
+        'node:child_process': { spawn: stubs.spawn },
       });
 
       exec = gitleaksModule.exec;
 
       req = {};
-      action = new Action(
-        '1234567890',
-        'push',
-        'POST',
-        1234567890,
-        'test/repo'
-      );
+      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
       action.proxyGitPath = '/tmp';
       action.repoName = 'test-repo';
       action.commitFrom = 'abc123';
@@ -66,8 +60,10 @@ describe('gitleaks', () => {
       expect(result.error).to.be.true;
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.true;
-      expect(stepSpy.calledWith('failed setup gitleaks, please contact an administrator\n')).to.be.true;
-      expect(errorStub.calledWith('failed to get gitleaks config, please fix the error:')).to.be.true;
+      expect(stepSpy.calledWith('failed setup gitleaks, please contact an administrator\n')).to.be
+        .true;
+      expect(errorStub.calledWith('failed to get gitleaks config, please fix the error:')).to.be
+        .true;
     });
 
     it('should skip scanning when plugin is disabled', async () => {
@@ -87,31 +83,33 @@ describe('gitleaks', () => {
       const gitRootCommitMock = {
         exitCode: 0,
         stdout: 'rootcommit123\n',
-        stderr: ''
+        stderr: '',
       };
 
       const gitleaksMock = {
         exitCode: 0,
         stdout: '',
-        stderr: 'No leaks found'
+        stderr: 'No leaks found',
       };
 
       stubs.spawn
-        .onFirstCall().returns({
+        .onFirstCall()
+        .returns({
           on: (event, cb) => {
             if (event === 'close') cb(gitRootCommitMock.exitCode);
             return { stdout: { on: () => {} }, stderr: { on: () => {} } };
           },
           stdout: { on: (_, cb) => cb(gitRootCommitMock.stdout) },
-          stderr: { on: (_, cb) => cb(gitRootCommitMock.stderr) }
+          stderr: { on: (_, cb) => cb(gitRootCommitMock.stderr) },
         })
-        .onSecondCall().returns({
+        .onSecondCall()
+        .returns({
           on: (event, cb) => {
             if (event === 'close') cb(gitleaksMock.exitCode);
             return { stdout: { on: () => {} }, stderr: { on: () => {} } };
           },
           stdout: { on: (_, cb) => cb(gitleaksMock.stdout) },
-          stderr: { on: (_, cb) => cb(gitleaksMock.stderr) }
+          stderr: { on: (_, cb) => cb(gitleaksMock.stderr) },
         });
 
       const result = await exec(req, action);
@@ -129,31 +127,33 @@ describe('gitleaks', () => {
       const gitRootCommitMock = {
         exitCode: 0,
         stdout: 'rootcommit123\n',
-        stderr: ''
+        stderr: '',
       };
 
       const gitleaksMock = {
         exitCode: 99,
         stdout: 'Found secret in file.txt\n',
-        stderr: 'Warning: potential leak'
+        stderr: 'Warning: potential leak',
       };
 
       stubs.spawn
-        .onFirstCall().returns({
+        .onFirstCall()
+        .returns({
           on: (event, cb) => {
             if (event === 'close') cb(gitRootCommitMock.exitCode);
             return { stdout: { on: () => {} }, stderr: { on: () => {} } };
           },
           stdout: { on: (_, cb) => cb(gitRootCommitMock.stdout) },
-          stderr: { on: (_, cb) => cb(gitRootCommitMock.stderr) }
+          stderr: { on: (_, cb) => cb(gitRootCommitMock.stderr) },
         })
-        .onSecondCall().returns({
+        .onSecondCall()
+        .returns({
           on: (event, cb) => {
             if (event === 'close') cb(gitleaksMock.exitCode);
             return { stdout: { on: () => {} }, stderr: { on: () => {} } };
           },
           stdout: { on: (_, cb) => cb(gitleaksMock.stdout) },
-          stderr: { on: (_, cb) => cb(gitleaksMock.stderr) }
+          stderr: { on: (_, cb) => cb(gitleaksMock.stderr) },
         });
 
       const result = await exec(req, action);
@@ -170,31 +170,33 @@ describe('gitleaks', () => {
       const gitRootCommitMock = {
         exitCode: 0,
         stdout: 'rootcommit123\n',
-        stderr: ''
+        stderr: '',
       };
 
       const gitleaksMock = {
         exitCode: 1,
         stdout: '',
-        stderr: 'Command failed'
+        stderr: 'Command failed',
       };
 
       stubs.spawn
-        .onFirstCall().returns({
+        .onFirstCall()
+        .returns({
           on: (event, cb) => {
             if (event === 'close') cb(gitRootCommitMock.exitCode);
             return { stdout: { on: () => {} }, stderr: { on: () => {} } };
           },
           stdout: { on: (_, cb) => cb(gitRootCommitMock.stdout) },
-          stderr: { on: (_, cb) => cb(gitRootCommitMock.stderr) }
+          stderr: { on: (_, cb) => cb(gitRootCommitMock.stderr) },
         })
-        .onSecondCall().returns({
+        .onSecondCall()
+        .returns({
           on: (event, cb) => {
             if (event === 'close') cb(gitleaksMock.exitCode);
             return { stdout: { on: () => {} }, stderr: { on: () => {} } };
           },
           stdout: { on: (_, cb) => cb(gitleaksMock.stdout) },
-          stderr: { on: (_, cb) => cb(gitleaksMock.stderr) }
+          stderr: { on: (_, cb) => cb(gitleaksMock.stderr) },
         });
 
       const result = await exec(req, action);
@@ -202,7 +204,8 @@ describe('gitleaks', () => {
       expect(result.error).to.be.true;
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.true;
-      expect(stepSpy.calledWith('failed to run gitleaks, please contact an administrator\n')).to.be.true;
+      expect(stepSpy.calledWith('failed to run gitleaks, please contact an administrator\n')).to.be
+        .true;
     });
 
     it('should handle gitleaks spawn failure', async () => {
@@ -214,7 +217,8 @@ describe('gitleaks', () => {
       expect(result.error).to.be.true;
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.true;
-      expect(stepSpy.calledWith('failed to spawn gitleaks, please contact an administrator\n')).to.be.true;
+      expect(stepSpy.calledWith('failed to spawn gitleaks, please contact an administrator\n')).to
+        .be.true;
     });
 
     it('should handle empty gitleaks entry in proxy.config.json', async () => {
@@ -233,7 +237,7 @@ describe('gitleaks', () => {
           return { stdout: { on: () => {} }, stderr: { on: () => {} } };
         },
         stdout: { on: (_, cb) => cb('') },
-        stderr: { on: (_, cb) => cb('') }
+        stderr: { on: (_, cb) => cb('') },
       });
 
       const result = await exec(req, action);
@@ -244,11 +248,11 @@ describe('gitleaks', () => {
     });
 
     it('should handle custom config path', async () => {
-      stubs.getAPIs.returns({ 
-        gitleaks: { 
+      stubs.getAPIs.returns({
+        gitleaks: {
           enabled: true,
-          configPath: `../fixtures/gitleaks-config.toml`
-        } 
+          configPath: `../fixtures/gitleaks-config.toml`,
+        },
       });
 
       stubs.fs.stat.resolves({ isFile: () => true });
@@ -257,46 +261,50 @@ describe('gitleaks', () => {
       const gitRootCommitMock = {
         exitCode: 0,
         stdout: 'rootcommit123\n',
-        stderr: ''
+        stderr: '',
       };
 
       const gitleaksMock = {
         exitCode: 0,
         stdout: '',
-        stderr: 'No leaks found'
+        stderr: 'No leaks found',
       };
 
       stubs.spawn
-        .onFirstCall().returns({
+        .onFirstCall()
+        .returns({
           on: (event, cb) => {
             if (event === 'close') cb(gitRootCommitMock.exitCode);
             return { stdout: { on: () => {} }, stderr: { on: () => {} } };
           },
           stdout: { on: (_, cb) => cb(gitRootCommitMock.stdout) },
-          stderr: { on: (_, cb) => cb(gitRootCommitMock.stderr) }
+          stderr: { on: (_, cb) => cb(gitRootCommitMock.stderr) },
         })
-        .onSecondCall().returns({
+        .onSecondCall()
+        .returns({
           on: (event, cb) => {
             if (event === 'close') cb(gitleaksMock.exitCode);
             return { stdout: { on: () => {} }, stderr: { on: () => {} } };
           },
           stdout: { on: (_, cb) => cb(gitleaksMock.stdout) },
-          stderr: { on: (_, cb) => cb(gitleaksMock.stderr) }
+          stderr: { on: (_, cb) => cb(gitleaksMock.stderr) },
         });
 
       const result = await exec(req, action);
 
       expect(result.error).to.be.false;
       expect(result.steps[0].error).to.be.false;
-      expect(stubs.spawn.secondCall.args[1]).to.include('--config=../fixtures/gitleaks-config.toml');
+      expect(stubs.spawn.secondCall.args[1]).to.include(
+        '--config=../fixtures/gitleaks-config.toml',
+      );
     });
 
     it('should handle invalid custom config path', async () => {
-      stubs.getAPIs.returns({ 
-        gitleaks: { 
+      stubs.getAPIs.returns({
+        gitleaks: {
           enabled: true,
-          configPath: '/invalid/path.toml'
-        } 
+          configPath: '/invalid/path.toml',
+        },
       });
 
       stubs.fs.stat.rejects(new Error('File not found'));
@@ -306,7 +314,11 @@ describe('gitleaks', () => {
       expect(result.error).to.be.true;
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.true;
-      expect(errorStub.calledWith('could not read file at the config path provided, will not be fed to gitleaks')).to.be.true;
+      expect(
+        errorStub.calledWith(
+          'could not read file at the config path provided, will not be fed to gitleaks',
+        ),
+      ).to.be.true;
     });
   });
 });

@@ -11,7 +11,7 @@ describe('default configuration', function () {
   it('should use default values if no user-settings.json file exists', function () {
     const config = require('../src/config');
     config.logConfiguration();
-    const enabledMethods = defaultSettings.authentication.filter(method => method.enabled);
+    const enabledMethods = defaultSettings.authentication.filter((method) => method.enabled);
 
     expect(config.getAuthMethods()).to.deep.equal(enabledMethods);
     expect(config.getDatabase()).to.be.eql(defaultSettings.sink[0]);
@@ -60,7 +60,7 @@ describe('user configuration', function () {
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
-    const enabledMethods = defaultSettings.authentication.filter(method => method.enabled);
+    const enabledMethods = defaultSettings.authentication.filter((method) => method.enabled);
 
     expect(config.getAuthorisedList()).to.be.eql(user.authorisedList);
     expect(config.getAuthMethods()).to.deep.equal(enabledMethods);
@@ -81,7 +81,7 @@ describe('user configuration', function () {
 
     const config = require('../src/config');
     const authMethods = config.getAuthMethods();
-    const googleAuth = authMethods.find(method => method.type === 'google');
+    const googleAuth = authMethods.find((method) => method.type === 'google');
 
     expect(googleAuth).to.not.be.undefined;
     expect(googleAuth.enabled).to.be.true;
@@ -103,7 +103,7 @@ describe('user configuration', function () {
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
-    const enabledMethods = defaultSettings.authentication.filter(method => method.enabled);
+    const enabledMethods = defaultSettings.authentication.filter((method) => method.enabled);
 
     expect(config.getDatabase()).to.be.eql(user.sink[0]);
     expect(config.getDatabase()).to.not.be.eql(defaultSettings.sink[0]);
@@ -201,7 +201,7 @@ describe('user configuration', function () {
         enabled: true,
         key: 'my-key.pem',
         cert: 'my-cert.pem',
-      }
+      },
     };
 
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
@@ -224,7 +224,7 @@ describe('user configuration', function () {
       sslCertPemPath: 'bad-cert.pem',
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
-    
+
     const config = require('../src/config');
 
     expect(config.getTLSCertPemPath()).to.be.eql(user.tls.cert);
@@ -255,7 +255,7 @@ describe('user configuration', function () {
       },
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
-    
+
     const config = require('../src/config');
 
     expect(config.getAPIs()).to.be.eql(user.api);
