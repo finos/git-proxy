@@ -2,7 +2,7 @@ import fs from 'fs';
 import _ from 'lodash';
 import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
-import { toClass } from '../helper';
+import { toClass, trimTrailingDotGit } from '../helper';
 import * as repo from './repo';
 import { PushQuery } from '../types';
 
@@ -138,7 +138,7 @@ export const canUserCancelPush = async (id: string, user: string) => {
       return;
     }
 
-    const repoName = pushDetail.repoName.replace('.git', '');
+    const repoName = trimTrailingDotGit(pushDetail.repoName);
     const isAllowed = await repo.isUserPushAllowed(repoName, user);
 
     if (isAllowed) {
@@ -156,7 +156,8 @@ export const canUserApproveRejectPush = async (id: string, user: string) => {
       resolve(false);
       return;
     }
-    const repoName = action.repoName.replace('.git', '');
+
+    const repoName = trimTrailingDotGit(action.repoName);
     const isAllowed = await repo.canUserApproveRejectPushRepo(repoName, user);
 
     resolve(isAllowed);
