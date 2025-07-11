@@ -23,6 +23,7 @@ import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import { PushData } from '../../../types/models';
+import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -105,8 +106,8 @@ const Dashboard: React.FC = () => {
     };
   }
 
-  const repoFullName = data.repo.replace('.git', '');
-  const repoBranch = data.branch.replace('refs/heads/', '');
+  const repoFullName = trimTrailingDotGit(data.repo);
+  const repoBranch = trimPrefixRefsHeads(data.branch);
   const repoUrl = data.url;
   const repoWebUrl = repoUrl.replace('.git', '');
   const isGitHub = URL.parse(repoUrl)?.hostname === 'github.com';

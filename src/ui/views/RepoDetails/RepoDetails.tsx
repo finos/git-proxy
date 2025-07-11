@@ -20,6 +20,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { UserContext } from '../../../context';
 import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
 import { Box } from '@material-ui/core';
+import { trimTrailingDotGit } from '../../../db/helper';
 
 interface RepoData {
   _id: string;
@@ -150,7 +151,7 @@ const RepoDetails: React.FC = () => {
                   <FormLabel component='legend'>URL</FormLabel>
                   <h4>
                     <a href={data.url} target='_blank' rel='noopener noreferrer'>
-                      {data.url.replace('.git', '')}
+                      {trimTrailingDotGit(data.url)}
                     </a>
                   </h4>
                 </GridItem>
