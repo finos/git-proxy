@@ -21,6 +21,8 @@ import { UserContext } from '../../../context';
 import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
 import { Box } from '@material-ui/core';
 import { trimTrailingDotGit } from '../../../db/helper';
+import { fetchRemoteRepositoryData } from '../../utils';
+import { SCMRepositoryMetadata } from '../../../types/models';
 
 interface RepoData {
   _id: string;
@@ -59,6 +61,7 @@ const RepoDetails: React.FC = () => {
   const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
+  const [remoteRepoData, setRemoteRepoData] = React.useState<SCMRepositoryMetadata | null>(null);
   const { user } = useContext<UserContextType>(UserContext);
   const { id: repoId } = useParams<{ id: string }>();
 
@@ -67,6 +70,12 @@ const RepoDetails: React.FC = () => {
       getRepo(setIsLoading, setData, setAuth, setIsError, repoId);
     }
   }, [repoId]);
+
+  useEffect(() => {
+    if (data) {
+      fetchRemoteRepositoryData(data.project, data.name, data.url).then(setRemoteRepoData);
+    }
+  }, [data]);
 
   const removeUser = async (userToRemove: string, action: 'authorise' | 'push') => {
     if (!repoId) return;
@@ -115,31 +124,33 @@ const RepoDetails: React.FC = () => {
             </Box>
             <form className={classes.root} noValidate autoComplete='off'>
               <GridContainer>
-                <GridItem xs={1} sm={1} md={1}>
-                  <img
-                    width='75px'
-                    style={{ borderRadius: '5px' }}
-                    src={`https://github.com/${data.project}.png`}
-                    alt={`${data.project} logo`}
-                  />
-                </GridItem>
+                {remoteRepoData?.avatarUrl && (
+                  <GridItem xs={1} sm={1} md={1}>
+                    <img
+                      width='75px'
+                      style={{ borderRadius: '5px' }}
+                      src={remoteRepoData.avatarUrl}
+                      alt={`${data.project} logo`}
+                    />
+                  </GridItem>
+                )}
+
                 <GridItem xs={2} sm={2} md={2}>
                   <FormLabel component='legend'>Organization</FormLabel>
                   <h4>
-                    <a
-                      href={`https://github.com/${data.project}`}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                    >
-                      {data.project}
-                    </a>
+                    {remoteRepoData?.profileUrl && (
+                      <a href={remoteRepoData.profileUrl} target='_blank' rel='noopener noreferrer'>
+                        {data.project}
+                      </a>
+                    )}
+                    {!remoteRepoData?.profileUrl && <span>{data.project}</span>}
                   </h4>
                 </GridItem>
                 <GridItem xs={2} sm={2} md={2}>
                   <FormLabel component='legend'>Name</FormLabel>
                   <h4>
                     <a
-                      href={`https://github.com/${data.project}/${data.name}`}
+                      href={trimTrailingDotGit(data.url)}
                       target='_blank'
                       rel='noopener noreferrer'
                     >
