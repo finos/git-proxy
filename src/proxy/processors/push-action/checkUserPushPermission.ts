@@ -1,11 +1,20 @@
 import { Action, Step } from '../../actions';
 import { getUsers, isUserPushAllowed } from '../../../db';
+import { trimTrailingDotGit } from '../../../db/helper';
 
 // Execute if the repo is approved
 const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('checkUserPushPermission');
 
-  const repoName = action.repo.split('/')[1].replace('.git', '');
+  const repoSplit = trimTrailingDotGit(action.repo.toLowerCase()).split('/');
+  // we expect there to be exactly one / separating org/repoName
+  if (repoSplit.length != 2) {
+    step.setError('Server-side issue extracting repoName');
+    action.addStep(step);
+    return action;
+  }
+  // pull the 2nd value of the split for repoName
+  const repoName = repoSplit[1];
   let isUserAllowed = false;
 
   // n.b. action.user will be set to whatever the user had set in their user.name config in their git client.
