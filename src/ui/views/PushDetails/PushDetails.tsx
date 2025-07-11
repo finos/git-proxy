@@ -24,6 +24,7 @@ import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import { PushData } from '../../../types/models';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
+import { getGitProvider } from '../../utils';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -109,8 +110,9 @@ const Dashboard: React.FC = () => {
   const repoFullName = trimTrailingDotGit(data.repo);
   const repoBranch = trimPrefixRefsHeads(data.branch);
   const repoUrl = data.url;
-  const repoWebUrl = repoUrl.replace('.git', '');
-  const isGitHub = URL.parse(repoUrl)?.hostname === 'github.com';
+  const repoWebUrl = trimTrailingDotGit(repoUrl);
+  const gitProvider = getGitProvider(repoUrl);
+  const isGitHub = gitProvider == 'github';
 
   const generateIcon = (title: string) => {
     switch (title) {
