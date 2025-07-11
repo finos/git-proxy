@@ -4,7 +4,6 @@ const db = require('../src/db');
 const { Repo, User } = require('../src/db/types');
 const { Action } = require('../src/proxy/actions/Action');
 const { Step } = require('../src/proxy/actions/Step');
-const { trimTrailingDotGit } = require('../src/db/helper');
 
 const { expect } = chai;
 
@@ -834,9 +833,7 @@ describe('Database clients', async () => {
 
   it('should be able to check if a user can approve/reject push including .git within the repo name', async function () {
     let allowed = undefined;
-    const repoName = trimTrailingDotGit(TEST_PUSH_DOT_GIT.repoName);
-
-    await db.createRepo(TEST_REPO_DOT_GIT);
+    const repo = await db.createRepo(TEST_REPO_DOT_GIT);
     try {
       // push does not exist yet, should return false
       allowed = await db.canUserApproveRejectPush(TEST_PUSH_DOT_GIT.id, TEST_USER.username);
@@ -856,7 +853,7 @@ describe('Database clients', async () => {
 
     try {
       // authorise user and recheck
-      await db.addUserCanAuthorise(repoName, TEST_USER.username);
+      await db.addUserCanAuthorise(repo._id, TEST_USER.username);
       allowed = await db.canUserApproveRejectPush(TEST_PUSH_DOT_GIT.id, TEST_USER.username);
       expect(allowed).to.be.true;
     } catch (e) {
@@ -865,7 +862,7 @@ describe('Database clients', async () => {
 
     // clean up
     await db.deletePush(TEST_PUSH_DOT_GIT.id);
-    await db.removeUserCanAuthorise(repoName, TEST_USER.username);
+    await db.removeUserCanAuthorise(repo._id, TEST_USER.username);
   });
 
   after(async function () {
