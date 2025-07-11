@@ -17,6 +17,7 @@ import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
 import { PushData } from '../../../../types/models';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../../db/helper';
+import { getGitProvider, getUserProfileLink } from '../../../utils';
 
 interface PushesTableProps {
   [key: string]: any;
@@ -80,38 +81,6 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>{errorMessage}</div>;
 
-  const getGitProvider = (url: string) => {
-    const hostname = new URL(url).hostname.toLowerCase();
-    if (hostname === 'github.com') return 'github';
-    if (hostname.includes('gitlab')) return 'gitlab';
-    return 'unknown';
-  };
-
-  const getUserProfileUrl = (username: string, provider: string, hostname: string) => {
-    if (provider == 'github') {
-      return `https://github.com/${username}`;
-    } else if (provider == 'gitlab') {
-      return `https://${hostname}/${username}`;
-    } else {
-      return null;
-    }
-  };
-
-  const getUserProfileData = (username: string, provider: string, hostname: string) => {
-    if (username) {
-      let profileData = '';
-      const profileUrl = getUserProfileUrl(username, provider, hostname);
-      if (profileUrl) {
-        profileData = `<a href="${profileUrl}" rel='noreferrer' target='_blank'>${username}</a>`;
-      } else {
-        profileData = `<span>${username}</span>`;
-      }
-      return profileData;
-    } else {
-      return 'N/A';
-    }
-  };
-
   return (
     <div>
       <Search onSearch={handleSearch} />
@@ -136,7 +105,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
               const repoFullName = trimTrailingDotGit(row.repo);
               const repoBranch = trimPrefixRefsHeads(row.branch);
               const repoUrl = row.url;
-              const repoWebUrl = repoUrl.replace('.git', '');
+              const repoWebUrl = trimTrailingDotGit(repoUrl);
               const gitProvider = getGitProvider(repoUrl);
               const hostname = new URL(repoUrl).hostname;
               const commitTimestamp =
@@ -167,10 +136,10 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    {getUserProfileData(row.commitData[0].committer, gitProvider, hostname)}
+                    {getUserProfileLink(row.commitData[0].committer, gitProvider, hostname)}
                   </TableCell>
                   <TableCell align='left'>
-                    {getUserProfileData(row.commitData[0].author, gitProvider, hostname)}
+                    {getUserProfileLink(row.commitData[0].author, gitProvider, hostname)}
                   </TableCell>
                   <TableCell align='left'>
                     {row.commitData[0]?.authorEmail ? (
