@@ -486,6 +486,10 @@ describe('test git-proxy-cli', function () {
   // *** create user ***
 
   describe('test git-proxy-cli :: create-user', function () {
+    const testUser = 'testuser';
+    const testPassword = 'testpassword';
+    const testEmail = 'jane.doe@email.com';
+
     it('attempt to create user should fail when server is down', async function () {
       try {
         // start server -> login -> stop server
@@ -514,9 +518,10 @@ describe('test git-proxy-cli', function () {
 
     it('attempt to create user should fail when not admin', async function () {
       try {
+        await helper.addUserToDb(testUser, testPassword, testEmail, 'testGitAccount');
         await helper.startServer(service);
         await helper.runCli(
-          `npx -- @finos/git-proxy-cli login --username testuser --password testpassword`,
+          `npx -- @finos/git-proxy-cli login --username ${testUser} --password ${testPassword}`,
         );
 
         const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
@@ -525,6 +530,7 @@ describe('test git-proxy-cli', function () {
         const expectedErrorMessages = ['Error: Create User: Authentication required'];
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
       } finally {
+        await helper.removeUserFromDb(testUser);
         await helper.closeServer(service.httpServer);
       }
     });
@@ -563,6 +569,7 @@ describe('test git-proxy-cli', function () {
           null,
         );
       } finally {
+        await helper.removeUserFromDb('newuser');
         await helper.closeServer(service.httpServer);
       }
     });
@@ -586,6 +593,7 @@ describe('test git-proxy-cli', function () {
           null,
         );
       } finally {
+        await helper.removeUserFromDb('newadmin');
         await helper.closeServer(service.httpServer);
       }
     });
