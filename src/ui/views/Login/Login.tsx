@@ -64,6 +64,7 @@ const Login: React.FC = () => {
         window.sessionStorage.setItem('git.proxy.login', 'success');
         setMessage('Success!');
         setSuccess(true);
+        authContext.refreshUser().then(() => navigate(0));
       })
       .catch((error: AxiosError) => {
         if (error.response?.status === 307) {
@@ -75,8 +76,6 @@ const Login: React.FC = () => {
           setMessage('You entered an invalid username or password...');
         }
       })
-      .then(authContext.refreshUser)
-      .then(() => navigate(0))
       .finally(() => {
         setIsLoading(false);
       });
