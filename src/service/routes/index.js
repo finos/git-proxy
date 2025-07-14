@@ -11,7 +11,7 @@ const jwtAuthHandler = require('../passport/jwtAuthHandler');
 const routes = (proxy) => {
   const router = new express.Router();
   router.use('/api', home);
-  router.use('/api/auth', auth);
+  router.use('/api/auth', auth.router);
   router.use('/api/v1/healthcheck', healthcheck);
   router.use('/api/v1/push', jwtAuthHandler(), push);
   router.use('/api/v1/repo', jwtAuthHandler(), repo(proxy));
