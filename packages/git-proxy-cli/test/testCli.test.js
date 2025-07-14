@@ -541,9 +541,9 @@ describe('test git-proxy-cli', function () {
         await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
 
         const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --email new@email.com --gitAccount newgit`;
-        const expectedExitCode = 4;
+        const expectedExitCode = 1;
         const expectedMessages = null;
-        const expectedErrorMessages = ['Error: Create User: Missing required fields'];
+        const expectedErrorMessages = ['Missing required argument: password'];
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
       } finally {
         await helper.closeServer(service.httpServer);
