@@ -1,6 +1,6 @@
 import { connect, findDocuments, findOneDocument } from './helper';
 import { Action } from '../../proxy/actions';
-import { toClass } from '../helper';
+import { toClass, trimTrailingDotGit } from '../helper';
 import * as repo from './repo';
 import { Push, PushQuery } from '../types';
 
@@ -108,7 +108,7 @@ export const canUserApproveRejectPush = async (id: string, user: string) => {
       return;
     }
 
-    const repoName = action.repoName.replace('.git', '');
+    const repoName = trimTrailingDotGit(action.repoName);
     const isAllowed = await repo.canUserApproveRejectPushRepo(repoName, user);
 
     resolve(isAllowed);
@@ -123,7 +123,7 @@ export const canUserCancelPush = async (id: string, user: string) => {
       return;
     }
 
-    const repoName = pushDetail.repoName.replace('.git', '');
+    const repoName = trimTrailingDotGit(pushDetail.repoName);
     const isAllowed = await repo.isUserPushAllowed(repoName, user);
 
     if (isAllowed) {

@@ -16,6 +16,7 @@ import { KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
 import { PushData } from '../../../../types/models';
+import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../../db/helper';
 
 interface PushesTableProps {
   [key: string]: any;
@@ -100,8 +101,8 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
           </TableHead>
           <TableBody>
             {[...currentItems].reverse().map((row) => {
-              const repoFullName = row.repo.replace('.git', '');
-              const repoBranch = row.branch.replace('refs/heads/', '');
+              const repoFullName = trimTrailingDotGit(row.repo);
+              const repoBranch = trimPrefixRefsHeads(row.branch);
               const commitTimestamp =
                 row.commitData[0]?.commitTs || row.commitData[0]?.commitTimestamp;
 
