@@ -50,7 +50,7 @@ const useStyles = makeStyles((theme) => ({
     },
   },
   table: {
-    minWidth: 650,
+    minWidth: 200,
   },
 }));
 
@@ -107,25 +107,26 @@ const RepoDetails: React.FC = () => {
       <GridItem xs={12} sm={12} md={12}>
         <Card>
           <CardBody>
-            {user.admin && (
-              <div style={{ textAlign: 'right' }}>
-                <Button
-                  variant='contained'
-                  color='secondary'
-                  onClick={() => removeRepository(data._id)}
-                >
-                  <Delete />
-                </Button>
-              </div>
-            )}
-
             <Box mb={2} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+              {user.admin && (
+                <Box mx={1} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant='contained'
+                    color='secondary'
+                    onClick={() => removeRepository(data._id)}
+                    mx={1}
+                  >
+                    <Delete />
+                  </Button>
+                </Box>
+              )}
+
               <CodeActionButton cloneURL={cloneURL} />
             </Box>
             <form className={classes.root} noValidate autoComplete='off'>
               <GridContainer>
                 {remoteRepoData?.avatarUrl && (
-                  <GridItem xs={1} sm={1} md={1}>
+                  <GridItem xs={12} sm={2} md={2}>
                     <img
                       width='75px'
                       style={{ borderRadius: '5px' }}
@@ -135,7 +136,7 @@ const RepoDetails: React.FC = () => {
                   </GridItem>
                 )}
 
-                <GridItem xs={2} sm={2} md={2}>
+                <GridItem xs={12} sm={2} md={2}>
                   <FormLabel component='legend'>Organization</FormLabel>
                   <h4>
                     {remoteRepoData?.profileUrl && (
@@ -146,7 +147,7 @@ const RepoDetails: React.FC = () => {
                     {!remoteRepoData?.profileUrl && <span>{data.project}</span>}
                   </h4>
                 </GridItem>
-                <GridItem xs={2} sm={2} md={2}>
+                <GridItem xs={12} sm={2} md={2}>
                   <FormLabel component='legend'>Name</FormLabel>
                   <h4>
                     <a
@@ -158,7 +159,7 @@ const RepoDetails: React.FC = () => {
                     </a>
                   </h4>
                 </GridItem>
-                <GridItem xs={3} sm={3} md={3}>
+                <GridItem xs={12} sm={6} md={6}>
                   <FormLabel component='legend'>URL</FormLabel>
                   <h4>
                     <a href={data.url} target='_blank' rel='noopener noreferrer'>
