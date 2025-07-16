@@ -28,6 +28,7 @@ interface GridContainerLayoutProps {
   onPageChange: (page: number) => void;
   onFilterChange: (filterOption: FilterOption, sortOrder: SortOrder) => void;
   tableId: string;
+  key: string;
 }
 
 interface UserContextType {
@@ -136,25 +137,23 @@ export default function Repositories(props: RepositoriesProps): React.ReactEleme
     <GridItem />
   );
 
-  return (
-    <GetGridContainerLayOut
-      key='x'
-      classes={classes}
-      openRepo={openRepo}
-      data={paginatedData}
-      repoButton={addrepoButton}
-      onSearch={handleSearch}
-      currentPage={currentPage}
-      totalItems={filteredData.length}
-      itemsPerPage={itemsPerPage}
-      onPageChange={handlePageChange}
-      onFilterChange={handleFilterChange}
-      tableId='RepoListTable'
-    />
-  );
+  return getGridContainerLayOut({
+    key: 'x',
+    classes: classes,
+    openRepo: openRepo,
+    data: paginatedData,
+    repoButton: addrepoButton,
+    onSearch: handleSearch,
+    currentPage: currentPage,
+    totalItems: filteredData.length,
+    itemsPerPage: itemsPerPage,
+    onPageChange: handlePageChange,
+    onFilterChange: handleFilterChange,
+    tableId: 'RepoListTable',
+  });
 }
 
-function GetGridContainerLayOut(props: GridContainerLayoutProps): React.ReactElement {
+function getGridContainerLayOut(props: GridContainerLayoutProps): React.ReactElement {
   return (
     <GridContainer>
       {props.repoButton}

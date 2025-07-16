@@ -12,6 +12,7 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
+import Box from '@material-ui/core/Box';
 import { getRepo, deleteUser, deleteRepo } from '../../services/repo';
 import { makeStyles } from '@material-ui/core/styles';
 import AddUser from './Components/AddUser';
@@ -19,7 +20,6 @@ import { Code, Delete, RemoveCircle, Visibility } from '@material-ui/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { UserContext } from '../../../context';
 import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
-import { Box } from '@material-ui/core';
 import { trimTrailingDotGit } from '../../../db/helper';
 import { fetchRemoteRepositoryData } from '../../utils';
 import { SCMRepositoryMetadata } from '../../../types/models';
@@ -114,7 +114,6 @@ const RepoDetails: React.FC = () => {
                     variant='contained'
                     color='secondary'
                     onClick={() => removeRepository(data._id)}
-                    mx={1}
                   >
                     <Delete />
                   </Button>
