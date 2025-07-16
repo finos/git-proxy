@@ -12,7 +12,7 @@ import TableCell from '@material-ui/core/TableCell';
 import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
-import Box from '@material-ui/core/Box';
+import Grid from '@material-ui/core/Grid';
 import { getRepo, deleteUser, deleteRepo } from '../../services/repo';
 import { makeStyles } from '@material-ui/core/styles';
 import AddUser from './Components/AddUser';
@@ -107,9 +107,15 @@ const RepoDetails: React.FC = () => {
       <GridItem xs={12} sm={12} md={12}>
         <Card>
           <CardBody>
-            <Box mb={2} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Grid
+              spacing={2}
+              container
+              direction='row'
+              justifyContent='flex-end'
+              alignItems='center'
+            >
               {user.admin && (
-                <Box mx={1} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Grid item>
                   <Button
                     variant='contained'
                     color='secondary'
@@ -117,11 +123,12 @@ const RepoDetails: React.FC = () => {
                   >
                     <Delete />
                   </Button>
-                </Box>
+                </Grid>
               )}
-
-              <CodeActionButton cloneURL={cloneURL} />
-            </Box>
+              <Grid item>
+                <CodeActionButton cloneURL={cloneURL} />
+              </Grid>
+            </Grid>
             <form className={classes.root} noValidate autoComplete='off'>
               <GridContainer>
                 {remoteRepoData?.avatarUrl && (
