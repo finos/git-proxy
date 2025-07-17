@@ -21,7 +21,8 @@
     "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx,json}\" \"test/**/*.{js,jsx,ts,tsx,json}\"",
     "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,md,json,scss} test/**/*.{js,jsx,ts,tsx,json} --config ./.prettierrc",
     "gen-schema-doc": "node ./scripts/doc-schema.js",
-    "cypress:run": "cypress run"
+    "cypress:run": "cypress run",
+    "generate-types": "quicktype --src-lang schema --lang typescript --out src/config/config.ts --top-level GitProxyConfig config.schema.json"
   },
   "bin": {
     "git-proxy": "./index.js",
@@ -77,8 +78,7 @@
     "react-router-dom": "6.28.2",
     "simple-git": "^3.25.0",
     "uuid": "^11.0.0",
-    "yargs": "^17.7.2",
-    "zod": "^3.24.3"
+    "yargs": "^17.7.2"
   },
   "devDependencies": {
     "@babel/core": "^7.23.2",
@@ -110,6 +110,7 @@
     "mocha": "^10.8.2",
     "nyc": "^17.0.0",
     "prettier": "^3.0.0",
+    "quicktype": "^23.2.6",
     "sinon": "^19.0.2",
     "ts-mocha": "^11.1.0",
     "ts-node": "^10.9.2",

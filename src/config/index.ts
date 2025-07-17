@@ -1,87 +1,93 @@
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
-import { configFile, validate } from './file';
+import { GitProxyConfig, Convert } from './config';
 import { ConfigLoader, Configuration } from './ConfigLoader';
-import {
-  Authentication,
-  AuthorisedRepo,
-  Database,
-  RateLimitConfig,
-  TempPasswordConfig,
-  UserSettings,
-} from './types';
 
-let _userSettings: UserSettings | null = null;
-if (existsSync(configFile)) {
-  _userSettings = JSON.parse(readFileSync(configFile, 'utf-8'));
-}
-let _authorisedList: AuthorisedRepo[] = defaultSettings.authorisedList;
-let _database: Database[] = defaultSettings.sink;
-let _authentication: Authentication[] = defaultSettings.authentication;
-let _tempPassword: TempPasswordConfig = defaultSettings.tempPassword;
-let _proxyUrl = defaultSettings.proxyUrl;
-let _api: Record<string, unknown> = defaultSettings.api;
-let _cookieSecret: string = defaultSettings.cookieSecret;
-let _sessionMaxAgeHours: number = defaultSettings.sessionMaxAgeHours;
-let _plugins: any[] = defaultSettings.plugins;
-let _commitConfig: Record<string, any> = defaultSettings.commitConfig;
-let _attestationConfig: Record<string, unknown> = defaultSettings.attestationConfig;
-let _privateOrganizations: string[] = defaultSettings.privateOrganizations;
-let _urlShortener: string = defaultSettings.urlShortener;
-let _contactEmail: string = defaultSettings.contactEmail;
-let _csrfProtection: boolean = defaultSettings.csrfProtection;
-let _domains: Record<string, unknown> = defaultSettings.domains;
-let _rateLimit: RateLimitConfig = defaultSettings.rateLimit;
+// Cache for current configuration
+let _currentConfig: GitProxyConfig | null = null;
+let _configLoader: ConfigLoader | null = null;
 
-// These are not always present in the default config file, so casting is required
-let _tlsEnabled = defaultSettings.tls.enabled;
-let _tlsKeyPemPath = defaultSettings.tls.key;
-let _tlsCertPemPath = defaultSettings.tls.cert;
-
-// Initialize configuration with defaults and user settings
-let _config = { ...defaultSettings, ...(_userSettings || {}) } as Configuration;
-
-// Create config loader instance
-const configLoader = new ConfigLoader(_config);
-
-// Get configured proxy URL
-export const getProxyUrl = () => {
-  if (_userSettings !== null && _userSettings.proxyUrl) {
-    _proxyUrl = _userSettings.proxyUrl;
+/**
+ * Load and merge default + user configuration with QuickType validation
+ * @return {GitProxyConfig} The merged and validated configuration
+ */
+function loadFullConfiguration(): GitProxyConfig {
+  if (_currentConfig) {
+    return _currentConfig;
   }
 
-  return _proxyUrl;
+  const defaultConfig = Convert.toGitProxyConfig(JSON.stringify(defaultSettings));
+
+  let userSettings: Partial<GitProxyConfig> = {};
+  const configFile = process.env.CONFIG_FILE || 'proxy.config.json';
+
+  if (existsSync(configFile)) {
+    try {
+      const userConfigContent = readFileSync(configFile, 'utf-8');
+      const userConfig = Convert.toGitProxyConfig(userConfigContent);
+      userSettings = userConfig;
+    } catch (error) {
+      console.error(`Error loading user config from ${configFile}:`, error);
+      throw error;
+    }
+  }
+
+  _currentConfig = mergeConfigurations(defaultConfig, userSettings);
+
+  return _currentConfig;
+}
+
+/**
+ * Merge configurations
+ * @param {GitProxyConfig} defaultConfig - The default configuration
+ * @param {Partial<GitProxyConfig>} userSettings - User-provided configuration overrides
+ * @return {GitProxyConfig} The merged configuration
+ */
+function mergeConfigurations(
+  defaultConfig: GitProxyConfig,
+  userSettings: Partial<GitProxyConfig>,
+): GitProxyConfig {
+  return {
+    ...defaultConfig,
+    ...userSettings,
+    // Deep merge for specific objects
+    api: { ...defaultConfig.api, ...userSettings.api },
+    domains: { ...defaultConfig.domains, ...userSettings.domains },
+    commitConfig: { ...defaultConfig.commitConfig, ...userSettings.commitConfig },
+    attestationConfig: { ...defaultConfig.attestationConfig, ...userSettings.attestationConfig },
+    rateLimit: userSettings.rateLimit || defaultConfig.rateLimit,
+    tls: userSettings.tls || defaultConfig.tls,
+    tempPassword: { ...defaultConfig.tempPassword, ...userSettings.tempPassword },
+  };
+}
+
+// Get configured proxy URL
+export const getProxyUrl = (): string | undefined => {
+  const config = loadFullConfiguration();
+  return config.proxyUrl;
 };
 
 // Gets a list of authorised repositories
 export const getAuthorisedList = () => {
-  if (_userSettings !== null && _userSettings.authorisedList) {
-    _authorisedList = _userSettings.authorisedList;
-  }
-  return _authorisedList;
+  const config = loadFullConfiguration();
+  return config.authorisedList || [];
 };
 
 // Gets a list of authorised repositories
 export const getTempPasswordConfig = () => {
-  if (_userSettings !== null && _userSettings.tempPassword) {
-    _tempPassword = _userSettings.tempPassword;
-  }
-
-  return _tempPassword;
+  const config = loadFullConfiguration();
+  return config.tempPassword;
 };
 
 // Gets the configured data sink, defaults to filesystem
 export const getDatabase = () => {
-  if (_userSettings !== null && _userSettings.sink) {
-    _database = _userSettings.sink;
-  }
-  for (const ix in _database) {
-    if (ix) {
-      const db = _database[ix];
-      if (db.enabled) {
-        return db;
-      }
+  const config = loadFullConfiguration();
+  const databases = config.sink || [];
+
+  for (const db of databases) {
+    if (db.enabled) {
+      return db;
     }
   }
 
@@ -90,12 +96,10 @@ export const getDatabase = () => {
 
 // Gets the configured authentication method, defaults to local
 export const getAuthentication = () => {
-  if (_userSettings !== null && _userSettings.authentication) {
-    _authentication = _userSettings.authentication;
-  }
-  for (const ix in _authentication) {
-    if (!ix) continue;
-    const auth = _authentication[ix];
+  const config = loadFullConfiguration();
+  const authSources = config.authentication || [];
+
+  for (const auth of authSources) {
     if (auth.enabled) {
       return auth;
     }
@@ -113,144 +117,102 @@ export const logConfiguration = () => {
 };
 
 export const getAPIs = () => {
-  if (_userSettings && _userSettings.api) {
-    _api = _userSettings.api;
-  }
-  return _api;
+  const config = loadFullConfiguration();
+  return config.api || {};
 };
 
-export const getCookieSecret = () => {
-  if (_userSettings && _userSettings.cookieSecret) {
-    _cookieSecret = _userSettings.cookieSecret;
-  }
-  return _cookieSecret;
+export const getCookieSecret = (): string | undefined => {
+  const config = loadFullConfiguration();
+  return config.cookieSecret;
 };
 
-export const getSessionMaxAgeHours = () => {
-  if (_userSettings && _userSettings.sessionMaxAgeHours) {
-    _sessionMaxAgeHours = _userSettings.sessionMaxAgeHours;
-  }
-  return _sessionMaxAgeHours;
+export const getSessionMaxAgeHours = (): number | undefined => {
+  const config = loadFullConfiguration();
+  return config.sessionMaxAgeHours;
 };
 
 // Get commit related configuration
 export const getCommitConfig = () => {
-  if (_userSettings && _userSettings.commitConfig) {
-    _commitConfig = _userSettings.commitConfig;
-  }
-  return _commitConfig;
+  const config = loadFullConfiguration();
+  return config.commitConfig || {};
 };
 
 // Get attestation related configuration
 export const getAttestationConfig = () => {
-  if (_userSettings && _userSettings.attestationConfig) {
-    _attestationConfig = _userSettings.attestationConfig;
-  }
-  return _attestationConfig;
+  const config = loadFullConfiguration();
+  return config.attestationConfig || {};
 };
 
 // Get private organizations related configuration
 export const getPrivateOrganizations = () => {
-  if (_userSettings && _userSettings.privateOrganizations) {
-    _privateOrganizations = _userSettings.privateOrganizations;
-  }
-  return _privateOrganizations;
+  const config = loadFullConfiguration();
+  return config.privateOrganizations || [];
 };
 
 // Get URL shortener
-export const getURLShortener = () => {
-  if (_userSettings && _userSettings.urlShortener) {
-    _urlShortener = _userSettings.urlShortener;
-  }
-  return _urlShortener;
+export const getURLShortener = (): string | undefined => {
+  const config = loadFullConfiguration();
+  return config.urlShortener;
 };
 
 // Get contact e-mail address
-export const getContactEmail = () => {
-  if (_userSettings && _userSettings.contactEmail) {
-    _contactEmail = _userSettings.contactEmail;
-  }
-  return _contactEmail;
+export const getContactEmail = (): string | undefined => {
+  const config = loadFullConfiguration();
+  return config.contactEmail;
 };
 
 // Get CSRF protection flag
-export const getCSRFProtection = () => {
-  if (_userSettings && _userSettings.csrfProtection) {
-    _csrfProtection = _userSettings.csrfProtection;
-  }
-  return _csrfProtection;
+export const getCSRFProtection = (): boolean | undefined => {
+  const config = loadFullConfiguration();
+  return config.csrfProtection;
 };
 
 // Get loadable push plugins
 export const getPlugins = () => {
-  if (_userSettings && _userSettings.plugins) {
-    _plugins = _userSettings.plugins;
-  }
-  return _plugins;
+  const config = loadFullConfiguration();
+  return config.plugins || [];
 };
 
-export const getTLSKeyPemPath = () => {
-  if (_userSettings && _userSettings.sslKeyPemPath) {
-    console.log(
-      'Warning: sslKeyPemPath setting is replaced with tls.key setting in proxy.config.json & will be deprecated in a future release',
-    );
-    _tlsKeyPemPath = _userSettings.sslKeyPemPath;
-  }
-  if (_userSettings?.tls && _userSettings?.tls?.key) {
-    _tlsKeyPemPath = _userSettings.tls.key;
-  }
-  return _tlsKeyPemPath;
+export const getTLSKeyPemPath = (): string | undefined => {
+  const config = loadFullConfiguration();
+  return config.tls?.key;
 };
 
-export const getTLSCertPemPath = () => {
-  if (_userSettings && _userSettings.sslCertPemPath) {
-    console.log(
-      'Warning: sslCertPemPath setting is replaced with tls.cert setting in proxy.config.json & will be deprecated in a future release',
-    );
-    _tlsCertPemPath = _userSettings.sslCertPemPath;
-  }
-  if (_userSettings?.tls && _userSettings?.tls?.cert) {
-    _tlsCertPemPath = _userSettings.tls.cert;
-  }
-  return _tlsCertPemPath;
+export const getTLSCertPemPath = (): string | undefined => {
+  const config = loadFullConfiguration();
+  return config.tls?.cert;
 };
 
-export const getTLSEnabled = () => {
-  if (_userSettings && _userSettings.tls && _userSettings.tls.enabled) {
-    _tlsEnabled = _userSettings.tls.enabled;
-  }
-  return _tlsEnabled;
+export const getTLSEnabled = (): boolean => {
+  const config = loadFullConfiguration();
+  return config.tls?.enabled || false;
 };
 
 export const getDomains = () => {
-  if (_userSettings && _userSettings.domains) {
-    _domains = _userSettings.domains;
-  }
-  return _domains;
+  const config = loadFullConfiguration();
+  return config.domains || {};
 };
 
 export const getRateLimit = () => {
-  if (_userSettings && _userSettings.rateLimit) {
-    _rateLimit = _userSettings.rateLimit;
-  }
-  return _rateLimit;
+  const config = loadFullConfiguration();
+  return config.rateLimit;
 };
 
 // Function to handle configuration updates
-const handleConfigUpdate = async (newConfig: typeof _config) => {
+const handleConfigUpdate = async (newConfig: Configuration) => {
   console.log('Configuration updated from external source');
   try {
-    // 1. Get proxy module dynamically to avoid circular dependency
+    // 1. Validate new configuration using QuickType
+    const validatedConfig = Convert.toGitProxyConfig(JSON.stringify(newConfig));
+
+    // 2. Get proxy module dynamically to avoid circular dependency
     const proxy = require('../proxy');
 
-    // 2. Stop existing services
+    // 3. Stop existing services
     await proxy.stop();
 
-    // 3. Update config
-    _config = newConfig;
-
-    // 4. Validate new configuration
-    validate();
+    // 4. Update config
+    _currentConfig = validatedConfig;
 
     // 5. Restart services with new config
     await proxy.start();
@@ -268,22 +230,39 @@ const handleConfigUpdate = async (newConfig: typeof _config) => {
   }
 };
 
-// Handle configuration updates
-configLoader.on('configurationChanged', handleConfigUpdate);
+// Initialize config loader
+function initializeConfigLoader() {
+  const config = loadFullConfiguration() as Configuration;
+  _configLoader = new ConfigLoader(config);
 
-configLoader.on('configurationError', (error: Error) => {
-  console.error('Error loading external configuration:', error);
-});
+  // Handle configuration updates
+  _configLoader.on('configurationChanged', handleConfigUpdate);
 
-// Start the config loader if external sources are enabled
-configLoader.start().catch((error: Error) => {
-  console.error('Failed to start configuration loader:', error);
-});
+  _configLoader.on('configurationError', (error: Error) => {
+    console.error('Error loading external configuration:', error);
+  });
+
+  // Start the config loader if external sources are enabled
+  _configLoader.start().catch((error: Error) => {
+    console.error('Failed to start configuration loader:', error);
+  });
+}
 
 // Force reload of configuration
-const reloadConfiguration = async () => {
-  await configLoader.reloadConfiguration();
+export const reloadConfiguration = async () => {
+  _currentConfig = null;
+  if (_configLoader) {
+    await _configLoader.reloadConfiguration();
+  }
+  loadFullConfiguration();
 };
 
-// Export reloadConfiguration
-export { reloadConfiguration };
+// Initialize configuration on module load
+try {
+  loadFullConfiguration();
+  initializeConfigLoader();
+  console.log('Configuration loaded successfully');
+} catch (error) {
+  console.error('Failed to load configuration:', error);
+  throw error;
+}

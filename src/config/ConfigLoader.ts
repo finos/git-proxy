@@ -5,6 +5,7 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import EventEmitter from 'events';
 import envPaths from 'env-paths';
+import { GitProxyConfig, Convert } from './config';
 
 const execFileAsync = promisify(execFile);
 
@@ -52,9 +53,8 @@ export interface ConfigurationSources {
   merge?: boolean;
 }
 
-export interface Configuration {
-  configurationSources: ConfigurationSources;
-  [key: string]: any;
+export interface Configuration extends GitProxyConfig {
+  configurationSources?: ConfigurationSources;
 }
 
 // Add path validation helper
@@ -206,7 +206,7 @@ export class ConfigLoader extends EventEmitter {
       );
 
       // Filter out null results from failed loads
-      const validConfigs = configs.filter((config): config is Configuration => config !== null);
+      const validConfigs = configs.filter((config): config is GitProxyConfig => config !== null);
 
       if (validConfigs.length === 0) {
         console.log('No valid configurations loaded from any source');
@@ -242,7 +242,7 @@ export class ConfigLoader extends EventEmitter {
     }
   }
 
-  async loadFromSource(source: ConfigurationSource): Promise<Configuration> {
+  async loadFromSource(source: ConfigurationSource): Promise<GitProxyConfig> {
     let exhaustiveCheck: never;
     switch (source.type) {
       case 'file':
@@ -257,17 +257,25 @@ export class ConfigLoader extends EventEmitter {
     }
   }
 
-  async loadFromFile(source: FileSource): Promise<Configuration> {
+  async loadFromFile(source: FileSource): Promise<GitProxyConfig> {
     const configPath = path.resolve(process.cwd(), source.path);
     if (!isValidPath(configPath)) {
       throw new Error('Invalid configuration file path');
     }
     console.log(`Loading configuration from file: ${configPath}`);
     const content = await fs.promises.readFile(configPath, 'utf8');
-    return JSON.parse(content);
+
+    // Use QuickType to validate and parse the configuration
+    try {
+      return Convert.toGitProxyConfig(content);
+    } catch (error) {
+      throw new Error(
+        `Invalid configuration file format: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  async loadFromHttp(source: HttpSource): Promise<Configuration> {
+  async loadFromHttp(source: HttpSource): Promise<GitProxyConfig> {
     console.log(`Loading configuration from HTTP: ${source.url}`);
     const headers = {
       ...source.headers,
@@ -275,10 +283,20 @@ export class ConfigLoader extends EventEmitter {
     };
 
     const response = await axios.get(source.url, { headers });
-    return response.data;
+
+    // Use QuickType to validate and parse the configuration from HTTP response
+    try {
+      const configJson =
+        typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+      return Convert.toGitProxyConfig(configJson);
+    } catch (error) {
+      throw new Error(
+        `Invalid configuration format from HTTP source: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  async loadFromGit(source: GitSource): Promise<Configuration> {
+  async loadFromGit(source: GitSource): Promise<GitProxyConfig> {
     console.log(`Loading configuration from Git: ${source.repository}`);
 
     // Validate inputs
@@ -379,7 +397,9 @@ export class ConfigLoader extends EventEmitter {
 
     try {
       const content = await fs.promises.readFile(configPath, 'utf8');
-      const config = JSON.parse(content);
+
+      // Use QuickType to validate and parse the configuration from Git
+      const config = Convert.toGitProxyConfig(content);
       console.log('Configuration loaded successfully from Git');
       return config;
     } catch (error: unknown) {

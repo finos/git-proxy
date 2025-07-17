@@ -1,0 +1,369 @@
+// To parse this data:
+//
+//   import { Convert, GitProxyConfig } from "./file";
+//
+//   const gitProxyConfig = Convert.toGitProxyConfig(json);
+//
+// These functions will throw an error if the JSON doesn't
+// match the expected interface, even if the JSON is valid.
+
+/**
+ * Configuration for customizing git-proxy
+ */
+export interface GitProxyConfig {
+    /**
+     * Third party APIs
+     */
+    api?: { [key: string]: any };
+    /**
+     * Customisable questions to add to attestation form
+     */
+    attestationConfig?: { [key: string]: any };
+    /**
+     * List of authentication sources. The first source in the configuration with enabled=true
+     * will be used.
+     */
+    authentication?: Authentication[];
+    /**
+     * List of repositories that are authorised to be pushed to through the proxy.
+     */
+    authorisedList?: AuthorisedRepo[];
+    /**
+     * Enforce rules and patterns on commits including e-mail and message
+     */
+    commitConfig?:         { [key: string]: any };
+    configurationSources?: any;
+    /**
+     * Customisable e-mail address to share in proxy responses and warnings
+     */
+    contactEmail?: string;
+    cookieSecret?: string;
+    /**
+     * Flag to enable CSRF protections for UI
+     */
+    csrfProtection?: boolean;
+    /**
+     * Provide domains to use alternative to the defaults
+     */
+    domains?: { [key: string]: any };
+    /**
+     * List of plugins to integrate on GitProxy's push or pull actions. Each value is either a
+     * file path or a module name.
+     */
+    plugins?: string[];
+    /**
+     * Pattern searches for listed private organizations are disabled
+     */
+    privateOrganizations?: any[];
+    proxyUrl?:             string;
+    /**
+     * API Rate limiting configuration.
+     */
+    rateLimit?:          RateLimit;
+    sessionMaxAgeHours?: number;
+    /**
+     * List of database sources. The first source in the configuration with enabled=true will be
+     * used.
+     */
+    sink?: Database[];
+    /**
+     * Toggle the generation of temporary password for git-proxy admin user
+     */
+    tempPassword?: TempPassword;
+    /**
+     * TLS configuration for secure connections
+     */
+    tls?: TLS;
+    /**
+     * Customisable URL shortener to share in proxy responses and warnings
+     */
+    urlShortener?: string;
+}
+
+export interface Authentication {
+    enabled:  boolean;
+    options?: { [key: string]: any };
+    type:     string;
+    [property: string]: any;
+}
+
+export interface AuthorisedRepo {
+    name:    string;
+    project: string;
+    url:     string;
+    [property: string]: any;
+}
+
+/**
+ * API Rate limiting configuration.
+ */
+export interface RateLimit {
+    /**
+     * How many requests to allow (default 150).
+     */
+    limit: number;
+    /**
+     * Response to return after limit is reached.
+     */
+    message?: string;
+    /**
+     * HTTP status code after limit is reached (default is 429).
+     */
+    statusCode?: number;
+    /**
+     * How long to remember requests for, in milliseconds (default 10 mins).
+     */
+    windowMs: number;
+}
+
+export interface Database {
+    connectionString?: string;
+    enabled:           boolean;
+    options?:          { [key: string]: any };
+    params?:           { [key: string]: any };
+    type:              string;
+    [property: string]: any;
+}
+
+/**
+ * Toggle the generation of temporary password for git-proxy admin user
+ */
+export interface TempPassword {
+    /**
+     * Generic object to configure nodemailer. For full type information, please see
+     * https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/nodemailer
+     */
+    emailConfig?: { [key: string]: any };
+    sendEmail?:   boolean;
+    [property: string]: any;
+}
+
+/**
+ * TLS configuration for secure connections
+ */
+export interface TLS {
+    cert:    string;
+    enabled: boolean;
+    key:     string;
+    [property: string]: any;
+}
+
+// Converts JSON strings to/from your types
+// and asserts the results of JSON.parse at runtime
+export class Convert {
+    public static toGitProxyConfig(json: string): GitProxyConfig {
+        return cast(JSON.parse(json), r("GitProxyConfig"));
+    }
+
+    public static gitProxyConfigToJson(value: GitProxyConfig): string {
+        return JSON.stringify(uncast(value, r("GitProxyConfig")), null, 2);
+    }
+}
+
+function invalidValue(typ: any, val: any, key: any, parent: any = ''): never {
+    const prettyTyp = prettyTypeName(typ);
+    const parentText = parent ? ` on ${parent}` : '';
+    const keyText = key ? ` for key "${key}"` : '';
+    throw Error(`Invalid value${keyText}${parentText}. Expected ${prettyTyp} but got ${JSON.stringify(val)}`);
+}
+
+function prettyTypeName(typ: any): string {
+    if (Array.isArray(typ)) {
+        if (typ.length === 2 && typ[0] === undefined) {
+            return `an optional ${prettyTypeName(typ[1])}`;
+        } else {
+            return `one of [${typ.map(a => { return prettyTypeName(a); }).join(", ")}]`;
+        }
+    } else if (typeof typ === "object" && typ.literal !== undefined) {
+        return typ.literal;
+    } else {
+        return typeof typ;
+    }
+}
+
+function jsonToJSProps(typ: any): any {
+    if (typ.jsonToJS === undefined) {
+        const map: any = {};
+        typ.props.forEach((p: any) => map[p.json] = { key: p.js, typ: p.typ });
+        typ.jsonToJS = map;
+    }
+    return typ.jsonToJS;
+}
+
+function jsToJSONProps(typ: any): any {
+    if (typ.jsToJSON === undefined) {
+        const map: any = {};
+        typ.props.forEach((p: any) => map[p.js] = { key: p.json, typ: p.typ });
+        typ.jsToJSON = map;
+    }
+    return typ.jsToJSON;
+}
+
+function transform(val: any, typ: any, getProps: any, key: any = '', parent: any = ''): any {
+    function transformPrimitive(typ: string, val: any): any {
+        if (typeof typ === typeof val) return val;
+        return invalidValue(typ, val, key, parent);
+    }
+
+    function transformUnion(typs: any[], val: any): any {
+        // val must validate against one typ in typs
+        const l = typs.length;
+        for (let i = 0; i < l; i++) {
+            const typ = typs[i];
+            try {
+                return transform(val, typ, getProps);
+            } catch (_) {}
+        }
+        return invalidValue(typs, val, key, parent);
+    }
+
+    function transformEnum(cases: string[], val: any): any {
+        if (cases.indexOf(val) !== -1) return val;
+        return invalidValue(cases.map(a => { return l(a); }), val, key, parent);
+    }
+
+    function transformArray(typ: any, val: any): any {
+        // val must be an array with no invalid elements
+        if (!Array.isArray(val)) return invalidValue(l("array"), val, key, parent);
+        return val.map(el => transform(el, typ, getProps));
+    }
+
+    function transformDate(val: any): any {
+        if (val === null) {
+            return null;
+        }
+        const d = new Date(val);
+        if (isNaN(d.valueOf())) {
+            return invalidValue(l("Date"), val, key, parent);
+        }
+        return d;
+    }
+
+    function transformObject(props: { [k: string]: any }, additional: any, val: any): any {
+        if (val === null || typeof val !== "object" || Array.isArray(val)) {
+            return invalidValue(l(ref || "object"), val, key, parent);
+        }
+        const result: any = {};
+        Object.getOwnPropertyNames(props).forEach(key => {
+            const prop = props[key];
+            const v = Object.prototype.hasOwnProperty.call(val, key) ? val[key] : undefined;
+            result[prop.key] = transform(v, prop.typ, getProps, key, ref);
+        });
+        Object.getOwnPropertyNames(val).forEach(key => {
+            if (!Object.prototype.hasOwnProperty.call(props, key)) {
+                result[key] = transform(val[key], additional, getProps, key, ref);
+            }
+        });
+        return result;
+    }
+
+    if (typ === "any") return val;
+    if (typ === null) {
+        if (val === null) return val;
+        return invalidValue(typ, val, key, parent);
+    }
+    if (typ === false) return invalidValue(typ, val, key, parent);
+    let ref: any = undefined;
+    while (typeof typ === "object" && typ.ref !== undefined) {
+        ref = typ.ref;
+        typ = typeMap[typ.ref];
+    }
+    if (Array.isArray(typ)) return transformEnum(typ, val);
+    if (typeof typ === "object") {
+        return typ.hasOwnProperty("unionMembers") ? transformUnion(typ.unionMembers, val)
+            : typ.hasOwnProperty("arrayItems")    ? transformArray(typ.arrayItems, val)
+            : typ.hasOwnProperty("props")         ? transformObject(getProps(typ), typ.additional, val)
+            : invalidValue(typ, val, key, parent);
+    }
+    // Numbers can be parsed by Date but shouldn't be.
+    if (typ === Date && typeof val !== "number") return transformDate(val);
+    return transformPrimitive(typ, val);
+}
+
+function cast<T>(val: any, typ: any): T {
+    return transform(val, typ, jsonToJSProps);
+}
+
+function uncast<T>(val: T, typ: any): any {
+    return transform(val, typ, jsToJSONProps);
+}
+
+function l(typ: any) {
+    return { literal: typ };
+}
+
+function a(typ: any) {
+    return { arrayItems: typ };
+}
+
+function u(...typs: any[]) {
+    return { unionMembers: typs };
+}
+
+function o(props: any[], additional: any) {
+    return { props, additional };
+}
+
+function m(additional: any) {
+    return { props: [], additional };
+}
+
+function r(name: string) {
+    return { ref: name };
+}
+
+const typeMap: any = {
+    "GitProxyConfig": o([
+        { json: "api", js: "api", typ: u(undefined, m("any")) },
+        { json: "attestationConfig", js: "attestationConfig", typ: u(undefined, m("any")) },
+        { json: "authentication", js: "authentication", typ: u(undefined, a(r("Authentication"))) },
+        { json: "authorisedList", js: "authorisedList", typ: u(undefined, a(r("AuthorisedRepo"))) },
+        { json: "commitConfig", js: "commitConfig", typ: u(undefined, m("any")) },
+        { json: "configurationSources", js: "configurationSources", typ: u(undefined, "any") },
+        { json: "contactEmail", js: "contactEmail", typ: u(undefined, "") },
+        { json: "cookieSecret", js: "cookieSecret", typ: u(undefined, "") },
+        { json: "csrfProtection", js: "csrfProtection", typ: u(undefined, true) },
+        { json: "domains", js: "domains", typ: u(undefined, m("any")) },
+        { json: "plugins", js: "plugins", typ: u(undefined, a("")) },
+        { json: "privateOrganizations", js: "privateOrganizations", typ: u(undefined, a("any")) },
+        { json: "proxyUrl", js: "proxyUrl", typ: u(undefined, "") },
+        { json: "rateLimit", js: "rateLimit", typ: u(undefined, r("RateLimit")) },
+        { json: "sessionMaxAgeHours", js: "sessionMaxAgeHours", typ: u(undefined, 3.14) },
+        { json: "sink", js: "sink", typ: u(undefined, a(r("Database"))) },
+        { json: "tempPassword", js: "tempPassword", typ: u(undefined, r("TempPassword")) },
+        { json: "tls", js: "tls", typ: u(undefined, r("TLS")) },
+        { json: "urlShortener", js: "urlShortener", typ: u(undefined, "") },
+    ], false),
+    "Authentication": o([
+        { json: "enabled", js: "enabled", typ: true },
+        { json: "options", js: "options", typ: u(undefined, m("any")) },
+        { json: "type", js: "type", typ: "" },
+    ], "any"),
+    "AuthorisedRepo": o([
+        { json: "name", js: "name", typ: "" },
+        { json: "project", js: "project", typ: "" },
+        { json: "url", js: "url", typ: "" },
+    ], "any"),
+    "RateLimit": o([
+        { json: "limit", js: "limit", typ: 3.14 },
+        { json: "message", js: "message", typ: u(undefined, "") },
+        { json: "statusCode", js: "statusCode", typ: u(undefined, 3.14) },
+        { json: "windowMs", js: "windowMs", typ: 3.14 },
+    ], false),
+    "Database": o([
+        { json: "connectionString", js: "connectionString", typ: u(undefined, "") },
+        { json: "enabled", js: "enabled", typ: true },
+        { json: "options", js: "options", typ: u(undefined, m("any")) },
+        { json: "params", js: "params", typ: u(undefined, m("any")) },
+        { json: "type", js: "type", typ: "" },
+    ], "any"),
+    "TempPassword": o([
+        { json: "emailConfig", js: "emailConfig", typ: u(undefined, m("any")) },
+        { json: "sendEmail", js: "sendEmail", typ: u(undefined, true) },
+    ], "any"),
+    "TLS": o([
+        { json: "cert", js: "cert", typ: "" },
+        { json: "enabled", js: "enabled", typ: true },
+        { json: "key", js: "key", typ: "" },
+    ], "any"),
+};
