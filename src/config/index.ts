@@ -4,10 +4,31 @@ import defaultSettings from '../../proxy.config.json';
 import { GitProxyConfig, Convert } from './config';
 import { ConfigLoader, Configuration } from './ConfigLoader';
 import { serverConfig } from './env';
+import { configFile } from './file';
 
 // Cache for current configuration
 let _currentConfig: GitProxyConfig | null = null;
 let _configLoader: ConfigLoader | null = null;
+
+// Function to invalidate cache - useful for testing
+export const invalidateCache = () => {
+  _currentConfig = null;
+};
+
+// Function to clean undefined values from an object
+function cleanUndefinedValues(obj: any): any {
+  if (obj === null || obj === undefined) return obj;
+  if (typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(cleanUndefinedValues);
+  
+  const cleaned: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      cleaned[key] = cleanUndefinedValues(value);
+    }
+  }
+  return cleaned;
+}
 
 /**
  * Load and merge default + user configuration with QuickType validation
@@ -18,18 +39,23 @@ function loadFullConfiguration(): GitProxyConfig {
     return _currentConfig;
   }
 
-  const defaultConfig = Convert.toGitProxyConfig(JSON.stringify(defaultSettings));
+  const rawDefaultConfig = Convert.toGitProxyConfig(JSON.stringify(defaultSettings));
+  
+  // Clean undefined values from defaultConfig
+  const defaultConfig = cleanUndefinedValues(rawDefaultConfig);
 
   let userSettings: Partial<GitProxyConfig> = {};
-  const configFile = process.env.CONFIG_FILE || 'proxy.config.json';
+  const userConfigFile = process.env.CONFIG_FILE || configFile;
 
-  if (existsSync(configFile)) {
+  if (existsSync(userConfigFile)) {
     try {
-      const userConfigContent = readFileSync(configFile, 'utf-8');
-      const userConfig = Convert.toGitProxyConfig(userConfigContent);
-      userSettings = userConfig;
+      const userConfigContent = readFileSync(userConfigFile, 'utf-8');
+      // Parse as JSON first, then clean undefined values
+      // Don't use QuickType validation for partial configurations
+      const rawUserConfig = JSON.parse(userConfigContent);
+      userSettings = cleanUndefinedValues(rawUserConfig);
     } catch (error) {
-      console.error(`Error loading user config from ${configFile}:`, error);
+      console.error(`Error loading user config from ${userConfigFile}:`, error);
       throw error;
     }
   }
@@ -49,17 +75,33 @@ function mergeConfigurations(
   defaultConfig: GitProxyConfig,
   userSettings: Partial<GitProxyConfig>,
 ): GitProxyConfig {
+  // Special handling for TLS configuration when legacy fields are used
+  let tlsConfig = userSettings.tls || defaultConfig.tls;
+  
+  // If user doesn't specify tls but has legacy SSL fields, use only legacy fallback
+  if (!userSettings.tls && (userSettings.sslKeyPemPath || userSettings.sslCertPemPath)) {
+    tlsConfig = {
+      ...defaultConfig.tls,
+      // Clear the default key/cert paths so legacy fallback works
+      key: undefined as any,
+      cert: undefined as any,
+    };
+  }
+
   return {
     ...defaultConfig,
     ...userSettings,
     // Deep merge for specific objects
-    api: { ...defaultConfig.api, ...userSettings.api },
+    api: userSettings.api ? cleanUndefinedValues(userSettings.api) : defaultConfig.api,
     domains: { ...defaultConfig.domains, ...userSettings.domains },
     commitConfig: { ...defaultConfig.commitConfig, ...userSettings.commitConfig },
     attestationConfig: { ...defaultConfig.attestationConfig, ...userSettings.attestationConfig },
     rateLimit: userSettings.rateLimit || defaultConfig.rateLimit,
-    tls: userSettings.tls || defaultConfig.tls,
+    tls: tlsConfig,
     tempPassword: { ...defaultConfig.tempPassword, ...userSettings.tempPassword },
+    // Preserve legacy SSL fields
+    sslKeyPemPath: userSettings.sslKeyPemPath || defaultConfig.sslKeyPemPath,
+    sslCertPemPath: userSettings.sslCertPemPath || defaultConfig.sslCertPemPath,
     // Environment variable overrides
     cookieSecret:
       serverConfig.GIT_PROXY_COOKIE_SECRET ||
@@ -215,12 +257,12 @@ export const getPlugins = () => {
 
 export const getTLSKeyPemPath = (): string | undefined => {
   const config = loadFullConfiguration();
-  return config.tls?.key;
+  return config.tls?.key || config.sslKeyPemPath;
 };
 
 export const getTLSCertPemPath = (): string | undefined => {
   const config = loadFullConfiguration();
-  return config.tls?.cert;
+  return config.tls?.cert || config.sslCertPemPath;
 };
 
 export const getTLSEnabled = (): boolean => {

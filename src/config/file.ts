@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { Convert } from './config';
 
-export let configFile: string = join(process.cwd(), 'config.proxy.json');
+export let configFile: string = join(process.cwd(), 'proxy.config.json');
 
 /**
  * Sets the path to the configuration file.
@@ -15,12 +15,8 @@ export function setConfigFile(file: string) {
 }
 
 export function validate(filePath: string = configFile): boolean {
-  try {
-    // Use QuickType to validate the configuration
-    const configContent = readFileSync(filePath, 'utf-8');
-    Convert.toGitProxyConfig(configContent);
-    return true;
-  } catch (err: any) {
-    return false;
-  }
+  // Use QuickType to validate the configuration
+  const configContent = readFileSync(filePath, 'utf-8');
+  Convert.toGitProxyConfig(configContent);
+  return true;
 }

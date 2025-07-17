@@ -14,7 +14,12 @@ export interface GitProxyConfig {
     /**
      * Third party APIs
      */
-    api?: { [key: string]: any };
+    api?: API;
+    /**
+     * List of authentication sources for API endpoints. May be empty, in which case all
+     * endpoints are public.
+     */
+    apiAuthentication?: Authentication[];
     /**
      * Customisable questions to add to attestation form
      */
@@ -67,6 +72,14 @@ export interface GitProxyConfig {
      */
     sink?: Database[];
     /**
+     * Legacy: Path to SSL certificate file (use tls.cert instead)
+     */
+    sslCertPemPath?: string;
+    /**
+     * Legacy: Path to SSL private key file (use tls.key instead)
+     */
+    sslKeyPemPath?: string;
+    /**
      * Toggle the generation of temporary password for git-proxy admin user
      */
     tempPassword?: TempPassword;
@@ -75,16 +88,146 @@ export interface GitProxyConfig {
      */
     tls?: TLS;
     /**
+     * UI routes that require authentication (logged in or admin)
+     */
+    uiRouteAuth?: UIRouteAuth;
+    /**
      * Customisable URL shortener to share in proxy responses and warnings
      */
     urlShortener?: string;
 }
 
-export interface Authentication {
-    enabled:  boolean;
-    options?: { [key: string]: any };
-    type:     string;
+/**
+ * Third party APIs
+ */
+export interface API {
+    github?: Github;
+    /**
+     * Configuration used in conjunction with ActiveDirectory auth, which relates to a REST API
+     * used to check user group membership, as opposed to direct querying via LDAP.<br />If this
+     * configuration is set direct querying of group membership via LDAP will be disabled.
+     */
+    ls?: Ls;
     [property: string]: any;
+}
+
+export interface Github {
+    baseUrl?: string;
+    [property: string]: any;
+}
+
+/**
+ * Configuration used in conjunction with ActiveDirectory auth, which relates to a REST API
+ * used to check user group membership, as opposed to direct querying via LDAP.<br />If this
+ * configuration is set direct querying of group membership via LDAP will be disabled.
+ */
+export interface Ls {
+    /**
+     * URL template for a GET request that confirms a user's membership of a specific group.
+     * Should respond with a non-empty 200 status if the user is a member of the group, an empty
+     * response or non-200 status indicates that the user is not a group member. If set, this
+     * URL will be queried and direct queries via LDAP will be disabled. The template should
+     * contain the following string placeholders, which will be replaced to produce the final
+     * URL:<ul><li>"&lt;domain&gt;": AD domain,</li><li>"&lt;name&gt;": The group name to check
+     * membership of.</li><li>"&lt;id&gt;": The username to check group membership for.</li></ul>
+     */
+    userInADGroup?: string;
+    [property: string]: any;
+}
+
+/**
+ * Configuration for an authentication source
+ */
+export interface Authentication {
+    enabled: boolean;
+    type:    Type;
+    /**
+     * Additional Active Directory configuration supporting LDAP connection which can be used to
+     * confirm group membership. For the full set of available options see the activedirectory 2
+     * NPM module docs at https://www.npmjs.com/package/activedirectory2#activedirectoryoptions
+     * <br /><br />Please note that if the Third Party APIs config `api.ls.userInADGroup` is set
+     * then the REST API it represents is used in preference to direct querying of group
+     * memebership via LDAP.
+     */
+    adConfig?: AdConfig;
+    /**
+     * Group that indicates that a user is an admin
+     */
+    adminGroup?: string;
+    /**
+     * Active Directory domain
+     */
+    domain?: string;
+    /**
+     * Group that indicates that a user should be able to login to the Git Proxy UI and can work
+     * as a reviewer
+     */
+    userGroup?: string;
+    /**
+     * Additional OIDC configuration.
+     */
+    oidcConfig?: OidcConfig;
+    /**
+     * Additional JWT configuration.
+     */
+    jwtConfig?: JwtConfig;
+    [property: string]: any;
+}
+
+/**
+ * Additional Active Directory configuration supporting LDAP connection which can be used to
+ * confirm group membership. For the full set of available options see the activedirectory 2
+ * NPM module docs at https://www.npmjs.com/package/activedirectory2#activedirectoryoptions
+ * <br /><br />Please note that if the Third Party APIs config `api.ls.userInADGroup` is set
+ * then the REST API it represents is used in preference to direct querying of group
+ * memebership via LDAP.
+ */
+export interface AdConfig {
+    /**
+     * The root DN from which all searches will be performed, e.g. `dc=example,dc=com`.
+     */
+    baseDN: string;
+    /**
+     * Password for the given `username`.
+     */
+    password: string;
+    /**
+     * Active Directory server to connect to, e.g. `ldap://ad.example.com`.
+     */
+    url: string;
+    /**
+     * An account name capable of performing the operations desired.
+     */
+    username: string;
+    [property: string]: any;
+}
+
+/**
+ * Additional JWT configuration.
+ */
+export interface JwtConfig {
+    authorityURL: string;
+    clientID:     string;
+    [property: string]: any;
+}
+
+/**
+ * Additional OIDC configuration.
+ */
+export interface OidcConfig {
+    callbackURL:  string;
+    clientID:     string;
+    clientSecret: string;
+    issuer:       string;
+    scope:        string;
+    [property: string]: any;
+}
+
+export enum Type {
+    ActiveDirectory = "ActiveDirectory",
+    Jwt = "jwt",
+    Local = "local",
+    Openidconnect = "openidconnect",
 }
 
 export interface AuthorisedRepo {
@@ -145,6 +288,22 @@ export interface TLS {
     cert:    string;
     enabled: boolean;
     key:     string;
+    [property: string]: any;
+}
+
+/**
+ * UI routes that require authentication (logged in or admin)
+ */
+export interface UIRouteAuth {
+    enabled?: boolean;
+    rules?:   RouteAuthRule[];
+    [property: string]: any;
+}
+
+export interface RouteAuthRule {
+    adminOnly?:     boolean;
+    loginRequired?: boolean;
+    pattern?:       string;
     [property: string]: any;
 }
 
@@ -314,7 +473,8 @@ function r(name: string) {
 
 const typeMap: any = {
     "GitProxyConfig": o([
-        { json: "api", js: "api", typ: u(undefined, m("any")) },
+        { json: "api", js: "api", typ: u(undefined, r("API")) },
+        { json: "apiAuthentication", js: "apiAuthentication", typ: u(undefined, a(r("Authentication"))) },
         { json: "attestationConfig", js: "attestationConfig", typ: u(undefined, m("any")) },
         { json: "authentication", js: "authentication", typ: u(undefined, a(r("Authentication"))) },
         { json: "authorisedList", js: "authorisedList", typ: u(undefined, a(r("AuthorisedRepo"))) },
@@ -330,14 +490,49 @@ const typeMap: any = {
         { json: "rateLimit", js: "rateLimit", typ: u(undefined, r("RateLimit")) },
         { json: "sessionMaxAgeHours", js: "sessionMaxAgeHours", typ: u(undefined, 3.14) },
         { json: "sink", js: "sink", typ: u(undefined, a(r("Database"))) },
+        { json: "sslCertPemPath", js: "sslCertPemPath", typ: u(undefined, "") },
+        { json: "sslKeyPemPath", js: "sslKeyPemPath", typ: u(undefined, "") },
         { json: "tempPassword", js: "tempPassword", typ: u(undefined, r("TempPassword")) },
         { json: "tls", js: "tls", typ: u(undefined, r("TLS")) },
+        { json: "uiRouteAuth", js: "uiRouteAuth", typ: u(undefined, r("UIRouteAuth")) },
         { json: "urlShortener", js: "urlShortener", typ: u(undefined, "") },
     ], false),
+    "API": o([
+        { json: "github", js: "github", typ: u(undefined, r("Github")) },
+        { json: "ls", js: "ls", typ: u(undefined, r("Ls")) },
+    ], "any"),
+    "Github": o([
+        { json: "baseUrl", js: "baseUrl", typ: u(undefined, "") },
+    ], "any"),
+    "Ls": o([
+        { json: "userInADGroup", js: "userInADGroup", typ: u(undefined, "") },
+    ], "any"),
     "Authentication": o([
         { json: "enabled", js: "enabled", typ: true },
-        { json: "options", js: "options", typ: u(undefined, m("any")) },
-        { json: "type", js: "type", typ: "" },
+        { json: "type", js: "type", typ: r("Type") },
+        { json: "adConfig", js: "adConfig", typ: u(undefined, r("AdConfig")) },
+        { json: "adminGroup", js: "adminGroup", typ: u(undefined, "") },
+        { json: "domain", js: "domain", typ: u(undefined, "") },
+        { json: "userGroup", js: "userGroup", typ: u(undefined, "") },
+        { json: "oidcConfig", js: "oidcConfig", typ: u(undefined, r("OidcConfig")) },
+        { json: "jwtConfig", js: "jwtConfig", typ: u(undefined, r("JwtConfig")) },
+    ], "any"),
+    "AdConfig": o([
+        { json: "baseDN", js: "baseDN", typ: "" },
+        { json: "password", js: "password", typ: "" },
+        { json: "url", js: "url", typ: "" },
+        { json: "username", js: "username", typ: "" },
+    ], "any"),
+    "JwtConfig": o([
+        { json: "authorityURL", js: "authorityURL", typ: "" },
+        { json: "clientID", js: "clientID", typ: "" },
+    ], "any"),
+    "OidcConfig": o([
+        { json: "callbackURL", js: "callbackURL", typ: "" },
+        { json: "clientID", js: "clientID", typ: "" },
+        { json: "clientSecret", js: "clientSecret", typ: "" },
+        { json: "issuer", js: "issuer", typ: "" },
+        { json: "scope", js: "scope", typ: "" },
     ], "any"),
     "AuthorisedRepo": o([
         { json: "name", js: "name", typ: "" },
@@ -366,4 +561,19 @@ const typeMap: any = {
         { json: "enabled", js: "enabled", typ: true },
         { json: "key", js: "key", typ: "" },
     ], "any"),
+    "UIRouteAuth": o([
+        { json: "enabled", js: "enabled", typ: u(undefined, true) },
+        { json: "rules", js: "rules", typ: u(undefined, a(r("RouteAuthRule"))) },
+    ], "any"),
+    "RouteAuthRule": o([
+        { json: "adminOnly", js: "adminOnly", typ: u(undefined, true) },
+        { json: "loginRequired", js: "loginRequired", typ: u(undefined, true) },
+        { json: "pattern", js: "pattern", typ: u(undefined, "") },
+    ], "any"),
+    "Type": [
+        "ActiveDirectory",
+        "jwt",
+        "local",
+        "openidconnect",
+    ],
 };

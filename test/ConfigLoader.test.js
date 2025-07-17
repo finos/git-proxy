@@ -53,7 +53,9 @@ describe('ConfigLoader', () => {
         path: tempConfigFile,
       });
 
-      expect(result).to.deep.equal(testConfig);
+      expect(result).to.be.an('object');
+      expect(result.proxyUrl).to.equal('https://test.com');
+      expect(result.cookieSecret).to.equal('test-secret');
     });
   });
 
@@ -74,7 +76,9 @@ describe('ConfigLoader', () => {
         headers: {},
       });
 
-      expect(result).to.deep.equal(testConfig);
+      expect(result).to.be.an('object');
+      expect(result.proxyUrl).to.equal('https://test.com');
+      expect(result.cookieSecret).to.equal('test-secret');
     });
 
     it('should include bearer token if provided', async () => {

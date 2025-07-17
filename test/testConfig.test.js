@@ -59,7 +59,9 @@ describe('user configuration', function () {
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
+    // Invalidate cache to force reload
     const config = require('../src/config');
+    config.invalidateCache();
     const enabledMethods = defaultSettings.authentication.filter(method => method.enabled);
 
     expect(config.getAuthorisedList()).to.be.eql(user.authorisedList);
@@ -72,19 +74,28 @@ describe('user configuration', function () {
     const user = {
       authentication: [
         {
-          type: 'google',
+          type: 'openidconnect',
           enabled: true,
+          oidcConfig: {
+            issuer: 'https://accounts.google.com',
+            clientID: 'test-client-id',
+            clientSecret: 'test-client-secret',
+            callbackURL: 'https://example.com/callback',
+            scope: 'openid email profile'
+          }
         },
       ],
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
+    // Invalidate cache to force reload
     const config = require('../src/config');
+    config.invalidateCache();
     const authMethods = config.getAuthMethods();
-    const googleAuth = authMethods.find(method => method.type === 'google');
+    const oidcAuth = authMethods.find(method => method.type === 'openidconnect');
 
-    expect(googleAuth).to.not.be.undefined;
-    expect(googleAuth.enabled).to.be.true;
+    expect(oidcAuth).to.not.be.undefined;
+    expect(oidcAuth.enabled).to.be.true;
     expect(config.getAuthMethods()).to.deep.include(user.authentication[0]);
     expect(config.getAuthMethods()).to.not.be.eql(defaultSettings.authentication);
     expect(config.getDatabase()).to.be.eql(defaultSettings.sink[0]);
@@ -114,13 +125,16 @@ describe('user configuration', function () {
   it('should override default settings for SSL certificate', function () {
     const user = {
       tls: {
+        enabled: true,
         key: 'my-key.pem',
         cert: 'my-cert.pem',
       },
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
+    // Invalidate cache to force reload
     const config = require('../src/config');
+    config.invalidateCache();
 
     expect(config.getTLSKeyPemPath()).to.be.eql(user.tls.key);
     expect(config.getTLSCertPemPath()).to.be.eql(user.tls.cert);
@@ -168,7 +182,9 @@ describe('user configuration', function () {
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
+    // Invalidate cache to force reload
     const config = require('../src/config');
+    config.invalidateCache();
 
     expect(config.getURLShortener()).to.be.eql(user.urlShortener);
   });
@@ -225,7 +241,9 @@ describe('user configuration', function () {
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
     
+    // Invalidate cache to force reload
     const config = require('../src/config');
+    config.invalidateCache();
 
     expect(config.getTLSCertPemPath()).to.be.eql(user.tls.cert);
     expect(config.getTLSKeyPemPath()).to.be.eql(user.tls.key);
@@ -239,7 +257,9 @@ describe('user configuration', function () {
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
+    // Invalidate cache to force reload
     const config = require('../src/config');
+    config.invalidateCache();
 
     expect(config.getTLSCertPemPath()).to.be.eql(user.sslCertPemPath);
     expect(config.getTLSKeyPemPath()).to.be.eql(user.sslKeyPemPath);
@@ -256,7 +276,9 @@ describe('user configuration', function () {
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
     
+    // Invalidate cache to force reload
     const config = require('../src/config');
+    config.invalidateCache();
 
     expect(config.getAPIs()).to.be.eql(user.api);
   });

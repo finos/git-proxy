@@ -1,9 +1,9 @@
-import fs from 'fs';
-import path from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 import axios from 'axios';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import EventEmitter from 'events';
+import { EventEmitter } from 'events';
 import envPaths from 'env-paths';
 import { GitProxyConfig, Convert } from './config';
 
@@ -109,6 +109,10 @@ export class ConfigLoader extends EventEmitter {
     this.reloadTimer = null;
     this.isReloading = false;
     this.cacheDir = null;
+  }
+
+  get cacheDirPath(): string | null {
+    return this.cacheDir;
   }
 
   async initialize(): Promise<boolean> {
