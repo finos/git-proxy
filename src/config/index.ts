@@ -81,10 +81,10 @@ function mergeConfigurations(
   // If user doesn't specify tls but has legacy SSL fields, use only legacy fallback
   if (!userSettings.tls && (userSettings.sslKeyPemPath || userSettings.sslCertPemPath)) {
     tlsConfig = {
-      ...defaultConfig.tls,
-      // Clear the default key/cert paths so legacy fallback works
-      key: undefined as any,
-      cert: undefined as any,
+      enabled: defaultConfig.tls?.enabled || false,
+      // Use empty strings so legacy fallback works
+      key: '',
+      cert: '',
     };
   }
 
@@ -257,12 +257,12 @@ export const getPlugins = () => {
 
 export const getTLSKeyPemPath = (): string | undefined => {
   const config = loadFullConfiguration();
-  return config.tls?.key || config.sslKeyPemPath;
+  return (config.tls?.key && config.tls.key !== '') ? config.tls.key : config.sslKeyPemPath;
 };
 
 export const getTLSCertPemPath = (): string | undefined => {
   const config = loadFullConfiguration();
-  return config.tls?.cert || config.sslCertPemPath;
+  return (config.tls?.cert && config.tls.cert !== '') ? config.tls.cert : config.sslCertPemPath;
 };
 
 export const getTLSEnabled = (): boolean => {
