@@ -3,10 +3,10 @@
   <a href="https://github.com/finos/git-proxy">
     <img src="./docs/img/logo.png" alt="Logo" height="95">
   </a>
-
+  
   <br />
   <br />
-
+  
   <p align="center">
     Deploy custom push protections and policies<br />on top of Git
     <br />
@@ -23,18 +23,17 @@
 
   <br />
 
-[![FINOS - Incubating](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-incubating.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/incubating)
+[![FINOS - Active](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-active.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/active)
 [![NPM](https://img.shields.io/npm/v/@finos/git-proxy?colorA=00C586&colorB=000000)](https://www.npmjs.com/package/@finos/git-proxy)
 [![Build](https://img.shields.io/github/actions/workflow/status/finos/git-proxy/ci.yml?branch=main&label=CI&logo=github&colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/finos/git-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/finos/git-proxy)
-[![git-proxy](https://api.securityscorecards.dev/projects/github.com/finos/git-proxy/badge)](https://api.securityscorecards.dev/projects/github.com/finos/git-proxy)
 [![Documentation](https://img.shields.io/badge/_-documentation-000000?colorA=00C586&logo=docusaurus&logoColor=FFFFFF&)](https://git-proxy.finos.org)
 <br />
 [![License](https://img.shields.io/github/license/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/blob/main/LICENSE)
 [![Contributors](https://img.shields.io/github/contributors/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/graphs/contributors)
 [![Slack](https://img.shields.io/badge/_-Chat_on_Slack-000000.svg?logo=slack&colorA=00C586)](https://app.slack.com/client/T01E7QRQH97/C06LXNW0W76)
-[![Stars](https://img.shields.io/github/stars/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/stargazers)
-[![Forks](https://img.shields.io/github/forks/finos/git-proxy?colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/forks)
+[![git-proxy](https://api.securityscorecards.dev/projects/github.com/finos/git-proxy/badge)](https://api.securityscorecards.dev/projects/github.com/finos/git-proxy)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/10520/badge)](https://www.bestpractices.dev/projects/10520)
 
 </div>
 <br />
@@ -85,6 +84,7 @@ $ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remo
 Using the default configuration, GitProxy intercepts the push and _blocks_ it. To enable code pushing to your fork via GitProxy, add your repository URL into the GitProxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
 
 ## Documentation
+
 For detailed step-by-step instructions for how to install, deploy & configure GitProxy and
 customize for your environment, see the [project's documentation](https://git-proxy.finos.org/docs/):
 
@@ -102,11 +102,11 @@ If you identify a security vulnerability in the codebase, please follow the step
 
 ## Code of Conduct
 
-We are committed to making open source an enjoyable and respectful experience for our community. See <a href="https://github.com/finos/git-proxy/blob/main/CODE_OF_CONDUCT.md"><code>CODE_OF_CONDUCT</code></a> for more information.
+We are committed to making open source an enjoyable and respectful experience for our community. See [`CODE_OF_CONDUCT`](CODE_OF_CONDUCT.md) for more information.
 
 ## License
 
-This project is distributed under the Apache-2.0 license. See <a href="./LICENSE"><code>LICENSE</code></a> for more information.
+This project is distributed under the Apache-2.0 license. See [`LICENSE`](LICENSE) for more information.
 
 ## Contact
 
@@ -114,6 +114,8 @@ Drop a note, ask a question or just say hello in our [community Slack channel](h
 
 If you can't access Slack, you can also [subscribe to our mailing list](mailto:git-proxy+subscribe@lists.finos.org).
 
-Join our [fortnightly Zoom meeting](https://zoom.us/j/97235277537?pwd=aDJsaE8zcDJpYW1vZHJmSTJ0RXNZUT09) on Monday, 11AM EST (odd week numbers). Send an e-mail to [help@finos.org](mailto:help@finos.org) to get a calendar invitation.
+🤝 Join our [fortnightly Zoom meeting](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595) on Monday, 4PM BST (odd week numbers). 
+🌍 [Convert to your local time](https://www.timeanddate.com/worldclock)
+📅 [Click here](https://calendar.google.com/calendar/event?action=TEMPLATE&tmeid=MTRvbzM0NG01dWNvNGc4OGJjNWphM2ZtaTZfMjAyNTA2MDJUMTUwMDAwWiBzYW0uaG9sbWVzQGNvbnRyb2wtcGxhbmUuaW8&tmsrc=sam.holmes%40control-plane.io&scp=ALL) for the recurring Google Calendar meeting invite. Alternatively, send an e-mail to [help@finos.org](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595#:~:text=Need-,an,-invite%3F) to get a calendar invitation. 
 
-Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues). 
+Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues).
