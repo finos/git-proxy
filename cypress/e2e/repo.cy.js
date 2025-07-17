@@ -1,6 +1,8 @@
 describe('Repo', () => {
   beforeEach(() => {
-    cy.visit('/admin/repo');
+    cy.login('admin', 'admin');
+
+    cy.visit('/dashboard/repo');
 
     // prevent failures on 404 request and uncaught promises
     cy.on('uncaught:exception', () => false);
@@ -8,7 +10,7 @@ describe('Repo', () => {
 
   describe('Code button for repo row', () => {
     it('Opens tooltip with correct content and can copy', () => {
-      const cloneURL = 'http://localhost:8000/finos/test-repo.git';
+      const cloneURL = 'http://localhost:8000/finos/git-proxy.git';
       const tooltipQuery = 'div[role="tooltip"]';
 
       cy
@@ -17,8 +19,8 @@ describe('Repo', () => {
         .should('not.exist');
 
       cy
-        // find the entry for finos/test-repo
-        .get('a[href="/admin/repo/test-repo"]')
+        // find the entry for finos/git-proxy
+        .get('a[href="/dashboard/repo/git-proxy"]')
         // take it's parent row
         .closest('tr')
         // find the nearby span containing Code we can click to open the tooltip

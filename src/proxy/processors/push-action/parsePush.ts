@@ -34,7 +34,6 @@ if (!fs.existsSync(dir)) {
  */
 async function exec(req: any, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
-
   try {
     if (!req.body || req.body.length === 0) {
       step.log('No data received in request body.');
@@ -116,7 +115,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     action.addStep(step);
   }
   return action;
-};
+}
 
 /**
  * Parses the name, email, and timestamp from an author or committer line.
