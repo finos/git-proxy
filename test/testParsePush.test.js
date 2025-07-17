@@ -10,6 +10,8 @@ const {
   unpack
 } = require('../src/proxy/processors/push-action/parsePush');
 
+import { FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
+
 /**
  * Creates a simplified sample PACK buffer for testing.
  * @param {number} numEntries - Number of entries in the PACK file.
@@ -23,7 +25,7 @@ function createSamplePackBuffer(
   type = 1,
 ) {
   const header = Buffer.alloc(12);
-  header.write('PACK', 0, 4, 'utf-8'); // Signature
+  header.write(PACK_SIGNATURE, 0, 4, 'utf-8'); // Signature
   header.writeUInt32BE(2, 4); // Version
   header.writeUInt32BE(numEntries, 8); // Number of entries
 
@@ -57,7 +59,7 @@ function createPacketLineBuffer(lines) {
     const lengthInHex = (line.length + 4).toString(16).padStart(4, '0');
     buffer = Buffer.concat([buffer, Buffer.from(lengthInHex, 'ascii'), Buffer.from(line, 'ascii')]);
   });
-  buffer = Buffer.concat([buffer, Buffer.from('0000', 'ascii')]);
+  buffer = Buffer.concat([buffer, Buffer.from(FLUSH_PACKET, 'ascii')]);
 
   return buffer;
 }
@@ -222,7 +224,7 @@ describe('parsePackFile', () => {
       expect(parsedCommit.authorEmail).to.equal('author@example.com');
 
       expect(step.content.meta).to.deep.equal({
-        sig: 'PACK',
+        sig: PACK_SIGNATURE,
         version: 2,
         entries: numEntries,
       });
@@ -448,7 +450,7 @@ describe('parsePackFile', () => {
       const [meta, contentBuff] = getPackMeta(buffer);
 
       expect(meta).to.deep.equal({
-        sig: 'PACK',
+        sig: PACK_SIGNATURE,
         version: 2,
         entries: 5,
       });
@@ -461,7 +463,7 @@ describe('parsePackFile', () => {
         const [meta, contentBuff] = getPackMeta(buffer);
 
         expect(meta).to.deep.equal({
-          sig: 'PACK',
+          sig: PACK_SIGNATURE,
           version: 2,
           entries: 1,
         });
@@ -682,7 +684,7 @@ describe('parsePackFile', () => {
     });
 
     it('should handle a buffer only with a flush packet', () => {
-      const buffer = Buffer.from('0000');
+      const buffer = Buffer.from(FLUSH_PACKET);
       const [parsedLines, offset] = parsePacketLines(buffer);
 
       expect(parsedLines).to.deep.equal([]);

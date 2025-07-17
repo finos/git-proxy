@@ -1,48 +1,44 @@
 import z from 'zod';
+import localSPDX from './licenses.json';
 
-const license = z.object({
+const licenseSchema = z.object({
+  isDeprecatedLicenseId: z.boolean(),
   detailsUrl: z.string().url(),
   name: z.string(),
   licenseId: z.string(),
 });
 
-export type License = z.infer<typeof license>;
+export type License = z.infer<typeof licenseSchema>;
 export type LicensesMap = Map<string, License>;
 
-const licenses = z.object({
+const licensesSchema = z.object({
   licenseListVersion: z.string(),
-  licenses: license.array(),
+  licenses: licenseSchema.array(),
 });
+export type Licenses = z.infer<typeof licensesSchema>;
 
-export const getLicenseList = async () => {
-  // https://spdx.org/licenses/licenses.json
-  const req = await fetch('https://spdx.org/licenses/licenses.json');
-  const data = await req.json();
-  const { data: parsed, error } = licenses.safeParse(data);
-  if (error) {
-    throw new Error("couldn't get license list", { cause: error });
+export const getLicenseList = async (allowDeprecated: boolean) => {
+  let licenses: Licenses | undefined = undefined;
+  try {
+    // https://spdx.org/licenses/licenses.json
+    const req = await fetch('https://spdx.org/licenses/licenses.json');
+    const data = await req.json();
+    const { data: parsed, error } = licensesSchema.safeParse(data);
+    if (error) {
+      throw new Error("couldn't get license list", { cause: error });
+    }
+    licenses = parsed;
+  } catch (e: unknown) {
+    console.warn('failed to fetch upstream licenses, falling back to offline copy');
+    licenses = localSPDX;
   }
 
-  const licenseMap = new Map<string, License>();
-  parsed.licenses.forEach((license) => {
+  const licenseMap: LicensesMap = new Map<string, License>();
+  (licenses ?? ({} as Licenses)).licenses.forEach((license) => {
+    if (!allowDeprecated && license.isDeprecatedLicenseId) {
+      return;
+    }
     licenseMap.set(license.licenseId.toLowerCase(), license);
-  });
-
-  return licenseMap;
-};
-
-export const getLicenseData = async (url: string) => {
-  // https://spdx.org/licenses/licenses.json
-  const req = await fetch(url);
-  const data = await req.json();
-  const { data: parsed, error } = licenses.safeParse(data);
-  if (error) {
-    throw new Error("couldn't get license list", { cause: error });
-  }
-
-  const licenseMap = new Map<string, License>();
-  parsed.licenses.forEach((license) => {
-    licenseMap.set(license.licenseId, license);
   });
 
   return licenseMap;

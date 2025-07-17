@@ -1,7 +1,11 @@
+import { Options as RateLimitOptions } from 'express-rate-limit';
+
 export interface UserSettings {
+  uiRouteAuth: Record<string, unknown>;
   authorisedList: AuthorisedRepo[];
   sink: Database[];
   authentication: Authentication[];
+  apiAuthentication: Authentication[];
   tempPassword?: TempPasswordConfig;
   proxyUrl: string;
   api: Record<string, any>;
@@ -18,6 +22,7 @@ export interface UserSettings {
   contactEmail: string;
   csrfProtection: boolean;
   domains: Record<string, unknown>;
+  rateLimit: RateLimitConfig;
 }
 
 export interface TLSConfig {
@@ -50,3 +55,7 @@ export interface TempPasswordConfig {
   sendEmail: boolean;
   emailConfig: Record<string, unknown>;
 }
+
+export type RateLimitConfig = Partial<
+  Pick<RateLimitOptions, 'windowMs' | 'limit' | 'message' | 'statusCode'>
+>;

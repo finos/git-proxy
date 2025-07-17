@@ -1,6 +1,7 @@
 import { Action, Step } from '../../actions';
 import { getRepos } from '../../../db';
 import { Repo } from '../../../db/types';
+import { trimTrailingDotGit } from '../../../db/helper';
 
 // Execute if the repo is approved
 const exec = async (
@@ -14,8 +15,8 @@ const exec = async (
   console.log(list);
 
   const found = list.find((x: Repo) => {
-    const targetName = action.repo.replace('.git', '').toLowerCase();
-    const allowedName = `${x.project}/${x.name}`.replace('.git', '').toLowerCase();
+    const targetName = trimTrailingDotGit(action.repo.toLowerCase());
+    const allowedName = trimTrailingDotGit(`${x.project}/${x.name}`.toLowerCase());
     console.log(`${targetName} = ${allowedName}`);
     return targetName === allowedName;
   });
