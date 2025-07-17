@@ -2,6 +2,10 @@
   "proxyUrl": "https://github.com",
   "cookieSecret": "cookie secret",
   "sessionMaxAgeHours": 12,
+  "rateLimit": {
+    "windowMs": 60000,
+    "limit": 150
+  },
   "tempPassword": {
     "sendEmail": false,
     "emailConfig": {}
@@ -47,7 +51,20 @@
       "adConfig": {
         "url": "",
         "baseDN": "",
-        "searchBase": ""
+        "searchBase": "",
+        "username": "",
+        "password": ""
+      }
+    },
+    {
+      "type": "openidconnect",
+      "enabled": false,
+      "oidcConfig": {
+        "issuer": "",
+        "clientID": "",
+        "clientSecret": "",
+        "callbackURL": "",
+        "scope": ""
       }
     }
   ],
@@ -92,15 +109,79 @@
       }
     ]
   },
+  "configurationSources": {
+    "enabled": false,
+    "reloadIntervalSeconds": 60,
+    "merge": false,
+    "sources": [
+      {
+        "type": "file",
+        "enabled": false,
+        "path": "./external-config.json"
+      },
+      {
+        "type": "http",
+        "enabled": false,
+        "url": "http://config-service/git-proxy-config",
+        "headers": {},
+        "auth": {
+          "type": "bearer",
+          "token": ""
+        }
+      },
+      {
+        "type": "git",
+        "enabled": false,
+        "repository": "https://git-server.com/project/git-proxy-config",
+        "branch": "main",
+        "path": "git-proxy/config.json",
+        "auth": {
+          "type": "ssh",
+          "privateKeyPath": "/path/to/.ssh/id_rsa"
+        }
+      }
+    ]
+  },
   "domains": {},
   "privateOrganizations": [],
   "urlShortener": "",
   "contactEmail": "",
   "csrfProtection": true,
   "plugins": [],
+  "apiAuthentication": [
+    {
+      "type": "jwt",
+      "enabled": false,
+      "jwtConfig": {
+        "authorityURL": "",
+        "clientID": "",
+        "expectedAudience": "",
+        "roleMapping": {
+          "admin": {
+            "": ""
+          }
+        }
+      }
+    }
+  ],
   "tls": {
-    "enabled": true,
+    "enabled": false,
     "key": "certs/key.pem",
     "cert": "certs/cert.pem"
+  },
+  "uiRouteAuth": {
+    "enabled": false,
+    "rules": [
+      {
+        "pattern": "/dashboard/*",
+        "adminOnly": false,
+        "loginRequired": true
+      },
+      {
+        "pattern": "/admin/*",
+        "adminOnly": true,
+        "loginRequired": true
+      }
+    ]
   }
 }
