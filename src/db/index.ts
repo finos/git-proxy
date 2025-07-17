@@ -64,6 +64,7 @@ export const {
   getPushes,
   writeAudit,
   getPush,
+  deletePush,
   findUser,
   findUserByOIDC,
   getUsers,

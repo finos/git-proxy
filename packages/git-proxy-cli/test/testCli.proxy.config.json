@@ -1,8 +1,7 @@
 {
   "tempPassword": {
     "sendEmail": false,
-    "emailConfig": {
-    }
+    "emailConfig": {}
   },
   "authorisedList": [
     {
@@ -22,9 +21,9 @@
     {
       "type": "mongo",
       "connectionString": "mongodb://localhost:27017/gitproxy",
-      "options": {        
+      "options": {
         "useUnifiedTopology": true
-      },      
+      },
       "enabled": false
     }
   ],

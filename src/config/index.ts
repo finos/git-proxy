@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'fs';
 import defaultSettings from '../../proxy.config.json';
 import { GitProxyConfig, Convert } from './config';
 import { ConfigLoader, Configuration } from './ConfigLoader';
+import { serverConfig } from './env';
 
 // Cache for current configuration
 let _currentConfig: GitProxyConfig | null = null;
@@ -39,7 +40,7 @@ function loadFullConfiguration(): GitProxyConfig {
 }
 
 /**
- * Merge configurations
+ * Merge configurations with environment variable overrides
  * @param {GitProxyConfig} defaultConfig - The default configuration
  * @param {Partial<GitProxyConfig>} userSettings - User-provided configuration overrides
  * @return {GitProxyConfig} The merged configuration
@@ -59,6 +60,11 @@ function mergeConfigurations(
     rateLimit: userSettings.rateLimit || defaultConfig.rateLimit,
     tls: userSettings.tls || defaultConfig.tls,
     tempPassword: { ...defaultConfig.tempPassword, ...userSettings.tempPassword },
+    // Environment variable overrides
+    cookieSecret:
+      serverConfig.GIT_PROXY_COOKIE_SECRET ||
+      userSettings.cookieSecret ||
+      defaultConfig.cookieSecret,
   };
 }
 
@@ -87,32 +93,66 @@ export const getDatabase = () => {
 
   for (const db of databases) {
     if (db.enabled) {
+      // if mongodb is configured and connection string unspecified, fallback to env var
+      if (db.type === 'mongo' && !db.connectionString) {
+        db.connectionString = serverConfig.GIT_PROXY_MONGO_CONNECTION_STRING;
+      }
       return db;
     }
   }
 
-  throw Error('No database cofigured!');
+  throw Error('No database configured!');
 };
 
-// Gets the configured authentication method, defaults to local
-export const getAuthentication = () => {
+/**
+ * Get the list of enabled authentication methods
+ *
+ * At least one authentication method must be enabled.
+ * @return {Authentication[]} List of enabled authentication methods
+ */
+export const getAuthMethods = () => {
   const config = loadFullConfiguration();
   const authSources = config.authentication || [];
 
-  for (const auth of authSources) {
-    if (auth.enabled) {
-      return auth;
-    }
+  const enabledAuthMethods = authSources.filter((auth) => auth.enabled);
+
+  if (enabledAuthMethods.length === 0) {
+    throw new Error('No authentication method enabled');
   }
 
-  throw Error('No authentication cofigured!');
+  return enabledAuthMethods;
+};
+
+/**
+ * Get the list of enabled authentication methods for API endpoints
+ *
+ * If no API authentication methods are enabled, all endpoints are public.
+ * @return {Authentication[]} List of enabled authentication methods
+ */
+export const getAPIAuthMethods = () => {
+  const config = loadFullConfiguration();
+  const apiAuthSources = config.apiAuthentication || [];
+
+  const enabledAuthMethods = apiAuthSources.filter((auth: { enabled: any }) => auth.enabled);
+
+  if (enabledAuthMethods.length === 0) {
+    console.log('Warning: No authentication method enabled for API endpoints.');
+  }
+
+  return enabledAuthMethods;
+};
+
+// Gets the configured authentication method, defaults to local (backward compatibility)
+export const getAuthentication = () => {
+  const authMethods = getAuthMethods();
+  return authMethods[0]; // Return first enabled method for backward compatibility
 };
 
 // Log configuration to console
 export const logConfiguration = () => {
   console.log(`authorisedList = ${JSON.stringify(getAuthorisedList())}`);
   console.log(`data sink = ${JSON.stringify(getDatabase())}`);
-  console.log(`authentication = ${JSON.stringify(getAuthentication())}`);
+  console.log(`authentication = ${JSON.stringify(getAuthMethods())}`);
   console.log(`rateLimit = ${JSON.stringify(getRateLimit())}`);
 };
 
@@ -191,6 +231,11 @@ export const getTLSEnabled = (): boolean => {
 export const getDomains = () => {
   const config = loadFullConfiguration();
   return config.domains || {};
+};
+
+export const getUIRouteAuth = () => {
+  const config = loadFullConfiguration();
+  return config.uiRouteAuth || {};
 };
 
 export const getRateLimit = () => {
