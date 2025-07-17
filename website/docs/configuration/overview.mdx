@@ -7,6 +7,7 @@ description: How to customise push protections and policies
 
 On installation, GitProxy ships with an [out-of-the-box configuration](https://github.com/finos/git-proxy/blob/main/proxy.config.json). This is fine for
 demonstration purposes but is likely not what you want to deploy into your environment.
+
 ### Customise configuration
 
 To customise your GitProxy configuration, create a `proxy.config.json` in your current
@@ -44,8 +45,9 @@ npx -- @finos/git-proxy --config ./config.json
 ```
 
 ### Set ports with ENV variables
+
 By default, GitProxy uses port 8000 to expose the Git Server and 8080 for the frontend application.
-The ports can be changed by setting the `GIT_PROXY_SERVER_PORT`, `GIT_PROXY_HTTPS_SERVER_PORT` (optional) and `GIT_PROXY_UI_PORT` 
+The ports can be changed by setting the `GIT_PROXY_SERVER_PORT`, `GIT_PROXY_HTTPS_SERVER_PORT` (optional) and `GIT_PROXY_UI_PORT`
 environment variables:
 
 ```
@@ -54,10 +56,10 @@ export GIT_PROXY_SERVER_PORT="9090"
 export GIT_PROXY_HTTPS_SERVER_PORT="9443"
 ```
 
-Note that `GIT_PROXY_UI_PORT` is needed for both server and UI Node processes, 
+Note that `GIT_PROXY_UI_PORT` is needed for both server and UI Node processes,
 whereas `GIT_PROXY_SERVER_PORT` (and `GIT_PROXY_HTTPS_SERVER_PORT`) is only needed by the server process.
 
-By default, GitProxy CLI connects to GitProxy running on localhost and default port. This can be 
+By default, GitProxy CLI connects to GitProxy running on localhost and default port. This can be
 changed by setting the `GIT_PROXY_UI_HOST` and `GIT_PROXY_UI_PORT` environment variables:
 
 ```
@@ -79,5 +81,66 @@ To validate your configuration at a custom file location, run:
 git-proxy --validate --config ./config.json
 ```
 
+### Configuration Sources
 
+GitProxy supports dynamic configuration loading from multiple sources. This feature allows you to manage your configuration from external sources and update it without restarting the service. Configuration sources can be files, HTTP endpoints, or Git repositories.
 
+To enable configuration sources, add the `configurationSources` section to your configuration:
+
+```json
+{
+  "configurationSources": {
+    "enabled": true,
+    "reloadIntervalSeconds": 60,
+    "merge": false,
+    "sources": [
+      {
+        "type": "file",
+        "enabled": true,
+        "path": "./external-config.json"
+      },
+      {
+        "type": "http",
+        "enabled": true,
+        "url": "http://config-service/git-proxy-config",
+        "headers": {},
+        "auth": {
+          "type": "bearer",
+          "token": "your-token"
+        }
+      },
+      {
+        "type": "git",
+        "enabled": true,
+        "repository": "https://git-server.com/project/git-proxy-config",
+        "branch": "main",
+        "path": "git-proxy/config.json",
+        "auth": {
+          "type": "ssh",
+          "privateKeyPath": "/path/to/.ssh/id_rsa"
+        }
+      }
+    ]
+  }
+}
+```
+
+The configuration options for `configurationSources` are:
+
+- `enabled`: Enable/disable dynamic configuration loading
+- `reloadIntervalSeconds`: How often to check for configuration updates (in seconds)
+- `merge`: When true, merges configurations from all enabled sources. When false, uses the last successful configuration load. This can be used to upload only partial configuration to external source
+- `sources`: Array of configuration sources to load from
+
+Each source can be one of three types:
+
+1. `file`: Load from a local JSON file
+2. `http`: Load from an HTTP endpoint
+3. `git`: Load from a Git repository
+
+When configuration changes are detected, GitProxy will:
+
+1. Validate the new configuration
+2. Stop existing services
+3. Apply the new configuration
+4. Restart services with the updated configuration
