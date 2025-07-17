@@ -12,10 +12,10 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     // https://stackoverflow.com/questions/40883798/how-to-get-git-diff-of-the-first-commit
     let commitFrom = `4b825dc642cb6eb9a060e54bf8d69288fbee4904`;
 
-    if (!action.commitData) {
+    if (!action.commitData || action.commitData.length === 0) {
       step.error = true;
       step.log('No commitData found');
-      step.setError('Your push has been blocked because no commitData was found.');
+      step.setError('Your push has been blocked because no commit data was found.');
       action.addStep(step);
       return action;
     }

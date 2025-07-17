@@ -1,6 +1,6 @@
 import { connect, findDocuments, findOneDocument } from './helper';
 import { Action } from '../../proxy/actions';
-import { toClass } from '../helper';
+import { toClass, trimTrailingDotGit } from '../helper';
 import * as repo from './repo';
 import { Push, PushQuery } from '../types';
 
@@ -13,9 +13,7 @@ const defaultPushQuery: PushQuery = {
   authorised: false,
 };
 
-export const getPushes = async (
-  query: PushQuery = defaultPushQuery
-): Promise<Push[]> => {
+export const getPushes = async (query: PushQuery = defaultPushQuery): Promise<Push[]> => {
   return findDocuments<Push>(collectionName, query, {
     projection: {
       _id: 0,
@@ -44,7 +42,12 @@ export const getPushes = async (
 
 export const getPush = async (id: string): Promise<Action | null> => {
   const doc = await findOneDocument<any>(collectionName, { id });
-  return doc ? toClass(doc, Action.prototype) as Action : null;
+  return doc ? (toClass(doc, Action.prototype) as Action) : null;
+};
+
+export const deletePush = async function (id: string) {
+  const collection = await connect(collectionName);
+  return collection.deleteOne({ id });
 };
 
 export const writeAudit = async (action: Action): Promise<Action> => {
@@ -105,7 +108,7 @@ export const canUserApproveRejectPush = async (id: string, user: string) => {
       return;
     }
 
-    const repoName = action.repoName.replace('.git', '');
+    const repoName = trimTrailingDotGit(action.repoName);
     const isAllowed = await repo.canUserApproveRejectPushRepo(repoName, user);
 
     resolve(isAllowed);
@@ -120,7 +123,7 @@ export const canUserCancelPush = async (id: string, user: string) => {
       return;
     }
 
-    const repoName = pushDetail.repoName.replace('.git', '');
+    const repoName = trimTrailingDotGit(pushDetail.repoName);
     const isAllowed = await repo.isUserPushAllowed(repoName, user);
 
     if (isAllowed) {

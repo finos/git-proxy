@@ -1,5 +1,6 @@
 import { Action, Step } from '../../actions';
 import { getUsers, isUserPushAllowed } from '../../../db';
+import { trimTrailingDotGit } from '../../../db/helper';
 
 // Execute if the repo is approved
 const exec = async (req: any, action: Action): Promise<Action> => {
@@ -24,7 +25,15 @@ const exec = async (req: any, action: Action): Promise<Action> => {
  * @return {Promise<Action>} The action object
  */
 const validateUser = async (user: string, action: Action, step: Step): Promise<Action> => { 
-  const repoName = action.repo.split('/')[1].replace('.git', '');
+  const repoSplit = trimTrailingDotGit(action.repo.toLowerCase()).split('/');
+  // we expect there to be exactly one / separating org/repoName
+  if (repoSplit.length != 2) {
+    step.setError('Server-side issue extracting repoName');
+    action.addStep(step);
+    return action;
+  }
+  // pull the 2nd value of the split for repoName
+  const repoName = repoSplit[1];
   let isUserAllowed = false;
 
   // Find the user associated with this Git Account
@@ -48,8 +57,8 @@ const validateUser = async (user: string, action: Action, step: Step): Promise<A
 
     step.setError(
       `Rejecting push as user ${action.user} ` +
-      `is not allowed to push on repo ` +
-      `${action.repo}`,
+        `is not allowed to push on repo ` +
+        `${action.repo}`,
     );
     action.addStep(step);
     return action;
