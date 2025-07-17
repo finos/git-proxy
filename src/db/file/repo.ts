@@ -10,7 +10,8 @@ if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 /* istanbul ignore if */
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
-const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
+// export for testing purposes
+export const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
 db.ensureIndex({ fieldName: 'name', unique: false });
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
@@ -38,6 +39,20 @@ export const getRepos = async (query: any = {}) => {
 export const getRepo = async (name: string) => {
   return new Promise<Repo | null>((resolve, reject) => {
     db.findOne({ name: name.toLowerCase() }, (err: Error | null, doc: Repo) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
+      if (err) {
+        reject(err);
+      } else {
+        resolve(doc);
+      }
+    });
+  });
+};
+
+export const getRepoByUrl = async (url: string) => {
+  return new Promise<Repo | null>((resolve, reject) => {
+    db.findOne({ url: url.toLowerCase().replace('.git', '') }, (err: Error | null, doc: Repo) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {
