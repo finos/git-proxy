@@ -19,9 +19,8 @@ export const getRepo = async (name: string) => {
 };
 
 export const getRepoByUrl = async (url: string) => {
-  url = url.toLowerCase().replace('.git', '');
   const collection = await connect(collectionName);
-  return collection.findOne({ url: { $eq: url } });
+  return collection.findOne({ url: { $eq: url.toLowerCase() } });
 };
 
 export const createRepo = async (repo: Repo) => {

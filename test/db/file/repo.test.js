@@ -18,7 +18,7 @@ describe('File DB', () => {
       const repoData = {
         name: 'sample',
         users: { canPush: [] },
-        url: 'http://example.com/sample-repo',
+        url: 'http://example.com/sample-repo.git',
       };
 
       sandbox.stub(repoModule.db, 'findOne').callsFake((query, cb) => cb(null, repoData));
@@ -33,12 +33,12 @@ describe('File DB', () => {
       const repoData = {
         name: 'sample',
         users: { canPush: [] },
-        url: 'https://github.com/finos/git-proxy',
+        url: 'https://github.com/finos/git-proxy.git',
       };
 
       sandbox.stub(repoModule.db, 'findOne').callsFake((query, cb) => cb(null, repoData));
 
-      const result = await repoModule.getRepoByUrl('https://github.com/finos/git-proxy');
+      const result = await repoModule.getRepoByUrl('https://github.com/finos/git-proxy.git');
       expect(result).to.equal(repoData);
     });
 
@@ -46,14 +46,14 @@ describe('File DB', () => {
       const repoData = {
         name: 'sample',
         users: { canPush: [] },
-        url: 'https://github.com/finos/git-proxy',
+        url: 'https://github.com/finos/git-proxy.git',
       };
 
       sandbox.stub(repoModule.db, 'findOne').callsFake((query, cb) => cb(null, repoData));
 
       const result = await repoModule.getRepoByUrl('https://github.com/finos/git-proxy.git');
 
-      expect(repoModule.db.findOne.calledWith(sinon.match({ url: 'https://github.com/finos/git-proxy'}))).to.be.true;
+      expect(repoModule.db.findOne.calledWith(sinon.match({ url: 'https://github.com/finos/git-proxy.git'}))).to.be.true;
       expect(result).to.equal(repoData);
     });
   });
