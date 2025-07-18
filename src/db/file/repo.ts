@@ -52,7 +52,7 @@ export const getRepo = async (name: string) => {
 
 export const getRepoByUrl = async (url: string) => {
   return new Promise<Repo | null>((resolve, reject) => {
-    db.findOne({ url: url.toLowerCase().replace('.git', '') }, (err: Error | null, doc: Repo) => {
+    db.findOne({ url: url.toLowerCase() }, (err: Error | null, doc: Repo) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {
