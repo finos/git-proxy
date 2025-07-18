@@ -95,16 +95,7 @@ describe('blockForAuth', () => {
     });
   });
 
-  describe.only('fuzzing', () => {
-    it('should handle all possible characters in action ID', () => {
-      fc.assert(
-        fc.property(fc.string(), (actionId) => {
-          action.id = actionId;
-          exec(req, action);
-        })
-      );
-    });
-
+  describe('fuzzing', () => {
     it('should create a step with correct parameters regardless of action ID', () => {
       fc.assert(
         fc.asyncProperty(fc.string(), async (actionId) => {
@@ -133,7 +124,10 @@ describe('blockForAuth', () => {
           expect(message).to.include(`\x1B[34mhttp://localhost:8080/dashboard/push/${actionId}\x1B[0m`);
           expect(message).to.include('🔗 Shareable Link');
           expect(result).to.equal(action);
-        })
+        }),
+        {
+          numRuns: 100
+        }
       );
     });  
   });
