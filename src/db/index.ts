@@ -71,6 +71,7 @@ export const {
   updateUser,
   getRepos,
   getRepo,
+  getRepoByUrl,
   createRepo,
   addUserCanPush,
   addUserCanAuthorise,
