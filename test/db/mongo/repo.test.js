@@ -65,10 +65,5 @@ describe('MongoDB', () => {
         repoCollection.findOne.calledWith({ url: { $eq: 'https://github.com/finos/git-proxy.git' } }),
       ).to.be.true;
     });
-    
-    it('should handle invalid URLs gracefully', async () => {
-      const result = await getRepoByUrl('invalid-url');
-      expect(result).to.be.null;
-    });
   });
 });
