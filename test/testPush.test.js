@@ -24,7 +24,7 @@ describe('auth', async () => {
     expect(res).to.have.cookie('connect.sid');
     res.should.have.status(200);
 
-    // Get the connect cooie
+    // Get the connect cookie
     res.headers['set-cookie'].forEach((x) => {
       if (x.startsWith('connect')) {
         cookie = x.split(';')[0];

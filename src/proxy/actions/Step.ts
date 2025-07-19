@@ -35,12 +35,10 @@ class Step {
   }
 
   setContent(content: any): void {
-    this.log('setting content');
     this.content = content;
   }
 
   setAsyncBlock(message: string): void {
-    this.log('setting blocked');
     this.blocked = true;
     this.blockedMessage = message;
   }
