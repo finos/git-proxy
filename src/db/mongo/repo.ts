@@ -18,6 +18,11 @@ export const getRepo = async (name: string) => {
   return collection.findOne({ name: { $eq: name } });
 };
 
+export const getRepoByUrl = async (url: string) => {
+  const collection = await connect(collectionName);
+  return collection.findOne({ url: { $eq: url.toLowerCase() } });
+};
+
 export const createRepo = async (repo: Repo) => {
   repo.name = repo.name.toLowerCase();
   console.log(`creating new repo ${JSON.stringify(repo)}`);
