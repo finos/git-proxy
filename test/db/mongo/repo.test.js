@@ -22,7 +22,7 @@ describe('MongoDB', () => {
       const repoData = {
         name: 'sample',
         users: { canPush: [] },
-        url: 'http://example.com/sample-repo',
+        url: 'http://example.com/sample-repo.git',
       };
       repoCollection.findOne.resolves(repoData);
 
@@ -38,23 +38,7 @@ describe('MongoDB', () => {
       const repoData = {
         name: 'sample',
         users: { canPush: [] },
-        url: 'https://github.com/finos/git-proxy',
-      };
-      repoCollection.findOne.resolves(repoData);
-
-      const result = await getRepoByUrl('https://github.com/finos/git-proxy');
-      expect(result).to.equal(repoData);
-      expect(connectionStub.calledWith('repos')).to.be.true;
-      expect(
-        repoCollection.findOne.calledWith({ url: { $eq: 'https://github.com/finos/git-proxy' } }),
-      ).to.be.true;
-    });
-
-    it('should get the repo using the url, stripping off the .git', async () => {
-      const repoData = {
-        name: 'sample',
-        users: { canPush: [] },
-        url: 'https://github.com/finos/git-proxy',
+        url: 'https://github.com/finos/git-proxy.git',
       };
       repoCollection.findOne.resolves(repoData);
 
@@ -62,7 +46,7 @@ describe('MongoDB', () => {
       expect(result).to.equal(repoData);
       expect(connectionStub.calledWith('repos')).to.be.true;
       expect(
-        repoCollection.findOne.calledWith({ url: { $eq: 'https://github.com/finos/git-proxy' } }),
+        repoCollection.findOne.calledWith({ url: { $eq: 'https://github.com/finos/git-proxy.git' } }),
       ).to.be.true;
     });
 
@@ -70,7 +54,7 @@ describe('MongoDB', () => {
       const repoData = {
         name: 'sample',
         users: { canPush: [] },
-        url: 'https://github.com/finos/git-proxy',
+        url: 'https://github.com/finos/git-proxy.git',
       };
       repoCollection.findOne.resolves(repoData);
 
@@ -78,7 +62,7 @@ describe('MongoDB', () => {
       expect(result).to.equal(repoData);
       expect(connectionStub.calledWith('repos')).to.be.true;
       expect(
-        repoCollection.findOne.calledWith({ url: { $eq: 'https://github.com/finos/git-proxy' } }),
+        repoCollection.findOne.calledWith({ url: { $eq: 'https://github.com/finos/git-proxy.git' } }),
       ).to.be.true;
     });
   });
