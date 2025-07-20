@@ -180,9 +180,9 @@ describe('checkCommitMessages', () => {
                 'fuzz/repo'
               );
               fuzzAction.commitData = Array.isArray(fuzzedCommits) ? fuzzedCommits : [];
-      
+
               const result = await exec({}, fuzzAction);
-      
+
               expect(result).to.have.property('steps');
               expect(result.steps[0]).to.have.property('error').that.is.a('boolean');
             }
