@@ -399,8 +399,53 @@ describe('validate config files', function () {
     }
   });
 
+  it('should validate using default config file when no path provided', function () {
+    const originalConfigFile = config.configFile;
+    const mainConfigPath = path.join(__dirname, '..', 'proxy.config.json');
+    config.setConfigFile(mainConfigPath);
+
+    try {
+      // default configFile
+      expect(() => config.validate()).to.not.throw();
+    } finally {
+      // Restore original config file
+      config.setConfigFile(originalConfigFile);
+    }
+  });
+
   after(function () {
     delete require.cache[require.resolve('../src/config')];
+  });
+});
+
+describe('setConfigFile function', function () {
+  const config = require('../src/config/file');
+  let originalConfigFile;
+
+  beforeEach(function () {
+    originalConfigFile = config.configFile;
+  });
+
+  afterEach(function () {
+    // Restore original config file
+    config.setConfigFile(originalConfigFile);
+  });
+
+  it('should set the config file path', function () {
+    const newPath = '/tmp/new-config.json';
+    config.setConfigFile(newPath);
+    expect(config.configFile).to.equal(newPath);
+  });
+
+  it('should allow changing config file multiple times', function () {
+    const firstPath = '/tmp/first-config.json';
+    const secondPath = '/tmp/second-config.json';
+
+    config.setConfigFile(firstPath);
+    expect(config.configFile).to.equal(firstPath);
+
+    config.setConfigFile(secondPath);
+    expect(config.configFile).to.equal(secondPath);
   });
 });
 

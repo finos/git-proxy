@@ -206,6 +206,15 @@ describe('ConfigLoader', () => {
       }
     });
 
+    it('should return cacheDirPath via getter', async () => {
+      configLoader = new ConfigLoader({});
+      await configLoader.initialize();
+
+      const cacheDirPath = configLoader.cacheDirPath;
+      expect(cacheDirPath).to.equal(configLoader.cacheDir);
+      expect(cacheDirPath).to.be.a('string');
+    });
+
     it('should create cache directory if it does not exist', async () => {
       configLoader = new ConfigLoader({});
       await configLoader.initialize();
