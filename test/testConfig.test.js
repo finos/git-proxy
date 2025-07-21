@@ -354,6 +354,24 @@ describe('user configuration', function () {
     expect(() => config.getUIRouteAuth()).to.not.throw();
   });
 
+  it('should test getAuthentication function returns first auth method', function () {
+    const user = {
+      authentication: [
+        { type: 'ldap', enabled: true },
+        { type: 'local', enabled: true },
+      ],
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = require('../src/config');
+    config.invalidateCache();
+
+    const firstAuth = config.getAuthentication();
+    expect(firstAuth).to.be.an('object');
+    expect(firstAuth.type).to.equal('ldap');
+  });
+
+
   afterEach(function () {
     fs.rmSync(tempUserFile);
     fs.rmdirSync(tempDir);
