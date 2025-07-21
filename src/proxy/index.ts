@@ -1,5 +1,4 @@
-import express from 'express';
-import bodyParser from 'body-parser';
+import express, { Application } from 'express';
 import http from 'http';
 import https from 'https';
 import fs from 'fs';
@@ -19,7 +18,15 @@ import { Repo } from '../db/types';
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort, GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } =
   require('../config/env').serverConfig;
 
-const options = {
+interface ServerOptions {
+  inflate: boolean;
+  limit: string;
+  type: string;
+  key: Buffer | undefined;
+  cert: Buffer | undefined;
+}
+
+const options: ServerOptions = {
   inflate: true,
   limit: '100000kb',
   type: '*/*',
@@ -27,7 +34,7 @@ const options = {
   cert: getTLSEnabled() ? fs.readFileSync(getTLSCertPemPath()) : undefined,
 };
 
-const proxyPreparations = async () => {
+export const proxyPreparations = async () => {
   const plugins = getPlugins();
   const pluginLoader = new PluginLoader(plugins);
   await pluginLoader.load();
@@ -47,31 +54,59 @@ const proxyPreparations = async () => {
 };
 
 // just keep this async incase it needs async stuff in the future
-const createApp = async () => {
+const createApp = async (): Promise<Application> => {
   const app = express();
-  // Setup the proxy middleware
-  app.use(bodyParser.raw(options));
   app.use('/', router);
   return app;
 };
 
-const start = async () => {
+let httpServer: http.Server | null = null;
+let httpsServer: https.Server | null = null;
+
+const start = async (): Promise<Application> => {
   const app = await createApp();
   await proxyPreparations();
-  http.createServer(options as any, app).listen(proxyHttpPort, () => {
+  httpServer = http.createServer(options as any, app).listen(proxyHttpPort, () => {
     console.log(`HTTP Proxy Listening on ${proxyHttpPort}`);
   });
   // Start HTTPS server only if TLS is enabled
   if (getTLSEnabled()) {
-    https.createServer(options, app).listen(proxyHttpsPort, () => {
+    httpsServer = https.createServer(options, app).listen(proxyHttpsPort, () => {
       console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
     });
   }
   return app;
 };
 
+const stop = (): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Close HTTP server if it exists
+      if (httpServer) {
+        httpServer.close(() => {
+          console.log('HTTP server closed');
+          httpServer = null;
+        });
+      }
+
+      // Close HTTPS server if it exists
+      if (httpsServer) {
+        httpsServer.close(() => {
+          console.log('HTTPS server closed');
+          httpsServer = null;
+        });
+      }
+
+      resolve();
+    } catch (error) {
+      reject(error);
+    }
+  });
+};
+
 export default {
   proxyPreparations,
   createApp,
   start,
+  stop,
 };

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = new express.Router();
 const db = require('../../db');
+const { toPublicUser } = require('./publicApi');
 
 router.get('/', async (req, res) => {
   const query = {};
@@ -17,16 +18,15 @@ router.get('/', async (req, res) => {
     query[k] = v;
   }
 
-  res.send(await db.getUsers(query));
+  const users = await db.getUsers(query);
+  res.send(users.map(toPublicUser));
 });
 
 router.get('/:id', async (req, res) => {
   const username = req.params.id.toLowerCase();
   console.log(`Retrieving details for user: ${username}`);
-  const data = await db.findUser(username);
-  const user = JSON.parse(JSON.stringify(data));
-  if (user && user.password) delete user.password;
-  res.send(user);
+  const user = await db.findUser(username);
+  res.send(toPublicUser(user));
 });
 
 module.exports = router;

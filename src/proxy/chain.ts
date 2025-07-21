@@ -16,6 +16,8 @@ const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.getMissingData,
   proc.push.preReceive,
   proc.push.getDiff,
+  // run before clear remote
+  proc.push.gitleaks,
   proc.push.clearBareClone,
   proc.push.scanDiff,
   proc.push.blockForAuth,
@@ -61,7 +63,7 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
  */
 let chainPluginLoader: PluginLoader;
 
-const getChain = async (
+export const getChain = async (
   action: Action,
 ): Promise<((req: any, action: Action) => Promise<Action>)[]> => {
   if (chainPluginLoader === undefined) {

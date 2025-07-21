@@ -28,7 +28,7 @@ describe('add new repo', async () => {
     await db.deleteUser('u1');
     await db.deleteUser('u2');
     await db.createUser('u1', 'abc', 'test@test.com', 'test', true);
-    await db.createUser('u2', 'abc', 'test@test.com', 'test', true);
+    await db.createUser('u2', 'abc', 'test2@test.com', 'test', true);
   });
 
   it('login', async function () {
@@ -54,6 +54,18 @@ describe('add new repo', async () => {
     repo.url.should.equal('https://github.com/finos/test-repo.git');
     repo.users.canPush.length.should.equal(0);
     repo.users.canAuthorise.length.should.equal(0);
+  });
+
+  it('filter repos', async function () {
+    const res = await chai
+      .request(app)
+      .get('/api/v1/repo')
+      .set('Cookie', `${cookie}`)
+      .query({ name: 'test-repo' });
+    res.should.have.status(200);
+    res.body[0].project.should.equal('finos');
+    res.body[0].name.should.equal('test-repo');
+    res.body[0].url.should.equal('https://github.com/finos/test-repo.git');
   });
 
   it('add 1st can push user', async function () {
@@ -187,5 +199,10 @@ describe('add new repo', async () => {
 
   after(async function () {
     await service.httpServer.close();
+
+    // don't clean up data as cypress tests rely on it being present
+    // await db.deleteRepo('test-repo');
+    // await db.deleteUser('u1');
+    // await db.deleteUser('u2');
   });
 });

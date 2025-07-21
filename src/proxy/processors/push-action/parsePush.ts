@@ -1,7 +1,21 @@
 import { Action, Step } from '../../actions';
 import zlib from 'zlib';
 import lod from 'lodash';
-import { CommitContent } from '../types';
+
+import {
+  CommitContent,
+  CommitData,
+  CommitHeader,
+  PackMeta,
+  PersonLine,
+} from '../types';
+import {
+  BRANCH_PREFIX,
+  EMPTY_COMMIT_HASH,
+  PACK_SIGNATURE,
+  PACKET_SIZE,
+} from '../constants';
+
 const BitMask = require('bit-mask') as any;
 
 /**
@@ -12,7 +26,6 @@ const BitMask = require('bit-mask') as any;
  */
 async function exec(req: any, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
-
   try {
     if (!req.body || req.body.length === 0) {
       step.log('No data received in request body.');
@@ -21,7 +34,7 @@ async function exec(req: any, action: Action): Promise<Action> {
       return action;
     }
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
-    const refUpdates = packetLines.filter((line) => line.includes('refs/heads/'));
+    const refUpdates = packetLines.filter((line) => line.includes(BRANCH_PREFIX));
 
     if (refUpdates.length !== 1) {
       step.log('Invalid number of branch updates.');
@@ -34,11 +47,20 @@ async function exec(req: any, action: Action): Promise<Action> {
     }
 
     const parts = refUpdates[0].split(' ');
-    const [oldOid, newOid, rawRef] = parts;
+    if (parts.length !== 3) {
+      step.log('Invalid number of parts in ref update.');
+      step.log(`Expected 3, but got ${parts.length}`);
+      step.setError('Your push has been blocked. Invalid ref update format.');
+      action.addStep(step);
+      return action;
+    }
 
-    action.branch = rawRef.replace(/\0.*/, '').trim();
+    const [oldCommit, newCommit, ref] = parts;
 
-    action.setCommit(oldOid, newOid);
+    // Strip everything after NUL, which is cap-list from
+    // https://git-scm.com/docs/http-protocol#_smart_server_response
+    action.branch = ref.replace(/\0.*/, '').trim();
+    action.setCommit(oldCommit, newCommit);
 
     // Check if the offset is valid and if there's data after it
     if (packDataOffset >= req.body.length) {
@@ -51,7 +73,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     const buf = req.body.slice(packDataOffset);
 
     // Verify that data actually starts with PACK signature
-    if (buf.length < 4 || buf.toString('utf8', 0, 4) !== 'PACK') {
+    if (buf.length < PACKET_SIZE || buf.toString('utf8', 0, PACKET_SIZE) !== PACK_SIGNATURE) {
       step.log(`Expected PACK signature at offset ${packDataOffset}, but found something else.`);
       step.setError('Your push has been blocked. Invalid PACK data structure.');
       action.addStep(step);
@@ -65,7 +87,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     if (action.commitData.length === 0) {
       step.log('No commit data found when parsing push.');
     } else {
-      if (action.commitFrom === '0000000000000000000000000000000000000000') {
+      if (action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }
       const user = action.commitData[action.commitData.length - 1].committer;
@@ -92,9 +114,7 @@ async function exec(req: any, action: Action): Promise<Action> {
  * @param {string} line - The line to parse.
  * @return {Object} An object containing the name, email, and timestamp.
  */
-const parsePersonLine = (
-  line: string,
-): { name: string; email: string; timestamp: string } | null => {
+const parsePersonLine = (line: string): PersonLine => {
   const personRegex = /^(.*?) <(.*?)> (\d+) ([+-]\d+)$/;
   const match = line.match(personRegex);
   if (!match) {
@@ -102,53 +122,97 @@ const parsePersonLine = (
       `Failed to parse person line: ${line}. Make sure to include a name, email, timestamp and timezone offset.`,
     );
   }
-  return { name: match[1].trim(), email: match[2], timestamp: match[3] };
+  return { name: match[1], email: match[2], timestamp: match[3] };
 };
 
 /**
  * Parses the header lines of a commit.
  * @param {string[]} headerLines - The header lines of a commit.
- * @return {Object} An object containing the parsed data.
+ * @return {CommitHeader} An object containing the parsed commit header.
  */
-const getParsedData = (headerLines: string[]) => {
-  const parsedData: {
-    tree?: string;
-    parents: string[];
-    authorInfo?: ReturnType<typeof parsePersonLine>;
-    committerInfo?: ReturnType<typeof parsePersonLine>;
-  } = { parents: [] };
+const getParsedData = (headerLines: string[]): CommitHeader => {
+  const parsedData: CommitHeader = { 
+    parents: [],
+    tree: '',
+    author: { name: '', email: '', timestamp: '' },
+    committer: { name: '', email: '', timestamp: '' },
+  };
 
   for (const line of headerLines) {
-    const spaceIndex = line.indexOf(' ');
-    if (spaceIndex === -1) continue;
+    const firstSpaceIndex = line.indexOf(' ');
+    if (firstSpaceIndex === -1) {
+      // No spaces
+      continue;
+    }
 
-    const key = line.substring(0, spaceIndex);
-    const value = line.substring(spaceIndex + 1);
+    const key = line.substring(0, firstSpaceIndex);
+    const value = line.substring(firstSpaceIndex + 1);
 
     switch (key) {
       case 'tree':
+        if (parsedData.tree !== '') {
+          throw new Error('Multiple tree lines found in commit.');
+        }
         parsedData.tree = value.trim();
         break;
       case 'parent':
         parsedData.parents.push(value.trim());
         break;
       case 'author':
-        parsedData.authorInfo = parsePersonLine(value);
+        if (!isBlankPersonLine(parsedData.author)) {
+          throw new Error('Multiple author lines found in commit.');
+        }
+        parsedData.author = parsePersonLine(value);
         break;
       case 'committer':
-        parsedData.committerInfo = parsePersonLine(value);
+        if (!isBlankPersonLine(parsedData.committer)) {
+          throw new Error('Multiple committer lines found in commit.');
+        }
+        parsedData.committer = parsePersonLine(value);
         break;
     }
   }
+  validateParsedData(parsedData);
   return parsedData;
 };
 
 /**
+ * Validates the parsed commit header.
+ * @param {CommitHeader} parsedData - The parsed commit header.
+ * @return {void}
+ * @throws {Error} If the commit header is invalid.
+ */
+const validateParsedData = (parsedData: CommitHeader): void => {
+  const missing = [];
+  if (parsedData.tree === '') {
+    missing.push('tree');
+  }
+  if (isBlankPersonLine(parsedData.author)) {
+    missing.push('author');
+  }
+  if (isBlankPersonLine(parsedData.committer)) {
+    missing.push('committer');
+  }
+  if (missing.length > 0) {
+    throw new Error(`Invalid commit data: Missing ${missing.join(', ')}`);
+  }
+}
+
+/**
+ * Checks if a person line is blank.
+ * @param {PersonLine} personLine - The person line to check.
+ * @return {boolean} True if the person line is blank, false otherwise.
+ */
+const isBlankPersonLine = (personLine: PersonLine): boolean => {
+  return personLine.name === '' && personLine.email === '' && personLine.timestamp === '';
+}
+
+/**
  * Parses the commit data from the contents of a pack file.
  * @param {CommitContent[]} contents - The contents of the pack file.
- * @return {*} An array of commit data objects.
+ * @return {CommitData[]} An array of commit data objects.
  */
-const getCommitData = (contents: CommitContent[]) => {
+const getCommitData = (contents: CommitContent[]): CommitData[] => {
   console.log({ contents });
   return lod
     .chain(contents)
@@ -180,26 +244,17 @@ const getCommitData = (contents: CommitContent[]) => {
         .trim();
       console.log({ headerLines, message });
 
-      const { tree, parents, authorInfo, committerInfo } = getParsedData(headerLines);
+      const { tree, parents, author, committer } = getParsedData(headerLines);
       // No parent headers -> zero hash
-      const parent = parents.length > 0 ? parents[0] : '0000000000000000000000000000000000000000';
-
-      // Validation for required attributes
-      if (!tree || !authorInfo || !committerInfo) {
-        const missing = [];
-        if (!tree) missing.push('tree');
-        if (!authorInfo) missing.push('author');
-        if (!committerInfo) missing.push('committer');
-        throw new Error(`Invalid commit data: Missing ${missing.join(', ')}`);
-      }
+      const parent = parents.length > 0 ? parents[0] : EMPTY_COMMIT_HASH;
 
       return {
         tree,
         parent,
-        author: authorInfo.name,
-        committer: committerInfo.name,
-        authorEmail: authorInfo.email,
-        commitTimestamp: committerInfo.timestamp,
+        author: author.name,
+        committer: committer.name,
+        authorEmail: author.email,
+        commitTimestamp: committer.timestamp,
         message,
       };
     })
@@ -209,12 +264,12 @@ const getCommitData = (contents: CommitContent[]) => {
 /**
  * Gets the metadata from a pack file.
  * @param {Buffer} buffer - The buffer containing the pack file data.
- * @return {Array} An array containing the metadata and the remaining buffer.
+ * @return {[PackMeta, Buffer]} An array containing the metadata and the remaining buffer.
  */
-const getPackMeta = (buffer: Buffer) => {
-  const sig = buffer.slice(0, 4).toString('utf-8');
-  const version = buffer.readUIntBE(4, 4);
-  const entries = buffer.readUIntBE(8, 4);
+const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
+  const sig = buffer.slice(0, PACKET_SIZE).toString('utf-8');
+  const version = buffer.readUIntBE(PACKET_SIZE, PACKET_SIZE);
+  const entries = buffer.readUIntBE(PACKET_SIZE * 2, PACKET_SIZE);
 
   const meta = {
     sig: sig,
@@ -222,16 +277,16 @@ const getPackMeta = (buffer: Buffer) => {
     entries: entries,
   };
 
-  return [meta, buffer.slice(12)];
+  return [meta, buffer.slice(PACKET_SIZE * 3)];
 };
 
 /**
  * Gets the contents of a pack file.
  * @param {Buffer} buffer - The buffer containing the pack file data.
  * @param {number} entries - The number of entries in the pack file.
- * @return {CommitContent[]} An array of commit content objects.
+ * @return {Array} An array of commit content objects.
  */
-const getContents = (buffer: Buffer | CommitContent[], entries: number) => {
+const getContents = (buffer: Buffer | CommitContent[], entries: number): CommitContent[] => {
   const contents = [];
 
   for (let i = 0; i < entries; i++) {
@@ -252,7 +307,7 @@ const getContents = (buffer: Buffer | CommitContent[], entries: number) => {
  * @param {boolean[]} bits - The array of bits.
  * @return {number} The integer value.
  */
-const getInt = (bits: boolean[]) => {
+const getInt = (bits: boolean[]): number => {
   let strBits = '';
 
   // eslint-disable-next-line guard-for-in
@@ -269,7 +324,7 @@ const getInt = (bits: boolean[]) => {
  * @param {Buffer} buffer - The buffer containing the pack file data.
  * @return {Array} An array containing the content object and the next buffer.
  */
-const getContent = (item: number, buffer: Buffer) => {
+const getContent = (item: number, buffer: Buffer): [CommitContent, Buffer] => {
   // FIRST byte contains the type and some of the size of the file
   // a MORE flag -8th byte tells us if there is a subsequent byte
   // which holds the file size
@@ -340,7 +395,7 @@ const getContent = (item: number, buffer: Buffer) => {
  * @param {Buffer} buf - The buffer containing the zipped content.
  * @return {Array} An array containing the unzipped content and the size of the deflated content.
  */
-const unpack = (buf: Buffer) => {
+const unpack = (buf: Buffer): [string, number] => {
   // Unzip the content
   const inflated = zlib.inflateSync(buf);
 
@@ -361,8 +416,8 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
   const lines: string[] = [];
   let offset = 0;
 
-  while (offset + 4 <= buffer.length) {
-    const lengthHex = buffer.toString('utf8', offset, offset + 4);
+  while (offset + PACKET_SIZE <= buffer.length) {
+    const lengthHex = buffer.toString('utf8', offset, offset + PACKET_SIZE);
     const length = Number(`0x${lengthHex}`);
 
     // Prevent non-hex characters from causing issues
@@ -372,7 +427,7 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
 
     // length of 0 indicates flush packet (0000)
     if (length === 0) {
-      offset += 4; // Include length of the flush packet
+      offset += PACKET_SIZE; // Include length of the flush packet
       break;
     }
 
@@ -381,7 +436,7 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
       throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
     }
 
-    const line = buffer.toString('utf8', offset + 4, offset + length);
+    const line = buffer.toString('utf8', offset + PACKET_SIZE, offset + length);
     lines.push(line);
     offset += length; // Move offset to the start of the next line's length prefix
   }
