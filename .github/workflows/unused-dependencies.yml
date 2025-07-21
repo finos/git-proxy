@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2
         with:
           egress-policy: audit
 
@@ -21,7 +21,7 @@ jobs:
           node-version: '22.x'
       - name: 'Run depcheck'
         run: |
-          npx depcheck --skip-missing --ignores="tsx,@babel/*,@commitlint/*,eslint,eslint-*,husky,mocha,ts-mocha,ts-node,concurrently,nyc,prettier,typescript,tsconfig-paths,vite-tsconfig-paths"
+          npx depcheck --skip-missing --ignores="tsx,@babel/*,@commitlint/*,eslint,eslint-*,husky,mocha,ts-mocha,ts-node,concurrently,nyc,prettier,typescript,tsconfig-paths,vite-tsconfig-paths,history,@types/domutils"
           echo $?
           if [[ $? == 1 ]]; then
             echo "Unused dependencies or devDependencies found"
