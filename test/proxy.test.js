@@ -1,8 +1,6 @@
 const chai = require('chai');
 const sinon = require('sinon');
 const sinonChai = require('sinon-chai');
-const http = require('http');
-const https = require('https');
 const fs = require('fs');
 
 chai.use(sinonChai);
@@ -11,8 +9,6 @@ const { expect } = chai;
 describe('Proxy Module TLS Certificate Loading', () => {
   let sandbox;
   let mockConfig;
-  let httpCreateServerStub;
-  let httpsCreateServerStub;
   let mockHttpServer;
   let mockHttpsServer;
   let proxyModule;
@@ -58,9 +54,6 @@ describe('Proxy Module TLS Certificate Loading', () => {
         if (callback) callback();
       }),
     };
-
-    httpCreateServerStub = sandbox.stub(http, 'createServer').returns(mockHttpServer);
-    httpsCreateServerStub = sandbox.stub(https, 'createServer').returns(mockHttpsServer);
 
     sandbox.stub(require('../src/plugin'), 'PluginLoader').returns(mockPluginLoader);
 
