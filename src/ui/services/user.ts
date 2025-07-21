@@ -40,7 +40,6 @@ const getUsers = async (
   setIsLoading: SetStateCallback<boolean>,
   setData: SetStateCallback<UserData[]>,
   setAuth: SetStateCallback<boolean>,
-  setIsError: SetStateCallback<boolean>,
   setErrorMessage: SetStateCallback<string>,
   query: Record<string, string> = {},
 ): Promise<void> => {
