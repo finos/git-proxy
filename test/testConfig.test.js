@@ -371,7 +371,6 @@ describe('user configuration', function () {
     expect(firstAuth.type).to.equal('ldap');
   });
 
-
   afterEach(function () {
     fs.rmSync(tempUserFile);
     fs.rmdirSync(tempDir);
@@ -401,6 +400,79 @@ describe('validate config files', function () {
   });
 
   after(function () {
+    delete require.cache[require.resolve('../src/config')];
+  });
+});
+
+describe('Configuration Update Handling', function () {
+  let tempDir;
+  let tempUserFile;
+  let oldEnv;
+
+  beforeEach(function () {
+    delete require.cache[require.resolve('../src/config')];
+    oldEnv = { ...process.env };
+    tempDir = fs.mkdtempSync('gitproxy-test');
+    tempUserFile = path.join(tempDir, 'test-settings.json');
+    require('../src/config/file').configFile = tempUserFile;
+  });
+
+  it('should test ConfigLoader initialization', function () {
+    const configWithSources = {
+      configurationSources: {
+        enabled: true,
+        sources: [
+          {
+            type: 'file',
+            enabled: true,
+            path: tempUserFile,
+          },
+        ],
+      },
+    };
+
+    fs.writeFileSync(tempUserFile, JSON.stringify(configWithSources));
+
+    const config = require('../src/config');
+    config.invalidateCache();
+
+    expect(() => config.getAuthorisedList()).to.not.throw();
+  });
+
+  it('should handle config loader initialization errors', function () {
+    const invalidConfigSources = {
+      configurationSources: {
+        enabled: true,
+        sources: [
+          {
+            type: 'invalid-type',
+            enabled: true,
+            path: tempUserFile,
+          },
+        ],
+      },
+    };
+
+    fs.writeFileSync(tempUserFile, JSON.stringify(invalidConfigSources));
+
+    const consoleErrorSpy = require('sinon').spy(console, 'error');
+
+    const config = require('../src/config');
+    config.invalidateCache();
+
+    expect(() => config.getAuthorisedList()).to.not.throw();
+
+    consoleErrorSpy.restore();
+  });
+
+  afterEach(function () {
+    if (fs.existsSync(tempUserFile)) {
+      fs.rmSync(tempUserFile, { force: true });
+    }
+    if (fs.existsSync(tempDir)) {
+      fs.rmdirSync(tempDir);
+    }
+    process.env = oldEnv;
     delete require.cache[require.resolve('../src/config')];
   });
 });
