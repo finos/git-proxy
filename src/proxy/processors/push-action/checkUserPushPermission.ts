@@ -1,20 +1,10 @@
 import { Action, Step } from '../../actions';
 import { getUsers, isUserPushAllowed } from '../../../db';
-import { trimTrailingDotGit } from '../../../db/helper';
 
 // Execute if the repo is approved
 const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('checkUserPushPermission');
 
-  const repoSplit = trimTrailingDotGit(action.repo.toLowerCase()).split('/');
-  // we expect there to be exactly one / separating org/repoName
-  if (repoSplit.length != 2) {
-    step.setError('Server-side issue extracting repoName');
-    action.addStep(step);
-    return action;
-  }
-  // pull the 2nd value of the split for repoName
-  const repoName = repoSplit[1];
   let isUserAllowed = false;
   let user = action.user;
 
@@ -25,18 +15,15 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
   if (list.length == 1) {
     user = list[0].username;
-    isUserAllowed = await isUserPushAllowed(repoName, user);
+    isUserAllowed = await isUserPushAllowed(action.url, user!);
   }
 
-  console.log(`User ${user} permission on Repo ${repoName} : ${isUserAllowed}`);
+  console.log(`User ${user} permission on Repo ${action.url} : ${isUserAllowed}`);
 
   if (!isUserAllowed) {
     console.log('User not allowed to Push');
     step.error = true;
-    step.log(`User ${user} is not allowed to push on repo ${action.repo}, ending`);
-
-    console.log('setting error');
-
+    step.log(`User ${user} is not allowed to push on repo ${action.url}, ending`);
     step.setError(
       `Rejecting push as user ${action.user} ` +
         `is not allowed to push on repo ` +
@@ -46,7 +33,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     return action;
   }
 
-  step.log(`User ${user} is allowed to push on repo ${action.repo}`);
+  step.log(`User ${user} is allowed to push on repo ${action.url}`);
   action.addStep(step);
   return action;
 };

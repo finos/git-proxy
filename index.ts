@@ -4,7 +4,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import * as fs from 'fs';
 import { configFile, setConfigFile, validate } from './src/config/file';
-import proxy from './src/proxy';
+import Proxy from './src/proxy';
 import service from './src/service';
 
 const argv = yargs(hideBin(process.argv))
@@ -28,7 +28,7 @@ const argv = yargs(hideBin(process.argv))
   .strict()
   .parseSync();
 
-setConfigFile(argv.c as string || "");
+setConfigFile((argv.c as string) || '');
 
 if (argv.v) {
   if (!fs.existsSync(configFile)) {
@@ -45,7 +45,8 @@ if (argv.v) {
 
 validate();
 
+const proxy = new Proxy();
 proxy.start();
-service.start();
+service.start(proxy);
 
 export { proxy, service };

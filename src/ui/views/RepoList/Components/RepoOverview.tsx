@@ -1,66 +1,51 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Snackbar, TableCell, TableRow } from '@material-ui/core';
 import GridContainer from '../../../components/Grid/GridContainer';
 import GridItem from '../../../components/Grid/GridItem';
 import { CodeReviewIcon, LawIcon, PeopleIcon } from '@primer/octicons-react';
-import axios from 'axios';
-import moment from 'moment';
 import CodeActionButton from '../../../components/CustomButtons/CodeActionButton';
 import { languageColors } from '../../../../constants/languageColors';
 import { RepositoriesProps } from '../repositories.types';
-
-interface GitHubRepository {
-  description?: string;
-  language?: string;
-  license?: {
-    spdx_id: string;
-  };
-  parent?: {
-    full_name: string;
-    html_url: string;
-  };
-  created_at?: string;
-  updated_at?: string;
-  pushed_at?: string;
-}
+import { fetchRemoteRepositoryData } from '../../../utils';
+import { SCMRepositoryMetadata } from '../../../../types/models';
 
 const Repositories: React.FC<RepositoriesProps> = (props) => {
-  const [github, setGitHub] = useState<GitHubRepository>({});
-
+  const [remoteRepoData, setRemoteRepoData] = React.useState<SCMRepositoryMetadata | null>(null);
   const [errorMessage, setErrorMessage] = React.useState('');
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 
   useEffect(() => {
-    getGitHubRepository();
-  }, [props.data?.project, props.data?.name]);
+    prepareRemoteRepositoryData();
+  }, [props.data.project, props.data.name, props.data.url]);
 
-  const getGitHubRepository = async () => {
-    await axios
-      .get(`https://api.github.com/repos/${props.data?.project}/${props.data?.name}`)
-      .then((res) => {
-        setGitHub(res.data);
-      })
-      .catch((error) => {
-        setErrorMessage(
-          `Error fetching GitHub repository ${props.data?.project}/${props.data?.name}: ${error}`,
-        );
-        setSnackbarOpen(true);
-      });
+  const prepareRemoteRepositoryData = async () => {
+    try {
+      const { url: remoteUrl } = props.data;
+      if (!remoteUrl) return;
+
+      setRemoteRepoData(
+        await fetchRemoteRepositoryData(props.data.project, props.data.name, remoteUrl),
+      );
+    } catch (error: any) {
+      setErrorMessage(`Error fetching repository data: ${error.message}`);
+      setSnackbarOpen(true);
+    }
   };
 
-  const { project: org, name, proxyURL } = props?.data || {};
-  const cloneURL = `${proxyURL}/${org}/${name}.git`;
+  const { url: remoteUrl, proxyURL } = props?.data || {};
+  const parsedUrl = new URL(remoteUrl);
+  const cloneURL = `${proxyURL}/${parsedUrl.host}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`;
 
   return (
     <TableRow>
       <TableCell>
         <div style={{ padding: '15px' }}>
-          <a href={`/dashboard/repo/${props.data?.name}`}>
+          <a href={`/dashboard/repo/${props.data?._id}`}>
             <span style={{ fontSize: '17px' }}>
-              {props.data?.project}/{props.data?.name}
+              {props.data.project}/{props.data.name}
             </span>
           </a>
-          {github.parent && (
+          {remoteRepoData?.parentName && (
             <span
               style={{
                 fontSize: '11.5px',
@@ -74,33 +59,35 @@ const Repositories: React.FC<RepositoriesProps> = (props) => {
                   fontWeight: 'normal',
                   color: 'inherit',
                 }}
-                href={github.parent.html_url}
+                href={remoteRepoData.parentUrl}
               >
-                {github.parent.full_name}
+                {remoteRepoData.parentName}
               </a>
             </span>
           )}
-          {github.description && <p style={{ maxWidth: '80%' }}>{github.description}</p>}
+          {remoteRepoData?.description && (
+            <p style={{ maxWidth: '80%' }}>{remoteRepoData.description}</p>
+          )}
           <GridContainer>
-            {github.language && (
+            {remoteRepoData?.language && (
               <GridItem>
                 <span
                   style={{
                     height: '12px',
                     width: '12px',
-                    backgroundColor: `${languageColors[github.language] || '#ccc'}`,
+                    backgroundColor: `${languageColors[remoteRepoData.language] || '#ccc'}`,
                     borderRadius: '50px',
                     display: 'inline-block',
                     marginRight: '5px',
                   }}
                 ></span>
-                {github.language}
+                {remoteRepoData.language}
               </GridItem>
             )}
-            {github.license && (
+            {remoteRepoData?.license && (
               <GridItem>
                 <LawIcon size='small' />{' '}
-                <span style={{ marginLeft: '5px' }}>{github.license.spdx_id}</span>
+                <span style={{ marginLeft: '5px' }}>{remoteRepoData.license}</span>
               </GridItem>
             )}
             <GridItem>
@@ -113,17 +100,8 @@ const Repositories: React.FC<RepositoriesProps> = (props) => {
                 {props.data?.users?.canAuthorise?.length || 0}
               </span>
             </GridItem>
-            {(github.created_at || github.updated_at || github.pushed_at) && (
-              <GridItem>
-                Last updated{' '}
-                {moment
-                  .max([
-                    moment(github.created_at || 0),
-                    moment(github.updated_at || 0),
-                    moment(github.pushed_at || 0),
-                  ])
-                  .fromNow()}
-              </GridItem>
+            {remoteRepoData?.lastUpdated && (
+              <GridItem>Last updated {remoteRepoData.lastUpdated}</GridItem>
             )}
           </GridContainer>
         </div>
