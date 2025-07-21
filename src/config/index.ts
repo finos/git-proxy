@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
-import { GitProxyConfig, Convert } from './config';
+import { GitProxyConfig, Convert } from './generated/config';
 import { ConfigLoader, Configuration } from './ConfigLoader';
 import { serverConfig } from './env';
 import { configFile } from './file';
@@ -20,7 +20,7 @@ function cleanUndefinedValues(obj: any): any {
   if (obj === null || obj === undefined) return obj;
   if (typeof obj !== 'object') return obj;
   if (Array.isArray(obj)) return obj.map(cleanUndefinedValues);
-  
+
   const cleaned: any = {};
   for (const [key, value] of Object.entries(obj)) {
     if (value !== undefined) {
@@ -40,7 +40,7 @@ function loadFullConfiguration(): GitProxyConfig {
   }
 
   const rawDefaultConfig = Convert.toGitProxyConfig(JSON.stringify(defaultSettings));
-  
+
   // Clean undefined values from defaultConfig
   const defaultConfig = cleanUndefinedValues(rawDefaultConfig);
 
@@ -77,7 +77,7 @@ function mergeConfigurations(
 ): GitProxyConfig {
   // Special handling for TLS configuration when legacy fields are used
   let tlsConfig = userSettings.tls || defaultConfig.tls;
-  
+
   // If user doesn't specify tls but has legacy SSL fields, use only legacy fallback
   if (!userSettings.tls && (userSettings.sslKeyPemPath || userSettings.sslCertPemPath)) {
     tlsConfig = {
@@ -257,12 +257,12 @@ export const getPlugins = () => {
 
 export const getTLSKeyPemPath = (): string | undefined => {
   const config = loadFullConfiguration();
-  return (config.tls?.key && config.tls.key !== '') ? config.tls.key : config.sslKeyPemPath;
+  return config.tls?.key && config.tls.key !== '' ? config.tls.key : config.sslKeyPemPath;
 };
 
 export const getTLSCertPemPath = (): string | undefined => {
   const config = loadFullConfiguration();
-  return (config.tls?.cert && config.tls.cert !== '') ? config.tls.cert : config.sslCertPemPath;
+  return config.tls?.cert && config.tls.cert !== '' ? config.tls.cert : config.sslCertPemPath;
 };
 
 export const getTLSEnabled = (): boolean => {

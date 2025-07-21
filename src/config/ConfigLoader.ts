@@ -5,7 +5,7 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { EventEmitter } from 'events';
 import envPaths from 'env-paths';
-import { GitProxyConfig, Convert } from './config';
+import { GitProxyConfig, Convert } from './generated/config';
 
 const execFileAsync = promisify(execFile);
 

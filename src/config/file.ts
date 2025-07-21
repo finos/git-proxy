@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { Convert } from './config';
+import { Convert } from './generated/config';
 
 export let configFile: string = join(process.cwd(), 'proxy.config.json');
 
