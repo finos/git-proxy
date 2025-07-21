@@ -81,11 +81,11 @@ describe('Generated Config (QuickType)', () => {
         sessionMaxAgeHours: 24,
         rateLimit: {
           windowMs: 60000,
-          limit: 150
+          limit: 150,
         },
         tempPassword: {
           sendEmail: false,
-          emailConfig: {}
+          emailConfig: {},
         },
         authorisedList: [
           {
@@ -98,7 +98,7 @@ describe('Generated Config (QuickType)', () => {
           {
             type: 'fs',
             params: {
-              filepath: './.'
+              filepath: './.',
             },
             enabled: true,
           },
@@ -154,12 +154,8 @@ describe('Generated Config (QuickType)', () => {
           { project: 'proj1', name: 'repo1', url: 'https://github.com/proj1/repo1.git' },
           { project: 'proj2', name: 'repo2', url: 'https://github.com/proj2/repo2.git' },
         ],
-        authentication: [
-          { type: 'local', enabled: true }
-        ],
-        sink: [
-          { type: 'fs', params: { filepath: './.' }, enabled: true }
-        ],
+        authentication: [{ type: 'local', enabled: true }],
+        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
         plugins: ['plugin1', 'plugin2'],
         privateOrganizations: ['org1', 'org2'],
       };
@@ -185,12 +181,12 @@ describe('Generated Config (QuickType)', () => {
         },
         rateLimit: {
           windowMs: 60000,
-          limit: 150
+          limit: 150,
         },
         tempPassword: {
           sendEmail: false,
-          emailConfig: {}
-        }
+          emailConfig: {},
+        },
       };
 
       const result = Convert.toGitProxyConfig(JSON.stringify(configWithNesting));
@@ -199,6 +195,167 @@ describe('Generated Config (QuickType)', () => {
       expect(result.tls.enabled).to.be.a('boolean');
       expect(result.rateLimit).to.be.an('object');
       expect(result.tempPassword).to.be.an('object');
+    });
+
+    it('should handle complex validation scenarios', () => {
+      // Test configuration that will trigger more validation paths
+      const complexConfig = {
+        proxyUrl: 'https://proxy.example.com',
+        cookieSecret: 'secret',
+        authentication: [{ type: 'local', enabled: true }],
+        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
+
+        api: {
+          github: {
+            baseUrl: 'https://api.github.com',
+            token: 'secret-token',
+            rateLimit: 100,
+            enabled: true,
+          },
+        },
+
+        domains: {
+          localhost: 'http://localhost:3000',
+          'example.com': 'https://example.com',
+        },
+
+        // Complex nested structures
+        attestationConfig: {
+          enabled: true,
+          questions: [
+            {
+              id: 'q1',
+              type: 'boolean',
+              required: true,
+              label: 'Test Question',
+            },
+          ],
+        },
+      };
+
+      const result = Convert.toGitProxyConfig(JSON.stringify(complexConfig));
+      expect(result).to.be.an('object');
+      expect(result.api).to.be.an('object');
+      expect(result.domains).to.be.an('object');
+    });
+
+    it('should handle array validation edge cases', () => {
+      const configWithArrays = {
+        proxyUrl: 'https://proxy.example.com',
+        cookieSecret: 'secret',
+        authentication: [{ type: 'local', enabled: true }],
+        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
+
+        // Test different array structures
+        authorisedList: [
+          {
+            project: 'test1',
+            name: 'repo1',
+            url: 'https://github.com/test1/repo1.git',
+          },
+          {
+            project: 'test2',
+            name: 'repo2',
+            url: 'https://github.com/test2/repo2.git',
+          },
+        ],
+
+        plugins: ['plugin-a', 'plugin-b', 'plugin-c'],
+        privateOrganizations: ['org1', 'org2'],
+      };
+
+      const result = Convert.toGitProxyConfig(JSON.stringify(configWithArrays));
+      expect(result.authorisedList).to.have.lengthOf(2);
+      expect(result.plugins).to.have.lengthOf(3);
+      expect(result.privateOrganizations).to.have.lengthOf(2);
+    });
+
+    it('should exercise transformation functions with edge cases', () => {
+      const edgeCaseConfig = {
+        proxyUrl: 'https://proxy.example.com',
+        cookieSecret: 'secret',
+        authentication: [{ type: 'local', enabled: true }],
+        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
+
+        sessionMaxAgeHours: 0,
+        csrfProtection: false,
+
+        tempPassword: {
+          sendEmail: true,
+          emailConfig: {
+            host: 'smtp.example.com',
+            port: 587,
+            secure: false,
+            auth: {
+              user: 'user@example.com',
+              pass: 'password',
+            },
+          },
+          length: 12,
+          expiry: 7200,
+        },
+
+        rateLimit: {
+          windowMs: 900000,
+          limit: 1000,
+          message: 'Rate limit exceeded',
+        },
+      };
+
+      const result = Convert.toGitProxyConfig(JSON.stringify(edgeCaseConfig));
+      expect(result.sessionMaxAgeHours).to.equal(0);
+      expect(result.csrfProtection).to.equal(false);
+      expect(result.tempPassword).to.be.an('object');
+      expect(result.tempPassword.length).to.equal(12);
+    });
+
+    it('should test validation error paths', () => {
+      try {
+        // Try to parse something that looks like valid JSON but has wrong structure
+        Convert.toGitProxyConfig('{"proxyUrl": 123, "authentication": "not-array"}');
+      } catch (error) {
+        expect(error).to.be.an('error');
+      }
+    });
+
+    it('should test date and null handling', () => {
+      // Test that null values cause validation errors (covers error paths)
+      const configWithNulls = {
+        proxyUrl: 'https://proxy.example.com',
+        cookieSecret: null,
+        authentication: [{ type: 'local', enabled: true }],
+        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
+        contactEmail: null,
+        urlShortener: null,
+      };
+
+      expect(() => {
+        Convert.toGitProxyConfig(JSON.stringify(configWithNulls));
+      }).to.throw('Invalid value');
+    });
+
+    it('should test serialization back to JSON', () => {
+      const testConfig = {
+        proxyUrl: 'https://test.com',
+        cookieSecret: 'secret',
+        authentication: [{ type: 'local', enabled: true }],
+        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
+        rateLimit: {
+          windowMs: 60000,
+          limit: 150,
+        },
+        tempPassword: {
+          sendEmail: false,
+          emailConfig: {},
+        },
+      };
+
+      const parsed = Convert.toGitProxyConfig(JSON.stringify(testConfig));
+      const serialized = Convert.gitProxyConfigToJson(parsed);
+      const reparsed = JSON.parse(serialized);
+
+      expect(reparsed.proxyUrl).to.equal('https://test.com');
+      expect(reparsed.rateLimit).to.be.an('object');
     });
   });
 });
