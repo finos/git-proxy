@@ -51,7 +51,7 @@ const DashboardNavbarLinks: React.FC = () => {
 
   const logout = async () => {
     try {
-      const response = await axios.post(
+      await axios.post(
         `${process.env.VITE_API_URI || 'http://localhost:3000'}/api/auth/logout`,
         {},
         getAxiosConfig(),
