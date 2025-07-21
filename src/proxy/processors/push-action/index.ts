@@ -6,6 +6,7 @@ import { exec as pullRemote } from './pullRemote';
 import { exec as writePack } from './writePack';
 import { exec as getDiff } from './getDiff';
 import { exec as checkHiddenCommits } from './checkHiddenCommits';
+import { exec as gitleaks } from './gitleaks';
 import { exec as scanDiff } from './scanDiff';
 import { exec as blockForAuth } from './blockForAuth';
 import { exec as checkIfWaitingAuth } from './checkIfWaitingAuth';
@@ -24,6 +25,7 @@ export {
   writePack,
   getDiff,
   checkHiddenCommits,
+  gitleaks,
   scanDiff,
   blockForAuth,
   checkIfWaitingAuth,

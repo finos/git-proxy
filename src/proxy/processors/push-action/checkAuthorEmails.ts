@@ -5,36 +5,41 @@ import { Commit } from '../../actions/Action';
 const commitConfig = getCommitConfig();
 
 const isEmailAllowed = (email: string): boolean => {
-  const [emailLocal, emailDomain] = email.split('@');
-  console.log({ emailLocal, emailDomain });
+  if (!email) {
+    return false;
+  }
 
-  // E-mail address is not a permissible domain name
+  const [emailLocal, emailDomain] = email.split('@');
+
+  if (!emailLocal || !emailDomain) {
+    return false;
+  }
+
   if (
     commitConfig.author.email.domain.allow &&
     !emailDomain.match(new RegExp(commitConfig.author.email.domain.allow, 'g'))
   ) {
-    console.log('Bad e-mail address domain...');
     return false;
   }
 
-  // E-mail username is not a permissible form
   if (
     commitConfig.author.email.local.block &&
     emailLocal.match(new RegExp(commitConfig.author.email.local.block, 'g'))
   ) {
-    console.log('Bad e-mail address username...');
     return false;
   }
 
   return true;
-}
+};
 
 const exec = async (req: any, action: Action): Promise<Action> => {
   console.log({ req, action });
 
   const step = new Step('checkAuthorEmails');
 
-  const uniqueAuthorEmails = [...new Set(action.commitData?.map((commit: Commit) => commit.authorEmail))];
+  const uniqueAuthorEmails = [
+    ...new Set(action.commitData?.map((commit: Commit) => commit.authorEmail)),
+  ];
   console.log({ uniqueAuthorEmails });
 
   const illegalEmails = uniqueAuthorEmails.filter((email) => !isEmailAllowed(email));

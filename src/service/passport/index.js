@@ -1,33 +1,36 @@
+const passport = require("passport");
 const local = require('./local');
 const activeDirectory = require('./activeDirectory');
 const oidc = require('./oidc');
 const config = require('../../config');
-const authenticationConfig = config.getAuthentication();
-let _passport;
+
+// Allows obtaining strategy config function and type
+// Keep in mind to add AuthStrategy enum when refactoring this to TS
+const authStrategies = {
+  local: local,
+  activedirectory: activeDirectory,
+  openidconnect: oidc,
+};
 
 const configure = async () => {
-  const type = authenticationConfig.type.toLowerCase();
+  passport.initialize();
 
-  switch (type) {
-    case 'activedirectory':
-      _passport = await activeDirectory.configure();
-      break;
-    case 'local':
-      _passport = await local.configure();
-      break;
-    case 'openidconnect':
-      _passport = await oidc.configure();
-      break;
-    default:
-      throw Error(`uknown authentication type ${type}`);
+  const authMethods = config.getAuthMethods();
+
+  for (const auth of authMethods) {
+    const strategy = authStrategies[auth.type.toLowerCase()];
+    if (strategy && typeof strategy.configure === "function") {
+      await strategy.configure(passport);
+    }
   }
-  if (!_passport.type) {
-    _passport.type = type;
+
+  if (authMethods.some(auth => auth.type.toLowerCase() === "local")) {
+    await local.createDefaultAdmin();
   }
-  return _passport;
+
+  return passport;
 };
 
-module.exports.configure = configure;
-module.exports.getPassport = () => {
-  return _passport;
-};
+const getPassport = () => passport;
+
+module.exports = { authStrategies, configure, getPassport };
