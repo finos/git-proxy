@@ -11,7 +11,7 @@ describe('default configuration', function () {
   it('should use default values if no user-settings.json file exists', function () {
     const config = require('../src/config');
     config.logConfiguration();
-    const enabledMethods = defaultSettings.authentication.filter(method => method.enabled);
+    const enabledMethods = defaultSettings.authentication.filter((method) => method.enabled);
 
     expect(config.getAuthMethods()).to.deep.equal(enabledMethods);
     expect(config.getDatabase()).to.be.eql(defaultSettings.sink[0]);
@@ -62,7 +62,7 @@ describe('user configuration', function () {
     // Invalidate cache to force reload
     const config = require('../src/config');
     config.invalidateCache();
-    const enabledMethods = defaultSettings.authentication.filter(method => method.enabled);
+    const enabledMethods = defaultSettings.authentication.filter((method) => method.enabled);
 
     expect(config.getAuthorisedList()).to.be.eql(user.authorisedList);
     expect(config.getAuthMethods()).to.deep.equal(enabledMethods);
@@ -81,8 +81,8 @@ describe('user configuration', function () {
             clientID: 'test-client-id',
             clientSecret: 'test-client-secret',
             callbackURL: 'https://example.com/callback',
-            scope: 'openid email profile'
-          }
+            scope: 'openid email profile',
+          },
         },
       ],
     };
@@ -92,7 +92,7 @@ describe('user configuration', function () {
     const config = require('../src/config');
     config.invalidateCache();
     const authMethods = config.getAuthMethods();
-    const oidcAuth = authMethods.find(method => method.type === 'openidconnect');
+    const oidcAuth = authMethods.find((method) => method.type === 'openidconnect');
 
     expect(oidcAuth).to.not.be.undefined;
     expect(oidcAuth.enabled).to.be.true;
@@ -114,7 +114,7 @@ describe('user configuration', function () {
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
-    const enabledMethods = defaultSettings.authentication.filter(method => method.enabled);
+    const enabledMethods = defaultSettings.authentication.filter((method) => method.enabled);
 
     expect(config.getDatabase()).to.be.eql(user.sink[0]);
     expect(config.getDatabase()).to.not.be.eql(defaultSettings.sink[0]);
@@ -217,7 +217,7 @@ describe('user configuration', function () {
         enabled: true,
         key: 'my-key.pem',
         cert: 'my-cert.pem',
-      }
+      },
     };
 
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
@@ -240,7 +240,7 @@ describe('user configuration', function () {
       sslCertPemPath: 'bad-cert.pem',
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
-    
+
     // Invalidate cache to force reload
     const config = require('../src/config');
     config.invalidateCache();
@@ -275,7 +275,7 @@ describe('user configuration', function () {
       },
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
-    
+
     // Invalidate cache to force reload
     const config = require('../src/config');
     config.invalidateCache();
@@ -285,7 +285,7 @@ describe('user configuration', function () {
 
   it('should override default settings for cookieSecret if env var is used', function () {
     fs.writeFileSync(tempUserFile, '{}');
-    process.env.GIT_PROXY_COOKIE_SECRET = 'test-cookie-secret'
+    process.env.GIT_PROXY_COOKIE_SECRET = 'test-cookie-secret';
 
     const config = require('../src/config');
     expect(config.getCookieSecret()).to.equal('test-cookie-secret');
@@ -297,14 +297,61 @@ describe('user configuration', function () {
         {
           type: 'mongo',
           enabled: true,
-        }
-      ]
+        },
+      ],
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
     process.env.GIT_PROXY_MONGO_CONNECTION_STRING = 'mongodb://example.com:27017/test';
 
     const config = require('../src/config');
     expect(config.getDatabase().connectionString).to.equal('mongodb://example.com:27017/test');
+  });
+
+  it('should test cache invalidation function', function () {
+    fs.writeFileSync(tempUserFile, '{}');
+
+    const config = require('../src/config');
+
+    // Load config first time
+    const firstLoad = config.getAuthorisedList();
+
+    // Invalidate cache and load again
+    config.invalidateCache();
+    const secondLoad = config.getAuthorisedList();
+
+    expect(firstLoad).to.deep.equal(secondLoad);
+  });
+
+  it('should test reloadConfiguration function', async function () {
+    fs.writeFileSync(tempUserFile, '{}');
+
+    const config = require('../src/config');
+
+    // reloadConfiguration doesn't throw
+    await config.reloadConfiguration();
+  });
+
+  it('should handle configuration errors during initialization', function () {
+    const user = {
+      invalidConfig: 'this should cause validation error',
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = require('../src/config');
+    expect(() => config.getAuthorisedList()).to.not.throw();
+  });
+
+  it('should test all getter functions for coverage', function () {
+    fs.writeFileSync(tempUserFile, '{}');
+
+    const config = require('../src/config');
+
+    expect(() => config.getProxyUrl()).to.not.throw();
+    expect(() => config.getCookieSecret()).to.not.throw();
+    expect(() => config.getSessionMaxAgeHours()).to.not.throw();
+    expect(() => config.getCommitConfig()).to.not.throw();
+    expect(() => config.getPrivateOrganizations()).to.not.throw();
+    expect(() => config.getUIRouteAuth()).to.not.throw();
   });
 
   afterEach(function () {
