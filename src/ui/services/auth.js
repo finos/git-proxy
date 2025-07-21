@@ -1,4 +1,4 @@
-import { getCookie } from '../utils.jsx';
+import { getCookie } from '../utils';
 
 const baseUrl = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}`
