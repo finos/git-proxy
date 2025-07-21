@@ -7,7 +7,7 @@ const { Action, Step } = require('../../src/proxy/actions');
 chai.should();
 const expect = chai.expect;
 
-describe.only('checkUserPushPermission', () => {
+describe('checkUserPushPermission', () => {
   let exec;
   let getUsersStub;
   let isUserPushAllowedStub;
