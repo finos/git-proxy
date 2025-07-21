@@ -24,7 +24,7 @@
     "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,md,json,scss} test/**/*.{js,jsx,ts,tsx,json} packages/git-proxy-cli/test/**/*.{js,jsx,ts,tsx,json}  packages/git-proxy-cli/index.js --config ./.prettierrc",
     "gen-schema-doc": "node ./scripts/doc-schema.js",
     "cypress:run": "cypress run",
-    "generate-types": "quicktype --src-lang schema --lang typescript --out src/config/config.ts --top-level GitProxyConfig config.schema.json"
+    "generate-types": "quicktype --src-lang schema --lang typescript --out src/config/generated/config.ts --top-level GitProxyConfig config.schema.json && ts-node scripts/add-banner.ts src/config/generated/config.ts"
   },
   "bin": {
     "git-proxy": "./index.js",

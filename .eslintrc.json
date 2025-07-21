@@ -52,5 +52,5 @@
       "version": "detect"
     }
   },
-  "ignorePatterns": ["src/config/config.ts"]
+  "ignorePatterns": ["src/config/generated/config.ts"]
 }
