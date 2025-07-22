@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getCookie } from '../utils.jsx';
+import { getCookie } from '../utils.tsx';
 
 const baseUrl = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}/api/v1`
@@ -33,7 +33,14 @@ class DupUserValidationError extends Error {
   }
 }
 
-const getRepos = async (setIsLoading, setData, setAuth, setIsError, query = {}) => {
+const getRepos = async (
+  setIsLoading,
+  setData,
+  setAuth,
+  setIsError,
+  setErrorMessage,
+  query = {},
+) => {
   const url = new URL(`${baseUrl}/repo`);
   url.search = new URLSearchParams(query);
   setIsLoading(true);
@@ -41,15 +48,16 @@ const getRepos = async (setIsLoading, setData, setAuth, setIsError, query = {}) 
     .then((response) => {
       const data = response.data;
       setData(data);
-      setIsLoading(false);
     })
     .catch((error) => {
-      setIsLoading(false);
+      setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
+        setErrorMessage('Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.');
       } else {
-        setIsError(true);
+        setErrorMessage(`Error fetching repositories: ${error.response.data.message}`);
       }
+    }).finally(() => {
       setIsLoading(false);
     });
 };
@@ -61,15 +69,14 @@ const getRepo = async (setIsLoading, setData, setAuth, setIsError, id) => {
     .then((response) => {
       const data = response.data;
       setData(data);
-      setIsLoading(false);
     })
     .catch((error) => {
-      setIsLoading(false);
       if (error.response && error.response.status === 401) {
         setAuth(false);
       } else {
         setIsError(true);
       }
+    }).finally(() => {
       setIsLoading(false);
     });
 };

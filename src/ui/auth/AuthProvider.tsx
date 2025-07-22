@@ -9,10 +9,17 @@ import { getUserInfo } from '../services/auth';
 //   isLoading: boolean;
 // }
 
-const AuthContext = createContext(undefined);
+interface AuthContextType {
+  user: any;
+  setUser: React.Dispatch<any>;
+  refreshUser: () => Promise<void>;
+  isLoading: boolean;
+}
 
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const AuthProvider: React.FC<React.PropsWithChildren<object>> = ({ children }) => {
+  const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = async () => {
