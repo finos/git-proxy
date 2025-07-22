@@ -22,7 +22,13 @@ import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import { PushData } from '../../../types/models';
-import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
+import {
+  isTagPush,
+  getTagName,
+  getRepoFullName,
+  getRefToShow,
+  getGitHubUrl,
+} from '../../utils/pushUtils';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -33,7 +39,7 @@ const Dashboard: React.FC = () => {
   const [message, setMessage] = useState('');
   const [attestation, setAttestation] = useState(false);
   const navigate = useNavigate();
-  const isTagPush = Boolean(data?.tag && data?.tagData && data.tagData.length > 0);
+  const isTag = data ? isTagPush(data) : false;
   let isUserAllowedToApprove = true;
   let isUserAllowedToReject = true;
 
@@ -105,8 +111,8 @@ const Dashboard: React.FC = () => {
     };
   }
 
-  const repoFullName = data ? trimTrailingDotGit(data.repo) : '';
-  const repoBranch = data ? trimPrefixRefsHeads(data.branch) : '';
+  const repoFullName = data ? getRepoFullName(data.repo) : '';
+  const repoBranch = data ? getRefToShow(data) : '';
 
   const generateIcon = (title: string) => {
     switch (title) {
@@ -237,16 +243,16 @@ const Dashboard: React.FC = () => {
                 <GridItem xs={3} sm={3} md={3}>
                   <h3>Repository</h3>
                   <p>
-                    <a href={`https://github.com/${repoFullName}`} target='_blank' rel='noreferrer'>
+                    <a href={getGitHubUrl.repo(repoFullName)} target='_blank' rel='noreferrer'>
                       {repoFullName}
                     </a>
                   </p>
                 </GridItem>
                 <GridItem xs={3} sm={3} md={3}>
-                  {isTagPush ? (
+                  {isTag ? (
                     <>
                       <h3>Tag</h3>
-                      <p>{data.tag.replace('refs/tags/', '')}</p>
+                      <p>{getTagName(data.tag)}</p>
                     </>
                   ) : (
                     <>
@@ -259,7 +265,7 @@ const Dashboard: React.FC = () => {
                   <h3>From</h3>
                   <p>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${data.commitFrom}`}
+                      href={getGitHubUrl.commit(repoFullName, data.commitFrom)}
                       target='_blank'
                       rel='noreferrer'
                     >
@@ -271,7 +277,7 @@ const Dashboard: React.FC = () => {
                   <h3>To</h3>
                   <p>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${data.commitTo}`}
+                      href={getGitHubUrl.commit(repoFullName, data.commitTo)}
                       target='_blank'
                       rel='noreferrer'
                     >
@@ -285,7 +291,7 @@ const Dashboard: React.FC = () => {
         </GridItem>
 
         {/* Branch push: show commits and diff */}
-        {!isTagPush && (
+        {!isTag && (
           <>
             <GridItem xs={12} sm={12} md={12}>
               <Card>
@@ -309,7 +315,7 @@ const Dashboard: React.FC = () => {
                           </TableCell>
                           <TableCell>
                             <a
-                              href={`https://github.com/${c.committer}`}
+                              href={getGitHubUrl.user(c.committer)}
                               rel='noreferrer'
                               target='_blank'
                             >
@@ -318,7 +324,7 @@ const Dashboard: React.FC = () => {
                           </TableCell>
                           <TableCell>
                             <a
-                              href={`https://github.com/${c.author}`}
+                              href={getGitHubUrl.user(c.author)}
                               rel='noreferrer'
                               target='_blank'
                             >
@@ -351,7 +357,7 @@ const Dashboard: React.FC = () => {
         )}
 
         {/* Tag push: show tagData */}
-        {isTagPush && (
+        {isTag && (
           <GridItem xs={12} sm={12} md={12}>
             <Card>
               <CardHeader color={headerData.color} stats icon>
@@ -372,7 +378,7 @@ const Dashboard: React.FC = () => {
                         <TableCell>{t.type}</TableCell>
                         <TableCell>
                           <a
-                            href={`https://github.com/${t.tagger}`}
+                            href={getGitHubUrl.user(t.tagger)}
                             target='_blank'
                             rel='noreferrer'
                           >

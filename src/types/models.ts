@@ -22,6 +22,14 @@ export interface CommitData {
   commitTimestamp?: number;
 }
 
+export interface TagData {
+  tagName: string;
+  type: 'lightweight' | 'annotated';
+  tagger: string;
+  message: string;
+  timestamp?: number;
+}
+
 export interface PushData {
   id: string;
   repo: string;
@@ -38,6 +46,10 @@ export interface PushData {
   attestation?: AttestationData;
   autoApproved?: boolean;
   timestamp: string | Date;
+  // Tag-specific fields
+  tag?: string;
+  tagData?: TagData[];
+  user?: string; // Used for tag pushes as the tagger
 }
 
 export interface Route {
