@@ -272,7 +272,7 @@ const getCommitData = (contents: CommitContent[]): CommitData[] => {
  * @return {[PackMeta, Buffer]} An array containing the metadata and the remaining buffer.
  */
 const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
-  const sig = buffer.slice(0, PACKET_SIZE).toString('utf-8');
+  const sig = buffer.subarray(0, PACKET_SIZE).toString('utf-8');
   const version = buffer.readUIntBE(PACKET_SIZE, PACKET_SIZE);
   const entries = buffer.readUIntBE(PACKET_SIZE * 2, PACKET_SIZE);
 
