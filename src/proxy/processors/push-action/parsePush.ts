@@ -53,7 +53,9 @@ async function exec(req: any, action: Action): Promise<Action> {
       return action;
     }
 
-    const parts = refUpdates[0].split(' ');
+    const [commitParts, capParts] = refUpdates[0].split('\0');
+    const parts = commitParts.split(' ');
+    console.log({ commitParts, capParts, parts });
     if (parts.length !== 3) {
       step.log('Invalid number of parts in ref update.');
       step.log(`Expected 3, but got ${parts.length}`);
