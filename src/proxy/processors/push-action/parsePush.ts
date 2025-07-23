@@ -282,7 +282,7 @@ const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
     entries: entries,
   };
 
-  return [meta, buffer.slice(PACKET_SIZE * 3)];
+  return [meta, buffer.subarray(PACKET_SIZE * 3)];
 };
 
 /**
