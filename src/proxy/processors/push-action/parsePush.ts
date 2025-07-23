@@ -16,6 +16,7 @@ import {
   EMPTY_COMMIT_HASH,
   PACK_SIGNATURE,
   PACKET_SIZE,
+  GIT_OBJECT_TYPE_COMMIT,
 } from '../constants';
 
 const BitMask = require('bit-mask') as any;
@@ -217,14 +218,17 @@ const isBlankPersonLine = (personLine: PersonLine): boolean => {
 
 /**
  * Parses the commit data from the contents of a pack file.
+ * 
+ * Filters out all objects except for commits.
  * @param {CommitContent[]} contents - The contents of the pack file.
  * @return {CommitData[]} An array of commit data objects.
+ * @see https://git-scm.com/docs/pack-format#_object_types
  */
 const getCommitData = (contents: CommitContent[]): CommitData[] => {
   console.log({ contents });
   return lod
     .chain(contents)
-    .filter({ type: 1 })
+    .filter({ type: GIT_OBJECT_TYPE_COMMIT })
     .map((x: CommitContent) => {
       console.log({ x });
 
