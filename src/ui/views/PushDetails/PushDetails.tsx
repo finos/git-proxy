@@ -8,7 +8,6 @@ import Card from '../../components/Card/Card';
 import CardIcon from '../../components/Card/CardIcon';
 import CardBody from '../../components/Card/CardBody';
 import CardHeader, { CardHeaderColor } from '../../components/Card/CardHeader';
-import CardFooter from '../../components/Card/CardFooter';
 import Button from '../../components/CustomButtons/Button';
 import Diff from './components/Diff';
 import Attestation from './components/Attestation';
@@ -23,7 +22,13 @@ import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import { PushData } from '../../../types/models';
-import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
+import {
+  isTagPush,
+  getTagName,
+  getRepoFullName,
+  getRefToShow,
+  getGitHubUrl,
+} from '../../utils/pushUtils';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,7 +39,7 @@ const Dashboard: React.FC = () => {
   const [message, setMessage] = useState('');
   const [attestation, setAttestation] = useState(false);
   const navigate = useNavigate();
-
+  const isTag = data ? isTagPush(data) : false;
   let isUserAllowedToApprove = true;
   let isUserAllowedToReject = true;
 
@@ -73,7 +78,7 @@ const Dashboard: React.FC = () => {
   const cancel = async () => {
     if (!id) return;
     await cancelPush(id, setAuth, setIsError);
-    navigate(`/dashboard/push/`);
+    navigate('/dashboard/push/');
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -85,29 +90,29 @@ const Dashboard: React.FC = () => {
     color: 'warning',
   };
 
-  if (data.canceled) {
+  if (data?.canceled) {
     headerData = {
       color: 'warning',
       title: 'Canceled',
     };
   }
 
-  if (data.rejected) {
+  if (data?.rejected) {
     headerData = {
       color: 'danger',
       title: 'Rejected',
     };
   }
 
-  if (data.authorised) {
+  if (data?.authorised) {
     headerData = {
       color: 'success',
       title: 'Approved',
     };
   }
 
-  const repoFullName = trimTrailingDotGit(data.repo);
-  const repoBranch = trimPrefixRefsHeads(data.branch);
+  const repoFullName = data ? getRepoFullName(data.repo) : '';
+  const repoBranch = data ? getRefToShow(data) : '';
 
   const generateIcon = (title: string) => {
     switch (title) {
@@ -129,10 +134,7 @@ const Dashboard: React.FC = () => {
       <Snackbar
         open={!!message}
         message={message}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
         autoHideDuration={5000}
         onClose={() => setMessage('')}
       />
@@ -202,8 +204,9 @@ const Dashboard: React.FC = () => {
                       <div>
                         <p>
                           <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
-                            {data.attestation.reviewer.gitAccount}
-                          </a>{' '}
+                            {' '}
+                            {data.attestation.reviewer.gitAccount}{' '}
+                          </a>
                           approved this contribution
                         </p>
                       </div>
@@ -238,111 +241,159 @@ const Dashboard: React.FC = () => {
                   <p>{moment(data.timestamp).toString()}</p>
                 </GridItem>
                 <GridItem xs={3} sm={3} md={3}>
-                  <h3>Remote Head</h3>
+                  <h3>Repository</h3>
+                  <p>
+                    <a href={getGitHubUrl.repo(repoFullName)} target='_blank' rel='noreferrer'>
+                      {repoFullName}
+                    </a>
+                  </p>
+                </GridItem>
+                <GridItem xs={3} sm={3} md={3}>
+                  {isTag ? (
+                    <>
+                      <h3>Tag</h3>
+                      <p>{getTagName(data.tag)}</p>
+                    </>
+                  ) : (
+                    <>
+                      <h3>Branch</h3>
+                      <p>{repoBranch}</p>
+                    </>
+                  )}
+                </GridItem>
+                <GridItem xs={2} sm={2} md={2}>
+                  <h3>From</h3>
                   <p>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${data.commitFrom}`}
-                      rel='noreferrer'
+                      href={getGitHubUrl.commit(repoFullName, data.commitFrom)}
                       target='_blank'
+                      rel='noreferrer'
                     >
                       {data.commitFrom}
                     </a>
                   </p>
                 </GridItem>
-                <GridItem xs={3} sm={3} md={3}>
-                  <h3>Commit SHA</h3>
+                <GridItem xs={2} sm={2} md={2}>
+                  <h3>To</h3>
                   <p>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${data.commitTo}`}
-                      rel='noreferrer'
+                      href={getGitHubUrl.commit(repoFullName, data.commitTo)}
                       target='_blank'
+                      rel='noreferrer'
                     >
                       {data.commitTo}
-                    </a>
-                  </p>
-                </GridItem>
-                <GridItem xs={2} sm={2} md={2}>
-                  <h3>Repository</h3>
-                  <p>
-                    <a href={`https://github.com/${repoFullName}`} rel='noreferrer' target='_blank'>
-                      {repoFullName}
-                    </a>
-                  </p>
-                </GridItem>
-                <GridItem xs={2} sm={2} md={2}>
-                  <h3>Branch</h3>
-                  <p>
-                    <a
-                      href={`https://github.com/${repoFullName}/tree/${repoBranch}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
-                      {repoBranch}
                     </a>
                   </p>
                 </GridItem>
               </GridContainer>
             </CardBody>
           </Card>
-          <Card>
-            <CardHeader color={headerData.color} stats icon>
-              <h3>{headerData.title}</h3>
-            </CardHeader>
-            <CardBody>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Timestamp</TableCell>
-                    <TableCell>Committer</TableCell>
-                    <TableCell>Author</TableCell>
-                    <TableCell>Author E-mail</TableCell>
+        </GridItem>
+
+        {/* Branch push: show commits and diff */}
+        {!isTag && (
+          <>
+            <GridItem xs={12} sm={12} md={12}>
+              <Card>
+                <CardHeader color={headerData.color} stats icon>
+                  <h3>{headerData.title}</h3>
+                </CardHeader>
+                <CardBody>
+                  <Table>
+                    <TableHead>
+                      <TableCell>Timestamp</TableCell>
+                      <TableCell>Committer</TableCell>
+                      <TableCell>Author</TableCell>
+                      <TableCell>Email</TableCell>
+                      <TableCell>Message</TableCell>
+                    </TableHead>
+                    <TableBody>
+                      {data.commitData.map((c) => (
+                        <TableRow key={c.commitTimestamp}>
+                          <TableCell>
+                            {moment.unix(c.commitTs || c.commitTimestamp).toString()}
+                          </TableCell>
+                          <TableCell>
+                            <a
+                              href={getGitHubUrl.user(c.committer)}
+                              rel='noreferrer'
+                              target='_blank'
+                            >
+                              {c.committer}
+                            </a>
+                          </TableCell>
+                          <TableCell>
+                            <a
+                              href={getGitHubUrl.user(c.author)}
+                              rel='noreferrer'
+                              target='_blank'
+                            >
+                              {c.author}
+                            </a>
+                          </TableCell>
+                          <TableCell>
+                            {c.authorEmail ? (
+                              <a href={`mailto:${c.authorEmail}`}>{c.authorEmail}</a>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell>{c.message}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardBody>
+              </Card>
+            </GridItem>
+            <GridItem xs={12} sm={12} md={12}>
+              <Card>
+                <CardBody>
+                  <Diff diff={data.diff.content} />
+                </CardBody>
+              </Card>
+            </GridItem>
+          </>
+        )}
+
+        {/* Tag push: show tagData */}
+        {isTag && (
+          <GridItem xs={12} sm={12} md={12}>
+            <Card>
+              <CardHeader color={headerData.color} stats icon>
+                <h3>Tag Details</h3>
+              </CardHeader>
+              <CardBody>
+                <Table>
+                  <TableHead>
+                    <TableCell>Tag Name</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Tagger</TableCell>
                     <TableCell>Message</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {data.commitData.map((c) => (
-                    <TableRow key={c.commitTimestamp || c.commitTs}>
-                      <TableCell>
-                        {moment.unix(c.commitTs || c.commitTimestamp || 0).toString()}
-                      </TableCell>
-                      <TableCell>
-                        <a
-                          href={`https://github.com/${c.committer}`}
-                          rel='noreferrer'
-                          target='_blank'
-                        >
-                          {c.committer}
-                        </a>
-                      </TableCell>
-                      <TableCell>
-                        <a href={`https://github.com/${c.author}`} rel='noreferrer' target='_blank'>
-                          {c.author}
-                        </a>
-                      </TableCell>
-                      <TableCell>
-                        {c.authorEmail ? (
-                          <a href={`mailto:${c.authorEmail}`}>{c.authorEmail}</a>
-                        ) : (
-                          'No data...'
-                        )}
-                      </TableCell>
-                      <TableCell>{c.message}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardBody>
-          </Card>
-        </GridItem>
-        <GridItem xs={12} sm={12} md={12}>
-          <Card>
-            <CardHeader />
-            <CardBody>
-              <Diff diff={data.diff.content} />
-            </CardBody>
-            <CardFooter />
-          </Card>
-        </GridItem>
+                  </TableHead>
+                  <TableBody>
+                    {data.tagData.map((t) => (
+                      <TableRow key={t.tagName}>
+                        <TableCell>{t.tagName}</TableCell>
+                        <TableCell>{t.type}</TableCell>
+                        <TableCell>
+                          <a
+                            href={getGitHubUrl.user(t.tagger)}
+                            target='_blank'
+                            rel='noreferrer'
+                          >
+                            {t.tagger}
+                          </a>
+                        </TableCell>
+                        <TableCell>{t.message}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardBody>
+            </Card>
+          </GridItem>
+        )}
       </GridContainer>
     </div>
   );

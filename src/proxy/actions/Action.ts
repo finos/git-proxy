@@ -4,7 +4,7 @@ import { Step } from './Step';
 /**
  * Represents a commit.
  */
-export interface Commit {
+export interface CommitData {
   message: string;
   committer: string;
   tree: string;
@@ -15,6 +15,13 @@ export interface Commit {
   commitTimestamp?: string;
 }
 
+export interface TagData {
+  object: string;
+  type: string;
+  tagName: string;
+  tagger: string;
+  message: string;
+}
 /**
  * Class representing a Push.
  */
@@ -38,7 +45,7 @@ class Action {
   rejected: boolean = false;
   autoApproved: boolean = false;
   autoRejected: boolean = false;
-  commitData?: Commit[] = [];
+  commitData?: CommitData[] = [];
   commitFrom?: string;
   commitTo?: string;
   branch?: string;
@@ -48,6 +55,8 @@ class Action {
   attestation?: string;
   lastStep?: Step;
   proxyGitPath?: string;
+  tag?: string;
+  tagData?: TagData[];
 
   /**
    * Create an action.
