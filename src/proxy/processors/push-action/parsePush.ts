@@ -55,7 +55,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     } else if (action.tagData?.length) {
       action.user = action.tagData.at(-1)!.tagger;
     } else {
-      action.user = 'unknown';
+      throw new Error('No commit or tag data parsed from packfile');
     }
 
     step.content = {
@@ -105,8 +105,11 @@ function parseCommit(x: CommitContent): CommitData {
     .trim();
   console.log({ committerLine });
   const msgIndex = lines.indexOf('');
-  const message = lines.slice(msgIndex + 1, lines.length - 1).join(' ');
-
+  const message = lines
+    .slice(msgIndex + 1)
+    .join(' ')
+    .trim();
+  console.log({ message });
   console.log({ message });
 
   const commitTimestamp = committerLine?.split(' ').reverse()[1];
