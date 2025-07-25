@@ -23,7 +23,8 @@
     "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx,json}\" \"test/**/*.{js,jsx,ts,tsx,json}\"",
     "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,md,json,scss} test/**/*.{js,jsx,ts,tsx,json} packages/git-proxy-cli/test/**/*.{js,jsx,ts,tsx,json}  packages/git-proxy-cli/index.js --config ./.prettierrc",
     "gen-schema-doc": "node ./scripts/doc-schema.js",
-    "cypress:run": "cypress run"
+    "cypress:run": "cypress run",
+    "cypress:open": "cypress open"
   },
   "bin": {
     "git-proxy": "./index.js",
@@ -102,7 +103,7 @@
     "@vitejs/plugin-react": "^4.0.2",
     "chai": "^4.2.0",
     "chai-http": "^4.3.0",
-    "cypress": "^14.0.0",
+    "cypress": "^14.5.2",
     "eslint": "^8.57.0",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^10.0.1",
