@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { AccountCircle } from '@material-ui/icons';
 import { getUser } from '../../services/user';
 import axios from 'axios';
-import { getCookie } from '../../utils';
+import { getAxiosConfig } from '../../services/auth';
 import { UserData } from '../../../types/models';
 
 const useStyles = makeStyles(styles);
@@ -51,21 +51,17 @@ const DashboardNavbarLinks: React.FC = () => {
 
   const logout = async () => {
     try {
-      const response = await axios.post(
+      await axios.post(
         `${process.env.VITE_API_URI || 'http://localhost:3000'}/api/auth/logout`,
         {},
-        {
-          withCredentials: true,
-          headers: {
-            'X-CSRF-TOKEN': getCookie('csrf'),
-          },
-        },
-      );
-
-      if (!response.data.isAuth && !response.data.user) {
-        setAuth(false);
-        navigate(0);
-      }
+        getAxiosConfig(),
+      )
+      .then((res) => {
+        if (!res.data.isAuth && !res.data.user) {
+          setAuth(false);
+          navigate(0);
+        }
+      });
     } catch (error) {
       console.error('Logout failed:', error);
     }
