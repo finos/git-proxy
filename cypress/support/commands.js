@@ -39,3 +39,7 @@ Cypress.Commands.add('login', (username, password) => {
     cy.url().should('include', '/dashboard/repo');
   });
 });
+
+Cypress.Commands.add('logout', () => {
+   Cypress.session.clearAllSavedSessions();
+});
