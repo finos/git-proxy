@@ -1,16 +1,15 @@
 import { Action, Step } from '../../actions';
 import zlib from 'zlib';
 import fs from 'fs';
-import path from 'path';
 import lod from 'lodash';
 import { CommitContent } from '../types';
 
 const BitMask = require('bit-mask') as any;
 
-const dir = path.resolve(__dirname, './.tmp');
+const dir = './.tmp/';
 
 if (!fs.existsSync(dir)) {
-  fs.mkdirSync(dir, { recursive: true });
+  fs.mkdirSync(dir);
 }
 
 async function exec(req: any, action: Action): Promise<Action> {
