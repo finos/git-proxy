@@ -37,8 +37,11 @@ describe('default configuration', function () {
 describe('user configuration', function () {
   let tempDir;
   let tempUserFile;
+  let oldEnv;
 
   beforeEach(function () {
+    delete require.cache[require.resolve('../src/config/env')];
+    oldEnv = { ...process.env };
     tempDir = fs.mkdtempSync('gitproxy-test');
     tempUserFile = path.join(tempDir, 'test-settings.json');
     require('../src/config/file').configFile = tempUserFile;
@@ -258,9 +261,34 @@ describe('user configuration', function () {
     expect(config.getAPIs()).to.be.eql(user.api);
   });
 
+  it('should override default settings for cookieSecret if env var is used', function () {
+    fs.writeFileSync(tempUserFile, '{}');
+    process.env.GIT_PROXY_COOKIE_SECRET = 'test-cookie-secret'
+
+    const config = require('../src/config');
+    expect(config.getCookieSecret()).to.equal('test-cookie-secret');
+  });
+
+  it('should override default settings for mongo connection string if env var is used', function () {
+    const user = {
+      sink: [
+        {
+          type: 'mongo',
+          enabled: true,
+        }
+      ]
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+    process.env.GIT_PROXY_MONGO_CONNECTION_STRING = 'mongodb://example.com:27017/test';
+
+    const config = require('../src/config');
+    expect(config.getDatabase().connectionString).to.equal('mongodb://example.com:27017/test');
+  });
+
   afterEach(function () {
     fs.rmSync(tempUserFile);
     fs.rmdirSync(tempDir);
+    process.env = oldEnv;
     delete require.cache[require.resolve('../src/config')];
   });
 });
