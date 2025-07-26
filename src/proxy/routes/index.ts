@@ -113,7 +113,7 @@ router.use(teeAndValidate);
 
 router.use(
   '/',
-  proxy(getProxyUrl(), {
+  proxy(getProxyUrl() || '', {
     parseReqBody: false,
     preserveHostHdr: false,
 

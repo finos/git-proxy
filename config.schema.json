@@ -145,6 +145,14 @@
       },
       "required": ["enabled", "key", "cert"]
     },
+    "sslKeyPemPath": {
+      "description": "Legacy: Path to SSL private key file (use tls.key instead)",
+      "type": "string"
+    },
+    "sslCertPemPath": {
+      "description": "Legacy: Path to SSL certificate file (use tls.cert instead)",
+      "type": "string"
+    },
     "configurationSources": {
       "enabled": { "type": "boolean" },
       "reloadIntervalSeconds": { "type": "number" },
