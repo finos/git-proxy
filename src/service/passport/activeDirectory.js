@@ -43,8 +43,9 @@ const configure = (passport) => {
               const message = `User it not a member of ${userGroup}`;
               return done(message, null);
             }
-          } catch (e) {
-            const message = `An error occurred while checking if the user is a member of the user group: ${JSON.stringify(e)}`;
+          } catch (err) {
+            console.log('ad test (isUser): e', err);
+            const message = `An error occurred while checking if the user is a member of the user group: ${err.message}`;
             return done(message, null);
           }
         
@@ -53,9 +54,9 @@ const configure = (passport) => {
           try {
             isAdmin = await ldaphelper.isUserInAdGroup(req, profile, ad, domain, adminGroup);
 
-          } catch (e) {
-            const message = `An error occurred while checking if the user is a member of the admin group: ${JSON.stringify(e)}`;
-            console.error(message, e); // don't return an error for this case as you may still be a user
+          } catch (err) {
+            const message = `An error occurred while checking if the user is a member of the admin group: ${err.message}`;
+            console.error(message, err); // don't return an error for this case as you may still be a user
           }
 
           profile.admin = isAdmin;
