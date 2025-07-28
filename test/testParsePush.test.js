@@ -3,6 +3,29 @@ const actions = require('../src/proxy/actions/Action');
 const processor = require('../src/proxy/processors/push-action/parsePush');
 const expect = chai.expect;
 
+// Test utilities for creating mock Git push data
+const createMockPushBody = (refName, options = {}) => {
+  const {
+    commitFrom = '0000000000000000000000000000000000000000',
+    commitTo = '583e02096f1c6bdd441068fe6eefa5c6546c89d9',
+    entries = 0,
+    packData = '',
+  } = options;
+
+  // Create proper Git push line format with additional protocol info
+  const pushLine = `00bd${commitFrom} ${commitTo} ${refName}\0 report-status-v2 side-band-64k object-format=sha1 agent=git/test0000`;
+  const packHeader = Buffer.alloc(12);
+  packHeader.write('PACK', 0);
+  packHeader.writeUInt32BE(2, 4); // version
+  packHeader.writeUInt32BE(entries, 8); // entries
+
+  return Buffer.concat([Buffer.from(pushLine, 'utf8'), packHeader, Buffer.from(packData, 'utf8')]);
+};
+
+const createMockAction = (id = 'test-id', repo = 'https://github.com/test/repo.git') => {
+  return new actions.Action(id, 'push', 'POST', '2024-01-15T10:30:00Z', repo);
+};
+
 // request with a single commit
 const reqBody = Buffer.from([
   48, 48, 98, 100, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
@@ -591,5 +614,163 @@ describe('Check that pushes can be parsed', async () => {
     expect(result.commitData[0].message).to.equal('test: parsePush');
     expect(result.commitData[0].commitTimestamp).to.equal('1746612538');
     expect(result.commitData[0].message).to.equal('test: parsePush');
+  });
+
+  it('Should parse tag push correctly and populate tagData', async () => {
+    const tagPushBuffer = Buffer.from([
+      48, 48, 98, 97, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
+      48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 32, 99,
+      100, 101, 99, 51, 48, 50, 56, 54, 101, 97, 99, 49, 56, 99, 97, 102, 56, 97, 55, 57, 102, 99,
+      54, 101, 101, 50, 98, 54, 54, 51, 98, 100, 53, 57, 99, 100, 50, 51, 49, 32, 114, 101, 102,
+      115, 47, 116, 97, 103, 115, 47, 118, 49, 46, 50, 46, 52, 0, 32, 114, 101, 112, 111, 114, 116,
+      45, 115, 116, 97, 116, 117, 115, 45, 118, 50, 32, 115, 105, 100, 101, 45, 98, 97, 110, 100,
+      45, 54, 52, 107, 32, 111, 98, 106, 101, 99, 116, 45, 102, 111, 114, 109, 97, 116, 61, 115,
+      104, 97, 49, 32, 97, 103, 101, 110, 116, 61, 103, 105, 116, 47, 50, 46, 51, 57, 46, 53, 46,
+      40, 65, 112, 112, 108, 101, 46, 71, 105, 116, 45, 49, 53, 52, 41, 48, 48, 48, 48, 80, 65, 67,
+      75, 0, 0, 0, 2, 0, 0, 0, 1, 195, 10, 120, 156, 53, 140, 75, 10, 194, 48, 20, 0, 247, 57, 197,
+      219, 11, 33, 255, 164, 32, 226, 25, 188, 193, 75, 251, 18, 34, 77, 35, 109, 40, 232, 233, 173,
+      138, 187, 25, 6, 166, 197, 59, 141, 29, 200, 104, 227, 220, 64, 147, 73, 193, 42, 164, 20, 82,
+      82, 94, 82, 180, 24, 124, 152, 156, 180, 42, 24, 31, 145, 245, 231, 131, 96, 108, 181, 150,
+      206, 58, 102, 216, 37, 87, 220, 124, 48, 211, 10, 9, 99, 105, 123, 89, 70, 90, 94, 5, 206, 95,
+      229, 127, 87, 66, 200, 107, 174, 88, 102, 126, 12, 46, 32, 189, 213, 218, 74, 237, 7, 56, 137,
+      35, 50, 118, 163, 153, 112, 35, 216, 105, 221, 74, 91, 224, 247, 126, 3, 69, 140, 49, 238,
+      251, 56, 84, 89, 78, 149, 152, 192, 157, 210, 29, 108, 4, 196, 207, 245, 96, 159, 226, 27,
+    ]);
+
+    const tagAction = createMockAction('tag-test-id');
+
+    const req = { body: tagPushBuffer };
+    const result = await processor.exec(req, tagAction);
+    console.log(JSON.stringify(result, null, 2));
+
+    expect(result.error).to.be.false;
+    expect(result.tag).to.equal('refs/tags/v1.2.4');
+    expect(result.branch).to.be.undefined;
+    expect(result.tagData).to.have.length.greaterThan(0);
+    expect(result.tagData[0]).to.have.property('tagName');
+    expect(result.tagData[0]).to.have.property('tagger');
+    expect(result.tagData[0].tagger).to.equal('fabiovincenzi');
+    expect(result.tagData[0]).to.have.property('object');
+    expect(result.tagData[0]).to.have.property('type');
+    expect(result.tagData[0]).to.have.property('message');
+    expect(result.user).to.not.be.undefined;
+    expect(result.commitData).to.be.empty;
+  });
+
+  it('Should handle parseCommit with missing required fields', async () => {
+    // Create malformed commit body with corrupt pack data that will cause parsing errors
+    const malformedBody = createMockPushBody('refs/heads/test', {
+      commitFrom: '0000000000000000000000000000000000000000',
+      commitTo: '583e02096f1c6bdd441068fe6eefa5c6546c89d9',
+      entries: 1,
+      packData: 'corrupted-pack-data-that-will-cause-errors',
+    });
+    const action = createMockAction('malformed-test-id');
+
+    const req = { body: malformedBody };
+    const result = await processor.exec(req, action);
+
+    expect(result.error).to.be.true;
+    expect(result.steps[0].stepName).to.equal('parsePackFile');
+    expect(result.steps[0].error).to.be.true;
+    expect(result.steps[0].errorMessage).to.contain('Unable to parse push');
+    expect(result.commitData).to.be.empty;
+    expect(result.tagData).to.be.empty;
+    expect(result.branch).to.equal('refs/heads/test');
+  });
+
+  it('Should handle parseTag with missing tagger line', async () => {
+    // Tag push buffer with compressed tag object that lacks tagger line
+    // This will pass decompression but fail in parseTag() due to missing tagger
+    const tagPushBuffer = Buffer.from([
+      48, 48, 98, 100, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48,
+      48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 32, 53,
+      56, 51, 101, 48, 50, 48, 57, 54, 102, 49, 99, 54, 98, 100, 100, 52, 52, 49, 48, 54, 56, 102,
+      101, 54, 101, 101, 102, 97, 53, 99, 54, 53, 52, 54, 99, 56, 57, 100, 57, 32, 114, 101, 102,
+      115, 47, 116, 97, 103, 115, 47, 118, 49, 46, 48, 46, 48, 0, 32, 114, 101, 112, 111, 114, 116,
+      45, 115, 116, 97, 116, 117, 115, 45, 118, 50, 32, 115, 105, 100, 101, 45, 98, 97, 110, 100,
+      45, 54, 52, 107, 32, 111, 98, 106, 101, 99, 116, 45, 102, 111, 114, 109, 97, 116, 61, 115,
+      104, 97, 49, 32, 97, 103, 101, 110, 116, 61, 103, 105, 116, 47, 50, 46, 52, 52, 46, 48, 48,
+      48, 48, 80, 65, 67, 75, 0, 0, 0, 2, 0, 0, 0, 1, 203, 6, 120, 156, 5, 193, 219, 13, 131, 48,
+      12, 5, 208, 255, 76, 225, 9, 16, 73, 243, 234, 26, 221, 192, 129, 155, 52, 85, 193, 21, 24,
+      16, 219, 247, 28, 41, 31, 76, 74, 240, 15, 31, 227, 19, 179, 175, 57, 56, 70, 205, 181, 186,
+      100, 81, 2, 231, 148, 231, 104, 131, 203, 62, 21, 54, 122, 255, 64, 147, 44, 75, 87, 163, 220,
+      232, 180, 195, 56, 140, 198, 188, 240, 5, 239, 160, 19, 219, 222, 101, 165, 171, 235, 91, 14,
+      37, 229, 214, 176, 81, 95, 171, 252, 1, 233, 212, 34, 120,
+    ]);
+
+    const action = createMockAction('malformed-tag-id');
+    const req = { body: tagPushBuffer };
+    const result = await processor.exec(req, action);
+
+    expect(result.error).to.be.true;
+    expect(result.steps[0].stepName).to.equal('parsePackFile');
+    expect(result.steps[0].error).to.be.true;
+    expect(result.steps[0].errorMessage).to.contain('Unable to parse push');
+    expect(result.tag).to.equal('refs/tags/v1.0.0');
+    expect(result.branch).to.be.undefined;
+    expect(result.tagData).to.be.undefined;
+  });
+
+  it('Should handle empty pack with no commit or tag data', async () => {
+    // Empty pack with 0 entries should trigger "No commit or tag data" error
+    const emptyPackBody = createMockPushBody('refs/heads/test', {
+      entries: 0,
+      packData: '',
+    });
+    const action = createMockAction('empty-pack-id');
+
+    const req = { body: emptyPackBody };
+    const result = await processor.exec(req, action);
+
+    expect(result.error).to.be.true;
+    expect(result.steps[0].error).to.be.true;
+    expect(result.steps[0].errorMessage).to.contain('No commit or tag data parsed from packfile');
+    expect(result.branch).to.equal('refs/heads/test');
+    expect(result.user).to.be.undefined; // Never gets set because parsing fails
+  });
+
+  describe('Utility function tests', () => {
+    it('Should test getPackMeta function directly', () => {
+      const { getPackMeta } = processor;
+
+      const testBuffer = Buffer.alloc(16);
+      testBuffer.write('PACK', 0);
+      testBuffer.writeUInt32BE(2, 4); // version
+      testBuffer.writeUInt32BE(5, 8); // entries
+      testBuffer.writeUInt32BE(12345, 12); // extra data
+
+      const [meta, contentBuffer] = getPackMeta(testBuffer);
+
+      expect(meta.sig).to.equal('PACK');
+      expect(meta.version).to.equal(2);
+      expect(meta.entries).to.equal(5);
+      expect(contentBuffer.length).to.equal(4); // remaining buffer after header
+    });
+
+    it('Should test unpack function directly', () => {
+      const { unpack } = processor;
+      const zlib = require('zlib');
+
+      const originalData = 'test data for compression and decompression';
+      const compressed = zlib.deflateSync(Buffer.from(originalData));
+
+      const [decompressed, deflatedLength] = unpack(compressed);
+
+      expect(decompressed).to.equal(originalData);
+      expect(deflatedLength).to.be.a('number');
+      expect(deflatedLength).to.be.greaterThan(0);
+    });
+
+    it('Should test unpack with empty data', () => {
+      const { unpack } = processor;
+      const zlib = require('zlib');
+
+      const compressed = zlib.deflateSync(Buffer.from(''));
+      const [decompressed, deflatedLength] = unpack(compressed);
+
+      expect(decompressed).to.equal('');
+      expect(deflatedLength).to.be.a('number');
+    });
   });
 });

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import moment from 'moment';
 import { useNavigate } from 'react-router-dom';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
@@ -15,8 +14,23 @@ import { getPushes } from '../../../services/git-push';
 import { KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
+import ErrorBoundary from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PushData } from '../../../../types/models';
-import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../../db/helper';
+import {
+  isTagPush,
+  getDisplayTimestamp,
+  getTagName,
+  getRefToShow,
+  getShaOrTag,
+  getCommitterOrTagger,
+  getAuthor,
+  getAuthorEmail,
+  getMessage,
+  getCommitCount,
+  getRepoFullName,
+  getGitHubUrl,
+  isValidValue,
+} from '../../../utils/pushUtils';
 
 interface PushesTableProps {
   [key: string]: any;
@@ -53,15 +67,23 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
     setFilteredData(data);
   }, [data]);
 
+  // Include "tag" in the searchable fields when tag exists
   useEffect(() => {
     const lowerCaseTerm = searchTerm.toLowerCase();
     const filtered = searchTerm
-      ? data.filter(
-          (item) =>
-            item.repo.toLowerCase().includes(lowerCaseTerm) ||
-            item.commitTo.toLowerCase().includes(lowerCaseTerm) ||
-            item.commitData[0]?.message.toLowerCase().includes(lowerCaseTerm),
-        )
+      ? data.filter((item) => {
+          const repoName = getRepoFullName(item.repo).toLowerCase();
+          const message = getMessage(item).toLowerCase();
+          const commitToSha = item.commitTo.toLowerCase();
+          const tagName = getTagName(item.tag).toLowerCase();
+          
+          return (
+            repoName.includes(lowerCaseTerm) ||
+            commitToSha.includes(lowerCaseTerm) ||
+            message.includes(lowerCaseTerm) ||
+            tagName.includes(lowerCaseTerm)
+          );
+        })
       : data;
     setFilteredData(filtered);
     setCurrentPage(1);
@@ -81,96 +103,91 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
   if (isError) return <div>{errorMessage}</div>;
 
   return (
-    <div>
-      <Search onSearch={handleSearch} />
-      <TableContainer component={Paper}>
-        <Table className={classes.table} aria-label='simple table'>
+    <ErrorBoundary>
+      <div>
+        <Search onSearch={handleSearch} />
+        <TableContainer component={Paper}>
+        <Table className={classes.table} aria-label='pushes table'>
           <TableHead>
             <TableRow>
               <TableCell align='left'>Timestamp</TableCell>
               <TableCell align='left'>Repository</TableCell>
-              <TableCell align='left'>Branch</TableCell>
-              <TableCell align='left'>Commit SHA</TableCell>
-              <TableCell align='left'>Committer</TableCell>
+              <TableCell align='left'>Branch/Tag</TableCell>
+              <TableCell align='left'>Commit SHA/Tag</TableCell>
+              <TableCell align='left'>Committer/Tagger</TableCell>
               <TableCell align='left'>Author</TableCell>
               <TableCell align='left'>Author E-mail</TableCell>
-              <TableCell align='left'>Commit Message</TableCell>
+              <TableCell align='left'>Message</TableCell>
               <TableCell align='left'>No. of Commits</TableCell>
               <TableCell align='right'></TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {[...currentItems].reverse().map((row) => {
-              const repoFullName = trimTrailingDotGit(row.repo);
-              const repoBranch = trimPrefixRefsHeads(row.branch);
-              const commitTimestamp =
-                row.commitData[0]?.commitTs || row.commitData[0]?.commitTimestamp;
+              const isTag = isTagPush(row);
+              const repoFullName = getRepoFullName(row.repo);
+              const displayTime = getDisplayTimestamp(isTag, row.commitData[0], row.tagData?.[0]);
+              const refToShow = getRefToShow(row);
+              const shaOrTag = getShaOrTag(row);
+              const committerOrTagger = getCommitterOrTagger(row);
+              const author = getAuthor(row);
+              const authorEmail = getAuthorEmail(row);
+              const message = getMessage(row);
+              const commitCount = getCommitCount(row);
 
               return (
                 <TableRow key={row.id}>
+                  <TableCell align='left'>{displayTime}</TableCell>
                   <TableCell align='left'>
-                    {commitTimestamp ? moment.unix(commitTimestamp).toString() : 'N/A'}
-                  </TableCell>
-                  <TableCell align='left'>
-                    <a href={`https://github.com/${row.repo}`} rel='noreferrer' target='_blank'>
+                    <a href={getGitHubUrl.repo(repoFullName)} rel='noreferrer' target='_blank'>
                       {repoFullName}
                     </a>
                   </TableCell>
                   <TableCell align='left'>
                     <a
-                      href={`https://github.com/${repoFullName}/tree/${repoBranch}`}
+                      href={isTag ? getGitHubUrl.tag(repoFullName, refToShow) : getGitHubUrl.branch(repoFullName, refToShow)}
                       rel='noreferrer'
                       target='_blank'
                     >
-                      {repoBranch}
+                      {refToShow}
                     </a>
                   </TableCell>
                   <TableCell align='left'>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${row.commitTo}`}
+                      href={isTag ? getGitHubUrl.tag(repoFullName, shaOrTag) : getGitHubUrl.commit(repoFullName, row.commitTo)}
                       rel='noreferrer'
                       target='_blank'
                     >
-                      {row.commitTo.substring(0, 8)}
+                      {shaOrTag}
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    {row.commitData[0]?.committer ? (
-                      <a
-                        href={`https://github.com/${row.commitData[0].committer}`}
-                        rel='noreferrer'
-                        target='_blank'
-                      >
-                        {row.commitData[0].committer}
+                    {isValidValue(committerOrTagger) ? (
+                      <a href={getGitHubUrl.user(committerOrTagger)} rel='noreferrer' target='_blank'>
+                        {committerOrTagger}
                       </a>
                     ) : (
                       'N/A'
                     )}
                   </TableCell>
                   <TableCell align='left'>
-                    {row.commitData[0]?.author ? (
-                      <a
-                        href={`https://github.com/${row.commitData[0].author}`}
-                        rel='noreferrer'
-                        target='_blank'
-                      >
-                        {row.commitData[0].author}
+                    {isValidValue(author) ? (
+                      <a href={getGitHubUrl.user(author)} rel='noreferrer' target='_blank'>
+                        {author}
                       </a>
                     ) : (
                       'N/A'
                     )}
                   </TableCell>
                   <TableCell align='left'>
-                    {row.commitData[0]?.authorEmail ? (
-                      <a href={`mailto:${row.commitData[0].authorEmail}`}>
-                        {row.commitData[0].authorEmail}
-                      </a>
+                    {isValidValue(authorEmail) ? (
+                      <a href={`mailto:${authorEmail}`}>{authorEmail}</a>
                     ) : (
-                      'No data...'
+                      'N/A'
                     )}
                   </TableCell>
-                  <TableCell align='left'>{row.commitData[0]?.message || 'N/A'}</TableCell>
-                  <TableCell align='left'>{row.commitData.length}</TableCell>
+                  <TableCell align='left'>{message}</TableCell>
+                  <TableCell align='left'>{commitCount}</TableCell>
                   <TableCell component='th' scope='row'>
                     <Button variant='contained' color='primary' onClick={() => openPush(row.id)}>
                       <KeyboardArrowRight />
@@ -188,7 +205,8 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
         currentPage={currentPage}
         onPageChange={handlePageChange}
       />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 };
 
