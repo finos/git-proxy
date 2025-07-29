@@ -30,6 +30,8 @@ jobs:
 
     - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       with:
+        repository: jescalada/git-proxy-security-fixes
+        token: ${{ secrets.PAT_TOKEN }}
         fetch-depth: 0
 
     - name: Use Node.js ${{ matrix.node-version }}
