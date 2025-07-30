@@ -14,6 +14,7 @@ import {
   EMPTY_COMMIT_HASH,
   PACK_SIGNATURE,
   PACKET_SIZE,
+  GIT_OBJECT_TYPE_COMMIT,
 } from '../constants';
 
 const BitMask = require('bit-mask') as any;
@@ -46,7 +47,9 @@ async function exec(req: any, action: Action): Promise<Action> {
       return action;
     }
 
-    const parts = refUpdates[0].split(' ');
+    const [commitParts, capParts] = refUpdates[0].split('\0');
+    const parts = commitParts.split(' ');
+    console.log({ commitParts, capParts, parts });
     if (parts.length !== 3) {
       step.log('Invalid number of parts in ref update.');
       step.log(`Expected 3, but got ${parts.length}`);
@@ -209,14 +212,17 @@ const isBlankPersonLine = (personLine: PersonLine): boolean => {
 
 /**
  * Parses the commit data from the contents of a pack file.
+ * 
+ * Filters out all objects except for commits.
  * @param {CommitContent[]} contents - The contents of the pack file.
  * @return {CommitData[]} An array of commit data objects.
+ * @see https://git-scm.com/docs/pack-format#_object_types
  */
 const getCommitData = (contents: CommitContent[]): CommitData[] => {
   console.log({ contents });
   return lod
     .chain(contents)
-    .filter({ type: 1 })
+    .filter({ type: GIT_OBJECT_TYPE_COMMIT })
     .map((x: CommitContent) => {
       console.log({ x });
 
@@ -267,7 +273,7 @@ const getCommitData = (contents: CommitContent[]): CommitData[] => {
  * @return {[PackMeta, Buffer]} An array containing the metadata and the remaining buffer.
  */
 const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
-  const sig = buffer.slice(0, PACKET_SIZE).toString('utf-8');
+  const sig = buffer.subarray(0, PACKET_SIZE).toString('utf-8');
   const version = buffer.readUIntBE(PACKET_SIZE, PACKET_SIZE);
   const entries = buffer.readUIntBE(PACKET_SIZE * 2, PACKET_SIZE);
 
@@ -277,7 +283,7 @@ const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
     entries: entries,
   };
 
-  return [meta, buffer.slice(PACKET_SIZE * 3)];
+  return [meta, buffer.subarray(PACKET_SIZE * 3)];
 };
 
 /**
