@@ -53,7 +53,9 @@ describe('checkHiddenCommits.exec', () => {
     expect(step.logs).to.include(`checkHiddenCommits - Referenced commits: 0`);
     expect(step.logs).to.include(`checkHiddenCommits - Unreferenced commits: 2`);
     expect(step.logs).to.include(
-      `checkHiddenCommits - Unreferenced commits in pack (2): ${COMMIT_1}, ${COMMIT_2}`,
+      `checkHiddenCommits - Unreferenced commits in pack (2): ${COMMIT_1}, ${COMMIT_2}.\n` +
+        `This usually happens when a branch was made from a commit that hasn't been approved and pushed to the remote.\n` +
+        `Please get approval on the commits, push them and try again.`,
     );
     expect(action.error).to.be.true;
   });
@@ -80,7 +82,9 @@ describe('checkHiddenCommits.exec', () => {
     expect(step.logs).to.include('checkHiddenCommits - Referenced commits: 1');
     expect(step.logs).to.include('checkHiddenCommits - Unreferenced commits: 1');
     expect(step.logs).to.include(
-      `checkHiddenCommits - Unreferenced commits in pack (1): ${COMMIT_2}`,
+      `checkHiddenCommits - Unreferenced commits in pack (1): ${COMMIT_2}.\n` +
+        `This usually happens when a branch was made from a commit that hasn't been approved and pushed to the remote.\n` +
+        `Please get approval on the commits, push them and try again.`,
     );
     expect(action.error).to.be.true;
   });
