@@ -1,6 +1,7 @@
 const chai = require('chai');
 const sinon = require('sinon');
 const proxyquire = require('proxyquire');
+const fc = require('fast-check');
 const { Action, Step } = require('../../src/proxy/actions');
 
 chai.should();
@@ -97,6 +98,27 @@ describe('checkUserPushPermission', () => {
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.true;
       expect(logStub.calledWith('Users for this git account: [{"username":"user1","gitAccount":"git-user"},{"username":"user2","gitAccount":"git-user"}]')).to.be.true;
+    });
+
+    describe('fuzzing', () => {
+      it('should not crash on arbitrary getUsers return values (fuzzing)', async () => {
+        const userList = fc.sample(
+          fc.array(
+            fc.record({
+              username: fc.string(),
+              gitAccount: fc.string()
+            }),
+            { maxLength: 5 }
+          ),
+          1
+        )[0];
+        getUsersStub.resolves(userList);
+
+        const result = await exec(req, action);
+
+        expect(result.steps).to.have.lengthOf(1);
+        expect(result.steps[0].error).to.be.true;
+      });
     });
   });
 });
