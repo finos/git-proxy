@@ -1,7 +1,6 @@
-// test/checkHiddenCommits.test.js
 const fs = require('fs');
 const childProcess = require('child_process');
-import * as sinon from 'sinon';
+const sinon = require('sinon');
 const { expect } = require('chai');
 
 const { exec: checkHidden } = require('../src/proxy/processors/push-action/checkHiddenCommits');
