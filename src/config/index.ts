@@ -14,9 +14,15 @@ import {
 } from './types';
 
 let _userSettings: UserSettings | null = null;
-if (existsSync(configFile)) {
-  _userSettings = JSON.parse(readFileSync(configFile, 'utf-8'));
-}
+console.log(`_userSettings during import: ${_userSettings}`); // for debugging only
+
+export const initUserConfig = () => {
+  console.log(`Initializing user configuration from ${configFile}`); // for debugging only
+  if (existsSync(configFile)) {
+    _userSettings = JSON.parse(readFileSync(configFile, 'utf-8'));
+  }
+};
+
 let _authorisedList: AuthorisedRepo[] = defaultSettings.authorisedList;
 let _database: Database[] = defaultSettings.sink;
 let _authentication: Authentication[] = defaultSettings.authentication;
