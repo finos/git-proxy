@@ -460,22 +460,25 @@ describe('proxy chain', function () {
     expect(pullChain).to.deep.equal(chain.pullActionChain);
   });
 
-  it('returns tagPushChain when action.type is push and action.tag is set', async () => {
+  it('returns tagPushChain when action.type is push and action.actionType is TAG', async () => {
+    const { ActionType } = require('../src/proxy/actions/Action');
     const action = new Action('2', 'push', 'POST', Date.now(), 'owner/repo.git');
-    action.tag = 'refs/tags/v1.0';
+    action.actionType = ActionType.TAG;
     const tagChain = await chain.getChain(action);
     expect(tagChain).to.deep.equal(chain.tagPushChain);
   });
 
-  it('returns branchPushChain when action.type is push and no tag', async () => {
+  it('returns branchPushChain when action.type is push and actionType is not TAG', async () => {
+    const { ActionType } = require('../src/proxy/actions/Action');
     const action = new Action('3', 'push', 'POST', Date.now(), 'owner/repo.git');
-    action.tag = undefined;
+    action.actionType = ActionType.BRANCH;
     const branchChain = await chain.getChain(action);
     expect(branchChain).to.deep.equal(chain.branchPushChain);
   });
   it('getChain should set pluginsInserted and return tagPushChain if loader is undefined for tag pushes', async function () {
     chain.chainPluginLoader = undefined;
-    const actual = await chain.getChain({ type: 'push', tag: 'refs/tags/v1.0' });
+    const { ActionType } = require('../src/proxy/actions/Action');
+    const actual = await chain.getChain({ type: 'push', actionType: ActionType.TAG });
     expect(actual).to.deep.equal(chain.tagPushChain);
     expect(chain.chainPluginLoader).to.be.undefined;
     expect(chain.pluginsInserted).to.be.true;
@@ -484,7 +487,8 @@ describe('proxy chain', function () {
   it('getChain should load tag plugins from an initialized PluginLoader', async function () {
     chain.chainPluginLoader = mockLoader;
     const initialChain = [...chain.tagPushChain];
-    const actual = await chain.getChain({ type: 'push', tag: 'refs/tags/v2.0' });
+    const { ActionType } = require('../src/proxy/actions/Action');
+    const actual = await chain.getChain({ type: 'push', actionType: ActionType.TAG });
     expect(actual.length).to.be.greaterThan(initialChain.length);
     expect(chain.pluginsInserted).to.be.true;
   });

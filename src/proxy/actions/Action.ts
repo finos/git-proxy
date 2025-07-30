@@ -1,6 +1,22 @@
 import { getProxyUrl } from '../../config';
 import { Step } from './Step';
 
+export enum RequestType {
+  // eslint-disable-next-line no-unused-vars
+  PUSH = 'push',
+  // eslint-disable-next-line no-unused-vars
+  PULL = 'pull'
+}
+
+export enum ActionType {
+  // eslint-disable-next-line no-unused-vars
+  COMMIT = 'commit',
+  // eslint-disable-next-line no-unused-vars
+  TAG = 'tag',
+  // eslint-disable-next-line no-unused-vars
+  BRANCH = 'branch'
+}
+
 /**
  * Represents a commit.
  */
@@ -11,7 +27,6 @@ export interface CommitData {
   parent: string;
   author: string;
   authorEmail: string;
-  commitTS?: string; // TODO: Normalize this to commitTimestamp
   commitTimestamp?: string;
 }
 
@@ -27,7 +42,8 @@ export interface TagData {
  */
 class Action {
   id: string;
-  type: string;
+  type: RequestType;
+  actionType?: ActionType;
   method: string;
   timestamp: number;
   project: string;
@@ -66,7 +82,7 @@ class Action {
    * @param {number} timestamp The timestamp of the action
    * @param {string} repo The repo of the action
    */
-  constructor(id: string, type: string, method: string, timestamp: number, repo: string) {
+  constructor(id: string, type: RequestType, method: string, timestamp: number, repo: string) {
     this.id = id;
     this.type = type;
     this.method = method;

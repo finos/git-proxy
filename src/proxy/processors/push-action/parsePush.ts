@@ -1,4 +1,4 @@
-import { Action, Step } from '../../actions';
+import { Action, Step, ActionType } from '../../actions';
 import zlib from 'zlib';
 import fs from 'fs';
 import path from 'path';
@@ -27,6 +27,15 @@ async function exec(req: any, action: Action): Promise<Action> {
 
     action.branch = isBranch ? refName : undefined;
     action.tag = isTag ? refName : undefined;
+    
+    // Set actionType based on what type of push this is
+    if (isTag) {
+      action.actionType = ActionType.TAG;
+    } else if (isBranch) {
+      action.actionType = ActionType.BRANCH;
+    } else {
+      action.actionType = ActionType.COMMIT;
+    }
     action.setCommit(messageParts[0].substr(4), messageParts[1]);
 
     const index = req.body.lastIndexOf('PACK');
