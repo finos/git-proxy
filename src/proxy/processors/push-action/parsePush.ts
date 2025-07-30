@@ -1,5 +1,6 @@
 import { Action, Step } from '../../actions';
 import zlib from 'zlib';
+import fs from 'fs';
 import lod from 'lodash';
 
 import {
@@ -18,6 +19,12 @@ import {
 } from '../constants';
 
 const BitMask = require('bit-mask') as any;
+
+const dir = './.tmp/';
+
+if (!fs.existsSync(dir)) {
+  fs.mkdirSync(dir);
+}
 
 /**
  * Executes the parsing of a push request.
