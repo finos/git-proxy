@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
 /* eslint-disable max-len */
+import path from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import * as fs from 'fs';
@@ -19,7 +20,7 @@ const argv = yargs(hideBin(process.argv))
     },
     config: {
       description: 'Path to custom git-proxy configuration file.',
-      default: 'proxy.config.json',
+      default: path.join(__dirname, 'proxy.config.json'),
       required: false,
       alias: 'c',
       type: 'string',
