@@ -6,7 +6,7 @@ const { Action, Step } = require('../../src/proxy/actions');
 chai.should();
 const expect = chai.expect;
 
-describe.only('writePack', () => {
+describe('writePack', () => {
   let exec;
   let readdirSyncStub;
   let spawnSyncStub;
