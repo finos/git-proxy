@@ -1,5 +1,5 @@
 import { PluginLoader } from '../plugin';
-import { Action } from './actions';
+import { Action, RequestType, ActionType } from './actions';
 import * as proc from './processors';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 
@@ -43,10 +43,10 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
     // 1) Initialize basic action fields
     action = await proc.pre.parseAction(req);
     // 2) Parse the push payload first to detect tags/branches
-    if (action.type === 'push') {
+    if (action.type === RequestType.PUSH) {
       action = await proc.push.parsePush(req, action);
     }
-    // 3) Select the correct chain now that action.tag is set
+    // 3) Select the correct chain now that action.actionType is set
     const actionFns = await getChain(action);
 
     // 4) Execute each step in the selected chain
@@ -73,6 +73,22 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
  * @type {import('../plugin').PluginLoader}
  */
 let chainPluginLoader: PluginLoader;
+
+/**
+ * Selects the appropriate push chain based on action type
+ * @param {Action} action The action to select a chain for
+ * @return {Array} The appropriate push chain
+ */
+const getPushChain = (action: Action): ((req: any, action: Action) => Promise<Action>)[] => {
+  switch (action.actionType) {
+    case ActionType.TAG:
+      return tagPushChain;
+    case ActionType.BRANCH:
+    case ActionType.COMMIT:
+    default:
+      return branchPushChain;
+  }
+};
 
 export const getChain = async (
   action: Action,
@@ -102,16 +118,14 @@ export const getChain = async (
     // This is set to true so that we don't re-insert the plugins into the chain
     pluginsInserted = true;
   }
-  if (action.type === 'pull') {
-    return pullActionChain;
+  switch (action.type) {
+    case RequestType.PULL:
+      return pullActionChain;
+    case RequestType.PUSH:
+      return getPushChain(action);
+    default:
+      return [];
   }
-  if (action.type === 'push' && action.tag) {
-    return tagPushChain;
-  }
-  if (action.type === 'push') {
-    return branchPushChain;
-  }
-  return [];
 };
 
 export default {
