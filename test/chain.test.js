@@ -24,6 +24,7 @@ const initMockPushProcessors = (sinon) => {
     checkAuthorEmails: sinon.stub(),
     checkUserPushPermission: sinon.stub(),
     checkIfWaitingAuth: sinon.stub(),
+    checkHiddenCommits: sinon.stub(),
     pullRemote: sinon.stub(),
     writePack: sinon.stub(),
     preReceive: sinon.stub(),
@@ -32,6 +33,7 @@ const initMockPushProcessors = (sinon) => {
     clearBareClone: sinon.stub(),
     scanDiff: sinon.stub(),
     blockForAuth: sinon.stub(),
+    getMissingData: sinon.stub(),
   };
   mockPushProcessors.parsePush.displayName = 'parsePush';
   mockPushProcessors.audit.displayName = 'audit';
@@ -40,6 +42,7 @@ const initMockPushProcessors = (sinon) => {
   mockPushProcessors.checkAuthorEmails.displayName = 'checkAuthorEmails';
   mockPushProcessors.checkUserPushPermission.displayName = 'checkUserPushPermission';
   mockPushProcessors.checkIfWaitingAuth.displayName = 'checkIfWaitingAuth';
+  mockPushProcessors.checkHiddenCommits.displayName = 'checkHiddenCommits';
   mockPushProcessors.pullRemote.displayName = 'pullRemote';
   mockPushProcessors.writePack.displayName = 'writePack';
   mockPushProcessors.preReceive.displayName = 'preReceive';
@@ -48,12 +51,15 @@ const initMockPushProcessors = (sinon) => {
   mockPushProcessors.clearBareClone.displayName = 'clearBareClone';
   mockPushProcessors.scanDiff.displayName = 'scanDiff';
   mockPushProcessors.blockForAuth.displayName = 'blockForAuth';
+  mockPushProcessors.getMissingData.displayName = 'getMissingData';
   return mockPushProcessors;
 };
-
 const mockPreProcessors = {
   parseAction: sinon.stub(),
 };
+
+// eslint-disable-next-line no-unused-vars
+let mockPushProcessors;
 
 const clearCache = (sandbox) => {
   delete require.cache[require.resolve('../src/proxy/processors')];
@@ -125,7 +131,9 @@ describe('proxy chain', function () {
     mockPushProcessors.checkCommitMessages.resolves(continuingAction);
     mockPushProcessors.checkAuthorEmails.resolves(continuingAction);
     mockPushProcessors.checkUserPushPermission.resolves(continuingAction);
-
+    mockPushProcessors.checkHiddenCommits.resolves(continuingAction);
+    mockPushProcessors.pullRemote.resolves(continuingAction);
+    mockPushProcessors.writePack.resolves(continuingAction);
     // this stops the chain from further execution
     mockPushProcessors.checkIfWaitingAuth.resolves({
       type: 'push',
@@ -141,7 +149,10 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.checkAuthorEmails.called).to.be.true;
     expect(mockPushProcessors.checkUserPushPermission.called).to.be.true;
     expect(mockPushProcessors.checkIfWaitingAuth.called).to.be.true;
-    expect(mockPushProcessors.pullRemote.called).to.be.false;
+    expect(mockPushProcessors.pullRemote.called).to.be.true;
+    expect(mockPushProcessors.checkHiddenCommits.called).to.be.true;
+    expect(mockPushProcessors.writePack.called).to.be.true;
+    expect(mockPushProcessors.getMissingData.called).to.be.false;
     expect(mockPushProcessors.audit.called).to.be.true;
 
     expect(result.type).to.equal('push');
@@ -158,6 +169,9 @@ describe('proxy chain', function () {
     mockPushProcessors.checkCommitMessages.resolves(continuingAction);
     mockPushProcessors.checkAuthorEmails.resolves(continuingAction);
     mockPushProcessors.checkUserPushPermission.resolves(continuingAction);
+    mockPushProcessors.checkHiddenCommits.resolves(continuingAction);
+    mockPushProcessors.pullRemote.resolves(continuingAction);
+    mockPushProcessors.writePack.resolves(continuingAction);
     // this stops the chain from further execution
     mockPushProcessors.checkIfWaitingAuth.resolves({
       type: 'push',
@@ -173,7 +187,10 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.checkAuthorEmails.called).to.be.true;
     expect(mockPushProcessors.checkUserPushPermission.called).to.be.true;
     expect(mockPushProcessors.checkIfWaitingAuth.called).to.be.true;
-    expect(mockPushProcessors.pullRemote.called).to.be.false;
+    expect(mockPushProcessors.pullRemote.called).to.be.true;
+    expect(mockPushProcessors.checkHiddenCommits.called).to.be.true;
+    expect(mockPushProcessors.writePack.called).to.be.true;
+    expect(mockPushProcessors.getMissingData.called).to.be.false;
     expect(mockPushProcessors.audit.called).to.be.true;
 
     expect(result.type).to.equal('push');
@@ -193,12 +210,14 @@ describe('proxy chain', function () {
     mockPushProcessors.checkIfWaitingAuth.resolves(continuingAction);
     mockPushProcessors.pullRemote.resolves(continuingAction);
     mockPushProcessors.writePack.resolves(continuingAction);
+    mockPushProcessors.checkHiddenCommits.resolves(continuingAction);
     mockPushProcessors.preReceive.resolves(continuingAction);
     mockPushProcessors.getDiff.resolves(continuingAction);
     mockPushProcessors.gitleaks.resolves(continuingAction);
     mockPushProcessors.clearBareClone.resolves(continuingAction);
     mockPushProcessors.scanDiff.resolves(continuingAction);
     mockPushProcessors.blockForAuth.resolves(continuingAction);
+    mockPushProcessors.getMissingData.resolves(continuingAction);
 
     const result = await chain.executeChain(req);
 
@@ -210,6 +229,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.checkUserPushPermission.called).to.be.true;
     expect(mockPushProcessors.checkIfWaitingAuth.called).to.be.true;
     expect(mockPushProcessors.pullRemote.called).to.be.true;
+    expect(mockPushProcessors.checkHiddenCommits.called).to.be.true;
     expect(mockPushProcessors.writePack.called).to.be.true;
     expect(mockPushProcessors.preReceive.called).to.be.true;
     expect(mockPushProcessors.getDiff.called).to.be.true;
@@ -218,6 +238,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.scanDiff.called).to.be.true;
     expect(mockPushProcessors.blockForAuth.called).to.be.true;
     expect(mockPushProcessors.audit.called).to.be.true;
+    expect(mockPushProcessors.getMissingData.called).to.be.true;
 
     expect(result.type).to.equal('push');
     expect(result.allowPush).to.be.false;
@@ -285,6 +306,7 @@ describe('proxy chain', function () {
     mockPushProcessors.checkIfWaitingAuth.resolves(action);
     mockPushProcessors.pullRemote.resolves(action);
     mockPushProcessors.writePack.resolves(action);
+    mockPushProcessors.checkHiddenCommits.resolves(action);
 
     mockPushProcessors.preReceive.resolves({
       ...action,
@@ -298,7 +320,7 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
-
+    mockPushProcessors.getMissingData.resolves(action);
     const dbStub = sinon.stub(db, 'authorise').resolves(true);
 
     const result = await chain.executeChain(req);
@@ -332,6 +354,7 @@ describe('proxy chain', function () {
     mockPushProcessors.checkIfWaitingAuth.resolves(action);
     mockPushProcessors.pullRemote.resolves(action);
     mockPushProcessors.writePack.resolves(action);
+    mockPushProcessors.checkHiddenCommits.resolves(action);
 
     mockPushProcessors.preReceive.resolves({
       ...action,
@@ -345,6 +368,7 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
+    mockPushProcessors.getMissingData.resolves(action);
 
     const dbStub = sinon.stub(db, 'reject').resolves(true);
 
@@ -379,6 +403,7 @@ describe('proxy chain', function () {
     mockPushProcessors.checkIfWaitingAuth.resolves(action);
     mockPushProcessors.pullRemote.resolves(action);
     mockPushProcessors.writePack.resolves(action);
+    mockPushProcessors.checkHiddenCommits.resolves(action);
 
     mockPushProcessors.preReceive.resolves({
       ...action,
@@ -392,6 +417,7 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
+    mockPushProcessors.getMissingData.resolves(action);
 
     const error = new Error('Database error');
 
@@ -425,6 +451,7 @@ describe('proxy chain', function () {
     mockPushProcessors.checkIfWaitingAuth.resolves(action);
     mockPushProcessors.pullRemote.resolves(action);
     mockPushProcessors.writePack.resolves(action);
+    mockPushProcessors.checkHiddenCommits.resolves(action);
 
     mockPushProcessors.preReceive.resolves({
       ...action,
@@ -438,6 +465,7 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
+    mockPushProcessors.getMissingData.resolves(action);
 
     const error = new Error('Database error');
 

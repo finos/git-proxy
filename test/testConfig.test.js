@@ -41,25 +41,21 @@ describe('user configuration', function () {
 
   beforeEach(function () {
     delete require.cache[require.resolve('../src/config/env')];
+    delete require.cache[require.resolve('../src/config')];
     oldEnv = { ...process.env };
     tempDir = fs.mkdtempSync('gitproxy-test');
     tempUserFile = path.join(tempDir, 'test-settings.json');
-    require('../src/config/file').configFile = tempUserFile;
+    require('../src/config/file').setConfigFile(tempUserFile);
   });
 
   it('should override default settings for authorisedList', function () {
     const user = {
-      authorisedList: [
-        {
-          project: 'foo',
-          name: 'bar',
-          url: 'https://github.com/foo/bar.git',
-        },
-      ],
+      authorisedList: [{ project: 'foo', name: 'bar', url: 'https://github.com/foo/bar.git' }],
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
+    config.initUserConfig();
     const enabledMethods = defaultSettings.authentication.filter((method) => method.enabled);
 
     expect(config.getAuthorisedList()).to.be.eql(user.authorisedList);
@@ -69,17 +65,11 @@ describe('user configuration', function () {
   });
 
   it('should override default settings for authentication', function () {
-    const user = {
-      authentication: [
-        {
-          type: 'google',
-          enabled: true,
-        },
-      ],
-    };
+    const user = { authentication: [{ type: 'google', enabled: true }] };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
+    config.initUserConfig();
     const authMethods = config.getAuthMethods();
     const googleAuth = authMethods.find((method) => method.type === 'google');
 
@@ -92,17 +82,11 @@ describe('user configuration', function () {
   });
 
   it('should override default settings for database', function () {
-    const user = {
-      sink: [
-        {
-          type: 'postgres',
-          enabled: true,
-        },
-      ],
-    };
+    const user = { sink: [{ type: 'postgres', enabled: true }] };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
+    config.initUserConfig();
     const enabledMethods = defaultSettings.authentication.filter((method) => method.enabled);
 
     expect(config.getDatabase()).to.be.eql(user.sink[0]);
@@ -112,30 +96,22 @@ describe('user configuration', function () {
   });
 
   it('should override default settings for SSL certificate', function () {
-    const user = {
-      tls: {
-        key: 'my-key.pem',
-        cert: 'my-cert.pem',
-      },
-    };
+    const user = { tls: { key: 'my-key.pem', cert: 'my-cert.pem' } };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
+    config.initUserConfig();
 
     expect(config.getTLSKeyPemPath()).to.be.eql(user.tls.key);
     expect(config.getTLSCertPemPath()).to.be.eql(user.tls.cert);
   });
 
   it('should override default settings for rate limiting', function () {
-    const limitConfig = {
-      rateLimit: {
-        windowMs: 60000,
-        limit: 1500,
-      },
-    };
+    const limitConfig = { rateLimit: { windowMs: 60000, limit: 1500 } };
     fs.writeFileSync(tempUserFile, JSON.stringify(limitConfig));
 
     const config = require('../src/config');
+    config.initUserConfig();
 
     expect(config.getRateLimit().windowMs).to.be.eql(limitConfig.rateLimit.windowMs);
     expect(config.getRateLimit().limit).to.be.eql(limitConfig.rateLimit.limit);
@@ -145,68 +121,55 @@ describe('user configuration', function () {
     const user = {
       attestationConfig: {
         questions: [
-          {
-            label: 'Testing Label Change',
-            tooltip: {
-              text: 'Testing Tooltip Change',
-              links: [],
-            },
-          },
+          { label: 'Testing Label Change', tooltip: { text: 'Testing Tooltip Change', links: [] } },
         ],
       },
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
+    config.initUserConfig();
 
     expect(config.getAttestationConfig()).to.be.eql(user.attestationConfig);
   });
 
   it('should override default settings for url shortener', function () {
-    const user = {
-      urlShortener: 'https://url-shortener.com',
-    };
+    const user = { urlShortener: 'https://url-shortener.com' };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
+    config.initUserConfig();
 
     expect(config.getURLShortener()).to.be.eql(user.urlShortener);
   });
 
   it('should override default settings for contact email', function () {
-    const user = {
-      contactEmail: 'test@example.com',
-    };
+    const user = { contactEmail: 'test@example.com' };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
+    config.initUserConfig();
 
     expect(config.getContactEmail()).to.be.eql(user.contactEmail);
   });
 
   it('should override default settings for plugins', function () {
-    const user = {
-      plugins: ['plugin1', 'plugin2'],
-    };
+    const user = { plugins: ['plugin1', 'plugin2'] };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
+    config.initUserConfig();
 
     expect(config.getPlugins()).to.be.eql(user.plugins);
   });
 
   it('should override default settings for sslCertPemPath', function () {
-    const user = {
-      tls: {
-        enabled: true,
-        key: 'my-key.pem',
-        cert: 'my-cert.pem',
-      },
-    };
+    const user = { tls: { enabled: true, key: 'my-key.pem', cert: 'my-cert.pem' } };
 
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
+    config.initUserConfig();
 
     expect(config.getTLSCertPemPath()).to.be.eql(user.tls.cert);
     expect(config.getTLSKeyPemPath()).to.be.eql(user.tls.key);
@@ -215,17 +178,14 @@ describe('user configuration', function () {
 
   it('should prioritize tls.key and tls.cert over sslKeyPemPath and sslCertPemPath', function () {
     const user = {
-      tls: {
-        enabled: true,
-        key: 'good-key.pem',
-        cert: 'good-cert.pem',
-      },
+      tls: { enabled: true, key: 'good-key.pem', cert: 'good-cert.pem' },
       sslKeyPemPath: 'bad-key.pem',
       sslCertPemPath: 'bad-cert.pem',
     };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
+    config.initUserConfig();
 
     expect(config.getTLSCertPemPath()).to.be.eql(user.tls.cert);
     expect(config.getTLSKeyPemPath()).to.be.eql(user.tls.key);
@@ -233,13 +193,11 @@ describe('user configuration', function () {
   });
 
   it('should use sslKeyPemPath and sslCertPemPath if tls.key and tls.cert are not present', function () {
-    const user = {
-      sslKeyPemPath: 'good-key.pem',
-      sslCertPemPath: 'good-cert.pem',
-    };
+    const user = { sslKeyPemPath: 'good-key.pem', sslCertPemPath: 'good-cert.pem' };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
+    config.initUserConfig();
 
     expect(config.getTLSCertPemPath()).to.be.eql(user.sslCertPemPath);
     expect(config.getTLSKeyPemPath()).to.be.eql(user.sslKeyPemPath);
@@ -247,41 +205,31 @@ describe('user configuration', function () {
   });
 
   it('should override default settings for api', function () {
-    const user = {
-      api: {
-        gitlab: {
-          baseUrl: 'https://gitlab.com',
-        },
-      },
-    };
+    const user = { api: { gitlab: { baseUrl: 'https://gitlab.com' } } };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
 
     const config = require('../src/config');
+    config.initUserConfig();
 
     expect(config.getAPIs()).to.be.eql(user.api);
   });
 
   it('should override default settings for cookieSecret if env var is used', function () {
     fs.writeFileSync(tempUserFile, '{}');
-    process.env.GIT_PROXY_COOKIE_SECRET = 'test-cookie-secret'
+    process.env.GIT_PROXY_COOKIE_SECRET = 'test-cookie-secret';
 
     const config = require('../src/config');
+    config.initUserConfig();
     expect(config.getCookieSecret()).to.equal('test-cookie-secret');
   });
 
   it('should override default settings for mongo connection string if env var is used', function () {
-    const user = {
-      sink: [
-        {
-          type: 'mongo',
-          enabled: true,
-        }
-      ]
-    };
+    const user = { sink: [{ type: 'mongo', enabled: true }] };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
     process.env.GIT_PROXY_MONGO_CONNECTION_STRING = 'mongodb://example.com:27017/test';
 
     const config = require('../src/config');
+    config.initUserConfig();
     expect(config.getDatabase().connectionString).to.equal('mongodb://example.com:27017/test');
   });
 

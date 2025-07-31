@@ -31,6 +31,9 @@ describe('auth methods', async () => {
       fs: fsStub,
     });
 
+    // Initialize the user config after proxyquiring to load the stubbed config
+    config.initUserConfig();
+
     expect(() => config.getAuthMethods()).to.throw(Error, 'No authentication method enabled');
   });
 
@@ -51,6 +54,9 @@ describe('auth methods', async () => {
     const config = proxyquire('../src/config', {
       fs: fsStub,
     });
+
+    // Initialize the user config after proxyquiring to load the stubbed config
+    config.initUserConfig();
 
     const authMethods = config.getAuthMethods();
     expect(authMethods).to.have.lengthOf(3);
