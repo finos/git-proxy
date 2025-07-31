@@ -47,13 +47,14 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       const timestamp = Math.floor(new Date(entry.date).getTime() / 1000).toString();
       return {
         message: entry.message || '',
-        committer: entry.author_name || '',
+        committer: entry.author_name || '', // not actually the committer, but the author of one of the commits
         tree: entry.hash || '',
         parent: parent || EMPTY_COMMIT_HASH,
         author: entry.author_name || '',
         authorEmail: entry.author_email || '',
+        committerEmail: entry.author_email || '',
         commitTimestamp: timestamp,
-      }
+      };
     });
     console.log(`Updated commitData:`, { commitData: action.commitData });
 
