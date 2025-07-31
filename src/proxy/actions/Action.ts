@@ -50,6 +50,7 @@ class Action {
   attestation?: string;
   lastStep?: Step;
   proxyGitPath?: string;
+  newIdxFiles?: string[];
 
   /**
    * Create an action.
