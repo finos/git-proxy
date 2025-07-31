@@ -59,10 +59,10 @@ describe('checkUserPushPermission', () => {
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.false;
       expect(stepSpy.lastCall.args[0]).to.equal(
-        'User db-user <db-user@test.com> is allowed to push on repo test/repo.git',
+        'User db-user@test.com is allowed to push on repo test/repo.git',
       );
       expect(logStub.lastCall.args[0]).to.equal(
-        'User db-user <db-user@test.com> permission on Repo repo : true',
+        'User db-user@test.com permission on Repo repo : true',
       );
     });
 

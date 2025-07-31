@@ -18,7 +18,7 @@ describe('CheckUserPushPermissions...', async () => {
   before(async function () {
     await db.deleteRepo(TEST_REPO);
     await db.deleteUser(TEST_USERNAME_1);
-
+    await db.deleteUser(TEST_USERNAME_2);
     await db.createRepo({
       project: TEST_ORG,
       name: TEST_REPO,
@@ -26,7 +26,6 @@ describe('CheckUserPushPermissions...', async () => {
     });
     await db.createUser(TEST_USERNAME_1, 'abc', TEST_EMAIL_1, TEST_USERNAME_1, false);
     await db.addUserCanPush(TEST_REPO, TEST_USERNAME_1);
-
     await db.createUser(TEST_USERNAME_2, 'abc', TEST_EMAIL_2, TEST_USERNAME_2, false);
   });
 
