@@ -8,17 +8,18 @@ const expect = chai.expect;
 
 describe('writePack', () => {
   let exec;
+  let readdirSyncStub;
   let spawnSyncStub;
   let stepLogSpy;
   let stepSetContentSpy;
   let stepSetErrorSpy;
 
   beforeEach(() => {
-    spawnSyncStub = sinon.stub().returns({
-      stdout: 'git receive-pack output',
-      stderr: '',
-      status: 0,
-    });
+    spawnSyncStub = sinon.stub();
+    readdirSyncStub = sinon.stub();
+
+    readdirSyncStub.onFirstCall().returns(['old1.idx']);
+    readdirSyncStub.onSecondCall().returns(['old1.idx', 'new1.idx']);
 
     stepLogSpy = sinon.spy(Step.prototype, 'log');
     stepSetContentSpy = sinon.spy(Step.prototype, 'setContent');
@@ -26,6 +27,7 @@ describe('writePack', () => {
 
     const writePack = proxyquire('../../src/proxy/processors/push-action/writePack', {
       child_process: { spawnSync: spawnSyncStub },
+      fs: { readdirSync: readdirSyncStub },
     });
 
     exec = writePack.exec;
@@ -50,28 +52,34 @@ describe('writePack', () => {
         1234567890,
         'https://github.com/finos/git-proxy.git',
       );
-      action.proxyGitPath = '/path/to/repo';
+      action.proxyGitPath = '/path/to';
+      action.repoName = 'repo';
     });
 
     it('should execute git receive-pack with correct parameters', async () => {
+      const dummySpawnOutput = { stdout: 'git receive-pack output', stderr: '', status: 0 };
+      spawnSyncStub.returns(dummySpawnOutput);
+
       const result = await exec(req, action);
 
-      expect(spawnSyncStub.calledOnce).to.be.true;
+      expect(spawnSyncStub.callCount).to.equal(2);
       expect(spawnSyncStub.firstCall.args[0]).to.equal('git');
-      expect(spawnSyncStub.firstCall.args[1]).to.deep.equal(['receive-pack', 'git-proxy.git']);
-      expect(spawnSyncStub.firstCall.args[2]).to.deep.equal({
-        cwd: '/path/to/repo',
+      expect(spawnSyncStub.firstCall.args[1]).to.deep.equal(['config', 'receive.unpackLimit', '0']);
+      expect(spawnSyncStub.firstCall.args[2]).to.include({ cwd: '/path/to/repo' });
+
+      expect(spawnSyncStub.secondCall.args[0]).to.equal('git');
+      expect(spawnSyncStub.secondCall.args[1]).to.deep.equal(['receive-pack', 'repo']);
+      expect(spawnSyncStub.secondCall.args[2]).to.include({
+        cwd: '/path/to',
         input: 'pack data',
-        encoding: 'utf-8',
       });
 
-      expect(stepLogSpy.getCall(-2).args[0]).to.equal('executing git receive-pack git-proxy.git');
-      expect(stepLogSpy.getCall(-1).args[0]).to.equal('git receive-pack output');
-
-      expect(stepSetContentSpy.getCall(-1).args[0]).to.equal('git receive-pack output');
+      expect(stepLogSpy.calledWith('new idx files: new1.idx')).to.be.true;
+      expect(stepSetContentSpy.calledWith(dummySpawnOutput)).to.be.true;
 
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.false;
+      expect(result.newIdxFiles).to.deep.equal(['new1.idx']);
     });
 
     it('should handle errors from git receive-pack', async () => {
