@@ -17,20 +17,20 @@ export type CommitContent = {
   deflatedSize: number;
   objectRef: any;
   content: string;
-}
+};
 
 export type PersonLine = {
   name: string;
   email: string;
   timestamp: string;
-}
+};
 
 export type CommitHeader = {
   tree: string;
   parents: string[];
   author: PersonLine;
   committer: PersonLine;
-}
+};
 
 export type CommitData = {
   tree: string;
@@ -38,12 +38,13 @@ export type CommitData = {
   author: string;
   committer: string;
   authorEmail: string;
+  committerEmail: string;
   commitTimestamp: string;
   message: string;
-}
+};
 
 export type PackMeta = {
   sig: string;
   version: number;
   entries: number;
-}
+};

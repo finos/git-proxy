@@ -73,7 +73,9 @@ describe('getDiff', () => {
 
     const result = await exec({}, action);
     expect(result.steps[0].error).to.be.true;
-    expect(result.steps[0].errorMessage).to.contain('Your push has been blocked because no commit data was found');
+    expect(result.steps[0].errorMessage).to.contain(
+      'Your push has been blocked because no commit data was found',
+    );
   });
 
   it('should throw an error if no commit data is provided', async () => {
@@ -86,7 +88,9 @@ describe('getDiff', () => {
 
     const result = await exec({}, action);
     expect(result.steps[0].error).to.be.true;
-    expect(result.steps[0].errorMessage).to.contain('Your push has been blocked because no commit data was found');
+    expect(result.steps[0].errorMessage).to.contain(
+      'Your push has been blocked because no commit data was found',
+    );
   });
 
   it('should handle empty commit hash in commitFrom', async () => {
