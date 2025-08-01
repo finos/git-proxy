@@ -81,17 +81,17 @@ const getRepo = async (setIsLoading, setData, setAuth, setIsError, id) => {
     });
 };
 
-const addRepo = async (onClose, setError, data) => {
+const addRepo = async (data) => {
   const url = new URL(`${baseUrl}/repo`);
-  axios
-    .post(url, data, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
-    .then(() => {
-      onClose();
-    })
-    .catch((error) => {
-      console.log(error.response.data.message);
-      setError(error.response.data.message);
-    });
+  try {
+    await axios.post(url, data, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } });
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message
+    };
+  }
 };
 
 const addUser = async (repoName, user, action) => {
