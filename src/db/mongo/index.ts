@@ -20,6 +20,7 @@ export const {
 export const {
   getRepos,
   getRepo,
+  getRepoByUrl,
   createRepo,
   addUserCanPush,
   addUserCanAuthorise,
