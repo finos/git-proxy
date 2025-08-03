@@ -1,7 +1,7 @@
 const chai = require('chai');
 const sinon = require('sinon');
 const proxyquire = require('proxyquire');
-const { Action, Step } = require('../../src/proxy/actions');
+const { Action } = require('../../src/proxy/actions');
 
 chai.should();
 const expect = chai.expect;
