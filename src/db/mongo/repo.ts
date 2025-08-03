@@ -87,7 +87,7 @@ export const isUserPushAllowed = async (name: string, user: string) => {
       resolve(false);
       return;
     }
-    resolve(repo.users.canPush.includes(user) || repo.users.canAuthorise.includes(user));
+    resolve(repo.users?.canPush.includes(user) || repo.users?.canAuthorise.includes(user));
   });
 };
 
