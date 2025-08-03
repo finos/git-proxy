@@ -8,7 +8,9 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   const user = action.user;
 
   if (!user) {
-    console.log('Action has no user set. This may be due to a fast-forward ref update. Deferring to getMissingData action.');
+    step.setError('Push blocked: User not found. Please contact an administrator for support.');
+    action.addStep(step);
+    step.error = true;
     return action;
   }
 
