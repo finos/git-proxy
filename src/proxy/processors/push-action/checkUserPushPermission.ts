@@ -19,8 +19,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
 /**
  * Helper that validates the user's push permission.
- * This can be used by other actions that need it. For example, when the user is missing from the commit data,
- * validation is deferred to getMissingData, but the logic is the same.
+ * This can be used by other actions that need it.
  * @param {string} user The user to validate
  * @param {Action} action The action object
  * @param {Step} step The step object
