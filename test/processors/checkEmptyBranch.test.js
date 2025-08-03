@@ -6,7 +6,7 @@ const { Action } = require('../../src/proxy/actions');
 chai.should();
 const expect = chai.expect;
 
-describe.only('checkEmptyBranch', () => {
+describe('checkEmptyBranch', () => {
   let exec;
   let simpleGitStub;
   let gitRawStub;
