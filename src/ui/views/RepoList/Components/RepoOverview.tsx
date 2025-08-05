@@ -11,7 +11,7 @@ import { SCMRepositoryMetadata } from '../../../../types/models';
 
 const Repositories: React.FC<RepositoriesProps> = (props) => {
   const [remoteRepoData, setRemoteRepoData] = React.useState<SCMRepositoryMetadata | null>(null);
-  const [errorMessage, setErrorMessage] = React.useState('');
+  const [errorMessage] = React.useState('');
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 
   useEffect(() => {
@@ -27,8 +27,9 @@ const Repositories: React.FC<RepositoriesProps> = (props) => {
         await fetchRemoteRepositoryData(props.data.project, props.data.name, remoteUrl),
       );
     } catch (error: any) {
-      setErrorMessage(`Error fetching repository data: ${error.message}`);
-      setSnackbarOpen(true);
+      console.warn(
+        `Unable to fetch repository data for ${props.data.project}/${props.data.name} from '${remoteUrl}' - this may occur if the project is private or from an SCM vendor that is not supported.`,
+      );
     }
   };
 
