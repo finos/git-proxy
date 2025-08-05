@@ -23,10 +23,11 @@ const TEST_DEFAULT_REPO = {
 };
 
 const TEST_GITLAB_REPO = {
-  url: 'https://gitlab.com/gitlab-org/gitlab.git',
+  url: 'https://gitlab.com/gitlab-community/meta.git',
   name: 'gitlab',
-  project: 'gitlab-org/gitlab',
+  project: 'gitlab-community/meta',
   host: 'gitlab.com',
+  proxyUrlPrefix: 'gitlab.com/gitlab-community/meta.git',
 };
 
 describe('proxy route filter middleware', () => {
@@ -407,7 +408,7 @@ describe('proxy express application', async () => {
     // proxy a fetch request to the new repo
     const res2 = await chai
       .request(proxy.getExpressApp())
-      .get('/gitlab.com/gitlab-org/gitlab.git/info/refs?service=git-upload-pack')
+      .get(`/${TEST_GITLAB_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
       .set('user-agent', 'git/2.42.0')
       .set('accept', 'application/x-git-upload-pack-request')
       .buffer();
@@ -443,7 +444,7 @@ describe('proxy express application', async () => {
     // try (and fail) to proxy a request to gitlab.com
     const res2 = await chai
       .request(proxy.getExpressApp())
-      .get('/gitlab.com/gitlab-org/gitlab.git/info/refs?service=git-upload-pack')
+      .get(`/${TEST_GITLAB_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
       .set('user-agent', 'git/2.42.0')
       .set('accept', 'application/x-git-upload-pack-request')
       .buffer();
