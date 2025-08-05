@@ -1,6 +1,5 @@
 import { Action, Step } from '../../actions';
 import { getUsers, isUserPushAllowed } from '../../../db';
-import { trimTrailingDotGit } from '../../../db/helper';
 
 // Execute if the repo is approved
 const exec = async (req: any, action: Action): Promise<Action> => {
@@ -27,16 +26,6 @@ const exec = async (req: any, action: Action): Promise<Action> => {
  * @return {Promise<Action>} The action object
  */
 const validateUser = async (userEmail: string, action: Action, step: Step): Promise<Action> => {
-  const repoSplit = trimTrailingDotGit(action.repo.toLowerCase()).split('/');
-
-  // we expect there to be exactly one / separating org/repoName
-  if (repoSplit.length != 2) {
-    step.setError('Server-side issue extracting repoName');
-    action.addStep(step);
-    return action;
-  }
-  // pull the 2nd value of the split for repoName
-  const repoName = repoSplit[1];
   let isUserAllowed = false;
 
   // Find the user associated with this email address
@@ -57,26 +46,25 @@ const validateUser = async (userEmail: string, action: Action, step: Step): Prom
   } else if (list.length == 0) {
     console.error(`No user with email address ${userEmail} found`);
   } else {
-    isUserAllowed = await isUserPushAllowed(repoName, list[0].username);
+    isUserAllowed = await isUserPushAllowed(action.url, list[0].username);
   }
 
-  console.log(`User ${userEmail} permission on Repo ${repoName} : ${isUserAllowed}`);
+  console.log(`User ${userEmail} permission on Repo ${action.url} : ${isUserAllowed}`);
 
   if (!isUserAllowed) {
     console.log('User not allowed to Push');
     step.error = true;
-    step.log(`User ${userEmail} is not allowed to push on repo ${action.repo}, ending`);
-
+    step.log(`User ${userEmail} is not allowed to push on repo ${action.url}, ending`);
     step.setError(
       `Your push has been blocked (${action.userEmail} ` +
         `is not allowed to push on repo ` +
-        `${action.repo})`,
+        `${action.url})`,
     );
     action.addStep(step);
     return action;
   }
 
-  step.log(`User ${userEmail} is allowed to push on repo ${action.repo}`);
+  step.log(`User ${userEmail} is allowed to push on repo ${action.url}`);
   action.addStep(step);
   return action;
 };

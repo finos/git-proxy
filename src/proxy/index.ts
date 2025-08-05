@@ -1,8 +1,8 @@
-import express, { Application } from 'express';
+import express, { Express } from 'express';
 import http from 'http';
 import https from 'https';
 import fs from 'fs';
-import { router } from './routes';
+import { getRouter } from './routes';
 import {
   getAuthorisedList,
   getPlugins,
@@ -34,79 +34,82 @@ const options: ServerOptions = {
   cert: getTLSEnabled() ? fs.readFileSync(getTLSCertPemPath()) : undefined,
 };
 
-export const proxyPreparations = async () => {
-  const plugins = getPlugins();
-  const pluginLoader = new PluginLoader(plugins);
-  await pluginLoader.load();
-  chain.chainPluginLoader = pluginLoader;
-  // Check to see if the default repos are in the repo list
-  const defaultAuthorisedRepoList = getAuthorisedList();
-  const allowedList: Repo[] = await getRepos();
+export default class Proxy {
+  private httpServer: http.Server | null = null;
+  private httpsServer: https.Server | null = null;
+  private expressApp: Express | null = null;
 
-  defaultAuthorisedRepoList.forEach(async (x) => {
-    const found = allowedList.find((y) => y.project === x.project && x.name === y.name);
-    if (!found) {
-      await createRepo(x);
-      await addUserCanPush(x.name, 'admin');
-      await addUserCanAuthorise(x.name, 'admin');
-    }
-  });
-};
+  constructor() {}
 
-// just keep this async incase it needs async stuff in the future
-const createApp = async (): Promise<Application> => {
-  const app = express();
-  app.use('/', router);
-  return app;
-};
+  private async proxyPreparations() {
+    const plugins = getPlugins();
+    const pluginLoader = new PluginLoader(plugins);
+    await pluginLoader.load();
+    chain.chainPluginLoader = pluginLoader;
+    // Check to see if the default repos are in the repo list
+    const defaultAuthorisedRepoList = getAuthorisedList();
+    const allowedList: Repo[] = await getRepos();
 
-let httpServer: http.Server | null = null;
-let httpsServer: https.Server | null = null;
-
-const start = async (): Promise<Application> => {
-  const app = await createApp();
-  await proxyPreparations();
-  httpServer = http.createServer(options as any, app).listen(proxyHttpPort, () => {
-    console.log(`HTTP Proxy Listening on ${proxyHttpPort}`);
-  });
-  // Start HTTPS server only if TLS is enabled
-  if (getTLSEnabled()) {
-    httpsServer = https.createServer(options, app).listen(proxyHttpsPort, () => {
-      console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
+    defaultAuthorisedRepoList.forEach(async (x) => {
+      const found = allowedList.find((y) => y.project === x.project && x.name === y.name);
+      if (!found) {
+        const repo = await createRepo(x);
+        await addUserCanPush(repo._id!, 'admin');
+        await addUserCanAuthorise(repo._id!, 'admin');
+      }
     });
   }
-  return app;
-};
 
-const stop = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    try {
-      // Close HTTP server if it exists
-      if (httpServer) {
-        httpServer.close(() => {
-          console.log('HTTP server closed');
-          httpServer = null;
-        });
-      }
+  private async createApp() {
+    const app = express();
+    const router = await getRouter();
+    app.use('/', router);
+    return app;
+  }
 
-      // Close HTTPS server if it exists
-      if (httpsServer) {
-        httpsServer.close(() => {
-          console.log('HTTPS server closed');
-          httpsServer = null;
-        });
-      }
-
-      resolve();
-    } catch (error) {
-      reject(error);
+  public async start() {
+    await this.proxyPreparations();
+    this.expressApp = await this.createApp();
+    this.httpServer = http
+      .createServer(options as any, this.expressApp)
+      .listen(proxyHttpPort, () => {
+        console.log(`HTTP Proxy Listening on ${proxyHttpPort}`);
+      });
+    // Start HTTPS server only if TLS is enabled
+    if (getTLSEnabled()) {
+      this.httpsServer = https.createServer(options, this.expressApp).listen(proxyHttpsPort, () => {
+        console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
+      });
     }
-  });
-};
+  }
 
-export default {
-  proxyPreparations,
-  createApp,
-  start,
-  stop,
-};
+  public getExpressApp() {
+    return this.expressApp;
+  }
+
+  public stop(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      try {
+        // Close HTTP server if it exists
+        if (this.httpServer) {
+          this.httpServer.close(() => {
+            console.log('HTTP server closed');
+            this.httpServer = null;
+          });
+        }
+
+        // Close HTTPS server if it exists
+        if (this.httpsServer) {
+          this.httpsServer.close(() => {
+            console.log('HTTPS server closed');
+            this.httpsServer = null;
+          });
+        }
+
+        resolve();
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+}

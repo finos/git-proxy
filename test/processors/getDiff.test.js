@@ -35,7 +35,7 @@ describe('getDiff', () => {
     await git.add('.');
     await git.commit('second commit');
 
-    const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
+    const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
     action.proxyGitPath = __dirname; // Temp dir parent path
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
@@ -50,7 +50,7 @@ describe('getDiff', () => {
   });
 
   it('should get diff between commits with no changes', async () => {
-    const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
+    const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
     action.proxyGitPath = __dirname; // Temp dir parent path
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
@@ -64,7 +64,7 @@ describe('getDiff', () => {
   });
 
   it('should throw an error if no commit data is provided', async () => {
-    const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
+    const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
     action.proxyGitPath = __dirname; // Temp dir parent path
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
@@ -79,7 +79,7 @@ describe('getDiff', () => {
   });
 
   it('should throw an error if no commit data is provided', async () => {
-    const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
+    const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
     action.proxyGitPath = __dirname; // Temp dir parent path
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
@@ -102,7 +102,7 @@ describe('getDiff', () => {
     const parentCommit = log.all[1].hash;
     const headCommit = log.all[0].hash;
 
-    const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
+    const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
 
     action.proxyGitPath = path.dirname(tempDir);
     action.repoName = path.basename(tempDir);

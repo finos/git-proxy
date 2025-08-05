@@ -45,7 +45,13 @@ describe('writePack', () => {
       req = {
         body: 'pack data',
       };
-      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
+      action = new Action(
+        '1234567890',
+        'push',
+        'POST',
+        1234567890,
+        'https://github.com/finos/git-proxy.git',
+      );
       action.proxyGitPath = '/path/to';
       action.repoName = 'repo';
     });
