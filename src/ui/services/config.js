@@ -32,9 +32,4 @@ const getUIRouteAuth = async (setData) => {
   });
 };
 
-export {
-  getAttestationConfig,
-  getURLShortener,
-  getEmailContact,
-  getUIRouteAuth,
-};
+export { getAttestationConfig, getURLShortener, getEmailContact, getUIRouteAuth };
