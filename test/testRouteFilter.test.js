@@ -116,7 +116,7 @@ describe('url helpers and filter functions used in the proxy', function () {
     });
   });
 
-  it("processGitURLForNameAndOrg should return null for a git repository URL it can't pass", function () {
+  it("processGitURLForNameAndOrg should return null for a git repository URL it can't parse", function () {
     expect(processGitURLForNameAndOrg('someGitHost.com/repo')).to.be.null;
     expect(processGitURLForNameAndOrg('https://someGitHost.com/repo')).to.be.null;
     expect(processGitURLForNameAndOrg('https://somegithost.com:1234' + VERY_LONG_PATH + '.git')).to
