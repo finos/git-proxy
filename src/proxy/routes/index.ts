@@ -6,12 +6,28 @@ import { executeChain } from '../chain';
 import { processUrlPath, validGitRequest, getAllProxiedHosts } from './helper';
 import { ProxyOptions } from 'express-http-proxy';
 
+const logAction = (
+  url: string,
+  host: string | null | undefined,
+  userAgent: string | null | undefined,
+  errMsg: string | null | undefined,
+  blockMsg?: string | null | undefined,
+) => {
+  let msg = `Action processed: ${!(errMsg || blockMsg) ? 'Allowed' : 'Blocked'}
+    Request URL: ${url}
+    Host:        ${host}
+    User-Agent:  ${userAgent}`;
+  if (errMsg) {
+    msg += `\n    Error:       ${errMsg}`;
+  }
+  if (blockMsg) {
+    msg += `\n    Blocked:     ${blockMsg}`;
+  }
+  console.log(msg);
+};
+
 const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
   try {
-    console.log('request url: ', req.url);
-    console.log('host: ', req.headers.host);
-    console.log('user-agent: ', req.headers['user-agent']);
-
     const urlComponents = processUrlPath(req.url);
 
     if (
@@ -25,7 +41,6 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
     }
 
     const action = await executeChain(req, res);
-    console.log('action processed');
 
     if (action.error || action.blocked) {
       res.set('content-type', 'application/x-git-receive-pack-result');
@@ -48,16 +63,37 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
 
       const packetMessage = handleMessage(message);
 
-      console.log(req.headers);
+      logAction(
+        req.url,
+        req.headers.host,
+        req.headers['user-agent'],
+        action.errorMessage,
+        action.blockedMessage,
+      );
 
       res.status(200).send(packetMessage);
 
       return false;
     }
 
+    logAction(
+      req.url,
+      req.headers.host,
+      req.headers['user-agent'],
+      action.errorMessage,
+      action.blockedMessage,
+    );
+
     return true;
   } catch (e) {
     console.error('Error occurred in proxy filter function ', e);
+    logAction(
+      req.url,
+      req.headers.host,
+      req.headers['user-agent'],
+      'Error occurred in proxy filter function: ' + ((e as Error).message ?? e),
+      null,
+    );
     return false;
   }
 };
@@ -80,7 +116,7 @@ const getRequestPathResolver: (prefix: string) => ProxyOptions['proxyReqPathReso
       url = prefix + req.originalUrl;
     }
 
-    console.log(`Sending request to ${url}`);
+    console.log(`Request resolved to ${url}`);
     return url;
   };
 };
