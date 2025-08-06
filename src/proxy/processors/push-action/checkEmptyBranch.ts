@@ -3,10 +3,10 @@ import simpleGit from 'simple-git';
 import { EMPTY_COMMIT_HASH } from '../constants';
 
 const isEmptyBranch = async (action: Action) => {
-  const git = simpleGit(`${action.proxyGitPath}/${action.repoName}`);
-
   if (action.commitFrom === EMPTY_COMMIT_HASH) {
     try {
+      const git = simpleGit(`${action.proxyGitPath}/${action.repoName}`);
+
       const type = await git.raw(['cat-file', '-t', action.commitTo || '']);
       return type.trim() === 'commit';
     } catch (err) {
