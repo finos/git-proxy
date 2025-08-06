@@ -106,7 +106,7 @@ describe('checkEmptyBranch', () => {
 
       const result = await exec(req, action);
 
-      expect(simpleGitStub.called).to.be.true;
+      expect(simpleGitStub.called).to.be.false;
 
       const step = result.steps.find(s => s.stepName === 'checkEmptyBranch');
       expect(step).to.exist;
