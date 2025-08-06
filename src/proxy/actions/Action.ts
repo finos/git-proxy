@@ -73,6 +73,7 @@ class Action {
   proxyGitPath?: string;
   tag?: string;
   tagData?: TagData[];
+  newIdxFiles?: string[];
 
   /**
    * Create an action.
