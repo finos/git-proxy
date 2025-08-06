@@ -41,10 +41,10 @@ async function exec(req: any, action: Action): Promise<Action> {
     const refUpdates = packetLines.filter((line) => line.includes('refs/'));
 
     if (refUpdates.length !== 1) {
-      step.log('Invalid number of ref updates.');
+      step.log('Invalid number of branch updates.');
       step.log(`Expected 1, but got ${refUpdates.length}`);
       step.setError(
-        'Your push has been blocked. Please make sure you are pushing to a single ref.',
+        'Your push has been blocked. Please make sure you are pushing to a single branch.',
       );
       action.addStep(step);
       return action;
@@ -109,14 +109,9 @@ async function exec(req: any, action: Action): Promise<Action> {
     };
 
     for (const obj of contents) {
-      try {
-        if (obj.type === GIT_OBJECT_TYPE_COMMIT)
-          ParsedObjects.commits.push(...getCommitData([obj]));
-        else if (obj.type === GIT_OBJECT_TYPE_TAG) ParsedObjects.tags.push(parseTag(obj));
-      } catch (e) {
-        // If individual object parsing fails, log it but continue processing
-        step.log(`Failed to parse object: ${e}`);
-      }
+      if (obj.type === GIT_OBJECT_TYPE_COMMIT)
+        ParsedObjects.commits.push(...getCommitData([obj]));
+      else if (obj.type === GIT_OBJECT_TYPE_TAG) ParsedObjects.tags.push(parseTag(obj));
     }
 
     action.commitData = ParsedObjects.commits;
@@ -137,7 +132,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     };
   } catch (e: any) {
     step.setError(
-      `Unable to parse push. Please contact an administrator for support: ${e.toString('utf-8')}`,
+      `Unable to parse push. Please contact an administrator for support: ${e.message || e.toString()}`,
     );
   } finally {
     action.addStep(step);
