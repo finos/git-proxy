@@ -8,10 +8,7 @@ const isEmptyBranch = async (action: Action) => {
   if (action.commitFrom === EMPTY_COMMIT_HASH) {
     try {
       const type = await git.raw(['cat-file', '-t', action.commitTo || '']);
-      const known = type.trim() === 'commit';
-      if (known) {
-        return true;
-      }
+      return type.trim() === 'commit';
     } catch (err) {
       console.log(`Commit ${action.commitTo} not found: ${err}`);
     }
