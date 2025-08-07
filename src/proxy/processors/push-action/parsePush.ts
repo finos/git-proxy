@@ -35,9 +35,7 @@ async function exec(req: any, action: Action): Promise<Action> {
       action.addStep(step);
       return action;
     }
-    console.log('RRR');
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
-    console.log('PPPP');
     const refUpdates = packetLines.filter((line) => line.includes('refs/'));
 
     if (refUpdates.length !== 1) {
@@ -109,8 +107,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     };
 
     for (const obj of contents) {
-      if (obj.type === GIT_OBJECT_TYPE_COMMIT)
-        ParsedObjects.commits.push(...getCommitData([obj]));
+      if (obj.type === GIT_OBJECT_TYPE_COMMIT) ParsedObjects.commits.push(...getCommitData([obj]));
       else if (obj.type === GIT_OBJECT_TYPE_TAG) ParsedObjects.tags.push(parseTag(obj));
     }
 
