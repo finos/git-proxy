@@ -4,6 +4,8 @@ import * as proc from './processors';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 
 const branchPushChain: ((req: any, action: Action) => Promise<Action>)[] = [
+  proc.push.parsePush,
+  proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
   proc.push.checkAuthorEmails,
@@ -12,7 +14,6 @@ const branchPushChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.writePack,
   proc.push.checkHiddenCommits,
   proc.push.checkIfWaitingAuth,
-  proc.push.getMissingData,
   proc.push.preReceive,
   proc.push.getDiff,
   // run before clear remote

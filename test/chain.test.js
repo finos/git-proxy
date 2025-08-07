@@ -19,6 +19,7 @@ const mockLoader = {
 const initMockPushProcessors = (sinon) => {
   const mockPushProcessors = {
     parsePush: sinon.stub(),
+    checkEmptyBranch: sinon.stub(),
     audit: sinon.stub(),
     checkRepoInAuthorisedList: sinon.stub(),
     checkCommitMessages: sinon.stub(),
@@ -34,9 +35,9 @@ const initMockPushProcessors = (sinon) => {
     clearBareClone: sinon.stub(),
     scanDiff: sinon.stub(),
     blockForAuth: sinon.stub(),
-    getMissingData: sinon.stub(),
   };
   mockPushProcessors.parsePush.displayName = 'parsePush';
+  mockPushProcessors.checkEmptyBranch.displayName = 'checkEmptyBranch';
   mockPushProcessors.audit.displayName = 'audit';
   mockPushProcessors.checkRepoInAuthorisedList.displayName = 'checkRepoInAuthorisedList';
   mockPushProcessors.checkCommitMessages.displayName = 'checkCommitMessages';
@@ -52,7 +53,6 @@ const initMockPushProcessors = (sinon) => {
   mockPushProcessors.clearBareClone.displayName = 'clearBareClone';
   mockPushProcessors.scanDiff.displayName = 'scanDiff';
   mockPushProcessors.blockForAuth.displayName = 'blockForAuth';
-  mockPushProcessors.getMissingData.displayName = 'getMissingData';
   return mockPushProcessors;
 };
 const mockPreProcessors = {
@@ -128,6 +128,7 @@ describe('proxy chain', function () {
     const continuingAction = { type: 'push', continue: () => true, allowPush: false };
     mockPreProcessors.parseAction.resolves({ type: 'push' });
     mockPushProcessors.parsePush.resolves(continuingAction);
+    mockPushProcessors.checkEmptyBranch.resolves(continuingAction);
     mockPushProcessors.checkRepoInAuthorisedList.resolves(continuingAction);
     mockPushProcessors.checkCommitMessages.resolves(continuingAction);
     mockPushProcessors.checkAuthorEmails.resolves(continuingAction);
@@ -153,7 +154,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.pullRemote.called).to.be.true;
     expect(mockPushProcessors.checkHiddenCommits.called).to.be.true;
     expect(mockPushProcessors.writePack.called).to.be.true;
-    expect(mockPushProcessors.getMissingData.called).to.be.false;
+    expect(mockPushProcessors.checkEmptyBranch.called).to.be.true;
     expect(mockPushProcessors.audit.called).to.be.true;
 
     expect(result.type).to.equal('push');
@@ -166,6 +167,7 @@ describe('proxy chain', function () {
     const continuingAction = { type: 'push', continue: () => true, allowPush: false };
     mockPreProcessors.parseAction.resolves({ type: 'push' });
     mockPushProcessors.parsePush.resolves(continuingAction);
+    mockPushProcessors.checkEmptyBranch.resolves(continuingAction);
     mockPushProcessors.checkRepoInAuthorisedList.resolves(continuingAction);
     mockPushProcessors.checkCommitMessages.resolves(continuingAction);
     mockPushProcessors.checkAuthorEmails.resolves(continuingAction);
@@ -183,6 +185,7 @@ describe('proxy chain', function () {
 
     expect(mockPreProcessors.parseAction.called).to.be.true;
     expect(mockPushProcessors.parsePush.called).to.be.true;
+    expect(mockPushProcessors.checkEmptyBranch.called).to.be.true;
     expect(mockPushProcessors.checkRepoInAuthorisedList.called).to.be.true;
     expect(mockPushProcessors.checkCommitMessages.called).to.be.true;
     expect(mockPushProcessors.checkAuthorEmails.called).to.be.true;
@@ -191,7 +194,6 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.pullRemote.called).to.be.true;
     expect(mockPushProcessors.checkHiddenCommits.called).to.be.true;
     expect(mockPushProcessors.writePack.called).to.be.true;
-    expect(mockPushProcessors.getMissingData.called).to.be.false;
     expect(mockPushProcessors.audit.called).to.be.true;
 
     expect(result.type).to.equal('push');
@@ -204,6 +206,7 @@ describe('proxy chain', function () {
     const continuingAction = { type: 'push', continue: () => true, allowPush: false };
     mockPreProcessors.parseAction.resolves({ type: 'push' });
     mockPushProcessors.parsePush.resolves(continuingAction);
+    mockPushProcessors.checkEmptyBranch.resolves(continuingAction);
     mockPushProcessors.checkRepoInAuthorisedList.resolves(continuingAction);
     mockPushProcessors.checkCommitMessages.resolves(continuingAction);
     mockPushProcessors.checkAuthorEmails.resolves(continuingAction);
@@ -218,12 +221,12 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(continuingAction);
     mockPushProcessors.scanDiff.resolves(continuingAction);
     mockPushProcessors.blockForAuth.resolves(continuingAction);
-    mockPushProcessors.getMissingData.resolves(continuingAction);
 
     const result = await chain.executeChain(req);
 
     expect(mockPreProcessors.parseAction.called).to.be.true;
     expect(mockPushProcessors.parsePush.called).to.be.true;
+    expect(mockPushProcessors.checkEmptyBranch.called).to.be.true;
     expect(mockPushProcessors.checkRepoInAuthorisedList.called).to.be.true;
     expect(mockPushProcessors.checkCommitMessages.called).to.be.true;
     expect(mockPushProcessors.checkAuthorEmails.called).to.be.true;
@@ -239,7 +242,6 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.scanDiff.called).to.be.true;
     expect(mockPushProcessors.blockForAuth.called).to.be.true;
     expect(mockPushProcessors.audit.called).to.be.true;
-    expect(mockPushProcessors.getMissingData.called).to.be.true;
 
     expect(result.type).to.equal('push');
     expect(result.allowPush).to.be.false;
@@ -300,6 +302,7 @@ describe('proxy chain', function () {
 
     mockPreProcessors.parseAction.resolves(action);
     mockPushProcessors.parsePush.resolves(action);
+    mockPushProcessors.checkEmptyBranch.resolves(action);
     mockPushProcessors.checkRepoInAuthorisedList.resolves(action);
     mockPushProcessors.checkCommitMessages.resolves(action);
     mockPushProcessors.checkAuthorEmails.resolves(action);
@@ -321,7 +324,6 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
-    mockPushProcessors.getMissingData.resolves(action);
     const dbStub = sinon.stub(db, 'authorise').resolves(true);
 
     const result = await chain.executeChain(req);
@@ -348,6 +350,7 @@ describe('proxy chain', function () {
 
     mockPreProcessors.parseAction.resolves(action);
     mockPushProcessors.parsePush.resolves(action);
+    mockPushProcessors.checkEmptyBranch.resolves(action);
     mockPushProcessors.checkRepoInAuthorisedList.resolves(action);
     mockPushProcessors.checkCommitMessages.resolves(action);
     mockPushProcessors.checkAuthorEmails.resolves(action);
@@ -369,7 +372,6 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
-    mockPushProcessors.getMissingData.resolves(action);
 
     const dbStub = sinon.stub(db, 'reject').resolves(true);
 
@@ -397,6 +399,7 @@ describe('proxy chain', function () {
 
     mockPreProcessors.parseAction.resolves(action);
     mockPushProcessors.parsePush.resolves(action);
+    mockPushProcessors.checkEmptyBranch.resolves(action);
     mockPushProcessors.checkRepoInAuthorisedList.resolves(action);
     mockPushProcessors.checkCommitMessages.resolves(action);
     mockPushProcessors.checkAuthorEmails.resolves(action);
@@ -418,7 +421,6 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
-    mockPushProcessors.getMissingData.resolves(action);
 
     const error = new Error('Database error');
 
@@ -445,6 +447,7 @@ describe('proxy chain', function () {
 
     mockPreProcessors.parseAction.resolves(action);
     mockPushProcessors.parsePush.resolves(action);
+    mockPushProcessors.checkEmptyBranch.resolves(action);
     mockPushProcessors.checkRepoInAuthorisedList.resolves(action);
     mockPushProcessors.checkCommitMessages.resolves(action);
     mockPushProcessors.checkAuthorEmails.resolves(action);
@@ -466,7 +469,6 @@ describe('proxy chain', function () {
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
-    mockPushProcessors.getMissingData.resolves(action);
 
     const error = new Error('Database error');
 
