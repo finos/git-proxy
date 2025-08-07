@@ -1,4 +1,4 @@
-const passport = require("passport");
+const passport = require('passport');
 const local = require('./local');
 const activeDirectory = require('./activeDirectory');
 const oidc = require('./oidc');
@@ -19,12 +19,12 @@ const configure = async () => {
 
   for (const auth of authMethods) {
     const strategy = authStrategies[auth.type.toLowerCase()];
-    if (strategy && typeof strategy.configure === "function") {
+    if (strategy && typeof strategy.configure === 'function') {
       await strategy.configure(passport);
     }
   }
 
-  if (authMethods.some(auth => auth.type.toLowerCase() === "local")) {
+  if (authMethods.some((auth) => auth.type.toLowerCase() === 'local')) {
     await local.createDefaultAdmin();
   }
 

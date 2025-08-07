@@ -17,12 +17,12 @@ describe('blockForAuth', () => {
   beforeEach(() => {
     req = {
       protocol: 'https',
-      headers: { host: 'example.com' }
+      headers: { host: 'example.com' },
     };
 
     action = {
       id: 'push_123',
-      addStep: sinon.stub()
+      addStep: sinon.stub(),
     };
 
     stepInstance = new Step('temp');
@@ -34,7 +34,7 @@ describe('blockForAuth', () => {
 
     const blockForAuth = proxyquire('../../src/proxy/processors/push-action/blockForAuth', {
       '../../../service/urls': { getServiceUIURL: getServiceUIURLStub },
-      '../../actions': { Step: StepSpy }
+      '../../actions': { Step: StepSpy },
     });
 
     exec = blockForAuth.exec;
@@ -45,7 +45,6 @@ describe('blockForAuth', () => {
   });
 
   describe('exec', () => {
-
     it('should generate a correct shareable URL', async () => {
       await exec(req, action);
       expect(getServiceUIURLStub.calledOnce).to.be.true;
