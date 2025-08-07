@@ -50,7 +50,7 @@ describe('getDiff', () => {
   });
 
   it('should get diff between commits with no changes', async () => {
-    const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.get');
+    const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
     action.proxyGitPath = __dirname; // Temp dir parent path
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
@@ -73,7 +73,9 @@ describe('getDiff', () => {
 
     const result = await exec({}, action);
     expect(result.steps[0].error).to.be.true;
-    expect(result.steps[0].errorMessage).to.contain('Your push has been blocked because no commit data was found');
+    expect(result.steps[0].errorMessage).to.contain(
+      'Your push has been blocked because no commit data was found',
+    );
   });
 
   it('should throw an error if no commit data is provided', async () => {
@@ -86,7 +88,9 @@ describe('getDiff', () => {
 
     const result = await exec({}, action);
     expect(result.steps[0].error).to.be.true;
-    expect(result.steps[0].errorMessage).to.contain('Your push has been blocked because no commit data was found');
+    expect(result.steps[0].errorMessage).to.contain(
+      'Your push has been blocked because no commit data was found',
+    );
   });
 
   it('should handle empty commit hash in commitFrom', async () => {
