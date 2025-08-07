@@ -16,7 +16,6 @@ describe('checkUserPushPermission', () => {
   beforeEach(() => {
     logStub = sinon.stub(console, 'log');
     errorStub = sinon.stub(console, 'error');
-
     getUsersStub = sinon.stub();
     isUserPushAllowedStub = sinon.stub();
 
@@ -119,6 +118,18 @@ describe('checkUserPushPermission', () => {
       );
       expect(errorStub.lastCall.args[0]).to.equal(
         'Multiple users found with email address db-user@test.com, ending',
+      );
+    });
+
+    it('should return error when no user is set in the action', async () => {
+      action.user = null;
+      action.userEmail = null;
+      getUsersStub.resolves([]);
+      const result = await exec(req, action);
+      expect(result.steps).to.have.lengthOf(1);
+      expect(result.steps[0].error).to.be.true;
+      expect(result.steps[0].errorMessage).to.include(
+        'Push blocked: User not found. Please contact an administrator for support.',
       );
     });
   });
