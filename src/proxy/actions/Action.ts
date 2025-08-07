@@ -24,6 +24,7 @@ export enum ActionType {
 export interface CommitData {
   message: string;
   committer: string;
+  committerEmail: string;
   tree: string;
   parent: string;
   author: string;
@@ -62,6 +63,7 @@ class Action {
   message?: string;
   author?: string;
   user?: string;
+  userEmail?: string;
   attestation?: string;
   lastStep?: Step;
   proxyGitPath?: string;

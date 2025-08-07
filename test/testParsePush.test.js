@@ -157,7 +157,7 @@ describe('parsePackFile', () => {
       const step = action.steps[0];
       expect(step.stepName).to.equal('parsePackFile');
       expect(step.error).to.be.true;
-      expect(step.errorMessage).to.include('No data received');
+      expect(step.errorMessage).to.include('No body found in request');
     });
 
     it('should add error step if req.body is empty', async () => {
@@ -168,7 +168,7 @@ describe('parsePackFile', () => {
       const step = action.steps[0];
       expect(step.stepName).to.equal('parsePackFile');
       expect(step.error).to.be.true;
-      expect(step.errorMessage).to.include('No data received');
+      expect(step.errorMessage).to.include('No body found in request');
     });
 
     it('should add error step if no ref updates found', async () => {
@@ -742,6 +742,7 @@ describe('parsePackFile', () => {
         parent: '456',
         author: 'Au Thor',
         committer: 'Com Itter',
+        committerEmail: 'c@e.com',
         commitTimestamp: '222',
         message: 'Commit message here',
         authorEmail: 'a@e.com',
