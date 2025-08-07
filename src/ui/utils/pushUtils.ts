@@ -21,17 +21,19 @@ export const isTagPush = (pushData: PushData): boolean => {
 export const getDisplayTimestamp = (
   isTag: boolean,
   commitData: CommitData | null,
-  tagData?: TagData
+  tagData?: TagData,
 ): string => {
+  // For tag pushes, try to use tag timestamp if available
   if (isTag && tagData?.timestamp) {
-    return moment.unix(tagData.timestamp).toString();
+    return moment.unix(parseInt(tagData.timestamp)).toString();
   }
-  
+
+  // Fallback to commit timestamp for both commits and tags without timestamp
   if (commitData) {
     const timestamp = commitData.commitTimestamp || commitData.commitTs;
     return timestamp ? moment.unix(timestamp).toString() : 'N/A';
   }
-  
+
   return 'N/A';
 };
 
@@ -71,12 +73,12 @@ export const getShaOrTag = (pushData: PushData): string => {
   if (isTagPush(pushData)) {
     return getTagName(pushData.tag);
   }
-  
+
   if (!pushData.commitTo || typeof pushData.commitTo !== 'string') {
     console.warn('Invalid commitTo value:', pushData.commitTo);
     return 'N/A';
   }
-  
+
   return pushData.commitTo.substring(0, 8);
 };
 
@@ -89,35 +91,39 @@ export const getCommitterOrTagger = (pushData: PushData): string => {
   if (isTagPush(pushData) && pushData.user) {
     return pushData.user;
   }
-  
-  if (!pushData.commitData || !Array.isArray(pushData.commitData) || pushData.commitData.length === 0) {
+
+  if (
+    !pushData.commitData ||
+    !Array.isArray(pushData.commitData) ||
+    pushData.commitData.length === 0
+  ) {
     console.warn('Invalid or empty commitData:', pushData.commitData);
     return 'N/A';
   }
-  
+
   return pushData.commitData[0]?.committer || 'N/A';
 };
 
 /**
- * Gets the author (N/A for tag pushes)
+ * Gets the author (tagger for tag pushes)
  * @param {PushData} pushData - The push data
- * @return {string} The author username or 'N/A' for tag pushes
+ * @return {string} The author username for commits or tagger for tags
  */
 export const getAuthor = (pushData: PushData): string => {
   if (isTagPush(pushData)) {
-    return 'N/A';
+    return pushData.tagData?.[0]?.tagger || 'N/A';
   }
   return pushData.commitData[0]?.author || 'N/A';
 };
 
 /**
- * Gets the author email (N/A for tag pushes)
+ * Gets the author email (tagger email for tag pushes)
  * @param {PushData} pushData - The push data
- * @return {string} The author email or 'N/A' for tag pushes
+ * @return {string} The author email for commits or tagger email for tags
  */
 export const getAuthorEmail = (pushData: PushData): string => {
   if (isTagPush(pushData)) {
-    return 'N/A';
+    return pushData.tagData?.[0]?.taggerEmail || 'N/A';
   }
   return pushData.commitData[0]?.authorEmail || 'N/A';
 };
@@ -160,7 +166,8 @@ export const getGitHubUrl = {
   repo: (repoName: string) => `https://github.com/${repoName}`,
   commit: (repoName: string, sha: string) => `https://github.com/${repoName}/commit/${sha}`,
   branch: (repoName: string, branch: string) => `https://github.com/${repoName}/tree/${branch}`,
-  tag: (repoName: string, tagName: string) => `https://github.com/${repoName}/releases/tag/${tagName}`,
+  tag: (repoName: string, tagName: string) =>
+    `https://github.com/${repoName}/releases/tag/${tagName}`,
   user: (username: string) => `https://github.com/${username}`,
 };
 

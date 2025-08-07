@@ -367,15 +367,14 @@ const Dashboard: React.FC = () => {
                 <Table>
                   <TableHead>
                     <TableCell>Tag Name</TableCell>
-                    <TableCell>Type</TableCell>
                     <TableCell>Tagger</TableCell>
+                    <TableCell>Email</TableCell>
                     <TableCell>Message</TableCell>
                   </TableHead>
                   <TableBody>
                     {data.tagData.map((t) => (
                       <TableRow key={t.tagName}>
                         <TableCell>{t.tagName}</TableCell>
-                        <TableCell>{t.type}</TableCell>
                         <TableCell>
                           <a
                             href={getGitHubUrl.user(t.tagger)}
@@ -384,6 +383,13 @@ const Dashboard: React.FC = () => {
                           >
                             {t.tagger}
                           </a>
+                        </TableCell>
+                        <TableCell>
+                          {t.taggerEmail ? (
+                            <a href={`mailto:${t.taggerEmail}`}>{t.taggerEmail}</a>
+                          ) : (
+                            '-'
+                          )}
                         </TableCell>
                         <TableCell>{t.message}</TableCell>
                       </TableRow>

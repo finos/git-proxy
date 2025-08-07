@@ -4,13 +4,15 @@ import fs from 'fs';
 import lod from 'lodash';
 
 import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
-import { TagData } from '../../actions/Action';
+import { TagData } from '../../../types/models';
 import {
   EMPTY_COMMIT_HASH,
   PACK_SIGNATURE,
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
   GIT_OBJECT_TYPE_TAG,
+  BRANCH_PREFIX,
+  TAG_PREFIX,
 } from '../constants';
 const BitMask = require('bit-mask') as any;
 
@@ -39,10 +41,10 @@ async function exec(req: any, action: Action): Promise<Action> {
     const refUpdates = packetLines.filter((line) => line.includes('refs/'));
 
     if (refUpdates.length !== 1) {
-      step.log('Invalid number of branch updates.');
+      step.log('Invalid number of ref updates.');
       step.log(`Expected 1, but got ${refUpdates.length}`);
       step.setError(
-        'Your push has been blocked. Please make sure you are pushing to a single branch.',
+        'Your push has been blocked. Multi-ref pushes (multiple tags and/or branches) are not supported yet. Please push one ref at a time.',
       );
       action.addStep(step);
       return action;
@@ -64,8 +66,8 @@ async function exec(req: any, action: Action): Promise<Action> {
     // Strip everything after NUL, which is cap-list from
     // https://git-scm.com/docs/http-protocol#_smart_server_response
     const refName = ref.replace(/\0.*/, '').trim();
-    const isTag = refName.startsWith('refs/tags/');
-    const isBranch = refName.startsWith('refs/heads/');
+    const isTag = refName.startsWith(TAG_PREFIX);
+    const isBranch = refName.startsWith(BRANCH_PREFIX);
 
     action.branch = isBranch ? refName : undefined;
     action.tag = isTag ? refName : undefined;
@@ -121,8 +123,6 @@ async function exec(req: any, action: Action): Promise<Action> {
       action.user = action.commitData.at(-1)!.committer;
     } else if (action.tagData?.length) {
       action.user = action.tagData.at(-1)!.tagger;
-    } else {
-      throw new Error('No commit or tag data parsed from packfile');
     }
     step.content = {
       meta: meta,
@@ -157,18 +157,20 @@ function parseTag(x: CommitContent): TagData {
     .trim();
   if (!rawTagger) throw new Error('Invalid tag object: no tagger line');
 
-  const taggerName = rawTagger.split('<')[0].trim();
+  const taggerInfo = parsePersonLine(rawTagger);
 
   const messageIndex = lines.indexOf('');
   const message = lines.slice(messageIndex + 1).join('\n');
 
-  if (!object || !typeLine || !tagName || !taggerName) throw new Error('Invalid tag object');
+  if (!object || !typeLine || !tagName || !taggerInfo.name) throw new Error('Invalid tag object');
 
   return {
     object,
     type: typeLine,
     tagName,
-    tagger: taggerName,
+    tagger: taggerInfo.name,
+    taggerEmail: taggerInfo.email,
+    timestamp: taggerInfo.timestamp,
     message,
   };
 }

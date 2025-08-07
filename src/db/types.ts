@@ -42,7 +42,10 @@ export type Push = {
   rejected: boolean;
   repo: string;
   repoName: string;
+  tag?: string;
+  tagData?: object;
   timepstamp: string;
   type: string;
   url: string;
+  user?: string;
 };

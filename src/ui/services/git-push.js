@@ -45,17 +45,21 @@ const getPushes = async (
   await axios(url.toString(), { withCredentials: true })
     .then((response) => {
       const data = response.data;
+      console.log('getPushes', data);
       setData(data);
     })
     .catch((error) => {
       setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
-        setErrorMessage('Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.');
+        setErrorMessage(
+          'Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.',
+        );
       } else {
         setErrorMessage(`Error fetching pushes: ${error.response.data.message}`);
       }
-    }).finally(() => {
+    })
+    .finally(() => {
       setIsLoading(false);
     });
 };

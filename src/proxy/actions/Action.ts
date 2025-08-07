@@ -1,5 +1,6 @@
 import { getProxyUrl } from '../../config';
 import { Step } from './Step';
+import { TagData } from '../../types/models';
 
 export enum RequestType {
   // eslint-disable-next-line no-unused-vars
@@ -30,13 +31,6 @@ export interface CommitData {
   commitTimestamp?: string;
 }
 
-export interface TagData {
-  object: string;
-  type: string;
-  tagName: string;
-  tagger: string;
-  message: string;
-}
 /**
  * Class representing a Push.
  */
