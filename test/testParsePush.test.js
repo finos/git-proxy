@@ -8,7 +8,7 @@ const {
   getPackMeta,
   parsePacketLines,
   parseTag,
-  unpack
+  unpack,
 } = require('../src/proxy/processors/push-action/parsePush');
 
 import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
@@ -19,7 +19,7 @@ import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/pr
  * @param {string} commitContent - Content of the commit object.
  * @param {number} type - Type of the object (1 for commit).
  * @return {Buffer} - The generated PACK buffer.
- */ 
+ */
 function createSamplePackBuffer(
   numEntries = 1,
   commitContent = 'tree 123\nparent 456\nauthor A <a@a> 123 +0000\ncommitter C <c@c> 456 +0000\n\nmessage',
@@ -56,7 +56,7 @@ function createSamplePackBuffer(
  */
 function createPacketLineBuffer(lines) {
   let buffer = Buffer.alloc(0);
-  lines.forEach(line => {
+  lines.forEach((line) => {
     const lengthInHex = (line.length + 4).toString(16).padStart(4, '0');
     buffer = Buffer.concat([buffer, Buffer.from(lengthInHex, 'ascii'), Buffer.from(line, 'ascii')]);
   });
@@ -70,7 +70,7 @@ function createPacketLineBuffer(lines) {
  * @param {string} tagContent - Content of the tag object.
  * @param {number} type - Type of the object (4 for tag).
  * @return {Buffer} - The generated PACK buffer.
- */ 
+ */
 function createSampleTagPackBuffer(
   tagContent = 'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger Test Tagger <tagger@example.com> 1234567890 +0000\n\nTag message',
   type = 4,
@@ -180,8 +180,8 @@ describe('parsePackFile', () => {
       const step = action.steps[0];
       expect(step.stepName).to.equal('parsePackFile');
       expect(step.error).to.be.true;
-      expect(step.errorMessage).to.include('pushing to a single branch');
-      expect(step.logs[0]).to.include('Invalid number of branch updates');
+      expect(step.errorMessage).to.include('push one ref at a time');
+      expect(step.logs[0]).to.include('Invalid number of ref updates');
     });
 
     it('should add error step if multiple ref updates found', async () => {
@@ -196,8 +196,8 @@ describe('parsePackFile', () => {
       const step = action.steps[0];
       expect(step.stepName).to.equal('parsePackFile');
       expect(step.error).to.be.true;
-      expect(step.errorMessage).to.include('pushing to a single branch');
-      expect(step.logs[0]).to.include('Invalid number of branch updates');
+      expect(step.errorMessage).to.include('push one ref at a time');
+      expect(step.logs[0]).to.include('Invalid number of ref updates');
       expect(step.logs[1]).to.include('Expected 1, but got 2');
     });
 
@@ -227,12 +227,13 @@ describe('parsePackFile', () => {
       const ref = 'refs/heads/main';
       const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
 
-      const commitContent = "tree 1234567890abcdef1234567890abcdef12345678\n" +
-        "parent abcdef1234567890abcdef1234567890abcdef12\n" +
-        "author Test Author <author@example.com> 1234567890 +0000\n" +
-        "committer Test Committer <committer@example.com> 1234567890 +0000\n\n" +
-        "feat: Add new feature\n\n" +
-        "This is the commit body.";
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'parent abcdef1234567890abcdef1234567890abcdef12\n' +
+        'author Test Author <author@example.com> 1234567890 +0000\n' +
+        'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
+        'feat: Add new feature\n\n' +
+        'This is the commit body.';
       const commitContentBuffer = Buffer.from(commitContent, 'utf8');
 
       zlibInflateStub.returns(commitContentBuffer);
@@ -245,7 +246,7 @@ describe('parsePackFile', () => {
       expect(result).to.equal(action);
 
       // Check step and action properties
-      const step = action.steps.find(s => s.stepName === 'parsePackFile');
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
       expect(step).to.exist;
       expect(step.error).to.be.false;
       expect(step.errorMessage).to.be.null;
@@ -257,7 +258,7 @@ describe('parsePackFile', () => {
       expect(action.user).to.equal('Test Committer');
 
       // Check parsed commit data
-      const commitMessages = action.commitData.map(commit => commit.message);
+      const commitMessages = action.commitData.map((commit) => commit.message);
       expect(action.commitData).to.be.an('array').with.lengthOf(1);
       expect(commitMessages[0]).to.equal('feat: Add new feature\n\nThis is the commit body.');
 
@@ -284,10 +285,11 @@ describe('parsePackFile', () => {
       const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
 
       // Commit content without a parent line
-      const commitContent = "tree 1234567890abcdef1234567890abcdef12345678\n" +
-        "author Test Author <test@example.com> 1234567890 +0000\n" +
-        "committer Test Committer <committer@example.com> 1234567890 +0100\n\n" +
-        "feat: Initial commit";
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'author Test Author <test@example.com> 1234567890 +0000\n' +
+        'committer Test Committer <committer@example.com> 1234567890 +0100\n\n' +
+        'feat: Initial commit';
       const parentFromCommit = '0'.repeat(40); // Expected parent hash
 
       const commitContentBuffer = Buffer.from(commitContent, 'utf8');
@@ -299,7 +301,7 @@ describe('parsePackFile', () => {
       const result = await exec(req, action);
 
       expect(result).to.equal(action);
-      const step = action.steps.find(s => s.stepName === 'parsePackFile');
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
       expect(step).to.exist;
       expect(step.error).to.be.false;
 
@@ -323,11 +325,12 @@ describe('parsePackFile', () => {
 
       const parent1 = 'b1'.repeat(20);
       const parent2 = 'b2'.repeat(20);
-      const commitContent = "tree 1234567890abcdef1234567890abcdef12345678\n" +
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
         `parent ${parent1}\n` +
         `parent ${parent2}\n` +
-        "author Test Author <test@example.com> 1234567890 +0000\n" +
-        "committer Test Committer <committer@example.com> 1234567890 +0100\n\n" +
+        'author Test Author <test@example.com> 1234567890 +0000\n' +
+        'committer Test Committer <committer@example.com> 1234567890 +0100\n\n' +
         "Merge branch 'feature'";
 
       const commitContentBuffer = Buffer.from(commitContent, 'utf8');
@@ -340,7 +343,7 @@ describe('parsePackFile', () => {
       expect(result).to.equal(action);
 
       // Check step and action properties
-      const step = action.steps.find(s => s.stepName === 'parsePackFile');
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
       expect(step).to.exist;
       expect(step.error).to.be.false;
 
@@ -360,10 +363,11 @@ describe('parsePackFile', () => {
       const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
 
       // Malformed commit content - missing tree line
-      const commitContent = "parent abcdef1234567890abcdef1234567890abcdef12\n" +
-        "author Test Author <author@example.com> 1678886400 +0000\n" +
-        "committer Test Committer <committer@example.com> 1678886460 +0100\n\n" +
-        "feat: Missing tree";
+      const commitContent =
+        'parent abcdef1234567890abcdef1234567890abcdef12\n' +
+        'author Test Author <author@example.com> 1678886400 +0000\n' +
+        'committer Test Committer <committer@example.com> 1678886460 +0100\n\n' +
+        'feat: Missing tree';
       const commitContentBuffer = Buffer.from(commitContent, 'utf8');
       zlibInflateStub.returns(commitContentBuffer);
 
@@ -373,7 +377,7 @@ describe('parsePackFile', () => {
       const result = await exec(req, action);
       expect(result).to.equal(action);
 
-      const step = action.steps.find(s => s.stepName === 'parsePackFile');
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
       expect(step).to.exist;
       expect(step.error).to.be.true;
       expect(step.errorMessage).to.include('Invalid commit data: Missing tree');
@@ -384,7 +388,7 @@ describe('parsePackFile', () => {
       const newCommit = 'b'.repeat(40);
       const ref = 'refs/heads/main';
       const packetLines = [`${oldCommit} ${newCommit} ${ref}\0capa\n`];
-    
+
       const packetLineBuffer = createPacketLineBuffer(packetLines);
       const garbageData = Buffer.from('NOT PACK DATA');
       req.body = Buffer.concat([packetLineBuffer, garbageData]);
@@ -411,11 +415,12 @@ describe('parsePackFile', () => {
         'some other data containing PACK keyword', // Include "PACK" within a packet line's content
       ];
 
-      const commitContent = "tree 1234567890abcdef1234567890abcdef12345678\n" +
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
         `parent ${oldCommit}\n` +
-        "author Test Author <author@example.com> 1234567890 +0000\n" +
-        "committer Test Committer <committer@example.com> 1234567890 +0000\n\n" +
-        "Test commit message with PACK inside";
+        'author Test Author <author@example.com> 1234567890 +0000\n' +
+        'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
+        'Test commit message with PACK inside';
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
 
       zlibInflateStub.returns(Buffer.from(commitContent, 'utf8'));
@@ -450,11 +455,12 @@ describe('parsePackFile', () => {
       const ref = 'refs/heads/master';
       const packetLines = [`${oldCommit} ${newCommit} ${ref}\0`];
 
-      const commitContent = "tree 1234567890abcdef1234567890abcdef12345678\n" +
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
         `parent ${oldCommit}\n` +
-        "author Test Author <author@example.com> 1234567890 +0000\n" +
-        "committer Test Committer <committer@example.com> 1234567890 +0000\n\n" +
-        "Commit A";
+        'author Test Author <author@example.com> 1234567890 +0000\n' +
+        'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
+        'Commit A';
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       zlibInflateStub.returns(Buffer.from(commitContent, 'utf8'));
 
@@ -503,7 +509,7 @@ describe('parsePackFile', () => {
 
       expect(result).to.equal(action);
 
-      const step = action.steps.find(s => s.stepName === 'parsePackFile');
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
       expect(step).to.exist;
       expect(step.error).to.be.false;
       expect(action.branch).to.equal(ref);
@@ -520,7 +526,8 @@ describe('parsePackFile', () => {
       const ref = 'refs/tags/v1.0.0';
       const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
 
-      const tagContent = 'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger Test Tagger <tagger@example.com> 1234567890 +0000\n\nThis is a test tag message';
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger Test Tagger <tagger@example.com> 1234567890 +0000\n\nThis is a test tag message';
       const tagContentBuffer = Buffer.from(tagContent, 'utf8');
 
       zlibInflateStub.returns(tagContentBuffer);
@@ -532,7 +539,7 @@ describe('parsePackFile', () => {
       expect(result).to.equal(action);
 
       // Check step and action properties
-      const step = action.steps.find(s => s.stepName === 'parsePackFile');
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
       expect(step).to.exist;
       expect(step.error).to.be.false;
       expect(step.errorMessage).to.be.null;
@@ -552,7 +559,7 @@ describe('parsePackFile', () => {
       expect(parsedTag.tagName).to.equal('v1.0.0');
       expect(parsedTag.tagger).to.equal('Test Tagger');
       expect(parsedTag.message).to.equal('This is a test tag message');
-      
+
       expect(action.user).to.equal('Test Tagger');
     });
 
@@ -563,7 +570,8 @@ describe('parsePackFile', () => {
       const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
 
       // Tag content without tagger line
-      const malformedTagContent = 'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\n\nTag without tagger';
+      const malformedTagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\n\nTag without tagger';
       const tagContentBuffer = Buffer.from(malformedTagContent, 'utf8');
 
       zlibInflateStub.returns(tagContentBuffer);
@@ -580,7 +588,7 @@ describe('parsePackFile', () => {
       expect(action.actionType).to.equal('tag');
 
       // Should have error due to parsing failure
-      const step = action.steps.find(s => s.stepName === 'parsePackFile');
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
       expect(step).to.exist;
       expect(step.error).to.be.true;
       expect(step.errorMessage).to.include('Invalid tag object: no tagger line');
@@ -593,7 +601,8 @@ describe('parsePackFile', () => {
       const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
 
       // Tag content missing object field
-      const incompleteTagContent = 'type commit\ntag v2.0.0\ntagger Test Tagger <tagger@example.com> 1234567890 +0000\n\nIncomplete tag';
+      const incompleteTagContent =
+        'type commit\ntag v2.0.0\ntagger Test Tagger <tagger@example.com> 1234567890 +0000\n\nIncomplete tag';
       const tagContentBuffer = Buffer.from(incompleteTagContent, 'utf8');
 
       zlibInflateStub.returns(tagContentBuffer);
@@ -606,9 +615,9 @@ describe('parsePackFile', () => {
 
       expect(action.tag).to.equal(ref);
       expect(action.actionType).to.equal('tag');
-      
+
       // Should have error due to parsing failure
-      const step = action.steps.find(s => s.stepName === 'parsePackFile');
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
       expect(step).to.exist;
       expect(step.error).to.be.true;
       expect(step.errorMessage).to.include('Invalid tag object');
@@ -620,7 +629,8 @@ describe('parsePackFile', () => {
       const ref = 'refs/tags/v3.0.0-beta1';
       const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
 
-      const complexMessage = 'Release v3.0.0-beta1\n\nThis is a major release with:\n- Feature A\n- Feature B\n\nBreaking changes:\n- API change in module X';
+      const complexMessage =
+        'Release v3.0.0-beta1\n\nThis is a major release with:\n- Feature A\n- Feature B\n\nBreaking changes:\n- API change in module X';
       const tagContent = `object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v3.0.0-beta1\ntagger Release Bot <bot@company.com> 1678886400 +0000\n\n${complexMessage}`;
       const tagContentBuffer = Buffer.from(tagContent, 'utf8');
 
@@ -632,12 +642,12 @@ describe('parsePackFile', () => {
       const result = await exec(req, action);
       expect(result).to.equal(action);
 
-      const step = action.steps.find(s => s.stepName === 'parsePackFile');
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
       expect(step.error).to.be.false;
 
       expect(action.tag).to.equal(ref);
       expect(action.tagData).to.be.an('array').with.lengthOf(1);
-      
+
       const parsedTag = action.tagData[0];
       expect(parsedTag.tagName).to.equal('v3.0.0-beta1');
       expect(parsedTag.tagger).to.equal('Release Bot');
@@ -662,13 +672,13 @@ describe('parsePackFile', () => {
 
     it('should handle buffer exactly 12 bytes long', () => {
       const buffer = createSamplePackBuffer(1).slice(0, 12); // Only header
-        const [meta, contentBuff] = getPackMeta(buffer);
+      const [meta, contentBuff] = getPackMeta(buffer);
 
-        expect(meta).to.deep.equal({
-          sig: PACK_SIGNATURE,
-          version: 2,
-          entries: 1,
-        });
+      expect(meta).to.deep.equal({
+        sig: PACK_SIGNATURE,
+        version: 2,
+        entries: 1,
+      });
       expect(contentBuff.length).to.equal(0); // No content left
     });
   });
@@ -714,7 +724,10 @@ describe('parsePackFile', () => {
 
   describe('getCommitData', () => {
     it('should return empty array if no type 1 contents', () => {
-      const contents = [{ type: 2, content: 'blob' }, { type: 3, content: 'tree' }];
+      const contents = [
+        { type: 2, content: 'blob' },
+        { type: 3, content: 'tree' },
+      ];
       expect(getCommitData(contents)).to.deep.equal([]);
     });
 
@@ -810,37 +823,41 @@ describe('parsePackFile', () => {
     });
 
     it('should correctly parse a commit with a GPG signature header', () => {
-      const gpgSignedCommit = "tree b4d3c0ffee1234567890abcdef1234567890aabbcc\n" +
-        "parent 01dbeef9876543210fedcba9876543210fedcba\n" +
-        "author Test Author <test.author@example.com> 1744814600 +0100\n" +
-        "committer Test Committer <test.committer@example.com> 1744814610 +0200\n" +
-        "gpgsig -----BEGIN PGP SIGNATURE-----\n \n" +
-        " wsFcBAABCAAQBQJn/8ISCRC1aQ7uu5UhlAAAntAQACeyQd6IykNXiN6m9DfVp8DJ\n" +
-        " UsY64ws+Td0inrEee+cHXVI9uJn15RJYQkICwlM4TZsVGav7nYaVqO+gfAg2ORAH\n" +
-        " ghUnwSFFs7ucN/p0a47ItkJmt04+jQIFlZIC+wy1u2H3aKJwqaF+kGP5SA33ahgV\n" +
-        " ZWviKodXFki8/G+sKB63q1qrDw6aELtftEgeAPQUcuLzj+vu/m3dWrDbatfUXMkC\n" +
-        " JC6PbFajqrJ5pEtFwBqqRE+oIsOM9gkNAti1yDD5eoS+bNXACe0hT0+UoIzn5a34\n" +
-        " xcElXTSdAK/MRjGiLN91G2nWvlbpM5wAEqr5Bl5ealCc6BbWfPxbP46slaE5DfkD\n" +
-        " u0+RkVX06MSSPqzOmEV14ZWKap5C19FpF9o/rY8vtLlCxjWMhtUvvdR4OQfQpEDY\n" +
-        " eTqzCHRnM3+7r3ABAWt9v7cG99bIMEs3sGcMy11HMeaoBpye6vCIP4ghNnoB1hUJ\n" +
-        " D7MD77jzk4Kbf4IzS5omExyMu3AiNZecZX4+1w/527yPhv3s/HB1Gfz0oCUned+6\n" +
-        " b9Kkle+krsQ/EK/4gPcb/Kb1cTcm3HhjaOSYwA+JpApJQ0mrduH34AT5MZJuIPFe\n" +
-        " QheLzQI1d2jmFs11GRC5hc0HBk1WmGm6U8+FBuxCX0ECZPdYeQJjUeWjnNeUoE6a\n" +
-        " 5lytZU4Onk57nUhIMSrx\n" +
-        " =IxZr\n" +
-        " -----END PGP SIGNATURE-----\n\n" +
-        "This is the commit message.\n" +
-        "It can span multiple lines.\n\n" +
-        "And include blank lines internally.";
+      const gpgSignedCommit =
+        'tree b4d3c0ffee1234567890abcdef1234567890aabbcc\n' +
+        'parent 01dbeef9876543210fedcba9876543210fedcba\n' +
+        'author Test Author <test.author@example.com> 1744814600 +0100\n' +
+        'committer Test Committer <test.committer@example.com> 1744814610 +0200\n' +
+        'gpgsig -----BEGIN PGP SIGNATURE-----\n \n' +
+        ' wsFcBAABCAAQBQJn/8ISCRC1aQ7uu5UhlAAAntAQACeyQd6IykNXiN6m9DfVp8DJ\n' +
+        ' UsY64ws+Td0inrEee+cHXVI9uJn15RJYQkICwlM4TZsVGav7nYaVqO+gfAg2ORAH\n' +
+        ' ghUnwSFFs7ucN/p0a47ItkJmt04+jQIFlZIC+wy1u2H3aKJwqaF+kGP5SA33ahgV\n' +
+        ' ZWviKodXFki8/G+sKB63q1qrDw6aELtftEgeAPQUcuLzj+vu/m3dWrDbatfUXMkC\n' +
+        ' JC6PbFajqrJ5pEtFwBqqRE+oIsOM9gkNAti1yDD5eoS+bNXACe0hT0+UoIzn5a34\n' +
+        ' xcElXTSdAK/MRjGiLN91G2nWvlbpM5wAEqr5Bl5ealCc6BbWfPxbP46slaE5DfkD\n' +
+        ' u0+RkVX06MSSPqzOmEV14ZWKap5C19FpF9o/rY8vtLlCxjWMhtUvvdR4OQfQpEDY\n' +
+        ' eTqzCHRnM3+7r3ABAWt9v7cG99bIMEs3sGcMy11HMeaoBpye6vCIP4ghNnoB1hUJ\n' +
+        ' D7MD77jzk4Kbf4IzS5omExyMu3AiNZecZX4+1w/527yPhv3s/HB1Gfz0oCUned+6\n' +
+        ' b9Kkle+krsQ/EK/4gPcb/Kb1cTcm3HhjaOSYwA+JpApJQ0mrduH34AT5MZJuIPFe\n' +
+        ' QheLzQI1d2jmFs11GRC5hc0HBk1WmGm6U8+FBuxCX0ECZPdYeQJjUeWjnNeUoE6a\n' +
+        ' 5lytZU4Onk57nUhIMSrx\n' +
+        ' =IxZr\n' +
+        ' -----END PGP SIGNATURE-----\n\n' +
+        'This is the commit message.\n' +
+        'It can span multiple lines.\n\n' +
+        'And include blank lines internally.';
 
       const contents = [
         { type: 1, content: gpgSignedCommit },
-        { type: 1, content: `tree 111\nparent 000\nauthor A1 <a1@e.com> 1744814600 +0200\ncommitter C1 <c1@e.com> 1744814610 +0200\n\nMsg1` }
+        {
+          type: 1,
+          content: `tree 111\nparent 000\nauthor A1 <a1@e.com> 1744814600 +0200\ncommitter C1 <c1@e.com> 1744814610 +0200\n\nMsg1`,
+        },
       ];
 
       const result = getCommitData(contents);
       expect(result).to.be.an('array').with.lengthOf(2);
-  
+
       // Check the GPG signed commit data
       const gpgResult = result[0];
       expect(gpgResult.tree).to.equal('b4d3c0ffee1234567890abcdef1234567890aabbcc');
@@ -849,8 +866,10 @@ describe('parsePackFile', () => {
       expect(gpgResult.committer).to.equal('Test Committer');
       expect(gpgResult.authorEmail).to.equal('test.author@example.com');
       expect(gpgResult.commitTimestamp).to.equal('1744814610');
-      expect(gpgResult.message).to.equal(`This is the commit message.\nIt can span multiple lines.\n\nAnd include blank lines internally.`);
-  
+      expect(gpgResult.message).to.equal(
+        `This is the commit message.\nIt can span multiple lines.\n\nAnd include blank lines internally.`,
+      );
+
       // Sanity check: the second commit should be the simple commit
       const simpleResult = result[1];
       expect(simpleResult.message).to.equal('Msg1');
@@ -864,27 +883,31 @@ describe('parsePackFile', () => {
 
   describe('parseTag', () => {
     it('should parse a valid tag object correctly', () => {
-      const tagContent = 'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger John Doe <john@example.com> 1678886400 +0000\n\nFirst stable release';
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger John Doe <john@example.com> 1678886400 +0000\n\nFirst stable release';
       const tagObject = { content: tagContent };
-      
+
       const result = parseTag(tagObject);
-      
+
       expect(result).to.deep.equal({
         object: '1234567890abcdef1234567890abcdef12345678',
         type: 'commit',
         tagName: 'v1.0.0',
         tagger: 'John Doe',
+        taggerEmail: 'john@example.com',
+        timestamp: '1678886400',
         message: 'First stable release',
       });
     });
 
     it('should parse tag with multi-line message correctly', () => {
-      const complexMessage = 'Release v2.0.0\n\nMajor release with:\n- Feature A\n- Feature B\n\nBreaking changes included.';
+      const complexMessage =
+        'Release v2.0.0\n\nMajor release with:\n- Feature A\n- Feature B\n\nBreaking changes included.';
       const tagContent = `object abcdef1234567890abcdef1234567890abcdef12\ntype commit\ntag v2.0.0\ntagger Release Bot <bot@company.com> 1678972800 +0000\n\n${complexMessage}`;
       const tagObject = { content: tagContent };
-      
+
       const result = parseTag(tagObject);
-      
+
       expect(result.object).to.equal('abcdef1234567890abcdef1234567890abcdef12');
       expect(result.type).to.equal('commit');
       expect(result.tagName).to.equal('v2.0.0');
@@ -893,61 +916,68 @@ describe('parsePackFile', () => {
     });
 
     it('should handle tag with empty message', () => {
-      const tagContent = 'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger Jane Doe <jane@example.com> 1678886400 +0000\n\n';
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger Jane Doe <jane@example.com> 1678886400 +0000\n\n';
       const tagObject = { content: tagContent };
-      
+
       const result = parseTag(tagObject);
-      
+
       expect(result.message).to.equal('');
       expect(result.tagName).to.equal('v1.0.0');
       expect(result.tagger).to.equal('Jane Doe');
     });
 
     it('should throw error when tagger line is missing', () => {
-      const tagContent = 'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\n\nTag without tagger';
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\n\nTag without tagger';
       const tagObject = { content: tagContent };
-      
+
       expect(() => parseTag(tagObject)).to.throw('Invalid tag object: no tagger line');
     });
 
     it('should throw error when object line is missing', () => {
-      const tagContent = 'type commit\ntag v1.0.0\ntagger John Doe <john@example.com> 1678886400 +0000\n\nTag without object';
+      const tagContent =
+        'type commit\ntag v1.0.0\ntagger John Doe <john@example.com> 1678886400 +0000\n\nTag without object';
       const tagObject = { content: tagContent };
-      
+
       expect(() => parseTag(tagObject)).to.throw('Invalid tag object');
     });
 
     it('should throw error when type line is missing', () => {
-      const tagContent = 'object 1234567890abcdef1234567890abcdef12345678\ntag v1.0.0\ntagger John Doe <john@example.com> 1678886400 +0000\n\nTag without type';
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntag v1.0.0\ntagger John Doe <john@example.com> 1678886400 +0000\n\nTag without type';
       const tagObject = { content: tagContent };
-      
+
       expect(() => parseTag(tagObject)).to.throw('Invalid tag object');
     });
 
     it('should throw error when tag name is missing', () => {
-      const tagContent = 'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntagger John Doe <john@example.com> 1678886400 +0000\n\nTag without name';
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntagger John Doe <john@example.com> 1678886400 +0000\n\nTag without name';
       const tagObject = { content: tagContent };
-      
+
       expect(() => parseTag(tagObject)).to.throw('Invalid tag object');
     });
 
     it('should handle tagger with complex email format', () => {
-      const tagContent = 'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger John Doe (Developer) <john.doe+git@company.example.com> 1678886400 +0100\n\nTag with complex tagger';
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger John Doe (Developer) <john.doe+git@company.example.com> 1678886400 +0100\n\nTag with complex tagger';
       const tagObject = { content: tagContent };
-      
+
       const result = parseTag(tagObject);
-      
+
       expect(result.tagger).to.equal('John Doe (Developer)');
       expect(result.tagName).to.equal('v1.0.0');
       expect(result.message).to.equal('Tag with complex tagger');
     });
 
     it('should handle tag pointing to different object types', () => {
-      const tagContent = 'object 1234567890abcdef1234567890abcdef12345678\ntype tree\ntag tree-tag\ntagger Tree Tagger <tree@example.com> 1678886400 +0000\n\nTag pointing to tree object';
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype tree\ntag tree-tag\ntagger Tree Tagger <tree@example.com> 1678886400 +0000\n\nTag pointing to tree object';
       const tagObject = { content: tagContent };
-      
+
       const result = parseTag(tagObject);
-      
+
       expect(result.type).to.equal('tree');
       expect(result.tagName).to.equal('tree-tag');
       expect(result.tagger).to.equal('Tree Tagger');
@@ -956,11 +986,7 @@ describe('parsePackFile', () => {
 
   describe('parsePacketLines', () => {
     it('should parse multiple valid packet lines correctly and return the correct offset', () => {
-      const lines = [
-        'line1 content',
-        'line2 more content\nwith newline',
-        'line3',
-      ];
+      const lines = ['line1 content', 'line2 more content\nwith newline', 'line3'];
       const buffer = createPacketLineBuffer(lines); // Helper adds "0000" at the end
       const expectedOffset = buffer.length; // Should indicate the end of the buffer after flush packet
       const [parsedLines, offset] = parsePacketLines(buffer);
@@ -1004,7 +1030,7 @@ describe('parsePackFile', () => {
       buffer = Buffer.concat([buffer, extraData]);
 
       const expectedOffset = buffer.length - extraData.length;
-      const [parsedLines, offset] = parsePacketLines(buffer);  
+      const [parsedLines, offset] = parsePacketLines(buffer);
 
       expect(parsedLines).to.deep.equal(lines);
       expect(offset).to.equal(expectedOffset);
@@ -1013,7 +1039,9 @@ describe('parsePackFile', () => {
     it('should throw an error if a packet line length exceeds buffer bounds', () => {
       // 000A -> length 10, but actual line length is only 3 bytes
       const invalidLengthBuffer = Buffer.from('000Aabc');
-      expect(() => parsePacketLines(invalidLengthBuffer)).to.throw(/Invalid packet line length 000A/);
+      expect(() => parsePacketLines(invalidLengthBuffer)).to.throw(
+        /Invalid packet line length 000A/,
+      );
     });
 
     it('should throw an error for non-hex length prefix (all non-hex)', () => {
@@ -1027,7 +1055,7 @@ describe('parsePackFile', () => {
       expect(() => parsePacketLines(invalidHexBuffer)).to.throw(/Invalid packet line length 000z/);
     });
 
-     it('should handle buffer ending exactly after a valid line length without content', () => {
+    it('should handle buffer ending exactly after a valid line length without content', () => {
       // 0008 -> length 8, but buffer ends after header (no content)
       const incompleteBuffer = Buffer.from('0008');
       expect(() => parsePacketLines(incompleteBuffer)).to.throw(/Invalid packet line length 0008/);

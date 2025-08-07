@@ -23,11 +23,13 @@ export interface CommitData {
 }
 
 export interface TagData {
+  object?: string;
+  type: string; // commit | tree | blob | tag or 'lightweight' | 'annotated' for legacy
   tagName: string;
-  type: 'lightweight' | 'annotated';
   tagger: string;
+  taggerEmail?: string;
+  timestamp?: string;
   message: string;
-  timestamp?: number;
 }
 
 export interface PushData {

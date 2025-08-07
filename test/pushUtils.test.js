@@ -183,8 +183,8 @@ describe('pushUtils', () => {
   });
 
   describe('getAuthor', () => {
-    it('returns N/A for tag push', () => {
-      expect(getAuthor(mockTagPush)).to.equal('N/A');
+    it('returns tagger for tag push', () => {
+      expect(getAuthor(mockTagPush)).to.equal('release-bot');
     });
 
     it('returns author for commit push', () => {

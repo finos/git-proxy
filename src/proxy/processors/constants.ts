@@ -1,4 +1,5 @@
 export const BRANCH_PREFIX = 'refs/heads/';
+export const TAG_PREFIX = 'refs/tags/';
 export const EMPTY_COMMIT_HASH = '0000000000000000000000000000000000000000';
 export const FLUSH_PACKET = '0000';
 export const PACK_SIGNATURE = 'PACK';
