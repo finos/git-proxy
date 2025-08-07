@@ -97,8 +97,9 @@ describe('checkCommitMessages', () => {
     });
 
     it('should not error when commit data is empty', async () => {
-      // Empty commit data is a valid scenario that happens when making a branch from an unapproved commit
-      // This is remedied in the getMissingData.exec action  
+      // Empty commit data happens when making a branch from an unapproved commit
+      // or when pushing an empty branch or deleting a branch
+      // This is handled in the checkEmptyBranch.exec action  
       action.commitData = [];
       const result = await exec(req, action);
 
