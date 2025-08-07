@@ -11,7 +11,7 @@ const {
   unpack
 } = require('../src/proxy/processors/push-action/parsePush');
 
-import { FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
+import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
 
 /**
  * Creates a simplified sample PACK buffer for testing.
@@ -95,6 +95,20 @@ function createSampleTagPackBuffer(
   const checksum = Buffer.alloc(20);
 
   return Buffer.concat([header, packContent, checksum]);
+}
+
+/**
+ * Creates an empty PACK buffer for testing.
+ * @return {Buffer} - The generated buffer containing the PACK header and checksum.
+ */
+function createEmptyPackBuffer() {
+  const header = Buffer.alloc(12);
+  header.write(PACK_SIGNATURE, 0, 4, 'utf-8'); // signature
+  header.writeUInt32BE(2, 4); // version
+  header.writeUInt32BE(0, 8); // number of entries
+
+  const checksum = Buffer.alloc(20); // fake checksum (all zeros)
+  return Buffer.concat([header, checksum]);
 }
 
 describe('parsePackFile', () => {
@@ -474,6 +488,28 @@ describe('parsePackFile', () => {
       expect(step.stepName).to.equal('parsePackFile');
       expect(step.error).to.be.true;
       expect(step.errorMessage).to.include('Invalid PACK data structure');
+    });
+
+    it('should return empty commitData on empty branch push', async () => {
+      const emptyPackBuffer = createEmptyPackBuffer();
+
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/feature/emptybranch';
+      const packetLine = `${EMPTY_COMMIT_HASH} ${newCommit} ${ref}\0capabilities\n`;
+
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), emptyPackBuffer]);
+
+      const result = await exec(req, action);
+
+      expect(result).to.equal(action);
+
+      const step = action.steps.find(s => s.stepName === 'parsePackFile');
+      expect(step).to.exist;
+      expect(step.error).to.be.false;
+      expect(action.branch).to.equal(ref);
+      expect(action.setCommit.calledOnceWith(EMPTY_COMMIT_HASH, newCommit)).to.be.true;
+
+      expect(action.commitData).to.be.an('array').with.lengthOf(0);
     });
   });
 
