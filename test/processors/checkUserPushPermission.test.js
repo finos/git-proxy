@@ -98,5 +98,13 @@ describe('checkUserPushPermission', () => {
       expect(result.steps[0].error).to.be.true;
       expect(logStub.calledWith('Users for this git account: [{"username":"user1","gitAccount":"git-user"},{"username":"user2","gitAccount":"git-user"}]')).to.be.true;
     });
+
+    it('should return error when no user is set in the action', async () => {
+      action.user = null;
+      const result = await exec(req, action);
+      expect(result.steps).to.have.lengthOf(1);
+      expect(result.steps[0].error).to.be.true;
+      expect(result.steps[0].errorMessage).to.include('Push blocked: User not found. Please contact an administrator for support.');
+    });
   });
 });
