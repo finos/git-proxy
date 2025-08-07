@@ -179,9 +179,10 @@ async function removeRepoFromDb(repoUrl) {
  * @param {string} id The ID of the git push.
  * @param {string} repoUrl The repository URL of the git push.
  * @param {string} user The user who pushed the git push.
+ * @param {string} userEmail The email of the user who pushed the git push.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
-async function addGitPushToDb(id, repoUrl, user = null, debug = false) {
+async function addGitPushToDb(id, repoUrl, user = null, userEmail = null, debug = false) {
   const action = new actions.Action(
     id,
     'push', // type
@@ -190,6 +191,7 @@ async function addGitPushToDb(id, repoUrl, user = null, debug = false) {
     repoUrl,
   );
   action.user = user;
+  action.userEmail = userEmail;
   const step = new steps.Step(
     'authBlock', // stepName
     false, // error
