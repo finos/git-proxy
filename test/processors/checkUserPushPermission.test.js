@@ -105,5 +105,13 @@ describe('checkUserPushPermission', () => {
         'Your push has been blocked (there are multiple users with email db-user@test.com)',
       );
     });
+
+    it('should return error when no user is set in the action', async () => {
+      action.user = null;
+      const result = await exec(req, action);
+      expect(result.steps).to.have.lengthOf(1);
+      expect(result.steps[0].error).to.be.true;
+      expect(result.steps[0].errorMessage).to.include('Push blocked: User not found. Please contact an administrator for support.');
+    });
   });
 });
