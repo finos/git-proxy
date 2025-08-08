@@ -152,7 +152,9 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
                     onChange={(e) => setProject(e.target.value)}
                     value={project}
                   />
-                  <FormHelperText id='project-helper-text'>Organization or path</FormHelperText>
+                  <FormHelperText id='project-helper-text'>
+                    Organization or path, e.g. finos
+                  </FormHelperText>
                 </FormControl>
               </GridItem>
               <GridItem xs={12} sm={12} md={12}>
@@ -165,7 +167,9 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
                     onChange={(e) => setName(e.target.value)}
                     value={name}
                   />
-                  <FormHelperText id='name-helper-text'>Git Repository Name</FormHelperText>
+                  <FormHelperText id='name-helper-text'>
+                    Git Repository Name, e.g. git-proxy
+                  </FormHelperText>
                 </FormControl>
               </GridItem>
               <GridItem xs={12} sm={12} md={12}>
@@ -179,7 +183,9 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
                     onChange={(e) => setUrl(e.target.value)}
                     value={url}
                   />
-                  <FormHelperText id='url-helper-text'>Git Repository URL</FormHelperText>
+                  <FormHelperText id='url-helper-text'>
+                    Git Repository URL, e.g. https://github.com/finos/git-proxy.git
+                  </FormHelperText>
                 </FormControl>
               </GridItem>
               <GridItem xs={12} sm={12} md={12}>
