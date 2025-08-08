@@ -3,6 +3,9 @@ import * as db from '../../db';
 /** Regex used to analyze un-proxied Git URLs */
 const GIT_URL_REGEX = /(.+:\/\/)([^/]+)(\/.+\.git)(\/.+)*/;
 
+/** Used to reject URLs that are too long and may be part of a DoS involving regex. */
+const MAX_URL_LENGTH = 512;
+
 /** Type representing a breakdown of Git URL (un-proxied)*/
 export type GitUrlBreakdown = { protocol: string; host: string; repoPath: string };
 
@@ -26,7 +29,8 @@ export type GitUrlBreakdown = { protocol: string; host: string; repoPath: string
  * @return {GitUrlBreakdown | null} A breakdown of the components of the URL.
  */
 export const processGitUrl = (url: string): GitUrlBreakdown | null => {
-  if (url.length > 512) {
+  // limit URL length to avoid DoS via Regex issue detection in SAST scans
+  if (url.length > MAX_URL_LENGTH) {
     console.error(`The git URL is too long: ${url}`);
     return null;
   }
@@ -69,7 +73,8 @@ export type UrlPathBreakdown = { repoPath: string; gitPath: string };
  * @return {GitUrlBreakdown | null} A breakdown of the components of the URL path.
  */
 export const processUrlPath = (requestPath: string): UrlPathBreakdown | null => {
-  if (requestPath.length > 512) {
+  // limit URL length to avoid DoS via Regex issue detection in SAST scans
+  if (requestPath.length > MAX_URL_LENGTH) {
     console.error(`The requestPath is too long: ${requestPath}`);
     return null;
   }
@@ -119,7 +124,8 @@ export type GitNameBreakdown = { project: string | null; repoName: string };
  * @return {GitNameBreakdown | null} A breakdown of the components of the URL.
  */
 export const processGitURLForNameAndOrg = (gitUrl: string): GitNameBreakdown | null => {
-  if (gitUrl.length > 512) {
+  // limit URL length to avoid DoS via Regex issue detection in SAST scans
+  if (gitUrl.length > MAX_URL_LENGTH) {
     console.error(`The git URL is too long: ${gitUrl}`);
     return null;
   }
