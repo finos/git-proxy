@@ -1,21 +1,41 @@
-const { handleMessage, validGitRequest, stripGitHubFromGitPath } = require('../src/proxy/routes');
+const { handleMessage, validGitRequest } = require('../src/proxy/routes');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-const sinon = require('sinon');
-const express = require('express');
-const proxyRouter = require('../src/proxy/routes').router;
-const chain = require('../src/proxy/chain');
-
 chai.use(chaiHttp);
 chai.should();
 const expect = chai.expect;
+const sinon = require('sinon');
+const express = require('express');
+const getRouter = require('../src/proxy/routes').getRouter;
+const chain = require('../src/proxy/chain');
+const proxyquire = require('proxyquire');
+const { Action, Step } = require('../src/proxy/actions');
+const service = require('../src/service');
+const db = require('../src/db');
+
+import Proxy from '../src/proxy';
+
+const TEST_DEFAULT_REPO = {
+  url: 'https://github.com/finos/git-proxy.git',
+  name: 'git-proxy',
+  project: 'finos/gitproxy',
+  host: 'github.com',
+};
+
+const TEST_GITLAB_REPO = {
+  url: 'https://gitlab.com/gitlab-community/meta.git',
+  name: 'gitlab',
+  project: 'gitlab-community/meta',
+  host: 'gitlab.com',
+  proxyUrlPrefix: 'gitlab.com/gitlab-community/meta.git',
+};
 
 describe('proxy route filter middleware', () => {
   let app;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     app = express();
-    app.use('/', proxyRouter);
+    app.use('/', await getRouter());
   });
 
   afterEach(() => {
@@ -164,41 +184,271 @@ describe('proxy route helpers', () => {
       expect(res).to.be.false;
     });
   });
+});
 
-  describe('stripGitHubFromGitPath', () => {
-    it('should strip owner and repo from a valid GitHub-style path with 4 parts', () => {
-      const res = stripGitHubFromGitPath('/foo/bar.git/info/refs');
-      expect(res).to.equal('/info/refs');
+describe('proxyFilter function', async () => {
+  let proxyRoutes;
+  let req;
+  let res;
+  let actionToReturn;
+  let executeChainStub;
+
+  beforeEach(async () => {
+    executeChainStub = sinon.stub();
+
+    // Re-import the proxy routes module and stub executeChain
+    proxyRoutes = proxyquire('../src/proxy/routes', {
+      '../chain': { executeChain: executeChainStub },
     });
 
-    it('should strip owner and repo from a valid GitHub-style path with 5 parts', () => {
-      const res = stripGitHubFromGitPath('/foo/bar.git/git-upload-pack');
-      expect(res).to.equal('/git-upload-pack');
-    });
-
-    it('should return undefined for malformed path with too few segments', () => {
-      const res = stripGitHubFromGitPath('/foo/bar.git');
-      expect(res).to.be.undefined;
-    });
-
-    it('should return undefined for malformed path with too many segments', () => {
-      const res = stripGitHubFromGitPath('/foo/bar.git/extra/path/stuff');
-      expect(res).to.be.undefined;
-    });
-
-    it('should handle repo names that include dots correctly', () => {
-      const res = stripGitHubFromGitPath('/foo/some.repo.git/info/refs');
-      expect(res).to.equal('/info/refs');
-    });
-
-    it('should not break if the path is just a slash', () => {
-      const res = stripGitHubFromGitPath('/');
-      expect(res).to.be.undefined;
-    });
-
-    it('should not break if the path is empty', () => {
-      const res = stripGitHubFromGitPath('');
-      expect(res).to.be.undefined;
-    });
+    req = {
+      url: '/github.com/finos/git-proxy.git/info/refs?service=git-receive-pack',
+      headers: {
+        host: 'dummyHost',
+        'user-agent': 'git/dummy-git-client',
+        accept: 'application/x-git-receive-pack-request',
+      },
+    };
+    res = {
+      set: () => {},
+      status: () => {
+        return {
+          send: () => {},
+        };
+      },
+    };
   });
+
+  afterEach(() => {
+    sinon.restore();
+  });
+
+  it('should return false for push requests that should be blocked', async function () {
+    // mock the executeChain function
+    actionToReturn = new Action(
+      1234,
+      'dummy',
+      'dummy',
+      Date.now(),
+      '/github.com/finos/git-proxy.git',
+    );
+    const step = new Step('dummy', false, null, true, 'test block', null);
+    actionToReturn.addStep(step);
+    executeChainStub.returns(actionToReturn);
+    const result = await proxyRoutes.proxyFilter(req, res);
+    expect(result).to.be.false;
+  });
+
+  it('should return false for push requests that produced errors', async function () {
+    // mock the executeChain function
+    actionToReturn = new Action(
+      1234,
+      'dummy',
+      'dummy',
+      Date.now(),
+      '/github.com/finos/git-proxy.git',
+    );
+    const step = new Step('dummy', true, 'test error', false, null, null);
+    actionToReturn.addStep(step);
+    executeChainStub.returns(actionToReturn);
+    const result = await proxyRoutes.proxyFilter(req, res);
+    expect(result).to.be.false;
+  });
+
+  it('should return false for invalid push requests', async function () {
+    // mock the executeChain function
+    actionToReturn = new Action(
+      1234,
+      'dummy',
+      'dummy',
+      Date.now(),
+      '/github.com/finos/git-proxy.git',
+    );
+    const step = new Step('dummy', true, 'test error', false, null, null);
+    actionToReturn.addStep(step);
+    executeChainStub.returns(actionToReturn);
+
+    // create an invalid request
+    req = {
+      url: '/github.com/finos/git-proxy.git/invalidPath',
+      headers: {
+        host: 'dummyHost',
+        'user-agent': 'git/dummy-git-client',
+        accept: 'application/x-git-receive-pack-request',
+      },
+    };
+
+    const result = await proxyRoutes.proxyFilter(req, res);
+    expect(result).to.be.false;
+  });
+
+  it('should return true for push requests that are valid and pass the chain', async function () {
+    // mock the executeChain function
+    actionToReturn = new Action(
+      1234,
+      'dummy',
+      'dummy',
+      Date.now(),
+      '/github.com/finos/git-proxy.git',
+    );
+    const step = new Step('dummy', false, null, false, null, null);
+    actionToReturn.addStep(step);
+    executeChainStub.returns(actionToReturn);
+    const result = await proxyRoutes.proxyFilter(req, res);
+    expect(result).to.be.true;
+  });
+});
+
+describe('proxy express application', async () => {
+  let apiApp;
+  let cookie;
+  let proxy;
+
+  const setCookie = function (res) {
+    res.headers['set-cookie'].forEach((x) => {
+      if (x.startsWith('connect')) {
+        const value = x.split(';')[0];
+        cookie = value;
+      }
+    });
+  };
+
+  const cleanupRepo = async (url) => {
+    const repo = await db.getRepoByUrl(url);
+    if (repo) {
+      await db.deleteRepo(repo._id);
+    }
+  };
+
+  before(async () => {
+    // pass through requests
+    sinon.stub(chain, 'executeChain').resolves({
+      blocked: false,
+      blockedMessage: '',
+      error: false,
+    });
+
+    // start the API and proxy
+    proxy = new Proxy();
+    apiApp = await service.start(proxy);
+    await proxy.start();
+
+    const res = await chai.request(apiApp).post('/api/auth/login').send({
+      username: 'admin',
+      password: 'admin',
+    });
+    expect(res).to.have.cookie('connect.sid');
+    setCookie(res);
+
+    // if our default repo is not set-up, create it
+    const repo = await db.getRepoByUrl(TEST_DEFAULT_REPO.url);
+    if (!repo) {
+      const res2 = await chai
+        .request(apiApp)
+        .post('/api/v1/repo')
+        .set('Cookie', `${cookie}`)
+        .send(TEST_DEFAULT_REPO);
+      res2.should.have.status(200);
+    }
+  });
+
+  after(async () => {
+    sinon.restore();
+    await service.stop();
+    await proxy.stop();
+    await cleanupRepo(TEST_DEFAULT_REPO.url);
+    await cleanupRepo(TEST_GITLAB_REPO.url);
+  });
+
+  it('should proxy requests for the default GitHub repository', async function () {
+    // proxy a fetch request
+    const res = await chai
+      .request(proxy.getExpressApp())
+      .get('/github.com/finos/git-proxy.git/info/refs?service=git-upload-pack')
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-upload-pack-request')
+      .buffer();
+
+    expect(res.status).to.equal(200);
+    expect(res.text).to.contain('git-upload-pack');
+  });
+
+  it('should proxy requests for the default GitHub repository using the backwards compatibility URL', async function () {
+    // proxy a fetch request using a fallback URL
+    const res = await chai
+      .request(proxy.getExpressApp())
+      .get('/finos/git-proxy.git/info/refs?service=git-upload-pack')
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-upload-pack-request')
+      .buffer();
+
+    expect(res.status).to.equal(200);
+    expect(res.text).to.contain('git-upload-pack');
+  });
+
+  it('should be restarted by the api and proxy requests for a new host (e.g. gitlab.com) when a project at that host is ADDED via the API', async function () {
+    // Tests that the proxy restarts properly after a project with a URL at a new host is added
+
+    // check that we do not have the Gitlab test repo set up yet
+    let repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    expect(repo).to.be.null;
+
+    // create the repo through the API, which should force the proxy to restart to handle the new domain
+    const res = await chai
+      .request(apiApp)
+      .post('/api/v1/repo')
+      .set('Cookie', `${cookie}`)
+      .send(TEST_GITLAB_REPO);
+    res.should.have.status(200);
+
+    // confirm that the repo was created in teh DB
+    repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    expect(repo).to.not.be.null;
+
+    // proxy a fetch request to the new repo
+    const res2 = await chai
+      .request(proxy.getExpressApp())
+      .get(`/${TEST_GITLAB_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-upload-pack-request')
+      .buffer();
+
+    res2.should.have.status(200);
+    expect(res2.text).to.contain('git-upload-pack');
+  }).timeout(5000);
+
+  it('should be restarted by the api and stop proxying requests for a host (e.g. gitlab.com) when the last project at that host is DELETED via the API', async function () {
+    // We are testing that the proxy stops proxying requests for a particular origin
+    // The chain is stubbed and will always passthrough requests, hence, we are only checking what hosts are proxied.
+
+    // the gitlab test repo should already exist
+    let repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    expect(repo).to.not.be.null;
+
+    // delete the gitlab test repo, which should force the proxy to restart and stop proxying gitlab.com
+    // We assume that there are no other gitlab.com repos present
+    const res = await chai
+      .request(apiApp)
+      .delete('/api/v1/repo/' + repo._id + '/delete')
+      .set('Cookie', `${cookie}`)
+      .send();
+    res.should.have.status(200);
+
+    // confirm that its gone from the DB
+    repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    expect(repo).to.be.null;
+
+    // give the proxy half a second to restart
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    // try (and fail) to proxy a request to gitlab.com
+    const res2 = await chai
+      .request(proxy.getExpressApp())
+      .get(`/${TEST_GITLAB_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-upload-pack-request')
+      .buffer();
+
+    res2.should.have.status(404);
+  }).timeout(5000);
 });

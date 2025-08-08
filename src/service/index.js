@@ -9,7 +9,6 @@ const db = require('../db');
 const rateLimit = require('express-rate-limit');
 const lusca = require('lusca');
 const configLoader = require('../config/ConfigLoader');
-const proxy = require('../proxy');
 
 const limiter = rateLimit(config.getRateLimit());
 
@@ -22,7 +21,12 @@ const corsOptions = {
   origin: true,
 };
 
-const createApp = async () => {
+/**
+ * Internal function used to bootstrap the Git Proxy API's express application.
+ * @param {proxy} proxy A reference to the proxy express application, used to restart it when necessary.
+ * @return {Promise<Express>}
+ */
+async function createApp(proxy) {
   // configuration of passport is async
   // Before we can bind the routes - we need the passport strategy
   const passport = await require('./passport').configure();
@@ -98,17 +102,26 @@ const createApp = async () => {
   app.use(passport.session());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use('/', routes);
+  app.use('/', routes(proxy));
   app.use('/', express.static(absBuildPath));
   app.get('/*', (req, res) => {
     res.sendFile(path.join(`${absBuildPath}/index.html`));
   });
 
   return app;
-};
+}
 
-const start = async () => {
-  const app = await createApp();
+/**
+ * Starts the proxy service.
+ * @param {proxy?} proxy A reference to the proxy express application, used to restart it when necessary.
+ * @return {Promise<Express>} the express application (used for testing).
+ */
+async function start(proxy) {
+  if (!proxy) {
+    console.warn("WARNING: proxy is null and can't be controlled by the API service");
+  }
+
+  const app = await createApp(proxy);
 
   _httpServer.listen(uiPort);
 
@@ -116,8 +129,14 @@ const start = async () => {
   app.emit('ready');
 
   return app;
-};
+}
 
-module.exports.createApp = createApp;
-module.exports.start = start;
-module.exports.httpServer = _httpServer;
+/**
+ * Stops the proxy service.
+ */
+async function stop() {
+  console.log(`Stopping Service Listening on ${uiPort}`);
+  _httpServer.close();
+}
+
+module.exports = { start, stop, httpServer: _httpServer };
