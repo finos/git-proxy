@@ -43,14 +43,17 @@ export const proxyPreparations = async () => {
   const defaultAuthorisedRepoList = getAuthorisedList();
   const allowedList: Repo[] = await getRepos();
 
-  defaultAuthorisedRepoList.forEach(async (x) => {
+  await Promise.all(defaultAuthorisedRepoList.map(async (x) => {
+    console.log('x', x);
+    console.log('allowedList', allowedList);
     const found = allowedList.find((y) => y.project === x.project && x.name === y.name);
+    console.log('found', found);
     if (!found) {
       await createRepo(x);
       await addUserCanPush(x.name, 'admin');
       await addUserCanAuthorise(x.name, 'admin');
     }
-  });
+  }));
 };
 
 // just keep this async incase it needs async stuff in the future
