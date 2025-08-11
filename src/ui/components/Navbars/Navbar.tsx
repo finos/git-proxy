@@ -38,7 +38,7 @@ const Header: React.FC<HeaderProps> = (props) => {
   });
 
   return (
-    <AppBar style={{ borderRadius: '0px', zIndex: 10 }} className={classes.appBar + appBarClasses}>
+    <AppBar style={{ borderRadius: '0px', zIndex: 10, backgroundColor: 'black', boxShadow: 'none' }} className={classes.appBar + appBarClasses}>
       <Toolbar className={classes.container}>
         <div className={classes.flex}>
           {/* Here we create navbar brand, based on route name */}
