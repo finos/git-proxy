@@ -13,9 +13,12 @@ describe('checkIfWaitingAuth', () => {
   beforeEach(() => {
     getPushStub = sinon.stub();
 
-    const checkIfWaitingAuth = proxyquire('../../src/proxy/processors/push-action/checkIfWaitingAuth', {
-      '../../../db': { getPush: getPushStub }
-    });
+    const checkIfWaitingAuth = proxyquire(
+      '../../src/proxy/processors/push-action/checkIfWaitingAuth',
+      {
+        '../../../db': { getPush: getPushStub },
+      },
+    );
 
     exec = checkIfWaitingAuth.exec;
   });
@@ -30,23 +33,11 @@ describe('checkIfWaitingAuth', () => {
 
     beforeEach(() => {
       req = {};
-      action = new Action(
-        '1234567890',
-        'push',
-        'POST',
-        1234567890,
-        'test/repo'
-      );
+      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
     });
 
     it('should set allowPush when action exists and is authorized', async () => {
-      const authorizedAction = new Action(
-        '1234567890',
-        'push',
-        'POST',
-        1234567890,
-        'test/repo'
-      );
+      const authorizedAction = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
       authorizedAction.authorised = true;
       getPushStub.resolves(authorizedAction);
 
@@ -59,13 +50,7 @@ describe('checkIfWaitingAuth', () => {
     });
 
     it('should not set allowPush when action exists but not authorized', async () => {
-      const unauthorizedAction = new Action(
-        '1234567890',
-        'push',
-        'POST',
-        1234567890,
-        'test/repo'
-      );
+      const unauthorizedAction = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
       unauthorizedAction.authorised = false;
       getPushStub.resolves(unauthorizedAction);
 
@@ -88,13 +73,7 @@ describe('checkIfWaitingAuth', () => {
 
     it('should not modify action when it has an error', async () => {
       action.error = true;
-      const authorizedAction = new Action(
-        '1234567890',
-        'push',
-        'POST',
-        1234567890,
-        'test/repo'
-      );
+      const authorizedAction = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
       authorizedAction.authorised = true;
       getPushStub.resolves(authorizedAction);
 
