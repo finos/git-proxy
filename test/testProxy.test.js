@@ -1,6 +1,5 @@
 const chai = require('chai');
 const sinon = require('sinon');
-const express = require('express');
 const http = require('http');
 const https = require('https');
 
@@ -26,7 +25,7 @@ function purgeModule(moduleName) {
 
 describe('Proxy Module', () => {
   let sandbox;
-  
+
   beforeEach(() => {
     sandbox = sinon.createSandbox();
   });
@@ -43,7 +42,6 @@ describe('Proxy Module', () => {
       expect(app).to.be.an('function');
       expect(app.use).to.be.a('function');
       expect(app.listen).to.be.a('function');
-      
       expect(app.settings).to.be.an('object');
     });
   });
@@ -55,30 +53,26 @@ describe('Proxy Module', () => {
     let mockHttpsServer;
     let getTLSEnabledStub;
     let proxyPreparationsStub;
-    let createAppStub;
 
     beforeEach(() => {
       mockHttpServer = {
         listen: sandbox.stub().callsArg(1)
       };
-      
+
       mockHttpsServer = {
         listen: sandbox.stub().callsArg(1)
       };
 
       httpCreateServerStub = sandbox.stub(http, 'createServer').returns(mockHttpServer);
       httpsCreateServerStub = sandbox.stub(https, 'createServer').returns(mockHttpsServer);
-      
       getTLSEnabledStub = sandbox.stub(require('../src/config'), 'getTLSEnabled');
-      
       proxyPreparationsStub = sandbox.stub(proxyModule, 'proxyPreparations').resolves();
-      createAppStub = sandbox.stub(proxyModule.default, 'createApp').resolves({ express: 'app' });
     });
 
     it('should start HTTP server only when TLS is disabled', async () => {
       getTLSEnabledStub.returns(false);
 
-      const app = await proxyModule.default.start();
+      await proxyModule.default.start();
 
       expect(httpCreateServerStub.calledOnce).to.be.true;
       expect(httpsCreateServerStub.called).to.be.false;
@@ -88,9 +82,13 @@ describe('Proxy Module', () => {
   });
 
   describe('proxyPreparations', () => {
-    let getPluginsStub, getAuthorisedListStub, getReposStub;
-    let createRepoStub, addUserCanPushStub, addUserCanAuthoriseStub;
-    let PluginLoaderStub;
+    let getPluginsStub
+    let getAuthorisedListStub
+    let getReposStub
+    let createRepoStub
+    let addUserCanPushStub
+    let addUserCanAuthoriseStub
+    let PluginLoaderStub
 
     beforeEach(() => {
       purgeModule('../src/proxy/index');
