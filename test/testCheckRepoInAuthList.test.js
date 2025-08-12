@@ -2,6 +2,7 @@ const chai = require('chai');
 const actions = require('../src/proxy/actions/Action');
 const processor = require('../src/proxy/processors/push-action/checkRepoInAuthorisedList');
 const expect = chai.expect;
+const fc = require('fast-check');
 
 const authList = () => {
   return [
@@ -23,5 +24,21 @@ describe('Check a Repo is in the authorised list', async () => {
     const action = new actions.Action('123', 'type', 'get', 1234, 'thisproject/repo-is-not-ok');
     const result = await processor.exec(null, action, authList);
     expect(result.error).to.be.true;
+  });
+
+  describe('fuzzing', () => {
+    it('should not crash on random repo names', async () => {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.string(),
+          async (repoName) => {
+            const action = new actions.Action('123', 'type', 'get', 1234, repoName);
+            const result = await processor.exec(null, action, authList);
+            expect(result.error).to.be.true;
+          }
+        ),
+        { numRuns: 100 }
+      );
+    });
   });
 });
