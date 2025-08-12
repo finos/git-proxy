@@ -1,6 +1,7 @@
 const sinon = require('sinon');
 const proxyquire = require('proxyquire').noCallThru();
 const { expect } = require('chai');
+const fc = require('fast-check');
 
 describe('checkAuthorEmails', () => {
   let action;
@@ -167,6 +168,74 @@ describe('checkAuthorEmails', () => {
           'The following commit author e-mails are illegal: invalid1@bad.org,invalid2@wrong.net',
         ),
       ).to.be.true;
+    });
+  });
+
+  describe('fuzzing', () => {
+    it('should not crash on random string in commit email', () => {
+      fc.assert(
+        fc.property(fc.string(), (commitEmail) => {
+          action.commitData = [
+            { authorEmail: commitEmail }
+          ];
+          exec({}, action);
+        }),
+        {
+          numRuns: 100
+        }
+      );
+
+      expect(action.step.error).to.be.true;
+      expect(stepSpy.calledWith(
+        'The following commit author e-mails are illegal: '
+      )).to.be.true;
+    });
+
+    it('should handle valid emails with random characters', () => {
+      fc.assert(
+        fc.property(fc.emailAddress(), (commitEmail) => {
+          action.commitData = [
+            { authorEmail: commitEmail }
+          ];
+          exec({}, action);
+        }),
+        {
+          numRuns: 100
+        }
+      );
+      expect(action.step.error).to.be.undefined;
+    });
+
+    it('should handle invalid types in commit email', () => {
+      fc.assert(
+        fc.property(fc.anything(), (commitEmail) => {
+          action.commitData = [
+            { authorEmail: commitEmail }
+          ];
+          exec({}, action);
+        }),
+        {
+          numRuns: 100
+        }
+      );
+
+      expect(action.step.error).to.be.true;
+      expect(stepSpy.calledWith(
+        'The following commit author e-mails are illegal: '
+      )).to.be.true;
+    });
+
+    it('should handle arrays of valid emails', () => {
+      fc.assert(
+        fc.property(fc.array(fc.emailAddress()), (commitEmails) => {
+          action.commitData = commitEmails.map(email => ({ authorEmail: email }));
+          exec({}, action);
+        }),
+        {
+          numRuns: 100
+        }
+      );
+      expect(action.step.error).to.be.undefined;
     });
   });
 });

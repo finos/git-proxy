@@ -2,6 +2,7 @@ const chai = require('chai');
 const sinon = require('sinon');
 const proxyquire = require('proxyquire');
 const { Action, Step } = require('../../src/proxy/actions');
+const fc = require('fast-check');
 
 chai.should();
 const expect = chai.expect;
@@ -148,6 +149,54 @@ describe('checkCommitMessages', () => {
         .to.be.true;
       expect(logStub.calledWith('The following commit messages are illegal: secret password here'))
         .to.be.true;
+    });
+
+    describe('fuzzing', () => {
+      it('should not crash on arbitrary commit messages', async () => {
+        await fc.assert(
+          fc.asyncProperty(
+            fc.array(
+              fc.record({
+                message: fc.oneof(
+                  fc.string(),
+                  fc.constant(null),
+                  fc.constant(undefined),
+                  fc.integer(),
+                  fc.double(),
+                  fc.boolean(),
+                  fc.object(),
+                ),
+                author: fc.string()
+              }),
+              { maxLength: 20 }
+            ),
+            async (fuzzedCommits) => {
+              const fuzzAction = new Action(
+                'fuzz',
+                'push',
+                'POST',
+                Date.now(),
+                'fuzz/repo'
+              );
+              fuzzAction.commitData = Array.isArray(fuzzedCommits) ? fuzzedCommits : [];
+
+              const result = await exec({}, fuzzAction);
+
+              expect(result).to.have.property('steps');
+              expect(result.steps[0]).to.have.property('error').that.is.a('boolean');
+            }
+          ),
+          {
+            examples: [
+              [{ message: '', author: 'me' }],
+              [{ message: '1234-5678-9012-3456', author: 'me' }],
+              [{ message: null, author: 'me' }],
+              [{ message: {}, author: 'me' }],
+              [{ message: 'SeCrEt', author: 'me' }]
+            ]
+          }
+        );
+      });
     });
   });
 });
