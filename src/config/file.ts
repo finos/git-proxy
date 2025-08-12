@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { validate as jsonSchemaValidate } from 'jsonschema';
 
-export let configFile: string = join(process.cwd(), 'proxy.config.json');
+export let configFile: string = join(__dirname, '../../proxy.config.json');
 
 /**
  * Set the config file path.
@@ -20,7 +20,7 @@ export function setConfigFile(file: string) {
  */
 export function validate(configFilePath: string = configFile!): boolean {
   const config = JSON.parse(readFileSync(configFilePath, 'utf-8'));
-  const schemaPath = join(process.cwd(), 'config.schema.json');
+  const schemaPath = join(__dirname, '../../config.schema.json');
   const schema = JSON.parse(readFileSync(schemaPath, 'utf-8'));
   jsonSchemaValidate(config, schema, { required: true, throwError: true });
   return true;
