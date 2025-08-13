@@ -7,7 +7,7 @@ Here's how to get setup for contributing to GitProxy.
 ## Setup
 The GitProxy project relies on the following pre-requisites:
 
-- [Node](https://nodejs.org/en/download) (16+)
+- [Node](https://nodejs.org/en/download) (22+)
 - [npm](https://npmjs.com/) (8+)
 - [git](https://git-scm.com/downloads) or equivalent Git client. It must support HTTP/S.
 
@@ -26,7 +26,12 @@ $ npm run client # Run only the UI
 ```
 
 ## Testing
-<!-- Notes about testing methodology -->
+
+Currently, we use Mocha and Chai for unit testing and Cypress for E2E testing. For more details on how to use these testing libraries, check out our [Testing documentation](testing).
+
+### Patch coverage requirements
+
+Newly introduced changes **must have over 80% unit test coverage**. This is enforced by our CI, and in practice, only few exceptions (such as emergency fixes) are allowed to skip this requirement. Make sure to add thorough unit tests to your PR to help reviewers approve your PR more quickly!
 
 ## Configuration schema
 The configuration for GitProxy includes a JSON Schema ([`config.schema.json`](https://github.com/finos/git-proxy/blob/main/config.schema.json)) to define the expected properties used by the application. When adding new configuration properties to GitProxy, ensure that the schema is updated with any new, removed or changed properties. See [JSON Schema docs for specific syntax](https://json-schema.org/docs).
