@@ -275,3 +275,39 @@ Cypress.Commands.add('login', (username, password) => {
   });
 });
 ```
+
+### Fuzz testing with fast-check
+
+Fuzz testing helps find edge case bugs by generating random inputs for test data. This is very helpful since regular tests often have naive assumptions of users always inputting "expected" data.
+
+Fuzz testing with fast-check is very easy: it integrates seamlessly with Mocha and it doesn't require any additional libraries beyond fast-check itself.
+
+Here's an example of a fuzz test section for a test file (`testCheckRepoInAuthList.test.js`):
+
+```js
+const fc = require('fast-check');
+
+// Unit tests go here
+
+describe('fuzzing', () => {
+  it('should not crash on random repo names', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.string(),
+        async (repoName) => {
+          const action = new actions.Action('123', 'type', 'get', 1234, repoName);
+          const result = await processor.exec(null, action, authList);
+          expect(result.error).to.be.true;
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+});
+```
+
+Writing fuzz tests is a bit different from regular unit tests, although we do still `assert` whether a certain value is correct or not. In this example, fc.string() indicates that a random string value is being generated for the `repoName` variable. This `repoName` is then inserted in the `action` to see if the `processor.exec()` function is capable of handling these or not.
+
+In this case, we expect that the `result.error` value is always true. This means that the `exec` flow always errors out, but never crashes the app entirely. You may also want to test that the app is always able to complete a flow without an error.
+
+Finally, we have the `numRuns` property for `fc.assert`. This allows us to run the fuzz test multiple times with a new randomized value each time. This is important since the test may randomly fail or pass depending on the input.
