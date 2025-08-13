@@ -1,0 +1,87 @@
+---
+title: Testing
+---
+
+## Testing
+
+As of v1.19.2, GitProxy uses [Mocha](https://mochajs.org/) (`ts-mocha`) as the test runner, and [Chai](https://www.chaijs.com/) for unit test assertions. End-to-end (E2E) tests are written in [Cypress](https://docs.cypress.io), and some fuzz testing is done with [`fast-check`](https://fast-check.dev/).
+
+### Unit testing with Mocha and Chai
+
+Here's an example unit test that uses Chai for testing (`test/testAuthMethods.test.js`):
+
+```js
+// Import all the test dependencies we need
+const chai = require('chai');
+const sinon = require('sinon');
+const proxyquire = require('proxyquire');
+
+// Import module that contains the function we want to test
+const config = require('../src/config'); 
+
+// Allows using chain-based expect calls 
+chai.should();
+const expect = chai.expect;
+
+describe('auth methods', async () => {
+  it('should return a local auth method by default', async function () {
+    const authMethods = config.getAuthMethods();
+    expect(authMethods).to.have.lengthOf(1);
+    expect(authMethods[0].type).to.equal('local');
+  });
+
+  it('should return an error if no auth methods are enabled', async function () {
+    const newConfig = JSON.stringify({
+      authentication: [
+        { type: 'local', enabled: false },
+        { type: 'ActiveDirectory', enabled: false },
+        { type: 'openidconnect', enabled: false },
+      ],
+    });
+
+    const fsStub = {
+      existsSync: sinon.stub().returns(true),
+      readFileSync: sinon.stub().returns(newConfig),
+    };
+
+    const config = proxyquire('../src/config', {
+      fs: fsStub,
+    });
+
+    // Initialize the user config after proxyquiring to load the stubbed config
+    config.initUserConfig();
+
+    expect(() => config.getAuthMethods()).to.throw(Error, 'No authentication method enabled');
+  });
+
+  it('should return an array of enabled auth methods when overridden', async function () {
+    const newConfig = JSON.stringify({
+      authentication: [
+        { type: 'local', enabled: true },
+        { type: 'ActiveDirectory', enabled: true },
+        { type: 'openidconnect', enabled: true },
+      ],
+    });
+
+    const fsStub = {
+      existsSync: sinon.stub().returns(true),
+      readFileSync: sinon.stub().returns(newConfig),
+    };
+
+    const config = proxyquire('../src/config', {
+      fs: fsStub,
+    });
+
+    // Initialize the user config after proxyquiring to load the stubbed config
+    config.initUserConfig();
+
+    const authMethods = config.getAuthMethods();
+    expect(authMethods).to.have.lengthOf(3);
+    expect(authMethods[0].type).to.equal('local');
+    expect(authMethods[1].type).to.equal('ActiveDirectory');
+    expect(authMethods[2].type).to.equal('openidconnect');
+  });
+});
+```
+
+Core concepts to keep in mind when unit testing JS/TS modules with Chai:
