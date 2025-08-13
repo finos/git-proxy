@@ -184,3 +184,94 @@ expect(authMethods[0].type).to.equal('local');
 **All new lines of code introduced in a PR, must have over 80% coverage** (patch coverage). This is enforced by our CI, and generally a PR will not be merged unless this coverage requirement is met. Please make sure to write thorough unit tests to increase GitProxy's code quality!
 
 If test coverage is still insufficient after writing your tests, check out the [CodeCov report](https://app.codecov.io/gh/finos/git-proxy) after making the PR and take a look at which lines are missing coverage.
+
+### E2E testing with Cypress
+
+Although coverage is currently low, we have introduced Cypress testing to make sure that end-to-end flows are working as expected with every added feature.
+
+This is a sample test from `cypress/e2e/repo.cy.js`:
+
+```js
+describe('Repo', () => {
+  beforeEach(() => {
+    // Custom login command
+    cy.login('admin', 'admin');
+
+    cy.visit('/dashboard/repo');
+
+    // prevent failures on 404 request and uncaught promises
+    cy.on('uncaught:exception', () => false);
+  });
+
+  describe('Code button for repo row', () => {
+    it('Opens tooltip with correct content and can copy', () => {
+      const cloneURL = 'http://localhost:8000/finos/git-proxy.git';
+      const tooltipQuery = 'div[role="tooltip"]';
+
+      cy
+        // tooltip isn't open to start with
+        .get(tooltipQuery)
+        .should('not.exist');
+
+      cy
+        // find the entry for finos/git-proxy
+        .get('a[href="/dashboard/repo/git-proxy"]')
+        // take it's parent row
+        .closest('tr')
+        // find the nearby span containing Code we can click to open the tooltip
+        .find('span')
+        .contains('Code')
+        .should('exist')
+        .click();
+
+      cy
+        // find the newly opened tooltip
+        .get(tooltipQuery)
+        .should('exist')
+        .find('span')
+        // check it contains the url we expect
+        .contains(cloneURL)
+        .should('exist')
+        .parent()
+        // find the adjacent span that contains the svg
+        .find('span')
+        .next()
+        // check it has the copy icon first and click it
+        .get('svg.octicon-copy')
+        .should('exist')
+        .click()
+        // check the icon has changed to the check icon
+        .get('svg.octicon-copy')
+        .should('not.exist')
+        .get('svg.octicon-check')
+        .should('exist');
+
+      // failed to successfully check the clipboard
+    });
+  });
+});
+```
+
+Here, we use a similar syntax to Mocha to **describe the behaviour that we expect**. The difference, is that Cypress expects us to write actual commands for executing actions in the app. Some commands used very often include `visit` (navigates to a certain page), `get` (gets a certain page element to check its properties), `contains` (checks if an element has a certain string value in it), `should` (similar to `expect` in unit tests).
+
+#### Custom commands
+
+Cypress allows defining **custom commands** to reuse and simplify code.
+
+In the above example, `cy.login('admin', 'admin')` is actually a custom command defined in `/cypress/support/commands.js`. It allows logging a user into the app, which is a requirement for many E2E flows:
+
+```js
+Cypress.Commands.add('login', (username, password) => {
+  cy.session([username, password], () => {
+    cy.visit('/login');
+    cy.intercept('GET', '**/api/auth/me').as('getUser');
+
+    cy.get('[data-test=username]').type(username);
+    cy.get('[data-test=password]').type(password);
+    cy.get('[data-test=login]').click();
+
+    cy.wait('@getUser');
+    cy.url().should('include', '/dashboard/repo');
+  });
+});
+```
