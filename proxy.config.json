@@ -15,6 +15,11 @@
       "project": "finos",
       "name": "git-proxy",
       "url": "https://github.com/finos/git-proxy.git"
+    },
+    {
+      "project": "fabiovincenzi",
+      "name": "test",
+      "url": "https://github.com/fabiovincenzi/test.git"
     }
   ],
   "sink": [

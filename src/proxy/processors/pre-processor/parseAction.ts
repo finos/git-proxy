@@ -1,4 +1,4 @@
-import { Action } from '../../actions';
+import { Action, RequestType } from '../../actions';
 
 const exec = async (req: {
   originalUrl: string;
@@ -10,20 +10,20 @@ const exec = async (req: {
   const repoName = getRepoNameFromUrl(req.originalUrl);
   const paths = req.originalUrl.split('/');
 
-  let type = 'default';
+  let type: RequestType | string = 'default';
 
   if (paths[paths.length - 1].endsWith('git-upload-pack') && req.method === 'GET') {
-    type = 'pull';
+    type = RequestType.PULL;
   }
   if (
     paths[paths.length - 1] === 'git-receive-pack' &&
     req.method === 'POST' &&
     req.headers['content-type'] === 'application/x-git-receive-pack-request'
   ) {
-    type = 'push';
+    type = RequestType.PUSH;
   }
 
-  return new Action(id.toString(), type, req.method, timestamp, repoName);
+  return new Action(id.toString(), type as RequestType, req.method, timestamp, repoName);
 };
 
 const getRepoNameFromUrl = (url: string): string => {

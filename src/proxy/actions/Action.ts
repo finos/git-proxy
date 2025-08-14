@@ -1,10 +1,27 @@
 import { getProxyUrl } from '../../config';
 import { Step } from './Step';
+import { TagData } from '../../types/models';
+
+export enum RequestType {
+  // eslint-disable-next-line no-unused-vars
+  PUSH = 'push',
+  // eslint-disable-next-line no-unused-vars
+  PULL = 'pull'
+}
+
+export enum ActionType {
+  // eslint-disable-next-line no-unused-vars
+  COMMIT = 'commit',
+  // eslint-disable-next-line no-unused-vars
+  TAG = 'tag',
+  // eslint-disable-next-line no-unused-vars
+  BRANCH = 'branch'
+}
 
 /**
  * Represents a commit.
  */
-export interface Commit {
+export interface CommitData {
   message: string;
   committer: string;
   committerEmail: string;
@@ -12,7 +29,6 @@ export interface Commit {
   parent: string;
   author: string;
   authorEmail: string;
-  commitTS?: string; // TODO: Normalize this to commitTimestamp
   commitTimestamp?: string;
 }
 
@@ -21,7 +37,8 @@ export interface Commit {
  */
 class Action {
   id: string;
-  type: string;
+  type: RequestType;
+  actionType?: ActionType;
   method: string;
   timestamp: number;
   project: string;
@@ -39,7 +56,7 @@ class Action {
   rejected: boolean = false;
   autoApproved: boolean = false;
   autoRejected: boolean = false;
-  commitData?: Commit[] = [];
+  commitData?: CommitData[] = [];
   commitFrom?: string;
   commitTo?: string;
   branch?: string;
@@ -50,6 +67,8 @@ class Action {
   attestation?: string;
   lastStep?: Step;
   proxyGitPath?: string;
+  tag?: string;
+  tagData?: TagData[];
   newIdxFiles?: string[];
 
   /**
@@ -60,7 +79,7 @@ class Action {
    * @param {number} timestamp The timestamp of the action
    * @param {string} repo The repo of the action
    */
-  constructor(id: string, type: string, method: string, timestamp: number, repo: string) {
+  constructor(id: string, type: RequestType, method: string, timestamp: number, repo: string) {
     this.id = id;
     this.type = type;
     this.method = method;
