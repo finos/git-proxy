@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { Convert } from './generated/config';
 
-export let configFile: string = join(process.cwd(), 'proxy.config.json');
+export let configFile: string = join(__dirname, '../../proxy.config.json');
 
 /**
  * Sets the path to the configuration file.

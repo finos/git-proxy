@@ -50,6 +50,9 @@ describe('ActiveDirectory auth method', () => {
       fs: fsStub,
     });
 
+    // Initialize the user config after proxyquiring to load the stubbed config
+    config.initUserConfig();
+
     const { configure } = proxyquire('../src/service/passport/activeDirectory', {
       './ldaphelper': ldapStub,
       '../../db': dbStub,

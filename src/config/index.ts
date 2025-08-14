@@ -15,6 +15,12 @@ export const invalidateCache = () => {
   _currentConfig = null;
 };
 
+// Compatibility function for old initUserConfig behavior
+export const initUserConfig = () => {
+  invalidateCache();
+  loadFullConfiguration(); // Force immediate reload
+};
+
 // Function to clean undefined values from an object
 function cleanUndefinedValues(obj: any): any {
   if (obj === null || obj === undefined) return obj;
@@ -175,13 +181,7 @@ export const getAPIAuthMethods = () => {
   const config = loadFullConfiguration();
   const apiAuthSources = config.apiAuthentication || [];
 
-  const enabledAuthMethods = apiAuthSources.filter((auth: { enabled: any }) => auth.enabled);
-
-  if (enabledAuthMethods.length === 0) {
-    console.log('Warning: No authentication method enabled for API endpoints.');
-  }
-
-  return enabledAuthMethods;
+  return apiAuthSources.filter((auth: { enabled: any }) => auth.enabled);
 };
 
 // Gets the configured authentication method, defaults to local (backward compatibility)

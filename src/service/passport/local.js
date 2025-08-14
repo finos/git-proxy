@@ -1,8 +1,8 @@
-const bcrypt = require("bcryptjs");
-const LocalStrategy = require("passport-local").Strategy;
-const db = require("../../db");
+const bcrypt = require('bcryptjs');
+const LocalStrategy = require('passport-local').Strategy;
+const db = require('../../db');
 
-const type = "local";
+const type = 'local';
 
 const configure = async (passport) => {
   passport.use(
@@ -10,19 +10,19 @@ const configure = async (passport) => {
       try {
         const user = await db.findUser(username);
         if (!user) {
-          return done(null, false, { message: "Incorrect username." });
+          return done(null, false, { message: 'Incorrect username.' });
         }
 
         const passwordCorrect = await bcrypt.compare(password, user.password);
         if (!passwordCorrect) {
-          return done(null, false, { message: "Incorrect password." });
+          return done(null, false, { message: 'Incorrect password.' });
         }
 
         return done(null, user);
       } catch (err) {
         return done(err);
       }
-    })
+    }),
   );
 
   passport.serializeUser((user, done) => {
@@ -45,9 +45,9 @@ const configure = async (passport) => {
  * Create the default admin user if it doesn't exist
  */
 const createDefaultAdmin = async () => {
-  const admin = await db.findUser("admin");
+  const admin = await db.findUser('admin');
   if (!admin) {
-    await db.createUser("admin", "admin", "admin@place.com", "none", true);
+    await db.createUser('admin', 'admin', 'admin@place.com', 'none', true);
   }
 };
 

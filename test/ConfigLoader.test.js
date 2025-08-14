@@ -38,6 +38,10 @@ describe('ConfigLoader', () => {
     });
   });
 
+  after(() => {
+    // restore default config
+  });
+
   describe('loadFromFile', () => {
     it('should load configuration from file', async () => {
       const testConfig = {
@@ -264,7 +268,6 @@ describe('ConfigLoader', () => {
       configLoader = new ConfigLoader(mockConfig);
       configLoader.reloadTimer = setInterval(() => {}, 1000);
       await configLoader.start();
-
       expect(configLoader.reloadTimer).to.be.null;
     });
 
@@ -310,7 +313,6 @@ describe('ConfigLoader', () => {
       configLoader = new ConfigLoader(mockConfig);
       configLoader.reloadTimer = setInterval(() => {}, 1000);
       expect(configLoader.reloadTimer).to.not.be.null;
-
       await configLoader.stop();
       expect(configLoader.reloadTimer).to.be.null;
     });
