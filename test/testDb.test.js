@@ -128,7 +128,6 @@ describe('Database clients', async () => {
   it('should be able to delete a repo', async function () {
     await db.deleteRepo(TEST_REPO.name);
     const repos = await db.getRepos();
-
     const cleanRepos = cleanResponseData(TEST_REPO, repos);
     expect(cleanRepos).to.not.deep.include(TEST_REPO);
   });
@@ -211,6 +210,8 @@ describe('Database clients', async () => {
       TEST_USER.admin,
     );
     const users = await db.getUsers();
+    console.log('TEST USER:', JSON.stringify(TEST_USER, null, 2));
+    console.log('USERS:', JSON.stringify(users, null, 2));
     // remove password as it will have been hashed
     // eslint-disable-next-line no-unused-vars
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
