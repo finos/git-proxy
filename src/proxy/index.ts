@@ -44,10 +44,8 @@ export const proxyPreparations = async () => {
   const allowedList: Repo[] = await getRepos();
 
   await Promise.all(defaultAuthorisedRepoList.map(async (x) => {
-    console.log('x', x);
-    console.log('allowedList', allowedList);
     const found = allowedList.find((y) => y.project === x.project && x.name === y.name);
-    console.log('found', found);
+
     if (!found) {
       await createRepo(x);
       await addUserCanPush(x.name, 'admin');
