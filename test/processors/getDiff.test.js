@@ -1,6 +1,7 @@
 const path = require('path');
 const simpleGit = require('simple-git');
 const fs = require('fs').promises;
+const fc = require('fast-check');
 const { Action } = require('../../src/proxy/actions');
 const { exec } = require('../../src/proxy/processors/push-action/getDiff');
 
@@ -115,5 +116,58 @@ describe('getDiff', () => {
     expect(result.steps[0].error).to.be.false;
     expect(result.steps[0].content).to.not.be.null;
     expect(result.steps[0].content.length).to.be.greaterThan(0);
+  });
+
+  describe('fuzzing', () => {
+    it('should handle random action inputs without crashing', async function () {
+      // Not comprehensive but helps prevent crashing on bad input
+      await fc.assert(
+        fc.asyncProperty(
+          fc.string({ minLength: 0, maxLength: 40 }),
+          fc.string({ minLength: 0, maxLength: 40 }),
+          fc.array(fc.record({ parent: fc.string({ minLength: 0, maxLength: 40 }) }), { maxLength: 3 }),
+          async (from, to, commitData) => {
+            const action = new Action('id', 'push', 'POST', Date.now(), 'test/repo');
+            action.proxyGitPath = __dirname;
+            action.repoName = 'temp-test-repo';
+            action.commitFrom = from;
+            action.commitTo = to;
+            action.commitData = commitData;
+
+            const result = await exec({}, action);
+
+            expect(result).to.have.property('steps');
+            expect(result.steps[0]).to.have.property('error');
+            expect(result.steps[0]).to.have.property('content');
+          }
+        ),
+        { numRuns: 10 }
+      );
+    });
+
+    it('should handle randomized commitFrom and commitTo of proper length', async function () {
+      await fc.assert(
+        fc.asyncProperty(
+          fc.stringMatching(/^[0-9a-fA-F]{40}$/),
+          fc.stringMatching(/^[0-9a-fA-F]{40}$/),
+          async (from, to) => {
+            const action = new Action('id', 'push', 'POST', Date.now(), 'test/repo');
+            action.proxyGitPath = __dirname;
+            action.repoName = 'temp-test-repo';
+            action.commitFrom = from;
+            action.commitTo = to;
+            action.commitData = [
+              { parent: '0000000000000000000000000000000000000000' }
+            ];
+
+            const result = await exec({}, action);
+
+            expect(result.steps[0].error).to.be.true;
+            expect(result.steps[0].errorMessage).to.contain('Invalid revision range');
+          }
+        ),
+        { numRuns: 10 }
+      );
+    });
   });
 });
