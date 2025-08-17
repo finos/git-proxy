@@ -39,3 +39,12 @@ Cypress.Commands.add('login', (username, password) => {
     cy.url().should('include', '/dashboard/repo');
   });
 });
+
+Cypress.Commands.add('getCSRFToken', () => {
+  return cy.request('GET', 'http://localhost:8080/api/v1/repo').then((res) => {
+    const cookies = res.headers['set-cookie'];
+    const csrfCookie = cookies.find(c => c.startsWith('csrf='));
+    const token = decodeURIComponent(csrfCookie.split('=')[1].split(';')[0]);
+    return cy.wrap(token);
+  });
+});
