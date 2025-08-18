@@ -10,7 +10,6 @@ permissions:
 
 jobs:
   build-and-publish:
-  build-and-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
