@@ -93,6 +93,8 @@ describe('auth', async () => {
     // set up a repo, user and push to test against
     await db.deleteRepo(TEST_REPO);
     await db.deleteUser(TEST_USERNAME_1);
+    await db.deleteUser(TEST_USERNAME_2);
+
     await db.createRepo({
       project: TEST_ORG,
       name: TEST_REPO,
