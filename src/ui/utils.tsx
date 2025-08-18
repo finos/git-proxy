@@ -5,13 +5,13 @@
  */
 export const getCookie = (name: string): string | null => {
   if (!document.cookie) return null;
-  
+
   const cookies = document.cookie
     .split(';')
     .map((c) => c.trim())
     .filter((c) => c.startsWith(name + '='));
-    
+
   if (!cookies.length) return null;
-  
+
   return decodeURIComponent(cookies[0].split('=')[1]);
 };
