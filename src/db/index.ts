@@ -1,9 +1,10 @@
+import { getDatabase } from '../config';
 const bcrypt = require('bcryptjs');
-const config = require('../config');
+
 let sink: any;
-if (config.getDatabase().type === 'mongo') {
+if (getDatabase().type === 'mongo') {
   sink = require('./mongo');
-} else if (config.getDatabase().type === 'fs') {
+} else if (getDatabase().type === 'fs') {
   sink = require('./file');
 }
 

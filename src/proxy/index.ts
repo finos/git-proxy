@@ -30,8 +30,8 @@ const options: ServerOptions = {
   inflate: true,
   limit: '100000kb',
   type: '*/*',
-  key: getTLSEnabled() ? fs.readFileSync(getTLSKeyPemPath()) : undefined,
-  cert: getTLSEnabled() ? fs.readFileSync(getTLSCertPemPath()) : undefined,
+  key: getTLSEnabled() && getTLSKeyPemPath() ? fs.readFileSync(getTLSKeyPemPath()!) : undefined,
+  cert: getTLSEnabled() && getTLSCertPemPath() ? fs.readFileSync(getTLSCertPemPath()!) : undefined,
 };
 
 export const proxyPreparations = async () => {
