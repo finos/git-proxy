@@ -389,9 +389,12 @@ describe('proxy express application', async () => {
   it('should be restarted by the api and proxy requests for a new host (e.g. gitlab.com) when a project at that host is ADDED via the API', async function () {
     // Tests that the proxy restarts properly after a project with a URL at a new host is added
 
-    // check that we do not have the Gitlab test repo set up yet
-    let repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
-    expect(repo).to.be.null;
+    // check that we don't have *any* repos at gitlab.com setup
+    const numExistingGitlabRepos = (await db.getRepos({ url: /https:\/\/gitlab\.com/ })).length;
+    expect(
+      numExistingGitlabRepos,
+      'There is a GitLab that exists in the database already, which is NOT expected when running this test',
+    ).to.be.equal(0);
 
     // create the repo through the API, which should force the proxy to restart to handle the new domain
     const res = await chai
@@ -401,11 +404,15 @@ describe('proxy express application', async () => {
       .send(TEST_GITLAB_REPO);
     res.should.have.status(200);
 
-    // confirm that the repo was created in teh DB
-    repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    // confirm that the repo was created in the DB
+    const repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
     expect(repo).to.not.be.null;
 
-    // proxy a fetch request to the new repo
+    // and that our initial query for repos would have picked it up
+    const numCurrentGitlabRepos = (await db.getRepos({ url: /https:\/\/gitlab\.com/ })).length;
+    expect(numCurrentGitlabRepos).to.be.equal(1);
+
+    // proxy a request to the new repo
     const res2 = await chai
       .request(proxy.getExpressApp())
       .get(`/${TEST_GITLAB_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
@@ -435,7 +442,10 @@ describe('proxy express application', async () => {
     res.should.have.status(200);
 
     // confirm that its gone from the DB
-    repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    repo = await db.getRepoByUrl(
+      TEST_GITLAB_REPO.url,
+      'The GitLab repo still existed in the database after it should have been deleted...',
+    );
     expect(repo).to.be.null;
 
     // give the proxy half a second to restart
