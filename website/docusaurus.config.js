@@ -4,8 +4,6 @@ const projectName = 'GitProxy';
 
 const { version } = require('../package.json');
 
-const githubStars = fetch('https://api.github.com/repos/finos/git-proxy').then(res => res.json()).then(data => data.stargazers_count);
-
 module.exports = {
   title: `${projectName}`,
   tagline: `Deploy custom push protections and policies on top of Git`,
@@ -99,9 +97,10 @@ module.exports = {
         {
           href: 'https://github.com/finos/git-proxy',
           position: 'right',
-          className: 'header-star-link',
-          'aria-label': 'Star on GitHub',
-          'data-count': githubStars,
+          className: 'github-button',
+          'aria-label': 'Star finos/git-proxy on GitHub',
+          'data-icon': 'octicon-star',
+          'data-show-count': 'true',
         },
         {
           href: 'https://github.com/finos/git-proxy/fork',
