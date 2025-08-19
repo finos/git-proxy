@@ -40,15 +40,12 @@ describe('Check a Repo is in the authorised list', async () => {
   describe('fuzzing', () => {
     it('should not crash on random repo names', async () => {
       await fc.assert(
-        fc.asyncProperty(
-          fc.string(),
-          async (repoName) => {
-            const action = new actions.Action('123', 'type', 'get', 1234, repoName);
-            const result = await processor.exec(null, action, authList);
-            expect(result.error).to.be.true;
-          }
-        ),
-        { numRuns: 100 }
+        fc.asyncProperty(fc.string(), async (repoName) => {
+          const action = new actions.Action('123', 'type', 'get', 1234, repoName);
+          const result = await processor.exec(null, action);
+          expect(result.error).to.be.true;
+        }),
+        { numRuns: 100 },
       );
     });
   });
