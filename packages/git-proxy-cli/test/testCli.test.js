@@ -221,13 +221,13 @@ describe('test git-proxy-cli', function () {
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
-      await helper.addGitPushToDb(pushId, TEST_USER, TEST_EMAIL, TEST_REPO);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
 
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
     });
 
     it('attempt to authorise should fail when server is down', async function () {
@@ -304,7 +304,7 @@ describe('test git-proxy-cli', function () {
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
     });
 
     it('attempt to cancel should fail when server is down', async function () {
@@ -421,13 +421,13 @@ describe('test git-proxy-cli', function () {
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
-      await helper.addGitPushToDb(pushId, TEST_USER, TEST_EMAIL, TEST_REPO);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
 
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
     });
 
     it('attempt to reject should fail when server is down', async function () {
@@ -498,19 +498,13 @@ describe('test git-proxy-cli', function () {
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
-      await helper.addGitPushToDb(pushId, TEST_REPO, TEST_USER, TEST_EMAIL);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
 
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
-    });
-
-    after(async function () {
-      await helper.removeUserFromDb('testuser1');
-      await helper.removeGitPushFromDb(pushId);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
     });
 
     it('attempt to ls should list existing push', async function () {
