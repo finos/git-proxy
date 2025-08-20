@@ -45,6 +45,10 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
         return action;
       }
     }
+  } catch (e) {
+    action.error = true;
+    action.errorMessage = `An error occurred when executing the chain: ${e}`;
+    console.error(action.errorMessage);
   } finally {
     await proc.push.audit(req, action);
     if (action.autoApproved) {
