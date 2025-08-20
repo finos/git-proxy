@@ -398,14 +398,16 @@ const Dashboard: React.FC = () => {
           </GridItem>
         )}
 
-        {/* Diff section - show for both commits and tags */}
-        <GridItem xs={12} sm={12} md={12}>
-          <Card>
-            <CardBody>
-              <Diff diff={data.diff.content} />
-            </CardBody>
-          </Card>
-        </GridItem>
+        {/* Diff section - show only for commits */}
+        {!isTag && data.diff?.content && (
+          <GridItem xs={12} sm={12} md={12}>
+            <Card>
+              <CardBody>
+                <Diff diff={data.diff.content} />
+              </CardBody>
+            </Card>
+          </GridItem>
+        )}
       </GridContainer>
     </div>
   );
