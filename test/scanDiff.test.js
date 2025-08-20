@@ -4,6 +4,7 @@ const processor = require('../src/proxy/processors/push-action/scanDiff');
 const { Action } = require('../src/proxy/actions/Action');
 const { expect } = chai;
 const config = require('../src/config');
+const db = require('../src/db');
 chai.should();
 
 // Load blocked literals and patterns from configuration...
@@ -72,14 +73,28 @@ describe('Scan commit diff...', async () => {
       },
     },
   };
+
+  before(async () => {
+    // needed for private org tests
+    const repo = await db.createRepo(TEST_REPO);
+    TEST_REPO._id = repo._id;
+  });
+
+  after(async () => {
+    await db.deleteRepo(TEST_REPO._id);
+  });
+
   it('A diff including an AWS (Amazon Web Services) Access Key ID blocks the proxy...', async () => {
-    const action = new Action('1', 'type', 'method', 1, 'project/name');
+    const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateDiff('AKIAIOSFODNN7EXAMPLE'),
       },
     ];
+    action.setCommit('38cdc3e', '8a9c321');
+    action.setBranch('b');
+    action.setMessage('Message');
 
     const { error, errorMessage } = await processor.exec(null, action);
     expect(error).to.be.true;
@@ -88,13 +103,14 @@ describe('Scan commit diff...', async () => {
 
   // Formatting test
   it('A diff including multiple AWS (Amazon Web Services) Access Keys ID blocks the proxy...', async () => {
-    const action = new Action('1', 'type', 'method', 1, 'project/name');
+    const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateMultiLineDiff(),
       },
     ];
+    action.setCommit('8b97e49', 'de18d43');
 
     const { error, errorMessage } = await processor.exec(null, action);
 
@@ -107,13 +123,14 @@ describe('Scan commit diff...', async () => {
 
   // Formatting test
   it('A diff including multiple AWS Access Keys ID and Literal blocks the proxy with appropriate message...', async () => {
-    const action = new Action('1', 'type', 'method', 1, 'project/name');
+    const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateMultiLineDiffWithLiteral(),
       },
     ];
+    action.setCommit('8b97e49', 'de18d43');
 
     const { error, errorMessage } = await processor.exec(null, action);
 
@@ -128,13 +145,15 @@ describe('Scan commit diff...', async () => {
   });
 
   it('A diff including a Google Cloud Platform API Key blocks the proxy...', async () => {
-    const action = new Action('1', 'type', 'method', 1, 'project/name');
+    const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateDiff('AIza0aB7Z4Rfs23MnPqars81yzu19KbH72zaFda'),
       },
     ];
+    action.commitFrom = '38cdc3e';
+    action.commitTo = '8a9c321';
 
     const { error, errorMessage } = await processor.exec(null, action);
 
@@ -143,7 +162,7 @@ describe('Scan commit diff...', async () => {
   });
 
   it('A diff including a GitHub Personal Access Token blocks the proxy...', async () => {
-    const action = new Action('1', 'type', 'method', 1, 'project/name');
+    const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
@@ -158,7 +177,7 @@ describe('Scan commit diff...', async () => {
   });
 
   it('A diff including a GitHub Fine Grained Personal Access Token blocks the proxy...', async () => {
-    const action = new Action('1', 'type', 'method', 1, 'project/name');
+    const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
@@ -167,6 +186,8 @@ describe('Scan commit diff...', async () => {
         ),
       },
     ];
+    action.commitFrom = '38cdc3e';
+    action.commitTo = '8a9c321';
 
     const { error, errorMessage } = await processor.exec(null, action);
 
@@ -175,13 +196,15 @@ describe('Scan commit diff...', async () => {
   });
 
   it('A diff including a GitHub Actions Token blocks the proxy...', async () => {
-    const action = new Action('1', 'type', 'method', 1, 'project/name');
+    const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateDiff(`ghs_${crypto.randomBytes(20).toString('hex')}`),
       },
     ];
+    action.commitFrom = '38cdc3e';
+    action.commitTo = '8a9c321';
 
     const { error, errorMessage } = await processor.exec(null, action);
 
@@ -190,7 +213,7 @@ describe('Scan commit diff...', async () => {
   });
 
   it('A diff including a JSON Web Token (JWT) blocks the proxy...', async () => {
-    const action = new Action('1', 'type', 'method', 1, 'project/name');
+    const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
@@ -199,6 +222,8 @@ describe('Scan commit diff...', async () => {
         ),
       },
     ];
+    action.commitFrom = '38cdc3e';
+    action.commitTo = '8a9c321';
 
     const { error, errorMessage } = await processor.exec(null, action);
 
@@ -208,13 +233,15 @@ describe('Scan commit diff...', async () => {
 
   it('A diff including a blocked literal blocks the proxy...', async () => {
     for (const [literal] of blockedLiterals.entries()) {
-      const action = new Action('1', 'type', 'method', 1, 'project/name');
+      const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
       action.steps = [
         {
           stepName: 'diff',
           content: generateDiff(literal),
         },
       ];
+      action.commitFrom = '38cdc3e';
+      action.commitTo = '8a9c321';
 
       const { error, errorMessage } = await processor.exec(null, action);
 
@@ -223,7 +250,7 @@ describe('Scan commit diff...', async () => {
     }
   });
   it('When no diff is present, the proxy is blocked...', async () => {
-    const action = new Action('1', 'type', 'method', 1, 'project/name');
+    const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
@@ -238,7 +265,7 @@ describe('Scan commit diff...', async () => {
   });
 
   it('When diff is not a string, the proxy is blocked...', async () => {
-    const action = new Action('1', 'type', 'method', 1, 'project/name');
+    const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
@@ -253,20 +280,34 @@ describe('Scan commit diff...', async () => {
   });
 
   it('A diff with no secrets or sensitive information does not block the proxy...', async () => {
-    const action = new Action('1', 'type', 'method', 1, 'project/name');
+    const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateDiff(''),
       },
     ];
+    action.commitFrom = '38cdc3e';
+    action.commitTo = '8a9c321';
 
     const { error } = await processor.exec(null, action);
     expect(error).to.be.false;
   });
 
+  const TEST_REPO = {
+    project: 'private-org-test',
+    name: 'repo.git',
+    url: 'https://github.com/private-org-test/repo.git',
+  };
+
   it('A diff including a provider token in a private organization does not block the proxy...', async () => {
-    const action = new Action('1', 'type', 'method', 1, 'private-org-test');
+    const action = new Action(
+      '1',
+      'type',
+      'method',
+      1,
+      'https://github.com/private-org-test/repo.git', // URL needs to be parseable AND exist in DB
+    );
     action.steps = [
       {
         stepName: 'diff',
