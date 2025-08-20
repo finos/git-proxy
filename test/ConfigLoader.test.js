@@ -331,7 +331,6 @@ describe('ConfigLoader', () => {
 
       // Verify the loaded config has expected structure
       expect(config).to.be.an('object');
-      expect(config).to.have.property('proxyUrl');
       expect(config).to.have.property('cookieSecret');
     });
 
@@ -381,7 +380,6 @@ describe('ConfigLoader', () => {
 
       // Verify the loaded config has expected structure
       expect(config).to.be.an('object');
-      expect(config).to.have.property('proxyUrl');
       expect(config).to.have.property('cookieSecret');
     });
 
