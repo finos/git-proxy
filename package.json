@@ -114,6 +114,7 @@
     "eslint-plugin-typescript": "^0.14.0",
     "fast-check": "^4.2.0",
     "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
     "mocha": "^10.8.2",
     "nyc": "^17.1.0",
     "prettier": "^3.6.2",
@@ -142,6 +143,14 @@
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
+    ]
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}": [
+      "prettier --write"
+    ],
+    "*.{js,jsx,ts,tsx,json}": [
+      "eslint --fix"
     ]
   }
 }
