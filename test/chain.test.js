@@ -95,6 +95,8 @@ describe('proxy chain', function () {
 
   afterEach(() => {
     // Clear the module from the cache after each test
+    sandboxSinon.restore();
+    sinon.restore();
     clearCache(sandboxSinon);
   });
 
