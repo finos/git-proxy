@@ -41,7 +41,7 @@ const TEST_PUSH = {
   timestamp: 1744380903338,
   project: TEST_ORG,
   repoName: TEST_REPO + '.git',
-  url: TEST_REPO,
+  url: TEST_URL,
   repo: TEST_ORG + '/' + TEST_REPO + '.git',
   user: TEST_USERNAME_2,
   userEmail: TEST_EMAIL_2,
@@ -55,6 +55,7 @@ const TEST_PUSH = {
 describe('auth', async () => {
   let app;
   let cookie;
+  let testRepo;
 
   const setCookie = function (res) {
     res.headers['set-cookie'].forEach((x) => {
@@ -87,15 +88,19 @@ describe('auth', async () => {
   };
 
   before(async function () {
+    // remove existing repo and users if any
+    const oldRepo = await db.getRepoByUrl(TEST_URL);
+    if (oldRepo) {
+      await db.deleteRepo(oldRepo._id);
+    }
+    await db.deleteUser(TEST_USERNAME_1);
+    await db.deleteUser(TEST_USERNAME_2);
+
     app = await service.start();
     await loginAsAdmin();
 
     // set up a repo, user and push to test against
-    await db.deleteRepo(TEST_REPO);
-    await db.deleteUser(TEST_USERNAME_1);
-    await db.deleteUser(TEST_USERNAME_2);
-
-    await db.createRepo({
+    testRepo = await db.createRepo({
       project: TEST_ORG,
       name: TEST_REPO,
       url: TEST_URL,
@@ -104,15 +109,21 @@ describe('auth', async () => {
     // Create a new user for the approver
     console.log('creating approver');
     await db.createUser(TEST_USERNAME_1, TEST_PASSWORD_1, TEST_EMAIL_1, TEST_USERNAME_1, false);
-    await db.addUserCanAuthorise(TEST_REPO, TEST_USERNAME_1);
+    await db.addUserCanAuthorise(testRepo._id, TEST_USERNAME_1);
 
     // create a new user for the committer
     console.log('creating committer');
     await db.createUser(TEST_USERNAME_2, TEST_PASSWORD_2, TEST_EMAIL_2, TEST_USERNAME_2, false);
-    await db.addUserCanPush(TEST_REPO, TEST_USERNAME_2);
+    await db.addUserCanPush(testRepo._id, TEST_USERNAME_2);
 
     // logout of admin account
     await logout();
+  });
+
+  after(async function () {
+    await db.deleteRepo(testRepo._id);
+    await db.deleteUser(TEST_USERNAME_1);
+    await db.deleteUser(TEST_USERNAME_2);
   });
 
   describe('test push API', async function () {

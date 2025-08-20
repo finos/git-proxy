@@ -28,7 +28,6 @@ let _database: Database[] = defaultSettings.sink;
 let _authentication: Authentication[] = defaultSettings.authentication;
 let _apiAuthentication: Authentication[] = defaultSettings.apiAuthentication;
 let _tempPassword: TempPasswordConfig = defaultSettings.tempPassword;
-let _proxyUrl = defaultSettings.proxyUrl;
 let _api: Record<string, unknown> = defaultSettings.api;
 let _cookieSecret: string = serverConfig.GIT_PROXY_COOKIE_SECRET || defaultSettings.cookieSecret;
 let _sessionMaxAgeHours: number = defaultSettings.sessionMaxAgeHours;
@@ -53,15 +52,6 @@ let _config = { ...defaultSettings, ...(_userSettings || {}) } as Configuration;
 
 // Create config loader instance
 const configLoader = new ConfigLoader(_config);
-
-// Get configured proxy URL
-export const getProxyUrl = () => {
-  if (_userSettings !== null && _userSettings.proxyUrl) {
-    _proxyUrl = _userSettings.proxyUrl;
-  }
-
-  return _proxyUrl;
-};
 
 // Gets a list of authorised repositories
 export const getAuthorisedList = () => {

@@ -39,7 +39,7 @@ describe('gitleaks', () => {
       exec = gitleaksModule.exec;
 
       req = {};
-      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
+      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
       action.proxyGitPath = '/tmp';
       action.repoName = 'test-repo';
       action.commitFrom = 'abc123';

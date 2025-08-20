@@ -12,9 +12,11 @@ describe('checkUserPushPermission', () => {
   let getUsersStub;
   let isUserPushAllowedStub;
   let logStub;
+  let errorStub;
 
   beforeEach(() => {
     logStub = sinon.stub(console, 'log');
+    errorStub = sinon.stub(console, 'error');
     getUsersStub = sinon.stub();
     isUserPushAllowedStub = sinon.stub();
 
@@ -42,7 +44,13 @@ describe('checkUserPushPermission', () => {
 
     beforeEach(() => {
       req = {};
-      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
+      action = new Action(
+        '1234567890',
+        'push',
+        'POST',
+        1234567890,
+        'https://github.com/finos/git-proxy.git',
+      );
       action.user = 'git-user';
       action.userEmail = 'db-user@test.com';
       stepSpy = sinon.spy(Step.prototype, 'log');
@@ -59,10 +67,10 @@ describe('checkUserPushPermission', () => {
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.false;
       expect(stepSpy.lastCall.args[0]).to.equal(
-        'User db-user@test.com is allowed to push on repo test/repo.git',
+        'User db-user@test.com is allowed to push on repo https://github.com/finos/git-proxy.git',
       );
       expect(logStub.lastCall.args[0]).to.equal(
-        'User db-user@test.com permission on Repo repo : true',
+        'User db-user@test.com permission on Repo https://github.com/finos/git-proxy.git : true',
       );
     });
 
@@ -76,9 +84,11 @@ describe('checkUserPushPermission', () => {
 
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.true;
-      expect(result.steps[0].errorMessage).to.equal(
-        'Your push has been blocked (db-user@test.com is not allowed to push on repo test/repo.git)',
+      expect(stepSpy.lastCall.args[0]).to.equal(
+        'Your push has been blocked (db-user@test.com is not allowed to push on repo https://github.com/finos/git-proxy.git)',
       );
+      expect(result.steps[0].errorMessage).to.include('Your push has been blocked');
+      expect(logStub.lastCall.args[0]).to.equal('User not allowed to Push');
     });
 
     it('should reject push when no user found for git account', async () => {
@@ -88,6 +98,9 @@ describe('checkUserPushPermission', () => {
 
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.true;
+      expect(stepSpy.lastCall.args[0]).to.equal(
+        'Your push has been blocked (db-user@test.com is not allowed to push on repo https://github.com/finos/git-proxy.git)',
+      );
       expect(result.steps[0].errorMessage).to.include('Your push has been blocked');
     });
 
@@ -101,8 +114,11 @@ describe('checkUserPushPermission', () => {
 
       expect(result.steps).to.have.lengthOf(1);
       expect(result.steps[0].error).to.be.true;
-      expect(result.steps[0].errorMessage).to.equal(
+      expect(stepSpy.lastCall.args[0]).to.equal(
         'Your push has been blocked (there are multiple users with email db-user@test.com)',
+      );
+      expect(errorStub.lastCall.args[0]).to.equal(
+        'Multiple users found with email address db-user@test.com, ending',
       );
     });
 
