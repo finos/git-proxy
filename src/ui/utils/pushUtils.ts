@@ -160,7 +160,7 @@ export const getRepoFullName = (repo: string): string => {
 };
 
 /**
- * Generates GitHub URLs for different reference types
+ * Generates GitHub URLs for different reference types (legacy - use getGitUrl instead)
  */
 export const getGitHubUrl = {
   repo: (repoName: string) => `https://github.com/${repoName}`,
@@ -169,6 +169,59 @@ export const getGitHubUrl = {
   tag: (repoName: string, tagName: string) =>
     `https://github.com/${repoName}/releases/tag/${tagName}`,
   user: (username: string) => `https://github.com/${username}`,
+};
+
+/**
+ * Generates URLs for different Git providers and reference types
+ * @param {string} repoWebUrl - The base repository web URL
+ * @param {string} gitProvider - The Git provider (github, gitlab, etc.)
+ * @return {object} Object with URL generation functions
+ */
+export const getGitUrl = (repoWebUrl: string, gitProvider: string) => ({
+  repo: () => repoWebUrl,
+  commit: (sha: string) => `${repoWebUrl}/commit/${sha}`,
+  branch: (branch: string) => {
+    switch (gitProvider) {
+      case 'gitlab':
+        return `${repoWebUrl}/-/tree/${branch}`;
+      default:
+        return `${repoWebUrl}/tree/${branch}`;
+    }
+  },
+  tag: (tagName: string) => {
+    switch (gitProvider) {
+      case 'gitlab':
+        return `${repoWebUrl}/-/tags/${tagName}`;
+      default:
+        return `${repoWebUrl}/releases/tag/${tagName}`;
+    }
+  },
+});
+
+/**
+ * Gets the appropriate URL for a branch or tag reference
+ * @param {string} repoWebUrl - The base repository web URL
+ * @param {string} gitProvider - The Git provider 
+ * @param {boolean} isTag - Whether this is a tag reference
+ * @param {string} refName - The reference name (branch or tag)
+ * @return {string} The appropriate URL
+ */
+export const getRefUrl = (repoWebUrl: string, gitProvider: string, isTag: boolean, refName: string): string => {
+  const gitUrl = getGitUrl(repoWebUrl, gitProvider);
+  return isTag ? gitUrl.tag(refName) : gitUrl.branch(refName);
+};
+
+/**
+ * Gets the appropriate URL for a commit or tag SHA
+ * @param {string} repoWebUrl - The base repository web URL  
+ * @param {string} gitProvider - The Git provider
+ * @param {boolean} isTag - Whether this is a tag reference
+ * @param {string} sha - The SHA or tag name
+ * @return {string} The appropriate URL
+ */
+export const getShaUrl = (repoWebUrl: string, gitProvider: string, isTag: boolean, sha: string): string => {
+  const gitUrl = getGitUrl(repoWebUrl, gitProvider);
+  return isTag ? gitUrl.tag(sha) : gitUrl.commit(sha);
 };
 
 /**
