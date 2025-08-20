@@ -8,7 +8,7 @@ import styles from '../../../assets/jss/material-dashboard-react/views/dashboard
 import { getRepos } from '../../../services/repo';
 import GridContainer from '../../../components/Grid/GridContainer';
 import GridItem from '../../../components/Grid/GridItem';
-import NewRepo, { RepositoryData } from './NewRepo';
+import NewRepo, { RepositoryDataWithId } from './NewRepo';
 import RepoOverview from './RepoOverview';
 import { UserContext } from '../../../../context';
 import Search from '../../../components/Search/Search';
@@ -19,7 +19,7 @@ import { RepositoriesProps } from '../repositories.types';
 interface GridContainerLayoutProps {
   classes: any;
   openRepo: (repo: string) => void;
-  data: RepositoryData[];
+  data: RepositoryDataWithId[];
   repoButton: React.ReactNode;
   onSearch: (query: string) => void;
   currentPage: number;
@@ -27,6 +27,8 @@ interface GridContainerLayoutProps {
   itemsPerPage: number;
   onPageChange: (page: number) => void;
   onFilterChange: (filterOption: FilterOption, sortOrder: SortOrder) => void;
+  tableId: string;
+  key: string;
 }
 
 interface UserContextType {
@@ -39,8 +41,8 @@ interface UserContextType {
 export default function Repositories(props: RepositoriesProps): React.ReactElement {
   const useStyles = makeStyles(styles as any);
   const classes = useStyles();
-  const [data, setData] = useState<RepositoryData[]>([]);
-  const [filteredData, setFilteredData] = useState<RepositoryData[]>([]);
+  const [data, setData] = useState<RepositoryDataWithId[]>([]);
+  const [filteredData, setFilteredData] = useState<RepositoryDataWithId[]>([]);
   const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
@@ -49,8 +51,8 @@ export default function Repositories(props: RepositoriesProps): React.ReactEleme
   const itemsPerPage: number = 5;
   const navigate = useNavigate();
   const { user } = useContext<UserContextType>(UserContext);
-
-  const openRepo = (repo: string): void => navigate(`/dashboard/repo/${repo}`, { replace: true });
+  const openRepo = (repoId: string): void =>
+    navigate(`/dashboard/repo/${repoId}`, { replace: true });
 
   useEffect(() => {
     const query: Record<string, any> = {};
@@ -60,7 +62,7 @@ export default function Repositories(props: RepositoriesProps): React.ReactEleme
     }
     getRepos(
       setIsLoading,
-      (data: RepositoryData[]) => {
+      (data: RepositoryDataWithId[]) => {
         setData(data);
         setFilteredData(data);
       },
@@ -71,7 +73,7 @@ export default function Repositories(props: RepositoriesProps): React.ReactEleme
     );
   }, [props]);
 
-  const refresh = async (repo: RepositoryData): Promise<void> => {
+  const refresh = async (repo: RepositoryDataWithId): Promise<void> => {
     const updatedData = [...data, repo];
     setData(updatedData);
     setFilteredData(updatedData);
@@ -135,24 +137,23 @@ export default function Repositories(props: RepositoriesProps): React.ReactEleme
     <GridItem />
   );
 
-  return (
-    <GetGridContainerLayOut
-      key='x'
-      classes={classes}
-      openRepo={openRepo}
-      data={paginatedData}
-      repoButton={addrepoButton}
-      onSearch={handleSearch}
-      currentPage={currentPage}
-      totalItems={filteredData.length}
-      itemsPerPage={itemsPerPage}
-      onPageChange={handlePageChange}
-      onFilterChange={handleFilterChange}
-    />
-  );
+  return getGridContainerLayOut({
+    key: 'x',
+    classes: classes,
+    openRepo: openRepo,
+    data: paginatedData,
+    repoButton: addrepoButton,
+    onSearch: handleSearch,
+    currentPage: currentPage,
+    totalItems: filteredData.length,
+    itemsPerPage: itemsPerPage,
+    onPageChange: handlePageChange,
+    onFilterChange: handleFilterChange,
+    tableId: 'RepoListTable',
+  });
 }
 
-function GetGridContainerLayOut(props: GridContainerLayoutProps): React.ReactElement {
+function getGridContainerLayOut(props: GridContainerLayoutProps): React.ReactElement {
   return (
     <GridContainer>
       {props.repoButton}
@@ -162,10 +163,10 @@ function GetGridContainerLayOut(props: GridContainerLayoutProps): React.ReactEle
         <TableContainer
           style={{ background: 'transparent', borderRadius: '5px', border: '1px solid #d0d7de' }}
         >
-          <Table className={props.classes.table} aria-label='simple table'>
+          <Table id={props.tableId} className={props.classes.table} aria-label='simple table'>
             <TableBody>
               {props.data.map((row) => {
-                if (row.project && row.name) {
+                if (row.url) {
                   return (
                     <RepoOverview data={{ ...row, proxyURL: row.proxyURL || '' }} key={row._id} />
                   );

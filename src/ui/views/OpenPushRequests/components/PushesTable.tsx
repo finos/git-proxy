@@ -28,9 +28,12 @@ import {
   getMessage,
   getCommitCount,
   getRepoFullName,
-  getGitHubUrl,
   isValidValue,
+  getRefUrl,
+  getShaUrl,
 } from '../../../utils/pushUtils';
+import { trimTrailingDotGit } from '../../../../db/helper';
+import { getGitProvider, getUserProfileLink } from '../../../utils';
 
 interface PushesTableProps {
   [key: string]: any;
@@ -76,7 +79,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
           const message = getMessage(item).toLowerCase();
           const commitToSha = item.commitTo.toLowerCase();
           const tagName = getTagName(item.tag).toLowerCase();
-          
+
           return (
             repoName.includes(lowerCaseTerm) ||
             commitToSha.includes(lowerCaseTerm) ||
@@ -107,104 +110,104 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
       <div>
         <Search onSearch={handleSearch} />
         <TableContainer component={Paper}>
-        <Table className={classes.table} aria-label='pushes table'>
-          <TableHead>
-            <TableRow>
-              <TableCell align='left'>Timestamp</TableCell>
-              <TableCell align='left'>Repository</TableCell>
-              <TableCell align='left'>Branch/Tag</TableCell>
-              <TableCell align='left'>Commit SHA/Tag</TableCell>
-              <TableCell align='left'>Committer/Tagger</TableCell>
-              <TableCell align='left'>Author</TableCell>
-              <TableCell align='left'>Author E-mail</TableCell>
-              <TableCell align='left'>Message</TableCell>
-              <TableCell align='left'>No. of Commits</TableCell>
-              <TableCell align='right'></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {[...currentItems].reverse().map((row) => {
-              const isTag = isTagPush(row);
-              const repoFullName = getRepoFullName(row.repo);
-              const displayTime = getDisplayTimestamp(isTag, row.commitData[0], row.tagData?.[0]);
-              const refToShow = getRefToShow(row);
-              const shaOrTag = getShaOrTag(row);
-              const committerOrTagger = getCommitterOrTagger(row);
-              const author = getAuthor(row);
-              const authorEmail = getAuthorEmail(row);
-              const message = getMessage(row);
-              const commitCount = getCommitCount(row);
+          <Table className={classes.table} aria-label='pushes table'>
+            <TableHead>
+              <TableRow>
+                <TableCell align='left'>Timestamp</TableCell>
+                <TableCell align='left'>Repository</TableCell>
+                <TableCell align='left'>Branch/Tag</TableCell>
+                <TableCell align='left'>Commit SHA/Tag</TableCell>
+                <TableCell align='left'>Committer/Tagger</TableCell>
+                <TableCell align='left'>Author</TableCell>
+                <TableCell align='left'>Author E-mail</TableCell>
+                <TableCell align='left'>Message</TableCell>
+                <TableCell align='left'>No. of Commits</TableCell>
+                <TableCell align='right'></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[...currentItems].reverse().map((row) => {
+                const isTag = isTagPush(row);
+                const repoFullName = getRepoFullName(row.repo);
+                const displayTime = getDisplayTimestamp(isTag, row.commitData[0], row.tagData?.[0]);
+                const refToShow = getRefToShow(row);
+                const shaOrTag = getShaOrTag(row);
+                const repoUrl = row.url;
+                const repoWebUrl = trimTrailingDotGit(repoUrl);
+                const gitProvider = getGitProvider(repoUrl);
+                const hostname = new URL(repoUrl).hostname;
+                const committerOrTagger = getCommitterOrTagger(row);
+                const author = getAuthor(row);
+                const authorEmail = getAuthorEmail(row);
+                const message = getMessage(row);
+                const commitCount = getCommitCount(row);
 
-              return (
-                <TableRow key={row.id}>
-                  <TableCell align='left'>{displayTime}</TableCell>
-                  <TableCell align='left'>
-                    <a href={getGitHubUrl.repo(repoFullName)} rel='noreferrer' target='_blank'>
-                      {repoFullName}
-                    </a>
-                  </TableCell>
-                  <TableCell align='left'>
-                    <a
-                      href={isTag ? getGitHubUrl.tag(repoFullName, refToShow) : getGitHubUrl.branch(repoFullName, refToShow)}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
-                      {refToShow}
-                    </a>
-                  </TableCell>
-                  <TableCell align='left'>
-                    <a
-                      href={isTag ? getGitHubUrl.tag(repoFullName, shaOrTag) : getGitHubUrl.commit(repoFullName, row.commitTo)}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
-                      {shaOrTag}
-                    </a>
-                  </TableCell>
-                  <TableCell align='left'>
-                    {isValidValue(committerOrTagger) ? (
-                      <a href={getGitHubUrl.user(committerOrTagger)} rel='noreferrer' target='_blank'>
-                        {committerOrTagger}
+                return (
+                  <TableRow key={row.id}>
+                    <TableCell align='left'>{displayTime}</TableCell>
+                    <TableCell align='left'>
+                      <a href={`${repoUrl}`} rel='noreferrer' target='_blank'>
+                        {repoFullName}
                       </a>
-                    ) : (
-                      'N/A'
-                    )}
-                  </TableCell>
-                  <TableCell align='left'>
-                    {isValidValue(author) ? (
-                      <a href={getGitHubUrl.user(author)} rel='noreferrer' target='_blank'>
-                        {author}
+                    </TableCell>
+                    <TableCell align='left'>
+                      <a
+                        href={getRefUrl(repoWebUrl, gitProvider, isTag, refToShow)}
+                        rel='noreferrer'
+                        target='_blank'
+                      >
+                        {refToShow}
                       </a>
-                    ) : (
-                      'N/A'
-                    )}
-                  </TableCell>
-                  <TableCell align='left'>
-                    {isValidValue(authorEmail) ? (
-                      <a href={`mailto:${authorEmail}`}>{authorEmail}</a>
-                    ) : (
-                      'N/A'
-                    )}
-                  </TableCell>
-                  <TableCell align='left'>{message}</TableCell>
-                  <TableCell align='left'>{commitCount}</TableCell>
-                  <TableCell component='th' scope='row'>
-                    <Button variant='contained' color='primary' onClick={() => openPush(row.id)}>
-                      <KeyboardArrowRight />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <Pagination
-        itemsPerPage={itemsPerPage}
-        totalItems={filteredData.length}
-        currentPage={currentPage}
-        onPageChange={handlePageChange}
-      />
+                    </TableCell>
+                    <TableCell align='left'>
+                      <a
+                        href={getShaUrl(repoWebUrl, gitProvider, isTag, isTag ? shaOrTag : row.commitTo)}
+                        rel='noreferrer'
+                        target='_blank'
+                      >
+                        {shaOrTag}
+                      </a>
+                    </TableCell>
+                    <TableCell align='left'>
+                      {isValidValue(committerOrTagger) ? (
+                        <span dangerouslySetInnerHTML={{ __html: getUserProfileLink(committerOrTagger, gitProvider, hostname) }} />
+                      ) : (
+                        'N/A'
+                      )}
+                    </TableCell>
+                    <TableCell align='left'>
+                      {isValidValue(author) ? (
+                        <span dangerouslySetInnerHTML={{ __html: getUserProfileLink(author, gitProvider, hostname) }} />
+                      ) : (
+                        'N/A'
+                      )}
+                    </TableCell>
+                    <TableCell align='left'>
+                      {isValidValue(authorEmail) ? (
+                        <a href={`mailto:${authorEmail}`}>{authorEmail}</a>
+                      ) : (
+                        'N/A'
+                      )}
+                    </TableCell>
+                    <TableCell align='left'>{message}</TableCell>
+                    <TableCell align='left'>{commitCount}</TableCell>
+                    <TableCell component='th' scope='row'>
+                      <Button variant='contained' color='primary' onClick={() => openPush(row.id)}>
+                        <KeyboardArrowRight />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <Pagination
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredData.length}
+          currentPage={currentPage}
+          onPageChange={handlePageChange}
+        />
       </div>
     </ErrorBoundary>
   );

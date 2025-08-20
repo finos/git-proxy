@@ -27,8 +27,10 @@ import {
   getTagName,
   getRepoFullName,
   getRefToShow,
-  getGitHubUrl,
+  getGitUrl,
 } from '../../utils/pushUtils';
+import { trimTrailingDotGit } from '../../../db/helper';
+import { getGitProvider, getUserProfileLink } from '../../utils';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -112,7 +114,13 @@ const Dashboard: React.FC = () => {
   }
 
   const repoFullName = data ? getRepoFullName(data.repo) : '';
-  const repoBranch = data ? getRefToShow(data) : '';
+  const refToShow = data ? getRefToShow(data) : '';
+  const repoUrl = data.url;
+  const repoWebUrl = trimTrailingDotGit(repoUrl);
+  const gitProvider = getGitProvider(repoUrl);
+  const hostname = new URL(repoUrl).hostname;
+  const isGitHub = gitProvider == 'github';
+  const gitUrl = getGitUrl(repoWebUrl, gitProvider);
 
   const generateIcon = (title: string) => {
     switch (title) {
@@ -194,19 +202,26 @@ const Dashboard: React.FC = () => {
                     </div>
                   ) : (
                     <>
-                      <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
-                        <img
-                          style={{ width: '45px', borderRadius: '20px' }}
-                          src={`https://github.com/${data.attestation.reviewer.gitAccount}.png`}
-                          alt='Reviewer'
-                        />
-                      </a>
+                      {isGitHub && (
+                        <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
+                          <img
+                            style={{ width: '45px', borderRadius: '20px' }}
+                            src={`https://github.com/${data.attestation.reviewer.gitAccount}.png`}
+                          />
+                        </a>
+                      )}
                       <div>
                         <p>
-                          <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
-                            {' '}
-                            {data.attestation.reviewer.gitAccount}{' '}
-                          </a>
+                          {isGitHub && (
+                            <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
+                              {data.attestation.reviewer.gitAccount}
+                            </a>
+                          )}
+                          {!isGitHub && (
+                            <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
+                              {data.attestation.reviewer.username}
+                            </a>
+                          )}{' '}
                           approved this contribution
                         </p>
                       </div>
@@ -243,7 +258,7 @@ const Dashboard: React.FC = () => {
                 <GridItem xs={3} sm={3} md={3}>
                   <h3>Repository</h3>
                   <p>
-                    <a href={getGitHubUrl.repo(repoFullName)} target='_blank' rel='noreferrer'>
+                    <a href={gitUrl.repo()} target='_blank' rel='noreferrer'>
                       {repoFullName}
                     </a>
                   </p>
@@ -257,7 +272,7 @@ const Dashboard: React.FC = () => {
                   ) : (
                     <>
                       <h3>Branch</h3>
-                      <p>{repoBranch}</p>
+                      <p>{refToShow}</p>
                     </>
                   )}
                 </GridItem>
@@ -265,7 +280,7 @@ const Dashboard: React.FC = () => {
                   <h3>From</h3>
                   <p>
                     <a
-                      href={getGitHubUrl.commit(repoFullName, data.commitFrom)}
+                      href={gitUrl.commit(data.commitFrom)}
                       target='_blank'
                       rel='noreferrer'
                     >
@@ -277,7 +292,7 @@ const Dashboard: React.FC = () => {
                   <h3>To</h3>
                   <p>
                     <a
-                      href={getGitHubUrl.commit(repoFullName, data.commitTo)}
+                      href={gitUrl.commit(data.commitTo)}
                       target='_blank'
                       rel='noreferrer'
                     >
@@ -311,25 +326,13 @@ const Dashboard: React.FC = () => {
                       {data.commitData.map((c) => (
                         <TableRow key={c.commitTimestamp}>
                           <TableCell>
-                            {moment.unix(c.commitTs || c.commitTimestamp).toString()}
+                            {moment.unix(c.commitTs || c.commitTimestamp || 0).toString()}
                           </TableCell>
                           <TableCell>
-                            <a
-                              href={getGitHubUrl.user(c.committer)}
-                              rel='noreferrer'
-                              target='_blank'
-                            >
-                              {c.committer}
-                            </a>
+                            {getUserProfileLink(c.committer, gitProvider, hostname)}
                           </TableCell>
                           <TableCell>
-                            <a
-                              href={getGitHubUrl.user(c.author)}
-                              rel='noreferrer'
-                              target='_blank'
-                            >
-                              {c.author}
-                            </a>
+                            {getUserProfileLink(c.author, gitProvider, hostname)}
                           </TableCell>
                           <TableCell>
                             {c.authorEmail ? (
@@ -372,17 +375,11 @@ const Dashboard: React.FC = () => {
                     <TableCell>Message</TableCell>
                   </TableHead>
                   <TableBody>
-                    {data.tagData.map((t) => (
+                    {data.tagData?.map((t) => (
                       <TableRow key={t.tagName}>
                         <TableCell>{t.tagName}</TableCell>
                         <TableCell>
-                          <a
-                            href={getGitHubUrl.user(t.tagger)}
-                            target='_blank'
-                            rel='noreferrer'
-                          >
-                            {t.tagger}
-                          </a>
+                          {getUserProfileLink(t.tagger, gitProvider, hostname)}
                         </TableCell>
                         <TableCell>
                           {t.taggerEmail ? (
@@ -400,6 +397,15 @@ const Dashboard: React.FC = () => {
             </Card>
           </GridItem>
         )}
+
+        {/* Diff section - show for both commits and tags */}
+        <GridItem xs={12} sm={12} md={12}>
+          <Card>
+            <CardBody>
+              <Diff diff={data.diff.content} />
+            </CardBody>
+          </Card>
+        </GridItem>
       </GridContainer>
     </div>
   );
