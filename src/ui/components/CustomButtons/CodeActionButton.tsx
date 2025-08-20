@@ -20,32 +20,34 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
   const [placement, setPlacement] = useState<PopperPlacementType>();
   const [isCopied, setIsCopied] = useState<boolean>(false);
 
-  const handleClick = (newPlacement: PopperPlacementType) => (event: React.MouseEvent<HTMLElement>) => {
-    setIsCopied(false);
-    setAnchorEl(event.currentTarget);
-    setOpen((prev) => placement !== newPlacement || !prev);
-    setPlacement(newPlacement);
-  };
+  const handleClick =
+    (newPlacement: PopperPlacementType) => (event: React.MouseEvent<HTMLElement>) => {
+      setIsCopied(false);
+      setAnchorEl(event.currentTarget);
+      setOpen((prev) => placement !== newPlacement || !prev);
+      setPlacement(newPlacement);
+    };
 
   return (
     <>
-      <span
+      <div
         style={{
           background: '#2da44e',
           borderRadius: '5px',
           color: 'white',
-          padding: '8px 10px 8px 10px',
+          padding: '6px 10px 6px 10px',
           fontWeight: 'bold',
           cursor: 'pointer',
           border: '1px solid rgba(240,246,252,0.1)',
+          boxSizing: 'border-box',
           whiteSpace: 'nowrap',
         }}
         onClick={handleClick('bottom-end')}
       >
         <CodeIcon size='small' verticalAlign='middle' />{' '}
-        <span style={{ paddingLeft: '6px', paddingRight: '10px' }}>Code</span>
+        <span style={{ paddingLeft: '6px', paddingRight: '10px', height: '24px' }}>Code</span>
         <ChevronDownIcon size='small' verticalAlign='text-top' />
-      </span>
+      </div>
       <Popper
         open={open}
         anchorEl={anchorEl}
