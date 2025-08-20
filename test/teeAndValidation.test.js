@@ -79,6 +79,12 @@ describe('isPackPost()', () => {
   it('returns true for git-upload-pack POST', () => {
     expect(isPackPost({ method: 'POST', url: '/a/b.git/git-upload-pack' })).to.be.true;
   });
+  it('returns true for git-upload-pack POST, with a gitlab style multi-level org', () => {
+    expect(isPackPost({ method: 'POST', url: '/a/bee/sea/dee.git/git-upload-pack' })).to.be.true;
+  });
+  it('returns true for git-upload-pack POST, with a bare (no org) repo URL', () => {
+    expect(isPackPost({ method: 'POST', url: '/a.git/git-upload-pack' })).to.be.true;
+  });
   it('returns false for other URLs', () => {
     expect(isPackPost({ method: 'POST', url: '/info/refs' })).to.be.false;
   });
