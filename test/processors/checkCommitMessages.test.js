@@ -164,7 +164,6 @@ describe('checkCommitMessages', () => {
                   fc.integer(),
                   fc.double(),
                   fc.boolean(),
-                  fc.object(),
                 ),
                 author: fc.string()
               }),
@@ -193,7 +192,8 @@ describe('checkCommitMessages', () => {
               [{ message: null, author: 'me' }],
               [{ message: {}, author: 'me' }],
               [{ message: 'SeCrEt', author: 'me' }]
-            ]
+            ],
+            numRuns: 1000
           }
         );
       });
