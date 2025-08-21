@@ -1,8 +1,7 @@
 import { connect, findDocuments, findOneDocument } from './helper';
 import { Action } from '../../proxy/actions';
-import { toClass, trimTrailingDotGit } from '../helper';
-import * as repo from './repo';
-import { Push, PushQuery } from '../types';
+import { toClass } from '../helper';
+import { PushQuery } from '../types';
 
 const collectionName = 'pushes';
 
@@ -13,8 +12,8 @@ const defaultPushQuery: PushQuery = {
   authorised: false,
 };
 
-export const getPushes = async (query: PushQuery = defaultPushQuery): Promise<Push[]> => {
-  return findDocuments<Push>(collectionName, query, {
+export const getPushes = async (query: PushQuery = defaultPushQuery): Promise<Action[]> => {
+  return findDocuments<Action>(collectionName, query, {
     projection: {
       _id: 0,
       id: 1,
@@ -45,12 +44,12 @@ export const getPush = async (id: string): Promise<Action | null> => {
   return doc ? (toClass(doc, Action.prototype) as Action) : null;
 };
 
-export const deletePush = async function (id: string) {
+export const deletePush = async function (id: string): Promise<void> {
   const collection = await connect(collectionName);
-  return collection.deleteOne({ id });
+  await collection.deleteOne({ id });
 };
 
-export const writeAudit = async (action: Action): Promise<Action> => {
+export const writeAudit = async (action: Action): Promise<void> => {
   const data = JSON.parse(JSON.stringify(action));
   const options = { upsert: true };
   const collection = await connect(collectionName);
@@ -59,10 +58,9 @@ export const writeAudit = async (action: Action): Promise<Action> => {
     throw new Error('Invalid id');
   }
   await collection.updateOne({ id: data.id }, { $set: data }, options);
-  return action;
 };
 
-export const authorise = async (id: string, attestation: any) => {
+export const authorise = async (id: string, attestation: any): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -76,7 +74,7 @@ export const authorise = async (id: string, attestation: any) => {
   return { message: `authorised ${id}` };
 };
 
-export const reject = async (id: string) => {
+export const reject = async (id: string, attestation: any): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -84,11 +82,12 @@ export const reject = async (id: string) => {
   action.authorised = false;
   action.canceled = false;
   action.rejected = true;
+  action.attestation = attestation;
   await writeAudit(action);
   return { message: `reject ${id}` };
 };
 
-export const cancel = async (id: string) => {
+export const cancel = async (id: string): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -98,38 +97,4 @@ export const cancel = async (id: string) => {
   action.rejected = false;
   await writeAudit(action);
   return { message: `canceled ${id}` };
-};
-
-export const canUserApproveRejectPush = async (id: string, user: string) => {
-  return new Promise(async (resolve) => {
-    const action = await getPush(id);
-    if (!action) {
-      resolve(false);
-      return;
-    }
-
-    const repoName = trimTrailingDotGit(action.repoName);
-    const isAllowed = await repo.canUserApproveRejectPushRepo(repoName, user);
-
-    resolve(isAllowed);
-  });
-};
-
-export const canUserCancelPush = async (id: string, user: string) => {
-  return new Promise(async (resolve) => {
-    const pushDetail = await getPush(id);
-    if (!pushDetail) {
-      resolve(false);
-      return;
-    }
-
-    const repoName = trimTrailingDotGit(pushDetail.repoName);
-    const isAllowed = await repo.isUserPushAllowed(repoName, user);
-
-    if (isAllowed) {
-      resolve(true);
-    } else {
-      resolve(false);
-    }
-  });
 };

@@ -24,6 +24,16 @@ jobs:
       - run: npm run build
         env:
           IS_PUBLISHING: 'YES'
-      - run: npm publish --access=public
+
+      - name: Check if pre-release and publish to NPM
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" == *"-"* ]]; then
+            echo "Publishing pre-release: $VERSION"
+            npm publish --access=public --tag rc
+          else
+            echo "Publishing stable release: $VERSION"
+            npm publish --access=public
+          fi
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

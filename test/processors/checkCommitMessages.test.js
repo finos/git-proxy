@@ -48,7 +48,7 @@ describe('checkCommitMessages', () => {
 
     beforeEach(() => {
       req = {};
-      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
+      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
       action.commitData = [
         { message: 'Fix bug', author: 'test@example.com' },
         { message: 'Update docs', author: 'test@example.com' },
@@ -164,7 +164,6 @@ describe('checkCommitMessages', () => {
                   fc.integer(),
                   fc.double(),
                   fc.boolean(),
-                  fc.object(),
                 ),
                 author: fc.string()
               }),
@@ -193,7 +192,8 @@ describe('checkCommitMessages', () => {
               [{ message: null, author: 'me' }],
               [{ message: {}, author: 'me' }],
               [{ message: 'SeCrEt', author: 'me' }]
-            ]
+            ],
+            numRuns: 1000
           }
         );
       });
