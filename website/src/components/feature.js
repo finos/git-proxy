@@ -9,14 +9,7 @@ import PropTypes from 'prop-types';
  * @param {*} props
  * @return {JSX.Element}
  */
-export default function Feature({
-  imageUrl,
-  title,
-  description,
-  about,
-  project,
-  involved,
-}) {
+export default function Feature({ imageUrl, title, description, about, project, involved }) {
   // add prop validation
   Feature.propTypes = {
     imageUrl: PropTypes.string.isRequired,
@@ -42,9 +35,7 @@ export default function Feature({
   };
 
   return (
-    <div
-      className={classnames('text--center col col--4 padding', styles.feature)}
-    >
+    <div className={classnames('text--center col col--4 padding', styles.feature)}>
       {imgUrl && (
         <div>
           <img className={styles.featureImage} src={imgUrl} alt={title} />
@@ -53,16 +44,13 @@ export default function Feature({
       <h3>{title}</h3>
       <p>{description}</p>
       <div className={classnames(styles.featureCTA)}>
-        {defined(about) &&
-          defined(about.title) &&
-          defined(about.link) &&
-          about.link !== '' && (
-            <ul>
-              <li>
-                <a href={about.link}>{about.title}</a>
-              </li>
-            </ul>
-          )}
+        {defined(about) && defined(about.title) && defined(about.link) && about.link !== '' && (
+          <ul>
+            <li>
+              <a href={about.link}>{about.title}</a>
+            </li>
+          </ul>
+        )}
         {defined(project) &&
           defined(project.title) &&
           defined(project.link) &&

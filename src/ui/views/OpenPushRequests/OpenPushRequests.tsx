@@ -18,12 +18,7 @@ const Dashboard: React.FC = () => {
       tabName: 'Pending',
       tabIcon: Visibility,
       tabContent: (
-        <PushesTable
-          blocked={true}
-          authorised={false}
-          rejected={false}
-          canceled={false}
-        />
+        <PushesTable blocked={true} authorised={false} rejected={false} canceled={false} />
       ),
     },
     {
@@ -47,10 +42,7 @@ const Dashboard: React.FC = () => {
     <div>
       <GridContainer>
         <GridItem xs={12} sm={12} md={12}>
-          <CustomTabs
-            headerColor="primary"
-            tabs={tabs}
-          />
+          <CustomTabs headerColor='primary' tabs={tabs} />
         </GridItem>
       </GridContainer>
     </div>

@@ -64,14 +64,26 @@ describe('validateJwt', () => {
     pemStub.returns(mockPem);
     verifyStub.returns({ azp: 'client-id', sub: 'user123' });
 
-    const { verifiedPayload } = await validateJwt('fake.token.here', 'https://issuer.com', 'client-id', 'client-id', getJwksStub);
+    const { verifiedPayload } = await validateJwt(
+      'fake.token.here',
+      'https://issuer.com',
+      'client-id',
+      'client-id',
+      getJwksStub,
+    );
     expect(verifiedPayload.sub).to.equal('user123');
   });
 
   it('should return error if JWT invalid', async () => {
     decodeStub.returns(null); // Simulate broken token
 
-    const { error } = await validateJwt('bad.token', 'https://issuer.com', 'client-id', 'client-id', getJwksStub);
+    const { error } = await validateJwt(
+      'bad.token',
+      'https://issuer.com',
+      'client-id',
+      'client-id',
+      getJwksStub,
+    );
     expect(error).to.include('Invalid JWT');
   });
 });
@@ -80,7 +92,7 @@ describe('assignRoles', () => {
   it('should assign admin role based on claim', () => {
     const user = { username: 'admin-user' };
     const payload = { admin: 'admin' };
-    const mapping = { admin: { 'admin': 'admin' } };
+    const mapping = { admin: { admin: 'admin' } };
 
     assignRoles(mapping, payload, user);
     expect(user.admin).to.be.true;
@@ -88,8 +100,11 @@ describe('assignRoles', () => {
 
   it('should assign multiple roles based on claims', () => {
     const user = { username: 'multi-role-user' };
-    const payload = { 'custom-claim-admin': 'custom-value', 'editor': 'editor' };
-    const mapping = { admin: { 'custom-claim-admin': 'custom-value' }, editor: { 'editor': 'editor' } };
+    const payload = { 'custom-claim-admin': 'custom-value', editor: 'editor' };
+    const mapping = {
+      admin: { 'custom-claim-admin': 'custom-value' },
+      editor: { editor: 'editor' },
+    };
 
     assignRoles(mapping, payload, user);
     expect(user.admin).to.be.true;
@@ -130,14 +145,14 @@ describe('jwtAuthHandler', () => {
       clientID: 'client-id',
       authorityURL: 'https://accounts.google.com',
       expectedAudience: 'expected-audience',
-      roleMapping: { 'admin': { 'admin': 'admin' } }
+      roleMapping: { admin: { admin: 'admin' } },
     };
 
     validVerifyResponse = {
       header: { kid: '123' },
       azp: 'client-id',
       sub: 'user123',
-      admin: 'admin'
+      admin: 'admin',
     };
   });
 

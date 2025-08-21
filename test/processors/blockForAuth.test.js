@@ -108,7 +108,7 @@ describe('blockForAuth', () => {
 
           const blockForAuth = proxyquire('../../src/proxy/processors/push-action/blockForAuth', {
             '../../../service/urls': { getServiceUIURL: getServiceUIURLStubLocal },
-            '../../actions': { Step: StepSpyLocal }
+            '../../actions': { Step: StepSpyLocal },
           });
 
           const result = await blockForAuth.exec(req, action);
@@ -120,14 +120,16 @@ describe('blockForAuth', () => {
           const message = setAsyncBlockStub.firstCall.args[0];
           expect(message).to.include(`http://localhost:8080/dashboard/push/${actionId}`);
           expect(message).to.include('\x1B[32mGitProxy has received your push ✅\x1B[0m');
-          expect(message).to.include(`\x1B[34mhttp://localhost:8080/dashboard/push/${actionId}\x1B[0m`);
+          expect(message).to.include(
+            `\x1B[34mhttp://localhost:8080/dashboard/push/${actionId}\x1B[0m`,
+          );
           expect(message).to.include('🔗 Shareable Link');
           expect(result).to.equal(action);
         }),
         {
-          numRuns: 100
-        }
+          numRuns: 100,
+        },
       );
-    });  
+    });
   });
 });
