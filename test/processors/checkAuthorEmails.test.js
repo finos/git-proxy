@@ -181,7 +181,7 @@ describe('checkAuthorEmails', () => {
           exec({}, action);
         }),
         {
-          numRuns: 100
+          numRuns: 1000
         }
       );
 
@@ -200,7 +200,7 @@ describe('checkAuthorEmails', () => {
           exec({}, action);
         }),
         {
-          numRuns: 100
+          numRuns: 1000
         }
       );
       expect(action.step.error).to.be.undefined;
@@ -215,7 +215,7 @@ describe('checkAuthorEmails', () => {
           exec({}, action);
         }),
         {
-          numRuns: 100
+          numRuns: 1000
         }
       );
 
@@ -232,7 +232,7 @@ describe('checkAuthorEmails', () => {
           exec({}, action);
         }),
         {
-          numRuns: 100
+          numRuns: 1000
         }
       );
       expect(action.step.error).to.be.undefined;
