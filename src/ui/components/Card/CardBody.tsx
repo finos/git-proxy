@@ -20,7 +20,7 @@ const CardBody: React.FC<CardBodyProps> = ({
   ...rest
 }) => {
   const classes = useStyles();
-  
+
   const cardBodyClasses = classNames({
     [classes.cardBody]: true,
     [classes.cardBodyPlain]: plain,

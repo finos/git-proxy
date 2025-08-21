@@ -51,11 +51,14 @@ const getPushes = async (
       setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
-        setErrorMessage('Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.');
+        setErrorMessage(
+          'Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.',
+        );
       } else {
         setErrorMessage(`Error fetching pushes: ${error.response.data.message}`);
       }
-    }).finally(() => {
+    })
+    .finally(() => {
       setIsLoading(false);
     });
 };

@@ -14,9 +14,9 @@ describe('checkEmptyBranch', () => {
   beforeEach(() => {
     gitRawStub = sinon.stub();
     simpleGitStub = sinon.stub().callsFake((workingDir) => {
-      return { 
+      return {
         raw: gitRawStub,
-        cwd: workingDir
+        cwd: workingDir,
       };
     });
 
@@ -25,17 +25,17 @@ describe('checkEmptyBranch', () => {
         default: simpleGitStub,
         __esModule: true,
         '@global': true,
-        '@noCallThru': true
+        '@noCallThru': true,
       },
       // deeply mocking fs to prevent simple-git from validating directories (which fails)
-      'fs': {
+      fs: {
         existsSync: sinon.stub().returns(true),
         lstatSync: sinon.stub().returns({
           isDirectory: () => true,
-          isFile: () => false
+          isFile: () => false,
         }),
-        '@global': true
-      }
+        '@global': true,
+      },
     });
 
     exec = checkEmptyBranch.exec;
@@ -51,13 +51,7 @@ describe('checkEmptyBranch', () => {
 
     beforeEach(() => {
       req = {};
-      action = new Action(
-        '1234567890',
-        'push',
-        'POST',
-        1234567890,
-        'test/repo'
-      );
+      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
       action.proxyGitPath = '/tmp/gitproxy';
       action.repoName = 'test-repo';
       action.commitFrom = '0000000000000000000000000000000000000000';
@@ -82,7 +76,7 @@ describe('checkEmptyBranch', () => {
       expect(simpleGitStub.calledWith('/tmp/gitproxy/test-repo')).to.be.true;
       expect(gitRawStub.calledWith(['cat-file', '-t', action.commitTo])).to.be.true;
 
-      const step = result.steps.find(s => s.stepName === 'checkEmptyBranch');
+      const step = result.steps.find((s) => s.stepName === 'checkEmptyBranch');
       expect(step).to.exist;
       expect(step.error).to.be.true;
       expect(step.errorMessage).to.include('Push blocked: Empty branch');
@@ -95,7 +89,7 @@ describe('checkEmptyBranch', () => {
 
       expect(gitRawStub.calledWith(['cat-file', '-t', action.commitTo])).to.be.true;
 
-      const step = result.steps.find(s => s.stepName === 'checkEmptyBranch');
+      const step = result.steps.find((s) => s.stepName === 'checkEmptyBranch');
       expect(step).to.exist;
       expect(step.error).to.be.true;
       expect(step.errorMessage).to.include('Push blocked: Commit data not found');
@@ -108,7 +102,7 @@ describe('checkEmptyBranch', () => {
 
       expect(simpleGitStub.called).to.be.false;
 
-      const step = result.steps.find(s => s.stepName === 'checkEmptyBranch');
+      const step = result.steps.find((s) => s.stepName === 'checkEmptyBranch');
       expect(step).to.exist;
       expect(step.error).to.be.true;
       expect(step.errorMessage).to.include('Push blocked: Commit data not found');
