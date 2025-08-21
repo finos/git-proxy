@@ -160,15 +160,15 @@ const repo = (proxy) => {
           let newOrigin = true;
 
           const existingHosts = await getAllProxiedHosts();
-          existingHosts.forEach((h) => {
-            // assume SSL is in use and that our origins are missing the protocol
-            if (req.body.url.startsWith(`https://${h}`)) {
+          existingHosts.forEach((hostInfo) => {
+            // Check if the request URL starts with the existing protocol+host combination
+            if (req.body.url.startsWith(`${hostInfo.protocol}${hostInfo.host}`)) {
               newOrigin = false;
             }
           });
 
           console.log(
-            `API request to proxy repository ${req.body.url} is for a new origin: ${newOrigin},\n\texisting origin list was: ${JSON.stringify(existingHosts)}`,
+            `API request to proxy repository ${req.body.url} is for a new origin: ${newOrigin},\n\texisting origin list was: ${JSON.stringify(existingHosts.map((h) => `${h.protocol}${h.host}`))}`,
           );
 
           // create the repository

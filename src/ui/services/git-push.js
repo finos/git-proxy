@@ -1,9 +1,19 @@
 import axios from 'axios';
 import { getAxiosConfig, processAuthError } from './auth.js';
+import { getApiBaseUrl } from './runtime-config.js';
 
-const baseUrl = import.meta.env.VITE_API_URI
-  ? `${import.meta.env.VITE_API_URI}/api/v1`
-  : `${location.origin}/api/v1`;
+// Initialize baseUrl - will be set async
+let baseUrl = `${location.origin}/api/v1`; // Default fallback
+
+// Set the actual baseUrl from runtime config
+getApiBaseUrl()
+  .then((apiUrl) => {
+    baseUrl = `${apiUrl}/api/v1`;
+  })
+  .catch(() => {
+    // Keep the default if runtime config fails
+    console.warn('Using default API base URL for git-push');
+  });
 
   const getPush = async (id, setIsLoading, setData, setAuth, setIsError) => {
     const url = `${baseUrl}/push/${id}`;

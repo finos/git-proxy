@@ -15,11 +15,14 @@ const Repositories: React.FC<RepositoriesProps> = (props) => {
   const [snackbarOpen, setSnackbarOpen] = React.useState(false);
 
   useEffect(() => {
-    prepareRemoteRepositoryData();
-  }, [props.data.project, props.data.name, props.data.url]);
+    if (props.data) {
+      prepareRemoteRepositoryData();
+    }
+  }, [props.data?.project, props.data?.name, props.data?.url]);
 
   const prepareRemoteRepositoryData = async () => {
     try {
+      if (!props.data) return;
       const { url: remoteUrl } = props.data;
       if (!remoteUrl) return;
 
@@ -27,21 +30,30 @@ const Repositories: React.FC<RepositoriesProps> = (props) => {
         await fetchRemoteRepositoryData(props.data.project, props.data.name, remoteUrl),
       );
     } catch (error: any) {
-      console.warn(
-        `Unable to fetch repository data for ${props.data.project}/${props.data.name} from '${remoteUrl}' - this may occur if the project is private or from an SCM vendor that is not supported.`,
-      );
+      if (props.data) {
+        console.warn(
+          `Unable to fetch repository data for ${props.data.project}/${props.data.name} from '${props.data.url}' - this may occur if the project is private or from an SCM vendor that is not supported.`,
+        );
+      }
     }
   };
 
   const { url: remoteUrl, proxyURL } = props?.data || {};
-  const parsedUrl = new URL(remoteUrl);
-  const cloneURL = `${proxyURL}/${parsedUrl.host}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`;
+  const parsedUrl = remoteUrl ? new URL(remoteUrl) : null;
+  const cloneURL =
+    parsedUrl && proxyURL
+      ? `${proxyURL}/${parsedUrl.host}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`
+      : '';
+
+  if (!props.data) {
+    return null;
+  }
 
   return (
     <TableRow>
       <TableCell>
         <div style={{ padding: '15px' }}>
-          <a href={`/dashboard/repo/${props.data?._id}`}>
+          <a href={`/dashboard/repo/${props.data._id}`}>
             <span style={{ fontSize: '17px' }}>
               {props.data.project}/{props.data.name}
             </span>

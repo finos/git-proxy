@@ -4,14 +4,23 @@ import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
 import { PushQuery } from '../types';
+import * as config from '../../config';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
-// these don't get coverage in tests as they have already been run once before the test
-/* istanbul ignore if */
-if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
-/* istanbul ignore if */
-if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
+// Only create directories if we're actually using the file database
+const initializeFileDatabase = () => {
+  // these don't get coverage in tests as they have already been run once before the test
+  /* istanbul ignore if */
+  if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
+  /* istanbul ignore if */
+  if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
+};
+
+// Only initialize if this is the configured database type
+if (config.getDatabase().type === 'fs') {
+  initializeFileDatabase();
+}
 
 const db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
 try {
