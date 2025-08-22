@@ -150,6 +150,33 @@ after(async function () {
   await db.deleteUser('u1');
   await db.deleteUser('u2');
 });
+
+afterEach(() => {
+  sinon.restore();
+});
+```
+
+Note that `after` will execute once after **all** the tests are complete, whereas `afterEach` will execute at the end of **each** test. 
+
+#### Reset sinon and proxyquire cache
+
+**It's very important to reset Sinon and the Proxyquire/require cache after each test** when necessary. This prevents old stubs from leaking into subsequent tests.
+
+Here is an example of a function that resets both of these after each test (`test/chain.test.js`):
+
+```js
+const clearCache = (sandbox) => {
+  delete require.cache[require.resolve('../src/proxy/processors')];
+  delete require.cache[require.resolve('../src/proxy/chain')];
+  sandbox.reset();
+};
+
+...
+
+afterEach(() => {
+  // Clear the module from the cache after each test
+  clearCache(sandboxSinon);
+});
 ```
 
 #### Focus on expected behaviour
@@ -185,7 +212,7 @@ expect(authMethods[0].type).to.equal('local');
 
 If test coverage is still insufficient after writing your tests, check out the [CodeCov report](https://app.codecov.io/gh/finos/git-proxy) after making the PR and take a look at which lines are missing coverage.
 
-### E2E testing with Cypress
+### UI testing with Cypress
 
 Although coverage is currently low, we have introduced Cypress testing to make sure that end-to-end flows are working as expected with every added feature.
 
