@@ -14,16 +14,6 @@
       "project": "finos",
       "name": "git-proxy",
       "url": "https://github.com/finos/git-proxy.git"
-    },
-    {
-      "project": "fabiovincenzi",
-      "name": "test",
-      "url": "https://github.com/fabiovincenzi/test.git"
-    },
-    {
-      "project": "fabio.vincenzi.reviewit-group",
-      "name": "test",
-      "url": "https://gitlab.com/fabio.vincenzi.reviewit-group/test.git"
     }
   ],
   "sink": [
@@ -80,9 +70,6 @@
   "api": {
     "github": {
       "baseUrl": "https://api.github.com"
-    },
-    "gitlab": {
-      "baseUrl": "https://gitlab.com/api/v4"
     }
   },
   "commitConfig": {
