@@ -125,7 +125,7 @@ describe('blockForAuth', () => {
           expect(result).to.equal(action);
         }),
         {
-          numRuns: 100
+          numRuns: 1000
         }
       );
     });  
