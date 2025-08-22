@@ -5,21 +5,22 @@ const baseUrl = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}/api/v1`
   : `${location.origin}/api/v1`;
 
-const getPush = async (id, setIsLoading, setData, setAuth, setIsError) => {
-  const url = `${baseUrl}/push/${id}`;
-  await axios(url, getAxiosConfig())
-    .then((response) => {
+  const getPush = async (id, setIsLoading, setData, setAuth, setIsError) => {
+    const url = `${baseUrl}/push/${id}`;
+    setIsLoading(true);
+
+    try {
+      const response = await axios(url, getAxiosConfig());
       const data = response.data;
       data.diff = data.steps.find((x) => x.stepName === 'diff');
       setData(data);
-      setIsLoading(false);
-    })
-    .catch((error) => {
-      if (error.response && error.response.status === 401) setAuth(false);
+    } catch (error) {
+      if (error.response?.status === 401) setAuth(false);
       else setIsError(true);
+    } finally {
       setIsLoading(false);
-    });
-};
+    }
+  };
 
 const getPushes = async (
   setIsLoading,
@@ -32,28 +33,29 @@ const getPushes = async (
     canceled: false,
     authorised: false,
     rejected: false,
-  },
+  }
 ) => {
   const url = new URL(`${baseUrl}/push`);
   url.search = new URLSearchParams(query);
 
   setIsLoading(true);
-  await axios(url.toString(), getAxiosConfig())
-    .then((response) => {
-      const data = response.data;
-      setData(data);
-    })
-    .catch((error) => {
-      setIsError(true);
-      if (error.response && error.response.status === 401) {
-        setAuth(false);
-        setErrorMessage(processAuthError(error));
-      } else {
-        setErrorMessage(`Error fetching pushes: ${error.response.data.message}`);
-      }
-    }).finally(() => {
-      setIsLoading(false);
-    });
+
+  try {
+    const response = await axios(url.toString(), getAxiosConfig());
+    setData(response.data);
+  } catch (error) {
+    setIsError(true);
+
+    if (error.response?.status === 401) {
+      setAuth(false);
+      setErrorMessage(processAuthError(error));
+    } else {
+      const message = error.response?.data?.message || error.message;
+      setErrorMessage(`Error fetching pushes: ${message}`);
+    }
+  } finally {
+    setIsLoading(false);
+  }
 };
 
 const authorisePush = async (id, setMessage, setUserAllowedToApprove, attestation) => {
