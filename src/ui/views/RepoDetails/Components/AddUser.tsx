@@ -20,7 +20,7 @@ import { UserData } from '../../../../types/models';
 import Danger from '../../../components/Typography/Danger';
 
 interface AddUserDialogProps {
-  repoName: string;
+  repoId: string;
   type: string;
   refreshFn: () => void;
   open: boolean;
@@ -28,7 +28,7 @@ interface AddUserDialogProps {
 }
 
 const AddUserDialog: React.FC<AddUserDialogProps> = ({
-  repoName,
+  repoId,
   type,
   refreshFn,
   open,
@@ -59,7 +59,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const add = async () => {
     try {
       setIsLoading(true);
-      await addUser(repoName, username, type);
+      await addUser(repoId, username, type);
       handleSuccess();
       handleClose();
     } catch (e) {
@@ -145,12 +145,12 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
 };
 
 interface AddUserProps {
-  repoName: string;
+  repoId: string;
   type: string;
   refreshFn: () => void;
 }
 
-const AddUser: React.FC<AddUserProps> = ({ repoName, type, refreshFn }) => {
+const AddUser: React.FC<AddUserProps> = ({ repoId, type, refreshFn }) => {
   const [open, setOpen] = useState<boolean>(false);
 
   const handleClickOpen = () => {
@@ -167,7 +167,7 @@ const AddUser: React.FC<AddUserProps> = ({ repoName, type, refreshFn }) => {
         <PersonAdd />
       </Button>
       <AddUserDialog
-        repoName={repoName}
+        repoId={repoId}
         type={type}
         open={open}
         onClose={handleClose}

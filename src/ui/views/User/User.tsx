@@ -84,6 +84,7 @@ export default function UserProfile(): React.ReactElement {
         gitAccount: escapeHTML(gitAccount),
       };
       await updateUser(updatedData);
+      setData(updatedData);
       navigate(`/dashboard/profile`);
     } catch {
       setIsError(true);
