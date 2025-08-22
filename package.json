@@ -19,8 +19,8 @@
     "test-coverage": "nyc npm run test",
     "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text npm run test",
     "prepare": "node ./scripts/prepare.js",
-    "lint": "eslint \"src/**/*.{js,jsx,ts,tsx,json}\" \"test/**/*.{js,jsx,ts,tsx,json}\"",
-    "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx,json}\" \"test/**/*.{js,jsx,ts,tsx,json}\"",
+    "lint": "eslint \"{src,test,tests}/**/*.{js,jsx,ts,tsx,json}\"",
+    "lint:fix": "eslint --fix \"{src,test,tests}/**/*.{js,jsx,ts,tsx,json}\"",
     "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,md,json,scss} test/**/*.{js,jsx,ts,tsx,json} packages/git-proxy-cli/test/**/*.{js,jsx,ts,tsx,json}  packages/git-proxy-cli/index.js --config ./.prettierrc",
     "gen-schema-doc": "node ./scripts/doc-schema.js",
     "cypress:run": "cypress run"
@@ -109,6 +109,7 @@
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-json": "^3.1.0",
+    "eslint-plugin-license-header": "^0.8.0",
     "eslint-plugin-prettier": "^5.5.3",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-standard": "^5.0.0",
