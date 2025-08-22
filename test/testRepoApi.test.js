@@ -16,6 +16,7 @@ const TEST_REPO = {
   name: 'test-repo',
   project: 'finos',
   host: 'github.com',
+  protocol: 'https://',
 };
 
 const TEST_REPO_NON_GITHUB = {
@@ -23,6 +24,7 @@ const TEST_REPO_NON_GITHUB = {
   name: 'test-repo2',
   project: 'org/sub-org',
   host: 'gitlab.com',
+  protocol: 'https://',
 };
 
 const TEST_REPO_NAKED = {
@@ -30,6 +32,7 @@ const TEST_REPO_NAKED = {
   name: 'test-repo3',
   project: '',
   host: '123.456.789:80',
+  protocol: 'https://',
 };
 
 const cleanupRepo = async (url) => {
@@ -263,7 +266,12 @@ describe('add new repo', async () => {
 
   it('Proxy route helpers should return the proxied origin', async function () {
     const origins = await getAllProxiedHosts();
-    expect(origins).to.eql([TEST_REPO.host]);
+    expect(origins).to.eql([
+      {
+        host: TEST_REPO.host,
+        protocol: TEST_REPO.protocol,
+      },
+    ]);
   });
 
   it('Proxy route helpers should return the new proxied origins when new repos are added', async function () {
@@ -285,7 +293,16 @@ describe('add new repo', async () => {
     repo.users.canAuthorise.length.should.equal(0);
 
     const origins = await getAllProxiedHosts();
-    expect(origins).to.have.members([TEST_REPO.host, TEST_REPO_NON_GITHUB.host]);
+    expect(origins).to.have.deep.members([
+      {
+        host: TEST_REPO.host,
+        protocol: TEST_REPO.protocol,
+      },
+      {
+        host: TEST_REPO_NON_GITHUB.host,
+        protocol: TEST_REPO_NON_GITHUB.protocol,
+      },
+    ]);
 
     const res2 = await chai
       .request(app)
@@ -297,10 +314,19 @@ describe('add new repo', async () => {
     repoIds[2] = repo2._id;
 
     const origins2 = await getAllProxiedHosts();
-    expect(origins2).to.have.members([
-      TEST_REPO.host,
-      TEST_REPO_NON_GITHUB.host,
-      TEST_REPO_NAKED.host,
+    expect(origins2).to.have.deep.members([
+      {
+        host: TEST_REPO.host,
+        protocol: TEST_REPO.protocol,
+      },
+      {
+        host: TEST_REPO_NON_GITHUB.host,
+        protocol: TEST_REPO_NON_GITHUB.protocol,
+      },
+      {
+        host: TEST_REPO_NAKED.host,
+        protocol: TEST_REPO_NAKED.protocol,
+      },
     ]);
   });
 
