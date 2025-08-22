@@ -1,6 +1,26 @@
+/**
+ * @license
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execSync } from 'child_process';
-import { testConfig, waitForService, configureGitCredentials } from './setup';
+import { testConfig } from './setup';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -9,9 +29,6 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
   const tempDir: string = path.join(os.tmpdir(), 'git-proxy-push-e2e-tests', Date.now().toString());
 
   beforeAll(async () => {
-    // Ensure the git proxy service is ready
-    await waitForService(`${testConfig.gitProxyUiUrl}/api/v1/healthcheck`);
-
     // Create temp directory for test clones
     fs.mkdirSync(tempDir, { recursive: true });
 
@@ -22,15 +39,18 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
     it(
       'should handle push operations through git proxy (with proper authorization check)',
       async () => {
-        const repoUrl: string = `${testConfig.gitProxyUrl}/coopernetes/test-repo.git`;
+        // Build URL with embedded credentials for reliable authentication
+        const baseUrl = new URL(testConfig.gitProxyUrl);
+        baseUrl.username = testConfig.gitUsername;
+        baseUrl.password = testConfig.gitPassword;
+        const repoUrl = `${baseUrl.toString()}/coopernetes/test-repo.git`;
         const cloneDir: string = path.join(tempDir, 'test-repo-push');
 
-        console.log(`Testing push operation to ${repoUrl}`);
+        console.log(
+          `Testing push operation to ${testConfig.gitProxyUrl}/coopernetes/test-repo.git`,
+        );
 
         try {
-          // Configure git credentials for authentication
-          configureGitCredentials(tempDir);
-
           // Step 1: Clone the repository
           console.log('Step 1: Cloning repository...');
           const gitCloneCommand: string = `git clone ${repoUrl} ${cloneDir}`;
@@ -47,9 +67,6 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
           // Verify clone was successful
           expect(fs.existsSync(cloneDir)).toBe(true);
           expect(fs.existsSync(path.join(cloneDir, '.git'))).toBe(true);
-
-          // Configure git credentials in the cloned repository for push operations
-          configureGitCredentials(cloneDir);
 
           // Step 2: Make a dummy change
           console.log('Step 2: Creating dummy change...');
