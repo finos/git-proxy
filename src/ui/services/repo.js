@@ -42,8 +42,8 @@ const getRepos = async (
   setIsLoading(true);
   await axios(url.toString(), getAxiosConfig())
     .then((response) => {
-      const data = response.data;
-      setData(data);
+      const sortedRepos = response.data.sort((a, b) => a.name.localeCompare(b.name));
+      setData(sortedRepos);
     })
     .catch((error) => {
       setIsError(true);
