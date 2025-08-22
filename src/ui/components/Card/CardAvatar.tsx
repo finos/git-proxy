@@ -1,5 +1,5 @@
 import React from 'react';
-import classNames from 'classnames';
+import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import styles from '../../assets/jss/material-dashboard-react/components/cardAvatarStyle';
 
@@ -21,7 +21,7 @@ const CardAvatar: React.FC<CardAvatarProps> = ({
 }) => {
   const classes = useStyles();
 
-  const cardAvatarClasses = classNames({
+  const cardAvatarClasses = clsx({
     [classes.cardAvatar]: true,
     [classes.cardAvatarProfile]: profile,
     [classes.cardAvatarPlain]: plain,
