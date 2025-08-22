@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import classNames from 'classnames';
+import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import MenuItem from '@material-ui/core/MenuItem';
 import MenuList from '@material-ui/core/MenuList';
@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { AccountCircle } from '@material-ui/icons';
 import { getUser } from '../../services/user';
 import axios from 'axios';
-import { getCookie } from '../../utils';
+import { getAxiosConfig } from '../../services/auth';
 import { UserData } from '../../../types/models';
 
 const useStyles = makeStyles(styles);
@@ -51,18 +51,13 @@ const DashboardNavbarLinks: React.FC = () => {
 
   const logout = async () => {
     try {
-      const response = await axios.post(
+      const { data } = await axios.post(
         `${process.env.VITE_API_URI || 'http://localhost:3000'}/api/auth/logout`,
         {},
-        {
-          withCredentials: true,
-          headers: {
-            'X-CSRF-TOKEN': getCookie('csrf'),
-          },
-        },
+        getAxiosConfig()
       );
 
-      if (!response.data.isAuth && !response.data.user) {
+      if (!data.isAuth && !data.user) {
         setAuth(false);
         navigate(0);
       }
@@ -93,7 +88,7 @@ const DashboardNavbarLinks: React.FC = () => {
           anchorEl={openProfile}
           transition
           disablePortal
-          className={classNames({ [classes.popperClose]: !openProfile }) + ' ' + classes.popperNav}
+          className={clsx(classes.popperNav, { [classes.popperClose]: !openProfile })}
         >
           {({ TransitionProps, placement }) => (
             <Grow
