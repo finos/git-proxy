@@ -5,13 +5,15 @@ import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions
 
 const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.parsePush,
+  proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
   proc.push.checkAuthorEmails,
   proc.push.checkUserPushPermission,
-  proc.push.checkIfWaitingAuth,
   proc.push.pullRemote,
   proc.push.writePack,
+  proc.push.checkHiddenCommits,
+  proc.push.checkIfWaitingAuth,
   proc.push.preReceive,
   proc.push.getDiff,
   // run before clear remote

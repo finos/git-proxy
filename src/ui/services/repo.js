@@ -5,8 +5,8 @@ const baseUrl = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}/api/v1`
   : `${location.origin}/api/v1`;
 
-const canAddUser = (repoName, user, action) => {
-  const url = new URL(`${baseUrl}/repo/${repoName}`);
+const canAddUser = (repoId, user, action) => {
+  const url = new URL(`${baseUrl}/repo/${repoId}`);
   return axios
     .get(url.toString(), getAxiosConfig())
     .then((response) => {
@@ -53,7 +53,8 @@ const getRepos = async (
       } else {
         setErrorMessage(`Error fetching repos: ${error.response.data.message}`);
       }
-    }).finally(() => {
+    })
+    .finally(() => {
       setIsLoading(false);
     });
 };
@@ -72,17 +73,20 @@ const getRepo = async (setIsLoading, setData, setAuth, setIsError, id) => {
       } else {
         setIsError(true);
       }
-    }).finally(() => {
+    })
+    .finally(() => {
       setIsLoading(false);
     });
 };
 
 const addRepo = async (onClose, setError, data) => {
   const url = new URL(`${baseUrl}/repo`);
-  axios
+
+  return axios
     .post(url, data, getAxiosConfig())
-    .then(() => {
+    .then((response) => {
       onClose();
+      return response.data;
     })
     .catch((error) => {
       console.log(error.response.data.message);
@@ -90,10 +94,10 @@ const addRepo = async (onClose, setError, data) => {
     });
 };
 
-const addUser = async (repoName, user, action) => {
-  const canAdd = await canAddUser(repoName, user, action);
+const addUser = async (repoId, user, action) => {
+  const canAdd = await canAddUser(repoId, user, action);
   if (canAdd) {
-    const url = new URL(`${baseUrl}/repo/${repoName}/user/${action}`);
+    const url = new URL(`${baseUrl}/repo/${repoId}/user/${action}`);
     const data = { username: user };
     await axios
       .patch(url, data, getAxiosConfig())
@@ -107,8 +111,8 @@ const addUser = async (repoName, user, action) => {
   }
 };
 
-const deleteUser = async (user, repoName, action) => {
-  const url = new URL(`${baseUrl}/repo/${repoName}/user/${action}/${user}`);
+const deleteUser = async (user, repoId, action) => {
+  const url = new URL(`${baseUrl}/repo/${repoId}/user/${action}/${user}`);
 
   await axios
     .delete(url, getAxiosConfig())
@@ -118,8 +122,8 @@ const deleteUser = async (user, repoName, action) => {
     });
 };
 
-const deleteRepo = async (repoName) => {
-  const url = new URL(`${baseUrl}/repo/${repoName}/delete`);
+const deleteRepo = async (repoId) => {
+  const url = new URL(`${baseUrl}/repo/${repoId}/delete`);
 
   await axios
     .delete(url, getAxiosConfig())

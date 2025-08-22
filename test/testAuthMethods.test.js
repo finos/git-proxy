@@ -21,16 +21,19 @@ describe('auth methods', async () => {
         { type: 'openidconnect', enabled: false },
       ],
     });
-  
+
     const fsStub = {
       existsSync: sinon.stub().returns(true),
       readFileSync: sinon.stub().returns(newConfig),
     };
-  
+
     const config = proxyquire('../src/config', {
       fs: fsStub,
     });
-  
+
+    // Initialize the user config after proxyquiring to load the stubbed config
+    config.initUserConfig();
+
     expect(() => config.getAuthMethods()).to.throw(Error, 'No authentication method enabled');
   });
 
@@ -52,10 +55,13 @@ describe('auth methods', async () => {
       fs: fsStub,
     });
 
+    // Initialize the user config after proxyquiring to load the stubbed config
+    config.initUserConfig();
+
     const authMethods = config.getAuthMethods();
     expect(authMethods).to.have.lengthOf(3);
     expect(authMethods[0].type).to.equal('local');
     expect(authMethods[1].type).to.equal('ActiveDirectory');
     expect(authMethods[2].type).to.equal('openidconnect');
-  })
+  });
 });

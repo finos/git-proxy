@@ -22,7 +22,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     }
 
     const cmd = `git clone ${action.url}`;
-    step.log(`Exectuting ${cmd}`);
+    step.log(`Executing ${cmd}`);
 
     const authHeader = req.headers?.authorization;
     const [username, password] = Buffer.from(authHeader.split(' ')[1], 'base64')
