@@ -42,14 +42,22 @@ Cypress.Commands.add('login', (username, password) => {
 
 Cypress.Commands.add('getCSRFToken', () => {
   return cy.request('GET', 'http://localhost:8080/api/v1/repo').then((res) => {
-    const cookies = res.headers['set-cookie'];
-    const csrfCookie = cookies.find(c => c.startsWith('csrf='));
-
-    if (!csrfCookie) {
-      throw new Error('No CSRF cookie found');
+    let cookies = res.headers['set-cookie'];
+    
+    if (typeof cookies === 'string') {
+      cookies = [cookies];
     }
 
-    const token = decodeURIComponent(csrfCookie.split('=')[1].split(';')[0]);
-    return cy.wrap(token);
+    if (!cookies) {
+      throw new Error('No cookies found in response');
+    }
+
+    const csrfCookie = cookies.find(c => c.startsWith('csrf='));
+    if (!csrfCookie) {
+      throw new Error('No CSRF cookie found in response headers');
+    }
+
+    const token = csrfCookie.split('=')[1].split(';')[0];
+    return cy.wrap(decodeURIComponent(token));
   });
 });
