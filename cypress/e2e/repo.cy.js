@@ -1,55 +1,84 @@
 describe('Repo', () => {
-  beforeEach(() => {
+  let repoName;
+  let cloneURL;
+  let csrfToken;
+  let cookies;
+  let repoId;
+
+  before(() => {
     cy.login('admin', 'admin');
 
-    cy.visit('/dashboard/repo');
+    // Create a new repo
+    cy.getCSRFToken().then((csrfToken) => {
+      repoName = `${Date.now()}`;
+      cloneURL = `http://localhost:8000/github.com/cypress-test/${repoName}.git`;
 
-    // prevent failures on 404 request and uncaught promises
-    cy.on('uncaught:exception', () => false);
+      cy.request({
+        method: 'POST',
+        url: 'http://localhost:8080/api/v1/repo',
+        body: {
+          project: 'cypress-test',
+          name: repoName,
+          url: `https://github.com/cypress-test/${repoName}.git`
+        },
+        headers: { 
+          cookie: cookies?.join('; ') || '',
+          'X-CSRF-TOKEN': csrfToken
+        }
+      }).then((res) => {
+        expect(res.status).to.eq(200);
+        repoId = res.body._id;
+      });
+    });
   });
 
-  describe('Code button for repo row', () => {
-    it('Opens tooltip with correct content and can copy', () => {
-      const cloneURLRegex = /http:\/\/localhost:8000\/(?:[^\/]+\/).+\.git/;
-      const tooltipQuery = 'div[role="tooltip"]';
+  it('Opens tooltip with correct content and can copy', () => {
+    cy.visit('/dashboard/repo');
+    cy.on('uncaught:exception', () => false);
 
-      cy
-        // tooltip isn't open to start with
-        .get(tooltipQuery)
-        .should('not.exist');
+    const tooltipQuery = 'div[role="tooltip"]';
 
-      cy
-        // find a table row for a repo (any will do)
-        .get('table#RepoListTable>tbody>tr')
-        // find the nearby span containing Code we can click to open the tooltip
-        .find('span')
-        .contains('Code')
-        .should('exist')
-        .click();
+    // Check the tooltip isn't open to start with
+    cy.get(tooltipQuery)
+      .should('not.exist');
 
-      cy
-        // find the newly opened tooltip
-        .get(tooltipQuery)
-        .should('exist')
-        .find('span')
-        // check it contains the url we expect
-        .contains(cloneURLRegex)
-        .should('exist')
-        .parent()
-        // find the adjacent span that contains the svg
-        .find('span')
-        .next()
-        // check it has the copy icon first and click it
-        .get('svg.octicon-copy')
-        .should('exist')
-        .click()
-        // check the icon has changed to the check icon
-        .get('svg.octicon-copy')
-        .should('not.exist')
-        .get('svg.octicon-check')
-        .should('exist');
+    // Find the repo's Code button and click it
+      cy.get(`a[href="/dashboard/repo/${repoId}"]`)
+      .closest('tr')
+      .find('span')
+      .contains('Code')
+      .should('exist')
+      .click();
 
-      // failed to successfully check the clipboard
+    // Check tooltip is open and contains the correct clone URL
+    cy.get(tooltipQuery)
+      .should('exist')
+      .find('span')
+      .contains(cloneURL)
+      .should('exist')
+      .parent()
+      .find('span')
+      .next()
+      .get('svg.octicon-copy')
+      .should('exist')
+      .click()
+      .get('svg.octicon-copy')
+      .should('not.exist')
+      .get('svg.octicon-check')
+      .should('exist');
+  });
+
+  after(() => {
+    // Delete the repo
+    cy.getCSRFToken().then((csrfToken) => {
+      cy.request({
+        method: 'DELETE',
+        url: `http://localhost:8080/api/v1/repo/${repoName}/delete`,
+        headers: {
+          cookie: cookies?.join('; ') || '',
+            'X-CSRF-TOKEN': csrfToken
+        }
+      });
     });
   });
 });

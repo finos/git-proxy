@@ -46,8 +46,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
   const [data, setData] = useState<PushData[]>([]);
   const [filteredData, setFilteredData] = useState<PushData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [, setIsError] = useState(false);
   const navigate = useNavigate();
   const [, setAuth] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -63,7 +62,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
       authorised: props.authorised ?? false,
       rejected: props.rejected ?? false,
     };
-    getPushes(setIsLoading, setData, setAuth, setIsError, setErrorMessage, query);
+    getPushes(setIsLoading, setData, setAuth, setIsError, props.handleError, query);
   }, [props]);
 
   useEffect(() => {
@@ -103,7 +102,6 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>{errorMessage}</div>;
 
   return (
     <ErrorBoundary>

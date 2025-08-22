@@ -1,5 +1,6 @@
 import Popper from '@material-ui/core/Popper';
 import Paper from '@material-ui/core/Paper';
+import ClickAwayListener from '@material-ui/core/ClickAwayListener';
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -9,6 +10,7 @@ import {
 } from '@primer/octicons-react';
 import React, { useState } from 'react';
 import { PopperPlacementType } from '@material-ui/core/Popper';
+import Button from './Button';
 
 interface CodeActionButtonProps {
   cloneURL: string;
@@ -28,26 +30,27 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
       setPlacement(newPlacement);
     };
 
+  const handleClickAway = () => {
+    setOpen(false);
+  };
+
   return (
     <>
-      <div
+      <Button
+        color='success'
         style={{
-          background: '#2da44e',
           borderRadius: '5px',
-          color: 'white',
           padding: '6px 10px 6px 10px',
           fontWeight: 'bold',
-          cursor: 'pointer',
-          border: '1px solid rgba(240,246,252,0.1)',
           boxSizing: 'border-box',
           whiteSpace: 'nowrap',
         }}
         onClick={handleClick('bottom-end')}
       >
         <CodeIcon size='small' verticalAlign='middle' />{' '}
-        <span style={{ paddingLeft: '6px', paddingRight: '10px', height: '24px' }}>Code</span>
+        <span style={{ padding: '4px 10px' }}>Code</span>
         <ChevronDownIcon size='small' verticalAlign='text-top' />
-      </div>
+      </Button>
       <Popper
         open={open}
         anchorEl={anchorEl}
@@ -60,62 +63,64 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
           zIndex: 99,
         }}
       >
-        <Paper>
-          <div style={{ padding: '15px', gap: '5px' }}>
-            <TerminalIcon size='small' verticalAlign='middle' />{' '}
-            <span style={{ paddingLeft: '5px', fontSize: '14px', fontWeight: 'bold' }}>Clone</span>
-            <div style={{ marginTop: '5px', maxWidth: '299px' }}>
-              <div
-                style={{
-                  padding: '3px 8px 3px 8px',
-                  border: '1px solid gray',
-                  borderRadius: '5px',
-                  fontSize: '12px',
-                  minHeight: '22px',
-                }}
-              >
-                <span
+        <ClickAwayListener onClickAway={handleClickAway}>
+          <Paper>
+            <div style={{ padding: '15px', gap: '5px' }}>
+              <TerminalIcon size='small' verticalAlign='middle' />{' '}
+              <span style={{ paddingLeft: '5px', fontSize: '14px', fontWeight: 'bold' }}>Clone</span>
+              <div style={{ marginTop: '5px', maxWidth: '299px' }}>
+                <div
                   style={{
-                    float: 'left',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    width: '90%',
+                    padding: '3px 8px 3px 8px',
+                    border: '1px solid gray',
+                    borderRadius: '5px',
+                    fontSize: '12px',
+                    minHeight: '22px',
                   }}
                 >
-                  {cloneURL}
-                </span>
-                <span
-                  style={{
-                    float: 'right',
-                  }}
-                >
-                  {!isCopied && (
-                    <span
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => {
-                        navigator.clipboard.writeText(`git clone ${cloneURL}`);
-                        setIsCopied(true);
-                      }}
-                    >
-                      <CopyIcon />
-                    </span>
-                  )}
-                  {isCopied && (
-                    <span style={{ color: 'green' }}>
-                      <CheckIcon />
-                    </span>
-                  )}
+                  <span
+                    style={{
+                      float: 'left',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      width: '90%',
+                    }}
+                  >
+                    {cloneURL}
+                  </span>
+                  <span
+                    style={{
+                      float: 'right',
+                    }}
+                  >
+                    {!isCopied && (
+                      <span
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => {
+                          navigator.clipboard.writeText(`git clone ${cloneURL}`);
+                          setIsCopied(true);
+                        }}
+                      >
+                        <CopyIcon />
+                      </span>
+                    )}
+                    {isCopied && (
+                      <span style={{ color: 'green' }}>
+                        <CheckIcon />
+                      </span>
+                    )}
+                  </span>
+                </div>
+              </div>
+              <div style={{ marginTop: '5px' }}>
+                <span style={{ fontWeight: 'lighter', fontSize: '12px', opacity: 0.9 }}>
+                  Use Git and run this command in your IDE or Terminal 👍
                 </span>
               </div>
             </div>
-            <div style={{ marginTop: '5px' }}>
-              <span style={{ fontWeight: 'lighter', fontSize: '12px', opacity: 0.9 }}>
-                Use Git and run this command in your IDE or Terminal 👍
-              </span>
-            </div>
-          </div>
-        </Paper>
+          </Paper>
+        </ClickAwayListener>
       </Popper>
     </>
   );
