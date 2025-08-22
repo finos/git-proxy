@@ -56,7 +56,7 @@ describe('teeAndValidate middleware', () => {
     expect(next.called).to.be.false;
 
     expect(res.set.called).to.be.true;
-    expect(res.status.calledWith(200)).to.be.true;
+    expect(res.status.calledWith(403)).to.be.true;
     expect(res.send.calledWith(handleMessage('denied!'))).to.be.true;
   });
 
