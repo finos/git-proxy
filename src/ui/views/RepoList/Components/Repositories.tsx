@@ -14,6 +14,7 @@ import { UserContext } from '../../../../context';
 import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
 import Filtering, { FilterOption, SortOrder } from '../../../components/Filtering/Filtering';
+import Danger from '../../../components/Typography/Danger';
 import { RepositoriesProps } from '../repositories.types';
 
 interface GridContainerLayoutProps {
@@ -127,7 +128,7 @@ export default function Repositories(props: RepositoriesProps): React.ReactEleme
   const paginatedData = filteredData.slice(startIdx, startIdx + itemsPerPage);
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>{errorMessage}</div>;
+  if (isError) return <Danger>{errorMessage}</Danger>;
 
   const addrepoButton = user.admin ? (
     <GridItem>
