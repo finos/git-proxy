@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import clsx from 'clsx';
 // @material-ui/core components
 import { makeStyles } from '@material-ui/core/styles';
 // core components
@@ -11,7 +12,7 @@ export default function Quote(props) {
   const classes = useStyles();
   const { text, author } = props;
   return (
-    <blockquote className={classes.defaultFontStyle + ' ' + classes.quote}>
+    <blockquote className={clsx(classes.defaultFontStyle, classes.quote)}>
       <p className={classes.quoteText}>{text}</p>
       <small className={classes.quoteAuthor}>{author}</small>
     </blockquote>

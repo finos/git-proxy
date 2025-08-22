@@ -71,6 +71,7 @@ export default function UserProfile(): React.ReactElement {
 
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <div>Something went wrong ...</div>;
+
   if (!auth && window.location.pathname === '/dashboard/profile') {
     return <Navigate to='/login' />;
   }
@@ -83,6 +84,7 @@ export default function UserProfile(): React.ReactElement {
         gitAccount: escapeHTML(gitAccount),
       };
       await updateUser(updatedData);
+      setData(updatedData);
       navigate(`/dashboard/profile`);
     } catch {
       setIsError(true);
