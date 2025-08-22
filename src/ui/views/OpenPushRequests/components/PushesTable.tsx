@@ -170,14 +170,14 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                     </TableCell>
                     <TableCell align='left'>
                       {isValidValue(committerOrTagger) ? (
-                        <span dangerouslySetInnerHTML={{ __html: getUserProfileLink(committerOrTagger, gitProvider, hostname) }} />
+                        getUserProfileLink(committerOrTagger, gitProvider, hostname)
                       ) : (
                         'N/A'
                       )}
                     </TableCell>
                     <TableCell align='left'>
                       {isValidValue(author) ? (
-                        <span dangerouslySetInnerHTML={{ __html: getUserProfileLink(author, gitProvider, hostname) }} />
+                        getUserProfileLink(author, gitProvider, hostname)
                       ) : (
                         'N/A'
                       )}
