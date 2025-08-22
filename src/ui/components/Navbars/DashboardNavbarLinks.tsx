@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import classNames from 'classnames';
+import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import MenuItem from '@material-ui/core/MenuItem';
 import MenuList from '@material-ui/core/MenuList';
@@ -89,7 +89,7 @@ const DashboardNavbarLinks: React.FC = () => {
           anchorEl={openProfile}
           transition
           disablePortal
-          className={classNames({ [classes.popperClose]: !openProfile }) + ' ' + classes.popperNav}
+          className={clsx(classes.popperNav, { [classes.popperClose]: !openProfile })}
         >
           {({ TransitionProps, placement }) => (
             <Grow

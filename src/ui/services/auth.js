@@ -28,7 +28,6 @@ export const getUserInfo = async () => {
  * @return {Object} The Axios config
  */
 export const getAxiosConfig = () => {
-  console.log('getAxiosConfig', getCookie('csrf'), localStorage.getItem('ui_jwt_token'));
   const jwtToken = localStorage.getItem('ui_jwt_token');
   return {
     withCredentials: true,

@@ -1,5 +1,5 @@
 import React from 'react';
-import classNames from 'classnames';
+import clsx from 'clsx';
 import { NavLink } from 'react-router-dom';
 import { makeStyles } from '@material-ui/core/styles';
 import Drawer from '@material-ui/core/Drawer';
@@ -40,10 +40,10 @@ const Sidebar: React.FC<SidebarProps> = ({
     <List className={classes.list}>
       {routes.map((prop, key) => {
         const activePro = ' ';
-        const listItemClasses = classNames({
+        const listItemClasses = clsx({
           [` ${classes[color]}`]: activeRoute(prop.layout + prop.path),
         });
-        const whiteFontClasses = classNames({
+        const whiteFontClasses = clsx({
           [` ${classes.whiteFont}`]: activeRoute(prop.layout + prop.path),
         });
 
@@ -61,7 +61,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <ListItem button className={classes.itemLink + listItemClasses}>
               {typeof prop.icon === 'string' ? (
                 <Icon
-                  className={classNames(classes.itemIcon, whiteFontClasses, {
+                  className={clsx(classes.itemIcon, whiteFontClasses, {
                     [classes.itemIconRTL]: rtlActive,
                   })}
                 >
@@ -69,14 +69,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </Icon>
               ) : (
                 <IconComponent
-                  className={classNames(classes.itemIcon, whiteFontClasses, {
+                  className={clsx(classes.itemIcon, whiteFontClasses, {
                     [classes.itemIconRTL]: rtlActive,
                   })}
                 />
               )}
               <ListItemText
                 primary={rtlActive ? prop.rtlName : prop.name}
-                className={classNames(classes.itemText, whiteFontClasses, {
+                className={clsx(classes.itemText, whiteFontClasses, {
                   [classes.itemTextRTL]: rtlActive,
                 })}
                 disableTypography={true}
@@ -111,7 +111,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           anchor={rtlActive ? 'left' : 'right'}
           open={open}
           classes={{
-            paper: classNames(classes.drawerPaper, {
+            paper: clsx(classes.drawerPaper, {
               [classes.drawerPaperRTL]: rtlActive,
             }),
           }}
@@ -131,7 +131,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           variant='permanent'
           open
           classes={{
-            paper: classNames(classes.drawerPaper, {
+            paper: clsx(classes.drawerPaper, {
               [classes.drawerPaperRTL]: rtlActive,
             }),
           }}
