@@ -38,9 +38,13 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
           padding: '6px 10px 6px 10px',
           fontWeight: 'bold',
           cursor: 'pointer',
-          border: '1px solid rgba(240,246,252,0.1)',
+          border: '1px solid rgba(2, 2, 2, 0.1)',
           boxSizing: 'border-box',
           whiteSpace: 'nowrap',
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 1px 2px 1px rgba(0, 0, 0, 0.2)',
         }}
         onClick={handleClick('bottom-end')}
       >
