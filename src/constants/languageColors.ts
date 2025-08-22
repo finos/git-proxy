@@ -1,5 +1,3 @@
-// src/constants/languageColors.ts
-
 export const languageColors: Record<string, string> = {
   '1C Enterprise': '#814CCC',
   '2-Dimensional Array': '#38761D',
