@@ -3,6 +3,7 @@ describe('Repo', () => {
   let cloneURL;
   let csrfToken;
   let cookies;
+  let repoId;
 
   before(() => {
     cy.login('admin', 'admin');
@@ -10,7 +11,7 @@ describe('Repo', () => {
     // Create a new repo
     cy.getCSRFToken().then((csrfToken) => {
       repoName = `${Date.now()}`;
-      cloneURL = `http://localhost:8000/cypress-test/${repoName}.git`;
+      cloneURL = `http://localhost:8000/github.com/cypress-test/${repoName}.git`;
 
       cy.request({
         method: 'POST',
@@ -26,20 +27,7 @@ describe('Repo', () => {
         }
       }).then((res) => {
         expect(res.status).to.eq(200);
-      });
-    });
-  });
-
-  after(() => {
-    // Delete the repo
-    cy.getCSRFToken().then((csrfToken) => {
-      cy.request({
-        method: 'DELETE',
-        url: `http://localhost:8080/api/v1/repo/${repoName}/delete`,
-        headers: {
-          cookie: cookies?.join('; ') || '',
-            'X-CSRF-TOKEN': csrfToken
-        }
+        repoId = res.body._id;
       });
     });
   });
@@ -55,7 +43,7 @@ describe('Repo', () => {
       .should('not.exist');
 
     // Find the repo's Code button and click it
-      cy.get(`a[href="/dashboard/repo/${repoName}"]`)
+      cy.get(`a[href="/dashboard/repo/${repoId}"]`)
       .closest('tr')
       .find('span')
       .contains('Code')
@@ -78,5 +66,19 @@ describe('Repo', () => {
       .should('not.exist')
       .get('svg.octicon-check')
       .should('exist');
+  });
+
+  after(() => {
+    // Delete the repo
+    cy.getCSRFToken().then((csrfToken) => {
+      cy.request({
+        method: 'DELETE',
+        url: `http://localhost:8080/api/v1/repo/${repoName}/delete`,
+        headers: {
+          cookie: cookies?.join('; ') || '',
+            'X-CSRF-TOKEN': csrfToken
+        }
+      });
+    });
   });
 });
