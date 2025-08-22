@@ -17,6 +17,7 @@ import { addUser } from '../../../services/repo';
 import { getUsers } from '../../../services/user';
 import { PersonAdd } from '@material-ui/icons';
 import { UserData } from '../../../../types/models';
+import Danger from '../../../components/Typography/Danger';
 
 interface AddUserDialogProps {
   repoId: string;
@@ -37,7 +38,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const [data, setData] = useState<UserData[]>([]);
   const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isError, setIsError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [tip, setTip] = useState<boolean>(false);
 
@@ -76,10 +77,10 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   };
 
   useEffect(() => {
-    getUsers(setIsLoading, setData, setAuth, setIsError, setError, {});
+    getUsers(setIsLoading, setData, setAuth, setErrorMessage, {});
   }, []);
 
-  if (isError) return <div>Something went wrong ...</div>;
+  if (errorMessage) return <Danger>{errorMessage}</Danger>;
 
   return (
     <>
