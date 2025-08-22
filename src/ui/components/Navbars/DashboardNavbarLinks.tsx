@@ -51,17 +51,16 @@ const DashboardNavbarLinks: React.FC = () => {
 
   const logout = async () => {
     try {
-      await axios.post(
+      const { data } = await axios.post(
         `${process.env.VITE_API_URI || 'http://localhost:3000'}/api/auth/logout`,
         {},
-        getAxiosConfig(),
-      )
-      .then((res) => {
-        if (!res.data.isAuth && !res.data.user) {
-          setAuth(false);
-          navigate(0);
-        }
-      });
+        getAxiosConfig()
+      );
+
+      if (!data.isAuth && !data.user) {
+        setAuth(false);
+        navigate(0);
+      }
     } catch (error) {
       console.error('Logout failed:', error);
     }
