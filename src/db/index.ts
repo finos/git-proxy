@@ -155,7 +155,7 @@ export const canUserCancelPush = async (id: string, user: string) => {
 
 export const getSessionStore = (): MongoDBStore | null =>
   sink.getSessionStore ? sink.getSessionStore() : null;
-export const getPushes = (query: PushQuery): Promise<Action[]> => sink.getPushes(query);
+export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => sink.getPushes(query);
 export const writeAudit = (action: Action): Promise<void> => sink.writeAudit(action);
 export const getPush = (id: string): Promise<Action | null> => sink.getPush(id);
 export const deletePush = (id: string): Promise<void> => sink.deletePush(id);
@@ -182,4 +182,4 @@ export const findUserByEmail = (email: string): Promise<User | null> => sink.fin
 export const findUserByOIDC = (oidcId: string): Promise<User | null> => sink.findUserByOIDC(oidcId);
 export const getUsers = (query?: object): Promise<User[]> => sink.getUsers(query);
 export const deleteUser = (username: string): Promise<void> => sink.deleteUser(username);
-export const updateUser = (user: User): Promise<void> => sink.updateUser(user);
+export const updateUser = (user: Partial<User>): Promise<void> => sink.updateUser(user);

@@ -6,6 +6,7 @@ export type PushQuery = {
   blocked: boolean;
   allowPush: boolean;
   authorised: boolean;
+  type: string;
 };
 
 export type UserRole = 'canPush' | 'canAuthorise';
@@ -62,7 +63,7 @@ export class User {
 
 export interface Sink {
   getSessionStore?: () => MongoDBStore;
-  getPushes: (query: PushQuery) => Promise<Action[]>;
+  getPushes: (query: Partial<PushQuery>) => Promise<Action[]>;
   writeAudit: (action: Action) => Promise<void>;
   getPush: (id: string) => Promise<Action | null>;
   deletePush: (id: string) => Promise<void>;

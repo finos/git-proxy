@@ -12,7 +12,7 @@ const defaultPushQuery: PushQuery = {
   authorised: false,
 };
 
-export const getPushes = async (query: PushQuery = defaultPushQuery): Promise<Action[]> => {
+export const getPushes = async (query: Partial<PushQuery> = defaultPushQuery): Promise<Action[]> => {
   return findDocuments<Action>(collectionName, query, {
     projection: {
       _id: 0,
