@@ -1,16 +1,25 @@
-const express = require('express');
-const router = new express.Router();
-const passport = require('../passport').getPassport();
-const { getAuthMethods } = require('../../config');
-const passportLocal = require('../passport/local');
-const passportAD = require('../passport/activeDirectory');
-const authStrategies = require('../passport').authStrategies;
-const db = require('../../db');
-const { toPublicUser } = require('./publicApi');
-const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
-  process.env;
+import express, { Request, Response, NextFunction } from 'express';
+import { getPassport, authStrategies } from '../passport';
+import { getAuthMethods } from '../../config';
 
-router.get('/', (req, res) => {
+import * as db from '../../db';
+import * as passportLocal from '../passport/local';
+import * as passportAD from '../passport/activeDirectory';
+
+import { User } from '../../db/types';
+import { Authentication } from '../../config/types';
+
+import { toPublicUser } from './publicApi';
+
+const router = express.Router();
+const passport = getPassport();
+
+const {
+  GIT_PROXY_UI_HOST: uiHost = 'http://localhost',
+  GIT_PROXY_UI_PORT: uiPort = 3000
+} = process.env;
+
+router.get('/', (_req: Request, res: Response) => {
   res.status(200).json({
     login: {
       action: 'post',
@@ -35,7 +44,7 @@ const appropriateLoginStrategies = [passportLocal.type, passportAD.type];
 const getLoginStrategy = () => {
   // returns only enabled auth methods
   // returns at least one enabled auth method
-  const enabledAppropriateLoginStrategies = getAuthMethods().filter((am) =>
+  const enabledAppropriateLoginStrategies = getAuthMethods().filter((am: Authentication) =>
     appropriateLoginStrategies.includes(am.type.toLowerCase()),
   );
   // for where no login strategies which work for /login are enabled
@@ -47,10 +56,10 @@ const getLoginStrategy = () => {
   return enabledAppropriateLoginStrategies[0].type.toLowerCase();
 };
 
-const loginSuccessHandler = () => async (req, res) => {
+const loginSuccessHandler = () => async (req: Request, res: Response) => {
   try {
-    const currentUser = { ...req.user };
-    delete currentUser.password;
+    const currentUser = { ...req.user } as User;
+    delete (currentUser as any).password;
     console.log(
       `serivce.routes.auth.login: user logged in, username=${
         currentUser.username
@@ -70,7 +79,7 @@ const loginSuccessHandler = () => async (req, res) => {
 // TODO: if providing separate auth methods, inform the frontend so it has relevant UI elements and appropriate client-side behavior
 router.post(
   '/login',
-  (req, res, next) => {
+  (req: Request, res: Response, next: NextFunction) => {
     const authType = getLoginStrategy();
     if (authType === null) {
       res.status(403).send('Username and Password based Login is not enabled at this time').end();
@@ -84,8 +93,8 @@ router.post(
 
 router.get('/oidc', passport.authenticate(authStrategies['openidconnect'].type));
 
-router.get('/oidc/callback', (req, res, next) => {
-  passport.authenticate(authStrategies['openidconnect'].type, (err, user, info) => {
+router.get('/oidc/callback', (req: Request, res: Response, next: NextFunction) => {
+  passport.authenticate(authStrategies['openidconnect'].type, (err: any, user: any, info: any) => {
     if (err) {
       console.error('Authentication error:', err);
       return res.status(401).end();
@@ -105,28 +114,28 @@ router.get('/oidc/callback', (req, res, next) => {
   })(req, res, next);
 });
 
-router.post('/logout', (req, res, next) => {
-  req.logout(req.user, (err) => {
+router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
+  req.logout((err: any) => {
     if (err) return next(err);
   });
   res.clearCookie('connect.sid');
   res.send({ isAuth: req.isAuthenticated(), user: req.user });
 });
 
-router.get('/profile', async (req, res) => {
+router.get('/profile', async (req: Request, res: Response) => {
   if (req.user) {
-    const userVal = await db.findUser(req.user.username);
+    const userVal = await db.findUser((req.user as User).username);
     res.send(toPublicUser(userVal));
   } else {
     res.status(401).end();
   }
 });
 
-router.post('/gitAccount', async (req, res) => {
+router.post('/gitAccount', async (req: Request, res: Response) => {
   if (req.user) {
     try {
       let username =
-        req.body.username == null || req.body.username == 'undefined'
+        req.body.username == null || req.body.username === 'undefined'
           ? req.body.id
           : req.body.username;
       username = username?.split('@')[0];
@@ -136,17 +145,23 @@ router.post('/gitAccount', async (req, res) => {
         return;
       }
 
-      const reqUser = await db.findUser(req.user.username);
-      if (username !== reqUser.username && !reqUser.admin) {
+      const reqUser = await db.findUser((req.user as User).username);
+      if (username !== reqUser?.username && !reqUser?.admin) {
         res.status(403).send('Error: You must be an admin to update a different account').end();
         return;
       }
+
       const user = await db.findUser(username);
+      if (!user) {
+        res.status(400).send('Error: User not found').end();
+        return;
+      }
+
       console.log('Adding gitAccount' + req.body.gitAccount);
       user.gitAccount = req.body.gitAccount;
       db.updateUser(user);
       res.status(200).end();
-    } catch (e) {
+    } catch (e: any) {
       res
         .status(500)
         .send({
@@ -159,16 +174,13 @@ router.post('/gitAccount', async (req, res) => {
   }
 });
 
-router.get('/me', async (req, res) => {
+router.get('/me', async (req: Request, res: Response) => {
   if (req.user) {
-    const userVal = await db.findUser(req.user.username);
+    const userVal = await db.findUser((req.user as User).username);
     res.send(toPublicUser(userVal));
   } else {
     res.status(401).end();
   }
 });
 
-module.exports = {
-  router,
-  loginSuccessHandler
-};
+export default { router, loginSuccessHandler };

@@ -40,6 +40,8 @@ let _contactEmail: string = defaultSettings.contactEmail;
 let _csrfProtection: boolean = defaultSettings.csrfProtection;
 let _domains: Record<string, unknown> = defaultSettings.domains;
 let _rateLimit: RateLimitConfig = defaultSettings.rateLimit;
+let _smtpHost: string = defaultSettings.smtpHost;
+let _smtpPort: number = defaultSettings.smtpPort;
 
 // These are not always present in the default config file, so casting is required
 let _tlsEnabled = defaultSettings.tls.enabled;
@@ -262,6 +264,20 @@ export const getRateLimit = () => {
     _rateLimit = _userSettings.rateLimit;
   }
   return _rateLimit;
+};
+
+export const getSmtpHost = () => {
+  if (_userSettings && _userSettings.smtpHost) {
+    _smtpHost = _userSettings.smtpHost;
+  }
+  return _smtpHost;
+};
+
+export const getSmtpPort = () => {
+  if (_userSettings && _userSettings.smtpPort) {
+    _smtpPort = _userSettings.smtpPort;
+  }
+  return _smtpPort;
 };
 
 // Function to handle configuration updates

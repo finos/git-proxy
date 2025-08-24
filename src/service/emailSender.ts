@@ -1,7 +1,7 @@
-const nodemailer = require('nodemailer');
-const config = require('../config');
+import nodemailer from 'nodemailer';
+import * as config from '../config';
 
-exports.sendEmail = async (from, to, subject, body) => {
+export const sendEmail = async (from: string, to: string, subject: string, body: string) => {
   const smtpHost = config.getSmtpHost();
   const smtpPort = config.getSmtpPort();
   const transporter = nodemailer.createTransport({
