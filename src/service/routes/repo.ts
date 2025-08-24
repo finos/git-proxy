@@ -1,18 +1,18 @@
-const express = require('express');
-const db = require('../../db');
-const { getProxyURL } = require('../urls');
-const { getAllProxiedHosts } = require('../../proxy/routes/helper');
+import express, { Request, Response } from 'express';
+import * as db from '../../db';
+import { getProxyURL } from '../urls';
+import { getAllProxiedHosts } from '../../proxy/routes/helper';
 
 // create a reference to the proxy service as arrow functions will lose track of the `proxy` parameter
 // used to restart the proxy when a new host is added
-let theProxy = null;
-const repo = (proxy) => {
+let theProxy: any = null;
+const repo = (proxy: any) => {
   theProxy = proxy;
-  const router = new express.Router();
+  const router = express.Router();
 
-  router.get('/', async (req, res) => {
+  router.get('/', async (req: Request, res: Response) => {
     const proxyURL = getProxyURL(req);
-    const query = {};
+    const query: Record<string, any> = {};
 
     for (const k in req.query) {
       if (!k) continue;
@@ -20,8 +20,8 @@ const repo = (proxy) => {
       if (k === 'limit') continue;
       if (k === 'skip') continue;
       let v = req.query[k];
-      if (v === 'false') v = false;
-      if (v === 'true') v = true;
+      if (v === 'false') v = false as any;
+      if (v === 'true') v = true as any;
       query[k] = v;
     }
 
@@ -29,15 +29,15 @@ const repo = (proxy) => {
     res.send(qd.map((d) => ({ ...d, proxyURL })));
   });
 
-  router.get('/:id', async (req, res) => {
+  router.get('/:id', async (req: Request, res: Response) => {
     const proxyURL = getProxyURL(req);
     const _id = req.params.id;
     const qd = await db.getRepoById(_id);
     res.send({ ...qd, proxyURL });
   });
 
-  router.patch('/:id/user/push', async (req, res) => {
-    if (req.user && req.user.admin) {
+  router.patch('/:id/user/push', async (req: Request, res: Response) => {
+    if (req.user && (req.user as any).admin) {
       const _id = req.params.id;
       const username = req.body.username.toLowerCase();
       const user = await db.findUser(username);
@@ -56,8 +56,8 @@ const repo = (proxy) => {
     }
   });
 
-  router.patch('/:id/user/authorise', async (req, res) => {
-    if (req.user && req.user.admin) {
+  router.patch('/:id/user/authorise', async (req: Request, res: Response) => {
+    if (req.user && (req.user as any).admin) {
       const _id = req.params.id;
       const username = req.body.username;
       const user = await db.findUser(username);
@@ -76,8 +76,8 @@ const repo = (proxy) => {
     }
   });
 
-  router.delete('/:id/user/authorise/:username', async (req, res) => {
-    if (req.user && req.user.admin) {
+  router.delete('/:id/user/authorise/:username', async (req: Request, res: Response) => {
+    if (req.user && (req.user as any).admin) {
       const _id = req.params.id;
       const username = req.params.username;
       const user = await db.findUser(username);
@@ -96,8 +96,8 @@ const repo = (proxy) => {
     }
   });
 
-  router.delete('/:id/user/push/:username', async (req, res) => {
-    if (req.user && req.user.admin) {
+  router.delete('/:id/user/push/:username', async (req: Request, res: Response) => {
+    if (req.user && (req.user as any).admin) {
       const _id = req.params.id;
       const username = req.params.username;
       const user = await db.findUser(username);
@@ -116,8 +116,8 @@ const repo = (proxy) => {
     }
   });
 
-  router.delete('/:id/delete', async (req, res) => {
-    if (req.user && req.user.admin) {
+  router.delete('/:id/delete', async (req: Request, res: Response) => {
+    if (req.user && (req.user as any).admin) {
       const _id = req.params.id;
 
       // determine if we need to restart the proxy
@@ -140,8 +140,8 @@ const repo = (proxy) => {
     }
   });
 
-  router.post('/', async (req, res) => {
-    if (req.user && req.user.admin) {
+  router.post('/', async (req: Request, res: Response) => {
+    if (req.user && (req.user as any).admin) {
       if (!req.body.url) {
         res.status(400).send({
           message: 'Repository url is required',
@@ -184,7 +184,7 @@ const repo = (proxy) => {
             await theProxy.stop();
             await theProxy.start();
           }
-        } catch (e) {
+        } catch (e: any) {
           console.error('Repository creation failed due to error: ', e.message ? e.message : e);
           console.error(e.stack);
           res.status(500).send({ message: 'Failed to create repository due to error' });
@@ -200,4 +200,4 @@ const repo = (proxy) => {
   return router;
 };
 
-module.exports = repo;
+export default repo;
