@@ -1,16 +1,33 @@
-const thirdpartyApiConfig = require('../../config').getAPIs();
-const axios = require('axios');
+import axios from 'axios';
+import type { Request } from 'express';
 
-const isUserInAdGroup = (req, profile, ad, domain, name) => {
+import { getAPIs } from '../../config';
+import { AD } from './types';
+
+const thirdpartyApiConfig = getAPIs();
+
+export const isUserInAdGroup = (
+  req: Request,
+  profile: { username: string },
+  ad: AD,
+  domain: string,
+  name: string
+): Promise<boolean> => {
   // determine, via config, if we're using HTTP or AD directly
-  if (thirdpartyApiConfig?.ls?.userInADGroup) {
+  if ((thirdpartyApiConfig?.ls as any).userInADGroup) {
     return isUserInAdGroupViaHttp(profile.username, domain, name);
   } else {
     return isUserInAdGroupViaAD(req, profile, ad, domain, name);
   }
 };
 
-const isUserInAdGroupViaAD = (req, profile, ad, domain, name) => {
+const isUserInAdGroupViaAD = (
+  req: Request,
+  profile: { username: string },
+  ad: AD,
+  domain: string,
+  name: string
+): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     ad.isUserMemberOf(profile.username, name, function (err, isMember) {
       if (err) {
@@ -24,8 +41,12 @@ const isUserInAdGroupViaAD = (req, profile, ad, domain, name) => {
   });
 };
 
-const isUserInAdGroupViaHttp = (id, domain, name) => {
-  const url = String(thirdpartyApiConfig.ls.userInADGroup)
+const isUserInAdGroupViaHttp = (
+  id: string,
+  domain: string,
+  name: string
+): Promise<boolean> => {
+  const url = String((thirdpartyApiConfig?.ls as any).userInADGroup)
     .replace('<domain>', domain)
     .replace('<name>', name)
     .replace('<id>', id);
@@ -44,8 +65,4 @@ const isUserInAdGroupViaHttp = (id, domain, name) => {
     .catch(() => {
       return false;
     });
-};
-
-module.exports = {
-  isUserInAdGroup,
 };
