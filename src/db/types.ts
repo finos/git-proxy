@@ -85,5 +85,5 @@ export interface Sink {
   getUsers: (query?: object) => Promise<User[]>;
   createUser: (user: User) => Promise<void>;
   deleteUser: (username: string) => Promise<void>;
-  updateUser: (user: User) => Promise<void>;
+  updateUser: (user: Partial<User>) => Promise<void>;
 }
