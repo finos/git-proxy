@@ -16,6 +16,8 @@
     "check-types": "tsc",
     "check-types:server": "tsc --project tsconfig.publish.json --noEmit",
     "test": "NODE_ENV=test ts-mocha './test/**/*.test.js' --exit",
+    "test:e2e": "vitest run --config vitest.config.e2e.ts",
+    "test:e2e:watch": "vitest --config vitest.config.e2e.ts",
     "test-coverage": "nyc npm run test",
     "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text npm run test",
     "prepare": "node ./scripts/prepare.js",
@@ -125,7 +127,8 @@
     "tsx": "^4.20.3",
     "typescript": "^5.8.3",
     "vite": "^4.5.14",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
   },
   "optionalDependencies": {
     "@esbuild/darwin-arm64": "^0.25.8",

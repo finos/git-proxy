@@ -1,8 +1,19 @@
 import { getCookie } from '../utils';
 
-const baseUrl = import.meta.env.VITE_API_URI
-  ? `${import.meta.env.VITE_API_URI}`
-  : `${location.origin}`;
+import { getApiBaseUrl } from './runtime-config.js';
+
+// Initialize baseUrl - will be set async
+let baseUrl = location.origin; // Default fallback
+
+// Set the actual baseUrl from runtime config
+getApiBaseUrl()
+  .then((apiUrl) => {
+    baseUrl = apiUrl;
+  })
+  .catch(() => {
+    // Keep the default if runtime config fails
+    console.warn('Using default API base URL for auth');
+  });
 
 /**
  * Gets the current user's information
