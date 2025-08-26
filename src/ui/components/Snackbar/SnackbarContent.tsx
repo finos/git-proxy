@@ -1,5 +1,5 @@
 import React from 'react';
-import classNames from 'classnames';
+import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import MuiSnackbarContent from '@material-ui/core/SnackbarContent';
 import IconButton from '@material-ui/core/IconButton';
@@ -23,7 +23,7 @@ const SnackbarContent: React.FC<SnackbarContentProps> = (props) => {
   const { message, color = 'info', close, icon: Icon, rtlActive } = props;
 
   let action: React.ReactNode[] = [];
-  const messageClasses = classNames({
+  const messageClasses = clsx({
     [classes.iconMessage]: Icon !== undefined,
   });
 
@@ -44,9 +44,9 @@ const SnackbarContent: React.FC<SnackbarContentProps> = (props) => {
         </div>
       }
       classes={{
-        root: `${classes.root} ${classes[color]}`,
+        root: clsx(classes.root, classes[color]),
         message: classes.message,
-        action: classNames({ [classes.actionRTL]: rtlActive }),
+        action: clsx({ [classes.actionRTL]: rtlActive }),
       }}
       action={action}
     />
