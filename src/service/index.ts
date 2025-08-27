@@ -39,7 +39,7 @@ async function createApp(proxy: Express) {
 
   app.use(
     session({
-      store: config.getDatabase().type === 'mongo' ? db.getSessionStore() : undefined,
+      store: config.getDatabase().type === 'mongo' ? db.getSessionStore() || undefined : undefined,
       secret: config.getCookieSecret(),
       resave: false,
       saveUninitialized: false,
@@ -79,10 +79,10 @@ async function createApp(proxy: Express) {
 
 /**
  * Starts the proxy service.
- * @param {Express} proxy A reference to the proxy express application, used to restart it when necessary.
+ * @param {*} proxy A reference to the proxy express application, used to restart it when necessary.
  * @return {Promise<Express>} the express application (used for testing).
  */
-async function start(proxy: Express) {
+async function start(proxy: any) {
   if (!proxy) {
     console.warn("WARNING: proxy is null and can't be controlled by the API service");
   }
