@@ -33,18 +33,20 @@ class ErrorBoundary extends Component<Props, State> {
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details style={{ marginTop: '10px', textAlign: 'left' }}>
                 <summary>Error details (development only)</summary>
-                <pre style={{ 
-                  background: '#f5f5f5', 
-                  padding: '10px', 
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  overflow: 'auto'
-                }}>
+                <pre
+                  style={{
+                    background: '#f5f5f5',
+                    padding: '10px',
+                    borderRadius: '4px',
+                    fontSize: '12px',
+                    overflow: 'auto',
+                  }}
+                >
                   {this.state.error.stack}
                 </pre>
               </details>
             )}
-            <button 
+            <button
               onClick={() => this.setState({ hasError: false, error: undefined })}
               style={{
                 marginTop: '10px',
@@ -53,7 +55,7 @@ class ErrorBoundary extends Component<Props, State> {
                 color: 'white',
                 border: 'none',
                 borderRadius: '4px',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
               Try again

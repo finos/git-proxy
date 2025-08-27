@@ -6,7 +6,7 @@ export enum RequestType {
   // eslint-disable-next-line no-unused-vars
   PUSH = 'push',
   // eslint-disable-next-line no-unused-vars
-  PULL = 'pull'
+  PULL = 'pull',
 }
 
 export enum ActionType {
@@ -15,7 +15,7 @@ export enum ActionType {
   // eslint-disable-next-line no-unused-vars
   TAG = 'tag',
   // eslint-disable-next-line no-unused-vars
-  BRANCH = 'branch'
+  BRANCH = 'branch',
 }
 
 /**
