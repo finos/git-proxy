@@ -78,7 +78,8 @@ describe('Proxy Module TLS Certificate Loading', () => {
 
     // Import proxy module after mocks are set up
     delete require.cache[require.resolve('../src/proxy/index')];
-    proxyModule = require('../src/proxy/index').default;
+    const ProxyClass = require('../src/proxy/index').default;
+    proxyModule = new ProxyClass();
   });
 
   afterEach(async () => {
