@@ -7,7 +7,7 @@ const collectionName = 'repos';
 
 export const getRepos = async (query: any = {}): Promise<Repo[]> => {
   const collection = await connect(collectionName);
-  const docs = collection.find(query).toArray();
+  const docs = await collection.find(query).toArray();
   return _.chain(docs)
     .map((x) => toClass(x, Repo.prototype))
     .value();
