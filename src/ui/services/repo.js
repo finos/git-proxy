@@ -99,12 +99,10 @@ const addUser = async (repoId, user, action) => {
   if (canAdd) {
     const url = new URL(`${baseUrl}/repo/${repoId}/user/${action}`);
     const data = { username: user };
-    await axios
-      .patch(url, data, getAxiosConfig())
-      .catch((error) => {
-        console.log(error.response.data.message);
-        throw error;
-      });
+    await axios.patch(url, data, getAxiosConfig()).catch((error) => {
+      console.log(error.response.data.message);
+      throw error;
+    });
   } else {
     console.log('Duplicate user can not be added');
     throw new DupUserValidationError();
@@ -114,23 +112,19 @@ const addUser = async (repoId, user, action) => {
 const deleteUser = async (user, repoId, action) => {
   const url = new URL(`${baseUrl}/repo/${repoId}/user/${action}/${user}`);
 
-  await axios
-    .delete(url, getAxiosConfig())
-    .catch((error) => {
-      console.log(error.response.data.message);
-      throw error;
-    });
+  await axios.delete(url, getAxiosConfig()).catch((error) => {
+    console.log(error.response.data.message);
+    throw error;
+  });
 };
 
 const deleteRepo = async (repoId) => {
   const url = new URL(`${baseUrl}/repo/${repoId}/delete`);
 
-  await axios
-    .delete(url, getAxiosConfig())
-    .catch((error) => {
-      console.log(error.response.data.message);
-      throw error;
-    });
+  await axios.delete(url, getAxiosConfig()).catch((error) => {
+    console.log(error.response.data.message);
+    throw error;
+  });
 };
 
 export { addUser, deleteUser, getRepos, getRepo, addRepo, deleteRepo };

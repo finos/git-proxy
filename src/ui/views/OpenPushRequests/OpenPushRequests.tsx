@@ -18,19 +18,14 @@ const Dashboard: React.FC = () => {
 
   const handlePushTableError = (errorMessage: string) => {
     setErrorMessage(errorMessage);
-  }
+  };
 
   const tabs: TabConfig[] = [
     {
       tabName: 'Pending',
       tabIcon: Visibility,
       tabContent: (
-        <PushesTable
-          blocked={true}
-          authorised={false}
-          rejected={false}
-          canceled={false}
-        />
+        <PushesTable blocked={true} authorised={false} rejected={false} canceled={false} />
       ),
     },
     {
@@ -70,10 +65,7 @@ const Dashboard: React.FC = () => {
       {!errorMessage && (
         <GridContainer>
           <GridItem xs={12} sm={12} md={12}>
-            <CustomTabs
-              headerColor="primary"
-              tabs={tabs}
-            />
+            <CustomTabs headerColor='primary' tabs={tabs} />
           </GridItem>
         </GridContainer>
       )}
