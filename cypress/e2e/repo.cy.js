@@ -19,12 +19,12 @@ describe('Repo', () => {
         body: {
           project: 'cypress-test',
           name: repoName,
-          url: `https://github.com/cypress-test/${repoName}.git`
+          url: `https://github.com/cypress-test/${repoName}.git`,
         },
-        headers: { 
+        headers: {
           cookie: cookies?.join('; ') || '',
-          'X-CSRF-TOKEN': csrfToken
-        }
+          'X-CSRF-TOKEN': csrfToken,
+        },
       }).then((res) => {
         expect(res.status).to.eq(200);
         repoId = res.body._id;
@@ -39,11 +39,10 @@ describe('Repo', () => {
     const tooltipQuery = 'div[role="tooltip"]';
 
     // Check the tooltip isn't open to start with
-    cy.get(tooltipQuery)
-      .should('not.exist');
+    cy.get(tooltipQuery).should('not.exist');
 
     // Find the repo's Code button and click it
-      cy.get(`a[href="/dashboard/repo/${repoId}"]`)
+    cy.get(`a[href="/dashboard/repo/${repoId}"]`)
       .closest('tr')
       .find('span')
       .contains('Code')
@@ -76,8 +75,8 @@ describe('Repo', () => {
         url: `http://localhost:8080/api/v1/repo/${repoName}/delete`,
         headers: {
           cookie: cookies?.join('; ') || '',
-            'X-CSRF-TOKEN': csrfToken
-        }
+          'X-CSRF-TOKEN': csrfToken,
+        },
       });
     });
   });
