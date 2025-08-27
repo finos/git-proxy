@@ -45,7 +45,7 @@ describe('Check a Repo is in the authorised list', async () => {
           const result = await processor.exec(null, action);
           expect(result.error).to.be.true;
         }),
-        { numRuns: 100 },
+        { numRuns: 1000 },
       );
     });
   });
