@@ -32,7 +32,7 @@ export const getUsers = async function (query: any = {}): Promise<User[]> {
   }
   console.log(`Getting users for query = ${JSON.stringify(query)}`);
   const collection = await connect(collectionName);
-  const docs = collection.find(query).project({ password: 0 }).toArray();
+  const docs = await collection.find(query).project({ password: 0 }).toArray();
   return _.chain(docs)
     .map((x) => toClass(x, User.prototype))
     .value();
