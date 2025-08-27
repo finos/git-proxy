@@ -9,7 +9,7 @@ require('../../../src/config/file').configFile = path.join(
   'test',
   'testCli.proxy.config.json',
 );
-const service = require('../../../src/service');
+const service = require('../../../src/service').default;
 
 /* test constants */
 // push ID which does not exist
