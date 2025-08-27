@@ -4,7 +4,6 @@ import * as proc from './processors';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 
 const branchPushChain: ((req: any, action: Action) => Promise<Action>)[] = [
-  proc.push.parsePush,
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
