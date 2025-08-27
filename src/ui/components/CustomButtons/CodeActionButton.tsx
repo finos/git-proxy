@@ -67,7 +67,9 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
           <Paper>
             <div style={{ padding: '15px', gap: '5px' }}>
               <TerminalIcon size='small' verticalAlign='middle' />{' '}
-              <span style={{ paddingLeft: '5px', fontSize: '14px', fontWeight: 'bold' }}>Clone</span>
+              <span style={{ paddingLeft: '5px', fontSize: '14px', fontWeight: 'bold' }}>
+                Clone
+              </span>
               <div style={{ marginTop: '5px', maxWidth: '299px' }}>
                 <div
                   style={{
