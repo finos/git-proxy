@@ -54,7 +54,7 @@ const DashboardNavbarLinks: React.FC = () => {
       const { data } = await axios.post(
         `${process.env.VITE_API_URI || 'http://localhost:3000'}/api/auth/logout`,
         {},
-        getAxiosConfig()
+        getAxiosConfig(),
       );
 
       if (!data.isAuth && !data.user) {

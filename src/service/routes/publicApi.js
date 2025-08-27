@@ -6,5 +6,5 @@ export const toPublicUser = (user) => {
     title: user.title || '',
     gitAccount: user.gitAccount || '',
     admin: user.admin || false,
-  }
-}
+  };
+};
