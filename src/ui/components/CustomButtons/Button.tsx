@@ -1,5 +1,5 @@
 import React from 'react';
-import classNames from 'classnames';
+import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Button, { ButtonProps } from '@material-ui/core/Button';
 import styles from '../../assets/jss/material-dashboard-react/components/buttonStyle';
@@ -48,7 +48,7 @@ export default function RegularButton(props: RegularButtonProps) {
     ...rest
   } = props;
 
-  const btnClasses = classNames({
+  const btnClasses = clsx({
     [classes.button]: true,
     [classes[size as Size]]: size,
     [classes[color as Color]]: color,
