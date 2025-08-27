@@ -159,7 +159,12 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                     </TableCell>
                     <TableCell align='left'>
                       <a
-                        href={getShaUrl(repoWebUrl, gitProvider, isTag, isTag ? shaOrTag : row.commitTo)}
+                        href={getShaUrl(
+                          repoWebUrl,
+                          gitProvider,
+                          isTag,
+                          isTag ? shaOrTag : row.commitTo,
+                        )}
                         rel='noreferrer'
                         target='_blank'
                       >
@@ -167,18 +172,14 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                       </a>
                     </TableCell>
                     <TableCell align='left'>
-                      {isValidValue(committerOrTagger) ? (
-                        getUserProfileLink(committerOrTagger, gitProvider, hostname)
-                      ) : (
-                        'N/A'
-                      )}
+                      {isValidValue(committerOrTagger)
+                        ? getUserProfileLink(committerOrTagger, gitProvider, hostname)
+                        : 'N/A'}
                     </TableCell>
                     <TableCell align='left'>
-                      {isValidValue(author) ? (
-                        getUserProfileLink(author, gitProvider, hostname)
-                      ) : (
-                        'N/A'
-                      )}
+                      {isValidValue(author)
+                        ? getUserProfileLink(author, gitProvider, hostname)
+                        : 'N/A'}
                     </TableCell>
                     <TableCell align='left'>
                       {isValidValue(authorEmail) ? (

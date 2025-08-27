@@ -279,11 +279,7 @@ const Dashboard: React.FC = () => {
                 <GridItem xs={2} sm={2} md={2}>
                   <h3>From</h3>
                   <p>
-                    <a
-                      href={gitUrl.commit(data.commitFrom)}
-                      target='_blank'
-                      rel='noreferrer'
-                    >
+                    <a href={gitUrl.commit(data.commitFrom)} target='_blank' rel='noreferrer'>
                       {data.commitFrom}
                     </a>
                   </p>
@@ -291,11 +287,7 @@ const Dashboard: React.FC = () => {
                 <GridItem xs={2} sm={2} md={2}>
                   <h3>To</h3>
                   <p>
-                    <a
-                      href={gitUrl.commit(data.commitTo)}
-                      target='_blank'
-                      rel='noreferrer'
-                    >
+                    <a href={gitUrl.commit(data.commitTo)} target='_blank' rel='noreferrer'>
                       {data.commitTo}
                     </a>
                   </p>
@@ -378,9 +370,7 @@ const Dashboard: React.FC = () => {
                     {data.tagData?.map((t) => (
                       <TableRow key={t.tagName}>
                         <TableCell>{t.tagName}</TableCell>
-                        <TableCell>
-                          {getUserProfileLink(t.tagger, gitProvider, hostname)}
-                        </TableCell>
+                        <TableCell>{getUserProfileLink(t.tagger, gitProvider, hostname)}</TableCell>
                         <TableCell>
                           {t.taggerEmail ? (
                             <a href={`mailto:${t.taggerEmail}`}>{t.taggerEmail}</a>

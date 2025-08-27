@@ -201,25 +201,35 @@ export const getGitUrl = (repoWebUrl: string, gitProvider: string) => ({
 /**
  * Gets the appropriate URL for a branch or tag reference
  * @param {string} repoWebUrl - The base repository web URL
- * @param {string} gitProvider - The Git provider 
+ * @param {string} gitProvider - The Git provider
  * @param {boolean} isTag - Whether this is a tag reference
  * @param {string} refName - The reference name (branch or tag)
  * @return {string} The appropriate URL
  */
-export const getRefUrl = (repoWebUrl: string, gitProvider: string, isTag: boolean, refName: string): string => {
+export const getRefUrl = (
+  repoWebUrl: string,
+  gitProvider: string,
+  isTag: boolean,
+  refName: string,
+): string => {
   const gitUrl = getGitUrl(repoWebUrl, gitProvider);
   return isTag ? gitUrl.tag(refName) : gitUrl.branch(refName);
 };
 
 /**
  * Gets the appropriate URL for a commit or tag SHA
- * @param {string} repoWebUrl - The base repository web URL  
+ * @param {string} repoWebUrl - The base repository web URL
  * @param {string} gitProvider - The Git provider
  * @param {boolean} isTag - Whether this is a tag reference
  * @param {string} sha - The SHA or tag name
  * @return {string} The appropriate URL
  */
-export const getShaUrl = (repoWebUrl: string, gitProvider: string, isTag: boolean, sha: string): string => {
+export const getShaUrl = (
+  repoWebUrl: string,
+  gitProvider: string,
+  isTag: boolean,
+  sha: string,
+): string => {
   const gitUrl = getGitUrl(repoWebUrl, gitProvider);
   return isTag ? gitUrl.tag(sha) : gitUrl.commit(sha);
 };
