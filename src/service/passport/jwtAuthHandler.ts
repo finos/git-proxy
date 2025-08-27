@@ -36,6 +36,7 @@ export const jwtAuthHandler = (overrideConfig: JwtConfig | null = null) => {
       res.status(500).send({
         message: 'OIDC authority URL is not configured\n'
       });
+      console.log('OIDC authority URL is not configured\n');
       return;
     }
 
@@ -43,6 +44,7 @@ export const jwtAuthHandler = (overrideConfig: JwtConfig | null = null) => {
       res.status(500).send({
         message: 'OIDC client ID is not configured\n'
       });
+      console.log('OIDC client ID is not configured\n');
       return;
     }
 
@@ -58,12 +60,14 @@ export const jwtAuthHandler = (overrideConfig: JwtConfig | null = null) => {
 
     if (error || !verifiedPayload) {
       res.status(401).send(error || 'JWT validation failed\n');
+      console.log('JWT validation failed\n');
       return;
     }
 
     req.user = verifiedPayload;
     assignRoles(roleMapping as RoleMapping, verifiedPayload, req.user);
 
+    console.log('JWT validation successful\n');
     next();
   };
 };
