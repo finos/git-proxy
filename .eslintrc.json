@@ -45,7 +45,8 @@
     "@typescript-eslint/no-explicit-any": "off", // temporary until TS refactor is complete
     "@typescript-eslint/no-unused-vars": "off", // temporary until TS refactor is complete
     "@typescript-eslint/no-require-imports": "off", // prevents error on old "require" imports
-    "@typescript-eslint/no-unused-expressions": "off" // prevents error on test "expect" expressions
+    "@typescript-eslint/no-unused-expressions": "off", // prevents error on test "expect" expressions
+    "new-cap": "off" // prevents errors on express.Router()
   },
   "settings": {
     "react": {
