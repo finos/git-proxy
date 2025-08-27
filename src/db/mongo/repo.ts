@@ -14,15 +14,14 @@ export const getRepos = async (query: any = {}): Promise<Repo[]> => {
 };
 
 export const getRepo = async (name: string): Promise<Repo | null> => {
-  name = name.toLowerCase();
   const collection = await connect(collectionName);
-  const doc = await collection.findOne({ name: { $eq: name } });
+  const doc = await collection.findOne({ name: { $eq: name.toLowerCase() } });
   return doc ? toClass(doc, Repo.prototype) : null;
 };
 
 export const getRepoByUrl = async (repoUrl: string): Promise<Repo | null> => {
   const collection = await connect(collectionName);
-  const doc = await collection.findOne({ url: { $eq: repoUrl.toLowerCase() } });
+  const doc = await collection.findOne({ url: { $eq: repoUrl } });
   return doc ? toClass(doc, Repo.prototype) : null;
 };
 
