@@ -7,19 +7,19 @@ const collectionName = 'users';
 
 export const findUser = async function (username: string): Promise<User | null> {
   const collection = await connect(collectionName);
-  const doc = collection.findOne({ username: { $eq: username.toLowerCase() } });
+  const doc = await collection.findOne({ username: { $eq: username.toLowerCase() } });
   return doc ? toClass(doc, User.prototype) : null;
 };
 
 export const findUserByEmail = async function (email: string): Promise<User | null> {
   const collection = await connect(collectionName);
-  const doc = collection.findOne({ email: { $eq: email.toLowerCase() } });
+  const doc = await collection.findOne({ email: { $eq: email.toLowerCase() } });
   return doc ? toClass(doc, User.prototype) : null;
 };
 
 export const findUserByOIDC = async function (oidcId: string): Promise<User | null> {
   const collection = await connect(collectionName);
-  const doc = collection.findOne({ oidcId: { $eq: oidcId } });
+  const doc = await collection.findOne({ oidcId: { $eq: oidcId } });
   return doc ? toClass(doc, User.prototype) : null;
 };
 

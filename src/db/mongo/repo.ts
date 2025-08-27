@@ -16,19 +16,19 @@ export const getRepos = async (query: any = {}): Promise<Repo[]> => {
 export const getRepo = async (name: string): Promise<Repo | null> => {
   name = name.toLowerCase();
   const collection = await connect(collectionName);
-  const doc = collection.findOne({ name: { $eq: name } });
+  const doc = await collection.findOne({ name: { $eq: name } });
   return doc ? toClass(doc, Repo.prototype) : null;
 };
 
 export const getRepoByUrl = async (repoUrl: string): Promise<Repo | null> => {
   const collection = await connect(collectionName);
-  const doc = collection.findOne({ name: { $eq: repoUrl.toLowerCase() } });
+  const doc = await collection.findOne({ url: { $eq: repoUrl.toLowerCase() } });
   return doc ? toClass(doc, Repo.prototype) : null;
 };
 
 export const getRepoById = async (_id: string): Promise<Repo | null> => {
   const collection = await connect(collectionName);
-  const doc = collection.findOne({ _id: new ObjectId(_id) });
+  const doc = await collection.findOne({ _id: new ObjectId(_id) });
   return doc ? toClass(doc, Repo.prototype) : null;
 };
 
