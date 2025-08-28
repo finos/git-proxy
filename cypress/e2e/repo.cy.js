@@ -58,7 +58,7 @@ describe('Repo', () => {
       // cy.get('[data-testid="delete-repo-button"]').click();
     });
 
-    it('Prevents adding an existing repo', () => {
+    it('Displays an error when adding an existing repo', () => {
       cy.get('[data-testid="repo-list-view"]').find('[data-testid="add-repo-button"]').click();
 
       cy.get('[data-testid="add-repo-dialog"]').within(() => {
