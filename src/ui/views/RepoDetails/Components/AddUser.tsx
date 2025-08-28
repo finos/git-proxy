@@ -17,9 +17,10 @@ import { addUser } from '../../../services/repo';
 import { getUsers } from '../../../services/user';
 import { PersonAdd } from '@material-ui/icons';
 import { UserData } from '../../../../types/models';
+import Danger from '../../../components/Typography/Danger';
 
 interface AddUserDialogProps {
-  repoName: string;
+  repoId: string;
   type: string;
   refreshFn: () => void;
   open: boolean;
@@ -27,7 +28,7 @@ interface AddUserDialogProps {
 }
 
 const AddUserDialog: React.FC<AddUserDialogProps> = ({
-  repoName,
+  repoId,
   type,
   refreshFn,
   open,
@@ -37,7 +38,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const [data, setData] = useState<UserData[]>([]);
   const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isError, setIsError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [tip, setTip] = useState<boolean>(false);
 
@@ -58,7 +59,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const add = async () => {
     try {
       setIsLoading(true);
-      await addUser(repoName, username, type);
+      await addUser(repoId, username, type);
       handleSuccess();
       handleClose();
     } catch (e) {
@@ -76,10 +77,10 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   };
 
   useEffect(() => {
-    getUsers(setIsLoading, setData, setAuth, setIsError, setError, {});
+    getUsers(setIsLoading, setData, setAuth, setErrorMessage, {});
   }, []);
 
-  if (isError) return <div>Something went wrong ...</div>;
+  if (errorMessage) return <Danger>{errorMessage}</Danger>;
 
   return (
     <>
@@ -144,12 +145,12 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
 };
 
 interface AddUserProps {
-  repoName: string;
+  repoId: string;
   type: string;
   refreshFn: () => void;
 }
 
-const AddUser: React.FC<AddUserProps> = ({ repoName, type, refreshFn }) => {
+const AddUser: React.FC<AddUserProps> = ({ repoId, type, refreshFn }) => {
   const [open, setOpen] = useState<boolean>(false);
 
   const handleClickOpen = () => {
@@ -166,7 +167,7 @@ const AddUser: React.FC<AddUserProps> = ({ repoName, type, refreshFn }) => {
         <PersonAdd />
       </Button>
       <AddUserDialog
-        repoName={repoName}
+        repoId={repoId}
         type={type}
         open={open}
         onClose={handleClose}
