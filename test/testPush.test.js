@@ -52,7 +52,7 @@ const TEST_PUSH = {
   attestation: null,
 };
 
-describe.only('auth', async () => {
+describe('auth', async () => {
   let app;
   let cookie;
   let testRepo;
@@ -321,6 +321,26 @@ describe.only('auth', async () => {
       const res = await chai.request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
       res.should.have.status(200);
       res.body.should.be.an('array');
+    });
+
+    it('should allow a committer to cancel a push', async function () {
+      await db.writeAudit(TEST_PUSH);
+      await loginAsCommitter();
+      const res = await chai
+        .request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
+        .set('Cookie', `${cookie}`);
+      res.should.have.status(200);
+    });
+
+    it('should not allow a non-committer to cancel a push (even if admin)', async function () {
+      await db.writeAudit(TEST_PUSH);
+      await loginAsAdmin();
+      const res = await chai
+        .request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
+        .set('Cookie', `${cookie}`);
+      res.should.have.status(401);
     });
   });
 
