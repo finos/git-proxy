@@ -1,18 +1,14 @@
 import axios from 'axios';
-import { getCookie } from '../utils.tsx';
+import { getAxiosConfig, processAuthError } from './auth.js';
 
 const baseUrl = import.meta.env.VITE_API_URI
   ? `${import.meta.env.VITE_API_URI}/api/v1`
   : `${location.origin}/api/v1`;
 
-const config = {
-  withCredentials: true,
-};
-
-const canAddUser = (repoName, user, action) => {
-  const url = new URL(`${baseUrl}/repo/${repoName}`);
+const canAddUser = (repoId, user, action) => {
+  const url = new URL(`${baseUrl}/repo/${repoId}`);
   return axios
-    .get(url.toString(), config)
+    .get(url.toString(), getAxiosConfig())
     .then((response) => {
       const data = response.data;
       if (action === 'authorise') {
@@ -44,20 +40,21 @@ const getRepos = async (
   const url = new URL(`${baseUrl}/repo`);
   url.search = new URLSearchParams(query);
   setIsLoading(true);
-  await axios(url.toString(), config)
+  await axios(url.toString(), getAxiosConfig())
     .then((response) => {
-      const data = response.data;
-      setData(data);
+      const sortedRepos = response.data.sort((a, b) => a.name.localeCompare(b.name));
+      setData(sortedRepos);
     })
     .catch((error) => {
       setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
-        setErrorMessage('Failed to authorize user. If JWT auth is enabled, please check your configuration or disable it.');
+        setErrorMessage(processAuthError(error));
       } else {
-        setErrorMessage(`Error fetching repositories: ${error.response.data.message}`);
+        setErrorMessage(`Error fetching repos: ${error.response.data.message}`);
       }
-    }).finally(() => {
+    })
+    .finally(() => {
       setIsLoading(false);
     });
 };
@@ -65,7 +62,7 @@ const getRepos = async (
 const getRepo = async (setIsLoading, setData, setAuth, setIsError, id) => {
   const url = new URL(`${baseUrl}/repo/${id}`);
   setIsLoading(true);
-  await axios(url.toString(), config)
+  await axios(url.toString(), getAxiosConfig())
     .then((response) => {
       const data = response.data;
       setData(data);
@@ -76,61 +73,60 @@ const getRepo = async (setIsLoading, setData, setAuth, setIsError, id) => {
       } else {
         setIsError(true);
       }
-    }).finally(() => {
+    })
+    .finally(() => {
       setIsLoading(false);
     });
 };
 
 const addRepo = async (data) => {
   const url = new URL(`${baseUrl}/repo`);
+
   try {
-    await axios.post(url, data, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } });
-    return { success: true };
+    const response = await axios.post(url, data, getAxiosConfig());
+    return {
+      success: true,
+      repo: response.data,
+    };
   } catch (error) {
     return {
       success: false,
-      message: error.response?.data?.message || error.message
+      message: error.response?.data?.message || error.message,
     };
   }
 };
 
-const addUser = async (repoName, user, action) => {
-  const canAdd = await canAddUser(repoName, user, action);
+const addUser = async (repoId, user, action) => {
+  const canAdd = await canAddUser(repoId, user, action);
   if (canAdd) {
-    const url = new URL(`${baseUrl}/repo/${repoName}/user/${action}`);
+    const url = new URL(`${baseUrl}/repo/${repoId}/user/${action}`);
     const data = { username: user };
-    await axios
-      .patch(url, data, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
-      .catch((error) => {
-        console.log(error.response.data.message);
-        throw error;
-      });
+    await axios.patch(url, data, getAxiosConfig()).catch((error) => {
+      console.log(error.response.data.message);
+      throw error;
+    });
   } else {
     console.log('Duplicate user can not be added');
     throw new DupUserValidationError();
   }
 };
 
-const deleteUser = async (user, repoName, action) => {
-  const url = new URL(`${baseUrl}/repo/${repoName}/user/${action}/${user}`);
+const deleteUser = async (user, repoId, action) => {
+  const url = new URL(`${baseUrl}/repo/${repoId}/user/${action}/${user}`);
 
-  await axios
-    .delete(url, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
-    .catch((error) => {
-      console.log(error.response.data.message);
-      throw error;
-    });
+  await axios.delete(url, getAxiosConfig()).catch((error) => {
+    console.log(error.response.data.message);
+    throw error;
+  });
 };
 
-const deleteRepo = async (repoName) => {
-  const url = new URL(`${baseUrl}/repo/${repoName}/delete`);
+const deleteRepo = async (repoId) => {
+  const url = new URL(`${baseUrl}/repo/${repoId}/delete`);
 
-  await axios
-    .delete(url, { withCredentials: true, headers: { 'X-CSRF-TOKEN': getCookie('csrf') } })
-    .catch((error) => {
-      console.log(error.response.data.message);
-      throw error;
-    });
+  await axios.delete(url, getAxiosConfig()).catch((error) => {
+    console.log(error.response.data.message);
+    throw error;
+  });
 };
 
 export { addUser, deleteUser, getRepos, getRepo, addRepo, deleteRepo };
