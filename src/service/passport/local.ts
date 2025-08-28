@@ -8,23 +8,28 @@ export const type = 'local';
 export const configure = async (passport: PassportStatic): Promise<PassportStatic> => {
   passport.use(
     new LocalStrategy(
-      async (username: string, password: string, done: (err: any, user?: any, info?: any) => void) => {
-      try {
-        const user = await db.findUser(username);
-        if (!user) {
-          return done(null, false, { message: 'Incorrect username.' });
-        }
+      async (
+        username: string,
+        password: string,
+        done: (err: any, user?: any, info?: any) => void,
+      ) => {
+        try {
+          const user = await db.findUser(username);
+          if (!user) {
+            return done(null, false, { message: 'Incorrect username.' });
+          }
 
-        const passwordCorrect = await bcrypt.compare(password, user.password ?? '');
-        if (!passwordCorrect) {
-          return done(null, false, { message: 'Incorrect password.' });
-        }
+          const passwordCorrect = await bcrypt.compare(password, user.password ?? '');
+          if (!passwordCorrect) {
+            return done(null, false, { message: 'Incorrect password.' });
+          }
 
-        return done(null, user);
-      } catch (err) {
-        return done(err);
-      }
-    }),
+          return done(null, user);
+        } catch (err) {
+          return done(err);
+        }
+      },
+    ),
   );
 
   passport.serializeUser((user: any, done) => {

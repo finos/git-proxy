@@ -14,10 +14,8 @@ import { toPublicUser } from './publicApi';
 const router = express.Router();
 const passport = getPassport();
 
-const {
-  GIT_PROXY_UI_HOST: uiHost = 'http://localhost',
-  GIT_PROXY_UI_PORT: uiPort = 3000
-} = process.env;
+const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
+  process.env;
 
 router.get('/', (_req: Request, res: Response) => {
   res.status(200).json({

@@ -11,7 +11,7 @@ export const isUserInAdGroup = (
   profile: { username: string },
   ad: AD,
   domain: string,
-  name: string
+  name: string,
 ): Promise<boolean> => {
   // determine, via config, if we're using HTTP or AD directly
   if ((thirdpartyApiConfig?.ls as any).userInADGroup) {
@@ -26,7 +26,7 @@ const isUserInAdGroupViaAD = (
   profile: { username: string },
   ad: AD,
   domain: string,
-  name: string
+  name: string,
 ): Promise<boolean> => {
   return new Promise((resolve, reject) => {
     ad.isUserMemberOf(profile.username, name, function (err, isMember) {
@@ -41,11 +41,7 @@ const isUserInAdGroupViaAD = (
   });
 };
 
-const isUserInAdGroupViaHttp = (
-  id: string,
-  domain: string,
-  name: string
-): Promise<boolean> => {
+const isUserInAdGroupViaHttp = (id: string, domain: string, name: string): Promise<boolean> => {
   const url = String((thirdpartyApiConfig?.ls as any).userInADGroup)
     .replace('<domain>', domain)
     .replace('<name>', name)

@@ -29,7 +29,7 @@ export const configure = async (): Promise<PassportStatic> => {
     }
   }
 
-  if (authMethods.some(auth => auth.type.toLowerCase() === 'local')) {
+  if (authMethods.some((auth) => auth.type.toLowerCase() === 'local')) {
     await local.createDefaultAdmin?.();
   }
 

@@ -27,7 +27,7 @@ export async function getJwks(authorityUrl: string): Promise<JwkKey[]> {
  * @param {string} token the JWT token
  * @param {string} authorityUrl the OIDC authority URL
  * @param {string} expectedAudience the expected audience for the token
- * @param {string} clientID the OIDC client ID 
+ * @param {string} clientID the OIDC client ID
  * @param {Function} getJwksInject the getJwks function to use (for dependency injection). Defaults to the built-in getJwks function.
  * @return {Promise<JwtValidationResult>} the verified payload or an error
  */
@@ -36,7 +36,7 @@ export async function validateJwt(
   authorityUrl: string,
   expectedAudience: string,
   clientID: string,
-  getJwksInject: (authorityUrl: string) => Promise<JwkKey[]> = getJwks
+  getJwksInject: (authorityUrl: string) => Promise<JwkKey[]> = getJwks,
 ): Promise<JwtValidationResult> {
   try {
     const jwks = await getJwksInject(authorityUrl);
@@ -74,7 +74,7 @@ export async function validateJwt(
 
 /**
  * Assign roles to the user based on the role mappings provided in the jwtConfig.
- * 
+ *
  * If no role mapping is provided, the user will not have any roles assigned (i.e. user.admin = false).
  * @param {RoleMapping} roleMapping the role mapping configuration
  * @param {JwtPayload} payload the JWT payload
@@ -83,7 +83,7 @@ export async function validateJwt(
 export function assignRoles(
   roleMapping: RoleMapping | undefined,
   payload: JwtPayload,
-  user: Record<string, any>
+  user: Record<string, any>,
 ): void {
   if (!roleMapping) return;
 

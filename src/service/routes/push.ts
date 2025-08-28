@@ -53,7 +53,10 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
       return;
     }
 
-    if (list[0].username.toLowerCase() === (req.user as any).username.toLowerCase() && !list[0].admin) {
+    if (
+      list[0].username.toLowerCase() === (req.user as any).username.toLowerCase() &&
+      !list[0].admin
+    ) {
       res.status(401).send({
         message: `Cannot reject your own changes`,
       });
@@ -110,7 +113,10 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
       return;
     }
 
-    if (list[0].username.toLowerCase() === (req.user as any).username.toLowerCase() && !list[0].admin) {
+    if (
+      list[0].username.toLowerCase() === (req.user as any).username.toLowerCase() &&
+      !list[0].admin
+    ) {
       res.status(401).send({
         message: `Cannot approve your own changes`,
       });
@@ -169,7 +175,9 @@ router.post('/:id/cancel', async (req: Request, res: Response) => {
       console.log(`user ${(req.user as any).username} canceled push request for ${id}`);
       res.send(result);
     } else {
-      console.log(`user ${(req.user as any).username} not authorised to cancel push request for ${id}`);
+      console.log(
+        `user ${(req.user as any).username} not authorised to cancel push request for ${id}`,
+      );
       res.status(401).send({
         message:
           'User ${req.user.username)} not authorised to cancel push requests on this project.',
