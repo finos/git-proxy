@@ -11,9 +11,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
   const { Strategy } = await import('openid-client/build/passport');
 
   const authMethods = getAuthMethods();
-  const oidcConfig = authMethods.find(
-    (method) => method.type.toLowerCase() === 'openidconnect',
-  )?.oidcConfig;
+  const oidcConfig = authMethods.find((method) => method.type.toLowerCase() === type)?.oidcConfig;
 
   if (!oidcConfig || !oidcConfig.issuer) {
     throw new Error('Missing OIDC issuer in configuration');
@@ -39,7 +37,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
         const expectedSub = idTokenClaims.sub;
         const userInfo = await fetchUserInfo(config, tokenSet.access_token, expectedSub);
         handleUserAuthentication(userInfo, done);
-      }
+      },
     );
 
     strategy.currentUrl = function (request: any) {
@@ -78,7 +76,10 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
  * @param {Function} done - The callback function to handle the user authentication
  * @return {Promise<void>} - A promise that resolves when the user authentication is complete
  */
-const handleUserAuthentication = async (userInfo: UserInfoResponse, done: (err: any, user?: any) => void): Promise<void> => {
+const handleUserAuthentication = async (
+  userInfo: UserInfoResponse,
+  done: (err: any, user?: any) => void,
+): Promise<void> => {
   console.log('handleUserAuthentication called');
   try {
     const user = await db.findUserByOIDC(userInfo.sub);
@@ -93,14 +94,7 @@ const handleUserAuthentication = async (userInfo: UserInfoResponse, done: (err: 
         oidcId: userInfo.sub,
       };
 
-      await db.createUser(
-        newUser.username,
-        '',
-        newUser.email,
-        'Edit me',
-        false,
-        newUser.oidcId,
-      );
+      await db.createUser(newUser.username, '', newUser.email, 'Edit me', false, newUser.oidcId);
       return done(null, newUser);
     }
 

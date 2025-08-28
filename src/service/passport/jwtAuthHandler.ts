@@ -4,15 +4,15 @@ import { getAPIAuthMethods } from '../../config';
 import { JwtConfig, Authentication } from '../../config/types';
 import { RoleMapping } from './types';
 
+export const type = 'jwt';
+
 export const jwtAuthHandler = (overrideConfig: JwtConfig | null = null) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const apiAuthMethods: Authentication[] = overrideConfig
       ? [{ type: 'jwt', enabled: true, jwtConfig: overrideConfig }]
       : getAPIAuthMethods();
 
-    const jwtAuthMethod = apiAuthMethods.find(
-      (method) => method.type.toLowerCase() === 'jwt'
-    );
+    const jwtAuthMethod = apiAuthMethods.find((method) => method.type.toLowerCase() === type);
 
     if (!overrideConfig && (!jwtAuthMethod || !jwtAuthMethod.enabled)) {
       return next();
@@ -34,7 +34,7 @@ export const jwtAuthHandler = (overrideConfig: JwtConfig | null = null) => {
 
     if (!authorityURL) {
       res.status(500).send({
-        message: 'OIDC authority URL is not configured\n'
+        message: 'OIDC authority URL is not configured\n',
       });
       console.log('OIDC authority URL is not configured\n');
       return;
@@ -42,7 +42,7 @@ export const jwtAuthHandler = (overrideConfig: JwtConfig | null = null) => {
 
     if (!clientID) {
       res.status(500).send({
-        message: 'OIDC client ID is not configured\n'
+        message: 'OIDC client ID is not configured\n',
       });
       console.log('OIDC client ID is not configured\n');
       return;
@@ -55,7 +55,7 @@ export const jwtAuthHandler = (overrideConfig: JwtConfig | null = null) => {
       accessToken,
       authorityURL,
       audience,
-      clientID
+      clientID,
     );
 
     if (error || !verifiedPayload) {

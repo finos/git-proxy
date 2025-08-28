@@ -21,7 +21,8 @@
     "prepare": "node ./scripts/prepare.js",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx,json}\" \"test/**/*.{js,jsx,ts,tsx,json}\"",
     "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx,json}\" \"test/**/*.{js,jsx,ts,tsx,json}\"",
-    "format": "prettier --write src/**/*.{js,jsx,ts,tsx,css,md,json,scss} test/**/*.{js,jsx,ts,tsx,json} packages/git-proxy-cli/test/**/*.{js,jsx,ts,tsx,json}  packages/git-proxy-cli/index.js --config ./.prettierrc",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --config ./.prettierrc",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --config ./.prettierrc",
     "gen-schema-doc": "node ./scripts/doc-schema.js",
     "cypress:run": "cypress run"
   },
@@ -116,6 +117,7 @@
     "eslint": "^8.57.1",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-cypress": "^2.15.2",
     "eslint-plugin-json": "^3.1.0",
     "eslint-plugin-prettier": "^5.5.3",
     "eslint-plugin-react": "^7.37.5",
@@ -123,6 +125,7 @@
     "eslint-plugin-typescript": "^0.14.0",
     "fast-check": "^4.2.0",
     "husky": "^9.1.7",
+    "lint-staged": "^15.2.10",
     "mocha": "^10.8.2",
     "nyc": "^17.1.0",
     "prettier": "^3.6.2",
@@ -151,6 +154,17 @@
       "last 1 chrome version",
       "last 1 firefox version",
       "last 1 safari version"
+    ]
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}": [
+      "prettier --write"
+    ],
+    "src/**/*.{js,jsx,ts,tsx,json}": [
+      "eslint --fix"
+    ],
+    "test/**/*.{js,jsx,ts,tsx,json}": [
+      "eslint --fix"
     ]
   }
 }

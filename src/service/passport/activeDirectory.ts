@@ -62,14 +62,13 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
             const message = `An error occurred while checking if the user is a member of the user group: ${err.message}`;
             return done(message, null);
           }
-        
+
           // Now check if the user is an admin
           let isAdmin = false;
           try {
             isAdmin = await ldaphelper.isUserInAdGroup(req, profile, ad, domain, adminGroup);
-
           } catch (err: any) {
-            const message = `An error occurred while checking if the user is a member of the admin group: ${JSON.stringify(err)}`;
+            const message = `An error occurred while checking if the user is a member of the admin group: ${err.message}`;
             console.error(message, err); // don't return an error for this case as you may still be a user
           }
 
@@ -91,8 +90,8 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
           console.log(`Error authenticating AD user: ${err.message}`);
           return done(err, null);
         }
-      }
-    )
+      },
+    ),
   );
 
   passport.serializeUser(function (user: any, done: (err: any, user: any) => void) {
