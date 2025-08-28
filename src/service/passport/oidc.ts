@@ -8,7 +8,8 @@ export const type = 'openidconnect';
 export const configure = async (passport: PassportStatic): Promise<PassportStatic> => {
   // Use dynamic imports to avoid ESM/CommonJS issues
   const { discovery, fetchUserInfo } = await import('openid-client');
-  const { Strategy } = await import('openid-client/build/passport');
+  // @ts-expect-error - throws error due to missing type definitions
+  const { Strategy } = await import('openid-client/passport');
 
   const authMethods = getAuthMethods();
   const oidcConfig = authMethods.find((method) => method.type.toLowerCase() === type)?.oidcConfig;
@@ -94,7 +95,9 @@ const handleUserAuthentication = async (
         oidcId: userInfo.sub,
       };
 
+      console.log('Before createUser - ', newUser);
       await db.createUser(newUser.username, '', newUser.email, 'Edit me', false, newUser.oidcId);
+      console.log('After creating new user - ', newUser);
       return done(null, newUser);
     }
 
