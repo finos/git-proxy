@@ -2,6 +2,7 @@ const chai = require('chai');
 const sinon = require('sinon');
 const proxyquire = require('proxyquire');
 const expect = chai.expect;
+const { safelyExtractEmail, getUsername } = require('../src/service/passport/oidc');
 
 describe('OIDC auth method', () => {
   let dbStub;
@@ -137,5 +138,39 @@ describe('OIDC auth method', () => {
     expect(err).to.be.instanceOf(Error);
     expect(err.message).to.include('No email found');
     expect(user).to.be.undefined;
+  });
+
+  describe('safelyExtractEmail', () => {
+    it('should extract email from profile', () => {
+      const profile = { email: 'test@test.com' };
+      const email = safelyExtractEmail(profile);
+      expect(email).to.equal('test@test.com');
+    });
+
+    it('should extract email from profile with emails array', () => {
+      const profile = { emails: [{ value: 'test@test.com' }] };
+      const email = safelyExtractEmail(profile);
+      expect(email).to.equal('test@test.com');
+    });
+
+    it('should return null if no email in profile', () => {
+      const profile = { name: 'test' };
+      const email = safelyExtractEmail(profile);
+      expect(email).to.be.null;
+    });
+  });
+
+  describe('getUsername', () => {
+    it('should generate username from email', () => {
+      const email = 'test@test.com';
+      const username = getUsername(email);
+      expect(username).to.equal('test');
+    });
+
+    it('should return empty string if no email', () => {
+      const email = '';
+      const username = getUsername(email);
+      expect(username).to.equal('');
+    });
   });
 });

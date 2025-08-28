@@ -95,9 +95,7 @@ const handleUserAuthentication = async (
         oidcId: userInfo.sub,
       };
 
-      console.log('Before createUser - ', newUser);
       await db.createUser(newUser.username, '', newUser.email, 'Edit me', false, newUser.oidcId);
-      console.log('After creating new user - ', newUser);
       return done(null, newUser);
     }
 
@@ -113,7 +111,7 @@ const handleUserAuthentication = async (
  * @param {any} profile - The user profile from the OIDC provider
  * @return {string | null} - The email address from the profile
  */
-const safelyExtractEmail = (profile: any): string | null => {
+export const safelyExtractEmail = (profile: any): string | null => {
   return (
     profile.email || (profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null)
   );
@@ -127,6 +125,6 @@ const safelyExtractEmail = (profile: any): string | null => {
  * @param {string} email - The email address to generate a username from
  * @return {string} - The username generated from the email address
  */
-const getUsername = (email: string): string => {
+export const getUsername = (email: string): string => {
   return email ? email.split('@')[0] : '';
 };

@@ -52,7 +52,7 @@ const TEST_PUSH = {
   attestation: null,
 };
 
-describe('auth', async () => {
+describe.only('auth', async () => {
   let app;
   let cookie;
   let testRepo;
@@ -313,6 +313,14 @@ describe('auth', async () => {
         .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
         .set('Cookie', `${cookie}`);
       res.should.have.status(401);
+    });
+
+    it('should fetch all pushes', async function () {
+      await db.writeAudit(TEST_PUSH);
+      await loginAsApprover();
+      const res = await chai.request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
+      res.should.have.status(200);
+      res.body.should.be.an('array');
     });
   });
 
