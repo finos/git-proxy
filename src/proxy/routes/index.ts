@@ -29,14 +29,19 @@ const logAction = (
 const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
   try {
     const urlComponents = processUrlPath(req.url);
-
     if (
       !urlComponents ||
       urlComponents.gitPath === undefined ||
       !validGitRequest(urlComponents.gitPath, req.headers)
     ) {
-      res.status(400).send('Invalid request received');
-      console.log('action blocked');
+      logAction(
+        req.url,
+        req.headers.host,
+        req.headers['user-agent'],
+        'Invalid request received',
+        null,
+      );
+      res.status(400).send(handleMessage('Invalid request received'));
       return false;
     }
 
@@ -51,17 +56,7 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
       res.set('x-frame-options', 'DENY');
       res.set('connection', 'close');
 
-      let message = '';
-
-      if (action.error) {
-        message = action.errorMessage!;
-        console.error(message);
-      }
-      if (action.blocked) {
-        message = action.blockedMessage!;
-      }
-
-      const packetMessage = handleMessage(message);
+      const packetMessage = handleMessage(action.errorMessage ?? action.blockedMessage ?? '');
 
       logAction(
         req.url,
@@ -70,9 +65,7 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
         action.errorMessage,
         action.blockedMessage,
       );
-
-      res.status(200).send(packetMessage);
-
+      res.status(403).send(packetMessage);
       return false;
     }
 
@@ -84,9 +77,11 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
       action.blockedMessage,
     );
 
+    // this is the only case where we do not respond directly, instead we return true to proxy the request
     return true;
   } catch (e) {
-    console.error('Error occurred in proxy filter function ', e);
+    const packetMessage = handleMessage(`Error occurred in proxy filter function ${e}`);
+
     logAction(
       req.url,
       req.headers.host,
@@ -94,6 +89,8 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
       'Error occurred in proxy filter function: ' + ((e as Error).message ?? e),
       null,
     );
+
+    res.status(500).send(packetMessage);
     return false;
   }
 };
@@ -140,7 +137,9 @@ const isPackPost = (req: Request) =>
   /^(?:\/[^/]+)*\/[^/]+\.git\/(?:git-upload-pack|git-receive-pack)$/.test(req.url);
 
 const teeAndValidate = async (req: Request, res: Response, next: NextFunction) => {
-  if (!isPackPost(req)) return next();
+  if (!isPackPost(req)) {
+    return next();
+  }
 
   const proxyStream = new PassThrough();
   const pluginStream = new PassThrough();
@@ -152,17 +151,16 @@ const teeAndValidate = async (req: Request, res: Response, next: NextFunction) =
     const buf = await getRawBody(pluginStream, { limit: '1gb' });
     (req as any).body = buf;
     const verdict = await executeChain(req, res);
-    console.log('action processed');
     if (verdict.error || verdict.blocked) {
-      let msg = '';
+      const msg = verdict.errorMessage ?? verdict.blockedMessage ?? '';
 
-      if (verdict.error) {
-        msg = verdict.errorMessage!;
-        console.error(msg);
-      }
-      if (verdict.blocked) {
-        msg = verdict.blockedMessage!;
-      }
+      logAction(
+        req.url,
+        req.headers?.host,
+        req.headers?.['user-agent'],
+        verdict.errorMessage,
+        verdict.blockedMessage,
+      );
 
       res
         .set({
@@ -174,7 +172,7 @@ const teeAndValidate = async (req: Request, res: Response, next: NextFunction) =
           'x-frame-options': 'DENY',
           connection: 'close',
         })
-        .status(200)
+        .status(403)
         .send(handleMessage(msg));
       return;
     }
@@ -233,8 +231,9 @@ const getRouter = async () => {
   console.log('proxy keys registered: ', JSON.stringify(proxyKeys));
 
   router.use('/', (req, res, next) => {
-    console.log(`processing request URL: '${req.url}'`);
-    console.log('proxy keys registered: ', JSON.stringify(proxyKeys));
+    console.log(
+      `processing request URL: '${req.url}' against registered proxy keys: ${JSON.stringify(proxyKeys)}`,
+    );
 
     for (let i = 0; i < proxyKeys.length; i++) {
       if (req.url.startsWith(proxyKeys[i])) {
