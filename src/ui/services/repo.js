@@ -79,19 +79,21 @@ const getRepo = async (setIsLoading, setData, setAuth, setIsError, id) => {
     });
 };
 
-const addRepo = async (onClose, setError, data) => {
+const addRepo = async (data) => {
   const url = new URL(`${baseUrl}/repo`);
 
-  return axios
-    .post(url, data, getAxiosConfig())
-    .then((response) => {
-      onClose();
-      return response.data;
-    })
-    .catch((error) => {
-      console.log(error.response.data.message);
-      setError(error.response.data.message);
-    });
+  try {
+    const response = await axios.post(url, data, getAxiosConfig());
+    return {
+      success: true,
+      repo: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message,
+    };
+  }
 };
 
 const addUser = async (repoId, user, action) => {
