@@ -64,7 +64,7 @@ let mockPushProcessors;
 const clearCache = (sandbox) => {
   delete require.cache[require.resolve('../src/proxy/processors')];
   delete require.cache[require.resolve('../src/proxy/chain')];
-  sandbox.reset();
+  sandbox.restore();
 };
 
 describe('proxy chain', function () {
@@ -95,8 +95,6 @@ describe('proxy chain', function () {
 
   afterEach(() => {
     // Clear the module from the cache after each test
-    sandboxSinon.restore();
-    sinon.restore();
     clearCache(sandboxSinon);
   });
 
