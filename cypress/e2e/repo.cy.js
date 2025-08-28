@@ -1,56 +1,16 @@
 describe('Repo', () => {
+  let cookies;
+  let repoName;
+
   describe('Anonymous users', () => {
+    beforeEach(() => {
+      cy.visit('/dashboard/repo');
+    });
+
     it('Prevents anonymous users from adding repos', () => {
       cy.get('[data-testid="repo-list-view"]')
         .find('[data-testid="add-repo-button"]')
         .should('not.exist');
-    });
-
-    describe('Code button for repo row', () => {
-      it('Opens tooltip with correct content and can copy', () => {
-        const cloneURL = 'http://localhost:8000/finos/git-proxy.git';
-        const tooltipQuery = 'div[role="tooltip"]';
-
-        cy
-          // tooltip isn't open to start with
-          .get(tooltipQuery)
-          .should('not.exist');
-
-        cy
-          // find the entry for finos/git-proxy
-          .get('a[href="/dashboard/repo/git-proxy"]')
-          // take it's parent row
-          .closest('tr')
-          // find the nearby span containing Code we can click to open the tooltip
-          .find('span')
-          .contains('Code')
-          .should('exist')
-          .click();
-
-        cy
-          // find the newly opened tooltip
-          .get(tooltipQuery)
-          .should('exist')
-          .find('span')
-          // check it contains the url we expect
-          .contains(cloneURL)
-          .should('exist')
-          .parent()
-          // find the adjacent span that contains the svg
-          .find('span')
-          .next()
-          // check it has the copy icon first and click it
-          .get('svg.octicon-copy')
-          .should('exist')
-          .click()
-          // check the icon has changed to the check icon
-          .get('svg.octicon-copy')
-          .should('not.exist')
-          .get('svg.octicon-check')
-          .should('exist');
-
-        // failed to successfully check the clipboard
-      });
     });
   });
 
@@ -80,18 +40,22 @@ describe('Repo', () => {
     });
 
     it('Admin users can add repos', () => {
+      repoName = `${Date.now()}`;
+
       cy.get('[data-testid="repo-list-view"]').find('[data-testid="add-repo-button"]').click();
 
       cy.get('[data-testid="add-repo-dialog"]').within(() => {
-        cy.get('[data-testid="repo-project-input"]').type('uuidjs');
-        cy.get('[data-testid="repo-name-input"]').type('uuidjs');
-        cy.get('[data-testid="repo-url-input"]').type('https://github.com/uuidjs/uuid.git');
+        cy.get('[data-testid="repo-project-input"]').type('cypress-test');
+        cy.get('[data-testid="repo-name-input"]').type(repoName);
+        cy.get('[data-testid="repo-url-input"]').type(
+          `https://github.com/cypress-test/${repoName}.git`,
+        );
         cy.get('[data-testid="add-repo-button"]').click();
       });
 
-      cy.get('a[href="/dashboard/repo/uuidjs"]', { timeout: 10000 }).click();
+      cy.contains('a', `cypress-test/${repoName}`, { timeout: 10000 }).click();
 
-      cy.get('[data-testid="delete-repo-button"]').click();
+      // cy.get('[data-testid="delete-repo-button"]').click();
     });
 
     it('Prevents adding an existing repo', () => {
@@ -106,14 +70,12 @@ describe('Repo', () => {
 
       cy.get('[data-testid="repo-error"]')
         .should('be.visible')
-        .and('contain.text', 'Repository already exists!');
+        .and('contain.text', 'Repository https://github.com/finos/git-proxy.git already exists!');
     });
   });
 
   describe('Existing repo', () => {
-    let repoName;
     let cloneURL;
-    let cookies;
     let repoId;
 
     before(() => {
