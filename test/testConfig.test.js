@@ -28,6 +28,8 @@ describe('default configuration', function () {
     expect(config.getCSRFProtection()).to.be.eql(defaultSettings.csrfProtection);
     expect(config.getAttestationConfig()).to.be.eql(defaultSettings.attestationConfig);
     expect(config.getAPIs()).to.be.eql(defaultSettings.api);
+    expect(config.getSmtpHost()).to.be.eql(defaultSettings.smtpHost);
+    expect(config.getSmtpPort()).to.be.eql(defaultSettings.smtpPort);
   });
   after(function () {
     delete require.cache[require.resolve('../src/config')];
@@ -174,6 +176,17 @@ describe('user configuration', function () {
     expect(config.getTLSCertPemPath()).to.be.eql(user.tls.cert);
     expect(config.getTLSKeyPemPath()).to.be.eql(user.tls.key);
     expect(config.getTLSEnabled()).to.be.eql(user.tls.enabled);
+  });
+
+  it('should override default settings for smtp', function () {
+    const user = { smtpHost: 'smtp.example.com', smtpPort: 587 };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = require('../src/config');
+    config.initUserConfig();
+
+    expect(config.getSmtpHost()).to.be.eql(user.smtpHost);
+    expect(config.getSmtpPort()).to.be.eql(user.smtpPort);
   });
 
   it('should prioritize tls.key and tls.cert over sslKeyPemPath and sslCertPemPath', function () {
