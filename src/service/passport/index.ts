@@ -1,4 +1,4 @@
-import passport, { PassportStatic } from 'passport';
+import passport, { type PassportStatic } from 'passport';
 import * as local from './local';
 import * as activeDirectory from './activeDirectory';
 import * as oidc from './oidc';
