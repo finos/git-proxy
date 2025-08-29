@@ -40,7 +40,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
 
   app.use(
     session({
-      store: config.getDatabase().type === 'mongo' ? db.getSessionStore() || undefined : undefined,
+      store: db.getSessionStore(),
       secret: config.getCookieSecret(),
       resave: false,
       saveUninitialized: false,
