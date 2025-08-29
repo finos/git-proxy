@@ -9,6 +9,7 @@ import lusca from 'lusca';
 import * as config from '../config';
 import * as db from '../db';
 import { serverConfig } from '../config/env';
+import Proxy from '../proxy';
 
 const limiter = rateLimit(config.getRateLimit());
 
@@ -24,10 +25,10 @@ const corsOptions = {
 
 /**
  * Internal function used to bootstrap the Git Proxy API's express application.
- * @param {Express} proxy A reference to the proxy express application, used to restart it when necessary.
- * @return {Promise<Express>}
+ * @param {Proxy} proxy A reference to the proxy, used to restart it when necessary.
+ * @return {Promise<Express>} the express application
  */
-async function createApp(proxy: Express) {
+async function createApp(proxy: Proxy): Promise<Express> {
   // configuration of passport is async
   // Before we can bind the routes - we need the passport strategy
   const passport = await require('./passport').configure();
@@ -79,10 +80,10 @@ async function createApp(proxy: Express) {
 
 /**
  * Starts the proxy service.
- * @param {*} proxy A reference to the proxy express application, used to restart it when necessary.
+ * @param {Proxy} proxy A reference to the proxy, used to restart it when necessary.
  * @return {Promise<Express>} the express application (used for testing).
  */
-async function start(proxy: any) {
+async function start(proxy: Proxy) {
   if (!proxy) {
     console.warn("WARNING: proxy is null and can't be controlled by the API service");
   }

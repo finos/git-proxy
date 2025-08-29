@@ -118,10 +118,10 @@ export const deleteUser = (username: string): Promise<void> => {
 export const updateUser = (user: Partial<User>): Promise<void> => {
   if (user.username) {
     user.username = user.username.toLowerCase();
-  };
+  }
   if (user.email) {
     user.email = user.email.toLowerCase();
-  };
+  }
 
   return new Promise((resolve, reject) => {
     // The mongo db adaptor adds fields to existing documents, where this adaptor replaces the document
