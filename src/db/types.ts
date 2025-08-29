@@ -62,7 +62,7 @@ export class User {
 }
 
 export interface Sink {
-  getSessionStore?: () => MongoDBStore;
+  getSessionStore: () => MongoDBStore | undefined;
   getPushes: (query: Partial<PushQuery>) => Promise<Action[]>;
   writeAudit: (action: Action) => Promise<void>;
   getPush: (id: string) => Promise<Action | null>;
