@@ -69,6 +69,7 @@
     "mongodb": "^5.9.2",
     "nodemailer": "^6.10.1",
     "openid-client": "^6.7.0",
+    "pako": "^2.1.0",
     "parse-diff": "^0.11.1",
     "passport": "^0.7.0",
     "passport-activedirectory": "^1.4.0",
