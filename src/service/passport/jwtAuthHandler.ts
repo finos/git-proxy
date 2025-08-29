@@ -18,7 +18,7 @@ export const jwtAuthHandler = (overrideConfig: JwtConfig | null = null) => {
       return next();
     }
 
-    if (req.isAuthenticated?.()) {
+    if (req.isAuthenticated && req.isAuthenticated()) {
       return next();
     }
 
