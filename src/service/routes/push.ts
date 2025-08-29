@@ -40,10 +40,11 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
     const id = req.params.id;
 
     // Get the push request
-    const push = await db.getPush(id);
+    const push = await getValidPushOrRespond(id, res);
+    if (!push) return;
 
     // Get the committer of the push via their email
-    const committerEmail = push?.userEmail;
+    const committerEmail = push.userEmail;
     const list = await db.getUsers({ email: committerEmail });
 
     if (list.length === 0) {
@@ -97,12 +98,11 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
     const id = req.params.id;
     console.log({ id });
 
-    // Get the push request
-    const push = await db.getPush(id);
-    console.log({ push });
+    const push = await getValidPushOrRespond(id, res);
+    if (!push) return;
 
     // Get the committer of the push via their email address
-    const committerEmail = push?.userEmail;
+    const committerEmail = push.userEmail;
     const list = await db.getUsers({ email: committerEmail });
     console.log({ list });
 
@@ -189,5 +189,23 @@ router.post('/:id/cancel', async (req: Request, res: Response) => {
     });
   }
 });
+
+async function getValidPushOrRespond(id: string, res: Response) {
+  console.log('getValidPushOrRespond', { id });
+  const push = await db.getPush(id);
+  console.log({ push });
+
+  if (!push) {
+    res.status(404).send({ message: `Push request not found` });
+    return null;
+  }
+
+  if (!push.userEmail) {
+    res.status(400).send({ message: `Push request has no user email` });
+    return null;
+  }
+
+  return push;
+}
 
 export default router;
