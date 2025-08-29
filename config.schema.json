@@ -173,6 +173,14 @@
           }
         }
       }
+    },
+    "smtpHost": {
+      "type": "string",
+      "description": "SMTP host to use for sending emails"
+    },
+    "smtpPort": {
+      "type": "number",
+      "description": "SMTP port to use for sending emails"
     }
   },
   "definitions": {

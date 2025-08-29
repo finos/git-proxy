@@ -1,7 +1,7 @@
 // This test needs to run first
 const chai = require('chai');
 const chaiHttp = require('chai-http');
-const service = require('../src/service');
+const service = require('../src/service').default;
 
 chai.use(chaiHttp);
 chai.should();
