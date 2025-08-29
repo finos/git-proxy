@@ -63,7 +63,7 @@ describe('proxy route filter middleware', () => {
       .set('user-agent', 'git/2.42.0')
       .set('accept', 'application/x-git-upload-pack-request');
 
-    expect(res).to.have.status(400);
+    expect(res).to.have.status(200); // status 200 is used to ensure error message is rendered by git client
     expect(res.text).to.contain('Invalid request received');
   });
 
@@ -82,7 +82,7 @@ describe('proxy route filter middleware', () => {
       .send(Buffer.from('0000'))
       .buffer();
 
-    expect(res.status).to.equal(403);
+    expect(res.status).to.equal(200); // status 200 is used to ensure error message is rendered by git client
     expect(res.text).to.contain('You shall not push!');
     expect(res.headers['content-type']).to.include('application/x-git-receive-pack-result');
     expect(res.headers['x-frame-options']).to.equal('DENY');
@@ -466,7 +466,8 @@ describe('proxy express application', async () => {
       .set('accept', 'application/x-git-upload-pack-request')
       .buffer();
 
-    res2.should.have.status(403);
+    res2.should.have.status(200); // status 200 is used to ensure error message is rendered by git client
+    expect(res2.text).to.contain('Rejecting repo');
   }).timeout(5000);
 
   it('should not proxy requests for an unknown project', async function () {
@@ -487,7 +488,8 @@ describe('proxy express application', async () => {
       .set('user-agent', 'git/2.42.0')
       .set('accept', 'application/x-git-upload-pack-request')
       .buffer();
-    res.should.have.status(403);
+    res.should.have.status(200); // status 200 is used to ensure error message is rendered by git client
+    expect(res.text).to.contain('Rejecting repo');
 
     // try (and fail) to proxy a request to the repo via the fallback URL directly
     const res2 = await chai
@@ -496,6 +498,7 @@ describe('proxy express application', async () => {
       .set('user-agent', 'git/2.42.0')
       .set('accept', 'application/x-git-upload-pack-request')
       .buffer();
-    res2.should.have.status(403);
+    res2.should.have.status(200);
+    expect(res2.text).to.contain('Rejecting repo');
   }).timeout(5000);
 });
