@@ -1,5 +1,5 @@
 import { assignRoles, validateJwt } from './jwtUtils';
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import { getAPIAuthMethods } from '../../config';
 import { JwtConfig, Authentication } from '../../config/types';
 import { RoleMapping } from './types';
