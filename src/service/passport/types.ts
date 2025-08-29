@@ -42,29 +42,3 @@ export type AD = {
     callback: (err: Error | null, isMember: boolean) => void,
   ) => void;
 };
-
-/**
- * The UserInfoResponse type from openid-client (to fix some type errors)
- */
-export type UserInfoResponse = {
-  readonly sub: string;
-  readonly name?: string;
-  readonly given_name?: string;
-  readonly family_name?: string;
-  readonly middle_name?: string;
-  readonly nickname?: string;
-  readonly preferred_username?: string;
-  readonly profile?: string;
-  readonly picture?: string;
-  readonly website?: string;
-  readonly email?: string;
-  readonly email_verified?: boolean;
-  readonly gender?: string;
-  readonly birthdate?: string;
-  readonly zoneinfo?: string;
-  readonly locale?: string;
-  readonly phone_number?: string;
-  readonly updated_at?: number;
-  readonly address?: any;
-  readonly [claim: string]: any;
-};

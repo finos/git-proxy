@@ -1,7 +1,7 @@
 import * as db from '../../db';
 import { PassportStatic } from 'passport';
 import { getAuthMethods } from '../../config';
-import { UserInfoResponse } from './types';
+import { type UserInfoResponse } from 'openid-client';
 
 export const type = 'openidconnect';
 
