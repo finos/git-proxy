@@ -58,7 +58,11 @@ export async function validateJwt(
       algorithms: ['RS256'],
       issuer: authorityUrl,
       audience: expectedAudience,
-    }) as JwtPayload;
+    });
+
+    if (typeof verifiedPayload === 'string') {
+      throw new Error('Unexpected string payload in JWT');
+    }
 
     if (verifiedPayload.azp && verifiedPayload.azp !== clientID) {
       throw new Error('JWT client ID does not match');
