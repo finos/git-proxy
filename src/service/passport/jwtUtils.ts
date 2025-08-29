@@ -1,5 +1,5 @@
 import axios from 'axios';
-import jwt, { JwtPayload } from 'jsonwebtoken';
+import jwt, { type JwtPayload } from 'jsonwebtoken';
 import jwkToPem from 'jwk-to-pem';
 
 import { JwkKey, JwksResponse, JwtValidationResult, RoleMapping } from './types';
