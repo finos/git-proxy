@@ -2,6 +2,7 @@ import { Action, Step } from '../../actions';
 import zlib from 'zlib';
 import fs from 'fs';
 import lod from 'lodash';
+import pako from 'pako';
 
 import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
 import {
@@ -279,26 +280,122 @@ const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
   return [meta, buffer.subarray(PACKET_SIZE * 3)];
 };
 
+// /**
+//  * Gets the contents of a pack file.
+//  * @param {Buffer} buffer - The buffer containing the pack file data.
+//  * @param {number} entries - The number of entries in the pack file.
+//  * @return {Array} An array of commit content objects.
+//  */
+// const getContents = (buffer: Buffer | CommitContent[], entries: number): CommitContent[] => {
+//   const contents = [];
+
+//   for (let i = 0; i < entries; i++) {
+//     try {
+//       const [content, nextBuffer] = getContent(i, buffer as Buffer);
+//       console.log({ content, nextBuffer });
+//       buffer = nextBuffer as Buffer;
+//       contents.push(content);
+//     } catch (e) {
+//       console.log(e);
+//     }
+//   }
+//   return contents;
+// };
+
 /**
  * Gets the contents of a pack file.
- * @param {Buffer} buffer - The buffer containing the pack file data.
- * @param {number} entries - The number of entries in the pack file.
- * @return {Array} An array of commit content objects.
+ * @param {Buffer} buffer The buffer containing the pack file data.
+ * @param {number} numEntries The expected number of entries in the pack file.
+ * @returns {CommitContent[]}
  */
-const getContents = (buffer: Buffer | CommitContent[], entries: number): CommitContent[] => {
-  const contents = [];
+const getContents = (buffer: Buffer, numEntries: number): CommitContent[] => {
+  const entries: CommitContent[] = [];
+  let offset = 0;
 
-  for (let i = 0; i < entries; i++) {
-    try {
-      const [content, nextBuffer] = getContent(i, buffer as Buffer);
-      console.log({ content, nextBuffer });
-      buffer = nextBuffer as Buffer;
-      contents.push(content);
-    } catch (e) {
-      console.log(e);
+  while (offset < buffer.length) {
+    const startOffset = offset;
+    const firstByte = buffer[offset++];
+    const typeCode = (firstByte >> 4) & 0x07;
+    let size = firstByte & 0x0f;
+    let shift = 4;
+    let objectRef: string | null = null;
+
+    // Read variable-length size
+    let byte = firstByte;
+    while (byte & 0x80) {
+      byte = buffer[offset++];
+      size |= (byte & 0x7f) << shift;
+      shift += 7;
     }
+
+    // Handle delta headers
+    if (typeCode === 6) {
+      // OFS_DELTA: variable-length offset
+      let c = buffer[offset++];
+      while (c & 0x80) {
+        c = buffer[offset++];
+      }
+    } else if (typeCode === 7) {
+      // REF_DELTA: 20-byte base object ID
+      objectRef = buffer.subarray(offset, offset + 20).toString('hex');
+      offset += 20;
+    }
+
+    // Use pako to inflate from current offset
+    const inflater = new pako.Inflate();
+    inflater.push(buffer.subarray(offset), true);
+
+    if (inflater.err) {
+      throw new Error(`Decompression failed at offset ${startOffset}: ${inflater.msg}`);
+    }
+
+    const consumedLength = (inflater as any).strm?.next_in; //property exists at runtime but is not exposed in the type...
+    const decompressed = Buffer.from(inflater.result as Uint8Array);
+
+    entries.push({
+      item: entries.length,
+      type: typeCode,
+      typeName: gitObjectType(typeCode),
+      content: decompressed.toString('utf8'),
+      size: size,
+      deflatedSize: consumedLength,
+      objectRef: objectRef,
+    });
+
+    offset += consumedLength;
   }
-  return contents;
+
+  if (numEntries != entries.length) {
+    console.warn(
+      `getContents returned an unexpected number of entries: ${entries.length}, expected ${numEntries}`,
+    );
+  }
+
+  return entries;
+};
+
+/**
+ * Maps Git object type codes to human-readable names.
+ * @param typeCode - Numeric type code from PACK file.
+ * @returns Git object type as string.
+ */
+const gitObjectType = (typeCode: number): string => {
+  switch (typeCode) {
+    case 1:
+      return 'commit';
+    case 2:
+      return 'tree';
+    case 3:
+      return 'blob';
+    case 4:
+      return 'tag';
+    case 6:
+      return 'ofs_delta';
+    case 7:
+      return 'ref_delta';
+    default:
+      return 'unknown';
+  }
 };
 
 /**
@@ -317,93 +414,93 @@ const getInt = (bits: boolean[]): number => {
   return parseInt(strBits, 2);
 };
 
-/**
- * Gets the content of a pack file entry.
- * @param {number} item - The index of the entry.
- * @param {Buffer} buffer - The buffer containing the pack file data.
- * @return {Array} An array containing the content object and the next buffer.
- */
-const getContent = (item: number, buffer: Buffer): [CommitContent, Buffer] => {
-  // FIRST byte contains the type and some of the size of the file
-  // a MORE flag -8th byte tells us if there is a subsequent byte
-  // which holds the file size
+// /**
+//  * Gets the content of a pack file entry.
+//  * @param {number} item - The index of the entry.
+//  * @param {Buffer} buffer - The buffer containing the pack file data.
+//  * @return {Array} An array containing the content object and the next buffer.
+//  */
+// const getContent = (item: number, buffer: Buffer): [CommitContent, Buffer] => {
+//   // FIRST byte contains the type and some of the size of the file
+//   // a MORE flag -8th byte tells us if there is a subsequent byte
+//   // which holds the file size
 
-  const byte = buffer.readUIntBE(0, 1);
-  const m = new BitMask(byte);
+//   const byte = buffer.readUIntBE(0, 1);
+//   const m = new BitMask(byte);
 
-  let more = m.getBit(3);
-  let size = [m.getBit(7), m.getBit(8), m.getBit(9), m.getBit(10)];
-  const type = getInt([m.getBit(4), m.getBit(5), m.getBit(6)]);
+//   let more = m.getBit(3);
+//   let size = [m.getBit(7), m.getBit(8), m.getBit(9), m.getBit(10)];
+//   const type = getInt([m.getBit(4), m.getBit(5), m.getBit(6)]);
 
-  // Object IDs if this is a deltafied blob
-  let objectRef: string | null = null;
+//   // Object IDs if this is a deltafied blob
+//   let objectRef: string | null = null;
 
-  // If we have a more flag get the next
-  // 8 bytes
-  while (more) {
-    buffer = buffer.slice(1);
-    const nextByte = buffer.readUIntBE(0, 1);
-    const nextM = new BitMask(nextByte);
+//   // If we have a more flag get the next
+//   // 8 bytes
+//   while (more) {
+//     buffer = buffer.slice(1);
+//     const nextByte = buffer.readUIntBE(0, 1);
+//     const nextM = new BitMask(nextByte);
 
-    const nextSize = [
-      nextM.getBit(4),
-      nextM.getBit(5),
-      nextM.getBit(6),
-      nextM.getBit(7),
-      nextM.getBit(8),
-      nextM.getBit(9),
-      nextM.getBit(10),
-    ];
+//     const nextSize = [
+//       nextM.getBit(4),
+//       nextM.getBit(5),
+//       nextM.getBit(6),
+//       nextM.getBit(7),
+//       nextM.getBit(8),
+//       nextM.getBit(9),
+//       nextM.getBit(10),
+//     ];
 
-    size = nextSize.concat(size);
-    more = nextM.getBit(3);
-  }
+//     size = nextSize.concat(size);
+//     more = nextM.getBit(3);
+//   }
 
-  // NOTE Size is the unzipped size, not the zipped size
-  const intSize = getInt(size);
+//   // NOTE Size is the unzipped size, not the zipped size
+//   const intSize = getInt(size);
 
-  // Deltafied objectives have a 20 byte identifier
-  if (type == 7 || type == 6) {
-    objectRef = buffer.slice(0, 20).toString('hex');
-    buffer = buffer.slice(20);
-  }
+//   // Deltafied objectives have a 20 byte identifier
+//   if (type == 7 || type == 6) {
+//     objectRef = buffer.slice(0, 20).toString('hex');
+//     buffer = buffer.slice(20);
+//   }
 
-  const contentBuffer = buffer.slice(1);
-  const [content, deflatedSize] = unpack(contentBuffer);
+//   const contentBuffer = buffer.slice(1);
+//   const [content, deflatedSize] = unpack(contentBuffer);
 
-  // NOTE Size is the unzipped size, not the zipped size
-  // so it's kind of useless for us in terms of reading the stream
-  const result = {
-    item: item,
-    value: byte,
-    type: type,
-    size: intSize,
-    deflatedSize: deflatedSize,
-    objectRef: objectRef,
-    content: content,
-  };
+//   // NOTE Size is the unzipped size, not the zipped size
+//   // so it's kind of useless for us in terms of reading the stream
+//   const result = {
+//     item: item,
+//     value: byte,
+//     type: type,
+//     size: intSize,
+//     deflatedSize: deflatedSize,
+//     objectRef: objectRef,
+//     content: content,
+//   };
 
-  // Move on by the zipped content size.
-  const nextBuffer = contentBuffer.slice(deflatedSize as number);
+//   // Move on by the zipped content size.
+//   const nextBuffer = contentBuffer.slice(deflatedSize as number);
 
-  return [result, nextBuffer];
-};
+//   return [result, nextBuffer];
+// };
+//
+// /**
+//  * Unzips the content of a buffer.
+//  * @param {Buffer} buf - The buffer containing the zipped content.
+//  * @return {Array} An array containing the unzipped content and the size of the deflated content.
+//  */
+// const unpack = (buf: Buffer): [string, number] => {
+//   // Unzip the content
+//   const inflated = zlib.inflateSync(buf);
 
-/**
- * Unzips the content of a buffer.
- * @param {Buffer} buf - The buffer containing the zipped content.
- * @return {Array} An array containing the unzipped content and the size of the deflated content.
- */
-const unpack = (buf: Buffer): [string, number] => {
-  // Unzip the content
-  const inflated = zlib.inflateSync(buf);
+//   // We don't have IDX files here, so we need to know how
+//   // big the zipped content was, to set the next read location
+//   const deflated = zlib.deflateSync(inflated);
 
-  // We don't have IDX files here, so we need to know how
-  // big the zipped content was, to set the next read location
-  const deflated = zlib.deflateSync(inflated);
-
-  return [inflated.toString('utf8'), deflated.length];
-};
+//   return [inflated.toString('utf8'), deflated.length];
+// };
 
 /**
  * Parses the packet lines from a buffer into an array of strings.
@@ -444,4 +541,4 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
 
 exec.displayName = 'parsePush.exec';
 
-export { exec, getCommitData, getPackMeta, parsePacketLines, unpack };
+export { exec, getCommitData, getPackMeta, parsePacketLines };
