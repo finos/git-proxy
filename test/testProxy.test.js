@@ -23,7 +23,7 @@ describe('Proxy', () => {
       close: sandbox.stub().callsFake((callback) => {
         if (callback) setImmediate(callback);
         return mockHttpServer;
-      })
+      }),
     };
 
     mockHttpsServer = {
@@ -34,7 +34,7 @@ describe('Proxy', () => {
       close: sandbox.stub().callsFake((callback) => {
         if (callback) setImmediate(callback);
         return mockHttpsServer;
-      })
+      }),
     };
 
     sandbox.stub(http, 'createServer').returns(mockHttpServer);
@@ -49,40 +49,38 @@ describe('Proxy', () => {
 
     Proxy = proxyquire('../src/proxy/index', {
       './routes': {
-        getRouter: sandbox.stub().resolves(mockRouter)
+        getRouter: sandbox.stub().resolves(mockRouter),
       },
       '../config': {
         getTLSEnabled: sandbox.stub().returns(false),
         getTLSKeyPemPath: sandbox.stub().returns('/tmp/key.pem'),
         getTLSCertPemPath: sandbox.stub().returns('/tmp/cert.pem'),
         getPlugins: sandbox.stub().returns(['mock-plugin']),
-        getAuthorisedList: sandbox.stub().returns([
-          { project: 'test-proj', name: 'test-repo' }
-        ])
+        getAuthorisedList: sandbox.stub().returns([{ project: 'test-proj', name: 'test-repo' }]),
       },
       '../db': {
         getRepos: sandbox.stub().resolves([]),
         createRepo: sandbox.stub().resolves({ _id: 'mock-repo-id' }),
         addUserCanPush: sandbox.stub().resolves(),
-        addUserCanAuthorise: sandbox.stub().resolves()
+        addUserCanAuthorise: sandbox.stub().resolves(),
       },
       '../plugin': {
         PluginLoader: sandbox.stub().returns({
-          load: sandbox.stub().resolves()
-        })
+          load: sandbox.stub().resolves(),
+        }),
       },
       './chain': {
-        default: {}
+        default: {},
       },
       '../config/env': {
         serverConfig: {
           GIT_PROXY_SERVER_PORT: 3000,
-          GIT_PROXY_HTTPS_SERVER_PORT: 3001
-        }
+          GIT_PROXY_HTTPS_SERVER_PORT: 3001,
+        },
       },
-      'fs': {
-        readFileSync: sandbox.stub().returns(Buffer.from('mock-cert'))
-      }
+      fs: {
+        readFileSync: sandbox.stub().returns(Buffer.from('mock-cert')),
+      },
     }).default;
   });
 
@@ -112,38 +110,38 @@ describe('Proxy', () => {
 
       const ProxyWithTLS = proxyquire('../src/proxy/index', {
         './routes': {
-          getRouter: sandbox.stub().resolves(mockRouterTLS)
+          getRouter: sandbox.stub().resolves(mockRouterTLS),
         },
         '../config': {
           getTLSEnabled: sandbox.stub().returns(true), // TLS enabled
           getTLSKeyPemPath: sandbox.stub().returns('/tmp/key.pem'),
           getTLSCertPemPath: sandbox.stub().returns('/tmp/cert.pem'),
           getPlugins: sandbox.stub().returns(['mock-plugin']),
-          getAuthorisedList: sandbox.stub().returns([])
+          getAuthorisedList: sandbox.stub().returns([]),
         },
         '../db': {
           getRepos: sandbox.stub().resolves([]),
           createRepo: sandbox.stub().resolves({ _id: 'mock-repo-id' }),
           addUserCanPush: sandbox.stub().resolves(),
-          addUserCanAuthorise: sandbox.stub().resolves()
+          addUserCanAuthorise: sandbox.stub().resolves(),
         },
         '../plugin': {
           PluginLoader: sandbox.stub().returns({
-            load: sandbox.stub().resolves()
-          })
+            load: sandbox.stub().resolves(),
+          }),
         },
         './chain': {
-          default: {}
+          default: {},
         },
         '../config/env': {
           serverConfig: {
             GIT_PROXY_SERVER_PORT: 3000,
-            GIT_PROXY_HTTPS_SERVER_PORT: 3001
-          }
+            GIT_PROXY_HTTPS_SERVER_PORT: 3001,
+          },
         },
-        'fs': {
-          readFileSync: sandbox.stub().returns(Buffer.from('mock-cert'))
-        }
+        fs: {
+          readFileSync: sandbox.stub().returns(Buffer.from('mock-cert')),
+        },
       }).default;
 
       const proxy = new ProxyWithTLS();
@@ -210,38 +208,38 @@ describe('Proxy', () => {
 
       const ProxyWithTLS = proxyquire('../src/proxy/index', {
         './routes': {
-          getRouter: sandbox.stub().resolves(mockRouterStop)
+          getRouter: sandbox.stub().resolves(mockRouterStop),
         },
         '../config': {
           getTLSEnabled: sandbox.stub().returns(true),
           getTLSKeyPemPath: sandbox.stub().returns('/tmp/key.pem'),
           getTLSCertPemPath: sandbox.stub().returns('/tmp/cert.pem'),
           getPlugins: sandbox.stub().returns([]),
-          getAuthorisedList: sandbox.stub().returns([])
+          getAuthorisedList: sandbox.stub().returns([]),
         },
         '../db': {
           getRepos: sandbox.stub().resolves([]),
           createRepo: sandbox.stub().resolves({ _id: 'mock-repo-id' }),
           addUserCanPush: sandbox.stub().resolves(),
-          addUserCanAuthorise: sandbox.stub().resolves()
+          addUserCanAuthorise: sandbox.stub().resolves(),
         },
         '../plugin': {
           PluginLoader: sandbox.stub().returns({
-            load: sandbox.stub().resolves()
-          })
+            load: sandbox.stub().resolves(),
+          }),
         },
         './chain': {
-          default: {}
+          default: {},
         },
         '../config/env': {
           serverConfig: {
             GIT_PROXY_SERVER_PORT: 3000,
-            GIT_PROXY_HTTPS_SERVER_PORT: 3001
-          }
+            GIT_PROXY_HTTPS_SERVER_PORT: 3001,
+          },
         },
-        'fs': {
-          readFileSync: sandbox.stub().returns(Buffer.from('mock-cert'))
-        }
+        fs: {
+          readFileSync: sandbox.stub().returns(Buffer.from('mock-cert')),
+        },
       }).default;
 
       const proxy = new ProxyWithTLS();
@@ -302,7 +300,7 @@ describe('Proxy', () => {
 
       await proxy.start();
       await proxy.stop();
-      
+
       expect(mockHttpServer.listen.calledOnce).to.be.true;
       expect(mockHttpServer.close.calledOnce).to.be.true;
     });
