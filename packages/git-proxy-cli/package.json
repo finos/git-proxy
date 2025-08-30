@@ -16,8 +16,8 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint \"./*.ts\" --fix",
-    "test:dev": "ts-mocha test/*.ts --exit --timeout 10000",
-    "test": "NODE_ENV=test npm run build && ts-mocha test/*.ts --exit --timeout 10000",
+    "test:dev": "NODE_ENV=test ts-mocha test/*.ts --exit --timeout 10000",
+    "test": "npm run build && NODE_ENV=test ts-mocha test/*.ts --exit --timeout 10000",
     "test-coverage": "nyc npm run test",
     "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text --reporter=html npm run test"
   },
