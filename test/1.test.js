@@ -15,7 +15,6 @@ const proxyquire = require('proxyquire');
 
 const service = require('../src/service');
 const db = require('../src/db');
-const { readFileSync } = require('fs');
 
 const expect = chai.expect;
 
@@ -68,7 +67,7 @@ describe('init', () => {
             { type: 'ActiveDirectory', enabled: true },
             { type: 'openidconnect', enabled: true },
           ],
-        })
+        }),
       ),
     };
 
