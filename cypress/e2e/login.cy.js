@@ -29,7 +29,7 @@ describe('Login page', () => {
     cy.wait('@getUser');
 
     cy.url().should('include', '/dashboard/repo');
-  })
+  });
 
   it('should show an error snackbar on invalid login', () => {
     cy.get('[data-test="username"]').type('wronguser');

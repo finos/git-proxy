@@ -68,9 +68,12 @@ export default function SettingsView() {
           <Card>
             <CardBody>
               {/* Title */}
-              <FormLabel component='legend' style={{ fontSize: '1.2rem' }}>JWT Token for UI Authentication</FormLabel>
+              <FormLabel component='legend' style={{ fontSize: '1.2rem' }}>
+                JWT Token for UI Authentication
+              </FormLabel>
               <Typography variant='body2'>
-                Authenticates UI requests to the server when &quot;apiAuthentication&quot; is enabled in the config.
+                Authenticates UI requests to the server when &quot;apiAuthentication&quot; is
+                enabled in the config.
               </Typography>
               <TextField
                 id='jwt-token'
