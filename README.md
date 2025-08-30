@@ -91,6 +91,8 @@ customize for your environment, see the [project's documentation](https://git-pr
 - [Quickstart](https://git-proxy.finos.org/docs/category/quickstart/)
 - [Installation](https://git-proxy.finos.org/docs/installation)
 - [Configuration](https://git-proxy.finos.org/docs/category/configuration)
+- [Contributing](https://git-proxy.finos.org/docs/development/contributing)
+- [Testing](https://git-proxy.finos.org/docs/development/testing)
 
 ## Contributing
 

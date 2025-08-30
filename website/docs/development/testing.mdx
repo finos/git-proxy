@@ -168,7 +168,7 @@ Here is an example of a function that resets both of these after each test (`tes
 const clearCache = (sandbox) => {
   delete require.cache[require.resolve('../src/proxy/processors')];
   delete require.cache[require.resolve('../src/proxy/chain')];
-  sandbox.reset();
+  sandbox.restore();
 };
 
 ...
@@ -211,6 +211,10 @@ expect(authMethods[0].type).to.equal('local');
 **All new lines of code introduced in a PR, must have over 80% coverage** (patch coverage). This is enforced by our CI, and generally a PR will not be merged unless this coverage requirement is met. Please make sure to write thorough unit tests to increase GitProxy's code quality!
 
 If test coverage is still insufficient after writing your tests, check out the [CodeCov report](https://app.codecov.io/gh/finos/git-proxy) after making the PR and take a look at which lines are missing coverage.
+
+#### More examples
+
+Check out [test/1.test.js](https://github.com/finos/git-proxy/blob/main/test/1.test.js) for another example on how to write unit tests.
 
 ### UI testing with Cypress
 
