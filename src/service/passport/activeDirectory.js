@@ -48,12 +48,11 @@ const configure = (passport) => {
             const message = `An error occurred while checking if the user is a member of the user group: ${err.message}`;
             return done(message, null);
           }
-        
+
           // Now check if the user is an admin
           let isAdmin = false;
           try {
             isAdmin = await ldaphelper.isUserInAdGroup(req, profile, ad, domain, adminGroup);
-
           } catch (err) {
             const message = `An error occurred while checking if the user is a member of the admin group: ${err.message}`;
             console.error(message, err); // don't return an error for this case as you may still be a user
@@ -88,7 +87,7 @@ const configure = (passport) => {
   passport.deserializeUser(function (user, done) {
     done(null, user);
   });
-  passport.type = "ActiveDirectory";
+  passport.type = 'ActiveDirectory';
 
   return passport;
 };
