@@ -14,7 +14,6 @@ export type CommitContent = {
   type: number;
   typeName: string;
   size: number;
-  deflatedSize: number;
   objectRef: string | null;
   content: string;
 };

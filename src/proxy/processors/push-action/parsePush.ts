@@ -1,8 +1,7 @@
 import { Action, Step } from '../../actions';
 import fs from 'fs';
 import lod from 'lodash';
-import zlib, { createInflateRaw, InflateRaw } from 'zlib';
-
+import { createInflate } from 'zlib';
 import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
 import {
   BRANCH_PREFIX,
@@ -11,8 +10,6 @@ import {
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
 } from '../constants';
-
-const BitMask = require('bit-mask') as any;
 
 const dir = './.tmp/';
 
@@ -41,6 +38,8 @@ async function exec(req: any, action: Action): Promise<Action> {
       throw new Error(
         'Your push has been blocked. Please make sure you are pushing to a single branch.',
       );
+    } else {
+      console.log(`refUpdates: ${JSON.stringify(refUpdates, null, 2)}`);
     }
 
     const [commitParts] = refUpdates[0].split('\0');
@@ -76,13 +75,8 @@ async function exec(req: any, action: Action): Promise<Action> {
     console.log('Pack metadata: ' + JSON.stringify(meta, null, 2));
     console.log(`contentBuff = ${contentBuff.toString('hex')}`);
 
-    let contents;
-    try {
-      contents = getContentsNew(contentBuff, meta.entries);
-    } catch (e) {
-      console.warn('getContentsNew failed, trying getContents: ' + e);
-      contents = getContents(contentBuff, meta.entries);
-    }
+    const contents = await getContent(contentBuff, meta.entries);
+
     action.commitData = getCommitData(contents as any);
     console.log('commitData = ' + JSON.stringify(action.commitData));
 
@@ -272,87 +266,20 @@ const getCommitData = (contents: CommitContent[]): CommitData[] => {
 /**
  * Gets the metadata from a pack file.
  * @param {Buffer} buffer - The buffer containing the pack file data.
- * @return {[PackMeta, Buffer]} An array containing the metadata and the remaining buffer.
+ * @return {[PackMeta, Buffer]} A tuple containing the metadata and the remaining buffer.
  */
 const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
-  const sig = buffer.subarray(0, PACKET_SIZE).toString('utf-8');
-  const version = buffer.readUIntBE(PACKET_SIZE, PACKET_SIZE);
-  const entries = buffer.readUIntBE(PACKET_SIZE * 2, PACKET_SIZE);
+  const sig = buffer.subarray(0, 4).toString('utf-8');
+  const version = buffer.readUInt32BE(4);
+  const entries = buffer.readUInt32BE(8);
 
-  const meta = {
-    sig: sig,
-    version: version,
-    entries: entries,
+  const meta: PackMeta = {
+    sig,
+    version,
+    entries,
   };
 
-  return [meta, buffer.subarray(PACKET_SIZE * 3)];
-};
-
-/**
- * Decompresses a zlib stream from a buffer in small chunks until the expected size is reached.
- * @param {Uint8Array} buffer - The full packfile buffer.
- * @param {number} offset - Start of compressed data.
- * @param {number} expectedSize - Uncompressed size from object header.
- * @return {Buffer} Decompressed data and next offset.
- */
-const decompressObject = (
-  buffer: Uint8Array,
-  offset: number,
-  expectedSize: number,
-): { decompressed: Buffer; nextOffset: number } => {
-  jkj;
-  const inflate: InflateRaw = createInflateRaw();
-  const outputChunks: Buffer[] = [];
-
-  let decompressedLength = 0;
-  let inputOffset = offset;
-
-  // Listen for decompressed data
-  inflate.on('data', (chunk: Buffer) => {
-    outputChunks.push(chunk);
-    decompressedLength += chunk.length;
-    console.log(
-      `Decompressed chunk of length ${chunk.length}, total decompressed ${decompressedLength}`,
-    );
-  });
-
-  const chunkSize = 4;
-  // Feed data in 4-byte chunks until expected size is reached
-  while (decompressedLength < expectedSize && inputOffset < buffer.length) {
-    const chunk = buffer.subarray(inputOffset, inputOffset + chunkSize);
-    inputOffset += chunkSize;
-    inflate.write(chunk);
-  }
-
-  inflate.end();
-
-  const data = Buffer.concat(outputChunks);
-  return {
-    decompressed: data.subarray(0, expectedSize),
-    nextOffset: inputOffset,
-  };
-};
-
-/**
- * Gets the contents of a pack file.
- * @param {Buffer} buffer - The buffer containing the pack file data.
- * @param {number} entries - The number of entries in the pack file.
- * @return {Array} An array of commit content objects.
- */
-const getContents = (buffer: Buffer | CommitContent[], entries: number): CommitContent[] => {
-  const contents = [];
-
-  for (let i = 0; i < entries; i++) {
-    try {
-      const [content, nextBuffer] = getContent(i, buffer as Buffer);
-      console.log({ content, nextBuffer });
-      buffer = nextBuffer as Buffer;
-      contents.push(content);
-    } catch (e) {
-      console.log(e);
-    }
-  }
-  return contents;
+  return [meta, buffer.subarray(12)];
 };
 
 /**
@@ -361,110 +288,29 @@ const getContents = (buffer: Buffer | CommitContent[], entries: number): CommitC
  * @param {number} numEntries The expected number of entries in the pack file.
  * @return {CommitContent[]}
  */
-const getContentsNew = (buffer: Buffer, numEntries: number): CommitContent[] => {
+const getContent = async (buffer: Buffer, numEntries: number): Promise<CommitContent[]> => {
   console.log(
     `getContents parsing buffer length ${buffer.length} and expecting ${numEntries} entries`,
   );
   const entries: CommitContent[] = [];
-  let offset = 0;
 
-  while (offset < buffer.length) {
-    const firstByte = buffer[offset++];
-    const typeCode = (firstByte >> 4) & 0x07;
-    let size = firstByte & 0x0f;
-    let shift = 4;
-    let objectRef: string | null = null;
-
-    // Read variable-length size
-    let byte = buffer[offset++];
-    while (byte & 0x80) {
-      size |= (byte & 0x7f) << shift;
-      shift += 7;
-      byte = buffer[offset++];
-    }
-
-    // Handle delta headers
-    if (typeCode === 6) {
-      // OFS_DELTA: variable-length offset
-      let c = buffer[offset++];
-      while (c & 0x80) {
-        c = buffer[offset++];
-      }
-    } else if (typeCode === 7) {
-      // REF_DELTA: 20-byte base object ID
-      objectRef = buffer.subarray(offset, offset + 20).toString('hex');
-      offset += 20;
-    }
-
-    console.log(
-      `getContents type ${typeCode} size ${size} offset ${offset} objectRef ${objectRef}
-Next bytes: ${buffer.subarray(offset, offset + 8).toString('hex')}`,
-    );
-
-    // // Use fflate to decompress and track consumed length
-    // let consumed = 0;
-    // let done = false;
-    // let cursor = offset;
-    // const outputChunks: Uint8Array[] = [];
-    // let decompressedLength = 0;
-
-    // const decompressor = new Decompress((chunk, final) => {
-    //   if (chunk && chunk.length > 0) {
-    //     outputChunks.push(chunk);
-    //     decompressedLength += chunk.length;
-    //     if (final || decompressedLength >= size) {
-    //       done = true;
-    //       if (decompressedLength > size) {
-    //         console.log(`Decompressed size ${decompressedLength} overshot expected size ${size}`);
-    //       }
-    //     }
-    //   }
-    //   console.log(`done ${done} decompressedLength ${decompressedLength}`);
-    // });
-
-    // // Feed data byte-by-byte until decompression completes
-    // const chunkSize = 4;
-    // while (!done && cursor < buffer.length) {
-    //   decompressor.push(buffer.subarray(cursor, cursor + chunkSize));
-    //   cursor += chunkSize;
-    //   consumed += chunkSize;
-    // }
-    // console.log(`getContents consumed ${consumed} done ${done} result ${decompressedLength}`);
-
-    // // Final flush
-    // decompressor.push(new Uint8Array(0), true);
-
-    // console.log(
-    //   `getContents consumed after flush ${consumed} done ${done} result ${decompressedLength}`,
-    // );
-
-    // const result: Uint8Array = new Uint8Array(size);
-    // let pos = 0;
-    // for (const chunk of outputChunks) {
-    //   result.set(chunk, pos);
-    //   pos += chunk.length;
-    // }
-
-    const { decompressed, nextOffset } = decompressObject(buffer, offset, size);
-    const consumed = nextOffset - offset;
-    offset = nextOffset;
+  const gitObjects = await decompressGitObjects(buffer);
+  for (let index = 0; index < gitObjects.length; index++) {
+    const obj = gitObjects[index];
 
     entries.push({
-      item: entries.length,
-      type: typeCode,
-      typeName: gitObjectType(typeCode),
-      content: decompressed.toString('utf8'),
-      size: size,
-      deflatedSize: consumed,
-      objectRef: objectRef,
+      item: index,
+      type: obj.header.type,
+      typeName: obj.header.typeName,
+      content: obj.data,
+      size: obj.header.size,
+      objectRef: obj.header.baseSha ? obj.header.baseSha.toString('hex') : null,
     });
-
-    offset += consumed;
   }
 
   if (numEntries != entries.length) {
     console.warn(
-      `getContents returned an unexpected number of entries: ${entries.length}, expected ${numEntries}`,
+      `getContents returned an unexpected number of entries: ${entries.length}, expected ${numEntries}, entries:\n${JSON.stringify(entries, null, 2)}`,
     );
   } else {
     console.log(`getContents returned ${numEntries} entries:\n${JSON.stringify(entries, null, 2)}`);
@@ -472,6 +318,21 @@ Next bytes: ${buffer.subarray(offset, offset + 8).toString('hex')}`,
 
   return entries;
 };
+
+interface GitObject {
+  header: GitObjectHeader;
+  data: string;
+  offset: number;
+}
+
+interface GitObjectHeader {
+  type: number; // 1-based Git type number
+  typeName: string; // Mapped name
+  size: number;
+  headerLength: number;
+  baseOffset?: number;
+  baseSha?: Buffer;
+}
 
 /**
  * Maps Git object type codes to human-readable names.
@@ -497,109 +358,153 @@ const gitObjectType = (typeCode: number): string => {
   }
 };
 
-/**
- * Converts an array of bits to an integer.
- * @param {boolean[]} bits - The array of bits.
- * @return {number} The integer value.
- */
-const getInt = (bits: boolean[]): number => {
-  let strBits = '';
+// Parses OFS_DELTA offset encoding
+const parseOfsDeltaOffset = (
+  buffer: Buffer,
+  offset: number,
+): { baseOffset: number; length: number } => {
+  let i = 0;
+  let byte = buffer[offset];
+  let value = byte & 0x7f;
 
-  // eslint-disable-next-line guard-for-in
-  for (const i in bits) {
-    strBits += bits[i] ? 1 : 0;
+  while (byte & 0x80) {
+    i++;
+    byte = buffer[offset + i];
+    value = ((value + 1) << 7) | (byte & 0x7f);
   }
 
-  return parseInt(strBits, 2);
+  return { baseOffset: offset - value, length: i + 1 };
 };
 
-/**
- * Gets the content of a pack file entry.
- * @param {number} item - The index of the entry.
- * @param {Buffer} buffer - The buffer containing the pack file data.
- * @return {Array} An array containing the content object and the next buffer.
- */
-const getContent = (item: number, buffer: Buffer): [CommitContent, Buffer] => {
-  // FIRST byte contains the type and some of the size of the file
-  // a MORE flag -8th byte tells us if there is a subsequent byte
-  // which holds the file size
+// Parses the full Git object header including delta metadata
+const parseGitObjectHeader = (buffer: Buffer, offset: number): GitObjectHeader => {
+  const initialOffset = offset;
 
-  const byte = buffer.readUIntBE(0, 1);
-  const m = new BitMask(byte);
+  let byte = buffer[offset++];
 
-  let more = m.getBit(3);
-  let size = [m.getBit(7), m.getBit(8), m.getBit(9), m.getBit(10)];
-  const type = getInt([m.getBit(4), m.getBit(5), m.getBit(6)]);
+  const type = (byte >> 4) & 0x07;
+  let size = byte & 0x0f;
+  let shift = 4;
 
-  // Object IDs if this is a deltafied blob
-  let objectRef: string | null = null;
-
-  // If we have a more flag get the next
-  // 8 bytes
-  while (more) {
-    buffer = buffer.slice(1);
-    const nextByte = buffer.readUIntBE(0, 1);
-    const nextM = new BitMask(nextByte);
-
-    const nextSize = [
-      nextM.getBit(4),
-      nextM.getBit(5),
-      nextM.getBit(6),
-      nextM.getBit(7),
-      nextM.getBit(8),
-      nextM.getBit(9),
-      nextM.getBit(10),
-    ];
-
-    size = nextSize.concat(size);
-    more = nextM.getBit(3);
+  while (byte & 0x80) {
+    byte = buffer[offset++];
+    size |= (byte & 0x7f) << shift;
+    shift += 7;
   }
 
-  // NOTE Size is the unzipped size, not the zipped size
-  const intSize = getInt(size);
+  const typeName = gitObjectType(type);
+  let baseOffset: number | undefined;
+  let baseSha: Buffer | undefined;
 
-  // Deltafied objectives have a 20 byte identifier
-  if (type == 7 || type == 6) {
-    objectRef = buffer.slice(0, 20).toString('hex');
-    buffer = buffer.slice(20);
+  if (typeName === 'ofs_delta') {
+    const delta = parseOfsDeltaOffset(buffer, offset);
+    baseOffset = delta.baseOffset;
+    offset += delta.length;
+  } else if (typeName === 'ref_delta') {
+    baseSha = buffer.subarray(offset, offset + 20);
+    offset += 20;
   }
 
-  const contentBuffer = buffer.slice(1);
-  const [content, deflatedSize] = unpack(contentBuffer);
-
-  // NOTE Size is the unzipped size, not the zipped size
-  // so it's kind of useless for us in terms of reading the stream
-  const result = {
-    item: item,
-    value: byte,
-    type: type,
-    typeName: gitObjectType(type),
-    size: intSize,
-    deflatedSize: deflatedSize,
-    objectRef: objectRef,
-    content: content,
+  const header: GitObjectHeader = {
+    type,
+    typeName,
+    size: size,
+    headerLength: offset - initialOffset,
+    baseOffset,
+    baseSha,
   };
-
-  // Move on by the zipped content size.
-  const nextBuffer = contentBuffer.slice(deflatedSize as number);
-
-  return [result, nextBuffer];
+  console.log(`Parsed header: ${JSON.stringify(header)}`);
+  return header;
 };
 
-/**
- * Unzips the content of a buffer.
- * @param {Buffer} buf - The buffer containing the zipped content.
- * @return {Array} An array containing the unzipped content and the size of the deflated content.
- */
-const unpack = (buf: Buffer): [string, number] => {
-  // Unzip the content
-  const inflated = zlib.inflateSync(buf);
+const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
+  const results: GitObject[] = [];
+  let offset = 0;
+  let decompressionError = false;
 
-  // We don't have IDX files here, so we need to know how
-  // big the zipped content was, to set the next read location
-  const deflated = zlib.deflateSync(inflated);
+  console.log(`decompressing buffer length ${buffer.length}`);
 
-  return [inflated.toString('utf8'), deflated.length];
+  // keep going while there is more buffer to consume
+  // the buffer will end with either a 20 or 32 byte checksum - we don't know which
+  // but we can assume that 12 bytes will not be enough for a final object so there's
+  // no point continuing if we have < 32 bytes remaining.
+  // TODO: figure how many bytes we finish up with and then validate with the appropriate SHA type
+  while (offset < buffer.length - 32 && !decompressionError) {
+    const startOffset = offset;
+    const header = parseGitObjectHeader(buffer, offset);
+    offset += header.headerLength;
+
+    // create a new inflater for each object
+    const inflater = createInflate();
+    const chunks: Buffer[] = [];
+    let done = false;
+    let totalLength = 0;
+
+    // store any data returned
+    const onData = (data: Buffer) => {
+      chunks.push(data);
+      totalLength += data.length;
+    };
+
+    // stop at the end of each stream - there is no other good way to know how many bytes to process
+    const onEnd = () => {
+      inflater.end();
+      done = true;
+      console.log(`end event from inflater, total decompressed ${totalLength}`);
+    };
+
+    // stop on errors, except maybe buffer errors?
+    const onError = (e: any) => {
+      console.log(`Error during inflation: ${JSON.stringify(e)}`);
+      inflater.end();
+      done = true;
+      decompressionError = true;
+    };
+
+    inflater.on('data', onData);
+    inflater.on('end', onEnd);
+    inflater.on('error', onError);
+
+    // Feed the buffer in a byte at a time and wait for output
+    while (offset < buffer.length && !(done || decompressionError)) {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          if (!done) {
+            const byte = buffer.subarray(offset, offset + 1);
+            offset++;
+            // use the callback to throttle input such that each byte is processed before we insert the next
+            inflater.write(byte, () => {
+              resolve();
+            });
+          } else {
+            console.log('tried to write to inflater while done == true');
+          }
+        });
+      } catch (e) {
+        console.log(`Error during decompression: ${JSON.stringify(e)}`);
+      }
+    }
+    const result = {
+      header,
+      data: Buffer.concat(chunks).toString('utf-8'),
+      offset: startOffset,
+    };
+
+    results.push(result);
+
+    // we overshoot by one byte, back-up 1 to account for it.
+    offset--;
+
+    console.log(
+      `Finished reading entry ${results.length} at offsets: ${startOffset} - ${offset}: ${JSON.stringify(result.data)}`,
+    );
+
+    inflater.off('data', onData);
+    inflater.off('end', onEnd);
+    inflater.off('error', onError);
+    inflater.destroy();
+  }
+  return results;
 };
 
 /**
