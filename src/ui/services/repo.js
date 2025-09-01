@@ -79,19 +79,21 @@ const getRepo = async (setIsLoading, setData, setAuth, setIsError, id) => {
     });
 };
 
-const addRepo = async (onClose, setError, data) => {
+const addRepo = async (data) => {
   const url = new URL(`${baseUrl}/repo`);
 
-  return axios
-    .post(url, data, getAxiosConfig())
-    .then((response) => {
-      onClose();
-      return response.data;
-    })
-    .catch((error) => {
-      console.log(error.response.data.message);
-      setError(error.response.data.message);
-    });
+  try {
+    const response = await axios.post(url, data, getAxiosConfig());
+    return {
+      success: true,
+      repo: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.message || error.message,
+    };
+  }
 };
 
 const addUser = async (repoId, user, action) => {
@@ -99,12 +101,10 @@ const addUser = async (repoId, user, action) => {
   if (canAdd) {
     const url = new URL(`${baseUrl}/repo/${repoId}/user/${action}`);
     const data = { username: user };
-    await axios
-      .patch(url, data, getAxiosConfig())
-      .catch((error) => {
-        console.log(error.response.data.message);
-        throw error;
-      });
+    await axios.patch(url, data, getAxiosConfig()).catch((error) => {
+      console.log(error.response.data.message);
+      throw error;
+    });
   } else {
     console.log('Duplicate user can not be added');
     throw new DupUserValidationError();
@@ -114,23 +114,19 @@ const addUser = async (repoId, user, action) => {
 const deleteUser = async (user, repoId, action) => {
   const url = new URL(`${baseUrl}/repo/${repoId}/user/${action}/${user}`);
 
-  await axios
-    .delete(url, getAxiosConfig())
-    .catch((error) => {
-      console.log(error.response.data.message);
-      throw error;
-    });
+  await axios.delete(url, getAxiosConfig()).catch((error) => {
+    console.log(error.response.data.message);
+    throw error;
+  });
 };
 
 const deleteRepo = async (repoId) => {
   const url = new URL(`${baseUrl}/repo/${repoId}/delete`);
 
-  await axios
-    .delete(url, getAxiosConfig())
-    .catch((error) => {
-      console.log(error.response.data.message);
-      throw error;
-    });
+  await axios.delete(url, getAxiosConfig()).catch((error) => {
+    console.log(error.response.data.message);
+    throw error;
+  });
 };
 
 export { addUser, deleteUser, getRepos, getRepo, addRepo, deleteRepo };

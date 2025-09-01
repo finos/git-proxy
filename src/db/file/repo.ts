@@ -97,7 +97,7 @@ export const createRepo = async (repo: Repo): Promise<Repo> => {
       if (err) {
         reject(err);
       } else {
-        resolve(doc ? toClass(doc, Repo.prototype) : null);
+        resolve(toClass(doc, Repo.prototype));
       }
     });
   });

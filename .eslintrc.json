@@ -17,8 +17,15 @@
   ],
   "overrides": [
     {
-      "files": ["test/**/*.js", "**/*.json"],
+      "files": ["test/**/*.js", "**/*.json", "cypress/**/*.js", "plugins/**/*.js"],
+      "parserOptions": {
+        "project": null
+      },
       "parser": "espree",
+      "env": {
+        "cypress/globals": true
+      },
+      "plugins": ["cypress"],
       "rules": {
         "@typescript-eslint/no-unused-expressions": "off"
       }
