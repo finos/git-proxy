@@ -18,16 +18,13 @@ export default function Avatar({ name, description, username }) {
   const imageUrl = `${profileUrl}.png`;
 
   return (
-    <div className="avatar avatar--vertical margin-bottom--xl">
-      <img
-        className="avatar__photo avatar__photo--xl margin-bottom--md"
-        src={imageUrl}
-      />
-      <div className="avatar__intro">
-        <div className="avatar__name">{name}</div>
-        <small className="avatar__subtitle">{description}</small>
-        <small className="avatar__subtitle text--bold">
-          <a href={profileUrl} target="__blank">
+    <div className='avatar avatar--vertical margin-bottom--xl'>
+      <img className='avatar__photo avatar__photo--xl margin-bottom--md' src={imageUrl} />
+      <div className='avatar__intro'>
+        <div className='avatar__name'>{name}</div>
+        <small className='avatar__subtitle'>{description}</small>
+        <small className='avatar__subtitle text--bold'>
+          <a href={profileUrl} target='__blank'>
             @{username}
           </a>
         </small>
