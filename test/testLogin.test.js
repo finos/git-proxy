@@ -54,7 +54,9 @@ describe('auth', async () => {
 
     it('should be able to set the git account', async function () {
       console.log(`cookie: ${cookie}`);
-      const res = await chai.request(app).post('/api/auth/gitAccount')
+      const res = await chai
+        .request(app)
+        .post('/api/auth/gitAccount')
         .set('Cookie', `${cookie}`)
         .send({
           username: 'admin',
@@ -64,7 +66,9 @@ describe('auth', async () => {
     });
 
     it('should throw an error if the username is not provided when setting the git account', async function () {
-      const res = await chai.request(app).post('/api/auth/gitAccount')
+      const res = await chai
+        .request(app)
+        .post('/api/auth/gitAccount')
         .set('Cookie', `${cookie}`)
         .send({
           gitAccount: 'new-account',

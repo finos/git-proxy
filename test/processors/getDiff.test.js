@@ -125,7 +125,9 @@ describe('getDiff', () => {
         fc.asyncProperty(
           fc.string({ minLength: 0, maxLength: 40 }),
           fc.string({ minLength: 0, maxLength: 40 }),
-          fc.array(fc.record({ parent: fc.string({ minLength: 0, maxLength: 40 }) }), { maxLength: 3 }),
+          fc.array(fc.record({ parent: fc.string({ minLength: 0, maxLength: 40 }) }), {
+            maxLength: 3,
+          }),
           async (from, to, commitData) => {
             const action = new Action('id', 'push', 'POST', Date.now(), 'test/repo');
             action.proxyGitPath = __dirname;
@@ -139,9 +141,9 @@ describe('getDiff', () => {
             expect(result).to.have.property('steps');
             expect(result.steps[0]).to.have.property('error');
             expect(result.steps[0]).to.have.property('content');
-          }
+          },
         ),
-        { numRuns: 10 }
+        { numRuns: 10 },
       );
     });
 
@@ -156,17 +158,15 @@ describe('getDiff', () => {
             action.repoName = 'temp-test-repo';
             action.commitFrom = from;
             action.commitTo = to;
-            action.commitData = [
-              { parent: '0000000000000000000000000000000000000000' }
-            ];
+            action.commitData = [{ parent: '0000000000000000000000000000000000000000' }];
 
             const result = await exec({}, action);
 
             expect(result.steps[0].error).to.be.true;
             expect(result.steps[0].errorMessage).to.contain('Invalid revision range');
-          }
+          },
         ),
-        { numRuns: 10 }
+        { numRuns: 10 },
       );
     });
   });
