@@ -116,6 +116,6 @@ If you can't access Slack, you can also [subscribe to our mailing list](mailto:g
 
 Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues) 🧵
 
-🤝 Join our [fortnightly Zoom meeting](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595) on Monday, 4PM BST (odd week numbers). 
+🤝 Join our [fortnightly Zoom meeting](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595) on Monday, 4PM BST (odd week numbers).
 🌍 [Convert to your local time](https://www.timeanddate.com/worldclock)
-📅 [Click here](https://calendar.google.com/calendar/event?action=TEMPLATE&tmeid=MTRvbzM0NG01dWNvNGc4OGJjNWphM2ZtaTZfMjAyNTA2MDJUMTUwMDAwWiBzYW0uaG9sbWVzQGNvbnRyb2wtcGxhbmUuaW8&tmsrc=sam.holmes%40control-plane.io&scp=ALL) for the recurring Google Calendar meeting invite. Alternatively, send an e-mail to [help@finos.org](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595#:~:text=Need-,an,-invite%3F) to get a calendar invitation. 
+📅 [Click here](https://calendar.google.com/calendar/event?action=TEMPLATE&tmeid=MTRvbzM0NG01dWNvNGc4OGJjNWphM2ZtaTZfMjAyNTA2MDJUMTUwMDAwWiBzYW0uaG9sbWVzQGNvbnRyb2wtcGxhbmUuaW8&tmsrc=sam.holmes%40control-plane.io&scp=ALL) for the recurring Google Calendar meeting invite. Alternatively, send an e-mail to [help@finos.org](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595#:~:text=Need-,an,-invite%3F) to get a calendar invitation.

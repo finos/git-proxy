@@ -3,13 +3,7 @@ import zlib from 'zlib';
 import fs from 'fs';
 import lod from 'lodash';
 
-import {
-  CommitContent,
-  CommitData,
-  CommitHeader,
-  PackMeta,
-  PersonLine,
-} from '../types';
+import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
 import {
   BRANCH_PREFIX,
   EMPTY_COMMIT_HASH,
@@ -36,10 +30,7 @@ async function exec(req: any, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
   try {
     if (!req.body || req.body.length === 0) {
-      step.log('No data received in request body.');
-      step.setError('Your push has been blocked. No data received in request body.');
-      action.addStep(step);
-      return action;
+      throw new Error('No body found in request');
     }
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
     const refUpdates = packetLines.filter((line) => line.includes(BRANCH_PREFIX));
@@ -47,22 +38,17 @@ async function exec(req: any, action: Action): Promise<Action> {
     if (refUpdates.length !== 1) {
       step.log('Invalid number of branch updates.');
       step.log(`Expected 1, but got ${refUpdates.length}`);
-      step.setError(
+      throw new Error(
         'Your push has been blocked. Please make sure you are pushing to a single branch.',
       );
-      action.addStep(step);
-      return action;
     }
 
-    const [commitParts, capParts] = refUpdates[0].split('\0');
+    const [commitParts] = refUpdates[0].split('\0');
     const parts = commitParts.split(' ');
-    console.log({ commitParts, capParts, parts });
     if (parts.length !== 3) {
       step.log('Invalid number of parts in ref update.');
       step.log(`Expected 3, but got ${parts.length}`);
-      step.setError('Your push has been blocked. Invalid ref update format.');
-      action.addStep(step);
-      return action;
+      throw new Error('Your push has been blocked. Invalid ref update format.');
     }
 
     const [oldCommit, newCommit, ref] = parts;
@@ -75,9 +61,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     // Check if the offset is valid and if there's data after it
     if (packDataOffset >= req.body.length) {
       step.log('No PACK data found after packet lines.');
-      step.setError('Your push has been blocked. PACK data is missing.');
-      action.addStep(step);
-      return action;
+      throw new Error('Your push has been blocked. PACK data is missing.');
     }
 
     const buf = req.body.slice(packDataOffset);
@@ -85,23 +69,25 @@ async function exec(req: any, action: Action): Promise<Action> {
     // Verify that data actually starts with PACK signature
     if (buf.length < PACKET_SIZE || buf.toString('utf8', 0, PACKET_SIZE) !== PACK_SIGNATURE) {
       step.log(`Expected PACK signature at offset ${packDataOffset}, but found something else.`);
-      step.setError('Your push has been blocked. Invalid PACK data structure.');
-      action.addStep(step);
-      return action;
+      throw new Error('Your push has been blocked. Invalid PACK data structure.');
     }
 
     const [meta, contentBuff] = getPackMeta(buf);
     const contents = getContents(contentBuff as any, meta.entries as number);
 
     action.commitData = getCommitData(contents as any);
+
     if (action.commitData.length === 0) {
       step.log('No commit data found when parsing push.');
     } else {
       if (action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }
-      const user = action.commitData[action.commitData.length - 1].committer;
-      action.user = user;
+
+      const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
+      console.log(`Push Request received from user ${committer} with email ${committerEmail}`);
+      action.user = committer;
+      action.userEmail = committerEmail;
     }
 
     step.content = {
@@ -141,7 +127,7 @@ const parsePersonLine = (line: string): PersonLine => {
  * @return {CommitHeader} An object containing the parsed commit header.
  */
 const getParsedData = (headerLines: string[]): CommitHeader => {
-  const parsedData: CommitHeader = { 
+  const parsedData: CommitHeader = {
     parents: [],
     tree: '',
     author: { name: '', email: '', timestamp: '' },
@@ -206,7 +192,7 @@ const validateParsedData = (parsedData: CommitHeader): void => {
   if (missing.length > 0) {
     throw new Error(`Invalid commit data: Missing ${missing.join(', ')}`);
   }
-}
+};
 
 /**
  * Checks if a person line is blank.
@@ -215,18 +201,17 @@ const validateParsedData = (parsedData: CommitHeader): void => {
  */
 const isBlankPersonLine = (personLine: PersonLine): boolean => {
   return personLine.name === '' && personLine.email === '' && personLine.timestamp === '';
-}
+};
 
 /**
  * Parses the commit data from the contents of a pack file.
- * 
+ *
  * Filters out all objects except for commits.
  * @param {CommitContent[]} contents - The contents of the pack file.
  * @return {CommitData[]} An array of commit data objects.
  * @see https://git-scm.com/docs/pack-format#_object_types
  */
 const getCommitData = (contents: CommitContent[]): CommitData[] => {
-  console.log({ contents });
   return lod
     .chain(contents)
     .filter({ type: GIT_OBJECT_TYPE_COMMIT })
@@ -266,9 +251,10 @@ const getCommitData = (contents: CommitContent[]): CommitData[] => {
         parent,
         author: author.name,
         committer: committer.name,
-        authorEmail: author.email,
         commitTimestamp: committer.timestamp,
         message,
+        authorEmail: author.email,
+        committerEmail: committer.email,
       };
     })
     .value();
@@ -349,7 +335,7 @@ const getContent = (item: number, buffer: Buffer): [CommitContent, Buffer] => {
   let size = [m.getBit(7), m.getBit(8), m.getBit(9), m.getBit(10)];
   const type = getInt([m.getBit(4), m.getBit(5), m.getBit(6)]);
 
-  // Object IDs if this is a deltatfied blob
+  // Object IDs if this is a deltafied blob
   let objectRef: string | null = null;
 
   // If we have a more flag get the next
@@ -373,10 +359,10 @@ const getContent = (item: number, buffer: Buffer): [CommitContent, Buffer] => {
     more = nextM.getBit(3);
   }
 
-  // NOTE Size is the unziped size, not the zipped size
+  // NOTE Size is the unzipped size, not the zipped size
   const intSize = getInt(size);
 
-  // Deltafied objectives have a 20 byte identifer
+  // Deltafied objectives have a 20 byte identifier
   if (type == 7 || type == 6) {
     objectRef = buffer.slice(0, 20).toString('hex');
     buffer = buffer.slice(20);
@@ -385,7 +371,7 @@ const getContent = (item: number, buffer: Buffer): [CommitContent, Buffer] => {
   const contentBuffer = buffer.slice(1);
   const [content, deflatedSize] = unpack(contentBuffer);
 
-  // NOTE Size is the unziped size, not the zipped size
+  // NOTE Size is the unzipped size, not the zipped size
   // so it's kind of useless for us in terms of reading the stream
   const result = {
     item: item,

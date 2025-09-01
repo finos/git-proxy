@@ -24,6 +24,7 @@ import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import { PushData } from '../../../types/models';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
+import { generateEmailLink, getGitProvider } from '../../utils';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -108,6 +109,10 @@ const Dashboard: React.FC = () => {
 
   const repoFullName = trimTrailingDotGit(data.repo);
   const repoBranch = trimPrefixRefsHeads(data.branch);
+  const repoUrl = data.url;
+  const repoWebUrl = trimTrailingDotGit(repoUrl);
+  const gitProvider = getGitProvider(repoUrl);
+  const isGitHub = gitProvider == 'github';
 
   const generateIcon = (title: string) => {
     switch (title) {
@@ -192,18 +197,26 @@ const Dashboard: React.FC = () => {
                     </div>
                   ) : (
                     <>
-                      <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
-                        <img
-                          style={{ width: '45px', borderRadius: '20px' }}
-                          src={`https://github.com/${data.attestation.reviewer.gitAccount}.png`}
-                          alt='Reviewer'
-                        />
-                      </a>
+                      {isGitHub && (
+                        <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
+                          <img
+                            style={{ width: '45px', borderRadius: '20px' }}
+                            src={`https://github.com/${data.attestation.reviewer.gitAccount}.png`}
+                          />
+                        </a>
+                      )}
                       <div>
                         <p>
-                          <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
-                            {data.attestation.reviewer.gitAccount}
-                          </a>{' '}
+                          {isGitHub && (
+                            <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
+                              {data.attestation.reviewer.gitAccount}
+                            </a>
+                          )}
+                          {!isGitHub && (
+                            <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
+                              {data.attestation.reviewer.username}
+                            </a>
+                          )}{' '}
                           approved this contribution
                         </p>
                       </div>
@@ -241,7 +254,7 @@ const Dashboard: React.FC = () => {
                   <h3>Remote Head</h3>
                   <p>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${data.commitFrom}`}
+                      href={`${repoWebUrl}/commit/${data.commitFrom}`}
                       rel='noreferrer'
                       target='_blank'
                     >
@@ -253,7 +266,7 @@ const Dashboard: React.FC = () => {
                   <h3>Commit SHA</h3>
                   <p>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${data.commitTo}`}
+                      href={`${repoWebUrl}/commit/${data.commitTo}`}
                       rel='noreferrer'
                       target='_blank'
                     >
@@ -264,7 +277,7 @@ const Dashboard: React.FC = () => {
                 <GridItem xs={2} sm={2} md={2}>
                   <h3>Repository</h3>
                   <p>
-                    <a href={`https://github.com/${repoFullName}`} rel='noreferrer' target='_blank'>
+                    <a href={`${repoWebUrl}`} rel='noreferrer' target='_blank'>
                       {repoFullName}
                     </a>
                   </p>
@@ -272,11 +285,7 @@ const Dashboard: React.FC = () => {
                 <GridItem xs={2} sm={2} md={2}>
                   <h3>Branch</h3>
                   <p>
-                    <a
-                      href={`https://github.com/${repoFullName}/tree/${repoBranch}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
+                    <a href={`${repoWebUrl}/tree/${repoBranch}`} rel='noreferrer' target='_blank'>
                       {repoBranch}
                     </a>
                   </p>
@@ -295,7 +304,6 @@ const Dashboard: React.FC = () => {
                     <TableCell>Timestamp</TableCell>
                     <TableCell>Committer</TableCell>
                     <TableCell>Author</TableCell>
-                    <TableCell>Author E-mail</TableCell>
                     <TableCell>Message</TableCell>
                   </TableRow>
                 </TableHead>
@@ -305,27 +313,8 @@ const Dashboard: React.FC = () => {
                       <TableCell>
                         {moment.unix(c.commitTs || c.commitTimestamp || 0).toString()}
                       </TableCell>
-                      <TableCell>
-                        <a
-                          href={`https://github.com/${c.committer}`}
-                          rel='noreferrer'
-                          target='_blank'
-                        >
-                          {c.committer}
-                        </a>
-                      </TableCell>
-                      <TableCell>
-                        <a href={`https://github.com/${c.author}`} rel='noreferrer' target='_blank'>
-                          {c.author}
-                        </a>
-                      </TableCell>
-                      <TableCell>
-                        {c.authorEmail ? (
-                          <a href={`mailto:${c.authorEmail}`}>{c.authorEmail}</a>
-                        ) : (
-                          'No data...'
-                        )}
-                      </TableCell>
+                      <TableCell>{generateEmailLink(c.committer, c.committerEmail)}</TableCell>
+                      <TableCell>{generateEmailLink(c.author, c.authorEmail)}</TableCell>
                       <TableCell>{c.message}</TableCell>
                     </TableRow>
                   ))}
