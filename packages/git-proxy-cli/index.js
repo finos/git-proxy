@@ -351,7 +351,7 @@ async function createUser(username, password, email, gitAccount, admin = false) 
   try {
     const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
 
-    const response = await axios.post(
+    await axios.post(
       `${baseUrl}/api/auth/create-user`,
       {
         username,
