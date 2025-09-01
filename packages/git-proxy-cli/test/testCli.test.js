@@ -493,6 +493,14 @@ describe('test git-proxy-cli', function () {
   // *** create user ***
 
   describe('test git-proxy-cli :: create-user', function () {
+    before(async function () {
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
+    });
+
+    after(async function () {
+      await helper.removeUserFromDb(TEST_USER);
+    });
+
     it('attempt to create user should fail when server is down', async function () {
       try {
         // start server -> login -> stop server
@@ -541,7 +549,7 @@ describe('test git-proxy-cli', function () {
         await helper.startServer(service);
         await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --email new@email.com --gitAccount newgit`;
+        const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password "" --email new@email.com --gitAccount newgit`;
         const expectedExitCode = 4;
         const expectedMessages = null;
         const expectedErrorMessages = ['Error: Create User: Missing required fields'];
@@ -552,48 +560,62 @@ describe('test git-proxy-cli', function () {
     });
 
     it('should successfully create a new user', async function () {
+      const uniqueUsername = `newuser_${Date.now()}`;
       try {
         await helper.startServer(service);
         await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+        const cli = `npx -- @finos/git-proxy-cli create-user --username ${uniqueUsername} --password newpass --email new@email.com --gitAccount newgit`;
         const expectedExitCode = 0;
-        const expectedMessages = ["User 'newuser' created successfully"];
+        const expectedMessages = [`User '${uniqueUsername}' created successfully`];
         const expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 
         // Verify we can login with the new user
         await helper.runCli(
-          `npx -- @finos/git-proxy-cli login --username newuser --password newpass`,
+          `npx -- @finos/git-proxy-cli login --username ${uniqueUsername} --password newpass`,
           0,
-          [`Login "newuser" <new@email.com>: OK`],
+          [`Login "${uniqueUsername}" <new@email.com>: OK`],
           null,
         );
       } finally {
         await helper.closeServer(service.httpServer);
+        // Clean up the created user
+        try {
+          await helper.removeUserFromDb(uniqueUsername);
+        } catch (error) {
+          // Ignore cleanup errors
+        }
       }
     });
 
     it('should successfully create a new admin user', async function () {
+      const uniqueUsername = `newadmin_${Date.now()}`;
       try {
         await helper.startServer(service);
         await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli create-user --username newadmin --password newpass --email newadmin@email.com --gitAccount newgit --admin`;
+        const cli = `npx -- @finos/git-proxy-cli create-user --username ${uniqueUsername} --password newpass --email newadmin@email.com --gitAccount newgit --admin`;
         const expectedExitCode = 0;
-        const expectedMessages = ["User 'newadmin' created successfully"];
+        const expectedMessages = [`User '${uniqueUsername}' created successfully`];
         const expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 
         // Verify we can login with the new admin user
         await helper.runCli(
-          `npx -- @finos/git-proxy-cli login --username newadmin --password newpass`,
+          `npx -- @finos/git-proxy-cli login --username ${uniqueUsername} --password newpass`,
           0,
-          [`Login "newadmin" <newadmin@email.com> (admin): OK`],
+          [`Login "${uniqueUsername}" <newadmin@email.com> (admin): OK`],
           null,
         );
       } finally {
         await helper.closeServer(service.httpServer);
+        // Clean up the created user
+        try {
+          await helper.removeUserFromDb(uniqueUsername);
+        } catch (error) {
+          // Ignore cleanup errors
+        }
       }
     });
   });
