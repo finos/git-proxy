@@ -1,5 +1,5 @@
 import React from 'react';
-import classNames from 'classnames';
+import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -33,12 +33,15 @@ const Header: React.FC<HeaderProps> = (props) => {
   };
 
   const { color = 'primary' } = props;
-  const appBarClasses = classNames({
+  const appBarClasses = clsx({
     [` ${classes[color]}`]: color,
   });
 
   return (
-    <AppBar style={{ borderRadius: '0px', zIndex: 10 }} className={classes.appBar + appBarClasses}>
+    <AppBar
+      style={{ borderRadius: '0px', zIndex: 10, backgroundColor: 'black', boxShadow: 'none' }}
+      className={classes.appBar + appBarClasses}
+    >
       <Toolbar className={classes.container}>
         <div className={classes.flex}>
           {/* Here we create navbar brand, based on route name */}

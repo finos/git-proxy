@@ -26,8 +26,8 @@ describe('writePack', () => {
     stepSetErrorSpy = sinon.spy(Step.prototype, 'setError');
 
     const writePack = proxyquire('../../src/proxy/processors/push-action/writePack', {
-      'child_process': { spawnSync: spawnSyncStub },
-      'fs': { readdirSync: readdirSyncStub },
+      child_process: { spawnSync: spawnSyncStub },
+      fs: { readdirSync: readdirSyncStub },
     });
 
     exec = writePack.exec;
@@ -43,14 +43,14 @@ describe('writePack', () => {
 
     beforeEach(() => {
       req = {
-        body: 'pack data'
+        body: 'pack data',
       };
       action = new Action(
         '1234567890',
         'push',
         'POST',
         1234567890,
-        'test/repo'
+        'https://github.com/finos/git-proxy.git',
       );
       action.proxyGitPath = '/path/to';
       action.repoName = 'repo';
@@ -71,7 +71,7 @@ describe('writePack', () => {
       expect(spawnSyncStub.secondCall.args[1]).to.deep.equal(['receive-pack', 'repo']);
       expect(spawnSyncStub.secondCall.args[2]).to.include({
         cwd: '/path/to',
-        input: 'pack data'
+        input: 'pack data',
       });
 
       expect(stepLogSpy.calledWith('new idx files: new1.idx')).to.be.true;

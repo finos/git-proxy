@@ -201,5 +201,5 @@ module.exports = router;
 
 module.exports = {
   router,
-  loginSuccessHandler
+  loginSuccessHandler,
 };
