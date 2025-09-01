@@ -1,30 +1,27 @@
 import { Action, Step } from '../../actions';
 import { getCommitConfig } from '../../../config';
 import { Commit } from '../../actions/Action';
+import { isEmail } from 'validator';
 
 const commitConfig = getCommitConfig();
 
 const isEmailAllowed = (email: string): boolean => {
-  if (!email) {
+  if (!email || !isEmail(email)) {
     return false;
   }
 
   const [emailLocal, emailDomain] = email.split('@');
 
-  if (!emailLocal || !emailDomain) {
-    return false;
-  }
-
   if (
     commitConfig.author.email.domain.allow &&
-    !emailDomain.match(new RegExp(commitConfig.author.email.domain.allow, 'g'))
+    !new RegExp(commitConfig.author.email.domain.allow, 'g').test(emailDomain)
   ) {
     return false;
   }
 
   if (
     commitConfig.author.email.local.block &&
-    emailLocal.match(new RegExp(commitConfig.author.email.local.block, 'g'))
+    new RegExp(commitConfig.author.email.local.block, 'g').test(emailLocal)
   ) {
     return false;
   }

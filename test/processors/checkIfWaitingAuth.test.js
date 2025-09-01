@@ -13,9 +13,12 @@ describe('checkIfWaitingAuth', () => {
   beforeEach(() => {
     getPushStub = sinon.stub();
 
-    const checkIfWaitingAuth = proxyquire('../../src/proxy/processors/push-action/checkIfWaitingAuth', {
-      '../../../db': { getPush: getPushStub }
-    });
+    const checkIfWaitingAuth = proxyquire(
+      '../../src/proxy/processors/push-action/checkIfWaitingAuth',
+      {
+        '../../../db': { getPush: getPushStub },
+      },
+    );
 
     exec = checkIfWaitingAuth.exec;
   });
@@ -30,13 +33,7 @@ describe('checkIfWaitingAuth', () => {
 
     beforeEach(() => {
       req = {};
-      action = new Action(
-        '1234567890',
-        'push',
-        'POST',
-        1234567890,
-        'test/repo'
-      );
+      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
     });
 
     it('should set allowPush when action exists and is authorized', async () => {
@@ -45,7 +42,7 @@ describe('checkIfWaitingAuth', () => {
         'push',
         'POST',
         1234567890,
-        'test/repo'
+        'test/repo.git',
       );
       authorizedAction.authorised = true;
       getPushStub.resolves(authorizedAction);
@@ -64,7 +61,7 @@ describe('checkIfWaitingAuth', () => {
         'push',
         'POST',
         1234567890,
-        'test/repo'
+        'test/repo.git',
       );
       unauthorizedAction.authorised = false;
       getPushStub.resolves(unauthorizedAction);
@@ -93,7 +90,7 @@ describe('checkIfWaitingAuth', () => {
         'push',
         'POST',
         1234567890,
-        'test/repo'
+        'test/repo.git',
       );
       authorizedAction.authorised = true;
       getPushStub.resolves(authorizedAction);
