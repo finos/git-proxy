@@ -46,28 +46,56 @@ function createSamplePackBuffer(
 }
 
 /**
- * Creates git object headers used as part of a PACK buffer, for testing.
- * @param {number} type Git object type (0-7)
- * @param {number} size Object size in bytes.
- * @return {Buffer} Buffer containing one or more encoded bytes representing the header.
+ * Encodes Git object headers used in PACK files, for testing.
+ * @param {number} type - Git object type (1–4 for base types, 6 for ofs_delta, 7 for ref_delta).
+ * @param {number} size - Uncompressed object size in bytes.
+ * @param {object} [options] - Optional metadata for delta types.
+ * @param {number} [options.baseOffset] - Offset for ofs_delta.
+ * @param {Buffer} [options.baseSha] - SHA-1 hash for ref_delta (20 bytes).
+ * @returns {Buffer} - Encoded header buffer.
  */
-function encodeGitObjectHeader(type, size) {
+function encodeGitObjectHeader(type, size, options = {}) {
   const headerBytes = [];
 
   // First byte: type (3 bits), size (lower 4 bits), continuation bit
-  const firstSizeBits = size & 0x0f;
+  let firstSizeBits = size & 0x0f;
   size >>= 4;
 
   let byte = (type << 4) | firstSizeBits;
   if (size > 0) byte |= 0x80;
   headerBytes.push(byte);
 
-  // Remaining bytes: 7 bits per byte, continuation bit
+  // Remaining size bytes: 7 bits per byte, continuation bit
   while (size > 0) {
     let nextByte = size & 0x7f;
     size >>= 7;
     if (size > 0) nextByte |= 0x80;
     headerBytes.push(nextByte);
+  }
+
+  // Handle delta metadata
+  if (type === 6) {
+    // OFS_DELTA: encode base offset as variable-length
+    if (typeof options.baseOffset !== 'number') {
+      throw new Error('ofs_delta requires baseOffset');
+    }
+    let offset = options.baseOffset;
+    const offsetBytes = [];
+    let first = true;
+    while (offset > 0) {
+      let byte = offset & 0x7f;
+      offset >>= 7;
+      if (!first) byte |= 0x80;
+      offsetBytes.unshift(byte);
+      first = false;
+    }
+    headerBytes.push(...offsetBytes);
+  } else if (type === 7) {
+    // REF_DELTA: append 20-byte SHA-1
+    if (!Buffer.isBuffer(options.baseSha) || options.baseSha.length !== 20) {
+      throw new Error('ref_delta requires baseSha (20-byte Buffer)');
+    }
+    headerBytes.push(...options.baseSha);
   }
 
   return Buffer.from(headerBytes);
