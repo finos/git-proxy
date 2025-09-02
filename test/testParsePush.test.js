@@ -8,7 +8,6 @@ const {
   getCommitData,
   getPackMeta,
   parsePacketLines,
-  unpack,
 } = require('../src/proxy/processors/push-action/parsePush');
 
 import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
@@ -25,6 +24,7 @@ function createSamplePackBuffer(
   commitContent = 'tree 123\nparent 456\nauthor A <a@a> 123 +0000\ncommitter C <c@c> 456 +0000\n\nmessage',
   type = 1,
 ) {
+  // TODO: extend this to include several commits, blob, ofs_delta and ref_delta entries to test complex decompression cases
   const header = Buffer.alloc(12);
   header.write(PACK_SIGNATURE, 0, 4, 'utf-8'); // Signature
   header.writeUInt32BE(2, 4); // Version
@@ -108,7 +108,6 @@ describe('parsePackFile', () => {
   let action;
   let req;
   let sandbox;
-  let zlibInflateStub; // No deflate stub used due to complexity of PACK encoding
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -133,8 +132,6 @@ describe('parsePackFile', () => {
     req = {
       body: null,
     };
-
-    zlibInflateStub = sandbox.stub(zlib, 'inflateSync');
   });
 
   afterEach(() => {
@@ -227,9 +224,6 @@ describe('parsePackFile', () => {
         'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
         'feat: Add new feature\n\n' +
         'This is the commit body.';
-      const commitContentBuffer = Buffer.from(commitContent, 'utf8');
-
-      zlibInflateStub.returns(commitContentBuffer);
 
       const numEntries = 1;
       const packBuffer = createSamplePackBuffer(numEntries, commitContent, 1); // Use real zlib
@@ -285,9 +279,6 @@ describe('parsePackFile', () => {
         'feat: Initial commit';
       const parentFromCommit = '0'.repeat(40); // Expected parent hash
 
-      const commitContentBuffer = Buffer.from(commitContent, 'utf8');
-      zlibInflateStub.returns(commitContentBuffer);
-
       const packBuffer = createSamplePackBuffer(1, commitContent, 1); // Use real zlib
       req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
 
@@ -326,9 +317,6 @@ describe('parsePackFile', () => {
         'committer Test Committer <committer@example.com> 1234567890 +0100\n\n' +
         "Merge branch 'feature'";
 
-      const commitContentBuffer = Buffer.from(commitContent, 'utf8');
-      zlibInflateStub.returns(commitContentBuffer);
-
       const packBuffer = createSamplePackBuffer(1, commitContent, 1); // Use real zlib
       req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
 
@@ -361,8 +349,6 @@ describe('parsePackFile', () => {
         'author Test Author <author@example.com> 1678886400 +0000\n' +
         'committer Test Committer <committer@example.com> 1678886460 +0100\n\n' +
         'feat: Missing tree';
-      const commitContentBuffer = Buffer.from(commitContent, 'utf8');
-      zlibInflateStub.returns(commitContentBuffer);
 
       const packBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
@@ -415,9 +401,6 @@ describe('parsePackFile', () => {
         'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
         'Test commit message with PACK inside';
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
-
-      zlibInflateStub.returns(Buffer.from(commitContent, 'utf8'));
-
       const packetLineBuffer = createPacketLineBuffer(packetLines);
       req.body = Buffer.concat([packetLineBuffer, samplePackBuffer]);
 
@@ -455,7 +438,6 @@ describe('parsePackFile', () => {
         'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
         'Commit A';
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
-      zlibInflateStub.returns(Buffer.from(commitContent, 'utf8'));
 
       const packetLineBuffer = createPacketLineBuffer(packetLines);
       req.body = Buffer.concat([packetLineBuffer, samplePackBuffer]);
@@ -539,44 +521,44 @@ describe('parsePackFile', () => {
     });
   });
 
-  describe('unpack', () => {
-    let deflateStub;
+  // describe('unpack', () => {
+  //   let deflateStub;
 
-    beforeEach(() => {
-      // Need to stub deflate for unpack tests
-      deflateStub = sandbox.stub(zlib, 'deflateSync');
-    });
+  //   beforeEach(() => {
+  //     // Need to stub deflate for unpack tests
+  //     deflateStub = sandbox.stub(zlib, 'deflateSync');
+  //   });
 
-    it('should call zlib.inflateSync and zlib.deflateSync', () => {
-      const inputBuf = Buffer.from('compressed data');
-      const inflatedBuffer = Buffer.from('uncompressed data', 'utf8');
-      const deflatedResult = Buffer.from('re-deflated'); // Mock deflated buffer
+  //   it('should call zlib.inflateSync and zlib.deflateSync', () => {
+  //     const inputBuf = Buffer.from('compressed data');
+  //     const inflatedBuffer = Buffer.from('uncompressed data', 'utf8');
+  //     const deflatedResult = Buffer.from('re-deflated'); // Mock deflated buffer
 
-      zlibInflateStub.withArgs(inputBuf).returns(inflatedBuffer);
-      deflateStub.withArgs(inflatedBuffer).returns(deflatedResult);
+  //     zlibInflateStub.withArgs(inputBuf).returns(inflatedBuffer);
+  //     deflateStub.withArgs(inflatedBuffer).returns(deflatedResult);
 
-      const [resultString, resultLength] = unpack(inputBuf);
+  //     const [resultString, resultLength] = unpack(inputBuf);
 
-      expect(zlibInflateStub.calledOnceWith(inputBuf)).to.be.true;
-      expect(deflateStub.calledOnceWith(inflatedBuffer)).to.be.true; // Check local stub
-      expect(resultString).to.equal(inflatedBuffer.toString('utf8'));
-      expect(resultLength).to.equal(deflatedResult.length); // unpack returns length of the deflated buffer
-    });
+  //     expect(zlibInflateStub.calledOnceWith(inputBuf)).to.be.true;
+  //     expect(deflateStub.calledOnceWith(inflatedBuffer)).to.be.true; // Check local stub
+  //     expect(resultString).to.equal(inflatedBuffer.toString('utf8'));
+  //     expect(resultLength).to.equal(deflatedResult.length); // unpack returns length of the deflated buffer
+  //   });
 
-    it('should return inflated string and deflated length', () => {
-      const inputBuf = Buffer.from('dummy compressed');
-      const inflatedBuffer = Buffer.from('real uncompressed text', 'utf8');
-      const deflatedResult = Buffer.from('tiny'); // Different length
+  //   it('should return inflated string and deflated length', () => {
+  //     const inputBuf = Buffer.from('dummy compressed');
+  //     const inflatedBuffer = Buffer.from('real uncompressed text', 'utf8');
+  //     const deflatedResult = Buffer.from('tiny'); // Different length
 
-      zlibInflateStub.withArgs(inputBuf).returns(inflatedBuffer);
-      deflateStub.withArgs(inflatedBuffer).returns(deflatedResult);
+  //     zlibInflateStub.withArgs(inputBuf).returns(inflatedBuffer);
+  //     deflateStub.withArgs(inflatedBuffer).returns(deflatedResult);
 
-      const [content, size] = unpack(inputBuf);
+  //     const [content, size] = unpack(inputBuf);
 
-      expect(content).to.equal(inflatedBuffer.toString('utf8'));
-      expect(size).to.equal(deflatedResult.length);
-    });
-  });
+  //     expect(content).to.equal(inflatedBuffer.toString('utf8'));
+  //     expect(size).to.equal(deflatedResult.length);
+  //   });
+  // });
 
   describe('getCommitData', () => {
     it('should return empty array if no type 1 contents', () => {

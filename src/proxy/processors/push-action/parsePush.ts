@@ -75,7 +75,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     console.log('Pack metadata: ' + JSON.stringify(meta, null, 2));
     console.log(`contentBuff = ${contentBuff.toString('hex')}`);
 
-    const contents = await getContent(contentBuff, meta.entries);
+    const contents = await getContents(contentBuff, meta.entries);
 
     action.commitData = getCommitData(contents as any);
     console.log('commitData = ' + JSON.stringify(action.commitData));
@@ -288,7 +288,7 @@ const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
  * @param {number} numEntries The expected number of entries in the pack file.
  * @return {CommitContent[]}
  */
-const getContent = async (buffer: Buffer, numEntries: number): Promise<CommitContent[]> => {
+const getContents = async (buffer: Buffer, numEntries: number): Promise<CommitContent[]> => {
   console.log(
     `getContents parsing buffer length ${buffer.length} and expecting ${numEntries} entries`,
   );
