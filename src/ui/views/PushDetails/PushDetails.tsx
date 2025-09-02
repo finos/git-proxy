@@ -24,7 +24,7 @@ import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import { PushData } from '../../../types/models';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
-import { getGitProvider } from '../../utils';
+import { generateEmailLink, getGitProvider } from '../../utils';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -304,7 +304,6 @@ const Dashboard: React.FC = () => {
                     <TableCell>Timestamp</TableCell>
                     <TableCell>Committer</TableCell>
                     <TableCell>Author</TableCell>
-                    <TableCell>Author E-mail</TableCell>
                     <TableCell>Message</TableCell>
                   </TableRow>
                 </TableHead>
@@ -314,37 +313,8 @@ const Dashboard: React.FC = () => {
                       <TableCell>
                         {moment.unix(c.commitTs || c.commitTimestamp || 0).toString()}
                       </TableCell>
-                      <TableCell>
-                        {isGitHub && (
-                          <a
-                            href={`https://github.com/${c.committer}`}
-                            rel='noreferrer'
-                            target='_blank'
-                          >
-                            {c.committer}
-                          </a>
-                        )}
-                        {!isGitHub && <span>{c.committer}</span>}
-                      </TableCell>
-                      <TableCell>
-                        {isGitHub && (
-                          <a
-                            href={`https://github.com/${c.author}`}
-                            rel='noreferrer'
-                            target='_blank'
-                          >
-                            {c.author}
-                          </a>
-                        )}
-                        {!isGitHub && <span>{c.author}</span>}
-                      </TableCell>
-                      <TableCell>
-                        {c.authorEmail ? (
-                          <a href={`mailto:${c.authorEmail}`}>{c.authorEmail}</a>
-                        ) : (
-                          'No data...'
-                        )}
-                      </TableCell>
+                      <TableCell>{generateEmailLink(c.committer, c.committerEmail)}</TableCell>
+                      <TableCell>{generateEmailLink(c.author, c.authorEmail)}</TableCell>
                       <TableCell>{c.message}</TableCell>
                     </TableRow>
                   ))}
