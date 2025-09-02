@@ -2,13 +2,10 @@ import { Action, Step } from '../../actions';
 import { getRepoByUrl } from '../../../db';
 
 // Execute if the repo is approved
-const exec = async (
-  req: any,
-  action: Action,
-): Promise<Action> => {
+const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('checkRepoInAuthorisedList');
 
-  const found = await getRepoByUrl(action.url);
+  const found = (await getRepoByUrl(action.url)) !== null;
   if (found) {
     step.log(`repo ${action.repo} is in the authorisedList`);
   } else {

@@ -176,7 +176,8 @@ async function authoriseGitPush(id) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Authorise: Authentication required';
+          errorMessage =
+            'Error: Authorise: Authentication required (401): ' + error?.response?.data?.message;
           process.exitCode = 3;
           break;
         case 404:
@@ -223,7 +224,8 @@ async function rejectGitPush(id) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Reject: Authentication required';
+          errorMessage =
+            'Error: Reject: Authentication required (401): ' + error?.response?.data?.message;
           process.exitCode = 3;
           break;
         case 404:
@@ -270,7 +272,8 @@ async function cancelGitPush(id) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Cancel: Authentication required';
+          errorMessage =
+            'Error: Cancel: Authentication required (401): ' + error?.response?.data?.message;
           process.exitCode = 3;
           break;
         case 404:

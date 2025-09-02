@@ -25,7 +25,7 @@ const loginUrl = `${process.env.VITE_API_URI}/api/auth/login`;
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { refreshUser } = useAuth();
+  const authContext = useAuth();
 
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
@@ -64,7 +64,7 @@ const Login: React.FC = () => {
         window.sessionStorage.setItem('git.proxy.login', 'success');
         setMessage('Success!');
         setSuccess(true);
-        refreshUser().then(() => navigate('/dashboard/repo'));
+        authContext.refreshUser().then(() => navigate(0));
       })
       .catch((error: AxiosError) => {
         if (error.response?.status === 307) {

@@ -1,5 +1,5 @@
 import React from 'react';
-import classNames from 'classnames';
+import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import styles from '../../assets/jss/material-dashboard-react/components/cardStyle';
 
@@ -23,7 +23,7 @@ const Card: React.FC<CardProps> = ({
 }) => {
   const classes = useStyles();
 
-  const cardClasses = classNames({
+  const cardClasses = clsx({
     [classes.card]: true,
     [classes.cardPlain]: plain,
     [classes.cardProfile]: profile,

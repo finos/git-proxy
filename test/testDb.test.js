@@ -1,7 +1,9 @@
 // This test needs to run first
 const chai = require('chai');
 const db = require('../src/db');
-const { trimTrailingDotGit } = require('../src/db/helper');
+const { Repo, User } = require('../src/db/types');
+const { Action } = require('../src/proxy/actions/Action');
+const { Step } = require('../src/proxy/actions/Step');
 
 const { expect } = chai;
 
@@ -9,6 +11,13 @@ const TEST_REPO = {
   project: 'finos',
   name: 'db-test-repo',
   url: 'https://github.com/finos/db-test-repo.git',
+};
+
+const TEST_NONEXISTENT_REPO = {
+  project: 'MegaCorp',
+  name: 'repo',
+  url: 'https://example.com/MegaCorp/MegaGroup/repo.git',
+  _id: 'ABCDEFGHIJKLMNOP',
 };
 
 const TEST_USER = {
@@ -36,7 +45,7 @@ const TEST_PUSH = {
   timestamp: 1744380903338,
   project: 'finos',
   repoName: 'db-test-repo.git',
-  url: 'https://github.com/finos/db-test-repo.git',
+  url: TEST_REPO.url,
   repo: 'finos/db-test-repo.git',
   user: 'db-test-user',
   userEmail: 'db-test@test.com',
@@ -95,6 +104,100 @@ const cleanResponseData = (example, responses) => {
 describe('Database clients', async () => {
   before(async function () {});
 
+  it('should be able to construct a repo instance', async function () {
+    const repo = new Repo('project', 'name', 'https://github.com/finos.git-proxy.git', null, 'id');
+    expect(repo._id).to.equal('id');
+    expect(repo.project).to.equal('project');
+    expect(repo.name).to.equal('name');
+    expect(repo.url).to.equal('https://github.com/finos.git-proxy.git');
+    expect(repo.users).to.deep.equals({ canPush: [], canAuthorise: [] });
+
+    const repo2 = new Repo(
+      'project',
+      'name',
+      'https://github.com/finos.git-proxy.git',
+      { canPush: ['bill'], canAuthorise: ['ben'] },
+      'id',
+    );
+    expect(repo2.users).to.deep.equals({ canPush: ['bill'], canAuthorise: ['ben'] });
+  });
+
+  it('should be able to construct a user instance', async function () {
+    const user = new User(
+      'username',
+      'password',
+      'gitAccount',
+      'email@domain.com',
+      true,
+      null,
+      'id',
+    );
+    expect(user.username).to.equal('username');
+    expect(user.username).to.equal('username');
+    expect(user.gitAccount).to.equal('gitAccount');
+    expect(user.email).to.equal('email@domain.com');
+    expect(user.admin).to.equal(true);
+    expect(user.oidcId).to.be.null;
+    expect(user._id).to.equal('id');
+
+    const user2 = new User(
+      'username',
+      'password',
+      'gitAccount',
+      'email@domain.com',
+      false,
+      'oidcId',
+      'id',
+    );
+    expect(user2.admin).to.equal(false);
+    expect(user2.oidcId).to.equal('oidcId');
+  });
+
+  it('should be able to construct a valid action instance', async function () {
+    const action = new Action(
+      'id',
+      'type',
+      'method',
+      Date.now(),
+      'https://github.com/finos/git-proxy.git',
+    );
+    expect(action.project).to.equal('finos');
+    expect(action.repoName).to.equal('git-proxy.git');
+  });
+
+  it('should be able to block an action by adding a blocked step', async function () {
+    const action = new Action(
+      'id',
+      'type',
+      'method',
+      Date.now(),
+      'https://github.com/finos.git-proxy.git',
+    );
+    const step = new Step('stepName', false, null, false, null);
+    step.setAsyncBlock('blockedMessage');
+    action.addStep(step);
+    expect(action.blocked).to.be.true;
+    expect(action.blockedMessage).to.equal('blockedMessage');
+    expect(action.getLastStep()).to.deep.equals(step);
+    expect(action.continue()).to.be.false;
+  });
+
+  it('should be able to error an action by adding a step with an error', async function () {
+    const action = new Action(
+      'id',
+      'type',
+      'method',
+      Date.now(),
+      'https://github.com/finos.git-proxy.git',
+    );
+    const step = new Step('stepName', true, 'errorMessage', false, null);
+    action.addStep(step);
+    expect(action.error).to.be.true;
+    expect(action.errorMessage).to.equal('errorMessage');
+    expect(action.getLastStep()).to.deep.equals(step);
+    expect(action.continue()).to.be.false;
+  });
+
   it('should be able to create a repo', async function () {
     await db.createRepo(TEST_REPO);
     const repos = await db.getRepos();
@@ -118,22 +221,30 @@ describe('Database clients', async () => {
     expect(repos3).to.have.same.deep.members(repos4);
   });
 
-  it('should be able to retrieve a repo by name', async function () {
-    // uppercase the filter value to confirm db client is lowercasing inputs
-    const repo = await db.getRepo(TEST_REPO.name);
+  it('should be able to retrieve a repo by url', async function () {
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
     const cleanRepo = cleanResponseData(TEST_REPO, repo);
     expect(cleanRepo).to.eql(TEST_REPO);
   });
 
-  it('should be able to delete a repo', async function () {
-    await db.deleteRepo(TEST_REPO.name);
-    const repos = await db.getRepos();
+  it('should be able to retrieve a repo by id', async function () {
+    // _id is autogenerated by the DB so we need to retrieve it before we can use it
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
+    const repoById = await db.getRepoById(repo._id);
+    const cleanRepo = cleanResponseData(TEST_REPO, repoById);
+    expect(cleanRepo).to.eql(TEST_REPO);
+  });
 
+  it('should be able to delete a repo', async function () {
+    // _id is autogenerated by the DB so we need to retrieve it before we can use it
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
+    await db.deleteRepo(repo._id);
+    const repos = await db.getRepos();
     const cleanRepos = cleanResponseData(TEST_REPO, repos);
     expect(cleanRepos).to.not.deep.include(TEST_REPO);
   });
 
-  it('should NOT be able to create a repo with blank project, name or url', async function () {
+  it('should be able to create a repo with a blank project', async function () {
     // test with a null value
     let threwError = false;
     let testRepo = {
@@ -142,11 +253,12 @@ describe('Database clients', async () => {
       url: TEST_REPO.url,
     };
     try {
-      await db.createRepo(testRepo);
+      const repo = await db.createRepo(testRepo);
+      await db.deleteRepo(repo._id, true);
     } catch (e) {
       threwError = true;
     }
-    expect(threwError).to.be.true;
+    expect(threwError).to.be.false;
 
     // test with an empty string
     threwError = false;
@@ -156,11 +268,12 @@ describe('Database clients', async () => {
       url: TEST_REPO.url,
     };
     try {
-      await db.createRepo(testRepo);
+      const repo = await db.createRepo(testRepo);
+      await db.deleteRepo(repo._id, true);
     } catch (e) {
       threwError = true;
     }
-    expect(threwError).to.be.true;
+    expect(threwError).to.be.false;
 
     // test with an undefined property
     threwError = false;
@@ -169,15 +282,18 @@ describe('Database clients', async () => {
       url: TEST_REPO.url,
     };
     try {
-      await db.createRepo(testRepo);
+      const repo = await db.createRepo(testRepo);
+      await db.deleteRepo(repo._id, true);
     } catch (e) {
       threwError = true;
     }
-    expect(threwError).to.be.true;
+    expect(threwError).to.be.false;
+  });
 
-    // repeat tests for other fields, but don't both with all variations as they go through same fn
-    threwError = false;
-    testRepo = {
+  it('should NOT be able to create a repo with blank name or url', async function () {
+    // null name
+    let threwError = false;
+    let testRepo = {
       project: TEST_REPO.project,
       name: null,
       url: TEST_REPO.url,
@@ -189,6 +305,34 @@ describe('Database clients', async () => {
     }
     expect(threwError).to.be.true;
 
+    // blank name
+    threwError = false;
+    testRepo = {
+      project: TEST_REPO.project,
+      name: '',
+      url: TEST_REPO.url,
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+
+    // undefined name
+    threwError = false;
+    testRepo = {
+      project: TEST_REPO.project,
+      url: TEST_REPO.url,
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+
+    // null url
     testRepo = {
       project: TEST_REPO.project,
       name: TEST_REPO.name,
@@ -200,6 +344,102 @@ describe('Database clients', async () => {
       threwError = true;
     }
     expect(threwError).to.be.true;
+
+    // blank url
+    testRepo = {
+      project: TEST_REPO.project,
+      name: TEST_REPO.name,
+      url: '',
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+
+    // undefined url
+    testRepo = {
+      project: TEST_REPO.project,
+      name: TEST_REPO.name,
+    };
+    try {
+      await db.createRepo(testRepo);
+    } catch (e) {
+      threwError = true;
+    }
+    expect(threwError).to.be.true;
+  });
+
+  it('should throw an error when creating a user and username or email is not set', async function () {
+    // null username
+    let threwError = false;
+    let message = null;
+    try {
+      await db.createUser(
+        null,
+        TEST_USER.password,
+        TEST_USER.email,
+        TEST_USER.gitAccount,
+        TEST_USER.admin,
+      );
+    } catch (e) {
+      threwError = true;
+      message = e.message;
+    }
+    expect(threwError).to.be.true;
+    expect(message).to.equal('username cannot be empty');
+
+    // blank username
+    threwError = false;
+    try {
+      await db.createUser(
+        '',
+        TEST_USER.password,
+        TEST_USER.email,
+        TEST_USER.gitAccount,
+        TEST_USER.admin,
+      );
+    } catch (e) {
+      threwError = true;
+      message = e.message;
+    }
+    expect(threwError).to.be.true;
+    expect(message).to.equal('username cannot be empty');
+
+    // null email
+    threwError = false;
+    try {
+      await db.createUser(
+        TEST_USER.username,
+        TEST_USER.password,
+        null,
+        TEST_USER.gitAccount,
+        TEST_USER.admin,
+      );
+    } catch (e) {
+      threwError = true;
+      message = e.message;
+    }
+    expect(threwError).to.be.true;
+    expect(message).to.equal('email cannot be empty');
+
+    // blank username
+    threwError = false;
+    try {
+      await db.createUser(
+        TEST_USER.username,
+        TEST_USER.password,
+        '',
+        TEST_USER.gitAccount,
+        TEST_USER.admin,
+      );
+    } catch (e) {
+      threwError = true;
+      message = e.message;
+    }
+    expect(threwError).to.be.true;
+    expect(message).to.equal('email cannot be empty');
   });
 
   it('should be able to create a user', async function () {
@@ -211,11 +451,51 @@ describe('Database clients', async () => {
       TEST_USER.admin,
     );
     const users = await db.getUsers();
+    console.log('TEST USER:', JSON.stringify(TEST_USER, null, 2));
+    console.log('USERS:', JSON.stringify(users, null, 2));
     // remove password as it will have been hashed
     // eslint-disable-next-line no-unused-vars
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
     expect(cleanUsers).to.deep.include(TEST_USER_CLEAN);
+  });
+
+  it('should throw an error when creating a duplicate username', async function () {
+    let threwError = false;
+    let message = null;
+    try {
+      await db.createUser(
+        TEST_USER.username,
+        TEST_USER.password,
+        'prefix_' + TEST_USER.email,
+        TEST_USER.gitAccount,
+        TEST_USER.admin,
+      );
+    } catch (e) {
+      threwError = true;
+      message = e.message;
+    }
+    expect(threwError).to.be.true;
+    expect(message).to.equal(`user ${TEST_USER.username} already exists`);
+  });
+
+  it('should throw an error when creating a user with a duplicate email', async function () {
+    let threwError = false;
+    let message = null;
+    try {
+      await db.createUser(
+        'prefix_' + TEST_USER.username,
+        TEST_USER.password,
+        TEST_USER.email,
+        TEST_USER.gitAccount,
+        TEST_USER.admin,
+      );
+    } catch (e) {
+      threwError = true;
+      message = e.message;
+    }
+    expect(threwError).to.be.true;
+    expect(message).to.equal(`A user with email ${TEST_USER.email} already exists`);
   });
 
   it('should be able to find a user', async function () {
@@ -295,7 +575,7 @@ describe('Database clients', async () => {
     let threwError = false;
     try {
       // uppercase the filter value to confirm db client is lowercasing inputs
-      await db.addUserCanPush('non-existent-repo', TEST_USER.username);
+      await db.addUserCanPush(TEST_NONEXISTENT_REPO._id, TEST_USER.username);
     } catch (e) {
       threwError = true;
     }
@@ -303,40 +583,33 @@ describe('Database clients', async () => {
   });
 
   it('should be able to authorise a user to push and confirm that they can', async function () {
-    let threwError = false;
-    try {
-      // first create the repo and check that user is not allowed to push
-      await db.createRepo(TEST_REPO);
-      let allowed = await db.isUserPushAllowed(TEST_REPO.name, TEST_USER.username);
-      expect(allowed).to.be.false;
+    // first create the repo and check that user is not allowed to push
+    await db.createRepo(TEST_REPO);
 
-      // uppercase the filter value to confirm db client is lowercasing inputs
-      await db.addUserCanPush(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+    let allowed = await db.isUserPushAllowed(TEST_REPO.url, TEST_USER.username);
+    expect(allowed).to.be.false;
 
-      // repeat, should not throw an error if already set
-      await db.addUserCanPush(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
 
-      // confirm the setting exists
-      allowed = await db.isUserPushAllowed(TEST_REPO.name, TEST_USER.username);
-      expect(allowed).to.be.true;
+    // uppercase the filter value to confirm db client is lowercasing inputs
+    await db.addUserCanPush(repo._id, TEST_USER.username.toUpperCase());
 
-      // confirm that casing doesn't matter
-      allowed = await db.isUserPushAllowed(
-        TEST_REPO.name.toUpperCase(),
-        TEST_USER.username.toUpperCase(),
-      );
-      expect(allowed).to.be.true;
-    } catch (e) {
-      console.error('Error thrown ', e);
-      threwError = true;
-    }
-    expect(threwError).to.be.false;
+    // repeat, should not throw an error if already set
+    await db.addUserCanPush(repo._id, TEST_USER.username.toUpperCase());
+
+    // confirm the setting exists
+    allowed = await db.isUserPushAllowed(TEST_REPO.url, TEST_USER.username);
+    expect(allowed).to.be.true;
+
+    // confirm that casing doesn't matter
+    allowed = await db.isUserPushAllowed(TEST_REPO.url, TEST_USER.username.toUpperCase());
+    expect(allowed).to.be.true;
   });
 
   it('should throw an error when de-authorising a user to push on non-existent repo', async function () {
     let threwError = false;
     try {
-      await db.removeUserCanPush('non-existent-repo', TEST_USER.username);
+      await db.removeUserCanPush(TEST_NONEXISTENT_REPO._id, TEST_USER.username);
     } catch (e) {
       threwError = true;
     }
@@ -347,27 +620,26 @@ describe('Database clients', async () => {
     let threwError = false;
     try {
       // repo should already exist with user able to push after previous test
-      let allowed = await db.isUserPushAllowed(TEST_REPO.name, TEST_USER.username);
+      let allowed = await db.isUserPushAllowed(TEST_REPO.url, TEST_USER.username);
       expect(allowed).to.be.true;
 
+      const repo = await db.getRepoByUrl(TEST_REPO.url);
+
       // uppercase the filter value to confirm db client is lowercasing inputs
-      await db.removeUserCanPush(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+      await db.removeUserCanPush(repo._id, TEST_USER.username.toUpperCase());
 
       // repeat, should not throw an error if already unset
-      await db.removeUserCanPush(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
+      await db.removeUserCanPush(repo._id, TEST_USER.username.toUpperCase());
 
       // confirm the setting exists
-      allowed = await db.isUserPushAllowed(TEST_REPO.name, TEST_USER.username);
+      allowed = await db.isUserPushAllowed(TEST_REPO.url, TEST_USER.username);
       expect(allowed).to.be.false;
 
       // confirm that casing doesn't matter
-      allowed = await db.isUserPushAllowed(
-        TEST_REPO.name.toUpperCase(),
-        TEST_USER.username.toUpperCase(),
-      );
+      allowed = await db.isUserPushAllowed(TEST_REPO.url, TEST_USER.username.toUpperCase());
       expect(allowed).to.be.false;
     } catch (e) {
-      console.error('Error thrown ', e);
+      console.error('Error thrown at: ' + e.stack, e);
       threwError = true;
     }
     expect(threwError).to.be.false;
@@ -376,115 +648,27 @@ describe('Database clients', async () => {
   it('should throw an error when authorising a user to authorise on non-existent repo', async function () {
     let threwError = false;
     try {
-      await db.addUserCanAuthorise('non-existent-repo', TEST_USER.username);
+      await db.addUserCanAuthorise(TEST_NONEXISTENT_REPO._id, TEST_USER.username);
     } catch (e) {
       threwError = true;
     }
     expect(threwError).to.be.true;
-  });
-
-  it('should be able to authorise a user to authorise and confirm that they can', async function () {
-    let threwError = false;
-    try {
-      // repo should already exist after a previous test
-      let allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.name, TEST_USER.username);
-      expect(allowed).to.be.false;
-
-      // uppercase the filter value to confirm db client is lowercasing inputs
-      await db.addUserCanAuthorise(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
-
-      // repeat, should not throw an error if already set
-      await db.addUserCanAuthorise(TEST_REPO.name.toUpperCase(), TEST_USER.username.toUpperCase());
-
-      // confirm the setting exists
-      allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.name, TEST_USER.username);
-      expect(allowed).to.be.true;
-
-      // confirm that casing doesn't matter
-      allowed = await db.canUserApproveRejectPushRepo(
-        TEST_REPO.name.toUpperCase(),
-        TEST_USER.username.toUpperCase(),
-      );
-      expect(allowed).to.be.true;
-    } catch (e) {
-      console.error('Error thrown ', e);
-      threwError = true;
-    }
-    expect(threwError).to.be.false;
   });
 
   it('should throw an error when de-authorising a user to push on non-existent repo', async function () {
     let threwError = false;
     try {
       // uppercase the filter value to confirm db client is lowercasing inputs
-      await db.removeUserCanAuthorise('non-existent-repo', TEST_USER.username);
+      await db.removeUserCanAuthorise(TEST_NONEXISTENT_REPO._id, TEST_USER.username);
     } catch (e) {
       threwError = true;
     }
     expect(threwError).to.be.true;
   });
 
-  it("should be able to de-authorise a user to authorise and confirm that they can't", async function () {
-    let threwError = false;
-    try {
-      // repo should already exist after a previous test and user should be an authoriser
-      let allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.name, TEST_USER.username);
-      expect(allowed).to.be.true;
-
-      // uppercase the filter value to confirm db client is lowercasing inputs
-      await db.removeUserCanAuthorise(
-        TEST_REPO.name.toUpperCase(),
-        TEST_USER.username.toUpperCase(),
-      );
-
-      // repeat, should not throw an error if already set
-      await db.removeUserCanAuthorise(
-        TEST_REPO.name.toUpperCase(),
-        TEST_USER.username.toUpperCase(),
-      );
-
-      // confirm the setting was removed
-      allowed = await db.canUserApproveRejectPushRepo(TEST_REPO.name, TEST_USER.username);
-      expect(allowed).to.be.false;
-
-      // confirm that casing doesn't matter
-      allowed = await db.canUserApproveRejectPushRepo(
-        TEST_REPO.name.toUpperCase(),
-        TEST_USER.username.toUpperCase(),
-      );
-      expect(allowed).to.be.false;
-    } catch (e) {
-      console.error('Error thrown ', e);
-      threwError = true;
-    }
-    expect(threwError).to.be.false;
-  });
-
   it('should NOT throw an error when checking whether a user can push on non-existent repo', async function () {
-    let threwError = false;
-    try {
-      // uppercase the filter value to confirm db client is lowercasing inputs
-      const allowed = await db.isUserPushAllowed('non-existent-repo', TEST_USER.username);
-      expect(allowed).to.be.false;
-    } catch (e) {
-      threwError = true;
-    }
-    expect(threwError).to.be.false;
-  });
-
-  it('should NOT throw an error when checking whether a user can authorise on non-existent repo', async function () {
-    let threwError = false;
-    try {
-      // uppercase the filter value to confirm db client is lowercasing inputs
-      const allowed = await db.canUserApproveRejectPushRepo(
-        'non-existent-repo',
-        TEST_USER.username,
-      );
-      expect(allowed).to.be.false;
-    } catch (e) {
-      threwError = true;
-    }
-    expect(threwError).to.be.false;
+    const allowed = await db.isUserPushAllowed(TEST_NONEXISTENT_REPO.url, TEST_USER.username);
+    expect(allowed).to.be.false;
   });
 
   it('should be able to create a push', async function () {
@@ -579,8 +763,9 @@ describe('Database clients', async () => {
 
   it('should be able to check if a user can cancel push', async function () {
     let threwError = false;
-    const repoName = trimTrailingDotGit(TEST_PUSH.repoName);
     try {
+      const repo = await db.getRepoByUrl(TEST_REPO.url);
+
       // push does not exist yet, should return false
       let allowed = await db.canUserCancelPush(TEST_PUSH.id, TEST_USER.username);
       expect(allowed).to.be.false;
@@ -591,21 +776,25 @@ describe('Database clients', async () => {
       expect(allowed).to.be.false;
 
       // authorise user and recheck
-      await db.addUserCanPush(repoName, TEST_USER.username);
+      await db.addUserCanPush(repo._id, TEST_USER.username);
       allowed = await db.canUserCancelPush(TEST_PUSH.id, TEST_USER.username);
       expect(allowed).to.be.true;
+
+      // deauthorise user and recheck
+      await db.removeUserCanPush(repo._id, TEST_USER.username);
+      allowed = await db.canUserCancelPush(TEST_PUSH.id, TEST_USER.username);
+      expect(allowed).to.be.false;
     } catch (e) {
+      console.error(e);
       threwError = true;
     }
     expect(threwError).to.be.false;
     // clean up
     await db.deletePush(TEST_PUSH.id);
-    await db.removeUserCanPush(repoName, TEST_USER.username);
   });
 
   it('should be able to check if a user can approve/reject push', async function () {
     let allowed = undefined;
-    const repoName = trimTrailingDotGit(TEST_PUSH.repoName);
 
     try {
       // push does not exist yet, should return false
@@ -625,24 +814,28 @@ describe('Database clients', async () => {
     }
 
     try {
+      const repo = await db.getRepoByUrl(TEST_REPO.url);
+
       // authorise user and recheck
-      await db.addUserCanAuthorise(repoName, TEST_USER.username);
+      await db.addUserCanAuthorise(repo._id, TEST_USER.username);
       allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
       expect(allowed).to.be.true;
+
+      // deauthorise user and recheck
+      await db.removeUserCanAuthorise(repo._id, TEST_USER.username);
+      allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
+      expect(allowed).to.be.false;
     } catch (e) {
       expect.fail(e);
     }
 
     // clean up
     await db.deletePush(TEST_PUSH.id);
-    await db.removeUserCanAuthorise(repoName, TEST_USER.username);
   });
 
   it('should be able to check if a user can approve/reject push including .git within the repo name', async function () {
     let allowed = undefined;
-    const repoName = trimTrailingDotGit(TEST_PUSH_DOT_GIT.repoName);
-
-    await db.createRepo(TEST_REPO_DOT_GIT);
+    const repo = await db.createRepo(TEST_REPO_DOT_GIT);
     try {
       // push does not exist yet, should return false
       allowed = await db.canUserApproveRejectPush(TEST_PUSH_DOT_GIT.id, TEST_USER.username);
@@ -662,7 +855,7 @@ describe('Database clients', async () => {
 
     try {
       // authorise user and recheck
-      await db.addUserCanAuthorise(repoName, TEST_USER.username);
+      await db.addUserCanAuthorise(repo._id, TEST_USER.username);
       allowed = await db.canUserApproveRejectPush(TEST_PUSH_DOT_GIT.id, TEST_USER.username);
       expect(allowed).to.be.true;
     } catch (e) {
@@ -671,12 +864,15 @@ describe('Database clients', async () => {
 
     // clean up
     await db.deletePush(TEST_PUSH_DOT_GIT.id);
-    await db.removeUserCanAuthorise(repoName, TEST_USER.username);
+    await db.removeUserCanAuthorise(repo._id, TEST_USER.username);
   });
 
   after(async function () {
-    await db.deleteRepo(TEST_REPO.name);
-    await db.deleteRepo(TEST_REPO_DOT_GIT.name);
+    // _id is autogenerated by the DB so we need to retrieve it before we can use it
+    const repo = await db.getRepoByUrl(TEST_REPO.url);
+    await db.deleteRepo(repo._id, true);
+    const repoDotGit = await db.getRepoByUrl(TEST_REPO_DOT_GIT.url);
+    await db.deleteRepo(repoDotGit._id);
     await db.deleteUser(TEST_USER.username);
     await db.deletePush(TEST_PUSH.id);
     await db.deletePush(TEST_PUSH_DOT_GIT.id);
