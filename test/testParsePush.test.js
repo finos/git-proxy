@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 const sinon = require('sinon');
 const zlib = require('zlib');
+const { createHash } = require('crypto');
 
 const {
   exec,
@@ -31,20 +32,45 @@ function createSamplePackBuffer(
 
   const originalContent = Buffer.from(commitContent, 'utf8');
   const compressedContent = zlib.deflateSync(originalContent); // actual zlib for setup
-
-  // Basic type/size encoding (assumes small sizes for simplicity)
-  // Real PACK files use variable-length encoding for size
-  let typeAndSize = (type << 4) | (compressedContent.length & 0x0f); // Lower 4 bits of size
-  if (compressedContent.length >= 16) {
-    typeAndSize |= 0x80;
-  }
-  const objectHeader = Buffer.from([typeAndSize]); // Placeholder, actual size encoding is complex
+  const objectHeader = encodeGitObjectHeader(type, originalContent.length);
 
   // Combine parts and append checksum
   const packContent = Buffer.concat([objectHeader, compressedContent]);
-  const checksum = Buffer.alloc(20);
 
-  return Buffer.concat([header, packContent, checksum]);
+  const fullPackWithoutChecksum = Buffer.concat([header, packContent]);
+
+  // Compute SHA-1 checksum of the full pack content (excluding checksum)
+  const checksum = createHash('sha1').update(fullPackWithoutChecksum).digest();
+
+  return Buffer.concat([fullPackWithoutChecksum, checksum]);
+}
+
+/**
+ * Creates git object headers used as part of a PACK buffer, for testing.
+ * @param {number} type Git object type (0-7)
+ * @param {number} size Object size in bytes.
+ * @return {Buffer} Buffer containing one or more encoded bytes representing the header.
+ */
+function encodeGitObjectHeader(type, size) {
+  const headerBytes = [];
+
+  // First byte: type (3 bits), size (lower 4 bits), continuation bit
+  const firstSizeBits = size & 0x0f;
+  size >>= 4;
+
+  let byte = (type << 4) | firstSizeBits;
+  if (size > 0) byte |= 0x80;
+  headerBytes.push(byte);
+
+  // Remaining bytes: 7 bits per byte, continuation bit
+  while (size > 0) {
+    let nextByte = size & 0x7f;
+    size >>= 7;
+    if (size > 0) nextByte |= 0x80;
+    headerBytes.push(nextByte);
+  }
+
+  return Buffer.from(headerBytes);
 }
 
 /**
