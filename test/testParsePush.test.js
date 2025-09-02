@@ -45,6 +45,47 @@ function createSamplePackBuffer(
   return Buffer.concat([fullPackWithoutChecksum, checksum]);
 }
 
+/** Creates a multi-object sample PACK buffer for testing PACK file decompression.
+ * Creates a relatively large example as decompression steps involve variable length
+ * headers depending on content and size.
+ * @return {Buffer} - The generated PACK buffer.
+ */
+function createMultiObjectSamplePackBuffer() {
+  // TODO: add blob, ref_delta and ofs_delta examples
+  const commitContentArr = [
+    'tree 163a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e\nparent 5be75c8610b0fcafcca6a777471ba281ff98564f\nauthor AAAAAAAAAA <aaaaaaaaa@bbbbbbbb.com> 1756487408 +0100\ncommitter CCCCCCCCCCC <ccccccccc@cccccccc.com> 1756487404 +0100\n\nFirst Non-trivial commit message used in testing decompression of encoded objects in git PACK files.',
+    'tree 263a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e\nparent 6be75c8610b0fcafcca6a777471ba281ff98564f\nauthor AAAAAAAAAA <aaaaaaaaa@bbbbbbbb.com> 1756487407 +0100\ncommitter CCCCCCCCCCC <ccccccccc@cccccccc.com> 1756487403 +0100\n\nSecond Non-trivial commit message used in testing decompression of encoded objects in git PACK files.',
+    'tree 363a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e\nparent 7be75c8610b0fcafcca6a777471ba281ff98564f\nauthor AAAAAAAAAA <aaaaaaaaa@bbbbbbbb.com> 1756487406 +0100\ncommitter CCCCCCCCCCC <ccccccccc@cccccccc.com> 1756487402 +0100\n\nThird Non-trivial commit message used in testing decompression of encoded objects in git PACK files.',
+    'tree 463a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e\nparent 8be75c8610b0fcafcca6a777471ba281ff98564f\nauthor AAAAAAAAAA <aaaaaaaaa@bbbbbbbb.com> 1756487405 +0100\ncommitter CCCCCCCCCCC <ccccccccc@cccccccc.com> 1756487401 +0100\n\nFourth Non-trivial commit message used in testing decompression of encoded objects in git PACK files.',
+  ];
+  const typesArr = [1, 1, 1, 1];
+  const numEntries = commitContentArr.length;
+
+  // TODO: extend this to include several commits, blob, ofs_delta and ref_delta entries to test complex decompression cases
+  const header = Buffer.alloc(12);
+  header.write(PACK_SIGNATURE, 0, 4, 'utf-8'); // Signature
+  header.writeUInt32BE(2, 4); // Version
+  header.writeUInt32BE(numEntries, 8); // Number of entries
+
+  const packContents = [];
+  for (let i = 0; i < numEntries; i++) {
+    const commitContent = commitContentArr[i];
+    const type = typesArr[i];
+    const originalContent = Buffer.from(commitContent, 'utf8');
+    const compressedContent = zlib.deflateSync(originalContent);
+    const objectHeader = encodeGitObjectHeader(type, originalContent.length);
+    packContents.push(Buffer.concat([objectHeader, compressedContent]));
+  }
+
+  const packContent = Buffer.concat(packContents);
+  const fullPackWithoutChecksum = Buffer.concat([header, packContent]);
+
+  // Compute SHA-1 checksum of the full pack content (excluding checksum)
+  const checksum = createHash('sha1').update(fullPackWithoutChecksum).digest();
+
+  return Buffer.concat([fullPackWithoutChecksum, checksum]);
+}
+
 /**
  * Encodes Git object headers used in PACK files, for testing.
  * @param {number} type - Git object type (1–4 for base types, 6 for ofs_delta, 7 for ref_delta).
@@ -52,13 +93,15 @@ function createSamplePackBuffer(
  * @param {object} [options] - Optional metadata for delta types.
  * @param {number} [options.baseOffset] - Offset for ofs_delta.
  * @param {Buffer} [options.baseSha] - SHA-1 hash for ref_delta (20 bytes).
- * @returns {Buffer} - Encoded header buffer.
+ * @return {Buffer} - Encoded header buffer.
  */
 function encodeGitObjectHeader(type, size, options = {}) {
   const headerBytes = [];
 
+  // TODO: add handling for ofs_delta and ref_delta headers
+
   // First byte: type (3 bits), size (lower 4 bits), continuation bit
-  let firstSizeBits = size & 0x0f;
+  const firstSizeBits = size & 0x0f;
   size >>= 4;
 
   let byte = (type << 4) | firstSizeBits;
@@ -290,6 +333,57 @@ describe('parsePackFile', () => {
         sig: PACK_SIGNATURE,
         version: 2,
         entries: numEntries,
+      });
+    });
+
+    it('should successfully parse a valid multi-object push request', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/main';
+      const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
+
+      const packBuffer = createMultiObjectSamplePackBuffer();
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).to.equal(action);
+
+      // Check step and action properties
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
+      expect(step).to.exist;
+      expect(step.error).to.be.false;
+      expect(step.errorMessage).to.be.null;
+
+      expect(action.branch).to.equal(ref);
+      expect(action.setCommit.calledOnceWith(oldCommit, newCommit)).to.be.true;
+      expect(action.commitFrom).to.equal(oldCommit);
+      expect(action.commitTo).to.equal(newCommit);
+      expect(action.user).to.equal('CCCCCCCCCCC');
+
+      // Check parsed commit data
+      const commitMessages = action.commitData.map((commit) => commit.message);
+      expect(action.commitData).to.be.an('array').with.lengthOf(4);
+      expect(commitMessages[0]).to.equal(
+        'First Non-trivial commit message used in testing decompression of encoded objects in git PACK files.',
+      );
+
+      // TODO check all parsed data is present, not just the first commit
+      const parsedCommit = action.commitData[0];
+      expect(parsedCommit.tree).to.equal('163a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e');
+      expect(parsedCommit.parent).to.equal('5be75c8610b0fcafcca6a777471ba281ff98564f');
+      expect(parsedCommit.author).to.equal('AAAAAAAAAA');
+      expect(parsedCommit.authorEmail).to.equal('aaaaaaaaa@bbbbbbbb.com');
+      expect(parsedCommit.committer).to.equal('CCCCCCCCCCC');
+      expect(parsedCommit.committerEmail).to.equal('ccccccccc@cccccccc.com');
+      expect(parsedCommit.commitTimestamp).to.equal('1756487404');
+      expect(parsedCommit.message).to.equal(
+        'First Non-trivial commit message used in testing decompression of encoded objects in git PACK files.',
+      );
+
+      expect(step.content.meta).to.deep.equal({
+        sig: PACK_SIGNATURE,
+        version: 2,
+        entries: 4,
       });
     });
 
