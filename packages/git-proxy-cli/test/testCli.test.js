@@ -614,7 +614,7 @@ describe('test git-proxy-cli', function () {
         try {
           await helper.removeUserFromDb(uniqueUsername);
         } catch (error) {
-          // Ignore cleanup errors
+          console.error('Error cleaning up user', error);
         }
       }
     });
