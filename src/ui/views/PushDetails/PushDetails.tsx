@@ -30,7 +30,7 @@ import {
   getGitUrl,
 } from '../../utils/pushUtils';
 import { trimTrailingDotGit } from '../../../db/helper';
-import { getGitProvider, getUserProfileLink } from '../../utils';
+import { generateEmailLink, getGitProvider } from '../../utils';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -118,7 +118,6 @@ const Dashboard: React.FC = () => {
   const repoUrl = data.url;
   const repoWebUrl = trimTrailingDotGit(repoUrl);
   const gitProvider = getGitProvider(repoUrl);
-  const hostname = new URL(repoUrl).hostname;
   const isGitHub = gitProvider == 'github';
   const gitUrl = getGitUrl(repoWebUrl, gitProvider);
 
@@ -308,31 +307,21 @@ const Dashboard: React.FC = () => {
                 <CardBody>
                   <Table>
                     <TableHead>
-                      <TableCell>Timestamp</TableCell>
-                      <TableCell>Committer</TableCell>
-                      <TableCell>Author</TableCell>
-                      <TableCell>Email</TableCell>
-                      <TableCell>Message</TableCell>
+                      <TableRow>
+                        <TableCell>Timestamp</TableCell>
+                        <TableCell>Committer</TableCell>
+                        <TableCell>Author</TableCell>
+                        <TableCell>Message</TableCell>
+                      </TableRow>
                     </TableHead>
                     <TableBody>
                       {data.commitData.map((c) => (
-                        <TableRow key={c.commitTimestamp}>
+                        <TableRow key={c.commitTimestamp || c.commitTs}>
                           <TableCell>
                             {moment.unix(c.commitTs || c.commitTimestamp || 0).toString()}
                           </TableCell>
-                          <TableCell>
-                            {getUserProfileLink(c.committer, gitProvider, hostname)}
-                          </TableCell>
-                          <TableCell>
-                            {getUserProfileLink(c.author, gitProvider, hostname)}
-                          </TableCell>
-                          <TableCell>
-                            {c.authorEmail ? (
-                              <a href={`mailto:${c.authorEmail}`}>{c.authorEmail}</a>
-                            ) : (
-                              '-'
-                            )}
-                          </TableCell>
+                          <TableCell>{generateEmailLink(c.committer, c.committerEmail)}</TableCell>
+                          <TableCell>{generateEmailLink(c.author, c.authorEmail)}</TableCell>
                           <TableCell>{c.message}</TableCell>
                         </TableRow>
                       ))}
@@ -361,39 +350,22 @@ const Dashboard: React.FC = () => {
               <CardBody>
                 <Table>
                   <TableHead>
-                    <TableCell>Tag Name</TableCell>
-                    <TableCell>Tagger</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell>Message</TableCell>
+                    <TableRow>
+                      <TableCell>Tag Name</TableCell>
+                      <TableCell>Tagger</TableCell>
+                      <TableCell>Message</TableCell>
+                    </TableRow>
                   </TableHead>
                   <TableBody>
                     {data.tagData?.map((t) => (
                       <TableRow key={t.tagName}>
                         <TableCell>{t.tagName}</TableCell>
-                        <TableCell>{getUserProfileLink(t.tagger, gitProvider, hostname)}</TableCell>
-                        <TableCell>
-                          {t.taggerEmail ? (
-                            <a href={`mailto:${t.taggerEmail}`}>{t.taggerEmail}</a>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
+                        <TableCell>{generateEmailLink(t.tagger, t.taggerEmail)}</TableCell>
                         <TableCell>{t.message}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
-              </CardBody>
-            </Card>
-          </GridItem>
-        )}
-
-        {/* Diff section - show only for commits */}
-        {!isTag && data.diff?.content && (
-          <GridItem xs={12} sm={12} md={12}>
-            <Card>
-              <CardBody>
-                <Diff diff={data.diff.content} />
               </CardBody>
             </Card>
           </GridItem>

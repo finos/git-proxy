@@ -65,7 +65,7 @@ let mockPushProcessors;
 const clearCache = (sandbox) => {
   delete require.cache[require.resolve('../src/proxy/processors')];
   delete require.cache[require.resolve('../src/proxy/chain')];
-  sandbox.reset();
+  sandbox.restore();
 };
 
 describe('proxy chain', function () {
@@ -276,17 +276,15 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.audit.called).to.be.true;
   });
 
-  it('executeChain should run no actions if not a push or pull', async function () {
+  it('executeChain should always run at least checkRepoInAuthList', async function () {
     const req = {};
     const action = { type: 'foo', continue: () => true, allowPush: true };
 
-    processors.pre.parseAction.resolves(action);
+    mockPreProcessors.parseAction.resolves(action);
+    mockPushProcessors.checkRepoInAuthorisedList.resolves(action);
 
-    const result = await chain.executeChain(req);
-
-    expect(mockPushProcessors.checkRepoInAuthorisedList.called).to.be.false;
-    expect(mockPushProcessors.parsePush.called).to.be.false;
-    expect(result).to.deep.equal(action);
+    await chain.executeChain(req);
+    expect(mockPushProcessors.checkRepoInAuthorisedList.called).to.be.true;
   });
 
   it('should approve push automatically and record in the database', async function () {
