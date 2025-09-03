@@ -165,6 +165,25 @@ function createMultiObjectSamplePackBuffer() {
 }
 
 /**
+ * Encode distance in an ofs_delta git object header.
+ * @param {number} distance
+ * @return {Buffer} encoded distance bytes.
+ */
+const encodeOfsDeltaOffset = (distance) => {
+  const bytes = [];
+  let n = distance;
+
+  let byte = n & 0x7f;
+  while ((n >>= 7)) {
+    byte |= 0x80;
+    bytes.unshift(byte);
+    byte = n & 0x7f;
+  }
+  bytes.unshift(byte);
+  return Buffer.from(bytes);
+};
+
+/**
  * Encodes Git object headers used in PACK files, for testing.
  * @param {number} type - Git object type (1–4 for base types, 6 for ofs_delta, 7 for ref_delta).
  * @param {number} size - Uncompressed object size in bytes.
@@ -200,16 +219,7 @@ function encodeGitObjectHeader(type, size, options = {}) {
     if (typeof options.baseOffset !== 'number') {
       throw new Error('ofs_delta requires baseOffset');
     }
-    let offset = options.baseOffset;
-    const offsetBytes = [];
-    let first = true;
-    while (offset > 0) {
-      let byte = offset & 0x7f;
-      offset >>= 7;
-      if (!first) byte |= 0x80;
-      offsetBytes.unshift(byte);
-      first = false;
-    }
+    const offsetBytes = encodeOfsDeltaOffset(options.baseOffset);
     headerBytes.push(...offsetBytes);
   } else if (type === 7) {
     // REF_DELTA: append 20-byte SHA-1
