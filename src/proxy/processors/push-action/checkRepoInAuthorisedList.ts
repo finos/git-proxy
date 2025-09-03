@@ -7,11 +7,11 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
   const found = (await getRepoByUrl(action.url)) !== null;
   if (found) {
-    step.log(`repo ${action.repo} is in the authorisedList`);
+    step.log(`repo ${action.url} is in the authorisedList`);
   } else {
     step.error = true;
-    step.log(`repo ${action.repo} is not in the authorised whitelist, ending`);
-    step.setError(`Rejecting repo ${action.repo} not in the authorised whitelist`);
+    step.log(`repo ${action.url} is not in the authorised whitelist, ending`);
+    step.setError(`Rejecting repo ${action.url} not in the authorised whitelist`);
   }
 
   action.addStep(step);
