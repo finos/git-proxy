@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 
 import Table from '@material-ui/core/Table';
@@ -18,11 +19,11 @@ export default function CustomTable(props) {
     <div className={classes.tableResponsive}>
       <Table className={classes.table}>
         {tableHead !== undefined ? (
-          <TableHead className={classes[tableHeaderColor + 'TableHeader']}>
+          <TableHead className={clsx(classes[`${tableHeaderColor}TableHeader`])}>
             <TableRow className={classes.tableHeadRow}>
               {tableHead.map((prop, key) => {
                 return (
-                  <TableCell className={classes.tableCell + ' ' + classes.tableHeadCell} key={key}>
+                  <TableCell className={clsx(classes.tableCell, classes.tableHeadCell)} key={key}>
                     {prop}
                   </TableCell>
                 );
@@ -33,10 +34,10 @@ export default function CustomTable(props) {
         <TableBody>
           {tableData.map((prop, key) => {
             return (
-              <TableRow key={key} className={classes.tableBodyRow}>
+              <TableRow key={key} className={clsx(classes.tableBodyRow)}>
                 {prop.map((p, k) => {
                   return (
-                    <TableCell className={classes.tableCell} key={k}>
+                    <TableCell className={clsx(classes.tableCell)} key={k}>
                       {p}
                     </TableCell>
                   );

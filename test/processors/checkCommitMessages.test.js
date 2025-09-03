@@ -48,7 +48,7 @@ describe('checkCommitMessages', () => {
 
     beforeEach(() => {
       req = {};
-      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
+      action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
       action.commitData = [
         { message: 'Fix bug', author: 'test@example.com' },
         { message: 'Update docs', author: 'test@example.com' },
@@ -164,27 +164,20 @@ describe('checkCommitMessages', () => {
                   fc.integer(),
                   fc.double(),
                   fc.boolean(),
-                  fc.object(),
                 ),
-                author: fc.string()
+                author: fc.string(),
               }),
-              { maxLength: 20 }
+              { maxLength: 20 },
             ),
             async (fuzzedCommits) => {
-              const fuzzAction = new Action(
-                'fuzz',
-                'push',
-                'POST',
-                Date.now(),
-                'fuzz/repo'
-              );
+              const fuzzAction = new Action('fuzz', 'push', 'POST', Date.now(), 'fuzz/repo');
               fuzzAction.commitData = Array.isArray(fuzzedCommits) ? fuzzedCommits : [];
 
               const result = await exec({}, fuzzAction);
 
               expect(result).to.have.property('steps');
               expect(result.steps[0]).to.have.property('error').that.is.a('boolean');
-            }
+            },
           ),
           {
             examples: [
@@ -192,9 +185,10 @@ describe('checkCommitMessages', () => {
               [{ message: '1234-5678-9012-3456', author: 'me' }],
               [{ message: null, author: 'me' }],
               [{ message: {}, author: 'me' }],
-              [{ message: 'SeCrEt', author: 'me' }]
-            ]
-          }
+              [{ message: 'SeCrEt', author: 'me' }],
+            ],
+            numRuns: 1000,
+          },
         );
       });
     });

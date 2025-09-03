@@ -5,7 +5,7 @@ import Repositories from './Repositories';
 
 export default function Dashboard(): React.ReactElement {
   return (
-    <div>
+    <div data-testid='repo-list-view'>
       <GridContainer>
         <GridItem xs={12} sm={12} md={12}>
           <Repositories />

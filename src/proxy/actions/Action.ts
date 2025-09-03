@@ -1,4 +1,4 @@
-import { getProxyUrl } from '../../config';
+import { processGitURLForNameAndOrg, processUrlPath } from '../routes/helper';
 import { Step } from './Step';
 
 /**
@@ -58,17 +58,26 @@ class Action {
    * @param {string} type The type of the action
    * @param {string} method The method of the action
    * @param {number} timestamp The timestamp of the action
-   * @param {string} repo The repo of the action
+   * @param {string} url The URL to the repo that should be proxied (with protocol, origin, repo path, but not the path for the git operation).
    */
-  constructor(id: string, type: string, method: string, timestamp: number, repo: string) {
+  constructor(id: string, type: string, method: string, timestamp: number, url: string) {
     this.id = id;
     this.type = type;
     this.method = method;
     this.timestamp = timestamp;
-    this.project = repo.split('/')[0];
-    this.repoName = repo.split('/')[1];
-    this.url = `${getProxyUrl()}/${repo}`;
-    this.repo = repo;
+    this.url = url;
+
+    const urlBreakdown = processUrlPath(url);
+    if (urlBreakdown) {
+      this.repo = urlBreakdown.repoPath;
+      const repoBreakdown = processGitURLForNameAndOrg(urlBreakdown.repoPath);
+      this.project = repoBreakdown?.project ?? '';
+      this.repoName = repoBreakdown?.repoName ?? '';
+    } else {
+      this.repo = 'NOT-FOUND';
+      this.project = 'UNKNOWN';
+      this.repoName = 'UNKNOWN';
+    }
   }
 
   /**

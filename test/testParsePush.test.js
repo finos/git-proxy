@@ -476,7 +476,7 @@ describe('parsePackFile', () => {
 
       expect(result).to.equal(action);
 
-      const step = action.steps.find(s => s.stepName === 'parsePackFile');
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
       expect(step).to.exist;
       expect(step.error).to.be.false;
       expect(action.branch).to.equal(ref);
