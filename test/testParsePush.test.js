@@ -170,25 +170,19 @@ function createMultiObjectSamplePackBuffer() {
  * @return {Buffer} encoded distance bytes.
  */
 
+/** Encodes an ofs_delta offset for a type 6 g9it object header.
+ * @param {number} distance The offset value to encode.
+ * @return {Buffer} The encoded buffer.
+ */
 const encodeOfsDeltaOffset = (distance) => {
   const bytes = [];
-  let n = distance;
+  let val = distance;
 
-  // Build the byte sequence from most significant to least significant
-  let stack = [];
-  stack.push(n & 0x7f);
-  while ((n >>= 7)) {
-    stack.push(n & 0x7f);
+  while (val >= 0x80) {
+    bytes.push((val & 0x7f) | 0x80); // Set continuation bit
+    val >>= 7;
   }
-
-  // Now set continuation bits correctly
-  for (let i = 0; i < stack.length; i++) {
-    let byte = stack[i];
-    if (i !== stack.length - 1) {
-      byte |= 0x80; // Set MSB if more bytes follow
-    }
-    bytes.push(byte);
-  }
+  bytes.push(val); // Final byte without continuation bit
 
   return Buffer.from(bytes);
 };
