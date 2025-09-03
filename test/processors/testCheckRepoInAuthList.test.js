@@ -20,7 +20,9 @@ describe('Check a Repo is in the authorised list', async () => {
     const action = new actions.Action('123', 'type', 'get', 1234, 'thisproject/repo-is-ok');
     const result = await processor.exec(null, action);
     expect(result.error).to.be.false;
-    expect(result.steps[0].logs[0]).to.eq('checkRepoInAuthorisedList - repo thisproject/repo-is-ok is in the authorisedList');
+    expect(result.steps[0].logs[0]).to.eq(
+      'checkRepoInAuthorisedList - repo thisproject/repo-is-ok is in the authorisedList',
+    );
   });
 
   it('rejects the action if repository not in the db', async () => {
@@ -29,6 +31,8 @@ describe('Check a Repo is in the authorised list', async () => {
     const action = new actions.Action('123', 'type', 'get', 1234, 'thisproject/repo-is-not-ok');
     const result = await processor.exec(null, action);
     expect(result.error).to.be.true;
-    expect(result.steps[0].logs[0]).to.eq('checkRepoInAuthorisedList - repo thisproject/repo-is-not-ok is not in the authorised whitelist, ending');
+    expect(result.steps[0].logs[0]).to.eq(
+      'checkRepoInAuthorisedList - repo thisproject/repo-is-not-ok is not in the authorised whitelist, ending',
+    );
   });
 });
