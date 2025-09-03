@@ -30,7 +30,9 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     step.error = true;
     return action;
   } else {
-    step.setError('Push blocked: Commit data not found. Please contact an administrator for support.');
+    step.setError(
+      'Push blocked: Commit data not found. Please contact an administrator for support.',
+    );
     action.addStep(step);
     step.error = true;
     return action;
