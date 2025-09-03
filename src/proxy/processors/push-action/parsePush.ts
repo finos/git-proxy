@@ -421,6 +421,7 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
   const results: GitObject[] = [];
   let offset = 0;
   let decompressionError = false;
+  let currentWriteResolve: () => void | undefined;
 
   console.log(`decompressing buffer length ${buffer.length}`);
 
@@ -459,6 +460,7 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
       inflater.end();
       done = true;
       decompressionError = true;
+      if (currentWriteResolve) currentWriteResolve();
     };
 
     inflater.on('data', onData);
@@ -472,6 +474,8 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
           if (!done) {
             const byte = buffer.subarray(offset, offset + 1);
             offset++;
+            // store the resolve function in case an error occurs as callback will never be called
+            currentWriteResolve = resolve;
             // use the callback to throttle input such that each byte is processed before we insert the next
             inflater.write(byte, () => {
               resolve();
@@ -546,4 +550,4 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
 
 exec.displayName = 'parsePush.exec';
 
-export { exec, getCommitData, getPackMeta, parsePacketLines };
+export { exec, getCommitData, getContents, getPackMeta, parsePacketLines };
