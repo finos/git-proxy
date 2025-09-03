@@ -70,15 +70,10 @@ async function exec(req: any, action: Action): Promise<Action> {
       step.log(`Expected PACK signature at offset ${packDataOffset}, but found something else.`);
       throw new Error('Your push has been blocked. Invalid PACK data structure.');
     }
-    console.log(`buf = ${buf.toString('hex')}`);
     const [meta, contentBuff] = getPackMeta(buf);
-    console.log('Pack metadata: ' + JSON.stringify(meta, null, 2));
-    console.log(`contentBuff = ${contentBuff.toString('hex')}`);
-
     const contents = await getContents(contentBuff, meta.entries);
 
     action.commitData = getCommitData(contents as any);
-    console.log('commitData = ' + JSON.stringify(action.commitData));
 
     if (action.commitData.length === 0) {
       step.log('No commit data found when parsing push.');
@@ -289,9 +284,6 @@ const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
  * @return {CommitContent[]}
  */
 const getContents = async (buffer: Buffer, numEntries: number): Promise<CommitContent[]> => {
-  console.log(
-    `getContents parsing buffer length ${buffer.length} and expecting ${numEntries} entries`,
-  );
   const entries: CommitContent[] = [];
 
   const gitObjects = await decompressGitObjects(buffer);
@@ -449,8 +441,6 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
   let decompressionError = false;
   let currentWriteResolve: () => void | undefined;
 
-  console.log(`decompressing buffer length ${buffer.length}`);
-
   // keep going while there is more buffer to consume
   // the buffer will end with either a 20 or 32 byte checksum - we don't know which
   // but we can assume that 12 bytes will not be enough for a final object so there's
@@ -465,24 +455,21 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
     const inflater = createInflate();
     const chunks: Buffer[] = [];
     let done = false;
-    let totalLength = 0;
 
     // store any data returned
     const onData = (data: Buffer) => {
       chunks.push(data);
-      totalLength += data.length;
     };
 
     // stop at the end of each stream - there is no other good way to know how many bytes to process
     const onEnd = () => {
       inflater.end();
       done = true;
-      console.log(`end event from inflater, total decompressed ${totalLength}`);
     };
 
     // stop on errors, except maybe buffer errors?
     const onError = (e: any) => {
-      console.log(`Error during inflation: ${JSON.stringify(e)}`);
+      console.warn(`Error during inflation: ${JSON.stringify(e)}`);
       inflater.end();
       done = true;
       decompressionError = true;
@@ -506,12 +493,10 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
             inflater.write(byte, () => {
               resolve();
             });
-          } else {
-            console.log('tried to write to inflater while done == true');
           }
         });
       } catch (e) {
-        console.log(`Error during decompression: ${JSON.stringify(e)}`);
+        console.warn(`Error during decompression: ${JSON.stringify(e)}`);
       }
     }
     const result = {
@@ -524,10 +509,6 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
 
     // we overshoot by one byte, back-up 1 to account for it.
     offset--;
-
-    console.log(
-      `Finished reading entry ${results.length} at offsets: ${startOffset} - ${offset}: ${JSON.stringify(result.data)}`,
-    );
 
     inflater.off('data', onData);
     inflater.off('end', onEnd);

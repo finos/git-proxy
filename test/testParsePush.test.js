@@ -25,7 +25,6 @@ function createSamplePackBuffer(
   commitContent = 'tree 123\nparent 456\nauthor A <a@a> 123 +0000\ncommitter C <c@c> 456 +0000\n\nmessage',
   type = 1,
 ) {
-  // TODO: extend this to include several commits, blob, ofs_delta and ref_delta entries to test complex decompression cases
   const header = Buffer.alloc(12);
   header.write(PACK_SIGNATURE, 0, 4, 'utf-8'); // Signature
   header.writeUInt32BE(2, 4); // Version
@@ -198,8 +197,6 @@ const encodeOfsDeltaOffset = (distance) => {
  */
 function encodeGitObjectHeader(type, size, options = {}) {
   const headerBytes = [];
-
-  // TODO: add handling for ofs_delta and ref_delta headers
 
   // First byte: type (3 bits), size (lower 4 bits), continuation bit
   const firstSizeBits = size & 0x0f;
