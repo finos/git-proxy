@@ -65,3 +65,66 @@ Cypress.Commands.add('getCSRFToken', () => {
     return cy.wrap(decodeURIComponent(token));
   });
 });
+
+Cypress.Commands.add('createTestTagPush', (pushData = {}) => {
+  const defaultTagPush = {
+    id: `test-tag-push-${Date.now()}`,
+    steps: [],
+    error: false,
+    blocked: true,
+    allowPush: false,
+    authorised: false,
+    canceled: false,
+    rejected: false,
+    autoApproved: false,
+    autoRejected: false,
+    type: 'push',
+    method: 'get',
+    timestamp: Date.now(),
+    project: 'cypress-test',
+    repoName: 'test-repo.git',
+    url: 'https://github.com/cypress-test/test-repo.git',
+    repo: 'cypress-test/test-repo.git',
+    user: 'test-tagger',
+    userEmail: 'test-tagger@test.com',
+    branch: 'refs/heads/main',
+    tag: 'refs/tags/v1.0.0',
+    commitFrom: '0000000000000000000000000000000000000000',
+    commitTo: 'abcdef1234567890abcdef1234567890abcdef12',
+    lastStep: null,
+    blockedMessage: '\n\n\nGitProxy has received your tag push\n\n\n',
+    _id: null,
+    attestation: null,
+    tagData: [
+      {
+        tagName: 'v1.0.0',
+        type: 'annotated',
+        tagger: 'test-tagger',
+        message: 'Release version 1.0.0\n\nThis is a test tag release for Cypress testing.',
+        timestamp: Math.floor(Date.now() / 1000),
+      },
+    ],
+    commitData: [
+      {
+        commitTs: Math.floor(Date.now() / 1000) - 300,
+        commitTimestamp: Math.floor(Date.now() / 1000) - 300,
+        message: 'feat: add new tag push feature',
+        committer: 'test-committer',
+        author: 'test-author',
+        authorEmail: 'test-author@test.com',
+      },
+    ],
+    diff: {
+      content: '+++ test tag push implementation',
+    },
+    ...pushData,
+  };
+
+  // For now, intercept the push API calls and return our test data
+  cy.intercept('GET', '**/api/v1/push*', {
+    statusCode: 200,
+    body: [defaultTagPush],
+  }).as('getPushes');
+
+  return cy.wrap(defaultTagPush);
+});

@@ -23,6 +23,7 @@ import {
   getRefToShow,
   getShaOrTag,
   getCommitterOrTagger,
+  getAuthorEmail,
   getMessage,
   getCommitCount,
   getRepoFullName,
