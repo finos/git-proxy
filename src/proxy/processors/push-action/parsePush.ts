@@ -320,12 +320,18 @@ const getContents = async (buffer: Buffer, numEntries: number): Promise<CommitCo
   return entries;
 };
 
+/**
+ * Interface representing an object extracted from a PACK file.
+ */
 interface GitObject {
   header: GitObjectHeader;
   data: string;
   offset: number;
 }
 
+/**
+ * Interface representing data parsed from the header of an object in a PACK file.
+ */
 interface GitObjectHeader {
   type: number; // 1-based Git type number
   typeName: string; // Mapped name
@@ -359,25 +365,35 @@ const gitObjectType = (typeCode: number): string => {
   }
 };
 
-// Parses OFS_DELTA offset encoding
+/**
+ * Parses an encoded OFS_DELTA offset value.
+ * @param {Buffer} buffer The buffer to parse a header from.
+ * @param {number} offset The offset within the buffer to begin parsing at.
+ * @return { {baseOffset: number, length: number} } The value parsed and its length in bytes.
+ */
 const parseOfsDeltaOffset = (
   buffer: Buffer,
   offset: number,
 ): { baseOffset: number; length: number } => {
+  let ofs = 0;
   let i = 0;
-  let byte = buffer[offset];
-  let value = byte & 0x7f;
 
-  while (byte & 0x80) {
+  do {
+    const byte = buffer[offset + i];
+    ofs = (ofs << 7) + (byte & 0x7f);
     i++;
-    byte = buffer[offset + i];
-    value = ((value + 1) << 7) | (byte & 0x7f);
-  }
+  } while (buffer[offset + i - 1] & 0x80);
 
-  return { baseOffset: value, length: i + 1 };
+  return { baseOffset: ofs, length: i };
 };
 
-// Parses the full Git object header including delta metadata
+/**
+ * Parses the full Git object header including delta metadata.
+ * @param {Buffer} buffer The buffer to parse a header from.
+ * @param {number} offset The offset within the buffer to begin parsing at.
+ * @return {GitObjectHeader} An object containing the data parsed from the
+ * header including its length in bytes
+ */
 const parseGitObjectHeader = (buffer: Buffer, offset: number): GitObjectHeader => {
   const initialOffset = offset;
 
@@ -418,6 +434,14 @@ const parseGitObjectHeader = (buffer: Buffer, offset: number): GitObjectHeader =
   return header;
 };
 
+/**
+ * Decompresses the stream of headers and deflated git objects that follow
+ * the 12-byte PACK file headers (which should already have been removed from
+ * the buffer before processing it with this function).
+ * @param {Buffer} buffer The buffer to decompress
+ * @return {Promise<GitObject[]>} A promise to return an array of GitObjects
+ * representing the decompressed data.
+ */
 const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
   const results: GitObject[] = [];
   let offset = 0;
