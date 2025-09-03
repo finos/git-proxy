@@ -169,17 +169,27 @@ function createMultiObjectSamplePackBuffer() {
  * @param {number} distance
  * @return {Buffer} encoded distance bytes.
  */
+
 const encodeOfsDeltaOffset = (distance) => {
   const bytes = [];
   let n = distance;
 
-  let byte = n & 0x7f;
+  // Build the byte sequence from most significant to least significant
+  let stack = [];
+  stack.push(n & 0x7f);
   while ((n >>= 7)) {
-    byte |= 0x80;
-    bytes.unshift(byte);
-    byte = n & 0x7f;
+    stack.push(n & 0x7f);
   }
-  bytes.unshift(byte);
+
+  // Now set continuation bits correctly
+  for (let i = 0; i < stack.length; i++) {
+    let byte = stack[i];
+    if (i !== stack.length - 1) {
+      byte |= 0x80; // Set MSB if more bytes follow
+    }
+    bytes.push(byte);
+  }
+
   return Buffer.from(bytes);
 };
 

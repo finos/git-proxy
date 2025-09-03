@@ -374,7 +374,7 @@ const parseOfsDeltaOffset = (
     value = ((value + 1) << 7) | (byte & 0x7f);
   }
 
-  return { baseOffset: offset - value, length: i + 1 };
+  return { baseOffset: value, length: i + 1 };
 };
 
 // Parses the full Git object header including delta metadata
