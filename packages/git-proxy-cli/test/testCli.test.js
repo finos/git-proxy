@@ -605,7 +605,7 @@ describe('test git-proxy-cli', function () {
         await helper.runCli(
           `npx -- @finos/git-proxy-cli login --username ${uniqueUsername} --password newpass`,
           0,
-          [`Login "${uniqueUsername}" <newadmin@email.com> (admin): OK`],
+          [`Login "${uniqueUsername}" <${uniqueUsername}@email.com> (admin): OK`],
           null,
         );
       } finally {
