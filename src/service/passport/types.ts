@@ -42,3 +42,22 @@ export type AD = {
     callback: (err: Error | null, isMember: boolean) => void,
   ) => void;
 };
+
+export type ADProfile = {
+  id?: string;
+  username?: string;
+  email?: string;
+  displayName?: string;
+  admin?: boolean;
+  _json: ADProfileJson;
+};
+
+export type ADProfileJson = {
+  sAMAccountName?: string;
+  mail?: string;
+  title?: string;
+  userPrincipalName?: string;
+  [key: string]: any;
+};
+
+export type ADVerifyCallback = (err: Error | null, user: ADProfile | null) => void;

@@ -3,6 +3,7 @@ import { PassportStatic } from 'passport';
 import * as ldaphelper from './ldaphelper';
 import * as db from '../../db';
 import { getAuthMethods } from '../../config';
+import { AD, ADProfile } from './types';
 
 export const type = 'activedirectory';
 
@@ -15,10 +16,6 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
   }
 
   const adConfig = config.adConfig;
-
-  if (!adConfig) {
-    throw new Error('Invalid Active Directory configuration');
-  }
 
   // Handle legacy config
   const userGroup = adConfig.userGroup || config.userGroup;
@@ -39,7 +36,12 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
         integrated: false,
         ldap: adConfig,
       },
-      async function (req: any, profile: any, ad: any, done: (err: any, user: any) => void) {
+      async function (
+        req: Request & { user?: ADProfile },
+        profile: ADProfile,
+        ad: AD,
+        done: (err: any, user: any) => void,
+      ) {
         try {
           profile.username = profile._json.sAMAccountName?.toLowerCase();
           profile.email = profile._json.mail;

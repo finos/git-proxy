@@ -2,34 +2,34 @@ import axios from 'axios';
 import type { Request } from 'express';
 
 import { getAPIs } from '../../config';
-import { AD } from './types';
+import { AD, ADProfile } from './types';
 
 const thirdpartyApiConfig = getAPIs();
 
 export const isUserInAdGroup = (
-  req: Request,
-  profile: { username: string },
+  req: Request & { user?: ADProfile },
+  profile: ADProfile,
   ad: AD,
   domain: string,
   name: string,
 ): Promise<boolean> => {
   // determine, via config, if we're using HTTP or AD directly
   if (thirdpartyApiConfig.ls?.userInADGroup) {
-    return isUserInAdGroupViaHttp(profile.username, domain, name);
+    return isUserInAdGroupViaHttp(profile.username || '', domain, name);
   } else {
     return isUserInAdGroupViaAD(req, profile, ad, domain, name);
   }
 };
 
 const isUserInAdGroupViaAD = (
-  req: Request,
-  profile: { username: string },
+  req: Request & { user?: ADProfile },
+  profile: ADProfile,
   ad: AD,
   domain: string,
   name: string,
 ): Promise<boolean> => {
   return new Promise((resolve, reject) => {
-    ad.isUserMemberOf(profile.username, name, function (err, isMember) {
+    ad.isUserMemberOf(profile.username || '', name, function (err, isMember) {
       if (err) {
         const msg = 'ERROR isUserMemberOf: ' + JSON.stringify(err);
         reject(msg);
