@@ -304,7 +304,8 @@ const getContents = async (buffer: Buffer, numEntries: number): Promise<CommitCo
       typeName: obj.header.typeName,
       content: obj.data,
       size: obj.header.size,
-      objectRef: obj.header.baseSha ? obj.header.baseSha.toString('hex') : null,
+      baseSha: obj.header.baseSha ? obj.header.baseSha.toString('hex') : null,
+      baseOffset: obj.header.baseOffset ? obj.header.baseOffset : null,
     });
   }
 
@@ -410,8 +411,8 @@ const parseGitObjectHeader = (buffer: Buffer, offset: number): GitObjectHeader =
     typeName,
     size: size,
     headerLength: offset - initialOffset,
-    baseOffset,
     baseSha,
+    baseOffset,
   };
   console.log(`Parsed header: ${JSON.stringify(header)}`);
   return header;

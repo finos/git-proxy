@@ -14,7 +14,8 @@ export type CommitContent = {
   type: number;
   typeName: string;
   size: number;
-  objectRef: string | null;
+  baseSha: string | null;
+  baseOffset: number | null;
   content: string;
 };
 
