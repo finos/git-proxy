@@ -8,7 +8,7 @@
     "clientinstall": "npm install --prefix client",
     "server": "tsx index.ts",
     "start": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "npm run build-ui && npm run build-lib",
+    "build": "npm run generate-config-types && npm run build-ui && npm run build-lib",
     "build-ts": "tsc",
     "build-ui": "vite build",
     "build-lib": "./scripts/build-for-publish.sh",
@@ -26,7 +26,7 @@
     "gen-schema-doc": "node ./scripts/doc-schema.js",
     "cypress:run": "cypress run",
     "cypress:open": "cypress open",
-    "generate-types": "quicktype --src-lang schema --lang typescript --out src/config/generated/config.ts --top-level GitProxyConfig config.schema.json && ts-node scripts/add-banner.ts src/config/generated/config.ts"
+    "generate-config-types": "quicktype --src-lang schema --lang typescript --out src/config/generated/config.ts --top-level GitProxyConfig config.schema.json && ts-node scripts/add-banner.ts src/config/generated/config.ts"
   },
   "bin": {
     "git-proxy": "./index.js",
