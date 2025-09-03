@@ -10,6 +10,7 @@ import {
   Database,
   RateLimitConfig,
   TempPasswordConfig,
+  ThirdPartyApiConfig,
   UserSettings,
 } from './types';
 
@@ -28,7 +29,7 @@ let _database: Database[] = defaultSettings.sink;
 let _authentication: Authentication[] = defaultSettings.authentication;
 let _apiAuthentication: Authentication[] = defaultSettings.apiAuthentication;
 let _tempPassword: TempPasswordConfig = defaultSettings.tempPassword;
-let _api: Record<string, unknown> = defaultSettings.api;
+let _api: ThirdPartyApiConfig = defaultSettings.api;
 let _cookieSecret: string = serverConfig.GIT_PROXY_COOKIE_SECRET || defaultSettings.cookieSecret;
 let _sessionMaxAgeHours: number = defaultSettings.sessionMaxAgeHours;
 let _plugins: any[] = defaultSettings.plugins;

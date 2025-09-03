@@ -8,7 +8,7 @@ export interface UserSettings {
   apiAuthentication: Authentication[];
   tempPassword?: TempPasswordConfig;
   proxyUrl: string;
-  api: Record<string, any>;
+  api: ThirdPartyApiConfig;
   cookieSecret: string;
   sessionMaxAgeHours: number;
   tls?: TLSConfig;
@@ -94,3 +94,16 @@ export interface TempPasswordConfig {
 export type RateLimitConfig = Partial<
   Pick<RateLimitOptions, 'windowMs' | 'limit' | 'message' | 'statusCode'>
 >;
+
+export interface ThirdPartyApiConfig {
+  ls?: ThirdPartyApiConfigLs;
+  github?: ThirdPartyApiConfigGithub;
+}
+
+export interface ThirdPartyApiConfigLs {
+  userInADGroup: string;
+}
+
+export interface ThirdPartyApiConfigGithub {
+  baseUrl: string;
+}
