@@ -375,16 +375,17 @@ const parseOfsDeltaOffset = (
   buffer: Buffer,
   offset: number,
 ): { baseOffset: number; length: number } => {
-  let ofs = 0;
   let i = 0;
+  let byte = buffer[offset];
+  let value = byte & 0x7f;
 
-  do {
-    const byte = buffer[offset + i];
-    ofs = (ofs << 7) + (byte & 0x7f);
+  while (byte & 0x80) {
     i++;
-  } while (buffer[offset + i - 1] & 0x80);
+    byte = buffer[offset + i];
+    value = ((value + 1) << 7) | (byte & 0x7f);
+  }
 
-  return { baseOffset: ofs, length: i };
+  return { baseOffset: value, length: i + 1 };
 };
 
 /**

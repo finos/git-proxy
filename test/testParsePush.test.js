@@ -175,14 +175,14 @@ function createMultiObjectSamplePackBuffer() {
  * @return {Buffer} The encoded buffer.
  */
 const encodeOfsDeltaOffset = (distance) => {
-  const bytes = [];
+  // this encoding differs from the little endian size encoding
+  // its a big endian 7-bit encoding, with odd handling of the continuation bit
   let val = distance;
+  const bytes = [val & 0x7f];
 
-  while (val >= 0x80) {
-    bytes.push((val & 0x7f) | 0x80); // Set continuation bit
-    val >>= 7;
+  while ((val >>= 7)) {
+    bytes.unshift((--val & 0x7f) | 0x80); // Set continuation bit
   }
-  bytes.push(val); // Final byte without continuation bit
 
   return Buffer.from(bytes);
 };
