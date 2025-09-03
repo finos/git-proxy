@@ -37,10 +37,15 @@ const pullActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.checkRepoInAuthorisedList,
 ];
 
+const defaultActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
+  proc.push.checkRepoInAuthorisedList,
+];
+
 let pluginsInserted = false;
 
 export const executeChain = async (req: any, res: any): Promise<Action> => {
   let action: Action = {} as Action;
+
   try {
     // 1) Initialize basic action fields
     action = await proc.pre.parseAction(req);
@@ -55,9 +60,13 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
     for (const fn of actionFns) {
       action = await fn(req, action);
       if (!action.continue() || action.allowPush) {
-        return action;
+        break;
       }
     }
+  } catch (e) {
+    action.error = true;
+    action.errorMessage = `An error occurred when executing the chain: ${e}`;
+    console.error(action.errorMessage);
   } finally {
     await proc.push.audit(req, action);
     if (action.autoApproved) {
@@ -126,7 +135,7 @@ export const getChain = async (
     case RequestType.PUSH:
       return getPushChain(action);
     default:
-      return [];
+      return defaultActionChain;
   }
 };
 
@@ -148,6 +157,9 @@ export default {
   },
   get pullActionChain() {
     return pullActionChain;
+  },
+  get defaultActionChain() {
+    return defaultActionChain;
   },
   executeChain,
   getChain,

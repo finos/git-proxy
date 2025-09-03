@@ -4,6 +4,7 @@ import {
   SCMRepositoryMetadata,
   GitHubRepositoryMetadata,
   GitLabRepositoryMetadata,
+  CommitData,
 } from '../types/models';
 import moment from 'moment';
 
@@ -39,7 +40,50 @@ export const getGitProvider = (url: string) => {
 };
 
 /**
+ * Renders a block of mailto: links for author user names and email addresses found in an array of commit data.
+ *
+ * @param {CommitData[]} commitData The user.name to render in the link.
+ * @return {JSX.Element} A JSX Element representing the rendered links
+ */
+export const generateAuthorLinks = (commitData: CommitData[]) => {
+  const orderedAuthors: JSX.Element[] = [];
+  const uniqueAuthors: Set<string> = new Set();
+  commitData.forEach((row) => {
+    if (!uniqueAuthors.has(row.authorEmail)) {
+      uniqueAuthors.add(row.authorEmail);
+      orderedAuthors.push(
+        <div>
+          <a href={`mailto:${row.authorEmail}`}>
+            &quot;{row.author}&quot; &lt;{row.authorEmail}&gt;
+          </a>
+        </div>,
+      );
+    }
+  });
+  return <div>{orderedAuthors}</div>;
+};
+
+/**
+ * Renders a mailto: link for user name and email address, for use in rendering details of pushes.
+ *
+ * @param {string} name The user.name to render in the link.
+ * @param {string} email The email address to render in the link.
+ * @return {JSX.Element} An <a> tag based on the username and email address.
+ */
+export const generateEmailLink = (name: string, email: string) => {
+  return email ? (
+    <a href={`mailto:${email}`}>
+      &quot;{name}&quot; &lt;{email}&gt;
+    </a>
+  ) : (
+    <strong>No data...</strong>
+  );
+};
+
+/**
  * Predicts a user's profile URL based on their username and the SCM provider's details.
+ * TODO: update this to attempt to resolve a user email to a profile URL
+ *
  * @param {string} username The username.
  * @param {string} provider The name of the SCM provider.
  * @param {string} hostname The hostname of the SCM provider.
@@ -56,7 +100,10 @@ export const getUserProfileUrl = (username: string, provider: string, hostname: 
 };
 
 /**
- * Attempts to construct a JSX link to the user's profile at an SCM provider.
+ * Attempts to construct a link to the user's profile at an SCM provider.
+ *
+ * TODO: update this to attempt to resolve a user email to a profile URL
+ *
  * @param {string} username The username.
  * @param {string} provider The name of the SCM provider.
  * @param {string} hostname The hostname of the SCM provider.

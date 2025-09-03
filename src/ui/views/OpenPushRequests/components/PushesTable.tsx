@@ -23,8 +23,6 @@ import {
   getRefToShow,
   getShaOrTag,
   getCommitterOrTagger,
-  getAuthor,
-  getAuthorEmail,
   getMessage,
   getCommitCount,
   getRepoFullName,
@@ -33,7 +31,7 @@ import {
   getShaUrl,
 } from '../../../utils/pushUtils';
 import { trimTrailingDotGit } from '../../../../db/helper';
-import { getGitProvider, getUserProfileLink } from '../../../utils';
+import { getGitProvider, generateAuthorLinks, generateEmailLink } from '../../../utils';
 
 interface PushesTableProps {
   [key: string]: any;
@@ -116,8 +114,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                 <TableCell align='left'>Branch/Tag</TableCell>
                 <TableCell align='left'>Commit SHA/Tag</TableCell>
                 <TableCell align='left'>Committer/Tagger</TableCell>
-                <TableCell align='left'>Author</TableCell>
-                <TableCell align='left'>Author E-mail</TableCell>
+                <TableCell align='left'>Authors</TableCell>
                 <TableCell align='left'>Message</TableCell>
                 <TableCell align='left'>No. of Commits</TableCell>
                 <TableCell align='right'></TableCell>
@@ -133,10 +130,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                 const repoUrl = row.url;
                 const repoWebUrl = trimTrailingDotGit(repoUrl);
                 const gitProvider = getGitProvider(repoUrl);
-                const hostname = new URL(repoUrl).hostname;
                 const committerOrTagger = getCommitterOrTagger(row);
-                const author = getAuthor(row);
-                const authorEmail = getAuthorEmail(row);
                 const message = getMessage(row);
                 const commitCount = getCommitCount(row);
 
@@ -173,21 +167,10 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                     </TableCell>
                     <TableCell align='left'>
                       {isValidValue(committerOrTagger)
-                        ? getUserProfileLink(committerOrTagger, gitProvider, hostname)
+                        ? generateEmailLink(committerOrTagger, getAuthorEmail(row))
                         : 'N/A'}
                     </TableCell>
-                    <TableCell align='left'>
-                      {isValidValue(author)
-                        ? getUserProfileLink(author, gitProvider, hostname)
-                        : 'N/A'}
-                    </TableCell>
-                    <TableCell align='left'>
-                      {isValidValue(authorEmail) ? (
-                        <a href={`mailto:${authorEmail}`}>{authorEmail}</a>
-                      ) : (
-                        'N/A'
-                      )}
-                    </TableCell>
+                    <TableCell align='left'>{generateAuthorLinks(row.commitData)}</TableCell>
                     <TableCell align='left'>{message}</TableCell>
                     <TableCell align='left'>{commitCount}</TableCell>
                     <TableCell component='th' scope='row'>
