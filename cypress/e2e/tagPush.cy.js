@@ -2,46 +2,63 @@ describe('Tag Push Functionality', () => {
   beforeEach(() => {
     cy.login('admin', 'admin');
     cy.on('uncaught:exception', () => false);
+
+    // Create test data for tag pushes
+    cy.createTestTagPush();
   });
 
   describe('Tag Push Display in PushesTable', () => {
-    it('can navigate to repo dashboard and view push table', () => {
-      cy.visit('/dashboard/repo');
+    it('can navigate to push dashboard and view push table', () => {
+      cy.visit('/dashboard/push');
+
+      // Wait for API call to complete
+      cy.wait('@getPushes');
 
       // Check that we can see the basic table structure
-      cy.get('table').should('exist');
+      cy.get('table', { timeout: 10000 }).should('exist');
+      cy.get('thead').should('exist');
+      cy.get('tbody').should('exist');
+
+      // Now we should have test data, so we can check for rows
       cy.get('tbody tr').should('have.length.at.least', 1);
 
-      // Look for any push entries in the table
+      // Check the structure of the first row
       cy.get('tbody tr')
         .first()
         .within(() => {
-          // Check that basic cells exist - adjust expectation to actual data (2 cells)
-          cy.get('td').should('have.length.at.least', 2);
+          cy.get('td').should('have.length.at.least', 6); // We know there are multiple columns
+          // Check for tag-specific content
+          cy.contains('v1.0.0').should('exist'); // Tag name
+          cy.contains('test-tagger').should('exist'); // Tagger
         });
     });
 
     it('has search functionality', () => {
-      cy.visit('/dashboard/repo');
+      cy.visit('/dashboard/push');
+      cy.wait('@getPushes');
 
-      // Look for search input - it might have different selector
+      // Check search input exists
       cy.get('input[type="text"]').first().should('exist');
+
+      // Test searching for tag name
+      cy.get('input[type="text"]').first().type('v1.0.0');
+      cy.get('tbody tr').should('have.length.at.least', 1);
     });
 
     it('can interact with push table entries', () => {
-      cy.visit('/dashboard/repo');
+      cy.visit('/dashboard/push');
+      cy.wait('@getPushes');
 
-      // Try to find clickable links within table rows instead of clicking the row
+      cy.get('tbody tr').should('have.length.at.least', 1);
+
+      // Check for clickable elements in the first row
       cy.get('tbody tr')
         .first()
         .within(() => {
-          // Look for any clickable elements (links, buttons)
-          cy.get('a, button, [role="button"]').should('have.length.at.least', 0);
+          // Should have links and buttons
+          cy.get('a').should('have.length.at.least', 1); // Repository links, etc.
+          cy.get('button').should('have.length.at.least', 1); // Action button
         });
-
-      // Just verify we can navigate to a push details page directly
-      cy.visit('/dashboard/push/123', { failOnStatusCode: false });
-      cy.get('body').should('exist'); // Should not crash
     });
   });
 
@@ -60,9 +77,13 @@ describe('Tag Push Functionality', () => {
 
   describe('Basic UI Navigation', () => {
     it('can navigate between dashboard pages', () => {
+      cy.visit('/dashboard/push');
+      cy.wait('@getPushes');
+      cy.get('table', { timeout: 10000 }).should('exist');
+
       // Test navigation to repo dashboard
       cy.visit('/dashboard/repo');
-      cy.get('table').should('exist');
+      cy.get('table', { timeout: 10000 }).should('exist');
 
       // Test navigation to user management if it exists
       cy.visit('/dashboard/user');
@@ -80,19 +101,22 @@ describe('Tag Push Functionality', () => {
     });
 
     it('maintains functionality after page refresh', () => {
-      cy.visit('/dashboard/repo');
-      cy.get('table').should('exist');
+      cy.visit('/dashboard/push');
+      cy.wait('@getPushes');
+      cy.get('table', { timeout: 10000 }).should('exist');
 
       // Refresh the page
       cy.reload();
+      // Wait for API call again after reload
+      cy.wait('@getPushes');
 
       // Wait for page to reload and check basic functionality
       cy.get('body').should('exist');
 
       // Give more time for table to load after refresh, or check if redirected
       cy.url().then((url) => {
-        if (url.includes('/dashboard/repo')) {
-          cy.get('table', { timeout: 10000 }).should('exist');
+        if (url.includes('/dashboard/push')) {
+          cy.get('table', { timeout: 15000 }).should('exist');
         } else {
           // If redirected (e.g., to login), that's also acceptable behavior
           cy.get('body').should('exist');
