@@ -90,7 +90,9 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
 
   // TODO: compare attestation to configuration and ensure all questions are answered
   // - we shouldn't go on the definition in the request!
-  const attestationComplete = questions?.every((question: any) => !!question.checked);
+  const attestationComplete = questions?.every(
+    (question: { checked: boolean }) => !!question.checked,
+  );
   console.log({ attestationComplete });
 
   if (req.user && attestationComplete) {
@@ -167,6 +169,7 @@ router.post('/:id/cancel', async (req: Request, res: Response) => {
     res.status(401).send({
       message: 'not logged in',
     });
+    console.log('/:id/cancel: not logged in');
     return;
   }
 
@@ -176,10 +179,12 @@ router.post('/:id/cancel', async (req: Request, res: Response) => {
   const isAllowed = await db.canUserCancelPush(id, username);
 
   if (isAllowed) {
+    console.log('/:id/cancel: is allowed');
     const result = await db.cancel(id);
     console.log(`user ${username} canceled push request for ${id}`);
     res.send(result);
   } else {
+    console.log('/:id/cancel: is not allowed');
     console.log(`user ${username} not authorised to cancel push request for ${id}`);
     res.status(401).send({
       message: 'User ${req.user.username)} not authorised to cancel push requests on this project.',
