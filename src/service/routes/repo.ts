@@ -4,6 +4,7 @@ import * as db from '../../db';
 import { getProxyURL } from '../urls';
 import { getAllProxiedHosts } from '../../proxy/routes/helper';
 import { RepoQuery } from '../../db/types';
+import { isAdminUser } from './utils';
 
 // create a reference to the proxy service as arrow functions will lose track of the `proxy` parameter
 // used to restart the proxy when a new host is added
@@ -39,7 +40,7 @@ const repo = (proxy: any) => {
   });
 
   router.patch('/:id/user/push', async (req: Request, res: Response) => {
-    if (req.user && (req.user as any).admin) {
+    if (isAdminUser(req.user)) {
       const _id = req.params.id;
       const username = req.body.username.toLowerCase();
       const user = await db.findUser(username);
@@ -59,7 +60,7 @@ const repo = (proxy: any) => {
   });
 
   router.patch('/:id/user/authorise', async (req: Request, res: Response) => {
-    if (req.user && (req.user as any).admin) {
+    if (isAdminUser(req.user)) {
       const _id = req.params.id;
       const username = req.body.username;
       const user = await db.findUser(username);
@@ -79,7 +80,7 @@ const repo = (proxy: any) => {
   });
 
   router.delete('/:id/user/authorise/:username', async (req: Request, res: Response) => {
-    if (req.user && (req.user as any).admin) {
+    if (isAdminUser(req.user)) {
       const _id = req.params.id;
       const username = req.params.username;
       const user = await db.findUser(username);
@@ -99,7 +100,7 @@ const repo = (proxy: any) => {
   });
 
   router.delete('/:id/user/push/:username', async (req: Request, res: Response) => {
-    if (req.user && (req.user as any).admin) {
+    if (isAdminUser(req.user)) {
       const _id = req.params.id;
       const username = req.params.username;
       const user = await db.findUser(username);
@@ -119,7 +120,7 @@ const repo = (proxy: any) => {
   });
 
   router.delete('/:id/delete', async (req: Request, res: Response) => {
-    if (req.user && (req.user as any).admin) {
+    if (isAdminUser(req.user)) {
       const _id = req.params.id;
 
       // determine if we need to restart the proxy
@@ -143,7 +144,7 @@ const repo = (proxy: any) => {
   });
 
   router.post('/', async (req: Request, res: Response) => {
-    if (req.user && (req.user as any).admin) {
+    if (isAdminUser(req.user)) {
       if (!req.body.url) {
         res.status(400).send({
           message: 'Repository url is required',
