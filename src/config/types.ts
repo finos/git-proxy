@@ -98,6 +98,7 @@ export type RateLimitConfig = Partial<
 export interface ThirdPartyApiConfig {
   ls?: ThirdPartyApiConfigLs;
   github?: ThirdPartyApiConfigGithub;
+  gitleaks?: ThirdPartyApiConfigGitleaks;
 }
 
 export interface ThirdPartyApiConfigLs {
@@ -106,4 +107,11 @@ export interface ThirdPartyApiConfigLs {
 
 export interface ThirdPartyApiConfigGithub {
   baseUrl: string;
+}
+
+export interface ThirdPartyApiConfigGitleaks {
+  configPath: string;
+  enabled: boolean;
+  ignoreGitleaksAllow: boolean;
+  noColor: boolean;
 }

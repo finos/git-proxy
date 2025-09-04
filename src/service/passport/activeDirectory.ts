@@ -1,9 +1,11 @@
 import ActiveDirectoryStrategy from 'passport-activedirectory';
 import { PassportStatic } from 'passport';
+import ActiveDirectory from 'activedirectory2';
+import { Request } from 'express';
+
 import * as ldaphelper from './ldaphelper';
 import * as db from '../../db';
 import { getAuthMethods } from '../../config';
-import ActiveDirectory from 'activedirectory2';
 import { ADProfile } from './types';
 
 export const type = 'activedirectory';
