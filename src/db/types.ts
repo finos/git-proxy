@@ -7,6 +7,7 @@ export type PushQuery = {
   allowPush: boolean;
   authorised: boolean;
   type: string;
+  [key: string]: string | boolean | number | undefined;
 };
 
 export type UserRole = 'canPush' | 'canAuthorise';

@@ -9,15 +9,16 @@ router.get('/', async (req: Request, res: Response) => {
     type: 'push',
   };
 
-  for (const k in req.query) {
-    if (!k) continue;
+  for (const key in req.query) {
+    if (!key) continue;
 
-    if (k === 'limit') continue;
-    if (k === 'skip') continue;
-    let v = req.query[k];
-    if (v === 'false') v = false as any;
-    if (v === 'true') v = true as any;
-    query[k as keyof PushQuery] = v as any;
+    if (key === 'limit') continue;
+    if (key === 'skip') continue;
+    const rawValue = req.query[key]?.toString();
+    let parsedValue: boolean | undefined;
+    if (rawValue === 'false') parsedValue = false;
+    if (rawValue === 'true') parsedValue = true;
+    query[key] = parsedValue;
   }
 
   res.send(await db.getPushes(query));
