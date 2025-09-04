@@ -23,8 +23,6 @@ export interface UserSettings {
   csrfProtection: boolean;
   domains: Record<string, unknown>;
   rateLimit: RateLimitConfig;
-  smtpHost?: string;
-  smtpPort?: number;
 }
 
 export interface TLSConfig {

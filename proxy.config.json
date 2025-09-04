@@ -182,7 +182,5 @@
         "loginRequired": true
       }
     ]
-  },
-  "smtpHost": "",
-  "smtpPort": 0
+  }
 }
