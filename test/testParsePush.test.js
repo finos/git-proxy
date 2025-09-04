@@ -109,6 +109,10 @@ const TEST_MULTI_OBJ_COMMIT_CONTENT = [
     message: 'not really a ref_delta',
   },
   { type: 3, content: 'not really a blob\n', message: 'not really a blob\n' },
+  // TODO: update this with a more realistic example
+  { type: 2, content: 'not really a tree\n', message: 'not really a tree\n' },
+  // TODO: update this with a more realistic example
+  { type: 4, content: 'not really a tag\n', message: 'not really a tag\n' },
   {
     type: 6,
     baseOffset: 997,
@@ -362,6 +366,28 @@ describe('parsePackFile', () => {
           );
         }
       }
+    });
+
+    it("should throw an error if the pack file can't be parsed", async () => {
+      const packBuffer = createMultiObjectSamplePackBuffer();
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      // break the content buffer so it won't parse
+      const brokenContentBuffer = contentBuffer.subarray(2);
+
+      let errorThrown = null;
+
+      try {
+        await getContents(brokenContentBuffer, TEST_MULTI_OBJ_COMMIT_CONTENT.length);
+      } catch (e) {
+        errorThrown = e;
+      }
+
+      expect(errorThrown, 'No error was thrown!').to.not.be.null;
+      expect(errorThrown.message).to.contain(
+        'Error during ',
+        `Expected the error message to include "Error during", but the message returned (${errorThrown.message}) did not`,
+      );
     });
   });
 

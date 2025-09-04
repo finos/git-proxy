@@ -437,15 +437,15 @@ const parseGitObjectHeader = (buffer: Buffer, offset: number): GitObjectHeader =
 const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
   const results: GitObject[] = [];
   let offset = 0;
-  let decompressionError = false;
   let currentWriteResolve: () => void | undefined;
+  let error: Error | null = null;
 
   // keep going while there is more buffer to consume
   // the buffer will end with either a 20 or 32 byte checksum - we don't know which
   // but we can assume that 12 bytes will not be enough for a final object so there's
   // no point continuing if we have < 32 bytes remaining.
   // TODO: figure how many bytes we finish up with and then validate with the appropriate SHA type
-  while (offset < buffer.length - 32 && !decompressionError) {
+  while (offset < buffer.length - 32 && !error) {
     const startOffset = offset;
     const header = parseGitObjectHeader(buffer, offset);
     offset += header.headerLength;
@@ -468,10 +468,11 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
 
     // stop on errors, except maybe buffer errors?
     const onError = (e: any) => {
+      error = e;
       console.warn(`Error during inflation: ${JSON.stringify(e)}`);
+      error = new Error('Error during inflation', { cause: e });
       inflater.end();
       done = true;
-      decompressionError = true;
       if (currentWriteResolve) currentWriteResolve();
     };
 
@@ -480,7 +481,7 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
     inflater.on('error', onError);
 
     // Feed the buffer in a byte at a time and wait for output
-    while (offset < buffer.length && !(done || decompressionError)) {
+    while (offset < buffer.length && !(done || error)) {
       try {
         await new Promise<void>((resolve, reject) => {
           if (!done) {
@@ -496,6 +497,7 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
         });
       } catch (e) {
         console.warn(`Error during decompression: ${JSON.stringify(e)}`);
+        error = new Error('Error during decompression', { cause: e });
       }
     }
     const result = {
@@ -513,6 +515,11 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
     inflater.off('end', onEnd);
     inflater.off('error', onError);
     inflater.destroy();
+  }
+
+  // throw any error that was caught as we were not able to read the pack file in full
+  if (error) {
+    throw error;
   }
   return results;
 };
