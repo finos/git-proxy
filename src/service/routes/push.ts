@@ -11,14 +11,13 @@ router.get('/', async (req: Request, res: Response) => {
 
   for (const key in req.query) {
     if (!key) continue;
+    if (key === 'limit' || key === 'skip') continue;
 
-    if (key === 'limit') continue;
-    if (key === 'skip') continue;
-    const rawValue = req.query[key]?.toString();
+    const rawValue = req.query[key];
     let parsedValue: boolean | undefined;
     if (rawValue === 'false') parsedValue = false;
     if (rawValue === 'true') parsedValue = true;
-    query[key] = parsedValue;
+    query[key] = parsedValue ?? rawValue?.toString();
   }
 
   res.send(await db.getPushes(query));

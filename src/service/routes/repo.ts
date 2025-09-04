@@ -1,7 +1,9 @@
 import express, { Request, Response } from 'express';
+
 import * as db from '../../db';
 import { getProxyURL } from '../urls';
 import { getAllProxiedHosts } from '../../proxy/routes/helper';
+import { RepoQuery } from '../../db/types';
 
 // create a reference to the proxy service as arrow functions will lose track of the `proxy` parameter
 // used to restart the proxy when a new host is added
@@ -12,17 +14,17 @@ const repo = (proxy: any) => {
 
   router.get('/', async (req: Request, res: Response) => {
     const proxyURL = getProxyURL(req);
-    const query: Record<string, any> = {};
+    const query: Partial<RepoQuery> = {};
 
-    for (const k in req.query) {
-      if (!k) continue;
+    for (const key in req.query) {
+      if (!key) continue;
+      if (key === 'limit' || key === 'skip') continue;
 
-      if (k === 'limit') continue;
-      if (k === 'skip') continue;
-      let v = req.query[k];
-      if (v === 'false') v = false as any;
-      if (v === 'true') v = true as any;
-      query[k] = v;
+      const rawValue = req.query[key];
+      let parsedValue: boolean | undefined;
+      if (rawValue === 'false') parsedValue = false;
+      if (rawValue === 'true') parsedValue = true;
+      query[key] = parsedValue ?? rawValue?.toString();
     }
 
     const qd = await db.getRepos(query);

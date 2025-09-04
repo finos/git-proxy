@@ -1,6 +1,7 @@
 import fs from 'fs';
 import Datastore from '@seald-io/nedb';
-import { User } from '../types';
+
+import { User, UserQuery } from '../types';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -156,7 +157,7 @@ export const updateUser = (user: Partial<User>): Promise<void> => {
   });
 };
 
-export const getUsers = (query: any = {}): Promise<User[]> => {
+export const getUsers = (query: Partial<UserQuery> = {}): Promise<User[]> => {
   if (query.username) {
     query.username = query.username.toLowerCase();
   }
