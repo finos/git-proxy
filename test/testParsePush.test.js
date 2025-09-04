@@ -115,6 +115,21 @@ const TEST_MULTI_OBJ_COMMIT_CONTENT = [
     content: 'not really an ofs_delta',
     message: 'not really an ofs_delta',
   },
+  {
+    // included to check that we've handled the ofs_delta and ref_delta entries correctly
+    type: 1,
+    content:
+      'tree 863a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e\nparent 5be75c8610b0fcafcca6a777471ba281ff98564f\nauthor AAAAAAAAAA <aaaaaaaaa@bbbbbbbb.com> 1756487408 +0100\ncommitter CCCCCCCCCCC <ccccccccc@cccccccc.com> 1756487490 +0100\n\nLast Non-trivial commit message used in testing decompression of encoded objects in git PACK files.\n',
+    message:
+      'Last Non-trivial commit message used in testing decompression of encoded objects in git PACK files.\n',
+    tree: '863a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e',
+    parent: '5be75c8610b0fcafcca6a777471ba281ff98564f',
+    author: 'AAAAAAAAAA',
+    authorEmail: 'aaaaaaaaa@bbbbbbbb.com',
+    committer: 'CCCCCCCCCCC',
+    committerEmail: 'ccccccccc@cccccccc.com',
+    commitTimestamp: '1756487490',
+  },
 ];
 
 /** Creates a multi-object sample PACK buffer for testing PACK file decompression.

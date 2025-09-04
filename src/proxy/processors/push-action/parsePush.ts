@@ -423,7 +423,6 @@ const parseGitObjectHeader = (buffer: Buffer, offset: number): GitObjectHeader =
     baseSha,
     baseOffset,
   };
-  console.log(`Parsed header: ${JSON.stringify(header)}`);
   return header;
 };
 
