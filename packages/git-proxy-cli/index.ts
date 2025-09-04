@@ -346,7 +346,13 @@ async function reloadConfig() {
  * @param {string} gitAccount The git account for the new user
  * @param {boolean} [admin=false] Whether the user should be an admin (optional)
  */
-async function createUser(username, password, email, gitAccount, admin = false) {
+async function createUser(
+  username: string,
+  password: string,
+  email: string,
+  gitAccount: string,
+  admin: boolean = false,
+) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     console.error('Error: Create User: Authentication required');
     process.exitCode = 1;
@@ -371,7 +377,7 @@ async function createUser(username, password, email, gitAccount, admin = false) 
     );
 
     console.log(`User '${username}' created successfully`);
-  } catch (error) {
+  } catch (error: any) {
     let errorMessage = `Error: Create User: '${error.message}'`;
     process.exitCode = 2;
 
