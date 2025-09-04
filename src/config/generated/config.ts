@@ -62,6 +62,11 @@ export interface GitProxyConfig {
    * Pattern searches for listed private organizations are disabled
    */
   privateOrganizations?: any[];
+  /**
+   * Used in early versions of git proxy to configure the remote host that traffic is proxied
+   * to. In later versions, the repository URL is used to determine the domain proxied,
+   * allowing multiple hosts to be proxied by one instance.
+   */
   proxyUrl?: string;
   /**
    * API Rate limiting configuration.
