@@ -49,11 +49,22 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
 };
 
 /**
- * Create the default admin user if it doesn't exist
+ * Create the default admin and regular test users.
  */
 export const createDefaultAdmin = async () => {
-  const admin = await db.findUser('admin');
-  if (!admin) {
-    await db.createUser('admin', 'admin', 'admin@place.com', 'none', true);
-  }
+  const createIfNotExists = async (
+    username: string,
+    password: string,
+    email: string,
+    type: string,
+    isAdmin: boolean,
+  ) => {
+    const user = await db.findUser(username);
+    if (!user) {
+      await db.createUser(username, password, email, type, isAdmin);
+    }
+  };
+
+  await createIfNotExists('admin', 'admin', 'admin@place.com', 'none', true);
+  await createIfNotExists('user', 'user', 'user@place.com', 'none', false);
 };
