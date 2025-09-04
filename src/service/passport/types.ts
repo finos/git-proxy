@@ -35,14 +35,6 @@ export type JwtValidationResult = {
  */
 export type RoleMapping = Record<string, Record<string, string>>;
 
-export type AD = {
-  isUserMemberOf: (
-    username: string,
-    groupName: string,
-    callback: (err: Error | null, isMember: boolean) => void,
-  ) => void;
-};
-
 export type ADProfile = {
   id?: string;
   username?: string;

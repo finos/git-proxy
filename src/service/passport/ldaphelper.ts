@@ -1,15 +1,16 @@
 import axios from 'axios';
 import type { Request } from 'express';
-
+import ActiveDirectory from 'activedirectory2';
 import { getAPIs } from '../../config';
-import { AD, ADProfile } from './types';
+
+import { ADProfile } from './types';
 
 const thirdpartyApiConfig = getAPIs();
 
 export const isUserInAdGroup = (
   req: Request & { user?: ADProfile },
   profile: ADProfile,
-  ad: AD,
+  ad: ActiveDirectory,
   domain: string,
   name: string,
 ): Promise<boolean> => {
@@ -24,7 +25,7 @@ export const isUserInAdGroup = (
 const isUserInAdGroupViaAD = (
   req: Request & { user?: ADProfile },
   profile: ADProfile,
-  ad: AD,
+  ad: ActiveDirectory,
   domain: string,
   name: string,
 ): Promise<boolean> => {

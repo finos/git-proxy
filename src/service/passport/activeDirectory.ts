@@ -3,7 +3,8 @@ import { PassportStatic } from 'passport';
 import * as ldaphelper from './ldaphelper';
 import * as db from '../../db';
 import { getAuthMethods } from '../../config';
-import { AD, ADProfile } from './types';
+import ActiveDirectory from 'activedirectory2';
+import { ADProfile } from './types';
 
 export const type = 'activedirectory';
 
@@ -39,7 +40,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
       async function (
         req: Request & { user?: ADProfile },
         profile: ADProfile,
-        ad: AD,
+        ad: ActiveDirectory,
         done: (err: any, user: any) => void,
       ) {
         try {

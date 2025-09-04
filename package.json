@@ -44,6 +44,7 @@
     "@material-ui/icons": "4.11.3",
     "@primer/octicons-react": "^19.16.0",
     "@seald-io/nedb": "^4.1.2",
+    "@types/activedirectory2": "^1.2.6",
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
     "bit-mask": "^1.0.2",
