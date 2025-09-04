@@ -56,8 +56,7 @@ const getLoginStrategy = () => {
 
 const loginSuccessHandler = () => async (req: Request, res: Response) => {
   try {
-    const currentUser = { ...req.user } as User;
-    delete (currentUser as any).password;
+    const currentUser = toPublicUser({ ...req.user });
     console.log(
       `serivce.routes.auth.login: user logged in, username=${
         currentUser.username
@@ -65,7 +64,7 @@ const loginSuccessHandler = () => async (req: Request, res: Response) => {
     );
     res.send({
       message: 'success',
-      user: toPublicUser(currentUser),
+      user: currentUser,
     });
   } catch (e) {
     console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
