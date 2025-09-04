@@ -36,49 +36,48 @@ router.get('/:id', async (req: Request, res: Response) => {
 });
 
 router.post('/:id/reject', async (req: Request, res: Response) => {
-  if (req.user) {
-    const id = req.params.id;
-
-    // Get the push request
-    const push = await getValidPushOrRespond(id, res);
-    if (!push) return;
-
-    // Get the committer of the push via their email
-    const committerEmail = push.userEmail;
-    const list = await db.getUsers({ email: committerEmail });
-
-    if (list.length === 0) {
-      res.status(401).send({
-        message: `There was no registered user with the committer's email address: ${committerEmail}`,
-      });
-      return;
-    }
-
-    if (
-      list[0].username.toLowerCase() === (req.user as any).username.toLowerCase() &&
-      !list[0].admin
-    ) {
-      res.status(401).send({
-        message: `Cannot reject your own changes`,
-      });
-      return;
-    }
-
-    const isAllowed = await db.canUserApproveRejectPush(id, (req.user as any).username);
-    console.log({ isAllowed });
-
-    if (isAllowed) {
-      const result = await db.reject(id, null);
-      console.log(`user ${(req.user as any).username} rejected push request for ${id}`);
-      res.send(result);
-    } else {
-      res.status(401).send({
-        message: 'User is not authorised to reject changes',
-      });
-    }
-  } else {
+  if (!req.user) {
     res.status(401).send({
       message: 'not logged in',
+    });
+    return;
+  }
+
+  const id = req.params.id;
+  const { username } = req.user as { username: string };
+
+  // Get the push request
+  const push = await getValidPushOrRespond(id, res);
+  if (!push) return;
+
+  // Get the committer of the push via their email
+  const committerEmail = push.userEmail;
+  const list = await db.getUsers({ email: committerEmail });
+
+  if (list.length === 0) {
+    res.status(401).send({
+      message: `There was no registered user with the committer's email address: ${committerEmail}`,
+    });
+    return;
+  }
+
+  if (list[0].username.toLowerCase() === username.toLowerCase() && !list[0].admin) {
+    res.status(401).send({
+      message: `Cannot reject your own changes`,
+    });
+    return;
+  }
+
+  const isAllowed = await db.canUserApproveRejectPush(id, username);
+  console.log({ isAllowed });
+
+  if (isAllowed) {
+    const result = await db.reject(id, null);
+    console.log(`user ${username} rejected push request for ${id}`);
+    res.send(result);
+  } else {
+    res.status(401).send({
+      message: 'User is not authorised to reject changes',
     });
   }
 });
@@ -98,6 +97,8 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
     const id = req.params.id;
     console.log({ id });
 
+    const { username } = req.user as { username: string };
+
     const push = await getValidPushOrRespond(id, res);
     if (!push) return;
 
@@ -113,50 +114,47 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
       return;
     }
 
-    if (
-      list[0].username.toLowerCase() === (req.user as any).username.toLowerCase() &&
-      !list[0].admin
-    ) {
+    if (list[0].username.toLowerCase() === username.toLowerCase() && !list[0].admin) {
       res.status(401).send({
         message: `Cannot approve your own changes`,
       });
       return;
     }
 
-    // If we are not the author, now check that we are allowed to authorise on this
-    // repo
-    const isAllowed = await db.canUserApproveRejectPush(id, (req.user as any).username);
-    if (isAllowed) {
-      console.log(`user ${(req.user as any).username} approved push request for ${id}`);
-
-      const reviewerList = await db.getUsers({ username: (req.user as any).username });
-      console.log({ reviewerList });
-
-      const reviewerGitAccount = reviewerList[0].gitAccount;
-      console.log({ reviewerGitAccount });
-
-      if (!reviewerGitAccount) {
-        res.status(401).send({
-          message: 'You must associate a GitHub account with your user before approving...',
-        });
-        return;
-      }
-
-      const attestation = {
-        questions,
-        timestamp: new Date(),
-        reviewer: {
-          username: (req.user as any).username,
-          gitAccount: reviewerGitAccount,
-        },
-      };
-      const result = await db.authorise(id, attestation);
-      res.send(result);
-    } else {
+    // If we are not the author, now check that we are allowed to authorise on this repo
+    const isAllowed = await db.canUserApproveRejectPush(id, username);
+    if (!isAllowed) {
       res.status(401).send({
-        message: `user ${(req.user as any).username} not authorised to approve push's on this project`,
+        message: 'User is not authorised to authorise changes',
       });
+      return;
     }
+
+    console.log(`user ${username} approved push request for ${id}`);
+
+    const reviewerList = await db.getUsers({ username });
+    console.log({ reviewerList });
+
+    const reviewerGitAccount = reviewerList[0].gitAccount;
+    console.log({ reviewerGitAccount });
+
+    if (!reviewerGitAccount) {
+      res.status(401).send({
+        message: 'You must associate a GitHub account with your user before approving...',
+      });
+      return;
+    }
+
+    const attestation = {
+      questions,
+      timestamp: new Date(),
+      reviewer: {
+        username,
+        gitAccount: reviewerGitAccount,
+      },
+    };
+    const result = await db.authorise(id, attestation);
+    res.send(result);
   } else {
     res.status(401).send({
       message: 'You are unauthorized to perform this action...',
@@ -165,27 +163,26 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
 });
 
 router.post('/:id/cancel', async (req: Request, res: Response) => {
-  if (req.user) {
-    const id = req.params.id;
-
-    const isAllowed = await db.canUserCancelPush(id, (req.user as any).username);
-
-    if (isAllowed) {
-      const result = await db.cancel(id);
-      console.log(`user ${(req.user as any).username} canceled push request for ${id}`);
-      res.send(result);
-    } else {
-      console.log(
-        `user ${(req.user as any).username} not authorised to cancel push request for ${id}`,
-      );
-      res.status(401).send({
-        message:
-          'User ${req.user.username)} not authorised to cancel push requests on this project.',
-      });
-    }
-  } else {
+  if (!req.user) {
     res.status(401).send({
       message: 'not logged in',
+    });
+    return;
+  }
+
+  const id = req.params.id;
+  const { username } = req.user as { username: string };
+
+  const isAllowed = await db.canUserCancelPush(id, username);
+
+  if (isAllowed) {
+    const result = await db.cancel(id);
+    console.log(`user ${username} canceled push request for ${id}`);
+    res.send(result);
+  } else {
+    console.log(`user ${username} not authorised to cancel push request for ${id}`);
+    res.status(401).send({
+      message: 'User ${req.user.username)} not authorised to cancel push requests on this project.',
     });
   }
 });
