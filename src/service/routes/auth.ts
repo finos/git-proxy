@@ -10,6 +10,7 @@ import { User } from '../../db/types';
 import { Authentication } from '../../config/types';
 
 import { toPublicUser } from './publicApi';
+import { isAdminUser } from './utils';
 
 const router = express.Router();
 const passport = getPassport();
@@ -177,6 +178,36 @@ router.get('/me', async (req: Request, res: Response) => {
     res.send(toPublicUser(userVal));
   } else {
     res.status(401).end();
+  }
+});
+
+router.post('/create-user', async (req: Request, res: Response) => {
+  if (!isAdminUser(req.user)) {
+    res.status(401).send({
+      message: 'You are not authorized to perform this action...',
+    });
+    return;
+  }
+
+  try {
+    const { username, password, email, gitAccount, admin: isAdmin = false } = req.body;
+
+    if (!username || !password || !email || !gitAccount) {
+      res.status(400).send({
+        message: 'Missing required fields: username, password, email, and gitAccount are required',
+      });
+    }
+
+    await db.createUser(username, password, email, gitAccount, isAdmin);
+    res.status(201).send({
+      message: 'User created successfully',
+      username,
+    });
+  } catch (error: any) {
+    console.error('Error creating user:', error);
+    res.status(400).send({
+      message: error.message || 'Failed to create user',
+    });
   }
 });
 

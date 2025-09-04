@@ -41,7 +41,8 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
         'Invalid request received',
         null,
       );
-      res.status(400).send(handleMessage('Invalid request received'));
+      // return status 200 to ensure that the error message is rendered by the git client
+      res.status(200).send(handleMessage('Invalid request received'));
       return false;
     }
 
@@ -65,7 +66,8 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
         action.errorMessage,
         action.blockedMessage,
       );
-      res.status(403).send(packetMessage);
+      // return status 200 to ensure that the error message is rendered by the git client
+      res.status(200).send(packetMessage);
       return false;
     }
 
@@ -90,7 +92,8 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
       null,
     );
 
-    res.status(500).send(packetMessage);
+    // return status 200 to ensure that the error message is rendered by the git client
+    res.status(200).send(packetMessage);
     return false;
   }
 };
@@ -172,7 +175,7 @@ const teeAndValidate = async (req: Request, res: Response, next: NextFunction) =
           'x-frame-options': 'DENY',
           connection: 'close',
         })
-        .status(403)
+        .status(200) // return status 200 to ensure that the error message is rendered by the git client
         .send(handleMessage(msg));
       return;
     }
