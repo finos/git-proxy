@@ -26,7 +26,7 @@ const TEST_PASSWORD = 'testpassword';
 const TEST_EMAIL = 'jane.doe@email.com';
 const TEST_GIT_ACCOUNT = 'testGitAccount';
 
-const CLI_PATH = 'npx -- @finos/git-proxy-cli';
+const CLI_PATH = 'npx git-proxy-cli';
 
 describe('test git-proxy-cli', function () {
   // *** help ***
