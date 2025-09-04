@@ -565,7 +565,7 @@ describe('test git-proxy-cli', function () {
         await helper.startServer(service);
         await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli create-user --username ${uniqueUsername} --password newpass --email new@email.com --gitAccount newgit`;
+        const cli = `npx -- @finos/git-proxy-cli create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com --gitAccount newgit`;
         const expectedExitCode = 0;
         const expectedMessages = [`User '${uniqueUsername}' created successfully`];
         const expectedErrorMessages = null;
@@ -575,7 +575,7 @@ describe('test git-proxy-cli', function () {
         await helper.runCli(
           `npx -- @finos/git-proxy-cli login --username ${uniqueUsername} --password newpass`,
           0,
-          [`Login "${uniqueUsername}" <new@email.com>: OK`],
+          [`Login "${uniqueUsername}" <${uniqueUsername}@email.com>: OK`],
           null,
         );
       } finally {
