@@ -17,6 +17,14 @@ if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir);
 }
 
+/** Bit mask for the seven bits used in variable length size encodings
+ * (size and ofd_delta offset) to encode the value. */
+const SEVEN_BIT_MASK = 0x7f;
+/** Bit mask for the continuation bit (8th bit) used in the variable length
+ * size encodings (size and ofs_delta offsets) in Git object headers used in
+ * PACK files. */
+const EIGHTH_BIT_MASK = 0x80;
+
 /**
  * Executes the parsing of a push request.
  * @param {*} req - The request object containing the push data.
@@ -369,12 +377,12 @@ const parseOfsDeltaOffset = (
 ): { baseOffset: number; length: number } => {
   let i = 0;
   let byte = buffer[offset];
-  let value = byte & 0x7f;
+  let value = byte & SEVEN_BIT_MASK;
 
-  while (byte & 0x80) {
+  while (byte & EIGHTH_BIT_MASK) {
     i++;
     byte = buffer[offset + i];
-    value = ((value + 1) << 7) | (byte & 0x7f);
+    value = ((value + 1) << 7) | (byte & SEVEN_BIT_MASK);
   }
 
   return { baseOffset: value, length: i + 1 };
@@ -392,20 +400,22 @@ const parseGitObjectHeader = (buffer: Buffer, offset: number): GitObjectHeader =
 
   let byte = buffer[offset++];
 
+  // read object type
   const type = (byte >> 4) & 0x07;
+  const typeName = gitObjectType(type);
+
+  // read variable length size of encoded object
   let size = byte & 0x0f;
   let shift = 4;
-
-  while (byte & 0x80) {
+  while (byte & EIGHTH_BIT_MASK) {
     byte = buffer[offset++];
-    size |= (byte & 0x7f) << shift;
+    size |= (byte & SEVEN_BIT_MASK) << shift;
     shift += 7;
   }
 
-  const typeName = gitObjectType(type);
+  // read references for ref_delta and ofd_delta types
   let baseOffset: number | undefined;
   let baseSha: Buffer | undefined;
-
   if (typeName === 'ofs_delta') {
     const delta = parseOfsDeltaOffset(buffer, offset);
     baseOffset = delta.baseOffset;
@@ -485,14 +495,13 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
       try {
         await new Promise<void>((resolve, reject) => {
           if (!done) {
-            const byte = buffer.subarray(offset, offset + 1);
-            offset++;
             // store the resolve function in case an error occurs as callback will never be called
             currentWriteResolve = resolve;
             // use the callback to throttle input such that each byte is processed before we insert the next
-            inflater.write(byte, () => {
+            inflater.write(buffer.subarray(offset, offset + 1), () => {
               resolve();
             });
+            offset++;
           }
         });
       } catch (e) {
@@ -511,9 +520,7 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
     // we overshoot by one byte, back-up 1 to account for it.
     offset--;
 
-    inflater.off('data', onData);
-    inflater.off('end', onEnd);
-    inflater.off('error', onError);
+    inflater.removeAllListeners();
     inflater.destroy();
   }
 
