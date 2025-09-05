@@ -249,7 +249,7 @@ describe('Scan commit diff...', async () => {
       expect(errorMessage).to.contains('Your push has been blocked');
     }
   });
-  it('When no diff is present, the proxy is blocked...', async () => {
+  it('When no diff is present, the proxy allows the push (legitimate empty diff)...', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
@@ -258,10 +258,10 @@ describe('Scan commit diff...', async () => {
       },
     ];
 
-    const { error, errorMessage } = await processor.exec(null, action);
+    const result = await processor.exec(null, action);
+    const scanDiffStep = result.steps.find((s) => s.stepName === 'scanDiff');
 
-    expect(error).to.be.true;
-    expect(errorMessage).to.contains('Your push has been blocked');
+    expect(scanDiffStep.error).to.be.false;
   });
 
   it('When diff is not a string, the proxy is blocked...', async () => {
