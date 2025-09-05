@@ -2,7 +2,7 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const sinon = require('sinon');
 const express = require('express');
-const { router, loginSuccessHandler } = require('../../../src/service/routes/auth');
+const authRoutes = require('../../../src/service/routes/auth').default;
 const db = require('../../../src/db');
 
 const { expect } = chai;
@@ -19,7 +19,7 @@ const newApp = (username) => {
     });
   }
 
-  app.use('/auth', router);
+  app.use('/auth', authRoutes.router);
   return app;
 };
 
@@ -151,7 +151,7 @@ describe('Auth API', function () {
         send: sinon.spy(),
       };
 
-      await loginSuccessHandler()({ user }, res);
+      await authRoutes.loginSuccessHandler()({ user }, res);
 
       expect(res.send.calledOnce).to.be.true;
       expect(res.send.firstCall.args[0]).to.deep.equal({
