@@ -41,8 +41,6 @@ describe('File DB', () => {
       const result = await repoModule.getRepoByUrl('https://github.com/finos/git-proxy.git');
       expect(result).to.deep.equal(repoData);
     });
-
-
     it('should return null if the repo is not found', async () => {
       sandbox.stub(repoModule.db, 'findOne').callsFake((query, cb) => cb(null, null));
 
