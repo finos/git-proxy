@@ -1,4 +1,4 @@
-export const toPublicUser = (user: any) => {
+export const toPublicUser = (user: Record<string, boolean | string | null>) => {
   return {
     username: user.username || '',
     displayName: user.displayName || '',
