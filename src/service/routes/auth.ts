@@ -57,7 +57,7 @@ const getLoginStrategy = () => {
 
 const loginSuccessHandler = () => async (req: Request, res: Response) => {
   try {
-    const currentUser = toPublicUser({ ...req.user });
+    const currentUser = toPublicUser({ ...req.user } as User);
     console.log(
       `serivce.routes.auth.login: user logged in, username=${
         currentUser.username
@@ -123,6 +123,10 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
 router.get('/profile', async (req: Request, res: Response) => {
   if (req.user) {
     const userVal = await db.findUser((req.user as User).username);
+    if (!userVal) {
+      res.status(400).send('Error: Logged in user not found').end();
+      return;
+    }
     res.send(toPublicUser(userVal));
   } else {
     res.status(401).end();
@@ -175,6 +179,10 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
 router.get('/me', async (req: Request, res: Response) => {
   if (req.user) {
     const userVal = await db.findUser((req.user as User).username);
+    if (!userVal) {
+      res.status(400).send('Error: Logged in user not found').end();
+      return;
+    }
     res.send(toPublicUser(userVal));
   } else {
     res.status(401).end();

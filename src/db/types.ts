@@ -56,6 +56,8 @@ export class User {
   email: string;
   admin: boolean;
   oidcId?: string | null;
+  displayName?: string | null;
+  title?: string | null;
   _id?: string;
 
   constructor(
