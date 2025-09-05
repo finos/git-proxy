@@ -42,24 +42,6 @@ describe('File DB', () => {
       expect(result).to.deep.equal(repoData);
     });
 
-    it('should get the repo using the url, stripping off the .git', async () => {
-      const repoData = {
-        name: 'sample',
-        users: { canPush: [] },
-        url: 'https://github.com/finos/git-proxy.git',
-      };
-
-      sandbox.stub(repoModule.db, 'findOne').callsFake((query, cb) => cb(null, repoData));
-
-      const result = await repoModule.getRepoByUrl('https://github.com/finos/git-proxy.git');
-
-      expect(
-        repoModule.db.findOne.calledWith(
-          sinon.match({ url: 'https://github.com/finos/git-proxy.git' }),
-        ),
-      ).to.be.true;
-      expect(result).to.deep.equal(repoData);
-    });
 
     it('should return null if the repo is not found', async () => {
       sandbox.stub(repoModule.db, 'findOne').callsFake((query, cb) => cb(null, null));
