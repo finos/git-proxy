@@ -7,7 +7,7 @@ Here's how to get setup for contributing to GitProxy.
 ## Setup
 The GitProxy project relies on the following pre-requisites:
 
-- [Node](https://nodejs.org/en/download) (16+)
+- [Node](https://nodejs.org/en/download) (20+)
 - [npm](https://npmjs.com/) (8+)
 - [git](https://git-scm.com/downloads) or equivalent Git client. It must support HTTP/S.
 
@@ -26,7 +26,12 @@ $ npm run client # Run only the UI
 ```
 
 ## Testing
-<!-- Notes about testing methodology -->
+
+Currently, we use Mocha and Chai for unit testing and Cypress for E2E testing. For more details on how to use these testing libraries, check out our [Testing documentation](testing).
+
+### Patch coverage requirements
+
+Newly introduced changes **must have over 80% unit test coverage**. This is enforced by our CI, and in practice, only few exceptions (such as emergency fixes) are allowed to skip this requirement. Make sure to add thorough unit tests to your PR to help reviewers approve your PR more quickly!
 
 ## Configuration schema
 The configuration for GitProxy includes a JSON Schema ([`config.schema.json`](https://github.com/finos/git-proxy/blob/main/config.schema.json)) to define the expected properties used by the application. When adding new configuration properties to GitProxy, ensure that the schema is updated with any new, removed or changed properties. See [JSON Schema docs for specific syntax](https://json-schema.org/docs).
@@ -43,8 +48,8 @@ When updating the configuration schema, you must also re-generate the reference 
 <!-- Notes around signing the CLA. See existing CONTRIBUTING.md -->
 
 ## Community Meetings
-Join our [fortnightly Zoom meeting](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595) on Monday, 4PM BST (odd week numbers). 
-🌍 [Convert to your local time](https://www.timeanddate.com/worldclock)
+Join our [fortnightly Zoom meeting](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595) on Monday, 4PM BST (odd week numbers).  
+🌍 [Convert to your local time](https://www.timeanddate.com/worldclock)  
 [Click here](https://calendar.google.com/calendar/event?action=TEMPLATE&tmeid=MTRvbzM0NG01dWNvNGc4OGJjNWphM2ZtaTZfMjAyNTA2MDJUMTUwMDAwWiBzYW0uaG9sbWVzQGNvbnRyb2wtcGxhbmUuaW8&tmsrc=sam.holmes%40control-plane.io&scp=ALL) for the recurring Google Calendar meeting invite. 
 Alternatively, send an e-mail to [help@finos.org](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595#:~:text=Need-,an,-invite%3F) to get a calendar invitation. 
 
