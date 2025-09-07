@@ -40,6 +40,10 @@ Cypress.Commands.add('login', (username, password) => {
   });
 });
 
+Cypress.Commands.add('logout', () => {
+  Cypress.session.clearAllSavedSessions();
+});
+
 Cypress.Commands.add('getCSRFToken', () => {
   return cy.request('GET', 'http://localhost:8080/api/v1/repo').then((res) => {
     let cookies = res.headers['set-cookie'];

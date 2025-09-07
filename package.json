@@ -24,7 +24,8 @@
     "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --config ./.prettierrc",
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --config ./.prettierrc",
     "gen-schema-doc": "node ./scripts/doc-schema.js",
-    "cypress:run": "cypress run"
+    "cypress:run": "cypress run",
+    "cypress:open": "cypress open"
   },
   "bin": {
     "git-proxy": "./index.js",
@@ -147,6 +148,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "engines": {
+    "node": ">=20.19.2"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}": [
