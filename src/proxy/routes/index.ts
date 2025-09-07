@@ -46,7 +46,12 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
       return false;
     }
 
+    console.log('TIME: executeChain start');
+    const startTime = Date.now();
     const action = await executeChain(req, res);
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    console.log(`TIME: executeChain completed in ${duration}ms`);
 
     if (action.error || action.blocked) {
       res.set('content-type', 'application/x-git-receive-pack-result');

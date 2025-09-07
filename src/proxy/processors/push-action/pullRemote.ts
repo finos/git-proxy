@@ -6,18 +6,19 @@ import gitHttpClient from 'isomorphic-git/http/node';
 const dir = './.remote';
 
 const exec = async (req: any, action: Action): Promise<Action> => {
+  console.log('TIME: pullRemoteStart');
+  const startTime = Date.now();
   const step = new Step('pullRemote');
 
   try {
-    action.proxyGitPath = `${dir}/${action.timestamp}`;
-
-    step.log(`Creating folder ${action.proxyGitPath}`);
+    action.proxyGitPath = `${dir}/${action.id}`;
 
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
 
     if (!fs.existsSync(action.proxyGitPath)) {
+      step.log(`Creating folder ${action.proxyGitPath}`);
       fs.mkdirSync(action.proxyGitPath, 0o755);
     }
 
@@ -29,18 +30,31 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       .toString()
       .split(':');
 
-    await git.clone({
-      fs,
-      http: gitHttpClient,
-      url: action.url,
-      onAuth: () => ({
-        username,
-        password,
-      }),
-      dir: `${action.proxyGitPath}/${action.repoName}`,
-    });
+    if (!fs.existsSync(`${action.proxyGitPath}/${action.repoName}`)) {
+      console.log('Clone: ', action.url);
+      await git.clone({
+        fs,
+        http: gitHttpClient,
+        url: action.url,
+        dir: `${action.proxyGitPath}/${action.repoName}`,
+        onAuth: () => ({ username, password }),
+        singleBranch: true,
+        depth: 1,
+      });
+    } else {
+      console.log('Fetch: ', action.url);
+      await git.fetch({
+        fs,
+        http: gitHttpClient,
+        url: action.url,
+        dir: `${action.proxyGitPath}/${action.repoName}`,
+        onAuth: () => ({ username, password }),
+        singleBranch: true,
+        depth: 1,
+      });
+    }
 
-    console.log('Clone Success: ', action.url);
+    console.log('Clone/Fetch Success: ', action.url);
 
     step.log(`Completed ${cmd}`);
     step.setContent(`Completed ${cmd}`);
@@ -50,6 +64,9 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   } finally {
     action.addStep(step);
   }
+  const endTime = Date.now();
+  const duration = endTime - startTime;
+  console.log(`TIME: pullRemote completed in ${duration}ms`);
   return action;
 };
 
