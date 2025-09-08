@@ -1,8 +1,6 @@
 const opts = {
-  branches: 80,
+  checkCoverage: true,
   lines: 80,
-  functions: 80,
-  statements: 80,
 };
 
 console.log('nyc config: ', opts);
