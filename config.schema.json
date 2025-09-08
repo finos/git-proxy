@@ -150,12 +150,14 @@
       "required": ["enabled", "key", "cert"]
     },
     "sslKeyPemPath": {
-      "description": "Legacy: Path to SSL private key file (use tls.key instead)",
-      "type": "string"
+      "description": "Deprecated: Path to SSL private key file (use tls.key instead)",
+      "type": "string",
+      "deprecated": true
     },
     "sslCertPemPath": {
-      "description": "Legacy: Path to SSL certificate file (use tls.cert instead)",
-      "type": "string"
+      "description": "Deprecated: Path to SSL certificate file (use tls.cert instead)",
+      "type": "string",
+      "deprecated": true
     },
     "configurationSources": {
       "enabled": { "type": "boolean" },
