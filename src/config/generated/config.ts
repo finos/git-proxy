@@ -79,11 +79,11 @@ export interface GitProxyConfig {
    */
   sink?: Database[];
   /**
-   * Legacy: Path to SSL certificate file (use tls.cert instead)
+   * Deprecated: Path to SSL certificate file (use tls.cert instead)
    */
   sslCertPemPath?: string;
   /**
-   * Legacy: Path to SSL private key file (use tls.key instead)
+   * Deprecated: Path to SSL private key file (use tls.key instead)
    */
   sslKeyPemPath?: string;
   /**
