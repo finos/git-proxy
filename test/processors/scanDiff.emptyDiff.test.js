@@ -1,5 +1,5 @@
-const { Action } = require('../src/proxy/actions');
-const { exec } = require('../src/proxy/processors/push-action/scanDiff');
+const { Action } = require('../../src/proxy/actions');
+const { exec } = require('../../src/proxy/processors/push-action/scanDiff');
 
 const chai = require('chai');
 const expect = chai.expect;
