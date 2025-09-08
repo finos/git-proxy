@@ -1,14 +1,14 @@
 const chai = require('chai');
 const crypto = require('crypto');
-const processor = require('../src/proxy/processors/push-action/scanDiff');
-const { Action } = require('../src/proxy/actions/Action');
+const processor = require('../../src/proxy/processors/push-action/scanDiff');
+const { Action } = require('../../src/proxy/actions/Action');
 const { expect } = chai;
-const config = require('../src/config');
-const db = require('../src/db');
+const config = require('../../src/config');
+const db = require('../../src/db');
 chai.should();
 
 // Load blocked literals and patterns from configuration...
-const commitConfig = require('../src/config/index').getCommitConfig();
+const commitConfig = require('../../src/config/index').getCommitConfig();
 const privateOrganizations = config.getPrivateOrganizations();
 
 const blockedLiterals = commitConfig.diff.block.literals;
