@@ -1,5 +1,6 @@
 const chai = require('chai');
 const { Convert } = require('../src/config/generated/config');
+const defaultSettings = require('../proxy.config.json');
 
 const { expect } = chai;
 
@@ -356,6 +357,22 @@ describe('Generated Config (QuickType)', () => {
 
       expect(reparsed.proxyUrl).to.equal('https://test.com');
       expect(reparsed.rateLimit).to.be.an('object');
+    });
+
+    it('should validate the default configuration from proxy.config.json', () => {
+      // This test ensures that the default config always passes QuickType validation
+      // This catches cases where schema updates haven't been reflected in the default config
+      const result = Convert.toGitProxyConfig(JSON.stringify(defaultSettings));
+
+      expect(result).to.be.an('object');
+      expect(result.cookieSecret).to.be.a('string');
+      expect(result.authorisedList).to.be.an('array');
+      expect(result.authentication).to.be.an('array');
+      expect(result.sink).to.be.an('array');
+
+      // Validate that serialization also works
+      const serialized = Convert.gitProxyConfigToJson(result);
+      expect(() => JSON.parse(serialized)).to.not.throw();
     });
   });
 });
