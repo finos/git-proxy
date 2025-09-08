@@ -133,11 +133,8 @@ describe('Force Push Integration Test', () => {
       expect(diffStep.errorMessage).to.be.a('string');
       expect(diffStep.errorMessage.length).to.be.greaterThan(0);
       expect(diffStep.errorMessage).to.satisfy(
-        (msg) =>
-          msg.includes('fatal:') ||
-          msg.includes('unknown revision') ||
-          msg.includes('bad revision'),
-        'Error message should contain git-specific error patterns',
+        (msg) => msg.includes('fatal:') && msg.includes('Invalid revision range'),
+        'Error message should contain git diff specific error for invalid SHA',
       );
 
       // scanDiff should not block on missing diff due to error
