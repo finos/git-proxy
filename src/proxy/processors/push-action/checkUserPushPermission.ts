@@ -16,12 +16,12 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     const isUserAllowed =
       user && (repo.users.canPush.includes(user) || repo.users.canAuthorise.includes(user));
     if (isUserAllowed) {
-      step.log(`User ${user} is allowed to push on repo ${action.repo}`);
+      step.log(`User ${user} is allowed to push on repo ${action.url}`);
     } else {
       step.error = true;
-      step.log(`User ${user} is not allowed to push on repo ${action.repo}, ending`);
+      step.log(`User ${user} is not allowed to push on repo ${action.url}, ending`);
       step.setError(
-        `Rejecting push as user ${action.user} is not allowed to push on repo ${action.repo}`,
+        `Rejecting push as user ${action.user} is not allowed to push on repo ${action.url}`,
       );
     }
   }

@@ -5,16 +5,15 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 permissions:
   pull-requests: write
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -23,71 +22,69 @@ jobs:
         mongodb-version: [4.4]
 
     steps:
-    - name: Harden Runner
-      uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
-      with:
-        egress-policy: audit
+      - name: Harden Runner
+        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        with:
+          egress-policy: audit
 
-    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-      with:
-        fetch-depth: 0
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
+        with:
+          fetch-depth: 0
 
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: ${{ matrix.node-version }}
 
-    - name: Start MongoDB
-      uses: supercharge/mongodb-github-action@90004df786821b6308fb02299e5835d0dae05d0d # 1.12.0
-      with:
-        mongodb-version: ${{ matrix.mongodb-version }}
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@90004df786821b6308fb02299e5835d0dae05d0d # 1.12.0
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
 
-    - name: Install dependencies
-      run: npm i
+      - name: Install dependencies
+        run: npm i
 
-    # for now only check the types of the server
-    # tsconfig isn't quite set up right to respect what vite accepts
-    # for the frontend code
-    - name: Check Types (Server)
-      run: npm run check-types:server
+      # for now only check the types of the server
+      # tsconfig isn't quite set up right to respect what vite accepts
+      # for the frontend code
+      - name: Check Types (Server)
+        run: npm run check-types:server
 
-    - name: Test
-      id: test
-      run: |
-        npm run test-coverage-ci
-        npm run test-coverage-ci --workspaces --if-present
+      - name: Test
+        id: test
+        run: |
+          npm run test-coverage-ci
+          npm run test-coverage-ci --workspaces --if-present
 
-    - name: Upload test coverage report
-      uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
-      with:
-        files: ./coverage/lcov.info
-        token: ${{ secrets.CODECOV_TOKEN }}
-    # - name: Exit if coverage condition not met
-    #   if: ${{ steps.test.outputs.exit_code }} != 0
-    #   run: exit ${{ steps.test.outputs.exit_code }}
-    
-    - name: Build frontend
-      run: npm run build-ui
+      - name: Upload test coverage report
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+        with:
+          files: ./coverage/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
+      # - name: Exit if coverage condition not met
+      #   if: ${{ steps.test.outputs.exit_code }} != 0
+      #   run: exit ${{ steps.test.outputs.exit_code }}
 
-    - name: Save build folder
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-      with:
-        name: build
-        if-no-files-found: error
-        path: build
+      - name: Build frontend
+        run: npm run build-ui
 
-    - name: Download the build folders
-      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-      with:
-        name: build
-        path: build
+      - name: Save build folder
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: build
+          if-no-files-found: error
+          path: build
 
-    - name: Run cypress test
-      uses: cypress-io/github-action@6c143abc292aa835d827652c2ea025d098311070 # v6.10.1
-      with: 
-        start: npm start &
-        wait-on: "http://localhost:3000"
-        wait-on-timeout: 120
-        run: npm run cypress:run
+      - name: Download the build folders
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: build
+          path: build
 
-
+      - name: Run cypress test
+        uses: cypress-io/github-action@b8ba51a856ba5f4c15cf39007636d4ab04f23e3c # v6.10.2
+        with:
+          start: npm start &
+          wait-on: 'http://localhost:3000'
+          wait-on-timeout: 120
+          run: npm run cypress:run

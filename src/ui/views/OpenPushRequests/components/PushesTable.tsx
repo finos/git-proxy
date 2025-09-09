@@ -17,6 +17,7 @@ import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
 import { PushData } from '../../../../types/models';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../../db/helper';
+import { generateAuthorLinks, generateEmailLink } from '../../../utils';
 
 interface PushesTableProps {
   [key: string]: any;
@@ -29,8 +30,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
   const [data, setData] = useState<PushData[]>([]);
   const [filteredData, setFilteredData] = useState<PushData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isError, setIsError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
+  const [, setIsError] = useState(false);
   const navigate = useNavigate();
   const [, setAuth] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -46,7 +46,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
       authorised: props.authorised ?? false,
       rejected: props.rejected ?? false,
     };
-    getPushes(setIsLoading, setData, setAuth, setIsError, setErrorMessage, query);
+    getPushes(setIsLoading, setData, setAuth, setIsError, props.handleError, query);
   }, [props]);
 
   useEffect(() => {
@@ -78,7 +78,6 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>{errorMessage}</div>;
 
   return (
     <div>
@@ -92,8 +91,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
               <TableCell align='left'>Branch</TableCell>
               <TableCell align='left'>Commit SHA</TableCell>
               <TableCell align='left'>Committer</TableCell>
-              <TableCell align='left'>Author</TableCell>
-              <TableCell align='left'>Author E-mail</TableCell>
+              <TableCell align='left'>Authors</TableCell>
               <TableCell align='left'>Commit Message</TableCell>
               <TableCell align='left'>No. of Commits</TableCell>
               <TableCell align='right'></TableCell>
@@ -103,6 +101,11 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
             {[...currentItems].reverse().map((row) => {
               const repoFullName = trimTrailingDotGit(row.repo);
               const repoBranch = trimPrefixRefsHeads(row.branch);
+              const repoUrl = row.url;
+              const repoWebUrl = trimTrailingDotGit(repoUrl);
+              // may be used to resolve users to profile links in future
+              // const gitProvider = getGitProvider(repoUrl);
+              // const hostname = new URL(repoUrl).hostname;
               const commitTimestamp =
                 row.commitData[0]?.commitTs || row.commitData[0]?.commitTimestamp;
 
@@ -112,22 +115,18 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                     {commitTimestamp ? moment.unix(commitTimestamp).toString() : 'N/A'}
                   </TableCell>
                   <TableCell align='left'>
-                    <a href={`https://github.com/${row.repo}`} rel='noreferrer' target='_blank'>
+                    <a href={`${repoUrl}`} rel='noreferrer' target='_blank'>
                       {repoFullName}
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    <a
-                      href={`https://github.com/${repoFullName}/tree/${repoBranch}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
+                    <a href={`${repoWebUrl}/tree/${repoBranch}`} rel='noreferrer' target='_blank'>
                       {repoBranch}
                     </a>
                   </TableCell>
                   <TableCell align='left'>
                     <a
-                      href={`https://github.com/${repoFullName}/commit/${row.commitTo}`}
+                      href={`${repoWebUrl}/commit/${row.commitTo}`}
                       rel='noreferrer'
                       target='_blank'
                     >
@@ -135,39 +134,19 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    {row.commitData[0]?.committer ? (
-                      <a
-                        href={`https://github.com/${row.commitData[0].committer}`}
-                        rel='noreferrer'
-                        target='_blank'
-                      >
-                        {row.commitData[0].committer}
-                      </a>
-                    ) : (
-                      'N/A'
+                    {/* render github/gitlab profile links in future 
+                    {getUserProfileLink(row.commitData[0].committerEmail, gitProvider, hostname)} 
+                    */}
+                    {generateEmailLink(
+                      row.commitData[0].committer,
+                      row.commitData[0]?.committerEmail,
                     )}
                   </TableCell>
                   <TableCell align='left'>
-                    {row.commitData[0]?.author ? (
-                      <a
-                        href={`https://github.com/${row.commitData[0].author}`}
-                        rel='noreferrer'
-                        target='_blank'
-                      >
-                        {row.commitData[0].author}
-                      </a>
-                    ) : (
-                      'N/A'
-                    )}
-                  </TableCell>
-                  <TableCell align='left'>
-                    {row.commitData[0]?.authorEmail ? (
-                      <a href={`mailto:${row.commitData[0].authorEmail}`}>
-                        {row.commitData[0].authorEmail}
-                      </a>
-                    ) : (
-                      'No data...'
-                    )}
+                    {/* render github/gitlab profile links in future 
+                    {getUserProfileLink(row.commitData[0].authorEmail, gitProvider, hostname)} 
+                    */}
+                    {generateAuthorLinks(row.commitData)}
                   </TableCell>
                   <TableCell align='left'>{row.commitData[0]?.message || 'N/A'}</TableCell>
                   <TableCell align='left'>{row.commitData.length}</TableCell>

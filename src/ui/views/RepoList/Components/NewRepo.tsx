@@ -19,7 +19,7 @@ import { RepoIcon } from '@primer/octicons-react';
 interface AddRepositoryDialogProps {
   open: boolean;
   onClose: () => void;
-  onSuccess: (data: RepositoryData) => void;
+  onSuccess: (data: RepositoryDataWithId) => void;
 }
 
 export interface RepositoryData {
@@ -33,8 +33,10 @@ export interface RepositoryData {
   proxyURL?: string;
 }
 
+export type RepositoryDataWithId = Required<Pick<RepositoryData, '_id'>> & RepositoryData;
+
 interface NewRepoProps {
-  onSuccess: (data: RepositoryData) => void;
+  onSuccess: (data: RepositoryDataWithId) => Promise<void>;
 }
 
 const useStyles = makeStyles(styles as any);
@@ -53,7 +55,7 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
     onClose();
   };
 
-  const handleSuccess = (data: RepositoryData) => {
+  const handleSuccess = (data: RepositoryDataWithId) => {
     onSuccess(data);
     setTip(true);
   };
@@ -83,22 +85,22 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
     }
 
     try {
-      new URL(data.url);
+      const parsedUrl = new URL(data.url);
+      if (!parsedUrl.pathname.endsWith('.git')) {
+        setError('Invalid git URL - Git URLs should end with .git');
+        return;
+      }
     } catch {
       setError('Invalid URL format');
       return;
     }
 
-    try {
-      await addRepo(onClose, setError, data);
-      handleSuccess(data);
+    const result = await addRepo(data);
+    if (result.success) {
+      handleSuccess(result.repo);
       handleClose();
-    } catch (e) {
-      if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError('An unexpected error occurred');
-      }
+    } else {
+      setError(result.message || 'Failed to add repository');
     }
   };
 
@@ -126,7 +128,7 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
         maxWidth='md'
       >
         {error && (
-          <DialogTitle style={{ color: 'red' }} id='simple-dialog-title'>
+          <DialogTitle style={{ color: 'red' }} data-testid='repo-error'>
             {error}
           </DialogTitle>
         )}
@@ -135,18 +137,21 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
         </DialogTitle>
         <Card>
           <CardBody>
-            <GridContainer>
+            <GridContainer data-testid='add-repo-dialog'>
               <GridItem xs={12} sm={12} md={12}>
                 <FormControl style={inputStyle}>
                   <InputLabel htmlFor='project'>Organization</InputLabel>
                   <Input
                     id='project'
                     inputProps={{ maxLength: 200, minLength: 3 }}
+                    data-testid='repo-project-input'
                     aria-describedby='project-helper-text'
                     onChange={(e) => setProject(e.target.value)}
                     value={project}
                   />
-                  <FormHelperText id='project-helper-text'>GitHub Organization</FormHelperText>
+                  <FormHelperText id='project-helper-text'>
+                    Organization or path, e.g. finos
+                  </FormHelperText>
                 </FormControl>
               </GridItem>
               <GridItem xs={12} sm={12} md={12}>
@@ -155,11 +160,14 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
                   <Input
                     inputProps={{ maxLength: 200, minLength: 3 }}
                     id='name'
+                    data-testid='repo-name-input'
                     aria-describedby='name-helper-text'
                     onChange={(e) => setName(e.target.value)}
                     value={name}
                   />
-                  <FormHelperText id='name-helper-text'>GitHub Repository Name</FormHelperText>
+                  <FormHelperText id='name-helper-text'>
+                    Git Repository Name, e.g. git-proxy
+                  </FormHelperText>
                 </FormControl>
               </GridItem>
               <GridItem xs={12} sm={12} md={12}>
@@ -170,10 +178,13 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
                     type='url'
                     id='url'
                     aria-describedby='url-helper-text'
+                    data-testid='repo-url-input'
                     onChange={(e) => setUrl(e.target.value)}
                     value={url}
                   />
-                  <FormHelperText id='url-helper-text'>GitHub Repository URL</FormHelperText>
+                  <FormHelperText id='url-helper-text'>
+                    Git Repository URL, e.g. https://github.com/finos/git-proxy.git
+                  </FormHelperText>
                 </FormControl>
               </GridItem>
               <GridItem xs={12} sm={12} md={12}>
@@ -181,7 +192,12 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
                   <Button variant='outlined' color='warning' onClick={handleClose}>
                     Cancel
                   </Button>
-                  <Button variant='outlined' color='success' onClick={add}>
+                  <Button
+                    variant='outlined'
+                    color='success'
+                    onClick={add}
+                    data-testid='add-repo-button'
+                  >
                     Add
                   </Button>
                 </div>
@@ -207,7 +223,7 @@ const NewRepo: React.FC<NewRepoProps> = ({ onSuccess }) => {
 
   return (
     <div>
-      <Button color='success' onClick={handleClickOpen}>
+      <Button color='success' onClick={handleClickOpen} data-testid='add-repo-button'>
         <RepoIcon /> Add repository
       </Button>
       <AddRepositoryDialog open={open} onClose={handleClose} onSuccess={onSuccess} />

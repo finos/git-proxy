@@ -46,11 +46,11 @@ const RouteGuard = ({ component: Component, fullRoutePath }: RouteGuardProps) =>
   }
 
   if (loginRequired && !user) {
-    return <Navigate to="/login" />;
+    return <Navigate to='/login' />;
   }
 
   if (adminOnly && !user?.admin) {
-    return <Navigate to="/not-authorized" />;
+    return <Navigate to='/not-authorized' />;
   }
 
   return <Component />;

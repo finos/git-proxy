@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import classNames from 'classnames';
+import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
@@ -40,7 +40,7 @@ const CustomTabs: React.FC<CustomTabsProps> = ({
     setValue(newValue);
   };
 
-  const cardTitle = classNames({
+  const cardTitle = clsx({
     [classes.cardTitle]: true,
     [classes.cardTitleRTL]: rtlActive,
   });
