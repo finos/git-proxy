@@ -190,7 +190,6 @@ const teeAndValidate = async (req: Request, res: Response, next: NextFunction) =
 };
 
 const getRouter = async () => {
-  // eslint-disable-next-line new-cap
   const router = Router();
   router.use(teeAndValidate);
 

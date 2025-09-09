@@ -16,7 +16,6 @@ const FILE_HUSKY = './.husky/_/husky.sh';
 // Commands.
 // =========
 
-// eslint-disable-next-line quotes
 const COMMIT_MSG_STRING = "'npx --no -- commitlint --edit $'{1}''";
 const CLI_COMMIT = `npx husky add .husky/commit-msg ${COMMIT_MSG_STRING}`;
 const CLI_HUSKY = 'npx husky install';
