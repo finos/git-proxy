@@ -21,7 +21,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       step.error = true;
       step.log(`User ${user} is not allowed to push on repo ${action.url}, ending`);
       step.setError(
-        `Rejecting push as user ${action.user} is not allowed to push on repo ${action.url}`,
+        `Your push has been blocked (${action.user} is not allowed to push on repo ${action.url})`,
       );
     }
   }

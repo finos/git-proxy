@@ -12,7 +12,7 @@ const TEST_USERNAME_1 = 'push-perms-test';
 const TEST_EMAIL_1 = 'push-perms-test@test.com';
 const TEST_USERNAME_2 = 'push-perms-test-2';
 const TEST_EMAIL_2 = 'push-perms-test-2@test.com';
-const TEST_EMAIL_3 = 'push-perms-test-3@test.com';
+const TEST_USERNAME_3 = 'push-perms-test-3';
 
 describe('CheckUserPushPermissions...', async () => {
   let testRepo = null;
@@ -39,14 +39,14 @@ describe('CheckUserPushPermissions...', async () => {
 
   it('A committer that is approved should be allowed to push...', async () => {
     const action = new Action('1', 'type', 'method', 1, TEST_URL);
-    action.userEmail = TEST_EMAIL_1;
+    action.user = TEST_USERNAME_1;
     const { error } = await processor.exec(null, action);
     expect(error).to.be.false;
   });
 
   it('A committer that is NOT approved should NOT be allowed to push...', async () => {
     const action = new Action('1', 'type', 'method', 1, TEST_URL);
-    action.userEmail = TEST_EMAIL_2;
+    action.user = TEST_USERNAME_2;
     const { error, errorMessage } = await processor.exec(null, action);
     expect(error).to.be.true;
     expect(errorMessage).to.contains('Your push has been blocked');
@@ -54,7 +54,7 @@ describe('CheckUserPushPermissions...', async () => {
 
   it('An unknown committer should NOT be allowed to push...', async () => {
     const action = new Action('1', 'type', 'method', 1, TEST_URL);
-    action.userEmail = TEST_EMAIL_3;
+    action.user = TEST_USERNAME_3;
     const { error, errorMessage } = await processor.exec(null, action);
     expect(error).to.be.true;
     expect(errorMessage).to.contains('Your push has been blocked');
