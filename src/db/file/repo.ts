@@ -12,7 +12,7 @@ if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 /* istanbul ignore if */
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
-const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
+export const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
 
 try {
   db.ensureIndex({ fieldName: 'url', unique: true });

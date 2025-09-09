@@ -83,7 +83,7 @@ describe('checkUserPushPermission', () => {
       expect(result.error).to.be.true;
       expect(result.steps[0].error).to.be.true;
       expect(result.steps[0].errorMessage).to.equal(
-        'Rejecting push as user a-git-user is not allowed to push on repo test/repo.git',
+        'Your push has been blocked (a-git-user is not allowed to push on repo test/repo.git)',
       );
       expect(result.steps[0].logs[0]).to.eq(
         'checkUserPushPermission - User a-user is not allowed to push on repo test/repo.git, ending',
@@ -108,7 +108,7 @@ describe('checkUserPushPermission', () => {
       expect(result.error).to.be.true;
       expect(result.steps[0].error).to.be.true;
       expect(result.steps[0].errorMessage).to.equal(
-        'Rejecting push as user a-git-user is not allowed to push on repo test/repo.git',
+        'Your push has been blocked (a-git-user is not allowed to push on repo test/repo.git)',
       );
     });
 
@@ -133,7 +133,7 @@ describe('checkUserPushPermission', () => {
       expect(result.error).to.be.true;
       expect(result.steps[0].error).to.be.true;
       expect(result.steps[0].errorMessage).to.equal(
-        'Rejecting push as user a-git-user is not allowed to push on repo test/repo.git',
+        'Your push has been blocked (a-git-user is not allowed to push on repo test/repo.git)',
       );
     });
   });
