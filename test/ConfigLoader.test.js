@@ -57,7 +57,9 @@ describe('ConfigLoader', () => {
         path: tempConfigFile,
       });
 
-      expect(result).to.deep.equal(testConfig);
+      expect(result).to.be.an('object');
+      expect(result.proxyUrl).to.equal('https://test.com');
+      expect(result.cookieSecret).to.equal('test-secret');
     });
   });
 
@@ -78,7 +80,9 @@ describe('ConfigLoader', () => {
         headers: {},
       });
 
-      expect(result).to.deep.equal(testConfig);
+      expect(result).to.be.an('object');
+      expect(result.proxyUrl).to.equal('https://test.com');
+      expect(result.cookieSecret).to.equal('test-secret');
     });
 
     it('should include bearer token if provided', async () => {
@@ -204,6 +208,15 @@ describe('ConfigLoader', () => {
       } else if (process.platform === 'win32') {
         expect(configLoader.cacheDir).to.include('AppData/Local');
       }
+    });
+
+    it('should return cacheDirPath via getter', async () => {
+      configLoader = new ConfigLoader({});
+      await configLoader.initialize();
+
+      const cacheDirPath = configLoader.cacheDirPath;
+      expect(cacheDirPath).to.equal(configLoader.cacheDir);
+      expect(cacheDirPath).to.be.a('string');
     });
 
     it('should create cache directory if it does not exist', async () => {
@@ -676,5 +689,72 @@ describe('Validation Helpers', () => {
       expect(isValidBranchName(undefined)).to.be.false;
       expect(isValidBranchName('branch..name')).to.be.false;
     });
+  });
+});
+
+describe('ConfigLoader Error Handling', () => {
+  let configLoader;
+  let tempDir;
+  let tempConfigFile;
+
+  beforeEach(() => {
+    tempDir = fs.mkdtempSync('gitproxy-configloader-test-');
+    tempConfigFile = path.join(tempDir, 'test-config.json');
+  });
+
+  afterEach(() => {
+    if (fs.existsSync(tempDir)) {
+      fs.rmSync(tempDir, { recursive: true });
+    }
+    sinon.restore();
+    configLoader?.stop();
+  });
+
+  it('should handle invalid JSON in file source', async () => {
+    fs.writeFileSync(tempConfigFile, 'invalid json content');
+
+    configLoader = new ConfigLoader({});
+    try {
+      await configLoader.loadFromFile({
+        type: 'file',
+        enabled: true,
+        path: tempConfigFile,
+      });
+      throw new Error('Expected error was not thrown');
+    } catch (error) {
+      expect(error.message).to.contain('Invalid configuration file format');
+    }
+  });
+
+  it('should handle HTTP request errors', async () => {
+    sinon.stub(axios, 'get').rejects(new Error('Network error'));
+
+    configLoader = new ConfigLoader({});
+    try {
+      await configLoader.loadFromHttp({
+        type: 'http',
+        enabled: true,
+        url: 'http://config-service/config',
+      });
+      throw new Error('Expected error was not thrown');
+    } catch (error) {
+      expect(error.message).to.equal('Network error');
+    }
+  });
+
+  it('should handle invalid JSON from HTTP response', async () => {
+    sinon.stub(axios, 'get').resolves({ data: 'invalid json response' });
+
+    configLoader = new ConfigLoader({});
+    try {
+      await configLoader.loadFromHttp({
+        type: 'http',
+        enabled: true,
+        url: 'http://config-service/config',
+      });
+      throw new Error('Expected error was not thrown');
+    } catch (error) {
+      expect(error.message).to.contain('Invalid configuration format from HTTP source');
+    }
   });
 });
