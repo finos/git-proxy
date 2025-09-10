@@ -221,6 +221,7 @@ describe('healthcheck route', () => {
     );
     expect(res).to.have.header('pragma', 'no-cache');
     expect(res).to.have.header('expires', '0');
+    expect(res).to.have.header('surrogate-control', 'no-store');
   });
 });
 

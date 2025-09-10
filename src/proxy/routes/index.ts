@@ -238,7 +238,7 @@ const getRouter = async () => {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
       res.set('Pragma', 'no-cache');
       res.set('Expires', '0');
-      res.set('Surrigate-Control', 'no-store');
+      res.set('Surrogate-Control', 'no-store');
       return res.status(200).send('OK');
     }
 
