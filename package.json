@@ -107,7 +107,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "chai": "^4.5.0",
     "chai-http": "^4.4.0",
-    "cypress": "^14.5.4",
+    "cypress": "^15.2.0",
     "eslint": "^8.57.1",
     "eslint-config-google": "^0.14.0",
     "eslint-config-prettier": "^10.1.8",
