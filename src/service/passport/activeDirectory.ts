@@ -1,18 +1,33 @@
-const ActiveDirectoryStrategy = require('passport-activedirectory');
-const ldaphelper = require('./ldaphelper');
+import ActiveDirectoryStrategy from 'passport-activedirectory';
+import { PassportStatic } from 'passport';
+import ActiveDirectory from 'activedirectory2';
+import { Request } from 'express';
 
-const type = 'activedirectory';
+import * as ldaphelper from './ldaphelper';
+import * as db from '../../db';
+import { getAuthMethods } from '../../config';
+import { ADProfile } from './types';
 
-const configure = (passport) => {
-  const db = require('../../db');
+export const type = 'activedirectory';
 
-  // We can refactor this by normalizing auth strategy config and pass it directly into the configure() function,
-  // ideally when we convert this to TS.
-  const authMethods = require('../../config').getAuthMethods();
+export const configure = async (passport: PassportStatic): Promise<PassportStatic> => {
+  const authMethods = getAuthMethods();
   const config = authMethods.find((method) => method.type.toLowerCase() === type);
+
+  if (!config || !config.adConfig) {
+    throw new Error('AD authentication method not enabled');
+  }
+
   const adConfig = config.adConfig;
 
-  const { userGroup, adminGroup, domain } = config;
+  // Handle legacy config
+  const userGroup = adConfig.userGroup || config.userGroup;
+  const adminGroup = adConfig.adminGroup || config.adminGroup;
+  const domain = adConfig.domain || config.domain;
+
+  if (!userGroup || !adminGroup || !domain) {
+    throw new Error('Invalid Active Directory configuration');
+  }
 
   console.log(`AD User Group: ${userGroup}, AD Admin Group: ${adminGroup}`);
 
@@ -24,7 +39,12 @@ const configure = (passport) => {
         integrated: false,
         ldap: adConfig,
       },
-      async function (req, profile, ad, done) {
+      async function (
+        req: Request & { user?: ADProfile },
+        profile: ADProfile,
+        ad: ActiveDirectory,
+        done: (err: any, user: any) => void,
+      ) {
         try {
           profile.username = profile._json.sAMAccountName?.toLowerCase();
           profile.email = profile._json.mail;
@@ -43,8 +63,7 @@ const configure = (passport) => {
               const message = `User it not a member of ${userGroup}`;
               return done(message, null);
             }
-          } catch (err) {
-            console.log('ad test (isUser): e', err);
+          } catch (err: any) {
             const message = `An error occurred while checking if the user is a member of the user group: ${err.message}`;
             return done(message, null);
           }
@@ -53,7 +72,7 @@ const configure = (passport) => {
           let isAdmin = false;
           try {
             isAdmin = await ldaphelper.isUserInAdGroup(req, profile, ad, domain, adminGroup);
-          } catch (err) {
+          } catch (err: any) {
             const message = `An error occurred while checking if the user is a member of the admin group: ${err.message}`;
             console.error(message, err); // don't return an error for this case as you may still be a user
           }
@@ -72,7 +91,7 @@ const configure = (passport) => {
           await db.updateUser(user);
 
           return done(null, user);
-        } catch (err) {
+        } catch (err: any) {
           console.log(`Error authenticating AD user: ${err.message}`);
           return done(err, null);
         }
@@ -80,16 +99,13 @@ const configure = (passport) => {
     ),
   );
 
-  passport.serializeUser(function (user, done) {
+  passport.serializeUser(function (user: any, done: (err: any, user: any) => void) {
     done(null, user);
   });
 
-  passport.deserializeUser(function (user, done) {
+  passport.deserializeUser(function (user: any, done: (err: any, user: any) => void) {
     done(null, user);
   });
-  passport.type = 'ActiveDirectory';
 
   return passport;
 };
-
-module.exports = { configure, type };
