@@ -38,3 +38,11 @@ jobs:
 
       - name: Check formatting
         run: npm run format:check
+
+      - name: Check generated config types are up-to-date
+        run: |
+          npm run generate-config-types
+          if ! git diff --exit-code src/config/generated/config.ts; then
+            echo "Generated config types are out of date. Run 'npm run generate-config-types' locally and commit the changes."
+            exit 1
+          fi
