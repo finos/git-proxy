@@ -200,6 +200,30 @@ describe('proxy route helpers', () => {
   });
 });
 
+describe('healthcheck route', () => {
+  let app;
+
+  beforeEach(async () => {
+    app = express();
+    app.use('/', await getRouter());
+  });
+
+  it('returns 200 OK with no-cache headers', async () => {
+    const res = await chai.request(app).get('/healthcheck');
+
+    expect(res).to.have.status(200);
+    expect(res.text).to.equal('OK');
+
+    // Basic header checks (values defined in route)
+    expect(res).to.have.header(
+      'cache-control',
+      'no-cache, no-store, must-revalidate, proxy-revalidate',
+    );
+    expect(res).to.have.header('pragma', 'no-cache');
+    expect(res).to.have.header('expires', '0');
+  });
+});
+
 describe('proxyFilter function', async () => {
   let proxyRoutes;
   let req;
