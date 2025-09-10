@@ -1,7 +1,18 @@
 import { v4 as uuidv4 } from 'uuid';
 
+export interface StepData {
+  id: string;
+  stepName: string;
+  content: any;
+  error: boolean;
+  errorMessage: string | null;
+  blocked: boolean;
+  blockedMessage: string | null;
+  logs: string[];
+}
+
 /** Class representing a Push Step. */
-class Step {
+class Step implements StepData {
   id: string;
   stepName: string;
   content: any;

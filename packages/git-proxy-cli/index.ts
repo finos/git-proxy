@@ -5,7 +5,8 @@ import { hideBin } from 'yargs/helpers';
 import fs from 'fs';
 import util from 'util';
 
-import { CommitData, PushData, PushFilters } from './types';
+import { CommitData, PushData } from '@finos/git-proxy/src/types/models';
+import { PushQuery } from '@finos/git-proxy/src/db/types';
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
@@ -63,7 +64,7 @@ async function login(username: string, password: string) {
  * the push is allowed, authorised, blocked, canceled, encountered an error,
  * or was rejected.
  *
- * @param {Object} filters - An object containing filter criteria for Git
+ * @param {Partial<PushQuery>} filters - An object containing filter criteria for Git
  *          pushes.
  * @param {boolean} filters.allowPush - If not null, filters for pushes with
  *          given attribute and status.
@@ -78,7 +79,7 @@ async function login(username: string, password: string) {
  * @param {boolean} filters.rejected - If not null, filters for pushes with
  *          given attribute and status.
  */
-async function getGitPushes(filters: PushFilters) {
+async function getGitPushes(filters: Partial<PushQuery>) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     console.error('Error: List: Authentication required');
     process.exitCode = 1;
@@ -97,18 +98,29 @@ async function getGitPushes(filters: PushFilters) {
     response.data.forEach((push: PushData) => {
       const record: PushData = {
         id: push.id,
+        repo: push.repo,
+        branch: push.branch,
+        commitFrom: push.commitFrom,
+        commitTo: push.commitTo,
+        commitData: push.commitData,
+        diff: push.diff,
+        error: push.error,
+        canceled: push.canceled,
+        rejected: push.rejected,
+        blocked: push.blocked,
+        authorised: push.authorised,
+        attestation: push.attestation,
+        autoApproved: push.autoApproved,
         timestamp: push.timestamp,
         url: push.url,
         allowPush: push.allowPush,
-        authorised: push.authorised,
-        blocked: push.blocked,
-        canceled: push.canceled,
-        error: push.error,
-        rejected: push.rejected,
       };
 
       if (push.lastStep) {
         record.lastStep = {
+          id: push.lastStep?.id,
+          content: push.lastStep?.content,
+          logs: push.lastStep?.logs,
           stepName: push.lastStep?.stepName,
           error: push.lastStep?.error,
           errorMessage: push.lastStep?.errorMessage,
@@ -123,6 +135,13 @@ async function getGitPushes(filters: PushFilters) {
           commitData.push({
             message: pushCommitDataRecord.message,
             committer: pushCommitDataRecord.committer,
+            committerEmail: pushCommitDataRecord.committerEmail,
+            author: pushCommitDataRecord.author,
+            authorEmail: pushCommitDataRecord.authorEmail,
+            commitTimestamp: pushCommitDataRecord.commitTimestamp,
+            tree: pushCommitDataRecord.tree,
+            parent: pushCommitDataRecord.parent,
+            commitTs: pushCommitDataRecord.commitTs,
           });
         });
         record.commitData = commitData;
