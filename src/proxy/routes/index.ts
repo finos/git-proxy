@@ -233,7 +233,7 @@ const getRouter = async () => {
 
   console.log('proxy keys registered: ', JSON.stringify(proxyKeys));
 
-  router.use('/', (req, res, next) => {
+  router.use('/', ((req, res, next) => {
     if (req.path === '/healthcheck') {
       res.set('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
       res.set('Pragma', 'no-cache');
@@ -255,7 +255,7 @@ const getRouter = async () => {
     // fallback
     console.log(`\tusing fallback`);
     return fallbackProxy(req, res, next);
-  });
+  }) as RequestHandler);
   return router;
 };
 
