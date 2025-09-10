@@ -10,6 +10,8 @@ const defaultPushQuery: PushQuery = {
   blocked: true,
   allowPush: false,
   authorised: false,
+  canceled: false,
+  rejected: false,
 };
 
 export const getPushes = async (query: PushQuery = defaultPushQuery): Promise<Action[]> => {
