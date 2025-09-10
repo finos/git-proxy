@@ -563,7 +563,7 @@ describe('test git-proxy-cli', function () {
         await helper.startServer(service as unknown as Proxy);
         await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `${CLI_PATH} create-user --username ${uniqueUsername} --password newpass --email new@email.com --gitAccount newgit`;
+        const cli = `${CLI_PATH} create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com --gitAccount newgit`;
         const expectedExitCode = 0;
         const expectedMessages = [`User '${uniqueUsername}' created successfully`];
         const expectedErrorMessages = null;
@@ -573,7 +573,7 @@ describe('test git-proxy-cli', function () {
         await helper.runCli(
           `${CLI_PATH} login --username ${uniqueUsername} --password newpass`,
           0,
-          [`Login "${uniqueUsername}" <new@email.com>: OK`],
+          [`Login "${uniqueUsername}" <${uniqueUsername}@email.com>: OK`],
           null,
         );
       } finally {

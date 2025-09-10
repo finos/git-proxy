@@ -24,16 +24,14 @@ try {
 }
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
-const defaultPushQuery: PushQuery = {
+const defaultPushQuery: Partial<PushQuery> = {
   error: false,
   blocked: true,
   allowPush: false,
   authorised: false,
-  canceled: false,
-  rejected: false,
 };
 
-export const getPushes = (query: PushQuery): Promise<Action[]> => {
+export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => {
   if (!query) query = defaultPushQuery;
   return new Promise((resolve, reject) => {
     db.find(query, (err: Error, docs: Action[]) => {
