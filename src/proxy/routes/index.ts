@@ -27,6 +27,10 @@ const logAction = (
 };
 
 const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
+  if (req.method !== 'GET' || !req.url.includes('/info/refs')) {
+    return true;
+  }
+
   try {
     const urlComponents = processUrlPath(req.url);
     if (
