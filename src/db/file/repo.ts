@@ -21,7 +21,8 @@ if (config.getDatabase().type === 'fs') {
   initializeFileDatabase();
 }
 
-const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
+// export for testing purposes
+export const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
 
 try {
   db.ensureIndex({ fieldName: 'url', unique: true });
@@ -106,7 +107,7 @@ export const createRepo = async (repo: Repo): Promise<Repo> => {
       if (err) {
         reject(err);
       } else {
-        resolve(doc ? toClass(doc, Repo.prototype) : null);
+        resolve(toClass(doc, Repo.prototype));
       }
     });
   });

@@ -18,8 +18,9 @@ import Proxy from '../src/proxy';
 const TEST_DEFAULT_REPO = {
   url: 'https://github.com/finos/git-proxy.git',
   name: 'git-proxy',
-  project: 'finos/gitproxy',
+  project: 'finos/git-proxy',
   host: 'github.com',
+  proxyUrlPrefix: '/github.com/finos/git-proxy.git',
 };
 
 const TEST_GITLAB_REPO = {
@@ -27,7 +28,16 @@ const TEST_GITLAB_REPO = {
   name: 'gitlab',
   project: 'gitlab-community/meta',
   host: 'gitlab.com',
-  proxyUrlPrefix: 'gitlab.com/gitlab-community/meta.git',
+  proxyUrlPrefix: '/gitlab.com/gitlab-community/meta.git',
+};
+
+const TEST_UNKNOWN_REPO = {
+  url: 'https://github.com/finos/fdc3.git',
+  name: 'fdc3',
+  project: 'finos/fdc3',
+  host: 'github.com',
+  proxyUrlPrefix: '/github.com/finos/fdc3.git',
+  fallbackUrlPrefix: '/finos/fdc3.git',
 };
 
 describe('proxy route filter middleware', () => {
@@ -42,6 +52,10 @@ describe('proxy route filter middleware', () => {
     sinon.restore();
   });
 
+  after(() => {
+    sinon.restore();
+  });
+
   it('should reject invalid git requests with 400', async () => {
     const res = await chai
       .request(app)
@@ -49,8 +63,8 @@ describe('proxy route filter middleware', () => {
       .set('user-agent', 'git/2.42.0')
       .set('accept', 'application/x-git-upload-pack-request');
 
-    expect(res).to.have.status(400);
-    expect(res.text).to.equal('Invalid request received');
+    expect(res).to.have.status(200); // status 200 is used to ensure error message is rendered by git client
+    expect(res.text).to.contain('Invalid request received');
   });
 
   it('should handle blocked requests and return custom packet message', async () => {
@@ -68,7 +82,7 @@ describe('proxy route filter middleware', () => {
       .send(Buffer.from('0000'))
       .buffer();
 
-    expect(res.status).to.equal(200);
+    expect(res.status).to.equal(200); // status 200 is used to ensure error message is rendered by git client
     expect(res.text).to.contain('You shall not push!');
     expect(res.headers['content-type']).to.include('application/x-git-receive-pack-result');
     expect(res.headers['x-frame-options']).to.equal('DENY');
@@ -183,6 +197,31 @@ describe('proxy route helpers', () => {
       });
       expect(res).to.be.false;
     });
+  });
+});
+
+describe('healthcheck route', () => {
+  let app;
+
+  beforeEach(async () => {
+    app = express();
+    app.use('/', await getRouter());
+  });
+
+  it('returns 200 OK with no-cache headers', async () => {
+    const res = await chai.request(app).get('/healthcheck');
+
+    expect(res).to.have.status(200);
+    expect(res.text).to.equal('OK');
+
+    // Basic header checks (values defined in route)
+    expect(res).to.have.header(
+      'cache-control',
+      'no-cache, no-store, must-revalidate, proxy-revalidate',
+    );
+    expect(res).to.have.header('pragma', 'no-cache');
+    expect(res).to.have.header('expires', '0');
+    expect(res).to.have.header('surrogate-control', 'no-store');
   });
 });
 
@@ -321,13 +360,6 @@ describe('proxy express application', async () => {
   };
 
   before(async () => {
-    // pass through requests
-    sinon.stub(chain, 'executeChain').resolves({
-      blocked: false,
-      blockedMessage: '',
-      error: false,
-    });
-
     // start the API and proxy
     proxy = new Proxy();
     apiApp = await service.start(proxy);
@@ -364,7 +396,7 @@ describe('proxy express application', async () => {
     // proxy a fetch request
     const res = await chai
       .request(proxy.getExpressApp())
-      .get('/github.com/finos/git-proxy.git/info/refs?service=git-upload-pack')
+      .get(`${TEST_DEFAULT_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
       .set('user-agent', 'git/2.42.0')
       .set('accept', 'application/x-git-upload-pack-request')
       .buffer();
@@ -373,11 +405,11 @@ describe('proxy express application', async () => {
     expect(res.text).to.contain('git-upload-pack');
   });
 
-  it('should proxy requests for the default GitHub repository using the backwards compatibility URL', async function () {
+  it('should proxy requests for the default GitHub repository using the fallback URL', async function () {
     // proxy a fetch request using a fallback URL
     const res = await chai
       .request(proxy.getExpressApp())
-      .get('/finos/git-proxy.git/info/refs?service=git-upload-pack')
+      .get(`${TEST_DEFAULT_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
       .set('user-agent', 'git/2.42.0')
       .set('accept', 'application/x-git-upload-pack-request')
       .buffer();
@@ -415,7 +447,7 @@ describe('proxy express application', async () => {
     // proxy a request to the new repo
     const res2 = await chai
       .request(proxy.getExpressApp())
-      .get(`/${TEST_GITLAB_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
+      .get(`${TEST_GITLAB_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
       .set('user-agent', 'git/2.42.0')
       .set('accept', 'application/x-git-upload-pack-request')
       .buffer();
@@ -442,11 +474,11 @@ describe('proxy express application', async () => {
     res.should.have.status(200);
 
     // confirm that its gone from the DB
-    repo = await db.getRepoByUrl(
-      TEST_GITLAB_REPO.url,
+    repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    expect(
+      repo,
       'The GitLab repo still existed in the database after it should have been deleted...',
-    );
-    expect(repo).to.be.null;
+    ).to.be.null;
 
     // give the proxy half a second to restart
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -454,11 +486,44 @@ describe('proxy express application', async () => {
     // try (and fail) to proxy a request to gitlab.com
     const res2 = await chai
       .request(proxy.getExpressApp())
-      .get(`/${TEST_GITLAB_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
+      .get(`${TEST_GITLAB_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
       .set('user-agent', 'git/2.42.0')
       .set('accept', 'application/x-git-upload-pack-request')
       .buffer();
 
-    res2.should.have.status(404);
+    res2.should.have.status(200); // status 200 is used to ensure error message is rendered by git client
+    expect(res2.text).to.contain('Rejecting repo');
+  }).timeout(5000);
+
+  it('should not proxy requests for an unknown project', async function () {
+    // We are testing that the proxy stops proxying requests for a particular origin
+    // The chain is stubbed and will always passthrough requests, hence, we are only checking what hosts are proxied.
+
+    // the gitlab test repo should already exist
+    const repo = await db.getRepoByUrl(TEST_UNKNOWN_REPO.url);
+    expect(
+      repo,
+      'The unknown (but real) repo existed in the database which is not expected for this test',
+    ).to.be.null;
+
+    // try (and fail) to proxy a request to the repo directly
+    const res = await chai
+      .request(proxy.getExpressApp())
+      .get(`${TEST_UNKNOWN_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-upload-pack-request')
+      .buffer();
+    res.should.have.status(200); // status 200 is used to ensure error message is rendered by git client
+    expect(res.text).to.contain('Rejecting repo');
+
+    // try (and fail) to proxy a request to the repo via the fallback URL directly
+    const res2 = await chai
+      .request(proxy.getExpressApp())
+      .get(`${TEST_UNKNOWN_REPO.fallbackUrlPrefix}/info/refs?service=git-upload-pack`)
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-upload-pack-request')
+      .buffer();
+    res2.should.have.status(200);
+    expect(res2.text).to.contain('Rejecting repo');
   }).timeout(5000);
 });

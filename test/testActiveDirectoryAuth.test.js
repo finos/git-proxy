@@ -81,9 +81,7 @@ describe('ActiveDirectory auth method', () => {
       displayName: 'Test User',
     };
 
-    ldapStub.isUserInAdGroup
-      .onCall(0).resolves(true)
-      .onCall(1).resolves(true);
+    ldapStub.isUserInAdGroup.onCall(0).resolves(true).onCall(1).resolves(true);
 
     const done = sinon.spy();
 
@@ -108,9 +106,9 @@ describe('ActiveDirectory auth method', () => {
         sAMAccountName: 'bad-user',
         mail: 'bad@test.com',
         userPrincipalName: 'bad@test.com',
-        title: 'Bad User'
+        title: 'Bad User',
       },
-      displayName: 'Bad User'
+      displayName: 'Bad User',
     };
 
     ldapStub.isUserInAdGroup.onCall(0).resolves(false);
@@ -134,9 +132,9 @@ describe('ActiveDirectory auth method', () => {
         sAMAccountName: 'error-user',
         mail: 'err@test.com',
         userPrincipalName: 'err@test.com',
-        title: 'Whoops'
+        title: 'Whoops',
       },
-      displayName: 'Error User'
+      displayName: 'Error User',
     };
 
     ldapStub.isUserInAdGroup.rejects(new Error('LDAP error'));

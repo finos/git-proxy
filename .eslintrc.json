@@ -17,8 +17,16 @@
   ],
   "overrides": [
     {
-      "files": ["test/**/*.js", "**/*.json"],
+      "files": ["test/**/*.js", "**/*.json", "cypress/**/*.js", "plugins/**/*.js"],
+      "parserOptions": {
+        "project": null
+      },
       "parser": "espree",
+      "env": {
+        "browser": true,
+        "node": true,
+        "mocha": true
+      },
       "rules": {
         "@typescript-eslint/no-unused-expressions": "off"
       }
@@ -51,5 +59,6 @@
     "react": {
       "version": "detect"
     }
-  }
+  },
+  "ignorePatterns": ["src/config/generated/config.ts"]
 }

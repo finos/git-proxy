@@ -119,6 +119,7 @@ const RepoDetails: React.FC = () => {
                   <Button
                     variant='contained'
                     color='secondary'
+                    data-testid='delete-repo-button'
                     onClick={() => removeRepository(data._id)}
                   >
                     <Delete />

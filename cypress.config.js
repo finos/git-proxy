@@ -5,12 +5,12 @@ module.exports = defineConfig({
     baseUrl: process.env.CYPRESS_BASE_URL || 'http://localhost:8080',
     chromeWebSecurity: false, // Required for OIDC testing
     setupNodeEvents(on, config) {
-      on("task", {
+      on('task', {
         log(message) {
           console.log(message);
           return null;
-        }
-      })
-    }
+        },
+      });
+    },
   },
 });

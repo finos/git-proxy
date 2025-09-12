@@ -57,9 +57,10 @@ export const getAxiosConfig = () => {
 export const processAuthError = (error) => {
   let errorMessage = `Failed to authorize user: ${error.response.data.trim()}. `;
   if (!localStorage.getItem('ui_jwt_token')) {
-    errorMessage += 'Set your JWT token in the settings page or disable JWT auth in your app configuration.'
+    errorMessage +=
+      'Set your JWT token in the settings page or disable JWT auth in your app configuration.';
   } else {
-    errorMessage += 'Check your JWT token or disable JWT auth in your app configuration.'
+    errorMessage += 'Check your JWT token or disable JWT auth in your app configuration.';
   }
   return errorMessage;
 };
