@@ -9,6 +9,14 @@ import {
 import moment from 'moment';
 
 /**
+ * The base URL for API requests.
+ *
+ * Uses the `VITE_API_URI` environment variable if set, otherwise defaults to the current origin.
+ * @return {string} The base URL to use for API requests.
+ */
+export const baseApiUrl = process.env.VITE_API_URI || location.origin;
+
+/**
  * Retrieve a decoded cookie value from `document.cookie` with given `name`.
  * @param {string} name - The name of the cookie to retrieve
  * @return {string | null} - The cookie value or null if not found
