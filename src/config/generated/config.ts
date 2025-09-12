@@ -79,6 +79,10 @@ export interface GitProxyConfig {
    */
   sink?: Database[];
   /**
+   * SSH proxy server configuration
+   */
+  ssh?: SSH;
+  /**
    * Deprecated: Path to SSL certificate file (use tls.cert instead)
    */
   sslCertPemPath?: string;
@@ -295,6 +299,25 @@ export interface TLS {
   cert: string;
   enabled: boolean;
   key: string;
+  [property: string]: any;
+}
+
+/**
+ * SSH proxy server configuration
+ */
+export interface SSH {
+  enabled?: boolean;
+  port?: number;
+  hostKey?: SSHHostKey;
+  [property: string]: any;
+}
+
+/**
+ * SSH host key configuration
+ */
+export interface SSHHostKey {
+  privateKeyPath: string;
+  publicKeyPath: string;
   [property: string]: any;
 }
 

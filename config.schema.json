@@ -183,6 +183,39 @@
           }
         }
       }
+    },
+    "ssh": {
+      "description": "SSH proxy server configuration",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable SSH proxy server"
+        },
+        "port": {
+          "type": "number",
+          "description": "Port for SSH proxy server to listen on",
+          "default": 2222
+        },
+        "hostKey": {
+          "type": "object",
+          "description": "SSH host key configuration",
+          "properties": {
+            "privateKeyPath": {
+              "type": "string",
+              "description": "Path to private SSH host key",
+              "default": "./.ssh/host_key"
+            },
+            "publicKeyPath": {
+              "type": "string",
+              "description": "Path to public SSH host key",
+              "default": "./.ssh/host_key.pub"
+            }
+          },
+          "required": ["privateKeyPath", "publicKeyPath"]
+        }
+      },
+      "required": ["enabled"]
     }
   },
   "definitions": {

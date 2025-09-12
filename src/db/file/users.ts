@@ -88,6 +88,9 @@ export const findUserByOIDC = function (oidcId: string): Promise<User | null> {
 export const createUser = function (user: User): Promise<void> {
   user.username = user.username.toLowerCase();
   user.email = user.email.toLowerCase();
+  if (!user.publicKeys) {
+    user.publicKeys = [];
+  }
   return new Promise((resolve, reject) => {
     db.insert(user, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -168,6 +171,70 @@ export const getUsers = (query: any = {}): Promise<User[]> => {
         reject(err);
       } else {
         resolve(docs);
+      }
+    });
+  });
+};
+
+export const addPublicKey = (username: string, publicKey: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    findUser(username)
+      .then((user) => {
+        if (!user) {
+          reject(new Error('User not found'));
+          return;
+        }
+        if (!user.publicKeys) {
+          user.publicKeys = [];
+        }
+        if (!user.publicKeys.includes(publicKey)) {
+          user.publicKeys.push(publicKey);
+          updateUser(user)
+            .then(() => resolve())
+            .catch(reject);
+        } else {
+          resolve();
+        }
+      })
+      .catch(reject);
+  });
+};
+
+export const removePublicKey = (username: string, publicKey: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    findUser(username)
+      .then((user) => {
+        if (!user) {
+          reject(new Error('User not found'));
+          return;
+        }
+        if (!user.publicKeys) {
+          user.publicKeys = [];
+          resolve();
+          return;
+        }
+        user.publicKeys = user.publicKeys.filter((key) => key !== publicKey);
+        updateUser(user)
+          .then(() => resolve())
+          .catch(reject);
+      })
+      .catch(reject);
+  });
+};
+
+export const findUserBySSHKey = (sshKey: string): Promise<User | null> => {
+  return new Promise<User | null>((resolve, reject) => {
+    db.findOne({ publicKeys: sshKey }, (err: Error | null, doc: User) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
+      if (err) {
+        reject(err);
+      } else {
+        if (!doc) {
+          resolve(null);
+        } else {
+          resolve(doc);
+        }
       }
     });
   });

@@ -39,6 +39,7 @@ export class User {
   email: string;
   admin: boolean;
   oidcId?: string | null;
+  publicKeys?: string[];
   _id?: string;
 
   constructor(
@@ -48,6 +49,7 @@ export class User {
     email: string,
     admin: boolean,
     oidcId: string | null = null,
+    publicKeys: string[] = [],
     _id?: string,
   ) {
     this.username = username;
@@ -56,6 +58,7 @@ export class User {
     this.email = email;
     this.admin = admin;
     this.oidcId = oidcId ?? null;
+    this.publicKeys = publicKeys;
     this._id = _id;
   }
 }
@@ -82,8 +85,11 @@ export interface Sink {
   findUser: (username: string) => Promise<User | null>;
   findUserByEmail: (email: string) => Promise<User | null>;
   findUserByOIDC: (oidcId: string) => Promise<User | null>;
+  findUserBySSHKey: (sshKey: string) => Promise<User | null>;
   getUsers: (query?: object) => Promise<User[]>;
   createUser: (user: User) => Promise<void>;
   deleteUser: (username: string) => Promise<void>;
   updateUser: (user: User) => Promise<void>;
+  addPublicKey: (username: string, publicKey: string) => Promise<void>;
+  removePublicKey: (username: string, publicKey: string) => Promise<void>;
 }

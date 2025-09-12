@@ -9,11 +9,14 @@ import {
   getTLSKeyPemPath,
   getTLSCertPemPath,
   getTLSEnabled,
+  getSSHConfig,
 } from '../config';
 import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos } from '../db';
 import { PluginLoader } from '../plugin';
 import chain from './chain';
 import { Repo } from '../db/types';
+// @ts-expect-error - SSH server is a JavaScript file
+import SSHServer from './ssh/server';
 
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort, GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } =
   require('../config/env').serverConfig;
@@ -38,6 +41,7 @@ export default class Proxy {
   private httpServer: http.Server | null = null;
   private httpsServer: https.Server | null = null;
   private expressApp: Express | null = null;
+  private sshServer: any | null = null;
 
   constructor() {}
 
@@ -81,6 +85,13 @@ export default class Proxy {
         console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
       });
     }
+
+    // Initialize SSH server if enabled
+    const sshConfig = getSSHConfig();
+    if (sshConfig.enabled) {
+      this.sshServer = new SSHServer();
+      this.sshServer.start();
+    }
   }
 
   public getExpressApp() {
@@ -104,6 +115,13 @@ export default class Proxy {
             console.log('HTTPS server closed');
             this.httpsServer = null;
           });
+        }
+
+        // Close SSH server if it exists
+        if (this.sshServer) {
+          this.sshServer.stop();
+          console.log('SSH server stopped');
+          this.sshServer = null;
         }
 
         resolve();
