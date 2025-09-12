@@ -27,8 +27,13 @@ export const getRepoByUrl = async (repoUrl: string): Promise<Repo | null> => {
 
 export const getRepoById = async (_id: string): Promise<Repo | null> => {
   const collection = await connect(collectionName);
-  const doc = await collection.findOne({ _id: new ObjectId(_id) });
-  return doc ? toClass(doc, Repo.prototype) : null;
+  try {
+    const doc = await collection.findOne({ _id: new ObjectId(_id) });
+    return doc ? toClass(doc, Repo.prototype) : null;
+  } catch (error) {
+    // Handle invalid ObjectId strings gracefully
+    return null;
+  }
 };
 
 export const createRepo = async (repo: Repo): Promise<Repo> => {

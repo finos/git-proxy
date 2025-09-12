@@ -56,6 +56,11 @@ jobs:
           npm run test-coverage-ci
           npm run test-coverage-ci --workspaces --if-present
 
+      - name: Test MongoDB Integration
+        run: npm run test:mongo
+        env:
+          GIT_PROXY_MONGO_CONNECTION_STRING: mongodb://localhost:27017/git-proxy-test
+
       - name: Upload test coverage report
         uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
         with:

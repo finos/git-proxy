@@ -1,0 +1,6 @@
+{
+  "sink": {
+    "type": "mongo",
+    "enabled": true
+  }
+}

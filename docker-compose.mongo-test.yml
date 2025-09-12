@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  mongodb-test:
+    image: mongo:4.4
+    container_name: git-proxy-mongo-test
+    ports:
+      - '27017:27017'
+    environment:
+      MONGO_INITDB_DATABASE: git-proxy-test
+    volumes:
+      - mongo-test-data:/data/db
+    command: mongod --bind_ip_all
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.runCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo-test-data:
