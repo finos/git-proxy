@@ -17,7 +17,7 @@ import { getUser } from '../../services/user';
 import axios from 'axios';
 import { getAxiosConfig } from '../../services/auth';
 import { UserData } from '../../../types/models';
-import { baseApiUrl } from '../../utils';
+import { API_BASE } from '../../utils';
 
 const useStyles = makeStyles(styles);
 
@@ -52,7 +52,7 @@ const DashboardNavbarLinks: React.FC = () => {
 
   const logout = async () => {
     try {
-      const { data } = await axios.post(`${baseApiUrl}/api/auth/logout`, {}, getAxiosConfig());
+      const { data } = await axios.post(`${API_BASE}/api/auth/logout`, {}, getAxiosConfig());
 
       if (!data.isAuth && !data.user) {
         setAuth(false);

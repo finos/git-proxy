@@ -8,13 +8,15 @@ import {
 } from '../types/models';
 import moment from 'moment';
 
+const strip = (s: string) => s.replace(/\/+$/, '');
+
 /**
  * The base URL for API requests.
  *
  * Uses the `VITE_API_URI` environment variable if set, otherwise defaults to the current origin.
  * @return {string} The base URL to use for API requests.
  */
-export const baseApiUrl = process.env.VITE_API_URI || location.origin;
+export const API_BASE = import.meta.env.VITE_API_URI ? strip(import.meta.env.VITE_API_URI) : '';
 
 /**
  * Retrieve a decoded cookie value from `document.cookie` with given `name`.

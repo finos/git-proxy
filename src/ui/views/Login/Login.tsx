@@ -13,7 +13,7 @@ import CardFooter from '../../components/Card/CardFooter';
 import axios, { AxiosError } from 'axios';
 import logo from '../../assets/img/git-proxy.png';
 import { Badge, CircularProgress, Snackbar } from '@material-ui/core';
-import { baseApiUrl, getCookie } from '../../utils';
+import { API_BASE, getCookie } from '../../utils';
 import { useAuth } from '../../auth/AuthProvider';
 
 interface LoginResponse {
@@ -21,7 +21,7 @@ interface LoginResponse {
   password: string;
 }
 
-const loginUrl = `${baseApiUrl}/api/auth/login`;
+const loginUrl = `${API_BASE}/api/auth/login`;
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -41,7 +41,7 @@ const Login: React.FC = () => {
   }
 
   function handleOIDCLogin(): void {
-    window.location.href = `${baseApiUrl}/api/auth/oidc`;
+    window.location.href = `${API_BASE}/api/auth/oidc`;
   }
 
   function handleSubmit(event: FormEvent): void {
