@@ -85,9 +85,12 @@ jobs:
     - name: Run cypress test
       uses: cypress-io/github-action@b8ba51a856ba5f4c15cf39007636d4ab04f23e3c # v6.10.2
       with: 
-        start: npm start
+        start: npm run start:ci
         wait-on: "http://localhost:8080"
         wait-on-timeout: 120
         run: npm run cypress:run
+      env:
+        NODE_ENV: test
+        CYPRESS_BASE_URL: "http://localhost:8080"
 
 

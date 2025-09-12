@@ -8,6 +8,7 @@
     "clientinstall": "npm install --prefix client",
     "server": "tsx index.ts",
     "start": "concurrently \"npm run server\" \"npm run client\"",
+    "start:ci": "npm run server",
     "build": "npm run build-ui && npm run build-lib",
     "build-ts": "tsc",
     "build-ui": "vite build",
