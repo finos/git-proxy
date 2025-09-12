@@ -7,9 +7,16 @@ const configure = async (passport) => {
   const { discovery, fetchUserInfo } = await import('openid-client');
   const { Strategy } = await import('openid-client/passport');
   const authMethods = require('../../config').getAuthMethods();
-  const oidcConfig = authMethods.find(
+  const oidcMethod = authMethods.find(
     (method) => method.type.toLowerCase() === 'openidconnect',
-  )?.oidcConfig;
+  );
+  
+  if (!oidcMethod || !oidcMethod.enabled) {
+    console.log('OIDC authentication is not enabled, skipping configuration');
+    return passport;
+  }
+  
+  const oidcConfig = oidcMethod.oidcConfig;
   const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
 
   if (!oidcConfig || !oidcConfig.issuer) {
