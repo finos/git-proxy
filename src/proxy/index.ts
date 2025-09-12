@@ -15,7 +15,6 @@ import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos } from '../db
 import { PluginLoader } from '../plugin';
 import chain from './chain';
 import { Repo } from '../db/types';
-// @ts-expect-error - SSH server is a JavaScript file
 import SSHServer from './ssh/server';
 
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort, GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } =
