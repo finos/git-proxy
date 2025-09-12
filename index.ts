@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-/* eslint-disable max-len */
+
 import path from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
