@@ -235,7 +235,15 @@ const getRouter = async () => {
 
   console.log('proxy keys registered: ', JSON.stringify(proxyKeys));
 
-  router.use('/', (req, res, next) => {
+  router.use('/', ((req, res, next) => {
+    if (req.path === '/healthcheck') {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      res.set('Surrogate-Control', 'no-store');
+      return res.status(200).send('OK');
+    }
+
     console.log(
       `processing request URL: '${req.url}' against registered proxy keys: ${JSON.stringify(proxyKeys)}`,
     );
@@ -249,7 +257,7 @@ const getRouter = async () => {
     // fallback
     console.log(`\tusing fallback`);
     return fallbackProxy(req, res, next);
-  });
+  }) as RequestHandler);
   return router;
 };
 
