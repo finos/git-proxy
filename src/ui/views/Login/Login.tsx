@@ -15,13 +15,14 @@ import logo from '../../assets/img/git-proxy.png';
 import { Badge, CircularProgress, Snackbar } from '@material-ui/core';
 import { getCookie } from '../../utils';
 import { useAuth } from '../../auth/AuthProvider';
+import { API_BASE } from '../../apiBase';
 
 interface LoginResponse {
   username: string;
   password: string;
 }
 
-const loginUrl = `${process.env.VITE_API_URI}/api/auth/login`;
+const loginUrl = `${API_BASE}/api/auth/login`;
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -41,7 +42,7 @@ const Login: React.FC = () => {
   }
 
   function handleOIDCLogin(): void {
-    window.location.href = `${process.env.VITE_API_URI}/api/auth/oidc`;
+    window.location.href = `${API_BASE}/api/auth/oidc`;
   }
 
   function handleSubmit(event: FormEvent): void {
