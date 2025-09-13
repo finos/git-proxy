@@ -13,8 +13,9 @@ import CardFooter from '../../components/Card/CardFooter';
 import axios, { AxiosError } from 'axios';
 import logo from '../../assets/img/git-proxy.png';
 import { Badge, CircularProgress, Snackbar } from '@material-ui/core';
-import { API_BASE, getCookie } from '../../utils';
+import { getCookie } from '../../utils';
 import { useAuth } from '../../auth/AuthProvider';
+import { API_BASE } from '../../apiBase';
 
 interface LoginResponse {
   username: string;

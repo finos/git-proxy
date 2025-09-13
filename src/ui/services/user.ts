@@ -1,7 +1,8 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
 import { UserData } from '../../types/models';
-import { API_BASE } from '../utils';
+
+import { API_BASE } from '../apiBase';
 
 type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
 

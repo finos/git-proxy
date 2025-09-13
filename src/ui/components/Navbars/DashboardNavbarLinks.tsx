@@ -17,7 +17,8 @@ import { getUser } from '../../services/user';
 import axios from 'axios';
 import { getAxiosConfig } from '../../services/auth';
 import { UserData } from '../../../types/models';
-import { API_BASE } from '../../utils';
+
+import { API_BASE } from '../../apiBase';
 
 const useStyles = makeStyles(styles);
 
