@@ -30,8 +30,6 @@ const isEmailAllowed = (email: string): boolean => {
 };
 
 const exec = async (req: any, action: Action): Promise<Action> => {
-  console.log({ req, action });
-
   const step = new Step('checkAuthorEmails');
 
   const uniqueAuthorEmails = [
