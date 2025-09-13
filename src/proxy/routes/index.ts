@@ -27,10 +27,6 @@ const logAction = (
 };
 
 const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
-  if (req.method !== 'GET' || !req.url.includes('/info/refs')) {
-    return true;
-  }
-
   try {
     const urlComponents = processUrlPath(req.url);
     if (
@@ -50,7 +46,6 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
       return false;
     }
 
-    console.log('TIME: executeChain start');
     const action = await executeChain(req, res);
 
     if (action.error || action.blocked) {
