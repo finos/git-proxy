@@ -31,7 +31,8 @@ const corsOptions = {
 async function createApp(proxy: Proxy): Promise<Express> {
   // configuration of passport is async
   // Before we can bind the routes - we need the passport strategy
-  const passport = await require('./passport').configure();
+  const { configure } = await import('./passport');
+  const passport = await configure();
   const routes = await import('./routes');
   const absBuildPath = path.join(__dirname, '../../build');
   app.use(cors(corsOptions));
@@ -83,7 +84,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
  * @param {Proxy} proxy A reference to the proxy, used to restart it when necessary.
  * @return {Promise<Express>} the express application (used for testing).
  */
-async function start(proxy: Proxy) {
+async function start(proxy?: Proxy) {
   if (!proxy) {
     console.warn("WARNING: proxy is null and can't be controlled by the API service");
   }
