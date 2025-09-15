@@ -1,4 +1,4 @@
-const { handleMessage, handleGetMessage, validGitRequest } = require('../src/proxy/routes');
+const { handleMessage, handleRefsErrorMessage, validGitRequest } = require('../src/proxy/routes');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 chai.use(chaiHttp);
@@ -362,7 +362,7 @@ describe('proxyFilter function', async () => {
 
     expect(result).to.be.false;
 
-    const expectedPacket = handleGetMessage('Repository not in authorised list');
+    const expectedPacket = handleRefsErrorMessage('Repository not in authorised list');
 
     expect(res.set.calledWith('content-type', 'application/x-git-upload-pack-advertisement')).to.be
       .true;

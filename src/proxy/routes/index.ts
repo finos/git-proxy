@@ -64,7 +64,7 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
         );
 
         // Use Git protocol error packet format
-        res.status(200).send(handleGetMessage(errorMessage));
+        res.status(200).send(handleRefsErrorMessage(errorMessage));
         return false;
       }
 
@@ -289,7 +289,7 @@ export {
   proxyFilter,
   getRouter,
   handleMessage,
-  handleGetMessage,
+  handleRefsErrorMessage,
   isPackPost,
   teeAndValidate,
   validGitRequest,
