@@ -71,7 +71,7 @@ export interface OidcConfig {
 export interface AdConfig {
   url: string;
   baseDN: string;
-  searchBase: string;
+  searchBase?: string;
   userGroup?: string;
   adminGroup?: string;
   domain?: string;
@@ -80,8 +80,12 @@ export interface AdConfig {
 export interface JwtConfig {
   clientID: string;
   authorityURL: string;
-  roleMapping: Record<string, unknown>;
+  roleMapping?: RoleMapping;
   expectedAudience?: string;
+}
+
+export interface RoleMapping {
+  [key: string]: Record<string, string> | undefined;
 }
 
 export interface TempPasswordConfig {

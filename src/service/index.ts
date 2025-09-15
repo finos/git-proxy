@@ -84,7 +84,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
  * @param {Proxy} proxy A reference to the proxy, used to restart it when necessary.
  * @return {Promise<Express>} the express application (used for testing).
  */
-async function start(proxy?: Proxy) {
+async function start(proxy: Proxy) {
   if (!proxy) {
     console.warn("WARNING: proxy is null and can't be controlled by the API service");
   }

@@ -199,6 +199,10 @@ export interface AdConfig {
    */
   password: string;
   /**
+   * Override baseDN to query for users in other OUs or sub-trees.
+   */
+  searchBase?: string;
+  /**
    * Active Directory server to connect to, e.g. `ldap://ad.example.com`.
    */
   url: string;
@@ -215,6 +219,8 @@ export interface AdConfig {
 export interface JwtConfig {
   authorityURL: string;
   clientID: string;
+  expectedAudience?: string;
+  roleMapping?: { [key: string]: { [key: string]: string } };
   [property: string]: any;
 }
 
@@ -553,6 +559,7 @@ const typeMap: any = {
     [
       { json: 'baseDN', js: 'baseDN', typ: '' },
       { json: 'password', js: 'password', typ: '' },
+      { json: 'searchBase', js: 'searchBase', typ: u(undefined, '') },
       { json: 'url', js: 'url', typ: '' },
       { json: 'username', js: 'username', typ: '' },
     ],
@@ -562,6 +569,8 @@ const typeMap: any = {
     [
       { json: 'authorityURL', js: 'authorityURL', typ: '' },
       { json: 'clientID', js: 'clientID', typ: '' },
+      { json: 'expectedAudience', js: 'expectedAudience', typ: u(undefined, '') },
+      { json: 'roleMapping', js: 'roleMapping', typ: u(undefined, m(m(''))) },
     ],
     'any',
   ),

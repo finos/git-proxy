@@ -203,14 +203,19 @@ export const getAPIs = () => {
   return config.api || {};
 };
 
-export const getCookieSecret = (): string | undefined => {
+export const getCookieSecret = (): string => {
   const config = loadFullConfiguration();
+
+  if (!config.cookieSecret) {
+    throw new Error('cookieSecret is not set!');
+  }
+
   return config.cookieSecret;
 };
 
-export const getSessionMaxAgeHours = (): number | undefined => {
+export const getSessionMaxAgeHours = (): number => {
   const config = loadFullConfiguration();
-  return config.sessionMaxAgeHours;
+  return config.sessionMaxAgeHours || 24;
 };
 
 // Get commit related configuration
