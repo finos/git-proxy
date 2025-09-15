@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@ec9f2d5744a09debf3a187a3f4f675c53b671911 # v2.13.0
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2.13.1
         with:
           egress-policy: audit
 
@@ -57,7 +57,7 @@ jobs:
           npm run test-coverage-ci --workspaces --if-present
 
       - name: Upload test coverage report
-        uses: codecov/codecov-action@18283e04ce6e62d37312384ff67231eb8fd56d24 # v5.4.3
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
         with:
           files: ./coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
