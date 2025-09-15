@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import moment from 'moment';
 import { useNavigate } from 'react-router-dom';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
@@ -15,9 +14,25 @@ import { getPushes } from '../../../services/git-push';
 import { KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
+import ErrorBoundary from '../../../components/ErrorBoundary/ErrorBoundary';
 import { PushData } from '../../../../types/models';
-import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../../db/helper';
-import { generateAuthorLinks, generateEmailLink } from '../../../utils';
+import {
+  isTagPush,
+  getDisplayTimestamp,
+  getTagName,
+  getRefToShow,
+  getShaOrTag,
+  getCommitterOrTagger,
+  getAuthorEmail,
+  getMessage,
+  getCommitCount,
+  getRepoFullName,
+  isValidValue,
+  getRefUrl,
+  getShaUrl,
+} from '../../../utils/pushUtils';
+import { trimTrailingDotGit } from '../../../../db/helper';
+import { getGitProvider, generateAuthorLinks, generateEmailLink } from '../../../utils';
 
 interface PushesTableProps {
   [key: string]: any;
@@ -53,15 +68,23 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
     setFilteredData(data);
   }, [data]);
 
+  // Include "tag" in the searchable fields when tag exists
   useEffect(() => {
     const lowerCaseTerm = searchTerm.toLowerCase();
     const filtered = searchTerm
-      ? data.filter(
-          (item) =>
-            item.repo.toLowerCase().includes(lowerCaseTerm) ||
-            item.commitTo.toLowerCase().includes(lowerCaseTerm) ||
-            item.commitData[0]?.message.toLowerCase().includes(lowerCaseTerm),
-        )
+      ? data.filter((item) => {
+          const repoName = getRepoFullName(item.repo).toLowerCase();
+          const message = getMessage(item).toLowerCase();
+          const commitToSha = item.commitTo.toLowerCase();
+          const tagName = getTagName(item.tag).toLowerCase();
+
+          return (
+            repoName.includes(lowerCaseTerm) ||
+            commitToSha.includes(lowerCaseTerm) ||
+            message.includes(lowerCaseTerm) ||
+            tagName.includes(lowerCaseTerm)
+          );
+        })
       : data;
     setFilteredData(filtered);
     setCurrentPage(1);
@@ -80,94 +103,96 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
   if (isLoading) return <div>Loading...</div>;
 
   return (
-    <div>
-      <Search onSearch={handleSearch} />
-      <TableContainer component={Paper}>
-        <Table className={classes.table} aria-label='simple table'>
-          <TableHead>
-            <TableRow>
-              <TableCell align='left'>Timestamp</TableCell>
-              <TableCell align='left'>Repository</TableCell>
-              <TableCell align='left'>Branch</TableCell>
-              <TableCell align='left'>Commit SHA</TableCell>
-              <TableCell align='left'>Committer</TableCell>
-              <TableCell align='left'>Authors</TableCell>
-              <TableCell align='left'>Commit Message</TableCell>
-              <TableCell align='left'>No. of Commits</TableCell>
-              <TableCell align='right'></TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {[...currentItems].reverse().map((row) => {
-              const repoFullName = trimTrailingDotGit(row.repo);
-              const repoBranch = trimPrefixRefsHeads(row.branch);
-              const repoUrl = row.url;
-              const repoWebUrl = trimTrailingDotGit(repoUrl);
-              // may be used to resolve users to profile links in future
-              // const gitProvider = getGitProvider(repoUrl);
-              // const hostname = new URL(repoUrl).hostname;
-              const commitTimestamp =
-                row.commitData[0]?.commitTs || row.commitData[0]?.commitTimestamp;
+    <ErrorBoundary>
+      <div>
+        <Search onSearch={handleSearch} />
+        <TableContainer component={Paper}>
+          <Table className={classes.table} aria-label='pushes table'>
+            <TableHead>
+              <TableRow>
+                <TableCell align='left'>Timestamp</TableCell>
+                <TableCell align='left'>Repository</TableCell>
+                <TableCell align='left'>Branch/Tag</TableCell>
+                <TableCell align='left'>Commit SHA/Tag</TableCell>
+                <TableCell align='left'>Committer/Tagger</TableCell>
+                <TableCell align='left'>Authors</TableCell>
+                <TableCell align='left'>Message</TableCell>
+                <TableCell align='left'>No. of Commits</TableCell>
+                <TableCell align='right'></TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {[...currentItems].reverse().map((row) => {
+                const isTag = isTagPush(row);
+                const repoFullName = getRepoFullName(row.repo);
+                const displayTime = getDisplayTimestamp(isTag, row.commitData[0], row.tagData?.[0]);
+                const refToShow = getRefToShow(row);
+                const shaOrTag = getShaOrTag(row);
+                const repoUrl = row.url;
+                const repoWebUrl = trimTrailingDotGit(repoUrl);
+                const gitProvider = getGitProvider(repoUrl);
+                const committerOrTagger = getCommitterOrTagger(row);
+                const message = getMessage(row);
+                const commitCount = getCommitCount(row);
 
-              return (
-                <TableRow key={row.id}>
-                  <TableCell align='left'>
-                    {commitTimestamp ? moment.unix(commitTimestamp).toString() : 'N/A'}
-                  </TableCell>
-                  <TableCell align='left'>
-                    <a href={`${repoUrl}`} rel='noreferrer' target='_blank'>
-                      {repoFullName}
-                    </a>
-                  </TableCell>
-                  <TableCell align='left'>
-                    <a href={`${repoWebUrl}/tree/${repoBranch}`} rel='noreferrer' target='_blank'>
-                      {repoBranch}
-                    </a>
-                  </TableCell>
-                  <TableCell align='left'>
-                    <a
-                      href={`${repoWebUrl}/commit/${row.commitTo}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
-                      {row.commitTo.substring(0, 8)}
-                    </a>
-                  </TableCell>
-                  <TableCell align='left'>
-                    {/* render github/gitlab profile links in future 
-                    {getUserProfileLink(row.commitData[0].committerEmail, gitProvider, hostname)} 
-                    */}
-                    {generateEmailLink(
-                      row.commitData[0].committer,
-                      row.commitData[0]?.committerEmail,
-                    )}
-                  </TableCell>
-                  <TableCell align='left'>
-                    {/* render github/gitlab profile links in future 
-                    {getUserProfileLink(row.commitData[0].authorEmail, gitProvider, hostname)} 
-                    */}
-                    {generateAuthorLinks(row.commitData)}
-                  </TableCell>
-                  <TableCell align='left'>{row.commitData[0]?.message || 'N/A'}</TableCell>
-                  <TableCell align='left'>{row.commitData.length}</TableCell>
-                  <TableCell component='th' scope='row'>
-                    <Button variant='contained' color='primary' onClick={() => openPush(row.id)}>
-                      <KeyboardArrowRight />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </TableContainer>
-      <Pagination
-        itemsPerPage={itemsPerPage}
-        totalItems={filteredData.length}
-        currentPage={currentPage}
-        onPageChange={handlePageChange}
-      />
-    </div>
+                return (
+                  <TableRow key={row.id}>
+                    <TableCell align='left'>{displayTime}</TableCell>
+                    <TableCell align='left'>
+                      <a href={`${repoUrl}`} rel='noreferrer' target='_blank'>
+                        {repoFullName}
+                      </a>
+                    </TableCell>
+                    <TableCell align='left'>
+                      <a
+                        href={getRefUrl(repoWebUrl, gitProvider, isTag, refToShow)}
+                        rel='noreferrer'
+                        target='_blank'
+                      >
+                        {refToShow}
+                      </a>
+                    </TableCell>
+                    <TableCell align='left'>
+                      <a
+                        href={getShaUrl(
+                          repoWebUrl,
+                          gitProvider,
+                          isTag,
+                          isTag ? shaOrTag : row.commitTo,
+                        )}
+                        rel='noreferrer'
+                        target='_blank'
+                      >
+                        {shaOrTag}
+                      </a>
+                    </TableCell>
+                    <TableCell align='left'>
+                      {isValidValue(committerOrTagger)
+                        ? generateEmailLink(committerOrTagger, getAuthorEmail(row))
+                        : 'N/A'}
+                    </TableCell>
+                    <TableCell align='left'>{generateAuthorLinks(row.commitData)}</TableCell>
+                    <TableCell align='left'>{message}</TableCell>
+                    <TableCell align='left'>{commitCount}</TableCell>
+                    <TableCell component='th' scope='row'>
+                      <Button variant='contained' color='primary' onClick={() => openPush(row.id)}>
+                        <KeyboardArrowRight />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+        <Pagination
+          itemsPerPage={itemsPerPage}
+          totalItems={filteredData.length}
+          currentPage={currentPage}
+          onPageChange={handlePageChange}
+        />
+      </div>
+    </ErrorBoundary>
   );
 };
 
