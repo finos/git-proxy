@@ -49,6 +49,25 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
     const action = await executeChain(req, res);
 
     if (action.error || action.blocked) {
+      const errorMessage = action.errorMessage ?? action.blockedMessage ?? '';
+
+      // For GET requests to /info/refs (clone operations), use Git protocol error packet format
+      if (req.method === 'GET' && req.url.includes('/info/refs')) {
+        res.set('content-type', 'application/x-git-upload-pack-advertisement');
+
+        logAction(
+          req.url,
+          req.headers.host,
+          req.headers['user-agent'],
+          action.errorMessage,
+          action.blockedMessage,
+        );
+
+        // Use Git protocol error packet format
+        res.status(200).send(handleGetMessage(errorMessage));
+        return false;
+      }
+
       res.set('content-type', 'application/x-git-receive-pack-result');
       res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
       res.set('pragma', 'no-cache');
@@ -57,7 +76,7 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
       res.set('x-frame-options', 'DENY');
       res.set('connection', 'close');
 
-      const packetMessage = handleMessage(action.errorMessage ?? action.blockedMessage ?? '');
+      const packetMessage = handleMessage(errorMessage);
 
       logAction(
         req.url,
@@ -102,6 +121,13 @@ const handleMessage = (message: string): string => {
   const body = `\t${message}`;
   const len = (6 + Buffer.byteLength(body)).toString(16).padStart(4, '0');
   return `${len}\x02${body}\n0000`;
+};
+
+const handleGetMessage = (message: string): string => {
+  // Git protocol for GET /info/refs error packets: PKT-LINE("ERR" SP explanation-text)
+  const errorBody = `ERR ${message}`;
+  const len = (4 + Buffer.byteLength(errorBody)).toString(16).padStart(4, '0');
+  return `${len}${errorBody}\n0000`;
 };
 
 const getRequestPathResolver: (prefix: string) => ProxyOptions['proxyReqPathResolver'] = (
@@ -251,4 +277,12 @@ const getRouter = async () => {
   return router;
 };
 
-export { proxyFilter, getRouter, handleMessage, isPackPost, teeAndValidate, validGitRequest };
+export {
+  proxyFilter,
+  getRouter,
+  handleMessage,
+  handleGetMessage,
+  isPackPost,
+  teeAndValidate,
+  validGitRequest,
+};
