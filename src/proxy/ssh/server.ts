@@ -9,6 +9,14 @@ interface SSHUser {
   username: string;
   password?: string | null;
   publicKeys?: string[];
+  email?: string;
+  gitAccount?: string;
+}
+
+interface AuthenticatedUser {
+  username: string;
+  email?: string;
+  gitAccount?: string;
 }
 
 interface ClientWithUser extends ssh2.Connection {
@@ -16,6 +24,8 @@ interface ClientWithUser extends ssh2.Connection {
     keyType: string;
     keyData: Buffer;
   };
+  authenticatedUser?: AuthenticatedUser;
+  clientIp?: string;
 }
 
 export class SSHServer {
@@ -31,31 +41,51 @@ export class SSHServer {
         keepaliveCountMax: 10, // Allow more keepalive attempts
         readyTimeout: 30000, // Longer ready timeout
         debug: (msg: string) => {
-          console.debug('[SSH Debug]', msg);
+          if (process.env.SSH_DEBUG === 'true') {
+            console.debug('[SSH Debug]', msg);
+          }
         },
       } as any, // Cast to any to avoid strict type checking for now
-      this.handleClient.bind(this),
+      (client: ssh2.Connection, info: any) => {
+        // Pass client connection info to the handler
+        this.handleClient(client, { ip: info?.ip, family: info?.family });
+      },
     );
   }
 
-  async handleClient(client: ssh2.Connection): Promise<void> {
-    console.log('[SSH] Client connected');
+  async handleClient(
+    client: ssh2.Connection,
+    clientInfo?: { ip?: string; family?: string },
+  ): Promise<void> {
+    const clientIp = clientInfo?.ip || 'unknown';
+    console.log(`[SSH] Client connected from ${clientIp}`);
     const clientWithUser = client as ClientWithUser;
+    clientWithUser.clientIp = clientIp;
+
+    // Set up connection timeout (10 minutes)
+    const connectionTimeout = setTimeout(() => {
+      console.log(`[SSH] Connection timeout for ${clientIp} - closing`);
+      client.end();
+    }, 600000); // 10 minute timeout
 
     // Set up client error handling
     client.on('error', (err: Error) => {
-      console.error('[SSH] Client error:', err);
-      // Don't end the connection on error, let it try to recover
+      console.error(`[SSH] Client error from ${clientIp}:`, err);
+      clearTimeout(connectionTimeout);
+      // Close connection on error for security
+      client.end();
     });
 
     // Handle client end
     client.on('end', () => {
-      console.log('[SSH] Client disconnected');
+      console.log(`[SSH] Client disconnected from ${clientIp}`);
+      clearTimeout(connectionTimeout);
     });
 
     // Handle client close
     client.on('close', () => {
-      console.log('[SSH] Client connection closed');
+      console.log(`[SSH] Client connection closed from ${clientIp}`);
+      clearTimeout(connectionTimeout);
     });
 
     // Handle keepalive requests
@@ -73,7 +103,12 @@ export class SSHServer {
 
     // Handle authentication
     client.on('authentication', (ctx: ssh2.AuthContext) => {
-      console.log('[SSH] Authentication attempt:', ctx.method, 'for user:', ctx.username);
+      console.log(
+        `[SSH] Authentication attempt from ${clientIp}:`,
+        ctx.method,
+        'for user:',
+        ctx.username,
+      );
 
       if (ctx.method === 'publickey') {
         // Handle public key authentication
@@ -83,11 +118,18 @@ export class SSHServer {
           .findUserBySSHKey(keyString)
           .then((user: any) => {
             if (user) {
-              console.log(`[SSH] Public key authentication successful for user: ${user.username}`);
-              // Store the public key info for later use
+              console.log(
+                `[SSH] Public key authentication successful for user: ${user.username} from ${clientIp}`,
+              );
+              // Store the public key info and user context for later use
               clientWithUser.userPrivateKey = {
                 keyType: ctx.key.algo,
                 keyData: ctx.key.data,
+              };
+              clientWithUser.authenticatedUser = {
+                username: user.username,
+                email: user.email,
+                gitAccount: user.gitAccount,
               };
               ctx.accept();
             } else {
@@ -113,8 +155,14 @@ export class SSHServer {
                     ctx.reject();
                   } else if (result) {
                     console.log(
-                      `[SSH] Password authentication successful for user: ${user.username}`,
+                      `[SSH] Password authentication successful for user: ${user.username} from ${clientIp}`,
                     );
+                    // Store user context for later use
+                    clientWithUser.authenticatedUser = {
+                      username: user.username,
+                      email: user.email,
+                      gitAccount: user.gitAccount,
+                    };
                     ctx.accept();
                   } else {
                     console.log('[SSH] Password authentication failed - invalid password');
@@ -157,7 +205,10 @@ export class SSHServer {
 
     // Handle ready state
     client.on('ready', () => {
-      console.log('[SSH] Client ready, starting keepalive');
+      console.log(
+        `[SSH] Client ready from ${clientIp}, user: ${clientWithUser.authenticatedUser?.username || 'unknown'}`,
+      );
+      clearTimeout(connectionTimeout);
       startKeepalive();
     });
 
@@ -184,20 +235,31 @@ export class SSHServer {
     stream: ssh2.ServerChannel,
     client: ClientWithUser,
   ): Promise<void> {
-    console.log('[SSH] Handling command:', command);
+    const userName = client.authenticatedUser?.username || 'unknown';
+    const clientIp = client.clientIp || 'unknown';
+    console.log(`[SSH] Handling command from ${userName}@${clientIp}: ${command}`);
+
+    // Validate user is authenticated
+    if (!client.authenticatedUser) {
+      console.error(`[SSH] Unauthenticated command attempt from ${clientIp}`);
+      stream.stderr.write('Authentication required\n');
+      stream.exit(1);
+      stream.end();
+      return;
+    }
 
     try {
       // Check if it's a Git command
-      if (command.startsWith('git-')) {
+      if (command.startsWith('git-upload-pack') || command.startsWith('git-receive-pack')) {
         await this.handleGitCommand(command, stream, client);
       } else {
-        console.log('[SSH] Unsupported command:', command);
+        console.log(`[SSH] Unsupported command from ${userName}@${clientIp}: ${command}`);
         stream.stderr.write(`Unsupported command: ${command}\n`);
         stream.exit(1);
         stream.end();
       }
     } catch (error) {
-      console.error('[SSH] Error handling command:', error);
+      console.error(`[SSH] Error handling command from ${userName}@${clientIp}:`, error);
       stream.stderr.write(`Error: ${error}\n`);
       stream.exit(1);
       stream.end();
@@ -217,30 +279,61 @@ export class SSHServer {
       }
 
       const repoPath = repoMatch[1];
-      console.log('[SSH] Git command for repository:', repoPath);
+      const isReceivePack = command.includes('git-receive-pack');
+      const gitPath = isReceivePack ? 'git-receive-pack' : 'git-upload-pack';
 
-      // Create a simulated HTTP request for the proxy chain
+      console.log(
+        `[SSH] Git command for repository: ${repoPath} from user: ${client.authenticatedUser?.username || 'unknown'}`,
+      );
+
+      // Create a properly formatted HTTP request for the proxy chain
+      // Match the format expected by the HTTPS flow
       const req = {
-        url: repoPath,
-        method: command.startsWith('git-upload-pack') ? 'GET' : 'POST',
+        originalUrl: `/${repoPath}/${gitPath}`,
+        url: `/${repoPath}/${gitPath}`,
+        method: isReceivePack ? 'POST' : 'GET',
         headers: {
           'user-agent': 'git/ssh-proxy',
-          'content-type': command.startsWith('git-receive-pack')
+          'content-type': isReceivePack
             ? 'application/x-git-receive-pack-request'
             : 'application/x-git-upload-pack-request',
+          host: 'ssh-proxy',
         },
         body: null,
-        user: client.userPrivateKey ? { username: 'ssh-user' } : null,
+        user: client.authenticatedUser || null,
+        isSSH: true,
+      };
+
+      // Create a mock response object for the chain
+      const res = {
+        headers: {},
+        statusCode: 200,
+        set: function (headers: any) {
+          Object.assign(this.headers, headers);
+          return this;
+        },
+        status: function (code: number) {
+          this.statusCode = code;
+          return this;
+        },
+        send: function (data: any) {
+          return this;
+        },
       };
 
       // Execute the proxy chain
       try {
-        const result = await chain.executeChain(req, {} as any);
+        const result = await chain.executeChain(req, res);
         if (result.error || result.blocked) {
-          throw new Error(result.message || 'Request blocked by proxy chain');
+          const message =
+            result.errorMessage || result.blockedMessage || 'Request blocked by proxy chain';
+          throw new Error(message);
         }
       } catch (chainError) {
-        console.error('[SSH] Chain execution failed:', chainError);
+        console.error(
+          `[SSH] Chain execution failed for user ${client.authenticatedUser?.username}:`,
+          chainError,
+        );
         stream.stderr.write(`Access denied: ${chainError}\n`);
         stream.exit(1);
         stream.end();
@@ -263,12 +356,18 @@ export class SSHServer {
     client: ClientWithUser,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
-      console.log('[SSH] Creating SSH connection to remote');
+      const userName = client.authenticatedUser?.username || 'unknown';
+      console.log(`[SSH] Creating SSH connection to remote for user: ${userName}`);
 
       // Get remote host from config
       const proxyUrl = getProxyUrl();
       if (!proxyUrl) {
-        reject(new Error('No proxy URL configured'));
+        const error = new Error('No proxy URL configured');
+        console.error(`[SSH] ${error.message}`);
+        stream.stderr.write(`Configuration error: ${error.message}\n`);
+        stream.exit(1);
+        stream.end();
+        reject(error);
         return;
       }
 
@@ -309,12 +408,12 @@ export class SSHServer {
 
       // Handle connection success
       remoteGitSsh.on('ready', () => {
-        console.log('[SSH] Connected to remote Git server');
+        console.log(`[SSH] Connected to remote Git server for user: ${userName}`);
 
         // Execute the Git command on the remote server
         remoteGitSsh.exec(command, (err: Error | undefined, remoteStream: ssh2.ClientChannel) => {
           if (err) {
-            console.error('[SSH] Error executing command on remote:', err);
+            console.error(`[SSH] Error executing command on remote for user ${userName}:`, err);
             stream.stderr.write(`Remote execution error: ${err.message}\n`);
             stream.exit(1);
             stream.end();
@@ -323,51 +422,66 @@ export class SSHServer {
             return;
           }
 
-          console.log('[SSH] Command executed on remote, setting up data piping');
+          console.log(
+            `[SSH] Command executed on remote for user ${userName}, setting up data piping`,
+          );
 
           // Pipe data between client and remote
-          stream.on('data', (data: Buffer) => {
+          stream.on('data', (data: any) => {
             remoteStream.write(data);
           });
 
-          remoteStream.on('data', (data: Buffer) => {
+          remoteStream.on('data', (data: any) => {
             stream.write(data);
           });
 
           // Handle stream events
           remoteStream.on('close', () => {
-            console.log('[SSH] Remote stream closed');
+            console.log(`[SSH] Remote stream closed for user: ${userName}`);
             stream.end();
             resolve();
           });
 
           remoteStream.on('exit', (code: number, signal?: string) => {
-            console.log('[SSH] Remote command exited with code:', code, 'signal:', signal);
+            console.log(
+              `[SSH] Remote command exited for user ${userName} with code: ${code}, signal: ${signal || 'none'}`,
+            );
             stream.exit(code || 0);
             resolve();
           });
 
           stream.on('close', () => {
-            console.log('[SSH] Client stream closed');
+            console.log(`[SSH] Client stream closed for user: ${userName}`);
             remoteStream.end();
           });
 
           stream.on('end', () => {
-            console.log('[SSH] Client stream ended');
+            console.log(`[SSH] Client stream ended for user: ${userName}`);
             setTimeout(() => {
               remoteGitSsh.end();
             }, 1000);
           });
+
+          // Handle errors on streams
+          remoteStream.on('error', (err: Error) => {
+            console.error(`[SSH] Remote stream error for user ${userName}:`, err);
+            stream.stderr.write(`Stream error: ${err.message}\n`);
+          });
+
+          stream.on('error', (err: Error) => {
+            console.error(`[SSH] Client stream error for user ${userName}:`, err);
+            remoteStream.destroy();
+          });
         });
       });
 
-      // Handle connection errors with retry logic
+      // Handle connection errors
       remoteGitSsh.on('error', (err: Error) => {
-        console.error('[SSH] Remote connection error:', err);
+        console.error(`[SSH] Remote connection error for user ${userName}:`, err);
 
         if (err.message.includes('All configured authentication methods failed')) {
           console.log(
-            '[SSH] Authentication failed with default key, this is expected for some servers',
+            `[SSH] Authentication failed with default key for user ${userName}, this may be expected for some servers`,
           );
         }
 
@@ -379,10 +493,25 @@ export class SSHServer {
 
       // Handle connection close
       remoteGitSsh.on('close', () => {
-        console.log('[SSH] Remote connection closed');
+        console.log(`[SSH] Remote connection closed for user: ${userName}`);
+      });
+
+      // Set a timeout for the connection attempt
+      const connectTimeout = setTimeout(() => {
+        console.error(`[SSH] Connection timeout to remote for user ${userName}`);
+        remoteGitSsh.end();
+        stream.stderr.write('Connection timeout to remote server\n');
+        stream.exit(1);
+        stream.end();
+        reject(new Error('Connection timeout'));
+      }, 30000);
+
+      remoteGitSsh.on('ready', () => {
+        clearTimeout(connectTimeout);
       });
 
       // Connect to remote
+      console.log(`[SSH] Connecting to ${remoteUrl.hostname} for user ${userName}`);
       remoteGitSsh.connect(connectionOptions);
     });
   }

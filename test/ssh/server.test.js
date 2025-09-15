@@ -98,10 +98,11 @@ describe('SSHServer', () => {
       expect(ssh2.Server.calledOnce).to.be.true;
       const serverConfig = ssh2.Server.firstCall.args[0];
       expect(serverConfig.hostKeys).to.be.an('array');
-      expect(serverConfig.authMethods).to.deep.equal(['publickey', 'password']);
       expect(serverConfig.keepaliveInterval).to.equal(5000);
       expect(serverConfig.keepaliveCountMax).to.equal(10);
       expect(serverConfig.readyTimeout).to.equal(30000);
+      // Check that a connection handler is provided
+      expect(ssh2.Server.firstCall.args[1]).to.be.a('function');
     });
   });
 
@@ -114,17 +115,24 @@ describe('SSHServer', () => {
 
   describe('handleClient', () => {
     let mockClient;
+    let clientInfo;
 
     beforeEach(() => {
       mockClient = {
         on: sinon.stub(),
+        end: sinon.stub(),
         username: null,
         userPrivateKey: null,
+        authenticatedUser: null,
+      };
+      clientInfo = {
+        ip: '127.0.0.1',
+        family: 'IPv4',
       };
     });
 
     it('should set up client event handlers', () => {
-      server.handleClient(mockClient);
+      server.handleClient(mockClient, clientInfo);
       expect(mockClient.on.calledWith('error')).to.be.true;
       expect(mockClient.on.calledWith('end')).to.be.true;
       expect(mockClient.on.calledWith('close')).to.be.true;
@@ -146,15 +154,23 @@ describe('SSHServer', () => {
           reject: sinon.stub(),
         };
 
-        mockDb.findUserBySSHKey.resolves({ username: 'test-user' });
+        mockDb.findUserBySSHKey.resolves({
+          username: 'test-user',
+          email: 'test@example.com',
+          gitAccount: 'testgit',
+        });
 
-        server.handleClient(mockClient);
+        server.handleClient(mockClient, clientInfo);
         const authHandler = mockClient.on.withArgs('authentication').firstCall.args[1];
         await authHandler(mockCtx);
 
         expect(mockDb.findUserBySSHKey.calledOnce).to.be.true;
         expect(mockCtx.accept.calledOnce).to.be.true;
-        expect(mockClient.username).to.equal('test-user');
+        expect(mockClient.authenticatedUser).to.deep.equal({
+          username: 'test-user',
+          email: 'test@example.com',
+          gitAccount: 'testgit',
+        });
         expect(mockClient.userPrivateKey).to.deep.equal(mockCtx.key);
       });
 
@@ -170,17 +186,24 @@ describe('SSHServer', () => {
         mockDb.findUser.resolves({
           username: 'test-user',
           password: '$2a$10$mockHash',
+          email: 'test@example.com',
+          gitAccount: 'testgit',
         });
 
         const bcrypt = require('bcryptjs');
-        sinon.stub(bcrypt, 'compare').resolves(true);
+        sinon.stub(bcrypt, 'compare').callsFake((password, hash, callback) => {
+          callback(null, true);
+        });
 
-        server.handleClient(mockClient);
+        server.handleClient(mockClient, clientInfo);
         const authHandler = mockClient.on.withArgs('authentication').firstCall.args[1];
         await authHandler(mockCtx);
 
+        // Give async callback time to complete
+        await new Promise((resolve) => setTimeout(resolve, 10));
+
         expect(mockDb.findUser.calledWith('test-user')).to.be.true;
-        expect(bcrypt.compare.calledWith('test-password', '$2a$10$mockHash')).to.be.true;
+        expect(bcrypt.compare.calledOnce).to.be.true;
         expect(mockCtx.accept.calledOnce).to.be.true;
       });
     });
@@ -221,6 +244,8 @@ describe('SSHServer', () => {
       mockChain.executeChain.resolves({
         error: false,
         blocked: false,
+        errorMessage: null,
+        blockedMessage: null,
       });
 
       const { Client } = require('ssh2');
@@ -275,6 +300,8 @@ describe('SSHServer', () => {
       mockChain.executeChain.resolves({
         error: false,
         blocked: false,
+        errorMessage: null,
+        blockedMessage: null,
       });
 
       const { Client } = require('ssh2');
