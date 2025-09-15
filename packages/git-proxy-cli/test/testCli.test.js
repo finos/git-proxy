@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 const helper = require('./testCliUtils');
 
 const path = require('path');

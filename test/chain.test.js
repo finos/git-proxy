@@ -58,7 +58,6 @@ const mockPreProcessors = {
   parseAction: sinon.stub(),
 };
 
-// eslint-disable-next-line no-unused-vars
 let mockPushProcessors;
 
 const clearCache = (sandbox) => {
