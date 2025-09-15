@@ -123,7 +123,7 @@ const handleMessage = (message: string): string => {
   return `${len}\x02${body}\n0000`;
 };
 
-const handleGetMessage = (message: string): string => {
+const handleRefsErrorMessage = (message: string): string => {
   // Git protocol for GET /info/refs error packets: PKT-LINE("ERR" SP explanation-text)
   const errorBody = `ERR ${message}`;
   const len = (4 + Buffer.byteLength(errorBody)).toString(16).padStart(4, '0');
