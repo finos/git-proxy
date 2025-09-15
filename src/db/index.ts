@@ -180,6 +180,8 @@ export const deleteRepo = (_id: string): Promise<void> => sink.deleteRepo(_id);
 export const findUser = (username: string): Promise<User | null> => sink.findUser(username);
 export const findUserByEmail = (email: string): Promise<User | null> => sink.findUserByEmail(email);
 export const findUserByOIDC = (oidcId: string): Promise<User | null> => sink.findUserByOIDC(oidcId);
+export const findUserBySSHKey = (sshKey: string): Promise<User | null> =>
+  sink.findUserBySSHKey(sshKey);
 export const getUsers = (query?: object): Promise<User[]> => sink.getUsers(query);
 export const deleteUser = (username: string): Promise<void> => sink.deleteUser(username);
 export const updateUser = (user: User): Promise<void> => sink.updateUser(user);
