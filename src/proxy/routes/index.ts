@@ -51,7 +51,7 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
     if (action.error || action.blocked) {
       const errorMessage = action.errorMessage ?? action.blockedMessage ?? '';
 
-      // For GET requests to /info/refs (clone operations), use Git protocol error packet format
+      // GET requests to /info/refs (used to check refs for many git operations) must use Git protocol error packet format
       if (req.method === 'GET' && req.url.includes('/info/refs')) {
         res.set('content-type', 'application/x-git-upload-pack-advertisement');
 
