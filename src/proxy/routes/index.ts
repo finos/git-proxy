@@ -101,7 +101,34 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
     // this is the only case where we do not respond directly, instead we return true to proxy the request
     return true;
   } catch (e) {
-    const packetMessage = handleMessage(`Error occurred in proxy filter function ${e}`);
+    const errorMessage = `Error occurred in proxy filter function ${e}`;
+
+    // GET requests to /info/refs (used to check refs for many git operations) must use Git protocol error packet format
+    if (req.method === 'GET' && req.url.includes('/info/refs')) {
+      res.set('content-type', 'application/x-git-upload-pack-advertisement');
+
+      logAction(
+        req.url,
+        req.headers.host,
+        req.headers['user-agent'],
+        'Error occurred in proxy filter function: ' + ((e as Error).message ?? e),
+        null,
+      );
+
+      // Use Git protocol error packet format
+      res.status(200).send(handleRefsErrorMessage(errorMessage));
+      return false;
+    }
+
+    res.set('content-type', 'application/x-git-receive-pack-result');
+    res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
+    res.set('pragma', 'no-cache');
+    res.set('cache-control', 'no-cache, max-age=0, must-revalidate');
+    res.set('vary', 'Accept-Encoding');
+    res.set('x-frame-options', 'DENY');
+    res.set('connection', 'close');
+
+    const packetMessage = handleMessage(errorMessage);
 
     logAction(
       req.url,
