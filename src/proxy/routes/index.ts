@@ -50,43 +50,7 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
 
     if (action.error || action.blocked) {
       const errorMessage = action.errorMessage ?? action.blockedMessage ?? '';
-
-      // GET requests to /info/refs (used to check refs for many git operations) must use Git protocol error packet format
-      if (req.method === 'GET' && req.url.includes('/info/refs')) {
-        res.set('content-type', 'application/x-git-upload-pack-advertisement');
-
-        logAction(
-          req.url,
-          req.headers.host,
-          req.headers['user-agent'],
-          action.errorMessage,
-          action.blockedMessage,
-        );
-
-        // Use Git protocol error packet format
-        res.status(200).send(handleRefsErrorMessage(errorMessage));
-        return false;
-      }
-
-      res.set('content-type', 'application/x-git-receive-pack-result');
-      res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
-      res.set('pragma', 'no-cache');
-      res.set('cache-control', 'no-cache, max-age=0, must-revalidate');
-      res.set('vary', 'Accept-Encoding');
-      res.set('x-frame-options', 'DENY');
-      res.set('connection', 'close');
-
-      const packetMessage = handleMessage(errorMessage);
-
-      logAction(
-        req.url,
-        req.headers.host,
-        req.headers['user-agent'],
-        action.errorMessage,
-        action.blockedMessage,
-      );
-      // return status 200 to ensure that the error message is rendered by the git client
-      res.status(200).send(packetMessage);
+      sendErrorResponse(req, res, errorMessage, action.errorMessage, action.blockedMessage);
       return false;
     }
 
@@ -102,46 +66,57 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
     return true;
   } catch (e) {
     const errorMessage = `Error occurred in proxy filter function ${e}`;
+    const logMessage = 'Error occurred in proxy filter function: ' + ((e as Error).message ?? e);
 
-    // GET requests to /info/refs (used to check refs for many git operations) must use Git protocol error packet format
-    if (req.method === 'GET' && req.url.includes('/info/refs')) {
-      res.set('content-type', 'application/x-git-upload-pack-advertisement');
+    sendErrorResponse(req, res, errorMessage, logMessage, null);
+    return false;
+  }
+};
 
-      logAction(
-        req.url,
-        req.headers.host,
-        req.headers['user-agent'],
-        'Error occurred in proxy filter function: ' + ((e as Error).message ?? e),
-        null,
-      );
-
-      // Use Git protocol error packet format
-      res.status(200).send(handleRefsErrorMessage(errorMessage));
-      return false;
-    }
-
-    res.set('content-type', 'application/x-git-receive-pack-result');
-    res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
-    res.set('pragma', 'no-cache');
-    res.set('cache-control', 'no-cache, max-age=0, must-revalidate');
-    res.set('vary', 'Accept-Encoding');
-    res.set('x-frame-options', 'DENY');
-    res.set('connection', 'close');
-
-    const packetMessage = handleMessage(errorMessage);
+const sendErrorResponse = (
+  req: Request,
+  res: Response,
+  errorMessage: string,
+  actionErrorMessage: string | null | undefined,
+  actionBlockedMessage: string | null | undefined,
+): void => {
+  // GET requests to /info/refs (used to check refs for many git operations) must use Git protocol error packet format
+  if (req.method === 'GET' && req.url.includes('/info/refs')) {
+    res.set('content-type', 'application/x-git-upload-pack-advertisement');
 
     logAction(
       req.url,
       req.headers.host,
       req.headers['user-agent'],
-      'Error occurred in proxy filter function: ' + ((e as Error).message ?? e),
-      null,
+      actionErrorMessage,
+      actionBlockedMessage,
     );
 
-    // return status 200 to ensure that the error message is rendered by the git client
-    res.status(200).send(packetMessage);
-    return false;
+    // Use Git protocol error packet format
+    res.status(200).send(handleRefsErrorMessage(errorMessage));
+    return;
   }
+
+  res.set('content-type', 'application/x-git-receive-pack-result');
+  res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
+  res.set('pragma', 'no-cache');
+  res.set('cache-control', 'no-cache, max-age=0, must-revalidate');
+  res.set('vary', 'Accept-Encoding');
+  res.set('x-frame-options', 'DENY');
+  res.set('connection', 'close');
+
+  const packetMessage = handleMessage(errorMessage);
+
+  logAction(
+    req.url,
+    req.headers.host,
+    req.headers['user-agent'],
+    actionErrorMessage,
+    actionBlockedMessage,
+  );
+
+  // return status 200 to ensure that the error message is rendered by the git client
+  res.status(200).send(packetMessage);
 };
 
 const handleMessage = (message: string): string => {
