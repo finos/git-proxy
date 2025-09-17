@@ -51,6 +51,16 @@ class Action {
   lastStep?: Step;
   proxyGitPath?: string;
   newIdxFiles?: string[];
+  protocol?: 'https' | 'ssh';
+  sshUser?: {
+    username: string;
+    email?: string;
+    gitAccount?: string;
+    sshKeyInfo?: {
+      keyType: string;
+      keyData: Buffer;
+    };
+  };
 
   /**
    * Create an action.

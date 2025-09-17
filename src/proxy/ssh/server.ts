@@ -322,6 +322,13 @@ export class SSHServer {
         body: null,
         user: client.authenticatedUser || null,
         isSSH: true,
+        protocol: 'ssh' as const,
+        sshUser: {
+          username: client.authenticatedUser?.username || 'unknown',
+          email: client.authenticatedUser?.email,
+          gitAccount: client.authenticatedUser?.gitAccount,
+          sshKeyInfo: client.userPrivateKey,
+        },
       };
 
       // Create a mock response object for the chain
@@ -447,15 +454,8 @@ export class SSHServer {
           connectionOptions.privateKey = clientKey;
           console.log('[SSH] Using client key buffer directly');
         } else {
-          // Try to convert the key to a buffer if it's a string
-          try {
-            connectionOptions.privateKey = Buffer.from(clientKey);
-            console.log('[SSH] Converted client key to buffer');
-          } catch (error) {
-            console.error('[SSH] Failed to convert client key to buffer:', error);
-            // Fall back to the proxy key (already set)
-            console.log('[SSH] Falling back to proxy key');
-          }
+          // For other key types, we can't use the client key directly since we only have public key info
+          console.log('[SSH] Client key is not a buffer, falling back to proxy key');
         }
       } else {
         console.log('[SSH] No client key available, using proxy key');

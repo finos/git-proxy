@@ -40,6 +40,10 @@ export interface PushData {
   attestation?: AttestationData;
   autoApproved?: boolean;
   timestamp: string | Date;
+  encryptedSSHKey?: string;
+  sshKeyExpiry?: Date;
+  protocol?: 'https' | 'ssh';
+  userId?: string;
 }
 
 export interface Route {
