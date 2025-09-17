@@ -30,20 +30,20 @@ interface ClientWithUser extends ssh2.Connection {
 
 export class SSHServer {
   private server: ssh2.Server;
+  private keepaliveTimers: Map<ssh2.Connection, NodeJS.Timeout> = new Map();
 
   constructor() {
     const sshConfig = getSSHConfig();
+    // TODO: Server config could go to config file
     this.server = new ssh2.Server(
       {
         hostKeys: [fs.readFileSync(sshConfig.hostKey.privateKeyPath)],
-        // Increase connection timeout and keepalive settings
-        keepaliveInterval: 5000, // More frequent keepalive
-        keepaliveCountMax: 10, // Allow more keepalive attempts
+        authMethods: ['publickey', 'password'] as any,
+        keepaliveInterval: 20000, // 20 seconds is recommended for SSH connections
+        keepaliveCountMax: 5, // Recommended for SSH connections is 3-5 attempts
         readyTimeout: 30000, // Longer ready timeout
         debug: (msg: string) => {
-          if (process.env.SSH_DEBUG === 'true') {
-            console.debug('[SSH Debug]', msg);
-          }
+          console.debug('[SSH Debug]', msg);
         },
       } as any, // Cast to any to avoid strict type checking for now
       (client: ssh2.Connection, info: any) => {
@@ -72,20 +72,31 @@ export class SSHServer {
     client.on('error', (err: Error) => {
       console.error(`[SSH] Client error from ${clientIp}:`, err);
       clearTimeout(connectionTimeout);
-      // Close connection on error for security
-      client.end();
+      // Don't end the connection on error, let it try to recover
     });
 
     // Handle client end
     client.on('end', () => {
       console.log(`[SSH] Client disconnected from ${clientIp}`);
       clearTimeout(connectionTimeout);
+      // Clean up keepalive timer
+      const keepaliveTimer = this.keepaliveTimers.get(client);
+      if (keepaliveTimer) {
+        clearInterval(keepaliveTimer);
+        this.keepaliveTimers.delete(client);
+      }
     });
 
     // Handle client close
     client.on('close', () => {
       console.log(`[SSH] Client connection closed from ${clientIp}`);
       clearTimeout(connectionTimeout);
+      // Clean up keepalive timer
+      const keepaliveTimer = this.keepaliveTimers.get(client);
+      if (keepaliveTimer) {
+        clearInterval(keepaliveTimer);
+        this.keepaliveTimers.delete(client);
+      }
     });
 
     // Handle keepalive requests
@@ -96,7 +107,7 @@ export class SSHServer {
         // Always accept keepalive requests to prevent connection drops
         accept();
       } else {
-        console.log('[SSH] Rejecting global request:', info.type);
+        console.log('[SSH] Rejecting unknown global request:', info.type);
         reject();
       }
     });
@@ -185,28 +196,37 @@ export class SSHServer {
       }
     });
 
-    // Set up keepalive functionality
+    // Set up keepalive timer
     const startKeepalive = (): void => {
-      const keepaliveInterval = setInterval(() => {
-        try {
-          // Use a type assertion to access ping method
-          (client as any).ping();
-          console.log('[SSH] Sent keepalive ping to client');
-        } catch (err) {
-          console.error('[SSH] Failed to send keepalive ping:', err);
-          clearInterval(keepaliveInterval);
-        }
-      }, 30000); // Send ping every 30 seconds
+      // Clean up any existing timer
+      const existingTimer = this.keepaliveTimers.get(client);
+      if (existingTimer) {
+        clearInterval(existingTimer);
+      }
 
-      client.on('close', () => {
-        clearInterval(keepaliveInterval);
-      });
+      const keepaliveTimer = setInterval(() => {
+        if ((client as any).connected !== false) {
+          console.log(`[SSH] Sending keepalive to ${clientIp}`);
+          try {
+            (client as any).ping();
+          } catch (error) {
+            console.error(`[SSH] Error sending keepalive to ${clientIp}:`, error);
+            // Don't clear the timer on error, let it try again
+          }
+        } else {
+          console.log(`[SSH] Client ${clientIp} disconnected, clearing keepalive`);
+          clearInterval(keepaliveTimer);
+          this.keepaliveTimers.delete(client);
+        }
+      }, 15000); // 15 seconds between keepalives (recommended for SSH connections is 15-30 seconds)
+
+      this.keepaliveTimers.set(client, keepaliveTimer);
     };
 
     // Handle ready state
     client.on('ready', () => {
       console.log(
-        `[SSH] Client ready from ${clientIp}, user: ${clientWithUser.authenticatedUser?.username || 'unknown'}`,
+        `[SSH] Client ready from ${clientIp}, user: ${clientWithUser.authenticatedUser?.username || 'unknown'}, starting keepalive`,
       );
       clearTimeout(connectionTimeout);
       startKeepalive();
@@ -374,16 +394,22 @@ export class SSHServer {
       const remoteUrl = new URL(proxyUrl);
       const sshConfig = getSSHConfig();
 
+      // TODO: Connection options could go to config
       // Set up connection options
-      const connectionOptions = {
+      const connectionOptions: any = {
         host: remoteUrl.hostname,
         port: 22,
         username: 'git',
         tryKeyboard: false,
         readyTimeout: 30000,
-        keepaliveInterval: 5000,
-        keepaliveCountMax: 10,
+        keepaliveInterval: 15000, // 15 seconds between keepalives (recommended for SSH connections is 15-30 seconds)
+        keepaliveCountMax: 5, // Recommended for SSH connections is 3-5 attempts
+        windowSize: 1024 * 1024, // 1MB window size
+        packetSize: 32768, // 32KB packet size
         privateKey: fs.readFileSync(sshConfig.hostKey.privateKeyPath),
+        debug: (msg: string) => {
+          console.debug('[GitHub SSH Debug]', msg);
+        },
         algorithms: {
           kex: [
             'ecdh-sha2-nistp256' as any,
@@ -403,6 +429,51 @@ export class SSHServer {
           hmac: ['hmac-sha2-256' as any, 'hmac-sha2-512' as any],
         },
       };
+
+      // Get the client's SSH key that was used for authentication
+      const clientKey = client.userPrivateKey;
+      console.log('[SSH] Client key:', clientKey ? 'Available' : 'Not available');
+
+      // Handle client key if available (though we only have public key data)
+      if (clientKey) {
+        console.log('[SSH] Using client key info:', JSON.stringify(clientKey));
+        // Check if the key is in the correct format
+        if (typeof clientKey === 'object' && clientKey.keyType && clientKey.keyData) {
+          // We need to use the private key, not the public key data
+          // Since we only have the public key from authentication, we'll use the proxy key
+          console.log('[SSH] Only have public key data, using proxy key instead');
+        } else if (Buffer.isBuffer(clientKey)) {
+          // The key is a buffer, use it directly
+          connectionOptions.privateKey = clientKey;
+          console.log('[SSH] Using client key buffer directly');
+        } else {
+          // Try to convert the key to a buffer if it's a string
+          try {
+            connectionOptions.privateKey = Buffer.from(clientKey);
+            console.log('[SSH] Converted client key to buffer');
+          } catch (error) {
+            console.error('[SSH] Failed to convert client key to buffer:', error);
+            // Fall back to the proxy key (already set)
+            console.log('[SSH] Falling back to proxy key');
+          }
+        }
+      } else {
+        console.log('[SSH] No client key available, using proxy key');
+      }
+
+      // Log the key type for debugging
+      if (connectionOptions.privateKey) {
+        if (
+          typeof connectionOptions.privateKey === 'object' &&
+          (connectionOptions.privateKey as any).algo
+        ) {
+          console.log(`[SSH] Key algo: ${(connectionOptions.privateKey as any).algo}`);
+        } else if (Buffer.isBuffer(connectionOptions.privateKey)) {
+          console.log(`[SSH] Key is a buffer of length: ${connectionOptions.privateKey.length}`);
+        } else {
+          console.log(`[SSH] Key is of type: ${typeof connectionOptions.privateKey}`);
+        }
+      }
 
       const remoteGitSsh = new ssh2.Client();
 
@@ -425,6 +496,29 @@ export class SSHServer {
           console.log(
             `[SSH] Command executed on remote for user ${userName}, setting up data piping`,
           );
+
+          // Handle stream errors
+          remoteStream.on('error', (err: Error) => {
+            console.error(`[SSH] Remote stream error for user ${userName}:`, err);
+            // Don't immediately end the stream on error, try to recover
+            if (
+              err.message.includes('early EOF') ||
+              err.message.includes('unexpected disconnect')
+            ) {
+              console.log(
+                `[SSH] Detected early EOF or unexpected disconnect for user ${userName}, attempting to recover`,
+              );
+              // Try to keep the connection alive
+              if ((remoteGitSsh as any).connected) {
+                console.log(`[SSH] Connection still active for user ${userName}, continuing`);
+                // Don't end the stream, let it try to recover
+                return;
+              }
+            }
+            // If we can't recover, then end the stream
+            stream.stderr.write(`Stream error: ${err.message}\n`);
+            stream.end();
+          });
 
           // Pipe data between client and remote
           stream.on('data', (data: any) => {

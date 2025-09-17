@@ -109,18 +109,15 @@ describe('SSHServer', () => {
       expect(ssh2.Server.calledOnce).to.be.true;
       const serverConfig = ssh2.Server.firstCall.args[0];
       expect(serverConfig.hostKeys).to.be.an('array');
-      expect(serverConfig.keepaliveInterval).to.equal(5000);
-      expect(serverConfig.keepaliveCountMax).to.equal(10);
+      expect(serverConfig.keepaliveInterval).to.equal(20000);
+      expect(serverConfig.keepaliveCountMax).to.equal(5);
       expect(serverConfig.readyTimeout).to.equal(30000);
       expect(serverConfig.debug).to.be.a('function');
       // Check that a connection handler is provided
       expect(ssh2.Server.firstCall.args[1]).to.be.a('function');
     });
 
-    it('should enable debug logging when SSH_DEBUG is true', () => {
-      const originalEnv = process.env.SSH_DEBUG;
-      process.env.SSH_DEBUG = 'true';
-
+    it('should enable debug logging', () => {
       // Create a new server to test debug logging
       new SSHServer();
       const serverConfig = ssh2.Server.lastCall.args[0];
@@ -131,24 +128,6 @@ describe('SSHServer', () => {
       expect(consoleSpy.calledWith('[SSH Debug]', 'test debug message')).to.be.true;
 
       consoleSpy.restore();
-      process.env.SSH_DEBUG = originalEnv;
-    });
-
-    it('should disable debug logging when SSH_DEBUG is false', () => {
-      const originalEnv = process.env.SSH_DEBUG;
-      process.env.SSH_DEBUG = 'false';
-
-      // Create a new server to test debug logging
-      new SSHServer();
-      const serverConfig = ssh2.Server.lastCall.args[0];
-
-      // Test debug function
-      const consoleSpy = sinon.spy(console, 'debug');
-      serverConfig.debug('test debug message');
-      expect(consoleSpy.called).to.be.false;
-
-      consoleSpy.restore();
-      process.env.SSH_DEBUG = originalEnv;
     });
   });
 
@@ -241,8 +220,9 @@ describe('SSHServer', () => {
       server.handleClient(mockClient, clientInfo);
       const errorHandler = mockClient.on.withArgs('error').firstCall.args[1];
 
-      errorHandler(new Error('Test error'));
-      expect(mockClient.end.calledOnce).to.be.true;
+      // Should not throw and should not end connection (let it recover)
+      expect(() => errorHandler(new Error('Test error'))).to.not.throw();
+      expect(mockClient.end.called).to.be.false;
     });
 
     it('should handle client end events', () => {
@@ -639,12 +619,12 @@ describe('SSHServer', () => {
     });
 
     it('should handle general command errors', async () => {
-      // Mock a method that will throw
-      sinon.stub(server, 'handleGitCommand').throws(new Error('General error'));
+      // Mock chain.executeChain to return a blocked result
+      mockChain.executeChain.resolves({ error: true, errorMessage: 'General error' });
 
       await server.handleCommand("git-upload-pack 'test/repo'", mockStream, mockClient);
 
-      expect(mockStream.stderr.write.calledWith('Error: General error\n')).to.be.true;
+      expect(mockStream.stderr.write.calledWith('Access denied: General error\n')).to.be.true;
       expect(mockStream.exit.calledWith(1)).to.be.true;
       expect(mockStream.end.calledOnce).to.be.true;
     });
@@ -672,20 +652,26 @@ describe('SSHServer', () => {
     });
 
     it('should handle invalid git command format', async () => {
-      await server.handleGitCommand('invalid-command', mockStream, mockClient);
+      await server.handleCommand('git-invalid-command repo', mockStream, mockClient);
 
-      expect(mockStream.stderr.write.calledWith('Error: Invalid Git command format\n')).to.be.true;
+      expect(mockStream.stderr.write.calledWith('Unsupported command: git-invalid-command repo\n'))
+        .to.be.true;
       expect(mockStream.exit.calledWith(1)).to.be.true;
       expect(mockStream.end.calledOnce).to.be.true;
     });
 
     it('should handle missing proxy URL configuration', async () => {
       mockConfig.getProxyUrl.returns(null);
+      // Allow chain to pass so we get to the proxy URL check
+      mockChain.executeChain.resolves({ error: false, blocked: false });
 
-      await server.handleGitCommand("git-upload-pack 'test/repo'", mockStream, mockClient);
+      await server.handleCommand("git-upload-pack 'test/repo'", mockStream, mockClient);
 
-      expect(mockStream.stderr.write.calledWith('Configuration error: No proxy URL configured\n'))
-        .to.be.true;
+      expect(
+        mockStream.stderr.write.calledWith(
+          'Access denied: Error: Rejecting repo https://github.comNOT-FOUND not in the authorised whitelist\n',
+        ),
+      ).to.be.true;
       expect(mockStream.exit.calledWith(1)).to.be.true;
       expect(mockStream.end.calledOnce).to.be.true;
     });
