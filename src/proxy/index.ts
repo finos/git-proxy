@@ -14,9 +14,10 @@ import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos } from '../db
 import { PluginLoader } from '../plugin';
 import chain from './chain';
 import { Repo } from '../db/types';
+import { serverConfig } from '../config/env';
 
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort, GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } =
-  require('../config/env').serverConfig;
+  serverConfig;
 
 interface ServerOptions {
   inflate: boolean;

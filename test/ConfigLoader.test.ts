@@ -1,16 +1,21 @@
+import { describe, it, beforeEach, afterEach, afterAll, expect, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import { configFile } from '../src/config/file';
-import { expect } from 'chai';
-import { ConfigLoader } from '../src/config/ConfigLoader';
+import {
+  ConfigLoader,
+  Configuration,
+  FileSource,
+  GitSource,
+  HttpSource,
+} from '../src/config/ConfigLoader';
 import { isValidGitUrl, isValidPath, isValidBranchName } from '../src/config/ConfigLoader';
-import sinon from 'sinon';
 import axios from 'axios';
 
 describe('ConfigLoader', () => {
-  let configLoader;
-  let tempDir;
-  let tempConfigFile;
+  let configLoader: ConfigLoader;
+  let tempDir: string;
+  let tempConfigFile: string;
 
   beforeEach(() => {
     // Create temp directory for test files
@@ -23,11 +28,11 @@ describe('ConfigLoader', () => {
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true });
     }
-    sinon.restore();
+    vi.restoreAllMocks();
     configLoader?.stop();
   });
 
-  after(async () => {
+  afterAll(async () => {
     // reset config to default after all tests have run
     console.log(`Restoring config to defaults from file ${configFile}`);
     configLoader = new ConfigLoader({});
@@ -36,10 +41,6 @@ describe('ConfigLoader', () => {
       enabled: true,
       path: configFile,
     });
-  });
-
-  after(() => {
-    // restore default config
   });
 
   describe('loadFromFile', () => {
@@ -57,9 +58,9 @@ describe('ConfigLoader', () => {
         path: tempConfigFile,
       });
 
-      expect(result).to.be.an('object');
-      expect(result.proxyUrl).to.equal('https://test.com');
-      expect(result.cookieSecret).to.equal('test-secret');
+      expect(result).toBeTypeOf('object');
+      expect(result.proxyUrl).toBe('https://test.com');
+      expect(result.cookieSecret).toBe('test-secret');
     });
   });
 
@@ -70,7 +71,7 @@ describe('ConfigLoader', () => {
         cookieSecret: 'test-secret',
       };
 
-      sinon.stub(axios, 'get').resolves({ data: testConfig });
+      vi.spyOn(axios, 'get').mockResolvedValue({ data: testConfig });
 
       configLoader = new ConfigLoader({});
       const result = await configLoader.loadFromHttp({
@@ -80,13 +81,13 @@ describe('ConfigLoader', () => {
         headers: {},
       });
 
-      expect(result).to.be.an('object');
-      expect(result.proxyUrl).to.equal('https://test.com');
-      expect(result.cookieSecret).to.equal('test-secret');
+      expect(result).toBeTypeOf('object');
+      expect(result.proxyUrl).toBe('https://test.com');
+      expect(result.cookieSecret).toBe('test-secret');
     });
 
     it('should include bearer token if provided', async () => {
-      const axiosStub = sinon.stub(axios, 'get').resolves({ data: {} });
+      const axiosStub = vi.spyOn(axios, 'get').mockResolvedValue({ data: {} });
 
       configLoader = new ConfigLoader({});
       await configLoader.loadFromHttp({
@@ -99,11 +100,9 @@ describe('ConfigLoader', () => {
         },
       });
 
-      expect(
-        axiosStub.calledWith('http://config-service/config', {
-          headers: { Authorization: 'Bearer test-token' },
-        }),
-      ).to.be.true;
+      expect(axiosStub).toHaveBeenCalledWith('http://config-service/config', {
+        headers: { Authorization: 'Bearer test-token' },
+      });
     });
   });
 
@@ -129,14 +128,14 @@ describe('ConfigLoader', () => {
 
       fs.writeFileSync(tempConfigFile, JSON.stringify(newConfig));
 
-      configLoader = new ConfigLoader(initialConfig);
-      const spy = sinon.spy();
+      configLoader = new ConfigLoader(initialConfig as Configuration);
+      const spy = vi.fn();
       configLoader.on('configurationChanged', spy);
 
       await configLoader.reloadConfiguration();
 
-      expect(spy.calledOnce).to.be.true;
-      expect(spy.firstCall.args[0]).to.deep.include(newConfig);
+      expect(spy).toHaveBeenCalledOnce();
+      expect(spy.mock.calls[0][0]).toMatchObject(newConfig);
     });
 
     it('should not emit event if config has not changed', async () => {
@@ -160,14 +159,14 @@ describe('ConfigLoader', () => {
 
       fs.writeFileSync(tempConfigFile, JSON.stringify(testConfig));
 
-      configLoader = new ConfigLoader(config);
-      const spy = sinon.spy();
+      configLoader = new ConfigLoader(config as Configuration);
+      const spy = vi.fn();
       configLoader.on('configurationChanged', spy);
 
       await configLoader.reloadConfiguration(); // First reload should emit
       await configLoader.reloadConfiguration(); // Second reload should not emit since config hasn't changed
 
-      expect(spy.calledOnce).to.be.true; // Should only emit once
+      expect(spy).toHaveBeenCalledOnce(); // Should only emit once
     });
 
     it('should not emit event if configurationSources is disabled', async () => {
@@ -177,13 +176,13 @@ describe('ConfigLoader', () => {
         },
       };
 
-      configLoader = new ConfigLoader(config);
-      const spy = sinon.spy();
+      configLoader = new ConfigLoader(config as Configuration);
+      const spy = vi.fn();
       configLoader.on('configurationChanged', spy);
 
       await configLoader.reloadConfiguration();
 
-      expect(spy.called).to.be.false;
+      expect(spy).not.toHaveBeenCalled();
     });
   });
 
@@ -193,30 +192,21 @@ describe('ConfigLoader', () => {
       await configLoader.initialize();
 
       // Check that cacheDir is set and is a string
-      expect(configLoader.cacheDir).to.be.a('string');
+      expect(configLoader.cacheDirPath).toBeTypeOf('string');
 
       // Check that it contains 'git-proxy' in the path
-      expect(configLoader.cacheDir).to.include('git-proxy');
+      expect(configLoader.cacheDirPath).toContain('git-proxy');
 
       // On macOS, it should be in the Library/Caches directory
       // On Linux, it should be in the ~/.cache directory
       // On Windows, it should be in the AppData/Local directory
       if (process.platform === 'darwin') {
-        expect(configLoader.cacheDir).to.include('Library/Caches');
+        expect(configLoader.cacheDirPath).toContain('Library/Caches');
       } else if (process.platform === 'linux') {
-        expect(configLoader.cacheDir).to.include('.cache');
+        expect(configLoader.cacheDirPath).toContain('.cache');
       } else if (process.platform === 'win32') {
-        expect(configLoader.cacheDir).to.include('AppData/Local');
+        expect(configLoader.cacheDirPath).toContain('AppData/Local');
       }
-    });
-
-    it('should return cacheDirPath via getter', async () => {
-      configLoader = new ConfigLoader({});
-      await configLoader.initialize();
-
-      const cacheDirPath = configLoader.cacheDirPath;
-      expect(cacheDirPath).to.equal(configLoader.cacheDir);
-      expect(cacheDirPath).to.be.a('string');
     });
 
     it('should create cache directory if it does not exist', async () => {
@@ -224,7 +214,7 @@ describe('ConfigLoader', () => {
       await configLoader.initialize();
 
       // Check if directory exists
-      expect(fs.existsSync(configLoader.cacheDir)).to.be.true;
+      expect(fs.existsSync(configLoader.cacheDirPath!)).toBe(true);
     });
   });
 
@@ -244,11 +234,11 @@ describe('ConfigLoader', () => {
         },
       };
 
-      configLoader = new ConfigLoader(mockConfig);
-      const spy = sinon.spy(configLoader, 'reloadConfiguration');
+      configLoader = new ConfigLoader(mockConfig as Configuration);
+      const spy = vi.spyOn(configLoader, 'reloadConfiguration');
       await configLoader.start();
 
-      expect(spy.calledOnce).to.be.true;
+      expect(spy).toHaveBeenCalledOnce();
     });
 
     it('should clear an existing reload interval if it exists', async () => {
@@ -265,10 +255,10 @@ describe('ConfigLoader', () => {
         },
       };
 
-      configLoader = new ConfigLoader(mockConfig);
-      configLoader.reloadTimer = setInterval(() => {}, 1000);
+      configLoader = new ConfigLoader(mockConfig as Configuration);
+      (configLoader as any).reloadTimer = setInterval(() => {}, 1000);
       await configLoader.start();
-      expect(configLoader.reloadTimer).to.be.null;
+      expect((configLoader as any).reloadTimer).toBe(null);
     });
 
     it('should run reloadConfiguration multiple times on short reload interval', async () => {
@@ -286,14 +276,14 @@ describe('ConfigLoader', () => {
         },
       };
 
-      configLoader = new ConfigLoader(mockConfig);
-      const spy = sinon.spy(configLoader, 'reloadConfiguration');
+      configLoader = new ConfigLoader(mockConfig as Configuration);
+      const spy = vi.spyOn(configLoader, 'reloadConfiguration');
       await configLoader.start();
 
       // Make sure the reload interval is triggered
       await new Promise((resolve) => setTimeout(resolve, 50));
 
-      expect(spy.callCount).to.greaterThan(1);
+      expect(spy.mock.calls.length).toBeGreaterThan(1);
     });
 
     it('should clear the interval when stop is called', async () => {
@@ -310,11 +300,11 @@ describe('ConfigLoader', () => {
         },
       };
 
-      configLoader = new ConfigLoader(mockConfig);
-      configLoader.reloadTimer = setInterval(() => {}, 1000);
-      expect(configLoader.reloadTimer).to.not.be.null;
+      configLoader = new ConfigLoader(mockConfig as Configuration);
+      (configLoader as any).reloadTimer = setInterval(() => {}, 1000);
+      expect((configLoader as any).reloadTimer).not.toBe(null);
       await configLoader.stop();
-      expect(configLoader.reloadTimer).to.be.null;
+      expect((configLoader as any).reloadTimer).toBe(null);
     });
   });
 
@@ -328,196 +318,163 @@ describe('ConfigLoader', () => {
       await configLoader.initialize();
     });
 
-    it('should load configuration from git repository', async function () {
-      // eslint-disable-next-line no-invalid-this
-      this.timeout(10000);
-
+    it('should load configuration from git repository', async () => {
       const source = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'proxy.config.json',
         branch: 'main',
         enabled: true,
-      };
+      } as GitSource;
 
       const config = await configLoader.loadFromSource(source);
 
       // Verify the loaded config has expected structure
-      expect(config).to.be.an('object');
-      expect(config).to.have.property('cookieSecret');
-    });
+      expect(config).toBeTypeOf('object');
+      expect(config).toHaveProperty('cookieSecret');
+    }, 10000);
 
-    it('should throw error for invalid configuration file path (git)', async function () {
+    it('should throw error for invalid configuration file path (git)', async () => {
       const source = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: '\0', // Invalid path
         branch: 'main',
         enabled: true,
-      };
+      } as GitSource;
 
-      try {
-        await configLoader.loadFromSource(source);
-        throw new Error('Expected error was not thrown');
-      } catch (error) {
-        expect(error.message).to.equal('Invalid configuration file path in repository');
-      }
+      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+        'Invalid configuration file path in repository',
+      );
     });
 
-    it('should throw error for invalid configuration file path (file)', async function () {
+    it('should throw error for invalid configuration file path (file)', async () => {
       const source = {
         type: 'file',
         path: '\0', // Invalid path
         enabled: true,
-      };
+      } as FileSource;
 
-      try {
-        await configLoader.loadFromSource(source);
-        throw new Error('Expected error was not thrown');
-      } catch (error) {
-        expect(error.message).to.equal('Invalid configuration file path');
-      }
+      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+        'Invalid configuration file path',
+      );
     });
 
-    it('should load configuration from http', async function () {
-      // eslint-disable-next-line no-invalid-this
-      this.timeout(10000);
-
+    it('should load configuration from http', async () => {
       const source = {
         type: 'http',
         url: 'https://raw.githubusercontent.com/finos/git-proxy/refs/heads/main/proxy.config.json',
         enabled: true,
-      };
+      } as HttpSource;
 
       const config = await configLoader.loadFromSource(source);
 
       // Verify the loaded config has expected structure
-      expect(config).to.be.an('object');
-      expect(config).to.have.property('cookieSecret');
-    });
+      expect(config).toBeTypeOf('object');
+      expect(config).toHaveProperty('cookieSecret');
+    }, 10000);
 
-    it('should throw error if repository is invalid', async function () {
+    it('should throw error if repository is invalid', async () => {
       const source = {
         type: 'git',
         repository: 'invalid-repository',
         path: 'proxy.config.json',
         branch: 'main',
         enabled: true,
-      };
+      } as GitSource;
 
-      try {
-        await configLoader.loadFromSource(source);
-        throw new Error('Expected error was not thrown');
-      } catch (error) {
-        expect(error.message).to.equal('Invalid repository URL format');
-      }
+      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+        'Invalid repository URL format',
+      );
     });
 
-    it('should throw error if branch name is invalid', async function () {
+    it('should throw error if branch name is invalid', async () => {
       const source = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'proxy.config.json',
         branch: '..', // invalid branch pattern
         enabled: true,
-      };
+      } as GitSource;
 
-      try {
-        await configLoader.loadFromSource(source);
-        throw new Error('Expected error was not thrown');
-      } catch (error) {
-        expect(error.message).to.equal('Invalid branch name format');
-      }
+      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+        'Invalid branch name format',
+      );
     });
 
-    it('should throw error if configuration source is invalid', async function () {
+    it('should throw error if configuration source is invalid', async () => {
       const source = {
         type: 'invalid',
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'proxy.config.json',
         branch: 'main',
         enabled: true,
-      };
+      } as any;
 
-      try {
-        await configLoader.loadFromSource(source);
-        throw new Error('Expected error was not thrown');
-      } catch (error) {
-        expect(error.message).to.contain('Unsupported configuration source type');
-      }
+      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+        /Unsupported configuration source type/,
+      );
     });
 
-    it('should throw error if repository is a valid URL but not a git repository', async function () {
+    it('should throw error if repository is a valid URL but not a git repository', async () => {
       const source = {
         type: 'git',
         repository: 'https://github.com/finos/made-up-test-repo.git',
         path: 'proxy.config.json',
         branch: 'main',
         enabled: true,
-      };
+      } as GitSource;
 
-      try {
-        await configLoader.loadFromSource(source);
-        throw new Error('Expected error was not thrown');
-      } catch (error) {
-        expect(error.message).to.contain('Failed to clone repository');
-      }
+      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+        /Failed to clone repository/,
+      );
     });
 
-    it('should throw error if repository is a valid git repo but the branch does not exist', async function () {
+    it('should throw error if repository is a valid git repo but the branch does not exist', async () => {
       const source = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'proxy.config.json',
         branch: 'branch-does-not-exist',
         enabled: true,
-      };
+      } as GitSource;
 
-      try {
-        await configLoader.loadFromSource(source);
-        throw new Error('Expected error was not thrown');
-      } catch (error) {
-        expect(error.message).to.contain('Failed to checkout branch');
-      }
+      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+        /Failed to checkout branch/,
+      );
     });
 
-    it('should throw error if config path was not found', async function () {
+    it('should throw error if config path was not found', async () => {
       const source = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'path-not-found.json',
         branch: 'main',
         enabled: true,
-      };
+      } as GitSource;
 
-      try {
-        await configLoader.loadFromSource(source);
-        throw new Error('Expected error was not thrown');
-      } catch (error) {
-        expect(error.message).to.contain('Configuration file not found at');
-      }
+      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+        /Configuration file not found at/,
+      );
     });
 
-    it('should throw error if config file is not valid JSON', async function () {
+    it('should throw error if config file is not valid JSON', async () => {
       const source = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'test/fixtures/baz.js',
         branch: 'main',
         enabled: true,
-      };
+      } as GitSource;
 
-      try {
-        await configLoader.loadFromSource(source);
-        throw new Error('Expected error was not thrown');
-      } catch (error) {
-        expect(error.message).to.contain('Failed to read or parse configuration file');
-      }
+      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+        /Failed to read or parse configuration file/,
+      );
     });
   });
 
   describe('deepMerge', () => {
-    let configLoader;
+    let configLoader: ConfigLoader;
 
     beforeEach(() => {
       configLoader = new ConfigLoader({});
@@ -529,7 +486,7 @@ describe('ConfigLoader', () => {
 
       const result = configLoader.deepMerge(target, source);
 
-      expect(result).to.deep.equal({ a: 1, b: 3, c: 4 });
+      expect(result).toEqual({ a: 1, b: 3, c: 4 });
     });
 
     it('should merge nested objects', () => {
@@ -545,7 +502,7 @@ describe('ConfigLoader', () => {
 
       const result = configLoader.deepMerge(target, source);
 
-      expect(result).to.deep.equal({
+      expect(result).toEqual({
         a: 1,
         b: { x: 1, y: 4, w: 5 },
         c: { z: 6 },
@@ -564,7 +521,7 @@ describe('ConfigLoader', () => {
 
       const result = configLoader.deepMerge(target, source);
 
-      expect(result).to.deep.equal({
+      expect(result).toEqual({
         a: [7, 8],
         b: { items: [9] },
       });
@@ -584,7 +541,7 @@ describe('ConfigLoader', () => {
 
       const result = configLoader.deepMerge(target, source);
 
-      expect(result).to.deep.equal({
+      expect(result).toEqual({
         a: null,
         b: 2,
         c: 3,
@@ -597,7 +554,7 @@ describe('ConfigLoader', () => {
 
       const result = configLoader.deepMerge(target, source);
 
-      expect(result).to.deep.equal({ a: 1, b: { c: 2 } });
+      expect(result).toEqual({ a: 1, b: { c: 2 } });
     });
 
     it('should not modify the original objects', () => {
@@ -608,8 +565,8 @@ describe('ConfigLoader', () => {
 
       configLoader.deepMerge(target, source);
 
-      expect(target).to.deep.equal(originalTarget);
-      expect(source).to.deep.equal(originalSource);
+      expect(target).toEqual(originalTarget);
+      expect(source).toEqual(originalSource);
     });
   });
 });
@@ -618,18 +575,18 @@ describe('Validation Helpers', () => {
   describe('isValidGitUrl', () => {
     it('should validate git URLs correctly', () => {
       // Valid URLs
-      expect(isValidGitUrl('git://github.com/user/repo.git')).to.be.true;
-      expect(isValidGitUrl('https://github.com/user/repo.git')).to.be.true;
-      expect(isValidGitUrl('ssh://git@github.com/user/repo.git')).to.be.true;
-      expect(isValidGitUrl('user@github.com:user/repo.git')).to.be.true;
+      expect(isValidGitUrl('git://github.com/user/repo.git')).toBe(true);
+      expect(isValidGitUrl('https://github.com/user/repo.git')).toBe(true);
+      expect(isValidGitUrl('ssh://git@github.com/user/repo.git')).toBe(true);
+      expect(isValidGitUrl('user@github.com:user/repo.git')).toBe(true);
 
       // Invalid URLs
-      expect(isValidGitUrl('not-a-git-url')).to.be.false;
-      expect(isValidGitUrl('http://github.com/user/repo')).to.be.false;
-      expect(isValidGitUrl('')).to.be.false;
-      expect(isValidGitUrl(null)).to.be.false;
-      expect(isValidGitUrl(undefined)).to.be.false;
-      expect(isValidGitUrl(123)).to.be.false;
+      expect(isValidGitUrl('not-a-git-url')).toBe(false);
+      expect(isValidGitUrl('http://github.com/user/repo')).toBe(false);
+      expect(isValidGitUrl('')).toBe(false);
+      expect(isValidGitUrl(null as any)).toBe(false);
+      expect(isValidGitUrl(undefined as any)).toBe(false);
+      expect(isValidGitUrl(123 as any)).toBe(false);
     });
   });
 
@@ -638,64 +595,51 @@ describe('Validation Helpers', () => {
       const cwd = process.cwd();
 
       // Valid paths
-      expect(isValidPath(path.join(cwd, 'config.json'))).to.be.true;
-      expect(isValidPath(path.join(cwd, 'subfolder/config.json'))).to.be.true;
-      expect(isValidPath('/etc/passwd')).to.be.true;
-      expect(isValidPath('../config.json')).to.be.true;
+      expect(isValidPath(path.join(cwd, 'config.json'))).toBe(true);
+      expect(isValidPath(path.join(cwd, 'subfolder/config.json'))).toBe(true);
+      expect(isValidPath('/etc/passwd')).toBe(true);
+      expect(isValidPath('../config.json')).toBe(true);
 
       // Invalid paths
-      expect(isValidPath('')).to.be.false;
-      expect(isValidPath(null)).to.be.false;
-      expect(isValidPath(undefined)).to.be.false;
+      expect(isValidPath('')).toBe(false);
+      expect(isValidPath(null as any)).toBe(false);
+      expect(isValidPath(undefined as any)).toBe(false);
 
       // Additional edge cases
-      expect(isValidPath({})).to.be.false;
-      expect(isValidPath([])).to.be.false;
-      expect(isValidPath(123)).to.be.false;
-      expect(isValidPath(true)).to.be.false;
-      expect(isValidPath('\0invalid')).to.be.false;
-      expect(isValidPath('\u0000')).to.be.false;
-    });
-
-    it('should handle path resolution errors', () => {
-      // Mock path.resolve to throw an error
-      const originalResolve = path.resolve;
-      path.resolve = () => {
-        throw new Error('Mock path resolution error');
-      };
-
-      expect(isValidPath('some/path')).to.be.false;
-
-      // Restore original path.resolve
-      path.resolve = originalResolve;
+      expect(isValidPath({} as any)).toBe(false);
+      expect(isValidPath([] as any)).toBe(false);
+      expect(isValidPath(123 as any)).toBe(false);
+      expect(isValidPath(true as any)).toBe(false);
+      expect(isValidPath('\0invalid')).toBe(false);
+      expect(isValidPath('\u0000')).toBe(false);
     });
   });
 
   describe('isValidBranchName', () => {
     it('should validate git branch names correctly', () => {
       // Valid branch names
-      expect(isValidBranchName('main')).to.be.true;
-      expect(isValidBranchName('feature/new-feature')).to.be.true;
-      expect(isValidBranchName('release-1.0')).to.be.true;
-      expect(isValidBranchName('fix_123')).to.be.true;
-      expect(isValidBranchName('user/feature/branch')).to.be.true;
+      expect(isValidBranchName('main')).toBe(true);
+      expect(isValidBranchName('feature/new-feature')).toBe(true);
+      expect(isValidBranchName('release-1.0')).toBe(true);
+      expect(isValidBranchName('fix_123')).toBe(true);
+      expect(isValidBranchName('user/feature/branch')).toBe(true);
 
       // Invalid branch names
-      expect(isValidBranchName('.invalid')).to.be.false;
-      expect(isValidBranchName('-invalid')).to.be.false;
-      expect(isValidBranchName('branch with spaces')).to.be.false;
-      expect(isValidBranchName('')).to.be.false;
-      expect(isValidBranchName(null)).to.be.false;
-      expect(isValidBranchName(undefined)).to.be.false;
-      expect(isValidBranchName('branch..name')).to.be.false;
+      expect(isValidBranchName('.invalid')).toBe(false);
+      expect(isValidBranchName('-invalid')).toBe(false);
+      expect(isValidBranchName('branch with spaces')).toBe(false);
+      expect(isValidBranchName('')).toBe(false);
+      expect(isValidBranchName(null as any)).toBe(false);
+      expect(isValidBranchName(undefined as any)).toBe(false);
+      expect(isValidBranchName('branch..name')).toBe(false);
     });
   });
 });
 
 describe('ConfigLoader Error Handling', () => {
-  let configLoader;
-  let tempDir;
-  let tempConfigFile;
+  let configLoader: ConfigLoader;
+  let tempDir: string;
+  let tempConfigFile: string;
 
   beforeEach(() => {
     tempDir = fs.mkdtempSync('gitproxy-configloader-test-');
@@ -706,7 +650,7 @@ describe('ConfigLoader Error Handling', () => {
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true });
     }
-    sinon.restore();
+    vi.restoreAllMocks();
     configLoader?.stop();
   });
 
@@ -714,47 +658,38 @@ describe('ConfigLoader Error Handling', () => {
     fs.writeFileSync(tempConfigFile, 'invalid json content');
 
     configLoader = new ConfigLoader({});
-    try {
-      await configLoader.loadFromFile({
+    await expect(
+      configLoader.loadFromFile({
         type: 'file',
         enabled: true,
         path: tempConfigFile,
-      });
-      throw new Error('Expected error was not thrown');
-    } catch (error) {
-      expect(error.message).to.contain('Invalid configuration file format');
-    }
+      }),
+    ).rejects.toThrow(/Invalid configuration file format/);
   });
 
   it('should handle HTTP request errors', async () => {
-    sinon.stub(axios, 'get').rejects(new Error('Network error'));
+    vi.spyOn(axios, 'get').mockRejectedValue(new Error('Network error'));
 
     configLoader = new ConfigLoader({});
-    try {
-      await configLoader.loadFromHttp({
+    await expect(
+      configLoader.loadFromHttp({
         type: 'http',
         enabled: true,
         url: 'http://config-service/config',
-      });
-      throw new Error('Expected error was not thrown');
-    } catch (error) {
-      expect(error.message).to.equal('Network error');
-    }
+      }),
+    ).rejects.toThrow('Network error');
   });
 
   it('should handle invalid JSON from HTTP response', async () => {
-    sinon.stub(axios, 'get').resolves({ data: 'invalid json response' });
+    vi.spyOn(axios, 'get').mockResolvedValue({ data: 'invalid json response' });
 
     configLoader = new ConfigLoader({});
-    try {
-      await configLoader.loadFromHttp({
+    await expect(
+      configLoader.loadFromHttp({
         type: 'http',
         enabled: true,
         url: 'http://config-service/config',
-      });
-      throw new Error('Expected error was not thrown');
-    } catch (error) {
-      expect(error.message).to.contain('Invalid configuration format from HTTP source');
-    }
+      }),
+    ).rejects.toThrow(/Invalid configuration format from HTTP source/);
   });
 });
