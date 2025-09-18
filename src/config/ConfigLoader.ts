@@ -24,19 +24,19 @@ interface BaseSource {
   enabled: boolean;
 }
 
-interface FileSource extends BaseSource {
+export interface FileSource extends BaseSource {
   type: 'file';
   path: string;
 }
 
-interface HttpSource extends BaseSource {
+export interface HttpSource extends BaseSource {
   type: 'http';
   url: string;
   headers?: Record<string, string>;
   auth?: HttpAuth;
 }
 
-interface GitSource extends BaseSource {
+export interface GitSource extends BaseSource {
   type: 'git';
   repository: string;
   branch?: string;
@@ -44,7 +44,7 @@ interface GitSource extends BaseSource {
   auth?: GitAuth;
 }
 
-type ConfigurationSource = FileSource | HttpSource | GitSource;
+export type ConfigurationSource = FileSource | HttpSource | GitSource;
 
 export interface ConfigurationSources {
   enabled: boolean;
