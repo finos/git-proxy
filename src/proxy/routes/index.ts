@@ -50,7 +50,7 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
 
     if (action.error || action.blocked) {
       const errorMessage = action.errorMessage ?? action.blockedMessage ?? '';
-      sendErrorResponse(req, res, errorMessage, action.errorMessage, action.blockedMessage);
+      sendErrorResponse(req, res, errorMessage, action.blockedMessage);
       return false;
     }
 
@@ -65,10 +65,9 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
     // this is the only case where we do not respond directly, instead we return true to proxy the request
     return true;
   } catch (e) {
-    const errorMessage = `Error occurred in proxy filter function ${e}`;
-    const logMessage = 'Error occurred in proxy filter function: ' + ((e as Error).message ?? e);
+    const errorMessage = `Error occurred in proxy filter function ${(e as Error).message ?? e}`;
 
-    sendErrorResponse(req, res, errorMessage, logMessage, null);
+    sendErrorResponse(req, res, errorMessage, null);
     return false;
   }
 };
@@ -77,7 +76,6 @@ const sendErrorResponse = (
   req: Request,
   res: Response,
   errorMessage: string,
-  actionErrorMessage: string | null | undefined,
   actionBlockedMessage: string | null | undefined,
 ): void => {
   // GET requests to /info/refs (used to check refs for many git operations) must use Git protocol error packet format
@@ -88,7 +86,7 @@ const sendErrorResponse = (
       req.url,
       req.headers.host,
       req.headers['user-agent'],
-      actionErrorMessage,
+      errorMessage,
       actionBlockedMessage,
     );
 
@@ -111,7 +109,7 @@ const sendErrorResponse = (
     req.url,
     req.headers.host,
     req.headers['user-agent'],
-    actionErrorMessage,
+    errorMessage,
     actionBlockedMessage,
   );
 
