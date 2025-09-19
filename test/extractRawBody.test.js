@@ -50,7 +50,7 @@ describe('extractRawBody middleware', () => {
     await extractRawBody(req, res, next);
 
     expect(fakeRawBody.calledOnce).to.be.true;
-    expect(fakeChain.executeChain.called).to.be.false; // extractRawBody no longer calls executeChain
+    expect(fakeChain.executeChain.called).to.be.false;
     expect(next.calledOnce).to.be.true;
     expect(req.bodyRaw).to.exist;
     expect(typeof req.pipe).to.equal('function');
