@@ -269,3 +269,5 @@ website/.docusaurus
 
 # Jetbrains IDE
 .idea
+
+.claude/
