@@ -11,11 +11,11 @@ export interface ProcessorMetadata {
 
 export type CommitContent = {
   item: number;
-  value: number;
   type: number;
+  typeName: string;
   size: number;
-  deflatedSize: number;
-  objectRef: any;
+  baseSha: string | null;
+  baseOffset: number | null;
   content: string;
 };
 
