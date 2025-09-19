@@ -23,9 +23,9 @@
       },
       "parser": "espree",
       "env": {
-        "cypress/globals": true
+        "node": true,
+        "mocha": true
       },
-      "plugins": ["cypress"],
       "rules": {
         "@typescript-eslint/no-unused-expressions": "off"
       }
