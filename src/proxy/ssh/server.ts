@@ -250,7 +250,7 @@ export class SSHServer {
     });
   }
 
-  private async handleCommand(
+  public async handleCommand(
     command: string,
     stream: ssh2.ServerChannel,
     client: ClientWithUser,
@@ -361,7 +361,7 @@ export class SSHServer {
           `[SSH] Chain execution failed for user ${client.authenticatedUser?.username}:`,
           chainError,
         );
-        stream.stderr.write(`Access denied: ${chainError}\n`);
+        stream.stderr.write(`Access denied: ${chainError.message || chainError}\n`);
         stream.exit(1);
         stream.end();
         return;
