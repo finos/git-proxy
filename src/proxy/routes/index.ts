@@ -212,7 +212,8 @@ const getRouter = async () => {
         proxyReqOptDecorator: proxyReqOptDecorator,
         proxyReqBodyDecorator: proxyReqBodyDecorator,
         proxyErrorHandler: proxyErrorHandler,
-      }),
+        stream: true,
+      } as any),
     );
   });
 
@@ -225,7 +226,8 @@ const getRouter = async () => {
     proxyReqOptDecorator: proxyReqOptDecorator,
     proxyReqBodyDecorator: proxyReqBodyDecorator,
     proxyErrorHandler: proxyErrorHandler,
-  });
+    stream: true,
+  } as any);
 
   console.log('proxy keys registered: ', JSON.stringify(proxyKeys));
 

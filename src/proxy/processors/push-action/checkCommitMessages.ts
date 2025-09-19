@@ -51,8 +51,6 @@ const isMessageAllowed = (commitMessage: string): boolean => {
 
 // Execute if the repo is approved
 const exec = async (req: any, action: Action): Promise<Action> => {
-  console.log({ req, action });
-
   const step = new Step('checkCommitMessages');
 
   const uniqueCommitMessages = [...new Set(action.commitData?.map((commit) => commit.message))];
