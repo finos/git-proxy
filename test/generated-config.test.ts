@@ -1,8 +1,6 @@
-const chai = require('chai');
-const { Convert } = require('../src/config/generated/config');
-const defaultSettings = require('../proxy.config.json');
-
-const { expect } = chai;
+import { describe, it, expect } from 'vitest';
+import { Convert, GitProxyConfig } from '../src/config/generated/config';
+import defaultSettings from '../proxy.config.json';
 
 describe('Generated Config (QuickType)', () => {
   describe('Convert class', () => {
@@ -33,12 +31,12 @@ describe('Generated Config (QuickType)', () => {
 
       const result = Convert.toGitProxyConfig(JSON.stringify(validConfig));
 
-      expect(result).to.be.an('object');
-      expect(result.proxyUrl).to.equal('https://proxy.example.com');
-      expect(result.cookieSecret).to.equal('test-secret');
-      expect(result.authorisedList).to.be.an('array');
-      expect(result.authentication).to.be.an('array');
-      expect(result.sink).to.be.an('array');
+      expect(result).toBeTypeOf('object');
+      expect(result.proxyUrl).toBe('https://proxy.example.com');
+      expect(result.cookieSecret).toBe('test-secret');
+      expect(Array.isArray(result.authorisedList)).toBe(true);
+      expect(Array.isArray(result.authentication)).toBe(true);
+      expect(Array.isArray(result.sink)).toBe(true);
     });
 
     it('should convert config object back to JSON', () => {
@@ -52,27 +50,27 @@ describe('Generated Config (QuickType)', () => {
             enabled: true,
           },
         ],
-      };
+      } as GitProxyConfig;
 
       const jsonString = Convert.gitProxyConfigToJson(configObject);
       const parsed = JSON.parse(jsonString);
 
-      expect(parsed).to.be.an('object');
-      expect(parsed.proxyUrl).to.equal('https://proxy.example.com');
-      expect(parsed.cookieSecret).to.equal('test-secret');
+      expect(parsed).toBeTypeOf('object');
+      expect(parsed.proxyUrl).toBe('https://proxy.example.com');
+      expect(parsed.cookieSecret).toBe('test-secret');
     });
 
     it('should handle empty configuration object', () => {
       const emptyConfig = {};
 
       const result = Convert.toGitProxyConfig(JSON.stringify(emptyConfig));
-      expect(result).to.be.an('object');
+      expect(result).toBeTypeOf('object');
     });
 
     it('should throw error for invalid JSON string', () => {
       expect(() => {
         Convert.toGitProxyConfig('invalid json');
-      }).to.throw();
+      }).toThrow();
     });
 
     it('should handle configuration with valid rate limit structure', () => {
@@ -119,18 +117,18 @@ describe('Generated Config (QuickType)', () => {
 
       const result = Convert.toGitProxyConfig(JSON.stringify(validConfig));
 
-      expect(result).to.be.an('object');
-      expect(result.authentication).to.be.an('array');
-      expect(result.authorisedList).to.be.an('array');
-      expect(result.contactEmail).to.be.a('string');
-      expect(result.cookieSecret).to.be.a('string');
-      expect(result.csrfProtection).to.be.a('boolean');
-      expect(result.plugins).to.be.an('array');
-      expect(result.privateOrganizations).to.be.an('array');
-      expect(result.proxyUrl).to.be.a('string');
-      expect(result.rateLimit).to.be.an('object');
-      expect(result.sessionMaxAgeHours).to.be.a('number');
-      expect(result.sink).to.be.an('array');
+      expect(result).toBeTypeOf('object');
+      expect(Array.isArray(result.authentication)).toBe(true);
+      expect(Array.isArray(result.authorisedList)).toBe(true);
+      expect(result.contactEmail).toBeTypeOf('string');
+      expect(result.cookieSecret).toBeTypeOf('string');
+      expect(result.csrfProtection).toBeTypeOf('boolean');
+      expect(Array.isArray(result.plugins)).toBe(true);
+      expect(Array.isArray(result.privateOrganizations)).toBe(true);
+      expect(result.proxyUrl).toBeTypeOf('string');
+      expect(result.rateLimit).toBeTypeOf('object');
+      expect(result.sessionMaxAgeHours).toBeTypeOf('number');
+      expect(Array.isArray(result.sink)).toBe(true);
     });
 
     it('should handle malformed configuration gracefully', () => {
@@ -141,9 +139,9 @@ describe('Generated Config (QuickType)', () => {
 
       try {
         const result = Convert.toGitProxyConfig(JSON.stringify(malformedConfig));
-        expect(result).to.be.an('object');
+        expect(result).toBeTypeOf('object');
       } catch (error) {
-        expect(error).to.be.an('error');
+        expect(error).toBeInstanceOf(Error);
       }
     });
 
@@ -163,10 +161,10 @@ describe('Generated Config (QuickType)', () => {
 
       const result = Convert.toGitProxyConfig(JSON.stringify(configWithArrays));
 
-      expect(result.authorisedList).to.have.lengthOf(2);
-      expect(result.authentication).to.have.lengthOf(1);
-      expect(result.plugins).to.have.lengthOf(2);
-      expect(result.privateOrganizations).to.have.lengthOf(2);
+      expect(result.authorisedList).toHaveLength(2);
+      expect(result.authentication).toHaveLength(1);
+      expect(result.plugins).toHaveLength(2);
+      expect(result.privateOrganizations).toHaveLength(2);
     });
 
     it('should handle nested object structures', () => {
@@ -192,10 +190,10 @@ describe('Generated Config (QuickType)', () => {
 
       const result = Convert.toGitProxyConfig(JSON.stringify(configWithNesting));
 
-      expect(result.tls).to.be.an('object');
-      expect(result.tls.enabled).to.be.a('boolean');
-      expect(result.rateLimit).to.be.an('object');
-      expect(result.tempPassword).to.be.an('object');
+      expect(result.tls).toBeTypeOf('object');
+      expect(result.tls!.enabled).toBeTypeOf('boolean');
+      expect(result.rateLimit).toBeTypeOf('object');
+      expect(result.tempPassword).toBeTypeOf('object');
     });
 
     it('should handle complex validation scenarios', () => {
@@ -235,9 +233,9 @@ describe('Generated Config (QuickType)', () => {
       };
 
       const result = Convert.toGitProxyConfig(JSON.stringify(complexConfig));
-      expect(result).to.be.an('object');
-      expect(result.api).to.be.an('object');
-      expect(result.domains).to.be.an('object');
+      expect(result).toBeTypeOf('object');
+      expect(result.api).toBeTypeOf('object');
+      expect(result.domains).toBeTypeOf('object');
     });
 
     it('should handle array validation edge cases', () => {
@@ -266,9 +264,9 @@ describe('Generated Config (QuickType)', () => {
       };
 
       const result = Convert.toGitProxyConfig(JSON.stringify(configWithArrays));
-      expect(result.authorisedList).to.have.lengthOf(2);
-      expect(result.plugins).to.have.lengthOf(3);
-      expect(result.privateOrganizations).to.have.lengthOf(2);
+      expect(result.authorisedList).toHaveLength(2);
+      expect(result.plugins).toHaveLength(3);
+      expect(result.privateOrganizations).toHaveLength(2);
     });
 
     it('should exercise transformation functions with edge cases', () => {
@@ -304,10 +302,10 @@ describe('Generated Config (QuickType)', () => {
       };
 
       const result = Convert.toGitProxyConfig(JSON.stringify(edgeCaseConfig));
-      expect(result.sessionMaxAgeHours).to.equal(0);
-      expect(result.csrfProtection).to.equal(false);
-      expect(result.tempPassword).to.be.an('object');
-      expect(result.tempPassword.length).to.equal(12);
+      expect(result.sessionMaxAgeHours).toBe(0);
+      expect(result.csrfProtection).toBe(false);
+      expect(result.tempPassword).toBeTypeOf('object');
+      expect(result.tempPassword!.length).toBe(12);
     });
 
     it('should test validation error paths', () => {
@@ -315,7 +313,7 @@ describe('Generated Config (QuickType)', () => {
         // Try to parse something that looks like valid JSON but has wrong structure
         Convert.toGitProxyConfig('{"proxyUrl": 123, "authentication": "not-array"}');
       } catch (error) {
-        expect(error).to.be.an('error');
+        expect(error).toBeInstanceOf(Error);
       }
     });
 
@@ -332,7 +330,7 @@ describe('Generated Config (QuickType)', () => {
 
       expect(() => {
         Convert.toGitProxyConfig(JSON.stringify(configWithNulls));
-      }).to.throw('Invalid value');
+      }).toThrow('Invalid value');
     });
 
     it('should test serialization back to JSON', () => {
@@ -355,8 +353,8 @@ describe('Generated Config (QuickType)', () => {
       const serialized = Convert.gitProxyConfigToJson(parsed);
       const reparsed = JSON.parse(serialized);
 
-      expect(reparsed.proxyUrl).to.equal('https://test.com');
-      expect(reparsed.rateLimit).to.be.an('object');
+      expect(reparsed.proxyUrl).toBe('https://test.com');
+      expect(reparsed.rateLimit).toBeTypeOf('object');
     });
 
     it('should validate the default configuration from proxy.config.json', () => {
@@ -364,15 +362,15 @@ describe('Generated Config (QuickType)', () => {
       // This catches cases where schema updates haven't been reflected in the default config
       const result = Convert.toGitProxyConfig(JSON.stringify(defaultSettings));
 
-      expect(result).to.be.an('object');
-      expect(result.cookieSecret).to.be.a('string');
-      expect(result.authorisedList).to.be.an('array');
-      expect(result.authentication).to.be.an('array');
-      expect(result.sink).to.be.an('array');
+      expect(result).toBeTypeOf('object');
+      expect(result.cookieSecret).toBeTypeOf('string');
+      expect(Array.isArray(result.authorisedList)).toBe(true);
+      expect(Array.isArray(result.authentication)).toBe(true);
+      expect(Array.isArray(result.sink)).toBe(true);
 
       // Validate that serialization also works
       const serialized = Convert.gitProxyConfigToJson(result);
-      expect(() => JSON.parse(serialized)).to.not.throw();
+      expect(() => JSON.parse(serialized)).not.toThrow();
     });
   });
 });
