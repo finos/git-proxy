@@ -6,23 +6,31 @@ import { executeChain } from '../chain';
 import { processUrlPath, validGitRequest, getAllProxiedHosts } from './helper';
 import { ProxyOptions } from 'express-http-proxy';
 
+enum ActionType {
+  // eslint-disable-next-line no-unused-vars
+  ALLOWED = 'Allowed',
+  // eslint-disable-next-line no-unused-vars
+  ERROR = 'Error',
+  // eslint-disable-next-line no-unused-vars
+  BLOCKED = 'Blocked',
+}
+
 const logAction = (
   url: string,
   host: string | null | undefined,
   userAgent: string | null | undefined,
-  errMsg: string | null | undefined,
-  blockMsg?: string | null | undefined,
+  type: ActionType,
+  message?: string,
 ) => {
-  let msg = `Action processed: ${!(errMsg || blockMsg) ? 'Allowed' : 'Blocked'}
+  let msg = `Action processed: ${type}
     Request URL: ${url}
     Host:        ${host}
     User-Agent:  ${userAgent}`;
-  if (errMsg) {
-    msg += `\n    Error:       ${errMsg}`;
+
+  if (message && type !== ActionType.ALLOWED) {
+    msg += `\n    ${type}:       ${message}`;
   }
-  if (blockMsg) {
-    msg += `\n    Blocked:     ${blockMsg}`;
-  }
+
   console.log(msg);
 };
 
@@ -34,67 +42,45 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
       urlComponents.gitPath === undefined ||
       !validGitRequest(urlComponents.gitPath, req.headers)
     ) {
-      logAction(
-        req.url,
-        req.headers.host,
-        req.headers['user-agent'],
-        'Invalid request received',
-        null,
-      );
-      // return status 200 to ensure that the error message is rendered by the git client
-      res.status(200).send(handleMessage('Invalid request received'));
+      const message = 'Invalid request received';
+      logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ERROR, message);
+      res.status(200).send(handleMessage(message));
       return false;
     }
 
     const action = await executeChain(req, res);
 
     if (action.error || action.blocked) {
-      const errorMessage = action.errorMessage ?? action.blockedMessage ?? '';
-      sendErrorResponse(req, res, errorMessage, action.blockedMessage);
+      const message = action.errorMessage ?? action.blockedMessage ?? 'Unknown error';
+      const type = action.error ? ActionType.ERROR : ActionType.BLOCKED;
+
+      logAction(req.url, req.headers.host, req.headers['user-agent'], type, message);
+      sendErrorResponse(req, res, message);
       return false;
     }
 
-    logAction(
-      req.url,
-      req.headers.host,
-      req.headers['user-agent'],
-      action.errorMessage,
-      action.blockedMessage,
-    );
+    logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ALLOWED);
 
     // this is the only case where we do not respond directly, instead we return true to proxy the request
     return true;
   } catch (e) {
-    const errorMessage = `Error occurred in proxy filter function ${(e as Error).message ?? e}`;
+    const message = `Error occurred in proxy filter function ${(e as Error).message ?? e}`;
 
-    sendErrorResponse(req, res, errorMessage, null);
+    logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ERROR, message);
+    sendErrorResponse(req, res, message);
     return false;
   }
 };
 
-const sendErrorResponse = (
-  req: Request,
-  res: Response,
-  errorMessage: string,
-  actionBlockedMessage: string | null | undefined,
-): void => {
+const sendErrorResponse = (req: Request, res: Response, message: string): void => {
   // GET requests to /info/refs (used to check refs for many git operations) must use Git protocol error packet format
   if (req.method === 'GET' && req.url.includes('/info/refs')) {
     res.set('content-type', 'application/x-git-upload-pack-advertisement');
-
-    logAction(
-      req.url,
-      req.headers.host,
-      req.headers['user-agent'],
-      errorMessage,
-      actionBlockedMessage,
-    );
-
-    // Use Git protocol error packet format
-    res.status(200).send(handleRefsErrorMessage(errorMessage));
+    res.status(200).send(handleRefsErrorMessage(message));
     return;
   }
 
+  // Standard git receive-pack response
   res.set('content-type', 'application/x-git-receive-pack-result');
   res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
   res.set('pragma', 'no-cache');
@@ -103,18 +89,7 @@ const sendErrorResponse = (
   res.set('x-frame-options', 'DENY');
   res.set('connection', 'close');
 
-  const packetMessage = handleMessage(errorMessage);
-
-  logAction(
-    req.url,
-    req.headers.host,
-    req.headers['user-agent'],
-    errorMessage,
-    actionBlockedMessage,
-  );
-
-  // return status 200 to ensure that the error message is rendered by the git client
-  res.status(200).send(packetMessage);
+  res.status(200).send(handleMessage(message));
 };
 
 const handleMessage = (message: string): string => {
@@ -181,15 +156,10 @@ const teeAndValidate = async (req: Request, res: Response, next: NextFunction) =
     (req as any).body = buf;
     const verdict = await executeChain(req, res);
     if (verdict.error || verdict.blocked) {
-      const msg = verdict.errorMessage ?? verdict.blockedMessage ?? '';
+      const message = verdict.errorMessage ?? verdict.blockedMessage ?? 'Unknown error';
+      const type = verdict.error ? ActionType.ERROR : ActionType.BLOCKED;
 
-      logAction(
-        req.url,
-        req.headers?.host,
-        req.headers?.['user-agent'],
-        verdict.errorMessage,
-        verdict.blockedMessage,
-      );
+      logAction(req.url, req.headers?.host, req.headers?.['user-agent'], type, message);
 
       res
         .set({
@@ -202,7 +172,7 @@ const teeAndValidate = async (req: Request, res: Response, next: NextFunction) =
           connection: 'close',
         })
         .status(200) // return status 200 to ensure that the error message is rendered by the git client
-        .send(handleMessage(msg));
+        .send(handleMessage(message));
       return;
     }
 
