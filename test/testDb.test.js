@@ -26,6 +26,7 @@ const TEST_USER = {
   gitAccount: 'db-test-user',
   email: 'db-test@test.com',
   admin: true,
+  publicKeys: [],
 };
 
 const TEST_PUSH = {
@@ -130,6 +131,7 @@ describe('Database clients', async () => {
       'email@domain.com',
       true,
       null,
+      [],
       'id',
     );
     expect(user.username).to.equal('username');
@@ -147,6 +149,7 @@ describe('Database clients', async () => {
       'email@domain.com',
       false,
       'oidcId',
+      [],
       'id',
     );
     expect(user2.admin).to.equal(false);

@@ -46,6 +46,9 @@ export const deleteUser = async function (username: string): Promise<void> {
 export const createUser = async function (user: User): Promise<void> {
   user.username = user.username.toLowerCase();
   user.email = user.email.toLowerCase();
+  if (!user.publicKeys) {
+    user.publicKeys = [];
+  }
   const collection = await connect(collectionName);
   await collection.insertOne(user as OptionalId<Document>);
 };
@@ -55,7 +58,32 @@ export const updateUser = async (user: User): Promise<void> => {
   if (user.email) {
     user.email = user.email.toLowerCase();
   }
+  if (!user.publicKeys) {
+    user.publicKeys = [];
+  }
   const options = { upsert: true };
   const collection = await connect(collectionName);
   await collection.updateOne({ username: user.username }, { $set: user }, options);
+};
+
+export const addPublicKey = async (username: string, publicKey: string): Promise<void> => {
+  const collection = await connect(collectionName);
+  await collection.updateOne(
+    { username: username.toLowerCase() },
+    { $addToSet: { publicKeys: publicKey } },
+  );
+};
+
+export const removePublicKey = async (username: string, publicKey: string): Promise<void> => {
+  const collection = await connect(collectionName);
+  await collection.updateOne(
+    { username: username.toLowerCase() },
+    { $pull: { publicKeys: publicKey } },
+  );
+};
+
+export const findUserBySSHKey = async function (sshKey: string): Promise<User | null> {
+  const collection = await connect(collectionName);
+  const doc = await collection.findOne({ publicKeys: { $eq: sshKey } });
+  return doc ? toClass(doc, User.prototype) : null;
 };
