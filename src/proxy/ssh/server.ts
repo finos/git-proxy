@@ -356,12 +356,13 @@ export class SSHServer {
             result.errorMessage || result.blockedMessage || 'Request blocked by proxy chain';
           throw new Error(message);
         }
-      } catch (chainError) {
+      } catch (chainError: unknown) {
         console.error(
           `[SSH] Chain execution failed for user ${client.authenticatedUser?.username}:`,
           chainError,
         );
-        stream.stderr.write(`Access denied: ${chainError.message || chainError}\n`);
+        const errorMessage = chainError instanceof Error ? chainError.message : String(chainError);
+        stream.stderr.write(`Access denied: ${errorMessage}\n`);
         stream.exit(1);
         stream.end();
         return;

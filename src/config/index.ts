@@ -106,7 +106,12 @@ function mergeConfigurations(
     rateLimit: userSettings.rateLimit || defaultConfig.rateLimit,
     tls: tlsConfig,
     tempPassword: { ...defaultConfig.tempPassword, ...userSettings.tempPassword },
-    ssh: { ...defaultConfig.ssh, ...userSettings.ssh },
+    ssh: {
+      ...defaultConfig.ssh,
+      ...userSettings.ssh,
+      // Ensure enabled is always a boolean
+      enabled: userSettings.ssh?.enabled ?? defaultConfig.ssh?.enabled ?? false,
+    },
     // Preserve legacy SSL fields
     sslKeyPemPath: userSettings.sslKeyPemPath || defaultConfig.sslKeyPemPath,
     sslCertPemPath: userSettings.sslCertPemPath || defaultConfig.sslCertPemPath,
