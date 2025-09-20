@@ -1,6 +1,5 @@
 import { describe, it, beforeEach, expect, vi, type Mock } from 'vitest';
 
-// Stubs
 let ldapStub: { isUserInAdGroup: Mock };
 let dbStub: { updateUser: Mock };
 let passportStub: {
