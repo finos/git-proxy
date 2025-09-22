@@ -204,6 +204,7 @@ router.post('/create-user', async (req: Request, res: Response) => {
       res.status(400).send({
         message: 'Missing required fields: username, password, email, and gitAccount are required',
       });
+      return;
     }
 
     await db.createUser(username, password, email, gitAccount, isAdmin);
