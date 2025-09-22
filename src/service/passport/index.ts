@@ -3,7 +3,7 @@ import * as local from './local';
 import * as activeDirectory from './activeDirectory';
 import * as oidc from './oidc';
 import * as config from '../../config';
-import { Authentication } from '../../config/types';
+import { Authentication } from '../../config/generated/config';
 
 type StrategyModule = {
   configure: (passport: PassportStatic) => Promise<PassportStatic>;

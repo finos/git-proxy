@@ -7,7 +7,7 @@ import * as passportLocal from '../passport/local';
 import * as passportAD from '../passport/activeDirectory';
 
 import { User } from '../../db/types';
-import { Authentication } from '../../config/types';
+import { Authentication } from '../../config/generated/config';
 
 import { toPublicUser } from './publicApi';
 import { isAdminUser } from './utils';

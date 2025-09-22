@@ -1,7 +1,7 @@
 import { assignRoles, validateJwt } from './jwtUtils';
 import type { Request, Response, NextFunction } from 'express';
 import { getAPIAuthMethods } from '../../config';
-import { JwtConfig, Authentication } from '../../config/types';
+import { JwtConfig, Authentication, Type } from '../../config/generated/config';
 import { RoleMapping } from './types';
 
 export const type = 'jwt';
@@ -9,7 +9,7 @@ export const type = 'jwt';
 export const jwtAuthHandler = (overrideConfig: JwtConfig | null = null) => {
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const apiAuthMethods: Authentication[] = overrideConfig
-      ? [{ type: 'jwt', enabled: true, jwtConfig: overrideConfig }]
+      ? [{ type: 'jwt' as Type, enabled: true, jwtConfig: overrideConfig }]
       : getAPIAuthMethods();
 
     const jwtAuthMethod = apiAuthMethods.find((method) => method.type.toLowerCase() === type);

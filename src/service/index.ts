@@ -15,6 +15,8 @@ const limiter = rateLimit(config.getRateLimit());
 
 const { GIT_PROXY_UI_PORT: uiPort } = serverConfig;
 
+const DEFAULT_SESSION_MAX_AGE_HOURS = 12;
+
 const app: Express = express();
 const _httpServer = http.createServer(app);
 
@@ -41,13 +43,13 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.use(
     session({
       store: db.getSessionStore(),
-      secret: config.getCookieSecret(),
+      secret: config.getCookieSecret() as string,
       resave: false,
       saveUninitialized: false,
       cookie: {
         secure: 'auto',
         httpOnly: true,
-        maxAge: config.getSessionMaxAgeHours() * 60 * 60 * 1000,
+        maxAge: (config.getSessionMaxAgeHours() || DEFAULT_SESSION_MAX_AGE_HOURS) * 60 * 60 * 1000,
       },
     }),
   );

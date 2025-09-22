@@ -83,8 +83,6 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
 });
 
 router.post('/:id/authorise', async (req: Request, res: Response) => {
-  console.log({ req });
-
   const questions = req.body.params?.attestation;
   console.log({ questions });
 
