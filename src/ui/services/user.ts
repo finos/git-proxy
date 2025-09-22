@@ -2,9 +2,9 @@ import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
 import { UserData } from '../../types/models';
 
-type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
+import { API_BASE } from '../apiBase';
 
-const baseUrl = process.env.VITE_API_URI || location.origin;
+type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
 
 const getUser = async (
   setIsLoading?: SetStateCallback<boolean>,
@@ -13,9 +13,9 @@ const getUser = async (
   setIsError?: SetStateCallback<boolean>,
   id: string | null = null,
 ): Promise<void> => {
-  let url = `${baseUrl}/api/auth/profile`;
+  let url = `${API_BASE}/api/auth/profile`;
   if (id) {
-    url = `${baseUrl}/api/v1/user/${id}`;
+    url = `${API_BASE}/api/v1/user/${id}`;
   }
   console.log(url);
 
@@ -43,7 +43,7 @@ const getUsers = async (
   setErrorMessage: SetStateCallback<string>,
   query: Record<string, string> = {},
 ): Promise<void> => {
-  const url = new URL(`${baseUrl}/api/v1/user`);
+  const url = new URL(`${API_BASE}/api/v1/user`);
   url.search = new URLSearchParams(query).toString();
 
   setIsLoading(true);
@@ -70,7 +70,7 @@ const getUsers = async (
 
 const updateUser = async (data: UserData): Promise<void> => {
   console.log(data);
-  const url = new URL(`${baseUrl}/api/auth/gitAccount`);
+  const url = new URL(`${API_BASE}/api/auth/gitAccount`);
 
   try {
     await axios.post(url.toString(), data, getAxiosConfig());
@@ -89,7 +89,7 @@ const getUserLoggedIn = async (
   setIsError: SetStateCallback<boolean>,
   setAuth: SetStateCallback<boolean>,
 ): Promise<void> => {
-  const url = new URL(`${baseUrl}/api/auth/me`);
+  const url = new URL(`${API_BASE}/api/auth/me`);
 
   try {
     const response: AxiosResponse<UserData> = await axios(url.toString(), getAxiosConfig());

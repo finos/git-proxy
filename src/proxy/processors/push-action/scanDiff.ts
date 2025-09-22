@@ -35,8 +35,10 @@ type Match = {
 const getDiffViolations = (diff: string, organization: string): Match[] | string | null => {
   // Commit diff is empty, i.e. '', null or undefined
   if (!diff) {
-    console.log('No commit diff...');
-    return 'No commit diff...';
+    console.log('No commit diff found, but this may be legitimate (empty diff)');
+    // Empty diff is not necessarily a violation - could be legitimate
+    // (e.g., cherry-pick with no changes, reverts, etc.)
+    return null;
   }
 
   // Validation for configured block pattern(s) check...
