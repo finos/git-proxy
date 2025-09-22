@@ -341,12 +341,21 @@ interface GitObjectHeader {
   baseSha?: Buffer;
 }
 
+type GitObjectType =
+  | 'commit'
+  | 'tree'
+  | 'blob'
+  | 'tag'
+  | 'ofs_delta'
+  | 'ref_delta'
+  | unknown;
+
 /**
  * Maps Git object type codes to human-readable names.
  * @param {number} typeCode  Numeric type code from PACK file.
- * @return {string} Git object type as string.
+ * @return {GitObjectType} Git object type
  */
-const gitObjectType = (typeCode: number): string => {
+const gitObjectType = (typeCode: number): GitObjectType => {
   switch (typeCode) {
     case 1:
       return 'commit';
