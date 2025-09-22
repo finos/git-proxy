@@ -18,6 +18,8 @@ import axios from 'axios';
 import { getAxiosConfig } from '../../services/auth';
 import { UserData } from '../../../types/models';
 
+import { API_BASE } from '../../apiBase';
+
 const useStyles = makeStyles(styles);
 
 const DashboardNavbarLinks: React.FC = () => {
@@ -51,11 +53,7 @@ const DashboardNavbarLinks: React.FC = () => {
 
   const logout = async () => {
     try {
-      const { data } = await axios.post(
-        `${process.env.VITE_API_URI || 'http://localhost:3000'}/api/auth/logout`,
-        {},
-        getAxiosConfig(),
-      );
+      const { data } = await axios.post(`${API_BASE}/api/auth/logout`, {}, getAxiosConfig());
 
       if (!data.isAuth && !data.user) {
         setAuth(false);
