@@ -18,6 +18,7 @@
     "test": "NODE_ENV=test ts-mocha './test/**/*.test.js' --exit",
     "test-coverage": "nyc npm run test",
     "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text npm run test",
+    "vitest": "vitest ./test/*.ts",
     "prepare": "node ./scripts/prepare.js",
     "lint": "eslint \"src/**/*.{js,jsx,ts,tsx,json}\" \"test/**/*.{js,jsx,ts,tsx,json}\"",
     "lint:fix": "eslint --fix \"src/**/*.{js,jsx,ts,tsx,json}\" \"test/**/*.{js,jsx,ts,tsx,json}\"",
