@@ -1,10 +1,10 @@
 import axios from 'axios';
 import React from 'react';
 import {
-  SCMRepositoryMetadata,
+  CommitData,
   GitHubRepositoryMetadata,
   GitLabRepositoryMetadata,
-  CommitData,
+  SCMRepositoryMetadata,
 } from '../types/models';
 import moment from 'moment';
 
