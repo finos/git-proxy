@@ -341,14 +341,7 @@ interface GitObjectHeader {
   baseSha?: Buffer;
 }
 
-type GitObjectType =
-  | 'commit'
-  | 'tree'
-  | 'blob'
-  | 'tag'
-  | 'ofs_delta'
-  | 'ref_delta'
-  | unknown;
+type GitObjectType = 'commit' | 'tree' | 'blob' | 'tag' | 'ofs_delta' | 'ref_delta' | 'unknown';
 
 /**
  * Maps Git object type codes to human-readable names.
