@@ -1,4 +1,4 @@
-const { handleMessage, validGitRequest } = require('../src/proxy/routes');
+const { handleMessage, handleRefsErrorMessage, validGitRequest } = require('../src/proxy/routes');
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 chai.use(chaiHttp);
@@ -200,6 +200,31 @@ describe('proxy route helpers', () => {
   });
 });
 
+describe('healthcheck route', () => {
+  let app;
+
+  beforeEach(async () => {
+    app = express();
+    app.use('/', await getRouter());
+  });
+
+  it('returns 200 OK with no-cache headers', async () => {
+    const res = await chai.request(app).get('/healthcheck');
+
+    expect(res).to.have.status(200);
+    expect(res.text).to.equal('OK');
+
+    // Basic header checks (values defined in route)
+    expect(res).to.have.header(
+      'cache-control',
+      'no-cache, no-store, must-revalidate, proxy-revalidate',
+    );
+    expect(res).to.have.header('pragma', 'no-cache');
+    expect(res).to.have.header('expires', '0');
+    expect(res).to.have.header('surrogate-control', 'no-store');
+  });
+});
+
 describe('proxyFilter function', async () => {
   let proxyRoutes;
   let req;
@@ -310,6 +335,39 @@ describe('proxyFilter function', async () => {
     executeChainStub.returns(actionToReturn);
     const result = await proxyRoutes.proxyFilter(req, res);
     expect(result).to.be.true;
+  });
+
+  it('should handle GET /info/refs with blocked action using Git protocol error format', async () => {
+    const req = {
+      url: '/proj/repo.git/info/refs?service=git-upload-pack',
+      method: 'GET',
+      headers: {
+        host: 'localhost',
+        'user-agent': 'git/2.34.1',
+      },
+    };
+    const res = {
+      set: sinon.spy(),
+      status: sinon.stub().returnsThis(),
+      send: sinon.spy(),
+    };
+
+    const actionToReturn = {
+      blocked: true,
+      blockedMessage: 'Repository not in authorised list',
+    };
+
+    executeChainStub.returns(actionToReturn);
+    const result = await proxyRoutes.proxyFilter(req, res);
+
+    expect(result).to.be.false;
+
+    const expectedPacket = handleRefsErrorMessage('Repository not in authorised list');
+
+    expect(res.set.calledWith('content-type', 'application/x-git-upload-pack-advertisement')).to.be
+      .true;
+    expect(res.status.calledWith(200)).to.be.true;
+    expect(res.send.calledWith(expectedPacket)).to.be.true;
   });
 });
 
