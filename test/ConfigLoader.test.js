@@ -329,7 +329,6 @@ describe('ConfigLoader', () => {
     });
 
     it('should load configuration from git repository', async function () {
-      // eslint-disable-next-line no-invalid-this
       this.timeout(10000);
 
       const source = {
@@ -380,7 +379,6 @@ describe('ConfigLoader', () => {
     });
 
     it('should load configuration from http', async function () {
-      // eslint-disable-next-line no-invalid-this
       this.timeout(10000);
 
       const source = {
