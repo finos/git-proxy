@@ -7,11 +7,11 @@ import { processUrlPath, validGitRequest, getAllProxiedHosts } from './helper';
 import { ProxyOptions } from 'express-http-proxy';
 
 enum ActionType {
-  // eslint-disable-next-line no-unused-vars
+   
   ALLOWED = 'Allowed',
-  // eslint-disable-next-line no-unused-vars
+   
   ERROR = 'Error',
-  // eslint-disable-next-line no-unused-vars
+   
   BLOCKED = 'Blocked',
 }
 
@@ -186,7 +186,6 @@ const teeAndValidate = async (req: Request, res: Response, next: NextFunction) =
 };
 
 const getRouter = async () => {
-  // eslint-disable-next-line new-cap
   const router = Router();
   router.use(teeAndValidate);
 

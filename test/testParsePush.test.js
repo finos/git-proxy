@@ -305,11 +305,11 @@ describe('parsePackFile', () => {
       user: null,
       steps: [],
       addStep: sandbox.spy(function (step) {
-        this.steps.push(step); // eslint-disable-line no-invalid-this
+        this.steps.push(step);
       }),
       setCommit: sandbox.spy(function (from, to) {
-        this.commitFrom = from; // eslint-disable-line no-invalid-this
-        this.commitTo = to; // eslint-disable-line no-invalid-this
+        this.commitFrom = from;
+        this.commitTo = to;
       }),
     };
 
