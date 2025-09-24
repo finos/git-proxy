@@ -45,6 +45,13 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
       return false;
     }
 
+    // For POST pack requests, use the raw body extracted by extractRawBody middleware
+    if (isPackPost(req) && (req as any).bodyRaw) {
+      (req as any).body = (req as any).bodyRaw;
+      // Clean up the bodyRaw property before forwarding the request
+      delete (req as any).bodyRaw;
+    }
+
     const action = await executeChain(req, res);
 
     if (action.error || action.blocked) {
@@ -128,7 +135,7 @@ const proxyReqBodyDecorator: ProxyOptions['proxyReqBodyDecorator'] = (bodyConten
   return bodyContent;
 };
 
-const proxyErrorHandler: ProxyOptions['proxyErrorHandler'] = (err, res, next) => {
+const proxyErrorHandler: ProxyOptions['proxyErrorHandler'] = (err, _res, next) => {
   console.log(`ERROR=${err}`);
   next(err);
 };
@@ -137,42 +144,24 @@ const isPackPost = (req: Request) =>
   req.method === 'POST' &&
   /^(?:\/[^/]+)*\/[^/]+\.git\/(?:git-upload-pack|git-receive-pack)$/.test(req.url);
 
-const teeAndValidate = async (req: Request, res: Response, next: NextFunction) => {
+const extractRawBody = async (req: Request, res: Response, next: NextFunction) => {
   if (!isPackPost(req)) {
     return next();
   }
 
-  const proxyStream = new PassThrough();
-  const pluginStream = new PassThrough();
+  const proxyStream = new PassThrough({
+    highWaterMark: 4 * 1024 * 1024,
+  });
+  const pluginStream = new PassThrough({
+    highWaterMark: 4 * 1024 * 1024,
+  });
 
   req.pipe(proxyStream);
   req.pipe(pluginStream);
 
   try {
     const buf = await getRawBody(pluginStream, { limit: '1gb' });
-    (req as any).body = buf;
-    const verdict = await executeChain(req, res);
-    if (verdict.error || verdict.blocked) {
-      const message = verdict.errorMessage ?? verdict.blockedMessage ?? 'Unknown error';
-      const type = verdict.error ? ActionType.ERROR : ActionType.BLOCKED;
-
-      logAction(req.url, req.headers?.host, req.headers?.['user-agent'], type, message);
-
-      res
-        .set({
-          'content-type': 'application/x-git-receive-pack-result',
-          expires: 'Fri, 01 Jan 1980 00:00:00 GMT',
-          pragma: 'no-cache',
-          'cache-control': 'no-cache, max-age=0, must-revalidate',
-          vary: 'Accept-Encoding',
-          'x-frame-options': 'DENY',
-          connection: 'close',
-        })
-        .status(200) // return status 200 to ensure that the error message is rendered by the git client
-        .send(handleMessage(message));
-      return;
-    }
-
+    (req as any).bodyRaw = buf;
     (req as any).pipe = (dest: any, opts: any) => proxyStream.pipe(dest, opts);
     next();
   } catch (e) {
@@ -184,7 +173,7 @@ const teeAndValidate = async (req: Request, res: Response, next: NextFunction) =
 
 const getRouter = async () => {
   const router = Router();
-  router.use(teeAndValidate);
+  router.use(extractRawBody);
 
   const originsToProxy = await getAllProxiedHosts();
   const proxyKeys: string[] = [];
@@ -259,6 +248,6 @@ export {
   handleMessage,
   handleRefsErrorMessage,
   isPackPost,
-  teeAndValidate,
+  extractRawBody,
   validGitRequest,
 };
