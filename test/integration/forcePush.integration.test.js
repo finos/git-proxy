@@ -15,7 +15,7 @@ describe('Force Push Integration Test', () => {
   let rebasedCommitSHA;
 
   before(async function () {
-    this.timeout(10000); // eslint-disable-line no-invalid-this
+    this.timeout(10000);
 
     tempDir = path.join(__dirname, '../temp-integration-repo');
     await fs.mkdir(tempDir, { recursive: true });
@@ -58,7 +58,7 @@ describe('Force Push Integration Test', () => {
 
   describe('Complete force push pipeline', () => {
     it('should handle valid diff after rebase scenario', async function () {
-      this.timeout(5000); // eslint-disable-line no-invalid-this
+      this.timeout(5000);
 
       // Create action simulating force push with valid SHAs that have actual changes
       const action = new Action(
@@ -101,7 +101,7 @@ describe('Force Push Integration Test', () => {
     });
 
     it('should handle unreachable commit SHA error', async function () {
-      this.timeout(5000); // eslint-disable-line no-invalid-this
+      this.timeout(5000);
 
       // Invalid SHA to trigger error
       const action = new Action(

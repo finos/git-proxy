@@ -264,7 +264,7 @@ describe('Proxy', () => {
       await proxy.start();
 
       // simulate error in server close
-      mockHttpServer.close.callsFake((callback) => {
+      mockHttpServer.close.callsFake(() => {
         throw new Error('Server close error');
       });
 

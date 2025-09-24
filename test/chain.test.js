@@ -58,8 +58,6 @@ const mockPreProcessors = {
   parseAction: sinon.stub(),
 };
 
-let mockPushProcessors;
-
 const clearCache = (sandbox) => {
   delete require.cache[require.resolve('../src/proxy/processors')];
   delete require.cache[require.resolve('../src/proxy/chain')];

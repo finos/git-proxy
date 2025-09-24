@@ -133,11 +133,11 @@ describe('Repo', () => {
         .next()
         .get('svg.octicon-copy')
         .should('exist')
-        .click()
-        .get('svg.octicon-copy')
-        .should('not.exist')
-        .get('svg.octicon-check')
-        .should('exist');
+        .click();
+
+      cy.get('svg.octicon-copy').should('not.exist');
+
+      cy.get('svg.octicon-check').should('exist');
     });
 
     after(() => {
