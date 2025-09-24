@@ -106,20 +106,19 @@ export const createRepo = async (repo: Repo): Promise<Repo> => {
 
 export const addUserCanPush = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
-  return new Promise(async (resolve, reject) => {
-    const repo = await getRepoById(_id);
-    if (!repo) {
-      reject(new Error('Repo not found'));
-      return;
-    }
+  const repo = await getRepoById(_id);
+  if (!repo) {
+    throw new Error('Repo not found');
+  }
 
-    if (repo.users?.canPush.includes(user)) {
-      resolve();
-      return;
-    }
-    repo.users?.canPush.push(user);
+  if (repo.users?.canPush.includes(user)) {
+    return;
+  }
+  repo.users?.canPush.push(user);
 
-    const options = { multi: false, upsert: false };
+  const options = { multi: false, upsert: false };
+
+  return new Promise<void>((resolve, reject) => {
     db.update({ _id: _id }, repo, options, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
@@ -134,21 +133,21 @@ export const addUserCanPush = async (_id: string, user: string): Promise<void> =
 
 export const addUserCanAuthorise = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
-  return new Promise(async (resolve, reject) => {
-    const repo = await getRepoById(_id);
-    if (!repo) {
-      reject(new Error('Repo not found'));
-      return;
-    }
+  const repo = await getRepoById(_id);
+  if (!repo) {
+    throw new Error('Repo not found');
+    return;
+  }
 
-    if (repo.users.canAuthorise.includes(user)) {
-      resolve();
-      return;
-    }
+  if (repo.users.canAuthorise.includes(user)) {
+    return;
+  }
 
-    repo.users.canAuthorise.push(user);
+  repo.users.canAuthorise.push(user);
 
-    const options = { multi: false, upsert: false };
+  const options = { multi: false, upsert: false };
+
+  return new Promise((resolve, reject) => {
     db.update({ _id: _id }, repo, options, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
@@ -163,16 +162,16 @@ export const addUserCanAuthorise = async (_id: string, user: string): Promise<vo
 
 export const removeUserCanAuthorise = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
-  return new Promise(async (resolve, reject) => {
-    const repo = await getRepoById(_id);
-    if (!repo) {
-      reject(new Error('Repo not found'));
-      return;
-    }
+  const repo = await getRepoById(_id);
+  if (!repo) {
+    throw new Error('Repo not found');
+  }
 
-    repo.users.canAuthorise = repo.users.canAuthorise.filter((x: string) => x != user);
+  repo.users.canAuthorise = repo.users.canAuthorise.filter((x: string) => x != user);
 
-    const options = { multi: false, upsert: false };
+  const options = { multi: false, upsert: false };
+
+  return new Promise<void>((resolve, reject) => {
     db.update({ _id: _id }, repo, options, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
@@ -187,16 +186,16 @@ export const removeUserCanAuthorise = async (_id: string, user: string): Promise
 
 export const removeUserCanPush = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
-  return new Promise(async (resolve, reject) => {
-    const repo = await getRepoById(_id);
-    if (!repo) {
-      reject(new Error('Repo not found'));
-      return;
-    }
+  const repo = await getRepoById(_id);
+  if (!repo) {
+    throw new Error('Repo not found');
+  }
 
-    repo.users.canPush = repo.users.canPush.filter((x) => x != user);
+  repo.users.canPush = repo.users.canPush.filter((x) => x != user);
 
-    const options = { multi: false, upsert: false };
+  const options = { multi: false, upsert: false };
+
+  return new Promise<void>((resolve, reject) => {
     db.update({ _id: _id }, repo, options, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
