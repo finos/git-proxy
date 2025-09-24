@@ -7,11 +7,10 @@ import { processUrlPath, validGitRequest, getAllProxiedHosts } from './helper';
 import { ProxyOptions } from 'express-http-proxy';
 
 enum ActionType {
-   
   ALLOWED = 'Allowed',
-   
+
   ERROR = 'Error',
-   
+
   BLOCKED = 'Blocked',
 }
 

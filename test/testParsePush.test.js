@@ -2,6 +2,8 @@ const { expect } = require('chai');
 const sinon = require('sinon');
 const zlib = require('zlib');
 const { createHash } = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const {
   exec,
@@ -464,7 +466,7 @@ describe('parsePackFile', () => {
       expect(action.setCommit.calledOnceWith(oldCommit, newCommit)).to.be.true;
     });
 
-    it('should successfully parse a valid push request', async () => {
+    it('should successfully parse a valid push request (simulated)', async () => {
       const oldCommit = 'a'.repeat(40);
       const newCommit = 'b'.repeat(40);
       const ref = 'refs/heads/main';
@@ -518,7 +520,61 @@ describe('parsePackFile', () => {
       });
     });
 
-    it('should successfully parse a valid multi-object push request', async () => {
+    it('should successfully parse a valid push request (captured)', async () => {
+      const oldCommit = '640bd00d63208466021143366adbc926824ba66f';
+      const newCommit = '93ca160407a9660c5ef81b951892b7a9ab1c41ca';
+      const ref = 'refs/heads/main';
+      const numEntries = 4;
+      const tree = 'e4dbd7b12566edee6840bf053b70a81897bcf9cd';
+      const parent = '640bd00d63208466021143366adbc926824ba66f';
+      const author = 'Kris West';
+      const timestamp = '1758647093';
+      const message = 'test: test commit for pack capture Tue Sep 23 18:04:53 BST 2025';
+
+      // see ../fixtures/captured-push.bin for details of how the content of this file were captured
+      const capturedPushPath = path.join(__dirname, 'fixtures', 'captured-push.bin');
+
+      console.log(`Reading captured pack file from ${capturedPushPath}`);
+      const pushBuffer = fs.readFileSync(capturedPushPath);
+      console.log(`Got buffer length: ${pushBuffer.length}`);
+
+      req.body = pushBuffer;
+
+      const result = await exec(req, action);
+      expect(result).to.equal(action);
+
+      // Check step and action properties
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
+      expect(step).to.exist;
+      expect(step.error).to.be.false;
+      expect(step.errorMessage).to.be.null;
+
+      expect(action.branch).to.equal(ref);
+      expect(action.setCommit.calledOnceWith(oldCommit, newCommit)).to.be.true;
+      expect(action.commitFrom).to.equal(oldCommit);
+      expect(action.commitTo).to.equal(newCommit);
+      expect(action.user).to.equal(author);
+
+      // Check parsed commit data
+      const commitMessages = action.commitData.map((commit) => commit.message);
+      expect(action.commitData).to.be.an('array').with.lengthOf(1);
+      expect(commitMessages[0]).to.equal(message);
+
+      const parsedCommit = action.commitData[0];
+      expect(parsedCommit.tree).to.equal(tree);
+      expect(parsedCommit.parent).to.equal(parent);
+      expect(parsedCommit.author).to.equal(author);
+      expect(parsedCommit.committer).to.equal(author);
+      expect(parsedCommit.commitTimestamp).to.equal(timestamp);
+      expect(parsedCommit.message).to.equal(message);
+      expect(step.content.meta).to.deep.equal({
+        sig: PACK_SIGNATURE,
+        version: 2,
+        entries: numEntries,
+      });
+    });
+
+    it('should successfully parse a valid multi-object push request (simulated)', async () => {
       const oldCommit = 'a'.repeat(40);
       const newCommit = 'b'.repeat(40);
       const ref = 'refs/heads/main';
