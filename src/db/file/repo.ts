@@ -136,7 +136,6 @@ export const addUserCanAuthorise = async (_id: string, user: string): Promise<vo
   const repo = await getRepoById(_id);
   if (!repo) {
     throw new Error('Repo not found');
-    return;
   }
 
   if (repo.users.canAuthorise.includes(user)) {
