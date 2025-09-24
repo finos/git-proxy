@@ -152,8 +152,12 @@ const extractRawBody = async (req: Request, res: Response, next: NextFunction) =
     return next();
   }
 
-  const proxyStream = new PassThrough();
-  const pluginStream = new PassThrough();
+  const proxyStream = new PassThrough({
+    highWaterMark: 4 * 1024 * 1024,
+  });
+  const pluginStream = new PassThrough({
+    highWaterMark: 4 * 1024 * 1024,
+  });
 
   req.pipe(proxyStream);
   req.pipe(pluginStream);
