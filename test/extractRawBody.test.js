@@ -9,12 +9,12 @@ const fakeChain = {
   executeChain: sinon.stub(),
 };
 
-const { teeAndValidate, isPackPost, handleMessage } = proxyquire('../src/proxy/routes', {
+const { extractRawBody, isPackPost } = proxyquire('../src/proxy/routes', {
   'raw-body': fakeRawBody,
   '../chain': fakeChain,
 });
 
-describe('teeAndValidate middleware', () => {
+describe('extractRawBody middleware', () => {
   let req;
   let res;
   let next;
@@ -38,39 +38,21 @@ describe('teeAndValidate middleware', () => {
 
   it('skips non-pack posts', async () => {
     req.method = 'GET';
-    await teeAndValidate(req, res, next);
+    await extractRawBody(req, res, next);
     expect(next.calledOnce).to.be.true;
     expect(fakeRawBody.called).to.be.false;
   });
 
-  it('when the chain blocks it sends a packet and does NOT call next()', async () => {
-    fakeChain.executeChain.resolves({ blocked: true, blockedMessage: 'denied!' });
-
+  it('extracts raw body and sets bodyRaw property', async () => {
     req.write('abcd');
     req.end();
 
-    await teeAndValidate(req, res, next);
+    await extractRawBody(req, res, next);
 
     expect(fakeRawBody.calledOnce).to.be.true;
-    expect(fakeChain.executeChain.calledOnce).to.be.true;
-    expect(next.called).to.be.false;
-
-    expect(res.set.called).to.be.true;
-    expect(res.status.calledWith(200)).to.be.true; // status 200 is used to ensure error message is rendered by git client
-    expect(res.send.calledWith(handleMessage('denied!'))).to.be.true;
-  });
-
-  it('when the chain allow it calls next() and overrides req.pipe', async () => {
-    fakeChain.executeChain.resolves({ blocked: false, error: false });
-
-    req.write('abcd');
-    req.end();
-
-    await teeAndValidate(req, res, next);
-
-    expect(fakeRawBody.calledOnce).to.be.true;
-    expect(fakeChain.executeChain.calledOnce).to.be.true;
+    expect(fakeChain.executeChain.called).to.be.false;
     expect(next.calledOnce).to.be.true;
+    expect(req.bodyRaw).to.exist;
     expect(typeof req.pipe).to.equal('function');
   });
 });
