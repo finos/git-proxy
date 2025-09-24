@@ -1,13 +1,16 @@
 const { expect } = require('chai');
 const sinon = require('sinon');
 const zlib = require('zlib');
+const { createHash } = require('crypto');
+const fs = require('fs');
+const path = require('path');
 
 const {
   exec,
   getCommitData,
+  getContents,
   getPackMeta,
   parsePacketLines,
-  unpack,
 } = require('../src/proxy/processors/push-action/parsePush');
 
 import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
@@ -31,20 +34,229 @@ function createSamplePackBuffer(
 
   const originalContent = Buffer.from(commitContent, 'utf8');
   const compressedContent = zlib.deflateSync(originalContent); // actual zlib for setup
-
-  // Basic type/size encoding (assumes small sizes for simplicity)
-  // Real PACK files use variable-length encoding for size
-  let typeAndSize = (type << 4) | (compressedContent.length & 0x0f); // Lower 4 bits of size
-  if (compressedContent.length >= 16) {
-    typeAndSize |= 0x80;
-  }
-  const objectHeader = Buffer.from([typeAndSize]); // Placeholder, actual size encoding is complex
+  const objectHeader = encodeGitObjectHeader(type, originalContent.length);
 
   // Combine parts and append checksum
   const packContent = Buffer.concat([objectHeader, compressedContent]);
-  const checksum = Buffer.alloc(20);
 
-  return Buffer.concat([header, packContent, checksum]);
+  const fullPackWithoutChecksum = Buffer.concat([header, packContent]);
+
+  // Compute SHA-1 checksum of the full pack content (excluding checksum)
+  const checksum = createHash('sha1').update(fullPackWithoutChecksum).digest();
+
+  return Buffer.concat([fullPackWithoutChecksum, checksum]);
+}
+
+const TEST_MULTI_OBJ_COMMIT_CONTENT = [
+  {
+    type: 1,
+    content:
+      'tree 163a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e\nparent 5be75c8610b0fcafcca6a777471ba281ff98564f\nauthor AAAAAAAAAA <aaaaaaaaa@bbbbbbbb.com> 1756487408 +0100\ncommitter CCCCCCCCCCC <ccccccccc@cccccccc.com> 1756487404 +0100\n\nFirst Non-trivial commit message used in testing decompression of encoded objects in git PACK files.\n',
+    message:
+      'First Non-trivial commit message used in testing decompression of encoded objects in git PACK files.\n',
+    tree: '163a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e',
+    parent: '5be75c8610b0fcafcca6a777471ba281ff98564f',
+    author: 'AAAAAAAAAA',
+    authorEmail: 'aaaaaaaaa@bbbbbbbb.com',
+    committer: 'CCCCCCCCCCC',
+    committerEmail: 'ccccccccc@cccccccc.com',
+    commitTimestamp: '1756487404',
+  },
+  {
+    type: 1,
+    content:
+      'tree 263a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e\nparent 6be75c8610b0fcafcca6a777471ba281ff98564f\nauthor AAAAAAAAAA <aaaaaaaaa@bbbbbbbb.com> 1756487407 +0100\ncommitter CCCCCCCCCCC <ccccccccc@cccccccc.com> 1756487403 +0100\n\nSecond Non-trivial commit message used in testing decompression of encoded objects in git PACK files.',
+    message:
+      'Second Non-trivial commit message used in testing decompression of encoded objects in git PACK files.',
+    tree: '263a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e',
+    parent: '6be75c8610b0fcafcca6a777471ba281ff98564f',
+    author: 'AAAAAAAAAA',
+    authorEmail: 'aaaaaaaaa@bbbbbbbb.com',
+    committer: 'CCCCCCCCCCC',
+    committerEmail: 'ccccccccc@cccccccc.com',
+    commitTimestamp: '1756487403',
+  },
+  {
+    type: 1,
+    content:
+      'tree 363a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e\nparent 7be75c8610b0fcafcca6a777471ba281ff98564f\nauthor AAAAAAAAAA <aaaaaaaaa@bbbbbbbb.com> 1756487406 +0100\ncommitter CCCCCCCCCCC <ccccccccc@cccccccc.com> 1756487402 +0100\n\nThird Non-trivial commit message used in testing decompression of encoded objects in git PACK files.',
+    message:
+      'Third Non-trivial commit message used in testing decompression of encoded objects in git PACK files.',
+    tree: '363a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e',
+    parent: '7be75c8610b0fcafcca6a777471ba281ff98564f',
+    author: 'AAAAAAAAAA',
+    authorEmail: 'aaaaaaaaa@bbbbbbbb.com',
+    committer: 'CCCCCCCCCCC',
+    committerEmail: 'ccccccccc@cccccccc.com',
+    commitTimestamp: '1756487402',
+  },
+  {
+    type: 1,
+    content:
+      'tree 463a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e\nparent 8be75c8610b0fcafcca6a777471ba281ff98564f\nauthor AAAAAAAAAA <aaaaaaaaa@bbbbbbbb.com> 1756487405 +0100\ncommitter CCCCCCCCCCC <ccccccccc@cccccccc.com> 1756487401 +0100\n\nFourth Non-trivial commit message used in testing decompression of encoded objects in git PACK files.',
+    message:
+      'Fourth Non-trivial commit message used in testing decompression of encoded objects in git PACK files.',
+    tree: '463a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e',
+    parent: '8be75c8610b0fcafcca6a777471ba281ff98564f',
+    author: 'AAAAAAAAAA',
+    authorEmail: 'aaaaaaaaa@bbbbbbbb.com',
+    committer: 'CCCCCCCCCCC',
+    committerEmail: 'ccccccccc@cccccccc.com',
+    commitTimestamp: '1756487401',
+  },
+  {
+    type: 7,
+    baseSha: '22d2d1c780390f079532a4851f773324692c0af5',
+    content: 'not really a ref_delta',
+    message: 'not really a ref_delta',
+  },
+  { type: 3, content: 'not really a blob\n', message: 'not really a blob\n' },
+  // TODO: update this with a more realistic example
+  { type: 2, content: 'not really a tree\n', message: 'not really a tree\n' },
+  // TODO: update this with a more realistic example
+  { type: 4, content: 'not really a tag\n', message: 'not really a tag\n' },
+  {
+    type: 6,
+    baseOffset: 997,
+    content: 'not really an ofs_delta',
+    message: 'not really an ofs_delta',
+  },
+  {
+    // included to check that we've handled the ofs_delta and ref_delta entries correctly
+    type: 1,
+    content:
+      'tree 863a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e\nparent 5be75c8610b0fcafcca6a777471ba281ff98564f\nauthor AAAAAAAAAA <aaaaaaaaa@bbbbbbbb.com> 1756487408 +0100\ncommitter CCCCCCCCCCC <ccccccccc@cccccccc.com> 1756487490 +0100\n\nLast Non-trivial commit message used in testing decompression of encoded objects in git PACK files.\n',
+    message:
+      'Last Non-trivial commit message used in testing decompression of encoded objects in git PACK files.\n',
+    tree: '863a9d7fcb53daae8f2f26b5aa865a5dbf4dab3e',
+    parent: '5be75c8610b0fcafcca6a777471ba281ff98564f',
+    author: 'AAAAAAAAAA',
+    authorEmail: 'aaaaaaaaa@bbbbbbbb.com',
+    committer: 'CCCCCCCCCCC',
+    committerEmail: 'ccccccccc@cccccccc.com',
+    commitTimestamp: '1756487490',
+  },
+];
+
+/** Creates a multi-object sample PACK buffer for testing PACK file decompression.
+ * Creates a relatively large example as decompression steps involve variable length
+ * headers depending on content and size.
+ * @return {Buffer} - The generated PACK buffer.
+ */
+function createMultiObjectSamplePackBuffer() {
+  const numEntries = TEST_MULTI_OBJ_COMMIT_CONTENT.length;
+
+  const header = Buffer.alloc(12);
+  header.write(PACK_SIGNATURE, 0, 4, 'utf-8'); // Signature
+  header.writeUInt32BE(2, 4); // Version
+  header.writeUInt32BE(numEntries, 8); // Number of entries
+
+  const packContents = [];
+  for (let i = 0; i < numEntries; i++) {
+    const commitContent = TEST_MULTI_OBJ_COMMIT_CONTENT[i];
+    const originalContent = Buffer.from(commitContent.content, 'utf8');
+    const compressedContent = zlib.deflateSync(originalContent);
+    let objectHeader;
+    if (commitContent.type == 7) {
+      // ref_delta
+      objectHeader = encodeGitObjectHeader(commitContent.type, originalContent.length, {
+        baseSha: Buffer.from(commitContent.baseSha, 'hex'),
+      });
+    } else if (commitContent.type == 6) {
+      // ofs_delta
+      objectHeader = encodeGitObjectHeader(commitContent.type, originalContent.length, {
+        baseOffset: commitContent.baseOffset,
+      });
+    } else {
+      // all other types
+      objectHeader = encodeGitObjectHeader(commitContent.type, originalContent.length);
+    }
+
+    packContents.push(Buffer.concat([objectHeader, compressedContent]));
+  }
+
+  const packContent = Buffer.concat(packContents);
+  const fullPackWithoutChecksum = Buffer.concat([header, packContent]);
+
+  // Compute SHA-1 checksum of the full pack content (excluding checksum)
+  const checksum = createHash('sha1').update(fullPackWithoutChecksum).digest();
+
+  return Buffer.concat([fullPackWithoutChecksum, checksum]);
+}
+
+/**
+ * Encode distance in an ofs_delta git object header.
+ * @param {number} distance
+ * @return {Buffer} encoded distance bytes.
+ */
+
+/** Encodes an ofs_delta offset for a type 6 g9it object header.
+ * @param {number} distance The offset value to encode.
+ * @return {Buffer} The encoded buffer.
+ */
+const encodeOfsDeltaOffset = (distance) => {
+  // this encoding differs from the little endian size encoding
+  // its a big endian 7-bit encoding, with odd handling of the continuation bit
+  let val = distance;
+  const bytes = [val & 0x7f];
+
+  while ((val >>= 7)) {
+    bytes.unshift((--val & 0x7f) | 0x80); // Set continuation bit
+  }
+
+  return Buffer.from(bytes);
+};
+
+/**
+ * Encodes Git object headers used in PACK files, for testing.
+ * @param {number} type - Git object type (1–4 for base types, 6 for ofs_delta, 7 for ref_delta).
+ * @param {number} size - Uncompressed object size in bytes.
+ * @param {object} [options] - Optional metadata for delta types.
+ * @param {number} [options.baseOffset] - Offset for ofs_delta.
+ * @param {Buffer} [options.baseSha] - SHA-1 hash for ref_delta (20 bytes).
+ * @return {Buffer} - Encoded header buffer.
+ */
+function encodeGitObjectHeader(type, size, options = {}) {
+  const headerBytes = [];
+
+  // First byte: type (3 bits), size (lower 4 bits), continuation bit
+  const firstSizeBits = size & 0x0f;
+  size >>= 4;
+
+  let byte = (type << 4) | firstSizeBits;
+  if (size > 0) byte |= 0x80;
+  headerBytes.push(byte);
+
+  // Remaining size bytes: 7 bits per byte, continuation bit
+  while (size > 0) {
+    let nextByte = size & 0x7f;
+    size >>= 7;
+    if (size > 0) nextByte |= 0x80;
+    headerBytes.push(nextByte);
+  }
+
+  // Handle delta metadata
+  if (type === 6) {
+    // OFS_DELTA: encode base offset as variable-length
+    if (typeof options.baseOffset !== 'number') {
+      throw new Error('ofs_delta requires baseOffset');
+    }
+    const offsetBytes = encodeOfsDeltaOffset(options.baseOffset);
+    headerBytes.push(...offsetBytes);
+  } else if (type === 7) {
+    // REF_DELTA: append 20-byte SHA-1
+    if (!Buffer.isBuffer(options.baseSha)) {
+      throw new Error('ref_delta requires a baseSha as a buffer');
+    }
+    if (options.baseSha.length !== 20) {
+      throw new Error(
+        `ref_delta requires a 20-byte Buffer representing the baseSha, yours was length ${options.baseSha.length}}`,
+      );
+    }
+    headerBytes.push(...options.baseSha);
+  }
+
+  return Buffer.from(headerBytes);
 }
 
 /**
@@ -82,7 +294,6 @@ describe('parsePackFile', () => {
   let action;
   let req;
   let sandbox;
-  let zlibInflateStub; // No deflate stub used due to complexity of PACK encoding
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
@@ -107,12 +318,79 @@ describe('parsePackFile', () => {
     req = {
       body: null,
     };
-
-    zlibInflateStub = sandbox.stub(zlib, 'inflateSync');
   });
 
   afterEach(() => {
     sandbox.restore();
+  });
+
+  describe('parsePush.getContents', () => {
+    it('should retrieve all object data from a multiple object push', async () => {
+      const packBuffer = createMultiObjectSamplePackBuffer();
+      const [packMeta, contentBuffer] = getPackMeta(packBuffer);
+      expect(packMeta.entries).to.equal(
+        TEST_MULTI_OBJ_COMMIT_CONTENT.length,
+        `PACK meta entries (${packMeta.entries}) don't match the expected number (${TEST_MULTI_OBJ_COMMIT_CONTENT.length})`,
+      );
+
+      const gitObjects = await getContents(contentBuffer, TEST_MULTI_OBJ_COMMIT_CONTENT.length);
+
+      expect(gitObjects.length).to.equal(
+        TEST_MULTI_OBJ_COMMIT_CONTENT.length,
+        `The number of objects extracted (${gitObjects.length}) didn't match the expected number (${TEST_MULTI_OBJ_COMMIT_CONTENT.length})`,
+      );
+
+      for (let index = 0; index < TEST_MULTI_OBJ_COMMIT_CONTENT.length; index++) {
+        const expected = TEST_MULTI_OBJ_COMMIT_CONTENT[index];
+        const actual = gitObjects[index];
+
+        expect(actual.type).to.equal(
+          expected.type,
+          `Type extracted (${actual.type}) didn't match\nactual: ${JSON.stringify(actual, null, 2)}\nexpected: ${JSON.stringify(expected, null, 2)}`,
+        );
+        expect(actual.content).to.equal(
+          expected.content,
+          `Content didn't match\nactual: ${JSON.stringify(actual, null, 2)}\nexpected: ${JSON.stringify(expected, null, 2)}`,
+        );
+
+        // type 6 ofs_delta
+        if (expected.baseOffset) {
+          expect(actual.baseOffset).to.equal(
+            expected.baseOffset,
+            `Base SHA extracted for ofs_delta didn't match\nactual: ${JSON.stringify(actual, null, 2)}\nexpected: ${JSON.stringify(expected, null, 2)}`,
+          );
+        }
+        // type t ref_delta
+        if (expected.baseSha) {
+          expect(actual.baseSha).to.equal(
+            expected.baseSha,
+            `Base SHA extracted for ref_delta didn't match\nactual: ${JSON.stringify(actual, null, 2)}\nexpected: ${JSON.stringify(expected, null, 2)}`,
+          );
+        }
+      }
+    });
+
+    it("should throw an error if the pack file can't be parsed", async () => {
+      const packBuffer = createMultiObjectSamplePackBuffer();
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      // break the content buffer so it won't parse
+      const brokenContentBuffer = contentBuffer.subarray(2);
+
+      let errorThrown = null;
+
+      try {
+        await getContents(brokenContentBuffer, TEST_MULTI_OBJ_COMMIT_CONTENT.length);
+      } catch (e) {
+        errorThrown = e;
+      }
+
+      expect(errorThrown, 'No error was thrown!').to.not.be.null;
+      expect(errorThrown.message).to.contain(
+        'Error during ',
+        `Expected the error message to include "Error during", but the message returned (${errorThrown.message}) did not`,
+      );
+    });
   });
 
   describe('exec', () => {
@@ -188,7 +466,7 @@ describe('parsePackFile', () => {
       expect(action.setCommit.calledOnceWith(oldCommit, newCommit)).to.be.true;
     });
 
-    it('should successfully parse a valid push request', async () => {
+    it('should successfully parse a valid push request (simulated)', async () => {
       const oldCommit = 'a'.repeat(40);
       const newCommit = 'b'.repeat(40);
       const ref = 'refs/heads/main';
@@ -201,9 +479,6 @@ describe('parsePackFile', () => {
         'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
         'feat: Add new feature\n\n' +
         'This is the commit body.';
-      const commitContentBuffer = Buffer.from(commitContent, 'utf8');
-
-      zlibInflateStub.returns(commitContentBuffer);
 
       const numEntries = 1;
       const packBuffer = createSamplePackBuffer(numEntries, commitContent, 1); // Use real zlib
@@ -245,6 +520,139 @@ describe('parsePackFile', () => {
       });
     });
 
+    it('should successfully parse a valid push request (captured)', async () => {
+      const oldCommit = '640bd00d63208466021143366adbc926824ba66f';
+      const newCommit = '93ca160407a9660c5ef81b951892b7a9ab1c41ca';
+      const ref = 'refs/heads/main';
+      const numEntries = 4;
+      const tree = 'e4dbd7b12566edee6840bf053b70a81897bcf9cd';
+      const parent = '640bd00d63208466021143366adbc926824ba66f';
+      const author = 'Kris West';
+      const timestamp = '1758647093';
+      const message = 'test: test commit for pack capture Tue Sep 23 18:04:53 BST 2025';
+
+      // see ../fixtures/captured-push.bin for details of how the content of this file were captured
+      const capturedPushPath = path.join(__dirname, 'fixtures', 'captured-push.bin');
+
+      console.log(`Reading captured pack file from ${capturedPushPath}`);
+      const pushBuffer = fs.readFileSync(capturedPushPath);
+      console.log(`Got buffer length: ${pushBuffer.length}`);
+
+      req.body = pushBuffer;
+
+      const result = await exec(req, action);
+      expect(result).to.equal(action);
+
+      // Check step and action properties
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
+      expect(step).to.exist;
+      expect(step.error).to.be.false;
+      expect(step.errorMessage).to.be.null;
+
+      expect(action.branch).to.equal(ref);
+      expect(action.setCommit.calledOnceWith(oldCommit, newCommit)).to.be.true;
+      expect(action.commitFrom).to.equal(oldCommit);
+      expect(action.commitTo).to.equal(newCommit);
+      expect(action.user).to.equal(author);
+
+      // Check parsed commit data
+      const commitMessages = action.commitData.map((commit) => commit.message);
+      expect(action.commitData).to.be.an('array').with.lengthOf(1);
+      expect(commitMessages[0]).to.equal(message);
+
+      const parsedCommit = action.commitData[0];
+      expect(parsedCommit.tree).to.equal(tree);
+      expect(parsedCommit.parent).to.equal(parent);
+      expect(parsedCommit.author).to.equal(author);
+      expect(parsedCommit.committer).to.equal(author);
+      expect(parsedCommit.commitTimestamp).to.equal(timestamp);
+      expect(parsedCommit.message).to.equal(message);
+      expect(step.content.meta).to.deep.equal({
+        sig: PACK_SIGNATURE,
+        version: 2,
+        entries: numEntries,
+      });
+    });
+
+    it('should successfully parse a valid multi-object push request (simulated)', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/main';
+      const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
+
+      const packBuffer = createMultiObjectSamplePackBuffer();
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).to.equal(action);
+
+      // Check step and action properties
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
+      expect(step).to.exist;
+      expect(step.error).to.be.false;
+      expect(step.errorMessage).to.be.null;
+
+      expect(action.branch).to.equal(ref);
+      expect(action.setCommit.calledOnceWith(oldCommit, newCommit)).to.be.true;
+      expect(action.commitFrom).to.equal(oldCommit);
+      expect(action.commitTo).to.equal(newCommit);
+      expect(action.user).to.equal('CCCCCCCCCCC');
+
+      // Check parsed commit messages only
+      const expectedCommits = TEST_MULTI_OBJ_COMMIT_CONTENT.filter((value) => value.type == 1);
+
+      expect(action.commitData)
+        .to.be.an('array')
+        .with.lengthOf(
+          expectedCommits.length,
+          "We didn't find the expected number of commit messages",
+        );
+
+      for (let index = 0; index < expectedCommits.length; index++) {
+        expect(action.commitData[index].message).to.equal(
+          expectedCommits[index].message.trim(), // trailing new lines will be removed from messages
+          "Commit message didn't match",
+        );
+        expect(action.commitData[index].tree).to.equal(
+          expectedCommits[index].tree,
+          "tree didn't match",
+        );
+        expect(action.commitData[index].parent).to.equal(
+          expectedCommits[index].parent,
+          "parent didn't match",
+        );
+        expect(action.commitData[index].author).to.equal(
+          expectedCommits[index].author,
+          "author didn't match",
+        );
+        expect(action.commitData[index].authorEmail).to.equal(
+          expectedCommits[index].authorEmail,
+          "authorEmail didn't match",
+        );
+        expect(action.commitData[index].committer).to.equal(
+          expectedCommits[index].committer,
+          "committer didn't match",
+        );
+        expect(action.commitData[index].committerEmail).to.equal(
+          expectedCommits[index].committerEmail,
+          "committerEmail didn't match",
+        );
+        expect(action.commitData[index].commitTimestamp).to.equal(
+          expectedCommits[index].commitTimestamp,
+          "commitTimestamp didn't match",
+        );
+      }
+
+      expect(step.content.meta).to.deep.equal(
+        {
+          sig: PACK_SIGNATURE,
+          version: 2,
+          entries: TEST_MULTI_OBJ_COMMIT_CONTENT.length,
+        },
+        "PACK file metadata didn't match",
+      );
+    });
+
     it('should handle initial commit (zero hash oldCommit)', async () => {
       const oldCommit = '0'.repeat(40); // Zero hash
       const newCommit = 'b'.repeat(40);
@@ -258,9 +666,6 @@ describe('parsePackFile', () => {
         'committer Test Committer <committer@example.com> 1234567890 +0100\n\n' +
         'feat: Initial commit';
       const parentFromCommit = '0'.repeat(40); // Expected parent hash
-
-      const commitContentBuffer = Buffer.from(commitContent, 'utf8');
-      zlibInflateStub.returns(commitContentBuffer);
 
       const packBuffer = createSamplePackBuffer(1, commitContent, 1); // Use real zlib
       req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
@@ -300,9 +705,6 @@ describe('parsePackFile', () => {
         'committer Test Committer <committer@example.com> 1234567890 +0100\n\n' +
         "Merge branch 'feature'";
 
-      const commitContentBuffer = Buffer.from(commitContent, 'utf8');
-      zlibInflateStub.returns(commitContentBuffer);
-
       const packBuffer = createSamplePackBuffer(1, commitContent, 1); // Use real zlib
       req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
 
@@ -335,8 +737,6 @@ describe('parsePackFile', () => {
         'author Test Author <author@example.com> 1678886400 +0000\n' +
         'committer Test Committer <committer@example.com> 1678886460 +0100\n\n' +
         'feat: Missing tree';
-      const commitContentBuffer = Buffer.from(commitContent, 'utf8');
-      zlibInflateStub.returns(commitContentBuffer);
 
       const packBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
@@ -389,9 +789,6 @@ describe('parsePackFile', () => {
         'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
         'Test commit message with PACK inside';
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
-
-      zlibInflateStub.returns(Buffer.from(commitContent, 'utf8'));
-
       const packetLineBuffer = createPacketLineBuffer(packetLines);
       req.body = Buffer.concat([packetLineBuffer, samplePackBuffer]);
 
@@ -429,7 +826,6 @@ describe('parsePackFile', () => {
         'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
         'Commit A';
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
-      zlibInflateStub.returns(Buffer.from(commitContent, 'utf8'));
 
       const packetLineBuffer = createPacketLineBuffer(packetLines);
       req.body = Buffer.concat([packetLineBuffer, samplePackBuffer]);
@@ -510,45 +906,6 @@ describe('parsePackFile', () => {
         entries: 1,
       });
       expect(contentBuff.length).to.equal(0); // No content left
-    });
-  });
-
-  describe('unpack', () => {
-    let deflateStub;
-
-    beforeEach(() => {
-      // Need to stub deflate for unpack tests
-      deflateStub = sandbox.stub(zlib, 'deflateSync');
-    });
-
-    it('should call zlib.inflateSync and zlib.deflateSync', () => {
-      const inputBuf = Buffer.from('compressed data');
-      const inflatedBuffer = Buffer.from('uncompressed data', 'utf8');
-      const deflatedResult = Buffer.from('re-deflated'); // Mock deflated buffer
-
-      zlibInflateStub.withArgs(inputBuf).returns(inflatedBuffer);
-      deflateStub.withArgs(inflatedBuffer).returns(deflatedResult);
-
-      const [resultString, resultLength] = unpack(inputBuf);
-
-      expect(zlibInflateStub.calledOnceWith(inputBuf)).to.be.true;
-      expect(deflateStub.calledOnceWith(inflatedBuffer)).to.be.true; // Check local stub
-      expect(resultString).to.equal(inflatedBuffer.toString('utf8'));
-      expect(resultLength).to.equal(deflatedResult.length); // unpack returns length of the deflated buffer
-    });
-
-    it('should return inflated string and deflated length', () => {
-      const inputBuf = Buffer.from('dummy compressed');
-      const inflatedBuffer = Buffer.from('real uncompressed text', 'utf8');
-      const deflatedResult = Buffer.from('tiny'); // Different length
-
-      zlibInflateStub.withArgs(inputBuf).returns(inflatedBuffer);
-      deflateStub.withArgs(inflatedBuffer).returns(deflatedResult);
-
-      const [content, size] = unpack(inputBuf);
-
-      expect(content).to.equal(inflatedBuffer.toString('utf8'));
-      expect(size).to.equal(deflatedResult.length);
     });
   });
 
