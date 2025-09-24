@@ -60,6 +60,31 @@ export class User {
   }
 }
 
+export type Push = {
+  id: string;
+  allowPush: boolean;
+  authorised: boolean;
+  blocked: boolean;
+  blockedMessage: string;
+  branch: string;
+  canceled: boolean;
+  commitData: object;
+  commitFrom: string;
+  commitTo: string;
+  error: boolean;
+  method: string;
+  project: string;
+  rejected: boolean;
+  repo: string;
+  repoName: string;
+  tag?: string;
+  tagData?: object;
+  timepstamp: string;
+  type: string;
+  url: string;
+  user?: string;
+};
+
 export interface Sink {
   getSessionStore?: () => MongoDBStore;
   getPushes: (query: PushQuery) => Promise<Action[]>;

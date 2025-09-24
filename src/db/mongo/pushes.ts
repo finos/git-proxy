@@ -32,9 +32,12 @@ export const getPushes = async (query: PushQuery = defaultPushQuery): Promise<Ac
       rejected: 1,
       repo: 1,
       repoName: 1,
+      tag: 1,
+      tagData: 1,
       timepstamp: 1,
       type: 1,
       url: 1,
+      user: 1,
     },
   });
 };

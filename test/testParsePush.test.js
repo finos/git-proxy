@@ -7,6 +7,7 @@ const {
   getCommitData,
   getPackMeta,
   parsePacketLines,
+  parseTag,
   unpack,
 } = require('../src/proxy/processors/push-action/parsePush');
 
@@ -62,6 +63,38 @@ function createPacketLineBuffer(lines) {
   buffer = Buffer.concat([buffer, Buffer.from(FLUSH_PACKET, 'ascii')]);
 
   return buffer;
+}
+
+/**
+ * Creates a simplified sample PACK buffer for tag objects.
+ * @param {string} tagContent - Content of the tag object.
+ * @param {number} type - Type of the object (4 for tag).
+ * @return {Buffer} - The generated PACK buffer.
+ */
+function createSampleTagPackBuffer(
+  tagContent = 'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger Test Tagger <tagger@example.com> 1234567890 +0000\n\nTag message',
+  type = 4,
+) {
+  const header = Buffer.alloc(12);
+  header.write(PACK_SIGNATURE, 0, 4, 'utf-8'); // Signature
+  header.writeUInt32BE(2, 4); // Version
+  header.writeUInt32BE(1, 8); // Number of entries (1 tag)
+
+  const originalContent = Buffer.from(tagContent, 'utf8');
+  const compressedContent = zlib.deflateSync(originalContent);
+
+  // Basic type/size encoding for tag objects
+  let typeAndSize = (type << 4) | (compressedContent.length & 0x0f);
+  if (compressedContent.length >= 16) {
+    typeAndSize |= 0x80;
+  }
+  const objectHeader = Buffer.from([typeAndSize]);
+
+  // Combine parts and append checksum
+  const packContent = Buffer.concat([objectHeader, compressedContent]);
+  const checksum = Buffer.alloc(20);
+
+  return Buffer.concat([header, packContent, checksum]);
 }
 
 /**
@@ -147,8 +180,8 @@ describe('parsePackFile', () => {
       const step = action.steps[0];
       expect(step.stepName).to.equal('parsePackFile');
       expect(step.error).to.be.true;
-      expect(step.errorMessage).to.include('pushing to a single branch');
-      expect(step.logs[0]).to.include('Invalid number of branch updates');
+      expect(step.errorMessage).to.include('push one ref at a time');
+      expect(step.logs[0]).to.include('Invalid number of ref updates');
     });
 
     it('should add error step if multiple ref updates found', async () => {
@@ -163,8 +196,8 @@ describe('parsePackFile', () => {
       const step = action.steps[0];
       expect(step.stepName).to.equal('parsePackFile');
       expect(step.error).to.be.true;
-      expect(step.errorMessage).to.include('pushing to a single branch');
-      expect(step.logs[0]).to.include('Invalid number of branch updates');
+      expect(step.errorMessage).to.include('push one ref at a time');
+      expect(step.logs[0]).to.include('Invalid number of ref updates');
       expect(step.logs[1]).to.include('Expected 1, but got 2');
     });
 
@@ -486,6 +519,143 @@ describe('parsePackFile', () => {
     });
   });
 
+  describe('Tag Push Tests', () => {
+    it('should successfully parse a valid tag push request', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/tags/v1.0.0';
+      const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
+
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger Test Tagger <tagger@example.com> 1234567890 +0000\n\nThis is a test tag message';
+      const tagContentBuffer = Buffer.from(tagContent, 'utf8');
+
+      zlibInflateStub.returns(tagContentBuffer);
+
+      const packBuffer = createSampleTagPackBuffer(tagContent, 4); // Type 4 = tag
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).to.equal(action);
+
+      // Check step and action properties
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
+      expect(step).to.exist;
+      expect(step.error).to.be.false;
+      expect(step.errorMessage).to.be.null;
+
+      expect(action.tag).to.equal(ref);
+      expect(action.branch).to.be.undefined;
+      expect(action.actionType).to.equal('tag'); // ActionType.TAG enum value
+      expect(action.setCommit.calledOnceWith(oldCommit, newCommit)).to.be.true;
+      expect(action.commitFrom).to.equal(oldCommit);
+      expect(action.commitTo).to.equal(newCommit);
+
+      // Check parsed tag data
+      expect(action.tagData).to.be.an('array').with.lengthOf(1);
+      const parsedTag = action.tagData[0];
+      expect(parsedTag.object).to.equal('1234567890abcdef1234567890abcdef12345678');
+      expect(parsedTag.type).to.equal('commit');
+      expect(parsedTag.tagName).to.equal('v1.0.0');
+      expect(parsedTag.tagger).to.equal('Test Tagger');
+      expect(parsedTag.message).to.equal('This is a test tag message');
+
+      expect(action.user).to.equal('Test Tagger');
+    });
+
+    it('should handle tag with missing tagger line with error', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/tags/v1.0.0';
+      const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
+
+      // Tag content without tagger line
+      const malformedTagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\n\nTag without tagger';
+      const tagContentBuffer = Buffer.from(malformedTagContent, 'utf8');
+
+      zlibInflateStub.returns(tagContentBuffer);
+
+      const packBuffer = createSampleTagPackBuffer(malformedTagContent, 4);
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).to.equal(action);
+
+      // Should set tag name from packet line
+      expect(action.tag).to.equal(ref);
+      expect(action.branch).to.be.undefined;
+      expect(action.actionType).to.equal('tag');
+
+      // Should have error due to parsing failure
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
+      expect(step).to.exist;
+      expect(step.error).to.be.true;
+      expect(step.errorMessage).to.include('Invalid tag object: no tagger line');
+    });
+
+    it('should handle tag with incomplete data with error', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/tags/v2.0.0';
+      const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
+
+      // Tag content missing object field
+      const incompleteTagContent =
+        'type commit\ntag v2.0.0\ntagger Test Tagger <tagger@example.com> 1234567890 +0000\n\nIncomplete tag';
+      const tagContentBuffer = Buffer.from(incompleteTagContent, 'utf8');
+
+      zlibInflateStub.returns(tagContentBuffer);
+
+      const packBuffer = createSampleTagPackBuffer(incompleteTagContent, 4);
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).to.equal(action);
+
+      expect(action.tag).to.equal(ref);
+      expect(action.actionType).to.equal('tag');
+
+      // Should have error due to parsing failure
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
+      expect(step).to.exist;
+      expect(step.error).to.be.true;
+      expect(step.errorMessage).to.include('Invalid tag object');
+    });
+
+    it('should handle annotated tag with complex message', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/tags/v3.0.0-beta1';
+      const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
+
+      const complexMessage =
+        'Release v3.0.0-beta1\n\nThis is a major release with:\n- Feature A\n- Feature B\n\nBreaking changes:\n- API change in module X';
+      const tagContent = `object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v3.0.0-beta1\ntagger Release Bot <bot@company.com> 1678886400 +0000\n\n${complexMessage}`;
+      const tagContentBuffer = Buffer.from(tagContent, 'utf8');
+
+      zlibInflateStub.returns(tagContentBuffer);
+
+      const packBuffer = createSampleTagPackBuffer(tagContent, 4);
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).to.equal(action);
+
+      const step = action.steps.find((s) => s.stepName === 'parsePackFile');
+      expect(step.error).to.be.false;
+
+      expect(action.tag).to.equal(ref);
+      expect(action.tagData).to.be.an('array').with.lengthOf(1);
+
+      const parsedTag = action.tagData[0];
+      expect(parsedTag.tagName).to.equal('v3.0.0-beta1');
+      expect(parsedTag.tagger).to.equal('Release Bot');
+      expect(parsedTag.message).to.equal(complexMessage);
+      expect(action.user).to.equal('Release Bot');
+    });
+  });
+
   describe('getPackMeta', () => {
     it('should correctly parse PACK header', () => {
       const buffer = createSamplePackBuffer(5); // 5 entries
@@ -709,6 +879,109 @@ describe('parsePackFile', () => {
       expect(simpleResult.committer).to.equal('C1');
       expect(simpleResult.authorEmail).to.equal('a1@e.com');
       expect(simpleResult.commitTimestamp).to.equal('1744814610');
+    });
+  });
+
+  describe('parseTag', () => {
+    it('should parse a valid tag object correctly', () => {
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger John Doe <john@example.com> 1678886400 +0000\n\nFirst stable release';
+      const tagObject = { content: tagContent };
+
+      const result = parseTag(tagObject);
+
+      expect(result).to.deep.equal({
+        object: '1234567890abcdef1234567890abcdef12345678',
+        type: 'commit',
+        tagName: 'v1.0.0',
+        tagger: 'John Doe',
+        taggerEmail: 'john@example.com',
+        timestamp: '1678886400',
+        message: 'First stable release',
+      });
+    });
+
+    it('should parse tag with multi-line message correctly', () => {
+      const complexMessage =
+        'Release v2.0.0\n\nMajor release with:\n- Feature A\n- Feature B\n\nBreaking changes included.';
+      const tagContent = `object abcdef1234567890abcdef1234567890abcdef12\ntype commit\ntag v2.0.0\ntagger Release Bot <bot@company.com> 1678972800 +0000\n\n${complexMessage}`;
+      const tagObject = { content: tagContent };
+
+      const result = parseTag(tagObject);
+
+      expect(result.object).to.equal('abcdef1234567890abcdef1234567890abcdef12');
+      expect(result.type).to.equal('commit');
+      expect(result.tagName).to.equal('v2.0.0');
+      expect(result.tagger).to.equal('Release Bot');
+      expect(result.message).to.equal(complexMessage);
+    });
+
+    it('should handle tag with empty message', () => {
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger Jane Doe <jane@example.com> 1678886400 +0000\n\n';
+      const tagObject = { content: tagContent };
+
+      const result = parseTag(tagObject);
+
+      expect(result.message).to.equal('');
+      expect(result.tagName).to.equal('v1.0.0');
+      expect(result.tagger).to.equal('Jane Doe');
+    });
+
+    it('should throw error when tagger line is missing', () => {
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\n\nTag without tagger';
+      const tagObject = { content: tagContent };
+
+      expect(() => parseTag(tagObject)).to.throw('Invalid tag object: no tagger line');
+    });
+
+    it('should throw error when object line is missing', () => {
+      const tagContent =
+        'type commit\ntag v1.0.0\ntagger John Doe <john@example.com> 1678886400 +0000\n\nTag without object';
+      const tagObject = { content: tagContent };
+
+      expect(() => parseTag(tagObject)).to.throw('Invalid tag object');
+    });
+
+    it('should throw error when type line is missing', () => {
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntag v1.0.0\ntagger John Doe <john@example.com> 1678886400 +0000\n\nTag without type';
+      const tagObject = { content: tagContent };
+
+      expect(() => parseTag(tagObject)).to.throw('Invalid tag object');
+    });
+
+    it('should throw error when tag name is missing', () => {
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntagger John Doe <john@example.com> 1678886400 +0000\n\nTag without name';
+      const tagObject = { content: tagContent };
+
+      expect(() => parseTag(tagObject)).to.throw('Invalid tag object');
+    });
+
+    it('should handle tagger with complex email format', () => {
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype commit\ntag v1.0.0\ntagger John Doe (Developer) <john.doe+git@company.example.com> 1678886400 +0100\n\nTag with complex tagger';
+      const tagObject = { content: tagContent };
+
+      const result = parseTag(tagObject);
+
+      expect(result.tagger).to.equal('John Doe (Developer)');
+      expect(result.tagName).to.equal('v1.0.0');
+      expect(result.message).to.equal('Tag with complex tagger');
+    });
+
+    it('should handle tag pointing to different object types', () => {
+      const tagContent =
+        'object 1234567890abcdef1234567890abcdef12345678\ntype tree\ntag tree-tag\ntagger Tree Tagger <tree@example.com> 1678886400 +0000\n\nTag pointing to tree object';
+      const tagObject = { content: tagContent };
+
+      const result = parseTag(tagObject);
+
+      expect(result.type).to.equal('tree');
+      expect(result.tagName).to.equal('tree-tag');
+      expect(result.tagger).to.equal('Tree Tagger');
     });
   });
 

@@ -1,4 +1,4 @@
-import { Action } from '../../actions';
+import { Action, RequestType } from '../../actions';
 import { processUrlPath } from '../../routes/helper';
 import * as db from '../../../db';
 
@@ -10,16 +10,16 @@ const exec = async (req: {
   const id = Date.now();
   const timestamp = id;
   const pathBreakdown = processUrlPath(req.originalUrl);
-  let type = 'default';
+  let type: RequestType | string = 'default';
   if (pathBreakdown) {
     if (pathBreakdown.gitPath.endsWith('git-upload-pack') && req.method === 'GET') {
-      type = 'pull';
+      type = RequestType.PULL;
     } else if (
       pathBreakdown.gitPath.includes('git-receive-pack') &&
       req.method === 'POST' &&
       req.headers['content-type'] === 'application/x-git-receive-pack-request'
     ) {
-      type = 'push';
+      type = RequestType.PUSH;
     }
   } // else failed to parse proxy URL path - which is logged in the parsing util
 
@@ -41,7 +41,7 @@ const exec = async (req: {
     );
   }
 
-  return new Action(id.toString(), type, req.method, timestamp, url);
+  return new Action(id.toString(), type as RequestType, req.method, timestamp, url);
 };
 
 exec.displayName = 'parseAction.exec';

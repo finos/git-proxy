@@ -1,17 +1,19 @@
-import { Action, Step } from '../../actions';
+import { Action, Step, ActionType } from '../../actions';
 import zlib from 'zlib';
 import fs from 'fs';
 import lod from 'lodash';
 
 import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
+import { TagData } from '../../../types/models';
 import {
   BRANCH_PREFIX,
   EMPTY_COMMIT_HASH,
   PACK_SIGNATURE,
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
+  GIT_OBJECT_TYPE_TAG,
+  TAG_PREFIX,
 } from '../constants';
-
 const BitMask = require('bit-mask') as any;
 
 const dir = './.tmp/';
@@ -33,13 +35,13 @@ async function exec(req: any, action: Action): Promise<Action> {
       throw new Error('No body found in request');
     }
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
-    const refUpdates = packetLines.filter((line) => line.includes(BRANCH_PREFIX));
+    const refUpdates = packetLines.filter((line) => line.includes('refs/'));
 
     if (refUpdates.length !== 1) {
-      step.log('Invalid number of branch updates.');
+      step.log('Invalid number of ref updates.');
       step.log(`Expected 1, but got ${refUpdates.length}`);
       throw new Error(
-        'Your push has been blocked. Please make sure you are pushing to a single branch.',
+        'Your push has been blocked. Multi-ref pushes (multiple tags and/or branches) are not supported yet. Please push one ref at a time.',
       );
     }
 
@@ -55,7 +57,21 @@ async function exec(req: any, action: Action): Promise<Action> {
 
     // Strip everything after NUL, which is cap-list from
     // https://git-scm.com/docs/http-protocol#_smart_server_response
-    action.branch = ref.replace(/\0.*/, '').trim();
+    const refName = ref.replace(/\0.*/, '').trim();
+    const isTag = refName.startsWith(TAG_PREFIX);
+    const isBranch = refName.startsWith(BRANCH_PREFIX);
+
+    action.branch = isBranch ? refName : undefined;
+    action.tag = isTag ? refName : undefined;
+
+    // Set actionType based on what type of push this is
+    if (isTag) {
+      action.actionType = ActionType.TAG;
+    } else if (isBranch) {
+      action.actionType = ActionType.BRANCH;
+    } else {
+      action.actionType = ActionType.COMMIT;
+    }
     action.setCommit(oldCommit, newCommit);
 
     // Check if the offset is valid and if there's data after it
@@ -75,32 +91,82 @@ async function exec(req: any, action: Action): Promise<Action> {
     const [meta, contentBuff] = getPackMeta(buf);
     const contents = getContents(contentBuff as any, meta.entries as number);
 
-    action.commitData = getCommitData(contents as any);
+    const ParsedObjects = {
+      commits: [] as CommitData[],
+      tags: [] as TagData[],
+    };
 
-    if (action.commitData.length === 0) {
-      step.log('No commit data found when parsing push.');
-    } else {
+    for (const obj of contents) {
+      if (obj.type === GIT_OBJECT_TYPE_COMMIT) ParsedObjects.commits.push(...getCommitData([obj]));
+      else if (obj.type === GIT_OBJECT_TYPE_TAG) ParsedObjects.tags.push(parseTag(obj));
+    }
+
+    action.commitData = ParsedObjects.commits;
+    action.tagData = ParsedObjects.tags;
+
+    if (action.commitData.length) {
       if (action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }
-
       const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
       console.log(`Push Request received from user ${committer} with email ${committerEmail}`);
       action.user = committer;
       action.userEmail = committerEmail;
+    } else if (action.tagData?.length) {
+      action.user = action.tagData.at(-1)!.tagger;
+      action.userEmail = action.tagData.at(-1)!.taggerEmail;
+    } else {
+      step.log('No commit data found when parsing push.');
     }
-
     step.content = {
       meta: meta,
     };
   } catch (e: any) {
     step.setError(
-      `Unable to parse push. Please contact an administrator for support: ${e.toString('utf-8')}`,
+      `Unable to parse push. Please contact an administrator for support: ${e.message || e.toString()}`,
     );
   } finally {
     action.addStep(step);
   }
   return action;
+}
+
+function parseTag(x: CommitContent): TagData {
+  const lines = x.content.split('\n');
+  const object = lines
+    .find((l) => l.startsWith('object '))
+    ?.slice(7)
+    .trim();
+  const typeLine = lines
+    .find((l) => l.startsWith('type '))
+    ?.slice(5)
+    .trim(); // commit | tree | blob
+  const tagName = lines
+    .find((l) => l.startsWith('tag '))
+    ?.slice(4)
+    .trim();
+  const rawTagger = lines
+    .find((l) => l.startsWith('tagger '))
+    ?.slice(7)
+    .trim();
+  if (!rawTagger) throw new Error('Invalid tag object: no tagger line');
+
+  const taggerInfo = parsePersonLine(rawTagger);
+
+  const messageIndex = lines.indexOf('');
+  const message = lines.slice(messageIndex + 1).join('\n');
+
+  if (!object || !typeLine || !tagName || !taggerInfo.name) throw new Error('Invalid tag object');
+
+  return {
+    object,
+    type: typeLine,
+    tagName,
+    tagger: taggerInfo.name,
+    taggerEmail: taggerInfo.email,
+    timestamp: taggerInfo.timestamp,
+    message,
+  };
 }
 
 /**
@@ -285,8 +351,8 @@ const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
  * @param {number} entries - The number of entries in the pack file.
  * @return {Array} An array of commit content objects.
  */
-const getContents = (buffer: Buffer | CommitContent[], entries: number): CommitContent[] => {
-  const contents = [];
+const getContents = (buffer: Buffer, entries: number): CommitContent[] => {
+  const contents: CommitContent[] = [];
 
   for (let i = 0; i < entries; i++) {
     try {
@@ -373,14 +439,14 @@ const getContent = (item: number, buffer: Buffer): [CommitContent, Buffer] => {
 
   // NOTE Size is the unzipped size, not the zipped size
   // so it's kind of useless for us in terms of reading the stream
-  const result = {
-    item: item,
+  const result: CommitContent = {
+    item,
     value: byte,
-    type: type,
+    type,
     size: intSize,
-    deflatedSize: deflatedSize,
-    objectRef: objectRef,
-    content: content,
+    deflatedSize: deflatedSize as number,
+    objectRef,
+    content: content as string,
   };
 
   // Move on by the zipped content size.
@@ -418,7 +484,6 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
   while (offset + PACKET_SIZE <= buffer.length) {
     const lengthHex = buffer.toString('utf8', offset, offset + PACKET_SIZE);
     const length = Number(`0x${lengthHex}`);
-
     // Prevent non-hex characters from causing issues
     if (isNaN(length) || length < 0) {
       throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
@@ -444,4 +509,4 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
 
 exec.displayName = 'parsePush.exec';
 
-export { exec, getCommitData, getPackMeta, parsePacketLines, unpack };
+export { exec, getCommitData, getPackMeta, parsePacketLines, parseTag, unpack };

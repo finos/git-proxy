@@ -23,6 +23,16 @@ export interface CommitData {
   commitTimestamp?: number;
 }
 
+export interface TagData {
+  object?: string;
+  type: string; // commit | tree | blob | tag or 'lightweight' | 'annotated' for legacy
+  tagName: string;
+  tagger: string;
+  taggerEmail?: string;
+  timestamp?: string;
+  message: string;
+}
+
 export interface PushData {
   id: string;
   url: string;
@@ -40,6 +50,10 @@ export interface PushData {
   attestation?: AttestationData;
   autoApproved?: boolean;
   timestamp: string | Date;
+  // Tag-specific fields
+  tag?: string;
+  tagData?: TagData[];
+  user?: string; // Used for tag pushes as the tagger
 }
 
 export interface Route {
