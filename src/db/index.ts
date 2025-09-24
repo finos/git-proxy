@@ -100,57 +100,44 @@ export const createRepo = async (repo: AuthorisedRepo) => {
 
 export const isUserPushAllowed = async (url: string, user: string) => {
   user = user.toLowerCase();
-  return new Promise<boolean>(async (resolve) => {
-    const repo = await getRepoByUrl(url);
-    if (!repo) {
-      resolve(false);
-      return;
-    }
+  const repo = await getRepoByUrl(url);
+  if (!repo) {
+    return false;
+  }
 
-    if (repo.users?.canPush.includes(user) || repo.users?.canAuthorise.includes(user)) {
-      resolve(true);
-    } else {
-      resolve(false);
-    }
-  });
+  return repo.users?.canPush.includes(user) || repo.users?.canAuthorise.includes(user);
 };
 
 export const canUserApproveRejectPush = async (id: string, user: string) => {
-  return new Promise(async (resolve) => {
-    const action = await getPush(id);
-    if (!action) {
-      resolve(false);
-      return;
-    }
+  const action = await getPush(id);
+  if (!action) {
+    return false;
+  }
 
-    const theRepo = await sink.getRepoByUrl(action.url);
+  const theRepo = await sink.getRepoByUrl(action.url);
 
-    if (theRepo?.users?.canAuthorise?.includes(user)) {
-      console.log(`user ${user} can approve/reject for repo ${action.url}`);
-      resolve(true);
-    } else {
-      console.log(`user ${user} cannot approve/reject for repo ${action.url}`);
-      resolve(false);
-    }
-  });
+  if (theRepo?.users?.canAuthorise?.includes(user)) {
+    console.log(`user ${user} can approve/reject for repo ${action.url}`);
+    return true;
+  } else {
+    console.log(`user ${user} cannot approve/reject for repo ${action.url}`);
+    return false;
+  }
 };
 
 export const canUserCancelPush = async (id: string, user: string) => {
-  return new Promise(async (resolve) => {
-    const action = await getPush(id);
-    if (!action) {
-      resolve(false);
-      return;
-    }
+  const action = await getPush(id);
+  if (!action) {
+    return false;
+  }
 
-    const isAllowed = await isUserPushAllowed(action.url, user);
+  const isAllowed = await isUserPushAllowed(action.url, user);
 
-    if (isAllowed) {
-      resolve(true);
-    } else {
-      resolve(false);
-    }
-  });
+  if (isAllowed) {
+    return true;
+  } else {
+    return false;
+  }
 };
 
 export const getSessionStore = (): MongoDBStore | undefined =>
