@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
 import { createApp } from '@/app';
@@ -9,7 +9,7 @@ const genRoute = (p: string) => basePath + p;
 
 describe(basePath, () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('GET / - list', () => {

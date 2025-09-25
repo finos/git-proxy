@@ -1,4 +1,4 @@
-import { beforeAll, afterAll } from '@jest/globals';
+import { beforeAll, afterAll } from 'vitest';
 import mongoose from 'mongoose';
 
 beforeAll(async () => {
