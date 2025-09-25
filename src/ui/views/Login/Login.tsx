@@ -116,57 +116,72 @@ const Login: React.FC = () => {
                 />
               </div>
             </CardHeader>
-            <CardBody>
-              <GridContainer>
-                <GridItem xs={12} sm={12} md={12}>
-                  <FormLabel component='legend' style={{ fontSize: '1.2rem', marginTop: 10 }}>
-                    {usernamePasswordMethod.charAt(0).toUpperCase() +
-                      usernamePasswordMethod.slice(1)}{' '}
-                    Authentication
-                  </FormLabel>
-                  <FormControl fullWidth>
-                    <InputLabel htmlFor='username'>Username</InputLabel>
-                    <Input
-                      id='username'
-                      type='text'
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      autoFocus
-                      data-test='username'
-                    />
-                  </FormControl>
-                </GridItem>
-              </GridContainer>
-              <GridContainer>
-                <GridItem xs={12} sm={12} md={12}>
-                  <FormControl fullWidth>
-                    <InputLabel htmlFor='password'>Password</InputLabel>
-                    <Input
-                      id='password'
-                      type='password'
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      data-test='password'
-                    />
-                  </FormControl>
-                </GridItem>
-              </GridContainer>
-            </CardBody>
-            <CardFooter>
+            {usernamePasswordMethod ? (
+              <CardBody>
+                <GridContainer>
+                  <GridItem xs={12} sm={12} md={12}>
+                    <FormLabel component='legend' style={{ fontSize: '1.2rem', marginTop: 10 }}>
+                      {usernamePasswordMethod.charAt(0).toUpperCase() +
+                        usernamePasswordMethod.slice(1)}{' '}
+                      Authentication
+                    </FormLabel>
+                    <FormControl fullWidth>
+                      <InputLabel htmlFor='username'>Username</InputLabel>
+                      <Input
+                        id='username'
+                        type='text'
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        autoFocus
+                        data-test='username'
+                      />
+                    </FormControl>
+                  </GridItem>
+                </GridContainer>
+                <GridContainer>
+                  <GridItem xs={12} sm={12} md={12}>
+                    <FormControl fullWidth>
+                      <InputLabel htmlFor='password'>Password</InputLabel>
+                      <Input
+                        id='password'
+                        type='password'
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        data-test='password'
+                      />
+                    </FormControl>
+                  </GridItem>
+                </GridContainer>
+              </CardBody>
+            ) : (
+              <CardBody>
+                <FormLabel
+                  component='legend'
+                  style={{ fontSize: '1rem', marginTop: 10, marginBottom: 0 }}
+                >
+                  No username/password authentication method is configured. Please contact an
+                  administrator to enable this feature.
+                </FormLabel>
+              </CardBody>
+            )}
+            {/* Show login buttons if available (one on top of the other) */}
+            <CardFooter style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {!isLoading ? (
                 <>
-                  <Button
-                    color='success'
-                    block
-                    disabled={!validateForm()}
-                    type='submit'
-                    data-test='login'
-                  >
-                    Login
-                  </Button>
+                  {usernamePasswordMethod && (
+                    <Button
+                      color='success'
+                      block
+                      disabled={!validateForm()}
+                      type='submit'
+                      data-test='login'
+                    >
+                      Login
+                    </Button>
+                  )}
                   {authMethods.map((am) => (
                     <Button
-                      color='warning'
+                      color='success'
                       block
                       onClick={() => handleAuthMethodLogin(am)}
                       data-test={`${am}-login`}
