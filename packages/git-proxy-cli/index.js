@@ -361,7 +361,7 @@ async function addSSHKey(username, keyPath) {
 }
 
 // Parsing command line arguments
-yargs(hideBin(process.argv))
+const argv = yargs(hideBin(process.argv))
   .command({
     command: 'authorise',
     describe: 'Authorise git push by ID',

@@ -104,7 +104,6 @@
     "@types/validator": "^13.15.3",
     "@types/sinon": "^17.0.4",
     "@types/ssh2": "^1.15.5",
-    "@types/validator": "^13.15.2",
     "@types/yargs": "^17.0.33",
     "@vitejs/plugin-react": "^4.7.0",
     "chai": "^4.5.0",
