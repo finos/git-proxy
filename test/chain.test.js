@@ -60,9 +60,6 @@ const mockPreProcessors = {
   parseAction: sinon.stub(),
 };
 
-// eslint-disable-next-line no-unused-vars
-let mockPushProcessors;
-
 const clearCache = (sandbox) => {
   delete require.cache[require.resolve('../src/proxy/processors')];
   delete require.cache[require.resolve('../src/proxy/chain')];

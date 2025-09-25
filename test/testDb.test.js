@@ -457,7 +457,7 @@ describe('Database clients', async () => {
     console.log('TEST USER:', JSON.stringify(TEST_USER, null, 2));
     console.log('USERS:', JSON.stringify(users, null, 2));
     // remove password as it will have been hashed
-    // eslint-disable-next-line no-unused-vars
+
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
     expect(cleanUsers).to.deep.include(TEST_USER_CLEAN);
@@ -503,9 +503,9 @@ describe('Database clients', async () => {
 
   it('should be able to find a user', async function () {
     const user = await db.findUser(TEST_USER.username);
-    // eslint-disable-next-line no-unused-vars
+
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
-    // eslint-disable-next-line no-unused-vars
+
     const { password: _2, _id: _3, ...DB_USER_CLEAN } = user;
 
     expect(DB_USER_CLEAN).to.eql(TEST_USER_CLEAN);
@@ -514,7 +514,7 @@ describe('Database clients', async () => {
   it('should be able to filter getUsers', async function () {
     // uppercase the filter value to confirm db client is lowercasing inputs
     const users = await db.getUsers({ username: TEST_USER.username.toUpperCase() });
-    // eslint-disable-next-line no-unused-vars
+
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
     expect(cleanUsers[0]).to.eql(TEST_USER_CLEAN);
@@ -567,7 +567,7 @@ describe('Database clients', async () => {
 
     const users = await db.getUsers();
     // remove password as it will have been hashed
-    // eslint-disable-next-line no-unused-vars
+
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
     expect(cleanUsers).to.deep.include(TEST_USER_CLEAN);

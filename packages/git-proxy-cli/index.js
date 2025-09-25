@@ -434,7 +434,7 @@ yargs(hideBin(process.argv))
         default: null,
       },
       authorised: {
-        describe: `Filter for the "authorised" flag of the git push on the list`, // eslint-disable-line max-len
+        describe: `Filter for the "authorised" flag of the git push on the list`,
         demandOption: false,
         type: 'boolean',
         default: null,

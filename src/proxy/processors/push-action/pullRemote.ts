@@ -9,15 +9,14 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('pullRemote');
 
   try {
-    action.proxyGitPath = `${dir}/${action.timestamp}`;
-
-    step.log(`Creating folder ${action.proxyGitPath}`);
+    action.proxyGitPath = `${dir}/${action.id}`;
 
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir);
     }
 
     if (!fs.existsSync(action.proxyGitPath)) {
+      step.log(`Creating folder ${action.proxyGitPath}`);
       fs.mkdirSync(action.proxyGitPath, 0o755);
     }
 
@@ -33,14 +32,11 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       fs,
       http: gitHttpClient,
       url: action.url,
-      onAuth: () => ({
-        username,
-        password,
-      }),
       dir: `${action.proxyGitPath}/${action.repoName}`,
+      onAuth: () => ({ username, password }),
+      singleBranch: true,
+      depth: 1,
     });
-
-    console.log('Clone Success: ', action.url);
 
     step.log(`Completed ${cmd}`);
     step.setContent(`Completed ${cmd}`);
