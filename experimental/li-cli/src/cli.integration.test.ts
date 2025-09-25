@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import { execFile } from 'node:child_process';
 import path from 'node:path';
 import process from 'node:process';
