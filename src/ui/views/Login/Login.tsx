@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useState, FormEvent, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import FormControl from '@material-ui/core/FormControl';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -12,10 +12,10 @@ import CardBody from '../../components/Card/CardBody';
 import CardFooter from '../../components/Card/CardFooter';
 import axios, { AxiosError } from 'axios';
 import logo from '../../assets/img/git-proxy.png';
-import { Badge, CircularProgress, Snackbar } from '@material-ui/core';
-import { getCookie } from '../../utils';
+import { Badge, CircularProgress, FormLabel, Snackbar } from '@material-ui/core';
 import { useAuth } from '../../auth/AuthProvider';
 import { API_BASE } from '../../apiBase';
+import { getAxiosConfig, processAuthError } from '../../services/auth';
 
 interface LoginResponse {
   username: string;
@@ -34,6 +34,19 @@ const Login: React.FC = () => {
   const [success, setSuccess] = useState<boolean>(false);
   const [gitAccountError, setGitAccountError] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [authMethods, setAuthMethods] = useState<string[]>([]);
+  const [usernamePasswordMethod, setUsernamePasswordMethod] = useState<string>('');
+
+  useEffect(() => {
+    axios.get(`${API_BASE}/api/auth/config`).then((response) => {
+      const authMethods = response.data.allLoginMethods;
+      const usernamePasswordMethod = response.data.usernamePasswordMethod;
+      const nonUsernamePasswordMethods = authMethods.filter((am) => am !== usernamePasswordMethod);
+
+      setAuthMethods(nonUsernamePasswordMethods);
+      setUsernamePasswordMethod(usernamePasswordMethod);
+    });
+  }, []);
 
   function validateForm(): boolean {
     return (
@@ -41,8 +54,8 @@ const Login: React.FC = () => {
     );
   }
 
-  function handleOIDCLogin(): void {
-    window.location.href = `${API_BASE}/api/auth/oidc`;
+  function handleAuthMethodLogin(authMethod: string): void {
+    window.location.href = `${API_BASE}/api/auth/${authMethod}`;
   }
 
   function handleSubmit(event: FormEvent): void {
@@ -50,17 +63,7 @@ const Login: React.FC = () => {
     setIsLoading(true);
 
     axios
-      .post<LoginResponse>(
-        loginUrl,
-        { username, password },
-        {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': getCookie('csrf') || '',
-          },
-        },
-      )
+      .post<LoginResponse>(loginUrl, { username, password }, getAxiosConfig())
       .then(() => {
         window.sessionStorage.setItem('git.proxy.login', 'success');
         setMessage('Success!');
@@ -72,7 +75,7 @@ const Login: React.FC = () => {
           window.sessionStorage.setItem('git.proxy.login', 'success');
           setGitAccountError(true);
         } else if (error.response?.status === 403) {
-          setMessage('You do not have the correct access permissions...');
+          setMessage(processAuthError(error, false));
         } else {
           setMessage('You entered an invalid username or password...');
         }
@@ -116,6 +119,11 @@ const Login: React.FC = () => {
             <CardBody>
               <GridContainer>
                 <GridItem xs={12} sm={12} md={12}>
+                  <FormLabel component='legend' style={{ fontSize: '1.2rem', marginTop: 10 }}>
+                    {usernamePasswordMethod.charAt(0).toUpperCase() +
+                      usernamePasswordMethod.slice(1)}{' '}
+                    Authentication
+                  </FormLabel>
                   <FormControl fullWidth>
                     <InputLabel htmlFor='username'>Username</InputLabel>
                     <Input
@@ -156,9 +164,17 @@ const Login: React.FC = () => {
                   >
                     Login
                   </Button>
-                  <Button color='warning' block onClick={handleOIDCLogin} data-test='oidc-login'>
-                    Login with OIDC
-                  </Button>
+                  {authMethods.map((am) => (
+                    <Button
+                      color='warning'
+                      block
+                      onClick={() => handleAuthMethodLogin(am)}
+                      data-test={`${am}-login`}
+                      key={am}
+                    >
+                      Login with {am.toUpperCase()}
+                    </Button>
+                  ))}
                 </>
               ) : (
                 <div style={{ textAlign: 'center', width: '100%', opacity: 0.5, color: 'green' }}>
@@ -168,7 +184,12 @@ const Login: React.FC = () => {
             </CardFooter>
           </Card>
           <div style={{ textAlign: 'center', opacity: 0.9, fontSize: 12, marginTop: 20 }}>
-            <Badge overlap='rectangular' color='error' badgeContent='NEW' />
+            <Badge
+              overlap='rectangular'
+              color='error'
+              badgeContent='NEW'
+              style={{ marginRight: 20 }}
+            />
             <span style={{ paddingLeft: 20 }}>
               View our <a href='/dashboard/push'>open source activity feed</a> or{' '}
               <a href='/dashboard/repo'>scroll through projects</a> we contribute to
