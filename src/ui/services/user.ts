@@ -41,16 +41,14 @@ const getUsers = async (
   setData: SetStateCallback<UserData[]>,
   setAuth: SetStateCallback<boolean>,
   setErrorMessage: SetStateCallback<string>,
-  query: Record<string, string> = {},
 ): Promise<void> => {
-  // todo fix
-  const url = new URL(`${API_BASE}/api/v1/user`);
-  url.search = new URLSearchParams(query).toString();
-
   setIsLoading(true);
 
   try {
-    const response: AxiosResponse<UserData[]> = await axios(url.toString(), getAxiosConfig());
+    const response: AxiosResponse<UserData[]> = await axios(
+      `${API_BASE}/api/v1/user`,
+      getAxiosConfig(),
+    );
     setData(response.data);
   } catch (error) {
     if (axios.isAxiosError(error)) {
