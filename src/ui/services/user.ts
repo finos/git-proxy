@@ -43,6 +43,7 @@ const getUsers = async (
   setErrorMessage: SetStateCallback<string>,
   query: Record<string, string> = {},
 ): Promise<void> => {
+  // todo fix
   const url = new URL(`${API_BASE}/api/v1/user`);
   url.search = new URLSearchParams(query).toString();
 
@@ -70,6 +71,7 @@ const getUsers = async (
 
 const updateUser = async (data: UserData): Promise<void> => {
   console.log(data);
+  // todo fix
   const url = new URL(`${API_BASE}/api/auth/gitAccount`);
 
   try {
@@ -89,10 +91,11 @@ const getUserLoggedIn = async (
   setIsError: SetStateCallback<boolean>,
   setAuth: SetStateCallback<boolean>,
 ): Promise<void> => {
-  const url = new URL(`${API_BASE}/api/auth/me`);
-
   try {
-    const response: AxiosResponse<UserData> = await axios(url.toString(), getAxiosConfig());
+    const response: AxiosResponse<UserData> = await axios(
+      `${API_BASE}/api/auth/me`,
+      getAxiosConfig(),
+    );
     const data = response.data;
     setIsLoading(false);
     setIsAdmin(data.admin || false);
