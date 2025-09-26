@@ -71,11 +71,8 @@ const getUsers = async (
 
 const updateUser = async (data: UserData): Promise<void> => {
   console.log(data);
-  // todo fix
-  const url = new URL(`${API_BASE}/api/auth/gitAccount`);
-
   try {
-    await axios.post(url.toString(), data, getAxiosConfig());
+    await axios.post(`${API_BASE}/api/auth/gitAccount`, data, getAxiosConfig());
   } catch (error) {
     const axiosError = error as AxiosError;
     if (axiosError.response) {
