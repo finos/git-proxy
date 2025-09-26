@@ -131,7 +131,6 @@ async function closeServer(server: Server, waitTime: number = 0) {
 async function createCookiesFileWithExpiredCookie() {
   await removeCookiesFile();
   const cookies = [
-    // eslint-disable-next-line max-len
     'connect.sid=s%3AuWjJK_VGFbX9-03UfvoSt_HFU3a0vFOd.jd986YQ17Bw4j1xGJn2l9yiF3QPYhayaYcDqGsNgQY4; Path=/; HttpOnly',
   ];
   fs.writeFileSync(GIT_PROXY_COOKIE_FILE, JSON.stringify(cookies), 'utf8');
