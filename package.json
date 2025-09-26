@@ -92,7 +92,7 @@
     "@eslint/compat": "^1.4.0",
     "@eslint/js": "^9.36.0",
     "@eslint/json": "^0.13.2",
-    "@types/domutils": "^1.7.8",
+    "@types/domutils": "^2.1.0",
     "@types/express": "^5.0.3",
     "@types/express-http-proxy": "^1.6.7",
     "@types/lodash": "^4.17.20",
