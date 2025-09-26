@@ -19,13 +19,9 @@ import Search from '../../../components/Search/Search';
 import Danger from '../../../components/Typography/Danger';
 import { UserData } from '../../../../types/models';
 
-interface UserListProps {
-  [key: string]: any;
-}
-
 const useStyles = makeStyles(styles as any);
 
-const UserList: React.FC<UserListProps> = (props) => {
+const UserList: React.FC = () => {
   const classes = useStyles();
   const [data, setData] = useState<UserData[]>([]);
   const [, setAuth] = useState<boolean>(true);
@@ -40,14 +36,8 @@ const UserList: React.FC<UserListProps> = (props) => {
     navigate(`/dashboard/admin/user/${username}`, { replace: true });
 
   useEffect(() => {
-    const query: Record<string, any> = {};
-
-    for (const k in props) {
-      if (!k) continue;
-      query[k] = props[k];
-    }
-    getUsers(setIsLoading, setData, setAuth, setErrorMessage, query);
-  }, [props]);
+    getUsers(setIsLoading, setData, setAuth, setErrorMessage, {});
+  });
 
   if (isLoading) return <div>Loading...</div>;
   if (errorMessage) return <Danger>{errorMessage}</Danger>;
