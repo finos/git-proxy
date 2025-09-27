@@ -41,10 +41,17 @@ const Login: React.FC = () => {
     axios.get(`${API_BASE}/api/auth/config`).then((response) => {
       const authMethods = response.data.allLoginMethods;
       const usernamePasswordMethod = response.data.usernamePasswordMethod;
-      const nonUsernamePasswordMethods = authMethods.filter((am) => am !== usernamePasswordMethod);
+      const nonUsernamePasswordMethods = authMethods.filter(
+        (am: string) => am !== usernamePasswordMethod,
+      );
 
       setAuthMethods(nonUsernamePasswordMethods);
       setUsernamePasswordMethod(usernamePasswordMethod);
+
+      // Automatically login if only one non-username/password method is enabled
+      if (!usernamePasswordMethod && nonUsernamePasswordMethods.length === 1) {
+        handleAuthMethodLogin(nonUsernamePasswordMethods[0]);
+      }
     });
   }, []);
 
@@ -121,9 +128,7 @@ const Login: React.FC = () => {
                 <GridContainer>
                   <GridItem xs={12} sm={12} md={12}>
                     <FormLabel component='legend' style={{ fontSize: '1.2rem', marginTop: 10 }}>
-                      {usernamePasswordMethod.charAt(0).toUpperCase() +
-                        usernamePasswordMethod.slice(1)}{' '}
-                      Authentication
+                      Login
                     </FormLabel>
                     <FormControl fullWidth>
                       <InputLabel htmlFor='username'>Username</InputLabel>
