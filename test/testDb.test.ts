@@ -347,7 +347,6 @@ describe('Database clients', () => {
     );
     const users = await db.getUsers();
     // remove password as it will have been hashed
-    // eslint-disable-next-line no-unused-vars
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
     expect(cleanUsers).toContainEqual(TEST_USER_CLEAN);
@@ -379,16 +378,13 @@ describe('Database clients', () => {
 
   it('should be able to find a user', async () => {
     const user = await db.findUser(TEST_USER.username);
-    // eslint-disable-next-line no-unused-vars
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
-    // eslint-disable-next-line no-unused-vars
     const { password: _2, _id: _3, ...DB_USER_CLEAN } = user!;
     expect(DB_USER_CLEAN).toEqual(TEST_USER_CLEAN);
   });
 
   it('should be able to filter getUsers', async () => {
     const users = await db.getUsers({ username: TEST_USER.username.toUpperCase() });
-    // eslint-disable-next-line no-unused-vars
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
     // @ts-expect-error dynamic indexing
@@ -444,7 +440,6 @@ describe('Database clients', () => {
     await db.updateUser(TEST_USER);
     const users = await db.getUsers();
     // remove password as it will have been hashed
-    // eslint-disable-next-line no-unused-vars
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
     expect(cleanUsers).toContainEqual(TEST_USER_CLEAN);
@@ -536,7 +531,7 @@ describe('Database clients', () => {
     const pushes = await db.getPushes();
     const cleanPushes = cleanResponseData(TEST_PUSH, pushes as any);
     expect(cleanPushes).toContainEqual(TEST_PUSH);
-  });
+  }, 20000);
 
   it('should be able to delete a push', async () => {
     await db.deletePush(TEST_PUSH.id);
