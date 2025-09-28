@@ -318,7 +318,9 @@ describe('ConfigLoader', () => {
       await configLoader.initialize();
     });
 
-    it('should load configuration from git repository', async () => {
+    it('should load configuration from git repository', async function () {
+      this.timeout(10000);
+
       const source = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
@@ -360,7 +362,9 @@ describe('ConfigLoader', () => {
       );
     });
 
-    it('should load configuration from http', async () => {
+    it('should load configuration from http', async function () {
+      this.timeout(10000);
+
       const source = {
         type: 'http',
         url: 'https://raw.githubusercontent.com/finos/git-proxy/refs/heads/main/proxy.config.json',
