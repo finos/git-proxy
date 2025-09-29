@@ -63,9 +63,9 @@ export interface GitProxyConfig {
    */
   privateOrganizations?: any[];
   /**
-   * Used in early versions of git proxy to configure the remote host that traffic is proxied
-   * to. In later versions, the repository URL is used to determine the domain proxied,
-   * allowing multiple hosts to be proxied by one instance.
+   * Deprecated: Used in early versions of git proxy to configure the remote host that traffic
+   * is proxied to. In later versions, the repository URL is used to determine the domain
+   * proxied, allowing multiple hosts to be proxied by one instance.
    */
   proxyUrl?: string;
   /**
