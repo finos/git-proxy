@@ -120,7 +120,6 @@ export interface API {
 
 export interface Github {
   baseUrl?: string;
-  [property: string]: any;
 }
 
 /**
@@ -534,7 +533,7 @@ const typeMap: any = {
     ],
     'any',
   ),
-  Github: o([{ json: 'baseUrl', js: 'baseUrl', typ: u(undefined, '') }], 'any'),
+  Github: o([{ json: 'baseUrl', js: 'baseUrl', typ: u(undefined, '') }], false),
   Ls: o([{ json: 'userInADGroup', js: 'userInADGroup', typ: u(undefined, '') }], 'any'),
   Authentication: o(
     [

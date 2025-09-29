@@ -35,9 +35,11 @@
             "baseUrl": {
               "type": "string",
               "format": "uri",
-              "examples": ["https://api.github.com"]
+              "examples": ["https://api.github.com"],
+              "deprecated": true
             }
-          }
+          },
+          "additionalProperties": false
         }
       }
     },
