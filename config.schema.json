@@ -7,7 +7,7 @@
   "properties": {
     "proxyUrl": {
       "type": "string",
-      "description": "Used in early versions of git proxy to configure the remote host that traffic is proxied to. In later versions, the repository URL is used to determine the domain proxied, allowing multiple hosts to be proxied by one instance.",
+      "description": "Deprecated: Used in early versions of git proxy to configure the remote host that traffic is proxied to. In later versions, the repository URL is used to determine the domain proxied, allowing multiple hosts to be proxied by one instance.",
       "deprecated": true
     },
     "cookieSecret": { "type": "string" },
