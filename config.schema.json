@@ -42,6 +42,16 @@
             }
           },
           "additionalProperties": false
+        },
+        "gitleaks": {
+          "type": "object",
+          "description": "Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "ignoreGitleaksAllow": { "type": "boolean" },
+            "noColor": { "type": "boolean" },
+            "configPath": { "type": "string" }
+          }
         }
       },
       "additionalProperties": false
