@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it } from 'vitest';
 import { License } from '@/db/collections';
 import { v4 as uuidv4 } from 'uuid';
 
