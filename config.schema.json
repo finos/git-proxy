@@ -27,10 +27,12 @@
                 "https://somedomain.com/some/path/checkUserGroups?domain=<domain>&name=<name>&id=<id>"
               ]
             }
-          }
+          },
+          "additionalProperties": false
         },
         "github": {
           "type": "object",
+          "description": "Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer referenced in the codebase.",
           "properties": {
             "baseUrl": {
               "type": "string",
@@ -41,7 +43,8 @@
           },
           "additionalProperties": false
         }
-      }
+      },
+      "additionalProperties": false
     },
     "commitConfig": {
       "description": "Enforce rules and patterns on commits including e-mail and message",

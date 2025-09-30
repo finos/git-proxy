@@ -108,6 +108,10 @@ export interface GitProxyConfig {
  * Third party APIs
  */
 export interface API {
+  /**
+   * Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer
+   * referenced in the codebase.
+   */
   github?: Github;
   /**
    * Configuration used in conjunction with ActiveDirectory auth, which relates to a REST API
@@ -115,9 +119,12 @@ export interface API {
    * configuration is set direct querying of group membership via LDAP will be disabled.
    */
   ls?: Ls;
-  [property: string]: any;
 }
 
+/**
+ * Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer
+ * referenced in the codebase.
+ */
 export interface Github {
   baseUrl?: string;
 }
@@ -138,7 +145,6 @@ export interface Ls {
    * membership of.</li><li>"&lt;id&gt;": The username to check group membership for.</li></ul>
    */
   userInADGroup?: string;
-  [property: string]: any;
 }
 
 /**
@@ -531,10 +537,10 @@ const typeMap: any = {
       { json: 'github', js: 'github', typ: u(undefined, r('Github')) },
       { json: 'ls', js: 'ls', typ: u(undefined, r('Ls')) },
     ],
-    'any',
+    false,
   ),
   Github: o([{ json: 'baseUrl', js: 'baseUrl', typ: u(undefined, '') }], false),
-  Ls: o([{ json: 'userInADGroup', js: 'userInADGroup', typ: u(undefined, '') }], 'any'),
+  Ls: o([{ json: 'userInADGroup', js: 'userInADGroup', typ: u(undefined, '') }], false),
   Authentication: o(
     [
       { json: 'enabled', js: 'enabled', typ: true },
