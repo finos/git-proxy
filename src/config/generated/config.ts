@@ -21,7 +21,7 @@ export interface GitProxyConfig {
    * List of authentication sources for API endpoints. May be empty, in which case all
    * endpoints are public.
    */
-  apiAuthentication?: Authentication[];
+  apiAuthentication?: AuthenticationElement[];
   /**
    * Customisable questions to add to attestation form
    */
@@ -30,7 +30,7 @@ export interface GitProxyConfig {
    * List of authentication sources. The first source in the configuration with enabled=true
    * will be used.
    */
-  authentication?: Authentication[];
+  authentication?: AuthenticationElement[];
   /**
    * List of repositories that are authorised to be pushed to through the proxy.
    */
@@ -145,7 +145,7 @@ export interface Ls {
 /**
  * Configuration for an authentication source
  */
-export interface Authentication {
+export interface AuthenticationElement {
   enabled: boolean;
   type: Type;
   /**
@@ -501,10 +501,14 @@ const typeMap: any = {
       {
         json: 'apiAuthentication',
         js: 'apiAuthentication',
-        typ: u(undefined, a(r('Authentication'))),
+        typ: u(undefined, a(r('AuthenticationElement'))),
       },
       { json: 'attestationConfig', js: 'attestationConfig', typ: u(undefined, m('any')) },
-      { json: 'authentication', js: 'authentication', typ: u(undefined, a(r('Authentication'))) },
+      {
+        json: 'authentication',
+        js: 'authentication',
+        typ: u(undefined, a(r('AuthenticationElement'))),
+      },
       { json: 'authorisedList', js: 'authorisedList', typ: u(undefined, a(r('AuthorisedRepo'))) },
       { json: 'commitConfig', js: 'commitConfig', typ: u(undefined, m('any')) },
       { json: 'configurationSources', js: 'configurationSources', typ: u(undefined, 'any') },
@@ -536,7 +540,7 @@ const typeMap: any = {
   ),
   Github: o([{ json: 'baseUrl', js: 'baseUrl', typ: u(undefined, '') }], 'any'),
   Ls: o([{ json: 'userInADGroup', js: 'userInADGroup', typ: u(undefined, '') }], 'any'),
-  Authentication: o(
+  AuthenticationElement: o(
     [
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'type', js: 'type', typ: r('Type') },
