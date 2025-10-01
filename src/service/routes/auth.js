@@ -67,9 +67,12 @@ const loginSuccessHandler = () => async (req, res) => {
 };
 
 router.get('/config', (req, res) => {
+  const usernamePasswordMethod = getLoginStrategy();
   res.send({
-    allLoginMethods: getAuthMethods().map((am) => am.type.toLowerCase()),
-    usernamePasswordMethod: getLoginStrategy(),
+    // enabled username /password auth method
+    usernamePasswordMethod: usernamePasswordMethod,
+    // other enabled auth methods
+    otherMethods: getAuthMethods().map((am) => am.type.toLowerCase()).filter((authType) => authType !== usernamePasswordMethod),
   });
 });
 
