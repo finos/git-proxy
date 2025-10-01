@@ -44,7 +44,7 @@ const Login: React.FC = () => {
 
       setUsernamePasswordMethod(usernamePasswordMethod);
       setAuthMethods(otherMethods);
-      
+
       // Automatically login if only one non-username/password method is enabled
       if (!usernamePasswordMethod && otherMethods.length === 1) {
         handleAuthMethodLogin(otherMethods[0]);
@@ -161,8 +161,7 @@ const Login: React.FC = () => {
                   component='legend'
                   style={{ fontSize: '1rem', marginTop: 10, marginBottom: 0 }}
                 >
-                  No username/password authentication method is configured. Please contact an
-                  administrator to enable this feature.
+                  Username/password authentication is not enabled at this time.
                 </FormLabel>
               </CardBody>
             )}
@@ -189,7 +188,10 @@ const Login: React.FC = () => {
                       data-test={`${am}-login`}
                       key={am}
                     >
-                      Login with {am.toUpperCase()}
+                      Login
+                      {authMethods.length > 1 || usernamePasswordMethod
+                        ? ` with ${am.toUpperCase()}`
+                        : ''}
                     </Button>
                   ))}
                 </>
