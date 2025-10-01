@@ -2,7 +2,7 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const db = require('../src/db');
-const service = require('../src/service');
+const service = require('../src/service').default;
 
 chai.use(chaiHttp);
 chai.should();
@@ -313,6 +313,51 @@ describe('auth', async () => {
         .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
         .set('Cookie', `${cookie}`);
       res.should.have.status(401);
+    });
+
+    it('should fetch all pushes', async function () {
+      await db.writeAudit(TEST_PUSH);
+      await loginAsApprover();
+      const res = await chai.request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
+      res.should.have.status(200);
+      res.body.should.be.an('array');
+
+      const push = res.body.find((push) => push.id === TEST_PUSH.id);
+      expect(push).to.exist;
+      expect(push).to.deep.equal(TEST_PUSH);
+      expect(push.canceled).to.be.false;
+    });
+
+    it('should allow a committer to cancel a push', async function () {
+      await db.writeAudit(TEST_PUSH);
+      await loginAsCommitter();
+      const res = await chai
+        .request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
+        .set('Cookie', `${cookie}`);
+      res.should.have.status(200);
+
+      const pushes = await chai.request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
+      const push = pushes.body.find((push) => push.id === TEST_PUSH.id);
+
+      expect(push).to.exist;
+      expect(push.canceled).to.be.true;
+    });
+
+    it('should not allow a non-committer to cancel a push (even if admin)', async function () {
+      await db.writeAudit(TEST_PUSH);
+      await loginAsAdmin();
+      const res = await chai
+        .request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
+        .set('Cookie', `${cookie}`);
+      res.should.have.status(401);
+
+      const pushes = await chai.request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
+      const push = pushes.body.find((push) => push.id === TEST_PUSH.id);
+
+      expect(push).to.exist;
+      expect(push.canceled).to.be.false;
     });
   });
 
