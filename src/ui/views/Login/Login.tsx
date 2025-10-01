@@ -39,18 +39,15 @@ const Login: React.FC = () => {
 
   useEffect(() => {
     axios.get(`${API_BASE}/api/auth/config`).then((response) => {
-      const authMethods = response.data.allLoginMethods;
       const usernamePasswordMethod = response.data.usernamePasswordMethod;
-      const nonUsernamePasswordMethods = authMethods.filter(
-        (am: string) => am !== usernamePasswordMethod,
-      );
+      const otherMethods = response.data.otherMethods;
 
-      setAuthMethods(nonUsernamePasswordMethods);
       setUsernamePasswordMethod(usernamePasswordMethod);
-
+      setAuthMethods(otherMethods);
+      
       // Automatically login if only one non-username/password method is enabled
-      if (!usernamePasswordMethod && nonUsernamePasswordMethods.length === 1) {
-        handleAuthMethodLogin(nonUsernamePasswordMethods[0]);
+      if (!usernamePasswordMethod && otherMethods.length === 1) {
+        handleAuthMethodLogin(otherMethods[0]);
       }
     });
   }, []);
