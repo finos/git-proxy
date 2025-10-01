@@ -7,7 +7,7 @@ import * as passportLocal from '../passport/local';
 import * as passportAD from '../passport/activeDirectory';
 
 import { User } from '../../db/types';
-import { Authentication } from '../../config/generated/config';
+import { AuthenticationElement } from '../../config/generated/config';
 
 import { toPublicUser } from './publicApi';
 import { isAdminUser } from './utils';
@@ -43,7 +43,7 @@ const appropriateLoginStrategies = [passportLocal.type, passportAD.type];
 const getLoginStrategy = () => {
   // returns only enabled auth methods
   // returns at least one enabled auth method
-  const enabledAppropriateLoginStrategies = getAuthMethods().filter((am: Authentication) =>
+  const enabledAppropriateLoginStrategies = getAuthMethods().filter((am: AuthenticationElement) =>
     appropriateLoginStrategies.includes(am.type.toLowerCase()),
   );
   // for where no login strategies which work for /login are enabled
