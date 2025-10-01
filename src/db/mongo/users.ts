@@ -1,4 +1,4 @@
-import { OptionalId, Document } from 'mongodb';
+import { OptionalId, Document, ObjectId } from 'mongodb';
 import { toClass } from '../helper';
 import { User } from '../types';
 import { connect } from './helper';
@@ -57,7 +57,9 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
   if (user.email) {
     user.email = user.email.toLowerCase();
   }
+  const { _id, ...userWithoutId } = user;
+  const filter = _id ? { _id: new ObjectId(_id) } : { username: user.username };
   const options = { upsert: true };
   const collection = await connect(collectionName);
-  await collection.updateOne({ username: user.username }, { $set: user }, options);
+  await collection.updateOne(filter, { $set: userWithoutId }, options);
 };
