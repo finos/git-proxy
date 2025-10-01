@@ -118,7 +118,7 @@
       "description": "List of authentication sources. The first source in the configuration with enabled=true will be used.",
       "type": "array",
       "items": {
-        "$ref": "#/definitions/authentication"
+        "$ref": "#/definitions/authenticationElement"
       }
     },
     "tempPassword": {
@@ -136,7 +136,7 @@
       "description": "List of authentication sources for API endpoints. May be empty, in which case all endpoints are public.",
       "type": "array",
       "items": {
-        "$ref": "#/definitions/authentication"
+        "$ref": "#/definitions/authenticationElement"
       }
     },
     "tls": {
@@ -206,7 +206,7 @@
       },
       "required": ["type", "enabled"]
     },
-    "authentication": {
+    "authenticationElement": {
       "type": "object",
       "description": "Configuration for an authentication source",
       "oneOf": [
