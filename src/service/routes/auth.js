@@ -72,7 +72,9 @@ router.get('/config', (req, res) => {
     // enabled username /password auth method
     usernamePasswordMethod: usernamePasswordMethod,
     // other enabled auth methods
-    otherMethods: getAuthMethods().map((am) => am.type.toLowerCase()).filter((authType) => authType !== usernamePasswordMethod),
+    otherMethods: getAuthMethods()
+      .map((am) => am.type.toLowerCase())
+      .filter((authType) => authType !== usernamePasswordMethod),
   });
 });
 
