@@ -13,7 +13,7 @@ const chaiHttp = require('chai-http');
 const sinon = require('sinon');
 const proxyquire = require('proxyquire');
 
-const service = require('../src/service');
+const service = require('../src/service').default;
 const db = require('../src/db');
 
 const expect = chai.expect;

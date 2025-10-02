@@ -2,7 +2,7 @@ const chai = require('chai');
 const chaiHttp = require('chai-http');
 const sinon = require('sinon');
 const express = require('express');
-const usersRouter = require('../../../src/service/routes/users');
+const usersRouter = require('../../../src/service/routes/users').default;
 const db = require('../../../src/db');
 
 const { expect } = chai;
