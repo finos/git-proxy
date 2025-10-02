@@ -66,6 +66,18 @@ const loginSuccessHandler = () => async (req, res) => {
   }
 };
 
+router.get('/config', (req, res) => {
+  const usernamePasswordMethod = getLoginStrategy();
+  res.send({
+    // enabled username /password auth method
+    usernamePasswordMethod: usernamePasswordMethod,
+    // other enabled auth methods
+    otherMethods: getAuthMethods()
+      .map((am) => am.type.toLowerCase())
+      .filter((authType) => authType !== usernamePasswordMethod),
+  });
+});
+
 // TODO: provide separate auth endpoints for each auth strategy or chain compatibile auth strategies
 // TODO: if providing separate auth methods, inform the frontend so it has relevant UI elements and appropriate client-side behavior
 router.post(
@@ -82,9 +94,9 @@ router.post(
   loginSuccessHandler(),
 );
 
-router.get('/oidc', passport.authenticate(authStrategies['openidconnect'].type));
+router.get('/openidconnect', passport.authenticate(authStrategies['openidconnect'].type));
 
-router.get('/oidc/callback', (req, res, next) => {
+router.get('/openidconnect/callback', (req, res, next) => {
   passport.authenticate(authStrategies['openidconnect'].type, (err, user, info) => {
     if (err) {
       console.error('Authentication error:', err);
