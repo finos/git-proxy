@@ -723,7 +723,45 @@ description: JSON schema reference documentation for GitProxy
 | **Required**              | No               |
 | **Additional properties** | Any type allowed |
 
-**Description:** Provide domains to use alternative to the defaults
+**Description:** Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL
+
+<details>
+<summary>
+<strong> <a name="domains_proxy"></a>7.1. [Optional] Property GitProxy configuration file > domains > proxy</strong>
+</summary>
+<blockquote>
+
+**Title:** ProxyUrl
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+| **Format**   | `url`    |
+
+**Description:** Override for the default proxy URL, should include the protocol
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="domains_service"></a>7.2. [Optional] Property GitProxy configuration file > domains > service</strong>
+</summary>
+<blockquote>
+
+**Title:** Service UI URL
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+| **Format**   | `url`    |
+
+**Description:** Override for the service UI URL, should include the protocol
+
+</blockquote>
+</details>
 
 </blockquote>
 </details>
@@ -1842,4 +1880,4 @@ Specific value: `"jwt"`
 </details>
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-10-02 at 18:16:04 +0100
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-10-02 at 18:44:23 +0100

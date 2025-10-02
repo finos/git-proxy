@@ -223,8 +223,22 @@
       "required": ["questions"]
     },
     "domains": {
-      "description": "Provide domains to use alternative to the defaults",
-      "type": "object"
+      "description": "Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL",
+      "type": "object",
+      "properties": {
+        "proxy": {
+          "title": "ProxyUrl",
+          "description": "Override for the default proxy URL, should include the protocol",
+          "type": "string",
+          "format": "url"
+        },
+        "service": {
+          "title": "Service UI URL",
+          "description": "Override for the service UI URL, should include the protocol",
+          "type": "string",
+          "format": "url"
+        }
+      }
     },
     "rateLimit": {
       "description": "API Rate limiting configuration.",
