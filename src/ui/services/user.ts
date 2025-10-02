@@ -41,15 +41,14 @@ const getUsers = async (
   setData: SetStateCallback<UserData[]>,
   setAuth: SetStateCallback<boolean>,
   setErrorMessage: SetStateCallback<string>,
-  query: Record<string, string> = {},
 ): Promise<void> => {
-  const url = new URL(`${API_BASE}/api/v1/user`);
-  url.search = new URLSearchParams(query).toString();
-
   setIsLoading(true);
 
   try {
-    const response: AxiosResponse<UserData[]> = await axios(url.toString(), getAxiosConfig());
+    const response: AxiosResponse<UserData[]> = await axios(
+      `${API_BASE}/api/v1/user`,
+      getAxiosConfig(),
+    );
     setData(response.data);
   } catch (error) {
     if (axios.isAxiosError(error)) {
@@ -70,10 +69,8 @@ const getUsers = async (
 
 const updateUser = async (data: UserData): Promise<void> => {
   console.log(data);
-  const url = new URL(`${API_BASE}/api/auth/gitAccount`);
-
   try {
-    await axios.post(url.toString(), data, getAxiosConfig());
+    await axios.post(`${API_BASE}/api/auth/gitAccount`, data, getAxiosConfig());
   } catch (error) {
     const axiosError = error as AxiosError;
     if (axiosError.response) {
@@ -89,10 +86,11 @@ const getUserLoggedIn = async (
   setIsError: SetStateCallback<boolean>,
   setAuth: SetStateCallback<boolean>,
 ): Promise<void> => {
-  const url = new URL(`${API_BASE}/api/auth/me`);
-
   try {
-    const response: AxiosResponse<UserData> = await axios(url.toString(), getAxiosConfig());
+    const response: AxiosResponse<UserData> = await axios(
+      `${API_BASE}/api/auth/me`,
+      getAxiosConfig(),
+    );
     const data = response.data;
     setIsLoading(false);
     setIsAdmin(data.admin || false);

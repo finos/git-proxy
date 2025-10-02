@@ -9,6 +9,14 @@ function loadApiBase() {
 describe('apiBase', () => {
   let originalEnv;
 
+  before(() => {
+    global.location = { origin: 'https://lovely-git-proxy.com' };
+  });
+
+  after(() => {
+    delete global.location;
+  });
+
   beforeEach(() => {
     originalEnv = process.env.VITE_API_URI;
     delete process.env.VITE_API_URI;
@@ -24,9 +32,9 @@ describe('apiBase', () => {
     delete require.cache[require.resolve('../../src/ui/apiBase')];
   });
 
-  it('uses empty string when VITE_API_URI is not set', () => {
+  it('uses the location origin when VITE_API_URI is not set', () => {
     const { API_BASE } = loadApiBase();
-    expect(API_BASE).to.equal('');
+    expect(API_BASE).to.equal('https://lovely-git-proxy.com');
   });
 
   it('returns the exact value when no trailing slash', () => {

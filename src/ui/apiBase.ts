@@ -8,4 +8,4 @@ const stripTrailingSlashes = (s: string) => s.replace(/\/+$/, '');
  */
 export const API_BASE = process.env.VITE_API_URI
   ? stripTrailingSlashes(process.env.VITE_API_URI)
-  : '';
+  : location.origin;

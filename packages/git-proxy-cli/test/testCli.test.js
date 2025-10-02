@@ -70,7 +70,9 @@ describe('test git-proxy-cli', function () {
     it(`"--version" option prints version details `, async function () {
       const cli = `npx -- @finos/git-proxy-cli --version`;
       const expectedExitCode = 0;
-      const expectedMessages = ['0.1.0'];
+      const packageJson = require('../../../package.json');
+      const version = packageJson.version;
+      const expectedMessages = [version];
       const expectedErrorMessages = null;
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });

@@ -1,6 +1,7 @@
 const chai = require('chai');
 const { Convert } = require('../src/config/generated/config');
 const defaultSettings = require('../proxy.config.json');
+const { isUserInAdGroup } = require('../src/service/passport/ldaphelper');
 
 const { expect } = chai;
 
@@ -207,11 +208,12 @@ describe('Generated Config (QuickType)', () => {
         sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
 
         api: {
+          ls: {
+            userInADGroup:
+              'https://somedomain.com/some/path/checkUserGroups?domain=<domain>&name=<name>&id=<id>',
+          },
           github: {
             baseUrl: 'https://api.github.com',
-            token: 'secret-token',
-            rateLimit: 100,
-            enabled: true,
           },
         },
 
