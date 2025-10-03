@@ -26,6 +26,8 @@ description: JSON schema reference documentation for GitProxy
 | **Type**     | `string` |
 | **Required** | No       |
 
+**Description:** Deprecated: Used in early versions of git proxy to configure the remote host that traffic is proxied to. In later versions, the repository URL is used to determine the domain proxied, allowing multiple hosts to be proxied by one instance.
+
 </blockquote>
 </details>
 
@@ -63,11 +65,11 @@ description: JSON schema reference documentation for GitProxy
 </summary>
 <blockquote>
 
-|                           |                  |
-| ------------------------- | ---------------- |
-| **Type**                  | `object`         |
-| **Required**              | No               |
-| **Additional properties** | Any type allowed |
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
 
 **Description:** Third party APIs
 
@@ -77,11 +79,11 @@ description: JSON schema reference documentation for GitProxy
 </summary>
 <blockquote>
 
-|                           |                  |
-| ------------------------- | ---------------- |
-| **Type**                  | `object`         |
-| **Required**              | No               |
-| **Additional properties** | Any type allowed |
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
 
 **Description:** Configuration used in conjunction with ActiveDirectory auth, which relates to a REST API used to check user group membership, as opposed to direct querying via LDAP.<br />If this configuration is set direct querying of group membership via LDAP will be disabled.
 
@@ -116,11 +118,13 @@ description: JSON schema reference documentation for GitProxy
 </summary>
 <blockquote>
 
-|                           |                  |
-| ------------------------- | ---------------- |
-| **Type**                  | `object`         |
-| **Required**              | No               |
-| **Additional properties** | Any type allowed |
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer referenced in the codebase.
 
 <details>
 <summary>
@@ -139,6 +143,79 @@ description: JSON schema reference documentation for GitProxy
 ```json
 "https://api.github.com"
 ```
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="api_gitleaks"></a>4.3. [Optional] Property GitProxy configuration file > api > gitleaks</strong>
+</summary>
+<blockquote>
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
+
+**Description:** Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin
+
+<details>
+<summary>
+<strong> <a name="api_gitleaks_enabled"></a>4.3.1. [Optional] Property GitProxy configuration file > api > gitleaks > enabled</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | No        |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="api_gitleaks_ignoreGitleaksAllow"></a>4.3.2. [Optional] Property GitProxy configuration file > api > gitleaks > ignoreGitleaksAllow</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | No        |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="api_gitleaks_noColor"></a>4.3.3. [Optional] Property GitProxy configuration file > api > gitleaks > noColor</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | No        |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="api_gitleaks_configPath"></a>4.3.4. [Optional] Property GitProxy configuration file > api > gitleaks > configPath</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
 
 </blockquote>
 </details>
@@ -557,18 +634,18 @@ description: JSON schema reference documentation for GitProxy
 
 **Description:** List of authentication sources. The first source in the configuration with enabled=true will be used.
 
-| Each item of this array must be         | Description                                |
-| --------------------------------------- | ------------------------------------------ |
-| [authentication](#authentication_items) | Configuration for an authentication source |
+| Each item of this array must be                | Description                                |
+| ---------------------------------------------- | ------------------------------------------ |
+| [authenticationElement](#authentication_items) | Configuration for an authentication source |
 
-### <a name="autogenerated_heading_5"></a>16.1. GitProxy configuration file > authentication > authentication
+### <a name="autogenerated_heading_5"></a>16.1. GitProxy configuration file > authentication > authenticationElement
 
-|                           |                              |
-| ------------------------- | ---------------------------- |
-| **Type**                  | `combining`                  |
-| **Required**              | No                           |
-| **Additional properties** | Any type allowed             |
-| **Defined in**            | #/definitions/authentication |
+|                           |                                     |
+| ------------------------- | ----------------------------------- |
+| **Type**                  | `combining`                         |
+| **Required**              | No                                  |
+| **Additional properties** | Any type allowed                    |
+| **Defined in**            | #/definitions/authenticationElement |
 
 **Description:** Configuration for an authentication source
 
@@ -1089,11 +1166,11 @@ Specific value: `"jwt"`
 
 **Description:** List of authentication sources for API endpoints. May be empty, in which case all endpoints are public.
 
-| Each item of this array must be            | Description                                |
-| ------------------------------------------ | ------------------------------------------ |
-| [authentication](#apiAuthentication_items) | Configuration for an authentication source |
+| Each item of this array must be                   | Description                                |
+| ------------------------------------------------- | ------------------------------------------ |
+| [authenticationElement](#apiAuthentication_items) | Configuration for an authentication source |
 
-### <a name="autogenerated_heading_6"></a>18.1. GitProxy configuration file > apiAuthentication > authentication
+### <a name="autogenerated_heading_6"></a>18.1. GitProxy configuration file > apiAuthentication > authenticationElement
 
 |                           |                                               |
 | ------------------------- | --------------------------------------------- |
@@ -1168,7 +1245,39 @@ Specific value: `"jwt"`
 
 <details>
 <summary>
-<strong> <a name="configurationSources"></a>20. [Optional] Property GitProxy configuration file > configurationSources</strong>
+<strong> <a name="sslKeyPemPath"></a>20. [Optional] Property GitProxy configuration file > sslKeyPemPath</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** Deprecated: Path to SSL private key file (use tls.key instead)
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sslCertPemPath"></a>21. [Optional] Property GitProxy configuration file > sslCertPemPath</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** Deprecated: Path to SSL certificate file (use tls.cert instead)
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="configurationSources"></a>22. [Optional] Property GitProxy configuration file > configurationSources</strong>
 </summary>
 <blockquote>
 
@@ -1183,7 +1292,7 @@ Specific value: `"jwt"`
 
 <details>
 <summary>
-<strong> <a name="uiRouteAuth"></a>21. [Optional] Property GitProxy configuration file > uiRouteAuth</strong>
+<strong> <a name="uiRouteAuth"></a>23. [Optional] Property GitProxy configuration file > uiRouteAuth</strong>
 </summary>
 <blockquote>
 
@@ -1197,7 +1306,7 @@ Specific value: `"jwt"`
 
 <details>
 <summary>
-<strong> <a name="uiRouteAuth_enabled"></a>21.1. [Optional] Property GitProxy configuration file > uiRouteAuth > enabled</strong>
+<strong> <a name="uiRouteAuth_enabled"></a>23.1. [Optional] Property GitProxy configuration file > uiRouteAuth > enabled</strong>
 </summary>
 <blockquote>
 
@@ -1211,7 +1320,7 @@ Specific value: `"jwt"`
 
 <details>
 <summary>
-<strong> <a name="uiRouteAuth_rules"></a>21.2. [Optional] Property GitProxy configuration file > uiRouteAuth > rules</strong>
+<strong> <a name="uiRouteAuth_rules"></a>23.2. [Optional] Property GitProxy configuration file > uiRouteAuth > rules</strong>
 </summary>
 <blockquote>
 
@@ -1224,7 +1333,7 @@ Specific value: `"jwt"`
 | ----------------------------------------- | ----------- |
 | [routeAuthRule](#uiRouteAuth_rules_items) | -           |
 
-#### <a name="autogenerated_heading_7"></a>21.2.1. GitProxy configuration file > uiRouteAuth > rules > routeAuthRule
+#### <a name="autogenerated_heading_7"></a>23.2.1. GitProxy configuration file > uiRouteAuth > rules > routeAuthRule
 
 |                           |                             |
 | ------------------------- | --------------------------- |
@@ -1235,7 +1344,7 @@ Specific value: `"jwt"`
 
 <details>
 <summary>
-<strong> <a name="uiRouteAuth_rules_items_pattern"></a>21.2.1.1. [Optional] Property GitProxy configuration file > uiRouteAuth > rules > rules items > pattern</strong>
+<strong> <a name="uiRouteAuth_rules_items_pattern"></a>23.2.1.1. [Optional] Property GitProxy configuration file > uiRouteAuth > rules > rules items > pattern</strong>
 </summary>
 <blockquote>
 
@@ -1249,7 +1358,7 @@ Specific value: `"jwt"`
 
 <details>
 <summary>
-<strong> <a name="uiRouteAuth_rules_items_adminOnly"></a>21.2.1.2. [Optional] Property GitProxy configuration file > uiRouteAuth > rules > rules items > adminOnly</strong>
+<strong> <a name="uiRouteAuth_rules_items_adminOnly"></a>23.2.1.2. [Optional] Property GitProxy configuration file > uiRouteAuth > rules > rules items > adminOnly</strong>
 </summary>
 <blockquote>
 
@@ -1263,7 +1372,7 @@ Specific value: `"jwt"`
 
 <details>
 <summary>
-<strong> <a name="uiRouteAuth_rules_items_loginRequired"></a>21.2.1.3. [Optional] Property GitProxy configuration file > uiRouteAuth > rules > rules items > loginRequired</strong>
+<strong> <a name="uiRouteAuth_rules_items_loginRequired"></a>23.2.1.3. [Optional] Property GitProxy configuration file > uiRouteAuth > rules > rules items > loginRequired</strong>
 </summary>
 <blockquote>
 
@@ -1282,4 +1391,4 @@ Specific value: `"jwt"`
 </details>
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-06-04 at 23:10:45 +0100
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-09-30 at 14:41:38 +0100
