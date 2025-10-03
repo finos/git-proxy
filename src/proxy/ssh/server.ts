@@ -306,55 +306,167 @@ export class SSHServer {
         `[SSH] Git command for repository: ${repoPath} from user: ${client.authenticatedUser?.username || 'unknown'}`,
       );
 
-      // Create a properly formatted HTTP request for the proxy chain
-      // Match the format expected by the HTTPS flow
-      const req = {
-        originalUrl: `/${repoPath}/${gitPath}`,
-        url: `/${repoPath}/${gitPath}`,
-        method: isReceivePack ? 'POST' : 'GET',
-        headers: {
-          'user-agent': 'git/ssh-proxy',
-          'content-type': isReceivePack
-            ? 'application/x-git-receive-pack-request'
-            : 'application/x-git-upload-pack-request',
-          host: 'ssh-proxy',
-        },
-        body: null,
-        user: client.authenticatedUser || null,
-        isSSH: true,
-        protocol: 'ssh' as const,
-        sshUser: {
-          username: client.authenticatedUser?.username || 'unknown',
-          email: client.authenticatedUser?.email,
-          gitAccount: client.authenticatedUser?.gitAccount,
-          sshKeyInfo: client.userPrivateKey,
-        },
-      };
+      if (isReceivePack) {
+        // For push operations (git-receive-pack), we need to capture pack data first
+        await this.handlePushOperation(command, stream, client, repoPath, gitPath);
+      } else {
+        // For pull operations (git-upload-pack), execute chain first then stream
+        await this.handlePullOperation(command, stream, client, repoPath, gitPath);
+      }
+    } catch (error) {
+      console.error('[SSH] Error in Git command handling:', error);
+      stream.stderr.write(`Error: ${error}\n`);
+      stream.exit(1);
+      stream.end();
+    }
+  }
 
-      // Create a mock response object for the chain
-      const res = {
-        headers: {},
-        statusCode: 200,
-        set: function (headers: any) {
-          Object.assign(this.headers, headers);
-          return this;
-        },
-        status: function (code: number) {
-          this.statusCode = code;
-          return this;
-        },
-        send: function (data: any) {
-          return this;
-        },
-      };
+  private async handlePushOperation(
+    command: string,
+    stream: ssh2.ServerChannel,
+    client: ClientWithUser,
+    repoPath: string,
+    gitPath: string,
+  ): Promise<void> {
+    console.log(`[SSH] Handling push operation for ${repoPath}`);
 
-      // Execute the proxy chain
+    // Create pack data capture buffers
+    const packDataChunks: Buffer[] = [];
+    let totalBytes = 0;
+    const maxPackSize = 500 * 1024 * 1024; // 500MB limit
+
+    // Set up data capture from client stream
+    const dataHandler = (data: Buffer) => {
       try {
-        const result = await chain.executeChain(req, res);
-        if (result.error || result.blocked) {
+        if (!Buffer.isBuffer(data)) {
+          console.error(`[SSH] Invalid data type received: ${typeof data}`);
+          stream.stderr.write('Error: Invalid data format received\n');
+          stream.exit(1);
+          stream.end();
+          return;
+        }
+
+        if (totalBytes + data.length > maxPackSize) {
+          console.error(
+            `[SSH] Pack size limit exceeded: ${totalBytes + data.length} > ${maxPackSize}`,
+          );
+          stream.stderr.write(
+            `Error: Pack data exceeds maximum size limit (${maxPackSize} bytes)\n`,
+          );
+          stream.exit(1);
+          stream.end();
+          return;
+        }
+
+        packDataChunks.push(data);
+        totalBytes += data.length;
+        console.log(`[SSH] Captured ${data.length} bytes, total: ${totalBytes} bytes`);
+      } catch (error) {
+        console.error(`[SSH] Error processing data chunk:`, error);
+        stream.stderr.write(`Error: Failed to process data chunk: ${error}\n`);
+        stream.exit(1);
+        stream.end();
+      }
+    };
+
+    const endHandler = async () => {
+      console.log(`[SSH] Pack data capture complete: ${totalBytes} bytes`);
+
+      try {
+        // Validate pack data before processing
+        if (packDataChunks.length === 0 && totalBytes === 0) {
+          console.warn(`[SSH] No pack data received for push operation`);
+          // Allow empty pushes (e.g., tag creation without commits)
+        }
+
+        // Concatenate all pack data chunks with error handling
+        let packData: Buffer | null = null;
+        try {
+          packData = packDataChunks.length > 0 ? Buffer.concat(packDataChunks) : null;
+
+          // Verify concatenated data integrity
+          if (packData && packData.length !== totalBytes) {
+            throw new Error(
+              `Pack data corruption detected: expected ${totalBytes} bytes, got ${packData.length} bytes`,
+            );
+          }
+        } catch (concatError) {
+          console.error(`[SSH] Error concatenating pack data:`, concatError);
+          stream.stderr.write(`Error: Failed to process pack data: ${concatError}\n`);
+          stream.exit(1);
+          stream.end();
+          return;
+        }
+
+        // Create request object with captured pack data
+        const req = {
+          originalUrl: `/${repoPath}/${gitPath}`,
+          url: `/${repoPath}/${gitPath}`,
+          method: 'POST' as const,
+          headers: {
+            'user-agent': 'git/ssh-proxy',
+            'content-type': 'application/x-git-receive-pack-request',
+            host: 'ssh-proxy',
+            'content-length': totalBytes.toString(),
+          },
+          body: packData,
+          bodyRaw: packData,
+          user: client.authenticatedUser || null,
+          isSSH: true,
+          protocol: 'ssh' as const,
+          sshUser: {
+            username: client.authenticatedUser?.username || 'unknown',
+            email: client.authenticatedUser?.email,
+            gitAccount: client.authenticatedUser?.gitAccount,
+            sshKeyInfo: client.userPrivateKey,
+          },
+        };
+
+        // Create mock response object
+        const res = {
+          headers: {},
+          statusCode: 200,
+          set: function (headers: any) {
+            Object.assign(this.headers, headers);
+            return this;
+          },
+          status: function (code: number) {
+            this.statusCode = code;
+            return this;
+          },
+          send: function (data: any) {
+            return this;
+          },
+        };
+
+        // Execute the proxy chain with captured pack data
+        console.log(`[SSH] Executing security chain for push operation`);
+        let chainResult;
+        try {
+          chainResult = await chain.executeChain(req, res);
+        } catch (chainExecError) {
+          console.error(`[SSH] Chain execution threw error:`, chainExecError);
+          throw new Error(`Security chain execution failed: ${chainExecError}`);
+        }
+
+        if (chainResult.error || chainResult.blocked) {
           const message =
-            result.errorMessage || result.blockedMessage || 'Request blocked by proxy chain';
+            chainResult.errorMessage ||
+            chainResult.blockedMessage ||
+            'Request blocked by proxy chain';
           throw new Error(message);
+        }
+
+        console.log(`[SSH] Security chain passed, forwarding to remote`);
+        // Chain passed, now forward the captured data to remote
+        try {
+          await this.forwardPackDataToRemote(command, stream, client, packData);
+        } catch (forwardError) {
+          console.error(`[SSH] Error forwarding pack data to remote:`, forwardError);
+          stream.stderr.write(`Error forwarding to remote: ${forwardError}\n`);
+          stream.exit(1);
+          stream.end();
+          return;
         }
       } catch (chainError: unknown) {
         console.error(
@@ -367,15 +479,263 @@ export class SSHServer {
         stream.end();
         return;
       }
+    };
 
-      // If chain passed, connect to remote Git server
-      await this.connectToRemoteGitServer(command, stream, client);
-    } catch (error) {
-      console.error('[SSH] Error in Git command handling:', error);
-      stream.stderr.write(`Error: ${error}\n`);
+    const errorHandler = (error: Error) => {
+      console.error(`[SSH] Stream error during pack capture:`, error);
+      stream.stderr.write(`Stream error: ${error.message}\n`);
       stream.exit(1);
       stream.end();
+    };
+
+    // Set up timeout for pack data capture (5 minutes max)
+    const captureTimeout = setTimeout(() => {
+      console.error(
+        `[SSH] Pack data capture timeout for user ${client.authenticatedUser?.username}`,
+      );
+      stream.stderr.write('Error: Pack data capture timeout\n');
+      stream.exit(1);
+      stream.end();
+    }, 300000); // 5 minutes
+
+    // Clean up timeout when stream ends
+    const originalEndHandler = endHandler;
+    const timeoutAwareEndHandler = async () => {
+      clearTimeout(captureTimeout);
+      await originalEndHandler();
+    };
+
+    const timeoutAwareErrorHandler = (error: Error) => {
+      clearTimeout(captureTimeout);
+      errorHandler(error);
+    };
+
+    // Attach event handlers
+    stream.on('data', dataHandler);
+    stream.once('end', timeoutAwareEndHandler);
+    stream.on('error', timeoutAwareErrorHandler);
+  }
+
+  private async handlePullOperation(
+    command: string,
+    stream: ssh2.ServerChannel,
+    client: ClientWithUser,
+    repoPath: string,
+    gitPath: string,
+  ): Promise<void> {
+    console.log(`[SSH] Handling pull operation for ${repoPath}`);
+
+    // For pull operations, execute chain first (no pack data to capture)
+    const req = {
+      originalUrl: `/${repoPath}/${gitPath}`,
+      url: `/${repoPath}/${gitPath}`,
+      method: 'GET' as const,
+      headers: {
+        'user-agent': 'git/ssh-proxy',
+        'content-type': 'application/x-git-upload-pack-request',
+        host: 'ssh-proxy',
+      },
+      body: null,
+      user: client.authenticatedUser || null,
+      isSSH: true,
+      protocol: 'ssh' as const,
+      sshUser: {
+        username: client.authenticatedUser?.username || 'unknown',
+        email: client.authenticatedUser?.email,
+        gitAccount: client.authenticatedUser?.gitAccount,
+        sshKeyInfo: client.userPrivateKey,
+      },
+    };
+
+    const res = {
+      headers: {},
+      statusCode: 200,
+      set: function (headers: any) {
+        Object.assign(this.headers, headers);
+        return this;
+      },
+      status: function (code: number) {
+        this.statusCode = code;
+        return this;
+      },
+      send: function (data: any) {
+        return this;
+      },
+    };
+
+    // Execute the proxy chain
+    try {
+      console.log(`[SSH] Executing security chain for pull operation`);
+      const result = await chain.executeChain(req, res);
+      if (result.error || result.blocked) {
+        const message =
+          result.errorMessage || result.blockedMessage || 'Request blocked by proxy chain';
+        throw new Error(message);
+      }
+
+      console.log(`[SSH] Security chain passed, connecting to remote`);
+      // Chain passed, connect to remote Git server
+      await this.connectToRemoteGitServer(command, stream, client);
+    } catch (chainError: unknown) {
+      console.error(
+        `[SSH] Chain execution failed for user ${client.authenticatedUser?.username}:`,
+        chainError,
+      );
+      const errorMessage = chainError instanceof Error ? chainError.message : String(chainError);
+      stream.stderr.write(`Access denied: ${errorMessage}\n`);
+      stream.exit(1);
+      stream.end();
+      return;
     }
+  }
+
+  private async forwardPackDataToRemote(
+    command: string,
+    stream: ssh2.ServerChannel,
+    client: ClientWithUser,
+    packData: Buffer | null,
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const userName = client.authenticatedUser?.username || 'unknown';
+      console.log(`[SSH] Forwarding pack data to remote for user: ${userName}`);
+
+      // Get remote host from config
+      const proxyUrl = getProxyUrl();
+      if (!proxyUrl) {
+        const error = new Error('No proxy URL configured');
+        console.error(`[SSH] ${error.message}`);
+        stream.stderr.write(`Configuration error: ${error.message}\n`);
+        stream.exit(1);
+        stream.end();
+        reject(error);
+        return;
+      }
+
+      const remoteUrl = new URL(proxyUrl);
+      const sshConfig = getSSHConfig();
+
+      // Set up connection options (same as original connectToRemoteGitServer)
+      const connectionOptions: any = {
+        host: remoteUrl.hostname,
+        port: 22,
+        username: 'git',
+        tryKeyboard: false,
+        readyTimeout: 30000,
+        keepaliveInterval: 15000,
+        keepaliveCountMax: 5,
+        windowSize: 1024 * 1024,
+        packetSize: 32768,
+        privateKey: fs.readFileSync(sshConfig.hostKey.privateKeyPath),
+        debug: (msg: string) => {
+          console.debug('[GitHub SSH Debug]', msg);
+        },
+        algorithms: {
+          kex: [
+            'ecdh-sha2-nistp256' as any,
+            'ecdh-sha2-nistp384' as any,
+            'ecdh-sha2-nistp521' as any,
+            'diffie-hellman-group14-sha256' as any,
+            'diffie-hellman-group16-sha512' as any,
+            'diffie-hellman-group18-sha512' as any,
+          ],
+          serverHostKey: ['rsa-sha2-512' as any, 'rsa-sha2-256' as any, 'ssh-rsa' as any],
+          cipher: [
+            'aes128-gcm' as any,
+            'aes256-gcm' as any,
+            'aes128-ctr' as any,
+            'aes256-ctr' as any,
+          ],
+          hmac: ['hmac-sha2-256' as any, 'hmac-sha2-512' as any],
+        },
+      };
+
+      const remoteGitSsh = new ssh2.Client();
+
+      // Handle connection success
+      remoteGitSsh.on('ready', () => {
+        console.log(`[SSH] Connected to remote Git server for user: ${userName}`);
+
+        // Execute the Git command on the remote server
+        remoteGitSsh.exec(command, (err: Error | undefined, remoteStream: ssh2.ClientChannel) => {
+          if (err) {
+            console.error(`[SSH] Error executing command on remote for user ${userName}:`, err);
+            stream.stderr.write(`Remote execution error: ${err.message}\n`);
+            stream.exit(1);
+            stream.end();
+            remoteGitSsh.end();
+            reject(err);
+            return;
+          }
+
+          console.log(
+            `[SSH] Command executed on remote for user ${userName}, forwarding pack data`,
+          );
+
+          // Forward the captured pack data to remote
+          if (packData && packData.length > 0) {
+            console.log(`[SSH] Writing ${packData.length} bytes of pack data to remote`);
+            remoteStream.write(packData);
+          }
+
+          // End the write stream to signal completion
+          remoteStream.end();
+
+          // Handle remote response
+          remoteStream.on('data', (data: any) => {
+            stream.write(data);
+          });
+
+          remoteStream.on('close', () => {
+            console.log(`[SSH] Remote stream closed for user: ${userName}`);
+            stream.end();
+            resolve();
+          });
+
+          remoteStream.on('exit', (code: number, signal?: string) => {
+            console.log(
+              `[SSH] Remote command exited for user ${userName} with code: ${code}, signal: ${signal || 'none'}`,
+            );
+            stream.exit(code || 0);
+            resolve();
+          });
+
+          remoteStream.on('error', (err: Error) => {
+            console.error(`[SSH] Remote stream error for user ${userName}:`, err);
+            stream.stderr.write(`Stream error: ${err.message}\n`);
+            stream.exit(1);
+            stream.end();
+            reject(err);
+          });
+        });
+      });
+
+      // Handle connection errors
+      remoteGitSsh.on('error', (err: Error) => {
+        console.error(`[SSH] Remote connection error for user ${userName}:`, err);
+        stream.stderr.write(`Connection error: ${err.message}\n`);
+        stream.exit(1);
+        stream.end();
+        reject(err);
+      });
+
+      // Set connection timeout
+      const connectTimeout = setTimeout(() => {
+        console.error(`[SSH] Connection timeout to remote for user ${userName}`);
+        remoteGitSsh.end();
+        stream.stderr.write('Connection timeout to remote server\n');
+        stream.exit(1);
+        stream.end();
+        reject(new Error('Connection timeout'));
+      }, 30000);
+
+      remoteGitSsh.on('ready', () => {
+        clearTimeout(connectTimeout);
+      });
+
+      // Connect to remote
+      console.log(`[SSH] Connecting to ${remoteUrl.hostname} for user ${userName}`);
+      remoteGitSsh.connect(connectionOptions);
+    });
   }
 
   private async connectToRemoteGitServer(

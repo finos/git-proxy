@@ -1503,4 +1503,791 @@ describe('SSHServer', () => {
       expect(mockStream.end.calledOnce).to.be.true;
     });
   });
+
+  describe('pack data capture functionality', () => {
+    let mockClient;
+    let mockStream;
+    let clock;
+
+    beforeEach(() => {
+      clock = sinon.useFakeTimers();
+      mockClient = {
+        authenticatedUser: {
+          username: 'test-user',
+          email: 'test@example.com',
+          gitAccount: 'testgit',
+        },
+        userPrivateKey: {
+          keyType: 'ssh-rsa',
+          keyData: Buffer.from('test-key-data'),
+        },
+        clientIp: '127.0.0.1',
+      };
+      mockStream = {
+        write: sinon.stub(),
+        stderr: { write: sinon.stub() },
+        exit: sinon.stub(),
+        end: sinon.stub(),
+        on: sinon.stub(),
+        once: sinon.stub(),
+      };
+    });
+
+    afterEach(() => {
+      clock.restore();
+    });
+
+    it('should differentiate between push and pull operations', async () => {
+      mockChain.executeChain.resolves({ error: false, blocked: false });
+      sinon.stub(server, 'connectToRemoteGitServer').resolves();
+      sinon.stub(server, 'handlePushOperation').resolves();
+      sinon.stub(server, 'handlePullOperation').resolves();
+
+      // Test push operation
+      await server.handleGitCommand("git-receive-pack 'test/repo'", mockStream, mockClient);
+      expect(server.handlePushOperation.calledOnce).to.be.true;
+
+      // Reset stubs
+      server.handlePushOperation.resetHistory();
+      server.handlePullOperation.resetHistory();
+
+      // Test pull operation
+      await server.handleGitCommand("git-upload-pack 'test/repo'", mockStream, mockClient);
+      expect(server.handlePullOperation.calledOnce).to.be.true;
+    });
+
+    it('should capture pack data for push operations', (done) => {
+      mockChain.executeChain.resolves({ error: false, blocked: false });
+      sinon.stub(server, 'forwardPackDataToRemote').resolves();
+
+      // Start push operation
+      server.handlePushOperation(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-receive-pack',
+      );
+
+      // Simulate pack data chunks
+      const dataHandlers = mockStream.on.getCalls().filter((call) => call.args[0] === 'data');
+      const dataHandler = dataHandlers[0].args[1];
+
+      const testData1 = Buffer.from('pack-data-chunk-1');
+      const testData2 = Buffer.from('pack-data-chunk-2');
+
+      dataHandler(testData1);
+      dataHandler(testData2);
+
+      // Simulate stream end
+      const endHandlers = mockStream.once.getCalls().filter((call) => call.args[0] === 'end');
+      const endHandler = endHandlers[0].args[1];
+
+      // Execute end handler and wait for async completion
+      endHandler()
+        .then(() => {
+          // Verify chain was called with captured pack data
+          expect(mockChain.executeChain.calledOnce).to.be.true;
+          const capturedReq = mockChain.executeChain.firstCall.args[0];
+          expect(capturedReq.body).to.not.be.null;
+          expect(capturedReq.bodyRaw).to.not.be.null;
+          expect(capturedReq.method).to.equal('POST');
+          expect(capturedReq.headers['content-type']).to.equal(
+            'application/x-git-receive-pack-request',
+          );
+
+          // Verify pack data forwarding was called
+          expect(server.forwardPackDataToRemote.calledOnce).to.be.true;
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should handle pack data size limits', () => {
+      // Start push operation
+      server.handlePushOperation(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-receive-pack',
+      );
+
+      // Get data handler
+      const dataHandlers = mockStream.on.getCalls().filter((call) => call.args[0] === 'data');
+      const dataHandler = dataHandlers[0].args[1];
+
+      // Create oversized data (over 500MB limit)
+      const oversizedData = Buffer.alloc(500 * 1024 * 1024 + 1);
+
+      dataHandler(oversizedData);
+
+      expect(
+        mockStream.stderr.write.calledWith(sinon.match(/Pack data exceeds maximum size limit/)),
+      ).to.be.true;
+      expect(mockStream.exit.calledWith(1)).to.be.true;
+      expect(mockStream.end.calledOnce).to.be.true;
+    });
+
+    it('should handle pack data capture timeout', () => {
+      // Start push operation
+      server.handlePushOperation(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-receive-pack',
+      );
+
+      // Fast-forward 5 minutes to trigger timeout
+      clock.tick(300001);
+
+      expect(mockStream.stderr.write.calledWith('Error: Pack data capture timeout\n')).to.be.true;
+      expect(mockStream.exit.calledWith(1)).to.be.true;
+      expect(mockStream.end.calledOnce).to.be.true;
+    });
+
+    it('should handle invalid data types during capture', () => {
+      // Start push operation
+      server.handlePushOperation(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-receive-pack',
+      );
+
+      // Get data handler
+      const dataHandlers = mockStream.on.getCalls().filter((call) => call.args[0] === 'data');
+      const dataHandler = dataHandlers[0].args[1];
+
+      // Send invalid data type
+      dataHandler('invalid-string-data');
+
+      expect(mockStream.stderr.write.calledWith('Error: Invalid data format received\n')).to.be
+        .true;
+      expect(mockStream.exit.calledWith(1)).to.be.true;
+      expect(mockStream.end.calledOnce).to.be.true;
+    });
+
+    it('should handle pack data corruption detection', (done) => {
+      mockChain.executeChain.resolves({ error: false, blocked: false });
+
+      // Start push operation
+      server.handlePushOperation(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-receive-pack',
+      );
+
+      // Get data handler
+      const dataHandlers = mockStream.on.getCalls().filter((call) => call.args[0] === 'data');
+      const dataHandler = dataHandlers[0].args[1];
+
+      // Simulate data chunks
+      dataHandler(Buffer.from('test-data'));
+
+      // Mock Buffer.concat to simulate corruption
+      const originalConcat = Buffer.concat;
+      Buffer.concat = sinon.stub().returns(Buffer.from('corrupted'));
+
+      // Simulate stream end
+      const endHandlers = mockStream.once.getCalls().filter((call) => call.args[0] === 'end');
+      const endHandler = endHandlers[0].args[1];
+
+      endHandler()
+        .then(() => {
+          // This should not be reached due to corruption detection
+          done(new Error('Expected corruption detection to fail'));
+        })
+        .catch(() => {
+          expect(mockStream.stderr.write.calledWith(sinon.match(/Failed to process pack data/))).to
+            .be.true;
+          expect(mockStream.exit.calledWith(1)).to.be.true;
+          expect(mockStream.end.calledOnce).to.be.true;
+
+          // Restore original function
+          Buffer.concat = originalConcat;
+          done();
+        });
+    });
+
+    it('should handle empty pack data for pushes', (done) => {
+      mockChain.executeChain.resolves({ error: false, blocked: false });
+      sinon.stub(server, 'forwardPackDataToRemote').resolves();
+
+      // Start push operation
+      server.handlePushOperation(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-receive-pack',
+      );
+
+      // Simulate stream end without any data
+      const endHandlers = mockStream.once.getCalls().filter((call) => call.args[0] === 'end');
+      const endHandler = endHandlers[0].args[1];
+
+      endHandler()
+        .then(() => {
+          // Should still execute chain with null body for empty pushes
+          expect(mockChain.executeChain.calledOnce).to.be.true;
+          const capturedReq = mockChain.executeChain.firstCall.args[0];
+          expect(capturedReq.body).to.be.null;
+          expect(capturedReq.bodyRaw).to.be.null;
+
+          expect(server.forwardPackDataToRemote.calledOnce).to.be.true;
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should handle chain execution failures for push operations', (done) => {
+      mockChain.executeChain.resolves({ error: true, errorMessage: 'Security scan failed' });
+
+      // Start push operation
+      server.handlePushOperation(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-receive-pack',
+      );
+
+      // Simulate stream end
+      const endHandlers = mockStream.once.getCalls().filter((call) => call.args[0] === 'end');
+      const endHandler = endHandlers[0].args[1];
+
+      endHandler()
+        .then(() => {
+          expect(mockStream.stderr.write.calledWith('Access denied: Security scan failed\n')).to.be
+            .true;
+          expect(mockStream.exit.calledWith(1)).to.be.true;
+          expect(mockStream.end.calledOnce).to.be.true;
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should execute chain immediately for pull operations', async () => {
+      mockChain.executeChain.resolves({ error: false, blocked: false });
+      sinon.stub(server, 'connectToRemoteGitServer').resolves();
+
+      await server.handlePullOperation(
+        "git-upload-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-upload-pack',
+      );
+
+      // Chain should be executed immediately without pack data capture
+      expect(mockChain.executeChain.calledOnce).to.be.true;
+      const capturedReq = mockChain.executeChain.firstCall.args[0];
+      expect(capturedReq.method).to.equal('GET');
+      expect(capturedReq.body).to.be.null;
+      expect(capturedReq.headers['content-type']).to.equal('application/x-git-upload-pack-request');
+
+      expect(server.connectToRemoteGitServer.calledOnce).to.be.true;
+    });
+
+    it('should handle pull operation chain failures', async () => {
+      mockChain.executeChain.resolves({ blocked: true, blockedMessage: 'Pull access denied' });
+
+      await server.handlePullOperation(
+        "git-upload-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-upload-pack',
+      );
+
+      expect(mockStream.stderr.write.calledWith('Access denied: Pull access denied\n')).to.be.true;
+      expect(mockStream.exit.calledWith(1)).to.be.true;
+      expect(mockStream.end.calledOnce).to.be.true;
+    });
+
+    it('should handle pull operation chain exceptions', async () => {
+      mockChain.executeChain.rejects(new Error('Chain threw exception'));
+
+      await server.handlePullOperation(
+        "git-upload-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-upload-pack',
+      );
+
+      expect(mockStream.stderr.write.calledWith('Access denied: Chain threw exception\n')).to.be
+        .true;
+      expect(mockStream.exit.calledWith(1)).to.be.true;
+      expect(mockStream.end.calledOnce).to.be.true;
+    });
+
+    it('should handle chain execution exceptions during push', (done) => {
+      mockChain.executeChain.rejects(new Error('Security chain exception'));
+
+      // Start push operation
+      server.handlePushOperation(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-receive-pack',
+      );
+
+      // Simulate stream end
+      const endHandlers = mockStream.once.getCalls().filter((call) => call.args[0] === 'end');
+      const endHandler = endHandlers[0].args[1];
+
+      endHandler()
+        .then(() => {
+          expect(
+            mockStream.stderr.write.calledWith(
+              'Access denied: Security chain execution failed: Security chain exception\n',
+            ),
+          ).to.be.true;
+          expect(mockStream.exit.calledWith(1)).to.be.true;
+          expect(mockStream.end.calledOnce).to.be.true;
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should handle forwarding errors during push operation', (done) => {
+      mockChain.executeChain.resolves({ error: false, blocked: false });
+      sinon.stub(server, 'forwardPackDataToRemote').rejects(new Error('Remote forwarding failed'));
+
+      // Start push operation
+      server.handlePushOperation(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-receive-pack',
+      );
+
+      // Simulate stream end
+      const endHandlers = mockStream.once.getCalls().filter((call) => call.args[0] === 'end');
+      const endHandler = endHandlers[0].args[1];
+
+      endHandler()
+        .then(() => {
+          expect(
+            mockStream.stderr.write.calledWith(
+              'Error forwarding to remote: Remote forwarding failed\n',
+            ),
+          ).to.be.true;
+          expect(mockStream.exit.calledWith(1)).to.be.true;
+          expect(mockStream.end.calledOnce).to.be.true;
+          done();
+        })
+        .catch(done);
+    });
+
+    it('should clear timeout when error occurs during push', () => {
+      // Start push operation
+      server.handlePushOperation(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-receive-pack',
+      );
+
+      // Get error handler
+      const errorHandlers = mockStream.on.getCalls().filter((call) => call.args[0] === 'error');
+      const errorHandler = errorHandlers[0].args[1];
+
+      // Trigger error
+      errorHandler(new Error('Stream error'));
+
+      expect(mockStream.stderr.write.calledWith('Stream error: Stream error\n')).to.be.true;
+      expect(mockStream.exit.calledWith(1)).to.be.true;
+      expect(mockStream.end.calledOnce).to.be.true;
+    });
+
+    it('should clear timeout when stream ends normally', (done) => {
+      mockChain.executeChain.resolves({ error: false, blocked: false });
+      sinon.stub(server, 'forwardPackDataToRemote').resolves();
+
+      // Start push operation
+      server.handlePushOperation(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        'test/repo',
+        'git-receive-pack',
+      );
+
+      // Simulate stream end
+      const endHandlers = mockStream.once.getCalls().filter((call) => call.args[0] === 'end');
+      const endHandler = endHandlers[0].args[1];
+
+      endHandler()
+        .then(() => {
+          // Verify the timeout was cleared (no timeout should fire after this)
+          clock.tick(300001);
+          // If timeout was properly cleared, no timeout error should occur
+          done();
+        })
+        .catch(done);
+    });
+  });
+
+  describe('forwardPackDataToRemote functionality', () => {
+    let mockClient;
+    let mockStream;
+    let mockSsh2Client;
+    let mockRemoteStream;
+
+    beforeEach(() => {
+      mockClient = {
+        authenticatedUser: {
+          username: 'test-user',
+          email: 'test@example.com',
+          gitAccount: 'testgit',
+        },
+        clientIp: '127.0.0.1',
+      };
+      mockStream = {
+        write: sinon.stub(),
+        stderr: { write: sinon.stub() },
+        exit: sinon.stub(),
+        end: sinon.stub(),
+      };
+
+      mockSsh2Client = {
+        on: sinon.stub(),
+        connect: sinon.stub(),
+        exec: sinon.stub(),
+        end: sinon.stub(),
+      };
+
+      mockRemoteStream = {
+        on: sinon.stub(),
+        write: sinon.stub(),
+        end: sinon.stub(),
+        destroy: sinon.stub(),
+      };
+
+      const { Client } = require('ssh2');
+      sinon.stub(Client.prototype, 'on').callsFake(mockSsh2Client.on);
+      sinon.stub(Client.prototype, 'connect').callsFake(mockSsh2Client.connect);
+      sinon.stub(Client.prototype, 'exec').callsFake(mockSsh2Client.exec);
+      sinon.stub(Client.prototype, 'end').callsFake(mockSsh2Client.end);
+    });
+
+    it('should successfully forward pack data to remote', async () => {
+      const packData = Buffer.from('test-pack-data');
+
+      // Mock successful connection and exec
+      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
+        mockSsh2Client.exec.callsFake((command, execCallback) => {
+          execCallback(null, mockRemoteStream);
+        });
+        callback();
+      });
+
+      // Mock stream close to resolve promise
+      mockRemoteStream.on.withArgs('close').callsFake((event, callback) => {
+        setImmediate(callback);
+      });
+
+      const promise = server.forwardPackDataToRemote(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        packData,
+      );
+
+      await promise;
+
+      expect(mockRemoteStream.write.calledWith(packData)).to.be.true;
+      expect(mockRemoteStream.end.calledOnce).to.be.true;
+    });
+
+    it('should handle null pack data gracefully', async () => {
+      // Mock successful connection and exec
+      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
+        mockSsh2Client.exec.callsFake((command, execCallback) => {
+          execCallback(null, mockRemoteStream);
+        });
+        callback();
+      });
+
+      // Mock stream close to resolve promise
+      mockRemoteStream.on.withArgs('close').callsFake((event, callback) => {
+        setImmediate(callback);
+      });
+
+      const promise = server.forwardPackDataToRemote(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        null,
+      );
+
+      await promise;
+
+      expect(mockRemoteStream.write.called).to.be.false; // No data to write
+      expect(mockRemoteStream.end.calledOnce).to.be.true;
+    });
+
+    it('should handle empty pack data', async () => {
+      const emptyPackData = Buffer.alloc(0);
+
+      // Mock successful connection and exec
+      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
+        mockSsh2Client.exec.callsFake((command, execCallback) => {
+          execCallback(null, mockRemoteStream);
+        });
+        callback();
+      });
+
+      // Mock stream close to resolve promise
+      mockRemoteStream.on.withArgs('close').callsFake((event, callback) => {
+        setImmediate(callback);
+      });
+
+      const promise = server.forwardPackDataToRemote(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        emptyPackData,
+      );
+
+      await promise;
+
+      expect(mockRemoteStream.write.called).to.be.false; // Empty data not written
+      expect(mockRemoteStream.end.calledOnce).to.be.true;
+    });
+
+    it('should handle missing proxy URL in forwarding', async () => {
+      mockConfig.getProxyUrl.returns(null);
+
+      try {
+        await server.forwardPackDataToRemote(
+          "git-receive-pack 'test/repo'",
+          mockStream,
+          mockClient,
+          Buffer.from('data'),
+        );
+      } catch (error) {
+        expect(error.message).to.equal('No proxy URL configured');
+        expect(mockStream.stderr.write.calledWith('Configuration error: No proxy URL configured\n'))
+          .to.be.true;
+        expect(mockStream.exit.calledWith(1)).to.be.true;
+        expect(mockStream.end.calledOnce).to.be.true;
+      }
+    });
+
+    it('should handle remote exec errors in forwarding', async () => {
+      // Mock connection ready but exec failure
+      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
+        mockSsh2Client.exec.callsFake((command, execCallback) => {
+          execCallback(new Error('Remote exec failed'));
+        });
+        callback();
+      });
+
+      try {
+        await server.forwardPackDataToRemote(
+          "git-receive-pack 'test/repo'",
+          mockStream,
+          mockClient,
+          Buffer.from('data'),
+        );
+      } catch (error) {
+        expect(error.message).to.equal('Remote exec failed');
+        expect(mockStream.stderr.write.calledWith('Remote execution error: Remote exec failed\n'))
+          .to.be.true;
+        expect(mockStream.exit.calledWith(1)).to.be.true;
+        expect(mockStream.end.calledOnce).to.be.true;
+      }
+    });
+
+    it('should handle remote connection errors in forwarding', async () => {
+      // Mock connection error
+      mockSsh2Client.on.withArgs('error').callsFake((event, callback) => {
+        callback(new Error('Connection to remote failed'));
+      });
+
+      try {
+        await server.forwardPackDataToRemote(
+          "git-receive-pack 'test/repo'",
+          mockStream,
+          mockClient,
+          Buffer.from('data'),
+        );
+      } catch (error) {
+        expect(error.message).to.equal('Connection to remote failed');
+        expect(
+          mockStream.stderr.write.calledWith('Connection error: Connection to remote failed\n'),
+        ).to.be.true;
+        expect(mockStream.exit.calledWith(1)).to.be.true;
+        expect(mockStream.end.calledOnce).to.be.true;
+      }
+    });
+
+    it('should handle remote stream errors in forwarding', async () => {
+      // Mock successful connection and exec
+      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
+        mockSsh2Client.exec.callsFake((command, execCallback) => {
+          execCallback(null, mockRemoteStream);
+        });
+        callback();
+      });
+
+      // Mock remote stream error
+      mockRemoteStream.on.withArgs('error').callsFake((event, callback) => {
+        callback(new Error('Remote stream error'));
+      });
+
+      try {
+        await server.forwardPackDataToRemote(
+          "git-receive-pack 'test/repo'",
+          mockStream,
+          mockClient,
+          Buffer.from('data'),
+        );
+      } catch (error) {
+        expect(error.message).to.equal('Remote stream error');
+        expect(mockStream.stderr.write.calledWith('Stream error: Remote stream error\n')).to.be
+          .true;
+        expect(mockStream.exit.calledWith(1)).to.be.true;
+        expect(mockStream.end.calledOnce).to.be.true;
+      }
+    });
+
+    it('should handle forwarding timeout', async () => {
+      const clock = sinon.useFakeTimers();
+
+      const promise = server.forwardPackDataToRemote(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        Buffer.from('data'),
+      );
+
+      // Fast-forward to trigger timeout
+      clock.tick(30001);
+
+      try {
+        await promise;
+      } catch (error) {
+        expect(error.message).to.equal('Connection timeout');
+        expect(mockStream.stderr.write.calledWith('Connection timeout to remote server\n')).to.be
+          .true;
+        expect(mockStream.exit.calledWith(1)).to.be.true;
+        expect(mockStream.end.calledOnce).to.be.true;
+      }
+
+      clock.restore();
+    });
+
+    it('should handle remote stream data forwarding to client', async () => {
+      const packData = Buffer.from('test-pack-data');
+      const remoteResponseData = Buffer.from('remote-response');
+
+      // Mock successful connection and exec
+      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
+        mockSsh2Client.exec.callsFake((command, execCallback) => {
+          execCallback(null, mockRemoteStream);
+        });
+        callback();
+      });
+
+      // Mock stream close to resolve promise after data handling
+      mockRemoteStream.on.withArgs('close').callsFake((event, callback) => {
+        setImmediate(callback);
+      });
+
+      const promise = server.forwardPackDataToRemote(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        packData,
+      );
+
+      // Simulate remote sending data back
+      const remoteDataHandler = mockRemoteStream.on.withArgs('data').firstCall?.args[1];
+      if (remoteDataHandler) {
+        remoteDataHandler(remoteResponseData);
+        expect(mockStream.write.calledWith(remoteResponseData)).to.be.true;
+      }
+
+      await promise;
+
+      expect(mockRemoteStream.write.calledWith(packData)).to.be.true;
+      expect(mockRemoteStream.end.calledOnce).to.be.true;
+    });
+
+    it('should handle remote stream exit events in forwarding', async () => {
+      const packData = Buffer.from('test-pack-data');
+
+      // Mock successful connection and exec
+      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
+        mockSsh2Client.exec.callsFake((command, execCallback) => {
+          execCallback(null, mockRemoteStream);
+        });
+        callback();
+      });
+
+      // Mock stream exit to resolve promise
+      mockRemoteStream.on.withArgs('exit').callsFake((event, callback) => {
+        setImmediate(() => callback(0, 'SIGTERM'));
+      });
+
+      const promise = server.forwardPackDataToRemote(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        packData,
+      );
+
+      await promise;
+
+      expect(mockStream.exit.calledWith(0)).to.be.true;
+      expect(mockRemoteStream.write.calledWith(packData)).to.be.true;
+    });
+
+    it('should clear timeout when remote connection succeeds', async () => {
+      const clock = sinon.useFakeTimers();
+
+      // Mock successful connection
+      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
+        mockSsh2Client.exec.callsFake((command, execCallback) => {
+          execCallback(null, mockRemoteStream);
+        });
+        callback();
+      });
+
+      // Mock stream close to resolve promise
+      mockRemoteStream.on.withArgs('close').callsFake((event, callback) => {
+        setImmediate(callback);
+      });
+
+      const promise = server.forwardPackDataToRemote(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        Buffer.from('data'),
+      );
+
+      // Fast-forward past timeout time - should not timeout since connection succeeded
+      clock.tick(30001);
+
+      await promise;
+
+      // Should not have timed out
+      expect(mockStream.stderr.write.calledWith('Connection timeout to remote server\n')).to.be
+        .false;
+
+      clock.restore();
+    });
+  });
 });
