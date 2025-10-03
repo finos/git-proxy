@@ -79,6 +79,10 @@ export interface GitProxyConfig {
    */
   sink?: Database[];
   /**
+   * SSH proxy server configuration
+   */
+  ssh?: SSH;
+  /**
    * Deprecated: Path to SSL certificate file (use tls.cert instead)
    */
   sslCertPemPath?: string;
@@ -292,6 +296,40 @@ export interface Database {
   options?: { [key: string]: any };
   params?: { [key: string]: any };
   type: string;
+  [property: string]: any;
+}
+
+/**
+ * SSH proxy server configuration
+ */
+export interface SSH {
+  /**
+   * Enable SSH proxy server
+   */
+  enabled: boolean;
+  /**
+   * SSH host key configuration
+   */
+  hostKey?: HostKey;
+  /**
+   * Port for SSH proxy server to listen on
+   */
+  port?: number;
+  [property: string]: any;
+}
+
+/**
+ * SSH host key configuration
+ */
+export interface HostKey {
+  /**
+   * Path to private SSH host key
+   */
+  privateKeyPath: string;
+  /**
+   * Path to public SSH host key
+   */
+  publicKeyPath: string;
   [property: string]: any;
 }
 
@@ -542,6 +580,7 @@ const typeMap: any = {
       { json: 'rateLimit', js: 'rateLimit', typ: u(undefined, r('RateLimit')) },
       { json: 'sessionMaxAgeHours', js: 'sessionMaxAgeHours', typ: u(undefined, 3.14) },
       { json: 'sink', js: 'sink', typ: u(undefined, a(r('Database'))) },
+      { json: 'ssh', js: 'ssh', typ: u(undefined, r('SSH')) },
       { json: 'sslCertPemPath', js: 'sslCertPemPath', typ: u(undefined, '') },
       { json: 'sslKeyPemPath', js: 'sslKeyPemPath', typ: u(undefined, '') },
       { json: 'tempPassword', js: 'tempPassword', typ: u(undefined, r('TempPassword')) },
@@ -633,6 +672,21 @@ const typeMap: any = {
       { json: 'options', js: 'options', typ: u(undefined, m('any')) },
       { json: 'params', js: 'params', typ: u(undefined, m('any')) },
       { json: 'type', js: 'type', typ: '' },
+    ],
+    'any',
+  ),
+  SSH: o(
+    [
+      { json: 'enabled', js: 'enabled', typ: true },
+      { json: 'hostKey', js: 'hostKey', typ: u(undefined, r('HostKey')) },
+      { json: 'port', js: 'port', typ: u(undefined, 3.14) },
+    ],
+    'any',
+  ),
+  HostKey: o(
+    [
+      { json: 'privateKeyPath', js: 'privateKeyPath', typ: '' },
+      { json: 'publicKeyPath', js: 'publicKeyPath', typ: '' },
     ],
     'any',
   ),
