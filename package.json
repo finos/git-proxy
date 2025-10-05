@@ -2,6 +2,40 @@
   "name": "@finos/git-proxy",
   "version": "2.0.0-rc.3",
   "description": "Deploy custom push protections and policies on top of Git.",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "require": "./index.js",
+      "types": "./index.d.ts"
+    },
+    "./config": {
+      "import": "./src/config/index.js",
+      "require": "./src/config/index.js",
+      "types": "./src/config/index.d.ts"
+    },
+    "./db": {
+      "import": "./src/db/index.js",
+      "require": "./src/db/index.js",
+      "types": "./src/db/index.d.ts"
+    },
+    "./proxy": {
+      "import": "./src/proxy/index.js",
+      "require": "./src/proxy/index.js",
+      "types": "./src/proxy/index.d.ts"
+    },
+    "./types": {
+      "import": "./src/types/models.js",
+      "require": "./src/types/models.js",
+      "types": "./src/types/models.d.ts"
+    },
+    "./plugin": {
+      "import": "./src/plugin.ts",
+      "require": "./src/plugin.ts",
+      "types": "./src/plugin.d.ts"
+    }
+  },
   "scripts": {
     "cli": "node ./packages/git-proxy-cli/index.js",
     "client": "vite --config vite.config.ts",
