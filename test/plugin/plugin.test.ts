@@ -93,7 +93,7 @@ describe.skip('loading plugins from packages', { timeout: 10000 }, () => {
 
 describe('plugin functions', () => {
   it('should return true for isCompatiblePlugin', () => {
-    const plugin = new PushActionPlugin();
+    const plugin = new PushActionPlugin(async () => {});
     expect(isCompatiblePlugin(plugin)).toBe(true);
     expect(isCompatiblePlugin(plugin, 'isGitProxyPushActionPlugin')).toBe(true);
   });

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import fc from 'fast-check';
 
 import { exec } from '../../src/proxy/processors/push-action/blockForAuth';
 import { Step, Action } from '../../src/proxy/actions';
@@ -55,5 +56,16 @@ describe('blockForAuth.exec', () => {
 
   it('should set exec.displayName properly', () => {
     expect(exec.displayName).toBe('blockForAuth.exec');
+  });
+
+  describe('fuzzing', () => {
+    it('should not crash on random req', () => {
+      fc.assert(
+        fc.property(fc.anything(), (req) => {
+          exec(req, mockAction);
+        }),
+        { numRuns: 1000 },
+      );
+    });
   });
 });
