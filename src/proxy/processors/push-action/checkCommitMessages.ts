@@ -1,51 +1,55 @@
 import { Action, Step } from '../../actions';
 import { getCommitConfig } from '../../../config';
 
-const commitConfig = getCommitConfig();
-
 const isMessageAllowed = (commitMessage: string): boolean => {
-  console.log(`isMessageAllowed(${commitMessage})`);
+  try {
+    const commitConfig = getCommitConfig();
 
-  // Commit message is empty, i.e. '', null or undefined
-  if (!commitMessage) {
-    console.log('No commit message included...');
+    console.log(`isMessageAllowed(${commitMessage})`);
+
+    // Commit message is empty, i.e. '', null or undefined
+    if (!commitMessage) {
+      console.log('No commit message included...');
+      return false;
+    }
+
+    // Validation for configured block pattern(s) check...
+    if (typeof commitMessage !== 'string') {
+      console.log('A non-string value has been captured for the commit message...');
+      return false;
+    }
+
+    // Configured blocked literals
+    const blockedLiterals: string[] = commitConfig.message.block.literals;
+
+    // Configured blocked patterns
+    const blockedPatterns: string[] = commitConfig.message.block.patterns;
+
+    // Find all instances of blocked literals in commit message...
+    const positiveLiterals = blockedLiterals.map((literal: string) =>
+      commitMessage.toLowerCase().includes(literal.toLowerCase()),
+    );
+
+    // Find all instances of blocked patterns in commit message...
+    const positivePatterns = blockedPatterns.map((pattern: string) =>
+      commitMessage.match(new RegExp(pattern, 'gi')),
+    );
+
+    // Flatten any positive literal results into a 1D array...
+    const literalMatches = positiveLiterals.flat().filter((result) => !!result);
+
+    // Flatten any positive pattern results into a 1D array...
+    const patternMatches = positivePatterns.flat().filter((result) => !!result);
+
+    // Commit message matches configured block pattern(s)
+    if (literalMatches.length || patternMatches.length) {
+      console.log('Commit message is blocked via configured literals/patterns...');
+      return false;
+    }
+  } catch (error) {
+    console.log('Invalid regex pattern...');
     return false;
   }
-
-  // Validation for configured block pattern(s) check...
-  if (typeof commitMessage !== 'string') {
-    console.log('A non-string value has been captured for the commit message...');
-    return false;
-  }
-
-  // Configured blocked literals
-  const blockedLiterals: string[] = commitConfig.message.block.literals;
-
-  // Configured blocked patterns
-  const blockedPatterns: string[] = commitConfig.message.block.patterns;
-
-  // Find all instances of blocked literals in commit message...
-  const positiveLiterals = blockedLiterals.map((literal: string) =>
-    commitMessage.toLowerCase().includes(literal.toLowerCase()),
-  );
-
-  // Find all instances of blocked patterns in commit message...
-  const positivePatterns = blockedPatterns.map((pattern: string) =>
-    commitMessage.match(new RegExp(pattern, 'gi')),
-  );
-
-  // Flatten any positive literal results into a 1D array...
-  const literalMatches = positiveLiterals.flat().filter((result) => !!result);
-
-  // Flatten any positive pattern results into a 1D array...
-  const patternMatches = positivePatterns.flat().filter((result) => !!result);
-
-  // Commit message matches configured block pattern(s)
-  if (literalMatches.length || patternMatches.length) {
-    console.log('Commit message is blocked via configured literals/patterns...');
-    return false;
-  }
-
   return true;
 };
 

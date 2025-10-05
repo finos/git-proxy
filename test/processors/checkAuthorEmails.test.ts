@@ -44,7 +44,7 @@ describe('checkAuthorEmails', () => {
           },
         },
       },
-    } as any);
+    });
 
     // mock console.log to suppress output and verify calls
     consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
