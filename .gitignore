@@ -271,3 +271,6 @@ website/.docusaurus
 .idea
 
 .claude/
+
+# Test SSH keys (generated during tests)
+test/keys/
