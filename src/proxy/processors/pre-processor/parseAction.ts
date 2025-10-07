@@ -16,6 +16,17 @@ const exec = async (req: {
       keyData: Buffer;
     };
   };
+  authContext?: {
+    cloneServiceToken?: {
+      username: string;
+      password: string;
+    };
+    sshKey?: {
+      keyType?: string;
+      keyData?: Buffer;
+      privateKey?: Buffer;
+    };
+  };
 }) => {
   const id = Date.now();
   const timestamp = id;

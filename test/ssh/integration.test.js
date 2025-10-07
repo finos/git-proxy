@@ -63,6 +63,7 @@ describe('SSH Pack Data Capture Integration Tests', () => {
     // Stub dependencies
     sinon.stub(config, 'getSSHConfig').callsFake(mockConfig.getSSHConfig);
     sinon.stub(config, 'getProxyUrl').callsFake(mockConfig.getProxyUrl);
+    sinon.stub(config, 'getMaxPackSizeBytes').returns(500 * 1024 * 1024);
     sinon.stub(db, 'findUserBySSHKey').callsFake(mockDb.findUserBySSHKey);
     sinon.stub(db, 'findUser').callsFake(mockDb.findUser);
     sinon.stub(chain.default, 'executeChain').callsFake(mockChain.executeChain);

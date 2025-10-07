@@ -16,6 +16,9 @@
       "url": "https://github.com/finos/git-proxy.git"
     }
   ],
+  "limits": {
+    "maxPackSizeBytes": 1073741824
+  },
   "sink": [
     {
       "type": "fs",
@@ -189,6 +192,12 @@
     "hostKey": {
       "privateKeyPath": "test/.ssh/host_key",
       "publicKeyPath": "test/.ssh/host_key.pub"
+    },
+    "clone": {
+      "serviceToken": {
+        "username": "",
+        "password": ""
+      }
     }
   }
 }

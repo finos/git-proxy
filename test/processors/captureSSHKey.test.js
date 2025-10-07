@@ -13,6 +13,8 @@ describe('captureSSHKey', () => {
   let req;
   let stepInstance;
   let StepSpy;
+  let addSSHKeyForPushStub;
+  let encryptSSHKeyStub;
 
   beforeEach(() => {
     req = {
@@ -42,8 +44,24 @@ describe('captureSSHKey', () => {
 
     StepSpy = sinon.stub().returns(stepInstance);
 
+    addSSHKeyForPushStub = sinon.stub().returns(true);
+    encryptSSHKeyStub = sinon.stub().returns({
+      encryptedKey: 'encrypted-key',
+      expiryTime: new Date('2020-01-01T00:00:00Z'),
+    });
+
     const captureSSHKey = proxyquire('../../src/proxy/processors/push-action/captureSSHKey', {
       '../../actions': { Step: StepSpy },
+      '../../../service/SSHKeyForwardingService': {
+        SSHKeyForwardingService: {
+          addSSHKeyForPush: addSSHKeyForPushStub,
+        },
+      },
+      '../../../security/SSHKeyManager': {
+        SSHKeyManager: {
+          encryptSSHKey: encryptSSHKeyStub,
+        },
+      },
     });
 
     exec = captureSSHKey.exec;
@@ -72,6 +90,13 @@ describe('captureSSHKey', () => {
         expect(stepInstance.log.secondCall.args[0]).to.equal(
           'SSH key information stored for approval process',
         );
+        expect(addSSHKeyForPushStub.calledOnce).to.be.true;
+        expect(addSSHKeyForPushStub.firstCall.args[0]).to.equal('push_123');
+        expect(Buffer.isBuffer(addSSHKeyForPushStub.firstCall.args[1])).to.be.true;
+        expect(Buffer.isBuffer(addSSHKeyForPushStub.firstCall.args[2])).to.be.true;
+        expect(encryptSSHKeyStub.calledOnce).to.be.true;
+        expect(action.encryptedSSHKey).to.equal('encrypted-key');
+        expect(action.sshKeyExpiry.toISOString()).to.equal('2020-01-01T00:00:00.000Z');
       });
 
       it('should set action user from SSH user', async () => {
@@ -137,6 +162,8 @@ describe('captureSSHKey', () => {
           'Skipping SSH key capture - not an SSH push requiring approval',
         );
         expect(action.user).to.be.undefined;
+        expect(addSSHKeyForPushStub.called).to.be.false;
+        expect(encryptSSHKeyStub.called).to.be.false;
       });
 
       it('should skip when no SSH user provided', async () => {
@@ -176,6 +203,8 @@ describe('captureSSHKey', () => {
           'No SSH key information available for capture',
         );
         expect(action.user).to.be.undefined;
+        expect(addSSHKeyForPushStub.called).to.be.false;
+        expect(encryptSSHKeyStub.called).to.be.false;
       });
 
       it('should skip when SSH user has null key info', async () => {
@@ -191,6 +220,8 @@ describe('captureSSHKey', () => {
           'No SSH key information available for capture',
         );
         expect(action.user).to.be.undefined;
+        expect(addSSHKeyForPushStub.called).to.be.false;
+        expect(encryptSSHKeyStub.called).to.be.false;
       });
 
       it('should skip when SSH user has undefined key info', async () => {
@@ -206,6 +237,8 @@ describe('captureSSHKey', () => {
           'No SSH key information available for capture',
         );
         expect(action.user).to.be.undefined;
+        expect(addSSHKeyForPushStub.called).to.be.false;
+        expect(encryptSSHKeyStub.called).to.be.false;
       });
 
       it('should add step to action even when skipping', async () => {

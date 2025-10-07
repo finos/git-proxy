@@ -61,6 +61,9 @@ class Action {
       keyData: Buffer;
     };
   };
+  pullAuthStrategy?: 'basic' | 'ssh-user-key' | 'ssh-service-token' | 'anonymous';
+  encryptedSSHKey?: string;
+  sshKeyExpiry?: Date;
 
   /**
    * Create an action.

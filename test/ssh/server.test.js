@@ -90,6 +90,7 @@ describe('SSHServer', () => {
     // Replace the real modules with our stubs
     sinon.stub(config, 'getSSHConfig').callsFake(mockConfig.getSSHConfig);
     sinon.stub(config, 'getProxyUrl').callsFake(mockConfig.getProxyUrl);
+    sinon.stub(config, 'getMaxPackSizeBytes').returns(1024 * 1024 * 1024);
     sinon.stub(db, 'findUserBySSHKey').callsFake(mockDb.findUserBySSHKey);
     sinon.stub(db, 'findUser').callsFake(mockDb.findUser);
     sinon.stub(chain.default, 'executeChain').callsFake(mockChain.executeChain);
@@ -1614,6 +1615,7 @@ describe('SSHServer', () => {
     });
 
     it('should handle pack data size limits', () => {
+      config.getMaxPackSizeBytes.returns(1024); // 1KB limit
       // Start push operation
       server.handlePushOperation(
         "git-receive-pack 'test/repo'",
@@ -1627,8 +1629,8 @@ describe('SSHServer', () => {
       const dataHandlers = mockStream.on.getCalls().filter((call) => call.args[0] === 'data');
       const dataHandler = dataHandlers[0].args[1];
 
-      // Create oversized data (over 500MB limit)
-      const oversizedData = Buffer.alloc(500 * 1024 * 1024 + 1);
+      // Create oversized data (over 1KB limit)
+      const oversizedData = Buffer.alloc(2048);
 
       dataHandler(oversizedData);
 
@@ -1946,6 +1948,8 @@ describe('SSHServer', () => {
     let mockStream;
     let mockSsh2Client;
     let mockRemoteStream;
+    let mockAgent;
+    let decryptSSHKeyStub;
 
     beforeEach(() => {
       mockClient = {
@@ -1982,6 +1986,106 @@ describe('SSHServer', () => {
       sinon.stub(Client.prototype, 'connect').callsFake(mockSsh2Client.connect);
       sinon.stub(Client.prototype, 'exec').callsFake(mockSsh2Client.exec);
       sinon.stub(Client.prototype, 'end').callsFake(mockSsh2Client.end);
+
+      const { SSHAgent } = require('../../src/security/SSHAgent');
+      const { SSHKeyManager } = require('../../src/security/SSHKeyManager');
+      mockAgent = {
+        getPrivateKey: sinon.stub().returns(null),
+        removeKey: sinon.stub(),
+      };
+      sinon.stub(SSHAgent, 'getInstance').returns(mockAgent);
+      decryptSSHKeyStub = sinon.stub(SSHKeyManager, 'decryptSSHKey').returns(null);
+    });
+
+    it('should use SSH agent key when available', async () => {
+      const packData = Buffer.from('test-pack-data');
+      const agentKey = Buffer.from('agent-key-data');
+      mockAgent.getPrivateKey.returns(agentKey);
+
+      // Mock successful connection and exec
+      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
+        mockSsh2Client.exec.callsFake((command, execCallback) => {
+          execCallback(null, mockRemoteStream);
+        });
+        callback();
+      });
+
+      let closeHandler;
+      mockRemoteStream.on.withArgs('close').callsFake((event, callback) => {
+        closeHandler = callback;
+      });
+
+      const action = {
+        id: 'push-agent',
+        protocol: 'ssh',
+      };
+
+      const promise = server.forwardPackDataToRemote(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        packData,
+        action,
+      );
+
+      const connectionOptions = mockSsh2Client.connect.firstCall.args[0];
+      expect(Buffer.isBuffer(connectionOptions.privateKey)).to.be.true;
+      expect(connectionOptions.privateKey.equals(agentKey)).to.be.true;
+
+      // Complete the stream
+      if (closeHandler) {
+        closeHandler();
+      }
+
+      await promise;
+
+      expect(mockAgent.removeKey.calledWith('push-agent')).to.be.true;
+    });
+
+    it('should use encrypted SSH key when agent key is unavailable', async () => {
+      const packData = Buffer.from('test-pack-data');
+      const decryptedKey = Buffer.from('decrypted-key-data');
+      mockAgent.getPrivateKey.returns(null);
+      decryptSSHKeyStub.returns(decryptedKey);
+
+      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
+        mockSsh2Client.exec.callsFake((command, execCallback) => {
+          execCallback(null, mockRemoteStream);
+        });
+        callback();
+      });
+
+      let closeHandler;
+      mockRemoteStream.on.withArgs('close').callsFake((event, callback) => {
+        closeHandler = callback;
+      });
+
+      const action = {
+        id: 'push-encrypted',
+        protocol: 'ssh',
+        encryptedSSHKey: 'ciphertext',
+        sshKeyExpiry: new Date('2030-01-01T00:00:00Z'),
+      };
+
+      const promise = server.forwardPackDataToRemote(
+        "git-receive-pack 'test/repo'",
+        mockStream,
+        mockClient,
+        packData,
+        action,
+      );
+
+      const connectionOptions = mockSsh2Client.connect.firstCall.args[0];
+      expect(Buffer.isBuffer(connectionOptions.privateKey)).to.be.true;
+      expect(connectionOptions.privateKey.equals(decryptedKey)).to.be.true;
+
+      if (closeHandler) {
+        closeHandler();
+      }
+
+      await promise;
+
+      expect(mockAgent.removeKey.calledWith('push-encrypted')).to.be.true;
     });
 
     it('should successfully forward pack data to remote', async () => {

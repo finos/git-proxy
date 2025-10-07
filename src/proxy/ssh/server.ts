@@ -1,9 +1,13 @@
 import * as ssh2 from 'ssh2';
 import * as fs from 'fs';
 import * as bcrypt from 'bcryptjs';
-import { getSSHConfig, getProxyUrl } from '../../config';
+import { getSSHConfig, getProxyUrl, getMaxPackSizeBytes, getDomains } from '../../config';
+import { serverConfig } from '../../config/env';
 import chain from '../chain';
 import * as db from '../../db';
+import { Action } from '../actions';
+import { SSHAgent } from '../../security/SSHAgent';
+import { SSHKeyManager } from '../../security/SSHKeyManager';
 
 interface SSHUser {
   username: string;
@@ -51,6 +55,111 @@ export class SSHServer {
         this.handleClient(client, { ip: info?.ip, family: info?.family });
       },
     );
+  }
+
+  private resolveHostHeader(): string {
+    const proxyPort = Number(serverConfig.GIT_PROXY_SERVER_PORT) || 8000;
+    const domains = getDomains();
+    const candidateHosts = [
+      typeof domains?.service === 'string' ? domains.service : undefined,
+      typeof serverConfig.GIT_PROXY_UI_HOST === 'string'
+        ? serverConfig.GIT_PROXY_UI_HOST
+        : undefined,
+    ];
+
+    for (const candidate of candidateHosts) {
+      const host = this.extractHostname(candidate);
+      if (host) {
+        return `${host}:${proxyPort}`;
+      }
+    }
+
+    return `localhost:${proxyPort}`;
+  }
+
+  private extractHostname(candidate?: string): string | null {
+    if (!candidate) {
+      return null;
+    }
+
+    const trimmed = candidate.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const attemptParse = (value: string): string | null => {
+      try {
+        const parsed = new URL(value);
+        if (parsed.hostname) {
+          return parsed.hostname;
+        }
+        if (parsed.host) {
+          return parsed.host;
+        }
+      } catch {
+        return null;
+      }
+      return null;
+    };
+
+    // Try parsing the raw string
+    let host = attemptParse(trimmed);
+    if (host) {
+      return host;
+    }
+
+    // Try assuming https scheme if missing
+    host = attemptParse(`https://${trimmed}`);
+    if (host) {
+      return host;
+    }
+
+    // Fallback: remove protocol-like prefixes and trailing paths
+    const withoutScheme = trimmed.replace(/^[a-zA-Z]+:\/\//, '');
+    const withoutPath = withoutScheme.split('/')[0];
+    const hostnameOnly = withoutPath.split(':')[0];
+    return hostnameOnly || null;
+  }
+
+  private buildAuthContext(client: ClientWithUser) {
+    const sshConfig = getSSHConfig();
+    const serviceToken =
+      sshConfig?.clone?.serviceToken &&
+      sshConfig.clone.serviceToken.username &&
+      sshConfig.clone.serviceToken.password
+        ? {
+            username: sshConfig.clone.serviceToken.username,
+            password: sshConfig.clone.serviceToken.password,
+          }
+        : undefined;
+
+    return {
+      protocol: 'ssh' as const,
+      username: client.authenticatedUser?.username,
+      email: client.authenticatedUser?.email,
+      gitAccount: client.authenticatedUser?.gitAccount,
+      sshKey: client.userPrivateKey,
+      clientIp: client.clientIp,
+      cloneServiceToken: serviceToken,
+    };
+  }
+
+  private formatBytes(bytes: number): string {
+    if (!Number.isFinite(bytes) || bytes <= 0) {
+      return `${bytes} bytes`;
+    }
+
+    const units = ['bytes', 'KB', 'MB', 'GB', 'TB'];
+    let value = bytes;
+    let unitIndex = 0;
+
+    while (value >= 1024 && unitIndex < units.length - 1) {
+      value /= 1024;
+      unitIndex++;
+    }
+
+    const precision = unitIndex === 0 ? 0 : 2;
+    return `${value.toFixed(precision)} ${units[unitIndex]}`;
   }
 
   async handleClient(
@@ -333,7 +442,9 @@ export class SSHServer {
     // Create pack data capture buffers
     const packDataChunks: Buffer[] = [];
     let totalBytes = 0;
-    const maxPackSize = 500 * 1024 * 1024; // 500MB limit
+    const maxPackSize = getMaxPackSizeBytes();
+    const maxPackSizeDisplay = this.formatBytes(maxPackSize);
+    const hostHeader = this.resolveHostHeader();
 
     // Set up data capture from client stream
     const dataHandler = (data: Buffer) => {
@@ -347,11 +458,12 @@ export class SSHServer {
         }
 
         if (totalBytes + data.length > maxPackSize) {
+          const attemptedSize = totalBytes + data.length;
           console.error(
-            `[SSH] Pack size limit exceeded: ${totalBytes + data.length} > ${maxPackSize}`,
+            `[SSH] Pack size limit exceeded: ${attemptedSize} (${this.formatBytes(attemptedSize)}) > ${maxPackSize} (${maxPackSizeDisplay})`,
           );
           stream.stderr.write(
-            `Error: Pack data exceeds maximum size limit (${maxPackSize} bytes)\n`,
+            `Error: Pack data exceeds maximum size limit (${maxPackSizeDisplay})\n`,
           );
           stream.exit(1);
           stream.end();
@@ -406,8 +518,10 @@ export class SSHServer {
           headers: {
             'user-agent': 'git/ssh-proxy',
             'content-type': 'application/x-git-receive-pack-request',
-            host: 'ssh-proxy',
+            host: hostHeader,
             'content-length': totalBytes.toString(),
+            'x-forwarded-proto': 'https',
+            'x-forwarded-host': hostHeader,
           },
           body: packData,
           bodyRaw: packData,
@@ -420,6 +534,7 @@ export class SSHServer {
             gitAccount: client.authenticatedUser?.gitAccount,
             sshKeyInfo: client.userPrivateKey,
           },
+          authContext: this.buildAuthContext(client),
         };
 
         // Create mock response object
@@ -441,7 +556,7 @@ export class SSHServer {
 
         // Execute the proxy chain with captured pack data
         console.log(`[SSH] Executing security chain for push operation`);
-        let chainResult;
+        let chainResult: Action;
         try {
           chainResult = await chain.executeChain(req, res);
         } catch (chainExecError) {
@@ -460,7 +575,7 @@ export class SSHServer {
         console.log(`[SSH] Security chain passed, forwarding to remote`);
         // Chain passed, now forward the captured data to remote
         try {
-          await this.forwardPackDataToRemote(command, stream, client, packData);
+          await this.forwardPackDataToRemote(command, stream, client, packData, chainResult);
         } catch (forwardError) {
           console.error(`[SSH] Error forwarding pack data to remote:`, forwardError);
           stream.stderr.write(`Error forwarding to remote: ${forwardError}\n`);
@@ -524,6 +639,7 @@ export class SSHServer {
     gitPath: string,
   ): Promise<void> {
     console.log(`[SSH] Handling pull operation for ${repoPath}`);
+    const hostHeader = this.resolveHostHeader();
 
     // For pull operations, execute chain first (no pack data to capture)
     const req = {
@@ -533,7 +649,9 @@ export class SSHServer {
       headers: {
         'user-agent': 'git/ssh-proxy',
         'content-type': 'application/x-git-upload-pack-request',
-        host: 'ssh-proxy',
+        host: hostHeader,
+        'x-forwarded-proto': 'https',
+        'x-forwarded-host': hostHeader,
       },
       body: null,
       user: client.authenticatedUser || null,
@@ -545,6 +663,7 @@ export class SSHServer {
         gitAccount: client.authenticatedUser?.gitAccount,
         sshKeyInfo: client.userPrivateKey,
       },
+      authContext: this.buildAuthContext(client),
     };
 
     const res = {
@@ -594,6 +713,7 @@ export class SSHServer {
     stream: ssh2.ServerChannel,
     client: ClientWithUser,
     packData: Buffer | null,
+    action?: Action,
   ): Promise<void> {
     return new Promise((resolve, reject) => {
       const userName = client.authenticatedUser?.username || 'unknown';
@@ -614,6 +734,58 @@ export class SSHServer {
       const remoteUrl = new URL(proxyUrl);
       const sshConfig = getSSHConfig();
 
+      const sshAgentInstance = SSHAgent.getInstance();
+      let agentKeyCopy: Buffer | null = null;
+      let decryptedKey: Buffer | null = null;
+
+      if (action?.id) {
+        const agentKey = sshAgentInstance.getPrivateKey(action.id);
+        if (agentKey) {
+          agentKeyCopy = Buffer.from(agentKey);
+        }
+      }
+
+      if (!agentKeyCopy && action?.encryptedSSHKey && action?.sshKeyExpiry) {
+        const expiry = new Date(action.sshKeyExpiry);
+        if (!Number.isNaN(expiry.getTime())) {
+          const decrypted = SSHKeyManager.decryptSSHKey(action.encryptedSSHKey, expiry);
+          if (decrypted) {
+            decryptedKey = decrypted;
+          }
+        }
+      }
+
+      const userPrivateKey = agentKeyCopy ?? decryptedKey;
+      const usingUserKey = Boolean(userPrivateKey);
+      const proxyPrivateKey = fs.readFileSync(sshConfig.hostKey.privateKeyPath);
+
+      if (usingUserKey) {
+        console.log(
+          `[SSH] Using caller SSH key for push ${action?.id ?? 'unknown'} when forwarding to remote`,
+        );
+      } else {
+        console.log(
+          '[SSH] Falling back to proxy SSH key when forwarding to remote (no caller key available)',
+        );
+      }
+
+      let cleanupRan = false;
+      const cleanupForwardingKey = () => {
+        if (cleanupRan) {
+          return;
+        }
+        cleanupRan = true;
+        if (usingUserKey && action?.id) {
+          sshAgentInstance.removeKey(action.id);
+        }
+        if (agentKeyCopy) {
+          agentKeyCopy.fill(0);
+        }
+        if (decryptedKey) {
+          decryptedKey.fill(0);
+        }
+      };
+
       // Set up connection options (same as original connectToRemoteGitServer)
       const connectionOptions: any = {
         host: remoteUrl.hostname,
@@ -625,7 +797,7 @@ export class SSHServer {
         keepaliveCountMax: 5,
         windowSize: 1024 * 1024,
         packetSize: 32768,
-        privateKey: fs.readFileSync(sshConfig.hostKey.privateKeyPath),
+        privateKey: usingUserKey ? (userPrivateKey as Buffer) : proxyPrivateKey,
         debug: (msg: string) => {
           console.debug('[GitHub SSH Debug]', msg);
         },
@@ -663,6 +835,7 @@ export class SSHServer {
             stream.exit(1);
             stream.end();
             remoteGitSsh.end();
+            cleanupForwardingKey();
             reject(err);
             return;
           }
@@ -687,6 +860,7 @@ export class SSHServer {
 
           remoteStream.on('close', () => {
             console.log(`[SSH] Remote stream closed for user: ${userName}`);
+            cleanupForwardingKey();
             stream.end();
             resolve();
           });
@@ -696,6 +870,7 @@ export class SSHServer {
               `[SSH] Remote command exited for user ${userName} with code: ${code}, signal: ${signal || 'none'}`,
             );
             stream.exit(code || 0);
+            cleanupForwardingKey();
             resolve();
           });
 
@@ -704,6 +879,7 @@ export class SSHServer {
             stream.stderr.write(`Stream error: ${err.message}\n`);
             stream.exit(1);
             stream.end();
+            cleanupForwardingKey();
             reject(err);
           });
         });
@@ -715,6 +891,7 @@ export class SSHServer {
         stream.stderr.write(`Connection error: ${err.message}\n`);
         stream.exit(1);
         stream.end();
+        cleanupForwardingKey();
         reject(err);
       });
 
@@ -725,6 +902,7 @@ export class SSHServer {
         stream.stderr.write('Connection timeout to remote server\n');
         stream.exit(1);
         stream.end();
+        cleanupForwardingKey();
         reject(new Error('Connection timeout'));
       }, 30000);
 

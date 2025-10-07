@@ -40,7 +40,21 @@ export class SSHKeyForwardingService {
       }
 
       // Try to get the SSH key from the agent
-      const privateKey = this.sshAgent.getPrivateKey(pushId);
+      let privateKey = this.sshAgent.getPrivateKey(pushId);
+      let decryptedBuffer: Buffer | null = null;
+
+      if (!privateKey && push.encryptedSSHKey && push.sshKeyExpiry) {
+        const expiry = new Date(push.sshKeyExpiry);
+        const decrypted = SSHKeyManager.decryptSSHKey(push.encryptedSSHKey, expiry);
+        if (decrypted) {
+          console.log(
+            `[SSH Forwarding] Retrieved encrypted SSH key for push ${pushId} from storage`,
+          );
+          privateKey = decrypted;
+          decryptedBuffer = decrypted;
+        }
+      }
+
       if (!privateKey) {
         console.warn(
           `[SSH Forwarding] No SSH key available for push ${pushId}, falling back to proxy key`,
@@ -48,8 +62,15 @@ export class SSHKeyForwardingService {
         return await this.executeSSHPushWithProxyKey(push);
       }
 
-      // Execute the push with the user's SSH key
-      return await this.executeSSHPushWithUserKey(push, privateKey);
+      try {
+        // Execute the push with the user's SSH key
+        return await this.executeSSHPushWithUserKey(push, privateKey);
+      } finally {
+        if (decryptedBuffer) {
+          decryptedBuffer.fill(0);
+        }
+        this.removeSSHKeyForPush(pushId);
+      }
     } catch (error) {
       console.error(`[SSH Forwarding] Failed to execute approved push ${pushId}:`, error);
       return false;
