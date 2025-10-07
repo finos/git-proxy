@@ -1,0 +1,50 @@
+{
+  "cookieSecret": "integration-test-cookie-secret",
+  "sessionMaxAgeHours": 12,
+  "rateLimit": {
+    "windowMs": 60000,
+    "limit": 150
+  },
+  "tempPassword": {
+    "sendEmail": false,
+    "emailConfig": {}
+  },
+  "authorisedList": [
+    {
+      "project": "coopernetes",
+      "name": "test-repo",
+      "url": "http://git-server:8080/coopernetes/test-repo.git"
+    },
+    {
+      "project": "finos",
+      "name": "git-proxy",
+      "url": "http://git-server:8080/finos/git-proxy.git"
+    }
+  ],
+  "sink": [
+    {
+      "type": "fs",
+      "params": {
+        "filepath": "./."
+      },
+      "enabled": false
+    },
+    {
+      "type": "mongo",
+      "connectionString": "mongodb://mongodb:27017/gitproxy",
+      "options": {
+        "useNewUrlParser": true,
+        "useUnifiedTopology": true,
+        "tlsAllowInvalidCertificates": false,
+        "ssl": false
+      },
+      "enabled": true
+    }
+  ],
+  "authentication": [
+    {
+      "type": "local",
+      "enabled": true
+    }
+  ]
+}

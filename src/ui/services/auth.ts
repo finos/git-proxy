@@ -2,6 +2,7 @@ import { getCookie } from '../utils';
 import { PublicUser } from '../../db/types';
 import { API_BASE } from '../apiBase';
 import { AxiosError } from 'axios';
+import { getApiBaseUrl } from './runtime-config.js';
 
 interface AxiosConfig {
   withCredentials: boolean;
@@ -10,6 +11,19 @@ interface AxiosConfig {
     Authorization?: string;
   };
 }
+
+// Initialize baseUrl - will be set async
+let baseUrl = location.origin; // Default fallback
+
+// Set the actual baseUrl from runtime config
+getApiBaseUrl()
+  .then((apiUrl) => {
+    baseUrl = apiUrl;
+  })
+  .catch(() => {
+    // Keep the default if runtime config fails
+    console.warn('Using default API base URL for auth');
+  });
 
 /**
  * Gets the current user's information

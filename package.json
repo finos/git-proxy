@@ -54,6 +54,8 @@
     "check-types": "tsc",
     "check-types:server": "tsc --project tsconfig.publish.json --noEmit",
     "test": "NODE_ENV=test vitest --run --dir ./test",
+    "test:e2e": "vitest run --config vitest.config.e2e.ts",
+    "test:e2e:watch": "vitest --config vitest.config.e2e.ts",
     "test-coverage": "NODE_ENV=test vitest --run --dir ./test --coverage",
     "test-coverage-ci": "NODE_ENV=test vitest --run --dir ./test --coverage.enabled=true --coverage.reporter=lcovonly --coverage.reporter=text",
     "test-watch": "NODE_ENV=test vitest --dir ./test --watch",
@@ -167,8 +169,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.1.9",
-    "vitest": "^3.2.4",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
   },
   "optionalDependencies": {
     "@esbuild/darwin-arm64": "^0.27.0",

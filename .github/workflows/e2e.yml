@@ -1,0 +1,68 @@
+name: E2E Tests
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+on:
+  push:
+    branches: [main]
+  issue_comment:
+    types: [created]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    # Run on push/PR or when a maintainer comments "/test e2e" or "/run e2e"
+    if: |
+      github.event_name != 'issue_comment' || (
+        github.event.issue.pull_request &&
+        (contains(github.event.comment.body, '/test e2e') || contains(github.event.comment.body, '/run e2e')) &&
+        (github.event.comment.author_association == 'OWNER' || 
+         github.event.comment.author_association == 'MEMBER' || 
+         github.event.comment.author_association == 'COLLABORATOR')
+      )
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          # When triggered by comment, checkout the PR branch
+          ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || github.ref }}
+
+      - name: Add reaction to comment
+        if: github.event_name == 'issue_comment'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          comment-id: ${{ github.event.comment.id }}
+          reactions: eyes
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build and start services with Docker Compose
+        run: docker-compose up -d --build
+
+      - name: Wait for services to be ready
+        run: |
+          timeout 60 bash -c 'until docker-compose ps | grep -q "Up"; do sleep 2; done'
+          sleep 10
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+        env:
+          GIT_PROXY_URL: http://localhost:8000
+          GIT_PROXY_UI_URL: http://localhost:8081
+          E2E_TIMEOUT: 30000
+
+      - name: Stop services
+        if: always()
+        run: docker-compose down -v
