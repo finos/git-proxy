@@ -9,7 +9,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies (including dev dependencies for building)
-RUN npm pkg delete scripts.prepare && npm ci --include=dev --loglevel verbose
+RUN npm pkg delete scripts.prepare && npm ci --include=dev
 
 # Copy source files and config files needed for build
 COPY tsconfig.json tsconfig.publish.json proxy.config.json config.schema.json integration-test.config.json vite.config.ts index.html index.ts ./
@@ -17,12 +17,12 @@ COPY src/ /app/src/
 COPY public/ /app/public/
 
 # Build the UI and server
-RUN npm run build-ui --loglevel verbose \
+RUN npm run build-ui \
   && npx tsc --project tsconfig.publish.json \
   && cp config.schema.json dist/
 
 # Prune dev dependencies after build is complete  
-RUN npm prune --production
+RUN npm prune --omit=dev
 
 # Production stage
 FROM node:20-slim AS production
