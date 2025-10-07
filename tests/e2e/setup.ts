@@ -1,3 +1,23 @@
+/**
+ * @license
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 import { beforeAll } from 'vitest';
 
 // Environment configuration - can be overridden for different environments
@@ -26,18 +46,46 @@ export const testConfig = {
 export function configureGitCredentials(tempDir: string): void {
   const { execSync } = require('child_process');
 
-  // Configure git credentials using URL rewriting
-  const baseUrlParsed = new URL(testConfig.gitProxyBaseUrl);
-  const credentialUrl = `${baseUrlParsed.protocol}//${testConfig.gitUsername}:${testConfig.gitPassword}@${baseUrlParsed.host}${baseUrlParsed.pathname}`;
-  const insteadOfUrl = testConfig.gitProxyBaseUrl;
+  try {
+    // Configure git credentials using URL rewriting
+    const baseUrlParsed = new URL(testConfig.gitProxyBaseUrl);
 
-  execSync('git init', { cwd: tempDir, encoding: 'utf8' });
-  execSync(`git config url."${credentialUrl}".insteadOf ${insteadOfUrl}`, {
-    cwd: tempDir,
-    encoding: 'utf8',
-  });
+    // Initialize git if not already done
+    try {
+      execSync('git rev-parse --git-dir', { cwd: tempDir, encoding: 'utf8', stdio: 'pipe' });
+    } catch {
+      execSync('git init', { cwd: tempDir, encoding: 'utf8' });
+    }
 
-  console.log(`Configured git credentials for ${insteadOfUrl}`);
+    // Configure multiple URL patterns to catch all variations
+    const patterns = [
+      // Most important: the proxy server itself (this is what's asking for auth)
+      {
+        insteadOf: `${baseUrlParsed.protocol}//${baseUrlParsed.host}`,
+        credUrl: `${baseUrlParsed.protocol}//${testConfig.gitUsername}:${testConfig.gitPassword}@${baseUrlParsed.host}`,
+      },
+      // Base URL with trailing slash
+      {
+        insteadOf: testConfig.gitProxyBaseUrl,
+        credUrl: `${baseUrlParsed.protocol}//${testConfig.gitUsername}:${testConfig.gitPassword}@${baseUrlParsed.host}${baseUrlParsed.pathname}`,
+      },
+      // Base URL without trailing slash
+      {
+        insteadOf: testConfig.gitProxyBaseUrl.replace(/\/$/, ''),
+        credUrl: `${baseUrlParsed.protocol}//${testConfig.gitUsername}:${testConfig.gitPassword}@${baseUrlParsed.host}`,
+      },
+    ];
+
+    for (const pattern of patterns) {
+      execSync(`git config url."${pattern.credUrl}".insteadOf "${pattern.insteadOf}"`, {
+        cwd: tempDir,
+        encoding: 'utf8',
+      });
+    }
+  } catch (error) {
+    console.error('Failed to configure git credentials:', error);
+    throw error;
+  }
 }
 
 export async function waitForService(
@@ -78,9 +126,9 @@ beforeAll(async () => {
   console.log(`Git Username: ${testConfig.gitUsername}`);
   console.log(`Git Proxy Base URL: ${testConfig.gitProxyBaseUrl}`);
 
-  // Wait for the git proxy service to be ready
+  // Wait for the git proxy UI service to be ready
   // Note: Docker Compose should be started externally (e.g., in CI or manually)
-  await waitForService(`${testConfig.gitProxyUrl}/health`);
+  await waitForService(`${testConfig.gitProxyUiUrl}/api/v1/healthcheck`);
 
   console.log('E2E test environment is ready');
 }, testConfig.timeout);
