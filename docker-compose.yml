@@ -1,0 +1,47 @@
+version: '3.7'
+
+services:
+  git-proxy:
+    build: .
+    ports:
+      - '8000:8000'
+      - '8081:8081'
+    command: ['node', 'dist/index.js', '--config', '/app/integration-test.config.json']
+    volumes:
+      - ./integration-test.config.json:/app/integration-test.config.json:ro
+    depends_on:
+      - mongodb
+      - git-server
+    networks:
+      - git-network
+    environment:
+      - NODE_ENV=test
+      - GIT_PROXY_UI_PORT=8081
+      - GIT_PROXY_SERVER_PORT=8000
+      - NODE_OPTIONS=--trace-warnings
+
+  mongodb:
+    image: mongo:7
+    ports:
+      - '27017:27017'
+    networks:
+      - git-network
+    environment:
+      - MONGO_INITDB_DATABASE=gitproxy
+    volumes:
+      - mongodb_data:/data/db
+
+  git-server:
+    build: localgit/
+    environment:
+      - GIT_HTTP_EXPORT_ALL=true
+    networks:
+      - git-network
+    hostname: git-server
+
+networks:
+  git-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
