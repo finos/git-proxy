@@ -30,12 +30,14 @@ create_bare_repo() {
     
     echo "Creating $repo_name in $owner's directory..."
     cd "$repo_dir" || exit 1
-    git init --bare "$repo_name"
+    git init --bare --initial-branch=main "$repo_name"
     
     # Configure for HTTP access
     cd "$repo_dir/$repo_name" || exit 1
     git config http.receivepack true
     git config http.uploadpack true
+    # Set HEAD to point to main branch
+    git symbolic-ref HEAD refs/heads/main
     cd "$repo_dir" || exit 1
 }
 

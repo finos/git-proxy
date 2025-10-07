@@ -33,6 +33,8 @@ services:
 
   git-server:
     build: localgit/
+    ports:
+      - '8080:8080' # Add this line to expose the git server
     environment:
       - GIT_HTTP_EXPORT_ALL=true
     networks:
