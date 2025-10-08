@@ -1,8 +1,6 @@
-const { Action } = require('../../src/proxy/actions');
-const { exec } = require('../../src/proxy/processors/push-action/scanDiff');
-
-const chai = require('chai');
-const expect = chai.expect;
+import { describe, it, expect } from 'vitest';
+import { Action, Step } from '../../src/proxy/actions';
+import { exec } from '../../src/proxy/processors/push-action/scanDiff';
 
 describe('scanDiff - Empty Diff Handling', () => {
   describe('Empty diff scenarios', () => {
@@ -11,13 +9,13 @@ describe('scanDiff - Empty Diff Handling', () => {
 
       // Simulate getDiff step with empty content
       const diffStep = { stepName: 'diff', content: '', error: false };
-      action.steps = [diffStep];
+      action.steps = [diffStep as Step];
 
       const result = await exec({}, action);
 
-      expect(result.steps.length).to.equal(2); // diff step + scanDiff step
-      expect(result.steps[1].error).to.be.false;
-      expect(result.steps[1].errorMessage).to.be.null;
+      expect(result.steps.length).toBe(2); // diff step + scanDiff step
+      expect(result.steps[1].error).toBe(false);
+      expect(result.steps[1].errorMessage).toBeNull();
     });
 
     it('should allow null diff', async () => {
@@ -25,13 +23,13 @@ describe('scanDiff - Empty Diff Handling', () => {
 
       // Simulate getDiff step with null content
       const diffStep = { stepName: 'diff', content: null, error: false };
-      action.steps = [diffStep];
+      action.steps = [diffStep as Step];
 
       const result = await exec({}, action);
 
-      expect(result.steps.length).to.equal(2);
-      expect(result.steps[1].error).to.be.false;
-      expect(result.steps[1].errorMessage).to.be.null;
+      expect(result.steps.length).toBe(2);
+      expect(result.steps[1].error).toBe(false);
+      expect(result.steps[1].errorMessage).toBeNull();
     });
 
     it('should allow undefined diff', async () => {
@@ -39,13 +37,13 @@ describe('scanDiff - Empty Diff Handling', () => {
 
       // Simulate getDiff step with undefined content
       const diffStep = { stepName: 'diff', content: undefined, error: false };
-      action.steps = [diffStep];
+      action.steps = [diffStep as Step];
 
       const result = await exec({}, action);
 
-      expect(result.steps.length).to.equal(2);
-      expect(result.steps[1].error).to.be.false;
-      expect(result.steps[1].errorMessage).to.be.null;
+      expect(result.steps.length).toBe(2);
+      expect(result.steps[1].error).toBe(false);
+      expect(result.steps[1].errorMessage).toBeNull();
     });
   });
 
@@ -61,31 +59,30 @@ index 1234567..abcdefg 100644
 +++ b/config.js
 @@ -1,3 +1,4 @@
  module.exports = {
-+  newFeature: true,
-   database: "production"
++ newFeature: true,
+ database: "production"
  };`;
 
       const diffStep = { stepName: 'diff', content: normalDiff, error: false };
-      action.steps = [diffStep];
+      action.steps = [diffStep as Step];
 
       const result = await exec({}, action);
 
-      expect(result.steps[1].error).to.be.false;
-      expect(result.steps[1].errorMessage).to.be.null;
+      expect(result.steps[1].error).toBe(false);
+      expect(result.steps[1].errorMessage).toBeNull();
     });
   });
 
   describe('Error conditions', () => {
     it('should handle non-string diff content', async () => {
       const action = new Action('non-string-test', 'push', 'POST', Date.now(), 'test/repo.git');
-
-      const diffStep = { stepName: 'diff', content: 12345, error: false };
-      action.steps = [diffStep];
+      const diffStep = { stepName: 'diff', content: 12345 as any, error: false };
+      action.steps = [diffStep as Step];
 
       const result = await exec({}, action);
 
-      expect(result.steps[1].error).to.be.true;
-      expect(result.steps[1].errorMessage).to.include('non-string value');
+      expect(result.steps[1].error).toBe(true);
+      expect(result.steps[1].errorMessage).toContain('non-string value');
     });
   });
 });
