@@ -112,11 +112,6 @@ export interface GitProxyConfig {
  */
 export interface API {
   /**
-   * Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer
-   * referenced in the codebase.
-   */
-  github?: Github;
-  /**
    * Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin
    */
   gitleaks?: Gitleaks;
@@ -126,14 +121,6 @@ export interface API {
    * configuration is set direct querying of group membership via LDAP will be disabled.
    */
   ls?: Ls;
-}
-
-/**
- * Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer
- * referenced in the codebase.
- */
-export interface Github {
-  baseUrl?: string;
 }
 
 /**
@@ -268,7 +255,7 @@ export interface AttestationConfig {
   /**
    * Customisable attestation questions to add to attestation form.
    */
-  questions: Question[];
+  questions?: Question[];
 }
 
 export interface Question {
@@ -726,13 +713,11 @@ const typeMap: any = {
   ),
   API: o(
     [
-      { json: 'github', js: 'github', typ: u(undefined, r('Github')) },
       { json: 'gitleaks', js: 'gitleaks', typ: u(undefined, r('Gitleaks')) },
       { json: 'ls', js: 'ls', typ: u(undefined, r('Ls')) },
     ],
     false,
   ),
-  Github: o([{ json: 'baseUrl', js: 'baseUrl', typ: u(undefined, '') }], false),
   Gitleaks: o(
     [
       { json: 'configPath', js: 'configPath', typ: u(undefined, '') },
@@ -782,7 +767,10 @@ const typeMap: any = {
     ],
     'any',
   ),
-  AttestationConfig: o([{ json: 'questions', js: 'questions', typ: a(r('Question')) }], false),
+  AttestationConfig: o(
+    [{ json: 'questions', js: 'questions', typ: u(undefined, a(r('Question'))) }],
+    false,
+  ),
   Question: o(
     [
       { json: 'label', js: 'label', typ: '' },

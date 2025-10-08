@@ -63,16 +63,16 @@ const getDiffViolations = (diff: string, organization: string): Match[] | string
 
 const combineMatches = (organization: string) => {
   // Configured blocked literals
-  const blockedLiterals: string[] = commitConfig.diff.block.literals;
+  const blockedLiterals: string[] = commitConfig?.diff?.block?.literals ?? [];
 
   // Configured blocked patterns
-  const blockedPatterns: string[] = commitConfig.diff.block.patterns;
+  const blockedPatterns: string[] = commitConfig?.diff?.block?.patterns ?? [];
 
   // Configured blocked providers
   const blockedProviders: [string, string][] =
     organization && privateOrganizations.includes(organization)
       ? []
-      : Object.entries(commitConfig.diff.block.providers);
+      : Object.entries(commitConfig?.diff?.block?.providers ?? []);
 
   // Combine all matches (literals, patterns)
   const combinedMatches = [

@@ -114,45 +114,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="api_github"></a>4.2. [Optional] Property GitProxy configuration file > api > github</strong>
-</summary>
-<blockquote>
-
-|                           |             |
-| ------------------------- | ----------- |
-| **Type**                  | `object`    |
-| **Required**              | No          |
-| **Additional properties** | Not allowed |
-
-**Description:** Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer referenced in the codebase.
-
-<details>
-<summary>
-<strong> <a name="api_github_baseUrl"></a>4.2.1. [Optional] Property GitProxy configuration file > api > github > baseUrl</strong>
-</summary>
-<blockquote>
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-| **Format**   | `uri`    |
-
-**Example:**
-
-```json
-"https://api.github.com"
-```
-
-</blockquote>
-</details>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="api_gitleaks"></a>4.3. [Optional] Property GitProxy configuration file > api > gitleaks</strong>
+<strong> <a name="api_gitleaks"></a>4.2. [Optional] Property GitProxy configuration file > api > gitleaks</strong>
 </summary>
 <blockquote>
 
@@ -166,7 +128,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="api_gitleaks_enabled"></a>4.3.1. [Optional] Property GitProxy configuration file > api > gitleaks > enabled</strong>
+<strong> <a name="api_gitleaks_enabled"></a>4.2.1. [Optional] Property GitProxy configuration file > api > gitleaks > enabled</strong>
 </summary>
 <blockquote>
 
@@ -180,7 +142,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="api_gitleaks_ignoreGitleaksAllow"></a>4.3.2. [Optional] Property GitProxy configuration file > api > gitleaks > ignoreGitleaksAllow</strong>
+<strong> <a name="api_gitleaks_ignoreGitleaksAllow"></a>4.2.2. [Optional] Property GitProxy configuration file > api > gitleaks > ignoreGitleaksAllow</strong>
 </summary>
 <blockquote>
 
@@ -194,7 +156,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="api_gitleaks_noColor"></a>4.3.3. [Optional] Property GitProxy configuration file > api > gitleaks > noColor</strong>
+<strong> <a name="api_gitleaks_noColor"></a>4.2.3. [Optional] Property GitProxy configuration file > api > gitleaks > noColor</strong>
 </summary>
 <blockquote>
 
@@ -208,7 +170,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="api_gitleaks_configPath"></a>4.3.4. [Optional] Property GitProxy configuration file > api > gitleaks > configPath</strong>
+<strong> <a name="api_gitleaks_configPath"></a>4.2.4. [Optional] Property GitProxy configuration file > api > gitleaks > configPath</strong>
 </summary>
 <blockquote>
 
@@ -601,7 +563,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="attestationConfig_questions"></a>6.1. [Required] Property GitProxy configuration file > attestationConfig > questions</strong>
+<strong> <a name="attestationConfig_questions"></a>6.1. [Optional] Property GitProxy configuration file > attestationConfig > questions</strong>
 </summary>
 <blockquote>
 
@@ -610,7 +572,7 @@ description: JSON schema reference documentation for GitProxy
 |              |                   |
 | ------------ | ----------------- |
 | **Type**     | `array of object` |
-| **Required** | Yes               |
+| **Required** | No                |
 
 **Description:** Customisable attestation questions to add to attestation form.
 
@@ -1880,4 +1842,4 @@ Specific value: `"jwt"`
 </details>
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-10-02 at 18:44:23 +0100
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-10-08 at 17:43:40 +0100
