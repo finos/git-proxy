@@ -1,18 +1,17 @@
-const path = require('path');
-const simpleGit = require('simple-git');
-const fs = require('fs').promises;
-const fc = require('fast-check');
-const { Action } = require('../../src/proxy/actions');
-const { exec } = require('../../src/proxy/processors/push-action/getDiff');
-
-const chai = require('chai');
-const expect = chai.expect;
+import path from 'path';
+import simpleGit, { SimpleGit } from 'simple-git';
+import fs from 'fs/promises';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import fc from 'fast-check';
+import { Action } from '../../src/proxy/actions';
+import { exec } from '../../src/proxy/processors/push-action/getDiff';
+import { Commit } from '../../src/proxy/actions/Action';
 
 describe('getDiff', () => {
-  let tempDir;
-  let git;
+  let tempDir: string;
+  let git: SimpleGit;
 
-  before(async () => {
+  beforeAll(async () => {
     // Create a temp repo to avoid mocking simple-git
     tempDir = path.join(__dirname, 'temp-test-repo');
     await fs.mkdir(tempDir, { recursive: true });
@@ -27,8 +26,8 @@ describe('getDiff', () => {
     await git.commit('initial commit');
   });
 
-  after(async () => {
-    await fs.rmdir(tempDir, { recursive: true });
+  afterAll(async () => {
+    await fs.rm(tempDir, { recursive: true, force: true });
   });
 
   it('should get diff between commits', async () => {
@@ -41,13 +40,13 @@ describe('getDiff', () => {
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
     action.commitTo = 'HEAD';
-    action.commitData = [{ parent: '0000000000000000000000000000000000000000' }];
+    action.commitData = [{ parent: '0000000000000000000000000000000000000000' } as Commit];
 
     const result = await exec({}, action);
 
-    expect(result.steps[0].error).to.be.false;
-    expect(result.steps[0].content).to.include('modified content');
-    expect(result.steps[0].content).to.include('initial content');
+    expect(result.steps[0].error).toBe(false);
+    expect(result.steps[0].content).toContain('modified content');
+    expect(result.steps[0].content).toContain('initial content');
   });
 
   it('should get diff between commits with no changes', async () => {
@@ -56,12 +55,12 @@ describe('getDiff', () => {
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
     action.commitTo = 'HEAD';
-    action.commitData = [{ parent: '0000000000000000000000000000000000000000' }];
+    action.commitData = [{ parent: '0000000000000000000000000000000000000000' } as Commit];
 
     const result = await exec({}, action);
 
-    expect(result.steps[0].error).to.be.false;
-    expect(result.steps[0].content).to.include('initial content');
+    expect(result.steps[0].error).toBe(false);
+    expect(result.steps[0].content).toContain('initial content');
   });
 
   it('should throw an error if no commit data is provided', async () => {
@@ -73,23 +72,23 @@ describe('getDiff', () => {
     action.commitData = [];
 
     const result = await exec({}, action);
-    expect(result.steps[0].error).to.be.true;
-    expect(result.steps[0].errorMessage).to.contain(
+    expect(result.steps[0].error).toBe(true);
+    expect(result.steps[0].errorMessage).toContain(
       'Your push has been blocked because no commit data was found',
     );
   });
 
-  it('should throw an error if no commit data is provided', async () => {
+  it('should throw an error if commit data is undefined', async () => {
     const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
     action.proxyGitPath = __dirname; // Temp dir parent path
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
     action.commitTo = 'HEAD';
-    action.commitData = undefined;
+    action.commitData = undefined as any;
 
     const result = await exec({}, action);
-    expect(result.steps[0].error).to.be.true;
-    expect(result.steps[0].errorMessage).to.contain(
+    expect(result.steps[0].error).toBe(true);
+    expect(result.steps[0].errorMessage).toContain(
       'Your push has been blocked because no commit data was found',
     );
   });
@@ -109,15 +108,14 @@ describe('getDiff', () => {
     action.repoName = path.basename(tempDir);
     action.commitFrom = '0000000000000000000000000000000000000000';
     action.commitTo = headCommit;
-    action.commitData = [{ parent: parentCommit }];
+    action.commitData = [{ parent: parentCommit } as Commit];
 
     const result = await exec({}, action);
 
-    expect(result.steps[0].error).to.be.false;
-    expect(result.steps[0].content).to.not.be.null;
-    expect(result.steps[0].content.length).to.be.greaterThan(0);
+    expect(result.steps[0].error).toBe(false);
+    expect(result.steps[0].content).not.toBeNull();
+    expect(result.steps[0].content!.length).toBeGreaterThan(0);
   });
-
   describe('fuzzing', () => {
     it('should handle random action inputs without crashing', async function () {
       // Not comprehensive but helps prevent crashing on bad input
@@ -134,13 +132,13 @@ describe('getDiff', () => {
             action.repoName = 'temp-test-repo';
             action.commitFrom = from;
             action.commitTo = to;
-            action.commitData = commitData;
+            action.commitData = commitData as any;
 
             const result = await exec({}, action);
 
-            expect(result).to.have.property('steps');
-            expect(result.steps[0]).to.have.property('error');
-            expect(result.steps[0]).to.have.property('content');
+            expect(result).toHaveProperty('steps');
+            expect(result.steps[0]).toHaveProperty('error');
+            expect(result.steps[0]).toHaveProperty('content');
           },
         ),
         { numRuns: 10 },
@@ -158,12 +156,12 @@ describe('getDiff', () => {
             action.repoName = 'temp-test-repo';
             action.commitFrom = from;
             action.commitTo = to;
-            action.commitData = [{ parent: '0000000000000000000000000000000000000000' }];
+            action.commitData = [{ parent: '0000000000000000000000000000000000000000' } as Commit];
 
             const result = await exec({}, action);
 
-            expect(result.steps[0].error).to.be.true;
-            expect(result.steps[0].errorMessage).to.contain('Invalid revision range');
+            expect(result.steps[0].error).toBe(true);
+            expect(result.steps[0].errorMessage).toContain('Invalid revision range');
           },
         ),
         { numRuns: 10 },
