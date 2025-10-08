@@ -1,18 +1,17 @@
-const chai = require('chai');
-const crypto = require('crypto');
-const processor = require('../../src/proxy/processors/push-action/scanDiff');
-const { Action } = require('../../src/proxy/actions/Action');
-const { expect } = chai;
-const config = require('../../src/config');
-const db = require('../../src/db');
-chai.should();
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import crypto from 'crypto';
+import * as processor from '../../src/proxy/processors/push-action/scanDiff';
+import { Action, Step } from '../../src/proxy/actions';
+import * as config from '../../src/config';
+import * as db from '../../src/db';
 
-// Load blocked literals and patterns from configuration...
-const commitConfig = require('../../src/config/index').getCommitConfig();
+// Load blocked literals and patterns from configuration
+const commitConfig = config.getCommitConfig();
 const privateOrganizations = config.getPrivateOrganizations();
 
 const blockedLiterals = commitConfig.diff.block.literals;
-const generateDiff = (value) => {
+
+const generateDiff = (value: string): string => {
   return `diff --git a/package.json b/package.json
 index 38cdc3e..8a9c321 100644
 --- a/package.json
@@ -29,7 +28,7 @@ index 38cdc3e..8a9c321 100644
   `;
 };
 
-const generateMultiLineDiff = () => {
+const generateMultiLineDiff = (): string => {
   return `diff --git a/README.md b/README.md
 index 8b97e49..de18d43 100644
 --- a/README.md
@@ -43,7 +42,7 @@ index 8b97e49..de18d43 100644
 `;
 };
 
-const generateMultiLineDiffWithLiteral = () => {
+const generateMultiLineDiffWithLiteral = (): string => {
   return `diff --git a/README.md b/README.md
 index 8b97e49..de18d43 100644
 --- a/README.md
@@ -56,127 +55,135 @@ index 8b97e49..de18d43 100644
 +blockedTestLiteral
 `;
 };
-describe('Scan commit diff...', async () => {
-  privateOrganizations[0] = 'private-org-test';
-  commitConfig.diff = {
-    block: {
-      literals: ['blockedTestLiteral'],
-      patterns: [],
-      providers: {
-        'AWS (Amazon Web Services) Access Key ID':
-          'A(AG|CC|GP|ID|IP|KI|NP|NV|PK|RO|SC|SI)A[A-Z0-9]{16}',
-        'Google Cloud Platform API Key': 'AIza[0-9A-Za-z-_]{35}',
-        'GitHub Personal Access Token': 'ghp_[a-zA-Z0-9]{36}',
-        'GitHub Fine Grained Personal Access Token': 'github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}',
-        'GitHub Actions Token': 'ghs_[a-zA-Z0-9]{36}',
-        'JSON Web Token (JWT)': 'ey[A-Za-z0-9-_=]{18,}.ey[A-Za-z0-9-_=]{18,}.[A-Za-z0-9-_.]{18,}',
-      },
-    },
-  };
 
-  before(async () => {
+const TEST_REPO = {
+  project: 'private-org-test',
+  name: 'repo.git',
+  url: 'https://github.com/private-org-test/repo.git',
+  _id: undefined as any,
+};
+
+describe('Scan commit diff', () => {
+  beforeAll(async () => {
+    privateOrganizations[0] = 'private-org-test';
+    commitConfig.diff = {
+      block: {
+        literals: ['blockedTestLiteral'],
+        patterns: [],
+        providers: {
+          'AWS (Amazon Web Services) Access Key ID':
+            'A(AG|CC|GP|ID|IP|KI|NP|NV|PK|RO|SC|SI)A[A-Z0-9]{16}',
+          'Google Cloud Platform API Key': 'AIza[0-9A-Za-z-_]{35}',
+          'GitHub Personal Access Token': 'ghp_[a-zA-Z0-9]{36}',
+          'GitHub Fine Grained Personal Access Token': 'github_pat_[a-zA-Z0-9]{22}_[a-zA-Z0-9]{59}',
+          'GitHub Actions Token': 'ghs_[a-zA-Z0-9]{36}',
+          'JSON Web Token (JWT)': 'ey[A-Za-z0-9-_=]{18,}.ey[A-Za-z0-9-_=]{18,}.[A-Za-z0-9-_.]{18,}',
+        },
+      },
+    };
+
     // needed for private org tests
     const repo = await db.createRepo(TEST_REPO);
     TEST_REPO._id = repo._id;
   });
 
-  after(async () => {
+  afterAll(async () => {
     await db.deleteRepo(TEST_REPO._id);
   });
 
-  it('A diff including an AWS (Amazon Web Services) Access Key ID blocks the proxy...', async () => {
+  it('should block push when diff includes AWS Access Key ID', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateDiff('AKIAIOSFODNN7EXAMPLE'),
-      },
+      } as Step,
     ];
     action.setCommit('38cdc3e', '8a9c321');
     action.setBranch('b');
     action.setMessage('Message');
 
     const { error, errorMessage } = await processor.exec(null, action);
-    expect(error).to.be.true;
-    expect(errorMessage).to.contains('Your push has been blocked');
+
+    expect(error).toBe(true);
+    expect(errorMessage).toContain('Your push has been blocked');
   });
 
-  // Formatting test
-  it('A diff including multiple AWS (Amazon Web Services) Access Keys ID blocks the proxy...', async () => {
+  // Formatting tests
+  it('should block push when diff includes multiple AWS Access Keys', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateMultiLineDiff(),
-      },
+      } as Step,
     ];
     action.setCommit('8b97e49', 'de18d43');
 
     const { error, errorMessage } = await processor.exec(null, action);
 
-    expect(error).to.be.true;
-    expect(errorMessage).to.contains('Your push has been blocked');
-    expect(errorMessage).to.contains('Line(s) of code: 3,4'); // blocked lines
-    expect(errorMessage).to.contains('#1 AWS (Amazon Web Services) Access Key ID'); // type of error
-    expect(errorMessage).to.contains('#2 AWS (Amazon Web Services) Access Key ID'); // type of error
+    expect(error).toBe(true);
+    expect(errorMessage).toContain('Your push has been blocked');
+    expect(errorMessage).toContain('Line(s) of code: 3,4');
+    expect(errorMessage).toContain('#1 AWS (Amazon Web Services) Access Key ID');
+    expect(errorMessage).toContain('#2 AWS (Amazon Web Services) Access Key ID');
   });
 
-  // Formatting test
-  it('A diff including multiple AWS Access Keys ID and Literal blocks the proxy with appropriate message...', async () => {
+  it('should block push when diff includes multiple AWS Access Keys and blocked literal with appropriate message', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateMultiLineDiffWithLiteral(),
-      },
+      } as Step,
     ];
     action.setCommit('8b97e49', 'de18d43');
 
     const { error, errorMessage } = await processor.exec(null, action);
 
-    expect(error).to.be.true;
-    expect(errorMessage).to.contains('Your push has been blocked');
-    expect(errorMessage).to.contains('Line(s) of code: 3'); // blocked lines
-    expect(errorMessage).to.contains('Line(s) of code: 4'); // blocked lines
-    expect(errorMessage).to.contains('Line(s) of code: 5'); // blocked lines
-    expect(errorMessage).to.contains('#1 AWS (Amazon Web Services) Access Key ID'); // type of error
-    expect(errorMessage).to.contains('#2 AWS (Amazon Web Services) Access Key ID'); // type of error
-    expect(errorMessage).to.contains('#3 Offending Literal');
+    expect(error).toBe(true);
+    expect(errorMessage).toContain('Your push has been blocked');
+    expect(errorMessage).toContain('Line(s) of code: 3');
+    expect(errorMessage).toContain('Line(s) of code: 4');
+    expect(errorMessage).toContain('Line(s) of code: 5');
+    expect(errorMessage).toContain('#1 AWS (Amazon Web Services) Access Key ID');
+    expect(errorMessage).toContain('#2 AWS (Amazon Web Services) Access Key ID');
+    expect(errorMessage).toContain('#3 Offending Literal');
   });
 
-  it('A diff including a Google Cloud Platform API Key blocks the proxy...', async () => {
+  it('should block push when diff includes Google Cloud Platform API Key', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateDiff('AIza0aB7Z4Rfs23MnPqars81yzu19KbH72zaFda'),
-      },
+      } as Step,
     ];
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
     const { error, errorMessage } = await processor.exec(null, action);
 
-    expect(error).to.be.true;
-    expect(errorMessage).to.contains('Your push has been blocked');
+    expect(error).toBe(true);
+    expect(errorMessage).toContain('Your push has been blocked');
   });
 
-  it('A diff including a GitHub Personal Access Token blocks the proxy...', async () => {
+  it('should block push when diff includes GitHub Personal Access Token', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateDiff(`ghp_${crypto.randomBytes(36).toString('hex')}`),
-      },
+      } as Step,
     ];
 
     const { error, errorMessage } = await processor.exec(null, action);
 
-    expect(error).to.be.true;
-    expect(errorMessage).to.contains('Your push has been blocked');
+    expect(error).toBe(true);
+    expect(errorMessage).toContain('Your push has been blocked');
   });
 
-  it('A diff including a GitHub Fine Grained Personal Access Token blocks the proxy...', async () => {
+  it('should block push when diff includes GitHub Fine Grained Personal Access Token', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
@@ -184,35 +191,35 @@ describe('Scan commit diff...', async () => {
         content: generateDiff(
           `github_pat_1SMAGDFOYZZK3P9ndFemen_${crypto.randomBytes(59).toString('hex')}`,
         ),
-      },
+      } as Step,
     ];
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
     const { error, errorMessage } = await processor.exec(null, action);
 
-    expect(error).to.be.true;
-    expect(errorMessage).to.contains('Your push has been blocked');
+    expect(error).toBe(true);
+    expect(errorMessage).toContain('Your push has been blocked');
   });
 
-  it('A diff including a GitHub Actions Token blocks the proxy...', async () => {
+  it('should block push when diff includes GitHub Actions Token', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateDiff(`ghs_${crypto.randomBytes(20).toString('hex')}`),
-      },
+      } as Step,
     ];
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
     const { error, errorMessage } = await processor.exec(null, action);
 
-    expect(error).to.be.true;
-    expect(errorMessage).to.contains('Your push has been blocked');
+    expect(error).toBe(true);
+    expect(errorMessage).toContain('Your push has been blocked');
   });
 
-  it('A diff including a JSON Web Token (JWT) blocks the proxy...', async () => {
+  it('should block push when diff includes JSON Web Token (JWT)', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
@@ -220,87 +227,83 @@ describe('Scan commit diff...', async () => {
         content: generateDiff(
           `eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ1cm46Z21haWwuY29tOmNsaWVudElkOjEyMyIsInN1YiI6IkphbmUgRG9lIiwiaWF0IjoxNTIzOTAxMjM0LCJleHAiOjE1MjM5ODc2MzR9.s5_hA8hyIT5jXfU9PlXJ-R74m5F_aPcVEFJSV-g-_kX`,
         ),
-      },
+      } as Step,
     ];
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
     const { error, errorMessage } = await processor.exec(null, action);
 
-    expect(error).to.be.true;
-    expect(errorMessage).to.contains('Your push has been blocked');
+    expect(error).toBe(true);
+    expect(errorMessage).toContain('Your push has been blocked');
   });
 
-  it('A diff including a blocked literal blocks the proxy...', async () => {
-    for (const [literal] of blockedLiterals.entries()) {
+  it('should block push when diff includes blocked literal', async () => {
+    for (const literal of blockedLiterals) {
       const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
       action.steps = [
         {
           stepName: 'diff',
           content: generateDiff(literal),
-        },
+        } as Step,
       ];
       action.commitFrom = '38cdc3e';
       action.commitTo = '8a9c321';
 
       const { error, errorMessage } = await processor.exec(null, action);
 
-      expect(error).to.be.true;
-      expect(errorMessage).to.contains('Your push has been blocked');
+      expect(error).toBe(true);
+      expect(errorMessage).toContain('Your push has been blocked');
     }
   });
-  it('When no diff is present, the proxy allows the push (legitimate empty diff)...', async () => {
+
+  it('should allow push when no diff is present (legitimate empty diff)', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: null,
-      },
+      } as Step,
     ];
 
     const result = await processor.exec(null, action);
     const scanDiffStep = result.steps.find((s) => s.stepName === 'scanDiff');
 
-    expect(scanDiffStep.error).to.be.false;
+    expect(scanDiffStep?.error).toBe(false);
   });
 
-  it('When diff is not a string, the proxy is blocked...', async () => {
+  it('should block push when diff is not a string', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
-        content: 1337,
-      },
+        content: 1337 as any,
+      } as Step,
     ];
 
     const { error, errorMessage } = await processor.exec(null, action);
 
-    expect(error).to.be.true;
-    expect(errorMessage).to.contains('Your push has been blocked');
+    expect(error).toBe(true);
+    expect(errorMessage).toContain('Your push has been blocked');
   });
 
-  it('A diff with no secrets or sensitive information does not block the proxy...', async () => {
+  it('should allow push when diff has no secrets or sensitive information', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [
       {
         stepName: 'diff',
         content: generateDiff(''),
-      },
+      } as Step,
     ];
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
     const { error } = await processor.exec(null, action);
-    expect(error).to.be.false;
+
+    expect(error).toBe(false);
   });
 
-  const TEST_REPO = {
-    project: 'private-org-test',
-    name: 'repo.git',
-    url: 'https://github.com/private-org-test/repo.git',
-  };
-
-  it('A diff including a provider token in a private organization does not block the proxy...', async () => {
+  it('should allow push when diff includes provider token in private organization', async () => {
     const action = new Action(
       '1',
       'type',
@@ -312,10 +315,11 @@ describe('Scan commit diff...', async () => {
       {
         stepName: 'diff',
         content: generateDiff('AKIAIOSFODNN7EXAMPLE'),
-      },
+      } as Step,
     ];
 
     const { error } = await processor.exec(null, action);
-    expect(error).to.be.false;
+
+    expect(error).toBe(false);
   });
 });
