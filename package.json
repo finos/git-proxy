@@ -2,38 +2,38 @@
   "name": "@finos/git-proxy",
   "version": "2.0.0-rc.3",
   "description": "Deploy custom push protections and policies on top of Git.",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./index.js",
-      "require": "./index.js",
-      "types": "./index.d.ts"
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "./config": {
-      "import": "./src/config/index.js",
-      "require": "./src/config/index.js",
-      "types": "./src/config/index.d.ts"
+      "import": "./dist/src/config/index.js",
+      "require": "./dist/src/config/index.js",
+      "types": "./dist/src/config/index.d.ts"
     },
     "./db": {
-      "import": "./src/db/index.js",
-      "require": "./src/db/index.js",
-      "types": "./src/db/index.d.ts"
+      "import": "./dist/src/db/index.js",
+      "require": "./dist/src/db/index.js",
+      "types": "./dist/src/db/index.d.ts"
     },
     "./proxy": {
-      "import": "./src/proxy/index.js",
-      "require": "./src/proxy/index.js",
-      "types": "./src/proxy/index.d.ts"
+      "import": "./dist/src/proxy/index.js",
+      "require": "./dist/src/proxy/index.js",
+      "types": "./dist/src/proxy/index.d.ts"
     },
     "./types": {
-      "import": "./src/types/models.js",
-      "require": "./src/types/models.js",
-      "types": "./src/types/models.d.ts"
+      "import": "./dist/src/types/models.js",
+      "require": "./dist/src/types/models.js",
+      "types": "./dist/src/types/models.d.ts"
     },
     "./plugin": {
-      "import": "./src/plugin.ts",
-      "require": "./src/plugin.ts",
-      "types": "./src/plugin.d.ts"
+      "import": "./dist/src/plugin.js",
+      "require": "./dist/src/plugin.js",
+      "types": "./dist/src/plugin.d.ts"
     }
   },
   "scripts": {
@@ -42,11 +42,9 @@
     "clientinstall": "npm install --prefix client",
     "server": "tsx index.ts",
     "start": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "npm run generate-config-types && npm run build-ui && npm run build-lib",
-    "build-ts": "tsc",
+    "build": "npm run generate-config-types && npm run build-ui && npm run build-ts",
+    "build-ts": "tsc --project tsconfig.publish.json && ./scripts/fix-shebang.sh",
     "build-ui": "vite build",
-    "build-lib": "./scripts/build-for-publish.sh",
-    "restore-lib": "./scripts/undo-build.sh",
     "check-types": "tsc",
     "check-types:server": "tsc --project tsconfig.publish.json --noEmit",
     "test": "NODE_ENV=test ts-mocha './test/**/*.test.js' --exit",
@@ -63,7 +61,7 @@
     "generate-config-types": "quicktype --src-lang schema --lang typescript --out src/config/generated/config.ts --top-level GitProxyConfig config.schema.json && ts-node scripts/add-banner.ts src/config/generated/config.ts && prettier --write src/config/generated/config.ts"
   },
   "bin": {
-    "git-proxy": "./index.js",
+    "git-proxy": "./dist/index.js",
     "git-proxy-all": "concurrently 'npm run server' 'npm run client'"
   },
   "workspaces": [
