@@ -1,5 +1,5 @@
 export interface RepositoriesProps {
-  data: {
+  data?: {
     _id: string;
     project: string;
     name: string;
