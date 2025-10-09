@@ -63,11 +63,9 @@ describe('Auto-Approved Push Test', () => {
       .local()
       .format('dddd, MMMM Do YYYY, h:mm:ss a');
 
-    cy.get('kbd')
-      .trigger('mouseover')
-      .then(() => {
-        cy.get('.MuiTooltip-tooltip').should('contain', expectedTooltipTimestamp);
-      });
+    cy.get('kbd').trigger('mouseover');
+
+    cy.get('.MuiTooltip-tooltip').should('contain', expectedTooltipTimestamp);
 
     cy.contains('approved this contribution').should('not.exist');
   });

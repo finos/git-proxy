@@ -17,7 +17,7 @@ import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
 import { PushData } from '../../../../types/models';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../../db/helper';
-import { getGitProvider, getUserProfileLink } from '../../../utils';
+import { generateAuthorLinks, generateEmailLink } from '../../../utils';
 
 interface PushesTableProps {
   [key: string]: any;
@@ -91,8 +91,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
               <TableCell align='left'>Branch</TableCell>
               <TableCell align='left'>Commit SHA</TableCell>
               <TableCell align='left'>Committer</TableCell>
-              <TableCell align='left'>Author</TableCell>
-              <TableCell align='left'>Author E-mail</TableCell>
+              <TableCell align='left'>Authors</TableCell>
               <TableCell align='left'>Commit Message</TableCell>
               <TableCell align='left'>No. of Commits</TableCell>
               <TableCell align='right'></TableCell>
@@ -104,8 +103,9 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
               const repoBranch = trimPrefixRefsHeads(row.branch);
               const repoUrl = row.url;
               const repoWebUrl = trimTrailingDotGit(repoUrl);
-              const gitProvider = getGitProvider(repoUrl);
-              const hostname = new URL(repoUrl).hostname;
+              // may be used to resolve users to profile links in future
+              // const gitProvider = getGitProvider(repoUrl);
+              // const hostname = new URL(repoUrl).hostname;
               const commitTimestamp =
                 row.commitData[0]?.commitTs || row.commitData[0]?.commitTimestamp;
 
@@ -134,19 +134,19 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    {getUserProfileLink(row.commitData[0].committer, gitProvider, hostname)}
-                  </TableCell>
-                  <TableCell align='left'>
-                    {getUserProfileLink(row.commitData[0].author, gitProvider, hostname)}
-                  </TableCell>
-                  <TableCell align='left'>
-                    {row.commitData[0]?.authorEmail ? (
-                      <a href={`mailto:${row.commitData[0].authorEmail}`}>
-                        {row.commitData[0].authorEmail}
-                      </a>
-                    ) : (
-                      'No data...'
+                    {/* render github/gitlab profile links in future 
+                    {getUserProfileLink(row.commitData[0].committerEmail, gitProvider, hostname)} 
+                    */}
+                    {generateEmailLink(
+                      row.commitData[0].committer,
+                      row.commitData[0]?.committerEmail,
                     )}
+                  </TableCell>
+                  <TableCell align='left'>
+                    {/* render github/gitlab profile links in future 
+                    {getUserProfileLink(row.commitData[0].authorEmail, gitProvider, hostname)} 
+                    */}
+                    {generateAuthorLinks(row.commitData)}
                   </TableCell>
                   <TableCell align='left'>{row.commitData[0]?.message || 'N/A'}</TableCell>
                   <TableCell align='left'>{row.commitData.length}</TableCell>

@@ -140,11 +140,11 @@ describe('checkUserPushPermission', () => {
           fc.array(
             fc.record({
               username: fc.string(),
-              gitAccount: fc.string()
+              gitAccount: fc.string(),
             }),
-            { maxLength: 5 }
+            { maxLength: 5 },
           ),
-          1
+          1,
         )[0];
         getUsersStub.resolves(userList);
 

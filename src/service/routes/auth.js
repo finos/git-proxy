@@ -66,6 +66,18 @@ const loginSuccessHandler = () => async (req, res) => {
   }
 };
 
+router.get('/config', (req, res) => {
+  const usernamePasswordMethod = getLoginStrategy();
+  res.send({
+    // enabled username /password auth method
+    usernamePasswordMethod: usernamePasswordMethod,
+    // other enabled auth methods
+    otherMethods: getAuthMethods()
+      .map((am) => am.type.toLowerCase())
+      .filter((authType) => authType !== usernamePasswordMethod),
+  });
+});
+
 // TODO: provide separate auth endpoints for each auth strategy or chain compatibile auth strategies
 // TODO: if providing separate auth methods, inform the frontend so it has relevant UI elements and appropriate client-side behavior
 router.post(
@@ -82,9 +94,9 @@ router.post(
   loginSuccessHandler(),
 );
 
-router.get('/oidc', passport.authenticate(authStrategies['openidconnect'].type));
+router.get('/openidconnect', passport.authenticate(authStrategies['openidconnect'].type));
 
-router.get('/oidc/callback', (req, res, next) => {
+router.get('/openidconnect/callback', (req, res, next) => {
   passport.authenticate(authStrategies['openidconnect'].type, (err, user, info) => {
     if (err) {
       console.error('Authentication error:', err);
@@ -168,7 +180,38 @@ router.get('/me', async (req, res) => {
   }
 });
 
+router.post('/create-user', async (req, res) => {
+  if (!req.user || !req.user.admin) {
+    return res.status(401).send({
+      message: 'You are not authorized to perform this action...',
+    });
+  }
+
+  try {
+    const { username, password, email, gitAccount, admin: isAdmin = false } = req.body;
+
+    if (!username || !password || !email || !gitAccount) {
+      return res.status(400).send({
+        message: 'Missing required fields: username, password, email, and gitAccount are required',
+      });
+    }
+
+    await db.createUser(username, password, email, gitAccount, isAdmin);
+    res.status(201).send({
+      message: 'User created successfully',
+      username,
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(400).send({
+      message: error.message || 'Failed to create user',
+    });
+  }
+});
+
+module.exports = router;
+
 module.exports = {
   router,
-  loginSuccessHandler
+  loginSuccessHandler,
 };

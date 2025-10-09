@@ -43,7 +43,7 @@ export const getAxiosConfig = () => {
   return {
     withCredentials: true,
     headers: {
-      'X-CSRF-TOKEN': getCookie('csrf'),
+      'X-CSRF-TOKEN': getCookie('csrf') || '',
       Authorization: jwtToken ? `Bearer ${jwtToken}` : undefined,
     },
   };
@@ -54,12 +54,13 @@ export const getAxiosConfig = () => {
  * @param {Object} error - The error object
  * @return {string} The error message
  */
-export const processAuthError = (error) => {
+export const processAuthError = (error, jwtAuthEnabled = false) => {
   let errorMessage = `Failed to authorize user: ${error.response.data.trim()}. `;
-  if (!localStorage.getItem('ui_jwt_token')) {
-    errorMessage += 'Set your JWT token in the settings page or disable JWT auth in your app configuration.'
+  if (jwtAuthEnabled && !localStorage.getItem('ui_jwt_token')) {
+    errorMessage +=
+      'Set your JWT token in the settings page or disable JWT auth in your app configuration.';
   } else {
-    errorMessage += 'Check your JWT token or disable JWT auth in your app configuration.'
+    errorMessage += 'Check your JWT token or disable JWT auth in your app configuration.';
   }
   return errorMessage;
 };

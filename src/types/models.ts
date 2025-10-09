@@ -15,6 +15,7 @@ export interface CommitData {
   commitTs?: number;
   message: string;
   committer: string;
+  committerEmail: string;
   tree?: string;
   parent?: string;
   author: string;

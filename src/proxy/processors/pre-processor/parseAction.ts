@@ -14,8 +14,7 @@ const exec = async (req: {
   if (pathBreakdown) {
     if (pathBreakdown.gitPath.endsWith('git-upload-pack') && req.method === 'GET') {
       type = 'pull';
-    }
-    if (
+    } else if (
       pathBreakdown.gitPath.includes('git-receive-pack') &&
       req.method === 'POST' &&
       req.headers['content-type'] === 'application/x-git-receive-pack-request'

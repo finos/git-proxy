@@ -103,11 +103,9 @@ const dashboardRoutes: Route[] = [
     path: '/admin/settings',
     name: 'Settings',
     icon: Settings,
-    component: (props) =>
-      <RouteGuard
-        component={SettingsView}
-        fullRoutePath={`/dashboard/admin/settings`}
-      />,
+    component: (props) => (
+      <RouteGuard component={SettingsView} fullRoutePath={`/dashboard/admin/settings`} />
+    ),
     layout: '/dashboard',
     visible: true,
   },

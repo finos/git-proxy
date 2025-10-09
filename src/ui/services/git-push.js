@@ -15,22 +15,22 @@ getApiBaseUrl()
     console.warn('Using default API base URL for git-push');
   });
 
-  const getPush = async (id, setIsLoading, setData, setAuth, setIsError) => {
-    const url = `${baseUrl}/push/${id}`;
-    setIsLoading(true);
+const getPush = async (id, setIsLoading, setData, setAuth, setIsError) => {
+  const url = `${baseUrl}/push/${id}`;
+  setIsLoading(true);
 
-    try {
-      const response = await axios(url, getAxiosConfig());
-      const data = response.data;
-      data.diff = data.steps.find((x) => x.stepName === 'diff');
-      setData(data);
-    } catch (error) {
-      if (error.response?.status === 401) setAuth(false);
-      else setIsError(true);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  try {
+    const response = await axios(url, getAxiosConfig());
+    const data = response.data;
+    data.diff = data.steps.find((x) => x.stepName === 'diff');
+    setData(data);
+  } catch (error) {
+    if (error.response?.status === 401) setAuth(false);
+    else setIsError(true);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
 const getPushes = async (
   setIsLoading,
@@ -43,7 +43,7 @@ const getPushes = async (
     canceled: false,
     authorised: false,
     rejected: false,
-  }
+  },
 ) => {
   const url = new URL(`${baseUrl}/push`);
   url.search = new URLSearchParams(query);
@@ -96,29 +96,25 @@ const rejectPush = async (id, setMessage, setUserAllowedToReject) => {
   const url = `${baseUrl}/push/${id}/reject`;
   let errorMsg = '';
   let isUserAllowedToReject = true;
-  await axios
-    .post(url, {}, getAxiosConfig())
-    .catch((error) => {
-      if (error.response && error.response.status === 401) {
-        errorMsg = 'You are not authorised to reject...';
-        isUserAllowedToReject = false;
-      }
-    });
+  await axios.post(url, {}, getAxiosConfig()).catch((error) => {
+    if (error.response && error.response.status === 401) {
+      errorMsg = 'You are not authorised to reject...';
+      isUserAllowedToReject = false;
+    }
+  });
   await setMessage(errorMsg);
   await setUserAllowedToReject(isUserAllowedToReject);
 };
 
 const cancelPush = async (id, setAuth, setIsError) => {
   const url = `${baseUrl}/push/${id}/cancel`;
-  await axios
-    .post(url, {}, getAxiosConfig())
-    .catch((error) => {
-      if (error.response && error.response.status === 401) {
-        setAuth(false);
-      } else {
-        setIsError(true);
-      }
-    });
+  await axios.post(url, {}, getAxiosConfig()).catch((error) => {
+    if (error.response && error.response.status === 401) {
+      setAuth(false);
+    } else {
+      setIsError(true);
+    }
+  });
 };
 
 export { getPush, getPushes, authorisePush, rejectPush, cancelPush };

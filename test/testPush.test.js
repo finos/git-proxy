@@ -136,7 +136,7 @@ describe('auth', async () => {
       await loginAsApprover();
 
       const commitId =
-        '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f'; // eslint-disable-line max-len
+        '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f';
       const res = await chai
         .request(app)
         .get(`/api/v1/push/${commitId}`)
