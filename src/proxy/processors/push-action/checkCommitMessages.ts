@@ -19,10 +19,10 @@ const isMessageAllowed = (commitMessage: string): boolean => {
   }
 
   // Configured blocked literals
-  const blockedLiterals: string[] = commitConfig.message.block.literals;
+  const blockedLiterals: string[] = commitConfig?.message?.block?.literals ?? [];
 
   // Configured blocked patterns
-  const blockedPatterns: string[] = commitConfig.message.block.patterns;
+  const blockedPatterns: string[] = commitConfig?.message?.block?.patterns ?? [];
 
   // Find all instances of blocked literals in commit message...
   const positiveLiterals = blockedLiterals.map((literal: string) =>

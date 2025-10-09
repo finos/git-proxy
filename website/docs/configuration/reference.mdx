@@ -114,45 +114,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="api_github"></a>4.2. [Optional] Property GitProxy configuration file > api > github</strong>
-</summary>
-<blockquote>
-
-|                           |             |
-| ------------------------- | ----------- |
-| **Type**                  | `object`    |
-| **Required**              | No          |
-| **Additional properties** | Not allowed |
-
-**Description:** Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer referenced in the codebase.
-
-<details>
-<summary>
-<strong> <a name="api_github_baseUrl"></a>4.2.1. [Optional] Property GitProxy configuration file > api > github > baseUrl</strong>
-</summary>
-<blockquote>
-
-|              |          |
-| ------------ | -------- |
-| **Type**     | `string` |
-| **Required** | No       |
-| **Format**   | `uri`    |
-
-**Example:**
-
-```json
-"https://api.github.com"
-```
-
-</blockquote>
-</details>
-
-</blockquote>
-</details>
-
-<details>
-<summary>
-<strong> <a name="api_gitleaks"></a>4.3. [Optional] Property GitProxy configuration file > api > gitleaks</strong>
+<strong> <a name="api_gitleaks"></a>4.2. [Optional] Property GitProxy configuration file > api > gitleaks</strong>
 </summary>
 <blockquote>
 
@@ -166,7 +128,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="api_gitleaks_enabled"></a>4.3.1. [Optional] Property GitProxy configuration file > api > gitleaks > enabled</strong>
+<strong> <a name="api_gitleaks_enabled"></a>4.2.1. [Optional] Property GitProxy configuration file > api > gitleaks > enabled</strong>
 </summary>
 <blockquote>
 
@@ -180,7 +142,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="api_gitleaks_ignoreGitleaksAllow"></a>4.3.2. [Optional] Property GitProxy configuration file > api > gitleaks > ignoreGitleaksAllow</strong>
+<strong> <a name="api_gitleaks_ignoreGitleaksAllow"></a>4.2.2. [Optional] Property GitProxy configuration file > api > gitleaks > ignoreGitleaksAllow</strong>
 </summary>
 <blockquote>
 
@@ -194,7 +156,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="api_gitleaks_noColor"></a>4.3.3. [Optional] Property GitProxy configuration file > api > gitleaks > noColor</strong>
+<strong> <a name="api_gitleaks_noColor"></a>4.2.3. [Optional] Property GitProxy configuration file > api > gitleaks > noColor</strong>
 </summary>
 <blockquote>
 
@@ -208,7 +170,7 @@ description: JSON schema reference documentation for GitProxy
 
 <details>
 <summary>
-<strong> <a name="api_gitleaks_configPath"></a>4.3.4. [Optional] Property GitProxy configuration file > api > gitleaks > configPath</strong>
+<strong> <a name="api_gitleaks_configPath"></a>4.2.4. [Optional] Property GitProxy configuration file > api > gitleaks > configPath</strong>
 </summary>
 <blockquote>
 
@@ -232,13 +194,353 @@ description: JSON schema reference documentation for GitProxy
 </summary>
 <blockquote>
 
+**Title:** CommitConfig
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Block commits based on rules defined over author/committer e-mail addresses, commit message content and diff content
+
+<details>
+<summary>
+<strong> <a name="commitConfig_author"></a>5.1. [Optional] Property GitProxy configuration file > commitConfig > author</strong>
+</summary>
+<blockquote>
+
+**Title:** Author
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Rules applied to commit authors
+
+<details>
+<summary>
+<strong> <a name="commitConfig_author_email"></a>5.1.1. [Optional] Property GitProxy configuration file > commitConfig > author > email</strong>
+</summary>
+<blockquote>
+
+**Title:** Email
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Rules applied to author email addresses
+
+<details>
+<summary>
+<strong> <a name="commitConfig_author_email_local"></a>5.1.1.1. [Optional] Property GitProxy configuration file > commitConfig > author > email > local</strong>
+</summary>
+<blockquote>
+
+**Title:** Local
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Rules applied to the local portion of the email address (i.e. section before the @ symbol)
+
+<details>
+<summary>
+<strong> <a name="commitConfig_author_email_local_block"></a>5.1.1.1.1. [Optional] Property GitProxy configuration file > commitConfig > author > email > local > block</strong>
+</summary>
+<blockquote>
+
+**Title:** Block
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** Block commits with author email addresses where the first part matches this regular expression
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="commitConfig_author_email_domain"></a>5.1.1.2. [Optional] Property GitProxy configuration file > commitConfig > author > email > domain</strong>
+</summary>
+<blockquote>
+
+**Title:** Domain
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Rules applied to the domain portion of the email address (i.e. section after the @ symbol)
+
+<details>
+<summary>
+<strong> <a name="commitConfig_author_email_domain_allow"></a>5.1.1.2.1. [Optional] Property GitProxy configuration file > commitConfig > author > email > domain > allow</strong>
+</summary>
+<blockquote>
+
+**Title:** Allow
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** Allow only commits where the domain part of the email address matches this regular expression
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="commitConfig_message"></a>5.2. [Optional] Property GitProxy configuration file > commitConfig > message</strong>
+</summary>
+<blockquote>
+
+**Title:** Message
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Rules applied to commit messages
+
+<details>
+<summary>
+<strong> <a name="commitConfig_message_block"></a>5.2.1. [Optional] Property GitProxy configuration file > commitConfig > message > block</strong>
+</summary>
+<blockquote>
+
+**Title:** MessageBlock
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Block commits where the commit message matches any of the given patterns
+
+<details>
+<summary>
+<strong> <a name="commitConfig_message_block_literals"></a>5.2.1.1. [Optional] Property GitProxy configuration file > commitConfig > message > block > literals</strong>
+</summary>
+<blockquote>
+
+**Title:** MessageBlockLiteral
+
+|              |                   |
+| ------------ | ----------------- |
+| **Type**     | `array of string` |
+| **Required** | No                |
+
+**Description:** Block commits where the commit message contains any of the given string literals
+
+| Each item of this array must be                              | Description |
+| ------------------------------------------------------------ | ----------- |
+| [literals items](#commitConfig_message_block_literals_items) | -           |
+
+###### <a name="autogenerated_heading_2"></a>5.2.1.1.1. GitProxy configuration file > commitConfig > message > block > literals > literals items
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="commitConfig_message_block_patterns"></a>5.2.1.2. [Optional] Property GitProxy configuration file > commitConfig > message > block > patterns</strong>
+</summary>
+<blockquote>
+
+**Title:** MessageBlockLiteral
+
+|              |                   |
+| ------------ | ----------------- |
+| **Type**     | `array of string` |
+| **Required** | No                |
+
+**Description:** Block commits where the commit message matches any of the given regular expressions
+
+| Each item of this array must be                              | Description |
+| ------------------------------------------------------------ | ----------- |
+| [patterns items](#commitConfig_message_block_patterns_items) | -           |
+
+###### <a name="autogenerated_heading_3"></a>5.2.1.2.1. GitProxy configuration file > commitConfig > message > block > patterns > patterns items
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="commitConfig_diff"></a>5.3. [Optional] Property GitProxy configuration file > commitConfig > diff</strong>
+</summary>
+<blockquote>
+
+**Title:** Diff
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Rules applied to commit diff content
+
+<details>
+<summary>
+<strong> <a name="commitConfig_diff_block"></a>5.3.1. [Optional] Property GitProxy configuration file > commitConfig > diff > block</strong>
+</summary>
+<blockquote>
+
+**Title:** DiffBlock
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Block commits where the commit diff matches any of the given patterns
+
+<details>
+<summary>
+<strong> <a name="commitConfig_diff_block_literals"></a>5.3.1.1. [Optional] Property GitProxy configuration file > commitConfig > diff > block > literals</strong>
+</summary>
+<blockquote>
+
+**Title:** DiffBlockLiteral
+
+|              |                   |
+| ------------ | ----------------- |
+| **Type**     | `array of string` |
+| **Required** | No                |
+
+**Description:** Block commits where the commit diff content contains any of the given string literals
+
+| Each item of this array must be                           | Description |
+| --------------------------------------------------------- | ----------- |
+| [literals items](#commitConfig_diff_block_literals_items) | -           |
+
+###### <a name="autogenerated_heading_4"></a>5.3.1.1.1. GitProxy configuration file > commitConfig > diff > block > literals > literals items
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="commitConfig_diff_block_patterns"></a>5.3.1.2. [Optional] Property GitProxy configuration file > commitConfig > diff > block > patterns</strong>
+</summary>
+<blockquote>
+
+**Title:** MessageBlockPatterns
+
+|              |         |
+| ------------ | ------- |
+| **Type**     | `array` |
+| **Required** | No      |
+
+**Description:** Block commits where the commit diff content matches any of the given regular expressions
+
+| Each item of this array must be                           | Description |
+| --------------------------------------------------------- | ----------- |
+| [patterns items](#commitConfig_diff_block_patterns_items) | -           |
+
+###### <a name="autogenerated_heading_5"></a>5.3.1.2.1. GitProxy configuration file > commitConfig > diff > block > patterns > patterns items
+
 |                           |                  |
 | ------------------------- | ---------------- |
 | **Type**                  | `object`         |
 | **Required**              | No               |
 | **Additional properties** | Any type allowed |
 
-**Description:** Enforce rules and patterns on commits including e-mail and message
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="commitConfig_diff_block_providers"></a>5.3.1.3. [Optional] Property GitProxy configuration file > commitConfig > diff > block > providers</strong>
+</summary>
+<blockquote>
+
+**Title:** MessageBlockProviders
+
+|                           |                                                                                                                |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Type**                  | `object`                                                                                                       |
+| **Required**              | No                                                                                                             |
+| **Additional properties** | [Each additional property must conform to the schema](#commitConfig_diff_block_providers_additionalProperties) |
+
+**Description:** Block commits where the commit diff content matches any of the given regular expressions, except where the repository path (project/organisation) matches one of the listed privateOrganisations. The keys in this array are listed as the block type in logs.
+
+<details>
+<summary>
+<strong> <a name="commitConfig_diff_block_providers_additionalProperties"></a>5.3.1.3.1. Property GitProxy configuration file > commitConfig > diff > block > providers > additionalProperties</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
 
 </blockquote>
 </details>
@@ -249,13 +551,124 @@ description: JSON schema reference documentation for GitProxy
 </summary>
 <blockquote>
 
-|                           |                  |
-| ------------------------- | ---------------- |
-| **Type**                  | `object`         |
-| **Required**              | No               |
-| **Additional properties** | Any type allowed |
+**Title:** AttestationConfig
 
-**Description:** Customisable questions to add to attestation form
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Configuration for the attestation form displayed to reviewers. Reviewers will need to check the box next to each question in order to complete the review attestation.
+
+<details>
+<summary>
+<strong> <a name="attestationConfig_questions"></a>6.1. [Optional] Property GitProxy configuration file > attestationConfig > questions</strong>
+</summary>
+<blockquote>
+
+**Title:** AttestationQuestions
+
+|              |                   |
+| ------------ | ----------------- |
+| **Type**     | `array of object` |
+| **Required** | No                |
+
+**Description:** Customisable attestation questions to add to attestation form.
+
+| Each item of this array must be                | Description |
+| ---------------------------------------------- | ----------- |
+| [Question](#attestationConfig_questions_items) | -           |
+
+#### <a name="autogenerated_heading_6"></a>6.1.1. GitProxy configuration file > attestationConfig > questions > Question
+
+**Title:** Question
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+<details>
+<summary>
+<strong> <a name="attestationConfig_questions_items_label"></a>6.1.1.1. [Required] Property GitProxy configuration file > attestationConfig > questions > Question > label</strong>
+</summary>
+<blockquote>
+
+**Title:** QuestionLabel
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+**Description:** The text of the question that will be displayed to the reviewer
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="attestationConfig_questions_items_tooltip"></a>6.1.1.2. [Required] Property GitProxy configuration file > attestationConfig > questions > Question > tooltip</strong>
+</summary>
+<blockquote>
+
+**Title:** QuestionTooltip
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | Yes         |
+| **Additional properties** | Not allowed |
+
+**Description:** A tooltip and optional set of links that will be displayed on mouseover of the question and used to provide additional guidance to the reviewer.
+
+<details>
+<summary>
+<strong> <a name="attestationConfig_questions_items_tooltip_text"></a>6.1.1.2.1. [Required] Property GitProxy configuration file > attestationConfig > questions > Question > tooltip > text</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="attestationConfig_questions_items_tooltip_links"></a>6.1.1.2.2. [Optional] Property GitProxy configuration file > attestationConfig > questions > Question > tooltip > links</strong>
+</summary>
+<blockquote>
+
+|              |                   |
+| ------------ | ----------------- |
+| **Type**     | `array of string` |
+| **Required** | No                |
+
+| Each item of this array must be                                       | Description |
+| --------------------------------------------------------------------- | ----------- |
+| [links items](#attestationConfig_questions_items_tooltip_links_items) | -           |
+
+###### <a name="autogenerated_heading_7"></a>6.1.1.2.2.1. GitProxy configuration file > attestationConfig > questions > Question > tooltip > links > links items
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+| **Format**   | `url`    |
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
 
 </blockquote>
 </details>
@@ -272,7 +685,45 @@ description: JSON schema reference documentation for GitProxy
 | **Required**              | No               |
 | **Additional properties** | Any type allowed |
 
-**Description:** Provide domains to use alternative to the defaults
+**Description:** Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL
+
+<details>
+<summary>
+<strong> <a name="domains_proxy"></a>7.1. [Optional] Property GitProxy configuration file > domains > proxy</strong>
+</summary>
+<blockquote>
+
+**Title:** ProxyUrl
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+| **Format**   | `url`    |
+
+**Description:** Override for the default proxy URL, should include the protocol
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="domains_service"></a>7.2. [Optional] Property GitProxy configuration file > domains > service</strong>
+</summary>
+<blockquote>
+
+**Title:** Service UI URL
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+| **Format**   | `url`    |
+
+**Description:** Override for the service UI URL, should include the protocol
+
+</blockquote>
+</details>
 
 </blockquote>
 </details>
@@ -369,7 +820,7 @@ description: JSON schema reference documentation for GitProxy
 | **Type**     | `array` |
 | **Required** | No      |
 
-**Description:** Pattern searches for listed private organizations are disabled
+**Description:** Provider searches for listed private organizations are disabled, see commitConfig.diff.block.providers
 
 </blockquote>
 </details>
@@ -439,7 +890,7 @@ description: JSON schema reference documentation for GitProxy
 | ------------------------------- | ----------- |
 | [plugins items](#plugins_items) | -           |
 
-### <a name="autogenerated_heading_2"></a>13.1. GitProxy configuration file > plugins > plugins items
+### <a name="autogenerated_heading_8"></a>13.1. GitProxy configuration file > plugins > plugins items
 
 |              |          |
 | ------------ | -------- |
@@ -466,7 +917,7 @@ description: JSON schema reference documentation for GitProxy
 | --------------------------------------- | ----------- |
 | [authorisedRepo](#authorisedList_items) | -           |
 
-### <a name="autogenerated_heading_3"></a>14.1. GitProxy configuration file > authorisedList > authorisedRepo
+### <a name="autogenerated_heading_9"></a>14.1. GitProxy configuration file > authorisedList > authorisedRepo
 
 |                           |                              |
 | ------------------------- | ---------------------------- |
@@ -537,7 +988,7 @@ description: JSON schema reference documentation for GitProxy
 | ------------------------------- | ----------- |
 | [database](#sink_items)         | -           |
 
-### <a name="autogenerated_heading_4"></a>15.1. GitProxy configuration file > sink > database
+### <a name="autogenerated_heading_10"></a>15.1. GitProxy configuration file > sink > database
 
 |                           |                        |
 | ------------------------- | ---------------------- |
@@ -638,7 +1089,7 @@ description: JSON schema reference documentation for GitProxy
 | ---------------------------------------------- | ------------------------------------------ |
 | [authenticationElement](#authentication_items) | Configuration for an authentication source |
 
-### <a name="autogenerated_heading_5"></a>16.1. GitProxy configuration file > authentication > authenticationElement
+### <a name="autogenerated_heading_11"></a>16.1. GitProxy configuration file > authentication > authenticationElement
 
 |                           |                                     |
 | ------------------------- | ----------------------------------- |
@@ -1170,7 +1621,7 @@ Specific value: `"jwt"`
 | ------------------------------------------------- | ------------------------------------------ |
 | [authenticationElement](#apiAuthentication_items) | Configuration for an authentication source |
 
-### <a name="autogenerated_heading_6"></a>18.1. GitProxy configuration file > apiAuthentication > authenticationElement
+### <a name="autogenerated_heading_12"></a>18.1. GitProxy configuration file > apiAuthentication > authenticationElement
 
 |                           |                                               |
 | ------------------------- | --------------------------------------------- |
@@ -1333,7 +1784,7 @@ Specific value: `"jwt"`
 | ----------------------------------------- | ----------- |
 | [routeAuthRule](#uiRouteAuth_rules_items) | -           |
 
-#### <a name="autogenerated_heading_7"></a>23.2.1. GitProxy configuration file > uiRouteAuth > rules > routeAuthRule
+#### <a name="autogenerated_heading_13"></a>23.2.1. GitProxy configuration file > uiRouteAuth > rules > routeAuthRule
 
 |                           |                             |
 | ------------------------- | --------------------------- |
@@ -1391,4 +1842,4 @@ Specific value: `"jwt"`
 </details>
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-09-30 at 14:41:38 +0100
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2025-10-08 at 17:43:40 +0100
