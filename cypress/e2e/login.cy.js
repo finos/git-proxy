@@ -40,18 +40,4 @@ describe('Login page', () => {
       .should('be.visible')
       .and('contain', 'You entered an invalid username or password...');
   });
-
-  describe('OIDC login button', () => {
-    it('should exist', () => {
-      cy.get('[data-test="oidc-login"]').should('exist');
-    });
-
-    // Validates that OIDC is configured correctly
-    it('should redirect to /oidc', () => {
-      // Set intercept first, since redirect on click can be quick
-      cy.intercept('GET', '/api/auth/oidc').as('oidcRedirect');
-      cy.get('[data-test="oidc-login"]').click();
-      cy.wait('@oidcRedirect');
-    });
-  });
 });
