@@ -63,9 +63,9 @@ export interface GitProxyConfig {
    */
   privateOrganizations?: any[];
   /**
-   * Used in early versions of git proxy to configure the remote host that traffic is proxied
-   * to. In later versions, the repository URL is used to determine the domain proxied,
-   * allowing multiple hosts to be proxied by one instance.
+   * Deprecated: Used in early versions of git proxy to configure the remote host that traffic
+   * is proxied to. In later versions, the repository URL is used to determine the domain
+   * proxied, allowing multiple hosts to be proxied by one instance.
    */
   proxyUrl?: string;
   /**
@@ -108,18 +108,39 @@ export interface GitProxyConfig {
  * Third party APIs
  */
 export interface API {
+  /**
+   * Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer
+   * referenced in the codebase.
+   */
   github?: Github;
+  /**
+   * Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin
+   */
+  gitleaks?: Gitleaks;
   /**
    * Configuration used in conjunction with ActiveDirectory auth, which relates to a REST API
    * used to check user group membership, as opposed to direct querying via LDAP.<br />If this
    * configuration is set direct querying of group membership via LDAP will be disabled.
    */
   ls?: Ls;
-  [property: string]: any;
 }
 
+/**
+ * Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer
+ * referenced in the codebase.
+ */
 export interface Github {
   baseUrl?: string;
+}
+
+/**
+ * Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin
+ */
+export interface Gitleaks {
+  configPath?: string;
+  enabled?: boolean;
+  ignoreGitleaksAllow?: boolean;
+  noColor?: boolean;
   [property: string]: any;
 }
 
@@ -139,7 +160,6 @@ export interface Ls {
    * membership of.</li><li>"&lt;id&gt;": The username to check group membership for.</li></ul>
    */
   userInADGroup?: string;
-  [property: string]: any;
 }
 
 /**
@@ -540,12 +560,22 @@ const typeMap: any = {
   API: o(
     [
       { json: 'github', js: 'github', typ: u(undefined, r('Github')) },
+      { json: 'gitleaks', js: 'gitleaks', typ: u(undefined, r('Gitleaks')) },
       { json: 'ls', js: 'ls', typ: u(undefined, r('Ls')) },
+    ],
+    false,
+  ),
+  Github: o([{ json: 'baseUrl', js: 'baseUrl', typ: u(undefined, '') }], false),
+  Gitleaks: o(
+    [
+      { json: 'configPath', js: 'configPath', typ: u(undefined, '') },
+      { json: 'enabled', js: 'enabled', typ: u(undefined, true) },
+      { json: 'ignoreGitleaksAllow', js: 'ignoreGitleaksAllow', typ: u(undefined, true) },
+      { json: 'noColor', js: 'noColor', typ: u(undefined, true) },
     ],
     'any',
   ),
-  Github: o([{ json: 'baseUrl', js: 'baseUrl', typ: u(undefined, '') }], 'any'),
-  Ls: o([{ json: 'userInADGroup', js: 'userInADGroup', typ: u(undefined, '') }], 'any'),
+  Ls: o([{ json: 'userInADGroup', js: 'userInADGroup', typ: u(undefined, '') }], false),
   AuthenticationElement: o(
     [
       { json: 'enabled', js: 'enabled', typ: true },
