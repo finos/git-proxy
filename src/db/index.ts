@@ -1,4 +1,4 @@
-import { AuthorisedRepo } from '../config/types';
+import { AuthorisedRepo } from '../config/generated/config';
 import { PushQuery, Repo, RepoQuery, Sink, User, UserQuery } from './types';
 import * as bcrypt from 'bcryptjs';
 import * as config from '../config';
