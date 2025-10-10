@@ -1,52 +1,71 @@
-const chai = require('chai');
-const sinon = require('sinon');
-const db = require('../../src/db');
+import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
 
-const { expect } = chai;
+vi.mock('../../src/db/mongo', () => ({
+  getRepoByUrl: vi.fn(),
+}));
+
+vi.mock('../../src/db/file', () => ({
+  getRepoByUrl: vi.fn(),
+}));
+
+vi.mock('../../src/config', () => ({
+  getDatabase: vi.fn(() => ({ type: 'mongo' })),
+}));
+
+import * as db from '../../src/db';
+import * as mongo from '../../src/db/mongo';
 
 describe('db', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   afterEach(() => {
-    sinon.restore();
+    vi.restoreAllMocks();
   });
 
   describe('isUserPushAllowed', () => {
     it('returns true if user is in canPush', async () => {
-      sinon.stub(db, 'getRepoByUrl').resolves({
+      vi.mocked(mongo.getRepoByUrl).mockResolvedValue({
         users: {
           canPush: ['alice'],
           canAuthorise: [],
         },
-      });
+      } as any);
+
       const result = await db.isUserPushAllowed('myrepo', 'alice');
-      expect(result).to.be.true;
+      expect(result).toBe(true);
     });
 
     it('returns true if user is in canAuthorise', async () => {
-      sinon.stub(db, 'getRepoByUrl').resolves({
+      vi.mocked(mongo.getRepoByUrl).mockResolvedValue({
         users: {
           canPush: [],
           canAuthorise: ['bob'],
         },
-      });
+      } as any);
+
       const result = await db.isUserPushAllowed('myrepo', 'bob');
-      expect(result).to.be.true;
+      expect(result).toBe(true);
     });
 
     it('returns false if user is in neither', async () => {
-      sinon.stub(db, 'getRepoByUrl').resolves({
+      vi.mocked(mongo.getRepoByUrl).mockResolvedValue({
         users: {
           canPush: [],
           canAuthorise: [],
         },
-      });
+      } as any);
+
       const result = await db.isUserPushAllowed('myrepo', 'charlie');
-      expect(result).to.be.false;
+      expect(result).toBe(false);
     });
 
     it('returns false if repo is not registered', async () => {
-      sinon.stub(db, 'getRepoByUrl').resolves(null);
+      vi.mocked(mongo.getRepoByUrl).mockResolvedValue(null);
+
       const result = await db.isUserPushAllowed('myrepo', 'charlie');
-      expect(result).to.be.false;
+      expect(result).toBe(false);
     });
   });
 });
