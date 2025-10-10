@@ -1,7 +1,6 @@
 const chai = require('chai');
 const { Convert } = require('../src/config/generated/config');
 const defaultSettings = require('../proxy.config.json');
-const { isUserInAdGroup } = require('../src/service/passport/ldaphelper');
 
 const { expect } = chai;
 

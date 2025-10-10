@@ -10,7 +10,7 @@ const getRouter = require('../src/proxy/routes').getRouter;
 const chain = require('../src/proxy/chain');
 const proxyquire = require('proxyquire');
 const { Action, Step } = require('../src/proxy/actions');
-const service = require('../src/service');
+const service = require('../src/service').default;
 const db = require('../src/db');
 
 import Proxy from '../src/proxy';
