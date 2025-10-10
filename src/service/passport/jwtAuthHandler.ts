@@ -14,7 +14,7 @@ export const jwtAuthHandler = (overrideConfig: JwtConfig | null = null) => {
 
     const jwtAuthMethod = apiAuthMethods.find((method) => method.type.toLowerCase() === type);
 
-    if (!overrideConfig && (!jwtAuthMethod || !jwtAuthMethod.enabled)) {
+    if (!jwtAuthMethod || !jwtAuthMethod.enabled) {
       return next();
     }
 
@@ -28,7 +28,15 @@ export const jwtAuthHandler = (overrideConfig: JwtConfig | null = null) => {
       return;
     }
 
-    const config = jwtAuthMethod!.jwtConfig!;
+    if (!jwtAuthMethod.jwtConfig) {
+      res.status(500).send({
+        message: 'JWT configuration is missing\n',
+      });
+      console.log('JWT configuration is missing\n');
+      return;
+    }
+
+    const config = jwtAuthMethod.jwtConfig!;
     const { clientID, authorityURL, expectedAudience, roleMapping } = config;
     const audience = expectedAudience || clientID;
 
