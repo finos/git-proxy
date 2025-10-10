@@ -2,7 +2,6 @@ import axios from 'axios';
 import type { Request } from 'express';
 import ActiveDirectory from 'activedirectory2';
 import { getAPIs } from '../../config';
-
 import { ADProfile } from './types';
 
 const thirdpartyApiConfig = getAPIs();
