@@ -128,19 +128,6 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
     if (isAllowed) {
       console.log(`user ${username} approved push request for ${id}`);
 
-      const reviewerList = await db.getUsers({ username });
-      console.log({ reviewerList });
-
-      const reviewerGitAccount = reviewerList[0].gitAccount;
-      console.log({ reviewerGitAccount });
-
-      if (!reviewerGitAccount) {
-        res.status(401).send({
-          message: 'You must associate a GitHub account with your user before approving...',
-        });
-        return;
-      }
-
       const attestation = {
         questions,
         timestamp: new Date(),
