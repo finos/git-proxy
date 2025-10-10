@@ -23,6 +23,7 @@ export interface UserSettings {
   csrfProtection: boolean;
   domains: Record<string, unknown>;
   rateLimit: RateLimitConfig;
+  cache: CacheConfig;
 }
 
 export interface TLSConfig {
@@ -59,3 +60,9 @@ export interface TempPasswordConfig {
 export type RateLimitConfig = Partial<
   Pick<RateLimitOptions, 'windowMs' | 'limit' | 'message' | 'statusCode'>
 >;
+
+export interface CacheConfig {
+  maxSizeGB: number;
+  maxRepositories: number;
+  cacheDir: string;
+}

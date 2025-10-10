@@ -182,5 +182,10 @@
         "loginRequired": true
       }
     ]
+  },
+  "cache": {
+    "maxSizeGB": 2,
+    "maxRepositories": 50,
+    "cacheDir": "./.remote/cache"
   }
 }
