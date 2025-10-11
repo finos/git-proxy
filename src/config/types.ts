@@ -8,7 +8,7 @@ export interface UserSettings {
   apiAuthentication: Authentication[];
   tempPassword?: TempPasswordConfig;
   proxyUrl: string;
-  api: Record<string, any>;
+  api: ThirdPartyApiConfig;
   cookieSecret: string;
   sessionMaxAgeHours: number;
   tls?: TLSConfig;
@@ -49,6 +49,43 @@ export interface Authentication {
   type: string;
   enabled: boolean;
   options?: Record<string, unknown>;
+  oidcConfig?: OidcConfig;
+  adConfig?: AdConfig;
+  jwtConfig?: JwtConfig;
+
+  // Deprecated fields for backwards compatibility
+  // TODO: remove in future release and keep the ones in adConfig
+  userGroup?: string;
+  adminGroup?: string;
+  domain?: string;
+}
+
+export interface OidcConfig {
+  issuer: string;
+  clientID: string;
+  clientSecret: string;
+  callbackURL: string;
+  scope: string;
+}
+
+export interface AdConfig {
+  url: string;
+  baseDN: string;
+  searchBase?: string;
+  userGroup?: string;
+  adminGroup?: string;
+  domain?: string;
+}
+
+export interface JwtConfig {
+  clientID: string;
+  authorityURL: string;
+  roleMapping?: RoleMapping;
+  expectedAudience?: string;
+}
+
+export interface RoleMapping {
+  [key: string]: Record<string, string> | undefined;
 }
 
 export interface TempPasswordConfig {
@@ -59,3 +96,24 @@ export interface TempPasswordConfig {
 export type RateLimitConfig = Partial<
   Pick<RateLimitOptions, 'windowMs' | 'limit' | 'message' | 'statusCode'>
 >;
+
+export interface ThirdPartyApiConfig {
+  ls?: ThirdPartyApiConfigLs;
+  github?: ThirdPartyApiConfigGithub;
+  gitleaks?: ThirdPartyApiConfigGitleaks;
+}
+
+export interface ThirdPartyApiConfigLs {
+  userInADGroup: string;
+}
+
+export interface ThirdPartyApiConfigGithub {
+  baseUrl: string;
+}
+
+export interface ThirdPartyApiConfigGitleaks {
+  configPath: string;
+  enabled: boolean;
+  ignoreGitleaksAllow: boolean;
+  noColor: boolean;
+}

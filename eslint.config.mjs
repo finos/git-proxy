@@ -150,6 +150,7 @@ export default defineConfig(
       ],
       // allow for chai `expect().to.xyz`
       '@typescript-eslint/no-unused-expressions': 'off',
+      'new-cap': ['error', { capIsNewExceptionPattern: '^express\\..*' }],
     },
   },
 
