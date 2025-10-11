@@ -3,6 +3,7 @@ import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import * as db from '../src/db';
 import service from '../src/service';
 import Proxy from '../src/proxy';
+import { Express } from 'express';
 
 // dummy repo
 const TEST_ORG = 'finos';
@@ -49,7 +50,7 @@ const TEST_PUSH = {
 };
 
 describe('Push API', () => {
-  let app: any;
+  let app: Express;
   let cookie: string | null = null;
   let testRepo: any;
 

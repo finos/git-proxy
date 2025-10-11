@@ -3,10 +3,10 @@ import { beforeAll, afterAll, beforeEach, describe, it, expect } from 'vitest';
 import * as db from '../src/db';
 import service from '../src/service';
 import Proxy from '../src/proxy';
-import { App } from 'supertest/types';
+import { Express } from 'express';
 
 describe('login', () => {
-  let app: App;
+  let app: Express;
   let cookie: string;
 
   beforeAll(async () => {

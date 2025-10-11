@@ -40,6 +40,10 @@ const TEST_UNKNOWN_REPO = {
   fallbackUrlPrefix: '/finos/fdc3.git',
 };
 
+afterAll(() => {
+  vi.resetModules();
+});
+
 describe('proxy route filter middleware', () => {
   let app: Express;
 
