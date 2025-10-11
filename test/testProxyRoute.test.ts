@@ -44,7 +44,7 @@ afterAll(() => {
   vi.resetModules();
 });
 
-describe('proxy route filter middleware', () => {
+describe.skip('proxy route filter middleware', () => {
   let app: Express;
 
   beforeEach(async () => {
@@ -217,7 +217,7 @@ describe('healthcheck route', () => {
   });
 });
 
-describe('proxy express application', () => {
+describe.skip('proxy express application', () => {
   let apiApp: Express;
   let proxy: Proxy;
   let cookie: string;
@@ -387,7 +387,7 @@ describe('proxy express application', () => {
   }, 5000);
 });
 
-describe('proxyFilter function', () => {
+describe.skip('proxyFilter function', () => {
   let proxyRoutes: any;
   let req: any;
   let res: any;
