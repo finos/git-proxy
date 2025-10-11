@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import * as db from '../src/db';
 import service from '../src/service';
 import Proxy from '../src/proxy';
@@ -115,6 +115,9 @@ describe('Push API', () => {
     await db.deleteRepo(testRepo._id);
     await db.deleteUser(TEST_USERNAME_1);
     await db.deleteUser(TEST_USERNAME_2);
+
+    vi.resetModules();
+    service.httpServer.close();
   });
 
   describe('test push API', () => {

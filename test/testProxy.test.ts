@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, afterAll } from 'vitest';
 
 vi.mock('http', async (importOriginal) => {
   const actual: any = await importOriginal();
@@ -57,8 +57,8 @@ vi.mock('../src/proxy/chain', () => ({
 
 vi.mock('../src/config/env', () => ({
   serverConfig: {
-    GIT_PROXY_SERVER_PORT: 0,
-    GIT_PROXY_HTTPS_SERVER_PORT: 0,
+    GIT_PROXY_SERVER_PORT: 8001,
+    GIT_PROXY_HTTPS_SERVER_PORT: 8444,
   },
 }));
 
@@ -171,6 +171,11 @@ describe('Proxy', () => {
 
   afterEach(() => {
     vi.clearAllMocks();
+    proxy.stop();
+  });
+
+  afterAll(() => {
+    vi.resetModules();
   });
 
   describe('start()', () => {
