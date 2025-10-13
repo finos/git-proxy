@@ -5,6 +5,7 @@ import getRawBody from 'raw-body';
 import { executeChain } from '../chain';
 import { processUrlPath, validGitRequest, getAllProxiedHosts } from './helper';
 import { ProxyOptions } from 'express-http-proxy';
+import { getMaxPackSizeBytes } from '../../config';
 
 enum ActionType {
   ALLOWED = 'Allowed',
@@ -160,7 +161,7 @@ const extractRawBody = async (req: Request, res: Response, next: NextFunction) =
   req.pipe(pluginStream);
 
   try {
-    const buf = await getRawBody(pluginStream, { limit: '1gb' });
+    const buf = await getRawBody(pluginStream, { limit: getMaxPackSizeBytes() });
     (req as any).bodyRaw = buf;
     (req as any).pipe = (dest: any, opts: any) => proxyStream.pipe(dest, opts);
     next();

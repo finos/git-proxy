@@ -33,6 +33,7 @@ const initMockPushProcessors = (sinon) => {
     gitleaks: sinon.stub(),
     clearBareClone: sinon.stub(),
     scanDiff: sinon.stub(),
+    captureSSHKey: sinon.stub(),
     blockForAuth: sinon.stub(),
   };
   mockPushProcessors.parsePush.displayName = 'parsePush';
@@ -51,6 +52,7 @@ const initMockPushProcessors = (sinon) => {
   mockPushProcessors.gitleaks.displayName = 'gitleaks';
   mockPushProcessors.clearBareClone.displayName = 'clearBareClone';
   mockPushProcessors.scanDiff.displayName = 'scanDiff';
+  mockPushProcessors.captureSSHKey.displayName = 'captureSSHKey';
   mockPushProcessors.blockForAuth.displayName = 'blockForAuth';
   return mockPushProcessors;
 };
@@ -216,11 +218,13 @@ describe('proxy chain', function () {
     mockPushProcessors.gitleaks.resolves(continuingAction);
     mockPushProcessors.clearBareClone.resolves(continuingAction);
     mockPushProcessors.scanDiff.resolves(continuingAction);
+    mockPushProcessors.captureSSHKey.resolves(continuingAction);
     mockPushProcessors.blockForAuth.resolves(continuingAction);
 
     const result = await chain.executeChain(req);
 
     expect(mockPreProcessors.parseAction.called).to.be.true;
+    console.log(mockPushProcessors);
     expect(mockPushProcessors.parsePush.called).to.be.true;
     expect(mockPushProcessors.checkEmptyBranch.called).to.be.true;
     expect(mockPushProcessors.checkRepoInAuthorisedList.called).to.be.true;
@@ -236,6 +240,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.gitleaks.called).to.be.true;
     expect(mockPushProcessors.clearBareClone.called).to.be.true;
     expect(mockPushProcessors.scanDiff.called).to.be.true;
+    expect(mockPushProcessors.captureSSHKey.called).to.be.true;
     expect(mockPushProcessors.blockForAuth.called).to.be.true;
     expect(mockPushProcessors.audit.called).to.be.true;
 
@@ -317,6 +322,7 @@ describe('proxy chain', function () {
     mockPushProcessors.gitleaks.resolves(action);
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
+    mockPushProcessors.captureSSHKey.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
     const dbStub = sinon.stub(db, 'authorise').resolves(true);
 
@@ -365,6 +371,7 @@ describe('proxy chain', function () {
     mockPushProcessors.gitleaks.resolves(action);
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
+    mockPushProcessors.captureSSHKey.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
 
     const dbStub = sinon.stub(db, 'reject').resolves(true);
@@ -414,6 +421,7 @@ describe('proxy chain', function () {
     mockPushProcessors.gitleaks.resolves(action);
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
+    mockPushProcessors.captureSSHKey.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
 
     const error = new Error('Database error');
@@ -462,6 +470,7 @@ describe('proxy chain', function () {
     mockPushProcessors.gitleaks.resolves(action);
     mockPushProcessors.clearBareClone.resolves(action);
     mockPushProcessors.scanDiff.resolves(action);
+    mockPushProcessors.captureSSHKey.resolves(action);
     mockPushProcessors.blockForAuth.resolves(action);
 
     const error = new Error('Database error');

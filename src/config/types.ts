@@ -23,6 +23,9 @@ export interface UserSettings {
   csrfProtection: boolean;
   domains: Record<string, unknown>;
   rateLimit: RateLimitConfig;
+  limits?: {
+    maxPackSizeBytes?: number;
+  };
 }
 
 export interface TLSConfig {

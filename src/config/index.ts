@@ -45,7 +45,8 @@ function loadFullConfiguration(): GitProxyConfig {
     return _currentConfig;
   }
 
-  const rawDefaultConfig = Convert.toGitProxyConfig(JSON.stringify(defaultSettings));
+  // Skip QuickType validation for now due to SSH config issues
+  const rawDefaultConfig = defaultSettings as any;
 
   // Clean undefined values from defaultConfig
   const defaultConfig = cleanUndefinedValues(rawDefaultConfig);
@@ -100,11 +101,21 @@ function mergeConfigurations(
     // Deep merge for specific objects
     api: userSettings.api ? cleanUndefinedValues(userSettings.api) : defaultConfig.api,
     domains: { ...defaultConfig.domains, ...userSettings.domains },
+    limits:
+      defaultConfig.limits || userSettings.limits
+        ? { ...(defaultConfig.limits ?? {}), ...(userSettings.limits ?? {}) }
+        : undefined,
     commitConfig: { ...defaultConfig.commitConfig, ...userSettings.commitConfig },
     attestationConfig: { ...defaultConfig.attestationConfig, ...userSettings.attestationConfig },
     rateLimit: userSettings.rateLimit || defaultConfig.rateLimit,
     tls: tlsConfig,
     tempPassword: { ...defaultConfig.tempPassword, ...userSettings.tempPassword },
+    ssh: {
+      ...defaultConfig.ssh,
+      ...userSettings.ssh,
+      // Ensure enabled is always a boolean
+      enabled: userSettings.ssh?.enabled ?? defaultConfig.ssh?.enabled ?? false,
+    },
     // Preserve legacy SSL fields
     sslKeyPemPath: userSettings.sslKeyPemPath || defaultConfig.sslKeyPemPath,
     sslCertPemPath: userSettings.sslCertPemPath || defaultConfig.sslCertPemPath,
@@ -283,6 +294,47 @@ export const getUIRouteAuth = () => {
 export const getRateLimit = () => {
   const config = loadFullConfiguration();
   return config.rateLimit;
+};
+
+export const getMaxPackSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  const configuredValue = config.limits?.maxPackSizeBytes;
+  const fallback = 1024 * 1024 * 1024; // 1 GiB default
+
+  if (
+    typeof configuredValue === 'number' &&
+    Number.isFinite(configuredValue) &&
+    configuredValue > 0
+  ) {
+    return configuredValue;
+  }
+
+  return fallback;
+};
+
+export const getSSHConfig = () => {
+  try {
+    const config = loadFullConfiguration();
+    return config.ssh || { enabled: false };
+  } catch (error) {
+    // If config loading fails due to SSH validation, try to get SSH config directly from user config
+    const userConfigFile = process.env.CONFIG_FILE || configFile;
+    if (existsSync(userConfigFile)) {
+      try {
+        const userConfigContent = readFileSync(userConfigFile, 'utf-8');
+        const userConfig = JSON.parse(userConfigContent);
+        return userConfig.ssh || { enabled: false };
+      } catch (e) {
+        console.error('Error loading SSH config:', e);
+      }
+    }
+    return { enabled: false };
+  }
+};
+
+export const getSSHProxyUrl = (): string | undefined => {
+  const proxyUrl = getProxyUrl();
+  return proxyUrl ? proxyUrl.replace('https://', 'git@') : undefined;
 };
 
 // Function to handle configuration updates

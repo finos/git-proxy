@@ -269,3 +269,8 @@ website/.docusaurus
 
 # Jetbrains IDE
 .idea
+
+.claude/
+
+# Test SSH keys (generated during tests)
+test/keys/
