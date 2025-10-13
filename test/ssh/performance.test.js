@@ -9,7 +9,7 @@ describe('SSH Performance Tests', () => {
 
       // Simulate pack data capture
       const packDataChunks = [smallPackData];
-      const totalBytes = smallPackData.length;
+      const _totalBytes = smallPackData.length;
       const packData = Buffer.concat(packDataChunks);
 
       const endMemory = process.memoryUsage().heapUsed;
@@ -25,7 +25,7 @@ describe('SSH Performance Tests', () => {
 
       // Simulate pack data capture
       const packDataChunks = [mediumPackData];
-      const totalBytes = mediumPackData.length;
+      const _totalBytes = mediumPackData.length;
       const packData = Buffer.concat(packDataChunks);
 
       const endMemory = process.memoryUsage().heapUsed;
@@ -41,7 +41,7 @@ describe('SSH Performance Tests', () => {
 
       // Simulate pack data capture
       const packDataChunks = [largePackData];
-      const totalBytes = largePackData.length;
+      const _totalBytes = largePackData.length;
       const packData = Buffer.concat(packDataChunks);
 
       const endMemory = process.memoryUsage().heapUsed;
@@ -207,13 +207,13 @@ describe('SSH Performance Tests', () => {
 
       // Simulate processing with cleanup
       const packData = Buffer.alloc(10 * 1024 * 1024); // 10MB
-      const processedData = Buffer.concat([packData]);
+      const _processedData = Buffer.concat([packData]);
 
       // Simulate cleanup
       packData.fill(0); // Clear buffer
       const cleanedMemory = process.memoryUsage().heapUsed;
 
-      expect(processedData.length).to.equal(10 * 1024 * 1024);
+      expect(_processedData.length).to.equal(10 * 1024 * 1024);
       // Memory should be similar to start (allowing for GC timing)
       expect(cleanedMemory - startMemory).to.be.lessThan(5 * 1024 * 1024);
     });
@@ -224,7 +224,7 @@ describe('SSH Performance Tests', () => {
       // Simulate multiple processing cycles
       for (let i = 0; i < 5; i++) {
         const packData = Buffer.alloc(5 * 1024 * 1024); // 5MB
-        const processedData = Buffer.concat([packData]);
+        const _processedData = Buffer.concat([packData]);
         packData.fill(0); // Cleanup
 
         // Force garbage collection if available

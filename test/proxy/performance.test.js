@@ -257,13 +257,13 @@ describe('HTTP/HTTPS Performance Tests', () => {
 
       // Simulate processing with cleanup
       const data = Buffer.alloc(10 * 1024 * 1024); // 10MB
-      const processedData = Buffer.concat([data]);
+      const _processedData = Buffer.concat([data]);
 
       // Simulate cleanup
       data.fill(0); // Clear buffer
       const cleanedMemory = process.memoryUsage().heapUsed;
 
-      expect(processedData.length).to.equal(10 * 1024 * 1024);
+      expect(_processedData.length).to.equal(10 * 1024 * 1024);
       // Memory should be similar to start (allowing for GC timing)
       expect(cleanedMemory - startMemory).to.be.lessThan(5 * 1024 * 1024);
     });
@@ -274,7 +274,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
       // Simulate multiple processing cycles
       for (let i = 0; i < 5; i++) {
         const data = Buffer.alloc(5 * 1024 * 1024); // 5MB
-        const processedData = Buffer.concat([data]);
+        const _processedData = Buffer.concat([data]);
         data.fill(0); // Cleanup
 
         // Force garbage collection if available
