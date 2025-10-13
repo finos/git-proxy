@@ -9,7 +9,8 @@
     "@finos/git-proxy": "file:../.."
   },
   "devDependencies": {
-    "chai": "^4.5.0"
+    "chai": "^4.5.0",
+    "ts-mocha": "^11.1.0"
   },
   "scripts": {
     "lint": "eslint --fix . --ext .js,.jsx",
