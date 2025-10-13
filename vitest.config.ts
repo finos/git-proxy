@@ -19,6 +19,7 @@ export default defineConfig({
         'packages',
         'plugins',
         'scripts',
+        'src/**/types.ts',
         'src/config/generated',
         'src/constants',
         'src/contents',
