@@ -36,6 +36,10 @@ export interface GitProxyConfig {
    */
   authorisedList?: AuthorisedRepo[];
   /**
+   * Configuration for bare repository cache (hybrid cache system)
+   */
+  cache?: Cache;
+  /**
    * Enforce rules and patterns on commits including e-mail and message
    */
   commitConfig?: { [key: string]: any };
@@ -262,6 +266,24 @@ export interface AuthorisedRepo {
   project: string;
   url: string;
   [property: string]: any;
+}
+
+/**
+ * Configuration for bare repository cache (hybrid cache system)
+ */
+export interface Cache {
+  /**
+   * Directory path for bare repository cache (default ./.remote/cache)
+   */
+  cacheDir: string;
+  /**
+   * Maximum number of repositories in cache (default 50)
+   */
+  maxRepositories: number;
+  /**
+   * Maximum cache size in gigabytes (default 2GB)
+   */
+  maxSizeGB: number;
 }
 
 /**
@@ -530,6 +552,7 @@ const typeMap: any = {
         typ: u(undefined, a(r('AuthenticationElement'))),
       },
       { json: 'authorisedList', js: 'authorisedList', typ: u(undefined, a(r('AuthorisedRepo'))) },
+      { json: 'cache', js: 'cache', typ: u(undefined, r('Cache')) },
       { json: 'commitConfig', js: 'commitConfig', typ: u(undefined, m('any')) },
       { json: 'configurationSources', js: 'configurationSources', typ: u(undefined, 'any') },
       { json: 'contactEmail', js: 'contactEmail', typ: u(undefined, '') },
@@ -616,6 +639,14 @@ const typeMap: any = {
       { json: 'url', js: 'url', typ: '' },
     ],
     'any',
+  ),
+  Cache: o(
+    [
+      { json: 'cacheDir', js: 'cacheDir', typ: '' },
+      { json: 'maxRepositories', js: 'maxRepositories', typ: 3.14 },
+      { json: 'maxSizeGB', js: 'maxSizeGB', typ: 3.14 },
+    ],
+    false,
   ),
   RateLimit: o(
     [

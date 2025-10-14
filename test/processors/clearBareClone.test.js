@@ -11,7 +11,7 @@ const actionId = '123__456';
 const timestamp = Date.now();
 
 describe('clear bare and local clones', async () => {
-  it('pull remote generates a local .remote folder', async () => {
+  it('pull remote generates a local .remote folder with hybrid cache structure', async () => {
     const action = new Action(actionId, 'type', 'get', timestamp, 'finos/git-proxy.git');
     action.url = 'https://github.com/finos/git-proxy.git';
 
@@ -26,14 +26,16 @@ describe('clear bare and local clones', async () => {
       action,
     );
 
-    expect(fs.existsSync(`./.remote/${actionId}`)).to.be.true;
+    // Hybrid cache creates: .remote/cache (bare repos) and .remote/work (working copies)
+    expect(fs.existsSync(`./.remote/work/${actionId}`)).to.be.true;
+    expect(fs.existsSync(`./.remote/cache/git-proxy.git`)).to.be.true;
   }).timeout(20000);
 
-  it('clear bare clone function purges .remote folder and specific clone folder', async () => {
+  it('clear bare clone function purges .remote folder in test environment', async () => {
     const action = new Action(actionId, 'type', 'get', timestamp, 'finos/git-proxy.git');
     await clearBareClone(null, action);
-    expect(fs.existsSync(`./.remote`)).to.throw;
-    expect(fs.existsSync(`./.remote/${actionId}`)).to.throw;
+    // In test environment, clearBareClone removes the entire .remote directory
+    expect(fs.existsSync(`./.remote`)).to.be.false;
   });
 
   afterEach(() => {
