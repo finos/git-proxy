@@ -6,6 +6,8 @@ export type PushQuery = {
   blocked: boolean;
   allowPush: boolean;
   authorised: boolean;
+  canceled: boolean;
+  rejected: boolean;
 };
 
 export type UserRole = 'canPush' | 'canAuthorise';
