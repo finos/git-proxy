@@ -5,14 +5,18 @@
     "allowJs": true,
     "checkJs": false,
     "jsx": "react-jsx",
-    "moduleResolution": "Node",
+    "moduleResolution": "nodenext",
     "strict": true,
-    "noEmit": true,
+    "declaration": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "module": "CommonJS",
+    "module": "NodeNext",
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "outDir": "./dist",
+    "rootDir": "."
   },
-  "include": ["index.js", "test", "coverage"]
+  "include": ["index.ts", "types.ts"],
+  "exclude": ["src/config/**/*", "src/db/**/*", "src/proxy/**/*", "src/service/**/*", "src/ui/**/*"]
 }

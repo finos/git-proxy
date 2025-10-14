@@ -1,9 +1,12 @@
 #!/usr/bin/env node
-const axios = require('axios');
-const yargs = require('yargs/yargs');
-const { hideBin } = require('yargs/helpers');
-const fs = require('fs');
-const util = require('util');
+import axios from 'axios';
+import yargs from 'yargs/yargs';
+import { hideBin } from 'yargs/helpers';
+import fs from 'fs';
+import util from 'util';
+
+import { CommitData, PushData } from '@finos/git-proxy/src/types/models';
+import { PushQuery } from '@finos/git-proxy/src/db/types';
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
@@ -19,7 +22,7 @@ axios.defaults.timeout = 30000;
  * @param {string} username The user name to login with
  * @param {string} password The password to use for the login
  */
-async function login(username, password) {
+async function login(username: string, password: string) {
   try {
     let response = await axios.post(
       `${baseUrl}/api/auth/login`,
@@ -44,7 +47,7 @@ async function login(username, password) {
     const user = `"${response.data.username}" <${response.data.email}>`;
     const isAdmin = response.data.admin ? ' (admin)' : '';
     console.log(`Login ${user}${isAdmin}: OK`);
-  } catch (error) {
+  } catch (error: any) {
     if (error.response) {
       console.error(`Error: Login '${username}': '${error.response.status}'`);
       process.exitCode = 1;
@@ -61,7 +64,7 @@ async function login(username, password) {
  * the push is allowed, authorised, blocked, canceled, encountered an error,
  * or was rejected.
  *
- * @param {Object} filters - An object containing filter criteria for Git
+ * @param {Partial<PushQuery>} filters - An object containing filter criteria for Git
  *          pushes.
  * @param {boolean} filters.allowPush - If not null, filters for pushes with
  *          given attribute and status.
@@ -76,7 +79,7 @@ async function login(username, password) {
  * @param {boolean} filters.rejected - If not null, filters for pushes with
  *          given attribute and status.
  */
-async function getGitPushes(filters) {
+async function getGitPushes(filters: Partial<PushQuery>) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     console.error('Error: List: Authentication required');
     process.exitCode = 1;
@@ -91,40 +94,64 @@ async function getGitPushes(filters) {
       params: filters,
     });
 
-    const records = [];
-    response.data?.forEach((push) => {
-      const record = {};
-      record.id = push.id;
-      record.timestamp = push.timestamp;
-      record.url = push.url;
-      record.allowPush = push.allowPush;
-      record.authorised = push.authorised;
-      record.blocked = push.blocked;
-      record.canceled = push.canceled;
-      record.error = push.error;
-      record.rejected = push.rejected;
-
-      record.lastStep = {
-        stepName: push.lastStep?.stepName,
-        error: push.lastStep?.error,
-        errorMessage: push.lastStep?.errorMessage,
-        blocked: push.lastStep?.blocked,
-        blockedMessage: push.lastStep?.blockedMessage,
+    const records: PushData[] = [];
+    response.data.forEach((push: PushData) => {
+      const record: PushData = {
+        id: push.id,
+        repo: push.repo,
+        branch: push.branch,
+        commitFrom: push.commitFrom,
+        commitTo: push.commitTo,
+        commitData: push.commitData,
+        diff: push.diff,
+        error: push.error,
+        canceled: push.canceled,
+        rejected: push.rejected,
+        blocked: push.blocked,
+        authorised: push.authorised,
+        attestation: push.attestation,
+        autoApproved: push.autoApproved,
+        timestamp: push.timestamp,
+        url: push.url,
+        allowPush: push.allowPush,
       };
 
-      record.commitData = [];
-      push.commitData?.forEach((pushCommitDataRecord) => {
-        record.commitData.push({
-          message: pushCommitDataRecord.message,
-          committer: pushCommitDataRecord.committer,
+      if (push.lastStep) {
+        record.lastStep = {
+          id: push.lastStep?.id,
+          content: push.lastStep?.content,
+          logs: push.lastStep?.logs,
+          stepName: push.lastStep?.stepName,
+          error: push.lastStep?.error,
+          errorMessage: push.lastStep?.errorMessage,
+          blocked: push.lastStep?.blocked,
+          blockedMessage: push.lastStep?.blockedMessage,
+        };
+      }
+
+      if (push.commitData) {
+        const commitData: CommitData[] = [];
+        push.commitData.forEach((pushCommitDataRecord: CommitData) => {
+          commitData.push({
+            message: pushCommitDataRecord.message,
+            committer: pushCommitDataRecord.committer,
+            committerEmail: pushCommitDataRecord.committerEmail,
+            author: pushCommitDataRecord.author,
+            authorEmail: pushCommitDataRecord.authorEmail,
+            commitTimestamp: pushCommitDataRecord.commitTimestamp,
+            tree: pushCommitDataRecord.tree,
+            parent: pushCommitDataRecord.parent,
+            commitTs: pushCommitDataRecord.commitTs,
+          });
         });
-      });
+        record.commitData = commitData;
+      }
 
       records.push(record);
     });
 
     console.log(`${util.inspect(records, false, null, false)}`);
-  } catch (error) {
+  } catch (error: any) {
     // default error
     const errorMessage = `Error: List: '${error.message}'`;
     process.exitCode = 2;
@@ -136,7 +163,7 @@ async function getGitPushes(filters) {
  * Authorise git push by ID
  * @param {string} id The ID of the git push to authorise
  */
-async function authoriseGitPush(id) {
+async function authoriseGitPush(id: string) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     console.error('Error: Authorise: Authentication required');
     process.exitCode = 1;
@@ -168,7 +195,7 @@ async function authoriseGitPush(id) {
     );
 
     console.log(`Authorise: ID: '${id}': OK`);
-  } catch (error) {
+  } catch (error: any) {
     // default error
     let errorMessage = `Error: Authorise: '${error.message}'`;
     process.exitCode = 2;
@@ -176,8 +203,7 @@ async function authoriseGitPush(id) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage =
-            'Error: Authorise: Authentication required (401): ' + error?.response?.data?.message;
+          errorMessage = 'Error: Authorise: Authentication required';
           process.exitCode = 3;
           break;
         case 404:
@@ -193,7 +219,7 @@ async function authoriseGitPush(id) {
  * Reject git push by ID
  * @param {string} id The ID of the git push to reject
  */
-async function rejectGitPush(id) {
+async function rejectGitPush(id: string) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     console.error('Error: Reject: Authentication required');
     process.exitCode = 1;
@@ -216,7 +242,7 @@ async function rejectGitPush(id) {
     );
 
     console.log(`Reject: ID: '${id}': OK`);
-  } catch (error) {
+  } catch (error: any) {
     // default error
     let errorMessage = `Error: Reject: '${error.message}'`;
     process.exitCode = 2;
@@ -224,8 +250,7 @@ async function rejectGitPush(id) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage =
-            'Error: Reject: Authentication required (401): ' + error?.response?.data?.message;
+          errorMessage = 'Error: Reject: Authentication required';
           process.exitCode = 3;
           break;
         case 404:
@@ -241,7 +266,7 @@ async function rejectGitPush(id) {
  * Cancel git push by ID
  * @param {string} id The ID of the git push to cancel
  */
-async function cancelGitPush(id) {
+async function cancelGitPush(id: string) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     console.error('Error: Cancel: Authentication required');
     process.exitCode = 1;
@@ -264,7 +289,7 @@ async function cancelGitPush(id) {
     );
 
     console.log(`Cancel: ID: '${id}': OK`);
-  } catch (error) {
+  } catch (error: any) {
     // default error
     let errorMessage = `Error: Cancel: '${error.message}'`;
     process.exitCode = 2;
@@ -272,8 +297,7 @@ async function cancelGitPush(id) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage =
-            'Error: Cancel: Authentication required (401): ' + error?.response?.data?.message;
+          errorMessage = 'Error: Cancel: Authentication required';
           process.exitCode = 3;
           break;
         case 404:
@@ -302,7 +326,7 @@ async function logout() {
           headers: { Cookie: cookies },
         },
       );
-    } catch (error) {
+    } catch (error: any) {
       console.log(`Warning: Logout: '${error.message}'`);
     }
   }
@@ -326,7 +350,7 @@ async function reloadConfig() {
     await axios.post(`${baseUrl}/api/v1/admin/reload-config`, {}, { headers: { Cookie: cookies } });
 
     console.log('Configuration reloaded successfully');
-  } catch (error) {
+  } catch (error: any) {
     const errorMessage = `Error: Reload config: '${error.message}'`;
     process.exitCode = 2;
     console.error(errorMessage);
@@ -341,7 +365,13 @@ async function reloadConfig() {
  * @param {string} gitAccount The git account for the new user
  * @param {boolean} [admin=false] Whether the user should be an admin (optional)
  */
-async function createUser(username, password, email, gitAccount, admin = false) {
+async function createUser(
+  username: string,
+  password: string,
+  email: string,
+  gitAccount: string,
+  admin: boolean = false,
+) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     console.error('Error: Create User: Authentication required');
     process.exitCode = 1;
@@ -366,7 +396,7 @@ async function createUser(username, password, email, gitAccount, admin = false) 
     );
 
     console.log(`User '${username}' created successfully`);
-  } catch (error) {
+  } catch (error: any) {
     let errorMessage = `Error: Create User: '${error.message}'`;
     process.exitCode = 2;
 
@@ -518,8 +548,10 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
   })
   .command({
     command: 'reload-config',
-    description: 'Reload GitProxy configuration without restarting',
-    action: reloadConfig,
+    describe: 'Reload GitProxy configuration without restarting',
+    handler() {
+      reloadConfig();
+    },
   })
   .command({
     command: 'create-user',
