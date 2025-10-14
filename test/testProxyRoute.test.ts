@@ -1,15 +1,17 @@
 import request from 'supertest';
-import express, { Express } from 'express';
+import express, { Express, Request, Response } from 'express';
 import { describe, it, beforeEach, afterEach, expect, vi, beforeAll, afterAll } from 'vitest';
 
 import { Action, Step } from '../src/proxy/actions';
 import * as chain from '../src/proxy/chain';
+import * as helper from '../src/proxy/routes/helper';
 import Proxy from '../src/proxy';
 import {
   handleMessage,
   validGitRequest,
   getRouter,
   handleRefsErrorMessage,
+  proxyFilter,
 } from '../src/proxy/routes';
 
 import * as db from '../src/db';
@@ -42,179 +44,6 @@ const TEST_UNKNOWN_REPO = {
 
 afterAll(() => {
   vi.resetModules();
-});
-
-describe.skip('proxy route filter middleware', () => {
-  let app: Express;
-
-  beforeEach(async () => {
-    app = express();
-    app.use('/', await getRouter());
-  });
-
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  it('should reject invalid git requests with 400', async () => {
-    const res = await request(app)
-      .get('/owner/repo.git/invalid/path')
-      .set('user-agent', 'git/2.42.0')
-      .set('accept', 'application/x-git-upload-pack-request');
-
-    expect(res.status).toBe(200); // status 200 is used to ensure error message is rendered by git client
-    expect(res.text).toContain('Invalid request received');
-  });
-
-  it('should handle blocked requests and return custom packet message', async () => {
-    vi.spyOn(chain, 'executeChain').mockResolvedValue({
-      blocked: true,
-      blockedMessage: 'You shall not push!',
-      error: true,
-    } as Action);
-
-    const res = await request(app)
-      .post('/owner/repo.git/git-upload-pack')
-      .set('user-agent', 'git/2.42.0')
-      .set('accept', 'application/x-git-upload-pack-request')
-      .send(Buffer.from('0000'));
-
-    expect(res.status).toBe(200); // status 200 is used to ensure error message is rendered by git client
-    expect(res.text).toContain('You shall not push!');
-    expect(res.headers['content-type']).toContain('application/x-git-receive-pack-result');
-    expect(res.headers['x-frame-options']).toBe('DENY');
-  });
-
-  describe('when request is valid and not blocked', () => {
-    it('should return error if repo is not found', async () => {
-      vi.spyOn(chain, 'executeChain').mockResolvedValue({
-        blocked: false,
-        blockedMessage: '',
-        error: false,
-      } as Action);
-
-      const res = await request(app)
-        .get('/owner/repo.git/info/refs?service=git-upload-pack')
-        .set('user-agent', 'git/2.42.0')
-        .set('accept', 'application/x-git-upload-pack-request');
-
-      expect(res.status).toBe(401);
-      expect(res.text).toBe('Repository not found.');
-    });
-
-    it('should pass through if repo is found', async () => {
-      vi.spyOn(chain, 'executeChain').mockResolvedValue({
-        blocked: false,
-        blockedMessage: '',
-        error: false,
-      } as Action);
-
-      const res = await request(app)
-        .get('/finos/git-proxy.git/info/refs?service=git-upload-pack')
-        .set('user-agent', 'git/2.42.0')
-        .set('accept', 'application/x-git-upload-pack-request');
-
-      expect(res.status).toBe(200);
-      expect(res.text).toContain('git-upload-pack');
-    });
-  });
-});
-
-describe('proxy route helpers', () => {
-  describe('handleMessage', async () => {
-    it('should handle short messages', async () => {
-      const res = await handleMessage('one');
-      expect(res).toContain('one');
-    });
-
-    it('should handle emoji messages', async () => {
-      const res = await handleMessage('❌ push failed: too many errors');
-      expect(res).toContain('❌');
-    });
-  });
-
-  describe('validGitRequest', () => {
-    it('should return true for /info/refs?service=git-upload-pack with valid user-agent', () => {
-      const res = validGitRequest('/info/refs?service=git-upload-pack', {
-        'user-agent': 'git/2.30.1',
-      });
-      expect(res).toBe(true);
-    });
-
-    it('should return true for /info/refs?service=git-receive-pack with valid user-agent', () => {
-      const res = validGitRequest('/info/refs?service=git-receive-pack', {
-        'user-agent': 'git/1.9.1',
-      });
-      expect(res).toBe(true);
-    });
-
-    it('should return false for /info/refs?service=git-upload-pack with missing user-agent', () => {
-      const res = validGitRequest('/info/refs?service=git-upload-pack', {});
-      expect(res).toBe(false);
-    });
-
-    it('should return false for /info/refs?service=git-upload-pack with non-git user-agent', () => {
-      const res = validGitRequest('/info/refs?service=git-upload-pack', {
-        'user-agent': 'curl/7.79.1',
-      });
-      expect(res).toBe(false);
-    });
-
-    it('should return true for /git-upload-pack with valid user-agent and accept', () => {
-      const res = validGitRequest('/git-upload-pack', {
-        'user-agent': 'git/2.40.0',
-        accept: 'application/x-git-upload-pack-request',
-      });
-      expect(res).toBe(true);
-    });
-
-    it('should return false for /git-upload-pack with missing accept header', () => {
-      const res = validGitRequest('/git-upload-pack', {
-        'user-agent': 'git/2.40.0',
-      });
-      expect(res).toBe(false);
-    });
-
-    it('should return false for /git-upload-pack with wrong accept header', () => {
-      const res = validGitRequest('/git-upload-pack', {
-        'user-agent': 'git/2.40.0',
-        accept: 'application/json',
-      });
-      expect(res).toBe(false);
-    });
-
-    it('should return false for unknown paths', () => {
-      const res = validGitRequest('/not-a-valid-git-path', {
-        'user-agent': 'git/2.40.0',
-        accept: 'application/x-git-upload-pack-request',
-      });
-      expect(res).toBe(false);
-    });
-  });
-});
-
-describe('healthcheck route', () => {
-  let app: Express;
-
-  beforeEach(async () => {
-    app = express();
-    app.use('/', await getRouter());
-  });
-
-  it('returns 200 OK with no-cache headers', async () => {
-    const res = await request(app).get('/healthcheck');
-
-    expect(res.status).toBe(200);
-    expect(res.text).toBe('OK');
-
-    // Basic header checks (values defined in route)
-    expect(res.headers['cache-control']).toBe(
-      'no-cache, no-store, must-revalidate, proxy-revalidate',
-    );
-    expect(res.headers['pragma']).toBe('no-cache');
-    expect(res.headers['expires']).toBe('0');
-    expect(res.headers['surrogate-control']).toBe('no-store');
-  });
 });
 
 describe.skip('proxy express application', () => {
@@ -387,149 +216,495 @@ describe.skip('proxy express application', () => {
   }, 5000);
 });
 
-describe.skip('proxyFilter function', () => {
-  let proxyRoutes: any;
-  let req: any;
-  let res: any;
-  let actionToReturn: any;
-  let executeChainStub: any;
+describe('handleRefsErrorMessage', () => {
+  it('should format refs error message correctly', () => {
+    const message = 'Repository not found';
+    const result = handleRefsErrorMessage(message);
 
-  beforeEach(async () => {
-    // mock the executeChain function
-    executeChainStub = vi.fn();
-    vi.doMock('../src/proxy/chain', () => ({
-      executeChain: executeChainStub,
-    }));
+    expect(result).toMatch(/^[0-9a-f]{4}ERR /);
+    expect(result).toContain(message);
+    expect(result).toContain('\n0000');
+  });
 
-    // Re-import with mocked chain
-    proxyRoutes = await import('../src/proxy/routes');
+  it('should calculate correct length for refs error', () => {
+    const message = 'Access denied';
+    const result = handleRefsErrorMessage(message);
 
-    req = {
-      url: '/github.com/finos/git-proxy.git/info/refs?service=git-receive-pack',
+    const lengthHex = result.substring(0, 4);
+    const length = parseInt(lengthHex, 16);
+
+    const errorBody = `ERR ${message}`;
+    expect(length).toBe(4 + Buffer.byteLength(errorBody));
+  });
+});
+
+describe('proxyFilter', () => {
+  let mockReq: Partial<Request>;
+  let mockRes: Partial<Response>;
+  let statusMock: ReturnType<typeof vi.fn>;
+  let sendMock: ReturnType<typeof vi.fn>;
+  let setMock: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    // setup mock response
+    statusMock = vi.fn().mockReturnThis();
+    sendMock = vi.fn().mockReturnThis();
+    setMock = vi.fn().mockReturnThis();
+
+    mockRes = {
+      status: statusMock,
+      send: sendMock,
+      set: setMock,
+    };
+
+    // setup mock request
+    mockReq = {
+      url: '/github.com/finos/git-proxy.git/info/refs?service=git-upload-pack',
+      method: 'GET',
       headers: {
-        host: 'dummyHost',
-        'user-agent': 'git/dummy-git-client',
-        accept: 'application/x-git-receive-pack-request',
+        host: 'localhost:8080',
+        'user-agent': 'git/2.30.0',
       },
     };
-    res = {
-      set: vi.fn(),
-      status: vi.fn().mockReturnThis(),
-      send: vi.fn(),
-    };
+
+    // reduces console noise
+    vi.spyOn(console, 'log').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    vi.resetModules();
     vi.restoreAllMocks();
   });
 
-  it('should return false for push requests that should be blocked', async () => {
-    actionToReturn = new Action(
-      '1234',
-      'dummy',
-      'dummy',
-      Date.now(),
-      '/github.com/finos/git-proxy.git',
-    );
-    const step = new Step('dummy', false, null, true, 'test block', null);
-    actionToReturn.addStep(step);
-    executeChainStub.mockReturnValue(actionToReturn);
+  describe('Valid requests', () => {
+    it('should allow valid GET request to info/refs', async () => {
+      // mock helpers to return valid data
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/info/refs',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
 
-    const result = await proxyRoutes.proxyFilter(req, res);
-    expect(result).toBe(false);
+      // mock executeChain to return allowed action
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: false,
+      } as Action);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(true);
+      expect(statusMock).not.toHaveBeenCalled();
+      expect(sendMock).not.toHaveBeenCalled();
+    });
+
+    it('should allow valid POST request to git-receive-pack', async () => {
+      mockReq.method = 'POST';
+      mockReq.url = '/github.com/finos/git-proxy.git/git-receive-pack';
+
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/git-receive-pack',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: false,
+      } as Action);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(true);
+    });
+
+    it('should handle bodyRaw for POST pack requests', async () => {
+      mockReq.method = 'POST';
+      mockReq.url = '/github.com/finos/git-proxy.git/git-upload-pack';
+      (mockReq as any).bodyRaw = Buffer.from('test data');
+
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/git-upload-pack',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: false,
+      } as Action);
+
+      await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect((mockReq as any).body).toEqual(Buffer.from('test data'));
+      expect((mockReq as any).bodyRaw).toBeUndefined();
+    });
   });
 
-  it('should return false for push requests that produced errors', async () => {
-    actionToReturn = new Action(
-      '1234',
-      'dummy',
-      'dummy',
-      Date.now(),
-      '/github.com/finos/git-proxy.git',
-    );
-    const step = new Step('dummy', true, 'test error', false, null, null);
-    actionToReturn.addStep(step);
-    executeChainStub.mockReturnValue(actionToReturn);
+  describe('Invalid requests', () => {
+    it('should reject request with invalid URL components', async () => {
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue(null);
 
-    const result = await proxyRoutes.proxyFilter(req, res);
-    expect(result).toBe(false);
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(statusMock).toHaveBeenCalledWith(200);
+      expect(sendMock).toHaveBeenCalled();
+      const sentMessage = sendMock.mock.calls[0][0];
+      expect(sentMessage).toContain('Invalid request received');
+    });
+
+    it('should reject request with empty gitPath', async () => {
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '',
+        repoPath: 'github.com',
+      });
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(statusMock).toHaveBeenCalledWith(200);
+    });
+
+    it('should reject invalid git request', async () => {
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/info/refs',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(false);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(statusMock).toHaveBeenCalledWith(200);
+    });
   });
 
-  it('should return false for invalid push requests', async () => {
-    actionToReturn = new Action(
-      '1234',
-      'dummy',
-      'dummy',
-      Date.now(),
-      '/github.com/finos/git-proxy.git',
-    );
-    const step = new Step('dummy', true, 'test error', false, null, null);
-    actionToReturn.addStep(step);
-    executeChainStub.mockReturnValue(actionToReturn);
+  describe('Blocked requests', () => {
+    it('should handle blocked request with message', async () => {
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/info/refs',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
 
-    // create an invalid request
-    req = {
-      url: '/github.com/finos/git-proxy.git/invalidPath',
-      headers: {
-        host: 'dummyHost',
-        'user-agent': 'git/dummy-git-client',
-        accept: 'application/x-git-receive-pack-request',
-      },
-    };
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: true,
+        blockedMessage: 'Repository blocked by policy',
+      } as Action);
 
-    const result = await proxyRoutes.proxyFilter(req, res);
-    expect(result).toBe(false);
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(statusMock).toHaveBeenCalledWith(200);
+      expect(setMock).toHaveBeenCalledWith(
+        'content-type',
+        'application/x-git-upload-pack-advertisement',
+      );
+      const sentMessage = sendMock.mock.calls[0][0];
+      expect(sentMessage).toContain('Repository blocked by policy');
+    });
+
+    it('should handle blocked POST request', async () => {
+      mockReq.method = 'POST';
+      mockReq.url = '/github.com/finos/git-proxy.git/git-receive-pack';
+
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/git-receive-pack',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: true,
+        blockedMessage: 'Push blocked',
+      } as Action);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(setMock).toHaveBeenCalledWith('content-type', 'application/x-git-receive-pack-result');
+    });
   });
 
-  it('should return true for push requests that are valid and pass the chain', async () => {
-    actionToReturn = new Action(
-      '1234',
-      'dummy',
-      'dummy',
-      Date.now(),
-      '/github.com/finos/git-proxy.git',
-    );
-    const step = new Step('dummy', false, null, false, null, null);
-    actionToReturn.addStep(step);
-    executeChainStub.mockReturnValue(actionToReturn);
+  describe('Error handling', () => {
+    it('should handle error from executeChain', async () => {
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/info/refs',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
 
-    const result = await proxyRoutes.proxyFilter(req, res);
-    expect(result).toBe(true);
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: true,
+        blocked: false,
+        errorMessage: 'Chain execution failed',
+      } as Action);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(statusMock).toHaveBeenCalledWith(200);
+      const sentMessage = sendMock.mock.calls[0][0];
+      expect(sentMessage).toContain('Chain execution failed');
+    });
+
+    it('should handle thrown exception', async () => {
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/info/refs',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+
+      vi.spyOn(chain, 'executeChain').mockRejectedValue(new Error('Unexpected error'));
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(statusMock).toHaveBeenCalledWith(200);
+      const sentMessage = sendMock.mock.calls[0][0];
+      expect(sentMessage).toContain('Error occurred in proxy filter function');
+      expect(sentMessage).toContain('Unexpected error');
+    });
+
+    it('should use correct error format for GET /info/refs', async () => {
+      mockReq.method = 'GET';
+      mockReq.url = '/github.com/finos/git-proxy.git/info/refs?service=git-upload-pack';
+
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/info/refs',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: true,
+        blocked: false,
+        errorMessage: 'Test error',
+      } as Action);
+
+      await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(setMock).toHaveBeenCalledWith(
+        'content-type',
+        'application/x-git-upload-pack-advertisement',
+      );
+      const sentMessage = sendMock.mock.calls[0][0];
+
+      expect(sentMessage).toMatch(/^[0-9a-f]{4}ERR /);
+    });
+
+    it('should use standard error format for non-refs requests', async () => {
+      mockReq.method = 'POST';
+      mockReq.url = '/github.com/finos/git-proxy.git/git-receive-pack';
+
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/git-receive-pack',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: true,
+        blocked: false,
+        errorMessage: 'Test error',
+      } as Action);
+
+      await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(setMock).toHaveBeenCalledWith('content-type', 'application/x-git-receive-pack-result');
+      const sentMessage = sendMock.mock.calls[0][0];
+      // should use handleMessage format
+      // eslint-disable-next-line no-control-regex
+      expect(sentMessage).toMatch(/^[0-9a-f]{4}\x02/);
+    });
   });
 
-  it('should handle GET /info/refs with blocked action using Git protocol error format', async () => {
-    const req = {
-      url: '/proj/repo.git/info/refs?service=git-upload-pack',
-      method: 'GET',
-      headers: {
-        host: 'localhost',
-        'user-agent': 'git/2.34.1',
-      },
-    };
-    const res = {
-      set: vi.fn(),
-      status: vi.fn().mockReturnThis(),
-      send: vi.fn(),
-    };
+  describe('Different git operations', () => {
+    it('should handle git-upload-pack request', async () => {
+      mockReq.method = 'POST';
+      mockReq.url = '/gitlab.com/gitlab-community/meta.git/git-upload-pack';
 
-    const actionToReturn = {
-      blocked: true,
-      blockedMessage: 'Repository not in authorised list',
-    };
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/gitlab-community/meta.git/git-upload-pack',
+        repoPath: 'gitlab.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
 
-    executeChainStub.mockReturnValue(actionToReturn);
-    const result = await proxyRoutes.proxyFilter(req, res);
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: false,
+      } as Action);
 
-    expect(result).toBe(false);
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
 
-    const expectedPacket = handleRefsErrorMessage('Repository not in authorised list');
+      expect(result).toBe(true);
+    });
 
-    expect(res.set).toHaveBeenCalledWith(
-      'content-type',
-      'application/x-git-upload-pack-advertisement',
+    it('should handle different origins (GitLab)', async () => {
+      mockReq.url = '/gitlab.com/gitlab-community/meta.git/info/refs?service=git-upload-pack';
+      mockReq.headers = {
+        ...mockReq.headers,
+        host: 'gitlab.com',
+      };
+
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/gitlab-community/meta.git/info/refs',
+        repoPath: 'gitlab.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: false,
+      } as Action);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(true);
+    });
+  });
+});
+
+describe('proxy route helpers', () => {
+  describe('handleMessage', async () => {
+    it('should handle short messages', async () => {
+      const res = await handleMessage('one');
+      expect(res).toContain('one');
+    });
+
+    it('should handle emoji messages', async () => {
+      const res = await handleMessage('❌ push failed: too many errors');
+      expect(res).toContain('❌');
+    });
+  });
+
+  describe('validGitRequest', () => {
+    it('should return true for /info/refs?service=git-upload-pack with valid user-agent', () => {
+      const res = validGitRequest('/info/refs?service=git-upload-pack', {
+        'user-agent': 'git/2.30.1',
+      });
+      expect(res).toBe(true);
+    });
+
+    it('should return true for /info/refs?service=git-receive-pack with valid user-agent', () => {
+      const res = validGitRequest('/info/refs?service=git-receive-pack', {
+        'user-agent': 'git/1.9.1',
+      });
+      expect(res).toBe(true);
+    });
+
+    it('should return false for /info/refs?service=git-upload-pack with missing user-agent', () => {
+      const res = validGitRequest('/info/refs?service=git-upload-pack', {});
+      expect(res).toBe(false);
+    });
+
+    it('should return false for /info/refs?service=git-upload-pack with non-git user-agent', () => {
+      const res = validGitRequest('/info/refs?service=git-upload-pack', {
+        'user-agent': 'curl/7.79.1',
+      });
+      expect(res).toBe(false);
+    });
+
+    it('should return true for /git-upload-pack with valid user-agent and accept', () => {
+      const res = validGitRequest('/git-upload-pack', {
+        'user-agent': 'git/2.40.0',
+        accept: 'application/x-git-upload-pack-request',
+      });
+      expect(res).toBe(true);
+    });
+
+    it('should return false for /git-upload-pack with missing accept header', () => {
+      const res = validGitRequest('/git-upload-pack', {
+        'user-agent': 'git/2.40.0',
+      });
+      expect(res).toBe(false);
+    });
+
+    it('should return false for /git-upload-pack with wrong accept header', () => {
+      const res = validGitRequest('/git-upload-pack', {
+        'user-agent': 'git/2.40.0',
+        accept: 'application/json',
+      });
+      expect(res).toBe(false);
+    });
+
+    it('should return false for unknown paths', () => {
+      const res = validGitRequest('/not-a-valid-git-path', {
+        'user-agent': 'git/2.40.0',
+        accept: 'application/x-git-upload-pack-request',
+      });
+      expect(res).toBe(false);
+    });
+  });
+
+  describe('handleMessage', () => {
+    it('should format error message correctly', () => {
+      const message = 'Test error message';
+      const result = handleMessage(message);
+
+      // eslint-disable-next-line no-control-regex
+      expect(result).toMatch(/^[0-9a-f]{4}\x02\t/);
+      expect(result).toContain(message);
+      expect(result).toContain('\n0000');
+    });
+
+    it('should calculate correct length for message', () => {
+      const message = 'Error';
+      const result = handleMessage(message);
+
+      const lengthHex = result.substring(0, 4);
+      const length = parseInt(lengthHex, 16);
+
+      const body = `\t${message}`;
+      expect(length).toBe(6 + Buffer.byteLength(body));
+    });
+  });
+
+  describe('handleRefsErrorMessage', () => {
+    it('should format refs error message correctly', () => {
+      const message = 'Repository not found';
+      const result = handleRefsErrorMessage(message);
+
+      expect(result).toMatch(/^[0-9a-f]{4}ERR /);
+      expect(result).toContain(message);
+      expect(result).toContain('\n0000');
+    });
+
+    it('should calculate correct length for refs error', () => {
+      const message = 'Access denied';
+      const result = handleRefsErrorMessage(message);
+
+      const lengthHex = result.substring(0, 4);
+      const length = parseInt(lengthHex, 16);
+
+      const errorBody = `ERR ${message}`;
+      expect(length).toBe(4 + Buffer.byteLength(errorBody));
+    });
+  });
+});
+
+describe('healthcheck route', () => {
+  let app: Express;
+
+  beforeEach(async () => {
+    app = express();
+    app.use('/', await getRouter());
+  });
+
+  it('returns 200 OK with no-cache headers', async () => {
+    const res = await request(app).get('/healthcheck');
+
+    expect(res.status).toBe(200);
+    expect(res.text).toBe('OK');
+
+    // basic header checks (values defined in route)
+    expect(res.headers['cache-control']).toBe(
+      'no-cache, no-store, must-revalidate, proxy-revalidate',
     );
-    expect(res.status).toHaveBeenCalledWith(200);
-    expect(res.send).toHaveBeenCalledWith(expectedPacket);
+    expect(res.headers['pragma']).toBe('no-cache');
+    expect(res.headers['expires']).toBe('0');
+    expect(res.headers['surrogate-control']).toBe('no-store');
   });
 });
