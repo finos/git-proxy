@@ -5,14 +5,16 @@ import { PushQuery } from '../types';
 
 const collectionName = 'pushes';
 
-const defaultPushQuery: PushQuery = {
+const defaultPushQuery: Partial<PushQuery> = {
   error: false,
   blocked: true,
   allowPush: false,
   authorised: false,
 };
 
-export const getPushes = async (query: PushQuery = defaultPushQuery): Promise<Action[]> => {
+export const getPushes = async (
+  query: Partial<PushQuery> = defaultPushQuery,
+): Promise<Action[]> => {
   return findDocuments<Action>(collectionName, query, {
     projection: {
       _id: 0,

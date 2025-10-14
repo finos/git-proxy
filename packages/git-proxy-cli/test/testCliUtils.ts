@@ -1,13 +1,17 @@
-const fs = require('fs');
-const util = require('util');
-const { exec } = require('child_process');
-const execAsync = util.promisify(exec);
-const { expect } = require('chai');
+import fs from 'fs';
+import util from 'util';
+import { exec } from 'child_process';
+import { expect } from 'chai';
 
-const actions = require('../../../src/proxy/actions/Action');
-const steps = require('../../../src/proxy/actions/Step');
-const processor = require('../../../src/proxy/processors/push-action/audit');
-const db = require('../../../src/db');
+import Proxy from '../../../src/proxy';
+import { Action } from '../../../src/proxy/actions/Action';
+import { Step } from '../../../src/proxy/actions/Step';
+import { exec as execProcessor } from '../../../src/proxy/processors/push-action/audit';
+import * as db from '../../../src/db';
+import { Server } from 'http';
+import { Repo } from '../../../src/db/types';
+
+const execAsync = util.promisify(exec);
 
 // cookie file name
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
@@ -26,11 +30,11 @@ const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
  *         match the `expectedExitCode`.
  */
 async function runCli(
-  cli,
-  expectedExitCode = 0,
-  expectedMessages = null,
-  expectedErrorMessages = null,
-  debug = true,
+  cli: string,
+  expectedExitCode: number = 0,
+  expectedMessages: string[] | null = null,
+  expectedErrorMessages: string[] | null = null,
+  debug: boolean = true,
 ) {
   try {
     console.log(`cli: '${cli}'`);
@@ -50,7 +54,7 @@ async function runCli(
         expect(stderr).to.include(expectedErrorMessage);
       });
     }
-  } catch (error) {
+  } catch (error: any) {
     const exitCode = error.code;
     if (!exitCode) {
       // an AssertionError is thrown from failing some of the expectations
@@ -81,12 +85,12 @@ async function runCli(
 
 /**
  * Starts the server.
- * @param {Object} service - The GitProxy API service to be started.
+ * @param {*} service - The GitProxy API service to be started.
  * @return {Promise<void>} A promise that resolves when the service has
  * successfully started. Does not return any value upon resolution.
  */
-async function startServer(service) {
-  await service.start();
+async function startServer(service: typeof import('../../../src/service/index')) {
+  await service.start(new Proxy());
 }
 
 /**
@@ -104,8 +108,8 @@ async function startServer(service) {
  * @throws {Error} If the server cannot be closed properly or if an error
  * occurs during the close operation.
  */
-async function closeServer(server, waitTime = 0) {
-  return new Promise((resolve, reject) => {
+async function closeServer(server: Server, waitTime: number = 0) {
+  return new Promise<void>((resolve, reject) => {
     server.closeAllConnections();
     server.close((err) => {
       if (err) {
@@ -146,14 +150,14 @@ async function removeCookiesFile() {
  * @param {object} newRepo The new repo attributes.
  * @param {boolean} debug Print debug messages to console if true.
  */
-async function addRepoToDb(newRepo, debug = false) {
+async function addRepoToDb(newRepo: Repo, debug = false) {
   const repos = await db.getRepos();
   const found = repos.find((y) => y.project === newRepo.project && newRepo.name === y.name);
   if (!found) {
     await db.createRepo(newRepo);
     const repo = await db.getRepoByUrl(newRepo.url);
-    await db.addUserCanPush(repo._id, 'admin');
-    await db.addUserCanAuthorise(repo._id, 'admin');
+    await db.addUserCanPush(repo?._id || '', 'admin');
+    await db.addUserCanAuthorise(repo?._id || '', 'admin');
     if (debug) {
       console.log(`New repo added to database: ${newRepo}`);
     }
@@ -168,9 +172,9 @@ async function addRepoToDb(newRepo, debug = false) {
  * Removes a repo from the DB.
  * @param {string} repoUrl  The url of the repo to remove.
  */
-async function removeRepoFromDb(repoUrl) {
+async function removeRepoFromDb(repoUrl: string) {
   const repo = await db.getRepoByUrl(repoUrl);
-  await db.deleteRepo(repo._id);
+  await db.deleteRepo(repo?._id || '');
 }
 
 /**
@@ -181,17 +185,23 @@ async function removeRepoFromDb(repoUrl) {
  * @param {string} userEmail The email of the user who pushed the git push.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
-async function addGitPushToDb(id, repoUrl, user = null, userEmail = null, debug = false) {
-  const action = new actions.Action(
+async function addGitPushToDb(
+  id: string,
+  repoUrl: string,
+  user: string | null = null,
+  userEmail: string | null = null,
+  debug: boolean = false,
+) {
+  const action = new Action(
     id,
     'push', // type
     'get', // method
     Date.now(), // timestamp
     repoUrl,
   );
-  action.user = user;
-  action.userEmail = userEmail;
-  const step = new steps.Step(
+  action.user = user || '';
+  action.userEmail = userEmail || '';
+  const step = new Step(
     'authBlock', // stepName
     false, // error
     null, // errorMessage
@@ -207,10 +217,12 @@ async function addGitPushToDb(id, repoUrl, user = null, userEmail = null, debug 
     committer: 'committer',
     commitTs: 'commitTs',
     message: 'message',
+    authorEmail: 'authorEmail',
+    committerEmail: 'committerEmail',
   });
   action.commitData = commitData;
   action.addStep(step);
-  const result = await processor.exec(null, action);
+  const result = await execProcessor(null, action);
   if (debug) {
     console.log(`New git push added to DB: ${util.inspect(result)}`);
   }
@@ -220,7 +232,7 @@ async function addGitPushToDb(id, repoUrl, user = null, userEmail = null, debug 
  * Removes a push from the DB
  * @param {string} id
  */
-async function removeGitPushFromDb(id) {
+async function removeGitPushFromDb(id: string) {
   await db.deletePush(id);
 }
 
@@ -233,7 +245,14 @@ async function removeGitPushFromDb(id) {
  * @param {boolean} admin Flag to make the user administrator.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
-async function addUserToDb(username, password, email, gitAccount, admin = false, debug = false) {
+async function addUserToDb(
+  username: string,
+  password: string,
+  email: string,
+  gitAccount: string,
+  admin: boolean = false,
+  debug: boolean = false,
+) {
   const result = await db.createUser(username, password, email, gitAccount, admin);
   if (debug) {
     console.log(`New user added to DB: ${util.inspect(result)}`);
@@ -244,20 +263,20 @@ async function addUserToDb(username, password, email, gitAccount, admin = false,
  * Remove a user record from the database if present.
  * @param {string} username The user name.
  */
-async function removeUserFromDb(username) {
+async function removeUserFromDb(username: string) {
   await db.deleteUser(username);
 }
 
-module.exports = {
-  runCli: runCli,
-  startServer: startServer,
-  closeServer: closeServer,
-  addRepoToDb: addRepoToDb,
-  removeRepoFromDb: removeRepoFromDb,
-  addGitPushToDb: addGitPushToDb,
-  removeGitPushFromDb: removeGitPushFromDb,
-  addUserToDb: addUserToDb,
-  removeUserFromDb: removeUserFromDb,
-  createCookiesFileWithExpiredCookie: createCookiesFileWithExpiredCookie,
-  removeCookiesFile: removeCookiesFile,
+export {
+  runCli,
+  startServer,
+  closeServer,
+  addRepoToDb,
+  removeRepoFromDb,
+  addGitPushToDb,
+  removeGitPushFromDb,
+  addUserToDb,
+  removeUserFromDb,
+  createCookiesFileWithExpiredCookie,
+  removeCookiesFile,
 };
