@@ -170,3 +170,6 @@ export const findUserByOIDC = (oidcId: string): Promise<User | null> => sink.fin
 export const getUsers = (query?: object): Promise<User[]> => sink.getUsers(query);
 export const deleteUser = (username: string): Promise<void> => sink.deleteUser(username);
 export const updateUser = (user: User): Promise<void> => sink.updateUser(user);
+
+// Re-export types
+export type { PushQuery, Repo, Sink, User } from './types';
