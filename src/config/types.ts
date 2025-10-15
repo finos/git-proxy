@@ -1,30 +1,5 @@
 import { Options as RateLimitOptions } from 'express-rate-limit';
 
-export interface UserSettings {
-  uiRouteAuth: Record<string, unknown>;
-  authorisedList: AuthorisedRepo[];
-  sink: Database[];
-  authentication: Authentication[];
-  apiAuthentication: Authentication[];
-  tempPassword?: TempPasswordConfig;
-  proxyUrl: string;
-  api: Record<string, any>;
-  cookieSecret: string;
-  sessionMaxAgeHours: number;
-  tls?: TLSConfig;
-  sslCertPemPath?: string; // deprecated
-  sslKeyPemPath?: string; // deprecated
-  plugins: any[];
-  commitConfig: Record<string, unknown>;
-  attestationConfig: Record<string, unknown>;
-  privateOrganizations: any[];
-  urlShortener: string;
-  contactEmail: string;
-  csrfProtection: boolean;
-  domains: Record<string, unknown>;
-  rateLimit: RateLimitConfig;
-}
-
 export interface TLSConfig {
   enabled?: boolean;
   cert?: string;
