@@ -13,14 +13,14 @@ const isEmailAllowed = (email: string): boolean => {
   const [emailLocal, emailDomain] = email.split('@');
 
   if (
-    commitConfig.author.email.domain.allow &&
+    commitConfig?.author?.email?.domain?.allow &&
     !new RegExp(commitConfig.author.email.domain.allow, 'g').test(emailDomain)
   ) {
     return false;
   }
 
   if (
-    commitConfig.author.email.local.block &&
+    commitConfig?.author?.email?.local?.block &&
     new RegExp(commitConfig.author.email.local.block, 'g').test(emailLocal)
   ) {
     return false;

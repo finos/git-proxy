@@ -13,6 +13,7 @@
     "src/ui/**",
     "**/*.tsx",
     "**/*.jsx",
-    "./src/context.js"
+    "./src/context.js",
+    "eslint.config.mjs"
   ]
 }

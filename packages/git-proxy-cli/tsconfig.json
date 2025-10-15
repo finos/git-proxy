@@ -18,5 +18,12 @@
     "rootDir": "."
   },
   "include": ["index.ts", "types.ts"],
-  "exclude": ["src/config/**/*", "src/db/**/*", "src/proxy/**/*", "src/service/**/*", "src/ui/**/*"]
+  "exclude": [
+    "src/config/**/*",
+    "src/db/**/*",
+    "src/proxy/**/*",
+    "src/service/**/*",
+    "src/ui/**/*",
+    "eslint.config.mjs"
+  ]
 }
