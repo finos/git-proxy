@@ -179,16 +179,19 @@ export const validGitRequest = (gitPath: string, headers: any): boolean => {
  * Collect the Set of all host (host and port if specified) that we
  * will be proxying requests for, to be used to initialize the proxy.
  *
- * @return {string[]} an array of origins
+ * @return {Promise<Array<{protocol: string, host: string}>>} an array of protocol+host combinations
  */
-export const getAllProxiedHosts = async (): Promise<string[]> => {
+export const getAllProxiedHosts = async (): Promise<Array<{ protocol: string; host: string }>> => {
   const repos = await db.getRepos();
-  const origins = new Set<string>();
+  const origins = new Map<string, string>(); // host -> protocol
   repos.forEach((repo) => {
     const parsedUrl = processGitUrl(repo.url);
     if (parsedUrl) {
-      origins.add(parsedUrl.host);
+      // If this host doesn't exist yet, or if we find an HTTP repo (to prefer HTTP over HTTPS for mixed cases)
+      if (!origins.has(parsedUrl.host) || parsedUrl.protocol === 'http://') {
+        origins.set(parsedUrl.host, parsedUrl.protocol);
+      }
     } // failures are logged by parsing util fn
   });
-  return Array.from(origins);
+  return Array.from(origins.entries()).map(([host, protocol]) => ({ protocol, host }));
 };
