@@ -1,6 +1,7 @@
 import { Action, Step } from '../../actions';
 import { getCommitConfig, getPrivateOrganizations } from '../../../config';
 import parseDiff, { File } from 'parse-diff';
+import escapeStringRegexp from 'escape-string-regexp';
 
 const commitConfig = getCommitConfig();
 const privateOrganizations = getPrivateOrganizations();
@@ -75,10 +76,11 @@ const combineMatches = (organization: string) => {
       : Object.entries(commitConfig?.diff?.block?.providers ?? []);
 
   // Combine all matches (literals, patterns)
+
   const combinedMatches = [
     ...blockedLiterals.map((literal) => ({
       type: BLOCK_TYPE.LITERAL,
-      match: new RegExp(literal, 'gi'),
+      match: new RegExp(escapeStringRegexp(literal), 'gi'), //TODO: swap out escapeStringRegexp() for RegExp.escape() when we require node 24
     })),
     ...blockedPatterns.map((pattern) => ({
       type: BLOCK_TYPE.PATTERN,

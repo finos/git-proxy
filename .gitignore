@@ -269,3 +269,4 @@ website/.docusaurus
 
 # Jetbrains IDE
 .idea
+.vscode/settings.json
