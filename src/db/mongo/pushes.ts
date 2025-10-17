@@ -10,6 +10,7 @@ const defaultPushQuery: Partial<PushQuery> = {
   blocked: true,
   allowPush: false,
   authorised: false,
+  type: 'push',
 };
 
 export const getPushes = async (
