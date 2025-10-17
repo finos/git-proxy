@@ -89,8 +89,8 @@ async function runCli(
  * @return {Promise<void>} A promise that resolves when the service has
  * successfully started. Does not return any value upon resolution.
  */
-async function startServer(service: Proxy) {
-  await service.start();
+async function startServer(service: typeof import('../../../src/service').default) {
+  await service.start(new Proxy());
 }
 
 /**
