@@ -53,14 +53,15 @@ index 8b97e49..de18d43 100644
  Project to test gitproxy
 +AKIAIOSFODNN7EXAMPLE
 +AKIAIOSFODNN8EXAMPLE
-+blockedTestLiteral
++emdedded_blocked.Te$t.Literal?
 `;
 };
 describe('Scan commit diff...', async () => {
   privateOrganizations[0] = 'private-org-test';
   commitConfig.diff = {
     block: {
-      literals: ['blockedTestLiteral'],
+      //n.b. the example literal includes special chars that would be interpreted as RegEx if not escaped properly
+      literals: ['blocked.Te$t.Literal?'],
       patterns: [],
       providers: {
         'AWS (Amazon Web Services) Access Key ID':
