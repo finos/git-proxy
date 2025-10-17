@@ -10,6 +10,8 @@ import * as config from '../config';
 import * as db from '../db';
 import { serverConfig } from '../config/env';
 import Proxy from '../proxy';
+import routes from './routes';
+import { configure } from './passport';
 
 const limiter = rateLimit(config.getRateLimit());
 
@@ -33,8 +35,7 @@ const corsOptions = {
 async function createApp(proxy: Proxy): Promise<Express> {
   // configuration of passport is async
   // Before we can bind the routes - we need the passport strategy
-  const passport = await require('./passport').configure();
-  const routes = await import('./routes');
+  const passport = await configure();
   const absBuildPath = path.join(__dirname, '../../build');
   app.use(cors(corsOptions));
   app.set('trust proxy', 1);
@@ -71,7 +72,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.use(passport.session());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use('/', routes.default(proxy));
+  app.use('/', routes(proxy));
   app.use('/', express.static(absBuildPath));
   app.get('/*', (req, res) => {
     res.sendFile(path.join(`${absBuildPath}/index.html`));
