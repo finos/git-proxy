@@ -269,3 +269,6 @@ website/.docusaurus
 
 # Jetbrains IDE
 .idea
+
+# Generated from testing
+/test/fixtures/test-package/package-lock.json

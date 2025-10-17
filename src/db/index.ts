@@ -1,5 +1,5 @@
-import { AuthorisedRepo } from '../config/types';
-import { PushQuery, Repo, Sink, User } from './types';
+import { AuthorisedRepo } from '../config/generated/config';
+import { PushQuery, Repo, RepoQuery, Sink, User, UserQuery } from './types';
 import * as bcrypt from 'bcryptjs';
 import * as config from '../config';
 import * as mongo from './mongo';
@@ -140,9 +140,9 @@ export const canUserCancelPush = async (id: string, user: string) => {
   }
 };
 
-export const getSessionStore = (): MongoDBStore | null =>
-  sink.getSessionStore ? sink.getSessionStore() : null;
-export const getPushes = (query: PushQuery): Promise<Action[]> => sink.getPushes(query);
+export const getSessionStore = (): MongoDBStore | undefined =>
+  sink.getSessionStore ? sink.getSessionStore() : undefined;
+export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => sink.getPushes(query);
 export const writeAudit = (action: Action): Promise<void> => sink.writeAudit(action);
 export const getPush = (id: string): Promise<Action | null> => sink.getPush(id);
 export const deletePush = (id: string): Promise<void> => sink.deletePush(id);
@@ -151,7 +151,7 @@ export const authorise = (id: string, attestation: any): Promise<{ message: stri
 export const cancel = (id: string): Promise<{ message: string }> => sink.cancel(id);
 export const reject = (id: string, attestation: any): Promise<{ message: string }> =>
   sink.reject(id, attestation);
-export const getRepos = (query?: object): Promise<Repo[]> => sink.getRepos(query);
+export const getRepos = (query?: Partial<RepoQuery>): Promise<Repo[]> => sink.getRepos(query);
 export const getRepo = (name: string): Promise<Repo | null> => sink.getRepo(name);
 export const getRepoByUrl = (url: string): Promise<Repo | null> => sink.getRepoByUrl(url);
 export const getRepoById = (_id: string): Promise<Repo | null> => sink.getRepoById(_id);
@@ -167,9 +167,8 @@ export const deleteRepo = (_id: string): Promise<void> => sink.deleteRepo(_id);
 export const findUser = (username: string): Promise<User | null> => sink.findUser(username);
 export const findUserByEmail = (email: string): Promise<User | null> => sink.findUserByEmail(email);
 export const findUserByOIDC = (oidcId: string): Promise<User | null> => sink.findUserByOIDC(oidcId);
-export const getUsers = (query?: object): Promise<User[]> => sink.getUsers(query);
+export const getUsers = (query?: Partial<UserQuery>): Promise<User[]> => sink.getUsers(query);
 export const deleteUser = (username: string): Promise<void> => sink.deleteUser(username);
-export const updateUser = (user: User): Promise<void> => sink.updateUser(user);
 
-// Re-export types
+export const updateUser = (user: Partial<User>): Promise<void> => sink.updateUser(user);
 export type { PushQuery, Repo, Sink, User } from './types';
