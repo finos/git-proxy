@@ -1,8 +1,9 @@
 import fs from 'fs';
 import Datastore from '@seald-io/nedb';
-import { Repo } from '../types';
-import { toClass } from '../helper';
 import _ from 'lodash';
+
+import { Repo, RepoQuery } from '../types';
+import { toClass } from '../helper';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -27,7 +28,7 @@ try {
 db.ensureIndex({ fieldName: 'name', unique: false });
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
-export const getRepos = async (query: any = {}): Promise<Repo[]> => {
+export const getRepos = async (query: Partial<RepoQuery> = {}): Promise<Repo[]> => {
   if (query?.name) {
     query.name = query.name.toLowerCase();
   }
