@@ -128,11 +128,22 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
     if (isAllowed) {
       console.log(`user ${username} approved push request for ${id}`);
 
+      const reviewerList = await db.getUsers({ username });
+      const reviewerEmail = reviewerList[0].email;
+
+      if (!reviewerEmail) {
+        res.status(401).send({
+          message: `There was no registered email address for the reviewer: ${username}`,
+        });
+        return;
+      }
+
       const attestation = {
         questions,
         timestamp: new Date(),
         reviewer: {
           username,
+          reviewerEmail,
         },
       };
       const result = await db.authorise(id, attestation);
