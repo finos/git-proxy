@@ -1,14 +1,12 @@
-const helper = require('./testCliUtils');
+import * as helper from './testCliUtils';
+import path from 'path';
 
-const path = require('path');
+import { setConfigFile } from '../../../src/config/file';
 
-// set test proxy config file path *before* loading the proxy
-require('../../../src/config/file').configFile = path.join(
-  process.cwd(),
-  'test',
-  'testCli.proxy.config.json',
-);
-const service = require('../../../src/service').default;
+import service from '../../../src/service/index';
+import { Repo } from '../../../src/db/types';
+
+setConfigFile(path.join(process.cwd(), 'test', 'testCli.proxy.config.json'));
 
 /* test constants */
 // push ID which does not exist
@@ -27,12 +25,14 @@ const TEST_PASSWORD = 'testpassword';
 const TEST_EMAIL = 'jane.doe@email.com';
 const TEST_GIT_ACCOUNT = 'testGitAccount';
 
+const CLI_PATH = 'npx git-proxy-cli';
+
 describe('test git-proxy-cli', function () {
   // *** help ***
 
   describe(`test git-proxy-cli :: help`, function () {
     it(`print help if no command or option is given`, async function () {
-      const cli = `npx -- @finos/git-proxy-cli`;
+      const cli = `${CLI_PATH}`;
       const expectedExitCode = 1;
       const expectedMessages = null;
       const expectedErrorMessages = [
@@ -44,7 +44,7 @@ describe('test git-proxy-cli', function () {
     });
 
     it(`print help if invalid command or option is given`, async function () {
-      const cli = `npx -- @finos/git-proxy-cli invalid --invalid`;
+      const cli = `${CLI_PATH} invalid --invalid`;
       const expectedExitCode = 1;
       const expectedMessages = null;
       const expectedErrorMessages = [
@@ -56,7 +56,7 @@ describe('test git-proxy-cli', function () {
     });
 
     it(`print help if "--help" option is given`, async function () {
-      const cli = `npx -- @finos/git-proxy-cli invalid --help`;
+      const cli = `${CLI_PATH} invalid --help`;
       const expectedExitCode = 0;
       const expectedMessages = ['Commands:', 'Options:'];
       const expectedErrorMessages = null;
@@ -68,7 +68,7 @@ describe('test git-proxy-cli', function () {
 
   describe(`test git-proxy-cli :: version`, function () {
     it(`"--version" option prints version details `, async function () {
-      const cli = `npx -- @finos/git-proxy-cli --version`;
+      const cli = `${CLI_PATH} --version`;
       const expectedExitCode = 0;
       const packageJson = require('../../../package.json');
       const version = packageJson.version;
@@ -82,7 +82,7 @@ describe('test git-proxy-cli', function () {
 
   describe('test git-proxy-cli :: configuration', function () {
     it(`"config" command prints configuration details`, async function () {
-      const cli = `npx -- @finos/git-proxy-cli config`;
+      const cli = `${CLI_PATH} config`;
       const expectedExitCode = 0;
       const expectedMessages = ['GitProxy URL:'];
       const expectedErrorMessages = null;
@@ -104,7 +104,7 @@ describe('test git-proxy-cli', function () {
     it('login should fail when server is down', async function () {
       const username = 'admin';
       const password = 'admin';
-      const cli = `npx -- @finos/git-proxy-cli login --username ${username} --password ${password}`;
+      const cli = `${CLI_PATH} login --username ${username} --password ${password}`;
       const expectedExitCode = 2;
       const expectedMessages = null;
       const expectedErrorMessages = [`Error: Login '${username}':`];
@@ -114,7 +114,7 @@ describe('test git-proxy-cli', function () {
     it('login should fail with invalid credentials', async function () {
       const username = 'unkn0wn';
       const password = 'p4ssw0rd';
-      const cli = `npx -- @finos/git-proxy-cli login --username ${username} --password ${password}`;
+      const cli = `${CLI_PATH} login --username ${username} --password ${password}`;
       const expectedExitCode = 1;
       const expectedMessages = null;
       const expectedErrorMessages = [`Error: Login '${username}': '401'`];
@@ -129,7 +129,7 @@ describe('test git-proxy-cli', function () {
     it('login shoud be successful with valid credentials (admin)', async function () {
       const username = 'admin';
       const password = 'admin';
-      const cli = `npx -- @finos/git-proxy-cli login --username ${username} --password ${password}`;
+      const cli = `${CLI_PATH} login --username ${username} --password ${password}`;
       const expectedExitCode = 0;
       const expectedMessages = [`Login "${username}" <admin@place.com> (admin): OK`];
       const expectedErrorMessages = null;
@@ -142,7 +142,7 @@ describe('test git-proxy-cli', function () {
     });
 
     it('login shoud be successful with valid credentials (non-admin)', async function () {
-      const cli = `npx -- @finos/git-proxy-cli login --username ${TEST_USER} --password ${TEST_PASSWORD}`;
+      const cli = `${CLI_PATH} login --username ${TEST_USER} --password ${TEST_PASSWORD}`;
       const expectedExitCode = 0;
       const expectedMessages = [`Login "${TEST_USER}" <${TEST_EMAIL}>: OK`];
       const expectedErrorMessages = null;
@@ -161,7 +161,7 @@ describe('test git-proxy-cli', function () {
     it('logout shoud succeed when server is down (and not logged in before)', async function () {
       await helper.removeCookiesFile();
 
-      const cli = `npx -- @finos/git-proxy-cli logout`;
+      const cli = `${CLI_PATH} logout`;
       const expectedExitCode = 0;
       const expectedMessages = [`Logout: OK`];
       const expectedErrorMessages = null;
@@ -171,12 +171,12 @@ describe('test git-proxy-cli', function () {
     it('logout should succeed when server is down (but logged in before)', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
       } finally {
         await helper.closeServer(service.httpServer);
       }
 
-      const cli = `npx -- @finos/git-proxy-cli logout`;
+      const cli = `${CLI_PATH} logout`;
       const expectedExitCode = 0;
       const expectedMessages = [`Logout: OK`];
       const expectedErrorMessages = null;
@@ -187,7 +187,7 @@ describe('test git-proxy-cli', function () {
       try {
         await helper.createCookiesFileWithExpiredCookie();
 
-        const cli = `npx -- @finos/git-proxy-cli logout`;
+        const cli = `${CLI_PATH} logout`;
         const expectedExitCode = 0;
         const expectedMessages = [`Logout: OK`];
         const expectedErrorMessages = null;
@@ -201,9 +201,9 @@ describe('test git-proxy-cli', function () {
     it('logout shoud be successful when authenticated (server is up)', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli logout`;
+        const cli = `${CLI_PATH} logout`;
         const expectedExitCode = 0;
         const expectedMessages = [`Logout: OK`];
         const expectedErrorMessages = null;
@@ -220,7 +220,7 @@ describe('test git-proxy-cli', function () {
     const pushId = `auth000000000000000000000000000000000000__${Date.now()}`;
 
     before(async function () {
-      await helper.addRepoToDb(TEST_REPO_CONFIG);
+      await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
@@ -235,13 +235,13 @@ describe('test git-proxy-cli', function () {
       try {
         // start server -> login -> stop server
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
       } finally {
         await helper.closeServer(service.httpServer);
       }
 
       const id = GHOST_PUSH_ID;
-      const cli = `npx -- @finos/git-proxy-cli authorise --id ${id}`;
+      const cli = `${CLI_PATH} authorise --id ${id}`;
       const expectedExitCode = 2;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: Authorise:'];
@@ -252,7 +252,7 @@ describe('test git-proxy-cli', function () {
       await helper.removeCookiesFile();
 
       const id = GHOST_PUSH_ID;
-      const cli = `npx -- @finos/git-proxy-cli authorise --id ${id}`;
+      const cli = `${CLI_PATH} authorise --id ${id}`;
       const expectedExitCode = 1;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: Authorise: Authentication required'];
@@ -264,7 +264,7 @@ describe('test git-proxy-cli', function () {
         await helper.createCookiesFileWithExpiredCookie();
         await helper.startServer(service);
         const id = pushId;
-        const cli = `npx -- @finos/git-proxy-cli authorise --id ${id}`;
+        const cli = `${CLI_PATH} authorise --id ${id}`;
         const expectedExitCode = 3;
         const expectedMessages = null;
         const expectedErrorMessages = ['Error: Authorise: Authentication required'];
@@ -277,10 +277,10 @@ describe('test git-proxy-cli', function () {
     it('attempt to authorise should fail when git push ID not found', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
         const id = GHOST_PUSH_ID;
-        const cli = `npx -- @finos/git-proxy-cli authorise --id ${id}`;
+        const cli = `${CLI_PATH} authorise --id ${id}`;
         const expectedExitCode = 4;
         const expectedMessages = null;
         const expectedErrorMessages = [`Error: Authorise: ID: '${id}': Not Found`];
@@ -297,7 +297,7 @@ describe('test git-proxy-cli', function () {
     const pushId = `cancel0000000000000000000000000000000000__${Date.now()}`;
 
     before(async function () {
-      await helper.addRepoToDb(TEST_REPO_CONFIG);
+      await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_USER, TEST_EMAIL, TEST_REPO);
     });
@@ -312,13 +312,13 @@ describe('test git-proxy-cli', function () {
       try {
         // start server -> login -> stop server
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
       } finally {
         await helper.closeServer(service.httpServer);
       }
 
       const id = GHOST_PUSH_ID;
-      const cli = `npx -- @finos/git-proxy-cli cancel --id ${id}`;
+      const cli = `${CLI_PATH} cancel --id ${id}`;
       const expectedExitCode = 2;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: Cancel:'];
@@ -329,7 +329,7 @@ describe('test git-proxy-cli', function () {
       await helper.removeCookiesFile();
 
       const id = GHOST_PUSH_ID;
-      const cli = `npx -- @finos/git-proxy-cli cancel --id ${id}`;
+      const cli = `${CLI_PATH} cancel --id ${id}`;
       const expectedExitCode = 1;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: Cancel: Authentication required'];
@@ -341,7 +341,7 @@ describe('test git-proxy-cli', function () {
         await helper.createCookiesFileWithExpiredCookie();
         await helper.startServer(service);
         const id = pushId;
-        const cli = `npx -- @finos/git-proxy-cli cancel --id ${id}`;
+        const cli = `${CLI_PATH} cancel --id ${id}`;
         const expectedExitCode = 3;
         const expectedMessages = null;
         const expectedErrorMessages = ['Error: Cancel: Authentication required'];
@@ -355,10 +355,10 @@ describe('test git-proxy-cli', function () {
     it('attempt to cancel should fail when git push ID not found', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
         const id = GHOST_PUSH_ID;
-        const cli = `npx -- @finos/git-proxy-cli cancel --id ${id}`;
+        const cli = `${CLI_PATH} cancel --id ${id}`;
         const expectedExitCode = 4;
         const expectedMessages = null;
         const expectedErrorMessages = [`Error: Cancel: ID: '${id}': Not Found`];
@@ -376,12 +376,12 @@ describe('test git-proxy-cli', function () {
       try {
         // start server -> login -> stop server
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
       } finally {
         await helper.closeServer(service.httpServer);
       }
 
-      const cli = `npx -- @finos/git-proxy-cli ls`;
+      const cli = `${CLI_PATH} ls`;
       const expectedExitCode = 2;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: List:'];
@@ -391,7 +391,7 @@ describe('test git-proxy-cli', function () {
     it('attempt to ls should fail when not authenticated', async function () {
       await helper.removeCookiesFile();
 
-      const cli = `npx -- @finos/git-proxy-cli ls`;
+      const cli = `${CLI_PATH} ls`;
       const expectedExitCode = 1;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: List: Authentication required'];
@@ -401,9 +401,9 @@ describe('test git-proxy-cli', function () {
     it('attempt to ls should fail when invalid option given', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli ls --invalid`;
+        const cli = `${CLI_PATH} ls --invalid`;
         const expectedExitCode = 1;
         const expectedMessages = null;
         const expectedErrorMessages = ['Options:', 'Unknown argument: invalid'];
@@ -420,7 +420,7 @@ describe('test git-proxy-cli', function () {
     const pushId = `reject0000000000000000000000000000000000__${Date.now()}`;
 
     before(async function () {
-      await helper.addRepoToDb(TEST_REPO_CONFIG);
+      await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
@@ -435,13 +435,13 @@ describe('test git-proxy-cli', function () {
       try {
         // start server -> login -> stop server
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
       } finally {
         await helper.closeServer(service.httpServer);
       }
 
       const id = GHOST_PUSH_ID;
-      const cli = `npx -- @finos/git-proxy-cli reject --id ${id}`;
+      const cli = `${CLI_PATH} reject --id ${id}`;
       const expectedExitCode = 2;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: Reject:'];
@@ -452,7 +452,7 @@ describe('test git-proxy-cli', function () {
       await helper.removeCookiesFile();
 
       const id = GHOST_PUSH_ID;
-      const cli = `npx -- @finos/git-proxy-cli reject --id ${id}`;
+      const cli = `${CLI_PATH} reject --id ${id}`;
       const expectedExitCode = 1;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: Reject: Authentication required'];
@@ -464,7 +464,7 @@ describe('test git-proxy-cli', function () {
         await helper.createCookiesFileWithExpiredCookie();
         await helper.startServer(service);
         const id = pushId;
-        const cli = `npx -- @finos/git-proxy-cli reject --id ${id}`;
+        const cli = `${CLI_PATH} reject --id ${id}`;
         const expectedExitCode = 3;
         const expectedMessages = null;
         const expectedErrorMessages = ['Error: Reject: Authentication required'];
@@ -477,10 +477,10 @@ describe('test git-proxy-cli', function () {
     it('attempt to reject should fail when git push ID not found', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
         const id = GHOST_PUSH_ID;
-        const cli = `npx -- @finos/git-proxy-cli reject --id ${id}`;
+        const cli = `${CLI_PATH} reject --id ${id}`;
         const expectedExitCode = 4;
         const expectedMessages = null;
         const expectedErrorMessages = [`Error: Reject: ID: '${id}': Not Found`];
@@ -506,12 +506,12 @@ describe('test git-proxy-cli', function () {
       try {
         // start server -> login -> stop server
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
       } finally {
         await helper.closeServer(service.httpServer);
       }
 
-      const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+      const cli = `${CLI_PATH} create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
       const expectedExitCode = 2;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: Create User:'];
@@ -521,7 +521,7 @@ describe('test git-proxy-cli', function () {
     it('attempt to create user should fail when not authenticated', async function () {
       await helper.removeCookiesFile();
 
-      const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+      const cli = `${CLI_PATH} create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
       const expectedExitCode = 1;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: Create User: Authentication required'];
@@ -531,11 +531,9 @@ describe('test git-proxy-cli', function () {
     it('attempt to create user should fail when not admin', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(
-          `npx -- @finos/git-proxy-cli login --username testuser --password testpassword`,
-        );
+        await helper.runCli(`${CLI_PATH} login --username testuser --password testpassword`);
 
-        const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+        const cli = `${CLI_PATH} create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
         const expectedExitCode = 3;
         const expectedMessages = null;
         const expectedErrorMessages = ['Error: Create User: Authentication required'];
@@ -548,9 +546,9 @@ describe('test git-proxy-cli', function () {
     it('attempt to create user should fail with missing required fields', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password "" --email new@email.com --gitAccount newgit`;
+        const cli = `${CLI_PATH} create-user --username newuser --password "" --email new@email.com --gitAccount newgit`;
         const expectedExitCode = 4;
         const expectedMessages = null;
         const expectedErrorMessages = ['Error: Create User: Missing required fields'];
@@ -564,9 +562,9 @@ describe('test git-proxy-cli', function () {
       const uniqueUsername = `newuser_${Date.now()}`;
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com --gitAccount newgit`;
+        const cli = `${CLI_PATH} create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com --gitAccount newgit`;
         const expectedExitCode = 0;
         const expectedMessages = [`User '${uniqueUsername}' created successfully`];
         const expectedErrorMessages = null;
@@ -574,7 +572,7 @@ describe('test git-proxy-cli', function () {
 
         // Verify we can login with the new user
         await helper.runCli(
-          `npx -- @finos/git-proxy-cli login --username ${uniqueUsername} --password newpass`,
+          `${CLI_PATH} login --username ${uniqueUsername} --password newpass`,
           0,
           [`Login "${uniqueUsername}" <${uniqueUsername}@email.com>: OK`],
           null,
@@ -584,7 +582,7 @@ describe('test git-proxy-cli', function () {
         // Clean up the created user
         try {
           await helper.removeUserFromDb(uniqueUsername);
-        } catch (error) {
+        } catch (error: any) {
           // Ignore cleanup errors
         }
       }
@@ -594,9 +592,9 @@ describe('test git-proxy-cli', function () {
       const uniqueUsername = `newadmin_${Date.now()}`;
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com --gitAccount newgit --admin`;
+        const cli = `${CLI_PATH} create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com --gitAccount newgit --admin`;
         const expectedExitCode = 0;
         const expectedMessages = [`User '${uniqueUsername}' created successfully`];
         const expectedErrorMessages = null;
@@ -604,7 +602,7 @@ describe('test git-proxy-cli', function () {
 
         // Verify we can login with the new admin user
         await helper.runCli(
-          `npx -- @finos/git-proxy-cli login --username ${uniqueUsername} --password newpass`,
+          `${CLI_PATH} login --username ${uniqueUsername} --password newpass`,
           0,
           [`Login "${uniqueUsername}" <${uniqueUsername}@email.com> (admin): OK`],
           null,
@@ -614,7 +612,7 @@ describe('test git-proxy-cli', function () {
         // Clean up the created user
         try {
           await helper.removeUserFromDb(uniqueUsername);
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error cleaning up user', error);
         }
       }
@@ -627,7 +625,7 @@ describe('test git-proxy-cli', function () {
     const pushId = `0000000000000000000000000000000000000000__${Date.now()}`;
 
     before(async function () {
-      await helper.addRepoToDb(TEST_REPO_CONFIG);
+      await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
@@ -641,9 +639,9 @@ describe('test git-proxy-cli', function () {
     it('attempt to ls should list existing push', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli ls --authorised false --blocked true --canceled false --rejected false`;
+        const cli = `${CLI_PATH} ls --authorised false --blocked true --canceled false --rejected false`;
         const expectedExitCode = 0;
         const expectedMessages = [
           pushId,
@@ -664,9 +662,9 @@ describe('test git-proxy-cli', function () {
     it('attempt to ls should not list existing push when filtered for authorised', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli ls --authorised true`;
+        const cli = `${CLI_PATH} ls --authorised true`;
         const expectedExitCode = 0;
         const expectedMessages = ['[]'];
         const expectedErrorMessages = null;
@@ -679,9 +677,9 @@ describe('test git-proxy-cli', function () {
     it('attempt to ls should not list existing push when filtered for canceled', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli ls --canceled true`;
+        const cli = `${CLI_PATH} ls --canceled true`;
         const expectedExitCode = 0;
         const expectedMessages = ['[]'];
         const expectedErrorMessages = null;
@@ -694,9 +692,9 @@ describe('test git-proxy-cli', function () {
     it('attempt to ls should not list existing push when filtered for rejected', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli ls --rejected true`;
+        const cli = `${CLI_PATH} ls --rejected true`;
         const expectedExitCode = 0;
         const expectedMessages = ['[]'];
         const expectedErrorMessages = null;
@@ -709,9 +707,9 @@ describe('test git-proxy-cli', function () {
     it('attempt to ls should not list existing push when filtered for non-blocked', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `npx -- @finos/git-proxy-cli ls --blocked false`;
+        const cli = `${CLI_PATH} ls --blocked false`;
         const expectedExitCode = 0;
         const expectedMessages = ['[]'];
         const expectedErrorMessages = null;
@@ -724,21 +722,21 @@ describe('test git-proxy-cli', function () {
     it('authorise push and test if appears on authorised list', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        let cli = `npx -- @finos/git-proxy-cli ls --authorised true --canceled false --rejected false`;
+        let cli = `${CLI_PATH} ls --authorised true --canceled false --rejected false`;
         let expectedExitCode = 0;
         let expectedMessages = ['[]'];
         let expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 
-        cli = `npx -- @finos/git-proxy-cli authorise --id ${pushId}`;
+        cli = `${CLI_PATH} authorise --id ${pushId}`;
         expectedExitCode = 0;
         expectedMessages = [`Authorise: ID: '${pushId}': OK`];
         expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 
-        cli = `npx -- @finos/git-proxy-cli ls --authorised true --canceled false --rejected false`;
+        cli = `${CLI_PATH} ls --authorised true --canceled false --rejected false`;
         expectedExitCode = 0;
         expectedMessages = [pushId, TEST_REPO];
         expectedErrorMessages = null;
@@ -751,21 +749,21 @@ describe('test git-proxy-cli', function () {
     it('reject push and test if appears on rejected list', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        let cli = `npx -- @finos/git-proxy-cli ls --authorised false --canceled false --rejected true`;
+        let cli = `${CLI_PATH} ls --authorised false --canceled false --rejected true`;
         let expectedExitCode = 0;
         let expectedMessages = ['[]'];
         let expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 
-        cli = `npx -- @finos/git-proxy-cli reject --id ${pushId}`;
+        cli = `${CLI_PATH} reject --id ${pushId}`;
         expectedExitCode = 0;
         expectedMessages = [`Reject: ID: '${pushId}': OK`];
         expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 
-        cli = `npx -- @finos/git-proxy-cli ls --authorised false --canceled false --rejected true`;
+        cli = `${CLI_PATH} ls --authorised false --canceled false --rejected true`;
         expectedExitCode = 0;
         expectedMessages = [pushId, TEST_REPO];
         expectedErrorMessages = null;
@@ -778,21 +776,21 @@ describe('test git-proxy-cli', function () {
     it('cancel push and test if appears on canceled list', async function () {
       try {
         await helper.startServer(service);
-        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        let cli = `npx -- @finos/git-proxy-cli ls --authorised false --canceled true --rejected false`;
+        let cli = `${CLI_PATH} ls --authorised false --canceled true --rejected false`;
         let expectedExitCode = 0;
         let expectedMessages = ['[]'];
         let expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 
-        cli = `npx -- @finos/git-proxy-cli cancel --id ${pushId}`;
+        cli = `${CLI_PATH} cancel --id ${pushId}`;
         expectedExitCode = 0;
         expectedMessages = [`Cancel: ID: '${pushId}': OK`];
         expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 
-        cli = `npx -- @finos/git-proxy-cli ls --authorised false --canceled true --rejected false`;
+        cli = `${CLI_PATH} ls --authorised false --canceled true --rejected false`;
         expectedExitCode = 0;
         expectedMessages = [pushId, TEST_REPO];
         expectedErrorMessages = null;

@@ -7,7 +7,6 @@ import js from '@eslint/js';
 import ts from 'typescript-eslint';
 import react from 'eslint-plugin-react';
 import json from '@eslint/json';
-// @ts-expect-error
 import cypress from 'eslint-plugin-cypress';
 import prettierConfig from 'eslint-config-prettier/flat';
 

@@ -5,7 +5,7 @@ import { PushQuery } from '../types';
 
 const collectionName = 'pushes';
 
-const defaultPushQuery: PushQuery = {
+const defaultPushQuery: Partial<PushQuery> = {
   error: false,
   blocked: true,
   allowPush: false,

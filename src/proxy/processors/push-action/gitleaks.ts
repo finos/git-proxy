@@ -171,7 +171,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
         step.setError('\n' + gitleaks.stdout + gitleaks.stderr);
       }
     } else {
-      console.log('succeded');
+      console.log('succeeded');
       console.log(gitleaks.stderr);
     }
   } catch (e) {

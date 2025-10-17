@@ -24,7 +24,7 @@ try {
 }
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
-const defaultPushQuery: PushQuery = {
+const defaultPushQuery: Partial<PushQuery> = {
   error: false,
   blocked: true,
   allowPush: false,

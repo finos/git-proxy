@@ -8,6 +8,8 @@ export type PushQuery = {
   authorised: boolean;
   type: string;
   [key: string]: QueryValue;
+  canceled: boolean;
+  rejected: boolean;
 };
 
 export type RepoQuery = {
