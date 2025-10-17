@@ -10,6 +10,7 @@ import { exec as execProcessor } from '../../../src/proxy/processors/push-action
 import * as db from '../../../src/db';
 import { Server } from 'http';
 import { Repo } from '../../../src/db/types';
+import service from '../../../src/service';
 
 const execAsync = util.promisify(exec);
 
@@ -89,7 +90,7 @@ async function runCli(
  * @return {Promise<void>} A promise that resolves when the service has
  * successfully started. Does not return any value upon resolution.
  */
-async function startServer(service: typeof import('../../../src/service/index')) {
+async function startServer() {
   await service.start(new Proxy());
 }
 
@@ -99,7 +100,6 @@ async function startServer(service: typeof import('../../../src/service/index'))
  * async/await usage. It ensures the server stops accepting new connections
  * and terminates existing ones before shutting down.
  *
- * @param {http.Server} server - The `http.Server` instance to close.
  * @param {number} waitTime - The wait time after close.
  * @return {Promise<void>} A promise that resolves when the server has been
  * successfully closed, or rejects if an error occurs during closure. The
@@ -108,7 +108,13 @@ async function startServer(service: typeof import('../../../src/service/index'))
  * @throws {Error} If the server cannot be closed properly or if an error
  * occurs during the close operation.
  */
-async function closeServer(server: Server, waitTime: number = 0) {
+async function closeServer(waitTime: number = 0) {
+  const server = service.httpServer;
+
+  if (!server) {
+    throw new Error('Server not started');
+  }
+
   return new Promise<void>((resolve, reject) => {
     server.closeAllConnections();
     server.close((err) => {

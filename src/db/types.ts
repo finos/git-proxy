@@ -6,9 +6,26 @@ export type PushQuery = {
   blocked: boolean;
   allowPush: boolean;
   authorised: boolean;
+  type: string;
+  [key: string]: QueryValue;
   canceled: boolean;
   rejected: boolean;
 };
+
+export type RepoQuery = {
+  name: string;
+  url: string;
+  project: string;
+  [key: string]: QueryValue;
+};
+
+export type UserQuery = {
+  username: string;
+  email: string;
+  [key: string]: QueryValue;
+};
+
+export type QueryValue = string | boolean | number | undefined;
 
 export type UserRole = 'canPush' | 'canAuthorise';
 
@@ -41,6 +58,8 @@ export class User {
   email: string;
   admin: boolean;
   oidcId?: string | null;
+  displayName?: string | null;
+  title?: string | null;
   _id?: string;
 
   constructor(
@@ -63,15 +82,15 @@ export class User {
 }
 
 export interface Sink {
-  getSessionStore?: () => MongoDBStore;
-  getPushes: (query: PushQuery) => Promise<Action[]>;
+  getSessionStore: () => MongoDBStore | undefined;
+  getPushes: (query: Partial<PushQuery>) => Promise<Action[]>;
   writeAudit: (action: Action) => Promise<void>;
   getPush: (id: string) => Promise<Action | null>;
   deletePush: (id: string) => Promise<void>;
   authorise: (id: string, attestation: any) => Promise<{ message: string }>;
   cancel: (id: string) => Promise<{ message: string }>;
   reject: (id: string, attestation: any) => Promise<{ message: string }>;
-  getRepos: (query?: object) => Promise<Repo[]>;
+  getRepos: (query?: Partial<RepoQuery>) => Promise<Repo[]>;
   getRepo: (name: string) => Promise<Repo | null>;
   getRepoByUrl: (url: string) => Promise<Repo | null>;
   getRepoById: (_id: string) => Promise<Repo | null>;
@@ -84,8 +103,8 @@ export interface Sink {
   findUser: (username: string) => Promise<User | null>;
   findUserByEmail: (email: string) => Promise<User | null>;
   findUserByOIDC: (oidcId: string) => Promise<User | null>;
-  getUsers: (query?: object) => Promise<User[]>;
+  getUsers: (query?: Partial<UserQuery>) => Promise<User[]>;
   createUser: (user: User) => Promise<void>;
   deleteUser: (username: string) => Promise<void>;
-  updateUser: (user: User) => Promise<void>;
+  updateUser: (user: Partial<User>) => Promise<void>;
 }
