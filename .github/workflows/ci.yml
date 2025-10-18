@@ -50,6 +50,9 @@ jobs:
       - name: Check Types (Server)
         run: npm run check-types:server
 
+      - name: Build TypeScript
+        run: npm run build-ts
+
       - name: Test
         id: test
         run: |
