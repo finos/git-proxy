@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const { jwkToBuffer } = require('jwk-to-pem');
 
 const { assignRoles, getJwks, validateJwt } = require('../src/service/passport/jwtUtils');
-const jwtAuthHandler = require('../src/service/passport/jwtAuthHandler');
+const { jwtAuthHandler } = require('../src/service/passport/jwtAuthHandler');
 
 describe('getJwks', () => {
   it('should fetch JWKS keys from authority', async () => {
@@ -182,8 +182,7 @@ describe('jwtAuthHandler', () => {
     await jwtAuthHandler(jwtConfig)(req, res, next);
 
     expect(res.status.calledWith(500)).to.be.true;
-    expect(res.send.calledWith({ message: 'JWT handler: authority URL is not configured\n' })).to.be
-      .true;
+    expect(res.send.calledWith({ message: 'OIDC authority URL is not configured\n' })).to.be.true;
   });
 
   it('should return 500 if clientID not configured', async () => {
@@ -194,8 +193,7 @@ describe('jwtAuthHandler', () => {
     await jwtAuthHandler(jwtConfig)(req, res, next);
 
     expect(res.status.calledWith(500)).to.be.true;
-    expect(res.send.calledWith({ message: 'JWT handler: client ID is not configured\n' })).to.be
-      .true;
+    expect(res.send.calledWith({ message: 'OIDC client ID is not configured\n' })).to.be.true;
   });
 
   it('should return 401 if JWT validation fails', async () => {
