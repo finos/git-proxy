@@ -528,14 +528,14 @@ describe('Database clients', () => {
 
   it('should be able to create a push', async () => {
     await db.writeAudit(TEST_PUSH as any);
-    const pushes = await db.getPushes();
+    const pushes = await db.getPushes({});
     const cleanPushes = cleanResponseData(TEST_PUSH, pushes as any);
     expect(cleanPushes).toContainEqual(TEST_PUSH);
   }, 20000);
 
   it('should be able to delete a push', async () => {
     await db.deletePush(TEST_PUSH.id);
-    const pushes = await db.getPushes();
+    const pushes = await db.getPushes({});
     const cleanPushes = cleanResponseData(TEST_PUSH, pushes as any);
     expect(cleanPushes).not.toContainEqual(TEST_PUSH);
   });

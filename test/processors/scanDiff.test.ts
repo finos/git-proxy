@@ -68,7 +68,8 @@ describe('Scan commit diff', () => {
     privateOrganizations[0] = 'private-org-test';
     commitConfig.diff = {
       block: {
-        literals: ['blockedTestLiteral'],
+        //n.b. the example literal includes special chars that would be interpreted as RegEx if not escaped properly
+        literals: ['blocked.Te$t.Literal?'],
         patterns: [],
         providers: {
           'AWS (Amazon Web Services) Access Key ID':
