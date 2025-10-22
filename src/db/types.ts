@@ -8,6 +8,8 @@ export type PushQuery = {
   authorised: boolean;
   type: string;
   [key: string]: QueryValue;
+  canceled: boolean;
+  rejected: boolean;
 };
 
 export type RepoQuery = {
@@ -81,7 +83,7 @@ export class User {
 
 export interface Sink {
   getSessionStore: () => MongoDBStore | undefined;
-  getPushes: (query?: Partial<PushQuery>) => Promise<Action[]>;
+  getPushes: (query: Partial<PushQuery>) => Promise<Action[]>;
   writeAudit: (action: Action) => Promise<void>;
   getPush: (id: string) => Promise<Action | null>;
   deletePush: (id: string) => Promise<void>;

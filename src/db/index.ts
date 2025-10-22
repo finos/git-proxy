@@ -1,4 +1,4 @@
-import { AuthorisedRepo } from '../config/types';
+import { AuthorisedRepo } from '../config/generated/config';
 import { PushQuery, Repo, RepoQuery, Sink, User, UserQuery } from './types';
 import * as bcrypt from 'bcryptjs';
 import * as config from '../config';
@@ -142,7 +142,7 @@ export const canUserCancelPush = async (id: string, user: string) => {
 
 export const getSessionStore = (): MongoDBStore | undefined =>
   sink.getSessionStore ? sink.getSessionStore() : undefined;
-export const getPushes = (query?: Partial<PushQuery>): Promise<Action[]> => sink.getPushes(query);
+export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => sink.getPushes(query);
 export const writeAudit = (action: Action): Promise<void> => sink.writeAudit(action);
 export const getPush = (id: string): Promise<Action | null> => sink.getPush(id);
 export const deletePush = (id: string): Promise<void> => sink.deletePush(id);

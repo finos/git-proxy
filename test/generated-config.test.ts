@@ -209,9 +209,6 @@ describe('Generated Config (QuickType)', () => {
             userInADGroup:
               'https://somedomain.com/some/path/checkUserGroups?domain=<domain>&name=<name>&id=<id>',
           },
-          github: {
-            baseUrl: 'https://api.github.com',
-          },
         },
 
         domains: {
@@ -221,13 +218,10 @@ describe('Generated Config (QuickType)', () => {
 
         // Complex nested structures
         attestationConfig: {
-          enabled: true,
           questions: [
             {
-              id: 'q1',
-              type: 'boolean',
-              required: true,
               label: 'Test Question',
+              tooltip: { text: 'Test tooltip content', links: ['https://git-proxy.finos.org./'] },
             },
           ],
         },

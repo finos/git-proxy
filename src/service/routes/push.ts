@@ -83,8 +83,6 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
 });
 
 router.post('/:id/authorise', async (req: Request, res: Response) => {
-  console.log({ req });
-
   const questions = req.body.params?.attestation;
   console.log({ questions });
 
@@ -101,11 +99,20 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
 
     const { username } = req.user as { username: string };
 
-    const push = await getValidPushOrRespond(id, res);
-    if (!push) return;
+    // Get the push request
+    const push = await db.getPush(id);
+    console.log({ push });
+
+    if (!push) {
+      res.status(404).send({
+        message: 'Push request not found',
+      });
+      return;
+    }
 
     // Get the committer of the push via their email address
     const committerEmail = push.userEmail;
+
     const list = await db.getUsers({ email: committerEmail });
     console.log({ list });
 
@@ -123,40 +130,37 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
       return;
     }
 
-    // If we are not the author, now check that we are allowed to authorise on this repo
+    // If we are not the author, now check that we are allowed to authorise on this
+    // repo
     const isAllowed = await db.canUserApproveRejectPush(id, username);
-    if (!isAllowed) {
+    if (isAllowed) {
+      console.log(`user ${username} approved push request for ${id}`);
+
+      const reviewerList = await db.getUsers({ username });
+      const reviewerEmail = reviewerList[0].email;
+
+      if (!reviewerEmail) {
+        res.status(401).send({
+          message: `There was no registered email address for the reviewer: ${username}`,
+        });
+        return;
+      }
+
+      const attestation = {
+        questions,
+        timestamp: new Date(),
+        reviewer: {
+          username,
+          reviewerEmail,
+        },
+      };
+      const result = await db.authorise(id, attestation);
+      res.send(result);
+    } else {
       res.status(401).send({
-        message: 'User is not authorised to authorise changes',
+        message: `user ${username} not authorised to approve push's on this project`,
       });
-      return;
     }
-
-    console.log(`user ${username} approved push request for ${id}`);
-
-    const reviewerList = await db.getUsers({ username });
-    console.log({ reviewerList });
-
-    const reviewerGitAccount = reviewerList[0].gitAccount;
-    console.log({ reviewerGitAccount });
-
-    if (!reviewerGitAccount) {
-      res.status(401).send({
-        message: 'You must associate a GitHub account with your user before approving...',
-      });
-      return;
-    }
-
-    const attestation = {
-      questions,
-      timestamp: new Date(),
-      reviewer: {
-        username,
-        gitAccount: reviewerGitAccount,
-      },
-    };
-    const result = await db.authorise(id, attestation);
-    res.send(result);
   } else {
     res.status(401).send({
       message: 'You are unauthorized to perform this action...',

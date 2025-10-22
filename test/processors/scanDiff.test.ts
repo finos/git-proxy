@@ -9,7 +9,7 @@ import * as db from '../../src/db';
 const commitConfig = config.getCommitConfig();
 const privateOrganizations = config.getPrivateOrganizations();
 
-const blockedLiterals = commitConfig.diff.block.literals;
+const blockedLiterals = commitConfig.diff?.block?.literals ?? [];
 
 const generateDiff = (value: string): string => {
   return `diff --git a/package.json b/package.json
@@ -52,7 +52,7 @@ index 8b97e49..de18d43 100644
  Project to test gitproxy
 +AKIAIOSFODNN7EXAMPLE
 +AKIAIOSFODNN8EXAMPLE
-+blockedTestLiteral
++emdedded_blocked.Te$t.Literal?
 `;
 };
 

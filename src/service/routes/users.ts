@@ -6,7 +6,7 @@ import { toPublicUser } from './publicApi';
 
 router.get('/', async (req: Request, res: Response) => {
   console.log('fetching users');
-  const users = await db.getUsers({});
+  const users = await db.getUsers();
   res.send(users.map(toPublicUser));
 });
 

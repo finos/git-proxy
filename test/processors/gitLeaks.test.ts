@@ -144,7 +144,7 @@ describe('gitleaks', () => {
       expect(result.error).toBe(false);
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(false);
-      expect(logStub).toHaveBeenCalledWith('succeded');
+      expect(logStub).toHaveBeenCalledWith('succeeded');
       expect(logStub).toHaveBeenCalledWith('No leaks found');
     });
 

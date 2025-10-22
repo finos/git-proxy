@@ -10,10 +10,14 @@ import * as config from '../config';
 import * as db from '../db';
 import { serverConfig } from '../config/env';
 import Proxy from '../proxy';
+import routes from './routes';
+import { configure } from './passport';
 
 const limiter = rateLimit(config.getRateLimit());
 
 const { GIT_PROXY_UI_PORT: uiPort } = serverConfig;
+
+const DEFAULT_SESSION_MAX_AGE_HOURS = 12;
 
 const app: Express = express();
 const _httpServer = http.createServer(app);
@@ -31,9 +35,7 @@ const corsOptions = {
 async function createApp(proxy: Proxy): Promise<Express> {
   // configuration of passport is async
   // Before we can bind the routes - we need the passport strategy
-  const { configure } = await import('./passport');
   const passport = await configure();
-  const routes = await import('./routes');
   const absBuildPath = path.join(__dirname, '../../build');
   app.use(cors(corsOptions));
   app.set('trust proxy', 1);
@@ -48,7 +50,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
       cookie: {
         secure: 'auto',
         httpOnly: true,
-        maxAge: config.getSessionMaxAgeHours() * 60 * 60 * 1000,
+        maxAge: (config.getSessionMaxAgeHours() || DEFAULT_SESSION_MAX_AGE_HOURS) * 60 * 60 * 1000,
       },
     }),
   );
@@ -70,7 +72,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.use(passport.session());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use('/', routes.default(proxy));
+  app.use('/', routes(proxy));
   app.use('/', express.static(absBuildPath));
   app.get('/*', (req, res) => {
     res.sendFile(path.join(`${absBuildPath}/index.html`));

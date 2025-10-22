@@ -3,7 +3,7 @@ import * as local from './local';
 import * as activeDirectory from './activeDirectory';
 import * as oidc from './oidc';
 import * as config from '../../config';
-import { Authentication } from '../../config/types';
+import { AuthenticationElement } from '../../config/generated/config';
 
 type StrategyModule = {
   configure: (passport: PassportStatic) => Promise<PassportStatic>;
@@ -20,7 +20,7 @@ export const authStrategies: Record<string, StrategyModule> = {
 export const configure = async (): Promise<PassportStatic> => {
   passport.initialize();
 
-  const authMethods: Authentication[] = config.getAuthMethods();
+  const authMethods: AuthenticationElement[] = config.getAuthMethods();
 
   for (const auth of authMethods) {
     const strategy = authStrategies[auth.type.toLowerCase()];

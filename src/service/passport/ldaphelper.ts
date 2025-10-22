@@ -2,7 +2,6 @@ import axios from 'axios';
 import type { Request } from 'express';
 import ActiveDirectory from 'activedirectory2';
 import { getAPIs } from '../../config';
-
 import { ADProfile } from './types';
 
 const thirdpartyApiConfig = getAPIs();
@@ -58,7 +57,7 @@ const isUserInAdGroupViaHttp = (id: string, domain: string, name: string): Promi
   console.log(`checking if user is in group ${url}`);
   return client
     .get(url)
-    .then((res) => res.data)
+    .then((res) => Boolean(res.data))
     .catch(() => {
       return false;
     });
