@@ -1,4 +1,4 @@
-const { PushActionPlugin, PullActionPlugin } = require('@finos/git-proxy/src/plugin');
+const { PushActionPlugin, PullActionPlugin } = require('@finos/git-proxy/plugin');
 
 module.exports = {
   foo: new PushActionPlugin(async (req, action) => {
