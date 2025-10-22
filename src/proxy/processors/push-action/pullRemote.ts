@@ -2,7 +2,7 @@ import { Action, Step } from '../../actions';
 import fs from 'fs';
 import { PerformanceTimer } from './metrics';
 import { cacheManager } from './cache-manager';
-import { cloneWorkingCopy, fetchBareRepository, cloneBareRepository } from './git-operations';
+import * as gitOps from './git-operations';
 
 const BARE_CACHE = './.remote/cache';
 const WORK_DIR = './.remote/work';
@@ -13,11 +13,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
   try {
     // Paths for hybrid architecture
-    // Ensure repoName ends with .git for bare repository convention
-    const repoNameWithGit = action.repoName.endsWith('.git')
-      ? action.repoName
-      : `${action.repoName}.git`;
-    const bareRepo = `${BARE_CACHE}/${repoNameWithGit}`;
+    const bareRepo = `${BARE_CACHE}/${action.repoName}`;
     const workCopy = `${WORK_DIR}/${action.id}`;
 
     // Check if bare cache exists
@@ -43,39 +39,79 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       .toString()
       .split(':');
 
-    // PHASE 1: Bare Cache (persistent, shared) ===
+    // PHASE 1: Bare Cache (persistent, shared)
     if (bareExists) {
       // CACHE HIT: Fetch updates in bare repository
       step.log(`Fetching updates in bare cache...`);
 
       try {
-        await fetchBareRepository(bareRepo, action.url, username, password, step);
+        await gitOps.fetch({
+          dir: bareRepo,
+          url: action.url,
+          username,
+          password,
+          depth: 1,
+          prune: true,
+          bare: true,
+        });
 
         // Update access time for LRU
-        cacheManager.touchRepository(`${action.repoName}.git`);
+        cacheManager.touchRepository(action.repoName);
         timer.mark('Fetch complete');
+        step.log(`Bare repository updated`);
       } catch (fetchError) {
         step.log(`Fetch failed, rebuilding bare cache: ${fetchError}`);
         // Remove broken cache and re-clone
         if (fs.existsSync(bareRepo)) {
           fs.rmSync(bareRepo, { recursive: true, force: true });
         }
-        await cloneBareRepository(bareRepo, action.url, username, password, step);
+
+        // Re-clone as fallback
+        await gitOps.clone({
+          dir: bareRepo,
+          url: action.url,
+          username,
+          password,
+          bare: true,
+          depth: 1,
+        });
+
         timer.mark('Bare clone complete (fallback)');
       }
     } else {
       // CACHE MISS: Clone bare repository
       step.log(`Cloning bare repository to cache...`);
-      await cloneBareRepository(bareRepo, action.url, username, password, step);
+
+      await gitOps.clone({
+        dir: bareRepo,
+        url: action.url,
+        username,
+        password,
+        bare: true,
+        depth: 1,
+      });
+
       timer.mark('Bare clone complete');
+      step.log(`Bare repository created at ${bareRepo}`);
+
+      // Update access time for LRU after successful clone
+      cacheManager.touchRepository(action.repoName);
     }
 
-    // PHASE 2: Working Copy (temporary, isolated) ===
+    // PHASE 2: Working Copy (temporary, isolated)
     step.log(`Creating isolated working copy for push ${action.id}...`);
 
-    await cloneWorkingCopy(bareRepo, `${workCopy}/${action.repoName}`, step);
+    const workCopyPath = `${workCopy}/${action.repoName}`;
+
+    // Clone from local bare cache (fast local operation)
+    await gitOps.cloneLocal({
+      sourceDir: bareRepo,
+      targetDir: workCopyPath,
+      depth: 1,
+    });
 
     timer.mark('Working copy ready');
+    step.log(`Working copy created at ${workCopyPath}`);
 
     // Set action path to working copy
     action.proxyGitPath = workCopy;
@@ -87,7 +123,6 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     step.log(completedMsg);
     step.setContent(completedMsg);
 
-    // End timing
     timer.end();
 
     // Enforce cache limits (LRU eviction on bare cache)
