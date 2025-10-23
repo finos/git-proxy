@@ -36,7 +36,6 @@ const UserList: React.FC = () => {
     navigate(`/dashboard/admin/user/${username}`, { replace: true });
 
   useEffect(() => {
-    console.log('LOADING USERS');
     getUsers(setIsLoading, setData, setAuth, setErrorMessage);
   }, []);
 
