@@ -5,7 +5,11 @@
   "description": "Configuration for customizing git-proxy",
   "type": "object",
   "properties": {
-    "proxyUrl": { "type": "string" },
+    "proxyUrl": {
+      "type": "string",
+      "description": "Deprecated: Used in early versions of git proxy to configure the remote host that traffic is proxied to. In later versions, the repository URL is used to determine the domain proxied, allowing multiple hosts to be proxied by one instance.",
+      "deprecated": true
+    },
     "cookieSecret": { "type": "string" },
     "sessionMaxAgeHours": { "type": "number" },
     "api": {
@@ -23,19 +27,34 @@
                 "https://somedomain.com/some/path/checkUserGroups?domain=<domain>&name=<name>&id=<id>"
               ]
             }
-          }
+          },
+          "additionalProperties": false
         },
         "github": {
           "type": "object",
+          "description": "Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer referenced in the codebase.",
           "properties": {
             "baseUrl": {
               "type": "string",
               "format": "uri",
-              "examples": ["https://api.github.com"]
+              "examples": ["https://api.github.com"],
+              "deprecated": true
             }
+          },
+          "additionalProperties": false
+        },
+        "gitleaks": {
+          "type": "object",
+          "description": "Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "ignoreGitleaksAllow": { "type": "boolean" },
+            "noColor": { "type": "boolean" },
+            "configPath": { "type": "string" }
           }
         }
-      }
+      },
+      "additionalProperties": false
     },
     "commitConfig": {
       "description": "Enforce rules and patterns on commits including e-mail and message",
@@ -114,7 +133,7 @@
       "description": "List of authentication sources. The first source in the configuration with enabled=true will be used.",
       "type": "array",
       "items": {
-        "$ref": "#/definitions/authentication"
+        "$ref": "#/definitions/authenticationElement"
       }
     },
     "tempPassword": {
@@ -132,7 +151,7 @@
       "description": "List of authentication sources for API endpoints. May be empty, in which case all endpoints are public.",
       "type": "array",
       "items": {
-        "$ref": "#/definitions/authentication"
+        "$ref": "#/definitions/authenticationElement"
       }
     },
     "ssh": {
@@ -175,6 +194,16 @@
       },
       "required": ["enabled", "key", "cert"]
     },
+    "sslKeyPemPath": {
+      "description": "Deprecated: Path to SSL private key file (use tls.key instead)",
+      "type": "string",
+      "deprecated": true
+    },
+    "sslCertPemPath": {
+      "description": "Deprecated: Path to SSL certificate file (use tls.cert instead)",
+      "type": "string",
+      "deprecated": true
+    },
     "configurationSources": {
       "enabled": { "type": "boolean" },
       "reloadIntervalSeconds": { "type": "number" },
@@ -199,6 +228,39 @@
           }
         }
       }
+    },
+    "ssh": {
+      "description": "SSH proxy server configuration",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable SSH proxy server"
+        },
+        "port": {
+          "type": "number",
+          "description": "Port for SSH proxy server to listen on",
+          "default": 2222
+        },
+        "hostKey": {
+          "type": "object",
+          "description": "SSH host key configuration",
+          "properties": {
+            "privateKeyPath": {
+              "type": "string",
+              "description": "Path to private SSH host key",
+              "default": "./.ssh/host_key"
+            },
+            "publicKeyPath": {
+              "type": "string",
+              "description": "Path to public SSH host key",
+              "default": "./.ssh/host_key.pub"
+            }
+          },
+          "required": ["privateKeyPath", "publicKeyPath"]
+        }
+      },
+      "required": ["enabled"]
     }
   },
   "definitions": {
@@ -222,7 +284,7 @@
       },
       "required": ["type", "enabled"]
     },
-    "authentication": {
+    "authenticationElement": {
       "type": "object",
       "description": "Configuration for an authentication source",
       "oneOf": [

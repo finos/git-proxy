@@ -24,6 +24,9 @@ export interface UserSettings {
   domains: Record<string, unknown>;
   ssh: SSHConfig;
   rateLimit: RateLimitConfig;
+  limits?: {
+    maxPackSizeBytes?: number;
+  };
 }
 
 export interface SSHConfig {

@@ -5,19 +5,22 @@ import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions
 
 const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.parsePush,
+  proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
   proc.push.checkAuthorEmails,
   proc.push.checkUserPushPermission,
-  proc.push.checkIfWaitingAuth,
   proc.push.pullRemote,
   proc.push.writePack,
+  proc.push.checkHiddenCommits,
+  proc.push.checkIfWaitingAuth,
   proc.push.preReceive,
   proc.push.getDiff,
   // run before clear remote
   proc.push.gitleaks,
   proc.push.clearBareClone,
   proc.push.scanDiff,
+  proc.push.captureSSHKey,
   proc.push.blockForAuth,
 ];
 
@@ -25,24 +28,29 @@ const pullActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.checkRepoInAuthorisedList,
 ];
 
+const defaultActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
+  proc.push.checkRepoInAuthorisedList,
+];
+
 let pluginsInserted = false;
 
 export const executeChain = async (req: any, res: any): Promise<Action> => {
   let action: Action = {} as Action;
+
   try {
     action = await proc.pre.parseAction(req);
     const actionFns = await getChain(action);
 
     for (const fn of actionFns) {
       action = await fn(req, action);
-      if (!action.continue()) {
-        return action;
-      }
-
-      if (action.allowPush) {
-        return action;
+      if (!action.continue() || action.allowPush) {
+        break;
       }
     }
+  } catch (e) {
+    action.error = true;
+    action.errorMessage = `An error occurred when executing the chain: ${e}`;
+    console.error(action.errorMessage);
   } finally {
     await proc.push.audit(req, action);
     if (action.autoApproved) {
@@ -87,9 +95,13 @@ export const getChain = async (
     // This is set to true so that we don't re-insert the plugins into the chain
     pluginsInserted = true;
   }
-  if (action.type === 'pull') return pullActionChain;
-  if (action.type === 'push') return pushActionChain;
-  return [];
+  if (action.type === 'pull') {
+    return pullActionChain;
+  } else if (action.type === 'push') {
+    return pushActionChain;
+  } else {
+    return defaultActionChain;
+  }
 };
 
 export default {
@@ -107,6 +119,9 @@ export default {
   },
   get pullActionChain() {
     return pullActionChain;
+  },
+  get defaultActionChain() {
+    return defaultActionChain;
   },
   executeChain,
   getChain,

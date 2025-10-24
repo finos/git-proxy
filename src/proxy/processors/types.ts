@@ -11,10 +11,40 @@ export interface ProcessorMetadata {
 
 export type CommitContent = {
   item: number;
-  value: number;
   type: number;
+  typeName: string;
   size: number;
-  deflatedSize: number;
-  objectRef: any;
+  baseSha: string | null;
+  baseOffset: number | null;
   content: string;
+};
+
+export type PersonLine = {
+  name: string;
+  email: string;
+  timestamp: string;
+};
+
+export type CommitHeader = {
+  tree: string;
+  parents: string[];
+  author: PersonLine;
+  committer: PersonLine;
+};
+
+export type CommitData = {
+  tree: string;
+  parent: string;
+  author: string;
+  committer: string;
+  authorEmail: string;
+  committerEmail: string;
+  commitTimestamp: string;
+  message: string;
+};
+
+export type PackMeta = {
+  sig: string;
+  version: number;
+  entries: number;
 };

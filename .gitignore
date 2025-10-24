@@ -10,7 +10,6 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
-package-lock.json
 
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
@@ -271,3 +270,8 @@ website/.docusaurus
 
 # Jetbrains IDE
 .idea
+
+.claude/
+
+# Test SSH keys (generated during tests)
+test/keys/

@@ -13,9 +13,9 @@
     "./example": "./example.cjs"
   },
   "dependencies": {
-    "express": "^4.21.2"
+    "express": "^5.1.0"
   },
   "peerDependencies": {
-    "@finos/git-proxy": "^1.18.2"
+    "@finos/git-proxy": "^1.19.2"
   }
 }

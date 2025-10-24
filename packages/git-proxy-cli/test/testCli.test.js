@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 const helper = require('./testCliUtils');
 
 const path = require('path');
@@ -22,6 +21,11 @@ const TEST_REPO_CONFIG = {
   url: 'https://github.com/finos/git-proxy-test.git',
 };
 const TEST_REPO = 'finos/git-proxy-test.git';
+// user for test cases
+const TEST_USER = 'testuser';
+const TEST_PASSWORD = 'testpassword';
+const TEST_EMAIL = 'jane.doe@email.com';
+const TEST_GIT_ACCOUNT = 'testGitAccount';
 
 describe('test git-proxy-cli', function () {
   // *** help ***
@@ -66,7 +70,9 @@ describe('test git-proxy-cli', function () {
     it(`"--version" option prints version details `, async function () {
       const cli = `npx -- @finos/git-proxy-cli --version`;
       const expectedExitCode = 0;
-      const expectedMessages = ['0.1.0'];
+      const packageJson = require('../../../package.json');
+      const version = packageJson.version;
+      const expectedMessages = [version];
       const expectedErrorMessages = null;
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
@@ -87,16 +93,12 @@ describe('test git-proxy-cli', function () {
   // *** login ***
 
   describe('test git-proxy-cli :: login', function () {
-    const testUser = 'testuser';
-    const testPassword = 'testpassword';
-    const testEmail = 'jane.doe@email.com';
-
     before(async function () {
-      await helper.addUserToDb(testUser, testPassword, testEmail, 'testGitAccount');
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
     });
 
     after(async function () {
-      await helper.removeUserFromDb(testUser);
+      await helper.removeUserFromDb(TEST_USER);
     });
 
     it('login should fail when server is down', async function () {
@@ -140,9 +142,9 @@ describe('test git-proxy-cli', function () {
     });
 
     it('login shoud be successful with valid credentials (non-admin)', async function () {
-      const cli = `npx -- @finos/git-proxy-cli login --username ${testUser} --password ${testPassword}`;
+      const cli = `npx -- @finos/git-proxy-cli login --username ${TEST_USER} --password ${TEST_PASSWORD}`;
       const expectedExitCode = 0;
-      const expectedMessages = [`Login "${testUser}" <${testEmail}>: OK`];
+      const expectedMessages = [`Login "${TEST_USER}" <${TEST_EMAIL}>: OK`];
       const expectedErrorMessages = null;
       try {
         await helper.startServer(service);
@@ -219,12 +221,14 @@ describe('test git-proxy-cli', function () {
 
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
 
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+      await helper.removeUserFromDb(TEST_USER);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
     });
 
     it('attempt to authorise should fail when server is down', async function () {
@@ -294,12 +298,14 @@ describe('test git-proxy-cli', function () {
 
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
+      await helper.addGitPushToDb(pushId, TEST_USER, TEST_EMAIL, TEST_REPO);
     });
 
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+      await helper.removeUserFromDb(TEST_USER);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
     });
 
     it('attempt to cancel should fail when server is down', async function () {
@@ -415,12 +421,14 @@ describe('test git-proxy-cli', function () {
 
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addGitPushToDb(pushId, TEST_REPO);
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
 
     after(async function () {
       await helper.removeGitPushFromDb(pushId);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+      await helper.removeUserFromDb(TEST_USER);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
     });
 
     it('attempt to reject should fail when server is down', async function () {
@@ -483,22 +491,151 @@ describe('test git-proxy-cli', function () {
     });
   });
 
+  // *** create user ***
+
+  describe('test git-proxy-cli :: create-user', function () {
+    before(async function () {
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
+    });
+
+    after(async function () {
+      await helper.removeUserFromDb(TEST_USER);
+    });
+
+    it('attempt to create user should fail when server is down', async function () {
+      try {
+        // start server -> login -> stop server
+        await helper.startServer(service);
+        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+      } finally {
+        await helper.closeServer(service.httpServer);
+      }
+
+      const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+      const expectedExitCode = 2;
+      const expectedMessages = null;
+      const expectedErrorMessages = ['Error: Create User:'];
+      await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+    });
+
+    it('attempt to create user should fail when not authenticated', async function () {
+      await helper.removeCookiesFile();
+
+      const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+      const expectedExitCode = 1;
+      const expectedMessages = null;
+      const expectedErrorMessages = ['Error: Create User: Authentication required'];
+      await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+    });
+
+    it('attempt to create user should fail when not admin', async function () {
+      try {
+        await helper.startServer(service);
+        await helper.runCli(
+          `npx -- @finos/git-proxy-cli login --username testuser --password testpassword`,
+        );
+
+        const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+        const expectedExitCode = 3;
+        const expectedMessages = null;
+        const expectedErrorMessages = ['Error: Create User: Authentication required'];
+        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+      } finally {
+        await helper.closeServer(service.httpServer);
+      }
+    });
+
+    it('attempt to create user should fail with missing required fields', async function () {
+      try {
+        await helper.startServer(service);
+        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+
+        const cli = `npx -- @finos/git-proxy-cli create-user --username newuser --password "" --email new@email.com --gitAccount newgit`;
+        const expectedExitCode = 4;
+        const expectedMessages = null;
+        const expectedErrorMessages = ['Error: Create User: Missing required fields'];
+        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+      } finally {
+        await helper.closeServer(service.httpServer);
+      }
+    });
+
+    it('should successfully create a new user', async function () {
+      const uniqueUsername = `newuser_${Date.now()}`;
+      try {
+        await helper.startServer(service);
+        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+
+        const cli = `npx -- @finos/git-proxy-cli create-user --username ${uniqueUsername} --password newpass --email new@email.com --gitAccount newgit`;
+        const expectedExitCode = 0;
+        const expectedMessages = [`User '${uniqueUsername}' created successfully`];
+        const expectedErrorMessages = null;
+        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+
+        // Verify we can login with the new user
+        await helper.runCli(
+          `npx -- @finos/git-proxy-cli login --username ${uniqueUsername} --password newpass`,
+          0,
+          [`Login "${uniqueUsername}" <new@email.com>: OK`],
+          null,
+        );
+      } finally {
+        await helper.closeServer(service.httpServer);
+        // Clean up the created user
+        try {
+          await helper.removeUserFromDb(uniqueUsername);
+        } catch (error) {
+          // Ignore cleanup errors
+        }
+      }
+    });
+
+    it('should successfully create a new admin user', async function () {
+      const uniqueUsername = `newadmin_${Date.now()}`;
+      try {
+        await helper.startServer(service);
+        await helper.runCli(`npx -- @finos/git-proxy-cli login --username admin --password admin`);
+
+        const cli = `npx -- @finos/git-proxy-cli create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com --gitAccount newgit --admin`;
+        const expectedExitCode = 0;
+        const expectedMessages = [`User '${uniqueUsername}' created successfully`];
+        const expectedErrorMessages = null;
+        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+
+        // Verify we can login with the new admin user
+        await helper.runCli(
+          `npx -- @finos/git-proxy-cli login --username ${uniqueUsername} --password newpass`,
+          0,
+          [`Login "${uniqueUsername}" <${uniqueUsername}@email.com> (admin): OK`],
+          null,
+        );
+      } finally {
+        await helper.closeServer(service.httpServer);
+        // Clean up the created user
+        try {
+          await helper.removeUserFromDb(uniqueUsername);
+        } catch (error) {
+          console.error('Error cleaning up user', error);
+        }
+      }
+    });
+  });
+
   // *** tests require push in db ***
 
   describe('test git-proxy-cli :: git push administration', function () {
     const pushId = `0000000000000000000000000000000000000000__${Date.now()}`;
-    const gitAccount = 'testGitAccount1';
 
     before(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG);
-      await helper.addUserToDb('testuser1', 'testpassword', 'test@email.com', gitAccount);
-      await helper.addGitPushToDb(pushId, TEST_REPO, gitAccount);
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
+      await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
 
     after(async function () {
-      await helper.removeUserFromDb('testuser1');
       await helper.removeGitPushFromDb(pushId);
-      await helper.removeRepoFromDb(TEST_REPO_CONFIG.name);
+      await helper.removeUserFromDb(TEST_USER);
+      await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
     });
 
     it('attempt to ls should list existing push', async function () {

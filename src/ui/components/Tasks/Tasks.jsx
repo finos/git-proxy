@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import classnames from 'classnames';
+import clsx from 'clsx';
 import { makeStyles } from '@material-ui/core/styles';
 import Checkbox from '@material-ui/core/Checkbox';
 import Tooltip from '@material-ui/core/Tooltip';
@@ -30,7 +30,7 @@ export default function Tasks(props) {
     setChecked(newChecked);
   };
   const { tasksIndexes, tasks, rtlActive } = props;
-  const tableCellClasses = classnames(classes.tableCell, {
+  const tableCellClasses = clsx(classes.tableCell, {
     [classes.tableCellRTL]: rtlActive,
   });
   return (
@@ -60,7 +60,7 @@ export default function Tasks(props) {
                 classes={{ tooltip: classes.tooltip }}
               >
                 <IconButton aria-label='Edit' className={classes.tableActionButton}>
-                  <Edit className={classes.tableActionButtonIcon + ' ' + classes.edit} />
+                  <Edit className={clsx(classes.tableActionButtonIcon, classes.edit)} />
                 </IconButton>
               </Tooltip>
               <Tooltip
@@ -70,7 +70,7 @@ export default function Tasks(props) {
                 classes={{ tooltip: classes.tooltip }}
               >
                 <IconButton aria-label='Close' className={classes.tableActionButton}>
-                  <Close className={classes.tableActionButtonIcon + ' ' + classes.close} />
+                  <Close className={clsx(classes.tableActionButtonIcon, classes.close)} />
                 </IconButton>
               </Tooltip>
             </TableCell>

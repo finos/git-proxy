@@ -1,6 +1,8 @@
 import { Action, Step } from '../../actions';
 import simpleGit from 'simple-git';
 
+import { EMPTY_COMMIT_HASH } from '../constants';
+
 const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('diff');
 
@@ -11,11 +13,15 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     let commitFrom = `4b825dc642cb6eb9a060e54bf8d69288fbee4904`;
 
     if (!action.commitData || action.commitData.length === 0) {
-      throw new Error('No commit data found');
+      step.error = true;
+      step.log('No commitData found');
+      step.setError('Your push has been blocked because no commit data was found.');
+      action.addStep(step);
+      return action;
     }
 
-    if (action.commitFrom === '0000000000000000000000000000000000000000') {
-      if (action.commitData[0].parent !== '0000000000000000000000000000000000000000') {
+    if (action.commitFrom === EMPTY_COMMIT_HASH) {
+      if (action.commitData[0].parent !== EMPTY_COMMIT_HASH) {
         commitFrom = `${action.commitData[action.commitData.length - 1].parent}`;
       }
     } else {

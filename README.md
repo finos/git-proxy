@@ -40,7 +40,7 @@
 
 ## What is GitProxy
 
-GitProxy is an application that stands between developers and a Git remote endpoint (e.g., `github.com`). It applies rules and workflows (configurable as `plugins`) to all outgoing `git push` operations to ensure they are compliant.
+GitProxy is an application that stands between developers and a Git remote endpoint (e.g., `github.com`). It applies rules and workflows (configurable as `plugins`) to all outgoing `git push` operations to ensure they are compliant. GitProxy supports both **HTTP/HTTPS** and **SSH** protocols with identical security scanning and validation.
 
 The main goal of GitProxy is to marry the defacto standard Open Source developer experience (git-based workflow of branching out, submitting changes and merging back) with security and legal requirements that firms have to comply with, when operating in highly regulated industries like financial services.
 
@@ -69,8 +69,10 @@ $ npx -- @finos/git-proxy
 Clone a repository, set the remote to the GitProxy URL and push your changes:
 
 ```bash
-# Only HTTPS cloning is supported at the moment, see https://github.com/finos/git-proxy/issues/27.
+# Both HTTPS and SSH cloning are supported
 $ git clone https://github.com/octocat/Hello-World.git && cd Hello-World
+# Or use SSH:
+# $ git clone git@github.com:octocat/Hello-World.git && cd Hello-World
 # The below command is using the GitHub official CLI to fork the repo that is cloned.
 # You can also fork on the GitHub UI. For usage details on the CLI, see https://github.com/cli/cli
 $ gh repo fork
@@ -83,6 +85,33 @@ $ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remo
 
 Using the default configuration, GitProxy intercepts the push and _blocks_ it. To enable code pushing to your fork via GitProxy, add your repository URL into the GitProxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
 
+## Protocol Support
+
+GitProxy supports both **HTTP/HTTPS** and **SSH** protocols with identical security features:
+
+### HTTP/HTTPS Support
+
+- ✅ Basic authentication and JWT tokens
+- ✅ Pack data extraction via middleware
+- ✅ Full security scanning and validation
+- ✅ Manual and auto-approval workflows
+
+### SSH Support
+
+- ✅ SSH key-based authentication
+- ✅ Pack data capture from SSH streams
+- ✅ Same 17-processor security chain as HTTPS
+- ✅ SSH key forwarding for approved pushes
+- ✅ Complete feature parity with HTTPS
+
+Both protocols provide the same level of security scanning, including:
+
+- Secret detection (gitleaks)
+- Commit message and author validation
+- Hidden commit detection
+- Pre-receive hooks
+- Comprehensive audit logging
+
 ## Documentation
 
 For detailed step-by-step instructions for how to install, deploy & configure GitProxy and
@@ -91,11 +120,12 @@ customize for your environment, see the [project's documentation](https://git-pr
 - [Quickstart](https://git-proxy.finos.org/docs/category/quickstart/)
 - [Installation](https://git-proxy.finos.org/docs/installation)
 - [Configuration](https://git-proxy.finos.org/docs/category/configuration)
-- [SSH Support](docs/SSH.md) - Documentation for SSH feature and configuration
+- [Contributing](https://git-proxy.finos.org/docs/development/contributing)
+- [Testing](https://git-proxy.finos.org/docs/development/testing)
 
 ## Contributing
 
-Your contributions are at the core of making this a true open source project. Any contributions you make are **greatly appreciated**. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more information.
+Your contributions are at the core of making this a truly open source project. Any contributions you make are **greatly appreciated**. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more information.
 
 ## Security
 
@@ -111,12 +141,12 @@ This project is distributed under the Apache-2.0 license. See [`LICENSE`](LICENS
 
 ## Contact
 
-Drop a note, ask a question or just say hello in our [community Slack channel](https://app.slack.com/client/T01E7QRQH97/C06LXNW0W76) 👋
+Drop a note, ask a question or just say hello in our community Slack channel, which is accessible via the [FINOS Slack Workspace](https://finos-lf.slack.com) 👋
 
-If you can't access Slack, you can also [subscribe to our mailing list](mailto:git-proxy+subscribe@lists.finos.org).
+If you can't access Slack, you can also [subscribe to our mailing list](mailto:git-proxy+subscribe@lists.finos.org) 📨
 
-🤝 Join our [fortnightly Zoom meeting](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595) on Monday, 4PM BST (odd week numbers). 
-🌍 [Convert to your local time](https://www.timeanddate.com/worldclock)
-📅 [Click here](https://calendar.google.com/calendar/event?action=TEMPLATE&tmeid=MTRvbzM0NG01dWNvNGc4OGJjNWphM2ZtaTZfMjAyNTA2MDJUMTUwMDAwWiBzYW0uaG9sbWVzQGNvbnRyb2wtcGxhbmUuaW8&tmsrc=sam.holmes%40control-plane.io&scp=ALL) for the recurring Google Calendar meeting invite. Alternatively, send an e-mail to [help@finos.org](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595#:~:text=Need-,an,-invite%3F) to get a calendar invitation. 
+Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues) 🧵
 
-Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues).
+🤝 Join our [fortnightly Zoom meeting](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595) on Monday, 4PM BST (odd week numbers).  
+🌍 [Convert to your local time](https://www.timeanddate.com/worldclock)  
+📅 [Click here](https://calendar.google.com/calendar/event?action=TEMPLATE&tmeid=MTRvbzM0NG01dWNvNGc4OGJjNWphM2ZtaTZfMjAyNTA2MDJUMTUwMDAwWiBzYW0uaG9sbWVzQGNvbnRyb2wtcGxhbmUuaW8&tmsrc=sam.holmes%40control-plane.io&scp=ALL) for the recurring Google Calendar meeting invite. Alternatively, send an e-mail to [help@finos.org](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595#:~:text=Need-,an,-invite%3F) to get a calendar invitation.

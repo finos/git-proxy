@@ -3,7 +3,6 @@ import _ from 'lodash';
 import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
-import * as repo from './repo';
 import { PushQuery } from '../types';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
@@ -15,7 +14,14 @@ if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 const db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
-db.ensureIndex({ fieldName: 'id', unique: true });
+try {
+  db.ensureIndex({ fieldName: 'id', unique: true });
+} catch (e) {
+  console.error(
+    'Failed to build a unique index of push id values. Please check your database file for duplicate entries or delete the duplicate through the UI and restart. ',
+    e,
+  );
+}
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
 const defaultPushQuery: PushQuery = {
@@ -25,7 +31,7 @@ const defaultPushQuery: PushQuery = {
   authorised: false,
 };
 
-export const getPushes = (query: PushQuery) => {
+export const getPushes = (query: PushQuery): Promise<Action[]> => {
   if (!query) query = defaultPushQuery;
   return new Promise((resolve, reject) => {
     db.find(query, (err: Error, docs: Action[]) => {
@@ -44,7 +50,7 @@ export const getPushes = (query: PushQuery) => {
   });
 };
 
-export const getPush = async (id: string) => {
+export const getPush = async (id: string): Promise<Action | null> => {
   return new Promise<Action | null>((resolve, reject) => {
     db.findOne({ id: id }, (err, doc) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -62,7 +68,7 @@ export const getPush = async (id: string) => {
   });
 };
 
-export const deletePush = async (id: string) => {
+export const deletePush = async (id: string): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
     db.remove({ id }, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -76,7 +82,7 @@ export const deletePush = async (id: string) => {
   });
 };
 
-export const writeAudit = async (action: Action) => {
+export const writeAudit = async (action: Action): Promise<void> => {
   return new Promise((resolve, reject) => {
     const options = { multi: false, upsert: true };
     db.update({ id: action.id }, action, options, (err) => {
@@ -85,13 +91,13 @@ export const writeAudit = async (action: Action) => {
       if (err) {
         reject(err);
       } else {
-        resolve(null);
+        resolve();
       }
     });
   });
 };
 
-export const authorise = async (id: string, attestation: any) => {
+export const authorise = async (id: string, attestation: any): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -105,7 +111,7 @@ export const authorise = async (id: string, attestation: any) => {
   return { message: `authorised ${id}` };
 };
 
-export const reject = async (id: string) => {
+export const reject = async (id: string, attestation: any): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -114,11 +120,12 @@ export const reject = async (id: string) => {
   action.authorised = false;
   action.canceled = false;
   action.rejected = true;
+  action.attestation = attestation;
   await writeAudit(action);
   return { message: `reject ${id}` };
 };
 
-export const cancel = async (id: string) => {
+export const cancel = async (id: string): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -128,37 +135,4 @@ export const cancel = async (id: string) => {
   action.rejected = false;
   await writeAudit(action);
   return { message: `cancel ${id}` };
-};
-
-export const canUserCancelPush = async (id: string, user: string) => {
-  return new Promise<boolean>(async (resolve) => {
-    const pushDetail = await getPush(id);
-    if (!pushDetail) {
-      resolve(false);
-      return;
-    }
-
-    const repoName = pushDetail.repoName.replace('.git', '');
-    const isAllowed = await repo.isUserPushAllowed(repoName, user);
-
-    if (isAllowed) {
-      resolve(true);
-    } else {
-      resolve(false);
-    }
-  });
-};
-
-export const canUserApproveRejectPush = async (id: string, user: string) => {
-  return new Promise<boolean>(async (resolve) => {
-    const action = await getPush(id);
-    if (!action) {
-      resolve(false);
-      return;
-    }
-    const repoName = action.repoName.replace('.git', '');
-    const isAllowed = await repo.canUserApproveRejectPushRepo(repoName, user);
-
-    resolve(isAllowed);
-  });
 };

@@ -1,3 +1,6 @@
+import { Action } from '../proxy/actions/Action';
+import MongoDBStore from 'connect-mongo';
+
 export type PushQuery = {
   error: boolean;
   blocked: boolean;
@@ -7,49 +10,86 @@ export type PushQuery = {
 
 export type UserRole = 'canPush' | 'canAuthorise';
 
-export type Repo = {
+export class Repo {
   project: string;
   name: string;
   url: string;
-  users: Record<UserRole, string[]>;
-  _id: string;
-};
+  users: { canPush: string[]; canAuthorise: string[] };
+  _id?: string;
 
-export type PublicKeyRecord = {
-  key: string;
-  name: string;
-  addedAt: string;
-};
+  constructor(
+    project: string,
+    name: string,
+    url: string,
+    users?: Record<UserRole, string[]>,
+    _id?: string,
+  ) {
+    this.project = project;
+    this.name = name;
+    this.url = url;
+    this.users = users ?? { canPush: [], canAuthorise: [] };
+    this._id = _id;
+  }
+}
 
-export type User = {
-  _id: string;
+export class User {
   username: string;
   password: string | null; // null if oidcId is set
   gitAccount: string;
   email: string;
   admin: boolean;
-  oidcId: string | null;
-  publicKeys: PublicKeyRecord[];
-};
+  oidcId?: string | null;
+  publicKeys?: string[];
+  _id?: string;
 
-export type Push = {
-  id: string;
-  allowPush: boolean;
-  authorised: boolean;
-  blocked: boolean;
-  blockedMessage: string;
-  branch: string;
-  canceled: boolean;
-  commitData: object;
-  commitFrom: string;
-  commitTo: string;
-  error: boolean;
-  method: string;
-  project: string;
-  rejected: boolean;
-  repo: string;
-  repoName: string;
-  timepstamp: string;
-  type: string;
-  url: string;
-};
+  constructor(
+    username: string,
+    password: string,
+    gitAccount: string,
+    email: string,
+    admin: boolean,
+    oidcId: string | null = null,
+    publicKeys: string[] = [],
+    _id?: string,
+  ) {
+    this.username = username;
+    this.password = password;
+    this.gitAccount = gitAccount;
+    this.email = email;
+    this.admin = admin;
+    this.oidcId = oidcId ?? null;
+    this.publicKeys = publicKeys;
+    this._id = _id;
+  }
+}
+
+export interface Sink {
+  getSessionStore?: () => MongoDBStore;
+  getPushes: (query: PushQuery) => Promise<Action[]>;
+  writeAudit: (action: Action) => Promise<void>;
+  getPush: (id: string) => Promise<Action | null>;
+  deletePush: (id: string) => Promise<void>;
+  authorise: (id: string, attestation: any) => Promise<{ message: string }>;
+  cancel: (id: string) => Promise<{ message: string }>;
+  reject: (id: string, attestation: any) => Promise<{ message: string }>;
+  getRepos: (query?: object) => Promise<Repo[]>;
+  getRepo: (name: string) => Promise<Repo | null>;
+  getRepoByUrl: (url: string) => Promise<Repo | null>;
+  getRepoById: (_id: string) => Promise<Repo | null>;
+  createRepo: (repo: Repo) => Promise<Repo>;
+  addUserCanPush: (_id: string, user: string) => Promise<void>;
+  addUserCanAuthorise: (_id: string, user: string) => Promise<void>;
+  removeUserCanPush: (_id: string, user: string) => Promise<void>;
+  removeUserCanAuthorise: (_id: string, user: string) => Promise<void>;
+  deleteRepo: (_id: string) => Promise<void>;
+  findUser: (username: string) => Promise<User | null>;
+  findUserByEmail: (email: string) => Promise<User | null>;
+  findUserByOIDC: (oidcId: string) => Promise<User | null>;
+  findUserBySSHKey: (sshKey: string) => Promise<User | null>;
+  getUsers: (query?: object) => Promise<User[]>;
+  createUser: (user: User) => Promise<void>;
+  deleteUser: (username: string) => Promise<void>;
+  updateUser: (user: User) => Promise<void>;
+  addPublicKey: (username: string, publicKey: string) => Promise<void>;
+  removePublicKey: (username: string, publicKey: string) => Promise<void>;
+}

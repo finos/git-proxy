@@ -1,119 +1,168 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, RequestHandler } from 'express';
 import proxy from 'express-http-proxy';
 import { PassThrough } from 'stream';
 import getRawBody from 'raw-body';
 import { executeChain } from '../chain';
-import { getProxyUrl } from '../../config';
+import { processUrlPath, validGitRequest, getAllProxiedHosts } from './helper';
+import { ProxyOptions } from 'express-http-proxy';
+import { getMaxPackSizeBytes } from '../../config';
 
-// eslint-disable-next-line new-cap
-const router = Router();
+enum ActionType {
+  ALLOWED = 'Allowed',
+  ERROR = 'Error',
+  BLOCKED = 'Blocked',
+}
 
-/**
- * For a given Git HTTP request destined for a GitHub repo,
- * remove the GitHub specific components of the URL.
- * @param {string} url URL path of the request
- * @return {string} Modified path which removes the {owner}/{repo} parts
- */
-const stripGitHubFromGitPath = (url: string): string | undefined => {
-  const parts = url.split('/');
-  // url = '/{owner}/{repo}.git/{git-path}'
-  // url.split('/') = ['', '{owner}', '{repo}.git', '{git-path}']
-  if (parts.length !== 4 && parts.length !== 5) {
-    console.error('unexpected url received: ', url);
-    return undefined;
+const logAction = (
+  url: string,
+  host: string | null | undefined,
+  userAgent: string | null | undefined,
+  type: ActionType,
+  message?: string,
+) => {
+  let msg = `Action processed: ${type}
+    Request URL: ${url}
+    Host:        ${host}
+    User-Agent:  ${userAgent}`;
+
+  if (message && type !== ActionType.ALLOWED) {
+    msg += `\n    ${type}:       ${message}`;
   }
-  parts.splice(1, 2); // remove the {owner} and {repo} from the array
-  return parts.join('/');
+
+  console.log(msg);
 };
 
-/**
- * Check whether an HTTP request has the expected properties of a
- * Git HTTP request. The URL is expected to be "sanitized", stripped of
- * specific paths such as the GitHub {owner}/{repo}.git parts.
- * @param {string} url Sanitized URL which only includes the path specific to git
- * @param {*} headers Request headers (TODO: Fix JSDoc linting and refer to node:http.IncomingHttpHeaders)
- * @return {boolean} If true, this is a valid and expected git request. Otherwise, false.
- */
-const validGitRequest = (url: string, headers: any): boolean => {
-  const { 'user-agent': agent, accept } = headers;
-  if (!agent) {
-    return false;
-  }
-  if (['/info/refs?service=git-upload-pack', '/info/refs?service=git-receive-pack'].includes(url)) {
-    // https://www.git-scm.com/docs/http-protocol#_discovering_references
-    // We can only filter based on User-Agent since the Accept header is not
-    // sent in this request
-    return agent.startsWith('git/');
-  }
-  if (['/git-upload-pack', '/git-receive-pack'].includes(url)) {
-    if (!accept) {
+const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
+  try {
+    const urlComponents = processUrlPath(req.url);
+    if (
+      !urlComponents ||
+      urlComponents.gitPath === undefined ||
+      !validGitRequest(urlComponents.gitPath, req.headers)
+    ) {
+      const message = 'Invalid request received';
+      logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ERROR, message);
+      res.status(200).send(handleMessage(message));
       return false;
     }
-    // https://www.git-scm.com/docs/http-protocol#_uploading_data
-    return agent.startsWith('git/') && accept.startsWith('application/x-git-');
+
+    // For POST pack requests, use the raw body extracted by extractRawBody middleware
+    if (isPackPost(req) && (req as any).bodyRaw) {
+      (req as any).body = (req as any).bodyRaw;
+      // Clean up the bodyRaw property before forwarding the request
+      delete (req as any).bodyRaw;
+    }
+
+    const action = await executeChain(req, res);
+
+    if (action.error || action.blocked) {
+      const message = action.errorMessage ?? action.blockedMessage ?? 'Unknown error';
+      const type = action.error ? ActionType.ERROR : ActionType.BLOCKED;
+
+      logAction(req.url, req.headers.host, req.headers['user-agent'], type, message);
+      sendErrorResponse(req, res, message);
+      return false;
+    }
+
+    logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ALLOWED);
+
+    // this is the only case where we do not respond directly, instead we return true to proxy the request
+    return true;
+  } catch (e) {
+    const message = `Error occurred in proxy filter function ${(e as Error).message ?? e}`;
+
+    logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ERROR, message);
+    sendErrorResponse(req, res, message);
+    return false;
   }
-  return false;
 };
 
-// function to convert SSH URL to HTTPS
-const convertSshToHttps = (url: string) => {
-  // Handle SSH URLs in the format git@host:path
-  const sshRegex = /^git@([^:]+):(.+)$/;
-  const match = url.match(sshRegex);
-
-  if (match) {
-    const [, host, path] = match;
-    return `https://${host}/${path}`;
+const sendErrorResponse = (req: Request, res: Response, message: string): void => {
+  // GET requests to /info/refs (used to check refs for many git operations) must use Git protocol error packet format
+  if (req.method === 'GET' && req.url.includes('/info/refs')) {
+    res.set('content-type', 'application/x-git-upload-pack-advertisement');
+    res.status(200).send(handleRefsErrorMessage(message));
+    return;
   }
 
-  return url;
+  // Standard git receive-pack response
+  res.set('content-type', 'application/x-git-receive-pack-result');
+  res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
+  res.set('pragma', 'no-cache');
+  res.set('cache-control', 'no-cache, max-age=0, must-revalidate');
+  res.set('vary', 'Accept-Encoding');
+  res.set('x-frame-options', 'DENY');
+  res.set('connection', 'close');
+
+  res.status(200).send(handleMessage(message));
+};
+
+const handleMessage = (message: string): string => {
+  const body = `\t${message}`;
+  const len = (6 + Buffer.byteLength(body)).toString(16).padStart(4, '0');
+  return `${len}\x02${body}\n0000`;
+};
+
+const handleRefsErrorMessage = (message: string): string => {
+  // Git protocol for GET /info/refs error packets: PKT-LINE("ERR" SP explanation-text)
+  const errorBody = `ERR ${message}`;
+  const len = (4 + Buffer.byteLength(errorBody)).toString(16).padStart(4, '0');
+  return `${len}${errorBody}\n0000`;
+};
+
+const getRequestPathResolver: (prefix: string) => ProxyOptions['proxyReqPathResolver'] = (
+  prefix,
+) => {
+  return (req) => {
+    let url;
+    // try to prevent too many slashes in the URL
+    if (prefix.endsWith('/') && req.originalUrl.startsWith('/')) {
+      url = prefix.substring(0, prefix.length - 1) + req.originalUrl;
+    } else {
+      url = prefix + req.originalUrl;
+    }
+
+    console.log(`Request resolved to ${url}`);
+    return url;
+  };
+};
+
+const proxyReqOptDecorator: ProxyOptions['proxyReqOptDecorator'] = (proxyReqOpts) => proxyReqOpts;
+
+const proxyReqBodyDecorator: ProxyOptions['proxyReqBodyDecorator'] = (bodyContent, srcReq) => {
+  if (srcReq.method === 'GET') {
+    return '';
+  }
+  return bodyContent;
+};
+
+const proxyErrorHandler: ProxyOptions['proxyErrorHandler'] = (err, _res, next) => {
+  console.log(`ERROR=${err}`);
+  next(err);
 };
 
 const isPackPost = (req: Request) =>
   req.method === 'POST' &&
-  // eslint-disable-next-line no-useless-escape
-  /^\/[^\/]+\/[^\/]+\.git\/(?:git-upload-pack|git-receive-pack)$/.test(req.url);
+  /^(?:\/[^/]+)*\/[^/]+\.git\/(?:git-upload-pack|git-receive-pack)$/.test(req.url);
 
-const teeAndValidate = async (req: Request, res: Response, next: NextFunction) => {
-  if (!isPackPost(req)) return next();
+const extractRawBody = async (req: Request, res: Response, next: NextFunction) => {
+  if (!isPackPost(req)) {
+    return next();
+  }
 
-  const proxyStream = new PassThrough();
-  const pluginStream = new PassThrough();
+  const proxyStream = new PassThrough({
+    highWaterMark: 4 * 1024 * 1024,
+  });
+  const pluginStream = new PassThrough({
+    highWaterMark: 4 * 1024 * 1024,
+  });
 
   req.pipe(proxyStream);
   req.pipe(pluginStream);
 
   try {
-    const buf = await getRawBody(pluginStream, { limit: '1gb' });
-    (req as any).body = buf;
-    const verdict = await executeChain(req, res);
-    console.log('action processed');
-    if (verdict.error || verdict.blocked) {
-      let msg = '';
-
-      if (verdict.error) {
-        msg = verdict.errorMessage!;
-        console.error(msg);
-      }
-      if (verdict.blocked) {
-        msg = verdict.blockedMessage!;
-      }
-
-      res
-        .set({
-          'content-type': 'application/x-git-receive-pack-result',
-          expires: 'Fri, 01 Jan 1980 00:00:00 GMT',
-          pragma: 'no-cache',
-          'cache-control': 'no-cache, max-age=0, must-revalidate',
-          vary: 'Accept-Encoding',
-          'x-frame-options': 'DENY',
-          connection: 'close',
-        })
-        .status(200)
-        .send(handleMessage(msg));
-      return;
-    }
-
+    const buf = await getRawBody(pluginStream, { limit: getMaxPackSizeBytes() });
+    (req as any).bodyRaw = buf;
     (req as any).pipe = (dest: any, opts: any) => proxyStream.pipe(dest, opts);
     next();
   } catch (e) {
@@ -123,58 +172,83 @@ const teeAndValidate = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
-router.use(teeAndValidate);
+const getRouter = async () => {
+  const router = Router();
+  router.use(extractRawBody);
 
-router.use(
-  '/',
-  proxy(getProxyUrl(), {
+  const originsToProxy = await getAllProxiedHosts();
+  const proxyKeys: string[] = [];
+  const proxies: RequestHandler[] = [];
+
+  console.log(`Initializing proxy router for origins: '${JSON.stringify(originsToProxy)}'`);
+
+  // we need to wrap multiple proxy middlewares in a custom middleware as middlewares
+  // with path are processed in descending path order (/ then /github.com etc.) and
+  // we want the fallback proxy to go last.
+  originsToProxy.forEach((origin) => {
+    console.log(`\tsetting up origin: '${origin}'`);
+
+    proxyKeys.push(`/${origin}/`);
+    proxies.push(
+      proxy('https://' + origin, {
+        parseReqBody: false,
+        preserveHostHdr: false,
+        filter: proxyFilter,
+        proxyReqPathResolver: getRequestPathResolver('https://'), // no need to add host as it's in the URL
+        proxyReqOptDecorator: proxyReqOptDecorator,
+        proxyReqBodyDecorator: proxyReqBodyDecorator,
+        proxyErrorHandler: proxyErrorHandler,
+        stream: true,
+      } as any),
+    );
+  });
+
+  console.log('\tsetting up catch-all route (github.com) for backwards compatibility');
+  const fallbackProxy: RequestHandler = proxy('https://github.com', {
     parseReqBody: false,
     preserveHostHdr: false,
+    filter: proxyFilter,
+    proxyReqPathResolver: getRequestPathResolver('https://github.com'),
+    proxyReqOptDecorator: proxyReqOptDecorator,
+    proxyReqBodyDecorator: proxyReqBodyDecorator,
+    proxyErrorHandler: proxyErrorHandler,
+    stream: true,
+  } as any);
 
-    filter: async (req, res) => {
-      console.log('request url: ', req.url);
-      console.log('host: ', req.headers.host);
-      console.log('user-agent: ', req.headers['user-agent']);
-      const gitPath = stripGitHubFromGitPath(req.url);
-      if (gitPath === undefined || !validGitRequest(gitPath, req.headers)) {
-        res.status(400).send('Invalid request received');
-        return false;
+  console.log('proxy keys registered: ', JSON.stringify(proxyKeys));
+
+  router.use('/', ((req, res, next) => {
+    if (req.path === '/healthcheck') {
+      res.set('Cache-Control', 'no-cache, no-store, must-revalidate, proxy-revalidate');
+      res.set('Pragma', 'no-cache');
+      res.set('Expires', '0');
+      res.set('Surrogate-Control', 'no-store');
+      return res.status(200).send('OK');
+    }
+
+    console.log(
+      `processing request URL: '${req.url}' against registered proxy keys: ${JSON.stringify(proxyKeys)}`,
+    );
+
+    for (let i = 0; i < proxyKeys.length; i++) {
+      if (req.url.startsWith(proxyKeys[i])) {
+        console.log(`\tusing proxy ${proxyKeys[i]}`);
+        return proxies[i](req, res, next);
       }
-      return true;
-    },
-
-    proxyReqPathResolver: (req) => {
-      const url = getProxyUrl() + req.originalUrl;
-      console.log('Sending request to ' + url);
-      return url;
-    },
-    proxySSHReqPathResolver: (req) => {
-      const url = convertSshToHttps(getProxyUrl()) + req.originalUrl;
-      console.log('Sending request to ' + url);
-      return url;
-    },
-    proxyReqOptDecorator: function (proxyReqOpts) {
-      return proxyReqOpts;
-    },
-
-    proxyErrorHandler: (err, res, next) => {
-      console.log(`ERROR=${err}`);
-      next(err);
-    },
-  }),
-);
-
-const handleMessage = (message: string): string => {
-  const body = `\t${message}`;
-  const len = (6 + Buffer.byteLength(body)).toString(16).padStart(4, '0');
-  return `${len}\x02${body}\n0000`;
+    }
+    // fallback
+    console.log(`\tusing fallback`);
+    return fallbackProxy(req, res, next);
+  }) as RequestHandler);
+  return router;
 };
 
 export {
-  router,
+  proxyFilter,
+  getRouter,
   handleMessage,
-  validGitRequest,
-  teeAndValidate,
+  handleRefsErrorMessage,
   isPackPost,
-  stripGitHubFromGitPath,
+  extractRawBody,
+  validGitRequest,
 };

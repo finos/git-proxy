@@ -35,8 +35,10 @@ type Match = {
 const getDiffViolations = (diff: string, organization: string): Match[] | string | null => {
   // Commit diff is empty, i.e. '', null or undefined
   if (!diff) {
-    console.log('No commit diff...');
-    return 'No commit diff...';
+    console.log('No commit diff found, but this may be legitimate (empty diff)');
+    // Empty diff is not necessarily a violation - could be legitimate
+    // (e.g., cherry-pick with no changes, reverts, etc.)
+    return null;
   }
 
   // Validation for configured block pattern(s) check...
@@ -72,7 +74,7 @@ const combineMatches = (organization: string) => {
       ? []
       : Object.entries(commitConfig.diff.block.providers);
 
-  // Combine all matches (literals, paterns)
+  // Combine all matches (literals, patterns)
   const combinedMatches = [
     ...blockedLiterals.map((literal) => ({
       type: BLOCK_TYPE.LITERAL,
@@ -104,7 +106,7 @@ const collectMatches = (parsedDiff: File[], combinedMatches: CombinedMatch[]): M
           const lineNumber = change.ln;
           // Iterate through each match types - literal, patterns, providers
           combinedMatches.forEach(({ type, match }) => {
-            // using Match all to find all occurences of the pattern in the line
+            // using Match all to find all occurrences of the pattern in the line
             const matches = [...change.content.matchAll(match)];
 
             matches.forEach((matchInstance) => {
@@ -122,7 +124,7 @@ const collectMatches = (parsedDiff: File[], combinedMatches: CombinedMatch[]): M
                 };
               }
 
-              // apend line numbers to the list of lines
+              // append line numbers to the list of lines
               allMatches[matchKey].lines.push(lineNumber);
             });
           });
@@ -131,7 +133,7 @@ const collectMatches = (parsedDiff: File[], combinedMatches: CombinedMatch[]): M
     });
   });
 
-  // convert matches into  a final result array, joining line numbers
+  // convert matches into a final result array, joining line numbers
   const result = Object.values(allMatches).map((match) => ({
     ...match,
     lines: match.lines.join(','), // join the line numbers into a comma-separated string

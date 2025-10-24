@@ -14,24 +14,35 @@ jobs:
     runs-on: ubuntu-latest
     steps: # list of steps
       - name: Harden Runner
-        uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2
+        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2
         with:
           egress-policy: audit
 
       - name: Install NodeJS
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Code Checkout
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
         with:
           fetch-depth: 0
 
       - name: Install Dependencies
         run: npm install --workspaces
-  
+
       - name: Code Linting
         run: |
           npm run lint
           npm run lint --workspaces --if-present
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Check generated config types are up-to-date
+        run: |
+          npm run generate-config-types
+          if ! git diff --exit-code src/config/generated/config.ts; then
+            echo "Generated config types are out of date. Run 'npm run generate-config-types' locally and commit the changes."
+            exit 1
+          fi

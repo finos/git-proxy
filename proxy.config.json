@@ -1,5 +1,4 @@
 {
-  "proxyUrl": "https://github.com",
   "cookieSecret": "cookie secret",
   "sessionMaxAgeHours": 12,
   "rateLimit": {
@@ -17,6 +16,9 @@
       "url": "https://github.com/finos/git-proxy.git"
     }
   ],
+  "limits": {
+    "maxPackSizeBytes": 1073741824
+  },
   "sink": [
     {
       "type": "fs",
@@ -188,8 +190,14 @@
     "enabled": false,
     "port": 2222,
     "hostKey": {
-      "privateKeyPath": "./.ssh/host_key",
-      "publicKeyPath": "./.ssh/host_key.pub"
+      "privateKeyPath": "test/.ssh/host_key",
+      "publicKeyPath": "test/.ssh/host_key.pub"
+    },
+    "clone": {
+      "serviceToken": {
+        "username": "",
+        "password": ""
+      }
     }
   }
 }

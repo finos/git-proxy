@@ -1,43 +1,100 @@
 import { Action, Step } from '../../actions';
-import zlib from 'zlib';
 import fs from 'fs';
-import path from 'path';
 import lod from 'lodash';
-import { CommitContent } from '../types';
+import { createInflate } from 'zlib';
+import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
+import {
+  BRANCH_PREFIX,
+  EMPTY_COMMIT_HASH,
+  PACK_SIGNATURE,
+  PACKET_SIZE,
+  GIT_OBJECT_TYPE_COMMIT,
+} from '../constants';
 
-const BitMask = require('bit-mask') as any;
-
-const dir = path.resolve(__dirname, './.tmp');
+const dir = './.tmp/';
 
 if (!fs.existsSync(dir)) {
-  fs.mkdirSync(dir, { recursive: true });
+  fs.mkdirSync(dir);
 }
 
+/** Bit mask for the seven bits used in variable length size encodings
+ * (size and ofd_delta offset) to encode the value. */
+const SEVEN_BIT_MASK = 0x7f;
+/** Bit mask for the continuation bit (8th bit) used in the variable length
+ * size encodings (size and ofs_delta offsets) in Git object headers used in
+ * PACK files. */
+const EIGHTH_BIT_MASK = 0x80;
+
+/**
+ * Executes the parsing of a push request.
+ * @param {*} req - The request object containing the push data.
+ * @param {Action} action - The action object to be modified.
+ * @return {Promise<Action>} The modified action object.
+ */
 async function exec(req: any, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
   try {
     if (!req.body || req.body.length === 0) {
       throw new Error('No body found in request');
     }
-    const messageParts = req.body.toString('utf8').split(' ');
+    const [packetLines, packDataOffset] = parsePacketLines(req.body);
+    const refUpdates = packetLines.filter((line) => line.includes(BRANCH_PREFIX));
 
-    action.branch = messageParts[2].trim().replace('\u0000', '');
-    action.setCommit(messageParts[0].substr(4), messageParts[1]);
+    if (refUpdates.length !== 1) {
+      step.log('Invalid number of branch updates.');
+      step.log(`Expected 1, but got ${refUpdates.length}`);
+      throw new Error(
+        'Your push has been blocked. Please make sure you are pushing to a single branch.',
+      );
+    } else {
+      console.log(`refUpdates: ${JSON.stringify(refUpdates, null, 2)}`);
+    }
 
-    const index = req.body.lastIndexOf('PACK');
-    const buf = req.body.slice(index);
+    const [commitParts] = refUpdates[0].split('\0');
+    const parts = commitParts.split(' ');
+    if (parts.length !== 3) {
+      step.log('Invalid number of parts in ref update.');
+      step.log(`Expected 3, but got ${parts.length}`);
+      throw new Error('Your push has been blocked. Invalid ref update format.');
+    }
+
+    const [oldCommit, newCommit, ref] = parts;
+
+    // Strip everything after NUL, which is cap-list from
+    // https://git-scm.com/docs/http-protocol#_smart_server_response
+    action.branch = ref.replace(/\0.*/, '').trim();
+    action.setCommit(oldCommit, newCommit);
+
+    // Check if the offset is valid and if there's data after it
+    if (packDataOffset >= req.body.length) {
+      step.log('No PACK data found after packet lines.');
+      throw new Error('Your push has been blocked. PACK data is missing.');
+    }
+
+    const buf = req.body.slice(packDataOffset);
+
+    // Verify that data actually starts with PACK signature
+    if (buf.length < PACKET_SIZE || buf.toString('utf8', 0, PACKET_SIZE) !== PACK_SIGNATURE) {
+      step.log(`Expected PACK signature at offset ${packDataOffset}, but found something else.`);
+      throw new Error('Your push has been blocked. Invalid PACK data structure.');
+    }
     const [meta, contentBuff] = getPackMeta(buf);
-    const contents = getContents(contentBuff as any, meta.entries as number);
+    const contents = await getContents(contentBuff, meta.entries);
 
     action.commitData = getCommitData(contents as any);
 
-    if (action.commitFrom === '0000000000000000000000000000000000000000') {
-      action.commitFrom = action.commitData[action.commitData.length - 1].parent;
-    }
+    if (action.commitData.length === 0) {
+      step.log('No commit data found when parsing push.');
+    } else {
+      if (action.commitFrom === EMPTY_COMMIT_HASH) {
+        action.commitFrom = action.commitData[action.commitData.length - 1].parent;
+      }
 
-    const user = action.commitData[action.commitData.length - 1].committer;
-    console.log(`Push Request received from user ${user}`);
-    action.user = user;
+      const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
+      console.log(`Push Request received from user ${committer} with email ${committerEmail}`);
+      action.user = committer;
+      action.userEmail = committerEmail;
+    }
 
     step.content = {
       meta: meta,
@@ -52,217 +109,467 @@ async function exec(req: any, action: Action): Promise<Action> {
   return action;
 }
 
-const getCommitData = (contents: CommitContent[]) => {
-  console.log({ contents });
+/**
+ * Parses the name, email, and timestamp from an author or committer line.
+ *
+ * Timestamp including timezone offset is required.
+ * @param {string} line - The line to parse.
+ * @return {Object} An object containing the name, email, and timestamp.
+ */
+const parsePersonLine = (line: string): PersonLine => {
+  const personRegex = /^(.*?) <(.*?)> (\d+) ([+-]\d+)$/;
+  const match = line.match(personRegex);
+  if (!match) {
+    throw new Error(
+      `Failed to parse person line: ${line}. Make sure to include a name, email, timestamp and timezone offset.`,
+    );
+  }
+  return { name: match[1], email: match[2], timestamp: match[3] };
+};
+
+/**
+ * Parses the header lines of a commit.
+ * @param {string[]} headerLines - The header lines of a commit.
+ * @return {CommitHeader} An object containing the parsed commit header.
+ */
+const getParsedData = (headerLines: string[]): CommitHeader => {
+  const parsedData: CommitHeader = {
+    parents: [],
+    tree: '',
+    author: { name: '', email: '', timestamp: '' },
+    committer: { name: '', email: '', timestamp: '' },
+  };
+
+  for (const line of headerLines) {
+    const firstSpaceIndex = line.indexOf(' ');
+    if (firstSpaceIndex === -1) {
+      // No spaces
+      continue;
+    }
+
+    const key = line.substring(0, firstSpaceIndex);
+    const value = line.substring(firstSpaceIndex + 1);
+
+    switch (key) {
+      case 'tree':
+        if (parsedData.tree !== '') {
+          throw new Error('Multiple tree lines found in commit.');
+        }
+        parsedData.tree = value.trim();
+        break;
+      case 'parent':
+        parsedData.parents.push(value.trim());
+        break;
+      case 'author':
+        if (!isBlankPersonLine(parsedData.author)) {
+          throw new Error('Multiple author lines found in commit.');
+        }
+        parsedData.author = parsePersonLine(value);
+        break;
+      case 'committer':
+        if (!isBlankPersonLine(parsedData.committer)) {
+          throw new Error('Multiple committer lines found in commit.');
+        }
+        parsedData.committer = parsePersonLine(value);
+        break;
+    }
+  }
+  validateParsedData(parsedData);
+  return parsedData;
+};
+
+/**
+ * Validates the parsed commit header.
+ * @param {CommitHeader} parsedData - The parsed commit header.
+ * @return {void}
+ * @throws {Error} If the commit header is invalid.
+ */
+const validateParsedData = (parsedData: CommitHeader): void => {
+  const missing = [];
+  if (parsedData.tree === '') {
+    missing.push('tree');
+  }
+  if (isBlankPersonLine(parsedData.author)) {
+    missing.push('author');
+  }
+  if (isBlankPersonLine(parsedData.committer)) {
+    missing.push('committer');
+  }
+  if (missing.length > 0) {
+    throw new Error(`Invalid commit data: Missing ${missing.join(', ')}`);
+  }
+};
+
+/**
+ * Checks if a person line is blank.
+ * @param {PersonLine} personLine - The person line to check.
+ * @return {boolean} True if the person line is blank, false otherwise.
+ */
+const isBlankPersonLine = (personLine: PersonLine): boolean => {
+  return personLine.name === '' && personLine.email === '' && personLine.timestamp === '';
+};
+
+/**
+ * Parses the commit data from the contents of a pack file.
+ *
+ * Filters out all objects except for commits.
+ * @param {CommitContent[]} contents - The contents of the pack file.
+ * @return {CommitData[]} An array of commit data objects.
+ * @see https://git-scm.com/docs/pack-format#_object_types
+ */
+const getCommitData = (contents: CommitContent[]): CommitData[] => {
   return lod
     .chain(contents)
-    .filter({ type: 1 })
-    .map((x) => {
+    .filter({ type: GIT_OBJECT_TYPE_COMMIT })
+    .map((x: CommitContent) => {
       console.log({ x });
 
-      const formattedContent = x.content.split('\n');
-      console.log({ formattedContent });
+      const allLines = x.content.split('\n');
+      let headerEndIndex = -1;
 
-      const parts = formattedContent.filter((part) => part.length > 0);
-      console.log({ parts });
-
-      if (!parts || parts.length < 5) {
-        throw new Error('Invalid commit data');
+      // First empty line marks end of header
+      for (let i = 0; i < allLines.length; i++) {
+        if (allLines[i] === '') {
+          headerEndIndex = i;
+          break;
+        }
       }
 
-      const tree = parts
-        .find((t) => t.split(' ')[0] === 'tree')
-        ?.replace('tree', '')
-        .trim();
-      console.log({ tree });
-
-      const parentValue = parts.find((t) => t.split(' ')[0] === 'parent');
-      console.log({ parentValue });
-
-      const parent = parentValue
-        ? parentValue.replace('parent', '').trim()
-        : '0000000000000000000000000000000000000000';
-      console.log({ parent });
-
-      const author = parts
-        .find((t) => t.split(' ')[0] === 'author')
-        ?.replace('author', '')
-        .trim();
-      console.log({ author });
-
-      const committer = parts
-        .find((t) => t.split(' ')[0] === 'committer')
-        ?.replace('committer', '')
-        .trim();
-      console.log({ committer });
-
-      const indexOfMessages = formattedContent.indexOf('');
-      console.log({ indexOfMessages });
-
-      const message = formattedContent
-        .slice(indexOfMessages + 1)
-        .join(' ')
-        .trim();
-      console.log({ message });
-
-      const commitTimestamp = committer?.split(' ').reverse()[1];
-      console.log({ commitTimestamp });
-
-      const authorEmail = author?.split(' ').reverse()[2].slice(1, -1);
-      console.log({ authorEmail });
-
-      console.log({
-        tree,
-        parent,
-        author: author?.split('<')[0].trim(),
-        committer: committer?.split('<')[0].trim(),
-        commitTimestamp,
-        message,
-        authorEmail,
-      });
-
-      if (
-        !tree ||
-        !parent ||
-        !author ||
-        !committer ||
-        !commitTimestamp ||
-        !message ||
-        !authorEmail
-      ) {
-        throw new Error('Invalid commit data');
+      // Commit has no message body or may be malformed
+      if (headerEndIndex === -1) {
+        // Treat as commit with no message body, header format is checked later
+        headerEndIndex = allLines.length;
       }
+
+      const headerLines = allLines.slice(0, headerEndIndex);
+      const message = allLines
+        .slice(headerEndIndex + 1)
+        .join('\n')
+        .trim();
+      console.log({ headerLines, message });
+
+      const { tree, parents, author, committer } = getParsedData(headerLines);
+      // No parent headers -> zero hash
+      const parent = parents.length > 0 ? parents[0] : EMPTY_COMMIT_HASH;
 
       return {
         tree,
         parent,
-        author: author.split('<')[0].trim(),
-        committer: committer.split('<')[0].trim(),
-        commitTimestamp,
+        author: author.name,
+        committer: committer.name,
+        commitTimestamp: committer.timestamp,
         message,
-        authorEmail: authorEmail,
+        authorEmail: author.email,
+        committerEmail: committer.email,
       };
     })
     .value();
 };
 
-const getPackMeta = (buffer: Buffer) => {
-  const sig = buffer.slice(0, 4).toString('utf-8');
-  const version = buffer.readUIntBE(4, 4);
-  const entries = buffer.readUIntBE(8, 4);
+/**
+ * Gets the metadata from a pack file.
+ * @param {Buffer} buffer - The buffer containing the pack file data.
+ * @return {[PackMeta, Buffer]} A tuple containing the metadata and the remaining buffer.
+ */
+const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
+  const sig = buffer.subarray(0, 4).toString('utf-8');
+  const version = buffer.readUInt32BE(4);
+  const entries = buffer.readUInt32BE(8);
 
-  const meta = {
-    sig: sig,
-    version: version,
-    entries: entries,
+  const meta: PackMeta = {
+    sig,
+    version,
+    entries,
   };
 
-  return [meta, buffer.slice(12)];
+  return [meta, buffer.subarray(12)];
 };
 
-const getContents = (buffer: Buffer | CommitContent[], entries: number) => {
-  const contents = [];
+/**
+ * Gets the contents of a pack file.
+ * @param {Buffer} buffer The buffer containing the pack file data.
+ * @param {number} numEntries The expected number of entries in the pack file.
+ * @return {CommitContent[]}
+ */
+const getContents = async (buffer: Buffer, numEntries: number): Promise<CommitContent[]> => {
+  const entries: CommitContent[] = [];
 
-  for (let i = 0; i < entries; i++) {
-    try {
-      const [content, nextBuffer] = getContent(i, buffer as Buffer);
-      buffer = nextBuffer as Buffer;
-      contents.push(content);
-    } catch (e) {
-      console.log(e);
+  const gitObjects = await decompressGitObjects(buffer);
+  for (let index = 0; index < gitObjects.length; index++) {
+    const obj = gitObjects[index];
+
+    entries.push({
+      item: index,
+      type: obj.header.type,
+      typeName: obj.header.typeName,
+      content: obj.data,
+      size: obj.header.size,
+      baseSha: obj.header.baseSha ? obj.header.baseSha.toString('hex') : null,
+      baseOffset: obj.header.baseOffset ? obj.header.baseOffset : null,
+    });
+  }
+
+  if (numEntries != entries.length) {
+    console.warn(
+      `getContents returned an unexpected number of entries: ${entries.length}, expected ${numEntries}, entries:\n${JSON.stringify(entries, null, 2)}`,
+    );
+  } else {
+    console.log(`getContents returned ${numEntries} entries:\n${JSON.stringify(entries, null, 2)}`);
+  }
+
+  return entries;
+};
+
+/**
+ * Interface representing an object extracted from a PACK file.
+ */
+interface GitObject {
+  header: GitObjectHeader;
+  data: string;
+  offset: number;
+}
+
+/**
+ * Interface representing data parsed from the header of an object in a PACK file.
+ */
+interface GitObjectHeader {
+  type: number; // 1-based Git type number
+  typeName: string; // Mapped name
+  size: number;
+  headerLength: number;
+  baseOffset?: number;
+  baseSha?: Buffer;
+}
+
+type GitObjectType = 'commit' | 'tree' | 'blob' | 'tag' | 'ofs_delta' | 'ref_delta' | 'unknown';
+
+/**
+ * Maps Git object type codes to human-readable names.
+ * @param {number} typeCode  Numeric type code from PACK file.
+ * @return {GitObjectType} Git object type
+ */
+const gitObjectType = (typeCode: number): GitObjectType => {
+  switch (typeCode) {
+    case 1:
+      return 'commit';
+    case 2:
+      return 'tree';
+    case 3:
+      return 'blob';
+    case 4:
+      return 'tag';
+    case 6:
+      return 'ofs_delta';
+    case 7:
+      return 'ref_delta';
+    default:
+      return 'unknown';
+  }
+};
+
+/**
+ * Parses an encoded OFS_DELTA offset value.
+ * @param {Buffer} buffer The buffer to parse a header from.
+ * @param {number} offset The offset within the buffer to begin parsing at.
+ * @return { {baseOffset: number, length: number} } The value parsed and its length in bytes.
+ */
+const parseOfsDeltaOffset = (
+  buffer: Buffer,
+  offset: number,
+): { baseOffset: number; length: number } => {
+  let i = 0;
+  let byte = buffer[offset];
+  let value = byte & SEVEN_BIT_MASK;
+
+  while (byte & EIGHTH_BIT_MASK) {
+    i++;
+    byte = buffer[offset + i];
+    value = ((value + 1) << 7) | (byte & SEVEN_BIT_MASK);
+  }
+
+  return { baseOffset: value, length: i + 1 };
+};
+
+/**
+ * Parses the full Git object header including delta metadata.
+ * @param {Buffer} buffer The buffer to parse a header from.
+ * @param {number} offset The offset within the buffer to begin parsing at.
+ * @return {GitObjectHeader} An object containing the data parsed from the
+ * header including its length in bytes
+ */
+const parseGitObjectHeader = (buffer: Buffer, offset: number): GitObjectHeader => {
+  const initialOffset = offset;
+
+  let byte = buffer[offset++];
+
+  // read object type
+  const type = (byte >> 4) & 0x07;
+  const typeName = gitObjectType(type);
+
+  // read variable length size of encoded object
+  let size = byte & 0x0f;
+  let shift = 4;
+  while (byte & EIGHTH_BIT_MASK) {
+    byte = buffer[offset++];
+    size |= (byte & SEVEN_BIT_MASK) << shift;
+    shift += 7;
+  }
+
+  // read references for ref_delta and ofd_delta types
+  let baseOffset: number | undefined;
+  let baseSha: Buffer | undefined;
+  if (typeName === 'ofs_delta') {
+    const delta = parseOfsDeltaOffset(buffer, offset);
+    baseOffset = delta.baseOffset;
+    offset += delta.length;
+  } else if (typeName === 'ref_delta') {
+    baseSha = buffer.subarray(offset, offset + 20);
+    offset += 20;
+  }
+
+  const header: GitObjectHeader = {
+    type,
+    typeName,
+    size: size,
+    headerLength: offset - initialOffset,
+    baseSha,
+    baseOffset,
+  };
+  return header;
+};
+
+/**
+ * Decompresses the stream of headers and deflated git objects that follow
+ * the 12-byte PACK file headers (which should already have been removed from
+ * the buffer before processing it with this function).
+ * @param {Buffer} buffer The buffer to decompress
+ * @return {Promise<GitObject[]>} A promise to return an array of GitObjects
+ * representing the decompressed data.
+ */
+const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
+  const results: GitObject[] = [];
+  let offset = 0;
+  let currentWriteResolve: () => void | undefined;
+  let error: Error | null = null;
+
+  // keep going while there is more buffer to consume
+  // the buffer will end with either a 20 or 32 byte checksum - we don't know which
+  // but we can assume that 12 bytes will not be enough for a final object so there's
+  // no point continuing if we have < 32 bytes remaining.
+  // TODO: figure how many bytes we finish up with and then validate with the appropriate SHA type
+  while (offset < buffer.length - 32 && !error) {
+    const startOffset = offset;
+    const header = parseGitObjectHeader(buffer, offset);
+    offset += header.headerLength;
+
+    // create a new inflater for each object
+    const inflater = createInflate();
+    const chunks: Buffer[] = [];
+    let done = false;
+
+    // store any data returned
+    const onData = (data: Buffer) => {
+      chunks.push(data);
+    };
+
+    // stop at the end of each stream - there is no other good way to know how many bytes to process
+    const onEnd = () => {
+      inflater.end();
+      done = true;
+    };
+
+    // stop on errors, except maybe buffer errors?
+    const onError = (e: any) => {
+      error = e;
+      console.warn(`Error during inflation: ${JSON.stringify(e)}`);
+      error = new Error('Error during inflation', { cause: e });
+      inflater.end();
+      done = true;
+      if (currentWriteResolve) currentWriteResolve();
+    };
+
+    inflater.on('data', onData);
+    inflater.on('end', onEnd);
+    inflater.on('error', onError);
+
+    // Feed the buffer in a byte at a time and wait for output
+    while (offset < buffer.length && !(done || error)) {
+      try {
+        await new Promise<void>((resolve, reject) => {
+          if (!done) {
+            // store the resolve function in case an error occurs as callback will never be called
+            currentWriteResolve = resolve;
+            // use the callback to throttle input such that each byte is processed before we insert the next
+            inflater.write(buffer.subarray(offset, offset + 1), () => {
+              resolve();
+            });
+            offset++;
+          }
+        });
+      } catch (e) {
+        console.warn(`Error during decompression: ${JSON.stringify(e)}`);
+        error = new Error('Error during decompression', { cause: e });
+      }
     }
+    const result = {
+      header,
+      data: Buffer.concat(chunks).toString('utf-8'),
+      offset: startOffset,
+    };
+
+    results.push(result);
+
+    // we overshoot by one byte, back-up 1 to account for it.
+    offset--;
+
+    inflater.removeAllListeners();
+    inflater.destroy();
   }
-  return contents;
+
+  // throw any error that was caught as we were not able to read the pack file in full
+  if (error) {
+    throw error;
+  }
+  return results;
 };
 
-const getInt = (bits: boolean[]) => {
-  let strBits = '';
+/**
+ * Parses the packet lines from a buffer into an array of strings.
+ * Also returns the offset immediately following the parsed lines (including the flush packet).
+ * @param {Buffer} buffer - The buffer containing the packet data.
+ * @return {[string[], number]} An array containing the parsed lines and the offset after the last parsed line/flush packet.
+ */
+const parsePacketLines = (buffer: Buffer): [string[], number] => {
+  const lines: string[] = [];
+  let offset = 0;
 
-  // eslint-disable-next-line guard-for-in
-  for (const i in bits) {
-    strBits += bits[i] ? 1 : 0;
+  while (offset + PACKET_SIZE <= buffer.length) {
+    const lengthHex = buffer.toString('utf8', offset, offset + PACKET_SIZE);
+    const length = Number(`0x${lengthHex}`);
+
+    // Prevent non-hex characters from causing issues
+    if (isNaN(length) || length < 0) {
+      throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
+    }
+
+    // length of 0 indicates flush packet (0000)
+    if (length === 0) {
+      offset += PACKET_SIZE; // Include length of the flush packet
+      break;
+    }
+
+    // Make sure we don't read past the end of the buffer
+    if (offset + length > buffer.length) {
+      throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
+    }
+
+    const line = buffer.toString('utf8', offset + PACKET_SIZE, offset + length);
+    lines.push(line);
+    offset += length; // Move offset to the start of the next line's length prefix
   }
-
-  return parseInt(strBits, 2);
-};
-
-const getContent = (item: number, buffer: Buffer) => {
-  // FIRST byte contains the type and some of the size of the file
-  // a MORE flag -8th byte tells us if there is a subsequent byte
-  // which holds the file size
-
-  const byte = buffer.readUIntBE(0, 1);
-  const m = new BitMask(byte);
-
-  let more = m.getBit(3);
-  let size = [m.getBit(7), m.getBit(8), m.getBit(9), m.getBit(10)];
-  const type = getInt([m.getBit(4), m.getBit(5), m.getBit(6)]);
-
-  // Object IDs if this is a deltatfied blob
-  let objectRef: string | null = null;
-
-  // If we have a more flag get the next
-  // 8 bytes
-  while (more) {
-    buffer = buffer.slice(1);
-    const nextByte = buffer.readUIntBE(0, 1);
-    const nextM = new BitMask(nextByte);
-
-    const nextSize = [
-      nextM.getBit(4),
-      nextM.getBit(5),
-      nextM.getBit(6),
-      nextM.getBit(7),
-      nextM.getBit(8),
-      nextM.getBit(9),
-      nextM.getBit(10),
-    ];
-
-    size = nextSize.concat(size);
-    more = nextM.getBit(3);
-  }
-
-  // NOTE Size is the unziped size, not the zipped size
-  const intSize = getInt(size);
-
-  // Deltafied objectives have a 20 byte identifer
-  if (type == 7 || type == 6) {
-    objectRef = buffer.slice(0, 20).toString('hex');
-    buffer = buffer.slice(20);
-  }
-
-  const contentBuffer = buffer.slice(1);
-  const [content, deflatedSize] = unpack(contentBuffer);
-
-  // NOTE Size is the unziped size, not the zipped size
-  // so it's kind of useless for us in terms of reading the stream
-  const result = {
-    item: item,
-    value: byte,
-    type: type,
-    size: intSize,
-    deflatedSize: deflatedSize,
-    objectRef: objectRef,
-    content: content,
-  };
-
-  // Move on by the zipped content size.
-  const nextBuffer = contentBuffer.slice(deflatedSize as number);
-
-  return [result, nextBuffer];
-};
-
-const unpack = (buf: Buffer) => {
-  // Unzip the content
-  const inflated = zlib.inflateSync(buf);
-
-  // We don't have IDX files here, so we need to know how
-  // big the zipped content was, to set the next read location
-  const deflated = zlib.deflateSync(inflated);
-
-  return [inflated.toString('utf8'), deflated.length];
+  return [lines, offset];
 };
 
 exec.displayName = 'parsePush.exec';
 
-export { exec, getPackMeta, unpack };
+export { exec, getCommitData, getContents, getPackMeta, parsePacketLines };

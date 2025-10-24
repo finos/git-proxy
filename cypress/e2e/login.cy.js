@@ -29,7 +29,7 @@ describe('Login page', () => {
     cy.wait('@getUser');
 
     cy.url().should('include', '/dashboard/repo');
-  })
+  });
 
   it('should show an error snackbar on invalid login', () => {
     cy.get('[data-test="username"]').type('wronguser');
@@ -39,19 +39,5 @@ describe('Login page', () => {
     cy.get('.MuiSnackbarContent-message')
       .should('be.visible')
       .and('contain', 'You entered an invalid username or password...');
-  });
-
-  describe('OIDC login button', () => {
-    it('should exist', () => {
-      cy.get('[data-test="oidc-login"]').should('exist');
-    });
-
-    // Validates that OIDC is configured correctly
-    it('should redirect to /oidc', () => {
-      // Set intercept first, since redirect on click can be quick
-      cy.intercept('GET', '/api/auth/oidc').as('oidcRedirect');
-      cy.get('[data-test="oidc-login"]').click();
-      cy.wait('@oidcRedirect');
-    });
   });
 });

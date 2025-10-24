@@ -30,7 +30,7 @@ async function runCli(
   expectedExitCode = 0,
   expectedMessages = null,
   expectedErrorMessages = null,
-  debug = false,
+  debug = true,
 ) {
   try {
     console.log(`cli: '${cli}'`);
@@ -127,7 +127,6 @@ async function closeServer(server, waitTime = 0) {
 async function createCookiesFileWithExpiredCookie() {
   await removeCookiesFile();
   const cookies = [
-    // eslint-disable-next-line max-len
     'connect.sid=s%3AuWjJK_VGFbX9-03UfvoSt_HFU3a0vFOd.jd986YQ17Bw4j1xGJn2l9yiF3QPYhayaYcDqGsNgQY4; Path=/; HttpOnly',
   ];
   fs.writeFileSync(GIT_PROXY_COOKIE_FILE, JSON.stringify(cookies), 'utf8');
@@ -152,8 +151,9 @@ async function addRepoToDb(newRepo, debug = false) {
   const found = repos.find((y) => y.project === newRepo.project && newRepo.name === y.name);
   if (!found) {
     await db.createRepo(newRepo);
-    await db.addUserCanPush(newRepo.name, 'admin');
-    await db.addUserCanAuthorise(newRepo.name, 'admin');
+    const repo = await db.getRepoByUrl(newRepo.url);
+    await db.addUserCanPush(repo._id, 'admin');
+    await db.addUserCanAuthorise(repo._id, 'admin');
     if (debug) {
       console.log(`New repo added to database: ${newRepo}`);
     }
@@ -166,28 +166,31 @@ async function addRepoToDb(newRepo, debug = false) {
 
 /**
  * Removes a repo from the DB.
- * @param {string} repoName  The name of the repo to remove.
+ * @param {string} repoUrl  The url of the repo to remove.
  */
-async function removeRepoFromDb(repoName) {
-  await db.deleteRepo(repoName);
+async function removeRepoFromDb(repoUrl) {
+  const repo = await db.getRepoByUrl(repoUrl);
+  await db.deleteRepo(repo._id);
 }
 
 /**
  * Add a new git push record to the database.
  * @param {string} id The ID of the git push.
- * @param {string} repo The repository of the git push.
+ * @param {string} repoUrl The repository URL of the git push.
  * @param {string} user The user who pushed the git push.
+ * @param {string} userEmail The email of the user who pushed the git push.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
-async function addGitPushToDb(id, repo, user = null, debug = false) {
+async function addGitPushToDb(id, repoUrl, user = null, userEmail = null, debug = false) {
   const action = new actions.Action(
     id,
     'push', // type
     'get', // method
     Date.now(), // timestamp
-    repo,
+    repoUrl,
   );
   action.user = user;
+  action.userEmail = userEmail;
   const step = new steps.Step(
     'authBlock', // stepName
     false, // error

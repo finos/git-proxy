@@ -54,7 +54,9 @@ describe('auth', async () => {
 
     it('should be able to set the git account', async function () {
       console.log(`cookie: ${cookie}`);
-      const res = await chai.request(app).post('/api/auth/gitAccount')
+      const res = await chai
+        .request(app)
+        .post('/api/auth/gitAccount')
         .set('Cookie', `${cookie}`)
         .send({
           username: 'admin',
@@ -64,7 +66,9 @@ describe('auth', async () => {
     });
 
     it('should throw an error if the username is not provided when setting the git account', async function () {
-      const res = await chai.request(app).post('/api/auth/gitAccount')
+      const res = await chai
+        .request(app)
+        .post('/api/auth/gitAccount')
         .set('Cookie', `${cookie}`)
         .send({
           gitAccount: 'new-account',
@@ -119,6 +123,165 @@ describe('auth', async () => {
         password: 'invalid',
       });
       res.should.have.status(401);
+    });
+  });
+
+  describe('test create user', async function () {
+    beforeEach(async function () {
+      await db.deleteUser('newuser');
+      await db.deleteUser('nonadmin');
+    });
+
+    it('should fail to create user when not authenticated', async function () {
+      const res = await chai.request(app).post('/api/auth/create-user').send({
+        username: 'newuser',
+        password: 'newpass',
+        email: 'new@email.com',
+        gitAccount: 'newgit',
+      });
+
+      res.should.have.status(401);
+      res.body.should.have
+        .property('message')
+        .eql('You are not authorized to perform this action...');
+    });
+
+    it('should fail to create user when not admin', async function () {
+      await db.deleteUser('nonadmin');
+      await db.createUser('nonadmin', 'nonadmin', 'nonadmin@test.com', 'nonadmin', false);
+
+      // First login as non-admin user
+      const loginRes = await chai.request(app).post('/api/auth/login').send({
+        username: 'nonadmin',
+        password: 'nonadmin',
+      });
+
+      loginRes.should.have.status(200);
+
+      let nonAdminCookie;
+      // Get the connect cooie
+      loginRes.headers['set-cookie'].forEach((x) => {
+        if (x.startsWith('connect')) {
+          nonAdminCookie = x.split(';')[0];
+        }
+      });
+
+      console.log('nonAdminCookie', nonAdminCookie);
+
+      const res = await chai
+        .request(app)
+        .post('/api/auth/create-user')
+        .set('Cookie', nonAdminCookie)
+        .send({
+          username: 'newuser',
+          password: 'newpass',
+          email: 'new@email.com',
+          gitAccount: 'newgit',
+        });
+
+      res.should.have.status(401);
+      res.body.should.have
+        .property('message')
+        .eql('You are not authorized to perform this action...');
+    });
+
+    it('should fail to create user with missing required fields', async function () {
+      // First login as admin
+      const loginRes = await chai.request(app).post('/api/auth/login').send({
+        username: 'admin',
+        password: 'admin',
+      });
+
+      const adminCookie = loginRes.headers['set-cookie'][0].split(';')[0];
+
+      const res = await chai
+        .request(app)
+        .post('/api/auth/create-user')
+        .set('Cookie', adminCookie)
+        .send({
+          username: 'newuser',
+          // missing password
+          email: 'new@email.com',
+          gitAccount: 'newgit',
+        });
+
+      res.should.have.status(400);
+      res.body.should.have
+        .property('message')
+        .eql('Missing required fields: username, password, email, and gitAccount are required');
+    });
+
+    it('should successfully create a new user', async function () {
+      // First login as admin
+      const loginRes = await chai.request(app).post('/api/auth/login').send({
+        username: 'admin',
+        password: 'admin',
+      });
+
+      const adminCookie = loginRes.headers['set-cookie'][0].split(';')[0];
+
+      const res = await chai
+        .request(app)
+        .post('/api/auth/create-user')
+        .set('Cookie', adminCookie)
+        .send({
+          username: 'newuser',
+          password: 'newpass',
+          email: 'new@email.com',
+          gitAccount: 'newgit',
+          admin: false,
+        });
+
+      res.should.have.status(201);
+      res.body.should.have.property('message').eql('User created successfully');
+      res.body.should.have.property('username').eql('newuser');
+
+      // Verify we can login with the new user
+      const newUserLoginRes = await chai.request(app).post('/api/auth/login').send({
+        username: 'newuser',
+        password: 'newpass',
+      });
+
+      newUserLoginRes.should.have.status(200);
+    });
+
+    it('should fail to create user when username already exists', async function () {
+      // First login as admin
+      const loginRes = await chai.request(app).post('/api/auth/login').send({
+        username: 'admin',
+        password: 'admin',
+      });
+
+      const adminCookie = loginRes.headers['set-cookie'][0].split(';')[0];
+
+      const res = await chai
+        .request(app)
+        .post('/api/auth/create-user')
+        .set('Cookie', adminCookie)
+        .send({
+          username: 'newuser',
+          password: 'newpass',
+          email: 'new@email.com',
+          gitAccount: 'newgit',
+          admin: false,
+        });
+
+      res.should.have.status(201);
+
+      // Verify we can login with the new user
+      const failCreateRes = await chai
+        .request(app)
+        .post('/api/auth/create-user')
+        .set('Cookie', adminCookie)
+        .send({
+          username: 'newuser',
+          password: 'newpass',
+          email: 'new@email.com',
+          gitAccount: 'newgit',
+          admin: false,
+        });
+
+      failCreateRes.should.have.status(400);
     });
   });
 
