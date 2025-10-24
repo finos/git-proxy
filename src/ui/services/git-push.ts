@@ -2,6 +2,8 @@ import axios from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
 import { API_BASE } from '../apiBase';
 
+const API_V1_BASE = `${API_BASE}/api/v1`;
+
 const getPush = async (
   id: string,
   setIsLoading: (isLoading: boolean) => void,
@@ -9,7 +11,7 @@ const getPush = async (
   setAuth: (auth: boolean) => void,
   setIsError: (isError: boolean) => void,
 ): Promise<void> => {
-  const url = `${API_BASE}/push/${id}`;
+  const url = `${API_V1_BASE}/push/${id}`;
   setIsLoading(true);
 
   try {
@@ -38,7 +40,7 @@ const getPushes = async (
     rejected: false,
   },
 ): Promise<void> => {
-  const url = new URL(`${API_BASE}/push`);
+  const url = new URL(`${API_V1_BASE}/push`);
   url.search = new URLSearchParams(query as any).toString();
 
   setIsLoading(true);
@@ -67,7 +69,7 @@ const authorisePush = async (
   setUserAllowedToApprove: (userAllowedToApprove: boolean) => void,
   attestation: Array<{ label: string; checked: boolean }>,
 ): Promise<void> => {
-  const url = `${API_BASE}/push/${id}/authorise`;
+  const url = `${API_V1_BASE}/push/${id}/authorise`;
   let errorMsg = '';
   let isUserAllowedToApprove = true;
   await axios
@@ -95,7 +97,7 @@ const rejectPush = async (
   setMessage: (message: string) => void,
   setUserAllowedToReject: (userAllowedToReject: boolean) => void,
 ): Promise<void> => {
-  const url = `${API_BASE}/push/${id}/reject`;
+  const url = `${API_V1_BASE}/push/${id}/reject`;
   let errorMsg = '';
   let isUserAllowedToReject = true;
   await axios.post(url, {}, getAxiosConfig()).catch((error: any) => {
