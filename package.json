@@ -122,7 +122,7 @@
     "@eslint/json": "^0.13.2",
     "@types/activedirectory2": "^1.2.6",
     "@types/cors": "^2.8.19",
-    "@types/domutils": "^1.7.8",
+    "@types/domutils": "^2.1.0",
     "@types/express": "^5.0.3",
     "@types/express-http-proxy": "^1.6.7",
     "@types/express-session": "^1.18.2",
