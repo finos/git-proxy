@@ -10,7 +10,7 @@ import moment from 'moment';
 import Checkbox from '@material-ui/core/Checkbox';
 import { withStyles } from '@material-ui/core/styles';
 import { green } from '@material-ui/core/colors';
-import { getURLShortener } from '../../../services/config';
+import { setURLShortenerData } from '../../../services/config';
 import { AttestationViewProps } from '../attestation.types';
 
 const StyledFormControlLabel = withStyles({
@@ -39,7 +39,7 @@ const AttestationView: React.FC<AttestationViewProps> = ({ attestation, setAttes
 
   useEffect(() => {
     if (attestation && !urlShortener) {
-      getURLShortener(setURLShortener);
+      setURLShortenerData(setURLShortener);
     }
   }, [attestation, urlShortener]);
 
