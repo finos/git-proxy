@@ -17,7 +17,6 @@ const getUser = async (
   if (id) {
     url = `${API_BASE}/api/v1/user/${id}`;
   }
-  console.log(url);
 
   try {
     const response: AxiosResponse<UserData> = await axios(url, getAxiosConfig());

@@ -39,28 +39,16 @@ export default function UserProfile(): React.ReactElement {
   const isProfile = !id;
 
   useEffect(() => {
-    if (id) {
-      getUser(
-        setIsLoading,
-        (userData: UserData) => {
-          setData(userData);
-          setGitAccount(userData.gitAccount || '');
-        },
-        setAuth,
-        setIsError,
-        id,
-      );
-    } else {
-      getUser(
-        setIsLoading,
-        (userData: UserData) => {
-          setData(userData);
-          setGitAccount(userData.gitAccount || '');
-        },
-        setAuth,
-        setIsError,
-      );
-    }
+    getUser(
+      setIsLoading,
+      (userData: UserData) => {
+        setData(userData);
+        setGitAccount(userData.gitAccount || '');
+      },
+      setAuth,
+      setIsError,
+      id,
+    );
   }, [id]);
 
   if (isLoading) return <div>Loading...</div>;
