@@ -32,17 +32,13 @@ export default function UserProfile(): React.ReactElement {
   const [auth, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
-  const [isProfile, setIsProfile] = useState<boolean>(false);
   const [gitAccount, setGitAccount] = useState<string>('');
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const { user: loggedInUser } = useContext(UserContext);
+  const isProfile = !id;
 
   useEffect(() => {
-    if (id == null) {
-      setIsProfile(true);
-    }
-
     if (id) {
       getUser(
         setIsLoading,
@@ -55,7 +51,6 @@ export default function UserProfile(): React.ReactElement {
         id,
       );
     } else {
-      setIsProfile(true);
       getUser(
         setIsLoading,
         (userData: UserData) => {
