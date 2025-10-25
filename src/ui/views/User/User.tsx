@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
@@ -6,7 +6,8 @@ import Card from '../../components/Card/Card';
 import CardBody from '../../components/Card/CardBody';
 import Button from '../../components/CustomButtons/Button';
 import FormLabel from '@material-ui/core/FormLabel';
-import { getUser, updateUser, getUserLoggedIn } from '../../services/user';
+import { getUser, updateUser } from '../../services/user';
+import { UserContext } from '../../../context';
 
 import { UserData } from '../../../types/models';
 import { makeStyles } from '@material-ui/core/styles';
@@ -32,10 +33,10 @@ export default function UserProfile(): React.ReactElement {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
   const [isProfile, setIsProfile] = useState<boolean>(false);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [gitAccount, setGitAccount] = useState<string>('');
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
+  const { user: loggedInUser } = useContext(UserContext);
 
   useEffect(() => {
     if (id == null) {
@@ -53,9 +54,7 @@ export default function UserProfile(): React.ReactElement {
         setIsError,
         id,
       );
-      getUserLoggedIn(setIsLoading, setIsAdmin, setIsError, setAuth);
     } else {
-      console.log('getting user data');
       setIsProfile(true);
       getUser(
         setIsLoading,
@@ -169,7 +168,7 @@ export default function UserProfile(): React.ReactElement {
                   )}
                 </GridItem>
               </GridContainer>
-              {isProfile || isAdmin ? (
+              {isProfile || loggedInUser.admin ? (
                 <div style={{ marginTop: '50px' }}>
                   <hr style={{ opacity: 0.2 }} />
                   <div style={{ marginTop: '25px' }}>
