@@ -16,6 +16,7 @@ import { LogoGithubIcon } from '@primer/octicons-react';
 import CloseRounded from '@material-ui/icons/CloseRounded';
 import { Check, Save } from '@material-ui/icons';
 import { TextField, Theme } from '@material-ui/core';
+import { UserContextType } from '../RepoDetails/RepoDetails';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
@@ -35,7 +36,7 @@ export default function UserProfile(): React.ReactElement {
   const [gitAccount, setGitAccount] = useState<string>('');
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
-  const { user: loggedInUser } = useContext(UserContext);
+  const { user: loggedInUser } = useContext<UserContextType>(UserContext);
   const isProfile = !id;
 
   useEffect(() => {
