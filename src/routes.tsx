@@ -21,7 +21,7 @@ import RouteGuard from './ui/components/RouteGuard/RouteGuard';
 import Person from '@material-ui/icons/Person';
 import OpenPushRequests from './ui/views/OpenPushRequests/OpenPushRequests';
 import PushDetails from './ui/views/PushDetails/PushDetails';
-import User from './ui/views/User/User';
+import User from './ui/views/User/UserProfile';
 import UserList from './ui/views/UserList/UserList';
 import RepoDetails from './ui/views/RepoDetails/RepoDetails';
 import RepoList from './ui/views/RepoList/RepoList';
