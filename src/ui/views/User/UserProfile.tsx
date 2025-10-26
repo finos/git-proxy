@@ -37,7 +37,7 @@ export default function UserProfile(): React.ReactElement {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const { user: loggedInUser } = useContext<UserContextType>(UserContext);
-  const isProfile = !id;
+  const isOwnProfile = !id;
 
   useEffect(() => {
     getUser(
@@ -152,7 +152,7 @@ export default function UserProfile(): React.ReactElement {
                   )}
                 </GridItem>
               </GridContainer>
-              {isProfile || loggedInUser.admin ? (
+              {isOwnProfile || loggedInUser.admin ? (
                 <div style={{ marginTop: '50px' }}>
                   <hr style={{ opacity: 0.2 }} />
                   <div style={{ marginTop: '25px' }}>
