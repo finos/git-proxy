@@ -291,13 +291,7 @@ export const getRateLimit = () => {
 
 export const getCacheConfig = () => {
   const config = loadFullConfiguration();
-  return (
-    config.cache || {
-      maxSizeGB: 2,
-      maxRepositories: 50,
-      cacheDir: './.remote/cache',
-    }
-  );
+  return config.cache;
 };
 
 // Function to handle configuration updates

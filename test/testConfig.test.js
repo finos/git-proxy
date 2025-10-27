@@ -140,6 +140,19 @@ describe('user configuration', function () {
     expect(config.getRateLimit().limit).to.be.eql(limitConfig.rateLimit.limit);
   });
 
+  it('should merge partial cache config with defaults', function () {
+    const user = { cache: { maxSizeGB: 5 } };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = require('../src/config');
+    config.invalidateCache();
+
+    const cacheConfig = config.getCacheConfig();
+    expect(cacheConfig.maxSizeGB).to.be.eql(5);
+    expect(cacheConfig.maxRepositories).to.be.eql(defaultSettings.cache.maxRepositories);
+    expect(cacheConfig.cacheDir).to.be.eql(defaultSettings.cache.cacheDir);
+  });
+
   it('should override default settings for attestation config', function () {
     const user = {
       attestationConfig: {
