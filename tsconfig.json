@@ -7,15 +7,20 @@
     "jsx": "react-jsx",
     "moduleResolution": "Node",
     "strict": true,
-    "noEmit": true,
-    "declaration": true,
     "skipLibCheck": true,
-    "isolatedModules": true,
+    "isolatedModules": false,
     "module": "CommonJS",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "noEmit": false,
+    "types": ["node"]
   },
-  "include": ["."],
-  "exclude": ["experimental/**", "plugins/**"]
+  "include": ["src"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
 }

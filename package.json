@@ -2,6 +2,35 @@
   "name": "@finos/git-proxy",
   "version": "2.0.0-rc.3",
   "description": "Deploy custom push protections and policies on top of Git.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./config": {
+      "import": "./dist/src/config/index.js",
+      "require": "./dist/src/config/index.js",
+      "types": "./dist/src/config/index.d.ts"
+    },
+    "./db": {
+      "import": "./dist/src/db/index.js",
+      "require": "./dist/src/db/index.js",
+      "types": "./dist/src/db/index.d.ts"
+    },
+    "./proxy": {
+      "import": "./dist/src/proxy/index.js",
+      "require": "./dist/src/proxy/index.js",
+      "types": "./dist/src/proxy/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/src/types/models.js",
+      "require": "./dist/src/types/models.js",
+      "types": "./dist/src/types/models.d.ts"
+    }
+  },
   "scripts": {
     "cli": "tsx ./packages/git-proxy-cli/index.ts",
     "cli:js": "node ./packages/git-proxy-cli/dist/index.js",
@@ -9,11 +38,9 @@
     "clientinstall": "npm install --prefix client",
     "server": "tsx index.ts",
     "start": "concurrently \"npm run server\" \"npm run client\"",
-    "build": "npm run generate-config-types && npm run build-ui && npm run build-lib",
-    "build-ts": "tsc",
+    "build": "npm run generate-config-types && npm run build-ui && npm run build-ts",
+    "build-ts": "tsc --project tsconfig.publish.json && ./scripts/fix-shebang.sh",
     "build-ui": "vite build",
-    "build-lib": "./scripts/build-for-publish.sh",
-    "restore-lib": "./scripts/undo-build.sh",
     "check-types": "tsc",
     "check-types:server": "tsc --project tsconfig.publish.json --noEmit",
     "test": "NODE_ENV=test vitest --run --dir ./test",
@@ -30,7 +57,7 @@
     "generate-config-types": "quicktype --src-lang schema --lang typescript --out src/config/generated/config.ts --top-level GitProxyConfig config.schema.json && ts-node scripts/add-banner.ts src/config/generated/config.ts && prettier --write src/config/generated/config.ts"
   },
   "bin": {
-    "git-proxy": "./index.js",
+    "git-proxy": "./dist/index.js",
     "git-proxy-all": "concurrently 'npm run server' 'npm run client'"
   },
   "workspaces": [

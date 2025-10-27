@@ -169,4 +169,6 @@ export const findUserByEmail = (email: string): Promise<User | null> => sink.fin
 export const findUserByOIDC = (oidcId: string): Promise<User | null> => sink.findUserByOIDC(oidcId);
 export const getUsers = (query?: Partial<UserQuery>): Promise<User[]> => sink.getUsers(query);
 export const deleteUser = (username: string): Promise<void> => sink.deleteUser(username);
+
 export const updateUser = (user: Partial<User>): Promise<void> => sink.updateUser(user);
+export type { PushQuery, Repo, Sink, User } from './types';

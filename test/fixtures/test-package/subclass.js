@@ -1,4 +1,4 @@
-const { PushActionPlugin } = require('@finos/git-proxy/src/plugin');
+const { PushActionPlugin } = require('@finos/git-proxy/plugin');
 
 class DummyPlugin extends PushActionPlugin {
   constructor(exec) {

@@ -5,8 +5,8 @@ import { hideBin } from 'yargs/helpers';
 import fs from 'fs';
 import util from 'util';
 
-import { CommitData, PushData } from '@finos/git-proxy/src/types/models';
-import { PushQuery } from '@finos/git-proxy/src/db/types';
+import { CommitData, PushData } from '@finos/git-proxy/types';
+import { PushQuery } from '@finos/git-proxy/db';
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
