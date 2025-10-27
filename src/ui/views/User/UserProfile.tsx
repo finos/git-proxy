@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
@@ -6,7 +6,8 @@ import Card from '../../components/Card/Card';
 import CardBody from '../../components/Card/CardBody';
 import Button from '../../components/CustomButtons/Button';
 import FormLabel from '@material-ui/core/FormLabel';
-import { getUser, updateUser, getUserLoggedIn } from '../../services/user';
+import { getUser, updateUser } from '../../services/user';
+import { UserContext } from '../../../context';
 
 import { UserData } from '../../../types/models';
 import { makeStyles } from '@material-ui/core/styles';
@@ -15,6 +16,7 @@ import { LogoGithubIcon } from '@primer/octicons-react';
 import CloseRounded from '@material-ui/icons/CloseRounded';
 import { Check, Save } from '@material-ui/icons';
 import { TextField, Theme } from '@material-ui/core';
+import { UserContextType } from '../RepoDetails/RepoDetails';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
@@ -31,42 +33,23 @@ export default function UserProfile(): React.ReactElement {
   const [auth, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
-  const [isProfile, setIsProfile] = useState<boolean>(false);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [gitAccount, setGitAccount] = useState<string>('');
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
+  const { user: loggedInUser } = useContext<UserContextType>(UserContext);
+  const isOwnProfile = !id;
 
   useEffect(() => {
-    if (id == null) {
-      setIsProfile(true);
-    }
-
-    if (id) {
-      getUser(
-        setIsLoading,
-        (userData: UserData) => {
-          setData(userData);
-          setGitAccount(userData.gitAccount || '');
-        },
-        setAuth,
-        setIsError,
-        id,
-      );
-      getUserLoggedIn(setIsLoading, setIsAdmin, setIsError, setAuth);
-    } else {
-      console.log('getting user data');
-      setIsProfile(true);
-      getUser(
-        setIsLoading,
-        (userData: UserData) => {
-          setData(userData);
-          setGitAccount(userData.gitAccount || '');
-        },
-        setAuth,
-        setIsError,
-      );
-    }
+    getUser(
+      setIsLoading,
+      (userData: UserData) => {
+        setData(userData);
+        setGitAccount(userData.gitAccount || '');
+      },
+      setAuth,
+      setIsError,
+      id,
+    );
   }, [id]);
 
   if (isLoading) return <div>Loading...</div>;
@@ -169,7 +152,7 @@ export default function UserProfile(): React.ReactElement {
                   )}
                 </GridItem>
               </GridContainer>
-              {isProfile || isAdmin ? (
+              {isOwnProfile || loggedInUser.admin ? (
                 <div style={{ marginTop: '50px' }}>
                   <hr style={{ opacity: 0.2 }} />
                   <div style={{ marginTop: '25px' }}>
