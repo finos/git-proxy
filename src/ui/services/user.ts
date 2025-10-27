@@ -1,8 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
 import { PublicUser } from '../../db/types';
-
-import { API_BASE } from '../apiBase';
+import { getBaseUrl, getApiV1BaseUrl } from './apiConfig';
 
 type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
 
@@ -13,9 +12,12 @@ const getUser = async (
   setErrorMessage?: SetStateCallback<string>,
   id: string | null = null,
 ): Promise<void> => {
-  let url = `${API_BASE}/api/auth/profile`;
+  const baseUrl = await getBaseUrl();
+  const apiV1BaseUrl = await getApiV1BaseUrl();
+
+  let url = `${baseUrl}/api/auth/profile`;
   if (id) {
-    url = `${API_BASE}/api/v1/user/${id}`;
+    url = `${apiV1BaseUrl}/user/${id}`;
   }
 
   try {
@@ -47,8 +49,9 @@ const getUsers = async (
   setIsLoading(true);
 
   try {
+    const apiV1BaseUrl = await getApiV1BaseUrl();
     const response: AxiosResponse<PublicUser[]> = await axios(
-      `${API_BASE}/api/v1/user`,
+      `${apiV1BaseUrl}/user`,
       getAxiosConfig(),
     );
     setUsers(response.data);
@@ -73,7 +76,8 @@ const updateUser = async (
   setIsLoading: SetStateCallback<boolean>,
 ): Promise<void> => {
   try {
-    await axios.post(`${API_BASE}/api/auth/gitAccount`, user, getAxiosConfig());
+    const baseUrl = await getBaseUrl();
+    await axios.post(`${baseUrl}/api/auth/gitAccount`, user, getAxiosConfig());
   } catch (error) {
     const axiosError = error as AxiosError;
     const status = axiosError.response?.status;
@@ -83,4 +87,30 @@ const updateUser = async (
   }
 };
 
-export { getUser, getUsers, updateUser };
+const getUserLoggedIn = async (
+  setIsLoading: SetStateCallback<boolean>,
+  setIsAdmin: SetStateCallback<boolean>,
+  setIsError: SetStateCallback<boolean>,
+  setAuth: SetStateCallback<boolean>,
+): Promise<void> => {
+  try {
+    const baseUrl = await getBaseUrl();
+    const response: AxiosResponse<UserData> = await axios(
+      `${baseUrl}/api/auth/me`,
+      getAxiosConfig(),
+    );
+    const data = response.data;
+    setIsLoading(false);
+    setIsAdmin(data.admin || false);
+  } catch (error) {
+    setIsLoading(false);
+    const axiosError = error as AxiosError;
+    if (axiosError.response?.status === 401) {
+      setAuth(false);
+    } else {
+      setIsError(true);
+    }
+  }
+};
+
+export { getUser, getUsers, updateUser, getUserLoggedIn };
