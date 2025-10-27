@@ -15,7 +15,6 @@ import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
 import Filtering, { FilterOption, SortOrder } from '../../../components/Filtering/Filtering';
 import Danger from '../../../components/Typography/Danger';
-import { RepositoriesProps } from '../repositories.types';
 
 interface GridContainerLayoutProps {
   classes: any;
@@ -39,7 +38,7 @@ interface UserContextType {
   };
 }
 
-export default function Repositories(props: RepositoriesProps): React.ReactElement {
+export default function Repositories(): React.ReactElement {
   const useStyles = makeStyles(styles as any);
   const classes = useStyles();
   const [data, setData] = useState<RepositoryDataWithId[]>([]);
@@ -56,11 +55,6 @@ export default function Repositories(props: RepositoriesProps): React.ReactEleme
     navigate(`/dashboard/repo/${repoId}`, { replace: true });
 
   useEffect(() => {
-    const query: Record<string, any> = {};
-    for (const k in props) {
-      if (!k) continue;
-      query[k] = props[k];
-    }
     getRepos(
       setIsLoading,
       (data: RepositoryDataWithId[]) => {
@@ -70,9 +64,8 @@ export default function Repositories(props: RepositoriesProps): React.ReactEleme
       setAuth,
       setIsError,
       setErrorMessage,
-      query,
     );
-  }, [props]);
+  }, []);
 
   const refresh = async (repo: RepositoryDataWithId): Promise<void> => {
     const updatedData = [...data, repo];
