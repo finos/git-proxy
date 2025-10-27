@@ -72,12 +72,14 @@ export class CacheManager {
     }
 
     // Sort by last accessed (newest first)
-    repositories.sort((a, b) => b.lastAccessed.getTime() - a.lastAccessed.getTime());
+    const sortedRepositories = repositories.toSorted(
+      (a, b) => b.lastAccessed.getTime() - a.lastAccessed.getTime(),
+    );
 
     return {
-      totalRepositories: repositories.length,
+      totalRepositories: sortedRepositories.length,
       totalSizeBytes,
-      repositories,
+      repositories: sortedRepositories,
     };
   }
 
@@ -90,7 +92,7 @@ export class CacheManager {
     let freedBytes = 0;
 
     // Sort repositories by last accessed (oldest first for removal)
-    const reposToEvaluate = [...stats.repositories].sort(
+    const reposToEvaluate = stats.repositories.toSorted(
       (a, b) => a.lastAccessed.getTime() - b.lastAccessed.getTime(),
     );
 
