@@ -182,7 +182,7 @@ describe('Hybrid Cache Integration Tests', () => {
 
       const gitProxyRepo = stats.repositories.find((r) => r.name === 'git-proxy.git');
       expect(gitProxyRepo).to.exist;
-      expect(gitProxyRepo.sizeMB).to.be.greaterThan(0);
+      expect(gitProxyRepo.sizeBytes).to.be.greaterThan(0);
       expect(gitProxyRepo.lastAccessed).to.be.instanceOf(Date);
     });
   });

@@ -27,7 +27,7 @@ describe('CacheManager', () => {
     it('should return empty stats for empty cache', () => {
       const stats = cacheManager.getCacheStats();
       expect(stats.totalRepositories).to.equal(0);
-      expect(stats.totalSizeMB).to.equal(0);
+      expect(stats.totalSizeBytes).to.equal(0);
       expect(stats.repositories).to.be.an('array').that.is.empty;
     });
 
@@ -43,10 +43,10 @@ describe('CacheManager', () => {
 
       const stats = cacheManager.getCacheStats();
       expect(stats.totalRepositories).to.equal(2);
-      expect(stats.totalSizeMB).to.be.at.least(2); // At least 2MB total
+      expect(stats.totalSizeBytes).to.be.at.least(2 * 1024 * 1024); // At least 2MB total in bytes
       expect(stats.repositories).to.have.lengthOf(2);
       expect(stats.repositories[0]).to.have.property('name');
-      expect(stats.repositories[0]).to.have.property('sizeMB');
+      expect(stats.repositories[0]).to.have.property('sizeBytes');
       expect(stats.repositories[0]).to.have.property('lastAccessed');
     });
 
@@ -111,7 +111,7 @@ describe('CacheManager', () => {
       const result = cacheManager.enforceLimits();
 
       expect(result.removedRepos).to.have.lengthOf.at.least(1);
-      expect(result.freedMB).to.be.at.least(0);
+      expect(result.freedBytes).to.be.at.least(0);
 
       const statsAfter = cacheManager.getCacheStats();
       expect(statsAfter.totalRepositories).to.be.at.most(3);
@@ -124,12 +124,12 @@ describe('CacheManager', () => {
       fs.writeFileSync(path.join(repo1, 'largefile.txt'), 'a'.repeat(2 * 1024 * 1024)); // 2MB
 
       const statsBefore = cacheManager.getCacheStats();
-      expect(statsBefore.totalSizeMB).to.be.greaterThan(1);
+      expect(statsBefore.totalSizeBytes).to.be.greaterThan(1024 * 1024); // Greater than 1MB in bytes
 
       const result = cacheManager.enforceLimits();
 
       expect(result.removedRepos).to.have.lengthOf(1);
-      expect(result.freedMB).to.be.greaterThan(1);
+      expect(result.freedBytes).to.be.greaterThan(1024 * 1024); // Greater than 1MB in bytes
 
       const statsAfter = cacheManager.getCacheStats();
       expect(statsAfter.totalRepositories).to.equal(0);
@@ -146,7 +146,7 @@ describe('CacheManager', () => {
       const result = cacheManager.enforceLimits();
 
       expect(result.removedRepos).to.be.empty;
-      expect(result.freedMB).to.equal(0);
+      expect(result.freedBytes).to.equal(0);
     });
   });
 

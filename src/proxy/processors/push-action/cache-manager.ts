@@ -4,10 +4,10 @@ import { getCacheConfig } from '../../../config';
 
 export interface CacheStats {
   totalRepositories: number;
-  totalSizeMB: number;
+  totalSizeBytes: number;
   repositories: Array<{
     name: string;
-    sizeMB: number;
+    sizeBytes: number;
     lastAccessed: Date;
   }>;
 }
@@ -45,29 +45,29 @@ export class CacheManager {
     if (!fs.existsSync(this.cacheDir)) {
       return {
         totalRepositories: 0,
-        totalSizeMB: 0,
+        totalSizeBytes: 0,
         repositories: [],
       };
     }
 
-    const repositories: Array<{ name: string; sizeMB: number; lastAccessed: Date }> = [];
-    let totalSizeMB = 0;
+    const repositories: Array<{ name: string; sizeBytes: number; lastAccessed: Date }> = [];
+    let totalSizeBytes = 0;
 
     const entries = fs.readdirSync(this.cacheDir, { withFileTypes: true });
 
     for (const entry of entries) {
       if (entry.isDirectory()) {
         const repoPath = path.join(this.cacheDir, entry.name);
-        const sizeMB = this.getDirectorySize(repoPath);
+        const sizeBytes = this.getDirectorySize(repoPath);
         const stats = fs.statSync(repoPath);
 
         repositories.push({
           name: entry.name,
-          sizeMB,
+          sizeBytes,
           lastAccessed: stats.atime,
         });
 
-        totalSizeMB += sizeMB;
+        totalSizeBytes += sizeBytes;
       }
     }
 
@@ -76,7 +76,7 @@ export class CacheManager {
 
     return {
       totalRepositories: repositories.length,
-      totalSizeMB,
+      totalSizeBytes,
       repositories,
     };
   }
@@ -84,36 +84,36 @@ export class CacheManager {
   /**
    * Enforce cache limits using LRU eviction
    */
-  enforceLimits(): { removedRepos: string[]; freedMB: number } {
+  enforceLimits(): { removedRepos: string[]; freedBytes: number } {
     const stats = this.getCacheStats();
     const removedRepos: string[] = [];
-    let freedMB = 0;
+    let freedBytes = 0;
 
     // Sort repositories by last accessed (oldest first for removal)
     const reposToEvaluate = [...stats.repositories].sort(
       (a, b) => a.lastAccessed.getTime() - b.lastAccessed.getTime(),
     );
 
-    // Check size limit
-    let currentSizeMB = stats.totalSizeMB;
-    const maxSizeMB = this.maxSizeGB * 1024;
+    // Check size limit - convert GB to bytes once
+    let currentSizeBytes = stats.totalSizeBytes;
+    const maxSizeBytes = this.maxSizeGB * 1024 * 1024 * 1024;
 
     for (const repo of reposToEvaluate) {
       const shouldRemove =
-        currentSizeMB > maxSizeMB || // Over size limit
+        currentSizeBytes > maxSizeBytes || // Over size limit
         stats.totalRepositories - removedRepos.length > this.maxRepositories; // Over count limit
 
       if (shouldRemove) {
         this.removeRepository(repo.name);
         removedRepos.push(repo.name);
-        freedMB += repo.sizeMB;
-        currentSizeMB -= repo.sizeMB;
+        freedBytes += repo.sizeBytes;
+        currentSizeBytes -= repo.sizeBytes;
       } else {
         break; // We've cleaned enough
       }
     }
 
-    return { removedRepos, freedMB };
+    return { removedRepos, freedBytes };
   }
 
   /**
@@ -127,7 +127,7 @@ export class CacheManager {
   }
 
   /**
-   * Calculate directory size in MB
+   * Calculate directory size in bytes
    */
   private getDirectorySize(dirPath: string): number {
     let totalBytes = 0;
@@ -157,7 +157,7 @@ export class CacheManager {
       return 0;
     }
 
-    return Math.round(totalBytes / (1024 * 1024)); // Convert to MB
+    return totalBytes;
   }
 
   /**
