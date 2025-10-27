@@ -73,7 +73,7 @@ EOF
 
 git add .
 git commit -m "Initial commit with basic content"
-git push origin master
+git push origin main
 
 echo "=== Creating finos/git-proxy.git ==="
 create_bare_repo "finos" "git-proxy.git"
@@ -113,7 +113,7 @@ EOF
 
 git add .
 git commit -m "Initial commit with project structure"
-git push origin master
+git push origin main
 
 echo "=== Repository creation complete ==="
 # No copying needed since we're creating specific repos for specific owners
