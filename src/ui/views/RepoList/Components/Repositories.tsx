@@ -39,7 +39,7 @@ interface UserContextType {
   };
 }
 
-export default function Repositories(props: RepositoriesProps): JSX.Element {
+export default function Repositories(): JSX.Element {
   const useStyles = makeStyles(styles as any);
   const classes = useStyles();
   const [repos, setRepos] = useState<RepoView[]>([]);

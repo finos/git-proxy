@@ -1,4 +1,3 @@
-# Build stage
 FROM node:20 AS builder
 
 USER root
@@ -17,24 +16,27 @@ RUN npm pkg delete scripts.prepare \
   && cp config.schema.json dist/ \
   && npm prune --omit=dev
 
-# Production stage
-FROM node:20-slim AS production
-
-RUN apt-get update && apt-get install -y \
-    git tini \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
+FROM node:20 AS production
 
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules/ /app/node_modules/
 COPY --from=builder /app/dist/ /app/dist/
 COPY --from=builder /app/build /app/dist/build/
 COPY proxy.config.json config.schema.json ./
-
-# Copy entrypoint script
 COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
+
+USER root
+
+RUN apt-get update && apt-get install -y \
+    git tini \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN chown 1000:1000 /app/dist/build \
+    && chmod g+w /app/dist/build
+
+USER 1000
+
+WORKDIR /app
 
 EXPOSE 8080 8000
 
