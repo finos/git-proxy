@@ -1,9 +1,22 @@
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import fs from 'fs';
 
 /**
  * Git operations using native git commands
  */
+
+/**
+ * Build URL with credentials if provided
+ */
+function buildAuthUrl(url: string, username?: string, password?: string): string {
+  if (username && password) {
+    return url.replace(
+      /^(https?:\/\/)/,
+      `$1${encodeURIComponent(username)}:${encodeURIComponent(password)}@`,
+    );
+  }
+  return url;
+}
 
 interface CloneOptions {
   dir: string;
@@ -31,16 +44,9 @@ interface FetchOptions {
 export async function clone(options: CloneOptions): Promise<void> {
   const { dir, url, username, password, bare = false, depth, singleBranch = false } = options;
 
-  // Build URL with credentials if provided
-  let authUrl = url;
-  if (username && password) {
-    authUrl = url.replace(
-      /^(https?:\/\/)/,
-      `$1${encodeURIComponent(username)}:${encodeURIComponent(password)}@`,
-    );
-  }
+  const authUrl = buildAuthUrl(url, username, password);
 
-  const args: string[] = ['git', 'clone'];
+  const args: string[] = ['clone'];
 
   if (bare) {
     args.push('--bare');
@@ -57,9 +63,12 @@ export async function clone(options: CloneOptions): Promise<void> {
     args.push('--no-single-branch');
   }
 
-  args.push(`"${authUrl}"`, `"${dir}"`);
+  args.push(authUrl, dir);
 
-  execSync(args.join(' '), { stdio: 'pipe' });
+  const result = spawnSync('git', args, { stdio: 'pipe' });
+  if (result.status !== 0) {
+    throw new Error(`Git clone failed: ${result.stderr?.toString() || 'Unknown error'}`);
+  }
 
   // Sanitize credentials from git config
   if (username && password) {
@@ -73,16 +82,9 @@ export async function clone(options: CloneOptions): Promise<void> {
 export async function fetch(options: FetchOptions): Promise<void> {
   const { dir, url, username, password, depth, prune = false, bare = false } = options;
 
-  // Build URL with credentials if provided
-  let authUrl = url;
-  if (username && password) {
-    authUrl = url.replace(
-      /^(https?:\/\/)/,
-      `$1${encodeURIComponent(username)}:${encodeURIComponent(password)}@`,
-    );
-  }
+  const authUrl = buildAuthUrl(url, username, password);
 
-  const args: string[] = ['git', '-C', `"${dir}"`, 'fetch'];
+  const args: string[] = ['-C', dir, 'fetch'];
 
   if (depth) {
     args.push('--depth', depth.toString());
@@ -92,10 +94,13 @@ export async function fetch(options: FetchOptions): Promise<void> {
     args.push('--prune');
   }
 
-  args.push(`"${authUrl}"`);
-  args.push('"+refs/heads/*:refs/heads/*"'); // Fetch all branches
+  args.push(authUrl);
+  args.push('+refs/heads/*:refs/heads/*'); // Fetch all branches
 
-  execSync(args.join(' '), { stdio: 'pipe' });
+  const result = spawnSync('git', args, { stdio: 'pipe' });
+  if (result.status !== 0) {
+    throw new Error(`Git fetch failed: ${result.stderr?.toString() || 'Unknown error'}`);
+  }
 
   // Sanitize credentials from git config
   if (username && password) {
@@ -111,23 +116,32 @@ function sanitizeCredentials(dir: string, cleanUrl: string, isBare: boolean): vo
     // For bare repositories, git clone --bare doesn't set up a remote by default
     // We need to add it first if it doesn't exist
     if (isBare) {
-      try {
-        execSync(`git -C "${dir}" remote add origin "${cleanUrl}"`, { stdio: 'pipe' });
-      } catch (e) {
+      let result = spawnSync('git', ['-C', dir, 'remote', 'add', 'origin', cleanUrl], {
+        stdio: 'pipe',
+      });
+      if (result.status !== 0) {
         // If remote already exists, update it
-        execSync(`git -C "${dir}" remote set-url origin "${cleanUrl}"`, { stdio: 'pipe' });
+        result = spawnSync('git', ['-C', dir, 'remote', 'set-url', 'origin', cleanUrl], {
+          stdio: 'pipe',
+        });
+        if (result.status !== 0) {
+          throw new Error(`Failed to set remote: ${result.stderr?.toString()}`);
+        }
       }
     } else {
       // For non-bare repositories, remote origin should exist
-      try {
-        // Unset the URL with credentials
-        execSync(`git -C "${dir}" config --unset remote.origin.url`, { stdio: 'pipe' });
-      } catch (e) {
-        // Ignore error if already unset
-      }
+      // Unset the URL with credentials (ignore error if already unset)
+      spawnSync('git', ['-C', dir, 'config', '--unset', 'remote.origin.url'], {
+        stdio: 'pipe',
+      });
 
       // Set clean URL without credentials
-      execSync(`git -C "${dir}" remote set-url origin "${cleanUrl}"`, { stdio: 'pipe' });
+      const result = spawnSync('git', ['-C', dir, 'remote', 'set-url', 'origin', cleanUrl], {
+        stdio: 'pipe',
+      });
+      if (result.status !== 0) {
+        throw new Error(`Failed to set remote: ${result.stderr?.toString()}`);
+      }
     }
   } catch (e) {
     console.warn(`Warning: Failed to sanitize credentials for ${dir}:`, e);
@@ -144,13 +158,16 @@ export async function cloneLocal(options: {
 }): Promise<void> {
   const { sourceDir, targetDir, depth } = options;
 
-  const args: string[] = ['git', 'clone'];
+  const args: string[] = ['clone'];
 
   if (depth) {
     args.push('--depth', depth.toString());
   }
 
-  args.push(`"${sourceDir}"`, `"${targetDir}"`);
+  args.push(sourceDir, targetDir);
 
-  execSync(args.join(' '), { stdio: 'pipe' });
+  const result = spawnSync('git', args, { stdio: 'pipe' });
+  if (result.status !== 0) {
+    throw new Error(`Git local clone failed: ${result.stderr?.toString() || 'Unknown error'}`);
+  }
 }
