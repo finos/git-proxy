@@ -1,13 +1,17 @@
 import { Action, Step } from '../../actions';
 import fs from 'node:fs';
-
-const WORK_DIR = './.remote/work';
+import path from 'node:path';
+import { cacheManager } from './cache-manager';
 
 const exec = async (_req: any, action: Action): Promise<Action> => {
   const step = new Step('clearBareClone');
 
+  // Get work directory from configuration
+  const config = cacheManager.getConfig();
+  const WORK_DIR = path.join(path.dirname(config.cacheDir), 'work');
+
   // Delete ONLY this push's working copy
-  const workCopy = `${WORK_DIR}/${action.id}`;
+  const workCopy = path.join(WORK_DIR, action.id);
 
   if (fs.existsSync(workCopy)) {
     try {

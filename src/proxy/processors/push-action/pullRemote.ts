@@ -1,20 +1,23 @@
 import { Action, Step } from '../../actions';
 import fs from 'fs';
+import path from 'path';
 import { PerformanceTimer } from './metrics';
 import { cacheManager } from './cache-manager';
 import * as gitOps from './git-operations';
-
-const BARE_CACHE = './.remote/cache';
-const WORK_DIR = './.remote/work';
 
 const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('pullRemote');
   const timer = new PerformanceTimer(step);
 
   try {
+    // Get cache directories from configuration
+    const config = cacheManager.getConfig();
+    const BARE_CACHE = config.cacheDir;
+    const WORK_DIR = path.join(path.dirname(BARE_CACHE), 'work');
+
     // Paths for hybrid architecture
-    const bareRepo = `${BARE_CACHE}/${action.repoName}`;
-    const workCopy = `${WORK_DIR}/${action.id}`;
+    const bareRepo = path.join(BARE_CACHE, action.repoName);
+    const workCopy = path.join(WORK_DIR, action.id);
 
     // Check if bare cache exists
     const bareExists = fs.existsSync(bareRepo);
@@ -101,7 +104,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     // PHASE 2: Working Copy (temporary, isolated)
     step.log(`Creating isolated working copy for push ${action.id}...`);
 
-    const workCopyPath = `${workCopy}/${action.repoName}`;
+    const workCopyPath = path.join(workCopy, action.repoName);
 
     // Clone from local bare cache (fast local operation)
     await gitOps.cloneLocal({
