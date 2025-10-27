@@ -5,7 +5,11 @@ import DialogActions from '@material-ui/core/DialogActions';
 import { CheckCircle, ErrorOutline } from '@material-ui/icons';
 import Button from '../../../components/CustomButtons/Button';
 import AttestationForm, { FormQuestion } from './AttestationForm';
-import { getAttestationConfig, getURLShortener, getEmailContact } from '../../../services/config';
+import {
+  setAttestationConfigData,
+  setURLShortenerData,
+  setEmailContactData,
+} from '../../../services/config';
 
 interface AttestationProps {
   approveFn: (data: { label: string; checked: boolean }[]) => void;
@@ -19,15 +23,15 @@ const Attestation: React.FC<AttestationProps> = ({ approveFn }) => {
 
   useEffect(() => {
     if (!open) {
-      getAttestationConfig(setFormData);
+      setAttestationConfigData(setFormData);
     }
 
     if (open) {
       if (!urlShortener) {
-        getURLShortener(setURLShortener);
+        setURLShortenerData(setURLShortener);
       }
       if (!contactEmail) {
-        getEmailContact(setContactEmail);
+        setEmailContactData(setContactEmail);
       }
     }
   }, [open, urlShortener, contactEmail]);
