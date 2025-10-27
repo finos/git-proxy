@@ -480,6 +480,8 @@ describe('ConfigLoader', () => {
     });
 
     it('should throw error if config path was not found', async function () {
+      this.timeout(10000);
+
       const source = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
@@ -497,6 +499,8 @@ describe('ConfigLoader', () => {
     });
 
     it('should throw error if config file is not valid JSON', async function () {
+      this.timeout(10000);
+
       const source = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
