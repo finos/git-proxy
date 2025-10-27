@@ -1,4 +1,5 @@
 import { Step } from '../../actions';
+import { performance } from 'perf_hooks';
 
 /**
  * Performance Timer
@@ -16,21 +17,21 @@ export class PerformanceTimer {
 
   start(operation: string): void {
     this.operation = operation;
-    this.startTime = Date.now();
+    this.startTime = performance.now();
     this.step.log(`${operation} started`);
   }
 
   mark(message: string): void {
     if (this.startTime > 0) {
-      const elapsed = Date.now() - this.startTime;
-      this.step.log(`${message}: ${elapsed}ms`);
+      const elapsed = performance.now() - this.startTime;
+      this.step.log(`${message}: ${elapsed.toFixed(2)}ms`);
     }
   }
 
   end(): void {
     if (this.startTime > 0) {
-      const totalTime = Date.now() - this.startTime;
-      this.step.log(`${this.operation} completed: ${totalTime}ms`);
+      const totalTime = performance.now() - this.startTime;
+      this.step.log(`${this.operation} completed: ${totalTime.toFixed(2)}ms`);
       this.startTime = 0;
     }
   }
