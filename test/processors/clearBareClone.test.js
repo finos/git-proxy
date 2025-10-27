@@ -31,11 +31,12 @@ describe('clear bare and local clones', async () => {
     expect(fs.existsSync(`./.remote/cache/git-proxy.git`)).to.be.true;
   }).timeout(20000);
 
-  it('clear bare clone function purges .remote folder in test environment', async () => {
+  it('clear bare clone function removes working copy and enforces cache limits', async () => {
     const action = new Action(actionId, 'type', 'get', timestamp, 'finos/git-proxy.git');
     await clearBareClone(null, action);
-    // In test environment, clearBareClone removes the entire .remote directory
-    expect(fs.existsSync(`./.remote`)).to.be.false;
+    // clearBareClone removes only the working copy for this push
+    expect(fs.existsSync(`./.remote/work/${actionId}`)).to.be.false;
+    expect(action.steps.some((s) => s.stepName === 'clearBareClone')).to.be.true;
   });
 
   afterEach(() => {

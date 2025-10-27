@@ -188,12 +188,14 @@ describe('Hybrid Cache Integration Tests', () => {
   });
 
   describe('Cache cleanup', () => {
-    it('should clear entire .remote directory in test mode', async () => {
+    it('should remove working copy and enforce cache limits', async () => {
       expect(fs.existsSync('./.remote')).to.be.true;
 
+      const actionId = testData.cacheMissAction.id;
       await clearBareClone(null, testData.cacheMissAction);
 
-      expect(fs.existsSync('./.remote')).to.be.false;
+      expect(fs.existsSync(`./.remote/work/${actionId}`)).to.be.false;
+      expect(fs.existsSync('./.remote/cache')).to.be.true;
     });
   });
 });

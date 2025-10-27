@@ -128,9 +128,8 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     // Enforce cache limits (LRU eviction on bare cache)
     const evictionResult = cacheManager.enforceLimits();
     if (evictionResult.removedRepos.length > 0) {
-      step.log(
-        `LRU evicted ${evictionResult.removedRepos.length} bare repos, freed ${evictionResult.freedMB}MB`,
-      );
+      const freedMB = (evictionResult.freedBytes / (1024 * 1024)).toFixed(2);
+      step.log(`LRU evicted ${evictionResult.removedRepos.length} bare repos, freed ${freedMB}MB`);
     }
   } catch (e: any) {
     step.setError(e.toString('utf-8'));
