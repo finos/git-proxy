@@ -1,21 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider';
-import { getUIRouteAuth } from '../../services/config';
+import { setUIRouteAuthData } from '../../services/config';
+import { UIRouteAuth } from '../../../config/generated/config';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
 interface RouteGuardProps {
   component: React.ComponentType<any>;
   fullRoutePath: string;
-}
-
-interface UIRouteAuth {
-  enabled: boolean;
-  rules: {
-    pattern: string;
-    adminOnly: boolean;
-    loginRequired: boolean;
-  }[];
 }
 
 const RouteGuard = ({ component: Component, fullRoutePath }: RouteGuardProps) => {
@@ -26,14 +18,14 @@ const RouteGuard = ({ component: Component, fullRoutePath }: RouteGuardProps) =>
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    getUIRouteAuth((uiRouteAuth: UIRouteAuth) => {
+    setUIRouteAuthData((uiRouteAuth: UIRouteAuth) => {
       if (uiRouteAuth?.enabled) {
-        for (const rule of uiRouteAuth.rules) {
-          if (new RegExp(rule.pattern).test(fullRoutePath)) {
+        for (const rule of uiRouteAuth.rules ?? []) {
+          if (new RegExp(rule.pattern ?? '').test(fullRoutePath)) {
             // Allow multiple rules to be applied according to route precedence
             // Ex: /dashboard/admin/* will override /dashboard/*
-            setLoginRequired(loginRequired || rule.loginRequired);
-            setAdminOnly(adminOnly || rule.adminOnly);
+            setLoginRequired(loginRequired || rule.loginRequired || false);
+            setAdminOnly(adminOnly || rule.adminOnly || false);
           }
         }
       }
