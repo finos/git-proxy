@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License. You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,7 +32,7 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
     // Create temp directory for test clones
     fs.mkdirSync(tempDir, { recursive: true });
 
-    console.log(`Test workspace: ${tempDir}`);
+    console.log(`[SETUP] Test workspace: ${tempDir}`);
   }, testConfig.timeout);
 
   describe('Repository fetching through git proxy', () => {
@@ -46,7 +46,9 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
         const repoUrl = `${baseUrl.toString()}/coopernetes/test-repo.git`;
         const cloneDir: string = path.join(tempDir, 'test-repo-clone');
 
-        console.log(`Cloning ${testConfig.gitProxyUrl}/coopernetes/test-repo.git to ${cloneDir}`);
+        console.log(
+          `[TEST] Cloning ${testConfig.gitProxyUrl}/coopernetes/test-repo.git to ${cloneDir}`,
+        );
 
         try {
           // Use git clone to fetch the repository through the proxy
@@ -61,7 +63,7 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
             },
           });
 
-          console.log('Git clone output:', output);
+          console.log('[TEST] Git clone output:', output);
 
           // Verify the repository was cloned successfully
           expect(fs.existsSync(cloneDir)).toBe(true);
@@ -71,9 +73,9 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
           const readmePath: string = path.join(cloneDir, 'README.md');
           expect(fs.existsSync(readmePath)).toBe(true);
 
-          console.log('Successfully fetched and verified coopernetes/test-repo');
+          console.log('[TEST] Successfully fetched and verified coopernetes/test-repo');
         } catch (error) {
-          console.error('Failed to clone repository:', error);
+          console.error('[TEST] Failed to clone repository:', error);
           throw error;
         }
       },
@@ -90,7 +92,7 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
         const repoUrl = `${baseUrl.toString()}/finos/git-proxy.git`;
         const cloneDir: string = path.join(tempDir, 'git-proxy-clone');
 
-        console.log(`Cloning ${testConfig.gitProxyUrl}/finos/git-proxy.git to ${cloneDir}`);
+        console.log(`[TEST] Cloning ${testConfig.gitProxyUrl}/finos/git-proxy.git to ${cloneDir}`);
 
         try {
           const gitCloneCommand: string = `git clone ${repoUrl} ${cloneDir}`;
@@ -104,7 +106,7 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
             },
           });
 
-          console.log('Git clone output:', output);
+          console.log('[TEST] Git clone output:', output);
 
           // Verify the repository was cloned successfully
           expect(fs.existsSync(cloneDir)).toBe(true);
@@ -118,9 +120,9 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
           const readmePath: string = path.join(cloneDir, 'README.md');
           expect(fs.existsSync(readmePath)).toBe(true);
 
-          console.log('Successfully fetched and verified finos/git-proxy');
+          console.log('[TEST] Successfully fetched and verified finos/git-proxy');
         } catch (error) {
-          console.error('Failed to clone repository:', error);
+          console.error('[TEST] Failed to clone repository:', error);
           throw error;
         }
       },
@@ -131,7 +133,7 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
       const nonExistentRepoUrl: string = `${testConfig.gitProxyUrl}/nonexistent/repo.git`;
       const cloneDir: string = path.join(tempDir, 'non-existent-clone');
 
-      console.log(`Attempting to clone non-existent repo: ${nonExistentRepoUrl}`);
+      console.log(`[TEST] Attempting to clone non-existent repo: ${nonExistentRepoUrl}`);
 
       try {
         const gitCloneCommand: string = `git clone ${nonExistentRepoUrl} ${cloneDir}`;
@@ -149,7 +151,7 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
         throw new Error('Expected clone to fail for non-existent repository');
       } catch (error: any) {
         // This is expected - git clone should fail for non-existent repos
-        console.log('Git clone correctly failed for non-existent repository');
+        console.log('[TEST] Git clone correctly failed for non-existent repository');
         expect(error.status).toBeGreaterThan(0); // Non-zero exit code expected
         expect(fs.existsSync(cloneDir)).toBe(false); // Directory should not be created
       }
@@ -159,7 +161,7 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
   // Cleanup after each test file
   afterAll(() => {
     if (fs.existsSync(tempDir)) {
-      console.log(`Cleaning up test directory: ${tempDir}`);
+      console.log(`[TEST] Cleaning up test directory: ${tempDir}`);
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
   });

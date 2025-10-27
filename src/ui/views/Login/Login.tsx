@@ -14,15 +14,13 @@ import axios, { AxiosError } from 'axios';
 import logo from '../../assets/img/git-proxy.png';
 import { Badge, CircularProgress, FormLabel, Snackbar } from '@material-ui/core';
 import { useAuth } from '../../auth/AuthProvider';
-import { API_BASE } from '../../apiBase';
+import { getBaseUrl } from '../../services/apiConfig';
 import { getAxiosConfig, processAuthError } from '../../services/auth';
 
 interface LoginResponse {
   username: string;
   password: string;
 }
-
-const loginUrl = `${API_BASE}/api/auth/login`;
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -36,19 +34,26 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [authMethods, setAuthMethods] = useState<string[]>([]);
   const [usernamePasswordMethod, setUsernamePasswordMethod] = useState<string>('');
+  const [apiBaseUrl, setApiBaseUrl] = useState<string>('');
 
   useEffect(() => {
-    axios.get(`${API_BASE}/api/auth/config`).then((response) => {
-      const usernamePasswordMethod = response.data.usernamePasswordMethod;
-      const otherMethods = response.data.otherMethods;
+    // Initialize API base URL
+    getBaseUrl().then((baseUrl) => {
+      setApiBaseUrl(baseUrl);
 
-      setUsernamePasswordMethod(usernamePasswordMethod);
-      setAuthMethods(otherMethods);
+      // Fetch auth config
+      axios.get(`${baseUrl}/api/auth/config`).then((response) => {
+        const usernamePasswordMethod = response.data.usernamePasswordMethod;
+        const otherMethods = response.data.otherMethods;
 
-      // Automatically login if only one non-username/password method is enabled
-      if (!usernamePasswordMethod && otherMethods.length === 1) {
-        handleAuthMethodLogin(otherMethods[0]);
-      }
+        setUsernamePasswordMethod(usernamePasswordMethod);
+        setAuthMethods(otherMethods);
+
+        // Automatically login if only one non-username/password method is enabled
+        if (!usernamePasswordMethod && otherMethods.length === 1) {
+          handleAuthMethodLogin(otherMethods[0], baseUrl);
+        }
+      });
     });
   }, []);
 
@@ -58,14 +63,16 @@ const Login: React.FC = () => {
     );
   }
 
-  function handleAuthMethodLogin(authMethod: string): void {
-    window.location.href = `${API_BASE}/api/auth/${authMethod}`;
+  function handleAuthMethodLogin(authMethod: string, baseUrl?: string): void {
+    const url = baseUrl || apiBaseUrl;
+    window.location.href = `${url}/api/auth/${authMethod}`;
   }
 
   function handleSubmit(event: FormEvent): void {
     event.preventDefault();
     setIsLoading(true);
 
+    const loginUrl = `${apiBaseUrl}/api/auth/login`;
     axios
       .post<LoginResponse>(loginUrl, { username, password }, getAxiosConfig())
       .then(() => {

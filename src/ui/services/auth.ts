@@ -1,8 +1,7 @@
 import { getCookie } from '../utils';
 import { PublicUser } from '../../db/types';
-import { API_BASE } from '../apiBase';
 import { AxiosError } from 'axios';
-import { getApiBaseUrl } from './runtime-config.js';
+import { getBaseUrl } from './apiConfig';
 
 interface AxiosConfig {
   withCredentials: boolean;
@@ -12,25 +11,13 @@ interface AxiosConfig {
   };
 }
 
-// Initialize baseUrl - will be set async
-let baseUrl = location.origin; // Default fallback
-
-// Set the actual baseUrl from runtime config
-getApiBaseUrl()
-  .then((apiUrl) => {
-    baseUrl = apiUrl;
-  })
-  .catch(() => {
-    // Keep the default if runtime config fails
-    console.warn('Using default API base URL for auth');
-  });
-
 /**
  * Gets the current user's information
  */
 export const getUserInfo = async (): Promise<PublicUser | null> => {
   try {
-    const response = await fetch(`${API_BASE}/api/auth/profile`, {
+    const baseUrl = await getBaseUrl();
+    const response = await fetch(`${baseUrl}/api/auth/me`, {
       credentials: 'include', // Sends cookies
     });
     if (!response.ok) throw new Error(`Failed to fetch user info: ${response.statusText}`);
