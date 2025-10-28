@@ -1,0 +1,128 @@
+import axios from 'axios';
+import { getAxiosConfig, processAuthError } from './auth';
+import { API_BASE } from '../apiBase';
+
+const API_V1_BASE = `${API_BASE}/api/v1`;
+
+const getPush = async (
+  id: string,
+  setIsLoading: (isLoading: boolean) => void,
+  setData: (data: any) => void,
+  setAuth: (auth: boolean) => void,
+  setIsError: (isError: boolean) => void,
+): Promise<void> => {
+  const url = `${API_V1_BASE}/push/${id}`;
+  setIsLoading(true);
+
+  try {
+    const response = await axios(url, getAxiosConfig());
+    const data = response.data;
+    data.diff = data.steps.find((x: any) => x.stepName === 'diff');
+    setData(data);
+  } catch (error: any) {
+    if (error.response?.status === 401) setAuth(false);
+    else setIsError(true);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const getPushes = async (
+  setIsLoading: (isLoading: boolean) => void,
+  setData: (data: any) => void,
+  setAuth: (auth: boolean) => void,
+  setIsError: (isError: boolean) => void,
+  setErrorMessage: (errorMessage: string) => void,
+  query = {
+    blocked: true,
+    canceled: false,
+    authorised: false,
+    rejected: false,
+  },
+): Promise<void> => {
+  const url = new URL(`${API_V1_BASE}/push`);
+  url.search = new URLSearchParams(query as any).toString();
+
+  setIsLoading(true);
+
+  try {
+    const response = await axios(url.toString(), getAxiosConfig());
+    setData(response.data);
+  } catch (error: any) {
+    setIsError(true);
+
+    if (error.response?.status === 401) {
+      setAuth(false);
+      setErrorMessage(processAuthError(error));
+    } else {
+      const message = error.response?.data?.message || error.message;
+      setErrorMessage(`Error fetching pushes: ${message}`);
+    }
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+const authorisePush = async (
+  id: string,
+  setMessage: (message: string) => void,
+  setUserAllowedToApprove: (userAllowedToApprove: boolean) => void,
+  attestation: Array<{ label: string; checked: boolean }>,
+): Promise<void> => {
+  const url = `${API_V1_BASE}/push/${id}/authorise`;
+  let errorMsg = '';
+  let isUserAllowedToApprove = true;
+  await axios
+    .post(
+      url,
+      {
+        params: {
+          attestation,
+        },
+      },
+      getAxiosConfig(),
+    )
+    .catch((error: any) => {
+      if (error.response && error.response.status === 401) {
+        errorMsg = 'You are not authorised to approve...';
+        isUserAllowedToApprove = false;
+      }
+    });
+  setMessage(errorMsg);
+  setUserAllowedToApprove(isUserAllowedToApprove);
+};
+
+const rejectPush = async (
+  id: string,
+  setMessage: (message: string) => void,
+  setUserAllowedToReject: (userAllowedToReject: boolean) => void,
+): Promise<void> => {
+  const url = `${API_V1_BASE}/push/${id}/reject`;
+  let errorMsg = '';
+  let isUserAllowedToReject = true;
+  await axios.post(url, {}, getAxiosConfig()).catch((error: any) => {
+    if (error.response && error.response.status === 401) {
+      errorMsg = 'You are not authorised to reject...';
+      isUserAllowedToReject = false;
+    }
+  });
+  setMessage(errorMsg);
+  setUserAllowedToReject(isUserAllowedToReject);
+};
+
+const cancelPush = async (
+  id: string,
+  setAuth: (auth: boolean) => void,
+  setIsError: (isError: boolean) => void,
+): Promise<void> => {
+  const url = `${API_BASE}/push/${id}/cancel`;
+  await axios.post(url, {}, getAxiosConfig()).catch((error: any) => {
+    if (error.response && error.response.status === 401) {
+      setAuth(false);
+    } else {
+      setIsError(true);
+    }
+  });
+};
+
+export { getPush, getPushes, authorisePush, rejectPush, cancelPush };
