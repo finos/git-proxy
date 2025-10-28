@@ -169,8 +169,8 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.4",
     "vite": "^7.1.9",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "vite-tsconfig-paths": "^5.1.4"
   },
   "optionalDependencies": {
     "@esbuild/darwin-arm64": "^0.27.0",
