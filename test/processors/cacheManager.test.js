@@ -158,7 +158,7 @@ describe('CacheManager', () => {
       expect(config).to.deep.equal({
         maxSizeGB: 0.001,
         maxRepositories: 3,
-        cacheDir: testCacheDir,
+        repoCacheDir: testCacheDir,
       });
     });
   });

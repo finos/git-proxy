@@ -8,7 +8,7 @@ const exec = async (_req: any, action: Action): Promise<Action> => {
 
   // Get work directory from configuration
   const config = cacheManager.getConfig();
-  const WORK_DIR = path.join(path.dirname(config.cacheDir), 'work');
+  const WORK_DIR = path.join(path.dirname(config.repoCacheDir), 'work');
 
   // Delete ONLY this push's working copy
   const workCopy = path.join(WORK_DIR, action.id);

@@ -12,7 +12,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   try {
     // Get cache directories from configuration
     const config = cacheManager.getConfig();
-    const BARE_CACHE = config.cacheDir;
+    const BARE_CACHE = config.repoCacheDir;
     const WORK_DIR = path.join(path.dirname(BARE_CACHE), 'work');
 
     // Paths for hybrid architecture
