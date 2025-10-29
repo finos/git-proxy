@@ -166,7 +166,7 @@ export class CacheManager {
             const stats = fs.statSync(itemPath);
             totalBytes += stats.size;
           } catch (error) {
-            // Skip files that can't be read
+            console.warn(`[CacheManager] Failed to stat file ${itemPath}:`, error);
           }
         }
       }
@@ -175,6 +175,7 @@ export class CacheManager {
     try {
       calculateSize(dirPath);
     } catch (error) {
+      console.warn(`[CacheManager] Failed to calculate size for ${dirPath}:`, error);
       return 0;
     }
 
