@@ -13,17 +13,17 @@ export interface CacheStats {
 }
 
 export class CacheManager {
-  private cacheDir: string;
+  private repoCacheDir: string;
   private maxSizeGB: number;
   private maxRepositories: number;
   private mutex: Promise<void> = Promise.resolve();
 
   constructor(
-    cacheDir: string = './.remote/cache',
+    repoCacheDir: string = './.remote/cache',
     maxSizeGB: number = 2,
     maxRepositories: number = 50,
   ) {
-    this.cacheDir = cacheDir;
+    this.repoCacheDir = repoCacheDir;
     this.maxSizeGB = maxSizeGB;
     this.maxRepositories = maxRepositories;
   }
@@ -52,7 +52,7 @@ export class CacheManager {
    */
   async touchRepository(repoName: string): Promise<void> {
     return this.acquireLock(() => {
-      const repoPath = path.join(this.cacheDir, repoName);
+      const repoPath = path.join(this.repoCacheDir, repoName);
       if (fs.existsSync(repoPath)) {
         const now = new Date();
         fs.utimesSync(repoPath, now, now);
@@ -64,7 +64,7 @@ export class CacheManager {
    * Get cache statistics
    */
   getCacheStats(): CacheStats {
-    if (!fs.existsSync(this.cacheDir)) {
+    if (!fs.existsSync(this.repoCacheDir)) {
       return {
         totalRepositories: 0,
         totalSizeBytes: 0,
@@ -75,11 +75,11 @@ export class CacheManager {
     const repositories: Array<{ name: string; sizeBytes: number; lastAccessed: Date }> = [];
     let totalSizeBytes = 0;
 
-    const entries = fs.readdirSync(this.cacheDir, { withFileTypes: true });
+    const entries = fs.readdirSync(this.repoCacheDir, { withFileTypes: true });
 
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        const repoPath = path.join(this.cacheDir, entry.name);
+        const repoPath = path.join(this.repoCacheDir, entry.name);
         const sizeBytes = this.getDirectorySize(repoPath);
         const stats = fs.statSync(repoPath);
 
@@ -141,7 +141,7 @@ export class CacheManager {
    * Remove specific repository from cache
    */
   private removeRepository(repoName: string): void {
-    const repoPath = path.join(this.cacheDir, repoName);
+    const repoPath = path.join(this.repoCacheDir, repoName);
     if (fs.existsSync(repoPath)) {
       fs.rmSync(repoPath, { recursive: true, force: true });
     }
@@ -189,7 +189,7 @@ export class CacheManager {
     return {
       maxSizeGB: this.maxSizeGB,
       maxRepositories: this.maxRepositories,
-      cacheDir: this.cacheDir,
+      repoCacheDir: this.repoCacheDir,
     };
   }
 }
