@@ -16,6 +16,7 @@ export class CacheManager {
   private cacheDir: string;
   private maxSizeGB: number;
   private maxRepositories: number;
+  private mutex: Promise<void> = Promise.resolve();
 
   constructor(
     cacheDir: string = './.remote/cache',
@@ -28,14 +29,35 @@ export class CacheManager {
   }
 
   /**
+   * Acquire mutex lock for cache operations
+   */
+  private async acquireLock<T>(operation: () => T | Promise<T>): Promise<T> {
+    const previousLock = this.mutex;
+    let releaseLock: () => void;
+
+    this.mutex = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+
+    try {
+      await previousLock;
+      return await operation();
+    } finally {
+      releaseLock!();
+    }
+  }
+
+  /**
    * Update access time for repository (for LRU purposes)
    */
-  touchRepository(repoName: string): void {
-    const repoPath = path.join(this.cacheDir, repoName);
-    if (fs.existsSync(repoPath)) {
-      const now = new Date();
-      fs.utimesSync(repoPath, now, now);
-    }
+  async touchRepository(repoName: string): Promise<void> {
+    return this.acquireLock(() => {
+      const repoPath = path.join(this.cacheDir, repoName);
+      if (fs.existsSync(repoPath)) {
+        const now = new Date();
+        fs.utimesSync(repoPath, now, now);
+      }
+    });
   }
 
   /**
@@ -86,36 +108,38 @@ export class CacheManager {
   /**
    * Enforce cache limits using LRU eviction
    */
-  enforceLimits(): { removedRepos: string[]; freedBytes: number } {
-    const stats = this.getCacheStats();
-    const removedRepos: string[] = [];
-    let freedBytes = 0;
+  async enforceLimits(): Promise<{ removedRepos: string[]; freedBytes: number }> {
+    return this.acquireLock(() => {
+      const stats = this.getCacheStats();
+      const removedRepos: string[] = [];
+      let freedBytes = 0;
 
-    // Sort repositories by last accessed (oldest first for removal)
-    const reposToEvaluate = stats.repositories.toSorted(
-      (a, b) => a.lastAccessed.getTime() - b.lastAccessed.getTime(),
-    );
+      // Sort repositories by last accessed (oldest first for removal)
+      const reposToEvaluate = stats.repositories.toSorted(
+        (a, b) => a.lastAccessed.getTime() - b.lastAccessed.getTime(),
+      );
 
-    // Check size limit - convert GB to bytes once
-    let currentSizeBytes = stats.totalSizeBytes;
-    const maxSizeBytes = this.maxSizeGB * 1024 * 1024 * 1024;
+      // Check size limit - convert GB to bytes once
+      let currentSizeBytes = stats.totalSizeBytes;
+      const maxSizeBytes = this.maxSizeGB * 1024 * 1024 * 1024;
 
-    for (const repo of reposToEvaluate) {
-      const shouldRemove =
-        currentSizeBytes > maxSizeBytes || // Over size limit
-        stats.totalRepositories - removedRepos.length > this.maxRepositories; // Over count limit
+      for (const repo of reposToEvaluate) {
+        const shouldRemove =
+          currentSizeBytes > maxSizeBytes || // Over size limit
+          stats.totalRepositories - removedRepos.length > this.maxRepositories; // Over count limit
 
-      if (shouldRemove) {
-        this.removeRepository(repo.name);
-        removedRepos.push(repo.name);
-        freedBytes += repo.sizeBytes;
-        currentSizeBytes -= repo.sizeBytes;
-      } else {
-        break; // We've cleaned enough
+        if (shouldRemove) {
+          this.removeRepository(repo.name);
+          removedRepos.push(repo.name);
+          freedBytes += repo.sizeBytes;
+          currentSizeBytes -= repo.sizeBytes;
+        } else {
+          break; // We've cleaned enough
+        }
       }
-    }
 
-    return { removedRepos, freedBytes };
+      return { removedRepos, freedBytes };
+    });
   }
 
   /**
@@ -177,7 +201,7 @@ export class CacheManager {
 // Global instance initialized with config
 const config = getCacheConfig();
 export const cacheManager = new CacheManager(
-  config.cacheDir,
-  config.maxSizeGB,
-  config.maxRepositories,
+  config?.cacheDir,
+  config?.maxSizeGB,
+  config?.maxRepositories,
 );

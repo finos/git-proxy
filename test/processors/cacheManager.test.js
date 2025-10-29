@@ -83,7 +83,7 @@ describe('CacheManager', () => {
 
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      cacheManager.touchRepository(repoName);
+      await cacheManager.touchRepository(repoName);
 
       const statsAfter = cacheManager.getCacheStats();
       const timeAfter = statsAfter.repositories[0].lastAccessed.getTime();
@@ -91,13 +91,14 @@ describe('CacheManager', () => {
       expect(timeAfter).to.be.greaterThan(timeBefore);
     });
 
-    it('should not throw error for non-existent repository', () => {
-      expect(() => cacheManager.touchRepository('non-existent.git')).to.not.throw();
+    it('should not throw error for non-existent repository', async () => {
+      // Should not throw
+      await cacheManager.touchRepository('non-existent.git');
     });
   });
 
   describe('enforceLimits', () => {
-    it('should remove oldest repositories when exceeding count limit', () => {
+    it('should remove oldest repositories when exceeding count limit', async () => {
       // Create 4 repos (exceeds limit of 3)
       for (let i = 1; i <= 4; i++) {
         const repoPath = path.join(testCacheDir, `repo${i}.git`);
@@ -108,7 +109,7 @@ describe('CacheManager', () => {
       const statsBefore = cacheManager.getCacheStats();
       expect(statsBefore.totalRepositories).to.equal(4);
 
-      const result = cacheManager.enforceLimits();
+      const result = await cacheManager.enforceLimits();
 
       expect(result.removedRepos).to.have.lengthOf.at.least(1);
       expect(result.freedBytes).to.be.at.least(0);
@@ -117,7 +118,7 @@ describe('CacheManager', () => {
       expect(statsAfter.totalRepositories).to.be.at.most(3);
     });
 
-    it('should remove repositories when exceeding size limit', () => {
+    it('should remove repositories when exceeding size limit', async () => {
       // Create repo that exceeds size limit (1MB)
       const repo1 = path.join(testCacheDir, 'repo1.git');
       fs.mkdirSync(repo1);
@@ -126,7 +127,7 @@ describe('CacheManager', () => {
       const statsBefore = cacheManager.getCacheStats();
       expect(statsBefore.totalSizeBytes).to.be.greaterThan(1024 * 1024); // Greater than 1MB in bytes
 
-      const result = cacheManager.enforceLimits();
+      const result = await cacheManager.enforceLimits();
 
       expect(result.removedRepos).to.have.lengthOf(1);
       expect(result.freedBytes).to.be.greaterThan(1024 * 1024); // Greater than 1MB in bytes
@@ -135,7 +136,7 @@ describe('CacheManager', () => {
       expect(statsAfter.totalRepositories).to.equal(0);
     });
 
-    it('should not remove anything if limits not exceeded', () => {
+    it('should not remove anything if limits not exceeded', async () => {
       // Create 2 repos (under limit of 3)
       for (let i = 1; i <= 2; i++) {
         const repoPath = path.join(testCacheDir, `repo${i}.git`);
@@ -143,7 +144,7 @@ describe('CacheManager', () => {
         fs.writeFileSync(path.join(repoPath, 'file.txt'), 'test');
       }
 
-      const result = cacheManager.enforceLimits();
+      const result = await cacheManager.enforceLimits();
 
       expect(result.removedRepos).to.be.empty;
       expect(result.freedBytes).to.equal(0);

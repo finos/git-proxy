@@ -59,7 +59,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
         });
 
         // Update access time for LRU
-        cacheManager.touchRepository(action.repoName);
+        await cacheManager.touchRepository(action.repoName);
         timer.mark('Fetch complete');
         step.log(`Bare repository updated`);
       } catch (fetchError) {
@@ -98,7 +98,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       step.log(`Bare repository created at ${bareRepo}`);
 
       // Update access time for LRU after successful clone
-      cacheManager.touchRepository(action.repoName);
+      await cacheManager.touchRepository(action.repoName);
     }
 
     // PHASE 2: Working Copy (temporary, isolated)
@@ -129,7 +129,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     timer.end();
 
     // Enforce cache limits (LRU eviction on bare cache)
-    const evictionResult = cacheManager.enforceLimits();
+    const evictionResult = await cacheManager.enforceLimits();
     if (evictionResult.removedRepos.length > 0) {
       const freedMB = (evictionResult.freedBytes / (1024 * 1024)).toFixed(2);
       step.log(`LRU evicted ${evictionResult.removedRepos.length} bare repos, freed ${freedMB}MB`);
