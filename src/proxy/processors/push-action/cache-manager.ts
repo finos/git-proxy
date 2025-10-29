@@ -93,15 +93,10 @@ export class CacheManager {
       }
     }
 
-    // Sort by last accessed (newest first)
-    const sortedRepositories = repositories.toSorted(
-      (a, b) => b.lastAccessed.getTime() - a.lastAccessed.getTime(),
-    );
-
     return {
-      totalRepositories: sortedRepositories.length,
+      totalRepositories: repositories.length,
       totalSizeBytes,
-      repositories: sortedRepositories,
+      repositories,
     };
   }
 
