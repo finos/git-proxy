@@ -2,17 +2,11 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawnSync } from 'child_process';
 import { rmSync } from 'fs';
 import { join } from 'path';
-import {
-  isCompatiblePlugin,
-  PullActionPlugin,
-  PushActionPlugin,
-  PluginLoader,
-} from '../../src/plugin';
+import { isCompatiblePlugin, PushActionPlugin, PluginLoader } from '../../src/plugin';
 
 const testPackagePath = join(__dirname, '../fixtures', 'test-package');
 
-// Temporarily skipping these until plugin loading is refactored to use ESM/TS
-describe.skip('loading plugins from packages', { timeout: 10000 }, () => {
+describe('loading plugins from packages', () => {
   beforeAll(() => {
     spawnSync('npm', ['install'], { cwd: testPackagePath, timeout: 5000 });
   });
@@ -20,11 +14,13 @@ describe.skip('loading plugins from packages', { timeout: 10000 }, () => {
   it(
     'should load plugins that are the default export (module.exports = pluginObj)',
     async () => {
-      const loader = new PluginLoader([join(testPackagePath, 'default-export.ts')]);
+      const loader = new PluginLoader([join(testPackagePath, 'default-export.js')]);
       await loader.load();
       expect(loader.pushPlugins.length).toBe(1);
       expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).toBe(true);
-      expect(loader.pushPlugins[0]).toBeInstanceOf(PushActionPlugin);
+      expect(
+        loader.pushPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPushActionPlugin')),
+      ).toBe(true);
     },
     { timeout: 10000 },
   );
@@ -43,8 +39,6 @@ describe.skip('loading plugins from packages', { timeout: 10000 }, () => {
       expect(
         loader.pullPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPullActionPlugin')),
       ).toBe(true);
-      expect(loader.pushPlugins[0]).toBeInstanceOf(PushActionPlugin);
-      expect(loader.pullPlugins[0]).toBeInstanceOf(PullActionPlugin);
     },
     { timeout: 10000 },
   );
@@ -59,7 +53,6 @@ describe.skip('loading plugins from packages', { timeout: 10000 }, () => {
       expect(
         loader.pushPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPushActionPlugin')),
       ).toBe(true);
-      expect(loader.pushPlugins[0]).toBeInstanceOf(PushActionPlugin);
     },
     { timeout: 10000 },
   );

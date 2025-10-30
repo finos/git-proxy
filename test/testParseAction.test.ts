@@ -30,7 +30,7 @@ describe('Pre-processor: parseAction', () => {
     const req = {
       originalUrl: '/github.com/finos/git-proxy.git/git-upload-pack',
       method: 'GET',
-      headers: {},
+      headers: { 'content-type': 'application/x-git-upload-pack-request' },
     };
 
     const action = await preprocessor.exec(req);
@@ -44,7 +44,7 @@ describe('Pre-processor: parseAction', () => {
     const req = {
       originalUrl: '/finos/git-proxy.git/git-upload-pack',
       method: 'GET',
-      headers: {},
+      headers: { 'content-type': 'application/x-git-upload-pack-request' },
     };
 
     const action = await preprocessor.exec(req);
