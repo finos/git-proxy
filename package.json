@@ -113,7 +113,7 @@
     "react-html-parser": "^2.0.2",
     "react-router-dom": "6.30.1",
     "simple-git": "^3.28.0",
-    "uuid": "^11.1.0",
+    "uuid": "^13.0.0",
     "validator": "^13.15.15",
     "yargs": "^17.7.2"
   },
