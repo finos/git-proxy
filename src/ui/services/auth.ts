@@ -1,7 +1,7 @@
 import { getCookie } from '../utils';
 import { UserData } from '../../types/models';
-import { API_BASE } from '../apiBase';
 import { AxiosError } from 'axios';
+import { getBaseUrl } from './apiConfig';
 
 interface AxiosConfig {
   withCredentials: boolean;
@@ -16,7 +16,8 @@ interface AxiosConfig {
  */
 export const getUserInfo = async (): Promise<UserData | null> => {
   try {
-    const response = await fetch(`${API_BASE}/api/auth/me`, {
+    const baseUrl = await getBaseUrl();
+    const response = await fetch(`${baseUrl}/api/auth/me`, {
       credentials: 'include', // Sends cookies
     });
     if (!response.ok) throw new Error(`Failed to fetch user info: ${response.statusText}`);

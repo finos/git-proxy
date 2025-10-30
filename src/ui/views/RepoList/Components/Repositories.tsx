@@ -38,7 +38,7 @@ interface UserContextType {
   };
 }
 
-export default function Repositories(): React.ReactElement {
+export default function Repositories(): JSX.Element {
   const useStyles = makeStyles(styles as any);
   const classes = useStyles();
   const [data, setData] = useState<RepositoryDataWithId[]>([]);
