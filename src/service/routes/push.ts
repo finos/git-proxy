@@ -103,8 +103,16 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
     const push = await db.getPush(id);
     console.log({ push });
 
+    if (!push) {
+      res.status(404).send({
+        message: 'Push request not found',
+      });
+      return;
+    }
+
     // Get the committer of the push via their email address
-    const committerEmail = push?.userEmail;
+    const committerEmail = push.userEmail;
+
     const list = await db.getUsers({ email: committerEmail });
     console.log({ list });
 
