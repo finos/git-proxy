@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { getAxiosConfig, processAuthError } from './auth.js';
 import { API_BASE } from '../apiBase';
-import { RepositoryData, RepositoryDataWithId } from '../views/RepoList/Components/NewRepo';
+import { RepositoryData, RepositoryDataWithId } from '../types';
 
 const API_V1_BASE = `${API_BASE}/api/v1`;
 

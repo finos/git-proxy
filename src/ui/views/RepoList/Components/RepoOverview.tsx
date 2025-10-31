@@ -5,9 +5,14 @@ import GridItem from '../../../components/Grid/GridItem';
 import { CodeReviewIcon, LawIcon, PeopleIcon } from '@primer/octicons-react';
 import CodeActionButton from '../../../components/CustomButtons/CodeActionButton';
 import { languageColors } from '../../../../constants/languageColors';
-import { RepositoriesProps } from '../repositories.types';
+import { RepositoryDataWithId } from '../../../types';
 import { fetchRemoteRepositoryData } from '../../../utils';
 import { SCMRepositoryMetadata } from '../../../../types/models';
+
+export interface RepositoriesProps {
+  data: RepositoryDataWithId;
+  [key: string]: unknown;
+}
 
 const Repositories: React.FC<RepositoriesProps> = (props) => {
   const [remoteRepoData, setRemoteRepoData] = React.useState<SCMRepositoryMetadata | null>(null);

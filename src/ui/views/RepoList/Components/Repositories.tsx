@@ -8,7 +8,8 @@ import styles from '../../../assets/jss/material-dashboard-react/views/dashboard
 import { getRepos } from '../../../services/repo';
 import GridContainer from '../../../components/Grid/GridContainer';
 import GridItem from '../../../components/Grid/GridItem';
-import NewRepo, { RepositoryDataWithId } from './NewRepo';
+import NewRepo from './NewRepo';
+import { RepositoryDataWithId } from '../../../types';
 import RepoOverview from './RepoOverview';
 import { UserContext } from '../../../../context';
 import Search from '../../../components/Search/Search';

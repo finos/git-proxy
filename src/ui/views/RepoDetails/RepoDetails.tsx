@@ -23,18 +23,7 @@ import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
 import { trimTrailingDotGit } from '../../../db/helper';
 import { fetchRemoteRepositoryData } from '../../utils';
 import { SCMRepositoryMetadata } from '../../../types/models';
-
-interface RepoData {
-  _id: string;
-  project: string;
-  name: string;
-  proxyURL: string;
-  url: string;
-  users: {
-    canAuthorise: string[];
-    canPush: string[];
-  };
-}
+import { RepositoryDataWithId } from '../../types';
 
 export interface UserContextType {
   user: {
@@ -57,7 +46,7 @@ const useStyles = makeStyles((theme) => ({
 const RepoDetails: React.FC = () => {
   const navigate = useNavigate();
   const classes = useStyles();
-  const [data, setData] = useState<RepoData | null>(null);
+  const [data, setData] = useState<RepositoryDataWithId | null>(null);
   const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -197,7 +186,7 @@ const RepoDetails: React.FC = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {data.users.canAuthorise.map((row) => (
+                      {data.users?.canAuthorise?.map((row) => (
                         <TableRow key={row}>
                           <TableCell align='left'>
                             <a href={`/dashboard/user/${row}`}>{row}</a>
@@ -240,7 +229,7 @@ const RepoDetails: React.FC = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {data.users.canPush.map((row) => (
+                      {data.users?.canPush?.map((row) => (
                         <TableRow key={row}>
                           <TableCell align='left'>
                             <a href={`/dashboard/user/${row}`}>{row}</a>

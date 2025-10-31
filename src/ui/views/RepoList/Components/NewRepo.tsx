@@ -15,25 +15,13 @@ import { addRepo } from '../../../services/repo';
 import { makeStyles } from '@material-ui/core/styles';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { RepoIcon } from '@primer/octicons-react';
+import { RepositoryData, RepositoryDataWithId } from '../../../types';
 
 interface AddRepositoryDialogProps {
   open: boolean;
   onClose: () => void;
   onSuccess: (data: RepositoryDataWithId) => void;
 }
-
-export interface RepositoryData {
-  _id?: string;
-  project: string;
-  name: string;
-  url: string;
-  maxUser: number;
-  lastModified?: string;
-  dateCreated?: string;
-  proxyURL?: string;
-}
-
-export type RepositoryDataWithId = Required<Pick<RepositoryData, '_id'>> & RepositoryData;
 
 interface NewRepoProps {
   onSuccess: (data: RepositoryDataWithId) => Promise<void>;
