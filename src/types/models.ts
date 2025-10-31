@@ -1,6 +1,6 @@
 import { StepData } from '../proxy/actions/Step';
-import { AttestationData } from '../ui/views/PushDetails/attestation.types';
 import { CommitData } from '../proxy/processors/types';
+import { AttestationFormData } from '../ui/types';
 
 export interface UserData {
   id: string;
@@ -29,7 +29,7 @@ export interface PushData {
   rejected?: boolean;
   blocked?: boolean;
   authorised?: boolean;
-  attestation?: AttestationData;
+  attestation?: AttestationFormData;
   autoApproved?: boolean;
   timestamp: string | Date;
   allowPush?: boolean;

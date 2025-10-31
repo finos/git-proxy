@@ -11,7 +11,13 @@ import Checkbox from '@material-ui/core/Checkbox';
 import { withStyles } from '@material-ui/core/styles';
 import { green } from '@material-ui/core/colors';
 import { setURLShortenerData } from '../../../services/config';
-import { AttestationViewProps } from '../attestation.types';
+import { AttestationFormData } from '../../../types';
+
+export interface AttestationViewProps {
+  attestation: boolean;
+  setAttestation: (value: boolean) => void;
+  data: AttestationFormData;
+}
 
 const StyledFormControlLabel = withStyles({
   root: {

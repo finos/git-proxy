@@ -1,11 +1,11 @@
 import axios from 'axios';
 import { API_BASE } from '../apiBase';
-import { FormQuestion } from '../views/PushDetails/components/AttestationForm';
+import { QuestionFormData } from '../types';
 import { UIRouteAuth } from '../../config/generated/config';
 
 const API_V1_BASE = `${API_BASE}/api/v1`;
 
-const setAttestationConfigData = async (setData: (data: FormQuestion[]) => void) => {
+const setAttestationConfigData = async (setData: (data: QuestionFormData[]) => void) => {
   const url = new URL(`${API_V1_BASE}/config/attestation`);
   await axios(url.toString()).then((response) => {
     setData(response.data.questions);
