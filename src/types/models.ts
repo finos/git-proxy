@@ -1,5 +1,6 @@
 import { StepData } from '../proxy/actions/Step';
 import { AttestationData } from '../ui/views/PushDetails/attestation.types';
+import { CommitData } from '../proxy/processors/types';
 
 export interface UserData {
   id: string;
@@ -10,18 +11,6 @@ export interface UserData {
   title?: string;
   gitAccount?: string;
   admin?: boolean;
-}
-
-export interface CommitData {
-  commitTs?: number;
-  message: string;
-  committer: string;
-  committerEmail: string;
-  tree?: string;
-  parent?: string;
-  author: string;
-  authorEmail: string;
-  commitTimestamp?: number;
 }
 
 export interface PushData {

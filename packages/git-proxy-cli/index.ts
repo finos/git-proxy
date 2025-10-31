@@ -141,7 +141,6 @@ async function getGitPushes(filters: Partial<PushQuery>) {
             commitTimestamp: pushCommitDataRecord.commitTimestamp,
             tree: pushCommitDataRecord.tree,
             parent: pushCommitDataRecord.parent,
-            commitTs: pushCommitDataRecord.commitTs,
           });
         });
         record.commitData = commitData;

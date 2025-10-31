@@ -106,13 +106,12 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
               // may be used to resolve users to profile links in future
               // const gitProvider = getGitProvider(repoUrl);
               // const hostname = new URL(repoUrl).hostname;
-              const commitTimestamp =
-                row.commitData[0]?.commitTs || row.commitData[0]?.commitTimestamp;
+              const commitTimestamp = row.commitData[0]?.commitTimestamp;
 
               return (
                 <TableRow key={row.id}>
                   <TableCell align='left'>
-                    {commitTimestamp ? moment.unix(commitTimestamp).toString() : 'N/A'}
+                    {commitTimestamp ? moment.unix(Number(commitTimestamp)).toString() : 'N/A'}
                   </TableCell>
                   <TableCell align='left'>
                     <a href={`${repoUrl}`} rel='noreferrer' target='_blank'>

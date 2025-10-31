@@ -309,9 +309,9 @@ const Dashboard: React.FC = () => {
                 </TableHead>
                 <TableBody>
                   {data.commitData.map((c) => (
-                    <TableRow key={c.commitTimestamp || c.commitTs}>
+                    <TableRow key={c.commitTimestamp}>
                       <TableCell>
-                        {moment.unix(c.commitTs || c.commitTimestamp || 0).toString()}
+                        {moment.unix(Number(c.commitTimestamp || 0)).toString()}
                       </TableCell>
                       <TableCell>{generateEmailLink(c.committer, c.committerEmail)}</TableCell>
                       <TableCell>{generateEmailLink(c.author, c.authorEmail)}</TableCell>
