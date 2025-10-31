@@ -29,6 +29,11 @@
       "import": "./dist/src/types/models.js",
       "require": "./dist/src/types/models.js",
       "types": "./dist/src/types/models.d.ts"
+    },
+    "./plugin": {
+      "import": "./dist/src/plugin.js",
+      "require": "./dist/src/plugin.js",
+      "types": "./dist/src/plugin.d.ts"
     }
   },
   "scripts": {
