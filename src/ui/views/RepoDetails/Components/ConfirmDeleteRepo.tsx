@@ -36,8 +36,8 @@ const ConfirmDeleteRepo: React.FC<ConfirmDeleteRepoProps> = ({
       <DialogTitle>Delete Repository</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          This action cannot be undone. This will permanently delete the repository{' '}
-          <strong>{repoName}</strong> repository.
+          This action cannot be undone. This will permanently delete the <strong>{repoName}</strong>{' '}
+          repository.
         </DialogContentText>
         <DialogContentText style={{ marginTop: '16px', marginBottom: '8px' }}>
           Please type <strong>{repoName}</strong> to confirm:
