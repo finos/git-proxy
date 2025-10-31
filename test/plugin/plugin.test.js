@@ -2,12 +2,7 @@ import chai from 'chai';
 import { spawnSync } from 'child_process';
 import { rmSync } from 'fs';
 import { join } from 'path';
-import {
-  isCompatiblePlugin,
-  PullActionPlugin,
-  PushActionPlugin,
-  PluginLoader,
-} from '../../src/plugin.ts';
+import { isCompatiblePlugin, PushActionPlugin, PluginLoader } from '../../src/plugin.ts';
 
 chai.should();
 
@@ -22,35 +17,69 @@ describe('loading plugins from packages', function () {
     spawnSync('npm', ['install'], { cwd: testPackagePath, timeout: 5000 });
   });
 
-  it('should load plugins that are the default export (module.exports = pluginObj)', async function () {
-    const loader = new PluginLoader([join(testPackagePath, 'default-export.js')]);
-    await loader.load();
-    expect(loader.pushPlugins.length).to.equal(1);
-    expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).to.be.true;
-    expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPushActionPlugin'))).to
-      .be.true;
-  }).timeout(10000);
+  describe('CommonJS syntax', () => {
+    it('should load plugins that are the default export (module.exports = pluginObj)', async function () {
+      const loader = new PluginLoader([join(testPackagePath, 'default-export.js')]);
+      await loader.load();
+      expect(loader.pushPlugins.length).to.equal(1);
+      expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).to.be.true;
+      expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPushActionPlugin')))
+        .to.be.true;
+    }).timeout(10000);
 
-  it('should load multiple plugins from a module that match the plugin class (module.exports = { pluginFoo, pluginBar })', async function () {
-    const loader = new PluginLoader([join(testPackagePath, 'multiple-export.js')]);
-    await loader.load();
-    expect(loader.pushPlugins.length).to.equal(1);
-    expect(loader.pullPlugins.length).to.equal(1);
-    expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).to.be.true;
-    expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPushActionPlugin'))).to
-      .be.true;
-    expect(loader.pullPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPullActionPlugin'))).to
-      .be.true;
-  }).timeout(10000);
+    it('should load multiple plugins from a module that match the plugin class (module.exports = { pluginFoo, pluginBar })', async function () {
+      const loader = new PluginLoader([join(testPackagePath, 'multiple-export.js')]);
+      await loader.load();
+      expect(loader.pushPlugins.length).to.equal(1);
+      expect(loader.pullPlugins.length).to.equal(1);
+      expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).to.be.true;
+      expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPushActionPlugin')))
+        .to.be.true;
+      expect(loader.pullPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPullActionPlugin')))
+        .to.be.true;
+    }).timeout(10000);
 
-  it('should load plugins that are subclassed from plugin classes', async function () {
-    const loader = new PluginLoader([join(testPackagePath, 'subclass.js')]);
-    await loader.load();
-    expect(loader.pushPlugins.length).to.equal(1);
-    expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).to.be.true;
-    expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPushActionPlugin'))).to
-      .be.true;
-  }).timeout(10000);
+    it('should load plugins that are subclassed from plugin classes', async function () {
+      const loader = new PluginLoader([join(testPackagePath, 'subclass.js')]);
+      await loader.load();
+      expect(loader.pushPlugins.length).to.equal(1);
+      expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).to.be.true;
+      expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPushActionPlugin')))
+        .to.be.true;
+    }).timeout(10000);
+  });
+
+  describe('ESM syntax', () => {
+    it('should load plugins that are the default export (exports default pluginObj)', async function () {
+      const loader = new PluginLoader([join(testPackagePath, 'esm-export.js')]);
+      await loader.load();
+      expect(loader.pushPlugins.length).to.equal(1);
+      expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).to.be.true;
+      expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPushActionPlugin')))
+        .to.be.true;
+    }).timeout(10000);
+
+    it('should load multiple plugins from a module that match the plugin class (exports default { pluginFoo, pluginBar })', async function () {
+      const loader = new PluginLoader([join(testPackagePath, 'esm-multiple-export.js')]);
+      await loader.load();
+      expect(loader.pushPlugins.length).to.equal(1);
+      expect(loader.pullPlugins.length).to.equal(1);
+      expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).to.be.true;
+      expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPushActionPlugin')))
+        .to.be.true;
+      expect(loader.pullPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPullActionPlugin')))
+        .to.be.true;
+    }).timeout(10000);
+
+    it('should load plugins that are subclassed from plugin classes (exports default class DummyPlugin extends PushActionPlugin {})', async function () {
+      const loader = new PluginLoader([join(testPackagePath, 'esm-subclass.js')]);
+      await loader.load();
+      expect(loader.pushPlugins.length).to.equal(1);
+      expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).to.be.true;
+      expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p, 'isGitProxyPushActionPlugin')))
+        .to.be.true;
+    }).timeout(10000);
+  });
 
   it('should not load plugins that are not valid modules', async function () {
     const loader = new PluginLoader([join(__dirname, './dummy.js')]);
