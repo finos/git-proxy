@@ -22,14 +22,7 @@ import { UserContext } from '../../../context';
 import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
 import { trimTrailingDotGit } from '../../../db/helper';
 import { fetchRemoteRepositoryData } from '../../utils';
-import { SCMRepositoryMetadata } from '../../../types/models';
-import { RepositoryDataWithId } from '../../types';
-
-export interface UserContextType {
-  user: {
-    admin: boolean;
-  };
-}
+import { RepositoryDataWithId, SCMRepositoryMetadata, UserContextType } from '../../types';
 
 const useStyles = makeStyles((theme) => ({
   root: {

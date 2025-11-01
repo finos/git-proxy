@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import { UserContextType } from './ui/views/RepoDetails/RepoDetails';
+import { UserContextType } from './ui/types';
 
 export const UserContext = createContext<UserContextType>({
   user: {

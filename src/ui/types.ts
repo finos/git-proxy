@@ -88,3 +88,9 @@ export interface Route {
   icon?: string | React.ComponentType<any>;
   visible?: boolean;
 }
+
+export interface UserContextType {
+  user: {
+    admin: boolean;
+  };
+}
