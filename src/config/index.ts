@@ -2,7 +2,8 @@ import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
 import { GitProxyConfig, Convert } from './generated/config';
-import { ConfigLoader, Configuration } from './ConfigLoader';
+import { ConfigLoader } from './ConfigLoader';
+import { Configuration } from './types';
 import { serverConfig } from './env';
 import { configFile } from './file';
 

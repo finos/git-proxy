@@ -1,11 +1,4 @@
-export type ServerConfig = {
-  GIT_PROXY_SERVER_PORT: string | number;
-  GIT_PROXY_HTTPS_SERVER_PORT: string | number;
-  GIT_PROXY_UI_HOST: string;
-  GIT_PROXY_UI_PORT: string | number;
-  GIT_PROXY_COOKIE_SECRET: string | undefined;
-  GIT_PROXY_MONGO_CONNECTION_STRING: string;
-};
+import { ServerConfig } from './types';
 
 const {
   GIT_PROXY_SERVER_PORT = 8000,
