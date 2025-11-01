@@ -225,6 +225,13 @@ export interface AdConfig {
 export interface JwtConfig {
   authorityURL: string;
   clientID: string;
+  expectedAudience?: string;
+  roleMapping?: RoleMapping;
+  [property: string]: any;
+}
+
+export interface RoleMapping {
+  admin?: { [key: string]: any };
   [property: string]: any;
 }
 
@@ -754,9 +761,12 @@ const typeMap: any = {
     [
       { json: 'authorityURL', js: 'authorityURL', typ: '' },
       { json: 'clientID', js: 'clientID', typ: '' },
+      { json: 'expectedAudience', js: 'expectedAudience', typ: u(undefined, '') },
+      { json: 'roleMapping', js: 'roleMapping', typ: u(undefined, r('RoleMapping')) },
     ],
     'any',
   ),
+  RoleMapping: o([{ json: 'admin', js: 'admin', typ: u(undefined, m('any')) }], 'any'),
   OidcConfig: o(
     [
       { json: 'callbackURL', js: 'callbackURL', typ: '' },
