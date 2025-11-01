@@ -15,7 +15,7 @@ import { getPushes } from '../../../services/git-push';
 import { KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
-import { PushData } from '../../../../types/models';
+import { PushData } from '../../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../../db/helper';
 import { generateAuthorLinks, generateEmailLink } from '../../../utils';
 

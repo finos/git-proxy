@@ -22,7 +22,7 @@ import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/g
 import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
-import { PushData } from '../../../types/models';
+import { PushData } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
 import { generateEmailLink, getGitProvider } from '../../utils';
 

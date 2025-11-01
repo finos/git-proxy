@@ -1,5 +1,5 @@
 import { getCookie } from '../utils';
-import { UserData } from '../../types/models';
+import { UserData } from '../types';
 import { API_BASE } from '../apiBase';
 import { AxiosError } from 'axios';
 

@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
-import { UserData } from '../../types/models';
+import { UserData } from '../types';
 
 import { API_BASE } from '../apiBase';
 

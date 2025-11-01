@@ -17,7 +17,7 @@ import Pagination from '../../../components/Pagination/Pagination';
 import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
 import Danger from '../../../components/Typography/Danger';
-import { UserData } from '../../../../types/models';
+import { UserData } from '../../../types';
 
 const useStyles = makeStyles(styles as any);
 

@@ -9,7 +9,7 @@ import FormLabel from '@material-ui/core/FormLabel';
 import { getUser, updateUser } from '../../services/user';
 import { UserContext } from '../../../context';
 
-import { UserData } from '../../../types/models';
+import { UserData } from '../../types';
 import { makeStyles } from '@material-ui/core/styles';
 
 import { LogoGithubIcon } from '@primer/octicons-react';
