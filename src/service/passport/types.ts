@@ -19,22 +19,6 @@ export type JwtValidationResult = {
   error: string | null;
 };
 
-/**
- * The JWT role mapping configuration.
- *
- * The key is the in-app role name (e.g. "admin").
- * The value is a pair of claim name and expected value.
- *
- * For example, the following role mapping will assign the "admin" role to users whose "name" claim is "John Doe":
- *
- * {
- *   "admin": {
- *     "name": "John Doe"
- *   }
- * }
- */
-export type RoleMapping = Record<string, Record<string, string>>;
-
 export type ADProfile = {
   id?: string;
   username?: string;
