@@ -16,7 +16,6 @@ import { LogoGithubIcon } from '@primer/octicons-react';
 import CloseRounded from '@material-ui/icons/CloseRounded';
 import { Check, Save } from '@material-ui/icons';
 import { TextField, Theme } from '@material-ui/core';
-import { UserContextType } from '../RepoDetails/RepoDetails';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {

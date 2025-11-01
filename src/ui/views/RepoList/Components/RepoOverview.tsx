@@ -5,9 +5,8 @@ import GridItem from '../../../components/Grid/GridItem';
 import { CodeReviewIcon, LawIcon, PeopleIcon } from '@primer/octicons-react';
 import CodeActionButton from '../../../components/CustomButtons/CodeActionButton';
 import { languageColors } from '../../../../constants/languageColors';
-import { RepositoryDataWithId } from '../../../types';
+import { RepositoryDataWithId, SCMRepositoryMetadata } from '../../../types';
 import { fetchRemoteRepositoryData } from '../../../utils';
-import { SCMRepositoryMetadata } from '../../../../types/models';
 
 export interface RepositoriesProps {
   data: RepositoryDataWithId;

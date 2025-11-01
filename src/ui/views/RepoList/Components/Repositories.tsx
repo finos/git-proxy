@@ -9,7 +9,7 @@ import { getRepos } from '../../../services/repo';
 import GridContainer from '../../../components/Grid/GridContainer';
 import GridItem from '../../../components/Grid/GridItem';
 import NewRepo from './NewRepo';
-import { RepositoryDataWithId } from '../../../types';
+import { RepositoryDataWithId, UserContextType } from '../../../types';
 import RepoOverview from './RepoOverview';
 import { UserContext } from '../../../../context';
 import Search from '../../../components/Search/Search';

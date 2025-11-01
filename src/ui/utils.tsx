@@ -1,10 +1,6 @@
 import axios from 'axios';
 import React from 'react';
-import {
-  GitHubRepositoryMetadata,
-  GitLabRepositoryMetadata,
-  SCMRepositoryMetadata,
-} from '../types/models';
+import { GitHubRepositoryMetadata, GitLabRepositoryMetadata, SCMRepositoryMetadata } from './types';
 import { CommitData } from '../proxy/processors/types';
 import moment from 'moment';
 
