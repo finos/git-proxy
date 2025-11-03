@@ -17,8 +17,16 @@
   transition: background-color 0.3s ease;
 }
 
-.pageButton:hover {
+.pageButton:hover:not(:disabled) {
   background-color: #e2e6ea;
+}
+
+.pageButton:disabled {
+  background-color: #e9ecef;
+  color: #6c757d;
+  border-color: #dee2e6;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .activeButton {
