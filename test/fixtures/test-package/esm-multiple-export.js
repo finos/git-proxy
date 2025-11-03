@@ -10,4 +10,9 @@ export default {
     console.log('PullActionPlugin: ', action);
     return action;
   }),
+  baz: {
+    exec: (async (req, action) => {
+      console.log('not a real plugin object');
+    }),
+  },
 };
