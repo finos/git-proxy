@@ -23,7 +23,7 @@ import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
 import { trimTrailingDotGit } from '../../../db/helper';
 import { fetchRemoteRepositoryData } from '../../utils';
 import { SCMRepositoryMetadata } from '../../../types/models';
-import ConfirmDeleteRepo from './Components/ConfirmDeleteRepo';
+import DeleteRepoDialog from './Components/DeleteRepoDialog';
 
 interface RepoData {
   _id: string;
@@ -269,7 +269,7 @@ const RepoDetails: React.FC = () => {
         </Card>
       </GridItem>
 
-      <ConfirmDeleteRepo
+      <DeleteRepoDialog
         repoName={data.name}
         open={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}

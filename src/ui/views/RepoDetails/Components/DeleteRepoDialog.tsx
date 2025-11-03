@@ -12,7 +12,7 @@ interface ConfirmDeleteRepoProps {
   onConfirm: () => void;
 }
 
-const ConfirmDeleteRepo: React.FC<ConfirmDeleteRepoProps> = ({
+const DeleteRepoDialog: React.FC<ConfirmDeleteRepoProps> = ({
   repoName,
   open,
   onClose,
@@ -67,4 +67,4 @@ const ConfirmDeleteRepo: React.FC<ConfirmDeleteRepoProps> = ({
   );
 };
 
-export default ConfirmDeleteRepo;
+export default DeleteRepoDialog;
