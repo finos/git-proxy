@@ -90,12 +90,12 @@ Real-world performance comparison using the Backstage repository (177MB cached b
 
 | Metric              | Without Cache (main) | With Cache (PR) | Improvement          |
 | ------------------- | -------------------- | --------------- | -------------------- |
-| **Cold Push**       | 20.63s               | 17.58s          | 15% faster           |
-| **Warm Push (avg)** | 19.88s               | **6.68s**       | **66% faster**       |
-| **Warm Push (min)** | 18.37s               | 6.34s           | 65% faster           |
-| **Warm Push (max)** | 21.22s               | 7.12s           | 66% faster           |
+| **Cold Push**       | 20.63s               | 17.58s          | 1.2x faster          |
+| **Warm Push (avg)** | 19.88s               | **6.68s**       | **3x faster**        |
+| **Warm Push (min)** | 18.37s               | 6.34s           | 2.9x faster          |
+| **Warm Push (max)** | 21.22s               | 7.12s           | 3x faster            |
 | **Std Deviation**   | 0.99s                | 0.19s           | 5x more consistent   |
-| **Speedup Ratio**   | 1.03x                | **2.63x**       | **155% improvement** |
+| **Speedup Ratio**   | 1.03x                | **2.63x**       | **2.6x improvement** |
 
 ### Time Saved
 
@@ -116,13 +116,13 @@ To reproduce these results with your own repository fork:
 
 ```bash
 # Test with cache (this PR branch)
-./cache-benchmark.sh owner/repo
+./scripts/cache-benchmark.sh owner/repo
 ```
 
 **Example**:
 
 ```bash
-./cache-benchmark.sh yourFork/backstage main 10
+./scripts/cache-benchmark.sh yourFork/backstage main 10
 ```
 
 **Note**: Results may vary based on network conditions, GitHub server load, and repository size. The benchmark uses `depth: 1` for all git operations. You must have push access to the repository you're testing.
