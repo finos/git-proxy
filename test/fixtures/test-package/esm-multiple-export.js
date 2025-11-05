@@ -1,6 +1,7 @@
-const { PushActionPlugin, PullActionPlugin } = require('@finos/git-proxy/plugin');
+import { PushActionPlugin, PullActionPlugin } from '@finos/git-proxy/plugin';
 
-module.exports = {
+// test multiple exports (ESM syntax)
+export default {
   foo: new PushActionPlugin(async (req, action) => {
     console.log('PushActionPlugin: ', action);
     return action;
