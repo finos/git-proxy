@@ -275,3 +275,7 @@ website/.docusaurus
 
 # Generated from testing
 /test/fixtures/test-package/package-lock.json
+
+# Benchmark results
+benchmark-detailed-*/
+results*.csv
