@@ -30,6 +30,8 @@ describe('loading plugins from packages', function () {
     it('should load multiple plugins from a module that match the plugin class (module.exports = { pluginFoo, pluginBar })', async function () {
       const loader = new PluginLoader([join(testPackagePath, 'multiple-export.js')]);
       await loader.load();
+
+      // Should load the foo and bar plugins, but not the baz object which isn't a plugin
       expect(loader.pushPlugins.length).to.equal(1);
       expect(loader.pullPlugins.length).to.equal(1);
       expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).to.be.true;
@@ -62,6 +64,8 @@ describe('loading plugins from packages', function () {
     it('should load multiple plugins from a module that match the plugin class (exports default { pluginFoo, pluginBar })', async function () {
       const loader = new PluginLoader([join(testPackagePath, 'esm-multiple-export.js')]);
       await loader.load();
+
+      // Should load the foo and bar plugins, but not the baz object which isn't a plugin
       expect(loader.pushPlugins.length).to.equal(1);
       expect(loader.pullPlugins.length).to.equal(1);
       expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).to.be.true;
