@@ -12,6 +12,7 @@ import { withStyles } from '@material-ui/core/styles';
 import { green } from '@material-ui/core/colors';
 import { setURLShortenerData } from '../../../services/config';
 import { AttestationViewProps } from '../attestation.types';
+import UserLink from '../../../components/UserLink/UserLink';
 
 const StyledFormControlLabel = withStyles({
   root: {
@@ -70,17 +71,15 @@ const AttestationView: React.FC<AttestationViewProps> = ({ attestation, setAttes
         <p style={{ fontSize: '15px', paddingLeft: '34px' }}>
           Prior to making this code contribution publicly accessible via GitHub, this code
           contribution was reviewed and approved by{' '}
-          <a href={`/dashboard/admin/user/${data.reviewer.username}`}>{data.reviewer.gitAccount}</a>
-          . As a reviewer, it was their responsibility to confirm that open sourcing this
-          contribution followed the requirements of the company open source contribution policy.
+          <UserLink username={data.reviewer.username}>{data.reviewer.gitAccount}</UserLink>. As a
+          reviewer, it was their responsibility to confirm that open sourcing this contribution
+          followed the requirements of the company open source contribution policy.
         </p>
       </span>
       <DialogContent>
         <p>
           <span>
-            <a href={`/dashboard/admin/user/${data.reviewer.username}`}>
-              {data.reviewer.gitAccount}
-            </a>{' '}
+            <UserLink username={data.reviewer.username}>{data.reviewer.gitAccount}</UserLink>{' '}
             approved this contribution{' '}
             <Tooltip title={moment(data.timestamp).format('dddd, MMMM Do YYYY, h:mm:ss a')} arrow>
               <kbd

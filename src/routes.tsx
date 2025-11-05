@@ -28,7 +28,7 @@ import RepoList from './ui/views/RepoList/RepoList';
 import SettingsView from './ui/views/Settings/Settings';
 
 import { RepoIcon } from '@primer/octicons-react';
-import { Group, AccountCircle, Dashboard, Settings } from '@material-ui/icons';
+import { AccountCircle, Dashboard, Group, Settings } from '@material-ui/icons';
 
 import { Route } from './types/models';
 
@@ -90,12 +90,10 @@ const dashboardRoutes: Route[] = [
     visible: true,
   },
   {
-    path: '/admin/user/:id',
+    path: '/user/:id',
     name: 'User',
     icon: Person,
-    component: (props) => (
-      <RouteGuard component={User} fullRoutePath={`/dashboard/admin/user/:id`} />
-    ),
+    component: (props) => <RouteGuard component={User} fullRoutePath={`/dashboard/user/:id`} />,
     layout: '/dashboard',
     visible: false,
   },
