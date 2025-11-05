@@ -11,8 +11,8 @@ export default {
     return action;
   }),
   baz: {
-    exec: (async (req, action) => {
+    exec: async (req, action) => {
       console.log('not a real plugin object');
-    }),
+    },
   },
 };
