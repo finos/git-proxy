@@ -23,6 +23,7 @@ import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
 import { trimTrailingDotGit } from '../../../db/helper';
 import { fetchRemoteRepositoryData } from '../../utils';
 import { SCMRepositoryMetadata } from '../../../types/models';
+import UserLink from '../../components/UserLink/UserLink';
 import DeleteRepoDialog from './Components/DeleteRepoDialog';
 
 interface RepoData {
@@ -202,7 +203,7 @@ const RepoDetails: React.FC = () => {
                       {data.users.canAuthorise.map((row) => (
                         <TableRow key={row}>
                           <TableCell align='left'>
-                            <a href={`/dashboard/user/${row}`}>{row}</a>
+                            <UserLink username={row} />
                           </TableCell>
                           {user.admin && (
                             <TableCell align='right' component='th' scope='row'>
@@ -245,7 +246,7 @@ const RepoDetails: React.FC = () => {
                       {data.users.canPush.map((row) => (
                         <TableRow key={row}>
                           <TableCell align='left'>
-                            <a href={`/dashboard/user/${row}`}>{row}</a>
+                            <UserLink username={row} />
                           </TableCell>
                           {user.admin && (
                             <TableCell align='right' component='th' scope='row'>
