@@ -1,4 +1,5 @@
-import { StepData } from '../proxy/actions/Step';
+import { Action } from '../proxy/actions';
+import { Step, StepData } from '../proxy/actions/Step';
 import { CommitData } from '../proxy/processors/types';
 
 export interface UserData {
@@ -12,27 +13,8 @@ export interface UserData {
   admin?: boolean;
 }
 
-export interface PushData {
-  id: string;
-  url: string;
-  repo: string;
-  branch: string;
-  commitFrom: string;
-  commitTo: string;
-  commitData: CommitData[];
-  diff: {
-    content: string;
-  };
-  error: boolean;
-  canceled?: boolean;
-  rejected?: boolean;
-  blocked?: boolean;
-  authorised?: boolean;
-  attestation?: AttestationFormData;
-  autoApproved?: boolean;
-  timestamp: string | Date;
-  allowPush?: boolean;
-  lastStep?: StepData;
+export interface PushActionView extends Action {
+  diff: Step;
 }
 
 export interface RepositoryData {

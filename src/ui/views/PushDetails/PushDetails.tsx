@@ -22,13 +22,13 @@ import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/g
 import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
-import { PushData } from '../../types';
+import { PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
 import { generateEmailLink, getGitProvider } from '../../utils';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const [data, setData] = useState<PushData | null>(null);
+  const [data, setData] = useState<PushActionView | null>(null);
   const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
@@ -108,7 +108,7 @@ const Dashboard: React.FC = () => {
   }
 
   const repoFullName = trimTrailingDotGit(data.repo);
-  const repoBranch = trimPrefixRefsHeads(data.branch);
+  const repoBranch = trimPrefixRefsHeads(data.branch ?? '');
   const repoUrl = data.url;
   const repoWebUrl = trimTrailingDotGit(repoUrl);
   const gitProvider = getGitProvider(repoUrl);
@@ -308,7 +308,7 @@ const Dashboard: React.FC = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {data.commitData.map((c) => (
+                  {data.commitData?.map((c) => (
                     <TableRow key={c.commitTimestamp}>
                       <TableCell>
                         {moment.unix(Number(c.commitTimestamp || 0)).toString()}

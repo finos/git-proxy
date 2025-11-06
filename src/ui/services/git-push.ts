@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
 import { API_BASE } from '../apiBase';
+import { Action, Step } from '../../proxy/actions';
 
 const API_V1_BASE = `${API_BASE}/api/v1`;
 
@@ -15,9 +16,9 @@ const getPush = async (
   setIsLoading(true);
 
   try {
-    const response = await axios(url, getAxiosConfig());
-    const data = response.data;
-    data.diff = data.steps.find((x: any) => x.stepName === 'diff');
+    const response = await axios<Action>(url, getAxiosConfig());
+    const data: Action & { diff?: Step } = response.data;
+    data.diff = data.steps.find((x: Step) => x.stepName === 'diff');
     setData(data);
   } catch (error: any) {
     if (error.response?.status === 401) setAuth(false);
@@ -46,7 +47,7 @@ const getPushes = async (
   setIsLoading(true);
 
   try {
-    const response = await axios(url.toString(), getAxiosConfig());
+    const response = await axios<Action[]>(url.toString(), getAxiosConfig());
     setData(response.data);
   } catch (error: any) {
     setIsError(true);
