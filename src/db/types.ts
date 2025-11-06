@@ -29,6 +29,13 @@ export type QueryValue = string | boolean | number | undefined;
 
 export type UserRole = 'canPush' | 'canAuthorise';
 
+export type PublicKeyRecord = {
+  key: string;
+  name: string;
+  addedAt: string;
+  fingerprint: string;
+};
+
 export class Repo {
   project: string;
   name: string;
@@ -58,7 +65,7 @@ export class User {
   email: string;
   admin: boolean;
   oidcId?: string | null;
-  publicKeys?: string[];
+  publicKeys?: PublicKeyRecord[];
   displayName?: string | null;
   title?: string | null;
   _id?: string;
@@ -70,7 +77,7 @@ export class User {
     email: string,
     admin: boolean,
     oidcId: string | null = null,
-    publicKeys: string[] = [],
+    publicKeys: PublicKeyRecord[] = [],
     _id?: string,
   ) {
     this.username = username;
@@ -110,7 +117,8 @@ export interface Sink {
   getUsers: (query?: Partial<UserQuery>) => Promise<User[]>;
   createUser: (user: User) => Promise<void>;
   deleteUser: (username: string) => Promise<void>;
-  updateUser: (user: Partial<User>) => Promise<void>;
-  addPublicKey: (username: string, publicKey: string) => Promise<void>;
-  removePublicKey: (username: string, publicKey: string) => Promise<void>;
+  updateUser: (user: User) => Promise<void>;
+  addPublicKey: (username: string, publicKey: PublicKeyRecord) => Promise<void>;
+  removePublicKey: (username: string, fingerprint: string) => Promise<void>;
+  getPublicKeys: (username: string) => Promise<PublicKeyRecord[]>;
 }
