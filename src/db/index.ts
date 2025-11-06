@@ -1,5 +1,5 @@
 import { AuthorisedRepo } from '../config/generated/config';
-import { PushQuery, Repo, RepoQuery, Sink, User, UserQuery } from './types';
+import { PushQuery, Repo, RepoQuery, Sink, User, UserQuery, PublicKeyRecord } from './types';
 import * as bcrypt from 'bcryptjs';
 import * as config from '../config';
 import * as mongo from './mongo';
@@ -171,9 +171,11 @@ export const findUserBySSHKey = (sshKey: string): Promise<User | null> =>
   sink.findUserBySSHKey(sshKey);
 export const getUsers = (query?: Partial<UserQuery>): Promise<User[]> => sink.getUsers(query);
 export const deleteUser = (username: string): Promise<void> => sink.deleteUser(username);
-export const updateUser = (user: Partial<User>): Promise<void> => sink.updateUser(user);
-export const addPublicKey = (username: string, publicKey: string): Promise<void> =>
+export const updateUser = (user: User): Promise<void> => sink.updateUser(user);
+export const addPublicKey = (username: string, publicKey: PublicKeyRecord): Promise<void> =>
   sink.addPublicKey(username, publicKey);
-export const removePublicKey = (username: string, publicKey: string): Promise<void> =>
-  sink.removePublicKey(username, publicKey);
-export type { PushQuery, Repo, Sink, User } from './types';
+export const removePublicKey = (username: string, fingerprint: string): Promise<void> =>
+  sink.removePublicKey(username, fingerprint);
+export const getPublicKeys = (username: string): Promise<PublicKeyRecord[]> =>
+  sink.getPublicKeys(username);
+export type { PushQuery, Repo, Sink, User, PublicKeyRecord } from './types';
