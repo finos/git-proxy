@@ -3,6 +3,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
+import { utils } from 'ssh2';
+import * as crypto from 'crypto';
 
 const API_BASE_URL = process.env.GIT_PROXY_API_URL || 'http://localhost:3000';
 const GIT_PROXY_COOKIE_FILE = path.join(
@@ -21,6 +23,23 @@ interface ErrorWithResponse {
   };
   code?: string;
   message: string;
+}
+
+// Calculate SHA-256 fingerprint from SSH public key
+// Note: This function is duplicated in src/service/routes/users.js to keep CLI and server independent
+function calculateFingerprint(publicKeyStr: string): string | null {
+  try {
+    const parsed = utils.parseKey(publicKeyStr);
+    if (!parsed || parsed instanceof Error) {
+      return null;
+    }
+    const pubKey = parsed.getPublicSSH();
+    const hash = crypto.createHash('sha256').update(pubKey).digest('base64');
+    return `SHA256:${hash}`;
+  } catch (err) {
+    console.error('Error calculating fingerprint:', err);
+    return null;
+  }
 }
 
 async function addSSHKey(username: string, keyPath: string): Promise<void> {
@@ -90,15 +109,28 @@ async function removeSSHKey(username: string, keyPath: string): Promise<void> {
     // Read the public key file
     const publicKey = fs.readFileSync(keyPath, 'utf8').trim();
 
-    // Make the API request
-    await axios.delete(`${API_BASE_URL}/api/v1/user/${username}/ssh-keys`, {
-      data: { publicKey },
-      withCredentials: true,
-      headers: {
-        'Content-Type': 'application/json',
-        Cookie: cookies,
+    // Strip the comment from the key (everything after the last space)
+    const keyWithoutComment = publicKey.split(' ').slice(0, 2).join(' ');
+
+    // Calculate fingerprint
+    const fingerprint = calculateFingerprint(keyWithoutComment);
+    if (!fingerprint) {
+      console.error('Invalid SSH key format. Unable to calculate fingerprint.');
+      process.exit(1);
+    }
+
+    console.log(`Removing SSH key with fingerprint: ${fingerprint}`);
+
+    // Make the API request using fingerprint in path
+    await axios.delete(
+      `${API_BASE_URL}/api/v1/user/${username}/ssh-keys/${encodeURIComponent(fingerprint)}`,
+      {
+        withCredentials: true,
+        headers: {
+          Cookie: cookies,
+        },
       },
-    });
+    );
 
     console.log('SSH key removed successfully!');
   } catch (error) {
