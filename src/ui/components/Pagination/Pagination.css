@@ -1,6 +1,7 @@
 .paginationContainer {
   display: flex;
   justify-content: center;
+  align-items: center;
   padding: 1rem;
   margin-top: 20px;
   gap: 10px;
