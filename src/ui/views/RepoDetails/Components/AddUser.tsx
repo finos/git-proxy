@@ -16,7 +16,7 @@ import Snackbar from '@material-ui/core/Snackbar';
 import { addUser } from '../../../services/repo';
 import { getUsers } from '../../../services/user';
 import { PersonAdd } from '@material-ui/icons';
-import { UserData } from '../../../types';
+import { PublicUser } from '../../../../db/types';
 import Danger from '../../../components/Typography/Danger';
 
 interface AddUserDialogProps {

@@ -11,7 +11,8 @@ import styles from '../assets/jss/material-dashboard-react/layouts/dashboardStyl
 import logo from '../assets/img/git-proxy.png';
 import { UserContext } from '../../context';
 import { getUser } from '../services/user';
-import { Route as RouteType, UserData } from '../types';
+import { Route as RouteType } from '../types';
+import { PublicUser } from '../../db/types';
 
 interface DashboardProps {
   [key: string]: any;
@@ -27,7 +28,7 @@ const Dashboard: React.FC<DashboardProps> = ({ ...rest }) => {
   const mainPanel = useRef<HTMLDivElement>(null);
   const [color] = useState<'purple' | 'blue' | 'green' | 'orange' | 'red'>('blue');
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
-  const [user, setUser] = useState<Partial<UserData>>({});
+  const [user, setUser] = useState<PublicUser | null>(null);
   const { id } = useParams<{ id?: string }>();
 
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);

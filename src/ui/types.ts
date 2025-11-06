@@ -1,17 +1,5 @@
 import { Action } from '../proxy/actions';
-import { Step, StepData } from '../proxy/actions/Step';
-import { CommitData } from '../proxy/processors/types';
-
-export interface UserData {
-  id: string;
-  name: string;
-  username: string;
-  email?: string;
-  displayName?: string;
-  title?: string;
-  gitAccount?: string;
-  admin?: boolean;
-}
+import { Step } from '../proxy/actions/Step';
 
 export interface PushActionView extends Action {
   diff: Step;

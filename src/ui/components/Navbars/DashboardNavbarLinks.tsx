@@ -16,7 +16,7 @@ import { AccountCircle } from '@material-ui/icons';
 import { getUser } from '../../services/user';
 import axios from 'axios';
 import { getAxiosConfig } from '../../services/auth';
-import { UserData } from '../../types';
+import { PublicUser } from '../../../db/types';
 
 import { API_BASE } from '../../apiBase';
 

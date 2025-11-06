@@ -81,6 +81,15 @@ export class User {
   }
 }
 
+export interface PublicUser {
+  username: string;
+  displayName: string;
+  email: string;
+  title: string;
+  gitAccount: string;
+  admin: boolean;
+}
+
 export interface Sink {
   getSessionStore: () => MongoDBStore | undefined;
   getPushes: (query: Partial<PushQuery>) => Promise<Action[]>;

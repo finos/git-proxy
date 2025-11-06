@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getUserInfo } from '../services/auth';
-import { UserData } from '../types';
+import { PublicUser } from '../../db/types';
 
 interface AuthContextType {
-  user: UserData | null;
+  user: PublicUser | null;
   setUser: React.Dispatch<any>;
   refreshUser: () => Promise<void>;
   isLoading: boolean;
@@ -12,7 +12,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<React.PropsWithChildren<object>> = ({ children }) => {
-  const [user, setUser] = useState<UserData | null>(null);
+  const [user, setUser] = useState<PublicUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = async () => {

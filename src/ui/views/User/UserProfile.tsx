@@ -9,7 +9,8 @@ import FormLabel from '@material-ui/core/FormLabel';
 import { getUser, updateUser } from '../../services/user';
 import { UserContext } from '../../../context';
 
-import { UserContextType, UserData } from '../../types';
+import { UserContextType } from '../../types';
+import { PublicUser } from '../../../db/types';
 import { makeStyles } from '@material-ui/core/styles';
 
 import { LogoGithubIcon } from '@primer/octicons-react';

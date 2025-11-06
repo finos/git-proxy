@@ -1,5 +1,5 @@
 import { getCookie } from '../utils';
-import { UserData } from '../types';
+import { PublicUser } from '../../db/types';
 import { API_BASE } from '../apiBase';
 import { AxiosError } from 'axios';
 
@@ -14,7 +14,7 @@ interface AxiosConfig {
 /**
  * Gets the current user's information
  */
-export const getUserInfo = async (): Promise<UserData | null> => {
+export const getUserInfo = async (): Promise<PublicUser | null> => {
   try {
     const response = await fetch(`${API_BASE}/api/auth/me`, {
       credentials: 'include', // Sends cookies
