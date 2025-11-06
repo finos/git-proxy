@@ -54,10 +54,6 @@ export interface GitProxyConfig {
    */
   domains?: { [key: string]: any };
   /**
-   * Limits for git operations such as maximum pack size
-   */
-  limits?: Limits;
-  /**
    * List of plugins to integrate on GitProxy's push or pull actions. Each value is either a
    * file path or a module name.
    */
@@ -149,17 +145,6 @@ export interface Gitleaks {
   enabled?: boolean;
   ignoreGitleaksAllow?: boolean;
   noColor?: boolean;
-  [property: string]: any;
-}
-
-/**
- * Limits for git operations
- */
-export interface Limits {
-  /**
-   * Maximum allowed size of git packfiles in bytes
-   */
-  maxPackSizeBytes?: number;
   [property: string]: any;
 }
 
@@ -330,10 +315,6 @@ export interface SSH {
    * Port for SSH proxy server to listen on
    */
   port?: number;
-  /**
-   * Credentials used when cloning repositories for SSH-originated pushes
-   */
-  clone?: SSHClone;
   [property: string]: any;
 }
 
@@ -349,23 +330,6 @@ export interface HostKey {
    * Path to public SSH host key
    */
   publicKeyPath: string;
-  [property: string]: any;
-}
-
-/**
- * Configuration for cloning repositories during SSH pushes
- */
-export interface SSHClone {
-  serviceToken?: ServiceToken;
-  [property: string]: any;
-}
-
-/**
- * Basic authentication credentials used for cloning operations
- */
-export interface ServiceToken {
-  username?: string;
-  password?: string;
   [property: string]: any;
 }
 
@@ -610,7 +574,6 @@ const typeMap: any = {
       { json: 'cookieSecret', js: 'cookieSecret', typ: u(undefined, '') },
       { json: 'csrfProtection', js: 'csrfProtection', typ: u(undefined, true) },
       { json: 'domains', js: 'domains', typ: u(undefined, m('any')) },
-      { json: 'limits', js: 'limits', typ: u(undefined, r('Limits')) },
       { json: 'plugins', js: 'plugins', typ: u(undefined, a('')) },
       { json: 'privateOrganizations', js: 'privateOrganizations', typ: u(undefined, a('any')) },
       { json: 'proxyUrl', js: 'proxyUrl', typ: u(undefined, '') },
@@ -645,7 +608,6 @@ const typeMap: any = {
     ],
     'any',
   ),
-  Limits: o([{ json: 'maxPackSizeBytes', js: 'maxPackSizeBytes', typ: u(undefined, 3.14) }], 'any'),
   Ls: o([{ json: 'userInADGroup', js: 'userInADGroup', typ: u(undefined, '') }], false),
   AuthenticationElement: o(
     [
@@ -718,7 +680,6 @@ const typeMap: any = {
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'hostKey', js: 'hostKey', typ: u(undefined, r('HostKey')) },
       { json: 'port', js: 'port', typ: u(undefined, 3.14) },
-      { json: 'clone', js: 'clone', typ: u(undefined, r('SSHClone')) },
     ],
     'any',
   ),
@@ -726,17 +687,6 @@ const typeMap: any = {
     [
       { json: 'privateKeyPath', js: 'privateKeyPath', typ: '' },
       { json: 'publicKeyPath', js: 'publicKeyPath', typ: '' },
-    ],
-    'any',
-  ),
-  SSHClone: o(
-    [{ json: 'serviceToken', js: 'serviceToken', typ: u(undefined, r('ServiceToken')) }],
-    'any',
-  ),
-  ServiceToken: o(
-    [
-      { json: 'username', js: 'username', typ: u(undefined, '') },
-      { json: 'password', js: 'password', typ: u(undefined, '') },
     ],
     'any',
   ),
