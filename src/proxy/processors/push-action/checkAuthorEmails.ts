@@ -1,6 +1,6 @@
 import { Action, Step } from '../../actions';
 import { getCommitConfig } from '../../../config';
-import { Commit } from '../../actions/Action';
+import { CommitData } from '../types';
 import { isEmail } from 'validator';
 
 const commitConfig = getCommitConfig();
@@ -33,7 +33,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('checkAuthorEmails');
 
   const uniqueAuthorEmails = [
-    ...new Set(action.commitData?.map((commit: Commit) => commit.authorEmail)),
+    ...new Set(action.commitData?.map((commitData: CommitData) => commitData.authorEmail)),
   ];
   console.log({ uniqueAuthorEmails });
 

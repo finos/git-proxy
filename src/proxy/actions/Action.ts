@@ -1,20 +1,7 @@
 import { processGitURLForNameAndOrg, processUrlPath } from '../routes/helper';
 import { Step } from './Step';
-
-/**
- * Represents a commit.
- */
-export interface Commit {
-  message: string;
-  committer: string;
-  committerEmail: string;
-  tree: string;
-  parent: string;
-  author: string;
-  authorEmail: string;
-  commitTS?: string; // TODO: Normalize this to commitTimestamp
-  commitTimestamp?: string;
-}
+import { CommitData } from '../processors/types';
+import { AttestationFormData } from '../../ui/types';
 
 /**
  * Class representing a Push.
@@ -39,7 +26,7 @@ class Action {
   rejected: boolean = false;
   autoApproved: boolean = false;
   autoRejected: boolean = false;
-  commitData?: Commit[] = [];
+  commitData?: CommitData[] = [];
   commitFrom?: string;
   commitTo?: string;
   branch?: string;
@@ -47,7 +34,7 @@ class Action {
   author?: string;
   user?: string;
   userEmail?: string;
-  attestation?: string;
+  attestation?: AttestationFormData;
   lastStep?: Step;
   proxyGitPath?: string;
   newIdxFiles?: string[];
