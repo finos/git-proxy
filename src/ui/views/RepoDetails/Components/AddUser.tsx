@@ -35,7 +35,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   onClose,
 }) => {
   const [username, setUsername] = useState<string>('');
-  const [data, setData] = useState<UserData[]>([]);
+  const [users, setUsers] = useState<PublicUser[]>([]);
   const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -77,7 +77,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   };
 
   useEffect(() => {
-    getUsers(setIsLoading, setData, setAuth, setErrorMessage);
+    getUsers(setIsLoading, setUsers, setAuth, setErrorMessage);
   }, []);
 
   if (errorMessage) return <Danger>{errorMessage}</Danger>;
@@ -119,9 +119,9 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                     onChange={handleChange}
                     disabled={isLoading}
                   >
-                    {data.map((row) => (
-                      <MenuItem key={row.username} value={row.username}>
-                        {row.username} / {row.gitAccount}
+                    {users.map((user) => (
+                      <MenuItem key={user.username} value={user.username}>
+                        {user.username} / {user.gitAccount}
                       </MenuItem>
                     ))}
                   </Select>
