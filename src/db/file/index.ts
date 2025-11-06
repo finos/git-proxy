@@ -31,4 +31,5 @@ export const {
   updateUser,
   addPublicKey,
   removePublicKey,
+  getPublicKeys,
 } = users;

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import Datastore from '@seald-io/nedb';
 
-import { User, UserQuery } from '../types';
+import { User, UserQuery, PublicKeyRecord } from '../types';
 import { DuplicateSSHKeyError, UserNotFoundError } from '../../errors/DatabaseErrors';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
@@ -181,7 +181,7 @@ export const getUsers = (query: Partial<UserQuery> = {}): Promise<User[]> => {
   });
 };
 
-export const addPublicKey = (username: string, publicKey: string): Promise<void> => {
+export const addPublicKey = (username: string, publicKey: PublicKeyRecord): Promise<void> => {
   return new Promise((resolve, reject) => {
     // Check if this key already exists for any user
     findUserBySSHKey(publicKey)
@@ -202,20 +202,28 @@ export const addPublicKey = (username: string, publicKey: string): Promise<void>
         if (!user.publicKeys) {
           user.publicKeys = [];
         }
-        if (!user.publicKeys.includes(publicKey)) {
-          user.publicKeys.push(publicKey);
-          updateUser(user)
-            .then(() => resolve())
-            .catch(reject);
-        } else {
-          resolve();
+
+        // Check if key already exists (by key content or fingerprint)
+        const keyExists = user.publicKeys.some(
+          (k) =>
+            k.key === publicKey.key || (k.fingerprint && k.fingerprint === publicKey.fingerprint),
+        );
+
+        if (keyExists) {
+          reject(new Error('SSH key already exists'));
+          return;
         }
+
+        user.publicKeys.push(publicKey);
+        updateUser(user)
+          .then(() => resolve())
+          .catch(reject);
       })
       .catch(reject);
   });
 };
 
-export const removePublicKey = (username: string, publicKey: string): Promise<void> => {
+export const removePublicKey = (username: string, fingerprint: string): Promise<void> => {
   return new Promise((resolve, reject) => {
     findUser(username)
       .then((user) => {
@@ -228,7 +236,7 @@ export const removePublicKey = (username: string, publicKey: string): Promise<vo
           resolve();
           return;
         }
-        user.publicKeys = user.publicKeys.filter((key) => key !== publicKey);
+        user.publicKeys = user.publicKeys.filter((k) => k.fingerprint !== fingerprint);
         updateUser(user)
           .then(() => resolve())
           .catch(reject);
@@ -239,7 +247,7 @@ export const removePublicKey = (username: string, publicKey: string): Promise<vo
 
 export const findUserBySSHKey = (sshKey: string): Promise<User | null> => {
   return new Promise<User | null>((resolve, reject) => {
-    db.findOne({ publicKeys: sshKey }, (err: Error | null, doc: User) => {
+    db.findOne({ 'publicKeys.key': sshKey }, (err: Error | null, doc: User) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {
@@ -252,5 +260,14 @@ export const findUserBySSHKey = (sshKey: string): Promise<User | null> => {
         }
       }
     });
+  });
+};
+
+export const getPublicKeys = (username: string): Promise<PublicKeyRecord[]> => {
+  return findUser(username).then((user) => {
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return user.publicKeys || [];
   });
 };
