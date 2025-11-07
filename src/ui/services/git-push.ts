@@ -2,13 +2,14 @@ import axios from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
 import { API_BASE } from '../apiBase';
 import { Action, Step } from '../../proxy/actions';
+import { PushActionView } from '../types';
 
 const API_V1_BASE = `${API_BASE}/api/v1`;
 
 const getPush = async (
   id: string,
   setIsLoading: (isLoading: boolean) => void,
-  setData: (data: any) => void,
+  setPush: (push: PushActionView) => void,
   setAuth: (auth: boolean) => void,
   setIsError: (isError: boolean) => void,
 ): Promise<void> => {
@@ -19,7 +20,7 @@ const getPush = async (
     const response = await axios<Action>(url, getAxiosConfig());
     const data: Action & { diff?: Step } = response.data;
     data.diff = data.steps.find((x: Step) => x.stepName === 'diff');
-    setData(data);
+    setPush(data as PushActionView);
   } catch (error: any) {
     if (error.response?.status === 401) setAuth(false);
     else setIsError(true);
@@ -30,7 +31,7 @@ const getPush = async (
 
 const getPushes = async (
   setIsLoading: (isLoading: boolean) => void,
-  setData: (data: any) => void,
+  setPushes: (pushes: PushActionView[]) => void,
   setAuth: (auth: boolean) => void,
   setIsError: (isError: boolean) => void,
   setErrorMessage: (errorMessage: string) => void,
@@ -48,7 +49,7 @@ const getPushes = async (
 
   try {
     const response = await axios<Action[]>(url.toString(), getAxiosConfig());
-    setData(response.data);
+    setPushes(response.data as PushActionView[]);
   } catch (error: any) {
     setIsError(true);
 

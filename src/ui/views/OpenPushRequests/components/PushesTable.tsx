@@ -27,7 +27,7 @@ const useStyles = makeStyles(styles as any);
 
 const PushesTable: React.FC<PushesTableProps> = (props) => {
   const classes = useStyles();
-  const [data, setData] = useState<PushActionView[]>([]);
+  const [pushes, setPushes] = useState<PushActionView[]>([]);
   const [filteredData, setFilteredData] = useState<PushActionView[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [, setIsError] = useState(false);
@@ -46,26 +46,26 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
       authorised: props.authorised ?? false,
       rejected: props.rejected ?? false,
     };
-    getPushes(setIsLoading, setData, setAuth, setIsError, props.handleError, query);
+    getPushes(setIsLoading, setPushes, setAuth, setIsError, props.handleError, query);
   }, [props]);
 
   useEffect(() => {
-    setFilteredData(data);
-  }, [data]);
+    setFilteredData(pushes);
+  }, [pushes]);
 
   useEffect(() => {
     const lowerCaseTerm = searchTerm.toLowerCase();
     const filtered = searchTerm
-      ? data.filter(
+      ? pushes.filter(
           (item) =>
             item.repo.toLowerCase().includes(lowerCaseTerm) ||
             item.commitTo?.toLowerCase().includes(lowerCaseTerm) ||
             item.commitData?.[0]?.message.toLowerCase().includes(lowerCaseTerm),
         )
-      : data;
+      : pushes;
     setFilteredData(filtered);
     setCurrentPage(1);
-  }, [searchTerm, data]);
+  }, [searchTerm, pushes]);
 
   const handleSearch = (term: string) => setSearchTerm(term.trim());
 
