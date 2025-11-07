@@ -28,7 +28,7 @@ const Dashboard: React.FC<DashboardProps> = ({ ...rest }) => {
   const mainPanel = useRef<HTMLDivElement>(null);
   const [color] = useState<'purple' | 'blue' | 'green' | 'orange' | 'red'>('blue');
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
-  const [user, setUser] = useState<PublicUser | null>(null);
+  const [user, setUser] = useState<PublicUser>({} as PublicUser);
   const { id } = useParams<{ id?: string }>();
 
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
