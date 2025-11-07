@@ -42,7 +42,7 @@ jobs:
           mongodb-version: ${{ matrix.mongodb-version }}
 
       - name: Install dependencies
-        run: npm i
+        run: npm ci
 
       # for now only check the types of the server
       # tsconfig isn't quite set up right to respect what vite accepts

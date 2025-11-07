@@ -1,12 +1,11 @@
 import axios from 'axios';
 import { getAxiosConfig, processAuthError } from './auth.js';
-import { API_BASE } from '../apiBase';
 import { RepositoryData, RepositoryDataWithId } from '../views/RepoList/Components/NewRepo';
+import { getApiV1BaseUrl } from './apiConfig';
 
-const API_V1_BASE = `${API_BASE}/api/v1`;
-
-const canAddUser = (repoId: string, user: string, action: string) => {
-  const url = new URL(`${API_V1_BASE}/repo/${repoId}`);
+const canAddUser = async (repoId: string, user: string, action: string) => {
+  const apiV1Base = await getApiV1BaseUrl();
+  const url = new URL(`${apiV1Base}/repo/${repoId}`);
   return axios
     .get(url.toString(), getAxiosConfig())
     .then((response) => {
@@ -37,7 +36,8 @@ const getRepos = async (
   setErrorMessage: (errorMessage: string) => void,
   query: Record<string, boolean> = {},
 ): Promise<void> => {
-  const url = new URL(`${API_V1_BASE}/repo`);
+  const apiV1Base = await getApiV1BaseUrl();
+  const url = new URL(`${apiV1Base}/repo`);
   url.search = new URLSearchParams(query as any).toString();
   setIsLoading(true);
   await axios(url.toString(), getAxiosConfig())
@@ -68,7 +68,8 @@ const getRepo = async (
   setIsError: (isError: boolean) => void,
   id: string,
 ): Promise<void> => {
-  const url = new URL(`${API_V1_BASE}/repo/${id}`);
+  const apiV1Base = await getApiV1BaseUrl();
+  const url = new URL(`${apiV1Base}/repo/${id}`);
   setIsLoading(true);
   await axios(url.toString(), getAxiosConfig())
     .then((response) => {
@@ -90,7 +91,8 @@ const getRepo = async (
 const addRepo = async (
   data: RepositoryData,
 ): Promise<{ success: boolean; message?: string; repo: RepositoryDataWithId | null }> => {
-  const url = new URL(`${API_V1_BASE}/repo`);
+  const apiV1Base = await getApiV1BaseUrl();
+  const url = new URL(`${apiV1Base}/repo`);
 
   try {
     const response = await axios.post(url.toString(), data, getAxiosConfig());
@@ -110,7 +112,8 @@ const addRepo = async (
 const addUser = async (repoId: string, user: string, action: string): Promise<void> => {
   const canAdd = await canAddUser(repoId, user, action);
   if (canAdd) {
-    const url = new URL(`${API_V1_BASE}/repo/${repoId}/user/${action}`);
+    const apiV1Base = await getApiV1BaseUrl();
+    const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}`);
     const data = { username: user };
     await axios.patch(url.toString(), data, getAxiosConfig()).catch((error: any) => {
       console.log(error.response.data.message);
@@ -123,7 +126,8 @@ const addUser = async (repoId: string, user: string, action: string): Promise<vo
 };
 
 const deleteUser = async (user: string, repoId: string, action: string): Promise<void> => {
-  const url = new URL(`${API_V1_BASE}/repo/${repoId}/user/${action}/${user}`);
+  const apiV1Base = await getApiV1BaseUrl();
+  const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}/${user}`);
 
   await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
     console.log(error.response.data.message);
@@ -132,7 +136,8 @@ const deleteUser = async (user: string, repoId: string, action: string): Promise
 };
 
 const deleteRepo = async (repoId: string): Promise<void> => {
-  const url = new URL(`${API_V1_BASE}/repo/${repoId}/delete`);
+  const apiV1Base = await getApiV1BaseUrl();
+  const url = new URL(`${apiV1Base}/repo/${repoId}/delete`);
 
   await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
     console.log(error.response.data.message);
