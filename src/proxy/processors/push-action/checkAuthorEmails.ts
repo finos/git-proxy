@@ -3,9 +3,9 @@ import { getCommitConfig } from '../../../config';
 import { Commit } from '../../actions/Action';
 import { isEmail } from 'validator';
 
-const commitConfig = getCommitConfig();
-
 const isEmailAllowed = (email: string): boolean => {
+  const commitConfig = getCommitConfig();
+
   if (!email || !isEmail(email)) {
     return false;
   }
