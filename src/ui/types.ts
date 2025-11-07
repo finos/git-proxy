@@ -1,26 +1,16 @@
 import { Action } from '../proxy/actions';
 import { Step } from '../proxy/actions/Step';
+import { Repo } from '../db/types';
 
 export interface PushActionView extends Action {
   diff: Step;
 }
 
-export interface RepositoryData {
-  _id?: string;
-  project: string;
-  name: string;
-  url: string;
-  maxUser: number;
+export interface RepoView extends Repo {
+  proxyURL: string;
   lastModified?: string;
   dateCreated?: string;
-  proxyURL?: string;
-  users?: {
-    canPush?: string[];
-    canAuthorise?: string[];
-  };
 }
-
-export type RepositoryDataWithId = Required<Pick<RepositoryData, '_id'>> & RepositoryData;
 
 interface QuestionTooltipLink {
   text: string;
