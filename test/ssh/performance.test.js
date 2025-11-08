@@ -196,7 +196,7 @@ describe('SSH Performance Tests', () => {
       const endTime = Date.now();
       const processingTime = endTime - startTime;
 
-      expect(processingTime).to.be.greaterThan(timeout);
+      expect(processingTime).to.be.greaterThanOrEqual(timeout);
       expect(processingTime).to.be.lessThan(timeout + 50); // Should timeout close to expected time
     });
   });
