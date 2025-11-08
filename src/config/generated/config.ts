@@ -23,9 +23,10 @@ export interface GitProxyConfig {
    */
   apiAuthentication?: AuthenticationElement[];
   /**
-   * Customisable questions to add to attestation form
+   * Configuration for the attestation form displayed to reviewers. Reviewers will need to
+   * check the box next to each question in order to complete the review attestation.
    */
-  attestationConfig?: { [key: string]: any };
+  attestationConfig?: AttestationConfig;
   /**
    * List of authentication sources. The first source in the configuration with enabled=true
    * will be used.
@@ -36,9 +37,10 @@ export interface GitProxyConfig {
    */
   authorisedList?: AuthorisedRepo[];
   /**
-   * Enforce rules and patterns on commits including e-mail and message
+   * Block commits based on rules defined over author/committer e-mail addresses, commit
+   * message content and diff content
    */
-  commitConfig?: { [key: string]: any };
+  commitConfig?: CommitConfig;
   configurationSources?: any;
   /**
    * Customisable e-mail address to share in proxy responses and warnings
@@ -50,11 +52,11 @@ export interface GitProxyConfig {
    */
   csrfProtection?: boolean;
   /**
-   * Provide domains to use alternative to the defaults
+   * Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL
    */
-  domains?: { [key: string]: any };
+  domains?: Domains;
   /**
-   * Limits for git operations such as maximum pack size
+   * Configuration for various limits
    */
   limits?: Limits;
   /**
@@ -63,7 +65,8 @@ export interface GitProxyConfig {
    */
   plugins?: string[];
   /**
-   * Pattern searches for listed private organizations are disabled
+   * Provider searches for listed private organizations are disabled, see
+   * commitConfig.diff.block.providers
    */
   privateOrganizations?: any[];
   /**
@@ -117,11 +120,6 @@ export interface GitProxyConfig {
  */
 export interface API {
   /**
-   * Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer
-   * referenced in the codebase.
-   */
-  github?: Github;
-  /**
    * Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin
    */
   gitleaks?: Gitleaks;
@@ -134,14 +132,6 @@ export interface API {
 }
 
 /**
- * Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer
- * referenced in the codebase.
- */
-export interface Github {
-  baseUrl?: string;
-}
-
-/**
  * Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin
  */
 export interface Gitleaks {
@@ -149,17 +139,6 @@ export interface Gitleaks {
   enabled?: boolean;
   ignoreGitleaksAllow?: boolean;
   noColor?: boolean;
-  [property: string]: any;
-}
-
-/**
- * Limits for git operations
- */
-export interface Limits {
-  /**
-   * Maximum allowed size of git packfiles in bytes
-   */
-  maxPackSizeBytes?: number;
   [property: string]: any;
 }
 
@@ -276,10 +255,187 @@ export enum Type {
   Openidconnect = 'openidconnect',
 }
 
+/**
+ * Configuration for the attestation form displayed to reviewers. Reviewers will need to
+ * check the box next to each question in order to complete the review attestation.
+ */
+export interface AttestationConfig {
+  /**
+   * Customisable attestation questions to add to attestation form.
+   */
+  questions?: Question[];
+}
+
+export interface Question {
+  /**
+   * The text of the question that will be displayed to the reviewer
+   */
+  label: string;
+  /**
+   * A tooltip and optional set of links that will be displayed on mouseover of the question
+   * and used to provide additional guidance to the reviewer.
+   */
+  tooltip: QuestionTooltip;
+}
+
+/**
+ * A tooltip and optional set of links that will be displayed on mouseover of the question
+ * and used to provide additional guidance to the reviewer.
+ */
+export interface QuestionTooltip {
+  links?: string[];
+  text: string;
+}
+
 export interface AuthorisedRepo {
   name: string;
   project: string;
   url: string;
+  [property: string]: any;
+}
+
+/**
+ * Block commits based on rules defined over author/committer e-mail addresses, commit
+ * message content and diff content
+ */
+export interface CommitConfig {
+  /**
+   * Rules applied to commit authors
+   */
+  author?: Author;
+  /**
+   * Rules applied to commit diff content
+   */
+  diff?: Diff;
+  /**
+   * Rules applied to commit messages
+   */
+  message?: Message;
+}
+
+/**
+ * Rules applied to commit authors
+ */
+export interface Author {
+  /**
+   * Rules applied to author email addresses
+   */
+  email?: Email;
+}
+
+/**
+ * Rules applied to author email addresses
+ */
+export interface Email {
+  /**
+   * Rules applied to the domain portion of the email address (i.e. section after the @ symbol)
+   */
+  domain?: Domain;
+  /**
+   * Rules applied to the local portion of the email address (i.e. section before the @ symbol)
+   */
+  local?: Local;
+}
+
+/**
+ * Rules applied to the domain portion of the email address (i.e. section after the @ symbol)
+ */
+export interface Domain {
+  /**
+   * Allow only commits where the domain part of the email address matches this regular
+   * expression
+   */
+  allow?: string;
+}
+
+/**
+ * Rules applied to the local portion of the email address (i.e. section before the @ symbol)
+ */
+export interface Local {
+  /**
+   * Block commits with author email addresses where the first part matches this regular
+   * expression
+   */
+  block?: string;
+}
+
+/**
+ * Rules applied to commit diff content
+ */
+export interface Diff {
+  /**
+   * Block commits where the commit diff matches any of the given patterns
+   */
+  block?: DiffBlock;
+}
+
+/**
+ * Block commits where the commit diff matches any of the given patterns
+ */
+export interface DiffBlock {
+  /**
+   * Block commits where the commit diff content contains any of the given string literals
+   */
+  literals?: string[];
+  /**
+   * Block commits where the commit diff content matches any of the given regular expressions
+   */
+  patterns?: any[];
+  /**
+   * Block commits where the commit diff content matches any of the given regular expressions,
+   * except where the repository path (project/organisation) matches one of the listed
+   * privateOrganisations. The keys in this array are listed as the block type in logs.
+   */
+  providers?: { [key: string]: string };
+}
+
+/**
+ * Rules applied to commit messages
+ */
+export interface Message {
+  /**
+   * Block commits where the commit message matches any of the given patterns
+   */
+  block?: MessageBlock;
+}
+
+/**
+ * Block commits where the commit message matches any of the given patterns
+ */
+export interface MessageBlock {
+  /**
+   * Block commits where the commit message contains any of the given string literals
+   */
+  literals?: string[];
+  /**
+   * Block commits where the commit message matches any of the given regular expressions
+   */
+  patterns?: string[];
+}
+
+/**
+ * Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL
+ */
+export interface Domains {
+  /**
+   * Override for the default proxy URL, should include the protocol
+   */
+  proxy?: string;
+  /**
+   * Override for the service UI URL, should include the protocol
+   */
+  service?: string;
+  [property: string]: any;
+}
+
+/**
+ * Configuration for various limits
+ */
+export interface Limits {
+  /**
+   * Maximum size of a pack file in bytes (default 1GB)
+   */
+  maxPackSizeBytes?: number;
   [property: string]: any;
 }
 
@@ -330,10 +486,6 @@ export interface SSH {
    * Port for SSH proxy server to listen on
    */
   port?: number;
-  /**
-   * Credentials used when cloning repositories for SSH-originated pushes
-   */
-  clone?: SSHClone;
   [property: string]: any;
 }
 
@@ -349,23 +501,6 @@ export interface HostKey {
    * Path to public SSH host key
    */
   publicKeyPath: string;
-  [property: string]: any;
-}
-
-/**
- * Configuration for cloning repositories during SSH pushes
- */
-export interface SSHClone {
-  serviceToken?: ServiceToken;
-  [property: string]: any;
-}
-
-/**
- * Basic authentication credentials used for cloning operations
- */
-export interface ServiceToken {
-  username?: string;
-  password?: string;
   [property: string]: any;
 }
 
@@ -597,19 +732,23 @@ const typeMap: any = {
         js: 'apiAuthentication',
         typ: u(undefined, a(r('AuthenticationElement'))),
       },
-      { json: 'attestationConfig', js: 'attestationConfig', typ: u(undefined, m('any')) },
+      {
+        json: 'attestationConfig',
+        js: 'attestationConfig',
+        typ: u(undefined, r('AttestationConfig')),
+      },
       {
         json: 'authentication',
         js: 'authentication',
         typ: u(undefined, a(r('AuthenticationElement'))),
       },
       { json: 'authorisedList', js: 'authorisedList', typ: u(undefined, a(r('AuthorisedRepo'))) },
-      { json: 'commitConfig', js: 'commitConfig', typ: u(undefined, m('any')) },
+      { json: 'commitConfig', js: 'commitConfig', typ: u(undefined, r('CommitConfig')) },
       { json: 'configurationSources', js: 'configurationSources', typ: u(undefined, 'any') },
       { json: 'contactEmail', js: 'contactEmail', typ: u(undefined, '') },
       { json: 'cookieSecret', js: 'cookieSecret', typ: u(undefined, '') },
       { json: 'csrfProtection', js: 'csrfProtection', typ: u(undefined, true) },
-      { json: 'domains', js: 'domains', typ: u(undefined, m('any')) },
+      { json: 'domains', js: 'domains', typ: u(undefined, r('Domains')) },
       { json: 'limits', js: 'limits', typ: u(undefined, r('Limits')) },
       { json: 'plugins', js: 'plugins', typ: u(undefined, a('')) },
       { json: 'privateOrganizations', js: 'privateOrganizations', typ: u(undefined, a('any')) },
@@ -629,13 +768,11 @@ const typeMap: any = {
   ),
   API: o(
     [
-      { json: 'github', js: 'github', typ: u(undefined, r('Github')) },
       { json: 'gitleaks', js: 'gitleaks', typ: u(undefined, r('Gitleaks')) },
       { json: 'ls', js: 'ls', typ: u(undefined, r('Ls')) },
     ],
     false,
   ),
-  Github: o([{ json: 'baseUrl', js: 'baseUrl', typ: u(undefined, '') }], false),
   Gitleaks: o(
     [
       { json: 'configPath', js: 'configPath', typ: u(undefined, '') },
@@ -645,7 +782,6 @@ const typeMap: any = {
     ],
     'any',
   ),
-  Limits: o([{ json: 'maxPackSizeBytes', js: 'maxPackSizeBytes', typ: u(undefined, 3.14) }], 'any'),
   Ls: o([{ json: 'userInADGroup', js: 'userInADGroup', typ: u(undefined, '') }], false),
   AuthenticationElement: o(
     [
@@ -686,6 +822,24 @@ const typeMap: any = {
     ],
     'any',
   ),
+  AttestationConfig: o(
+    [{ json: 'questions', js: 'questions', typ: u(undefined, a(r('Question'))) }],
+    false,
+  ),
+  Question: o(
+    [
+      { json: 'label', js: 'label', typ: '' },
+      { json: 'tooltip', js: 'tooltip', typ: r('QuestionTooltip') },
+    ],
+    false,
+  ),
+  QuestionTooltip: o(
+    [
+      { json: 'links', js: 'links', typ: u(undefined, a('')) },
+      { json: 'text', js: 'text', typ: '' },
+    ],
+    false,
+  ),
   AuthorisedRepo: o(
     [
       { json: 'name', js: 'name', typ: '' },
@@ -694,6 +848,49 @@ const typeMap: any = {
     ],
     'any',
   ),
+  CommitConfig: o(
+    [
+      { json: 'author', js: 'author', typ: u(undefined, r('Author')) },
+      { json: 'diff', js: 'diff', typ: u(undefined, r('Diff')) },
+      { json: 'message', js: 'message', typ: u(undefined, r('Message')) },
+    ],
+    false,
+  ),
+  Author: o([{ json: 'email', js: 'email', typ: u(undefined, r('Email')) }], false),
+  Email: o(
+    [
+      { json: 'domain', js: 'domain', typ: u(undefined, r('Domain')) },
+      { json: 'local', js: 'local', typ: u(undefined, r('Local')) },
+    ],
+    false,
+  ),
+  Domain: o([{ json: 'allow', js: 'allow', typ: u(undefined, '') }], false),
+  Local: o([{ json: 'block', js: 'block', typ: u(undefined, '') }], false),
+  Diff: o([{ json: 'block', js: 'block', typ: u(undefined, r('DiffBlock')) }], false),
+  DiffBlock: o(
+    [
+      { json: 'literals', js: 'literals', typ: u(undefined, a('')) },
+      { json: 'patterns', js: 'patterns', typ: u(undefined, a('any')) },
+      { json: 'providers', js: 'providers', typ: u(undefined, m('')) },
+    ],
+    false,
+  ),
+  Message: o([{ json: 'block', js: 'block', typ: u(undefined, r('MessageBlock')) }], false),
+  MessageBlock: o(
+    [
+      { json: 'literals', js: 'literals', typ: u(undefined, a('')) },
+      { json: 'patterns', js: 'patterns', typ: u(undefined, a('')) },
+    ],
+    false,
+  ),
+  Domains: o(
+    [
+      { json: 'proxy', js: 'proxy', typ: u(undefined, '') },
+      { json: 'service', js: 'service', typ: u(undefined, '') },
+    ],
+    'any',
+  ),
+  Limits: o([{ json: 'maxPackSizeBytes', js: 'maxPackSizeBytes', typ: u(undefined, 3.14) }], 'any'),
   RateLimit: o(
     [
       { json: 'limit', js: 'limit', typ: 3.14 },
@@ -718,7 +915,6 @@ const typeMap: any = {
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'hostKey', js: 'hostKey', typ: u(undefined, r('HostKey')) },
       { json: 'port', js: 'port', typ: u(undefined, 3.14) },
-      { json: 'clone', js: 'clone', typ: u(undefined, r('SSHClone')) },
     ],
     'any',
   ),
@@ -726,17 +922,6 @@ const typeMap: any = {
     [
       { json: 'privateKeyPath', js: 'privateKeyPath', typ: '' },
       { json: 'publicKeyPath', js: 'publicKeyPath', typ: '' },
-    ],
-    'any',
-  ),
-  SSHClone: o(
-    [{ json: 'serviceToken', js: 'serviceToken', typ: u(undefined, r('ServiceToken')) }],
-    'any',
-  ),
-  ServiceToken: o(
-    [
-      { json: 'username', js: 'username', typ: u(undefined, '') },
-      { json: 'password', js: 'password', typ: u(undefined, '') },
     ],
     'any',
   ),

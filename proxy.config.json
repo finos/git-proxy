@@ -70,11 +70,7 @@
       }
     }
   ],
-  "api": {
-    "github": {
-      "baseUrl": "https://api.github.com"
-    }
-  },
+  "api": {},
   "commitConfig": {
     "author": {
       "email": {

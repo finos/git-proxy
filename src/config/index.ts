@@ -167,7 +167,7 @@ export const getDatabase = () => {
  * Get the list of enabled authentication methods
  *
  * At least one authentication method must be enabled.
- * @return {Authentication[]} List of enabled authentication methods
+ * @return List of enabled authentication methods
  */
 export const getAuthMethods = () => {
   const config = loadFullConfiguration();
@@ -186,7 +186,7 @@ export const getAuthMethods = () => {
  * Get the list of enabled authentication methods for API endpoints
  *
  * If no API authentication methods are enabled, all endpoints are public.
- * @return {Authentication[]} List of enabled authentication methods
+ * @return List of enabled authentication methods
  */
 export const getAPIAuthMethods = () => {
   const config = loadFullConfiguration();

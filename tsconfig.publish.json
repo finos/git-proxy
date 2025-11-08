@@ -2,8 +2,10 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": false,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "rootDir": "./"
   },
+  "include": ["src/**/*", "index.ts"],
   "exclude": [
     "experimental/**",
     "plugins/**",
@@ -11,6 +13,7 @@
     "src/ui/**",
     "**/*.tsx",
     "**/*.jsx",
-    "./src/context.js"
+    "./src/context.js",
+    "eslint.config.mjs"
   ]
 }

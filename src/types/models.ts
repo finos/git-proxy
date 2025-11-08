@@ -1,3 +1,4 @@
+import { StepData } from '../proxy/actions/Step';
 import { AttestationData } from '../ui/views/PushDetails/attestation.types';
 
 export interface UserData {
@@ -34,8 +35,10 @@ export interface PushData {
   diff: {
     content: string;
   };
+  error: boolean;
   canceled?: boolean;
   rejected?: boolean;
+  blocked?: boolean;
   authorised?: boolean;
   attestation?: AttestationData;
   autoApproved?: boolean;
@@ -44,6 +47,8 @@ export interface PushData {
   sshKeyExpiry?: Date;
   protocol?: 'https' | 'ssh';
   userId?: string;
+  allowPush?: boolean;
+  lastStep?: StepData;
 }
 
 export interface Route {

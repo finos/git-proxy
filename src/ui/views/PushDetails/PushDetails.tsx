@@ -25,6 +25,7 @@ import Tooltip from '@material-ui/core/Tooltip';
 import { PushData } from '../../../types/models';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
 import { generateEmailLink, getGitProvider } from '../../utils';
+import UserLink from '../../components/UserLink/UserLink';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -198,25 +199,21 @@ const Dashboard: React.FC = () => {
                   ) : (
                     <>
                       {isGitHub && (
-                        <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
+                        <UserLink username={data.attestation.reviewer.username}>
                           <img
                             style={{ width: '45px', borderRadius: '20px' }}
                             src={`https://github.com/${data.attestation.reviewer.gitAccount}.png`}
                           />
-                        </a>
+                        </UserLink>
                       )}
                       <div>
                         <p>
                           {isGitHub && (
-                            <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
+                            <UserLink username={data.attestation.reviewer.username}>
                               {data.attestation.reviewer.gitAccount}
-                            </a>
+                            </UserLink>
                           )}
-                          {!isGitHub && (
-                            <a href={`/dashboard/user/${data.attestation.reviewer.username}`}>
-                              {data.attestation.reviewer.username}
-                            </a>
-                          )}{' '}
+                          {!isGitHub && <UserLink username={data.attestation.reviewer.username} />}{' '}
                           approved this contribution
                         </p>
                       </div>

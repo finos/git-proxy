@@ -2,7 +2,7 @@
 const chai = require('chai');
 const chaiHttp = require('chai-http');
 const db = require('../src/db');
-const service = require('../src/service');
+const service = require('../src/service').default;
 const { getAllProxiedHosts } = require('../src/proxy/routes/helper');
 
 import Proxy from '../src/proxy';

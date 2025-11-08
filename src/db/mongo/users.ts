@@ -53,8 +53,10 @@ export const createUser = async function (user: User): Promise<void> {
   await collection.insertOne(user as OptionalId<Document>);
 };
 
-export const updateUser = async (user: User): Promise<void> => {
-  user.username = user.username.toLowerCase();
+export const updateUser = async (user: Partial<User>): Promise<void> => {
+  if (user.username) {
+    user.username = user.username.toLowerCase();
+  }
   if (user.email) {
     user.email = user.email.toLowerCase();
   }

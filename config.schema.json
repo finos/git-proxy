@@ -30,19 +30,6 @@
           },
           "additionalProperties": false
         },
-        "github": {
-          "type": "object",
-          "description": "Deprecated: Defunct property that was used to provide the API URL for GitHub. No longer referenced in the codebase.",
-          "properties": {
-            "baseUrl": {
-              "type": "string",
-              "format": "uri",
-              "examples": ["https://api.github.com"],
-              "deprecated": true
-            }
-          },
-          "additionalProperties": false
-        },
         "gitleaks": {
           "type": "object",
           "description": "Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin",
@@ -57,16 +44,188 @@
       "additionalProperties": false
     },
     "commitConfig": {
-      "description": "Enforce rules and patterns on commits including e-mail and message",
-      "type": "object"
+      "title": "CommitConfig",
+      "description": "Block commits based on rules defined over author/committer e-mail addresses, commit message content and diff content",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "author": {
+          "title": "Author",
+          "description": "Rules applied to commit authors",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "email": {
+              "title": "Email",
+              "description": "Rules applied to author email addresses",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "local": {
+                  "title": "Local",
+                  "description": "Rules applied to the local portion of the email address (i.e. section before the @ symbol)",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "block": {
+                      "title": "Block",
+                      "description": "Block commits with author email addresses where the first part matches this regular expression",
+                      "type": "string"
+                    }
+                  },
+                  "required": []
+                },
+                "domain": {
+                  "title": "Domain",
+                  "description": "Rules applied to the domain portion of the email address (i.e. section after the @ symbol)",
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "allow": {
+                      "title": "Allow",
+                      "description": "Allow only commits where the domain part of the email address matches this regular expression",
+                      "type": "string"
+                    }
+                  },
+                  "required": []
+                }
+              },
+              "required": []
+            }
+          },
+          "required": []
+        },
+        "message": {
+          "title": "Message",
+          "description": "Rules applied to commit messages",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "block": {
+              "title": "MessageBlock",
+              "description": "Block commits where the commit message matches any of the given patterns",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "literals": {
+                  "title": "MessageBlockLiteral",
+                  "description": "Block commits where the commit message contains any of the given string literals",
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "patterns": {
+                  "title": "MessageBlockLiteral",
+                  "description": "Block commits where the commit message matches any of the given regular expressions",
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              },
+              "required": []
+            }
+          },
+          "required": []
+        },
+        "diff": {
+          "title": "Diff",
+          "description": "Rules applied to commit diff content",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "block": {
+              "title": "DiffBlock",
+              "description": "Block commits where the commit diff matches any of the given patterns",
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "literals": {
+                  "title": "DiffBlockLiteral",
+                  "description": "Block commits where the commit diff content contains any of the given string literals",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "patterns": {
+                  "title": "MessageBlockPatterns",
+                  "description": "Block commits where the commit diff content matches any of the given regular expressions",
+                  "type": "array",
+                  "items": {}
+                },
+                "providers": {
+                  "title": "MessageBlockProviders",
+                  "description": "Block commits where the commit diff content matches any of the given regular expressions, except where the repository path (project/organisation) matches one of the listed privateOrganisations. The keys in this array are listed as the block type in logs.",
+                  "type": "object",
+                  "additionalProperties": { "type": "string" }
+                }
+              },
+              "required": []
+            }
+          },
+          "required": []
+        }
+      },
+      "required": []
     },
     "attestationConfig": {
-      "description": "Customisable questions to add to attestation form",
-      "type": "object"
+      "title": "AttestationConfig",
+      "description": "Configuration for the attestation form displayed to reviewers. Reviewers will need to check the box next to each question in order to complete the review attestation.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "questions": {
+          "title": "AttestationQuestions",
+          "description": "Customisable attestation questions to add to attestation form.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "title": "QuestionLabel",
+                "description": "The text of the question that will be displayed to the reviewer",
+                "type": "string"
+              },
+              "tooltip": {
+                "title": "QuestionTooltip",
+                "description": "A tooltip and optional set of links that will be displayed on mouseover of the question and used to provide additional guidance to the reviewer.",
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  },
+                  "links": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "url" }
+                  }
+                },
+                "required": ["text"]
+              }
+            },
+            "required": ["label", "tooltip"],
+            "title": "Question"
+          }
+        }
+      },
+      "required": []
     },
     "domains": {
-      "description": "Provide domains to use alternative to the defaults",
-      "type": "object"
+      "description": "Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL",
+      "type": "object",
+      "properties": {
+        "proxy": {
+          "title": "ProxyUrl",
+          "description": "Override for the default proxy URL, should include the protocol",
+          "type": "string",
+          "format": "url"
+        },
+        "service": {
+          "title": "Service UI URL",
+          "description": "Override for the service UI URL, should include the protocol",
+          "type": "string",
+          "format": "url"
+        }
+      }
     },
     "rateLimit": {
       "description": "API Rate limiting configuration.",
@@ -93,7 +252,7 @@
       "additionalProperties": false
     },
     "privateOrganizations": {
-      "description": "Pattern searches for listed private organizations are disabled",
+      "description": "Provider searches for listed private organizations are disabled, see commitConfig.diff.block.providers",
       "type": "array"
     },
     "urlShortener": {
@@ -120,6 +279,16 @@
       "type": "array",
       "items": {
         "$ref": "#/definitions/authorisedRepo"
+      }
+    },
+    "limits": {
+      "description": "Configuration for various limits",
+      "type": "object",
+      "properties": {
+        "maxPackSizeBytes": {
+          "type": "number",
+          "description": "Maximum size of a pack file in bytes (default 1GB)"
+        }
       }
     },
     "sink": {
