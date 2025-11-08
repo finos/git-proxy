@@ -22,8 +22,11 @@ import { UserContext } from '../../context';
 import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
 import { trimTrailingDotGit } from '../../../db/helper';
 import { fetchRemoteRepositoryData } from '../../utils';
+
 import { RepoView, SCMRepositoryMetadata } from '../../types';
 import { UserContextType } from '../../context';
+import UserLink from '../../components/UserLink/UserLink';
+import DeleteRepoDialog from './Components/DeleteRepoDialog';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -41,10 +44,11 @@ const RepoDetails: React.FC = () => {
   const navigate = useNavigate();
   const classes = useStyles();
   const [repo, setRepo] = useState<RepoView | null>(null);
-  const [, setAuth] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
-  const [remoteRepoData, setRemoteRepoData] = React.useState<SCMRepositoryMetadata | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<boolean>(false);
+  const [, setAuth] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [remoteRepoData, setRemoteRepoData] = useState<SCMRepositoryMetadata | null>(null);
   const { user } = useContext<UserContextType>(UserContext);
   const { id: repoId } = useParams<{ id: string }>();
 
@@ -103,7 +107,7 @@ const RepoDetails: React.FC = () => {
                     variant='contained'
                     color='secondary'
                     data-testid='delete-repo-button'
-                    onClick={() => removeRepository(repo._id!)}
+                    onClick={() => setConfirmDeleteOpen(true)}
                   >
                     <Delete />
                   </Button>
@@ -183,7 +187,7 @@ const RepoDetails: React.FC = () => {
                       {repo.users?.canAuthorise?.map((username) => (
                         <TableRow key={username}>
                           <TableCell align='left'>
-                            <a href={`/dashboard/user/${username}`}>{username}</a>
+                            <UserLink username={username} />
                           </TableCell>
                           {user.admin && (
                             <TableCell align='right' component='th' scope='row'>
@@ -226,7 +230,7 @@ const RepoDetails: React.FC = () => {
                       {repo.users?.canPush?.map((username) => (
                         <TableRow key={username}>
                           <TableCell align='left'>
-                            <a href={`/dashboard/user/${username}`}>{username}</a>
+                            <UserLink username={username} />
                           </TableCell>
                           {user.admin && (
                             <TableCell align='right' component='th' scope='row'>
@@ -249,6 +253,13 @@ const RepoDetails: React.FC = () => {
           </CardBody>
         </Card>
       </GridItem>
+
+      <DeleteRepoDialog
+        repoName={repo.name}
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={() => removeRepository(repo._id!)}
+      />
     </GridContainer>
   );
 };
