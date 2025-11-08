@@ -12,29 +12,23 @@ export interface RepoView extends Repo {
   dateCreated?: string;
 }
 
-interface QuestionTooltipLink {
-  text: string;
-  url: string;
-}
-
-interface QuestionTooltip {
-  text: string;
-  links?: QuestionTooltipLink[];
-}
-
 export interface QuestionFormData {
   label: string;
   checked: boolean;
-  tooltip: QuestionTooltip;
-}
-
-interface Reviewer {
-  username: string;
-  gitAccount: string;
+  tooltip: {
+    text: string;
+    links?: {
+      text: string;
+      url: string;
+    }[];
+  };
 }
 
 export interface AttestationFormData {
-  reviewer: Reviewer;
+  reviewer: {
+    username: string;
+    gitAccount: string;
+  };
   timestamp: string | Date;
   questions: QuestionFormData[];
 }
@@ -105,10 +99,4 @@ export interface SCMRepositoryMetadata {
 
   profileUrl?: string;
   avatarUrl?: string;
-}
-
-export interface UserContextType {
-  user: {
-    admin: boolean;
-  };
 }
