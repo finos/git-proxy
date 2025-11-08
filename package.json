@@ -20,20 +20,25 @@
       "require": "./dist/src/db/index.js",
       "types": "./dist/src/db/index.d.ts"
     },
+    "./plugin": {
+      "import": "./dist/src/plugin.js",
+      "require": "./dist/src/plugin.js",
+      "types": "./dist/src/plugin.d.ts"
+    },
     "./proxy": {
       "import": "./dist/src/proxy/index.js",
       "require": "./dist/src/proxy/index.js",
       "types": "./dist/src/proxy/index.d.ts"
     },
-    "./types": {
-      "import": "./dist/src/types/models.js",
-      "require": "./dist/src/types/models.js",
-      "types": "./dist/src/types/models.d.ts"
+    "./proxy/actions": {
+      "import": "./dist/src/proxy/actions/index.js",
+      "require": "./dist/src/proxy/actions/index.js",
+      "types": "./dist/src/proxy/actions/index.d.ts"
     },
-    "./plugin": {
-      "import": "./dist/src/plugin.js",
-      "require": "./dist/src/plugin.js",
-      "types": "./dist/src/plugin.d.ts"
+    "./ui": {
+      "import": "./dist/src/ui/index.js",
+      "require": "./dist/src/ui/index.js",
+      "types": "./dist/src/ui/index.d.ts"
     }
   },
   "scripts": {

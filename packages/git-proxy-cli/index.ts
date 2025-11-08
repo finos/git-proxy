@@ -5,8 +5,8 @@ import { hideBin } from 'yargs/helpers';
 import fs from 'fs';
 import util from 'util';
 
-import { CommitData, PushData } from '@finos/git-proxy/types';
 import { PushQuery } from '@finos/git-proxy/db';
+import { Action } from '@finos/git-proxy/proxy/actions';
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
@@ -88,73 +88,86 @@ async function getGitPushes(filters: Partial<PushQuery>) {
 
   try {
     const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
-
-    const response = await axios.get(`${baseUrl}/api/v1/push/`, {
+    const { data } = await axios.get<Action[]>(`${baseUrl}/api/v1/push/`, {
       headers: { Cookie: cookies },
       params: filters,
     });
 
-    const records: PushData[] = [];
-    response.data.forEach((push: PushData) => {
-      const record: PushData = {
-        id: push.id,
-        repo: push.repo,
-        branch: push.branch,
-        commitFrom: push.commitFrom,
-        commitTo: push.commitTo,
-        commitData: push.commitData,
-        diff: push.diff,
-        error: push.error,
-        canceled: push.canceled,
-        rejected: push.rejected,
-        blocked: push.blocked,
-        authorised: push.authorised,
-        attestation: push.attestation,
-        autoApproved: push.autoApproved,
-        timestamp: push.timestamp,
-        url: push.url,
-        allowPush: push.allowPush,
+    const records = data.map((push: Action) => {
+      const {
+        id,
+        repo,
+        branch,
+        commitFrom,
+        commitTo,
+        commitData,
+        error,
+        canceled,
+        rejected,
+        blocked,
+        authorised,
+        attestation,
+        autoApproved,
+        timestamp,
+        url,
+        allowPush,
+        lastStep,
+      } = push;
+
+      return {
+        id,
+        repo,
+        branch,
+        commitFrom,
+        commitTo,
+        commitData: commitData?.map(
+          ({
+            message,
+            committer,
+            committerEmail,
+            author,
+            authorEmail,
+            commitTimestamp,
+            tree,
+            parent,
+          }) => ({
+            message,
+            committer,
+            committerEmail,
+            author,
+            authorEmail,
+            commitTimestamp,
+            tree,
+            parent,
+          }),
+        ),
+        error,
+        canceled,
+        rejected,
+        blocked,
+        authorised,
+        attestation,
+        autoApproved,
+        timestamp,
+        url,
+        allowPush,
+        lastStep: lastStep && {
+          id: lastStep.id,
+          content: lastStep.content,
+          logs: lastStep.logs,
+          stepName: lastStep.stepName,
+          error: lastStep.error,
+          errorMessage: lastStep.errorMessage,
+          blocked: lastStep.blocked,
+          blockedMessage: lastStep.blockedMessage,
+        },
       };
-
-      if (push.lastStep) {
-        record.lastStep = {
-          id: push.lastStep?.id,
-          content: push.lastStep?.content,
-          logs: push.lastStep?.logs,
-          stepName: push.lastStep?.stepName,
-          error: push.lastStep?.error,
-          errorMessage: push.lastStep?.errorMessage,
-          blocked: push.lastStep?.blocked,
-          blockedMessage: push.lastStep?.blockedMessage,
-        };
-      }
-
-      if (push.commitData) {
-        const commitData: CommitData[] = [];
-        push.commitData.forEach((pushCommitDataRecord: CommitData) => {
-          commitData.push({
-            message: pushCommitDataRecord.message,
-            committer: pushCommitDataRecord.committer,
-            committerEmail: pushCommitDataRecord.committerEmail,
-            author: pushCommitDataRecord.author,
-            authorEmail: pushCommitDataRecord.authorEmail,
-            commitTimestamp: pushCommitDataRecord.commitTimestamp,
-            tree: pushCommitDataRecord.tree,
-            parent: pushCommitDataRecord.parent,
-          });
-        });
-        record.commitData = commitData;
-      }
-
-      records.push(record);
     });
 
-    console.log(`${util.inspect(records, false, null, false)}`);
+    console.log(util.inspect(records, false, null, false));
   } catch (error: any) {
-    // default error
-    const errorMessage = `Error: List: '${error.message}'`;
+    console.error(`Error: List: '${error.message}'`);
     process.exitCode = 2;
-    console.error(errorMessage);
   }
 }
 
