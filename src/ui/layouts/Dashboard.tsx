@@ -9,7 +9,7 @@ import Sidebar from '../components/Sidebar/Sidebar';
 import routes from '../../routes';
 import styles from '../assets/jss/material-dashboard-react/layouts/dashboardStyle';
 import logo from '../assets/img/git-proxy.png';
-import { UserContext } from '../../context';
+import { UserContext } from '../context';
 import { getUser } from '../services/user';
 import { Route as RouteType } from '../types';
 import { PublicUser } from '../../db/types';

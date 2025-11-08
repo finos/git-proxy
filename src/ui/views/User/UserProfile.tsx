@@ -7,9 +7,8 @@ import CardBody from '../../components/Card/CardBody';
 import Button from '../../components/CustomButtons/Button';
 import FormLabel from '@material-ui/core/FormLabel';
 import { getUser, updateUser } from '../../services/user';
-import { UserContext } from '../../../context';
+import { UserContext, UserContextType } from '../../context';
 
-import { UserContextType } from '../../types';
 import { PublicUser } from '../../../db/types';
 import { makeStyles } from '@material-ui/core/styles';
 

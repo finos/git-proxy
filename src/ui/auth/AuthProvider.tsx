@@ -1,15 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { getUserInfo } from '../services/auth';
 import { PublicUser } from '../../db/types';
-
-interface AuthContextType {
-  user: PublicUser | null;
-  setUser: React.Dispatch<any>;
-  refreshUser: () => Promise<void>;
-  isLoading: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext } from '../context';
 
 export const AuthProvider: React.FC<React.PropsWithChildren<object>> = ({ children }) => {
   const [user, setUser] = useState<PublicUser | null>(null);

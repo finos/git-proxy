@@ -18,11 +18,12 @@ import { makeStyles } from '@material-ui/core/styles';
 import AddUser from './Components/AddUser';
 import { Code, Delete, RemoveCircle, Visibility } from '@material-ui/icons';
 import { useNavigate, useParams } from 'react-router-dom';
-import { UserContext } from '../../../context';
+import { UserContext } from '../../context';
 import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
 import { trimTrailingDotGit } from '../../../db/helper';
 import { fetchRemoteRepositoryData } from '../../utils';
-import { RepoView, SCMRepositoryMetadata, UserContextType } from '../../types';
+import { RepoView, SCMRepositoryMetadata } from '../../types';
+import { UserContextType } from '../../context';
 
 const useStyles = makeStyles((theme) => ({
   root: {
