@@ -15,6 +15,11 @@
       "require": "./dist/src/config/index.js",
       "types": "./dist/src/config/index.d.ts"
     },
+    "./config/env": {
+      "import": "./dist/src/config/env.js",
+      "require": "./dist/src/config/env.js",
+      "types": "./dist/src/config/env.d.ts"
+    },
     "./db": {
       "import": "./dist/src/db/index.js",
       "require": "./dist/src/db/index.js",

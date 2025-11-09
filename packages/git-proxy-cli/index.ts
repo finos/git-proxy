@@ -7,11 +7,12 @@ import util from 'util';
 
 import { CommitData, PushData } from '@finos/git-proxy/types';
 import { PushQuery } from '@finos/git-proxy/db';
+import { serverConfig } from '@finos/git-proxy/config/env';
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
 const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost' } = process.env;
-const { GIT_PROXY_UI_PORT: uiPort } = require('@finos/git-proxy/src/config/env').Vars;
+const { GIT_PROXY_UI_PORT: uiPort } = serverConfig;
 const baseUrl = `${uiHost}:${uiPort}`;
 
 axios.defaults.timeout = 30000;
