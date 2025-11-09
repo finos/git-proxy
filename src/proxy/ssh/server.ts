@@ -8,6 +8,7 @@ import * as db from '../../db';
 import { Action } from '../actions';
 import { SSHAgent } from '../../security/SSHAgent';
 import { SSHKeyManager } from '../../security/SSHKeyManager';
+import { KILOBYTE, MEGABYTE } from '../../constants';
 
 interface SSHUser {
   username: string;
@@ -795,8 +796,8 @@ export class SSHServer {
         readyTimeout: 30000,
         keepaliveInterval: 15000,
         keepaliveCountMax: 5,
-        windowSize: 1024 * 1024,
-        packetSize: 32768,
+        windowSize: 1 * MEGABYTE,
+        packetSize: 32 * KILOBYTE,
         privateKey: usingUserKey ? (userPrivateKey as Buffer) : proxyPrivateKey,
         debug: (msg: string) => {
           console.debug('[GitHub SSH Debug]', msg);
@@ -950,8 +951,8 @@ export class SSHServer {
         readyTimeout: 30000,
         keepaliveInterval: 15000, // 15 seconds between keepalives (recommended for SSH connections is 15-30 seconds)
         keepaliveCountMax: 5, // Recommended for SSH connections is 3-5 attempts
-        windowSize: 1024 * 1024, // 1MB window size
-        packetSize: 32768, // 32KB packet size
+        windowSize: 1 * MEGABYTE, // 1MB window size
+        packetSize: 32 * KILOBYTE, // 32KB packet size
         privateKey: fs.readFileSync(sshConfig.hostKey.privateKeyPath),
         debug: (msg: string) => {
           console.debug('[GitHub SSH Debug]', msg);

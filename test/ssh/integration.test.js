@@ -6,6 +6,7 @@ const ssh2 = require('ssh2');
 const config = require('../../src/config');
 const db = require('../../src/db');
 const chain = require('../../src/proxy/chain');
+const { MEGABYTE } = require('../../src/constants');
 const SSHServer = require('../../src/proxy/ssh/server').default;
 
 describe('SSH Pack Data Capture Integration Tests', () => {
@@ -63,7 +64,7 @@ describe('SSH Pack Data Capture Integration Tests', () => {
     // Stub dependencies
     sinon.stub(config, 'getSSHConfig').callsFake(mockConfig.getSSHConfig);
     sinon.stub(config, 'getProxyUrl').callsFake(mockConfig.getProxyUrl);
-    sinon.stub(config, 'getMaxPackSizeBytes').returns(500 * 1024 * 1024);
+    sinon.stub(config, 'getMaxPackSizeBytes').returns(500 * MEGABYTE);
     sinon.stub(db, 'findUserBySSHKey').callsFake(mockDb.findUserBySSHKey);
     sinon.stub(db, 'findUser').callsFake(mockDb.findUser);
     sinon.stub(chain.default, 'executeChain').callsFake(mockChain.executeChain);
@@ -147,7 +148,7 @@ describe('SSH Pack Data Capture Integration Tests', () => {
       // Simulate large but acceptable pack data (100MB)
       const dataHandler = mockStream.on.withArgs('data').firstCall?.args[1];
       if (dataHandler) {
-        const largePack = Buffer.alloc(100 * 1024 * 1024, 'pack-data');
+        const largePack = Buffer.alloc(100 * MEGABYTE, 'pack-data');
         dataHandler(largePack);
       }
 
@@ -164,7 +165,7 @@ describe('SSH Pack Data Capture Integration Tests', () => {
       // Simulate oversized pack data (600MB)
       const dataHandler = mockStream.on.withArgs('data').firstCall?.args[1];
       if (dataHandler) {
-        const oversizedPack = Buffer.alloc(600 * 1024 * 1024, 'oversized-pack');
+        const oversizedPack = Buffer.alloc(600 * MEGABYTE, 'oversized-pack');
         dataHandler(oversizedPack);
       }
 

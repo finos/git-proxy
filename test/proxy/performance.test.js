@@ -1,10 +1,11 @@
 const chai = require('chai');
+const { KILOBYTE, MEGABYTE } = require('../../src/constants');
 const expect = chai.expect;
 
 describe('HTTP/HTTPS Performance Tests', () => {
   describe('Memory Usage Tests', () => {
     it('should handle small POST requests efficiently', async () => {
-      const smallData = Buffer.alloc(1024); // 1KB
+      const smallData = Buffer.alloc(1 * KILOBYTE);
       const startMemory = process.memoryUsage().heapUsed;
 
       // Simulate request processing
@@ -20,12 +21,12 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const endMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = endMemory - startMemory;
 
-      expect(memoryIncrease).to.be.lessThan(1024 * 5); // Should use less than 5KB
-      expect(req.body.length).to.equal(1024);
+      expect(memoryIncrease).to.be.lessThan(KILOBYTE * 5); // Should use less than 5KB
+      expect(req.body.length).to.equal(KILOBYTE);
     });
 
     it('should handle medium POST requests within reasonable limits', async () => {
-      const mediumData = Buffer.alloc(10 * 1024 * 1024); // 10MB
+      const mediumData = Buffer.alloc(10 * MEGABYTE);
       const startMemory = process.memoryUsage().heapUsed;
 
       // Simulate request processing
@@ -41,12 +42,12 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const endMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = endMemory - startMemory;
 
-      expect(memoryIncrease).to.be.lessThan(15 * 1024 * 1024); // Should use less than 15MB
-      expect(req.body.length).to.equal(10 * 1024 * 1024);
+      expect(memoryIncrease).to.be.lessThan(15 * MEGABYTE); // Should use less than 15MB
+      expect(req.body.length).to.equal(10 * MEGABYTE);
     });
 
     it('should handle large POST requests up to size limit', async () => {
-      const largeData = Buffer.alloc(100 * 1024 * 1024); // 100MB
+      const largeData = Buffer.alloc(100 * MEGABYTE);
       const startMemory = process.memoryUsage().heapUsed;
 
       // Simulate request processing
@@ -62,25 +63,25 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const endMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = endMemory - startMemory;
 
-      expect(memoryIncrease).to.be.lessThan(120 * 1024 * 1024); // Should use less than 120MB
-      expect(req.body.length).to.equal(100 * 1024 * 1024);
+      expect(memoryIncrease).to.be.lessThan(120 * MEGABYTE); // Should use less than 120MB
+      expect(req.body.length).to.equal(100 * MEGABYTE);
     });
 
     it('should reject requests exceeding size limit', async () => {
-      const oversizedData = Buffer.alloc(1200 * 1024 * 1024); // 1.2GB (exceeds 1GB limit)
+      const oversizedData = Buffer.alloc(1200 * MEGABYTE); // 1.2GB (exceeds 1GB limit)
 
       // Simulate size check
-      const maxPackSize = 1024 * 1024 * 1024;
+      const maxPackSize = 1 * GIGABYTE;
       const requestSize = oversizedData.length;
 
       expect(requestSize).to.be.greaterThan(maxPackSize);
-      expect(requestSize).to.equal(1200 * 1024 * 1024);
+      expect(requestSize).to.equal(1200 * MEGABYTE);
     });
   });
 
   describe('Processing Time Tests', () => {
     it('should process small requests quickly', async () => {
-      const smallData = Buffer.alloc(1024); // 1KB
+      const smallData = Buffer.alloc(1 * KILOBYTE);
       const startTime = Date.now();
 
       // Simulate processing
@@ -96,11 +97,11 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const processingTime = Date.now() - startTime;
 
       expect(processingTime).to.be.lessThan(100); // Should complete in less than 100ms
-      expect(req.body.length).to.equal(1024);
+      expect(req.body.length).to.equal(1 * KILOBYTE);
     });
 
     it('should process medium requests within acceptable time', async () => {
-      const mediumData = Buffer.alloc(10 * 1024 * 1024); // 10MB
+      const mediumData = Buffer.alloc(10 * MEGABYTE);
       const startTime = Date.now();
 
       // Simulate processing
@@ -116,11 +117,11 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const processingTime = Date.now() - startTime;
 
       expect(processingTime).to.be.lessThan(1000); // Should complete in less than 1 second
-      expect(req.body.length).to.equal(10 * 1024 * 1024);
+      expect(req.body.length).to.equal(10 * MEGABYTE);
     });
 
     it('should process large requests within reasonable time', async () => {
-      const largeData = Buffer.alloc(100 * 1024 * 1024); // 100MB
+      const largeData = Buffer.alloc(100 * MEGABYTE);
       const startTime = Date.now();
 
       // Simulate processing
@@ -136,7 +137,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const processingTime = Date.now() - startTime;
 
       expect(processingTime).to.be.lessThan(5000); // Should complete in less than 5 seconds
-      expect(req.body.length).to.equal(100 * 1024 * 1024);
+      expect(req.body.length).to.equal(100 * MEGABYTE);
     });
   });
 
@@ -148,7 +149,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
       // Simulate 10 concurrent small requests
       for (let i = 0; i < 10; i++) {
         const request = new Promise((resolve) => {
-          const smallData = Buffer.alloc(1024);
+          const smallData = Buffer.alloc(1 * KILOBYTE);
           const req = {
             method: 'POST',
             url: '/github.com/test/test-repo.git/git-receive-pack',
@@ -168,7 +169,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
       expect(results).to.have.length(10);
       expect(totalTime).to.be.lessThan(1000); // Should complete all in less than 1 second
       results.forEach((result) => {
-        expect(result.body.length).to.equal(1024);
+        expect(result.body.length).to.equal(1 * KILOBYTE);
       });
     });
 
@@ -177,7 +178,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const startTime = Date.now();
 
       // Simulate mixed operations
-      const sizes = [1024, 1024 * 1024, 10 * 1024 * 1024]; // 1KB, 1MB, 10MB
+      const sizes = [1 * KILOBYTE, 1 * MEGABYTE, 10 * MEGABYTE];
 
       for (let i = 0; i < 9; i++) {
         const request = new Promise((resolve) => {
@@ -226,7 +227,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const processingTime = endTime - startTime;
 
       expect(processingTime).to.be.lessThan(100); // Should handle errors quickly
-      expect(memoryIncrease).to.be.lessThan(2048); // Should not leak memory (allow for GC timing)
+      expect(memoryIncrease).to.be.lessThan(2 * KILOBYTE); // Should not leak memory (allow for GC timing)
     });
 
     it('should handle malformed requests efficiently', async () => {
@@ -239,7 +240,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
         headers: {
           'content-type': 'application/x-git-receive-pack-request',
         },
-        body: Buffer.alloc(1024),
+        body: Buffer.alloc(1 * KILOBYTE),
       };
 
       // Simulate validation
@@ -256,16 +257,16 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const startMemory = process.memoryUsage().heapUsed;
 
       // Simulate processing with cleanup
-      const data = Buffer.alloc(10 * 1024 * 1024); // 10MB
+      const data = Buffer.alloc(10 * MEGABYTE);
       const _processedData = Buffer.concat([data]);
 
       // Simulate cleanup
       data.fill(0); // Clear buffer
       const cleanedMemory = process.memoryUsage().heapUsed;
 
-      expect(_processedData.length).to.equal(10 * 1024 * 1024);
+      expect(_processedData.length).to.equal(10 * MEGABYTE);
       // Memory should be similar to start (allowing for GC timing)
-      expect(cleanedMemory - startMemory).to.be.lessThan(5 * 1024 * 1024);
+      expect(cleanedMemory - startMemory).to.be.lessThan(5 * MEGABYTE);
     });
 
     it('should handle multiple cleanup cycles without memory growth', async () => {
@@ -273,7 +274,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
 
       // Simulate multiple processing cycles
       for (let i = 0; i < 5; i++) {
-        const data = Buffer.alloc(5 * 1024 * 1024); // 5MB
+        const data = Buffer.alloc(5 * MEGABYTE);
         const _processedData = Buffer.concat([data]);
         data.fill(0); // Cleanup
 
@@ -287,7 +288,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const memoryGrowth = finalMemory - initialMemory;
 
       // Memory growth should be minimal
-      expect(memoryGrowth).to.be.lessThan(10 * 1024 * 1024); // Less than 10MB growth
+      expect(memoryGrowth).to.be.lessThan(10 * MEGABYTE); // Less than 10MB growth
     });
   });
 
@@ -298,7 +299,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
       // Simulate config loading
       const testConfig = {
         proxy: { port: 8000, host: 'localhost' },
-        limits: { maxPackSizeBytes: 1024 * 1024 * 1024 },
+        limits: { maxPackSizeBytes: 1 * GIGABYTE },
       };
 
       const endTime = Date.now();
@@ -315,7 +316,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
       // Simulate config validation
       const testConfig = {
         proxy: { port: 8000 },
-        limits: { maxPackSizeBytes: 1024 * 1024 * 1024 },
+        limits: { maxPackSizeBytes: 1 * GIGABYTE },
       };
       const isValid = testConfig.proxy.port > 0 && testConfig.limits.maxPackSizeBytes > 0;
 

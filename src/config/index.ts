@@ -5,6 +5,7 @@ import { GitProxyConfig, Convert } from './generated/config';
 import { ConfigLoader, Configuration } from './ConfigLoader';
 import { serverConfig } from './env';
 import { configFile } from './file';
+import { GIGABYTE } from '../constants';
 
 // Cache for current configuration
 let _currentConfig: GitProxyConfig | null = null;
@@ -299,7 +300,7 @@ export const getRateLimit = () => {
 export const getMaxPackSizeBytes = (): number => {
   const config = loadFullConfiguration();
   const configuredValue = config.limits?.maxPackSizeBytes;
-  const fallback = 1024 * 1024 * 1024; // 1 GiB default
+  const fallback = 1 * GIGABYTE; // 1 GiB default
 
   if (
     typeof configuredValue === 'number' &&

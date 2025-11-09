@@ -1,10 +1,11 @@
 const chai = require('chai');
+const { KILOBYTE } = require('../../src/constants');
 const expect = chai.expect;
 
 describe('SSH Performance Tests', () => {
   describe('Memory Usage Tests', () => {
     it('should handle small pack data efficiently', async () => {
-      const smallPackData = Buffer.alloc(1024); // 1KB
+      const smallPackData = Buffer.alloc(1 * KILOBYTE);
       const startMemory = process.memoryUsage().heapUsed;
 
       // Simulate pack data capture
@@ -15,12 +16,12 @@ describe('SSH Performance Tests', () => {
       const endMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = endMemory - startMemory;
 
-      expect(memoryIncrease).to.be.lessThan(1024 * 10); // Should use less than 10KB
-      expect(packData.length).to.equal(1024);
+      expect(memoryIncrease).to.be.lessThan(10 * KILOBYTE); // Should use less than 10KB
+      expect(packData.length).to.equal(1 * KILOBYTE);
     });
 
     it('should handle medium pack data within reasonable limits', async () => {
-      const mediumPackData = Buffer.alloc(10 * 1024 * 1024); // 10MB
+      const mediumPackData = Buffer.alloc(10 * MEGABYTE);
       const startMemory = process.memoryUsage().heapUsed;
 
       // Simulate pack data capture
@@ -31,12 +32,12 @@ describe('SSH Performance Tests', () => {
       const endMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = endMemory - startMemory;
 
-      expect(memoryIncrease).to.be.lessThan(15 * 1024 * 1024); // Should use less than 15MB
-      expect(packData.length).to.equal(10 * 1024 * 1024);
+      expect(memoryIncrease).to.be.lessThan(15 * MEGABYTE); // Should use less than 15MB
+      expect(packData.length).to.equal(10 * MEGABYTE);
     });
 
     it('should handle large pack data up to size limit', async () => {
-      const largePackData = Buffer.alloc(100 * 1024 * 1024); // 100MB
+      const largePackData = Buffer.alloc(100 * MEGABYTE);
       const startMemory = process.memoryUsage().heapUsed;
 
       // Simulate pack data capture
@@ -47,25 +48,25 @@ describe('SSH Performance Tests', () => {
       const endMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = endMemory - startMemory;
 
-      expect(memoryIncrease).to.be.lessThan(120 * 1024 * 1024); // Should use less than 120MB
-      expect(packData.length).to.equal(100 * 1024 * 1024);
+      expect(memoryIncrease).to.be.lessThan(120 * MEGABYTE); // Should use less than 120MB
+      expect(packData.length).to.equal(100 * MEGABYTE);
     });
 
     it('should reject pack data exceeding size limit', async () => {
-      const oversizedPackData = Buffer.alloc(600 * 1024 * 1024); // 600MB (exceeds 500MB limit)
+      const oversizedPackData = Buffer.alloc(600 * MEGABYTE); // 600MB (exceeds 500MB limit)
 
       // Simulate size check
-      const maxPackSize = 500 * 1024 * 1024;
+      const maxPackSize = 500 * MEGABYTE;
       const totalBytes = oversizedPackData.length;
 
       expect(totalBytes).to.be.greaterThan(maxPackSize);
-      expect(totalBytes).to.equal(600 * 1024 * 1024);
+      expect(totalBytes).to.equal(600 * MEGABYTE);
     });
   });
 
   describe('Processing Time Tests', () => {
     it('should process small pack data quickly', async () => {
-      const smallPackData = Buffer.alloc(1024); // 1KB
+      const smallPackData = Buffer.alloc(1 * KILOBYTE);
       const startTime = Date.now();
 
       // Simulate processing
@@ -73,11 +74,11 @@ describe('SSH Performance Tests', () => {
       const processingTime = Date.now() - startTime;
 
       expect(processingTime).to.be.lessThan(100); // Should complete in less than 100ms
-      expect(packData.length).to.equal(1024);
+      expect(packData.length).to.equal(1 * KILOBYTE);
     });
 
     it('should process medium pack data within acceptable time', async () => {
-      const mediumPackData = Buffer.alloc(10 * 1024 * 1024); // 10MB
+      const mediumPackData = Buffer.alloc(10 * MEGABYTE);
       const startTime = Date.now();
 
       // Simulate processing
@@ -85,11 +86,11 @@ describe('SSH Performance Tests', () => {
       const processingTime = Date.now() - startTime;
 
       expect(processingTime).to.be.lessThan(1000); // Should complete in less than 1 second
-      expect(packData.length).to.equal(10 * 1024 * 1024);
+      expect(packData.length).to.equal(10 * MEGABYTE);
     });
 
     it('should process large pack data within reasonable time', async () => {
-      const largePackData = Buffer.alloc(100 * 1024 * 1024); // 100MB
+      const largePackData = Buffer.alloc(100 * MEGABYTE);
       const startTime = Date.now();
 
       // Simulate processing
@@ -97,7 +98,7 @@ describe('SSH Performance Tests', () => {
       const processingTime = Date.now() - startTime;
 
       expect(processingTime).to.be.lessThan(5000); // Should complete in less than 5 seconds
-      expect(packData.length).to.equal(100 * 1024 * 1024);
+      expect(packData.length).to.equal(100 * MEGABYTE);
     });
   });
 
@@ -109,7 +110,7 @@ describe('SSH Performance Tests', () => {
       // Simulate 10 concurrent small operations
       for (let i = 0; i < 10; i++) {
         const operation = new Promise((resolve) => {
-          const smallPackData = Buffer.alloc(1024);
+          const smallPackData = Buffer.alloc(1 * KILOBYTE);
           const packData = Buffer.concat([smallPackData]);
           resolve(packData);
         });
@@ -122,7 +123,7 @@ describe('SSH Performance Tests', () => {
       expect(results).to.have.length(10);
       expect(totalTime).to.be.lessThan(1000); // Should complete all in less than 1 second
       results.forEach((result) => {
-        expect(result.length).to.equal(1024);
+        expect(result.length).to.equal(1 * KILOBYTE);
       });
     });
 
@@ -131,7 +132,7 @@ describe('SSH Performance Tests', () => {
       const startTime = Date.now();
 
       // Simulate mixed operations
-      const sizes = [1024, 1024 * 1024, 10 * 1024 * 1024]; // 1KB, 1MB, 10MB
+      const sizes = [1 * KILOBYTE, 1 * MEGABYTE, 10 * MEGABYTE];
 
       for (let i = 0; i < 9; i++) {
         const operation = new Promise((resolve) => {
@@ -173,7 +174,7 @@ describe('SSH Performance Tests', () => {
       const processingTime = endTime - startTime;
 
       expect(processingTime).to.be.lessThan(100); // Should handle errors quickly
-      expect(memoryIncrease).to.be.lessThan(2048); // Should not leak memory (allow for GC timing)
+      expect(memoryIncrease).to.be.lessThan(2 * KILOBYTE); // Should not leak memory (allow for GC timing)
     });
 
     it('should handle timeout scenarios efficiently', async () => {
@@ -206,16 +207,16 @@ describe('SSH Performance Tests', () => {
       const startMemory = process.memoryUsage().heapUsed;
 
       // Simulate processing with cleanup
-      const packData = Buffer.alloc(10 * 1024 * 1024); // 10MB
+      const packData = Buffer.alloc(10 * MEGABYTE);
       const _processedData = Buffer.concat([packData]);
 
       // Simulate cleanup
       packData.fill(0); // Clear buffer
       const cleanedMemory = process.memoryUsage().heapUsed;
 
-      expect(_processedData.length).to.equal(10 * 1024 * 1024);
+      expect(_processedData.length).to.equal(10 * MEGABYTE);
       // Memory should be similar to start (allowing for GC timing)
-      expect(cleanedMemory - startMemory).to.be.lessThan(5 * 1024 * 1024);
+      expect(cleanedMemory - startMemory).to.be.lessThan(5 * MEGABYTE);
     });
 
     it('should handle multiple cleanup cycles without memory growth', async () => {
@@ -223,7 +224,7 @@ describe('SSH Performance Tests', () => {
 
       // Simulate multiple processing cycles
       for (let i = 0; i < 5; i++) {
-        const packData = Buffer.alloc(5 * 1024 * 1024); // 5MB
+        const packData = Buffer.alloc(5 * MEGABYTE);
         const _processedData = Buffer.concat([packData]);
         packData.fill(0); // Cleanup
 
@@ -237,7 +238,7 @@ describe('SSH Performance Tests', () => {
       const memoryGrowth = finalMemory - initialMemory;
 
       // Memory growth should be minimal
-      expect(memoryGrowth).to.be.lessThan(10 * 1024 * 1024); // Less than 10MB growth
+      expect(memoryGrowth).to.be.lessThan(10 * MEGABYTE); // Less than 10MB growth
     });
   });
 
@@ -248,7 +249,7 @@ describe('SSH Performance Tests', () => {
       // Simulate config loading
       const testConfig = {
         ssh: { enabled: true, port: 2222 },
-        limits: { maxPackSizeBytes: 500 * 1024 * 1024 },
+        limits: { maxPackSizeBytes: 500 * MEGABYTE },
       };
 
       const endTime = Date.now();
@@ -265,7 +266,7 @@ describe('SSH Performance Tests', () => {
       // Simulate config validation
       const testConfig = {
         ssh: { enabled: true },
-        limits: { maxPackSizeBytes: 500 * 1024 * 1024 },
+        limits: { maxPackSizeBytes: 500 * MEGABYTE },
       };
       const isValid = testConfig.ssh.enabled && testConfig.limits.maxPackSizeBytes > 0;
 
