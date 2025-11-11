@@ -1,8 +1,11 @@
 import express, { Request, Response } from 'express';
-const router = express.Router();
+import { utils } from 'ssh2';
 
 import * as db from '../../db';
 import { toPublicUser } from './publicApi';
+
+const router = express.Router();
+const parseKey = utils.parseKey;
 
 router.get('/', async (req: Request, res: Response) => {
   console.log('fetching users');
@@ -24,30 +27,40 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Add SSH public key
 router.post('/:username/ssh-keys', async (req: Request, res: Response) => {
   if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
+    res.status(401).json({ error: 'Login required' });
     return;
   }
 
   const { username, admin } = req.user as { username: string; admin: boolean };
   const targetUsername = req.params.username.toLowerCase();
 
-  // Only allow users to add keys to their own account, or admins to add to any account
+  // Admins can add to any account, users can only add to their own
   if (username !== targetUsername && !admin) {
     res.status(403).json({ error: 'Not authorized to add keys for this user' });
     return;
   }
 
   const { publicKey } = req.body;
-  if (!publicKey) {
+  if (!publicKey || typeof publicKey !== 'string') {
     res.status(400).json({ error: 'Public key is required' });
     return;
   }
 
-  // Strip the comment from the key (everything after the last space)
-  const keyWithoutComment = publicKey.split(' ').slice(0, 2).join(' ');
-
-  console.log('Adding SSH key', { targetUsername, keyWithoutComment });
   try {
+    const parsedKey = parseKey(publicKey.trim());
+
+    if (parsedKey instanceof Error) {
+      res.status(400).json({ error: `Invalid SSH key: ${parsedKey.message}` });
+      return;
+    }
+
+    if (parsedKey.isPrivateKey()) {
+      res.status(400).json({ error: 'Invalid SSH key: Must be a public key' });
+      return;
+    }
+
+    const keyWithoutComment = parsedKey.getPublicSSH().toString('utf8');
+    console.log('Adding SSH key', { targetUsername, keyWithoutComment });
     await db.addPublicKey(targetUsername, keyWithoutComment);
     res.status(201).json({ message: 'SSH key added successfully' });
   } catch (error) {
@@ -59,7 +72,7 @@ router.post('/:username/ssh-keys', async (req: Request, res: Response) => {
 // Remove SSH public key
 router.delete('/:username/ssh-keys', async (req: Request, res: Response) => {
   if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
+    res.status(401).json({ error: 'Login required' });
     return;
   }
 
