@@ -39,10 +39,21 @@ export class SSHServer {
 
   constructor() {
     const sshConfig = getSSHConfig();
+    const privateKeys: Buffer[] = [];
+
+    try {
+      privateKeys.push(fs.readFileSync(sshConfig.hostKey.privateKeyPath));
+    } catch (error) {
+      console.error(
+        `Error reading private key at ${sshConfig.hostKey.privateKeyPath}. Check your SSH host key configuration or disbale SSH.`,
+      );
+      process.exit(1);
+    }
+
     // TODO: Server config could go to config file
     this.server = new ssh2.Server(
       {
-        hostKeys: [fs.readFileSync(sshConfig.hostKey.privateKeyPath)],
+        hostKeys: privateKeys,
         authMethods: ['publickey', 'password'] as any,
         keepaliveInterval: 20000, // 20 seconds is recommended for SSH connections
         keepaliveCountMax: 5, // Recommended for SSH connections is 3-5 attempts
