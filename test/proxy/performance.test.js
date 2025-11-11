@@ -1,5 +1,5 @@
 const chai = require('chai');
-const { KILOBYTE, MEGABYTE } = require('../../src/constants');
+const { KILOBYTE, MEGABYTE, GIGABYTE } = require('../../src/constants');
 const expect = chai.expect;
 
 describe('HTTP/HTTPS Performance Tests', () => {
