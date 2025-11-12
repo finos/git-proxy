@@ -56,13 +56,6 @@ async function addSSHKey(username: string, keyPath: string): Promise<void> {
     // Read the public key file
     const publicKey = fs.readFileSync(keyPath, 'utf8').trim();
     console.log('Read public key:', publicKey);
-
-    // Validate the key format
-    if (!publicKey.startsWith('ssh-')) {
-      console.error('Invalid SSH key format. The key should start with "ssh-"');
-      process.exit(1);
-    }
-
     console.log('Making API request to:', `${API_BASE_URL}/api/v1/user/${username}/ssh-keys`);
 
     // Make the API request

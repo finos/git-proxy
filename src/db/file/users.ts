@@ -1,6 +1,7 @@
 import fs from 'fs';
 import Datastore from '@seald-io/nedb';
-import { User, PublicKeyRecord } from '../types';
+
+import { User, UserQuery, PublicKeyRecord } from '../types';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -118,11 +119,14 @@ export const deleteUser = (username: string): Promise<void> => {
   });
 };
 
-export const updateUser = (user: User): Promise<void> => {
-  user.username = user.username.toLowerCase();
+export const updateUser = (user: Partial<User>): Promise<void> => {
+  if (user.username) {
+    user.username = user.username.toLowerCase();
+  }
   if (user.email) {
     user.email = user.email.toLowerCase();
   }
+
   return new Promise((resolve, reject) => {
     // The mongo db adaptor adds fields to existing documents, where this adaptor replaces the document
     //   hence, retrieve and merge documents to avoid dropping fields (such as the gitaccount)
@@ -156,7 +160,7 @@ export const updateUser = (user: User): Promise<void> => {
   });
 };
 
-export const getUsers = (query: any = {}): Promise<User[]> => {
+export const getUsers = (query: Partial<UserQuery> = {}): Promise<User[]> => {
   if (query.username) {
     query.username = query.username.toLowerCase();
   }

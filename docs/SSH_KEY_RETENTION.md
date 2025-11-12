@@ -1,12 +1,12 @@
-# SSH Key Retention for Git Proxy
+# SSH Key Retention for GitProxy
 
 ## Overview
 
-This document describes the SSH key retention feature that allows Git Proxy to securely store and reuse user SSH keys during the approval process, eliminating the need for users to re-authenticate when their push is approved.
+This document describes the SSH key retention feature that allows GitProxy to securely store and reuse user SSH keys during the approval process, eliminating the need for users to re-authenticate when their push is approved.
 
 ## Problem Statement
 
-Previously, when a user pushes code via SSH to Git Proxy:
+Previously, when a user pushes code via SSH to GitProxy:
 
 1. User authenticates with their SSH key
 2. Push is intercepted and requires approval

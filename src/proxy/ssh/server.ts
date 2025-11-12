@@ -8,6 +8,7 @@ import * as db from '../../db';
 import { Action } from '../actions';
 import { SSHAgent } from '../../security/SSHAgent';
 import { SSHKeyManager } from '../../security/SSHKeyManager';
+import { KILOBYTE, MEGABYTE } from '../../constants';
 
 interface SSHUser {
   username: string;
@@ -38,10 +39,21 @@ export class SSHServer {
 
   constructor() {
     const sshConfig = getSSHConfig();
+    const privateKeys: Buffer[] = [];
+
+    try {
+      privateKeys.push(fs.readFileSync(sshConfig.hostKey.privateKeyPath));
+    } catch (error) {
+      console.error(
+        `Error reading private key at ${sshConfig.hostKey.privateKeyPath}. Check your SSH host key configuration or disbale SSH.`,
+      );
+      process.exit(1);
+    }
+
     // TODO: Server config could go to config file
     this.server = new ssh2.Server(
       {
-        hostKeys: [fs.readFileSync(sshConfig.hostKey.privateKeyPath)],
+        hostKeys: privateKeys,
         authMethods: ['publickey', 'password'] as any,
         keepaliveInterval: 20000, // 20 seconds is recommended for SSH connections
         keepaliveCountMax: 5, // Recommended for SSH connections is 3-5 attempts
@@ -795,8 +807,8 @@ export class SSHServer {
         readyTimeout: 30000,
         keepaliveInterval: 15000,
         keepaliveCountMax: 5,
-        windowSize: 1024 * 1024,
-        packetSize: 32768,
+        windowSize: 1 * MEGABYTE,
+        packetSize: 32 * KILOBYTE,
         privateKey: usingUserKey ? (userPrivateKey as Buffer) : proxyPrivateKey,
         debug: (msg: string) => {
           console.debug('[GitHub SSH Debug]', msg);
@@ -950,8 +962,8 @@ export class SSHServer {
         readyTimeout: 30000,
         keepaliveInterval: 15000, // 15 seconds between keepalives (recommended for SSH connections is 15-30 seconds)
         keepaliveCountMax: 5, // Recommended for SSH connections is 3-5 attempts
-        windowSize: 1024 * 1024, // 1MB window size
-        packetSize: 32768, // 32KB packet size
+        windowSize: 1 * MEGABYTE, // 1MB window size
+        packetSize: 32 * KILOBYTE, // 32KB packet size
         privateKey: fs.readFileSync(sshConfig.hostKey.privateKeyPath),
         debug: (msg: string) => {
           console.debug('[GitHub SSH Debug]', msg);
