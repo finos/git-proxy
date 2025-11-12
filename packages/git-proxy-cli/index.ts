@@ -7,12 +7,12 @@ import util from 'util';
 
 import { CommitData, PushData } from '@finos/git-proxy/types';
 import { PushQuery } from '@finos/git-proxy/db';
+import { serverConfig } from '@finos/git-proxy/config/env';
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
-const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 8080 } =
-  process.env;
-
+const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost' } = process.env;
+const { GIT_PROXY_UI_PORT: uiPort } = serverConfig;
 const baseUrl = `${uiHost}:${uiPort}`;
 
 axios.defaults.timeout = 30000;
@@ -203,7 +203,7 @@ async function authoriseGitPush(id: string) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Authorise: Authentication required';
+          errorMessage = `Error: Authorise: Authentication required: '${error.response.data.message}'`;
           process.exitCode = 3;
           break;
         case 404:
@@ -250,7 +250,7 @@ async function rejectGitPush(id: string) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Reject: Authentication required';
+          errorMessage = `Error: Reject: Authentication required: '${error.response.data.message}'`;
           process.exitCode = 3;
           break;
         case 404:
@@ -297,7 +297,7 @@ async function cancelGitPush(id: string) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Cancel: Authentication required';
+          errorMessage = `Error: Cancel: Authentication required: '${error.response.data.message}'`;
           process.exitCode = 3;
           break;
         case 404:
@@ -335,89 +335,61 @@ async function logout() {
 }
 
 /**
- * Reloads the GitProxy configuration without restarting the process
+ * Add SSH key for a user
+ * @param {string} username The username to add the key for
+ * @param {string} keyPath Path to the public key file
  */
-async function reloadConfig() {
+async function addSSHKey(username: string, keyPath: string) {
+  console.log('Add SSH key', { username, keyPath });
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: Reload config: Authentication required');
+    console.error('Error: SSH key: Authentication required');
     process.exitCode = 1;
     return;
   }
 
   try {
     const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
+    const publicKey = fs.readFileSync(keyPath, 'utf8').trim();
 
-    await axios.post(`${baseUrl}/api/v1/admin/reload-config`, {}, { headers: { Cookie: cookies } });
-
-    console.log('Configuration reloaded successfully');
-  } catch (error: any) {
-    const errorMessage = `Error: Reload config: '${error.message}'`;
-    process.exitCode = 2;
-    console.error(errorMessage);
-  }
-}
-
-/**
- * Create a new user
- * @param {string} username The username for the new user
- * @param {string} password The password for the new user
- * @param {string} email The email for the new user
- * @param {string} gitAccount The git account for the new user
- * @param {boolean} [admin=false] Whether the user should be an admin (optional)
- */
-async function createUser(
-  username: string,
-  password: string,
-  email: string,
-  gitAccount: string,
-  admin: boolean = false,
-) {
-  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: Create User: Authentication required');
-    process.exitCode = 1;
-    return;
-  }
-
-  try {
-    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
-
+    console.log('Adding SSH key', { username, publicKey });
     await axios.post(
-      `${baseUrl}/api/auth/create-user`,
+      `${baseUrl}/api/v1/user/${username}/ssh-keys`,
+      { publicKey },
       {
-        username,
-        password,
-        email,
-        gitAccount,
-        admin,
-      },
-      {
-        headers: { Cookie: cookies },
+        headers: {
+          Cookie: cookies,
+          'Content-Type': 'application/json',
+        },
+        withCredentials: true,
       },
     );
 
-    console.log(`User '${username}' created successfully`);
+    console.log(`SSH key added successfully for user ${username}`);
   } catch (error: any) {
-    let errorMessage = `Error: Create User: '${error.message}'`;
+    let errorMessage = `Error: SSH key: '${error.message}'`;
     process.exitCode = 2;
 
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Create User: Authentication required';
+          errorMessage = `Error: SSH key: Authentication required: '${error.response.data.message}'`;
           process.exitCode = 3;
           break;
-        case 400:
-          errorMessage = `Error: Create User: ${error.response.data.message}`;
+        case 404:
+          errorMessage = `Error: SSH key: User '${username}' not found`;
           process.exitCode = 4;
           break;
       }
+    } else if (error.code === 'ENOENT') {
+      errorMessage = `Error: SSH key: Could not find key file at ${keyPath}`;
+      process.exitCode = 5;
     }
     console.error(errorMessage);
   }
 }
 
 // Parsing command line arguments
-yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused-expressions
+const argv = yargs(hideBin(process.argv))
   .command({
     command: 'authorise',
     describe: 'Authorise git push by ID',
@@ -449,7 +421,7 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
   .command({
     command: 'config',
     describe: 'Print configuration',
-    handler() {
+    handler(argv) {
       console.log(`GitProxy URL: ${baseUrl}`);
     },
   })
@@ -475,7 +447,7 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
   .command({
     command: 'logout',
     describe: 'Log out',
-    handler() {
+    handler(argv) {
       logout();
     },
   })
@@ -547,45 +519,34 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
     },
   })
   .command({
-    command: 'reload-config',
-    describe: 'Reload GitProxy configuration without restarting',
-    handler() {
-      reloadConfig();
-    },
-  })
-  .command({
-    command: 'create-user',
-    describe: 'Create a new user',
+    command: 'ssh-key',
+    describe: 'Manage SSH keys',
     builder: {
+      action: {
+        describe: 'Action to perform (add/remove)',
+        demandOption: true,
+        type: 'string',
+        choices: ['add', 'remove'],
+      },
       username: {
-        describe: 'Username for the new user',
+        describe: 'Username to manage keys for',
         demandOption: true,
         type: 'string',
       },
-      password: {
-        describe: 'Password for the new user',
+      keyPath: {
+        describe: 'Path to the public key file',
         demandOption: true,
         type: 'string',
-      },
-      email: {
-        describe: 'Email for the new user',
-        demandOption: true,
-        type: 'string',
-      },
-      gitAccount: {
-        describe: 'Git account for the new user',
-        demandOption: true,
-        type: 'string',
-      },
-      admin: {
-        describe: 'Whether the user should be an admin (optional)',
-        demandOption: false,
-        type: 'boolean',
-        default: false,
       },
     },
     handler(argv) {
-      createUser(argv.username, argv.password, argv.email, argv.gitAccount, argv.admin);
+      if (argv.action === 'add') {
+        addSSHKey(argv.username, argv.keyPath);
+      } else if (argv.action === 'remove') {
+        // TODO: Implement remove SSH key
+        console.error('Error: SSH key: Remove action not implemented yet');
+        process.exitCode = 1;
+      }
     },
   })
   .demandCommand(1, 'You need at least one command before moving on')
