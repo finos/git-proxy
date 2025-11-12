@@ -52,7 +52,7 @@ export interface GitProxyConfig {
    */
   csrfProtection?: boolean;
   /**
-   * Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL
+   * Provide custom URLs for the GitProxy interfaces in case it cannot determine its own URL
    */
   domains?: Domains;
   /**
@@ -70,7 +70,7 @@ export interface GitProxyConfig {
    */
   privateOrganizations?: any[];
   /**
-   * Deprecated: Used in early versions of git proxy to configure the remote host that traffic
+   * Deprecated: Used in early versions of GitProxy to configure the remote host that traffic
    * is proxied to. In later versions, the repository URL is used to determine the domain
    * proxied, allowing multiple hosts to be proxied by one instance.
    */
@@ -184,7 +184,7 @@ export interface AuthenticationElement {
    */
   domain?: string;
   /**
-   * Group that indicates that a user should be able to login to the Git Proxy UI and can work
+   * Group that indicates that a user should be able to login to the GitProxy UI and can work
    * as a reviewer
    */
   userGroup?: string;
@@ -414,7 +414,7 @@ export interface MessageBlock {
 }
 
 /**
- * Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL
+ * Provide custom URLs for the GitProxy interfaces in case it cannot determine its own URL
  */
 export interface Domains {
   /**

@@ -1,4 +1,4 @@
-### SSH Git Proxy Data Flow
+### GitProxy SSH Data Flow
 
 1.  **Client Connection:**
     - An SSH client (e.g., `git` command line) connects to the proxy server's listening port.

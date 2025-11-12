@@ -203,7 +203,7 @@ async function authoriseGitPush(id: string) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Authorise: Authentication required';
+          errorMessage = `Error: Authorise: Authentication required: '${error.response.data.message}'`;
           process.exitCode = 3;
           break;
         case 404:
@@ -250,7 +250,7 @@ async function rejectGitPush(id: string) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Reject: Authentication required';
+          errorMessage = `Error: Reject: Authentication required: '${error.response.data.message}'`;
           process.exitCode = 3;
           break;
         case 404:
@@ -297,7 +297,7 @@ async function cancelGitPush(id: string) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Cancel: Authentication required';
+          errorMessage = `Error: Cancel: Authentication required: '${error.response.data.message}'`;
           process.exitCode = 3;
           break;
         case 404:
@@ -372,7 +372,7 @@ async function addSSHKey(username: string, keyPath: string) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: SSH key: Authentication required';
+          errorMessage = `Error: SSH key: Authentication required: '${error.response.data.message}'`;
           process.exitCode = 3;
           break;
         case 404:
