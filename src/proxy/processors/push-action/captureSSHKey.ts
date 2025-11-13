@@ -11,6 +11,8 @@ import { SSHKeyManager } from '../../../security/SSHKeyManager';
  */
 const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('captureSSHKey');
+  let privateKeyBuffer: Buffer | null = null;
+  let publicKeyBuffer: Buffer | null = null;
 
   try {
     // Only capture SSH keys for SSH protocol pushes that will require approval
@@ -38,11 +40,11 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       return action;
     }
 
-    const privateKeyBuffer = Buffer.isBuffer(privateKeySource)
+    privateKeyBuffer = Buffer.isBuffer(privateKeySource)
       ? Buffer.from(privateKeySource)
       : Buffer.from(privateKeySource);
     const publicKeySource = action.sshUser.sshKeyInfo.keyData;
-    const publicKeyBuffer = publicKeySource
+    publicKeyBuffer = publicKeySource
       ? Buffer.isBuffer(publicKeySource)
         ? Buffer.from(publicKeySource)
         : Buffer.from(publicKeySource)
@@ -75,8 +77,6 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     step.log('SSH key information stored for approval process');
     step.setContent(`SSH key retained until ${encrypted.expiryTime.toISOString()}`);
 
-    privateKeyBuffer.fill(0);
-
     // Store SSH user information in the action for database persistence
     action.user = action.sshUser.username;
 
@@ -91,6 +91,13 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     step.setError(`Failed to capture SSH key: ${errorMessage}`);
     action.addStep(step);
     return action;
+  } finally {
+    if (privateKeyBuffer) {
+      privateKeyBuffer.fill(0);
+    }
+    if (publicKeyBuffer) {
+      publicKeyBuffer.fill(0);
+    }
   }
 };
 
