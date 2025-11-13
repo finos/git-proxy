@@ -574,6 +574,100 @@ describe('Database clients', async () => {
     // leave user in place for next test(s)
   });
 
+  it('should be able to add a public SSH key to a user', async function () {
+    const testKey = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@example.com';
+
+    await db.addPublicKey(TEST_USER.username, testKey);
+
+    const user = await db.findUser(TEST_USER.username);
+    expect(user.publicKeys).to.include(testKey);
+  });
+
+  it('should not add duplicate SSH key to same user', async function () {
+    const testKey = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@example.com';
+
+    // Add same key again - should not throw error but also not duplicate
+    await db.addPublicKey(TEST_USER.username, testKey);
+
+    const user = await db.findUser(TEST_USER.username);
+    const keyCount = user.publicKeys.filter((k) => k === testKey).length;
+    expect(keyCount).to.equal(1);
+  });
+
+  it('should throw DuplicateSSHKeyError when adding key already used by another user', async function () {
+    const testKey = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@example.com';
+    const otherUser = {
+      username: 'other-user',
+      password: 'password',
+      email: 'other@example.com',
+      gitAccount: 'other-git',
+      admin: false,
+      publicKeys: [],
+    };
+
+    // Create another user
+    await db.createUser(
+      otherUser.username,
+      otherUser.password,
+      otherUser.email,
+      otherUser.gitAccount,
+      otherUser.admin,
+    );
+
+    let threwError = false;
+    let errorType = null;
+    try {
+      // Try to add the same key to another user
+      await db.addPublicKey(otherUser.username, testKey);
+    } catch (e) {
+      threwError = true;
+      errorType = e.constructor.name;
+    }
+
+    expect(threwError).to.be.true;
+    expect(errorType).to.equal('DuplicateSSHKeyError');
+
+    // Cleanup
+    await db.deleteUser(otherUser.username);
+  });
+
+  it('should be able to find user by SSH key', async function () {
+    const testKey = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@example.com';
+
+    const user = await db.findUserBySSHKey(testKey);
+    expect(user).to.not.be.null;
+    expect(user.username).to.equal(TEST_USER.username);
+  });
+
+  it('should return null when finding user by non-existent SSH key', async function () {
+    const nonExistentKey = 'ssh-rsa NONEXISTENT';
+
+    const user = await db.findUserBySSHKey(nonExistentKey);
+    expect(user).to.be.null;
+  });
+
+  it('should be able to remove a public SSH key from a user', async function () {
+    const testKey = 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC test@example.com';
+
+    await db.removePublicKey(TEST_USER.username, testKey);
+
+    const user = await db.findUser(TEST_USER.username);
+    expect(user.publicKeys).to.not.include(testKey);
+  });
+
+  it('should not throw error when removing non-existent SSH key', async function () {
+    const nonExistentKey = 'ssh-rsa NONEXISTENT';
+
+    let threwError = false;
+    try {
+      await db.removePublicKey(TEST_USER.username, nonExistentKey);
+    } catch (e) {
+      threwError = true;
+    }
+
+    expect(threwError).to.be.false;
+  });
+
   it('should throw an error when authorising a user to push on non-existent repo', async function () {
     let threwError = false;
     try {

@@ -3,6 +3,7 @@ import { toClass } from '../helper';
 import { User } from '../types';
 import { connect } from './helper';
 import _ from 'lodash';
+import { DuplicateSSHKeyError } from '../../errors/DatabaseErrors';
 const collectionName = 'users';
 
 export const findUser = async function (username: string): Promise<User | null> {
@@ -71,6 +72,14 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
 };
 
 export const addPublicKey = async (username: string, publicKey: string): Promise<void> => {
+  // Check if this key already exists for any user
+  const existingUser = await findUserBySSHKey(publicKey);
+
+  if (existingUser && existingUser.username.toLowerCase() !== username.toLowerCase()) {
+    throw new DuplicateSSHKeyError(existingUser.username);
+  }
+
+  // Key doesn't exist for other users
   const collection = await connect(collectionName);
   await collection.updateOne(
     { username: username.toLowerCase() },

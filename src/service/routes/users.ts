@@ -3,6 +3,7 @@ import { utils } from 'ssh2';
 
 import * as db from '../../db';
 import { toPublicUser } from './publicApi';
+import { DuplicateSSHKeyError, UserNotFoundError } from '../../errors/DatabaseErrors';
 
 const router = express.Router();
 const parseKey = utils.parseKey;
@@ -65,7 +66,19 @@ router.post('/:username/ssh-keys', async (req: Request, res: Response) => {
     res.status(201).json({ message: 'SSH key added successfully' });
   } catch (error) {
     console.error('Error adding SSH key:', error);
-    res.status(500).json({ error: 'Failed to add SSH key' });
+
+    if (error instanceof DuplicateSSHKeyError) {
+      res.status(409).json({ error: error.message });
+      return;
+    }
+
+    if (error instanceof UserNotFoundError) {
+      res.status(404).json({ error: error.message });
+      return;
+    }
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    res.status(500).json({ error: `Failed to add SSH key: ${errorMessage}` });
   }
 });
 
