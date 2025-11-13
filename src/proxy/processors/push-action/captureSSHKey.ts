@@ -2,6 +2,21 @@ import { Action, Step } from '../../actions';
 import { SSHKeyForwardingService } from '../../../service/SSHKeyForwardingService';
 import { SSHKeyManager } from '../../../security/SSHKeyManager';
 
+function getPrivateKeyBuffer(req: any, action: Action): Buffer | null {
+  const sshKeyContext = req?.authContext?.sshKey;
+  const keyData =
+    sshKeyContext?.privateKey ?? sshKeyContext?.keyData ?? action.sshUser?.sshKeyInfo?.keyData;
+
+  return keyData ? toBuffer(keyData) : null;
+}
+
+function toBuffer(data: any): Buffer {
+  if (!data) {
+    return Buffer.alloc(0);
+  }
+  return Buffer.from(data);
+}
+
 /**
  * Capture SSH key for later use during approval process
  * This processor stores the user's SSH credentials securely when a push requires approval
@@ -20,33 +35,14 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       return action;
     }
 
-    // Check if we have the necessary SSH key information
-    if (!action.sshUser.sshKeyInfo) {
-      step.log('No SSH key information available for capture');
-      action.addStep(step);
-      return action;
-    }
-
-    const authContext = req?.authContext ?? {};
-    const sshKeyContext = authContext?.sshKey;
-    const privateKeySource =
-      sshKeyContext?.privateKey ?? sshKeyContext?.keyData ?? action.sshUser.sshKeyInfo.keyData;
-
-    if (!privateKeySource) {
+    const privateKeyBuffer = getPrivateKeyBuffer(req, action);
+    if (!privateKeyBuffer) {
       step.log('No SSH private key available for capture');
       action.addStep(step);
       return action;
     }
-
-    const privateKeyBuffer = Buffer.isBuffer(privateKeySource)
-      ? Buffer.from(privateKeySource)
-      : Buffer.from(privateKeySource);
-    const publicKeySource = action.sshUser.sshKeyInfo.keyData;
-    const publicKeyBuffer = publicKeySource
-      ? Buffer.isBuffer(publicKeySource)
-        ? Buffer.from(publicKeySource)
-        : Buffer.from(publicKeySource)
-      : Buffer.alloc(0);
+    const publicKeySource = action.sshUser?.sshKeyInfo?.keyData;
+    const publicKeyBuffer = toBuffer(publicKeySource);
 
     // For this implementation, we need to work with SSH agent forwarding
     // In a real-world scenario, you would need to:
@@ -58,13 +54,13 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
     const addedToAgent = SSHKeyForwardingService.addSSHKeyForPush(
       action.id,
-      Buffer.from(privateKeyBuffer),
+      privateKeyBuffer,
       publicKeyBuffer,
       action.sshUser.email ?? action.sshUser.username,
     );
 
     if (!addedToAgent) {
-      console.warn(
+      throw new Error(
         `[SSH Key Capture] Failed to cache SSH key in forwarding service for push ${action.id}`,
       );
     }
@@ -72,28 +68,24 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     const encrypted = SSHKeyManager.encryptSSHKey(privateKeyBuffer);
     action.encryptedSSHKey = encrypted.encryptedKey;
     action.sshKeyExpiry = encrypted.expiryTime;
+    action.user = action.sshUser.username; // Store SSH user info in action for db persistence
+
     step.log('SSH key information stored for approval process');
     step.setContent(`SSH key retained until ${encrypted.expiryTime.toISOString()}`);
 
     privateKeyBuffer.fill(0);
-
-    // Store SSH user information in the action for database persistence
-    action.user = action.sshUser.username;
+    publicKeyBuffer.fill(0);
 
     // Add SSH key information to the push for later retrieval
     // Note: In production, you would implement SSH agent forwarding here
     // This is a placeholder for the key capture mechanism
-
-    action.addStep(step);
-    return action;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     step.setError(`Failed to capture SSH key: ${errorMessage}`);
-    action.addStep(step);
-    return action;
   }
+  action.addStep(step);
+  return action;
 };
 
 exec.displayName = 'captureSSHKey.exec';
-
 export { exec };
