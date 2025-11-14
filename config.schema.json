@@ -196,7 +196,14 @@
                   },
                   "links": {
                     "type": "array",
-                    "items": { "type": "string", "format": "url" }
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "text": { "type": "string" },
+                        "url": { "type": "string", "format": "url" }
+                      }
+                    }
                   }
                 },
                 "required": ["text"]
@@ -466,7 +473,14 @@
               "description": "Additional JWT configuration.",
               "properties": {
                 "clientID": { "type": "string" },
-                "authorityURL": { "type": "string" }
+                "authorityURL": { "type": "string" },
+                "expectedAudience": { "type": "string" },
+                "roleMapping": {
+                  "type": "object",
+                  "properties": {
+                    "admin": { "type": "object" }
+                  }
+                }
               },
               "required": ["clientID", "authorityURL"]
             }

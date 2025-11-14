@@ -1,6 +1,6 @@
-import { User } from '../../db/types';
+import { PublicUser, User } from '../../db/types';
 
-export const toPublicUser = (user: User) => {
+export const toPublicUser = (user: User): PublicUser => {
   return {
     username: user.username || '',
     displayName: user.displayName || '',

@@ -1,50 +1,25 @@
-import { StepData } from '../proxy/actions/Step';
-import { AttestationData } from '../ui/views/PushDetails/attestation.types';
+import { Action } from '../proxy/actions';
+import { Step } from '../proxy/actions/Step';
+import { Repo } from '../db/types';
+import { Attestation } from '../proxy/processors/types';
+import { Question } from '../config/generated/config';
 
-export interface UserData {
-  id: string;
-  name: string;
-  username: string;
-  email?: string;
-  displayName?: string;
-  title?: string;
-  gitAccount?: string;
-  admin?: boolean;
+export interface PushActionView extends Action {
+  diff: Step;
 }
 
-export interface CommitData {
-  commitTs?: number;
-  message: string;
-  committer: string;
-  committerEmail: string;
-  tree?: string;
-  parent?: string;
-  author: string;
-  authorEmail: string;
-  commitTimestamp?: number;
+export interface RepoView extends Repo {
+  proxyURL: string;
+  lastModified?: string;
+  dateCreated?: string;
 }
 
-export interface PushData {
-  id: string;
-  url: string;
-  repo: string;
-  branch: string;
-  commitFrom: string;
-  commitTo: string;
-  commitData: CommitData[];
-  diff: {
-    content: string;
-  };
-  error: boolean;
-  canceled?: boolean;
-  rejected?: boolean;
-  blocked?: boolean;
-  authorised?: boolean;
-  attestation?: AttestationData;
-  autoApproved?: boolean;
-  timestamp: string | Date;
-  allowPush?: boolean;
-  lastStep?: StepData;
+export interface QuestionFormData extends Question {
+  checked: boolean;
+}
+
+export interface AttestationFormData extends Attestation {
+  questions: QuestionFormData[];
 }
 
 export interface Route {

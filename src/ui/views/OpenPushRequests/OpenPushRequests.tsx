@@ -5,13 +5,7 @@ import PushesTable from './components/PushesTable';
 import CustomTabs from '../../components/CustomTabs/CustomTabs';
 import Danger from '../../components/Typography/Danger';
 import { Visibility, CheckCircle, Cancel, Block } from '@material-ui/icons';
-import { SvgIconProps } from '@material-ui/core';
-
-interface TabConfig {
-  tabName: string;
-  tabIcon: React.ComponentType<SvgIconProps>;
-  tabContent: React.ReactNode;
-}
+import { TabItem } from '../../components/CustomTabs/CustomTabs';
 
 const Dashboard: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -20,7 +14,7 @@ const Dashboard: React.FC = () => {
     setErrorMessage(errorMessage);
   };
 
-  const tabs: TabConfig[] = [
+  const tabs: TabItem[] = [
     {
       tabName: 'Pending',
       tabIcon: Visibility,

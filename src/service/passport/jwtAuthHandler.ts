@@ -1,8 +1,7 @@
 import { assignRoles, validateJwt } from './jwtUtils';
 import type { Request, Response, NextFunction } from 'express';
 import { getAPIAuthMethods } from '../../config';
-import { JwtConfig, AuthenticationElement, Type } from '../../config/generated/config';
-import { RoleMapping } from './types';
+import { AuthenticationElement, JwtConfig, RoleMapping, Type } from '../../config/generated/config';
 
 export const type = 'jwt';
 
