@@ -232,4 +232,9 @@ router.post('/create-user', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/csrf-token', (req: Request, res: Response) => {
+  console.log('req.user', req.user);
+  res.send({ csrfToken: (req as any).csrfToken() });
+});
+
 export default { router, loginSuccessHandler };
