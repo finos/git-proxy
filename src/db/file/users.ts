@@ -2,6 +2,7 @@ import fs from 'fs';
 import Datastore from '@seald-io/nedb';
 
 import { User, UserQuery } from '../types';
+import { DuplicateSSHKeyError, UserNotFoundError } from '../../errors/DatabaseErrors';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -182,10 +183,20 @@ export const getUsers = (query: Partial<UserQuery> = {}): Promise<User[]> => {
 
 export const addPublicKey = (username: string, publicKey: string): Promise<void> => {
   return new Promise((resolve, reject) => {
-    findUser(username)
+    // Check if this key already exists for any user
+    findUserBySSHKey(publicKey)
+      .then((existingUser) => {
+        if (existingUser && existingUser.username.toLowerCase() !== username.toLowerCase()) {
+          reject(new DuplicateSSHKeyError(existingUser.username));
+          return;
+        }
+
+        // Key doesn't exist for other users
+        return findUser(username);
+      })
       .then((user) => {
         if (!user) {
-          reject(new Error('User not found'));
+          reject(new UserNotFoundError(username));
           return;
         }
         if (!user.publicKeys) {
