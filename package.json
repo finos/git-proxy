@@ -105,7 +105,7 @@
     "lodash": "^4.17.21",
     "lusca": "^1.7.0",
     "moment": "^2.30.1",
-    "mongodb": "^5.9.2",
+    "mongodb": "^7.0.0",
     "openid-client": "^6.8.1",
     "parse-diff": "^0.11.1",
     "passport": "^0.7.0",
@@ -116,7 +116,7 @@
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
     "react-html-parser": "^2.0.2",
-    "react-router-dom": "6.30.1",
+    "react-router-dom": "7.9.6",
     "simple-git": "^3.28.0",
     "uuid": "^11.1.0",
     "validator": "^13.15.15",
@@ -173,7 +173,7 @@
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.46.1",
-    "vite": "^4.5.14",
+    "vite": "^7.2.2",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "optionalDependencies": {
