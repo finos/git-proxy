@@ -200,7 +200,7 @@ describe('captureSSHKey', () => {
 
         expect(stepInstance.log.calledOnce).to.be.true;
         expect(stepInstance.log.firstCall.args[0]).to.equal(
-          'No SSH key information available for capture',
+          'No SSH private key available for capture',
         );
         expect(action.user).to.be.undefined;
         expect(addSSHKeyForPushStub.called).to.be.false;
@@ -217,7 +217,7 @@ describe('captureSSHKey', () => {
 
         expect(stepInstance.log.calledOnce).to.be.true;
         expect(stepInstance.log.firstCall.args[0]).to.equal(
-          'No SSH key information available for capture',
+          'No SSH private key available for capture',
         );
         expect(action.user).to.be.undefined;
         expect(addSSHKeyForPushStub.called).to.be.false;
@@ -234,7 +234,7 @@ describe('captureSSHKey', () => {
 
         expect(stepInstance.log.calledOnce).to.be.true;
         expect(stepInstance.log.firstCall.args[0]).to.equal(
-          'No SSH key information available for capture',
+          'No SSH private key available for capture',
         );
         expect(action.user).to.be.undefined;
         expect(addSSHKeyForPushStub.called).to.be.false;
