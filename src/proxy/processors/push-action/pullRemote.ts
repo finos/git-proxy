@@ -18,10 +18,8 @@ type CloneResult = {
   strategy: Action['pullAuthStrategy'];
 };
 
-const ensureDirectory = (targetPath: string) => {
-  if (!fs.existsSync(targetPath)) {
-    fs.mkdirSync(targetPath, { recursive: true, mode: 0o755 });
-  }
+const ensureDirectory = async (targetPath: string) => {
+  await fs.promises.mkdir(targetPath, { recursive: true, mode: 0o755 });
 };
 
 const decodeBasicAuth = (authHeader?: string): BasicCredentials | null => {
@@ -53,15 +51,7 @@ const buildSSHCloneUrl = (remoteUrl: string): string => {
 };
 
 const cleanupTempDir = async (tempDir: string) => {
-  try {
-    await fs.promises.rm(tempDir, { recursive: true, force: true });
-  } catch {
-    try {
-      await fs.promises.rmdir(tempDir, { recursive: true });
-    } catch (_) {
-      // ignore cleanup errors
-    }
-  }
+  await fs.promises.rm(tempDir, { recursive: true, force: true });
 };
 
 const cloneWithHTTPS = async (
@@ -75,11 +65,8 @@ const cloneWithHTTPS = async (
     dir: `${action.proxyGitPath}/${action.repoName}`,
     singleBranch: true,
     depth: 1,
+    onAuth: credentials ? () => credentials : undefined,
   };
-
-  if (credentials) {
-    cloneOptions.onAuth = () => credentials;
-  }
 
   await git.clone(cloneOptions);
 };
@@ -165,16 +152,8 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   try {
     action.proxyGitPath = `${dir}/${action.id}`;
 
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir);
-    }
-
-    if (!fs.existsSync(action.proxyGitPath)) {
-      step.log(`Creating folder ${action.proxyGitPath}`);
-      fs.mkdirSync(action.proxyGitPath, { recursive: true, mode: 0o755 });
-    }
-
-    ensureDirectory(action.proxyGitPath);
+    await ensureDirectory(dir);
+    await ensureDirectory(action.proxyGitPath);
 
     let result: CloneResult;
 
@@ -207,5 +186,4 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 };
 
 exec.displayName = 'pullRemote.exec';
-
 export { exec };
