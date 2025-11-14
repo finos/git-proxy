@@ -282,8 +282,13 @@ export interface Question {
  * and used to provide additional guidance to the reviewer.
  */
 export interface QuestionTooltip {
-  links?: string[];
+  links?: Link[];
   text: string;
+}
+
+export interface Link {
+  text?: string;
+  url?: string;
 }
 
 export interface AuthorisedRepo {
@@ -790,8 +795,15 @@ const typeMap: any = {
   ),
   QuestionTooltip: o(
     [
-      { json: 'links', js: 'links', typ: u(undefined, a('')) },
+      { json: 'links', js: 'links', typ: u(undefined, a(r('Link'))) },
       { json: 'text', js: 'text', typ: '' },
+    ],
+    false,
+  ),
+  Link: o(
+    [
+      { json: 'text', js: 'text', typ: u(undefined, '') },
+      { json: 'url', js: 'url', typ: u(undefined, '') },
     ],
     false,
   ),

@@ -196,7 +196,14 @@
                   },
                   "links": {
                     "type": "array",
-                    "items": { "type": "string", "format": "url" }
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "text": { "type": "string" },
+                        "url": { "type": "string", "format": "url" }
+                      }
+                    }
                   }
                 },
                 "required": ["text"]
