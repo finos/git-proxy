@@ -133,12 +133,8 @@ const handleSSHClone = async (req: any, action: Action, step: Step): Promise<Clo
   try {
     await cloneWithHTTPS(action, null);
   } catch (error) {
-    const err =
-      error instanceof Error
-        ? error
-        : new Error(typeof error === 'string' ? error : 'Unknown clone error');
-    err.message = `Unable to clone repository for SSH push without credentials: ${err.message}`;
-    throw err;
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`Unable to clone repository for SSH push without credentials: ${message}`);
   }
   return {
     command: `git clone ${action.url}`,

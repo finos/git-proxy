@@ -25,13 +25,12 @@ describe('pullRemote processor', () => {
 
   beforeEach(() => {
     fsStub = {
-      existsSync: sinon.stub().returns(true),
-      mkdirSync: sinon.stub(),
       promises: {
         mkdtemp: sinon.stub(),
         writeFile: sinon.stub(),
         rm: sinon.stub(),
         rmdir: sinon.stub(),
+        mkdir: sinon.stub(),
       },
     };
     setupModule();
