@@ -8,8 +8,13 @@ import util from 'util';
 import { CommitData, PushData } from '@finos/git-proxy/types';
 import { PushQuery } from '@finos/git-proxy/db';
 import { serverConfig } from '@finos/git-proxy/config/env';
+import {
+  ensureAuthCookie,
+  getCliCookies,
+  getCliPostRequestConfig,
+  GIT_PROXY_COOKIE_FILE,
+} from './utils';
 
-const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
 const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost' } = process.env;
 const { GIT_PROXY_UI_PORT: uiPort } = serverConfig;
@@ -24,25 +29,22 @@ axios.defaults.timeout = 30000;
  */
 async function login(username: string, password: string) {
   try {
+    const config = await getCliPostRequestConfig(baseUrl);
     let response = await axios.post(
       `${baseUrl}/api/auth/login`,
       {
         username,
         password,
       },
-      {
-        headers: { 'Content-Type': 'application/json' },
-        withCredentials: true,
-      },
+      config,
     );
     const cookies = response.headers['set-cookie'];
+    fs.writeFileSync(GIT_PROXY_COOKIE_FILE, cookies ? cookies.join('; ') : '');
 
     response = await axios.get(`${baseUrl}/api/auth/profile`, {
       headers: { Cookie: cookies },
       withCredentials: true,
     });
-
-    fs.writeFileSync(GIT_PROXY_COOKIE_FILE, JSON.stringify(cookies), 'utf8');
 
     const user = `"${response.data.username}" <${response.data.email}>`;
     const isAdmin = response.data.admin ? ' (admin)' : '';
@@ -80,15 +82,9 @@ async function login(username: string, password: string) {
  *          given attribute and status.
  */
 async function getGitPushes(filters: Partial<PushQuery>) {
-  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: List: Authentication required');
-    process.exitCode = 1;
-    return;
-  }
-
+  if (!ensureAuthCookie()) return;
   try {
-    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
-
+    const cookies = getCliCookies();
     const response = await axios.get(`${baseUrl}/api/v1/push/`, {
       headers: { Cookie: cookies },
       params: filters,
@@ -164,15 +160,9 @@ async function getGitPushes(filters: Partial<PushQuery>) {
  * @param {string} id The ID of the git push to authorise
  */
 async function authoriseGitPush(id: string) {
-  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: Authorise: Authentication required');
-    process.exitCode = 1;
-    return;
-  }
-
+  if (!ensureAuthCookie()) return;
   try {
-    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
-
+    const cookies = getCliCookies();
     await axios.get(`${baseUrl}/api/v1/push/${id}`, {
       headers: { Cookie: cookies },
     });
@@ -220,15 +210,9 @@ async function authoriseGitPush(id: string) {
  * @param {string} id The ID of the git push to reject
  */
 async function rejectGitPush(id: string) {
-  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: Reject: Authentication required');
-    process.exitCode = 1;
-    return;
-  }
-
+  if (!ensureAuthCookie()) return;
   try {
-    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
-
+    const cookies = getCliCookies();
     await axios.get(`${baseUrl}/api/v1/push/${id}`, {
       headers: { Cookie: cookies },
     });
@@ -267,15 +251,9 @@ async function rejectGitPush(id: string) {
  * @param {string} id The ID of the git push to cancel
  */
 async function cancelGitPush(id: string) {
-  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: Cancel: Authentication required');
-    process.exitCode = 1;
-    return;
-  }
-
+  if (!ensureAuthCookie()) return;
   try {
-    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
-
+    const cookies = getCliCookies();
     await axios.get(`${baseUrl}/api/v1/push/${id}`, {
       headers: { Cookie: cookies },
     });
@@ -315,23 +293,18 @@ async function cancelGitPush(id: string) {
 async function logout() {
   if (fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     try {
-      const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
-      fs.writeFileSync(GIT_PROXY_COOKIE_FILE, '*** logged out ***', 'utf8');
+      const config = await getCliPostRequestConfig(baseUrl);
+      await axios.post(`${baseUrl}/api/auth/logout`, {}, config);
+
+      console.log('Logged out successfully.');
       fs.unlinkSync(GIT_PROXY_COOKIE_FILE);
-
-      await axios.post(
-        `${baseUrl}/api/auth/logout`,
-        {},
-        {
-          headers: { Cookie: cookies },
-        },
-      );
     } catch (error: any) {
-      console.log(`Warning: Logout: '${error.message}'`);
+      console.error(`Error: Logout: '${error.message}'`);
+      process.exitCode = 2;
     }
+  } else {
+    console.error('Not logged in.');
   }
-
-  console.log('Logout: OK');
 }
 
 /**
@@ -340,29 +313,13 @@ async function logout() {
  * @param {string} keyPath Path to the public key file
  */
 async function addSSHKey(username: string, keyPath: string) {
-  console.log('Add SSH key', { username, keyPath });
-  if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
-    console.error('Error: SSH key: Authentication required');
-    process.exitCode = 1;
-    return;
-  }
-
+  if (!ensureAuthCookie()) return;
   try {
-    const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
     const publicKey = fs.readFileSync(keyPath, 'utf8').trim();
+    const config = await getCliPostRequestConfig(baseUrl);
 
     console.log('Adding SSH key', { username, publicKey });
-    await axios.post(
-      `${baseUrl}/api/v1/user/${username}/ssh-keys`,
-      { publicKey },
-      {
-        headers: {
-          Cookie: cookies,
-          'Content-Type': 'application/json',
-        },
-        withCredentials: true,
-      },
-    );
+    await axios.post(`${baseUrl}/api/v1/user/${username}/ssh-keys`, { publicKey }, config);
 
     console.log(`SSH key added successfully for user ${username}`);
   } catch (error: any) {
@@ -372,7 +329,7 @@ async function addSSHKey(username: string, keyPath: string) {
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = `Error: SSH key: Authentication required: '${error.response.data.message}'`;
+          errorMessage = `Error: SSH key: Authentication required: '${error.message}'`;
           process.exitCode = 3;
           break;
         case 404:
