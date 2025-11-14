@@ -1,6 +1,8 @@
 import { Action } from '../proxy/actions';
 import { Step } from '../proxy/actions/Step';
 import { Repo } from '../db/types';
+import { Attestation } from '../proxy/processors/types';
+import { Question } from '../config/generated/config';
 
 export interface PushActionView extends Action {
   diff: Step;
@@ -12,24 +14,11 @@ export interface RepoView extends Repo {
   dateCreated?: string;
 }
 
-export interface QuestionFormData {
-  label: string;
+export interface QuestionFormData extends Question {
   checked: boolean;
-  tooltip: {
-    text: string;
-    links?: {
-      text: string;
-      url: string;
-    }[];
-  };
 }
 
-export interface AttestationFormData {
-  reviewer: {
-    username: string;
-    gitAccount: string;
-  };
-  timestamp: string | Date;
+export interface AttestationFormData extends Attestation {
   questions: QuestionFormData[];
 }
 

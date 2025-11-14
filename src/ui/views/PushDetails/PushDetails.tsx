@@ -22,7 +22,7 @@ import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/g
 import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
-import { PushActionView } from '../../types';
+import { AttestationFormData, PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
 import { generateEmailLink, getGitProvider } from '../../utils';
 import UserLink from '../../components/UserLink/UserLink';
@@ -233,7 +233,7 @@ const Dashboard: React.FC = () => {
 
                   {!push.autoApproved && (
                     <AttestationView
-                      data={push.attestation}
+                      data={push.attestation as AttestationFormData}
                       attestation={attestation}
                       setAttestation={setAttestation}
                     />

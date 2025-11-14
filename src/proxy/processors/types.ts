@@ -1,3 +1,4 @@
+import { Question } from '../../config/generated/config';
 import { Action } from '../actions';
 
 export interface Processor {
@@ -8,6 +9,15 @@ export interface Processor {
 export interface ProcessorMetadata {
   displayName: string;
 }
+
+export type Attestation = {
+  reviewer: {
+    username: string;
+    gitAccount: string;
+  };
+  timestamp: string | Date;
+  questions: Question[];
+};
 
 export type CommitContent = {
   item: number;
