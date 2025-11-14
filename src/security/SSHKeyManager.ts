@@ -1,4 +1,5 @@
 import * as crypto from 'crypto';
+import * as fs from 'fs';
 import { getSSHConfig } from '../config';
 
 /**
@@ -9,6 +10,7 @@ export class SSHKeyManager {
   private static readonly KEY_EXPIRY_HOURS = 24; // 24 hours max retention
   private static readonly IV_LENGTH = 16;
   private static readonly TAG_LENGTH = 16;
+  private static readonly AAD = Buffer.from('ssh-key-proxy');
 
   /**
    * Get the encryption key from environment or generate a secure one
@@ -22,7 +24,6 @@ export class SSHKeyManager {
 
     // For development, use a key derived from the SSH host key
     const hostKeyPath = getSSHConfig().hostKey.privateKeyPath;
-    const fs = require('fs');
     const hostKey = fs.readFileSync(hostKeyPath);
 
     // Create a consistent key from the host key
@@ -43,7 +44,7 @@ export class SSHKeyManager {
     const iv = crypto.randomBytes(this.IV_LENGTH);
 
     const cipher = crypto.createCipheriv(this.ALGORITHM, encryptionKey, iv);
-    cipher.setAAD(Buffer.from('ssh-key-proxy'));
+    cipher.setAAD(this.AAD);
 
     let encrypted = cipher.update(keyBuffer);
     encrypted = Buffer.concat([encrypted, cipher.final()]);
@@ -51,12 +52,9 @@ export class SSHKeyManager {
     const tag = cipher.getAuthTag();
     const result = Buffer.concat([iv, tag, encrypted]);
 
-    const expiryTime = new Date();
-    expiryTime.setHours(expiryTime.getHours() + this.KEY_EXPIRY_HOURS);
-
     return {
       encryptedKey: result.toString('base64'),
-      expiryTime,
+      expiryTime: new Date(Date.now() + this.KEY_EXPIRY_HOURS * 60 * 60 * 1000),
     };
   }
 
@@ -82,7 +80,7 @@ export class SSHKeyManager {
       const encrypted = data.subarray(this.IV_LENGTH + this.TAG_LENGTH);
 
       const decipher = crypto.createDecipheriv(this.ALGORITHM, encryptionKey, iv);
-      decipher.setAAD(Buffer.from('ssh-key-proxy'));
+      decipher.setAAD(this.AAD);
       decipher.setAuthTag(tag);
 
       let decrypted = decipher.update(encrypted);
