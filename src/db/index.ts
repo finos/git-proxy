@@ -167,8 +167,13 @@ export const deleteRepo = (_id: string): Promise<void> => sink.deleteRepo(_id);
 export const findUser = (username: string): Promise<User | null> => sink.findUser(username);
 export const findUserByEmail = (email: string): Promise<User | null> => sink.findUserByEmail(email);
 export const findUserByOIDC = (oidcId: string): Promise<User | null> => sink.findUserByOIDC(oidcId);
+export const findUserBySSHKey = (sshKey: string): Promise<User | null> =>
+  sink.findUserBySSHKey(sshKey);
 export const getUsers = (query?: Partial<UserQuery>): Promise<User[]> => sink.getUsers(query);
 export const deleteUser = (username: string): Promise<void> => sink.deleteUser(username);
-
 export const updateUser = (user: Partial<User>): Promise<void> => sink.updateUser(user);
+export const addPublicKey = (username: string, publicKey: string): Promise<void> =>
+  sink.addPublicKey(username, publicKey);
+export const removePublicKey = (username: string, publicKey: string): Promise<void> =>
+  sink.removePublicKey(username, publicKey);
 export type { PushQuery, Repo, Sink, User } from './types';

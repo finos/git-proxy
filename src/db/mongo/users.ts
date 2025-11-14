@@ -3,6 +3,7 @@ import { toClass } from '../helper';
 import { User } from '../types';
 import { connect } from './helper';
 import _ from 'lodash';
+import { DuplicateSSHKeyError } from '../../errors/DatabaseErrors';
 const collectionName = 'users';
 
 export const findUser = async function (username: string): Promise<User | null> {
@@ -46,6 +47,9 @@ export const deleteUser = async function (username: string): Promise<void> {
 export const createUser = async function (user: User): Promise<void> {
   user.username = user.username.toLowerCase();
   user.email = user.email.toLowerCase();
+  if (!user.publicKeys) {
+    user.publicKeys = [];
+  }
   const collection = await connect(collectionName);
   await collection.insertOne(user as OptionalId<Document>);
 };
@@ -57,9 +61,42 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
   if (user.email) {
     user.email = user.email.toLowerCase();
   }
+  if (!user.publicKeys) {
+    user.publicKeys = [];
+  }
   const { _id, ...userWithoutId } = user;
   const filter = _id ? { _id: new ObjectId(_id) } : { username: user.username };
   const options = { upsert: true };
   const collection = await connect(collectionName);
   await collection.updateOne(filter, { $set: userWithoutId }, options);
+};
+
+export const addPublicKey = async (username: string, publicKey: string): Promise<void> => {
+  // Check if this key already exists for any user
+  const existingUser = await findUserBySSHKey(publicKey);
+
+  if (existingUser && existingUser.username.toLowerCase() !== username.toLowerCase()) {
+    throw new DuplicateSSHKeyError(existingUser.username);
+  }
+
+  // Key doesn't exist for other users
+  const collection = await connect(collectionName);
+  await collection.updateOne(
+    { username: username.toLowerCase() },
+    { $addToSet: { publicKeys: publicKey } },
+  );
+};
+
+export const removePublicKey = async (username: string, publicKey: string): Promise<void> => {
+  const collection = await connect(collectionName);
+  await collection.updateOne(
+    { username: username.toLowerCase() },
+    { $pull: { publicKeys: publicKey } },
+  );
+};
+
+export const findUserBySSHKey = async function (sshKey: string): Promise<User | null> {
+  const collection = await connect(collectionName);
+  const doc = await collection.findOne({ publicKeys: { $eq: sshKey } });
+  return doc ? toClass(doc, User.prototype) : null;
 };

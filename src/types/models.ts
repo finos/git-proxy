@@ -43,6 +43,10 @@ export interface PushData {
   attestation?: AttestationData;
   autoApproved?: boolean;
   timestamp: string | Date;
+  encryptedSSHKey?: string;
+  sshKeyExpiry?: Date;
+  protocol?: 'https' | 'ssh';
+  userId?: string;
   allowPush?: boolean;
   lastStep?: StepData;
 }
