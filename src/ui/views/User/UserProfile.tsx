@@ -7,16 +7,15 @@ import CardBody from '../../components/Card/CardBody';
 import Button from '../../components/CustomButtons/Button';
 import FormLabel from '@material-ui/core/FormLabel';
 import { getUser, updateUser } from '../../services/user';
-import { UserContext } from '../../../context';
+import { UserContext, UserContextType } from '../../context';
 
-import { UserData } from '../../../types/models';
+import { PublicUser } from '../../../db/types';
 import { makeStyles } from '@material-ui/core/styles';
 
 import { LogoGithubIcon } from '@primer/octicons-react';
 import CloseRounded from '@material-ui/icons/CloseRounded';
 import { Check, Save } from '@material-ui/icons';
 import { TextField, Theme } from '@material-ui/core';
-import { UserContextType } from '../RepoDetails/RepoDetails';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
@@ -29,7 +28,7 @@ const useStyles = makeStyles((theme: Theme) => ({
 
 export default function UserProfile(): React.ReactElement {
   const classes = useStyles();
-  const [data, setData] = useState<UserData | null>(null);
+  const [user, setUser] = useState<PublicUser | null>(null);
   const [auth, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
@@ -42,9 +41,9 @@ export default function UserProfile(): React.ReactElement {
   useEffect(() => {
     getUser(
       setIsLoading,
-      (userData: UserData) => {
-        setData(userData);
-        setGitAccount(userData.gitAccount || '');
+      (user: PublicUser) => {
+        setUser(user);
+        setGitAccount(user.gitAccount || '');
       },
       setAuth,
       setIsError,
@@ -58,16 +57,16 @@ export default function UserProfile(): React.ReactElement {
   if (!auth && window.location.pathname === '/dashboard/profile') {
     return <Navigate to='/login' />;
   }
-  if (!data) return <div>No user data available</div>;
+  if (!user) return <div>No user data available</div>;
 
   const updateProfile = async (): Promise<void> => {
     try {
       const updatedData = {
-        ...data,
+        ...user,
         gitAccount: escapeHTML(gitAccount),
       };
       await updateUser(updatedData);
-      setData(updatedData);
+      setUser(updatedData);
       navigate(`/dashboard/profile`);
     } catch {
       setIsError(true);
@@ -107,43 +106,43 @@ export default function UserProfile(): React.ReactElement {
                   paddingTop: '10px',
                 }}
               >
-                {data.gitAccount && (
+                {user.gitAccount && (
                   <GridItem xs={1} sm={1} md={1}>
                     <img
                       width={'75px'}
                       style={{ borderRadius: '5px' }}
-                      src={`https://github.com/${data.gitAccount}.png`}
-                      alt={`${data.displayName}'s GitHub avatar`}
+                      src={`https://github.com/${user.gitAccount}.png`}
+                      alt={`${user.displayName}'s GitHub avatar`}
                     />
                   </GridItem>
                 )}
                 <GridItem xs={2} sm={2} md={2}>
                   <FormLabel component='legend'>Name</FormLabel>
-                  {data.displayName}
+                  {user.displayName}
                 </GridItem>
                 <GridItem xs={2} sm={2} md={2}>
                   <FormLabel component='legend'>Role</FormLabel>
-                  {data.title}
+                  {user.title}
                 </GridItem>
                 <GridItem xs={2} sm={2} md={2}>
                   <FormLabel component='legend'>E-mail</FormLabel>
-                  <a href={`mailto:${data.email}`}>{data.email}</a>
+                  <a href={`mailto:${user.email}`}>{user.email}</a>
                 </GridItem>
-                {data.gitAccount && (
+                {user.gitAccount && (
                   <GridItem xs={2} sm={2} md={2}>
                     <FormLabel component='legend'>GitHub Username</FormLabel>
                     <a
-                      href={`https://github.com/${data.gitAccount}`}
+                      href={`https://github.com/${user.gitAccount}`}
                       rel='noreferrer'
                       target='_blank'
                     >
-                      {data.gitAccount}
+                      {user.gitAccount}
                     </a>
                   </GridItem>
                 )}
                 <GridItem xs={2} sm={2} md={2}>
                   <FormLabel component='legend'>Administrator</FormLabel>
-                  {data.admin ? (
+                  {user.admin ? (
                     <span style={{ color: 'green' }}>
                       <Check fontSize='small' />
                     </span>

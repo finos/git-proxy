@@ -9,18 +9,13 @@ import Sidebar from '../components/Sidebar/Sidebar';
 import routes from '../../routes';
 import styles from '../assets/jss/material-dashboard-react/layouts/dashboardStyle';
 import logo from '../assets/img/git-proxy.png';
-import { UserContext } from '../../context';
+import { UserContext } from '../context';
 import { getUser } from '../services/user';
-import { Route as RouteType } from '../../types/models';
+import { Route as RouteType } from '../types';
+import { PublicUser } from '../../db/types';
 
 interface DashboardProps {
   [key: string]: any;
-}
-
-interface UserType {
-  id?: string;
-  name?: string;
-  email?: string;
 }
 
 let ps: PerfectScrollbar | undefined;
@@ -33,7 +28,7 @@ const Dashboard: React.FC<DashboardProps> = ({ ...rest }) => {
   const mainPanel = useRef<HTMLDivElement>(null);
   const [color] = useState<'purple' | 'blue' | 'green' | 'orange' | 'red'>('blue');
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
-  const [user, setUser] = useState<UserType>({});
+  const [user, setUser] = useState<PublicUser>({} as PublicUser);
   const { id } = useParams<{ id?: string }>();
 
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);

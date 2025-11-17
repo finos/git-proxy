@@ -223,7 +223,10 @@ describe('Generated Config (QuickType)', () => {
           questions: [
             {
               label: 'Test Question',
-              tooltip: { text: 'Test tooltip content', links: ['https://git-proxy.finos.org./'] },
+              tooltip: {
+                text: 'Test tooltip content',
+                links: [{ text: 'Test link', url: 'https://git-proxy.finos.org./' }],
+              },
             },
           ],
         },

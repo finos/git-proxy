@@ -8,7 +8,7 @@ import Hidden from '@material-ui/core/Hidden';
 import Menu from '@material-ui/icons/Menu';
 import DashboardNavbarLinks from './DashboardNavbarLinks';
 import styles from '../../assets/jss/material-dashboard-react/components/headerStyle';
-import { Route } from '../../../types/models';
+import { Route } from '../../types';
 
 const useStyles = makeStyles(styles as any);
 

@@ -17,13 +17,13 @@ import Pagination from '../../../components/Pagination/Pagination';
 import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
 import Danger from '../../../components/Typography/Danger';
-import { UserData } from '../../../../types/models';
+import { PublicUser } from '../../../../db/types';
 
 const useStyles = makeStyles(styles as any);
 
 const UserList: React.FC = () => {
   const classes = useStyles();
-  const [data, setData] = useState<UserData[]>([]);
+  const [users, setUsers] = useState<PublicUser[]>([]);
   const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -35,13 +35,13 @@ const UserList: React.FC = () => {
   const openUser = (username: string) => navigate(`/dashboard/user/${username}`, { replace: true });
 
   useEffect(() => {
-    getUsers(setIsLoading, setData, setAuth, setErrorMessage);
+    getUsers(setIsLoading, setUsers, setAuth, setErrorMessage);
   }, []);
 
   if (isLoading) return <div>Loading...</div>;
   if (errorMessage) return <Danger>{errorMessage}</Danger>;
 
-  const filteredUsers = data.filter(
+  const filteredUsers = users.filter(
     (user) =>
       (user.displayName && user.displayName.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase())),
@@ -78,24 +78,24 @@ const UserList: React.FC = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {currentItems.map((row) => (
-                <TableRow key={row.username}>
-                  <TableCell align='left'>{row.displayName}</TableCell>
-                  <TableCell align='left'>{row.title}</TableCell>
+              {currentItems.map((user) => (
+                <TableRow key={user.username}>
+                  <TableCell align='left'>{user.displayName}</TableCell>
+                  <TableCell align='left'>{user.title}</TableCell>
                   <TableCell align='left'>
-                    <a href={`mailto:${row.email}`}>{row.email}</a>
+                    <a href={`mailto:${user.email}`}>{user.email}</a>
                   </TableCell>
                   <TableCell align='left'>
                     <a
-                      href={`https://github.com/${row.gitAccount}`}
+                      href={`https://github.com/${user.gitAccount}`}
                       target='_blank'
                       rel='noreferrer'
                     >
-                      {row.gitAccount}
+                      {user.gitAccount}
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    {row.admin ? (
+                    {user.admin ? (
                       <Check fontSize='small' color='primary' />
                     ) : (
                       <CloseRounded color='error' />
@@ -105,7 +105,7 @@ const UserList: React.FC = () => {
                     <Button
                       variant='contained'
                       color='primary'
-                      onClick={() => openUser(row.username)}
+                      onClick={() => openUser(user.username)}
                     >
                       <KeyboardArrowRight />
                     </Button>
