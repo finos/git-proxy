@@ -297,13 +297,15 @@ async function logout() {
       await axios.post(`${baseUrl}/api/auth/logout`, {}, config);
 
       console.log('Logged out successfully.');
-      fs.unlinkSync(GIT_PROXY_COOKIE_FILE);
     } catch (error: any) {
       console.error(`Error: Logout: '${error.message}'`);
       process.exitCode = 2;
+    } finally {
+      fs.unlinkSync(GIT_PROXY_COOKIE_FILE);
     }
   } else {
-    console.error('Not logged in.');
+    console.error('Error: Logout: Not logged in.');
+    process.exitCode = 2;
   }
 }
 

@@ -157,17 +157,17 @@ describe('test git-proxy-cli', function () {
   // *** logout ***
 
   describe('test git-proxy-cli :: logout', function () {
-    it('logout shoud succeed when server is down (and not logged in before)', async function () {
+    it('logout should fail when server is down (and not logged in before)', async function () {
       await helper.removeCookiesFile();
 
       const cli = `${CLI_PATH} logout`;
-      const expectedExitCode = 0;
-      const expectedMessages = [`Logout: OK`];
-      const expectedErrorMessages = null;
+      const expectedExitCode = 2;
+      const expectedMessages = null;
+      const expectedErrorMessages = ['Error: Logout: Not logged in.'];
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
-    it('logout should succeed when server is down (but logged in before)', async function () {
+    it('logout should fail when server is down (but logged in before)', async function () {
       try {
         await helper.startServer();
         await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
@@ -176,9 +176,9 @@ describe('test git-proxy-cli', function () {
       }
 
       const cli = `${CLI_PATH} logout`;
-      const expectedExitCode = 0;
-      const expectedMessages = [`Logout: OK`];
-      const expectedErrorMessages = null;
+      const expectedExitCode = 2;
+      const expectedMessages = null;
+      const expectedErrorMessages = ['Error: Logout'];
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
@@ -188,7 +188,7 @@ describe('test git-proxy-cli', function () {
 
         const cli = `${CLI_PATH} logout`;
         const expectedExitCode = 0;
-        const expectedMessages = [`Logout: OK`];
+        const expectedMessages = [`Logged out successfully.`];
         const expectedErrorMessages = null;
         await helper.startServer();
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
@@ -204,7 +204,7 @@ describe('test git-proxy-cli', function () {
 
         const cli = `${CLI_PATH} logout`;
         const expectedExitCode = 0;
-        const expectedMessages = [`Logout: OK`];
+        const expectedMessages = [`Logged out successfully.`];
         const expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
       } finally {
@@ -254,7 +254,7 @@ describe('test git-proxy-cli', function () {
       const cli = `${CLI_PATH} authorise --id ${id}`;
       const expectedExitCode = 1;
       const expectedMessages = null;
-      const expectedErrorMessages = ['Error: Authorise: Authentication required'];
+      const expectedErrorMessages = ['Error: Authentication required'];
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
@@ -331,7 +331,7 @@ describe('test git-proxy-cli', function () {
       const cli = `${CLI_PATH} cancel --id ${id}`;
       const expectedExitCode = 1;
       const expectedMessages = null;
-      const expectedErrorMessages = ['Error: Cancel: Authentication required'];
+      const expectedErrorMessages = ['Error: Authentication required'];
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
@@ -393,7 +393,7 @@ describe('test git-proxy-cli', function () {
       const cli = `${CLI_PATH} ls`;
       const expectedExitCode = 1;
       const expectedMessages = null;
-      const expectedErrorMessages = ['Error: List: Authentication required'];
+      const expectedErrorMessages = ['Error: Authentication required'];
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
@@ -454,7 +454,7 @@ describe('test git-proxy-cli', function () {
       const cli = `${CLI_PATH} reject --id ${id}`;
       const expectedExitCode = 1;
       const expectedMessages = null;
-      const expectedErrorMessages = ['Error: Reject: Authentication required'];
+      const expectedErrorMessages = ['Error: Authentication required'];
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 

@@ -7,6 +7,16 @@ export const getCliPostRequestConfig = async (baseUrl: string) => {
   const initialCookies = fs.existsSync(GIT_PROXY_COOKIE_FILE)
     ? fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8').split('; ')
     : null;
+
+  if (process.env.NODE_ENV === 'test') {
+    return {
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: initialCookies,
+      },
+      withCredentials: true,
+    };
+  }
   const csrfTokenResponse = await axios.get(`${baseUrl}/api/auth/csrf-token`, {
     headers: {
       Cookie: initialCookies ? initialCookies.join('; ') : null,
