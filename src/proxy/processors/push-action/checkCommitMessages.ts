@@ -5,8 +5,6 @@ const isMessageAllowed = (commitMessage: string): boolean => {
   try {
     const commitConfig = getCommitConfig();
 
-    console.log(`isMessageAllowed(${commitMessage})`);
-
     // Commit message is empty, i.e. '', null or undefined
     if (!commitMessage) {
       console.log('No commit message included...');
@@ -19,26 +17,21 @@ const isMessageAllowed = (commitMessage: string): boolean => {
       return false;
     }
 
-    // Configured blocked literals
+    // Configured blocked literals and patterns
     const blockedLiterals: string[] = commitConfig.message?.block?.literals ?? [];
-
-    // Configured blocked patterns
     const blockedPatterns: string[] = commitConfig.message?.block?.patterns ?? [];
 
-    // Find all instances of blocked literals in commit message...
+    // Find all instances of blocked literals and patterns in commit message
     const positiveLiterals = blockedLiterals.map((literal: string) =>
       commitMessage.toLowerCase().includes(literal.toLowerCase()),
     );
 
-    // Find all instances of blocked patterns in commit message...
     const positivePatterns = blockedPatterns.map((pattern: string) =>
       commitMessage.match(new RegExp(pattern, 'gi')),
     );
 
-    // Flatten any positive literal results into a 1D array...
+    // Flatten any positive literal and pattern results into a 1D array
     const literalMatches = positiveLiterals.flat().filter((result) => !!result);
-
-    // Flatten any positive pattern results into a 1D array...
     const patternMatches = positivePatterns.flat().filter((result) => !!result);
 
     // Commit message matches configured block pattern(s)
@@ -59,15 +52,10 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('checkCommitMessages');
 
   const uniqueCommitMessages = [...new Set(action.commitData?.map((commit) => commit.message))];
-  console.log({ uniqueCommitMessages });
 
   const illegalMessages = uniqueCommitMessages.filter((message) => !isMessageAllowed(message));
-  console.log({ illegalMessages });
 
-  const usingIllegalMessages = illegalMessages.length > 0;
-  console.log({ usingIllegalMessages });
-
-  if (usingIllegalMessages) {
+  if (illegalMessages.length > 0) {
     console.log(`The following commit messages are illegal: ${illegalMessages}`);
 
     step.error = true;

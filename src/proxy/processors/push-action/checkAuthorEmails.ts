@@ -35,15 +35,10 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   const uniqueAuthorEmails = [
     ...new Set(action.commitData?.map((commitData: CommitData) => commitData.authorEmail)),
   ];
-  console.log({ uniqueAuthorEmails });
 
   const illegalEmails = uniqueAuthorEmails.filter((email) => !isEmailAllowed(email));
-  console.log({ illegalEmails });
 
-  const usingIllegalEmails = illegalEmails.length > 0;
-  console.log({ usingIllegalEmails });
-
-  if (usingIllegalEmails) {
+  if (illegalEmails.length > 0) {
     console.log(`The following commit author e-mails are illegal: ${illegalEmails}`);
 
     step.error = true;

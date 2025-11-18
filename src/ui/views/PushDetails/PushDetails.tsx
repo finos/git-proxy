@@ -42,12 +42,10 @@ const Dashboard: React.FC = () => {
 
   const setUserAllowedToApprove = (userAllowedToApprove: boolean) => {
     isUserAllowedToApprove = userAllowedToApprove;
-    console.log('isUserAllowedToApprove:' + isUserAllowedToApprove);
   };
 
   const setUserAllowedToReject = (userAllowedToReject: boolean) => {
     isUserAllowedToReject = userAllowedToReject;
-    console.log({ isUserAllowedToReject });
   };
 
   useEffect(() => {
