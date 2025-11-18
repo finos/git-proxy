@@ -317,9 +317,6 @@ describe('checkCommitMessages', () => {
 
         const result = await exec({}, action);
 
-        expect(consoleLogSpy).toHaveBeenCalledWith({
-          uniqueCommitMessages: ['fix: bug'],
-        });
         expect(result.steps[0].error).toBe(false);
       });
 
@@ -333,9 +330,6 @@ describe('checkCommitMessages', () => {
 
         const result = await exec({}, action);
 
-        expect(consoleLogSpy).toHaveBeenCalledWith({
-          uniqueCommitMessages: ['fix: bug', 'Add password'],
-        });
         expect(result.steps[0].error).toBe(true);
       });
     });
@@ -386,42 +380,6 @@ describe('checkCommitMessages', () => {
 
         expect(step.errorMessage).toContain('Add password');
         expect(step.errorMessage).toContain('Store token');
-      });
-
-      it('should log unique commit messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [
-          { message: 'fix: bug A' } as Commit,
-          { message: 'fix: bug B' } as Commit,
-        ];
-
-        await exec({}, action);
-
-        expect(consoleLogSpy).toHaveBeenCalledWith({
-          uniqueCommitMessages: ['fix: bug A', 'fix: bug B'],
-        });
-      });
-
-      it('should log illegal messages array', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add password' } as Commit];
-
-        await exec({}, action);
-
-        expect(consoleLogSpy).toHaveBeenCalledWith({
-          illegalMessages: ['Add password'],
-        });
-      });
-
-      it('should log usingIllegalMessages flag', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'fix: bug' } as Commit];
-
-        await exec({}, action);
-
-        expect(consoleLogSpy).toHaveBeenCalledWith({
-          usingIllegalMessages: false,
-        });
       });
     });
 

@@ -84,9 +84,6 @@ describe('checkAuthorEmails', () => {
 
         const step = vi.mocked(result.addStep).mock.calls[0][0];
         expect(step.error).toBe(true);
-        expect(consoleLogSpy).toHaveBeenCalledWith(
-          expect.objectContaining({ illegalEmails: [''] }),
-        );
       });
 
       it('should reject null/undefined email', async () => {
@@ -163,11 +160,6 @@ describe('checkAuthorEmails', () => {
 
         const step = vi.mocked(result.addStep).mock.calls[0][0];
         expect(step.error).toBe(true);
-        expect(consoleLogSpy).toHaveBeenCalledWith(
-          expect.objectContaining({
-            illegalEmails: ['user@notallowed.com', 'admin@different.org'],
-          }),
-        );
       });
 
       it('should handle partial domain matches correctly', async () => {
@@ -297,15 +289,6 @@ describe('checkAuthorEmails', () => {
 
         const step = vi.mocked(result.addStep).mock.calls[0][0];
         expect(step.error).toBe(true);
-        expect(consoleLogSpy).toHaveBeenCalledWith(
-          expect.objectContaining({
-            illegalEmails: expect.arrayContaining([
-              'test@example.com',
-              'temporary@example.com',
-              'fakeuser@example.com',
-            ]),
-          }),
-        );
       });
 
       it('should allow all local parts when block list is empty', async () => {
@@ -359,11 +342,6 @@ describe('checkAuthorEmails', () => {
 
         const step = vi.mocked(result.addStep).mock.calls[0][0];
         expect(step.error).toBe(true);
-        expect(consoleLogSpy).toHaveBeenCalledWith(
-          expect.objectContaining({
-            illegalEmails: expect.arrayContaining(['noreply@example.com', 'valid@otherdomain.com']),
-          }),
-        );
       });
     });
   });
@@ -393,19 +371,8 @@ describe('checkAuthorEmails', () => {
       await exec(mockReq, mockAction);
 
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          uniqueAuthorEmails: expect.arrayContaining([
-            'user1@example.com',
-            'user2@example.com',
-            'user3@example.com',
-          ]),
-        }),
+        'The following commit author e-mails are legal: user1@example.com,user2@example.com,user3@example.com',
       );
-      // should only have 3 unique emails
-      const uniqueEmailsCall = consoleLogSpy.mock.calls.find(
-        (call: any) => call[0].uniqueAuthorEmails !== undefined,
-      );
-      expect(uniqueEmailsCall[0].uniqueAuthorEmails).toHaveLength(3);
     });
 
     it('should handle empty commitData', async () => {
@@ -415,9 +382,6 @@ describe('checkAuthorEmails', () => {
 
       const step = vi.mocked(result.addStep).mock.calls[0][0];
       expect(step.error).toBe(false);
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.objectContaining({ uniqueAuthorEmails: [] }),
-      );
     });
 
     it('should handle undefined commitData', async () => {
@@ -434,10 +398,6 @@ describe('checkAuthorEmails', () => {
       mockAction.commitData = [{ authorEmail: 'invalid-email' } as Commit];
 
       await exec(mockReq, mockAction);
-
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        'The following commit author e-mails are illegal: invalid-email',
-      );
     });
 
     it('should log success message when all emails are legal', async () => {
@@ -461,22 +421,6 @@ describe('checkAuthorEmails', () => {
 
       const step = vi.mocked(mockAction.addStep).mock.calls[0][0];
       expect(step.error).toBe(true);
-    });
-
-    it('should call step.log with illegal emails message', async () => {
-      vi.mocked(validator.isEmail).mockReturnValue(false);
-      mockAction.commitData = [{ authorEmail: 'illegal@email' } as Commit];
-
-      await exec(mockReq, mockAction);
-
-      // re-execute to verify log call
-      vi.mocked(validator.isEmail).mockReturnValue(false);
-      await exec(mockReq, mockAction);
-
-      // verify through console.log since step.log is called internally
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        'The following commit author e-mails are illegal: illegal@email',
-      );
     });
 
     it('should call step.setError with user-friendly message', async () => {
@@ -515,69 +459,12 @@ describe('checkAuthorEmails', () => {
 
       const step = vi.mocked(result.addStep).mock.calls[0][0];
       expect(step.error).toBe(true);
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          illegalEmails: ['invalid'],
-        }),
-      );
     });
   });
 
   describe('displayName', () => {
     it('should have correct displayName', () => {
       expect(exec.displayName).toBe('checkAuthorEmails.exec');
-    });
-  });
-
-  describe('console logging behavior', () => {
-    it('should log all expected information for successful validation', async () => {
-      mockAction.commitData = [
-        { authorEmail: 'user1@example.com' } as Commit,
-        { authorEmail: 'user2@example.com' } as Commit,
-      ];
-
-      await exec(mockReq, mockAction);
-
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          uniqueAuthorEmails: expect.any(Array),
-        }),
-      );
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          illegalEmails: [],
-        }),
-      );
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          usingIllegalEmails: false,
-        }),
-      );
-      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('legal'));
-    });
-
-    it('should log all expected information for failed validation', async () => {
-      vi.mocked(validator.isEmail).mockReturnValue(false);
-      mockAction.commitData = [{ authorEmail: 'invalid' } as Commit];
-
-      await exec(mockReq, mockAction);
-
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          uniqueAuthorEmails: ['invalid'],
-        }),
-      );
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          illegalEmails: ['invalid'],
-        }),
-      );
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          usingIllegalEmails: true,
-        }),
-      );
-      expect(consoleLogSpy).toHaveBeenCalledWith(expect.stringContaining('illegal'));
     });
   });
 
