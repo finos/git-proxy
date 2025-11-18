@@ -14,6 +14,7 @@ import service from '../src/service';
 import * as db from '../src/db';
 import Proxy from '../src/proxy';
 
+// Create constants for values used in multiple tests
 const TEST_REPO = {
   project: 'finos',
   name: 'db-test-repo',
