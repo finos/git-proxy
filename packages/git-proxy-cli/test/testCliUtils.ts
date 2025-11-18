@@ -221,7 +221,6 @@ async function addGitPushToDb(
     parent: 'parent',
     author: 'author',
     committer: 'committer',
-    commitTs: 'commitTs',
     message: 'message',
     authorEmail: 'authorEmail',
     committerEmail: 'committerEmail',

@@ -4,12 +4,13 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogActions from '@material-ui/core/DialogActions';
 import { CheckCircle, ErrorOutline } from '@material-ui/icons';
 import Button from '../../../components/CustomButtons/Button';
-import AttestationForm, { FormQuestion } from './AttestationForm';
+import AttestationForm from './AttestationForm';
 import {
   setAttestationConfigData,
   setURLShortenerData,
   setEmailContactData,
 } from '../../../services/config';
+import { QuestionFormData } from '../../../types';
 
 interface AttestationProps {
   approveFn: (data: { label: string; checked: boolean }[]) => void;
@@ -17,7 +18,7 @@ interface AttestationProps {
 
 const Attestation: React.FC<AttestationProps> = ({ approveFn }) => {
   const [open, setOpen] = useState(false);
-  const [formData, setFormData] = useState<FormQuestion[]>([]);
+  const [formData, setFormData] = useState<QuestionFormData[]>([]);
   const [urlShortener, setURLShortener] = useState<string>('');
   const [contactEmail, setContactEmail] = useState<string>('');
 

@@ -196,7 +196,14 @@
                   },
                   "links": {
                     "type": "array",
-                    "items": { "type": "string", "format": "url" }
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "properties": {
+                        "text": { "type": "string" },
+                        "url": { "type": "string", "format": "url" }
+                      }
+                    }
                   }
                 },
                 "required": ["text"]
@@ -472,7 +479,12 @@
                 "clientID": { "type": "string" },
                 "authorityURL": { "type": "string" },
                 "expectedAudience": { "type": "string" },
-                "roleMapping": { "$ref": "#/definitions/roleMapping" }
+                "roleMapping": {
+                  "type": "object",
+                  "properties": {
+                    "admin": { "type": "object" }
+                  }
+                }
               },
               "required": ["clientID", "authorityURL"]
             }

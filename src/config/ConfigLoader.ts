@@ -6,56 +6,9 @@ import { promisify } from 'util';
 import { EventEmitter } from 'events';
 import envPaths from 'env-paths';
 import { GitProxyConfig, Convert } from './generated/config';
+import { Configuration, ConfigurationSource, FileSource, HttpSource, GitSource } from './types';
 
 const execFileAsync = promisify(execFile);
-
-interface GitAuth {
-  type: 'ssh';
-  privateKeyPath: string;
-}
-
-interface HttpAuth {
-  type: 'bearer';
-  token: string;
-}
-
-interface BaseSource {
-  type: 'file' | 'http' | 'git';
-  enabled: boolean;
-}
-
-export interface FileSource extends BaseSource {
-  type: 'file';
-  path: string;
-}
-
-export interface HttpSource extends BaseSource {
-  type: 'http';
-  url: string;
-  headers?: Record<string, string>;
-  auth?: HttpAuth;
-}
-
-export interface GitSource extends BaseSource {
-  type: 'git';
-  repository: string;
-  branch?: string;
-  path: string;
-  auth?: GitAuth;
-}
-
-export type ConfigurationSource = FileSource | HttpSource | GitSource;
-
-export interface ConfigurationSources {
-  enabled: boolean;
-  sources: ConfigurationSource[];
-  reloadIntervalSeconds: number;
-  merge?: boolean;
-}
-
-export interface Configuration extends GitProxyConfig {
-  configurationSources?: ConfigurationSources;
-}
 
 // Add path validation helper
 function isValidPath(filePath: string): boolean {

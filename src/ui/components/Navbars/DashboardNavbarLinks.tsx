@@ -16,7 +16,7 @@ import { AccountCircle } from '@material-ui/icons';
 import { getUser } from '../../services/user';
 import axios from 'axios';
 import { getAxiosConfig } from '../../services/auth';
-import { UserData } from '../../../types/models';
+import { PublicUser } from '../../../db/types';
 
 import { API_BASE } from '../../apiBase';
 
@@ -29,10 +29,10 @@ const DashboardNavbarLinks: React.FC = () => {
   const [, setAuth] = useState<boolean>(true);
   const [, setIsLoading] = useState<boolean>(true);
   const [, setIsError] = useState<boolean>(false);
-  const [data, setData] = useState<UserData | null>(null);
+  const [user, setUser] = useState<PublicUser | null>(null);
 
   useEffect(() => {
-    getUser(setIsLoading, setData, setAuth, setIsError);
+    getUser(setIsLoading, setUser, setAuth, setIsError);
   }, []);
 
   const handleClickProfile = (event: React.MouseEvent<HTMLElement>) => {
@@ -99,10 +99,10 @@ const DashboardNavbarLinks: React.FC = () => {
                 <ClickAwayListener onClickAway={handleCloseProfile}>
                   <MenuList role='menu'>
                     <MenuItem onClick={showProfile} className={classes.dropdownItem}>
-                      {data ? 'My Account' : 'Login'}
+                      {user ? 'My Account' : 'Login'}
                     </MenuItem>
-                    {!!data && <Divider light />}
-                    {!!data && (
+                    {!!user && <Divider light />}
+                    {!!user && (
                       <MenuItem onClick={logout} className={classes.dropdownItem}>
                         Logout
                       </MenuItem>
