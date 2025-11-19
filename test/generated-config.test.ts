@@ -120,7 +120,7 @@ describe('Generated Config (QuickType)', () => {
       expect(result).toBeTypeOf('object');
       expect(Array.isArray(result.authentication)).toBe(true);
       expect(Array.isArray(result.authorisedList)).toBe(true);
-      expect(result.contactEmail).toBeTypeOf('string');
+      assert.isString(result.contactEmail);
       expect(result.cookieSecret).toBeTypeOf('string');
       expect(result.csrfProtection).toBeTypeOf('boolean');
       expect(Array.isArray(result.plugins)).toBe(true);
