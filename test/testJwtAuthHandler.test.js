@@ -1,8 +1,8 @@
 const { expect } = require('chai');
 const sinon = require('sinon');
 const axios = require('axios');
+const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
-const { jwkToBuffer } = require('jwk-to-pem');
 
 const { assignRoles, getJwks, validateJwt } = require('../src/service/passport/jwtUtils');
 const { jwtAuthHandler } = require('../src/service/passport/jwtAuthHandler');
@@ -47,7 +47,7 @@ describe('validateJwt', () => {
     getJwksStub = sinon.stub().resolves(jwksResponse.keys);
     decodeStub = sinon.stub(jwt, 'decode');
     verifyStub = sinon.stub(jwt, 'verify');
-    pemStub = sinon.stub(jwkToBuffer);
+    pemStub = sinon.stub(crypto, 'createPublicKey');
 
     pemStub.returns('fake-public-key');
     getJwksStub.returns(jwksResponse.keys);
@@ -57,20 +57,19 @@ describe('validateJwt', () => {
 
   it('should validate a correct JWT', async () => {
     const mockJwk = { kid: '123', kty: 'RSA', n: 'abc', e: 'AQAB' };
-    const mockPem = 'fake-public-key';
 
     decodeStub.returns({ header: { kid: '123' } });
     getJwksStub.resolves([mockJwk]);
-    pemStub.returns(mockPem);
     verifyStub.returns({ azp: 'client-id', sub: 'user123' });
 
-    const { verifiedPayload } = await validateJwt(
+    const { verifiedPayload, error } = await validateJwt(
       'fake.token.here',
       'https://issuer.com',
       'client-id',
       'client-id',
       getJwksStub,
     );
+    expect(error).to.be.null;
     expect(verifiedPayload.sub).to.equal('user123');
   });
 
