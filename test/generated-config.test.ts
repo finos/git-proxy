@@ -34,7 +34,7 @@ describe('Generated Config (QuickType)', () => {
       expect(result).toBeTypeOf('object');
       expect(result.proxyUrl).toBe('https://proxy.example.com');
       expect(result.cookieSecret).toBe('test-secret');
-      expect(Array.isArray(result.authorisedList)).toBe(true);
+      assert.isArray(result.authorisedList);
       expect(Array.isArray(result.authentication)).toBe(true);
       expect(Array.isArray(result.sink)).toBe(true);
     });
