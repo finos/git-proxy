@@ -26,7 +26,7 @@ const TEST_DEFAULT_REPO = {
 const TEST_GITLAB_REPO = {
   url: 'https://gitlab.com/gitlab-community/meta.git',
   name: 'gitlab',
-  project: 'gitlab-community/meta',
+  project: 'gitlab-community',
   host: 'gitlab.com',
   proxyUrlPrefix: '/gitlab.com/gitlab-community/meta.git',
 };
@@ -34,7 +34,7 @@ const TEST_GITLAB_REPO = {
 const TEST_UNKNOWN_REPO = {
   url: 'https://github.com/finos/fdc3.git',
   name: 'fdc3',
-  project: 'finos/fdc3',
+  project: 'finos',
   host: 'github.com',
   proxyUrlPrefix: '/github.com/finos/fdc3.git',
   fallbackUrlPrefix: '/finos/fdc3.git',
