@@ -34,7 +34,7 @@ describe('Generated Config (QuickType)', () => {
       expect(result).toBeTypeOf('object');
       expect(result.proxyUrl).toBe('https://proxy.example.com');
       expect(result.cookieSecret).toBe('test-secret');
-      expect(Array.isArray(result.authorisedList)).toBe(true);
+      assert.isArray(result.authorisedList);
       expect(Array.isArray(result.authentication)).toBe(true);
       expect(Array.isArray(result.sink)).toBe(true);
     });
@@ -55,7 +55,7 @@ describe('Generated Config (QuickType)', () => {
       const jsonString = Convert.gitProxyConfigToJson(configObject);
       const parsed = JSON.parse(jsonString);
 
-      expect(parsed).toBeTypeOf('object');
+      assert.isObject(parsed);
       expect(parsed.proxyUrl).toBe('https://proxy.example.com');
       expect(parsed.cookieSecret).toBe('test-secret');
     });
@@ -120,7 +120,7 @@ describe('Generated Config (QuickType)', () => {
       expect(result).toBeTypeOf('object');
       expect(Array.isArray(result.authentication)).toBe(true);
       expect(Array.isArray(result.authorisedList)).toBe(true);
-      expect(result.contactEmail).toBeTypeOf('string');
+      assert.isString(result.contactEmail);
       expect(result.cookieSecret).toBeTypeOf('string');
       expect(result.csrfProtection).toBeTypeOf('boolean');
       expect(Array.isArray(result.plugins)).toBe(true);
