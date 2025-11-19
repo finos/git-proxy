@@ -55,7 +55,7 @@ describe('Generated Config (QuickType)', () => {
       const jsonString = Convert.gitProxyConfigToJson(configObject);
       const parsed = JSON.parse(jsonString);
 
-      expect(parsed).toBeTypeOf('object');
+      assert.isObject(parsed);
       expect(parsed.proxyUrl).toBe('https://proxy.example.com');
       expect(parsed.cookieSecret).toBe('test-secret');
     });
