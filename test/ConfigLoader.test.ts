@@ -4,12 +4,17 @@ import path from 'path';
 import { configFile } from '../src/config/file';
 import {
   ConfigLoader,
+  isValidGitUrl,
+  isValidPath,
+  isValidBranchName,
+} from '../src/config/ConfigLoader';
+import {
   Configuration,
+  ConfigurationSource,
   FileSource,
   GitSource,
   HttpSource,
-} from '../src/config/ConfigLoader';
-import { isValidGitUrl, isValidPath, isValidBranchName } from '../src/config/ConfigLoader';
+} from '../src/config/types';
 import axios from 'axios';
 
 describe('ConfigLoader', () => {
@@ -108,7 +113,7 @@ describe('ConfigLoader', () => {
 
   describe('reloadConfiguration', () => {
     it('should emit configurationChanged event when config changes', async () => {
-      const initialConfig = {
+      const initialConfig: Configuration = {
         configurationSources: {
           enabled: true,
           sources: [
@@ -128,7 +133,7 @@ describe('ConfigLoader', () => {
 
       fs.writeFileSync(tempConfigFile, JSON.stringify(newConfig));
 
-      configLoader = new ConfigLoader(initialConfig as Configuration);
+      configLoader = new ConfigLoader(initialConfig);
       const spy = vi.fn();
       configLoader.on('configurationChanged', spy);
 
@@ -143,7 +148,7 @@ describe('ConfigLoader', () => {
         proxyUrl: 'https://test.com',
       };
 
-      const config = {
+      const config: Configuration = {
         configurationSources: {
           enabled: true,
           sources: [
@@ -159,7 +164,7 @@ describe('ConfigLoader', () => {
 
       fs.writeFileSync(tempConfigFile, JSON.stringify(testConfig));
 
-      configLoader = new ConfigLoader(config as Configuration);
+      configLoader = new ConfigLoader(config);
       const spy = vi.fn();
       configLoader.on('configurationChanged', spy);
 
@@ -170,13 +175,15 @@ describe('ConfigLoader', () => {
     });
 
     it('should not emit event if configurationSources is disabled', async () => {
-      const config = {
+      const config: Configuration = {
         configurationSources: {
           enabled: false,
+          sources: [],
+          reloadIntervalSeconds: 0,
         },
       };
 
-      configLoader = new ConfigLoader(config as Configuration);
+      configLoader = new ConfigLoader(config);
       const spy = vi.fn();
       configLoader.on('configurationChanged', spy);
 
@@ -220,7 +227,7 @@ describe('ConfigLoader', () => {
 
   describe('start', () => {
     it('should perform initial load on start if configurationSources is enabled', async () => {
-      const mockConfig = {
+      const mockConfig: Configuration = {
         configurationSources: {
           enabled: true,
           sources: [
@@ -230,11 +237,11 @@ describe('ConfigLoader', () => {
               path: tempConfigFile,
             },
           ],
-          reloadIntervalSeconds: 30,
+          reloadIntervalSeconds: 0,
         },
       };
 
-      configLoader = new ConfigLoader(mockConfig as Configuration);
+      configLoader = new ConfigLoader(mockConfig);
       const spy = vi.spyOn(configLoader, 'reloadConfiguration');
       await configLoader.start();
 
@@ -242,7 +249,7 @@ describe('ConfigLoader', () => {
     });
 
     it('should clear an existing reload interval if it exists', async () => {
-      const mockConfig = {
+      const mockConfig: Configuration = {
         configurationSources: {
           enabled: true,
           sources: [
@@ -252,17 +259,20 @@ describe('ConfigLoader', () => {
               path: tempConfigFile,
             },
           ],
+          reloadIntervalSeconds: 0,
         },
       };
 
-      configLoader = new ConfigLoader(mockConfig as Configuration);
+      configLoader = new ConfigLoader(mockConfig);
+
+      // private property overridden for testing
       (configLoader as any).reloadTimer = setInterval(() => {}, 1000);
       await configLoader.start();
       expect((configLoader as any).reloadTimer).toBe(null);
     });
 
     it('should run reloadConfiguration multiple times on short reload interval', async () => {
-      const mockConfig = {
+      const mockConfig: Configuration = {
         configurationSources: {
           enabled: true,
           sources: [
@@ -276,7 +286,7 @@ describe('ConfigLoader', () => {
         },
       };
 
-      configLoader = new ConfigLoader(mockConfig as Configuration);
+      configLoader = new ConfigLoader(mockConfig);
       const spy = vi.spyOn(configLoader, 'reloadConfiguration');
       await configLoader.start();
 
@@ -287,7 +297,7 @@ describe('ConfigLoader', () => {
     });
 
     it('should clear the interval when stop is called', async () => {
-      const mockConfig = {
+      const mockConfig: Configuration = {
         configurationSources: {
           enabled: true,
           sources: [
@@ -297,10 +307,13 @@ describe('ConfigLoader', () => {
               path: tempConfigFile,
             },
           ],
+          reloadIntervalSeconds: 0,
         },
       };
 
-      configLoader = new ConfigLoader(mockConfig as Configuration);
+      configLoader = new ConfigLoader(mockConfig);
+
+      // private property overridden for testing
       (configLoader as any).reloadTimer = setInterval(() => {}, 1000);
       expect((configLoader as any).reloadTimer).not.toBe(null);
       await configLoader.stop();
@@ -403,13 +416,13 @@ describe('ConfigLoader', () => {
     });
 
     it('should throw error if configuration source is invalid', async () => {
-      const source = {
-        type: 'invalid',
+      const source: ConfigurationSource = {
+        type: 'invalid' as any, // invalid type
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'proxy.config.json',
         branch: 'main',
         enabled: true,
-      } as any;
+      };
 
       await expect(configLoader.loadFromSource(source)).rejects.toThrow(
         /Unsupported configuration source type/,
@@ -417,13 +430,13 @@ describe('ConfigLoader', () => {
     });
 
     it('should throw error if repository is a valid URL but not a git repository', async () => {
-      const source = {
+      const source: ConfigurationSource = {
         type: 'git',
         repository: 'https://github.com/finos/made-up-test-repo.git',
         path: 'proxy.config.json',
         branch: 'main',
         enabled: true,
-      } as GitSource;
+      };
 
       await expect(configLoader.loadFromSource(source)).rejects.toThrow(
         /Failed to clone repository/,
@@ -431,13 +444,13 @@ describe('ConfigLoader', () => {
     });
 
     it('should throw error if repository is a valid git repo but the branch does not exist', async () => {
-      const source = {
+      const source: ConfigurationSource = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'proxy.config.json',
         branch: 'branch-does-not-exist',
         enabled: true,
-      } as GitSource;
+      };
 
       await expect(configLoader.loadFromSource(source)).rejects.toThrow(
         /Failed to checkout branch/,
@@ -445,13 +458,13 @@ describe('ConfigLoader', () => {
     });
 
     it('should throw error if config path was not found', async () => {
-      const source = {
+      const source: ConfigurationSource = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'path-not-found.json',
         branch: 'main',
         enabled: true,
-      } as GitSource;
+      };
 
       await expect(configLoader.loadFromSource(source)).rejects.toThrow(
         /Configuration file not found at/,
@@ -459,13 +472,13 @@ describe('ConfigLoader', () => {
     });
 
     it('should throw error if config file is not valid JSON', async () => {
-      const source = {
+      const source: ConfigurationSource = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'test/fixtures/baz.js',
         branch: 'main',
         enabled: true,
-      } as GitSource;
+      };
 
       await expect(configLoader.loadFromSource(source)).rejects.toThrow(
         /Failed to read or parse configuration file/,
