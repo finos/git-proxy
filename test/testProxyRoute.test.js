@@ -18,7 +18,7 @@ import Proxy from '../src/proxy';
 const TEST_DEFAULT_REPO = {
   url: 'https://github.com/finos/git-proxy.git',
   name: 'git-proxy',
-  project: 'finos/git-proxy',
+  project: 'finos',
   host: 'github.com',
   proxyUrlPrefix: '/github.com/finos/git-proxy.git',
 };
