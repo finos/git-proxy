@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, assert } from 'vitest';
 import { Convert, GitProxyConfig } from '../src/config/generated/config';
 import defaultSettings from '../proxy.config.json';
 
@@ -31,12 +31,12 @@ describe('Generated Config (QuickType)', () => {
 
       const result = Convert.toGitProxyConfig(JSON.stringify(validConfig));
 
-      expect(result).toBeTypeOf('object');
+      assert.isObject(result);
       expect(result.proxyUrl).toBe('https://proxy.example.com');
       expect(result.cookieSecret).toBe('test-secret');
       assert.isArray(result.authorisedList);
-      expect(Array.isArray(result.authentication)).toBe(true);
-      expect(Array.isArray(result.sink)).toBe(true);
+      assert.isArray(result.authentication);
+      assert.isArray(result.sink);
     });
 
     it('should convert config object back to JSON', () => {
@@ -64,7 +64,7 @@ describe('Generated Config (QuickType)', () => {
       const emptyConfig = {};
 
       const result = Convert.toGitProxyConfig(JSON.stringify(emptyConfig));
-      expect(result).toBeTypeOf('object');
+      assert.isObject(result);
     });
 
     it('should throw error for invalid JSON string', () => {
@@ -117,18 +117,18 @@ describe('Generated Config (QuickType)', () => {
 
       const result = Convert.toGitProxyConfig(JSON.stringify(validConfig));
 
-      expect(result).toBeTypeOf('object');
-      expect(Array.isArray(result.authentication)).toBe(true);
-      expect(Array.isArray(result.authorisedList)).toBe(true);
+      assert.isObject(result);
+      assert.isArray(result.authentication);
+      assert.isArray(result.authorisedList);
       assert.isString(result.contactEmail);
-      expect(result.cookieSecret).toBeTypeOf('string');
-      expect(result.csrfProtection).toBeTypeOf('boolean');
-      expect(Array.isArray(result.plugins)).toBe(true);
-      expect(Array.isArray(result.privateOrganizations)).toBe(true);
-      expect(result.proxyUrl).toBeTypeOf('string');
-      expect(result.rateLimit).toBeTypeOf('object');
-      expect(result.sessionMaxAgeHours).toBeTypeOf('number');
-      expect(Array.isArray(result.sink)).toBe(true);
+      assert.isString(result.cookieSecret);
+      assert.isBoolean(result.csrfProtection);
+      assert.isArray(result.plugins);
+      assert.isArray(result.privateOrganizations);
+      assert.isString(result.proxyUrl);
+      assert.isObject(result.rateLimit);
+      assert.isNumber(result.sessionMaxAgeHours);
+      assert.isArray(result.sink);
     });
 
     it('should handle malformed configuration gracefully', () => {
@@ -137,12 +137,7 @@ describe('Generated Config (QuickType)', () => {
         authentication: 'not-an-array', // Wrong type
       };
 
-      try {
-        const result = Convert.toGitProxyConfig(JSON.stringify(malformedConfig));
-        expect(result).toBeTypeOf('object');
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-      }
+      assert.throws(() => Convert.toGitProxyConfig(JSON.stringify(malformedConfig)));
     });
 
     it('should preserve array structures', () => {
@@ -190,10 +185,10 @@ describe('Generated Config (QuickType)', () => {
 
       const result = Convert.toGitProxyConfig(JSON.stringify(configWithNesting));
 
-      expect(result.tls).toBeTypeOf('object');
-      expect(result.tls!.enabled).toBeTypeOf('boolean');
-      expect(result.rateLimit).toBeTypeOf('object');
-      expect(result.tempPassword).toBeTypeOf('object');
+      assert.isObject(result.tls);
+      assert.isBoolean(result.tls!.enabled);
+      assert.isObject(result.rateLimit);
+      assert.isObject(result.tempPassword);
     });
 
     it('should handle complex validation scenarios', () => {
@@ -231,9 +226,9 @@ describe('Generated Config (QuickType)', () => {
       };
 
       const result = Convert.toGitProxyConfig(JSON.stringify(complexConfig));
-      expect(result).toBeTypeOf('object');
-      expect(result.api).toBeTypeOf('object');
-      expect(result.domains).toBeTypeOf('object');
+      assert.isObject(result);
+      assert.isObject(result.api);
+      assert.isObject(result.domains);
     });
 
     it('should handle array validation edge cases', () => {
@@ -302,7 +297,7 @@ describe('Generated Config (QuickType)', () => {
       const result = Convert.toGitProxyConfig(JSON.stringify(edgeCaseConfig));
       expect(result.sessionMaxAgeHours).toBe(0);
       expect(result.csrfProtection).toBe(false);
-      expect(result.tempPassword).toBeTypeOf('object');
+      assert.isObject(result.tempPassword);
       expect(result.tempPassword!.length).toBe(12);
     });
 
@@ -311,7 +306,7 @@ describe('Generated Config (QuickType)', () => {
         // Try to parse something that looks like valid JSON but has wrong structure
         Convert.toGitProxyConfig('{"proxyUrl": 123, "authentication": "not-array"}');
       } catch (error) {
-        expect(error).toBeInstanceOf(Error);
+        assert.instanceOf(error, Error);
       }
     });
 
@@ -352,7 +347,7 @@ describe('Generated Config (QuickType)', () => {
       const reparsed = JSON.parse(serialized);
 
       expect(reparsed.proxyUrl).toBe('https://test.com');
-      expect(reparsed.rateLimit).toBeTypeOf('object');
+      assert.isObject(reparsed.rateLimit);
     });
 
     it('should validate the default configuration from proxy.config.json', () => {
@@ -360,11 +355,11 @@ describe('Generated Config (QuickType)', () => {
       // This catches cases where schema updates haven't been reflected in the default config
       const result = Convert.toGitProxyConfig(JSON.stringify(defaultSettings));
 
-      expect(result).toBeTypeOf('object');
-      expect(result.cookieSecret).toBeTypeOf('string');
-      expect(Array.isArray(result.authorisedList)).toBe(true);
-      expect(Array.isArray(result.authentication)).toBe(true);
-      expect(Array.isArray(result.sink)).toBe(true);
+      assert.isObject(result);
+      assert.isString(result.cookieSecret);
+      assert.isArray(result.authorisedList);
+      assert.isArray(result.authentication);
+      assert.isArray(result.sink);
 
       // Validate that serialization also works
       const serialized = Convert.gitProxyConfigToJson(result);
