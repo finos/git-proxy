@@ -24,7 +24,7 @@ describe('Auth API', () => {
     vi.restoreAllMocks();
   });
 
-  describe('/gitAccount', () => {
+  describe('POST /gitAccount', () => {
     beforeEach(() => {
       vi.spyOn(db, 'findUser').mockImplementation((username: string) => {
         if (username === 'alice') {
@@ -56,7 +56,7 @@ describe('Auth API', () => {
       vi.restoreAllMocks();
     });
 
-    it('POST /gitAccount returns Unauthorized if authenticated user not in request', async () => {
+    it('should return 401 Unauthorized if authenticated user not in request', async () => {
       const res = await request(newApp()).post('/auth/gitAccount').send({
         username: 'alice',
         gitAccount: '',
@@ -65,7 +65,51 @@ describe('Auth API', () => {
       expect(res.status).toBe(401);
     });
 
-    it('POST /gitAccount updates git account for authenticated user', async () => {
+    it('should return 400 Bad Request if username is missing', async () => {
+      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+        gitAccount: 'UPDATED_GIT_ACCOUNT',
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 400 Bad Request if username is undefined', async () => {
+      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+        username: undefined,
+        gitAccount: 'UPDATED_GIT_ACCOUNT',
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 400 Bad Request if username is null', async () => {
+      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+        username: null,
+        gitAccount: 'UPDATED_GIT_ACCOUNT',
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 400 Bad Request if username is an empty string', async () => {
+      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+        username: '',
+        gitAccount: 'UPDATED_GIT_ACCOUNT',
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 403 Forbidden if user is not an admin', async () => {
+      const res = await request(newApp('bob')).post('/auth/gitAccount').send({
+        username: 'alice',
+        gitAccount: 'UPDATED_GIT_ACCOUNT',
+      });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should return 200 OK if user is an admin and updates git account for authenticated user', async () => {
       const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
 
       const res = await request(newApp('alice')).post('/auth/gitAccount').send({
@@ -86,7 +130,7 @@ describe('Auth API', () => {
       });
     });
 
-    it('POST /gitAccount prevents non-admin user changing a different user gitAccount', async () => {
+    it("should prevent non-admin users from changing a different user's gitAccount", async () => {
       const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
 
       const res = await request(newApp('bob')).post('/auth/gitAccount').send({
@@ -98,7 +142,7 @@ describe('Auth API', () => {
       expect(updateUserSpy).not.toHaveBeenCalled();
     });
 
-    it('POST /gitAccount lets admin user change a different users gitAccount', async () => {
+    it("should allow admin users to change a different user's gitAccount", async () => {
       const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
 
       const res = await request(newApp('alice')).post('/auth/gitAccount').send({
@@ -119,7 +163,7 @@ describe('Auth API', () => {
       });
     });
 
-    it('POST /gitAccount allows non-admin user to update their own gitAccount', async () => {
+    it('should allow non-admin users to update their own gitAccount', async () => {
       const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
 
       const res = await request(newApp('bob')).post('/auth/gitAccount').send({
@@ -175,14 +219,14 @@ describe('Auth API', () => {
     });
   });
 
-  describe('/me', () => {
-    it('GET /me returns Unauthorized if authenticated user not in request', async () => {
+  describe('GET /me', () => {
+    it('should return 401 Unauthorized if user is not logged in', async () => {
       const res = await request(newApp()).get('/auth/me');
 
       expect(res.status).toBe(401);
     });
 
-    it('GET /me serializes public data representation of current authenticated user', async () => {
+    it('should return 200 OK and serialize public data representation of current logged in user', async () => {
       vi.spyOn(db, 'findUser').mockResolvedValue({
         username: 'alice',
         password: 'secret-hashed-password',
@@ -206,14 +250,14 @@ describe('Auth API', () => {
     });
   });
 
-  describe('/profile', () => {
-    it('GET /profile returns Unauthorized if authenticated user not in request', async () => {
+  describe('GET /profile', () => {
+    it('should return 401 Unauthorized if user is not logged in', async () => {
       const res = await request(newApp()).get('/auth/profile');
 
       expect(res.status).toBe(401);
     });
 
-    it('GET /profile serializes public data representation of current authenticated user', async () => {
+    it('should return 200 OK and serialize public data representation of current authenticated user', async () => {
       vi.spyOn(db, 'findUser').mockResolvedValue({
         username: 'alice',
         password: 'secret-hashed-password',
