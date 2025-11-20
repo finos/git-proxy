@@ -2,9 +2,6 @@ import { Action, Step } from '../../actions';
 import fs from 'fs';
 import git from 'isomorphic-git';
 import gitHttpClient from 'isomorphic-git/http/node';
-import path from 'path';
-import os from 'os';
-import { simpleGit } from 'simple-git';
 
 const dir = './.remote';
 
@@ -44,16 +41,6 @@ const decodeBasicAuth = (authHeader?: string): BasicCredentials | null => {
   };
 };
 
-const buildSSHCloneUrl = (remoteUrl: string): string => {
-  const parsed = new URL(remoteUrl);
-  const repoPath = parsed.pathname.replace(/^\//, '');
-  return `git@${parsed.hostname}:${repoPath}`;
-};
-
-const cleanupTempDir = async (tempDir: string) => {
-  await fs.promises.rm(tempDir, { recursive: true, force: true });
-};
-
 const cloneWithHTTPS = async (
   action: Action,
   credentials: BasicCredentials | null,
@@ -71,51 +58,10 @@ const cloneWithHTTPS = async (
   await git.clone(cloneOptions);
 };
 
-const cloneWithSSHKey = async (action: Action, privateKey: Buffer): Promise<void> => {
-  if (!privateKey || privateKey.length === 0) {
-    throw new Error('SSH private key is empty');
-  }
-
-  const keyBuffer = Buffer.isBuffer(privateKey) ? privateKey : Buffer.from(privateKey);
-  const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'git-proxy-ssh-clone-'));
-  const keyPath = path.join(tempDir, 'id_rsa');
-
-  await fs.promises.writeFile(keyPath, keyBuffer, { mode: 0o600 });
-
-  const originalGitSSH = process.env.GIT_SSH_COMMAND;
-  process.env.GIT_SSH_COMMAND = `ssh -i ${keyPath} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null`;
-
-  try {
-    const gitClient = simpleGit(action.proxyGitPath);
-    await gitClient.clone(buildSSHCloneUrl(action.url), action.repoName, [
-      '--depth',
-      '1',
-      '--single-branch',
-    ]);
-  } finally {
-    if (originalGitSSH) {
-      process.env.GIT_SSH_COMMAND = originalGitSSH;
-    } else {
-      delete process.env.GIT_SSH_COMMAND;
-    }
-    await cleanupTempDir(tempDir);
-  }
-};
-
 const handleSSHClone = async (req: any, action: Action, step: Step): Promise<CloneResult> => {
   const authContext = req?.authContext ?? {};
-  const sshKey = authContext?.sshKey;
 
-  if (sshKey?.keyData || sshKey?.privateKey) {
-    const keyData = sshKey.keyData ?? sshKey.privateKey;
-    step.log('Cloning repository over SSH using caller credentials');
-    await cloneWithSSHKey(action, keyData);
-    return {
-      command: `git clone ${buildSSHCloneUrl(action.url)}`,
-      strategy: 'ssh-user-key',
-    };
-  }
-
+  // Try service token first (if configured)
   const serviceToken = authContext?.cloneServiceToken;
   if (serviceToken?.username && serviceToken?.password) {
     step.log('Cloning repository over HTTPS using configured service token');
@@ -129,17 +75,20 @@ const handleSSHClone = async (req: any, action: Action, step: Step): Promise<Clo
     };
   }
 
-  step.log('No SSH clone credentials available; attempting anonymous HTTPS clone');
+  // Try anonymous HTTPS clone (for public repos)
+  step.log('No service token available; attempting anonymous HTTPS clone');
   try {
     await cloneWithHTTPS(action, null);
+    return {
+      command: `git clone ${action.url}`,
+      strategy: 'anonymous',
+    };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Unable to clone repository for SSH push without credentials: ${message}`);
+    throw new Error(
+      `Unable to clone repository: ${message}. Please configure a service token in proxy.config.json for private repositories.`,
+    );
   }
-  return {
-    command: `git clone ${action.url}`,
-    strategy: 'anonymous',
-  };
 };
 
 const exec = async (req: any, action: Action): Promise<Action> => {
