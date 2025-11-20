@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { Action, Step } from '../../src/proxy/actions';
 import { exec } from '../../src/proxy/processors/push-action/scanDiff';
+import { generateDiffStep } from './scanDiff.test';
 
 describe('scanDiff - Empty Diff Handling', () => {
   describe('Empty diff scenarios', () => {
@@ -8,7 +9,7 @@ describe('scanDiff - Empty Diff Handling', () => {
       const action = new Action('empty-diff-test', 'push', 'POST', Date.now(), 'test/repo.git');
 
       // Simulate getDiff step with empty content
-      const diffStep = { stepName: 'diff', content: '', error: false };
+      const diffStep = generateDiffStep('');
       action.steps = [diffStep as Step];
 
       const result = await exec({}, action);
@@ -22,7 +23,7 @@ describe('scanDiff - Empty Diff Handling', () => {
       const action = new Action('null-diff-test', 'push', 'POST', Date.now(), 'test/repo.git');
 
       // Simulate getDiff step with null content
-      const diffStep = { stepName: 'diff', content: null, error: false };
+      const diffStep = generateDiffStep(null);
       action.steps = [diffStep as Step];
 
       const result = await exec({}, action);
@@ -36,7 +37,7 @@ describe('scanDiff - Empty Diff Handling', () => {
       const action = new Action('undefined-diff-test', 'push', 'POST', Date.now(), 'test/repo.git');
 
       // Simulate getDiff step with undefined content
-      const diffStep = { stepName: 'diff', content: undefined, error: false };
+      const diffStep = generateDiffStep(undefined);
       action.steps = [diffStep as Step];
 
       const result = await exec({}, action);
@@ -63,7 +64,7 @@ index 1234567..abcdefg 100644
  database: "production"
  };`;
 
-      const diffStep = { stepName: 'diff', content: normalDiff, error: false };
+      const diffStep = generateDiffStep(normalDiff);
       action.steps = [diffStep as Step];
 
       const result = await exec({}, action);
@@ -76,7 +77,7 @@ index 1234567..abcdefg 100644
   describe('Error conditions', () => {
     it('should handle non-string diff content', async () => {
       const action = new Action('non-string-test', 'push', 'POST', Date.now(), 'test/repo.git');
-      const diffStep = { stepName: 'diff', content: 12345 as any, error: false };
+      const diffStep = generateDiffStep(12345 as any);
       action.steps = [diffStep as Step];
 
       const result = await exec({}, action);

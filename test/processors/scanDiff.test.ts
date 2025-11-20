@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import crypto from 'crypto';
 import * as processor from '../../src/proxy/processors/push-action/scanDiff';
 import { Action, Step } from '../../src/proxy/actions';
@@ -56,6 +56,23 @@ index 8b97e49..de18d43 100644
 `;
 };
 
+export const generateDiffStep = (content?: string | null): Step => {
+  return {
+    stepName: 'diff',
+    content: content,
+    error: false,
+    errorMessage: null,
+    blocked: false,
+    blockedMessage: null,
+    logs: [],
+    id: '1',
+    setError: vi.fn(),
+    setContent: vi.fn(),
+    setAsyncBlock: vi.fn(),
+    log: vi.fn(),
+  };
+};
+
 const TEST_REPO = {
   project: 'private-org-test',
   name: 'repo.git',
@@ -94,12 +111,8 @@ describe('Scan commit diff', () => {
 
   it('should block push when diff includes AWS Access Key ID', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [
-      {
-        stepName: 'diff',
-        content: generateDiff('AKIAIOSFODNN7EXAMPLE'),
-      } as Step,
-    ];
+    const diffStep = generateDiffStep(generateDiff('AKIAIOSFODNN7EXAMPLE'));
+    action.steps = [diffStep];
     action.setCommit('38cdc3e', '8a9c321');
     action.setBranch('b');
     action.setMessage('Message');
@@ -113,12 +126,8 @@ describe('Scan commit diff', () => {
   // Formatting tests
   it('should block push when diff includes multiple AWS Access Keys', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [
-      {
-        stepName: 'diff',
-        content: generateMultiLineDiff(),
-      } as Step,
-    ];
+    const diffStep = generateDiffStep(generateMultiLineDiff());
+    action.steps = [diffStep];
     action.setCommit('8b97e49', 'de18d43');
 
     const { error, errorMessage } = await processor.exec(null, action);
@@ -132,12 +141,8 @@ describe('Scan commit diff', () => {
 
   it('should block push when diff includes multiple AWS Access Keys and blocked literal with appropriate message', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [
-      {
-        stepName: 'diff',
-        content: generateMultiLineDiffWithLiteral(),
-      } as Step,
-    ];
+    const diffStep = generateDiffStep(generateMultiLineDiffWithLiteral());
+    action.steps = [diffStep];
     action.setCommit('8b97e49', 'de18d43');
 
     const { error, errorMessage } = await processor.exec(null, action);
@@ -154,12 +159,8 @@ describe('Scan commit diff', () => {
 
   it('should block push when diff includes Google Cloud Platform API Key', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [
-      {
-        stepName: 'diff',
-        content: generateDiff('AIza0aB7Z4Rfs23MnPqars81yzu19KbH72zaFda'),
-      } as Step,
-    ];
+    const diffStep = generateDiffStep(generateDiff('AIza0aB7Z4Rfs23MnPqars81yzu19KbH72zaFda'));
+    action.steps = [diffStep];
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
@@ -171,12 +172,10 @@ describe('Scan commit diff', () => {
 
   it('should block push when diff includes GitHub Personal Access Token', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [
-      {
-        stepName: 'diff',
-        content: generateDiff(`ghp_${crypto.randomBytes(36).toString('hex')}`),
-      } as Step,
-    ];
+    const diffStep = generateDiffStep(
+      generateDiff(`ghp_${crypto.randomBytes(36).toString('hex')}`),
+    );
+    action.steps = [diffStep];
 
     const { error, errorMessage } = await processor.exec(null, action);
 
@@ -186,14 +185,10 @@ describe('Scan commit diff', () => {
 
   it('should block push when diff includes GitHub Fine Grained Personal Access Token', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [
-      {
-        stepName: 'diff',
-        content: generateDiff(
-          `github_pat_1SMAGDFOYZZK3P9ndFemen_${crypto.randomBytes(59).toString('hex')}`,
-        ),
-      } as Step,
-    ];
+    const diffStep = generateDiffStep(
+      generateDiff(`github_pat_1SMAGDFOYZZK3P9ndFemen_${crypto.randomBytes(59).toString('hex')}`),
+    );
+    action.steps = [diffStep];
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
@@ -205,12 +200,10 @@ describe('Scan commit diff', () => {
 
   it('should block push when diff includes GitHub Actions Token', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [
-      {
-        stepName: 'diff',
-        content: generateDiff(`ghs_${crypto.randomBytes(20).toString('hex')}`),
-      } as Step,
-    ];
+    const diffStep = generateDiffStep(
+      generateDiff(`ghs_${crypto.randomBytes(20).toString('hex')}`),
+    );
+    action.steps = [diffStep];
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
@@ -222,14 +215,12 @@ describe('Scan commit diff', () => {
 
   it('should block push when diff includes JSON Web Token (JWT)', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [
-      {
-        stepName: 'diff',
-        content: generateDiff(
-          `eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ1cm46Z21haWwuY29tOmNsaWVudElkOjEyMyIsInN1YiI6IkphbmUgRG9lIiwiaWF0IjoxNTIzOTAxMjM0LCJleHAiOjE1MjM5ODc2MzR9.s5_hA8hyIT5jXfU9PlXJ-R74m5F_aPcVEFJSV-g-_kX`,
-        ),
-      } as Step,
-    ];
+    const diffStep = generateDiffStep(
+      generateDiff(
+        `eyJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ1cm46Z21haWwuY29tOmNsaWVudElkOjEyMyIsInN1YiI6IkphbmUgRG9lIiwiaWF0IjoxNTIzOTAxMjM0LCJleHAiOjE1MjM5ODc2MzR9.s5_hA8hyIT5jXfU9PlXJ-R74m5F_aPcVEFJSV-g-_kX`,
+      ),
+    );
+    action.steps = [diffStep];
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
@@ -242,12 +233,8 @@ describe('Scan commit diff', () => {
   it('should block push when diff includes blocked literal', async () => {
     for (const literal of blockedLiterals) {
       const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-      action.steps = [
-        {
-          stepName: 'diff',
-          content: generateDiff(literal),
-        } as Step,
-      ];
+      const diffStep = generateDiffStep(generateDiff(literal));
+      action.steps = [diffStep];
       action.commitFrom = '38cdc3e';
       action.commitTo = '8a9c321';
 
@@ -260,12 +247,7 @@ describe('Scan commit diff', () => {
 
   it('should allow push when no diff is present (legitimate empty diff)', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [
-      {
-        stepName: 'diff',
-        content: null,
-      } as Step,
-    ];
+    action.steps = [generateDiffStep(null)];
 
     const result = await processor.exec(null, action);
     const scanDiffStep = result.steps.find((s) => s.stepName === 'scanDiff');
@@ -275,12 +257,7 @@ describe('Scan commit diff', () => {
 
   it('should block push when diff is not a string', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [
-      {
-        stepName: 'diff',
-        content: 1337 as any,
-      } as Step,
-    ];
+    action.steps = [generateDiffStep(1337 as any)];
 
     const { error, errorMessage } = await processor.exec(null, action);
 
@@ -290,12 +267,7 @@ describe('Scan commit diff', () => {
 
   it('should allow push when diff has no secrets or sensitive information', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [
-      {
-        stepName: 'diff',
-        content: generateDiff(''),
-      } as Step,
-    ];
+    action.steps = [generateDiffStep(generateDiff(''))];
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
@@ -312,12 +284,8 @@ describe('Scan commit diff', () => {
       1,
       'https://github.com/private-org-test/repo.git', // URL needs to be parseable AND exist in DB
     );
-    action.steps = [
-      {
-        stepName: 'diff',
-        content: generateDiff('AKIAIOSFODNN7EXAMPLE'),
-      } as Step,
-    ];
+    const diffStep = generateDiffStep(generateDiff('AKIAIOSFODNN7EXAMPLE'));
+    action.steps = [diffStep];
 
     const { error } = await processor.exec(null, action);
 
