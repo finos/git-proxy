@@ -20,7 +20,7 @@ describe('Pre-processor: parseAction', () => {
   });
 
   afterAll(async () => {
-    // clean up test DB
+    // If we created the testRepo, clean it up
     if (testRepo?._id) {
       await db.deleteRepo(testRepo._id);
     }
