@@ -1,0 +1,351 @@
+# SSH Proxy Architecture
+
+Complete documentation of the SSH proxy architecture and operation for Git.
+
+### Main Components
+
+```
+┌─────────────┐         ┌──────────────────┐         ┌──────────┐
+│   Client    │ SSH     │    Git Proxy     │  SSH    │  GitHub  │
+│ (Developer) ├────────→│  (Middleware)    ├────────→│ (Remote) │
+└─────────────┘         └──────────────────┘         └──────────┘
+                              ↓
+                        ┌─────────────┐
+                        │  Security   │
+                        │    Chain    │
+                        └─────────────┘
+```
+
+---
+
+## Client → Proxy Communication
+
+### Client Setup
+
+The Git client uses SSH to communicate with the proxy. Minimum required configuration:
+
+**1. Configure Git remote**:
+
+```bash
+git remote add origin ssh://user@git-proxy.example.com:2222/org/repo.git
+```
+
+**2. Configure SSH agent forwarding** (`~/.ssh/config`):
+
+```
+Host git-proxy.example.com
+  ForwardAgent yes           # REQUIRED
+  IdentityFile ~/.ssh/id_ed25519
+  Port 2222
+```
+
+**3. Start ssh-agent and load key**:
+
+```bash
+eval $(ssh-agent -s)
+ssh-add ~/.ssh/id_ed25519
+ssh-add -l  # Verify key loaded
+```
+
+**4. Register public key with proxy**:
+
+```bash
+# Copy the public key
+cat ~/.ssh/id_ed25519.pub
+
+# Register it via UI (http://localhost:8000) or database
+# The key must be in the proxy database for Client → Proxy authentication
+```
+
+### How It Works
+
+When you run `git push`, Git translates the command into SSH:
+
+```bash
+# User:
+git push origin main
+
+# Git internally:
+ssh -A git-proxy.example.com "git-receive-pack '/org/repo.git'"
+```
+
+The `-A` flag (agent forwarding) is activated automatically if configured in `~/.ssh/config`
+
+---
+
+### SSH Channels: Session vs Agent
+
+**IMPORTANT**: Client → Proxy communication uses **different channels** than agent forwarding:
+
+#### Session Channel (Git Protocol)
+
+```
+┌─────────────┐                        ┌─────────────┐
+│   Client    │                        │    Proxy    │
+│             │   Session Channel 0    │             │
+│             │◄──────────────────────►│             │
+│  Git Data   │   Git Protocol         │  Git Data   │
+│             │   (upload/receive)     │             │
+└─────────────┘                        └─────────────┘
+```
+
+This channel carries:
+
+- Git commands (git-upload-pack, git-receive-pack)
+- Git data (capabilities, refs, pack data)
+- stdin/stdout/stderr of the command
+
+#### Agent Channel (Agent Forwarding)
+
+```
+┌─────────────┐                        ┌─────────────┐
+│   Client    │                        │    Proxy    │
+│             │                        │             │
+│ ssh-agent   │   Agent Channel 1      │ LazyAgent   │
+│    [Key]    │◄──────────────────────►│             │
+│             │   (opened on-demand)   │             │
+└─────────────┘                        └─────────────┘
+```
+
+This channel carries:
+
+- Identity requests (list of public keys)
+- Signature requests
+- Agent responses
+
+**The two channels are completely independent!**
+
+### Complete Example: git push with Agent Forwarding
+
+**What happens**:
+
+```
+CLIENT                              PROXY                          GITHUB
+
+  │ ssh -A git-proxy.example.com   │                               │
+  ├────────────────────────────────►│                               │
+  │  Session Channel                │                               │
+  │                                 │                               │
+  │  "git-receive-pack /org/repo"   │                               │
+  ├────────────────────────────────►│                               │
+  │                                 │                               │
+  │                                 │  ssh github.com               │
+  │                                 ├──────────────────────────────►│
+  │                                 │  (needs authentication)       │
+  │                                 │                               │
+  │  Agent Channel opened           │                               │
+  │◄────────────────────────────────┤                               │
+  │                                 │                               │
+  │  "Sign this challenge"          │                               │
+  │◄────────────────────────────────┤                               │
+  │                                 │                               │
+  │  [Signature]                    │                               │
+  │────────────────────────────────►│                               │
+  │                                 │  [Signature]                  │
+  │                                 ├──────────────────────────────►│
+  │  Agent Channel closed           │  (authenticated!)             │
+  │◄────────────────────────────────┤                               │
+  │                                 │                               │
+  │  Git capabilities               │  Git capabilities             │
+  │◄────────────────────────────────┼───────────────────────────────┤
+  │  (via Session Channel)          │  (forwarded)                  │
+  │                                 │                               │
+```
+
+---
+
+## Core Concepts
+
+### 1. SSH Agent Forwarding
+
+SSH agent forwarding allows the proxy to use the client's SSH keys **without ever receiving them**. The private key remains on the client's computer.
+
+#### How does it work?
+
+```
+┌──────────┐                    ┌───────────┐                  ┌──────────┐
+│  Client  │                    │   Proxy   │                  │  GitHub  │
+│          │                    │           │                  │          │
+│ ssh-agent│                    │           │                  │          │
+│    ↑     │                    │           │                  │          │
+│    │     │  Agent Forwarding  │           │                  │          │
+│ [Key]    │◄──────────────────►│  Lazy     │                  │          │
+│          │     SSH Channel    │  Agent    │                  │          │
+└──────────┘                    └───────────┘                  └──────────┘
+     │                                │                              │
+     │                                │   1. GitHub needs signature  │
+     │                                │◄─────────────────────────────┤
+     │                                │                              │
+     │   2. Open temp agent channel   │                              │
+     │◄───────────────────────────────┤                              │
+     │                                │                              │
+     │   3. Request signature         │                              │
+     │◄───────────────────────────────┤                              │
+     │                                │                              │
+     │   4. Return signature          │                              │
+     │───────────────────────────────►│                              │
+     │                                │                              │
+     │   5. Close channel             │                              │
+     │◄───────────────────────────────┤                              │
+     │                                │   6. Forward signature       │
+     │                                ├─────────────────────────────►│
+```
+
+#### Lazy Agent Pattern
+
+The proxy does **not** keep an agent channel open permanently. Instead:
+
+1. When GitHub requires a signature, we open a **temporary channel**
+2. We request the signature through the channel
+3. We **immediately close** the channel after the response
+
+#### Implementation Details and Limitations
+
+**Important**: The SSH agent forwarding implementation is more complex than typical due to limitations in the `ssh2` library.
+
+**The Problem:**
+The `ssh2` library does not expose public APIs for **server-side** SSH agent forwarding. While ssh2 has excellent support for client-side agent forwarding (connecting TO an agent), it doesn't provide APIs for the server side (accepting agent channels FROM clients and forwarding requests).
+
+**Our Solution:**
+We implemented agent forwarding by directly manipulating ssh2's internal structures:
+
+- `_protocol`: Internal protocol handler
+- `_chanMgr`: Internal channel manager
+- `_handlers`: Event handler registry
+
+**Code reference** (`AgentForwarding.ts`):
+
+```typescript
+// Uses ssh2 internals - no public API available
+const proto = (client as any)._protocol;
+const chanMgr = (client as any)._chanMgr;
+(proto as any)._handlers.CHANNEL_OPEN_CONFIRMATION = handlerWrapper;
+```
+
+**Risks:**
+
+- **Fragile**: If ssh2 changes internals, this could break
+- **Maintenance**: Requires monitoring ssh2 updates
+- **No type safety**: Uses `any` casts to bypass TypeScript
+
+**Upstream Work:**
+There are open PRs in the ssh2 repository to add proper server-side agent forwarding APIs:
+
+- [#781](https://github.com/mscdex/ssh2/pull/781) - Add support for server-side agent forwarding
+- [#1468](https://github.com/mscdex/ssh2/pull/1468) - Related improvements
+
+**Future Improvements:**
+Once ssh2 adds public APIs for server-side agent forwarding, we should:
+
+1. Remove internal API usage in `openTemporaryAgentChannel()`
+2. Use the new public APIs
+3. Improve type safety
+
+### 2. Git Capabilities
+
+"Capabilities" are the features supported by the Git server (e.g., `report-status`, `delete-refs`, `side-band-64k`). They are sent at the beginning of each Git session along with available refs.
+
+#### How does it work normally (without proxy)?
+
+**Standard Git push flow**:
+
+```
+Client ──────────────→ GitHub (single connection)
+       1. "git-receive-pack /repo.git"
+       2. GitHub: capabilities + refs
+       3. Client: pack data
+       4. GitHub: "ok refs/heads/main"
+```
+
+Capabilities are exchanged **only once** at the beginning of the connection.
+
+#### How did we modify the flow in the proxy?
+
+**Our modified flow**:
+
+```
+Client → Proxy                Proxy → GitHub
+  │                              │
+  │ 1. "git-receive-pack"        │
+  │─────────────────────────────→│
+  │                              │ CONNECTION 1
+  │                              ├──────────────→ GitHub
+  │                              │ "get capabilities"
+  │                              │←─────────────┤
+  │                              │ capabilities (500 bytes)
+  │ 2. capabilities              │ DISCONNECT
+  │←─────────────────────────────┤
+  │                              │
+  │ 3. pack data                 │
+  │─────────────────────────────→│ (BUFFERED!)
+  │                              │
+  │                              │ 4. Security validation
+  │                              │
+  │                              │ CONNECTION 2
+  │                              ├──────────────→ GitHub
+  │                              │ pack data
+  │                              │←─────────────┤
+  │                              │ capabilities (500 bytes AGAIN!)
+  │                              │ + actual response
+  │ 5. response                  │
+  │←─────────────────────────────┤ (skip capabilities, forward response)
+```
+
+#### Why this change?
+
+**Core requirement**: Validate pack data BEFORE sending it to GitHub (security chain).
+
+**Difference with HTTPS**:
+
+In **HTTPS**, capabilities are exchanged in a **separate** HTTP request:
+
+```
+1. GET /info/refs?service=git-receive-pack  → capabilities + refs
+2. POST /git-receive-pack                    → pack data (no capabilities)
+```
+
+The HTTPS proxy simply forwards the GET, then buffers/validates the POST.
+
+In **SSH**, everything happens in **a single conversational session**:
+
+```
+Client → Proxy: "git-receive-pack" → expects capabilities IMMEDIATELY in the same session
+```
+
+We can't say "make a separate request". The client blocks if we don't respond immediately.
+
+**SSH Problem**:
+
+1. The client expects capabilities **IMMEDIATELY** when requesting git-receive-pack
+2. But we need to **buffer** all pack data to validate it
+3. If we waited to receive all pack data BEFORE fetching capabilities → the client blocks
+
+**Solution**:
+
+- **Connection 1**: Fetch capabilities immediately, send to client
+- The client can start sending pack data
+- We **buffer** the pack data (we don't send it yet!)
+- **Validation**: Security chain verifies the pack data
+- **Connection 2**: Only AFTER approval, we send to GitHub
+
+**Consequence**:
+
+- GitHub sees the second connection as a **new session**
+- It resends capabilities (500 bytes) as it would normally
+- We must **skip** these 500 duplicate bytes
+- We forward only the real response: `"ok refs/heads/main\n"`
+
+### 3. Security Chain Validation Uses HTTPS
+
+**Important**: Even though the client uses SSH to connect to the proxy, the **security chain validation** (pullRemote action) clones the repository using **HTTPS**.
+
+The security chain needs to independently clone and analyze the repository **before** accepting the push. This validation is separate from the SSH git protocol flow and uses HTTPS because:
+
+1. Validation must work regardless of SSH agent forwarding state
+2. Uses proxy's own credentials (service token), not client's keys
+3. HTTPS is simpler for automated cloning/validation tasks
+
+The two protocols serve different purposes:
+
+- **SSH**: End-to-end git operations (preserves user identity)
+- **HTTPS**: Internal security validation (uses proxy credentials)
