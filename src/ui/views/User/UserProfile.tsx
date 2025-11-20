@@ -25,9 +25,9 @@ import {
   DialogContent,
   DialogActions,
 } from '@material-ui/core';
-import { UserContextType } from '../RepoDetails/RepoDetails';
 import { getSSHKeys, addSSHKey, deleteSSHKey, SSHKey } from '../../services/ssh';
 import Snackbar from '../../components/Snackbar/Snackbar';
+import { UserContextType } from '../RepoDetails/RepoDetails';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
@@ -82,10 +82,10 @@ export default function UserProfile(): React.ReactElement {
 
   // Load SSH keys when data is available
   useEffect(() => {
-    if (data && (isProfile || isAdmin)) {
+    if (data && (isOwnProfile || loggedInUser?.admin)) {
       loadSSHKeys();
     }
-  }, [data, isProfile, isAdmin, loadSSHKeys]);
+  }, [data, isOwnProfile, loggedInUser, loadSSHKeys]);
 
   const showSnackbar = (message: string, color: 'success' | 'danger') => {
     setSnackbarMessage(message);
@@ -190,11 +190,7 @@ export default function UserProfile(): React.ReactElement {
                   padding: '20px',
                 }}
               >
-                <GridContainer
-                  style={{
-                    paddingTop: '10px',
-                  }}
-                >
+                <GridContainer>
                   {data.gitAccount && (
                     <GridItem xs={1} sm={1} md={1}>
                       <img
@@ -240,7 +236,7 @@ export default function UserProfile(): React.ReactElement {
                     )}
                   </GridItem>
                 </GridContainer>
-                {isOwnProfile || loggedInUser.admin ? (
+                {isOwnProfile || loggedInUser?.admin ? (
                   <div style={{ marginTop: '50px' }}>
                     <hr style={{ opacity: 0.2 }} />
                     <div style={{ marginTop: '25px' }}>
