@@ -191,6 +191,35 @@ function Home() {
             </div>
           </div>
         </div>
+        <div className='row margin-bottom--xl'>
+          <div className='col col--4'>
+            <div className='col-demo'>
+              <Avatar
+                name='Kris West'
+                description='Principal Engineer at NatWest Group'
+                username='kriswest'
+              />
+            </div>
+          </div>
+          <div className='col col--4'>
+            <div className='col-demo'>
+              <Avatar
+                name='Jack Kelly'
+                description='Senior Consultant at ControlPlane'
+                username='06kellyjac'
+              />
+            </div>
+          </div>
+          <div className='col col--4'>
+            <div className='col-demo'>
+              <Avatar
+                name='Paul Groves'
+                description='Director, Citi'
+                username='grovesy'
+              />
+            </div>
+          </div>
+        </div>
       </div>
       <div className='container text--center'>
         <h1 className='margin-top--md'>
