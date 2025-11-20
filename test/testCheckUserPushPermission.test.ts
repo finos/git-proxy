@@ -13,7 +13,7 @@ const TEST_EMAIL_2 = 'push-perms-test-2@test.com';
 const TEST_EMAIL_3 = 'push-perms-test-3@test.com';
 
 describe('CheckUserPushPermissions...', () => {
-  let testRepo: any = null;
+  let testRepo: Repo | null = null;
 
   beforeAll(async () => {
     testRepo = await db.createRepo({
