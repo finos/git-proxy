@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, expect, vi, type Mock } from 'vitest';
+import { describe, it, beforeEach, expect, vi, type Mock, afterEach } from 'vitest';
 
 let ldapStub: { isUserInAdGroup: Mock };
 let dbStub: { updateUser: Mock };
@@ -33,9 +33,6 @@ const newConfig = JSON.stringify({
 
 describe('ActiveDirectory auth method', () => {
   beforeEach(async () => {
-    vi.clearAllMocks();
-    vi.resetModules();
-
     ldapStub = {
       isUserInAdGroup: vi.fn(),
     };
@@ -82,6 +79,11 @@ describe('ActiveDirectory auth method', () => {
     // then configure activeDirectory
     const { configure } = await import('../src/service/passport/activeDirectory.js');
     configure(passportStub as any);
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+    vi.resetModules();
   });
 
   it('should authenticate a valid user and mark them as admin', async () => {
