@@ -100,7 +100,6 @@ const cleanResponseData = <T extends object>(example: T, responses: T[] | T): T[
   }
 };
 
-// Use this test as a template
 describe('Database clients', () => {
   beforeAll(async function () {});
 
