@@ -212,11 +212,7 @@ function Home() {
           </div>
           <div className='col col--4'>
             <div className='col-demo'>
-              <Avatar
-                name='Paul Groves'
-                description='Director, Citi'
-                username='grovesy'
-              />
+              <Avatar name='Paul Groves' description='Director, Citi' username='grovesy' />
             </div>
           </div>
         </div>

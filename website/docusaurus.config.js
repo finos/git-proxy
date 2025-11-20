@@ -16,10 +16,10 @@ module.exports = {
     version,
     posts: [
       {
-      platform: 'linkedin',
+        platform: 'linkedin',
         url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7386982216444264448',
       },
-     {
+      {
         platform: 'linkedin',
         url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7384600028029419520',
       },
