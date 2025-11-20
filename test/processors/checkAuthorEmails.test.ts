@@ -534,8 +534,7 @@ describe('checkAuthorEmails', () => {
       const result = await exec(mockReq, mockAction);
 
       const step = vi.mocked(result.addStep).mock.calls[0][0];
-      // fails because regex is case-sensitive
-      expect(step.error).toBe(true);
+      expect(step.error).toBe(false);
     });
   });
 });

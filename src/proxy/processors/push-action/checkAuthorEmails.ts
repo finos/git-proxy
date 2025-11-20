@@ -14,14 +14,14 @@ const isEmailAllowed = (email: string): boolean => {
 
   if (
     commitConfig?.author?.email?.domain?.allow &&
-    !new RegExp(commitConfig.author.email.domain.allow, 'g').test(emailDomain)
+    !new RegExp(commitConfig.author.email.domain.allow, 'gi').test(emailDomain)
   ) {
     return false;
   }
 
   if (
     commitConfig?.author?.email?.local?.block &&
-    new RegExp(commitConfig.author.email.local.block, 'g').test(emailLocal)
+    new RegExp(commitConfig.author.email.local.block, 'gi').test(emailLocal)
   ) {
     return false;
   }
