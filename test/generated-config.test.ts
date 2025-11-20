@@ -302,12 +302,9 @@ describe('Generated Config (QuickType)', () => {
     });
 
     it('should test validation error paths', () => {
-      try {
-        // Try to parse something that looks like valid JSON but has wrong structure
-        Convert.toGitProxyConfig('{"proxyUrl": 123, "authentication": "not-array"}');
-      } catch (error) {
-        assert.instanceOf(error, Error);
-      }
+      assert.throws(() =>
+        Convert.toGitProxyConfig('{"proxyUrl": 123, "authentication": "not-array"}'),
+      );
     });
 
     it('should test date and null handling', () => {

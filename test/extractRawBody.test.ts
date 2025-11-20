@@ -1,4 +1,4 @@
-import { describe, it, beforeEach, expect, vi, Mock } from 'vitest';
+import { describe, it, beforeEach, expect, vi, Mock, afterAll } from 'vitest';
 import { PassThrough } from 'stream';
 
 // Tell Vitest to mock dependencies
@@ -33,7 +33,9 @@ describe('extractRawBody middleware', () => {
     };
 
     next = vi.fn();
+  });
 
+  afterAll(() => {
     (rawBody as Mock).mockClear();
     (chain.executeChain as Mock).mockClear();
   });
