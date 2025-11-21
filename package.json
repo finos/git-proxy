@@ -56,6 +56,7 @@
     "test": "NODE_ENV=test vitest --run --dir ./test",
     "test-coverage": "NODE_ENV=test vitest --run --dir ./test --coverage",
     "test-coverage-ci": "NODE_ENV=test vitest --run --dir ./test --coverage.enabled=true --coverage.reporter=lcovonly --coverage.reporter=text",
+    "test-watch": "NODE_ENV=test vitest --dir ./test --watch",
     "prepare": "node ./scripts/prepare.js",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
