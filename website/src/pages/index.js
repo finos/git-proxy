@@ -163,20 +163,16 @@ function Home() {
           <div className='col col--4'>
             <div className='col-demo'>
               {' '}
-              <Avatar
-                name='Jamie Slome'
-                description='Open Source Operations at Citi'
-                username='JamieSlome'
-              />
+              <Avatar name='Paul Groves' description='Director at Citi' username='grovesy' />
             </div>
           </div>
           <div className='col col--4'>
             <div className='col-demo'>
               {' '}
               <Avatar
-                name='Thomas Cooper'
-                description='Director, OSS Development at RBC'
-                username='coopernetes'
+                name='Jamie Slome'
+                description='Open Source Operations at Citi'
+                username='JamieSlome'
               />
             </div>
           </div>
@@ -204,15 +200,19 @@ function Home() {
           <div className='col col--4'>
             <div className='col-demo'>
               <Avatar
-                name='Jack Kelly'
-                description='Senior Consultant at ControlPlane'
-                username='06kellyjac'
+                name='Thomas Cooper'
+                description='Director, OSS Development at RBC'
+                username='coopernetes'
               />
             </div>
           </div>
           <div className='col col--4'>
             <div className='col-demo'>
-              <Avatar name='Paul Groves' description='Director, Citi' username='grovesy' />
+              <Avatar
+                name='Jack Kelly'
+                description='Senior Consultant at ControlPlane'
+                username='06kellyjac'
+              />
             </div>
           </div>
         </div>
