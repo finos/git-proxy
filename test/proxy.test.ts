@@ -2,8 +2,12 @@ import https from 'https';
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import fs from 'fs';
 
-// TODO: rewrite/fix these tests
-describe.skip('Proxy Module TLS Certificate Loading', () => {
+// jescalada: these tests are currently causing the following error
+// when running tests in the CI or for the first time locally:
+// Error: listen EADDRINUSE: address already in use :::8000
+// This is likely due to improper test isolation or cleanup in another test file
+// TODO: Find root cause of this error and fix it
+describe('Proxy Module TLS Certificate Loading', () => {
   let proxyModule: any;
   let mockConfig: any;
   let mockHttpServer: any;

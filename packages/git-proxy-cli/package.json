@@ -8,7 +8,7 @@
   "dependencies": {
     "axios": "^1.12.2",
     "yargs": "^17.7.2",
-    "@finos/git-proxy": "file:../.."
+    "@finos/git-proxy": "2.0.0-rc.3"
   },
   "scripts": {
     "build": "tsc",
