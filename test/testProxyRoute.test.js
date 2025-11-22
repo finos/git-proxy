@@ -559,4 +559,28 @@ describe('proxy express application', async () => {
     res2.should.have.status(200);
     expect(res2.text).to.contain('Rejecting repo');
   }).timeout(5000);
+
+  it('should create the default repo if it does not exist', async function () {
+    // Remove the default repo from the db and check it no longer exists
+    await cleanupRepo(TEST_DEFAULT_REPO.url);
+
+    const repo = await db.getRepoByUrl(TEST_DEFAULT_REPO.url);
+    expect(repo).to.be.null;
+
+    // Restart the proxy
+    await proxy.stop();
+    await proxy.start();
+
+    // Check that the default repo was created in the db
+    const repo2 = await db.getRepoByUrl(TEST_DEFAULT_REPO.url);
+    expect(repo2).to.not.be.null;
+
+    // Check that the default repo isn't duplicated on subsequent restarts
+    await proxy.stop();
+    await proxy.start();
+
+    const repo3 = await db.getRepoByUrl(TEST_DEFAULT_REPO.url);
+    expect(repo3).to.not.be.null;
+    expect(repo3._id).to.equal(repo2._id);
+  });
 });
