@@ -38,6 +38,23 @@ describe('init', () => {
     vi.spyOn(db, 'getRepo').mockResolvedValue(TEST_REPO);
   });
 
+  // Runs after each test
+  afterEach(function () {
+    // Restore all stubs: This cleans up replaced behaviour on existing modules
+    // Required when using vi.spyOn or vi.fn to stub modules/functions
+    vi.restoreAllMocks();
+
+    // Clear module cache: Wipes modules cache so imports are fresh for the next test file
+    // Required when using vi.doMock to override modules
+    vi.resetModules();
+  });
+
+  // Runs after all tests
+  afterAll(function () {
+    // Must close the server to avoid EADDRINUSE errors when running tests in parallel
+    service.httpServer.close();
+  });
+
   // Example test: check server is running
   it('should return 401 if not logged in', async function () {
     const res = await request(app).get('/api/auth/profile');
@@ -79,19 +96,5 @@ describe('init', () => {
     const authMethods = config.getAuthMethods();
     expect(authMethods).toHaveLength(3);
     expect(authMethods[0].type).toBe('local');
-  });
-
-  // Runs after each test
-  afterEach(function () {
-    // Restore all stubs
-    vi.restoreAllMocks();
-
-    // Clear module cache
-    vi.resetModules();
-  });
-
-  // Runs after all tests
-  afterAll(function () {
-    service.httpServer.close();
   });
 });
