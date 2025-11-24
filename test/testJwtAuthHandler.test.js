@@ -21,7 +21,7 @@ function publicKeyToJwk(publicKeyPem, kid = 'test-key') {
   return { ...jwk, kid };
 }
 
-describe.only('JWT', () => {
+describe('JWT', () => {
   describe('getJwks', () => {
     it('should fetch JWKS keys from authority', async () => {
       const jwksResponse = { keys: [{ kid: 'test-key', kty: 'RSA', n: 'abc', e: 'AQAB' }] };
