@@ -7,201 +7,253 @@ const jwt = require('jsonwebtoken');
 const { assignRoles, getJwks, validateJwt } = require('../src/service/passport/jwtUtils');
 const { jwtAuthHandler } = require('../src/service/passport/jwtAuthHandler');
 
-describe('getJwks', () => {
-  it('should fetch JWKS keys from authority', async () => {
-    const jwksResponse = { keys: [{ kid: 'test-key', kty: 'RSA', n: 'abc', e: 'AQAB' }] };
+function generateRsaKeyPair() {
+  return crypto.generateKeyPairSync('rsa', {
+    modulusLength: 2048,
+    publicKeyEncoding: { format: 'pem', type: 'pkcs1' },
+    privateKeyEncoding: { format: 'pem', type: 'pkcs1' },
+  });
+}
 
-    const getStub = sinon.stub(axios, 'get');
-    getStub.onFirstCall().resolves({ data: { jwks_uri: 'https://mock.com/jwks' } });
-    getStub.onSecondCall().resolves({ data: jwksResponse });
+function publicKeyToJwk(publicKeyPem, kid = 'test-key') {
+  const keyObj = crypto.createPublicKey(publicKeyPem);
+  const jwk = keyObj.export({ format: 'jwk' });
+  return { ...jwk, kid };
+}
 
-    const keys = await getJwks('https://mock.com');
-    expect(keys).to.deep.equal(jwksResponse.keys);
+describe.only('JWT', () => {
+  describe('getJwks', () => {
+    it('should fetch JWKS keys from authority', async () => {
+      const jwksResponse = { keys: [{ kid: 'test-key', kty: 'RSA', n: 'abc', e: 'AQAB' }] };
 
-    getStub.restore();
+      const getStub = sinon.stub(axios, 'get');
+      getStub.onFirstCall().resolves({ data: { jwks_uri: 'https://mock.com/jwks' } });
+      getStub.onSecondCall().resolves({ data: jwksResponse });
+
+      const keys = await getJwks('https://mock.com');
+      expect(keys).to.deep.equal(jwksResponse.keys);
+
+      getStub.restore();
+    });
+
+    it('should throw error if fetch fails', async () => {
+      const stub = sinon.stub(axios, 'get').rejects(new Error('Network fail'));
+      try {
+        await getJwks('https://fail.com');
+      } catch (err) {
+        expect(err.message).to.equal('Failed to fetch JWKS');
+      }
+      stub.restore();
+    });
   });
 
-  it('should throw error if fetch fails', async () => {
-    const stub = sinon.stub(axios, 'get').rejects(new Error('Network fail'));
-    try {
-      await getJwks('https://fail.com');
-    } catch (err) {
-      expect(err.message).to.equal('Failed to fetch JWKS');
-    }
-    stub.restore();
-  });
-});
+  describe('validateJwt', () => {
+    let decodeStub;
+    let verifyStub;
+    let pemStub;
+    let getJwksStub;
 
-describe('validateJwt', () => {
-  let decodeStub;
-  let verifyStub;
-  let pemStub;
-  let getJwksStub;
+    beforeEach(() => {
+      const jwksResponse = { keys: [{ kid: 'test-key', kty: 'RSA', n: 'abc', e: 'AQAB' }] };
+      const getStub = sinon.stub(axios, 'get');
+      getStub.onFirstCall().resolves({ data: { jwks_uri: 'https://mock.com/jwks' } });
+      getStub.onSecondCall().resolves({ data: jwksResponse });
 
-  beforeEach(() => {
-    const jwksResponse = { keys: [{ kid: 'test-key', kty: 'RSA', n: 'abc', e: 'AQAB' }] };
-    const getStub = sinon.stub(axios, 'get');
-    getStub.onFirstCall().resolves({ data: { jwks_uri: 'https://mock.com/jwks' } });
-    getStub.onSecondCall().resolves({ data: jwksResponse });
+      getJwksStub = sinon.stub().resolves(jwksResponse.keys);
+      decodeStub = sinon.stub(jwt, 'decode');
+      verifyStub = sinon.stub(jwt, 'verify');
+      pemStub = sinon.stub(crypto, 'createPublicKey');
 
-    getJwksStub = sinon.stub().resolves(jwksResponse.keys);
-    decodeStub = sinon.stub(jwt, 'decode');
-    verifyStub = sinon.stub(jwt, 'verify');
-    pemStub = sinon.stub(crypto, 'createPublicKey');
+      pemStub.returns('fake-public-key');
+      getJwksStub.returns(jwksResponse.keys);
+    });
 
-    pemStub.returns('fake-public-key');
-    getJwksStub.returns(jwksResponse.keys);
-  });
+    afterEach(() => sinon.restore());
 
-  afterEach(() => sinon.restore());
+    it('should validate a correct JWT', async () => {
+      const mockJwk = { kid: '123', kty: 'RSA', n: 'abc', e: 'AQAB' };
 
-  it('should validate a correct JWT', async () => {
-    const mockJwk = { kid: '123', kty: 'RSA', n: 'abc', e: 'AQAB' };
+      decodeStub.returns({ header: { kid: '123' } });
+      getJwksStub.resolves([mockJwk]);
+      verifyStub.returns({ azp: 'client-id', sub: 'user123' });
 
-    decodeStub.returns({ header: { kid: '123' } });
-    getJwksStub.resolves([mockJwk]);
-    verifyStub.returns({ azp: 'client-id', sub: 'user123' });
+      const { verifiedPayload, error } = await validateJwt(
+        'fake.token.here',
+        'https://issuer.com',
+        'client-id',
+        'client-id',
+        getJwksStub,
+      );
+      expect(error).to.be.null;
+      expect(verifiedPayload.sub).to.equal('user123');
+    });
 
-    const { verifiedPayload, error } = await validateJwt(
-      'fake.token.here',
-      'https://issuer.com',
-      'client-id',
-      'client-id',
-      getJwksStub,
-    );
-    expect(error).to.be.null;
-    expect(verifiedPayload.sub).to.equal('user123');
-  });
+    it('should return error if JWT invalid', async () => {
+      decodeStub.returns(null); // Simulate broken token
 
-  it('should return error if JWT invalid', async () => {
-    decodeStub.returns(null); // Simulate broken token
-
-    const { error } = await validateJwt(
-      'bad.token',
-      'https://issuer.com',
-      'client-id',
-      'client-id',
-      getJwksStub,
-    );
-    expect(error).to.include('Invalid JWT');
-  });
-});
-
-describe('assignRoles', () => {
-  it('should assign admin role based on claim', () => {
-    const user = { username: 'admin-user' };
-    const payload = { admin: 'admin' };
-    const mapping = { admin: { admin: 'admin' } };
-
-    assignRoles(mapping, payload, user);
-    expect(user.admin).to.be.true;
+      const { error } = await validateJwt(
+        'bad.token',
+        'https://issuer.com',
+        'client-id',
+        'client-id',
+        getJwksStub,
+      );
+      expect(error).to.include('Invalid JWT');
+    });
   });
 
-  it('should assign multiple roles based on claims', () => {
-    const user = { username: 'multi-role-user' };
-    const payload = { 'custom-claim-admin': 'custom-value', editor: 'editor' };
-    const mapping = {
-      admin: { 'custom-claim-admin': 'custom-value' },
-      editor: { editor: 'editor' },
-    };
+  describe('validateJwt with real JWT', () => {
+    it('should validate a JWT generated with crypto.createPublicKey', async () => {
+      const { privateKey, publicKey } = generateRsaKeyPair();
+      const jwk = publicKeyToJwk(publicKey, 'my-kid');
 
-    assignRoles(mapping, payload, user);
-    expect(user.admin).to.be.true;
-    expect(user.editor).to.be.true;
+      const tokenPayload = jwt.sign(
+        {
+          sub: 'user123',
+          azp: 'client-id',
+          admin: 'admin',
+        },
+        privateKey,
+        {
+          algorithm: 'RS256',
+          issuer: 'https://issuer.com',
+          audience: 'client-id',
+          keyid: 'my-kid',
+        },
+      );
+
+      const getJwksStub = sinon.stub().resolves([jwk]);
+
+      const { verifiedPayload, error } = await validateJwt(
+        tokenPayload,
+        'https://issuer.com',
+        'client-id',
+        'client-id',
+        getJwksStub,
+      );
+
+      expect(error).to.be.null;
+      expect(verifiedPayload.sub).to.equal('user123');
+      expect(verifiedPayload.admin).to.equal('admin');
+    });
   });
 
-  it('should not assign role if claim mismatch', () => {
-    const user = { username: 'basic-user' };
-    const payload = { admin: 'nope' };
-    const mapping = { admin: { admin: 'admin' } };
+  describe('assignRoles', () => {
+    it('should assign admin role based on claim', () => {
+      const user = { username: 'admin-user' };
+      const payload = { admin: 'admin' };
+      const mapping = { admin: { admin: 'admin' } };
 
-    assignRoles(mapping, payload, user);
-    expect(user.admin).to.be.undefined;
+      assignRoles(mapping, payload, user);
+      expect(user.admin).to.be.true;
+    });
+
+    it('should assign multiple roles based on claims', () => {
+      const user = { username: 'multi-role-user' };
+      const payload = { 'custom-claim-admin': 'custom-value', editor: 'editor' };
+      const mapping = {
+        admin: { 'custom-claim-admin': 'custom-value' },
+        editor: { editor: 'editor' },
+      };
+
+      assignRoles(mapping, payload, user);
+      expect(user.admin).to.be.true;
+      expect(user.editor).to.be.true;
+    });
+
+    it('should not assign role if claim mismatch', () => {
+      const user = { username: 'basic-user' };
+      const payload = { admin: 'nope' };
+      const mapping = { admin: { admin: 'admin' } };
+
+      assignRoles(mapping, payload, user);
+      expect(user.admin).to.be.undefined;
+    });
+
+    it('should not assign role if no mapping provided', () => {
+      const user = { username: 'no-role-user' };
+      const payload = { admin: 'admin' };
+
+      assignRoles(null, payload, user);
+      expect(user.admin).to.be.undefined;
+    });
   });
 
-  it('should not assign role if no mapping provided', () => {
-    const user = { username: 'no-role-user' };
-    const payload = { admin: 'admin' };
+  describe('jwtAuthHandler', () => {
+    let req;
+    let res;
+    let next;
+    let jwtConfig;
+    let validVerifyResponse;
 
-    assignRoles(null, payload, user);
-    expect(user.admin).to.be.undefined;
-  });
-});
+    beforeEach(() => {
+      req = { header: sinon.stub(), isAuthenticated: sinon.stub(), user: {} };
+      res = { status: sinon.stub().returnsThis(), send: sinon.stub() };
+      next = sinon.stub();
 
-describe('jwtAuthHandler', () => {
-  let req;
-  let res;
-  let next;
-  let jwtConfig;
-  let validVerifyResponse;
+      jwtConfig = {
+        clientID: 'client-id',
+        authorityURL: 'https://accounts.google.com',
+        expectedAudience: 'expected-audience',
+        roleMapping: { admin: { admin: 'admin' } },
+      };
 
-  beforeEach(() => {
-    req = { header: sinon.stub(), isAuthenticated: sinon.stub(), user: {} };
-    res = { status: sinon.stub().returnsThis(), send: sinon.stub() };
-    next = sinon.stub();
+      validVerifyResponse = {
+        header: { kid: '123' },
+        azp: 'client-id',
+        sub: 'user123',
+        admin: 'admin',
+      };
+    });
 
-    jwtConfig = {
-      clientID: 'client-id',
-      authorityURL: 'https://accounts.google.com',
-      expectedAudience: 'expected-audience',
-      roleMapping: { admin: { admin: 'admin' } },
-    };
+    afterEach(() => {
+      sinon.restore();
+    });
 
-    validVerifyResponse = {
-      header: { kid: '123' },
-      azp: 'client-id',
-      sub: 'user123',
-      admin: 'admin',
-    };
-  });
+    it('should call next if user is authenticated', async () => {
+      req.isAuthenticated.returns(true);
+      await jwtAuthHandler()(req, res, next);
+      expect(next.calledOnce).to.be.true;
+    });
 
-  afterEach(() => {
-    sinon.restore();
-  });
+    it('should return 401 if no token provided', async () => {
+      req.header.returns(null);
+      await jwtAuthHandler(jwtConfig)(req, res, next);
 
-  it('should call next if user is authenticated', async () => {
-    req.isAuthenticated.returns(true);
-    await jwtAuthHandler()(req, res, next);
-    expect(next.calledOnce).to.be.true;
-  });
+      expect(res.status.calledWith(401)).to.be.true;
+      expect(res.send.calledWith('No token provided\n')).to.be.true;
+    });
 
-  it('should return 401 if no token provided', async () => {
-    req.header.returns(null);
-    await jwtAuthHandler(jwtConfig)(req, res, next);
+    it('should return 500 if authorityURL not configured', async () => {
+      req.header.returns('Bearer fake-token');
+      jwtConfig.authorityURL = null;
+      sinon.stub(jwt, 'verify').returns(validVerifyResponse);
 
-    expect(res.status.calledWith(401)).to.be.true;
-    expect(res.send.calledWith('No token provided\n')).to.be.true;
-  });
+      await jwtAuthHandler(jwtConfig)(req, res, next);
 
-  it('should return 500 if authorityURL not configured', async () => {
-    req.header.returns('Bearer fake-token');
-    jwtConfig.authorityURL = null;
-    sinon.stub(jwt, 'verify').returns(validVerifyResponse);
+      expect(res.status.calledWith(500)).to.be.true;
+      expect(res.send.calledWith({ message: 'OIDC authority URL is not configured\n' })).to.be.true;
+    });
 
-    await jwtAuthHandler(jwtConfig)(req, res, next);
+    it('should return 500 if clientID not configured', async () => {
+      req.header.returns('Bearer fake-token');
+      jwtConfig.clientID = null;
+      sinon.stub(jwt, 'verify').returns(validVerifyResponse);
 
-    expect(res.status.calledWith(500)).to.be.true;
-    expect(res.send.calledWith({ message: 'OIDC authority URL is not configured\n' })).to.be.true;
-  });
+      await jwtAuthHandler(jwtConfig)(req, res, next);
 
-  it('should return 500 if clientID not configured', async () => {
-    req.header.returns('Bearer fake-token');
-    jwtConfig.clientID = null;
-    sinon.stub(jwt, 'verify').returns(validVerifyResponse);
+      expect(res.status.calledWith(500)).to.be.true;
+      expect(res.send.calledWith({ message: 'OIDC client ID is not configured\n' })).to.be.true;
+    });
 
-    await jwtAuthHandler(jwtConfig)(req, res, next);
+    it('should return 401 if JWT validation fails', async () => {
+      req.header.returns('Bearer fake-token');
+      sinon.stub(jwt, 'verify').throws(new Error('Invalid token'));
 
-    expect(res.status.calledWith(500)).to.be.true;
-    expect(res.send.calledWith({ message: 'OIDC client ID is not configured\n' })).to.be.true;
-  });
+      await jwtAuthHandler(jwtConfig)(req, res, next);
 
-  it('should return 401 if JWT validation fails', async () => {
-    req.header.returns('Bearer fake-token');
-    sinon.stub(jwt, 'verify').throws(new Error('Invalid token'));
-
-    await jwtAuthHandler(jwtConfig)(req, res, next);
-
-    expect(res.status.calledWith(401)).to.be.true;
-    expect(res.send.calledWithMatch(/JWT validation failed:/)).to.be.true;
+      expect(res.status.calledWith(401)).to.be.true;
+      expect(res.send.calledWithMatch(/JWT validation failed:/)).to.be.true;
+    });
   });
 });
