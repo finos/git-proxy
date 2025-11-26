@@ -2,6 +2,18 @@ import { getProxyUrl, getSSHConfig } from '../../config';
 import { KILOBYTE, MEGABYTE } from '../../constants';
 import { ClientWithUser } from './types';
 import { createLazyAgent } from './AgentForwarding';
+import { getKnownHosts, verifyHostKey } from './knownHosts';
+import * as crypto from 'crypto';
+
+/**
+ * Calculate SHA-256 fingerprint from SSH host key Buffer
+ */
+function calculateHostKeyFingerprint(keyBuffer: Buffer): string {
+  const hash = crypto.createHash('sha256').update(keyBuffer).digest('base64');
+  // Remove base64 padding to match SSH fingerprint standard format
+  const hashWithoutPadding = hash.replace(/=+$/, '');
+  return `SHA256:${hashWithoutPadding}`;
+}
 
 /**
  * Default error message for missing agent forwarding
@@ -53,6 +65,8 @@ export function createSSHConnectionOptions(
 
   const remoteUrl = new URL(proxyUrl);
   const customAgent = createLazyAgent(client);
+  const sshConfig = getSSHConfig();
+  const knownHosts = getKnownHosts(sshConfig?.knownHosts);
 
   const connectionOptions: any = {
     host: remoteUrl.hostname,
@@ -61,6 +75,22 @@ export function createSSHConnectionOptions(
     tryKeyboard: false,
     readyTimeout: 30000,
     agent: customAgent,
+    hostVerifier: (keyHash: Buffer | string, callback: (valid: boolean) => void) => {
+      const hostname = remoteUrl.hostname;
+
+      // ssh2 passes the raw key as a Buffer, calculate SHA256 fingerprint
+      const fingerprint = Buffer.isBuffer(keyHash) ? calculateHostKeyFingerprint(keyHash) : keyHash;
+
+      console.log(`[SSH] Verifying host key for ${hostname}: ${fingerprint}`);
+
+      const isValid = verifyHostKey(hostname, fingerprint, knownHosts);
+
+      if (isValid) {
+        console.log(`[SSH] Host key verification successful for ${hostname}`);
+      }
+
+      callback(isValid);
+    },
   };
 
   if (options?.keepalive) {
