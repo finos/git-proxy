@@ -397,6 +397,10 @@
             }
           },
           "required": ["privateKeyPath", "publicKeyPath"]
+        },
+        "agentForwardingErrorMessage": {
+          "type": "string",
+          "description": "Custom error message shown when SSH agent forwarding is not enabled. If not specified, a default message with git config commands will be used. This allows organizations to customize instructions based on their security policies."
         }
       },
       "required": ["enabled"]

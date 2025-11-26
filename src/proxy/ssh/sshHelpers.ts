@@ -1,7 +1,18 @@
-import { getProxyUrl } from '../../config';
+import { getProxyUrl, getSSHConfig } from '../../config';
 import { KILOBYTE, MEGABYTE } from '../../constants';
 import { ClientWithUser } from './types';
 import { createLazyAgent } from './AgentForwarding';
+
+/**
+ * Default error message for missing agent forwarding
+ */
+const DEFAULT_AGENT_FORWARDING_ERROR =
+  'SSH agent forwarding is required.\n\n' +
+  'Configure it for this repository:\n' +
+  '  git config core.sshCommand "ssh -A"\n\n' +
+  'Or globally for all repositories:\n' +
+  '  git config --global core.sshCommand "ssh -A"\n\n' +
+  'Note: Configuring per-repository is more secure than using --global.';
 
 /**
  * Validate prerequisites for SSH connection to remote
@@ -16,10 +27,11 @@ export function validateSSHPrerequisites(client: ClientWithUser): void {
 
   // Check agent forwarding
   if (!client.agentForwardingEnabled) {
-    throw new Error(
-      'SSH agent forwarding is required. Please connect with: ssh -A\n' +
-        'Or configure ~/.ssh/config with: ForwardAgent yes',
-    );
+    const sshConfig = getSSHConfig();
+    const customMessage = sshConfig?.agentForwardingErrorMessage;
+    const errorMessage = customMessage || DEFAULT_AGENT_FORWARDING_ERROR;
+
+    throw new Error(errorMessage);
   }
 }
 

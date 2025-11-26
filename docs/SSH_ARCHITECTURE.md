@@ -30,16 +30,7 @@ The Git client uses SSH to communicate with the proxy. Minimum required configur
 git remote add origin ssh://user@git-proxy.example.com:2222/org/repo.git
 ```
 
-**2. Configure SSH agent forwarding** (`~/.ssh/config`):
-
-```
-Host git-proxy.example.com
-  ForwardAgent yes           # REQUIRED
-  IdentityFile ~/.ssh/id_ed25519
-  Port 2222
-```
-
-**3. Start ssh-agent and load key**:
+**2. Start ssh-agent and load key**:
 
 ```bash
 eval $(ssh-agent -s)
@@ -47,7 +38,7 @@ ssh-add ~/.ssh/id_ed25519
 ssh-add -l  # Verify key loaded
 ```
 
-**4. Register public key with proxy**:
+**3. Register public key with proxy**:
 
 ```bash
 # Copy the public key
@@ -56,6 +47,69 @@ cat ~/.ssh/id_ed25519.pub
 # Register it via UI (http://localhost:8000) or database
 # The key must be in the proxy database for Client → Proxy authentication
 ```
+
+**4. Configure SSH agent forwarding**:
+
+⚠️ **Security Note**: SSH agent forwarding can be a security risk if enabled globally. Choose the most appropriate method for your security requirements:
+
+**Option A: Per-repository (RECOMMENDED - Most Secure)**
+
+This limits agent forwarding to only this repository's Git operations.
+
+For **existing repositories**:
+
+```bash
+cd /path/to/your/repo
+git config core.sshCommand "ssh -A"
+```
+
+For **cloning new repositories**, use the `-c` flag to set the configuration during clone:
+
+```bash
+# Clone with per-repository agent forwarding (recommended)
+git clone -c core.sshCommand="ssh -A" ssh://user@git-proxy.example.com:2222/org/repo.git
+
+# The configuration is automatically saved in the cloned repository
+cd repo
+git config core.sshCommand  # Verify: should show "ssh -A"
+```
+
+**Alternative for cloning**: Use Option B or C temporarily for the initial clone, then switch to per-repository configuration:
+
+```bash
+# Clone using SSH config (Option B) or global config (Option C)
+git clone ssh://user@git-proxy.example.com:2222/org/repo.git
+
+# Then configure for this repository only
+cd repo
+git config core.sshCommand "ssh -A"
+
+# Now you can remove ForwardAgent from ~/.ssh/config if desired
+```
+
+**Option B: Per-host via SSH config (Moderately Secure)**
+
+Add to `~/.ssh/config`:
+
+```
+Host git-proxy.example.com
+  ForwardAgent yes
+  IdentityFile ~/.ssh/id_ed25519
+  Port 2222
+```
+
+This enables agent forwarding only when connecting to the specific proxy host.
+
+**Option C: Global Git config (Least Secure - Not Recommended)**
+
+```bash
+# Enables agent forwarding for ALL Git operations
+git config --global core.sshCommand "ssh -A"
+```
+
+⚠️ **Warning**: This enables agent forwarding for all Git repositories. Only use this if you trust all Git servers you interact with. See [MITRE ATT&CK T1563.001](https://attack.mitre.org/techniques/T1563/001/) for security implications.
+
+**Custom Error Messages**: Administrators can customize the agent forwarding error message by setting `ssh.agentForwardingErrorMessage` in the proxy configuration to match your organization's security policies.
 
 ### How It Works
 
