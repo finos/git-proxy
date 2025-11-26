@@ -49,19 +49,6 @@ export function createSSHConnectionOptions(
     tryKeyboard: false,
     readyTimeout: 30000,
     agent: customAgent,
-    algorithms: {
-      kex: [
-        'ecdh-sha2-nistp256' as any,
-        'ecdh-sha2-nistp384' as any,
-        'ecdh-sha2-nistp521' as any,
-        'diffie-hellman-group14-sha256' as any,
-        'diffie-hellman-group16-sha512' as any,
-        'diffie-hellman-group18-sha512' as any,
-      ],
-      serverHostKey: ['rsa-sha2-512' as any, 'rsa-sha2-256' as any, 'ssh-rsa' as any],
-      cipher: ['aes128-gcm' as any, 'aes256-gcm' as any, 'aes128-ctr' as any, 'aes256-ctr' as any],
-      hmac: ['hmac-sha2-256' as any, 'hmac-sha2-512' as any],
-    },
   };
 
   if (options?.keepalive) {
