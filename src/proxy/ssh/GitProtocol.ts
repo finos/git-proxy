@@ -11,6 +11,7 @@
 import * as ssh2 from 'ssh2';
 import { ClientWithUser } from './types';
 import { validateSSHPrerequisites, createSSHConnectionOptions } from './sshHelpers';
+import { parsePacketLines } from '../processors/pktLineParser';
 
 /**
  * Parser for Git pkt-line protocol
@@ -29,11 +30,15 @@ class PktLineParser {
 
   /**
    * Check if we've received a flush packet (0000) indicating end of capabilities
-   * The flush packet appears after the capabilities/refs section
    */
   hasFlushPacket(): boolean {
-    const bufStr = this.buffer.toString('utf8');
-    return bufStr.includes('0000');
+    try {
+      const [, offset] = parsePacketLines(this.buffer);
+      // If offset > 0, we successfully parsed up to and including a flush packet
+      return offset > 0;
+    } catch (e) {
+      return false;
+    }
   }
 
   /**
