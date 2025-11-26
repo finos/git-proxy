@@ -345,7 +345,7 @@ export class SSHServer {
       if (repoPath.startsWith('/')) {
         repoPath = repoPath.substring(1);
       }
-      const isReceivePack = command.includes('git-receive-pack');
+      const isReceivePack = command.startsWith('git-receive-pack');
       const gitPath = isReceivePack ? 'git-receive-pack' : 'git-upload-pack';
 
       console.log(
