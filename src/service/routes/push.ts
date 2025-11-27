@@ -82,6 +82,13 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
 });
 
 router.post('/:id/authorise', async (req: Request, res: Response) => {
+  if (!req.user) {
+    res.status(401).send({
+      message: 'Not logged in',
+    });
+    return;
+  }
+
   const questions = req.body.params?.attestation;
 
   // TODO: compare attestation to configuration and ensure all questions are answered
@@ -90,72 +97,73 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
     (question: { checked: boolean }) => !!question.checked,
   );
 
-  if (req.user && attestationComplete) {
-    const id = req.params.id;
+  if (!attestationComplete) {
+    res.status(400).send({
+      message: 'Attestation is not complete',
+    });
+    return;
+  }
 
-    const { username } = req.user as { username: string };
+  const id = req.params.id;
 
-    const push = await db.getPush(id);
-    if (!push) {
+  const { username } = req.user as { username: string };
+
+  const push = await db.getPush(id);
+  if (!push) {
+    res.status(404).send({
+      message: 'Push request not found',
+    });
+    return;
+  }
+
+  // Get the committer of the push via their email address
+  const committerEmail = push.userEmail;
+
+  const list = await db.getUsers({ email: committerEmail });
+
+  if (list.length === 0) {
+    res.status(404).send({
+      message: `No user found with the committer's email address: ${committerEmail}`,
+    });
+    return;
+  }
+
+  if (list[0].username.toLowerCase() === username.toLowerCase() && !list[0].admin) {
+    res.status(403).send({
+      message: `Cannot approve your own changes`,
+    });
+    return;
+  }
+
+  // If we are not the author, now check that we are allowed to authorise on this
+  // repo
+  const isAllowed = await db.canUserApproveRejectPush(id, username);
+  if (isAllowed) {
+    console.log(`User ${username} approved push request for ${id}`);
+
+    const reviewerList = await db.getUsers({ username });
+    const reviewerEmail = reviewerList[0].email;
+
+    if (!reviewerEmail) {
       res.status(404).send({
-        message: 'Push request not found',
+        message: `There was no registered email address for the reviewer: ${username}`,
       });
       return;
     }
 
-    // Get the committer of the push via their email address
-    const committerEmail = push.userEmail;
-
-    const list = await db.getUsers({ email: committerEmail });
-
-    if (list.length === 0) {
-      res.status(401).send({
-        message: `There was no registered user with the committer's email address: ${committerEmail}`,
-      });
-      return;
-    }
-
-    if (list[0].username.toLowerCase() === username.toLowerCase() && !list[0].admin) {
-      res.status(401).send({
-        message: `Cannot approve your own changes`,
-      });
-      return;
-    }
-
-    // If we are not the author, now check that we are allowed to authorise on this
-    // repo
-    const isAllowed = await db.canUserApproveRejectPush(id, username);
-    if (isAllowed) {
-      console.log(`user ${username} approved push request for ${id}`);
-
-      const reviewerList = await db.getUsers({ username });
-      const reviewerEmail = reviewerList[0].email;
-
-      if (!reviewerEmail) {
-        res.status(401).send({
-          message: `There was no registered email address for the reviewer: ${username}`,
-        });
-        return;
-      }
-
-      const attestation = {
-        questions,
-        timestamp: new Date(),
-        reviewer: {
-          username,
-          reviewerEmail,
-        },
-      };
-      const result = await db.authorise(id, attestation);
-      res.send(result);
-    } else {
-      res.status(401).send({
-        message: `user ${username} not authorised to approve push's on this project`,
-      });
-    }
+    const attestation = {
+      questions,
+      timestamp: new Date(),
+      reviewer: {
+        username,
+        reviewerEmail,
+      },
+    };
+    const result = await db.authorise(id, attestation);
+    res.send(result);
   } else {
-    res.status(401).send({
-      message: 'You are unauthorized to perform this action...',
+    res.status(403).send({
+      message: `User ${username} not authorised to approve pushes on this project`,
     });
   }
 });
