@@ -38,7 +38,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/:id/reject', async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).send({
-      message: 'not logged in',
+      message: 'Not logged in',
     });
     return;
   }
@@ -55,14 +55,14 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
   const list = await db.getUsers({ email: committerEmail });
 
   if (list.length === 0) {
-    res.status(401).send({
-      message: `There was no registered user with the committer's email address: ${committerEmail}`,
+    res.status(404).send({
+      message: `No user found with the committer's email address: ${committerEmail}`,
     });
     return;
   }
 
   if (list[0].username.toLowerCase() === username.toLowerCase() && !list[0].admin) {
-    res.status(401).send({
+    res.status(403).send({
       message: `Cannot reject your own changes`,
     });
     return;
@@ -72,11 +72,11 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
 
   if (isAllowed) {
     const result = await db.reject(id, null);
-    console.log(`user ${username} rejected push request for ${id}`);
+    console.log(`User ${username} rejected push request for ${id}`);
     res.send(result);
   } else {
-    res.status(401).send({
-      message: 'User is not authorised to reject changes',
+    res.status(403).send({
+      message: `User ${username} is not authorised to reject changes on this project`,
     });
   }
 });
@@ -171,7 +171,7 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
 router.post('/:id/cancel', async (req: Request, res: Response) => {
   if (!req.user) {
     res.status(401).send({
-      message: 'not logged in',
+      message: 'Not logged in',
     });
     return;
   }
@@ -183,12 +183,12 @@ router.post('/:id/cancel', async (req: Request, res: Response) => {
 
   if (isAllowed) {
     const result = await db.cancel(id);
-    console.log(`user ${username} canceled push request for ${id}`);
+    console.log(`User ${username} canceled push request for ${id}`);
     res.send(result);
   } else {
-    console.log(`user ${username} not authorised to cancel push request for ${id}`);
-    res.status(401).send({
-      message: 'User ${req.user.username)} not authorised to cancel push requests on this project.',
+    console.log(`User ${username} not authorised to cancel push request for ${id}`);
+    res.status(403).send({
+      message: `User ${username} not authorised to cancel push requests on this project`,
     });
   }
 });
