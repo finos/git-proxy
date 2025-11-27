@@ -181,7 +181,8 @@ describe('Push API', () => {
             ],
           },
         });
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Attestation is not complete');
     });
 
     it('should NOT allow an authorizer to approve if committer is unknown', async () => {
@@ -207,7 +208,10 @@ describe('Push API', () => {
             ],
           },
         });
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe(
+        "No user found with the committer's email address: push-test-3@test.com",
+      );
     });
   });
 
@@ -236,7 +240,8 @@ describe('Push API', () => {
           ],
         },
       });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe('Cannot approve your own changes');
   });
 
   it('should NOT allow a non-authorizer to approve a push', async () => {
@@ -260,7 +265,8 @@ describe('Push API', () => {
           ],
         },
       });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe('Cannot approve your own changes');
   });
 
   it('should allow an authorizer to reject a push', async () => {
@@ -282,16 +288,24 @@ describe('Push API', () => {
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
       .set('Cookie', `${cookie}`);
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe('Cannot reject your own changes');
   });
 
   it('should NOT allow a non-authorizer to reject a push', async () => {
-    await db.writeAudit(TEST_PUSH as any);
+    const pushWithOtherUser = { ...TEST_PUSH };
+    pushWithOtherUser.user = TEST_USERNAME_1;
+    pushWithOtherUser.userEmail = TEST_EMAIL_1;
+
+    await db.writeAudit(pushWithOtherUser as any);
     await loginAsCommitter();
     const res = await request(app)
-      .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
+      .post(`/api/v1/push/${pushWithOtherUser.id}/reject`)
       .set('Cookie', `${cookie}`);
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe(
+      'User push-test-2 is not authorised to reject changes on this project',
+    );
   });
 
   it('should fetch all pushes', async () => {
@@ -328,7 +342,10 @@ describe('Push API', () => {
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
       .set('Cookie', `${cookie}`);
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe(
+      'User admin not authorised to cancel push requests on this project',
+    );
 
     const pushes = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
     const push = pushes.body.find((p: any) => p.id === TEST_PUSH.id);
