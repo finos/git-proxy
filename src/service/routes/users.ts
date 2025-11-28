@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 const router = express.Router();
 
 import * as db from '../../db';
-import { toPublicUser } from './publicApi';
+import { toPublicUser } from './utils';
 
 router.get('/', async (req: Request, res: Response) => {
   console.log('fetching users');

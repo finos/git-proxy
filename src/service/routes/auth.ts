@@ -9,8 +9,7 @@ import * as passportAD from '../passport/activeDirectory';
 import { User } from '../../db/types';
 import { AuthenticationElement } from '../../config/generated/config';
 
-import { toPublicUser } from './publicApi';
-import { isAdminUser } from './utils';
+import { isAdminUser, toPublicUser } from './utils';
 
 const router = express.Router();
 const passport = getPassport();
