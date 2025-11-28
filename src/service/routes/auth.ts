@@ -107,7 +107,7 @@ router.get('/openidconnect/callback', (req: Request, res: Response, next: NextFu
   passport.authenticate(authStrategies['openidconnect'].type, (err: any, user: any, info: any) => {
     if (err) {
       console.error('Authentication error:', err);
-      return res.status(401).end();
+      return res.status(500).end();
     }
     if (!user) {
       console.error('No user found:', info);
@@ -116,7 +116,7 @@ router.get('/openidconnect/callback', (req: Request, res: Response, next: NextFu
     req.logIn(user, (err) => {
       if (err) {
         console.error('Login error:', err);
-        return res.status(401).end();
+        return res.status(500).end();
       }
       console.log('Logged in successfully. User:', user);
       return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
@@ -217,9 +217,12 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
 
 router.post('/create-user', async (req: Request, res: Response) => {
   if (!isAdminUser(req.user)) {
-    res.status(401).send({
-      message: 'You are not authorized to perform this action...',
-    });
+    res
+      .status(403)
+      .send({
+        message: 'Not authorized to create users',
+      })
+      .end();
     return;
   }
 
@@ -227,20 +230,27 @@ router.post('/create-user', async (req: Request, res: Response) => {
     const { username, password, email, gitAccount, admin: isAdmin = false } = req.body;
 
     if (!username || !password || !email || !gitAccount) {
-      res.status(400).send({
-        message: 'Missing required fields: username, password, email, and gitAccount are required',
-      });
+      res
+        .status(400)
+        .send({
+          message:
+            'Missing required fields: username, password, email, and gitAccount are required',
+        })
+        .end();
       return;
     }
 
     await db.createUser(username, password, email, gitAccount, isAdmin);
-    res.status(201).send({
-      message: 'User created successfully',
-      username,
-    });
+    res
+      .status(201)
+      .send({
+        message: 'User created successfully',
+        username,
+      })
+      .end();
   } catch (error: any) {
     console.error('Error creating user:', error);
-    res.status(400).send({
+    res.status(500).send({
       message: error.message || 'Failed to create user',
     });
   }
