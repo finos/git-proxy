@@ -16,7 +16,7 @@ interface AxiosConfig {
  */
 export const getUserInfo = async (): Promise<PublicUser | null> => {
   try {
-    const response = await fetch(`${API_BASE}/api/auth/me`, {
+    const response = await fetch(`${API_BASE}/api/auth/profile`, {
       credentials: 'include', // Sends cookies
     });
     if (!response.ok) throw new Error(`Failed to fetch user info: ${response.statusText}`);

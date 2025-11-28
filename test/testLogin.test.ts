@@ -36,12 +36,7 @@ describe('login', () => {
       });
     });
 
-    it('should now be able to access the user login metadata', async () => {
-      const res = await request(app).get('/api/auth/me').set('Cookie', cookie);
-      expect(res.status).toBe(200);
-    });
-
-    it('should now be able to access the profile', async () => {
+    it('should now be able to access the user metadata', async () => {
       const res = await request(app).get('/api/auth/profile').set('Cookie', cookie);
       expect(res.status).toBe(200);
     });
@@ -96,7 +91,7 @@ describe('login', () => {
     });
 
     it('should fail to get the current user metadata if not logged in', async () => {
-      const res = await request(app).get('/api/auth/me');
+      const res = await request(app).get('/api/auth/profile');
       expect(res.status).toBe(401);
     });
 

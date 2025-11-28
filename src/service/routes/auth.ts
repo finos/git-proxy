@@ -188,19 +188,6 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/me', async (req: Request, res: Response) => {
-  if (req.user) {
-    const userVal = await db.findUser((req.user as User).username);
-    if (!userVal) {
-      res.status(400).send('Error: Logged in user not found').end();
-      return;
-    }
-    res.send(toPublicUser(userVal));
-  } else {
-    res.status(401).end();
-  }
-});
-
 router.post('/create-user', async (req: Request, res: Response) => {
   if (!isAdminUser(req.user)) {
     res.status(401).send({

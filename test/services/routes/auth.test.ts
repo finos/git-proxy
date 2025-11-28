@@ -219,37 +219,6 @@ describe('Auth API', () => {
     });
   });
 
-  describe('GET /me', () => {
-    it('should return 401 Unauthorized if user is not logged in', async () => {
-      const res = await request(newApp()).get('/auth/me');
-
-      expect(res.status).toBe(401);
-    });
-
-    it('should return 200 OK and serialize public data representation of current logged in user', async () => {
-      vi.spyOn(db, 'findUser').mockResolvedValue({
-        username: 'alice',
-        password: 'secret-hashed-password',
-        email: 'alice@example.com',
-        displayName: 'Alice Walker',
-        admin: false,
-        gitAccount: '',
-        title: '',
-      });
-
-      const res = await request(newApp('alice')).get('/auth/me');
-      expect(res.status).toBe(200);
-      expect(res.body).toEqual({
-        username: 'alice',
-        displayName: 'Alice Walker',
-        email: 'alice@example.com',
-        title: '',
-        gitAccount: '',
-        admin: false,
-      });
-    });
-  });
-
   describe('GET /profile', () => {
     it('should return 401 Unauthorized if user is not logged in', async () => {
       const res = await request(newApp()).get('/auth/profile');
