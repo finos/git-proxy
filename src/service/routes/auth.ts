@@ -133,58 +133,85 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.get('/profile', async (req: Request, res: Response) => {
-  if (req.user) {
-    const userVal = await db.findUser((req.user as User).username);
-    if (!userVal) {
-      res.status(400).send('Error: Logged in user not found').end();
-      return;
-    }
-    res.send(toPublicUser(userVal));
-  } else {
-    res.status(401).end();
+  if (!req.user) {
+    res
+      .status(401)
+      .send({
+        message: 'Not logged in',
+      })
+      .end();
+    return;
   }
+
+  const userVal = await db.findUser((req.user as User).username);
+  if (!userVal) {
+    res.status(404).send('User not found').end();
+    return;
+  }
+
+  res.send(toPublicUser(userVal));
 });
 
 router.post('/gitAccount', async (req: Request, res: Response) => {
-  if (req.user) {
-    try {
-      let username =
-        req.body.username == null || req.body.username === 'undefined'
-          ? req.body.id
-          : req.body.username;
-      username = username?.split('@')[0];
+  if (!req.user) {
+    res
+      .status(401)
+      .send({
+        message: 'Not logged in',
+      })
+      .end();
+    return;
+  }
 
-      if (!username) {
-        res.status(400).send('Error: Missing username. Git account not updated').end();
-        return;
-      }
+  try {
+    let username =
+      req.body.username == null || req.body.username === 'undefined'
+        ? req.body.id
+        : req.body.username;
+    username = username?.split('@')[0];
 
-      const reqUser = await db.findUser((req.user as User).username);
-      if (username !== reqUser?.username && !reqUser?.admin) {
-        res.status(403).send('Error: You must be an admin to update a different account').end();
-        return;
-      }
-
-      const user = await db.findUser(username);
-      if (!user) {
-        res.status(400).send('Error: User not found').end();
-        return;
-      }
-
-      console.log('Adding gitAccount' + req.body.gitAccount);
-      user.gitAccount = req.body.gitAccount;
-      db.updateUser(user);
-      res.status(200).end();
-    } catch (e: any) {
+    if (!username) {
       res
-        .status(500)
+        .status(400)
         .send({
-          message: `Error updating git account: ${e.message}`,
+          message: 'Missing username. Git account not updated',
         })
         .end();
+      return;
     }
-  } else {
-    res.status(401).end();
+
+    const reqUser = await db.findUser((req.user as User).username);
+    if (username !== reqUser?.username && !reqUser?.admin) {
+      res
+        .status(403)
+        .send({
+          message: 'Must be an admin to update a different account',
+        })
+        .end();
+      return;
+    }
+
+    const user = await db.findUser(username);
+    if (!user) {
+      res
+        .status(404)
+        .send({
+          message: 'User not found',
+        })
+        .end();
+      return;
+    }
+
+    user.gitAccount = req.body.gitAccount;
+    db.updateUser(user);
+    res.status(200).end();
+  } catch (e: any) {
+    res
+      .status(500)
+      .send({
+        message: `Failed to update git account: ${e.message}`,
+      })
+      .end();
   }
 });
 
