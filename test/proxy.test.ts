@@ -12,7 +12,8 @@ import fs from 'fs';
 
   Related: skipped tests in testProxyRoute.test.ts - these have a race condition
   where either these or those tests fail depending on execution order
-  TODO: Find root cause of this error and fix it
+  TODO: Find root cause of this error and fix it 
+  https://github.com/finos/git-proxy/issues/1294
 */
 describe.skip('Proxy Module TLS Certificate Loading', () => {
   let proxyModule: any;
