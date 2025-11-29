@@ -230,8 +230,9 @@ async function authoriseGitPush(id: string) {
 /**
  * Reject git push by ID
  * @param {string} id The ID of the git push to reject
+ * @param {string} reason The reason for rejecting the push
  */
-async function rejectGitPush(id: string) {
+async function rejectGitPush(id: string, reason: string) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     console.error('Error: Reject: Authentication required');
     process.exitCode = 1;
@@ -247,7 +248,11 @@ async function rejectGitPush(id: string) {
 
     await axios.post(
       `${baseUrl}/api/v1/push/${id}/reject`,
-      {},
+      {
+        params: {
+          reason,
+        },
+      },
       {
         headers: { Cookie: cookies },
       },
@@ -261,13 +266,17 @@ async function rejectGitPush(id: string) {
 
     if (error.response) {
       switch (error.response.status) {
+        case 400:
+          errorMessage = `Error: Reject: ${error.response.data.message}`;
+          process.exitCode = 3;
+          break;
         case 401:
           errorMessage = 'Error: Reject: Authentication required';
-          process.exitCode = 3;
+          process.exitCode = 4;
           break;
         case 404:
           errorMessage = `Error: Reject: ID: '${id}': Not Found`;
-          process.exitCode = 4;
+          process.exitCode = 5;
       }
     }
     console.error(errorMessage);
@@ -553,9 +562,14 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
         demandOption: true,
         type: 'string',
       },
+      reason: {
+        describe: 'Reason for rejecting the push',
+        demandOption: true,
+        type: 'string',
+      },
     },
     handler(argv) {
-      rejectGitPush(argv.id);
+      rejectGitPush(argv.id, argv.reason);
     },
   })
   .command({

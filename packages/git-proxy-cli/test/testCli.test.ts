@@ -440,7 +440,7 @@ describe('test git-proxy-cli', function () {
       }
 
       const id = GHOST_PUSH_ID;
-      const cli = `${CLI_PATH} reject --id ${id}`;
+      const cli = `${CLI_PATH} reject --id ${id} --reason "Test rejection"`;
       const expectedExitCode = 2;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: Reject:'];
@@ -451,7 +451,7 @@ describe('test git-proxy-cli', function () {
       await helper.removeCookiesFile();
 
       const id = GHOST_PUSH_ID;
-      const cli = `${CLI_PATH} reject --id ${id}`;
+      const cli = `${CLI_PATH} reject --id ${id} --reason "Test rejection"`;
       const expectedExitCode = 1;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: Reject: Authentication required'];
@@ -463,8 +463,8 @@ describe('test git-proxy-cli', function () {
         await helper.createCookiesFileWithExpiredCookie();
         await helper.startServer();
         const id = pushId;
-        const cli = `${CLI_PATH} reject --id ${id}`;
-        const expectedExitCode = 3;
+        const cli = `${CLI_PATH} reject --id ${id} --reason "Test rejection"`;
+        const expectedExitCode = 4;
         const expectedMessages = null;
         const expectedErrorMessages = ['Error: Reject: Authentication required'];
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
@@ -479,8 +479,8 @@ describe('test git-proxy-cli', function () {
         await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
         const id = GHOST_PUSH_ID;
-        const cli = `${CLI_PATH} reject --id ${id}`;
-        const expectedExitCode = 4;
+        const cli = `${CLI_PATH} reject --id ${id} --reason "Test rejection"`;
+        const expectedExitCode = 5;
         const expectedMessages = null;
         const expectedErrorMessages = [`Error: Reject: ID: '${id}': Not Found`];
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
@@ -756,7 +756,7 @@ describe('test git-proxy-cli', function () {
         let expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 
-        cli = `${CLI_PATH} reject --id ${pushId}`;
+        cli = `${CLI_PATH} reject --id ${pushId} --reason "Test rejection"`;
         expectedExitCode = 0;
         expectedMessages = [`Reject: ID: '${pushId}': OK`];
         expectedErrorMessages = null;
