@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import { useNavigate, useParams } from 'react-router-dom';
-import Icon from '@material-ui/core/Icon';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
 import Card from '../../components/Card/Card';
@@ -11,21 +10,18 @@ import CardFooter from '../../components/Card/CardFooter';
 import Button from '../../components/CustomButtons/Button';
 import Diff from './components/Diff';
 import Attestation from './components/Attestation';
-import AttestationView from './components/AttestationView';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import { authorisePush, cancelPush, getPush, rejectPush } from '../../services/git-push';
-import { Block, Cancel, CheckCircle, Visibility } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
-import Tooltip from '@material-ui/core/Tooltip';
-import { AttestationFormData, PushActionView } from '../../types';
+import { PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
-import { generateEmailLink, getGitProvider } from '../../utils';
-import UserLink from '../../components/UserLink/UserLink';
+import { generateEmailLink } from '../../utils';
 import { StatusIcon } from './components/StatusIcon';
+import ApprovalBadge from './components/ApprovalBadge';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,7 +30,6 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [message, setMessage] = useState('');
-  const [attestation, setAttestation] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -97,23 +92,6 @@ const Dashboard: React.FC = () => {
   const repoBranch = trimPrefixRefsHeads(push.branch ?? '');
   const repoUrl = push.url;
   const repoWebUrl = trimTrailingDotGit(repoUrl);
-  const gitProvider = getGitProvider(repoUrl);
-  const isGitHub = gitProvider == 'github';
-
-  const generateIcon = (title: string) => {
-    switch (title) {
-      case 'Approved':
-        return <CheckCircle />;
-      case 'Pending':
-        return <Visibility />;
-      case 'Canceled':
-        return <Cancel />;
-      case 'Rejected':
-        return <Block />;
-      default:
-        return <Icon />;
-    }
-  };
 
   return (
     <div>
@@ -144,83 +122,7 @@ const Dashboard: React.FC = () => {
                 </div>
               )}
               {push.attestation && push.authorised && (
-                <div
-                  style={{
-                    background: '#eee',
-                    padding: '10px 20px 10px 20px',
-                    borderRadius: '10px',
-                    color: 'black',
-                    marginTop: '15px',
-                    float: 'right',
-                    position: 'relative',
-                    textAlign: 'left',
-                  }}
-                >
-                  <span style={{ position: 'absolute', top: 0, right: 0 }}>
-                    <CheckCircle
-                      style={{
-                        cursor: push.autoApproved ? 'default' : 'pointer',
-                        transform: 'scale(0.65)',
-                        opacity: push.autoApproved ? 0.5 : 1,
-                      }}
-                      onClick={() => {
-                        if (!push.autoApproved) {
-                          setAttestation(true);
-                        }
-                      }}
-                      htmlColor='green'
-                    />
-                  </span>
-
-                  {push.autoApproved ? (
-                    <div style={{ paddingTop: '15px' }}>
-                      <p>
-                        <strong>Auto-approved by system</strong>
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      {isGitHub && (
-                        <UserLink username={push.attestation.reviewer.username}>
-                          <img
-                            style={{ width: '45px', borderRadius: '20px' }}
-                            src={`https://github.com/${push.attestation.reviewer.gitAccount}.png`}
-                          />
-                        </UserLink>
-                      )}
-                      <div>
-                        <p>
-                          {isGitHub && (
-                            <UserLink username={push.attestation.reviewer.username}>
-                              {push.attestation.reviewer.gitAccount}
-                            </UserLink>
-                          )}
-                          {!isGitHub && <UserLink username={push.attestation.reviewer.username} />}{' '}
-                          approved this contribution
-                        </p>
-                      </div>
-                    </>
-                  )}
-
-                  <Tooltip
-                    title={moment(push.attestation.timestamp).format(
-                      'dddd, MMMM Do YYYY, h:mm:ss a',
-                    )}
-                    arrow
-                  >
-                    <kbd style={{ color: 'black', float: 'right' }}>
-                      {moment(push.attestation.timestamp).fromNow()}
-                    </kbd>
-                  </Tooltip>
-
-                  {!push.autoApproved && (
-                    <AttestationView
-                      data={push.attestation as AttestationFormData}
-                      attestation={attestation}
-                      setAttestation={setAttestation}
-                    />
-                  )}
-                </div>
+                <ApprovalBadge attestation={push.attestation} autoApproved={push.autoApproved} />
               )}
             </CardHeader>
             <CardBody>
