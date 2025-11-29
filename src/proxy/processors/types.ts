@@ -19,6 +19,14 @@ export type Attestation = {
   questions: Question[];
 };
 
+export type Rejection = {
+  reviewer: {
+    username: string;
+  };
+  timestamp: string | Date;
+  reason: string;
+};
+
 export type CommitContent = {
   item: number;
   type: number;

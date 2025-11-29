@@ -6,6 +6,7 @@ import Attestation from './Attestation';
 import ApprovalBadge from './ApprovalBadge';
 import { PushActionView } from '../../../types';
 import Rejection from './Rejection';
+import RejectionBadge from './RejectionBadge';
 
 const getStatusInfo = (data: PushActionView): { title: string; color: CardHeaderColor } => {
   if (data.authorised) {
@@ -54,6 +55,7 @@ const PushStatusHeader: React.FC<PushStatusHeaderProps> = ({
       {data.attestation && data.authorised && (
         <ApprovalBadge attestation={data.attestation} autoApproved={data.autoApproved} />
       )}
+      {data.rejection && data.rejected && <RejectionBadge rejection={data.rejection} />}
     </CardHeader>
   );
 };
