@@ -1,11 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import { useNavigate, useParams } from 'react-router-dom';
 import Icon from '@material-ui/core/Icon';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
 import Card from '../../components/Card/Card';
-import CardIcon from '../../components/Card/CardIcon';
 import CardBody from '../../components/Card/CardBody';
 import CardHeader, { CardHeaderColor } from '../../components/Card/CardHeader';
 import CardFooter from '../../components/Card/CardFooter';
@@ -18,14 +17,15 @@ import TableBody from '@material-ui/core/TableBody';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
-import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/git-push';
-import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
+import { authorisePush, cancelPush, getPush, rejectPush } from '../../services/git-push';
+import { Block, Cancel, CheckCircle, Visibility } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
 import { AttestationFormData, PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
 import { generateEmailLink, getGitProvider } from '../../utils';
 import UserLink from '../../components/UserLink/UserLink';
+import { StatusIcon } from './components/StatusIcon';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -131,10 +131,7 @@ const Dashboard: React.FC = () => {
         <GridItem xs={12} sm={12} md={12}>
           <Card>
             <CardHeader color={headerData.color} stats icon>
-              <CardIcon color={headerData.color}>
-                {generateIcon(headerData.title)}
-                <h3>{headerData.title}</h3>
-              </CardIcon>
+              <StatusIcon status={headerData.title} colour={headerData.title} />
               {!(push.canceled || push.rejected || push.authorised) && (
                 <div style={{ display: 'inline-flex', padding: '20px' }}>
                   <Button color='warning' onClick={cancel}>
