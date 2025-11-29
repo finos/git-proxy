@@ -5,13 +5,7 @@ import Button from '../../../components/CustomButtons/Button';
 import Attestation from './Attestation';
 import ApprovalBadge from './ApprovalBadge';
 import { PushActionView } from '../../../types';
-
-interface PushStatusHeaderProps {
-  data: PushActionView;
-  onCancel: () => void;
-  onReject: () => void;
-  onAuthorise: (attestationData: Array<{ label: string; checked: boolean }>) => void;
-}
+import Rejection from './Rejection';
 
 const getStatusInfo = (data: PushActionView): { title: string; color: CardHeaderColor } => {
   if (data.authorised) {
@@ -28,6 +22,13 @@ const getStatusInfo = (data: PushActionView): { title: string; color: CardHeader
   }
   return { title: 'Pending', color: 'warning' };
 };
+
+interface PushStatusHeaderProps {
+  data: PushActionView;
+  onCancel: () => void;
+  onReject: (rejectionData: { reason: string }) => void;
+  onAuthorise: (attestationData: Array<{ label: string; checked: boolean }>) => void;
+}
 
 const PushStatusHeader: React.FC<PushStatusHeaderProps> = ({
   data,
@@ -46,9 +47,7 @@ const PushStatusHeader: React.FC<PushStatusHeaderProps> = ({
           <Button color='warning' onClick={onCancel}>
             Cancel
           </Button>
-          <Button color='danger' onClick={onReject}>
-            Reject
-          </Button>{' '}
+          <Rejection rejectFn={onReject} />
           <Attestation approveFn={onAuthorise} />
         </div>
       )}

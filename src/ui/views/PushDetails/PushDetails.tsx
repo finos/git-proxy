@@ -42,7 +42,7 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const reject = async () => {
+  const reject = async (rejectionData: { reason: string }) => {
     if (!id) return;
     if (await rejectPush(id, setMessage)) {
       navigate('/dashboard/push/');
