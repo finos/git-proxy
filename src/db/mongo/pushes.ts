@@ -63,7 +63,7 @@ export const writeAudit = async (action: Action): Promise<void> => {
   await collection.updateOne({ id: data.id }, { $set: data }, options);
 };
 
-export const authorise = async (id: string, attestation: any): Promise<{ message: string }> => {
+export const authorise = async (id: string, rejection: any): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -72,7 +72,7 @@ export const authorise = async (id: string, attestation: any): Promise<{ message
   action.authorised = true;
   action.canceled = false;
   action.rejected = false;
-  action.attestation = attestation;
+  action.rejection = rejection;
   await writeAudit(action);
   return { message: `authorised ${id}` };
 };
