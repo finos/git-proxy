@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import * as db from '../../db';
 import { PushQuery } from '../../db/types';
+import { convertIgnorePatternToMinimatch } from '@eslint/compat';
 
 const router = express.Router();
 
@@ -43,6 +44,14 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
     return;
   }
 
+  const reason = req.body.params?.reason;
+  if (!reason || reason.trim().length === 0) {
+    res.status(400).send({
+      message: 'Rejection reason is required',
+    });
+    return;
+  }
+
   const id = req.params.id;
   const { username } = req.user as { username: string };
 
@@ -72,8 +81,27 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
   console.log({ isAllowed });
 
   if (isAllowed) {
-    const result = await db.reject(id, null);
-    console.log(`user ${username} rejected push request for ${id}`);
+    console.log(`user ${username} rejected push request for ${id} with reason: ${reason}`);
+
+    const reviewerList = await db.getUsers({ username });
+    const reviewerEmail = reviewerList[0].email;
+
+    if (!reviewerEmail) {
+      res.status(401).send({
+        message: `There was no registered email address for the reviewer: ${username}`,
+      });
+      return;
+    }
+
+    const rejection = {
+      reason,
+      timestamp: new Date(),
+      reviewer: {
+        username,
+        reviewerEmail,
+      },
+    };
+    const result = await db.reject(id, rejection);
     res.send(result);
   } else {
     res.status(401).send({

@@ -287,7 +287,13 @@ describe('auth', async () => {
       const res = await chai
         .request(app)
         .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
-        .set('Cookie', `${cookie}`);
+        .set('Cookie', `${cookie}`)
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .send({
+          params: {
+            reason: 'This push does not meet the coding standards',
+          },
+        });
       res.should.have.status(200);
     });
 
@@ -301,7 +307,13 @@ describe('auth', async () => {
       const res = await chai
         .request(app)
         .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
-        .set('Cookie', `${cookie}`);
+        .set('Cookie', `${cookie}`)
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .send({
+          params: {
+            reason: 'tests did not pass',
+          },
+        });
       res.should.have.status(401);
     });
 
@@ -311,8 +323,44 @@ describe('auth', async () => {
       const res = await chai
         .request(app)
         .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
-        .set('Cookie', `${cookie}`);
+        .set('Cookie', `${cookie}`)
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .send({
+          params: {
+            reason: 'tests did not pass',
+          },
+        });
       res.should.have.status(401);
+    });
+
+    it('should not allow a authorizer to reject without a reason', async function () {
+      await db.writeAudit(TEST_PUSH);
+      await loginAsApprover();
+      const res = await chai
+        .request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
+        .set('Cookie', `${cookie}`)
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .send({
+          params: {},
+        });
+      res.should.have.status(400);
+    });
+
+    it('should not allow an authorizer to reject with an empty reason', async function () {
+      await db.writeAudit(TEST_PUSH);
+      await loginAsApprover();
+      const res = await chai
+        .request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
+        .set('Cookie', `${cookie}`)
+        .set('content-type', 'application/x-www-form-urlencoded')
+        .send({
+          params: {
+            reason: '   ',
+          },
+        });
+      res.should.have.status(400);
     });
 
     it('should fetch all pushes', async function () {
