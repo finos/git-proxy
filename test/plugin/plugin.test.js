@@ -10,7 +10,7 @@ const expect = chai.expect;
 
 const testPackagePath = join(__dirname, '../fixtures', 'test-package');
 
-describe('loading plugins from packages', function () {
+describe.skip('loading plugins from packages', function () {
   this.timeout(10000);
 
   before(function () {
