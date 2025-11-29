@@ -38,7 +38,9 @@ describe('git-push service', () => {
       const setMessageSpy = sinon.spy();
       axiosPostStub.resolves({ status: 200 });
 
-      const result = await gitPushService.rejectPush('test-push-id-123', setMessageSpy);
+      const result = await gitPushService.rejectPush('test-push-id-123', setMessageSpy, {
+        reason: 'tests dit not pass',
+      });
 
       expect(result).to.be.true;
       expect(setMessageSpy.calledWith('')).to.be.true;
@@ -57,7 +59,9 @@ describe('git-push service', () => {
       };
       axiosPostStub.rejects(error);
 
-      const result = await gitPushService.rejectPush(pushId, setMessageSpy);
+      const result = await gitPushService.rejectPush(pushId, setMessageSpy, {
+        reason: 'tests dit not pass',
+      });
 
       expect(result).to.be.false;
       expect(setMessageSpy.calledOnce).to.be.true;
