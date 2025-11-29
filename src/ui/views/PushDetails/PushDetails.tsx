@@ -7,9 +7,7 @@ import Card from '../../components/Card/Card';
 import CardBody from '../../components/Card/CardBody';
 import CardHeader, { CardHeaderColor } from '../../components/Card/CardHeader';
 import CardFooter from '../../components/Card/CardFooter';
-import Button from '../../components/CustomButtons/Button';
 import Diff from './components/Diff';
-import Attestation from './components/Attestation';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableHead from '@material-ui/core/TableHead';
@@ -20,8 +18,7 @@ import Snackbar from '@material-ui/core/Snackbar';
 import { PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
 import { generateEmailLink } from '../../utils';
-import { StatusIcon } from './components/StatusIcon';
-import ApprovalBadge from './components/ApprovalBadge';
+import PushStatusHeader from './components/PushStatusHeader';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -108,23 +105,12 @@ const Dashboard: React.FC = () => {
       <GridContainer>
         <GridItem xs={12} sm={12} md={12}>
           <Card>
-            <CardHeader color={headerData.color} stats icon>
-              <StatusIcon status={headerData.title} colour={headerData.title} />
-              {!(push.canceled || push.rejected || push.authorised) && (
-                <div style={{ display: 'inline-flex', padding: '20px' }}>
-                  <Button color='warning' onClick={cancel}>
-                    Cancel
-                  </Button>
-                  <Button color='danger' onClick={reject}>
-                    Reject
-                  </Button>
-                  <Attestation approveFn={authorise} />
-                </div>
-              )}
-              {push.attestation && push.authorised && (
-                <ApprovalBadge attestation={push.attestation} autoApproved={push.autoApproved} />
-              )}
-            </CardHeader>
+            <PushStatusHeader
+              data={push}
+              onCancel={cancel}
+              onReject={reject}
+              onAuthorise={authorise}
+            />
             <CardBody>
               <GridContainer>
                 <GridItem xs={2} sm={2} md={2}>

@@ -6,10 +6,10 @@ import { CardHeaderColor } from '../../../components/Card/CardHeader';
 
 interface StatusIconProps {
   status: string;
-  colour: CardHeaderColor;
+  color: CardHeaderColor;
 }
 
-export const StatusIcon: React.FC<StatusIconProps> = ({ status, colour }) => {
+export const StatusIcon: React.FC<StatusIconProps> = ({ status, color }) => {
   const renderIcon = () => {
     switch (status) {
       case 'Approved':
@@ -28,7 +28,7 @@ export const StatusIcon: React.FC<StatusIconProps> = ({ status, colour }) => {
   };
 
   return (
-    <CardIcon color={colour}>
+    <CardIcon color={color}>
       {renderIcon()}
       <h3>{status}</h3>
     </CardIcon>
