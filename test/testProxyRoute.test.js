@@ -579,8 +579,9 @@ describe('proxy express application', async () => {
     await proxy.stop();
     await proxy.start();
 
-    const repo3 = await db.getRepoByUrl(TEST_DEFAULT_REPO.url);
-    expect(repo3).to.not.be.null;
-    expect(repo3._id).to.equal(repo2._id);
+    const allRepos = await db.getRepos();
+    const matchingRepos = allRepos.filter((r) => r.url === TEST_DEFAULT_REPO.url);
+
+    expect(matchingRepos).to.have.length(1);
   });
 });
