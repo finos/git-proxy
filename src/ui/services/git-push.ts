@@ -94,22 +94,18 @@ const authorisePush = async (
   setUserAllowedToApprove(isUserAllowedToApprove);
 };
 
-const rejectPush = async (
-  id: string,
-  setMessage: (message: string) => void,
-  setUserAllowedToReject: (userAllowedToReject: boolean) => void,
-): Promise<void> => {
+const rejectPush = async (id: string, setMessage: (message: string) => void): Promise<boolean> => {
   const url = `${API_V1_BASE}/push/${id}/reject`;
   let errorMsg = '';
-  let isUserAllowedToReject = true;
+  let success = true;
   await axios.post(url, {}, getAxiosConfig()).catch((error: any) => {
     if (error.response && error.response.status === 401) {
       errorMsg = 'You are not authorised to reject...';
-      isUserAllowedToReject = false;
+      success = false;
     }
   });
   setMessage(errorMsg);
-  setUserAllowedToReject(isUserAllowedToReject);
+  return success;
 };
 
 const cancelPush = async (

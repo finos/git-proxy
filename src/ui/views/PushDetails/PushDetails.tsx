@@ -38,16 +38,10 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
   let isUserAllowedToApprove = true;
-  let isUserAllowedToReject = true;
 
   const setUserAllowedToApprove = (userAllowedToApprove: boolean) => {
     isUserAllowedToApprove = userAllowedToApprove;
     console.log('isUserAllowedToApprove:' + isUserAllowedToApprove);
-  };
-
-  const setUserAllowedToReject = (userAllowedToReject: boolean) => {
-    isUserAllowedToReject = userAllowedToReject;
-    console.log({ isUserAllowedToReject });
   };
 
   useEffect(() => {
@@ -66,8 +60,7 @@ const Dashboard: React.FC = () => {
 
   const reject = async () => {
     if (!id) return;
-    await rejectPush(id, setMessage, setUserAllowedToReject);
-    if (isUserAllowedToReject) {
+    if (await rejectPush(id, setMessage)) {
       navigate('/dashboard/push/');
     }
   };
