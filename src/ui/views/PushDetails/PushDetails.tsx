@@ -37,13 +37,6 @@ const Dashboard: React.FC = () => {
   const [attestation, setAttestation] = useState(false);
   const navigate = useNavigate();
 
-  let isUserAllowedToApprove = true;
-
-  const setUserAllowedToApprove = (userAllowedToApprove: boolean) => {
-    isUserAllowedToApprove = userAllowedToApprove;
-    console.log('isUserAllowedToApprove:' + isUserAllowedToApprove);
-  };
-
   useEffect(() => {
     if (id) {
       getPush(id, setIsLoading, setPush, setAuth, setIsError);
@@ -52,8 +45,7 @@ const Dashboard: React.FC = () => {
 
   const authorise = async (attestationData: Array<{ label: string; checked: boolean }>) => {
     if (!id) return;
-    await authorisePush(id, setMessage, setUserAllowedToApprove, attestationData);
-    if (isUserAllowedToApprove) {
+    if (await authorisePush(id, setMessage, attestationData)) {
       navigate('/dashboard/push/');
     }
   };

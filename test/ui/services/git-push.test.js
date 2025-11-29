@@ -11,9 +11,6 @@ describe('git-push service', () => {
 
     global.localStorage = {
       getItem: sinon.stub().returns(null),
-      setItem: sinon.stub(),
-      removeItem: sinon.stub(),
-      clear: sinon.stub(),
     };
 
     global.document = {
@@ -29,8 +26,6 @@ describe('git-push service', () => {
 
   beforeEach(() => {
     axiosPostStub = sinon.stub(axios, 'post');
-
-    delete require.cache[require.resolve('../../../src/ui/services/git-push')];
     gitPushService = require('../../../src/ui/services/git-push');
   });
 
@@ -67,6 +62,56 @@ describe('git-push service', () => {
       expect(result).to.be.false;
       expect(setMessageSpy.calledOnce).to.be.true;
       expect(setMessageSpy.calledWith('You are not authorised to reject...')).to.be.true;
+      expect(axiosPostStub.calledOnce).to.be.true;
+    });
+  });
+
+  describe('authorisePush', () => {
+    it('should return true when authorised a push', async () => {
+      const setMessageStub = sinon.stub();
+      const attestation = [
+        { label: 'Reviewed code', checked: true },
+        { label: 'Verified tests', checked: true },
+      ];
+
+      axiosPostStub.resolves({ status: 200 });
+
+      const result = await gitPushService.authorisePush(
+        'test-push-id-789',
+        setMessageStub,
+        attestation,
+      );
+
+      expect(result).to.be.true;
+      expect(setMessageStub.calledOnceWith('')).to.be.true;
+      expect(axiosPostStub.firstCall.args[0]).to.equal(
+        'http://localhost:8080/api/v1/push/test-push-id-789/authorise',
+      );
+      expect(axiosPostStub.firstCall.args[1]).to.deep.equal({
+        params: {
+          attestation,
+        },
+      });
+    });
+
+    it('should return false when returned 401', async () => {
+      const setMessageStub = sinon.stub();
+      const attestation = [{ label: 'Reviewed code', checked: true }];
+
+      const error = new Error('Unauthorized');
+      error.response = {
+        status: 401,
+      };
+      axiosPostStub.rejects(error);
+
+      const result = await gitPushService.authorisePush(
+        'test-push-id-101',
+        setMessageStub,
+        attestation,
+      );
+
+      expect(result).to.be.false;
+      expect(setMessageStub.calledOnceWith('You are not authorised to approve...')).to.be.true;
       expect(axiosPostStub.calledOnce).to.be.true;
     });
   });
