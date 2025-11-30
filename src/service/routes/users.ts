@@ -15,7 +15,12 @@ router.get('/:id', async (req: Request, res: Response) => {
   console.log(`Retrieving details for user: ${username}`);
   const user = await db.findUser(username);
   if (!user) {
-    res.status(404).send('Error: User not found').end();
+    res
+      .status(404)
+      .send({
+        message: `User ${username} not found`,
+      })
+      .end();
     return;
   }
   res.send(toPublicUser(user));
