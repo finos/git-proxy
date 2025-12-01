@@ -18,7 +18,7 @@ import Proxy from '../src/proxy';
 const TEST_DEFAULT_REPO = {
   url: 'https://github.com/finos/git-proxy.git',
   name: 'git-proxy',
-  project: 'finos/git-proxy',
+  project: 'finos',
   host: 'github.com',
   proxyUrlPrefix: '/github.com/finos/git-proxy.git',
 };
@@ -26,7 +26,7 @@ const TEST_DEFAULT_REPO = {
 const TEST_GITLAB_REPO = {
   url: 'https://gitlab.com/gitlab-community/meta.git',
   name: 'gitlab',
-  project: 'gitlab-community/meta',
+  project: 'gitlab-community',
   host: 'gitlab.com',
   proxyUrlPrefix: '/gitlab.com/gitlab-community/meta.git',
 };
@@ -34,7 +34,7 @@ const TEST_GITLAB_REPO = {
 const TEST_UNKNOWN_REPO = {
   url: 'https://github.com/finos/fdc3.git',
   name: 'fdc3',
-  project: 'finos/fdc3',
+  project: 'finos',
   host: 'github.com',
   proxyUrlPrefix: '/github.com/finos/fdc3.git',
   fallbackUrlPrefix: '/finos/fdc3.git',
@@ -559,4 +559,29 @@ describe('proxy express application', async () => {
     res2.should.have.status(200);
     expect(res2.text).to.contain('Rejecting repo');
   }).timeout(5000);
+
+  it('should create the default repo if it does not exist', async function () {
+    // Remove the default repo from the db and check it no longer exists
+    await cleanupRepo(TEST_DEFAULT_REPO.url);
+
+    const repo = await db.getRepoByUrl(TEST_DEFAULT_REPO.url);
+    expect(repo).to.be.null;
+
+    // Restart the proxy
+    await proxy.stop();
+    await proxy.start();
+
+    // Check that the default repo was created in the db
+    const repo2 = await db.getRepoByUrl(TEST_DEFAULT_REPO.url);
+    expect(repo2).to.not.be.null;
+
+    // Check that the default repo isn't duplicated on subsequent restarts
+    await proxy.stop();
+    await proxy.start();
+
+    const allRepos = await db.getRepos();
+    const matchingRepos = allRepos.filter((r) => r.url === TEST_DEFAULT_REPO.url);
+
+    expect(matchingRepos).to.have.length(1);
+  });
 });
