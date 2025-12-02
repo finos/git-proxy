@@ -3,9 +3,9 @@ import { getCommitConfig } from '../../../config';
 import { CommitData } from '../types';
 import { isEmail } from 'validator';
 
-const commitConfig = getCommitConfig();
-
 const isEmailAllowed = (email: string): boolean => {
+  const commitConfig = getCommitConfig();
+
   if (!email || !isEmail(email)) {
     return false;
   }
@@ -14,14 +14,14 @@ const isEmailAllowed = (email: string): boolean => {
 
   if (
     commitConfig?.author?.email?.domain?.allow &&
-    !new RegExp(commitConfig.author.email.domain.allow, 'g').test(emailDomain)
+    !new RegExp(commitConfig.author.email.domain.allow, 'gi').test(emailDomain)
   ) {
     return false;
   }
 
   if (
     commitConfig?.author?.email?.local?.block &&
-    new RegExp(commitConfig.author.email.local.block, 'g').test(emailLocal)
+    new RegExp(commitConfig.author.email.local.block, 'gi').test(emailLocal)
   ) {
     return false;
   }
@@ -35,15 +35,10 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   const uniqueAuthorEmails = [
     ...new Set(action.commitData?.map((commitData: CommitData) => commitData.authorEmail)),
   ];
-  console.log({ uniqueAuthorEmails });
 
   const illegalEmails = uniqueAuthorEmails.filter((email) => !isEmailAllowed(email));
-  console.log({ illegalEmails });
 
-  const usingIllegalEmails = illegalEmails.length > 0;
-  console.log({ usingIllegalEmails });
-
-  if (usingIllegalEmails) {
+  if (illegalEmails.length > 0) {
     console.log(`The following commit author e-mails are illegal: ${illegalEmails}`);
 
     step.error = true;
