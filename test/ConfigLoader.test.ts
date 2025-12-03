@@ -332,13 +332,13 @@ describe('ConfigLoader', () => {
     });
 
     it('should load configuration from git repository', async function () {
-      const source = {
+      const source: GitSource = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'proxy.config.json',
         branch: 'main',
         enabled: true,
-      } as GitSource;
+      };
 
       const config = await configLoader.loadFromSource(source);
 
@@ -348,13 +348,13 @@ describe('ConfigLoader', () => {
     }, 10000);
 
     it('should throw error for invalid configuration file path (git)', async () => {
-      const source = {
+      const source: GitSource = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: '\0', // Invalid path
         branch: 'main',
         enabled: true,
-      } as GitSource;
+      };
 
       await expect(configLoader.loadFromSource(source)).rejects.toThrow(
         'Invalid configuration file path in repository',
@@ -362,11 +362,11 @@ describe('ConfigLoader', () => {
     });
 
     it('should throw error for invalid configuration file path (file)', async () => {
-      const source = {
+      const source: FileSource = {
         type: 'file',
         path: '\0', // Invalid path
         enabled: true,
-      } as FileSource;
+      };
 
       await expect(configLoader.loadFromSource(source)).rejects.toThrow(
         'Invalid configuration file path',
@@ -374,11 +374,11 @@ describe('ConfigLoader', () => {
     });
 
     it('should load configuration from http', async function () {
-      const source = {
+      const source: HttpSource = {
         type: 'http',
         url: 'https://raw.githubusercontent.com/finos/git-proxy/refs/heads/main/proxy.config.json',
         enabled: true,
-      } as HttpSource;
+      };
 
       const config = await configLoader.loadFromSource(source);
 
@@ -388,13 +388,13 @@ describe('ConfigLoader', () => {
     }, 10000);
 
     it('should throw error if repository is invalid', async () => {
-      const source = {
+      const source: GitSource = {
         type: 'git',
         repository: 'invalid-repository',
         path: 'proxy.config.json',
         branch: 'main',
         enabled: true,
-      } as GitSource;
+      };
 
       await expect(configLoader.loadFromSource(source)).rejects.toThrow(
         'Invalid repository URL format',
@@ -402,13 +402,13 @@ describe('ConfigLoader', () => {
     });
 
     it('should throw error if branch name is invalid', async () => {
-      const source = {
+      const source: GitSource = {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'proxy.config.json',
         branch: '..', // invalid branch pattern
         enabled: true,
-      } as GitSource;
+      };
 
       await expect(configLoader.loadFromSource(source)).rejects.toThrow(
         'Invalid branch name format',
