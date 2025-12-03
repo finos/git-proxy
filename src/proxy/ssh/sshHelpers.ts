@@ -64,7 +64,6 @@ export function createSSHConnectionOptions(
   }
 
   const remoteUrl = new URL(proxyUrl);
-  const customAgent = createLazyAgent(client);
   const sshConfig = getSSHConfig();
   const knownHosts = getKnownHosts(sshConfig?.knownHosts);
 
@@ -74,7 +73,6 @@ export function createSSHConnectionOptions(
     username: 'git',
     tryKeyboard: false,
     readyTimeout: 30000,
-    agent: customAgent,
     hostVerifier: (keyHash: Buffer | string, callback: (valid: boolean) => void) => {
       const hostname = remoteUrl.hostname;
 
@@ -92,6 +90,10 @@ export function createSSHConnectionOptions(
       callback(isValid);
     },
   };
+
+  if (client.agentForwardingEnabled) {
+    connectionOptions.agent = createLazyAgent(client);
+  }
 
   if (options?.keepalive) {
     connectionOptions.keepaliveInterval = 15000;

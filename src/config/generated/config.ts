@@ -475,6 +475,12 @@ export interface Database {
  */
 export interface SSH {
   /**
+   * Custom error message shown when SSH agent forwarding is not enabled. If not specified, a
+   * default message with git config commands will be used. This allows organizations to
+   * customize instructions based on their security policies.
+   */
+  agentForwardingErrorMessage?: string;
+  /**
    * Enable SSH proxy server
    */
   enabled: boolean;
@@ -912,6 +918,11 @@ const typeMap: any = {
   ),
   SSH: o(
     [
+      {
+        json: 'agentForwardingErrorMessage',
+        js: 'agentForwardingErrorMessage',
+        typ: u(undefined, ''),
+      },
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'hostKey', js: 'hostKey', typ: u(undefined, r('HostKey')) },
       { json: 'port', js: 'port', typ: u(undefined, 3.14) },

@@ -109,6 +109,7 @@ export class SSHServer {
       user: client.authenticatedUser || null,
       isSSH: true,
       protocol: 'ssh' as const,
+      sshClient: client,
       sshUser: {
         username: client.authenticatedUser?.username || 'unknown',
         email: client.authenticatedUser?.email,
