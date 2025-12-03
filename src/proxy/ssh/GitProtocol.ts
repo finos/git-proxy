@@ -50,67 +50,139 @@ class PktLineParser {
 }
 
 /**
- * Fetch capabilities and refs from GitHub without sending any data
- * This allows us to validate data BEFORE sending to GitHub
+ * Base function for executing Git commands on remote server
+ * Handles all common SSH connection logic, error handling, and cleanup
+ *
+ * @param command - The Git command to execute
+ * @param client - The authenticated client connection
+ * @param options - Configuration options
+ * @param options.clientStream - Optional SSH stream to the client (for proxying)
+ * @param options.timeoutMs - Timeout in milliseconds (default: 30000)
+ * @param options.debug - Enable debug logging (default: false)
+ * @param options.keepalive - Enable keepalive (default: false)
+ * @param options.requireAgentForwarding - Require agent forwarding (default: true)
+ * @param onStreamReady - Callback invoked when remote stream is ready
  */
-export async function fetchGitHubCapabilities(
+async function executeRemoteGitCommand(
   command: string,
   client: ClientWithUser,
-): Promise<Buffer> {
-  validateSSHPrerequisites(client);
-  const connectionOptions = createSSHConnectionOptions(client);
+  options: {
+    clientStream?: ssh2.ServerChannel;
+    timeoutMs?: number;
+    debug?: boolean;
+    keepalive?: boolean;
+    requireAgentForwarding?: boolean;
+  },
+  onStreamReady: (remoteStream: ssh2.ClientChannel, connection: ssh2.Client) => void,
+): Promise<void> {
+  const { requireAgentForwarding = true } = options;
+
+  if (requireAgentForwarding) {
+    validateSSHPrerequisites(client);
+  }
+
+  const { clientStream, timeoutMs = 30000, debug = false, keepalive = false } = options;
+  const userName = client.authenticatedUser?.username || 'unknown';
+  const connectionOptions = createSSHConnectionOptions(client, { debug, keepalive });
 
   return new Promise((resolve, reject) => {
     const remoteGitSsh = new ssh2.Client();
-    const parser = new PktLineParser();
 
-    // Safety timeout (should never be reached)
     const timeout = setTimeout(() => {
-      console.error(`[fetchCapabilities] Timeout waiting for capabilities`);
+      console.error(`[executeRemoteGitCommand] Timeout for command: ${command}`);
       remoteGitSsh.end();
-      reject(new Error('Timeout waiting for capabilities from remote'));
-    }, 30000); // 30 seconds
+      if (clientStream) {
+        clientStream.stderr.write('Connection timeout to remote server\n');
+        clientStream.exit(1);
+        clientStream.end();
+      }
+      reject(new Error('Timeout waiting for remote command'));
+    }, timeoutMs);
 
     remoteGitSsh.on('ready', () => {
-      console.log(`[fetchCapabilities] Connected to GitHub`);
+      clearTimeout(timeout);
+      console.log(
+        clientStream
+          ? `[SSH] Connected to remote Git server for user: ${userName}`
+          : `[executeRemoteGitCommand] Connected to remote`,
+      );
 
       remoteGitSsh.exec(command, (err: Error | undefined, remoteStream: ssh2.ClientChannel) => {
         if (err) {
-          console.error(`[fetchCapabilities] Error executing command:`, err);
-          clearTimeout(timeout);
+          console.error(`[executeRemoteGitCommand] Error executing command:`, err);
           remoteGitSsh.end();
+          if (clientStream) {
+            clientStream.stderr.write(`Remote execution error: ${err.message}\n`);
+            clientStream.exit(1);
+            clientStream.end();
+          }
           reject(err);
           return;
         }
 
-        console.log(`[fetchCapabilities] Command executed, waiting for capabilities`);
+        console.log(
+          clientStream
+            ? `[SSH] Command executed on remote for user ${userName}`
+            : `[executeRemoteGitCommand] Command executed: ${command}`,
+        );
 
-        // Single data handler that checks for flush packet
-        remoteStream.on('data', (data: Buffer) => {
-          parser.append(data);
-          console.log(`[fetchCapabilities] Received ${data.length} bytes`);
-
-          if (parser.hasFlushPacket()) {
-            console.log(`[fetchCapabilities] Flush packet detected, capabilities complete`);
-            clearTimeout(timeout);
-            remoteStream.end();
-            remoteGitSsh.end();
-            resolve(parser.getBuffer());
+        try {
+          onStreamReady(remoteStream, remoteGitSsh);
+        } catch (callbackError) {
+          console.error(`[executeRemoteGitCommand] Error in callback:`, callbackError);
+          remoteGitSsh.end();
+          if (clientStream) {
+            clientStream.stderr.write(`Internal error: ${callbackError}\n`);
+            clientStream.exit(1);
+            clientStream.end();
           }
+          reject(callbackError);
+        }
+
+        remoteStream.on('close', () => {
+          console.log(
+            clientStream
+              ? `[SSH] Remote stream closed for user: ${userName}`
+              : `[executeRemoteGitCommand] Stream closed`,
+          );
+          remoteGitSsh.end();
+          if (clientStream) {
+            clientStream.end();
+          }
+          resolve();
         });
 
+        if (clientStream) {
+          remoteStream.on('exit', (code: number, signal?: string) => {
+            console.log(
+              `[SSH] Remote command exited for user ${userName} with code: ${code}, signal: ${signal || 'none'}`,
+            );
+            clientStream.exit(code || 0);
+            resolve();
+          });
+        }
+
         remoteStream.on('error', (err: Error) => {
-          console.error(`[fetchCapabilities] Stream error:`, err);
-          clearTimeout(timeout);
+          console.error(`[executeRemoteGitCommand] Stream error:`, err);
           remoteGitSsh.end();
+          if (clientStream) {
+            clientStream.stderr.write(`Stream error: ${err.message}\n`);
+            clientStream.exit(1);
+            clientStream.end();
+          }
           reject(err);
         });
       });
     });
 
     remoteGitSsh.on('error', (err: Error) => {
-      console.error(`[fetchCapabilities] Connection error:`, err);
+      console.error(`[executeRemoteGitCommand] Connection error:`, err);
       clearTimeout(timeout);
+      if (clientStream) {
+        clientStream.stderr.write(`Connection error: ${err.message}\n`);
+        clientStream.exit(1);
+        clientStream.end();
+      }
       reject(err);
     });
 
@@ -119,104 +191,27 @@ export async function fetchGitHubCapabilities(
 }
 
 /**
- * Base function for executing Git commands on remote server
- * Handles all common SSH connection logic, error handling, and cleanup
- * Delegates stream-specific behavior to the provided callback
- *
- * @param command - The Git command to execute
- * @param clientStream - The SSH stream to the client
- * @param client - The authenticated client connection
- * @param onRemoteStreamReady - Callback invoked when remote stream is ready
+ * Fetch capabilities and refs from git server without sending any data
  */
-async function executeGitCommandOnRemote(
+export async function fetchGitHubCapabilities(
   command: string,
-  clientStream: ssh2.ServerChannel,
   client: ClientWithUser,
-  onRemoteStreamReady: (remoteStream: ssh2.ClientChannel) => void,
-): Promise<void> {
-  validateSSHPrerequisites(client);
+): Promise<Buffer> {
+  const parser = new PktLineParser();
 
-  const userName = client.authenticatedUser?.username || 'unknown';
-  const connectionOptions = createSSHConnectionOptions(client, { debug: true, keepalive: true });
+  await executeRemoteGitCommand(command, client, { timeoutMs: 30000 }, (remoteStream) => {
+    remoteStream.on('data', (data: Buffer) => {
+      parser.append(data);
+      console.log(`[fetchCapabilities] Received ${data.length} bytes`);
 
-  return new Promise((resolve, reject) => {
-    const remoteGitSsh = new ssh2.Client();
-
-    const connectTimeout = setTimeout(() => {
-      console.error(`[SSH] Connection timeout to remote for user ${userName}`);
-      remoteGitSsh.end();
-      clientStream.stderr.write('Connection timeout to remote server\n');
-      clientStream.exit(1);
-      clientStream.end();
-      reject(new Error('Connection timeout'));
-    }, 30000);
-
-    remoteGitSsh.on('ready', () => {
-      clearTimeout(connectTimeout);
-      console.log(`[SSH] Connected to remote Git server for user: ${userName}`);
-
-      remoteGitSsh.exec(command, (err: Error | undefined, remoteStream: ssh2.ClientChannel) => {
-        if (err) {
-          console.error(`[SSH] Error executing command on remote for user ${userName}:`, err);
-          clientStream.stderr.write(`Remote execution error: ${err.message}\n`);
-          clientStream.exit(1);
-          clientStream.end();
-          remoteGitSsh.end();
-          reject(err);
-          return;
-        }
-
-        console.log(`[SSH] Command executed on remote for user ${userName}`);
-
-        remoteStream.on('close', () => {
-          console.log(`[SSH] Remote stream closed for user: ${userName}`);
-          clientStream.end();
-          remoteGitSsh.end();
-          console.log(`[SSH] Remote connection closed for user: ${userName}`);
-          resolve();
-        });
-
-        remoteStream.on('exit', (code: number, signal?: string) => {
-          console.log(
-            `[SSH] Remote command exited for user ${userName} with code: ${code}, signal: ${signal || 'none'}`,
-          );
-          clientStream.exit(code || 0);
-          resolve();
-        });
-
-        remoteStream.on('error', (err: Error) => {
-          console.error(`[SSH] Remote stream error for user ${userName}:`, err);
-          clientStream.stderr.write(`Stream error: ${err.message}\n`);
-          clientStream.exit(1);
-          clientStream.end();
-          remoteGitSsh.end();
-          reject(err);
-        });
-
-        try {
-          onRemoteStreamReady(remoteStream);
-        } catch (callbackError) {
-          console.error(`[SSH] Error in stream callback for user ${userName}:`, callbackError);
-          clientStream.stderr.write(`Internal error: ${callbackError}\n`);
-          clientStream.exit(1);
-          clientStream.end();
-          remoteGitSsh.end();
-          reject(callbackError);
-        }
-      });
+      if (parser.hasFlushPacket()) {
+        console.log(`[fetchCapabilities] Flush packet detected, capabilities complete`);
+        remoteStream.end();
+      }
     });
-
-    remoteGitSsh.on('error', (err: Error) => {
-      console.error(`[SSH] Remote connection error for user ${userName}:`, err);
-      clearTimeout(connectTimeout);
-      clientStream.stderr.write(`Connection error: ${err.message}\n`);
-      clientStream.exit(1);
-      clientStream.end();
-      reject(err);
-    });
-
-    remoteGitSsh.connect(connectionOptions);
   });
+
+  return parser.getBuffer();
 }
 
 /**
@@ -232,44 +227,49 @@ export async function forwardPackDataToRemote(
 ): Promise<void> {
   const userName = client.authenticatedUser?.username || 'unknown';
 
-  await executeGitCommandOnRemote(command, stream, client, (remoteStream) => {
-    console.log(`[SSH] Forwarding pack data for user ${userName}`);
+  await executeRemoteGitCommand(
+    command,
+    client,
+    { clientStream: stream, debug: true, keepalive: true },
+    (remoteStream) => {
+      console.log(`[SSH] Forwarding pack data for user ${userName}`);
 
-    // Send pack data to GitHub
-    if (packData && packData.length > 0) {
-      console.log(`[SSH] Writing ${packData.length} bytes of pack data to remote`);
-      remoteStream.write(packData);
-    }
-    remoteStream.end();
-
-    // Skip duplicate capabilities that we already sent to client
-    let bytesSkipped = 0;
-    const CAPABILITY_BYTES_TO_SKIP = capabilitiesSize || 0;
-
-    remoteStream.on('data', (data: Buffer) => {
-      if (CAPABILITY_BYTES_TO_SKIP > 0 && bytesSkipped < CAPABILITY_BYTES_TO_SKIP) {
-        const remainingToSkip = CAPABILITY_BYTES_TO_SKIP - bytesSkipped;
-
-        if (data.length <= remainingToSkip) {
-          bytesSkipped += data.length;
-          console.log(
-            `[SSH] Skipping ${data.length} bytes of capabilities (${bytesSkipped}/${CAPABILITY_BYTES_TO_SKIP})`,
-          );
-          return;
-        } else {
-          const actualResponse = data.slice(remainingToSkip);
-          bytesSkipped = CAPABILITY_BYTES_TO_SKIP;
-          console.log(
-            `[SSH] Capabilities skipped (${CAPABILITY_BYTES_TO_SKIP} bytes), forwarding response (${actualResponse.length} bytes)`,
-          );
-          stream.write(actualResponse);
-          return;
-        }
+      // Send pack data to GitHub
+      if (packData && packData.length > 0) {
+        console.log(`[SSH] Writing ${packData.length} bytes of pack data to remote`);
+        remoteStream.write(packData);
       }
-      // Forward all data after capabilities
-      stream.write(data);
-    });
-  });
+      remoteStream.end();
+
+      // Skip duplicate capabilities that we already sent to client
+      let bytesSkipped = 0;
+      const CAPABILITY_BYTES_TO_SKIP = capabilitiesSize || 0;
+
+      remoteStream.on('data', (data: Buffer) => {
+        if (CAPABILITY_BYTES_TO_SKIP > 0 && bytesSkipped < CAPABILITY_BYTES_TO_SKIP) {
+          const remainingToSkip = CAPABILITY_BYTES_TO_SKIP - bytesSkipped;
+
+          if (data.length <= remainingToSkip) {
+            bytesSkipped += data.length;
+            console.log(
+              `[SSH] Skipping ${data.length} bytes of capabilities (${bytesSkipped}/${CAPABILITY_BYTES_TO_SKIP})`,
+            );
+            return;
+          } else {
+            const actualResponse = data.slice(remainingToSkip);
+            bytesSkipped = CAPABILITY_BYTES_TO_SKIP;
+            console.log(
+              `[SSH] Capabilities skipped (${CAPABILITY_BYTES_TO_SKIP} bytes), forwarding response (${actualResponse.length} bytes)`,
+            );
+            stream.write(actualResponse);
+            return;
+          }
+        }
+        // Forward all data after capabilities
+        stream.write(data);
+      });
+    },
+  );
 }
 
 /**
@@ -283,28 +283,65 @@ export async function connectToRemoteGitServer(
 ): Promise<void> {
   const userName = client.authenticatedUser?.username || 'unknown';
 
-  await executeGitCommandOnRemote(command, stream, client, (remoteStream) => {
-    console.log(`[SSH] Setting up bidirectional piping for user ${userName}`);
+  await executeRemoteGitCommand(
+    command,
+    client,
+    {
+      clientStream: stream,
+      debug: true,
+      keepalive: true,
+      requireAgentForwarding: true,
+    },
+    (remoteStream) => {
+      console.log(`[SSH] Setting up bidirectional piping for user ${userName}`);
 
-    // Pipe client data to remote
-    stream.on('data', (data: Buffer) => {
-      remoteStream.write(data);
-    });
+      stream.on('data', (data: Buffer) => {
+        remoteStream.write(data);
+      });
 
-    // Pipe remote data to client
-    remoteStream.on('data', (data: Buffer) => {
-      stream.write(data);
-    });
+      remoteStream.on('data', (data: Buffer) => {
+        stream.write(data);
+      });
 
-    remoteStream.on('error', (err: Error) => {
-      if (err.message.includes('early EOF') || err.message.includes('unexpected disconnect')) {
-        console.log(
-          `[SSH] Detected early EOF for user ${userName}, this is usually harmless during Git operations`,
-        );
-        return;
-      }
-      // Re-throw other errors
-      throw err;
+      remoteStream.on('error', (err: Error) => {
+        if (err.message.includes('early EOF') || err.message.includes('unexpected disconnect')) {
+          console.log(
+            `[SSH] Detected early EOF for user ${userName}, this is usually harmless during Git operations`,
+          );
+          return;
+        }
+        throw err;
+      });
+    },
+  );
+}
+
+/**
+ * Fetch repository data from remote Git server
+ * Used for cloning repositories via SSH during security chain validation
+ *
+ * @param command - The git-upload-pack command to execute
+ * @param client - The authenticated client connection
+ * @param request - The Git protocol request (want + deepen + done)
+ * @returns Buffer containing the complete response (including PACK file)
+ */
+export async function fetchRepositoryData(
+  command: string,
+  client: ClientWithUser,
+  request: string,
+): Promise<Buffer> {
+  let buffer = Buffer.alloc(0);
+
+  await executeRemoteGitCommand(command, client, { timeoutMs: 60000 }, (remoteStream) => {
+    console.log(`[fetchRepositoryData] Sending request to GitHub`);
+
+    remoteStream.write(request);
+
+    remoteStream.on('data', (chunk: Buffer) => {
+      buffer = Buffer.concat([buffer, chunk]);
     });
   });
+
+  console.log(`[fetchRepositoryData] Received ${buffer.length} bytes from GitHub`);
+  return buffer;
 }
