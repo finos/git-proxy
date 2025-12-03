@@ -1,4 +1,4 @@
-import { getProxyUrl, getSSHConfig } from '../../config';
+import { getSSHConfig } from '../../config';
 import { KILOBYTE, MEGABYTE } from '../../constants';
 import { ClientWithUser } from './types';
 import { createLazyAgent } from './AgentForwarding';
@@ -31,12 +31,6 @@ const DEFAULT_AGENT_FORWARDING_ERROR =
  * Throws descriptive errors if requirements are not met
  */
 export function validateSSHPrerequisites(client: ClientWithUser): void {
-  // Check proxy URL
-  const proxyUrl = getProxyUrl();
-  if (!proxyUrl) {
-    throw new Error('No proxy URL configured');
-  }
-
   // Check agent forwarding
   if (!client.agentForwardingEnabled) {
     const sshConfig = getSSHConfig();
@@ -53,38 +47,31 @@ export function validateSSHPrerequisites(client: ClientWithUser): void {
  */
 export function createSSHConnectionOptions(
   client: ClientWithUser,
+  remoteHost: string,
   options?: {
     debug?: boolean;
     keepalive?: boolean;
   },
 ): any {
-  const proxyUrl = getProxyUrl();
-  if (!proxyUrl) {
-    throw new Error('No proxy URL configured');
-  }
-
-  const remoteUrl = new URL(proxyUrl);
   const sshConfig = getSSHConfig();
   const knownHosts = getKnownHosts(sshConfig?.knownHosts);
 
   const connectionOptions: any = {
-    host: remoteUrl.hostname,
+    host: remoteHost,
     port: 22,
     username: 'git',
     tryKeyboard: false,
     readyTimeout: 30000,
     hostVerifier: (keyHash: Buffer | string, callback: (valid: boolean) => void) => {
-      const hostname = remoteUrl.hostname;
-
       // ssh2 passes the raw key as a Buffer, calculate SHA256 fingerprint
       const fingerprint = Buffer.isBuffer(keyHash) ? calculateHostKeyFingerprint(keyHash) : keyHash;
 
-      console.log(`[SSH] Verifying host key for ${hostname}: ${fingerprint}`);
+      console.log(`[SSH] Verifying host key for ${remoteHost}: ${fingerprint}`);
 
-      const isValid = verifyHostKey(hostname, fingerprint, knownHosts);
+      const isValid = verifyHostKey(remoteHost, fingerprint, knownHosts);
 
       if (isValid) {
-        console.log(`[SSH] Host key verification successful for ${hostname}`);
+        console.log(`[SSH] Host key verification successful for ${remoteHost}`);
       }
 
       callback(isValid);

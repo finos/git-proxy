@@ -55,6 +55,7 @@ class PktLineParser {
  *
  * @param command - The Git command to execute
  * @param client - The authenticated client connection
+ * @param remoteHost - The remote Git server hostname (e.g., 'github.com')
  * @param options - Configuration options
  * @param options.clientStream - Optional SSH stream to the client (for proxying)
  * @param options.timeoutMs - Timeout in milliseconds (default: 30000)
@@ -66,6 +67,7 @@ class PktLineParser {
 async function executeRemoteGitCommand(
   command: string,
   client: ClientWithUser,
+  remoteHost: string,
   options: {
     clientStream?: ssh2.ServerChannel;
     timeoutMs?: number;
@@ -83,7 +85,7 @@ async function executeRemoteGitCommand(
 
   const { clientStream, timeoutMs = 30000, debug = false, keepalive = false } = options;
   const userName = client.authenticatedUser?.username || 'unknown';
-  const connectionOptions = createSSHConnectionOptions(client, { debug, keepalive });
+  const connectionOptions = createSSHConnectionOptions(client, remoteHost, { debug, keepalive });
 
   return new Promise((resolve, reject) => {
     const remoteGitSsh = new ssh2.Client();
@@ -196,20 +198,27 @@ async function executeRemoteGitCommand(
 export async function fetchGitHubCapabilities(
   command: string,
   client: ClientWithUser,
+  remoteHost: string,
 ): Promise<Buffer> {
   const parser = new PktLineParser();
 
-  await executeRemoteGitCommand(command, client, { timeoutMs: 30000 }, (remoteStream) => {
-    remoteStream.on('data', (data: Buffer) => {
-      parser.append(data);
-      console.log(`[fetchCapabilities] Received ${data.length} bytes`);
+  await executeRemoteGitCommand(
+    command,
+    client,
+    remoteHost,
+    { timeoutMs: 30000 },
+    (remoteStream) => {
+      remoteStream.on('data', (data: Buffer) => {
+        parser.append(data);
+        console.log(`[fetchCapabilities] Received ${data.length} bytes`);
 
-      if (parser.hasFlushPacket()) {
-        console.log(`[fetchCapabilities] Flush packet detected, capabilities complete`);
-        remoteStream.end();
-      }
-    });
-  });
+        if (parser.hasFlushPacket()) {
+          console.log(`[fetchCapabilities] Flush packet detected, capabilities complete`);
+          remoteStream.end();
+        }
+      });
+    },
+  );
 
   return parser.getBuffer();
 }
@@ -223,13 +232,15 @@ export async function forwardPackDataToRemote(
   stream: ssh2.ServerChannel,
   client: ClientWithUser,
   packData: Buffer | null,
-  capabilitiesSize?: number,
+  capabilitiesSize: number,
+  remoteHost: string,
 ): Promise<void> {
   const userName = client.authenticatedUser?.username || 'unknown';
 
   await executeRemoteGitCommand(
     command,
     client,
+    remoteHost,
     { clientStream: stream, debug: true, keepalive: true },
     (remoteStream) => {
       console.log(`[SSH] Forwarding pack data for user ${userName}`);
@@ -280,12 +291,14 @@ export async function connectToRemoteGitServer(
   command: string,
   stream: ssh2.ServerChannel,
   client: ClientWithUser,
+  remoteHost: string,
 ): Promise<void> {
   const userName = client.authenticatedUser?.username || 'unknown';
 
   await executeRemoteGitCommand(
     command,
     client,
+    remoteHost,
     {
       clientStream: stream,
       debug: true,
@@ -322,25 +335,33 @@ export async function connectToRemoteGitServer(
  *
  * @param command - The git-upload-pack command to execute
  * @param client - The authenticated client connection
+ * @param remoteHost - The remote Git server hostname (e.g., 'github.com')
  * @param request - The Git protocol request (want + deepen + done)
  * @returns Buffer containing the complete response (including PACK file)
  */
 export async function fetchRepositoryData(
   command: string,
   client: ClientWithUser,
+  remoteHost: string,
   request: string,
 ): Promise<Buffer> {
   let buffer = Buffer.alloc(0);
 
-  await executeRemoteGitCommand(command, client, { timeoutMs: 60000 }, (remoteStream) => {
-    console.log(`[fetchRepositoryData] Sending request to GitHub`);
+  await executeRemoteGitCommand(
+    command,
+    client,
+    remoteHost,
+    { timeoutMs: 60000 },
+    (remoteStream) => {
+      console.log(`[fetchRepositoryData] Sending request to GitHub`);
 
-    remoteStream.write(request);
+      remoteStream.write(request);
 
-    remoteStream.on('data', (chunk: Buffer) => {
-      buffer = Buffer.concat([buffer, chunk]);
-    });
-  });
+      remoteStream.on('data', (chunk: Buffer) => {
+        buffer = Buffer.concat([buffer, chunk]);
+      });
+    },
+  );
 
   console.log(`[fetchRepositoryData] Received ${buffer.length} bytes from GitHub`);
   return buffer;

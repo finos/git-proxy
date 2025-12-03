@@ -184,7 +184,7 @@ export const getUsers = (query: Partial<UserQuery> = {}): Promise<User[]> => {
 export const addPublicKey = (username: string, publicKey: PublicKeyRecord): Promise<void> => {
   return new Promise((resolve, reject) => {
     // Check if this key already exists for any user
-    findUserBySSHKey(publicKey)
+    findUserBySSHKey(publicKey.key)
       .then((existingUser) => {
         if (existingUser && existingUser.username.toLowerCase() !== username.toLowerCase()) {
           reject(new DuplicateSSHKeyError(existingUser.username));

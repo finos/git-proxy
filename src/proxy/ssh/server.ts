@@ -14,6 +14,7 @@ import {
 } from './GitProtocol';
 import { ClientWithUser } from './types';
 import { createMockResponse } from './sshHelpers';
+import { processGitUrl } from '../routes/helper';
 
 export class SSHServer {
   private server: ssh2.Server;
@@ -341,22 +342,51 @@ export class SSHServer {
         throw new Error('Invalid Git command format');
       }
 
-      let repoPath = repoMatch[1];
-      // Remove leading slash if present to avoid double slashes in URL construction
-      if (repoPath.startsWith('/')) {
-        repoPath = repoPath.substring(1);
+      let fullRepoPath = repoMatch[1];
+      // Remove leading slash if present
+      if (fullRepoPath.startsWith('/')) {
+        fullRepoPath = fullRepoPath.substring(1);
       }
+
+      // Parse full path to extract hostname and repository path
+      // Input: 'github.com/user/repo.git' -> { host: 'github.com', repoPath: '/user/repo.git' }
+      const fullUrl = `https://${fullRepoPath}`; // Construct URL for parsing
+      const urlComponents = processGitUrl(fullUrl);
+
+      if (!urlComponents) {
+        throw new Error(`Invalid repository path format: ${fullRepoPath}`);
+      }
+
+      const { host: remoteHost, repoPath } = urlComponents;
+
       const isReceivePack = command.startsWith('git-receive-pack');
       const gitPath = isReceivePack ? 'git-receive-pack' : 'git-upload-pack';
 
       console.log(
-        `[SSH] Git command for repository: ${repoPath} from user: ${client.authenticatedUser?.username || 'unknown'}`,
+        `[SSH] Git command for ${remoteHost}${repoPath} from user: ${client.authenticatedUser?.username || 'unknown'}`,
       );
 
+      // Build remote command with just the repo path (without hostname)
+      const remoteCommand = `${isReceivePack ? 'git-receive-pack' : 'git-upload-pack'} '${repoPath}'`;
+
       if (isReceivePack) {
-        await this.handlePushOperation(command, stream, client, repoPath, gitPath);
+        await this.handlePushOperation(
+          remoteCommand,
+          stream,
+          client,
+          fullRepoPath,
+          gitPath,
+          remoteHost,
+        );
       } else {
-        await this.handlePullOperation(command, stream, client, repoPath, gitPath);
+        await this.handlePullOperation(
+          remoteCommand,
+          stream,
+          client,
+          fullRepoPath,
+          gitPath,
+          remoteHost,
+        );
       }
     } catch (error) {
       console.error('[SSH] Error in Git command handling:', error);
@@ -372,6 +402,7 @@ export class SSHServer {
     client: ClientWithUser,
     repoPath: string,
     gitPath: string,
+    remoteHost: string,
   ): Promise<void> {
     console.log(
       `[SSH] Handling push operation for ${repoPath} (secure mode: validate BEFORE sending to GitHub)`,
@@ -381,7 +412,7 @@ export class SSHServer {
     const maxPackSizeDisplay = this.formatBytes(maxPackSize);
     const userName = client.authenticatedUser?.username || 'unknown';
 
-    const capabilities = await fetchGitHubCapabilities(command, client);
+    const capabilities = await fetchGitHubCapabilities(command, client, remoteHost);
     stream.write(capabilities);
 
     const packDataChunks: Buffer[] = [];
@@ -474,7 +505,14 @@ export class SSHServer {
         }
 
         console.log(`[SSH] Security chain passed, forwarding to GitHub`);
-        await forwardPackDataToRemote(command, stream, client, packData, capabilities.length);
+        await forwardPackDataToRemote(
+          command,
+          stream,
+          client,
+          packData,
+          capabilities.length,
+          remoteHost,
+        );
       } catch (chainError: unknown) {
         console.error(
           `[SSH] Chain execution failed for user ${client.authenticatedUser?.username}:`,
@@ -525,6 +563,7 @@ export class SSHServer {
     client: ClientWithUser,
     repoPath: string,
     gitPath: string,
+    remoteHost: string,
   ): Promise<void> {
     console.log(`[SSH] Handling pull operation for ${repoPath}`);
 
@@ -542,7 +581,7 @@ export class SSHServer {
       }
 
       // Chain passed, connect to remote Git server
-      await connectToRemoteGitServer(command, stream, client);
+      await connectToRemoteGitServer(command, stream, client, remoteHost);
     } catch (chainError: unknown) {
       console.error(
         `[SSH] Chain execution failed for user ${client.authenticatedUser?.username}:`,

@@ -38,23 +38,16 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
         if (config.enabled && cloneURL) {
           const url = new URL(cloneURL);
           const hostname = url.hostname; // proxy hostname
-          const fullPath = url.pathname.substring(1); // remove leading /
-
-          // Extract repository path (remove remote host from path if present)
-          // e.g., 'github.com/user/repo.git' -> 'user/repo.git'
-          const pathParts = fullPath.split('/');
-          let repoPath = fullPath;
-          if (pathParts.length >= 3 && pathParts[0].includes('.')) {
-            // First part looks like a hostname (contains dot), skip it
-            repoPath = pathParts.slice(1).join('/');
-          }
+          const path = url.pathname.substring(1); // remove leading /
+          // Keep full path including remote hostname (e.g., 'github.com/user/repo.git')
+          // This matches HTTPS behavior and allows backend to extract hostname
 
           // For non-standard SSH ports, use ssh:// URL format
           // For standard port 22, use git@host:path format
           if (config.port !== 22) {
-            setSSHURL(`ssh://git@${hostname}:${config.port}/${repoPath}`);
+            setSSHURL(`ssh://git@${hostname}:${config.port}/${path}`);
           } else {
-            setSSHURL(`git@${hostname}:${repoPath}`);
+            setSSHURL(`git@${hostname}:${path}`);
           }
         }
       } catch (error) {
