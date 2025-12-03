@@ -82,7 +82,8 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
   };
 
   const currentURL = selectedTab === 0 ? cloneURL : sshURL;
-  const currentCloneCommand = selectedTab === 0 ? `git clone ${cloneURL}` : `git clone ${sshURL}`;
+  const currentCloneCommand =
+    selectedTab === 0 ? `git clone ${cloneURL}` : `git clone -c core.sshCommand="ssh -A" ${sshURL}`;
 
   return (
     <>
@@ -180,7 +181,9 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
               </div>
               <div style={{ marginTop: '5px' }}>
                 <span style={{ fontWeight: 'lighter', fontSize: '12px', opacity: 0.9 }}>
-                  Use Git and run this command in your IDE or Terminal 👍
+                  {selectedTab === 0
+                    ? 'Use Git and run this command in your IDE or Terminal 👍'
+                    : 'The -A flag enables SSH agent forwarding for authentication 🔐'}
                 </span>
               </div>
             </div>
