@@ -2,7 +2,8 @@ import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
 import { GitProxyConfig, Convert } from './generated/config';
-import { ConfigLoader, Configuration } from './ConfigLoader';
+import { ConfigLoader } from './ConfigLoader';
+import { Configuration } from './types';
 import { serverConfig } from './env';
 import { configFile } from './file';
 import { GIGABYTE } from '../constants';
@@ -215,14 +216,19 @@ export const getAPIs = () => {
   return config.api || {};
 };
 
-export const getCookieSecret = (): string | undefined => {
+export const getCookieSecret = (): string => {
   const config = loadFullConfiguration();
+
+  if (!config.cookieSecret) {
+    throw new Error('cookieSecret is not set!');
+  }
+
   return config.cookieSecret;
 };
 
-export const getSessionMaxAgeHours = (): number | undefined => {
+export const getSessionMaxAgeHours = (): number => {
   const config = loadFullConfiguration();
-  return config.sessionMaxAgeHours;
+  return config.sessionMaxAgeHours || 24;
 };
 
 // Get commit related configuration

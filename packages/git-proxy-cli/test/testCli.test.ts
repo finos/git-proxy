@@ -1,5 +1,6 @@
 import * as helper from './testCliUtils';
 import path from 'path';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 
 import { setConfigFile } from '../../../src/config/file';
 
@@ -92,11 +93,11 @@ describe('test git-proxy-cli', function () {
   // *** login ***
 
   describe('test git-proxy-cli :: login', function () {
-    before(async function () {
+    beforeAll(async function () {
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
     });
 
-    after(async function () {
+    afterAll(async function () {
       await helper.removeUserFromDb(TEST_USER);
     });
 
@@ -157,17 +158,17 @@ describe('test git-proxy-cli', function () {
   // *** logout ***
 
   describe('test git-proxy-cli :: logout', function () {
-    it('logout should fail when server is down (and not logged in before)', async function () {
+    it('logout shoud succeed when server is down (and not logged in before)', async function () {
       await helper.removeCookiesFile();
 
       const cli = `${CLI_PATH} logout`;
-      const expectedExitCode = 2;
-      const expectedMessages = null;
-      const expectedErrorMessages = ['Error: Logout: Not logged in.'];
+      const expectedExitCode = 0;
+      const expectedMessages = [`Logout: OK`];
+      const expectedErrorMessages = null;
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
-    it('logout should fail when server is down (but logged in before)', async function () {
+    it('logout should succeed when server is down (but logged in before)', async function () {
       try {
         await helper.startServer();
         await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
@@ -176,9 +177,9 @@ describe('test git-proxy-cli', function () {
       }
 
       const cli = `${CLI_PATH} logout`;
-      const expectedExitCode = 2;
-      const expectedMessages = null;
-      const expectedErrorMessages = ['Error: Logout'];
+      const expectedExitCode = 0;
+      const expectedMessages = [`Logout: OK`];
+      const expectedErrorMessages = null;
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
@@ -188,7 +189,7 @@ describe('test git-proxy-cli', function () {
 
         const cli = `${CLI_PATH} logout`;
         const expectedExitCode = 0;
-        const expectedMessages = [`Logged out successfully.`];
+        const expectedMessages = [`Logout: OK`];
         const expectedErrorMessages = null;
         await helper.startServer();
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
@@ -204,7 +205,7 @@ describe('test git-proxy-cli', function () {
 
         const cli = `${CLI_PATH} logout`;
         const expectedExitCode = 0;
-        const expectedMessages = [`Logged out successfully.`];
+        const expectedMessages = [`Logout: OK`];
         const expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
       } finally {
@@ -218,13 +219,13 @@ describe('test git-proxy-cli', function () {
   describe('test git-proxy-cli :: authorise', function () {
     const pushId = `auth000000000000000000000000000000000000__${Date.now()}`;
 
-    before(async function () {
+    beforeAll(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
 
-    after(async function () {
+    afterAll(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
@@ -254,7 +255,7 @@ describe('test git-proxy-cli', function () {
       const cli = `${CLI_PATH} authorise --id ${id}`;
       const expectedExitCode = 1;
       const expectedMessages = null;
-      const expectedErrorMessages = ['Error: Authentication required'];
+      const expectedErrorMessages = ['Error: Authorise: Authentication required'];
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
@@ -295,13 +296,13 @@ describe('test git-proxy-cli', function () {
   describe('test git-proxy-cli :: cancel', function () {
     const pushId = `cancel0000000000000000000000000000000000__${Date.now()}`;
 
-    before(async function () {
+    beforeAll(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_USER, TEST_EMAIL, TEST_REPO);
     });
 
-    after(async function () {
+    afterAll(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
@@ -331,7 +332,7 @@ describe('test git-proxy-cli', function () {
       const cli = `${CLI_PATH} cancel --id ${id}`;
       const expectedExitCode = 1;
       const expectedMessages = null;
-      const expectedErrorMessages = ['Error: Authentication required'];
+      const expectedErrorMessages = ['Error: Cancel: Authentication required'];
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
@@ -393,7 +394,7 @@ describe('test git-proxy-cli', function () {
       const cli = `${CLI_PATH} ls`;
       const expectedExitCode = 1;
       const expectedMessages = null;
-      const expectedErrorMessages = ['Error: Authentication required'];
+      const expectedErrorMessages = ['Error: List: Authentication required'];
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
@@ -418,13 +419,13 @@ describe('test git-proxy-cli', function () {
   describe('test git-proxy-cli :: reject', function () {
     const pushId = `reject0000000000000000000000000000000000__${Date.now()}`;
 
-    before(async function () {
+    beforeAll(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
 
-    after(async function () {
+    afterAll(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
@@ -454,7 +455,7 @@ describe('test git-proxy-cli', function () {
       const cli = `${CLI_PATH} reject --id ${id}`;
       const expectedExitCode = 1;
       const expectedMessages = null;
-      const expectedErrorMessages = ['Error: Authentication required'];
+      const expectedErrorMessages = ['Error: Reject: Authentication required'];
       await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
     });
 
@@ -490,18 +491,146 @@ describe('test git-proxy-cli', function () {
     });
   });
 
+  // *** create user ***
+
+  describe('test git-proxy-cli :: create-user', function () {
+    beforeAll(async function () {
+      await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
+    });
+
+    afterAll(async function () {
+      await helper.removeUserFromDb(TEST_USER);
+    });
+
+    it('attempt to create user should fail when server is down', async function () {
+      try {
+        // start server -> login -> stop server
+        await helper.startServer();
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
+      } finally {
+        await helper.closeServer();
+      }
+
+      const cli = `${CLI_PATH} create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+      const expectedExitCode = 2;
+      const expectedMessages = null;
+      const expectedErrorMessages = ['Error: Create User:'];
+      await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+    });
+
+    it('attempt to create user should fail when not authenticated', async function () {
+      await helper.removeCookiesFile();
+
+      const cli = `${CLI_PATH} create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+      const expectedExitCode = 1;
+      const expectedMessages = null;
+      const expectedErrorMessages = ['Error: Create User: Authentication required'];
+      await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+    });
+
+    it('attempt to create user should fail when not admin', async function () {
+      try {
+        await helper.startServer();
+        await helper.runCli(`${CLI_PATH} login --username testuser --password testpassword`);
+
+        const cli = `${CLI_PATH} create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+        const expectedExitCode = 3;
+        const expectedMessages = null;
+        const expectedErrorMessages = ['Error: Create User: Authentication required'];
+        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+      } finally {
+        await helper.closeServer();
+      }
+    });
+
+    it('attempt to create user should fail with missing required fields', async function () {
+      try {
+        await helper.startServer();
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
+
+        const cli = `${CLI_PATH} create-user --username newuser --password "" --email new@email.com --gitAccount newgit`;
+        const expectedExitCode = 4;
+        const expectedMessages = null;
+        const expectedErrorMessages = ['Error: Create User: Missing required fields'];
+        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+      } finally {
+        await helper.closeServer();
+      }
+    });
+
+    it('should successfully create a new user', async function () {
+      const uniqueUsername = `newuser_${Date.now()}`;
+      try {
+        await helper.startServer();
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
+
+        const cli = `${CLI_PATH} create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com --gitAccount newgit`;
+        const expectedExitCode = 0;
+        const expectedMessages = [`User '${uniqueUsername}' created successfully`];
+        const expectedErrorMessages = null;
+        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+
+        // Verify we can login with the new user
+        await helper.runCli(
+          `${CLI_PATH} login --username ${uniqueUsername} --password newpass`,
+          0,
+          [`Login "${uniqueUsername}" <${uniqueUsername}@email.com>: OK`],
+          null,
+        );
+      } finally {
+        await helper.closeServer();
+        // Clean up the created user
+        try {
+          await helper.removeUserFromDb(uniqueUsername);
+        } catch (error: any) {
+          // Ignore cleanup errors
+        }
+      }
+    });
+
+    it('should successfully create a new admin user', async function () {
+      const uniqueUsername = `newadmin_${Date.now()}`;
+      try {
+        await helper.startServer();
+        await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
+
+        const cli = `${CLI_PATH} create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com --gitAccount newgit --admin`;
+        const expectedExitCode = 0;
+        const expectedMessages = [`User '${uniqueUsername}' created successfully`];
+        const expectedErrorMessages = null;
+        await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
+
+        // Verify we can login with the new admin user
+        await helper.runCli(
+          `${CLI_PATH} login --username ${uniqueUsername} --password newpass`,
+          0,
+          [`Login "${uniqueUsername}" <${uniqueUsername}@email.com> (admin): OK`],
+          null,
+        );
+      } finally {
+        await helper.closeServer();
+        // Clean up the created user
+        try {
+          await helper.removeUserFromDb(uniqueUsername);
+        } catch (error: any) {
+          console.error('Error cleaning up user', error);
+        }
+      }
+    });
+  });
+
   // *** tests require push in db ***
 
   describe('test git-proxy-cli :: git push administration', function () {
     const pushId = `0000000000000000000000000000000000000000__${Date.now()}`;
 
-    before(async function () {
+    beforeAll(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
 
-    after(async function () {
+    afterAll(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
@@ -567,7 +696,7 @@ describe('test git-proxy-cli', function () {
 
         const cli = `${CLI_PATH} ls --rejected true`;
         const expectedExitCode = 0;
-        const expectedMessages = ['[]'];
+        const expectedMessages: string[] | null = null;
         const expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
       } finally {
@@ -624,7 +753,7 @@ describe('test git-proxy-cli', function () {
 
         let cli = `${CLI_PATH} ls --authorised false --canceled false --rejected true`;
         let expectedExitCode = 0;
-        let expectedMessages = ['[]'];
+        let expectedMessages: string[] | null = null;
         let expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 

@@ -10,17 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@f4a75cfd619ee5ce8d5b864b0d183aff3c69b55a # v2
+        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2
         with:
           egress-policy: audit
 
       - name: 'Checkout Repository'
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
       - name: Dependency Review
-        uses: actions/dependency-review-action@45529485b5eb76184ced07362d2331fd9d26f03f # v4
+        uses: actions/dependency-review-action@3c4e3dcb1aa7874d2c16be7d79418e9b7efd6261 # v4
         with:
           comment-summary-in-pr: always
           fail-on-severity: high
-          allow-licenses: MIT, MIT-0, Apache-2.0, BSD-3-Clause, BSD-3-Clause-Clear, ISC, BSD-2-Clause, Unlicense, CC0-1.0, 0BSD, X11, MPL-2.0, MPL-1.0, MPL-1.1, MPL-2.0, OFL-1.1, Zlib
+          allow-licenses: MIT, MIT-0, Apache-2.0, BSD-3-Clause, BSD-3-Clause-Clear, ISC, BSD-2-Clause, Unlicense, CC0-1.0, 0BSD, X11, MPL-2.0, MPL-1.0, MPL-1.1, MPL-2.0, OFL-1.1, Zlib, BlueOak-1.0.0
           fail-on-scopes: development, runtime
           allow-dependencies-licenses: 'pkg:npm/caniuse-lite'

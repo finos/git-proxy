@@ -1,14 +1,13 @@
 import fs from 'fs';
 import util from 'util';
 import { exec } from 'child_process';
-import { expect } from 'chai';
+import { expect } from 'vitest';
 
 import Proxy from '../../../src/proxy';
 import { Action } from '../../../src/proxy/actions/Action';
 import { Step } from '../../../src/proxy/actions/Step';
 import { exec as execProcessor } from '../../../src/proxy/processors/push-action/audit';
 import * as db from '../../../src/db';
-import { Server } from 'http';
 import { Repo } from '../../../src/db/types';
 import service from '../../../src/service';
 
@@ -44,15 +43,15 @@ async function runCli(
       console.log(`stdout: ${stdout}`);
       console.log(`stderr: ${stderr}`);
     }
-    expect(0).to.equal(expectedExitCode);
+    expect(0).toEqual(expectedExitCode);
     if (expectedMessages) {
       expectedMessages.forEach((expectedMessage) => {
-        expect(stdout).to.include(expectedMessage);
+        expect(stdout).toContain(expectedMessage);
       });
     }
     if (expectedErrorMessages) {
       expectedErrorMessages.forEach((expectedErrorMessage) => {
-        expect(stderr).to.include(expectedErrorMessage);
+        expect(stderr).toContain(expectedErrorMessage);
       });
     }
   } catch (error: any) {
@@ -66,15 +65,15 @@ async function runCli(
       console.log(`error.stdout: ${error.stdout}`);
       console.log(`error.stderr: ${error.stderr}`);
     }
-    expect(exitCode).to.equal(expectedExitCode);
+    expect(exitCode).toEqual(expectedExitCode);
     if (expectedMessages) {
       expectedMessages.forEach((expectedMessage) => {
-        expect(error.stdout).to.include(expectedMessage);
+        expect(error.stdout).toContain(expectedMessage);
       });
     }
     if (expectedErrorMessages) {
       expectedErrorMessages.forEach((expectedErrorMessage) => {
-        expect(error.stderr).to.include(expectedErrorMessage);
+        expect(error.stderr).toContain(expectedErrorMessage);
       });
     }
   } finally {
@@ -221,7 +220,6 @@ async function addGitPushToDb(
     parent: 'parent',
     author: 'author',
     committer: 'committer',
-    commitTs: 'commitTs',
     message: 'message',
     authorEmail: 'authorEmail',
     committerEmail: 'committerEmail',

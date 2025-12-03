@@ -217,6 +217,10 @@ export interface AdConfig {
    */
   password: string;
   /**
+   * Override baseDN to query for users in other OUs or sub-trees.
+   */
+  searchBase?: string;
+  /**
    * Active Directory server to connect to, e.g. `ldap://ad.example.com`.
    */
   url: string;
@@ -233,6 +237,13 @@ export interface AdConfig {
 export interface JwtConfig {
   authorityURL: string;
   clientID: string;
+  expectedAudience?: string;
+  roleMapping?: RoleMapping;
+  [property: string]: any;
+}
+
+export interface RoleMapping {
+  admin?: { [key: string]: any };
   [property: string]: any;
 }
 
@@ -283,8 +294,13 @@ export interface Question {
  * and used to provide additional guidance to the reviewer.
  */
 export interface QuestionTooltip {
-  links?: string[];
+  links?: Link[];
   text: string;
+}
+
+export interface Link {
+  text?: string;
+  url?: string;
 }
 
 export interface AuthorisedRepo {
@@ -806,6 +822,7 @@ const typeMap: any = {
     [
       { json: 'baseDN', js: 'baseDN', typ: '' },
       { json: 'password', js: 'password', typ: '' },
+      { json: 'searchBase', js: 'searchBase', typ: u(undefined, '') },
       { json: 'url', js: 'url', typ: '' },
       { json: 'username', js: 'username', typ: '' },
     ],
@@ -815,9 +832,12 @@ const typeMap: any = {
     [
       { json: 'authorityURL', js: 'authorityURL', typ: '' },
       { json: 'clientID', js: 'clientID', typ: '' },
+      { json: 'expectedAudience', js: 'expectedAudience', typ: u(undefined, '') },
+      { json: 'roleMapping', js: 'roleMapping', typ: u(undefined, r('RoleMapping')) },
     ],
     'any',
   ),
+  RoleMapping: o([{ json: 'admin', js: 'admin', typ: u(undefined, m('any')) }], 'any'),
   OidcConfig: o(
     [
       { json: 'callbackURL', js: 'callbackURL', typ: '' },
@@ -841,8 +861,15 @@ const typeMap: any = {
   ),
   QuestionTooltip: o(
     [
-      { json: 'links', js: 'links', typ: u(undefined, a('')) },
+      { json: 'links', js: 'links', typ: u(undefined, a(r('Link'))) },
       { json: 'text', js: 'text', typ: '' },
+    ],
+    false,
+  ),
+  Link: o(
+    [
+      { json: 'text', js: 'text', typ: u(undefined, '') },
+      { json: 'url', js: 'url', typ: u(undefined, '') },
     ],
     false,
   ),

@@ -15,7 +15,7 @@ import { getPushes } from '../../../services/git-push';
 import { KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
-import { PushData } from '../../../../types/models';
+import { PushActionView } from '../../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../../db/helper';
 import { generateAuthorLinks, generateEmailLink } from '../../../utils';
 
@@ -27,8 +27,8 @@ const useStyles = makeStyles(styles as any);
 
 const PushesTable: React.FC<PushesTableProps> = (props) => {
   const classes = useStyles();
-  const [data, setData] = useState<PushData[]>([]);
-  const [filteredData, setFilteredData] = useState<PushData[]>([]);
+  const [pushes, setPushes] = useState<PushActionView[]>([]);
+  const [filteredData, setFilteredData] = useState<PushActionView[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [, setIsError] = useState(false);
   const navigate = useNavigate();
@@ -46,26 +46,26 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
       authorised: props.authorised ?? false,
       rejected: props.rejected ?? false,
     };
-    getPushes(setIsLoading, setData, setAuth, setIsError, props.handleError, query);
+    getPushes(setIsLoading, setPushes, setAuth, setIsError, props.handleError, query);
   }, [props]);
 
   useEffect(() => {
-    setFilteredData(data);
-  }, [data]);
+    setFilteredData(pushes);
+  }, [pushes]);
 
   useEffect(() => {
     const lowerCaseTerm = searchTerm.toLowerCase();
     const filtered = searchTerm
-      ? data.filter(
+      ? pushes.filter(
           (item) =>
             item.repo.toLowerCase().includes(lowerCaseTerm) ||
-            item.commitTo.toLowerCase().includes(lowerCaseTerm) ||
-            item.commitData[0]?.message.toLowerCase().includes(lowerCaseTerm),
+            item.commitTo?.toLowerCase().includes(lowerCaseTerm) ||
+            item.commitData?.[0]?.message.toLowerCase().includes(lowerCaseTerm),
         )
-      : data;
+      : pushes;
     setFilteredData(filtered);
     setCurrentPage(1);
-  }, [searchTerm, data]);
+  }, [searchTerm, pushes]);
 
   const handleSearch = (term: string) => setSearchTerm(term.trim());
 
@@ -100,19 +100,18 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
           <TableBody>
             {[...currentItems].reverse().map((row) => {
               const repoFullName = trimTrailingDotGit(row.repo);
-              const repoBranch = trimPrefixRefsHeads(row.branch);
+              const repoBranch = trimPrefixRefsHeads(row.branch ?? '');
               const repoUrl = row.url;
               const repoWebUrl = trimTrailingDotGit(repoUrl);
               // may be used to resolve users to profile links in future
               // const gitProvider = getGitProvider(repoUrl);
               // const hostname = new URL(repoUrl).hostname;
-              const commitTimestamp =
-                row.commitData[0]?.commitTs || row.commitData[0]?.commitTimestamp;
+              const commitTimestamp = row.commitData?.[0]?.commitTimestamp;
 
               return (
                 <TableRow key={row.id}>
                   <TableCell align='left'>
-                    {commitTimestamp ? moment.unix(commitTimestamp).toString() : 'N/A'}
+                    {commitTimestamp ? moment.unix(Number(commitTimestamp)).toString() : 'N/A'}
                   </TableCell>
                   <TableCell align='left'>
                     <a href={`${repoUrl}`} rel='noreferrer' target='_blank'>
@@ -130,7 +129,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                       rel='noreferrer'
                       target='_blank'
                     >
-                      {row.commitTo.substring(0, 8)}
+                      {row.commitTo?.substring(0, 8)}
                     </a>
                   </TableCell>
                   <TableCell align='left'>
@@ -138,18 +137,18 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                     {getUserProfileLink(row.commitData[0].committerEmail, gitProvider, hostname)} 
                     */}
                     {generateEmailLink(
-                      row.commitData[0].committer,
-                      row.commitData[0]?.committerEmail,
+                      row.commitData?.[0]?.committer ?? '',
+                      row.commitData?.[0]?.committerEmail ?? '',
                     )}
                   </TableCell>
                   <TableCell align='left'>
                     {/* render github/gitlab profile links in future 
                     {getUserProfileLink(row.commitData[0].authorEmail, gitProvider, hostname)} 
                     */}
-                    {generateAuthorLinks(row.commitData)}
+                    {generateAuthorLinks(row.commitData ?? [])}
                   </TableCell>
-                  <TableCell align='left'>{row.commitData[0]?.message || 'N/A'}</TableCell>
-                  <TableCell align='left'>{row.commitData.length}</TableCell>
+                  <TableCell align='left'>{row.commitData?.[0]?.message || 'N/A'}</TableCell>
+                  <TableCell align='left'>{row.commitData?.length ?? 0}</TableCell>
                   <TableCell component='th' scope='row'>
                     <Button variant='contained' color='primary' onClick={() => openPush(row.id)}>
                       <KeyboardArrowRight />

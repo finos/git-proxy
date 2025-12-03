@@ -9,7 +9,7 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Icon from '@material-ui/core/Icon';
 import styles from '../../assets/jss/material-dashboard-react/components/sidebarStyle';
-import { Route } from '../../../types/models';
+import { Route } from '../../types';
 
 const useStyles = makeStyles(styles as any);
 

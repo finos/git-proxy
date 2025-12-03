@@ -44,7 +44,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.use(
     session({
       store: db.getSessionStore(),
-      secret: config.getCookieSecret() as string,
+      secret: config.getCookieSecret(),
       resave: false,
       saveUninitialized: false,
       cookie: {

@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
-import { UserData } from '../../types/models';
+import { PublicUser } from '../../db/types';
 
 import { API_BASE } from '../apiBase';
 
@@ -8,7 +8,7 @@ type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
 
 const getUser = async (
   setIsLoading?: SetStateCallback<boolean>,
-  setData?: (userData: UserData) => void,
+  setUser?: (user: PublicUser) => void,
   setAuth?: SetStateCallback<boolean>,
   setIsError?: SetStateCallback<boolean>,
   id: string | null = null,
@@ -19,10 +19,10 @@ const getUser = async (
   }
 
   try {
-    const response: AxiosResponse<UserData> = await axios(url, getAxiosConfig());
-    const data = response.data;
+    const response: AxiosResponse<PublicUser> = await axios(url, getAxiosConfig());
+    const user = response.data;
 
-    setData?.(data);
+    setUser?.(user);
     setIsLoading?.(false);
   } catch (error) {
     const axiosError = error as AxiosError;
@@ -37,18 +37,18 @@ const getUser = async (
 
 const getUsers = async (
   setIsLoading: SetStateCallback<boolean>,
-  setData: SetStateCallback<UserData[]>,
+  setUsers: SetStateCallback<PublicUser[]>,
   setAuth: SetStateCallback<boolean>,
   setErrorMessage: SetStateCallback<string>,
 ): Promise<void> => {
   setIsLoading(true);
 
   try {
-    const response: AxiosResponse<UserData[]> = await axios(
+    const response: AxiosResponse<PublicUser[]> = await axios(
       `${API_BASE}/api/v1/user`,
       getAxiosConfig(),
     );
-    setData(response.data);
+    setUsers(response.data);
   } catch (error) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
@@ -66,10 +66,10 @@ const getUsers = async (
   }
 };
 
-const updateUser = async (data: UserData): Promise<void> => {
-  console.log(data);
+const updateUser = async (user: PublicUser): Promise<void> => {
+  console.log(user);
   try {
-    await axios.post(`${API_BASE}/api/auth/gitAccount`, data, getAxiosConfig());
+    await axios.post(`${API_BASE}/api/auth/gitAccount`, user, getAxiosConfig());
   } catch (error) {
     const axiosError = error as AxiosError;
     if (axiosError.response) {
