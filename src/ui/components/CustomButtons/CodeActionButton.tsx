@@ -36,12 +36,26 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
 
         // Calculate SSH URL from HTTPS URL
         if (config.enabled && cloneURL) {
-          // Convert https://proxy-host/github.com/user/repo.git to git@proxy-host:github.com/user/repo.git
           const url = new URL(cloneURL);
-          const host = url.host;
-          const path = url.pathname.substring(1); // remove leading /
-          const port = config.port !== 22 ? `:${config.port}` : '';
-          setSSHURL(`git@${host}${port}:${path}`);
+          const hostname = url.hostname; // proxy hostname
+          const fullPath = url.pathname.substring(1); // remove leading /
+
+          // Extract repository path (remove remote host from path if present)
+          // e.g., 'github.com/user/repo.git' -> 'user/repo.git'
+          const pathParts = fullPath.split('/');
+          let repoPath = fullPath;
+          if (pathParts.length >= 3 && pathParts[0].includes('.')) {
+            // First part looks like a hostname (contains dot), skip it
+            repoPath = pathParts.slice(1).join('/');
+          }
+
+          // For non-standard SSH ports, use ssh:// URL format
+          // For standard port 22, use git@host:path format
+          if (config.port !== 22) {
+            setSSHURL(`ssh://git@${hostname}:${config.port}/${repoPath}`);
+          } else {
+            setSSHURL(`git@${hostname}:${repoPath}`);
+          }
         }
       } catch (error) {
         console.error('Error loading SSH config:', error);
