@@ -9,8 +9,7 @@ import * as passportAD from '../passport/activeDirectory';
 import { User } from '../../db/types';
 import { AuthenticationElement } from '../../config/generated/config';
 
-import { toPublicUser } from './publicApi';
-import { isAdminUser } from './utils';
+import { isAdminUser, toPublicUser } from './utils';
 
 const router = express.Router();
 const passport = getPassport();
@@ -107,7 +106,7 @@ router.get('/openidconnect/callback', (req: Request, res: Response, next: NextFu
   passport.authenticate(authStrategies['openidconnect'].type, (err: any, user: any, info: any) => {
     if (err) {
       console.error('Authentication error:', err);
-      return res.status(401).end();
+      return res.status(500).end();
     }
     if (!user) {
       console.error('No user found:', info);
@@ -116,7 +115,7 @@ router.get('/openidconnect/callback', (req: Request, res: Response, next: NextFu
     req.logIn(user, (err) => {
       if (err) {
         console.error('Login error:', err);
-        return res.status(401).end();
+        return res.status(500).end();
       }
       console.log('Logged in successfully. User:', user);
       return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
@@ -133,79 +132,96 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
 });
 
 router.get('/profile', async (req: Request, res: Response) => {
-  if (req.user) {
-    const userVal = await db.findUser((req.user as User).username);
-    if (!userVal) {
-      res.status(400).send('Error: Logged in user not found').end();
-      return;
-    }
-    res.send(toPublicUser(userVal));
-  } else {
-    res.status(401).end();
+  if (!req.user) {
+    res
+      .status(401)
+      .send({
+        message: 'Not logged in',
+      })
+      .end();
+    return;
   }
+
+  const userVal = await db.findUser((req.user as User).username);
+  if (!userVal) {
+    res.status(404).send('User not found').end();
+    return;
+  }
+
+  res.send(toPublicUser(userVal));
 });
 
 router.post('/gitAccount', async (req: Request, res: Response) => {
-  if (req.user) {
-    try {
-      let username =
-        req.body.username == null || req.body.username === 'undefined'
-          ? req.body.id
-          : req.body.username;
-      username = username?.split('@')[0];
+  if (!req.user) {
+    res
+      .status(401)
+      .send({
+        message: 'Not logged in',
+      })
+      .end();
+    return;
+  }
 
-      if (!username) {
-        res.status(400).send('Error: Missing username. Git account not updated').end();
-        return;
-      }
+  try {
+    let username =
+      req.body.username == null || req.body.username === 'undefined'
+        ? req.body.id
+        : req.body.username;
+    username = username?.split('@')[0];
 
-      const reqUser = await db.findUser((req.user as User).username);
-      if (username !== reqUser?.username && !reqUser?.admin) {
-        res.status(403).send('Error: You must be an admin to update a different account').end();
-        return;
-      }
-
-      const user = await db.findUser(username);
-      if (!user) {
-        res.status(400).send('Error: User not found').end();
-        return;
-      }
-
-      console.log('Adding gitAccount' + req.body.gitAccount);
-      user.gitAccount = req.body.gitAccount;
-      db.updateUser(user);
-      res.status(200).end();
-    } catch (e: any) {
+    if (!username) {
       res
-        .status(500)
+        .status(400)
         .send({
-          message: `Error updating git account: ${e.message}`,
+          message: 'Missing username. Git account not updated',
         })
         .end();
-    }
-  } else {
-    res.status(401).end();
-  }
-});
-
-router.get('/me', async (req: Request, res: Response) => {
-  if (req.user) {
-    const userVal = await db.findUser((req.user as User).username);
-    if (!userVal) {
-      res.status(400).send('Error: Logged in user not found').end();
       return;
     }
-    res.send(toPublicUser(userVal));
-  } else {
-    res.status(401).end();
+
+    const reqUser = await db.findUser((req.user as User).username);
+    if (username !== reqUser?.username && !reqUser?.admin) {
+      res
+        .status(403)
+        .send({
+          message: 'Must be an admin to update a different account',
+        })
+        .end();
+      return;
+    }
+
+    const user = await db.findUser(username);
+    if (!user) {
+      res
+        .status(404)
+        .send({
+          message: 'User not found',
+        })
+        .end();
+      return;
+    }
+
+    user.gitAccount = req.body.gitAccount;
+    db.updateUser(user);
+    res.status(200).end();
+  } catch (e: any) {
+    res
+      .status(500)
+      .send({
+        message: `Failed to update git account: ${e.message}`,
+      })
+      .end();
   }
 });
 
 router.post('/create-user', async (req: Request, res: Response) => {
   if (!isAdminUser(req.user)) {
-    res.status(401).send({
-      message: 'You are not authorized to perform this action...',
-    });
+    res
+      .status(403)
+      .send({
+        message: 'Not authorized to create users',
+      })
+      .end();
     return;
   }
 
@@ -213,20 +229,27 @@ router.post('/create-user', async (req: Request, res: Response) => {
     const { username, password, email, gitAccount, admin: isAdmin = false } = req.body;
 
     if (!username || !password || !email || !gitAccount) {
-      res.status(400).send({
-        message: 'Missing required fields: username, password, email, and gitAccount are required',
-      });
+      res
+        .status(400)
+        .send({
+          message:
+            'Missing required fields: username, password, email, and gitAccount are required',
+        })
+        .end();
       return;
     }
 
     await db.createUser(username, password, email, gitAccount, isAdmin);
-    res.status(201).send({
-      message: 'User created successfully',
-      username,
-    });
+    res
+      .status(201)
+      .send({
+        message: 'User created successfully',
+        username,
+      })
+      .end();
   } catch (error: any) {
     console.error('Error creating user:', error);
-    res.status(400).send({
+    res.status(500).send({
       message: error.message || 'Failed to create user',
     });
   }

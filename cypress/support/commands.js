@@ -29,7 +29,7 @@
 Cypress.Commands.add('login', (username, password) => {
   cy.session([username, password], () => {
     cy.visit('/login');
-    cy.intercept('GET', '**/api/auth/me').as('getUser');
+    cy.intercept('GET', '**/api/auth/profile').as('getUser');
 
     cy.get('[data-test=username]').type(username);
     cy.get('[data-test=password]').type(password);

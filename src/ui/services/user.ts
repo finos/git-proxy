@@ -10,7 +10,7 @@ const getUser = async (
   setIsLoading?: SetStateCallback<boolean>,
   setUser?: (user: PublicUser) => void,
   setAuth?: SetStateCallback<boolean>,
-  setIsError?: SetStateCallback<boolean>,
+  setErrorMessage?: SetStateCallback<string>,
   id: string | null = null,
 ): Promise<void> => {
   let url = `${API_BASE}/api/auth/profile`;
@@ -26,10 +26,13 @@ const getUser = async (
     setIsLoading?.(false);
   } catch (error) {
     const axiosError = error as AxiosError;
-    if (axiosError.response?.status === 401) {
+    const status = axiosError.response?.status;
+    if (status === 401) {
       setAuth?.(false);
+      setErrorMessage?.(processAuthError(axiosError));
     } else {
-      setIsError?.(true);
+      const msg = (axiosError.response?.data as any)?.message ?? 'Unknown error';
+      setErrorMessage?.(`Error fetching user: ${status} ${msg}`);
     }
     setIsLoading?.(false);
   }
@@ -50,32 +53,33 @@ const getUsers = async (
     );
     setUsers(response.data);
   } catch (error) {
-    if (axios.isAxiosError(error)) {
-      if (error.response?.status === 401) {
-        setAuth(false);
-        setErrorMessage(processAuthError(error));
-      } else {
-        const msg = (error.response?.data as any)?.message ?? error.message;
-        setErrorMessage(`Error fetching users: ${msg}`);
-      }
+    const axiosError = error as AxiosError;
+    const status = axiosError.response?.status;
+    if (status === 401) {
+      setAuth(false);
+      setErrorMessage(processAuthError(axiosError));
     } else {
-      setErrorMessage(`Error fetching users: ${(error as Error).message ?? 'Unknown error'}`);
+      const msg = (axiosError.response?.data as any)?.message ?? 'Unknown error';
+      setErrorMessage(`Error fetching users: ${status} ${msg}`);
     }
   } finally {
     setIsLoading(false);
   }
 };
 
-const updateUser = async (user: PublicUser): Promise<void> => {
-  console.log(user);
+const updateUser = async (
+  user: PublicUser,
+  setErrorMessage: SetStateCallback<string>,
+  setIsLoading: SetStateCallback<boolean>,
+): Promise<void> => {
   try {
     await axios.post(`${API_BASE}/api/auth/gitAccount`, user, getAxiosConfig());
   } catch (error) {
     const axiosError = error as AxiosError;
-    if (axiosError.response) {
-      console.log((axiosError.response.data as any).message);
-    }
-    throw error;
+    const status = axiosError.response?.status;
+    const msg = (axiosError.response?.data as any)?.message ?? 'Unknown error';
+    setErrorMessage(`Error updating user: ${status} ${msg}`);
+    setIsLoading(false);
   }
 };
 
