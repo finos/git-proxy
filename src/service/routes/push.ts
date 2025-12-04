@@ -69,7 +69,6 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
   }
 
   const isAllowed = await db.canUserApproveRejectPush(id, username);
-  console.log({ isAllowed });
 
   if (isAllowed) {
     const result = await db.reject(id, null);
@@ -84,29 +83,30 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
 
 router.post('/:id/authorise', async (req: Request, res: Response) => {
   const questions = req.body.params?.attestation;
-  console.log({ questions });
 
   // TODO: compare attestation to configuration and ensure all questions are answered
   // - we shouldn't go on the definition in the request!
   const attestationComplete = questions?.every(
     (question: { checked: boolean }) => !!question.checked,
   );
-  console.log({ attestationComplete });
 
   if (req.user && attestationComplete) {
     const id = req.params.id;
-    console.log({ id });
 
     const { username } = req.user as { username: string };
 
-    // Get the push request
     const push = await db.getPush(id);
-    console.log({ push });
+    if (!push) {
+      res.status(404).send({
+        message: 'Push request not found',
+      });
+      return;
+    }
 
     // Get the committer of the push via their email address
-    const committerEmail = push?.userEmail;
+    const committerEmail = push.userEmail;
+
     const list = await db.getUsers({ email: committerEmail });
-    console.log({ list });
 
     if (list.length === 0) {
       res.status(401).send({
@@ -188,7 +188,6 @@ router.post('/:id/cancel', async (req: Request, res: Response) => {
 async function getValidPushOrRespond(id: string, res: Response) {
   console.log('getValidPushOrRespond', { id });
   const push = await db.getPush(id);
-  console.log({ push });
 
   if (!push) {
     res.status(404).send({ message: `Push request not found` });

@@ -1,5 +1,6 @@
 import * as helper from './testCliUtils';
 import path from 'path';
+import { describe, it, beforeAll, afterAll } from 'vitest';
 
 import { setConfigFile } from '../../../src/config/file';
 
@@ -92,11 +93,11 @@ describe('test git-proxy-cli', function () {
   // *** login ***
 
   describe('test git-proxy-cli :: login', function () {
-    before(async function () {
+    beforeAll(async function () {
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
     });
 
-    after(async function () {
+    afterAll(async function () {
       await helper.removeUserFromDb(TEST_USER);
     });
 
@@ -218,13 +219,13 @@ describe('test git-proxy-cli', function () {
   describe('test git-proxy-cli :: authorise', function () {
     const pushId = `auth000000000000000000000000000000000000__${Date.now()}`;
 
-    before(async function () {
+    beforeAll(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
 
-    after(async function () {
+    afterAll(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
@@ -295,13 +296,13 @@ describe('test git-proxy-cli', function () {
   describe('test git-proxy-cli :: cancel', function () {
     const pushId = `cancel0000000000000000000000000000000000__${Date.now()}`;
 
-    before(async function () {
+    beforeAll(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_USER, TEST_EMAIL, TEST_REPO);
     });
 
-    after(async function () {
+    afterAll(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
@@ -418,13 +419,13 @@ describe('test git-proxy-cli', function () {
   describe('test git-proxy-cli :: reject', function () {
     const pushId = `reject0000000000000000000000000000000000__${Date.now()}`;
 
-    before(async function () {
+    beforeAll(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
 
-    after(async function () {
+    afterAll(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
@@ -493,11 +494,11 @@ describe('test git-proxy-cli', function () {
   // *** create user ***
 
   describe('test git-proxy-cli :: create-user', function () {
-    before(async function () {
+    beforeAll(async function () {
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
     });
 
-    after(async function () {
+    afterAll(async function () {
       await helper.removeUserFromDb(TEST_USER);
     });
 
@@ -623,13 +624,13 @@ describe('test git-proxy-cli', function () {
   describe('test git-proxy-cli :: git push administration', function () {
     const pushId = `0000000000000000000000000000000000000000__${Date.now()}`;
 
-    before(async function () {
+    beforeAll(async function () {
       await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
 
-    after(async function () {
+    afterAll(async function () {
       await helper.removeGitPushFromDb(pushId);
       await helper.removeUserFromDb(TEST_USER);
       await helper.removeRepoFromDb(TEST_REPO_CONFIG.url);
@@ -695,7 +696,7 @@ describe('test git-proxy-cli', function () {
 
         const cli = `${CLI_PATH} ls --rejected true`;
         const expectedExitCode = 0;
-        const expectedMessages = ['[]'];
+        const expectedMessages: string[] | null = null;
         const expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
       } finally {
@@ -752,7 +753,7 @@ describe('test git-proxy-cli', function () {
 
         let cli = `${CLI_PATH} ls --authorised false --canceled false --rejected true`;
         let expectedExitCode = 0;
-        let expectedMessages = ['[]'];
+        let expectedMessages: string[] | null = null;
         let expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 

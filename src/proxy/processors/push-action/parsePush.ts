@@ -222,8 +222,6 @@ const getCommitData = (contents: CommitContent[]): CommitData[] => {
     .chain(contents)
     .filter({ type: GIT_OBJECT_TYPE_COMMIT })
     .map((x: CommitContent) => {
-      console.log({ x });
-
       const allLines = x.content.split('\n');
       let headerEndIndex = -1;
 
@@ -246,7 +244,6 @@ const getCommitData = (contents: CommitContent[]): CommitData[] => {
         .slice(headerEndIndex + 1)
         .join('\n')
         .trim();
-      console.log({ headerLines, message });
 
       const { tree, parents, author, committer } = getParsedData(headerLines);
       // No parent headers -> zero hash
