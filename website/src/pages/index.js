@@ -3,7 +3,6 @@ import Layout from '@theme/Layout';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Avatar from '../components/avatar';
 import Testimonials from './testimonials';
-import ReactPlayer from 'react-player';
 import axios from 'axios';
 
 /**
@@ -60,14 +59,17 @@ function Home() {
           </header>
           {showDemo ? (
             <section style={{ background: 'black' }}>
-              <ReactPlayer
-                url='https://www.finos.org/hubfs/Projects%20%2B%20SIGs/Open%20Source%20Readiness%20OSR/OSR%20Meeting_%20GitProxy%20Jamie%20Slome%20Citi%20Presentation.mp4#t=496'
-                controls={true}
-                width='100%'
-                pip={true}
-                stopOnUnmount={false}
-                playing={true}
-              />
+              <video
+                controls
+                style={{ width: '100%', display: 'block', aspectRatio: '16/9' }}
+                preload='metadata'
+              >
+                <source
+                  src='https://www.finos.org/hubfs/Projects%20%2B%20SIGs/Open%20Source%20Readiness%20OSR/OSR%20Meeting_%20GitProxy%20Jamie%20Slome%20Citi%20Presentation.mp4#t=496'
+                  type='video/mp4'
+                />
+                Your browser does not support the video tag.
+              </video>
             </section>
           ) : (
             <section className='terminal'>
