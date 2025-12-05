@@ -30,39 +30,18 @@ const getPush = async (
 };
 
 const getPushes = async (
-  setIsLoading: (isLoading: boolean) => void,
-  setPushes: (pushes: PushActionView[]) => void,
-  setAuth: (auth: boolean) => void,
-  setIsError: (isError: boolean) => void,
-  setErrorMessage: (errorMessage: string) => void,
   query = {
     blocked: true,
     canceled: false,
     authorised: false,
     rejected: false,
   },
-): Promise<void> => {
+): Promise<PushActionView[]> => {
   const url = new URL(`${API_V1_BASE}/push`);
   url.search = new URLSearchParams(query as any).toString();
 
-  setIsLoading(true);
-
-  try {
-    const response = await axios<Action[]>(url.toString(), getAxiosConfig());
-    setPushes(response.data as PushActionView[]);
-  } catch (error: any) {
-    setIsError(true);
-
-    if (error.response?.status === 401) {
-      setAuth(false);
-      setErrorMessage(processAuthError(error));
-    } else {
-      const message = error.response?.data?.message || error.message;
-      setErrorMessage(`Error fetching pushes: ${message}`);
-    }
-  } finally {
-    setIsLoading(false);
-  }
+  const response = await axios<Action[]>(url.toString(), getAxiosConfig());
+  return response.data as PushActionView[];
 };
 
 const authorisePush = async (
