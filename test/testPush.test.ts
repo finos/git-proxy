@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import * as db from '../src/db';
 import service from '../src/service';
 import Proxy from '../src/proxy';
@@ -268,7 +268,13 @@ describe('Push API', () => {
     await loginAsApprover();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
-      .set('Cookie', `${cookie}`);
+      .set('Cookie', `${cookie}`)
+      .send({
+        params: {
+          reason: 'tests did not pass',
+        },
+      });
+
     expect(res.status).toBe(200);
   });
 
@@ -281,7 +287,12 @@ describe('Push API', () => {
     await loginAsApprover();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
-      .set('Cookie', `${cookie}`);
+      .set('Cookie', `${cookie}`)
+      .send({
+        params: {
+          reason: 'tests did not pass',
+        },
+      });
     expect(res.status).toBe(401);
   });
 
@@ -290,7 +301,13 @@ describe('Push API', () => {
     await loginAsCommitter();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
-      .set('Cookie', `${cookie}`);
+      .set('Cookie', `${cookie}`)
+      .send({
+        params: {
+          reason: 'tests did not pass',
+        },
+      });
+
     expect(res.status).toBe(401);
   });
 
