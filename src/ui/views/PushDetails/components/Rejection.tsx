@@ -56,8 +56,8 @@ const Rejection: React.FC<RejectionProps> = ({ rejectFn }) => {
   };
 
   const handleClose = () => {
-    setOpen(false);
     setReason('');
+    setOpen(false);
   };
 
   const handleReject = () => {
@@ -111,7 +111,7 @@ const Rejection: React.FC<RejectionProps> = ({ rejectFn }) => {
             helperText={reason.trim().length === 0 ? 'Rejection reason is required.' : ' '}
           />
           <DialogActions style={{ marginRight: '15px' }}>
-            <Button color='warning' onAbort={handleClose}>
+            <Button color='warning' onClick={handleClose}>
               Cancel
             </Button>
             <Button color='danger' onClick={handleReject} disabled={!isFormValid}>
