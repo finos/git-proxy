@@ -16,7 +16,7 @@ export let db: Datastore;
 if (process.env.NODE_ENV === 'test') {
   db = new Datastore({ inMemoryOnly: true, autoload: true });
 } else {
-  db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
+  db = new Datastore({ filename: './.data/db/users.db', autoload: true });
 }
 
 // Using a unique constraint with the index
