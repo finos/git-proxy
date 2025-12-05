@@ -1,11 +1,13 @@
-import { Action, Step } from '../../actions';
+import { Request } from 'express';
 import fs from 'fs';
 import git from 'isomorphic-git';
 import gitHttpClient from 'isomorphic-git/http/node';
 
+import { Action, Step } from '../../actions';
+
 const dir = './.remote';
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (req: Request, action: Action): Promise<Action> => {
   const step = new Step('pullRemote');
 
   try {
@@ -24,6 +26,11 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     step.log(`Executing ${cmd}`);
 
     const authHeader = req.headers?.authorization;
+
+    if (!authHeader) {
+      throw new Error('Authorization header is required');
+    }
+
     const [username, password] = Buffer.from(authHeader.split(' ')[1], 'base64')
       .toString()
       .split(':');

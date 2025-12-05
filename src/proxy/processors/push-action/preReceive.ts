@@ -1,14 +1,16 @@
+import { spawnSync } from 'child_process';
+import { Request } from 'express';
 import fs from 'fs';
 import path from 'path';
-import { Action, Step } from '../../actions';
-import { spawnSync } from 'child_process';
 
-const sanitizeInput = (_req: any, action: Action): string => {
+import { Action, Step } from '../../actions';
+
+const sanitizeInput = (_req: Request, action: Action): string => {
   return `${action.commitFrom} ${action.commitTo} ${action.branch} \n`;
 };
 
 const exec = async (
-  req: any,
+  req: Request,
   action: Action,
   hookFilePath: string = './hooks/pre-receive.sh',
 ): Promise<Action> => {

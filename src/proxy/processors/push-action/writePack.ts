@@ -1,9 +1,11 @@
-import path from 'path';
-import { Action, Step } from '../../actions';
 import { spawnSync } from 'child_process';
+import { Request } from 'express';
 import fs from 'fs';
+import path from 'path';
 
-const exec = async (req: any, action: Action) => {
+import { Action, Step } from '../../actions';
+
+const exec = async (req: Request, action: Action) => {
   const step = new Step('writePack');
   try {
     if (!action.proxyGitPath || !action.repoName) {

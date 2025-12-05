@@ -1,8 +1,10 @@
-import path from 'path';
-import { Action, Step } from '../../actions';
 import { spawnSync } from 'child_process';
+import { Request } from 'express';
+import path from 'path';
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+import { Action, Step } from '../../actions';
+
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('checkHiddenCommits');
 
   try {

@@ -1,7 +1,9 @@
-import { Action, Step } from '../../actions';
+import { Request } from 'express';
 import fs from 'fs';
 import lod from 'lodash';
 import { createInflate } from 'zlib';
+
+import { Action, Step } from '../../actions';
 import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
 import {
   BRANCH_PREFIX,
@@ -27,11 +29,11 @@ const EIGHTH_BIT_MASK = 0x80;
 
 /**
  * Executes the parsing of a push request.
- * @param {*} req - The request object containing the push data.
+ * @param {Request} req - The Express Request object containing the push data.
  * @param {Action} action - The action object to be modified.
  * @return {Promise<Action>} The modified action object.
  */
-async function exec(req: any, action: Action): Promise<Action> {
+async function exec(req: Request, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
   try {
     if (!req.body || req.body.length === 0) {
@@ -81,7 +83,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     const [meta, contentBuff] = getPackMeta(buf);
     const contents = await getContents(contentBuff, meta.entries);
 
-    action.commitData = getCommitData(contents as any);
+    action.commitData = getCommitData(contents);
 
     if (action.commitData.length === 0) {
       step.log('No commit data found when parsing push.');

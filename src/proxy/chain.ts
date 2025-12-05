@@ -1,9 +1,11 @@
+import { Request, Response } from 'express';
+
 import { PluginLoader } from '../plugin';
 import { Action } from './actions';
 import * as proc from './processors';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 
-const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
+const pushActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.parsePush,
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
@@ -23,17 +25,17 @@ const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.blockForAuth,
 ];
 
-const pullActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
+const pullActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.checkRepoInAuthorisedList,
 ];
 
-const defaultActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
+const defaultActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.checkRepoInAuthorisedList,
 ];
 
 let pluginsInserted = false;
 
-export const executeChain = async (req: any, res: any): Promise<Action> => {
+export const executeChain = async (req: Request, _res: Response): Promise<Action> => {
   let action: Action = {} as Action;
 
   try {
@@ -70,7 +72,7 @@ let chainPluginLoader: PluginLoader;
 
 export const getChain = async (
   action: Action,
-): Promise<((req: any, action: Action) => Promise<Action>)[]> => {
+): Promise<((req: Request, action: Action) => Promise<Action>)[]> => {
   if (chainPluginLoader === undefined) {
     console.error(
       'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',

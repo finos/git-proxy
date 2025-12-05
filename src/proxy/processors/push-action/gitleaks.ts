@@ -1,9 +1,10 @@
+import { spawn } from 'node:child_process';
+import { PathLike } from 'node:fs';
+import fs from 'node:fs/promises';
+import { Request } from 'express';
+
 import { Action, Step } from '../../actions';
 import { getAPIs } from '../../../config';
-import { spawn } from 'node:child_process';
-import fs from 'node:fs/promises';
-import { PathLike } from 'node:fs';
-
 const EXIT_CODE = 99;
 
 function runCommand(
@@ -109,7 +110,7 @@ const getPluginConfig = async (): Promise<ConfigOptions> => {
   };
 };
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('gitleaks');
 
   let config: ConfigOptions | undefined = undefined;

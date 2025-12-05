@@ -1,8 +1,10 @@
+import { Request } from 'express';
+
 import { Action, Step } from '../../actions';
 import { getPush } from '../../../db';
 
 // Execute function
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('checkIfWaitingAuth');
   try {
     const existingAction = await getPush(action.id);

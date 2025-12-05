@@ -1,9 +1,10 @@
-import { Action, Step } from '../../actions';
+import { Request } from 'express';
 import simpleGit from 'simple-git';
 
+import { Action, Step } from '../../actions';
 import { EMPTY_COMMIT_HASH } from '../constants';
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('diff');
 
   try {

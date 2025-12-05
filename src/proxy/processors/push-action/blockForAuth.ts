@@ -1,7 +1,9 @@
+import { Request } from 'express';
+
 import { Action, Step } from '../../actions';
 import { getServiceUIURL } from '../../../service/urls';
 
-const exec = async (req: any, action: Action) => {
+const exec = async (req: Request, action: Action) => {
   const step = new Step('authBlock');
   const url = getServiceUIURL(req);
 

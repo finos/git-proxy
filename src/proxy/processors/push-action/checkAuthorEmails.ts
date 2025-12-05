@@ -1,7 +1,9 @@
+import { Request } from 'express';
+import { isEmail } from 'validator';
+
 import { Action, Step } from '../../actions';
 import { getCommitConfig } from '../../../config';
 import { CommitData } from '../types';
-import { isEmail } from 'validator';
 
 const isEmailAllowed = (email: string): boolean => {
   const commitConfig = getCommitConfig();
@@ -29,7 +31,7 @@ const isEmailAllowed = (email: string): boolean => {
   return true;
 };
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('checkAuthorEmails');
 
   const uniqueAuthorEmails = [

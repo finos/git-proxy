@@ -177,7 +177,7 @@ class ProxyPlugin {
  */
 class PushActionPlugin extends ProxyPlugin {
   isGitProxyPushActionPlugin: boolean;
-  exec: (req: any, action: Action) => Promise<any>;
+  exec: (req: Request, action: Action) => Promise<Action>;
 
   /**
    * Wrapper class which contains at least one function executed as part of the action chain for git push operations.
@@ -193,7 +193,7 @@ class PushActionPlugin extends ProxyPlugin {
    *   - Takes in an Action object as the second parameter (`action`).
    *   - Returns a Promise that resolves to an Action.
    */
-  constructor(exec: (req: any, action: Action) => Promise<any>) {
+  constructor(exec: (req: Request, action: Action) => Promise<Action>) {
     super();
     this.isGitProxyPushActionPlugin = true;
     this.exec = exec;
@@ -205,7 +205,7 @@ class PushActionPlugin extends ProxyPlugin {
  */
 class PullActionPlugin extends ProxyPlugin {
   isGitProxyPullActionPlugin: boolean;
-  exec: (req: any, action: Action) => Promise<any>;
+  exec: (req: Request, action: Action) => Promise<Action>;
 
   /**
    * Wrapper class which contains at least one function executed as part of the action chain for git pull operations.
@@ -221,7 +221,7 @@ class PullActionPlugin extends ProxyPlugin {
    *   - Takes in an Action object as the second parameter (`action`).
    *   - Returns a Promise that resolves to an Action.
    */
-  constructor(exec: (req: any, action: Action) => Promise<any>) {
+  constructor(exec: (req: Request, action: Action) => Promise<Action>) {
     super();
     this.isGitProxyPullActionPlugin = true;
     this.exec = exec;
