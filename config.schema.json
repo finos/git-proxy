@@ -434,6 +434,10 @@
                 "password": {
                   "type": "string",
                   "description": "Password for the given `username`."
+                },
+                "searchBase": {
+                  "type": "string",
+                  "description": "Override baseDN to query for users in other OUs or sub-trees."
                 }
               },
               "required": ["url", "baseDN", "username", "password"]
@@ -495,6 +499,14 @@
         "pattern": { "type": "string" },
         "adminOnly": { "type": "boolean" },
         "loginRequired": { "type": "boolean" }
+      }
+    },
+    "roleMapping": {
+      "type": "object",
+      "description": "Mapping of application roles to JWT claims. Each key is a role name, and its value is an object mapping claim names to expected values.",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": { "type": "string" }
       }
     }
   },

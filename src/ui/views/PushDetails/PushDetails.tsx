@@ -13,7 +13,7 @@ import TableBody from '@material-ui/core/TableBody';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
-import { authorisePush, cancelPush, getPush, rejectPush } from '../../services/git-push';
+import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/git-push';
 import Snackbar from '@material-ui/core/Snackbar';
 import { PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';

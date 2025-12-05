@@ -77,7 +77,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
  * @param {Function} done - The callback function to handle the user authentication
  * @return {Promise<void>} - A promise that resolves when the user authentication is complete
  */
-const handleUserAuthentication = async (
+export const handleUserAuthentication = async (
   userInfo: UserInfoResponse,
   done: (err: any, user?: any) => void,
 ): Promise<void> => {
