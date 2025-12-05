@@ -114,7 +114,7 @@ const Rejection: React.FC<RejectionProps> = ({ rejectFn }) => {
             <Button color='warning' onClick={handleClose}>
               Cancel
             </Button>
-            <Button color='danger' onClick={handleReject} disabled={!isFormValid}>
+            <Button color='danger' onClick={handleReject} disabled={!isFormValid()}>
               <Block /> Reject
             </Button>
           </DialogActions>
