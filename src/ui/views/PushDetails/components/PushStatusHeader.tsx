@@ -42,7 +42,7 @@ const PushStatusHeader: React.FC<PushStatusHeaderProps> = ({
 
   return (
     <CardHeader color={headerData.color} stats icon>
-      <StatusIcon status={headerData.title} color={headerData.title} />
+      <StatusIcon status={headerData.title} color={headerData.color} />
       {isPending && (
         <div style={{ display: 'inline-flex', padding: '20px' }}>
           <Button color='warning' onClick={onCancel}>
