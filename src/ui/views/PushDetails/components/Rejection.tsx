@@ -106,11 +106,10 @@ const Rejection: React.FC<RejectionProps> = ({ rejectFn }) => {
             placeholder='Please explain why this contribution is being rejected...'
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            style={{ marginBottom: '20px' }}
             required
             helperText={reason.trim().length === 0 ? 'Rejection reason is required.' : ' '}
           />
-          <DialogActions style={{ marginRight: '15px' }}>
+          <DialogActions>
             <Button color='warning' onClick={handleClose}>
               Cancel
             </Button>
