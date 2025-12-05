@@ -76,7 +76,9 @@ const Rejection: React.FC<RejectionProps> = ({ rejectFn }) => {
           <span className={classes.warningBox}>
             <div className={classes.warningHeader}>
               <ErrorOutline fontSize='medium' htmlColor='#c62828' />
-              <span className={classes.warningText}>You are about to reject this contribution</span>
+              <span className={classes.warningTitle}>
+                You are about to reject this contribution
+              </span>
             </div>
             <p className={classes.warningText}>
               This action will prevent this contribution from being published.
