@@ -46,10 +46,10 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
     }
 
     // For POST pack requests, use the raw body extracted by extractRawBody middleware
-    if (isPackPost(req) && (req as any).bodyRaw) {
-      (req as any).body = (req as any).bodyRaw;
+    if (isPackPost(req) && req.bodyRaw) {
+      req.body = req.bodyRaw;
       // Clean up the bodyRaw property before forwarding the request
-      delete (req as any).bodyRaw;
+      delete req.bodyRaw;
     }
 
     const action = await executeChain(req, res);
@@ -156,13 +156,13 @@ const extractRawBody = async (req: Request, res: Response, next: NextFunction) =
     highWaterMark: 4 * 1024 * 1024,
   });
 
-  req.pipe(proxyStream);
-  req.pipe(pluginStream);
+  req.customPipe?.(proxyStream);
+  req.customPipe?.(pluginStream);
 
   try {
     const buf = await getRawBody(pluginStream, { limit: '1gb' });
-    (req as any).bodyRaw = buf;
-    (req as any).pipe = (dest: any, opts: any) => proxyStream.pipe(dest, opts);
+    req.bodyRaw = buf;
+    req.customPipe = (dest, opts) => proxyStream.pipe(dest, opts);
     next();
   } catch (e) {
     console.error(e);
