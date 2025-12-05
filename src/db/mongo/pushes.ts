@@ -44,7 +44,7 @@ export const getPushes = async (
 };
 
 export const getPush = async (id: string): Promise<Action | null> => {
-  const doc = await findOneDocument<any>(collectionName, { id });
+  const doc = await findOneDocument<Action>(collectionName, { id });
   return doc ? (toClass(doc, Action.prototype) as Action) : null;
 };
 
@@ -64,7 +64,10 @@ export const writeAudit = async (action: Action): Promise<void> => {
   await collection.updateOne({ id: data.id }, { $set: data }, options);
 };
 
-export const authorise = async (id: string, attestation: any): Promise<{ message: string }> => {
+export const authorise = async (
+  id: string,
+  attestation?: Attestation,
+): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
