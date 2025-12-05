@@ -200,19 +200,14 @@ const Dashboard: React.FC = () => {
                         <UserLink username={push.attestation.reviewer.username}>
                           <img
                             style={{ width: '45px', borderRadius: '20px' }}
-                            src={`https://github.com/${push.attestation.reviewer.gitAccount}.png`}
+                            src={`https://github.com/${push.attestation.reviewer.username}.png`}
                           />
                         </UserLink>
                       )}
                       <div>
                         <p>
-                          {isGitHub && (
-                            <UserLink username={push.attestation.reviewer.username}>
-                              {push.attestation.reviewer.gitAccount}
-                            </UserLink>
-                          )}
-                          {!isGitHub && <UserLink username={push.attestation.reviewer.username} />}{' '}
-                          approved this contribution
+                          <UserLink username={push.attestation.reviewer.username} /> approved this
+                          contribution
                         </p>
                       </div>
                     </>

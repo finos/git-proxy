@@ -4,6 +4,7 @@ import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
 import { PushQuery } from '../types';
+import { Attestation } from '../../proxy/processors/types';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -98,7 +99,10 @@ export const writeAudit = async (action: Action): Promise<void> => {
   });
 };
 
-export const authorise = async (id: string, attestation: any): Promise<{ message: string }> => {
+export const authorise = async (
+  id: string,
+  attestation?: Attestation,
+): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -112,7 +116,10 @@ export const authorise = async (id: string, attestation: any): Promise<{ message
   return { message: `authorised ${id}` };
 };
 
-export const reject = async (id: string, attestation: any): Promise<{ message: string }> => {
+export const reject = async (
+  id: string,
+  attestation?: Attestation,
+): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);

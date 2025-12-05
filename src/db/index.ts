@@ -6,6 +6,7 @@ import * as mongo from './mongo';
 import * as neDb from './file';
 import { Action } from '../proxy/actions/Action';
 import MongoDBStore from 'connect-mongo';
+import { Attestation } from '../proxy/processors/types';
 
 let sink: Sink;
 if (config.getDatabase().type === 'mongo') {
@@ -146,10 +147,10 @@ export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => sink.
 export const writeAudit = (action: Action): Promise<void> => sink.writeAudit(action);
 export const getPush = (id: string): Promise<Action | null> => sink.getPush(id);
 export const deletePush = (id: string): Promise<void> => sink.deletePush(id);
-export const authorise = (id: string, attestation: any): Promise<{ message: string }> =>
+export const authorise = (id: string, attestation?: Attestation): Promise<{ message: string }> =>
   sink.authorise(id, attestation);
 export const cancel = (id: string): Promise<{ message: string }> => sink.cancel(id);
-export const reject = (id: string, attestation: any): Promise<{ message: string }> =>
+export const reject = (id: string, attestation?: Attestation): Promise<{ message: string }> =>
   sink.reject(id, attestation);
 export const getRepos = (query?: Partial<RepoQuery>): Promise<Repo[]> => sink.getRepos(query);
 export const getRepo = (name: string): Promise<Repo | null> => sink.getRepo(name);

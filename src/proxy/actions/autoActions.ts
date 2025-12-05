@@ -5,7 +5,12 @@ const attemptAutoApproval = async (action: Action) => {
   try {
     const attestation = {
       timestamp: new Date(),
-      autoApproved: true,
+      automated: true,
+      questions: [],
+      reviewer: {
+        username: 'system',
+        email: 'system@git-proxy.com',
+      },
     };
     await authorise(action.id, attestation);
     console.log('Push automatically approved by system.');
@@ -21,7 +26,12 @@ const attemptAutoRejection = async (action: Action) => {
   try {
     const attestation = {
       timestamp: new Date(),
-      autoApproved: true,
+      automated: true,
+      questions: [],
+      reviewer: {
+        username: 'system',
+        email: 'system@git-proxy.com',
+      },
     };
     await reject(action.id, attestation);
     console.log('Push automatically rejected by system.');

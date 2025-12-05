@@ -2,6 +2,7 @@ import { connect, findDocuments, findOneDocument } from './helper';
 import { Action } from '../../proxy/actions';
 import { toClass } from '../helper';
 import { PushQuery } from '../types';
+import { Attestation } from '../../proxy/processors/types';
 
 const collectionName = 'pushes';
 
@@ -77,7 +78,10 @@ export const authorise = async (id: string, attestation: any): Promise<{ message
   return { message: `authorised ${id}` };
 };
 
-export const reject = async (id: string, attestation: any): Promise<{ message: string }> => {
+export const reject = async (
+  id: string,
+  attestation?: Attestation,
+): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);

@@ -71,7 +71,7 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
   const isAllowed = await db.canUserApproveRejectPush(id, username);
 
   if (isAllowed) {
-    const result = await db.reject(id, null);
+    const result = await db.reject(id);
     console.log(`user ${username} rejected push request for ${id}`);
     res.send(result);
   } else {
@@ -143,7 +143,7 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
         timestamp: new Date(),
         reviewer: {
           username,
-          reviewerEmail,
+          email: reviewerEmail,
         },
       };
       const result = await db.authorise(id, attestation);
