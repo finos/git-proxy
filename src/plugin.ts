@@ -1,3 +1,5 @@
+import { Request } from 'express';
+
 import { Action } from './proxy/actions';
 
 const lpModule = import('load-plugin');

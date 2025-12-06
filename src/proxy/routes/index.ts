@@ -156,13 +156,13 @@ const extractRawBody = async (req: Request, res: Response, next: NextFunction) =
     highWaterMark: 4 * 1024 * 1024,
   });
 
-  req.customPipe?.(proxyStream);
-  req.customPipe?.(pluginStream);
+  req.pipe(proxyStream);
+  req.pipe(pluginStream);
 
   try {
     const buf = await getRawBody(pluginStream, { limit: '1gb' });
     req.bodyRaw = buf;
-    req.customPipe = (dest, opts) => proxyStream.pipe(dest, opts);
+    req.pipe = (dest, opts) => proxyStream.pipe(dest, opts);
     next();
   } catch (e) {
     console.error(e);
