@@ -14,8 +14,12 @@ if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 // export for testing purposes
-export const db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
-
+export let db: Datastore;
+if (process.env.NODE_ENV === 'test') {
+  db = new Datastore({ inMemoryOnly: true, autoload: true });
+} else {
+  db = new Datastore({ filename: './.data/db/repos.db', autoload: true });
+}
 try {
   db.ensureIndex({ fieldName: 'url', unique: true });
 } catch (e) {
