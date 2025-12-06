@@ -112,7 +112,7 @@ export const authorise = async (id: string, attestation: any): Promise<{ message
   return { message: `authorised ${id}` };
 };
 
-export const reject = async (id: string, attestation: any): Promise<{ message: string }> => {
+export const reject = async (id: string, rejection: any): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -121,7 +121,7 @@ export const reject = async (id: string, attestation: any): Promise<{ message: s
   action.authorised = false;
   action.canceled = false;
   action.rejected = true;
-  action.attestation = attestation;
+  action.rejection = rejection;
   await writeAudit(action);
   return { message: `reject ${id}` };
 };

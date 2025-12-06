@@ -30,86 +30,54 @@ const getPush = async (
 };
 
 const getPushes = async (
-  setIsLoading: (isLoading: boolean) => void,
-  setPushes: (pushes: PushActionView[]) => void,
-  setAuth: (auth: boolean) => void,
-  setIsError: (isError: boolean) => void,
-  setErrorMessage: (errorMessage: string) => void,
   query = {
     blocked: true,
     canceled: false,
     authorised: false,
     rejected: false,
   },
-): Promise<void> => {
+): Promise<PushActionView[]> => {
   const url = new URL(`${API_V1_BASE}/push`);
   url.search = new URLSearchParams(query as any).toString();
 
-  setIsLoading(true);
-
-  try {
-    const response = await axios<Action[]>(url.toString(), getAxiosConfig());
-    setPushes(response.data as PushActionView[]);
-  } catch (error: any) {
-    setIsError(true);
-
-    if (error.response?.status === 401) {
-      setAuth(false);
-      setErrorMessage(processAuthError(error));
-    } else {
-      const message = error.response?.data?.message || error.message;
-      setErrorMessage(`Error fetching pushes: ${message}`);
-    }
-  } finally {
-    setIsLoading(false);
-  }
+  const response = await axios<Action[]>(url.toString(), getAxiosConfig());
+  return response.data as PushActionView[];
 };
 
 const authorisePush = async (
   id: string,
   setMessage: (message: string) => void,
-  setUserAllowedToApprove: (userAllowedToApprove: boolean) => void,
   attestation: Array<{ label: string; checked: boolean }>,
-): Promise<void> => {
+): Promise<boolean> => {
   const url = `${API_V1_BASE}/push/${id}/authorise`;
   let errorMsg = '';
-  let isUserAllowedToApprove = true;
-  await axios
-    .post(
-      url,
-      {
-        params: {
-          attestation,
-        },
-      },
-      getAxiosConfig(),
-    )
-    .catch((error: any) => {
-      if (error.response && error.response.status === 401) {
-        errorMsg = 'You are not authorised to approve...';
-        isUserAllowedToApprove = false;
-      }
-    });
+  let success = true;
+  await axios.post(url, { params: { attestation } }, getAxiosConfig()).catch((error: any) => {
+    if (error.response && error.response.status === 401) {
+      errorMsg = 'You are not authorised to approve...';
+      success = false;
+    }
+  });
   setMessage(errorMsg);
-  setUserAllowedToApprove(isUserAllowedToApprove);
+  return success;
 };
 
 const rejectPush = async (
   id: string,
   setMessage: (message: string) => void,
-  setUserAllowedToReject: (userAllowedToReject: boolean) => void,
-): Promise<void> => {
+  rejection: { reason: string },
+): Promise<boolean> => {
   const url = `${API_V1_BASE}/push/${id}/reject`;
   let errorMsg = '';
-  let isUserAllowedToReject = true;
-  await axios.post(url, {}, getAxiosConfig()).catch((error: any) => {
+  let success = true;
+  await axios.post(url, { params: rejection }, getAxiosConfig()).catch((error: any) => {
     if (error.response && error.response.status === 401) {
       errorMsg = 'You are not authorised to reject...';
-      isUserAllowedToReject = false;
+      success = false;
     }
   });
   setMessage(errorMsg);
-  setUserAllowedToReject(isUserAllowedToReject);
+  return success;
 };
 
 const cancelPush = async (
