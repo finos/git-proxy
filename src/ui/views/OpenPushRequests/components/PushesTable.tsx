@@ -20,7 +20,11 @@ import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../../db/helper';
 import { generateAuthorLinks, generateEmailLink } from '../../../utils';
 
 interface PushesTableProps {
-  [key: string]: any;
+  blocked?: boolean;
+  canceled?: boolean;
+  authorised?: boolean;
+  rejected?: boolean;
+  handleError: (error: string) => void;
 }
 
 const useStyles = makeStyles(styles as any);

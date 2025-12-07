@@ -1,3 +1,5 @@
+import { CSSProperties } from '@material-ui/core/styles/withStyles';
+
 import { Action } from '../proxy/actions';
 import { Step } from '../proxy/actions/Step';
 import { Repo } from '../db/types';
@@ -89,3 +91,5 @@ export interface SCMRepositoryMetadata {
   profileUrl?: string;
   avatarUrl?: string;
 }
+
+export type CSSProperty = React.CSSProperties | CSSProperties;

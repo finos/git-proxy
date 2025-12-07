@@ -43,7 +43,11 @@ const getPushes = async (
   },
 ): Promise<void> => {
   const url = new URL(`${API_V1_BASE}/push`);
-  url.search = new URLSearchParams(query as any).toString();
+
+  const stringifiedQuery = Object.fromEntries(
+    Object.entries(query).map(([key, value]) => [key, value.toString()]),
+  );
+  url.search = new URLSearchParams(stringifiedQuery).toString();
 
   setIsLoading(true);
 

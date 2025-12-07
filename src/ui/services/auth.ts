@@ -44,7 +44,7 @@ export const getAxiosConfig = (): AxiosConfig => {
 /**
  * Processes authentication errors and returns a user-friendly error message
  */
-export const processAuthError = (error: AxiosError<any>, jwtAuthEnabled = false): string => {
+export const processAuthError = (error: AxiosError<string>, jwtAuthEnabled = false): string => {
   let errorMessage = `Failed to authorize user: ${error.response?.data?.trim() ?? ''}. `;
   if (jwtAuthEnabled && !localStorage.getItem('ui_jwt_token')) {
     errorMessage +=

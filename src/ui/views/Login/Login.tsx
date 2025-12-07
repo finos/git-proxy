@@ -74,7 +74,7 @@ const Login: React.FC = () => {
         setSuccess(true);
         authContext.refreshUser().then(() => navigate(0));
       })
-      .catch((error: AxiosError) => {
+      .catch((error: AxiosError<string>) => {
         if (error.response?.status === 307) {
           window.sessionStorage.setItem('git.proxy.login', 'success');
           setGitAccountError(true);

@@ -55,7 +55,7 @@ const getUsers = async (
         setAuth(false);
         setErrorMessage(processAuthError(error));
       } else {
-        const msg = (error.response?.data as any)?.message ?? error.message;
+        const msg = error.response?.data?.message ?? error.message;
         setErrorMessage(`Error fetching users: ${msg}`);
       }
     } else {
@@ -70,10 +70,11 @@ const updateUser = async (user: PublicUser): Promise<void> => {
   console.log(user);
   try {
     await axios.post(`${API_BASE}/api/auth/gitAccount`, user, getAxiosConfig());
-  } catch (error) {
-    const axiosError = error as AxiosError;
-    if (axiosError.response) {
-      console.log((axiosError.response.data as any).message);
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      console.log(error.response?.data?.message);
+    } else {
+      console.log(`Error updating user: ${error}`);
     }
     throw error;
   }

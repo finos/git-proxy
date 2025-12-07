@@ -36,10 +36,10 @@ const getRepos = async (
   setAuth: (auth: boolean) => void,
   setIsError: (isError: boolean) => void,
   setErrorMessage: (errorMessage: string) => void,
-  query: Record<string, boolean> = {},
+  query: Record<string, string> = {},
 ): Promise<void> => {
   const url = new URL(`${API_V1_BASE}/repo`);
-  url.search = new URLSearchParams(query as any).toString();
+  url.search = new URLSearchParams(query).toString();
   setIsLoading(true);
   await axios<RepoView[]>(url.toString(), getAxiosConfig())
     .then((response) => {
