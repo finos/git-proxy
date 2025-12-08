@@ -6,8 +6,6 @@ import { hideBin } from 'yargs/helpers';
 import * as fs from 'fs';
 import { configFile, setConfigFile, validate } from './src/config/file';
 import { initUserConfig } from './src/config';
-import Proxy from './src/proxy';
-import service from './src/service';
 
 const argv = yargs(hideBin(process.argv))
   .usage('Usage: $0 [options]')
@@ -47,6 +45,10 @@ if (argv.v) {
 }
 
 validate();
+
+//defer imports until after the config file has been set and loaded, or we'll pick up default config
+import Proxy from './src/proxy';
+import service from './src/service';
 
 const proxy = new Proxy();
 proxy.start();
