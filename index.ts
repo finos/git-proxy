@@ -6,8 +6,8 @@ import { hideBin } from 'yargs/helpers';
 import * as fs from 'fs';
 import { getConfigFile, setConfigFile, validate } from './src/config/file';
 import { initUserConfig } from './src/config';
-import * as Proxy from './src/proxy';
-import * as Service from './src/service';
+import { Proxy } from './src/proxy';
+import { Service } from './src/service';
 
 console.log('handling commandline args');
 const argv = yargs(hideBin(process.argv))
@@ -55,8 +55,8 @@ validate();
 console.log('Setting up the proxy and Service');
 
 // The deferred imports should cause these to be loaded on first access
-const proxy = new Proxy.Proxy();
+const proxy = new Proxy();
 proxy.start();
-Service.Service.start(proxy);
+Service.start(proxy);
 
 export { proxy, Service };

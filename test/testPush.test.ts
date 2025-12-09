@@ -1,8 +1,8 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import * as db from '../src/db';
-import service from '../src/service';
-import Proxy from '../src/proxy';
+import { Service } from '../src/service';
+import { Proxy } from '../src/proxy';
 import { Express } from 'express';
 
 // dummy repo
@@ -89,7 +89,7 @@ describe('Push API', () => {
     await db.deleteUser(TEST_USERNAME_2);
 
     const proxy = new Proxy();
-    app = await service.start(proxy);
+    app = await Service.start(proxy);
     await loginAsAdmin();
 
     // set up a repo, user and push to test against
@@ -117,7 +117,7 @@ describe('Push API', () => {
     await db.deleteUser(TEST_USERNAME_2);
 
     vi.resetModules();
-    service.httpServer.close();
+    Service.httpServer.close();
   });
 
   describe('test push API', () => {
@@ -341,7 +341,7 @@ describe('Push API', () => {
     const res = await request(app).post('/api/auth/logout').set('Cookie', `${cookie}`);
     expect(res.status).toBe(200);
 
-    await service.httpServer.close();
+    await Service.httpServer.close();
     await db.deleteRepo(TEST_REPO);
     await db.deleteUser(TEST_USERNAME_1);
     await db.deleteUser(TEST_USERNAME_2);
