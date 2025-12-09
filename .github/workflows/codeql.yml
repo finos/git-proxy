@@ -51,31 +51,30 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2 # v2
+        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2 # ratchet:step-security/harden-runner@v2.13.3
         with:
           egress-policy: audit
 
       - name: Checkout repository
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # ratchet:actions/checkout@v6.0.1
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@497990dfed22177a82ba1bbab381bc8f6d27058f # v3
+        uses: github/codeql-action/init@267c4672a565967e4531438f2498370de5e8a98d # ratchet:github/codeql-action/init@codeql-bundle-v2.23.7
         with:
           languages: ${{ matrix.language }}
           # If you wish to specify custom queries, you can do so here or in a config file.
           # By default, queries listed here will override any specified in a config file.
           # Prefix the list here with "+" to use these queries and those in the config file.
 
-          # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
-          # queries: security-extended,security-and-quality
-
       # Autobuild attempts to build any compiled languages (C/C++, C#, Go, Java, or Swift).
       # If this step fails, then you should remove it and run the build manually (see below)
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@497990dfed22177a82ba1bbab381bc8f6d27058f # v3
 
-      # ℹ️ Command-line programs to run using the OS shell.
+      - name: Autobuild
+        # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+        # queries: security-extended,security-and-quality
+
+        uses: github/codeql-action/autobuild@bffd034ab1518ad839a542b8a7356e13a240e076 # ratchet:github/codeql-action/autobuild@v3.31.7
       # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
 
       #   If the Autobuild fails above, remove it and uncomment the following three lines.
@@ -84,8 +83,8 @@ jobs:
       # - run: |
       #     echo "Run, Build Application using script"
       #     ./location_of_script_within_repo/buildscript.sh
-
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@497990dfed22177a82ba1bbab381bc8f6d27058f # v3
+        # ℹ️ Command-line programs to run using the OS shell.
+        uses: github/codeql-action/analyze@bffd034ab1518ad839a542b8a7356e13a240e076 # ratchet:github/codeql-action/analyze@v3.31.7
         with:
           category: '/language:${{matrix.language}}'
