@@ -9,7 +9,7 @@ import lusca from 'lusca';
 import * as config from '../config';
 import * as db from '../db';
 import { serverConfig } from '../config/env';
-import Proxy from '../proxy';
+import { Proxy } from '../proxy';
 import routes from './routes';
 import { configure } from './passport';
 
@@ -109,7 +109,7 @@ async function stop() {
   _httpServer.close();
 }
 
-export default {
+export const Service = {
   start,
   stop,
   httpServer: _httpServer,
