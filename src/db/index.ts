@@ -7,25 +7,26 @@ import * as neDb from './file';
 import { Action } from '../proxy/actions/Action';
 import MongoDBStore from 'connect-mongo';
 import { processGitUrl } from '../proxy/routes/helper';
+import { initializeFolders } from './file/helper';
 
-let _sink: Sink;
-let started = false;
+let _sink: Sink | null = null;
 
-/** The start function must be called before you attempt to use the DB adaptor.
- * We read the database config on start.
+/** The start function is before any attempt to use the DB adaptor and causes the configuration
+ * to be read. This allows the read of the config to be deferred, otherwise it will occur on
+ * import.
  */
 const start = () => {
-  if (!started) {
+  if (!_sink) {
     if (config.getDatabase().type === 'mongo') {
-      console.log('> Loading MongoDB database adaptor');
+      console.log('Loading MongoDB database adaptor');
       _sink = mongo;
     } else if (config.getDatabase().type === 'fs') {
-      console.log('> Loading neDB database adaptor');
+      console.log('Loading neDB database adaptor');
+      initializeFolders();
       _sink = neDb;
     }
-    started = true;
   }
-  return _sink;
+  return _sink!;
 };
 
 const isBlank = (str: string) => {
