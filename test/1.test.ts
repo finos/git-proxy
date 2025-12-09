@@ -10,9 +10,9 @@
 
 import { describe, it, beforeAll, afterAll, beforeEach, afterEach, expect, vi } from 'vitest';
 import request from 'supertest';
-import service from '../src/service';
+import { Service } from '../src/service';
 import * as db from '../src/db';
-import Proxy from '../src/proxy';
+import { Proxy } from '../src/proxy';
 
 // Create constants for values used in multiple tests
 const TEST_REPO = {
@@ -29,7 +29,7 @@ describe('init', () => {
   beforeAll(async function () {
     // Starts the service and returns the express app
     const proxy = new Proxy();
-    app = await service.start(proxy);
+    app = await Service.start(proxy);
   });
 
   // Runs before each test
@@ -52,7 +52,7 @@ describe('init', () => {
   // Runs after all tests
   afterAll(function () {
     // Must close the server to avoid EADDRINUSE errors when running tests in parallel
-    service.httpServer.close();
+    Service.httpServer.close();
   });
 
   // Example test: check server is running

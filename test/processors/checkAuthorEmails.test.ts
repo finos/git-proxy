@@ -3,7 +3,7 @@ import { exec } from '../../src/proxy/processors/push-action/checkAuthorEmails';
 import { Action } from '../../src/proxy/actions';
 import * as configModule from '../../src/config';
 import * as validator from 'validator';
-import { Commit } from '../../src/proxy/actions/Action';
+import { CommitData } from '../../src/proxy/actions/Action';
 
 // mock dependencies
 vi.mock('../../src/config', async (importOriginal) => {
@@ -66,8 +66,8 @@ describe('checkAuthorEmails', () => {
     describe('basic email validation', () => {
       it('should allow valid email addresses', async () => {
         mockAction.commitData = [
-          { authorEmail: 'john.doe@example.com' } as Commit,
-          { authorEmail: 'jane.smith@company.org' } as Commit,
+          { authorEmail: 'john.doe@example.com' } as CommitData,
+          { authorEmail: 'jane.smith@company.org' } as CommitData,
         ];
 
         const result = await exec(mockReq, mockAction);
@@ -78,7 +78,7 @@ describe('checkAuthorEmails', () => {
       });
 
       it('should reject empty email', async () => {
-        mockAction.commitData = [{ authorEmail: '' } as Commit];
+        mockAction.commitData = [{ authorEmail: '' } as CommitData];
 
         const result = await exec(mockReq, mockAction);
 
@@ -88,7 +88,7 @@ describe('checkAuthorEmails', () => {
 
       it('should reject null/undefined email', async () => {
         vi.mocked(validator.isEmail).mockReturnValue(false);
-        mockAction.commitData = [{ authorEmail: null as any } as Commit];
+        mockAction.commitData = [{ authorEmail: null as any } as CommitData];
 
         const result = await exec(mockReq, mockAction);
 
@@ -99,9 +99,9 @@ describe('checkAuthorEmails', () => {
       it('should reject invalid email format', async () => {
         vi.mocked(validator.isEmail).mockReturnValue(false);
         mockAction.commitData = [
-          { authorEmail: 'not-an-email' } as Commit,
-          { authorEmail: 'missing@domain' } as Commit,
-          { authorEmail: '@nodomain.com' } as Commit,
+          { authorEmail: 'not-an-email' } as CommitData,
+          { authorEmail: 'missing@domain' } as CommitData,
+          { authorEmail: '@nodomain.com' } as CommitData,
         ];
 
         const result = await exec(mockReq, mockAction);
@@ -127,8 +127,8 @@ describe('checkAuthorEmails', () => {
         } as any);
 
         mockAction.commitData = [
-          { authorEmail: 'user@example.com' } as Commit,
-          { authorEmail: 'admin@company.org' } as Commit,
+          { authorEmail: 'user@example.com' } as CommitData,
+          { authorEmail: 'admin@company.org' } as CommitData,
         ];
 
         const result = await exec(mockReq, mockAction);
@@ -152,8 +152,8 @@ describe('checkAuthorEmails', () => {
         } as any);
 
         mockAction.commitData = [
-          { authorEmail: 'user@notallowed.com' } as Commit,
-          { authorEmail: 'admin@different.org' } as Commit,
+          { authorEmail: 'user@notallowed.com' } as CommitData,
+          { authorEmail: 'admin@different.org' } as CommitData,
         ];
 
         const result = await exec(mockReq, mockAction);
@@ -177,8 +177,8 @@ describe('checkAuthorEmails', () => {
         } as any);
 
         mockAction.commitData = [
-          { authorEmail: 'user@subdomain.example.com' } as Commit,
-          { authorEmail: 'user@example.com.fake.org' } as Commit,
+          { authorEmail: 'user@subdomain.example.com' } as CommitData,
+          { authorEmail: 'user@example.com.fake.org' } as CommitData,
         ];
 
         const result = await exec(mockReq, mockAction);
@@ -203,8 +203,8 @@ describe('checkAuthorEmails', () => {
         } as any);
 
         mockAction.commitData = [
-          { authorEmail: 'user@anydomain.com' } as Commit,
-          { authorEmail: 'admin@otherdomain.org' } as Commit,
+          { authorEmail: 'user@anydomain.com' } as CommitData,
+          { authorEmail: 'admin@otherdomain.org' } as CommitData,
         ];
 
         const result = await exec(mockReq, mockAction);
@@ -230,8 +230,8 @@ describe('checkAuthorEmails', () => {
         } as any);
 
         mockAction.commitData = [
-          { authorEmail: 'noreply@example.com' } as Commit,
-          { authorEmail: 'donotreply@company.org' } as Commit,
+          { authorEmail: 'noreply@example.com' } as CommitData,
+          { authorEmail: 'donotreply@company.org' } as CommitData,
         ];
 
         const result = await exec(mockReq, mockAction);
@@ -255,8 +255,8 @@ describe('checkAuthorEmails', () => {
         } as any);
 
         mockAction.commitData = [
-          { authorEmail: 'john.doe@example.com' } as Commit,
-          { authorEmail: 'valid.user@company.org' } as Commit,
+          { authorEmail: 'john.doe@example.com' } as CommitData,
+          { authorEmail: 'valid.user@company.org' } as CommitData,
         ];
 
         const result = await exec(mockReq, mockAction);
@@ -280,9 +280,9 @@ describe('checkAuthorEmails', () => {
         } as any);
 
         mockAction.commitData = [
-          { authorEmail: 'test@example.com' } as Commit,
-          { authorEmail: 'temporary@example.com' } as Commit,
-          { authorEmail: 'fakeuser@example.com' } as Commit,
+          { authorEmail: 'test@example.com' } as CommitData,
+          { authorEmail: 'temporary@example.com' } as CommitData,
+          { authorEmail: 'fakeuser@example.com' } as CommitData,
         ];
 
         const result = await exec(mockReq, mockAction);
@@ -306,8 +306,8 @@ describe('checkAuthorEmails', () => {
         } as any);
 
         mockAction.commitData = [
-          { authorEmail: 'noreply@example.com' } as Commit,
-          { authorEmail: 'anything@example.com' } as Commit,
+          { authorEmail: 'noreply@example.com' } as CommitData,
+          { authorEmail: 'anything@example.com' } as CommitData,
         ];
 
         const result = await exec(mockReq, mockAction);
@@ -333,9 +333,9 @@ describe('checkAuthorEmails', () => {
         } as any);
 
         mockAction.commitData = [
-          { authorEmail: 'valid@example.com' } as Commit, // valid
-          { authorEmail: 'noreply@example.com' } as Commit, // invalid: blocked local
-          { authorEmail: 'valid@otherdomain.com' } as Commit, // invalid: wrong domain
+          { authorEmail: 'valid@example.com' } as CommitData, // valid
+          { authorEmail: 'noreply@example.com' } as CommitData, // invalid: blocked local
+          { authorEmail: 'valid@otherdomain.com' } as CommitData, // invalid: wrong domain
         ];
 
         const result = await exec(mockReq, mockAction);
@@ -348,7 +348,7 @@ describe('checkAuthorEmails', () => {
 
   describe('exec function behavior', () => {
     it('should create a step with name "checkAuthorEmails"', async () => {
-      mockAction.commitData = [{ authorEmail: 'user@example.com' } as Commit];
+      mockAction.commitData = [{ authorEmail: 'user@example.com' } as CommitData];
 
       await exec(mockReq, mockAction);
 
@@ -361,11 +361,11 @@ describe('checkAuthorEmails', () => {
 
     it('should handle unique author emails correctly', async () => {
       mockAction.commitData = [
-        { authorEmail: 'user1@example.com' } as Commit,
-        { authorEmail: 'user2@example.com' } as Commit,
-        { authorEmail: 'user1@example.com' } as Commit, // Duplicate
-        { authorEmail: 'user3@example.com' } as Commit,
-        { authorEmail: 'user2@example.com' } as Commit, // Duplicate
+        { authorEmail: 'user1@example.com' } as CommitData,
+        { authorEmail: 'user2@example.com' } as CommitData,
+        { authorEmail: 'user1@example.com' } as CommitData, // Duplicate
+        { authorEmail: 'user3@example.com' } as CommitData,
+        { authorEmail: 'user2@example.com' } as CommitData, // Duplicate
       ];
 
       await exec(mockReq, mockAction);
@@ -395,15 +395,15 @@ describe('checkAuthorEmails', () => {
 
     it('should log error message when illegal emails found', async () => {
       vi.mocked(validator.isEmail).mockReturnValue(false);
-      mockAction.commitData = [{ authorEmail: 'invalid-email' } as Commit];
+      mockAction.commitData = [{ authorEmail: 'invalid-email' } as CommitData];
 
       await exec(mockReq, mockAction);
     });
 
     it('should log success message when all emails are legal', async () => {
       mockAction.commitData = [
-        { authorEmail: 'user1@example.com' } as Commit,
-        { authorEmail: 'user2@example.com' } as Commit,
+        { authorEmail: 'user1@example.com' } as CommitData,
+        { authorEmail: 'user2@example.com' } as CommitData,
       ];
 
       await exec(mockReq, mockAction);
@@ -415,7 +415,7 @@ describe('checkAuthorEmails', () => {
 
     it('should set error on step when illegal emails found', async () => {
       vi.mocked(validator.isEmail).mockReturnValue(false);
-      mockAction.commitData = [{ authorEmail: 'bad@email' } as Commit];
+      mockAction.commitData = [{ authorEmail: 'bad@email' } as CommitData];
 
       await exec(mockReq, mockAction);
 
@@ -425,7 +425,7 @@ describe('checkAuthorEmails', () => {
 
     it('should call step.setError with user-friendly message', async () => {
       vi.mocked(validator.isEmail).mockReturnValue(false);
-      mockAction.commitData = [{ authorEmail: 'bad' } as Commit];
+      mockAction.commitData = [{ authorEmail: 'bad' } as CommitData];
 
       await exec(mockReq, mockAction);
 
@@ -437,7 +437,7 @@ describe('checkAuthorEmails', () => {
     });
 
     it('should return the action object', async () => {
-      mockAction.commitData = [{ authorEmail: 'user@example.com' } as Commit];
+      mockAction.commitData = [{ authorEmail: 'user@example.com' } as CommitData];
 
       const result = await exec(mockReq, mockAction);
 
@@ -446,9 +446,9 @@ describe('checkAuthorEmails', () => {
 
     it('should handle mixed valid and invalid emails', async () => {
       mockAction.commitData = [
-        { authorEmail: 'valid@example.com' } as Commit,
-        { authorEmail: 'invalid' } as Commit,
-        { authorEmail: 'also.valid@example.com' } as Commit,
+        { authorEmail: 'valid@example.com' } as CommitData,
+        { authorEmail: 'invalid' } as CommitData,
+        { authorEmail: 'also.valid@example.com' } as CommitData,
       ];
 
       vi.mocked(validator.isEmail).mockImplementation((email: string) => {
@@ -471,7 +471,7 @@ describe('checkAuthorEmails', () => {
   describe('edge cases', () => {
     it('should handle email with multiple @ symbols', async () => {
       vi.mocked(validator.isEmail).mockReturnValue(false);
-      mockAction.commitData = [{ authorEmail: 'user@@example.com' } as Commit];
+      mockAction.commitData = [{ authorEmail: 'user@@example.com' } as CommitData];
 
       const result = await exec(mockReq, mockAction);
 
@@ -481,7 +481,7 @@ describe('checkAuthorEmails', () => {
 
     it('should handle email without domain', async () => {
       vi.mocked(validator.isEmail).mockReturnValue(false);
-      mockAction.commitData = [{ authorEmail: 'user@' } as Commit];
+      mockAction.commitData = [{ authorEmail: 'user@' } as CommitData];
 
       const result = await exec(mockReq, mockAction);
 
@@ -492,7 +492,7 @@ describe('checkAuthorEmails', () => {
     it('should handle very long email addresses', async () => {
       const longLocal = 'a'.repeat(64);
       const longEmail = `${longLocal}@example.com`;
-      mockAction.commitData = [{ authorEmail: longEmail } as Commit];
+      mockAction.commitData = [{ authorEmail: longEmail } as CommitData];
 
       const result = await exec(mockReq, mockAction);
 
@@ -501,9 +501,9 @@ describe('checkAuthorEmails', () => {
 
     it('should handle special characters in local part', async () => {
       mockAction.commitData = [
-        { authorEmail: 'user+tag@example.com' } as Commit,
-        { authorEmail: 'user.name@example.com' } as Commit,
-        { authorEmail: 'user_name@example.com' } as Commit,
+        { authorEmail: 'user+tag@example.com' } as CommitData,
+        { authorEmail: 'user.name@example.com' } as CommitData,
+        { authorEmail: 'user_name@example.com' } as CommitData,
       ];
 
       const result = await exec(mockReq, mockAction);
@@ -527,8 +527,8 @@ describe('checkAuthorEmails', () => {
       } as any);
 
       mockAction.commitData = [
-        { authorEmail: 'user@EXAMPLE.COM' } as Commit,
-        { authorEmail: 'user@Example.Com' } as Commit,
+        { authorEmail: 'user@EXAMPLE.COM' } as CommitData,
+        { authorEmail: 'user@Example.Com' } as CommitData,
       ];
 
       const result = await exec(mockReq, mockAction);

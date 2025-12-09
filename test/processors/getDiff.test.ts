@@ -5,7 +5,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import fc from 'fast-check';
 import { Action } from '../../src/proxy/actions';
 import { exec } from '../../src/proxy/processors/push-action/getDiff';
-import { Commit } from '../../src/proxy/actions/Action';
+import { CommitData } from '../../src/proxy/processors/types';
 
 describe('getDiff', () => {
   let tempDir: string;
@@ -40,7 +40,7 @@ describe('getDiff', () => {
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
     action.commitTo = 'HEAD';
-    action.commitData = [{ parent: '0000000000000000000000000000000000000000' } as Commit];
+    action.commitData = [{ parent: '0000000000000000000000000000000000000000' } as CommitData];
 
     const result = await exec({}, action);
 
@@ -55,7 +55,7 @@ describe('getDiff', () => {
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
     action.commitTo = 'HEAD';
-    action.commitData = [{ parent: '0000000000000000000000000000000000000000' } as Commit];
+    action.commitData = [{ parent: '0000000000000000000000000000000000000000' } as CommitData];
 
     const result = await exec({}, action);
 
@@ -108,7 +108,7 @@ describe('getDiff', () => {
     action.repoName = path.basename(tempDir);
     action.commitFrom = '0000000000000000000000000000000000000000';
     action.commitTo = headCommit;
-    action.commitData = [{ parent: parentCommit } as Commit];
+    action.commitData = [{ parent: parentCommit } as CommitData];
 
     const result = await exec({}, action);
 
@@ -156,7 +156,9 @@ describe('getDiff', () => {
             action.repoName = 'temp-test-repo';
             action.commitFrom = from;
             action.commitTo = to;
-            action.commitData = [{ parent: '0000000000000000000000000000000000000000' } as Commit];
+            action.commitData = [
+              { parent: '0000000000000000000000000000000000000000' } as CommitData,
+            ];
 
             const result = await exec({}, action);
 
