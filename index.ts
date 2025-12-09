@@ -9,7 +9,6 @@ import { initUserConfig } from './src/config';
 import { Proxy } from './src/proxy';
 import { Service } from './src/service';
 
-console.log('handling commandline args');
 const argv = yargs(hideBin(process.argv))
   .usage('Usage: $0 [options]')
   .options({
