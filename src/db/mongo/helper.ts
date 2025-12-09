@@ -2,13 +2,14 @@ import { MongoClient, Db, Collection, Filter, Document, FindOptions } from 'mong
 import { getDatabase } from '../../config';
 import MongoDBStore from 'connect-mongo';
 
-const dbConfig = getDatabase();
-const connectionString = dbConfig.connectionString;
-const options = dbConfig.options;
-
 let _db: Db | null = null;
 
 export const connect = async (collectionName: string): Promise<Collection> => {
+  //retrieve config at point of use (rather than import)
+  const dbConfig = getDatabase();
+  const connectionString = dbConfig.connectionString;
+  const options = dbConfig.options;
+
   if (!_db) {
     if (!connectionString) {
       throw new Error('MongoDB connection string is not provided');
@@ -41,6 +42,10 @@ export const findOneDocument = async <T>(
 };
 
 export const getSessionStore = () => {
+  //retrieve config at point of use (rather than import)
+  const dbConfig = getDatabase();
+  const connectionString = dbConfig.connectionString;
+  const options = dbConfig.options;
   return new MongoDBStore({
     mongoUrl: connectionString,
     collectionName: 'user_session',
