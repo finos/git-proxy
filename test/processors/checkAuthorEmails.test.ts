@@ -3,7 +3,7 @@ import { exec } from '../../src/proxy/processors/push-action/checkAuthorEmails';
 import { Action } from '../../src/proxy/actions';
 import * as configModule from '../../src/config';
 import * as validator from 'validator';
-import { CommitData } from '../../src/proxy/actions/Action';
+import { CommitData } from '../../src/proxy/processors/types';
 
 // mock dependencies
 vi.mock('../../src/config', async (importOriginal) => {

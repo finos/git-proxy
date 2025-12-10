@@ -3,7 +3,6 @@ import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
 import { PushQuery } from '../types';
-import { initializeFolders } from './helper';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 

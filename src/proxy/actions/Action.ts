@@ -151,4 +151,4 @@ class Action {
   }
 }
 
-export { Action, CommitData };
+export { Action };

@@ -24,9 +24,12 @@ const start = () => {
       console.log('Loading neDB database adaptor');
       initializeFolders();
       _sink = neDb;
+    } else {
+      console.error(`Unsupported database type: ${config.getDatabase().type}`);
+      process.exit(1);
     }
   }
-  return _sink!;
+  return _sink;
 };
 
 const isBlank = (str: string) => {
@@ -97,8 +100,6 @@ export const createRepo = async (repo: AuthorisedRepo) => {
     },
   };
   toCreate.name = repo.name.toLowerCase();
-
-  start();
 
   console.log(`creating new repo ${JSON.stringify(toCreate)}`);
 
