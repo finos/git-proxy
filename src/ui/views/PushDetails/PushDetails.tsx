@@ -1,31 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import moment from 'moment';
 import { useNavigate, useParams } from 'react-router-dom';
-import Icon from '@material-ui/core/Icon';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
 import Card from '../../components/Card/Card';
-import CardIcon from '../../components/Card/CardIcon';
 import CardBody from '../../components/Card/CardBody';
 import CardHeader, { CardHeaderColor } from '../../components/Card/CardHeader';
 import CardFooter from '../../components/Card/CardFooter';
-import Button from '../../components/CustomButtons/Button';
 import Diff from './components/Diff';
-import Attestation from './components/Attestation';
-import AttestationView from './components/AttestationView';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/git-push';
-import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
-import Tooltip from '@material-ui/core/Tooltip';
-import { AttestationFormData, PushActionView } from '../../types';
+import { PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
-import { generateEmailLink, getGitProvider } from '../../utils';
-import UserLink from '../../components/UserLink/UserLink';
+import { generateEmailLink } from '../../utils';
+import PushStatusHeader from './components/PushStatusHeader';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,19 +27,7 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [message, setMessage] = useState('');
-  const [attestation, setAttestation] = useState(false);
   const navigate = useNavigate();
-
-  let isUserAllowedToApprove = true;
-  let isUserAllowedToReject = true;
-
-  const setUserAllowedToApprove = (userAllowedToApprove: boolean) => {
-    isUserAllowedToApprove = userAllowedToApprove;
-  };
-
-  const setUserAllowedToReject = (userAllowedToReject: boolean) => {
-    isUserAllowedToReject = userAllowedToReject;
-  };
 
   useEffect(() => {
     if (id) {
@@ -56,16 +37,14 @@ const Dashboard: React.FC = () => {
 
   const authorise = async (attestationData: Array<{ label: string; checked: boolean }>) => {
     if (!id) return;
-    await authorisePush(id, setMessage, setUserAllowedToApprove, attestationData);
-    if (isUserAllowedToApprove) {
+    if (await authorisePush(id, setMessage, attestationData)) {
       navigate('/dashboard/push/');
     }
   };
 
-  const reject = async () => {
+  const reject = async (rejectionData: { reason: string }) => {
     if (!id) return;
-    await rejectPush(id, setMessage, setUserAllowedToReject);
-    if (isUserAllowedToReject) {
+    if (await rejectPush(id, setMessage, rejectionData)) {
       navigate('/dashboard/push/');
     }
   };
@@ -110,23 +89,6 @@ const Dashboard: React.FC = () => {
   const repoBranch = trimPrefixRefsHeads(push.branch ?? '');
   const repoUrl = push.url;
   const repoWebUrl = trimTrailingDotGit(repoUrl);
-  const gitProvider = getGitProvider(repoUrl);
-  const isGitHub = gitProvider == 'github';
-
-  const generateIcon = (title: string) => {
-    switch (title) {
-      case 'Approved':
-        return <CheckCircle />;
-      case 'Pending':
-        return <Visibility />;
-      case 'Canceled':
-        return <Cancel />;
-      case 'Rejected':
-        return <Block />;
-      default:
-        return <Icon />;
-    }
-  };
 
   return (
     <div>
@@ -143,102 +105,12 @@ const Dashboard: React.FC = () => {
       <GridContainer>
         <GridItem xs={12} sm={12} md={12}>
           <Card>
-            <CardHeader color={headerData.color} stats icon>
-              <CardIcon color={headerData.color}>
-                {generateIcon(headerData.title)}
-                <h3>{headerData.title}</h3>
-              </CardIcon>
-              {!(push.canceled || push.rejected || push.authorised) && (
-                <div style={{ display: 'inline-flex', padding: '20px' }}>
-                  <Button color='warning' onClick={cancel}>
-                    Cancel
-                  </Button>
-                  <Button color='danger' onClick={reject}>
-                    Reject
-                  </Button>
-                  <Attestation approveFn={authorise} />
-                </div>
-              )}
-              {push.attestation && push.authorised && (
-                <div
-                  style={{
-                    background: '#eee',
-                    padding: '10px 20px 10px 20px',
-                    borderRadius: '10px',
-                    color: 'black',
-                    marginTop: '15px',
-                    float: 'right',
-                    position: 'relative',
-                    textAlign: 'left',
-                  }}
-                >
-                  <span style={{ position: 'absolute', top: 0, right: 0 }}>
-                    <CheckCircle
-                      style={{
-                        cursor: push.autoApproved ? 'default' : 'pointer',
-                        transform: 'scale(0.65)',
-                        opacity: push.autoApproved ? 0.5 : 1,
-                      }}
-                      onClick={() => {
-                        if (!push.autoApproved) {
-                          setAttestation(true);
-                        }
-                      }}
-                      htmlColor='green'
-                    />
-                  </span>
-
-                  {push.autoApproved ? (
-                    <div style={{ paddingTop: '15px' }}>
-                      <p>
-                        <strong>Auto-approved by system</strong>
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      {isGitHub && (
-                        <UserLink username={push.attestation.reviewer.username}>
-                          <img
-                            style={{ width: '45px', borderRadius: '20px' }}
-                            src={`https://github.com/${push.attestation.reviewer.gitAccount}.png`}
-                          />
-                        </UserLink>
-                      )}
-                      <div>
-                        <p>
-                          {isGitHub && (
-                            <UserLink username={push.attestation.reviewer.username}>
-                              {push.attestation.reviewer.gitAccount}
-                            </UserLink>
-                          )}
-                          {!isGitHub && <UserLink username={push.attestation.reviewer.username} />}{' '}
-                          approved this contribution
-                        </p>
-                      </div>
-                    </>
-                  )}
-
-                  <Tooltip
-                    title={moment(push.attestation.timestamp).format(
-                      'dddd, MMMM Do YYYY, h:mm:ss a',
-                    )}
-                    arrow
-                  >
-                    <kbd style={{ color: 'black', float: 'right' }}>
-                      {moment(push.attestation.timestamp).fromNow()}
-                    </kbd>
-                  </Tooltip>
-
-                  {!push.autoApproved && (
-                    <AttestationView
-                      data={push.attestation as AttestationFormData}
-                      attestation={attestation}
-                      setAttestation={setAttestation}
-                    />
-                  )}
-                </div>
-              )}
-            </CardHeader>
+            <PushStatusHeader
+              data={push}
+              onCancel={cancel}
+              onReject={reject}
+              onAuthorise={authorise}
+            />
             <CardBody>
               <GridContainer>
                 <GridItem xs={2} sm={2} md={2}>

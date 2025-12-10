@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import moment from 'moment';
 import { useNavigate } from 'react-router-dom';
@@ -11,63 +11,24 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
-import { getPushes } from '../../../services/git-push';
 import { KeyboardArrowRight } from '@material-ui/icons';
-import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
 import { PushActionView } from '../../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../../db/helper';
 import { generateAuthorLinks, generateEmailLink } from '../../../utils';
 
 interface PushesTableProps {
-  [key: string]: any;
+  pushes: PushActionView[];
 }
 
 const useStyles = makeStyles(styles as any);
 
-const PushesTable: React.FC<PushesTableProps> = (props) => {
+const PushesTable: React.FC<PushesTableProps> = ({ pushes }) => {
   const classes = useStyles();
-  const [pushes, setPushes] = useState<PushActionView[]>([]);
-  const [filteredData, setFilteredData] = useState<PushActionView[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [, setIsError] = useState(false);
   const navigate = useNavigate();
-  const [, setAuth] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-  const [searchTerm, setSearchTerm] = useState('');
-
   const openPush = (pushId: string) => navigate(`/dashboard/push/${pushId}`, { replace: true });
-
-  useEffect(() => {
-    const query = {
-      blocked: props.blocked ?? false,
-      canceled: props.canceled ?? false,
-      authorised: props.authorised ?? false,
-      rejected: props.rejected ?? false,
-    };
-    getPushes(setIsLoading, setPushes, setAuth, setIsError, props.handleError, query);
-  }, [props]);
-
-  useEffect(() => {
-    setFilteredData(pushes);
-  }, [pushes]);
-
-  useEffect(() => {
-    const lowerCaseTerm = searchTerm.toLowerCase();
-    const filtered = searchTerm
-      ? pushes.filter(
-          (item) =>
-            item.repo.toLowerCase().includes(lowerCaseTerm) ||
-            item.commitTo?.toLowerCase().includes(lowerCaseTerm) ||
-            item.commitData?.[0]?.message.toLowerCase().includes(lowerCaseTerm),
-        )
-      : pushes;
-    setFilteredData(filtered);
-    setCurrentPage(1);
-  }, [searchTerm, pushes]);
-
-  const handleSearch = (term: string) => setSearchTerm(term.trim());
+  const itemsPerPage = 11;
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -75,13 +36,10 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
-
-  if (isLoading) return <div>Loading...</div>;
+  const currentItems = pushes.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div>
-      <Search onSearch={handleSearch} />
       <TableContainer component={Paper}>
         <Table className={classes.table} aria-label='simple table'>
           <TableHead>
@@ -133,8 +91,8 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    {/* render github/gitlab profile links in future 
-                    {getUserProfileLink(row.commitData[0].committerEmail, gitProvider, hostname)} 
+                    {/* render github/gitlab profile links in future
+                    {getUserProfileLink(row.commitData[0].committerEmail, gitProvider, hostname)}
                     */}
                     {generateEmailLink(
                       row.commitData?.[0]?.committer ?? '',
@@ -142,8 +100,8 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                     )}
                   </TableCell>
                   <TableCell align='left'>
-                    {/* render github/gitlab profile links in future 
-                    {getUserProfileLink(row.commitData[0].authorEmail, gitProvider, hostname)} 
+                    {/* render github/gitlab profile links in future
+                    {getUserProfileLink(row.commitData[0].authorEmail, gitProvider, hostname)}
                     */}
                     {generateAuthorLinks(row.commitData ?? [])}
                   </TableCell>
@@ -162,7 +120,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
       </TableContainer>
       <Pagination
         itemsPerPage={itemsPerPage}
-        totalItems={filteredData.length}
+        totalItems={pushes.length}
         currentPage={currentPage}
         onPageChange={handlePageChange}
       />

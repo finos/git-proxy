@@ -16,7 +16,7 @@ type HeaderColor = 'warning' | 'success' | 'danger' | 'info' | 'primary' | 'rose
 export type TabItem = {
   tabName: string;
   tabIcon?: React.ComponentType<SvgIconProps>;
-  tabContent: React.ReactNode;
+  tabContent?: React.ReactNode;
 };
 
 interface CustomTabsProps {
@@ -25,6 +25,9 @@ interface CustomTabsProps {
   tabs: TabItem[];
   rtlActive?: boolean;
   plainTabs?: boolean;
+  defaultTab?: number;
+  value?: number;
+  onChange?: (value: number) => void;
 }
 
 const CustomTabs: React.FC<CustomTabsProps> = ({
@@ -33,12 +36,20 @@ const CustomTabs: React.FC<CustomTabsProps> = ({
   tabs,
   title,
   rtlActive = false,
+  defaultTab = 0,
+  value: controlledValue,
+  onChange: controlledOnChange,
 }) => {
-  const [value, setValue] = useState(0);
+  const [internalValue, setInternalValue] = useState(defaultTab);
   const classes = useStyles();
+  const value = controlledValue !== undefined ? controlledValue : internalValue;
 
   const handleChange = (event: React.ChangeEvent<unknown>, newValue: number) => {
-    setValue(newValue);
+    if (controlledOnChange) {
+      controlledOnChange(newValue);
+    } else {
+      setInternalValue(newValue);
+    }
   };
 
   const cardTitle = clsx({
@@ -80,7 +91,7 @@ const CustomTabs: React.FC<CustomTabsProps> = ({
       </CardHeader>
       <CardBody>
         {tabs.map((prop, key) => (
-          <div key={key} style={{ display: key === value ? 'block' : 'none' }}>
+          <div key={key} style={{ display: key === internalValue ? 'block' : 'none' }}>
             {prop.tabContent}
           </div>
         ))}
