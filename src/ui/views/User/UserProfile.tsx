@@ -64,6 +64,7 @@ export default function UserProfile(): React.ReactElement {
       ...user,
       gitAccount: escapeHTML(gitAccount),
     };
+    //does not reject and will display any errors that occur
     await updateUser(updatedData, setErrorMessage, setIsLoading);
     setUser(updatedData);
     navigate(`/dashboard/profile`);
