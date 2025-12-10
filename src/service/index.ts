@@ -74,7 +74,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.use(express.urlencoded({ extended: true }));
   app.use('/', routes(proxy));
   app.use('/', express.static(absBuildPath));
-  app.get('/*', (req, res) => {
+  app.get('/*path', (_req, res) => {
     res.sendFile(path.join(`${absBuildPath}/index.html`));
   });
 
