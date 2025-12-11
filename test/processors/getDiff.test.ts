@@ -1,11 +1,13 @@
+import { Request } from 'express';
 import path from 'path';
 import simpleGit, { SimpleGit } from 'simple-git';
 import fs from 'fs/promises';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import fc from 'fast-check';
+
 import { Action } from '../../src/proxy/actions';
 import { exec } from '../../src/proxy/processors/push-action/getDiff';
-import { Commit } from '../../src/proxy/actions/Action';
+import { EMPTY_COMMIT_HASH, SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
 
 describe('getDiff', () => {
   let tempDir: string;
@@ -40,9 +42,9 @@ describe('getDiff', () => {
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
     action.commitTo = 'HEAD';
-    action.commitData = [{ parent: '0000000000000000000000000000000000000000' } as Commit];
+    action.commitData = [{ ...SAMPLE_COMMIT, parent: EMPTY_COMMIT_HASH }];
 
-    const result = await exec({}, action);
+    const result = await exec({} as Request, action);
 
     expect(result.steps[0].error).toBe(false);
     expect(result.steps[0].content).toContain('modified content');
@@ -55,9 +57,9 @@ describe('getDiff', () => {
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
     action.commitTo = 'HEAD';
-    action.commitData = [{ parent: '0000000000000000000000000000000000000000' } as Commit];
+    action.commitData = [{ ...SAMPLE_COMMIT, parent: EMPTY_COMMIT_HASH }];
 
-    const result = await exec({}, action);
+    const result = await exec({} as Request, action);
 
     expect(result.steps[0].error).toBe(false);
     expect(result.steps[0].content).toContain('initial content');
@@ -71,7 +73,7 @@ describe('getDiff', () => {
     action.commitTo = 'HEAD';
     action.commitData = [];
 
-    const result = await exec({}, action);
+    const result = await exec({} as Request, action);
     expect(result.steps[0].error).toBe(true);
     expect(result.steps[0].errorMessage).toContain(
       'Your push has been blocked because no commit data was found',
@@ -84,9 +86,9 @@ describe('getDiff', () => {
     action.repoName = 'temp-test-repo';
     action.commitFrom = 'HEAD~1';
     action.commitTo = 'HEAD';
-    action.commitData = undefined as any;
+    action.commitData = undefined;
 
-    const result = await exec({}, action);
+    const result = await exec({} as Request, action);
     expect(result.steps[0].error).toBe(true);
     expect(result.steps[0].errorMessage).toContain(
       'Your push has been blocked because no commit data was found',
@@ -106,11 +108,11 @@ describe('getDiff', () => {
 
     action.proxyGitPath = path.dirname(tempDir);
     action.repoName = path.basename(tempDir);
-    action.commitFrom = '0000000000000000000000000000000000000000';
+    action.commitFrom = EMPTY_COMMIT_HASH;
     action.commitTo = headCommit;
-    action.commitData = [{ parent: parentCommit } as Commit];
+    action.commitData = [{ ...SAMPLE_COMMIT, parent: parentCommit }];
 
-    const result = await exec({}, action);
+    const result = await exec({} as Request, action);
 
     expect(result.steps[0].error).toBe(false);
     expect(result.steps[0].content).not.toBeNull();
@@ -132,9 +134,12 @@ describe('getDiff', () => {
             action.repoName = 'temp-test-repo';
             action.commitFrom = from;
             action.commitTo = to;
-            action.commitData = commitData as any;
+            action.commitData = commitData.map((commit) => ({
+              ...SAMPLE_COMMIT,
+              parent: commit.parent,
+            }));
 
-            const result = await exec({}, action);
+            const result = await exec({} as Request, action);
 
             expect(result).toHaveProperty('steps');
             expect(result.steps[0]).toHaveProperty('error');
@@ -156,9 +161,9 @@ describe('getDiff', () => {
             action.repoName = 'temp-test-repo';
             action.commitFrom = from;
             action.commitTo = to;
-            action.commitData = [{ parent: '0000000000000000000000000000000000000000' } as Commit];
+            action.commitData = [{ ...SAMPLE_COMMIT, parent: EMPTY_COMMIT_HASH }];
 
-            const result = await exec({}, action);
+            const result = await exec({} as Request, action);
 
             expect(result.steps[0].error).toBe(true);
             expect(result.steps[0].errorMessage).toContain('Invalid revision range');
