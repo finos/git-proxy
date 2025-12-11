@@ -7,7 +7,7 @@ vi.mock('child_process');
 vi.mock('fs');
 
 describe('writePack', () => {
-  let exec: any;
+  let exec: typeof import('../../src/proxy/processors/push-action/writePack').exec;
   let readdirSyncMock: any;
   let spawnSyncMock: any;
   let stepLogSpy: any;
@@ -19,9 +19,7 @@ describe('writePack', () => {
 
     spawnSyncMock = vi.mocked(childProcess.spawnSync);
     readdirSyncMock = vi.mocked(fs.readdirSync);
-    readdirSyncMock
-      .mockReturnValueOnce(['old1.idx'] as any)
-      .mockReturnValueOnce(['old1.idx', 'new1.idx'] as any);
+    readdirSyncMock.mockReturnValueOnce(['old1.idx']).mockReturnValueOnce(['old1.idx', 'new1.idx']);
 
     stepLogSpy = vi.spyOn(Step.prototype, 'log');
     stepSetContentSpy = vi.spyOn(Step.prototype, 'setContent');

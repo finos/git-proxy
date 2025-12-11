@@ -13,6 +13,7 @@ import request from 'supertest';
 import service from '../src/service';
 import * as db from '../src/db';
 import Proxy from '../src/proxy';
+import { Express } from 'express';
 
 // Create constants for values used in multiple tests
 const TEST_REPO = {
@@ -23,7 +24,7 @@ const TEST_REPO = {
 };
 
 describe('init', () => {
-  let app: any;
+  let app: Express;
 
   // Runs before all tests
   beforeAll(async function () {
@@ -72,7 +73,7 @@ describe('init', () => {
     // fs must be mocked BEFORE importing the config module
     // We also mock existsSync to ensure the file "exists"
     vi.doMock('fs', async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
         readFileSync: vi.fn().mockReturnValue(

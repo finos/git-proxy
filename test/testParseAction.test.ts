@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as preprocessor from '../src/proxy/processors/pre-processor/parseAction';
 import * as db from '../src/db';
 
-let testRepo: any = null;
+let testRepo: db.Repo | null = null;
 
 const TEST_REPO = {
   url: 'https://github.com/finos/git-proxy.git',
@@ -27,7 +27,7 @@ describe('Pre-processor: parseAction', () => {
   });
 
   it('should be able to parse a pull request into an action', async () => {
-    const req = {
+    const req: any = {
       originalUrl: '/github.com/finos/git-proxy.git/git-upload-pack',
       method: 'GET',
       headers: { 'content-type': 'application/x-git-upload-pack-request' },
@@ -41,7 +41,7 @@ describe('Pre-processor: parseAction', () => {
   });
 
   it('should be able to parse a pull request with a legacy path into an action', async () => {
-    const req = {
+    const req: any = {
       originalUrl: '/finos/git-proxy.git/git-upload-pack',
       method: 'GET',
       headers: { 'content-type': 'application/x-git-upload-pack-request' },
@@ -55,7 +55,7 @@ describe('Pre-processor: parseAction', () => {
   });
 
   it('should be able to parse a push request into an action', async () => {
-    const req = {
+    const req: any = {
       originalUrl: '/github.com/finos/git-proxy.git/git-receive-pack',
       method: 'POST',
       headers: { 'content-type': 'application/x-git-receive-pack-request' },
@@ -69,7 +69,7 @@ describe('Pre-processor: parseAction', () => {
   });
 
   it('should be able to parse a push request with a legacy path into an action', async () => {
-    const req = {
+    const req: any = {
       originalUrl: '/finos/git-proxy.git/git-receive-pack',
       method: 'POST',
       headers: { 'content-type': 'application/x-git-receive-pack-request' },
