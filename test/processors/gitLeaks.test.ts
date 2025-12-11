@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, MockInstance } from 'vitest';
 import { Action, Step } from '../../src/proxy/actions';
 
 vi.mock('../../src/config', async (importOriginal) => {
@@ -37,9 +37,9 @@ describe('gitleaks', () => {
     let exec: typeof import('../../src/proxy/processors/push-action/gitleaks').exec;
     let action: Action;
     let req: any;
-    let stepSpy: any;
-    let logStub: any;
-    let errorStub: any;
+    let stepSpy: ReturnType<typeof vi.spyOn>;
+    let logStub: ReturnType<typeof vi.spyOn>;
+    let errorStub: ReturnType<typeof vi.spyOn>;
     let getAPIs: typeof import('../../src/config').getAPIs;
     let fsModule: typeof import('node:fs/promises');
     let spawn: any;

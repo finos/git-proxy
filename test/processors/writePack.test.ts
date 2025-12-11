@@ -8,11 +8,11 @@ vi.mock('fs');
 
 describe('writePack', () => {
   let exec: typeof import('../../src/proxy/processors/push-action/writePack').exec;
-  let readdirSyncMock: any;
-  let spawnSyncMock: any;
-  let stepLogSpy: any;
-  let stepSetContentSpy: any;
-  let stepSetErrorSpy: any;
+  let readdirSyncMock: ReturnType<typeof vi.fn>;
+  let spawnSyncMock: ReturnType<typeof vi.fn>;
+  let stepLogSpy: ReturnType<typeof vi.spyOn>;
+  let stepSetContentSpy: ReturnType<typeof vi.spyOn>;
+  let stepSetErrorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
