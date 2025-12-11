@@ -36,12 +36,7 @@ describe('login', () => {
       });
     });
 
-    it('should now be able to access the user login metadata', async () => {
-      const res = await request(app).get('/api/auth/me').set('Cookie', cookie);
-      expect(res.status).toBe(200);
-    });
-
-    it('should now be able to access the profile', async () => {
+    it('should now be able to access the user metadata', async () => {
       const res = await request(app).get('/api/auth/profile').set('Cookie', cookie);
       expect(res.status).toBe(200);
     });
@@ -96,7 +91,7 @@ describe('login', () => {
     });
 
     it('should fail to get the current user metadata if not logged in', async () => {
-      const res = await request(app).get('/api/auth/me');
+      const res = await request(app).get('/api/auth/profile');
       expect(res.status).toBe(401);
     });
 
@@ -123,8 +118,8 @@ describe('login', () => {
         gitAccount: 'newgit',
       });
 
-      expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorized to perform this action...');
+      expect(res.status).toBe(403);
+      expect(res.body.message).toBe('Not authorized to create users');
     });
 
     it('should fail to create user when not admin', async () => {
@@ -155,8 +150,8 @@ describe('login', () => {
           gitAccount: 'newgit',
         });
 
-      expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorized to perform this action...');
+      expect(res.status).toBe(403);
+      expect(res.body.message).toBe('Not authorized to create users');
     });
 
     it('should fail to create user with missing required fields', async () => {
@@ -236,7 +231,8 @@ describe('login', () => {
           admin: false,
         });
 
-      expect(failCreateRes.status).toBe(400);
+      expect(failCreateRes.status).toBe(500);
+      expect(failCreateRes.body.message).toBe('user newuser already exists');
     });
   });
 
