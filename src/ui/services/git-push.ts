@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
 import { API_BASE } from '../apiBase';
 import { Action, Step } from '../../proxy/actions';
-import { PushActionView } from '../types';
+import { BackendResponse, PushActionView } from '../types';
 
 const API_V1_BASE = `${API_BASE}/api/v1`;
 
@@ -16,17 +16,19 @@ const getPush = async (
   const url = `${API_V1_BASE}/push/${id}`;
   setIsLoading(true);
 
-  try {
-    const response = await axios<Action>(url, getAxiosConfig());
-    const data: Action & { diff?: Step } = response.data;
-    data.diff = data.steps.find((x: Step) => x.stepName === 'diff');
-    setPush(data as PushActionView);
-  } catch (error: any) {
-    if (error.response?.status === 401) setAuth(false);
-    else setIsError(true);
-  } finally {
-    setIsLoading(false);
-  }
+  await axios<Action>(url, getAxiosConfig())
+    .then((response) => {
+      const data: Action & { diff?: Step } = response.data;
+      data.diff = data.steps.find((x: Step) => x.stepName === 'diff');
+      setPush(data as PushActionView);
+    })
+    .catch((error: AxiosError<string>) => {
+      if (error.response?.status === 401) setAuth(false);
+      else setIsError(true);
+    })
+    .finally(() => {
+      setIsLoading(false);
+    });
 };
 
 const getPushes = async (
@@ -51,22 +53,23 @@ const getPushes = async (
 
   setIsLoading(true);
 
-  try {
-    const response = await axios<Action[]>(url.toString(), getAxiosConfig());
-    setPushes(response.data as PushActionView[]);
-  } catch (error: any) {
-    setIsError(true);
-
-    if (error.response?.status === 401) {
-      setAuth(false);
-      setErrorMessage(processAuthError(error));
-    } else {
-      const message = error.response?.data?.message || error.message;
-      setErrorMessage(`Error fetching pushes: ${message}`);
-    }
-  } finally {
-    setIsLoading(false);
-  }
+  await axios<Action[]>(url.toString(), getAxiosConfig())
+    .then((response) => {
+      setPushes(response.data as PushActionView[]);
+    })
+    .catch((error: AxiosError<BackendResponse>) => {
+      setIsError(true);
+      if (error.response?.status === 401) {
+        setAuth(false);
+        setErrorMessage(processAuthError(error));
+      } else {
+        const message = error.response?.data?.message ?? error.message;
+        setErrorMessage(`Error fetching pushes: ${message}`);
+      }
+    })
+    .finally(() => {
+      setIsLoading(false);
+    });
 };
 
 const authorisePush = async (
@@ -88,7 +91,7 @@ const authorisePush = async (
       },
       getAxiosConfig(),
     )
-    .catch((error: any) => {
+    .catch((error: AxiosError<BackendResponse>) => {
       if (error.response && error.response.status === 401) {
         errorMsg = 'You are not authorised to approve...';
         isUserAllowedToApprove = false;
@@ -106,7 +109,7 @@ const rejectPush = async (
   const url = `${API_V1_BASE}/push/${id}/reject`;
   let errorMsg = '';
   let isUserAllowedToReject = true;
-  await axios.post(url, {}, getAxiosConfig()).catch((error: any) => {
+  await axios.post(url, {}, getAxiosConfig()).catch((error: AxiosError<BackendResponse>) => {
     if (error.response && error.response.status === 401) {
       errorMsg = 'You are not authorised to reject...';
       isUserAllowedToReject = false;
@@ -122,7 +125,7 @@ const cancelPush = async (
   setIsError: (isError: boolean) => void,
 ): Promise<void> => {
   const url = `${API_BASE}/push/${id}/cancel`;
-  await axios.post(url, {}, getAxiosConfig()).catch((error: any) => {
+  await axios.post(url, {}, getAxiosConfig()).catch((error: AxiosError<BackendResponse>) => {
     if (error.response && error.response.status === 401) {
       setAuth(false);
     } else {

@@ -15,7 +15,7 @@ export interface UserContextType {
 
 export interface AuthContextType {
   user: PublicUser | null;
-  setUser: React.Dispatch<any>;
+  setUser: React.Dispatch<React.SetStateAction<PublicUser | null>>;
   refreshUser: () => Promise<void>;
   isLoading: boolean;
 }

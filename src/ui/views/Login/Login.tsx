@@ -16,6 +16,7 @@ import { Badge, CircularProgress, FormLabel, Snackbar } from '@material-ui/core'
 import { useAuth } from '../../auth/AuthProvider';
 import { API_BASE } from '../../apiBase';
 import { getAxiosConfig, processAuthError } from '../../services/auth';
+import { BackendResponse } from '../../types';
 
 interface LoginResponse {
   username: string;
@@ -74,7 +75,7 @@ const Login: React.FC = () => {
         setSuccess(true);
         authContext.refreshUser().then(() => navigate(0));
       })
-      .catch((error: AxiosError<string>) => {
+      .catch((error: AxiosError<BackendResponse>) => {
         if (error.response?.status === 307) {
           window.sessionStorage.setItem('git.proxy.login', 'success');
           setGitAccountError(true);
