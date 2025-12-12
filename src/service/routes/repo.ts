@@ -187,16 +187,15 @@ const repo = (proxy: any) => {
             await theProxy.stop();
             await theProxy.start();
           }
-        } catch (e: any) {
-          console.error('Repository creation failed due to error: ', e.message ? e.message : e);
-          console.error(e.stack);
+        } catch (e: unknown) {
+          if (e instanceof Error) {
+            console.error('Repository creation failed due to error: ', e.message);
+            console.error(e.stack);
+            res.status(500).send({ message: 'Failed to create repository due to error' });
+          }
           res.status(500).send({ message: 'Failed to create repository due to error' });
         }
       }
-    } else {
-      res.status(401).send({
-        message: 'You are not authorised to perform this action...',
-      });
     }
   });
 

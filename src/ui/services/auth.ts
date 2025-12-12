@@ -1,7 +1,8 @@
+import { AxiosError } from 'axios';
 import { getCookie } from '../utils';
 import { PublicUser } from '../../db/types';
 import { API_BASE } from '../apiBase';
-import { AxiosError } from 'axios';
+import { BackendResponse } from '../types';
 
 interface AxiosConfig {
   withCredentials: boolean;
@@ -44,8 +45,11 @@ export const getAxiosConfig = (): AxiosConfig => {
 /**
  * Processes authentication errors and returns a user-friendly error message
  */
-export const processAuthError = (error: AxiosError<string>, jwtAuthEnabled = false): string => {
-  let errorMessage = `Failed to authorize user: ${error.response?.data?.trim() ?? ''}. `;
+export const processAuthError = (
+  error: AxiosError<BackendResponse>,
+  jwtAuthEnabled = false,
+): string => {
+  let errorMessage = `Failed to authorize user: ${error.response?.data?.message?.trim() ?? ''}. `;
   if (jwtAuthEnabled && !localStorage.getItem('ui_jwt_token')) {
     errorMessage +=
       'Set your JWT token in the settings page or disable JWT auth in your app configuration.';

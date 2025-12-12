@@ -1,8 +1,8 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth.js';
 import { API_BASE } from '../apiBase';
 import { Repo } from '../../db/types';
-import { RepoView } from '../types';
+import { BackendResponse, RepoView } from '../types';
 
 const API_V1_BASE = `${API_BASE}/api/v1`;
 
@@ -18,8 +18,12 @@ const canAddUser = (repoId: string, user: string, action: string) => {
         return !repo.users.canPush.includes(user);
       }
     })
-    .catch((error: any) => {
-      throw error;
+    .catch((error: unknown) => {
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error('Unknown error');
+      }
     });
 };
 
@@ -48,13 +52,13 @@ const getRepos = async (
       );
       setRepos(sortedRepos);
     })
-    .catch((error: any) => {
+    .catch((error: AxiosError<BackendResponse>) => {
       setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
         setErrorMessage(processAuthError(error));
       } else {
-        setErrorMessage(`Error fetching repos: ${error.response.data.message}`);
+        setErrorMessage(`Error fetching repos: ${error.response?.data?.message ?? error.message}`);
       }
     })
     .finally(() => {
@@ -76,7 +80,7 @@ const getRepo = async (
       const repo = response.data;
       setRepo(repo);
     })
-    .catch((error: any) => {
+    .catch((error: AxiosError) => {
       if (error.response && error.response.status === 401) {
         setAuth(false);
       } else {
@@ -99,12 +103,16 @@ const addRepo = async (
       success: true,
       repo: response.data,
     };
-  } catch (error: any) {
-    return {
-      success: false,
-      message: error.response?.data?.message || error.message,
-      repo: null,
-    };
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      return {
+        success: false,
+        message: error.response?.data?.message ?? error.message,
+        repo: null,
+      };
+    } else {
+      throw error;
+    }
   }
 };
 
@@ -113,8 +121,7 @@ const addUser = async (repoId: string, user: string, action: string): Promise<vo
   if (canAdd) {
     const url = new URL(`${API_V1_BASE}/repo/${repoId}/user/${action}`);
     const data = { username: user };
-    await axios.patch(url.toString(), data, getAxiosConfig()).catch((error: any) => {
-      console.log(error.response.data.message);
+    await axios.patch(url.toString(), data, getAxiosConfig()).catch((error: AxiosError<string>) => {
       throw error;
     });
   } else {
@@ -126,8 +133,7 @@ const addUser = async (repoId: string, user: string, action: string): Promise<vo
 const deleteUser = async (user: string, repoId: string, action: string): Promise<void> => {
   const url = new URL(`${API_V1_BASE}/repo/${repoId}/user/${action}/${user}`);
 
-  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
-    console.log(error.response.data.message);
+  await axios.delete(url.toString(), getAxiosConfig()).catch((error: AxiosError<string>) => {
     throw error;
   });
 };
@@ -135,8 +141,7 @@ const deleteUser = async (user: string, repoId: string, action: string): Promise
 const deleteRepo = async (repoId: string): Promise<void> => {
   const url = new URL(`${API_V1_BASE}/repo/${repoId}/delete`);
 
-  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
-    console.log(error.response.data.message);
+  await axios.delete(url.toString(), getAxiosConfig()).catch((error: AxiosError<string>) => {
     throw error;
   });
 };

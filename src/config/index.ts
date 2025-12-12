@@ -61,8 +61,9 @@ function loadFullConfiguration(): GitProxyConfig {
       // Don't use QuickType validation for partial configurations
       const rawUserConfig = JSON.parse(userConfigContent);
       userSettings = cleanUndefinedValues(rawUserConfig);
-    } catch (error) {
-      console.error(`Error loading user config from ${userConfigFile}:`, error);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`Error loading user config from ${userConfigFile}:`, msg);
       throw error;
     }
   }

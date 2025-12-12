@@ -14,19 +14,14 @@ describe('Pre-Receive Hook Execution', () => {
 
   beforeEach(() => {
     req = {} as Request;
-    action = {
-      steps: [] as Step[],
-      commitFrom: 'oldCommitHash',
-      commitTo: 'newCommitHash',
-      branch: 'feature-branch',
-      proxyGitPath: 'test/preReceive/mock/repo',
-      repoName: 'test-repo',
-      addStep(step: Step) {
-        this.steps.push(step);
-      },
-      setAutoApproval: vi.fn(),
-      setAutoRejection: vi.fn(),
-    } as unknown as Action;
+    action = new Action('123', 'push', 'POST', 1234567890, 'test/repo.git');
+    action.commitFrom = 'oldCommitHash';
+    action.commitTo = 'newCommitHash';
+    action.branch = 'feature-branch';
+    action.proxyGitPath = 'test/preReceive/mock/repo';
+    action.repoName = 'test-repo';
+    action.setAutoApproval = vi.fn();
+    action.setAutoRejection = vi.fn();
   });
 
   afterEach(() => {

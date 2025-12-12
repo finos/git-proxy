@@ -83,7 +83,6 @@ const cleanResponseData = <T extends object>(example: T, responses: T[] | T): T[
     return responses.map((response) => {
       const cleanResponse: Partial<T> = {};
       columns.forEach((col) => {
-        // @ts-expect-error dynamic indexing
         cleanResponse[col] = response[col];
       });
       return cleanResponse as T;
@@ -91,7 +90,6 @@ const cleanResponseData = <T extends object>(example: T, responses: T[] | T): T[
   } else if (typeof responses === 'object') {
     const cleanResponse: Partial<T> = {};
     columns.forEach((col) => {
-      // @ts-expect-error dynamic indexing
       cleanResponse[col] = responses[col];
     });
     return cleanResponse as T;
@@ -391,14 +389,13 @@ describe('Database clients', () => {
 
     const users2 = await db.getUsers({ email: TEST_USER.email.toUpperCase() });
     const cleanUsers2 = cleanResponseData(TEST_USER_CLEAN, users2);
-    // @ts-expect-error dynamic indexing
     expect(cleanUsers2[0]).toEqual(TEST_USER_CLEAN);
   });
 
   it('should be able to delete a user', async () => {
     await db.deleteUser(TEST_USER.username);
     const users = await db.getUsers();
-    const cleanUsers = cleanResponseData(TEST_USER, users as any);
+    const cleanUsers = cleanResponseData(TEST_USER, users);
     expect(cleanUsers).not.toContainEqual(TEST_USER);
   });
 

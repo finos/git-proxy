@@ -9,7 +9,7 @@ import Sidebar from '../components/Sidebar/Sidebar';
 import routes from '../../routes';
 import styles from '../assets/jss/material-dashboard-react/layouts/dashboardStyle';
 import logo from '../assets/img/git-proxy.png';
-import { UserContext } from '../context';
+import { UserContext, UserContextType } from '../context';
 import { getUser } from '../services/user';
 import { Route as RouteType } from '../types';
 import { PublicUser } from '../../db/types';
@@ -28,7 +28,7 @@ const Dashboard: React.FC<DashboardProps> = ({ ...rest }) => {
   const mainPanel = useRef<HTMLDivElement>(null);
   const [color] = useState<'purple' | 'blue' | 'green' | 'orange' | 'red'>('blue');
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
-  const [user, setUser] = useState<PublicUser>({} as PublicUser);
+  const [user, setUser] = useState<PublicUser | null>(null);
   const { id } = useParams<{ id?: string }>();
 
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
@@ -82,7 +82,7 @@ const Dashboard: React.FC<DashboardProps> = ({ ...rest }) => {
   }, [id]);
 
   return (
-    <UserContext.Provider value={{ user, setUser } as any}>
+    <UserContext.Provider value={{ user, setUser } as UserContextType}>
       <div className={classes.wrapper}>
         <Sidebar
           background='#1a1a1a'

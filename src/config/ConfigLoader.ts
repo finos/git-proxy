@@ -20,7 +20,7 @@ function isValidPath(filePath: string): boolean {
   try {
     path.resolve(filePath);
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     return false;
   }
 }
@@ -79,8 +79,9 @@ export class ConfigLoader extends EventEmitter {
         fs.mkdirSync(this.cacheDir, { recursive: true });
         console.log(`Created cache directory at ${this.cacheDir}`);
         return true;
-      } catch (err) {
-        console.error('Failed to create cache directory:', err);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('Failed to create cache directory:', msg);
         return false;
       }
     }
@@ -153,8 +154,9 @@ export class ConfigLoader extends EventEmitter {
           try {
             console.log(`Loading configuration from ${source.type} source`);
             return await this.loadFromSource(source);
-          } catch (error: any) {
-            console.error(`Error loading from ${source.type} source:`, error.message);
+          } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.error(`Error loading from ${source.type} source:`, msg);
             return null;
           }
         }),
@@ -189,8 +191,9 @@ export class ConfigLoader extends EventEmitter {
       } else {
         console.log('Configuration has not changed, no update needed');
       }
-    } catch (error: any) {
-      console.error('Error reloading configuration:', error);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('Error reloading configuration:', msg);
       this.emit('configurationError', error);
     } finally {
       this.isReloading = false;
@@ -223,10 +226,9 @@ export class ConfigLoader extends EventEmitter {
     // Use QuickType to validate and parse the configuration
     try {
       return Convert.toGitProxyConfig(content);
-    } catch (error) {
-      throw new Error(
-        `Invalid configuration file format: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new Error(`Invalid configuration file format: ${msg}`);
     }
   }
 
@@ -244,10 +246,9 @@ export class ConfigLoader extends EventEmitter {
       const configJson =
         typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
       return Convert.toGitProxyConfig(configJson);
-    } catch (error) {
-      throw new Error(
-        `Invalid configuration format from HTTP source: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      );
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      throw new Error(`Invalid configuration format from HTTP source: ${msg}`);
     }
   }
 
@@ -306,18 +307,20 @@ export class ConfigLoader extends EventEmitter {
       try {
         await execFileAsync('git', ['clone', source.repository, repoDir], execOptions);
         console.log('Repository cloned successfully');
-      } catch (error: any) {
-        console.error('Failed to clone repository:', error.message);
-        throw new Error(`Failed to clone repository: ${error.message}`);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error('Failed to clone repository:', msg);
+        throw new Error(`Failed to clone repository: ${msg}`);
       }
     } else {
       console.log(`Pulling latest changes from ${source.repository}`);
       try {
         await execFileAsync('git', ['pull'], { cwd: repoDir });
         console.log('Repository pulled successfully');
-      } catch (error: any) {
-        console.error('Failed to pull repository:', error.message);
-        throw new Error(`Failed to pull repository: ${error.message}`);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error('Failed to pull repository:', msg);
+        throw new Error(`Failed to pull repository: ${msg}`);
       }
     }
 
@@ -327,9 +330,10 @@ export class ConfigLoader extends EventEmitter {
       try {
         await execFileAsync('git', ['checkout', source.branch], { cwd: repoDir });
         console.log(`Branch ${source.branch} checked out successfully`);
-      } catch (error: any) {
-        console.error(`Failed to checkout branch ${source.branch}:`, error.message);
-        throw new Error(`Failed to checkout branch ${source.branch}: ${error.message}`);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error(`Failed to checkout branch ${source.branch}:`, msg);
+        throw new Error(`Failed to checkout branch ${source.branch}: ${msg}`);
       }
     }
 
@@ -351,9 +355,10 @@ export class ConfigLoader extends EventEmitter {
       const config = Convert.toGitProxyConfig(content);
       console.log('Configuration loaded successfully from Git');
       return config;
-    } catch (error: any) {
-      console.error('Failed to read or parse configuration file:', error.message);
-      throw new Error(`Failed to read or parse configuration file: ${error.message}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('Failed to read or parse configuration file:', msg);
+      throw new Error(`Failed to read or parse configuration file: ${msg}`);
     }
   }
 
