@@ -103,8 +103,9 @@ class PluginLoader {
       combinedPlugins.forEach((plugin) => {
         console.log(`Loaded plugin: ${plugin.constructor.name}`);
       });
-    } catch (error) {
-      console.error(`Error loading plugins: ${error}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`Error loading plugins: ${msg}`);
     }
   }
 
