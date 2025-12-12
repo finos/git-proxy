@@ -29,8 +29,8 @@ export interface Route {
   layout: string;
   name: string;
   rtlName?: string;
-  component: React.ComponentType<any>;
-  icon?: string | React.ComponentType<any>;
+  component: React.ComponentType;
+  icon?: string | React.ComponentType;
   visible?: boolean;
 }
 
