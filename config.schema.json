@@ -32,7 +32,7 @@
         },
         "gitleaks": {
           "type": "object",
-          "description": "Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin",
+          "description": "Configuration for the gitleaks [https://github.com/gitleaks/gitleaks](https://github.com/gitleaks/gitleaks) plugin",
           "properties": {
             "enabled": { "type": "boolean" },
             "ignoreGitleaksAllow": { "type": "boolean" },
@@ -391,18 +391,18 @@
             "enabled": { "type": "boolean" },
             "connectionString": {
               "type": "string",
-              "description": "mongoDB Client connection string, see https://www.mongodb.com/docs/manual/reference/connection-string/"
+              "description": "mongoDB Client connection string, see [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)"
             },
             "options": {
               "type": "object",
-              "description": "mongoDB Client connection options. Please note that only custom options are described here, see https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/ for all config options.",
+              "description": "mongoDB Client connection options. Please note that only custom options are described here, see [https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/](https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/) for all config options.",
               "properties": {
                 "authMechanismProperties": {
                   "type": "object",
                   "properties": {
                     "AWS_CREDENTIAL_PROVIDER": {
                       "type": "boolean",
-                      "description": "If set to true fromNodeProviderChain() from @aws-sdk/credential-providers is passed as the AWS_CREDENTIAL_PROVIDER"
+                      "description": "If set to true, the `fromNodeProviderChain()` function from @aws-sdk/credential-providers is passed as the `AWS_CREDENTIAL_PROVIDER`"
                     }
                   },
                   "additionalProperties": true

@@ -112,7 +112,8 @@ export interface GitProxyConfig {
  */
 export interface API {
   /**
-   * Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin
+   * Configuration for the gitleaks
+   * [https://github.com/gitleaks/gitleaks](https://github.com/gitleaks/gitleaks) plugin
    */
   gitleaks?: Gitleaks;
   /**
@@ -124,7 +125,8 @@ export interface API {
 }
 
 /**
- * Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin
+ * Configuration for the gitleaks
+ * [https://github.com/gitleaks/gitleaks](https://github.com/gitleaks/gitleaks) plugin
  */
 export interface Gitleaks {
   configPath?: string;
@@ -482,13 +484,14 @@ export interface RateLimit {
 export interface Database {
   /**
    * mongoDB Client connection string, see
-   * https://www.mongodb.com/docs/manual/reference/connection-string/
+   * [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)
    */
   connectionString?: string;
   enabled: boolean;
   /**
    * mongoDB Client connection options. Please note that only custom options are described
-   * here, see https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/
+   * here, see
+   * [https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/](https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/)
    * for all config options.
    */
   options?: Options;
@@ -502,7 +505,8 @@ export interface Database {
 
 /**
  * mongoDB Client connection options. Please note that only custom options are described
- * here, see https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/
+ * here, see
+ * [https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/](https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/)
  * for all config options.
  */
 export interface Options {
@@ -512,8 +516,8 @@ export interface Options {
 
 export interface AuthMechanismProperties {
   /**
-   * If set to true fromNodeProviderChain() from @aws-sdk/credential-providers is passed as
-   * the AWS_CREDENTIAL_PROVIDER
+   * If set to true, the `fromNodeProviderChain()` function from @aws-sdk/credential-providers
+   * is passed as the `AWS_CREDENTIAL_PROVIDER`
    */
   AWS_CREDENTIAL_PROVIDER?: boolean;
   [property: string]: any;
