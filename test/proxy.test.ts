@@ -1,6 +1,7 @@
 import https from 'https';
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import fs from 'fs';
+import { GitProxyConfig } from '../src/config/generated/config';
 
 /* 
   jescalada: these tests are currently causing the following error
@@ -71,7 +72,7 @@ describe.skip('Proxy Module TLS Certificate Loading', () => {
     });
 
     vi.doMock('../src/config', async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual = await importOriginal<GitProxyConfig>();
       return {
         ...actual,
         getTLSEnabled: mockConfig.getTLSEnabled,
