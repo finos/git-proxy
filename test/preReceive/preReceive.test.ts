@@ -1,30 +1,32 @@
+import { Request } from 'express';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import path from 'path';
 import * as fs from 'fs';
 import { exec } from '../../src/proxy/processors/push-action/preReceive';
+import { Action, Step } from '../../src/proxy/actions';
 
 // TODO: Replace with memfs to prevent test pollution issues
 vi.mock('fs', { spy: true });
 
 describe('Pre-Receive Hook Execution', () => {
-  let action: any;
-  let req: any;
+  let action: Action;
+  let req: Request;
 
   beforeEach(() => {
-    req = {};
+    req = {} as Request;
     action = {
-      steps: [] as any[],
+      steps: [] as Step[],
       commitFrom: 'oldCommitHash',
       commitTo: 'newCommitHash',
       branch: 'feature-branch',
       proxyGitPath: 'test/preReceive/mock/repo',
       repoName: 'test-repo',
-      addStep(step: any) {
+      addStep(step: Step) {
         this.steps.push(step);
       },
       setAutoApproval: vi.fn(),
       setAutoRejection: vi.fn(),
-    };
+    } as unknown as Action;
   });
 
   afterEach(() => {

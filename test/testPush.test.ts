@@ -4,6 +4,7 @@ import * as db from '../src/db';
 import service from '../src/service';
 import Proxy from '../src/proxy';
 import { Express } from 'express';
+import { Action } from '../src/proxy/actions/Action';
 
 // dummy repo
 const TEST_ORG = 'finos';
@@ -21,38 +22,25 @@ const TEST_PASSWORD_2 = 'test5678';
 const TEST_USERNAME_3 = 'push-test-3';
 const TEST_EMAIL_3 = 'push-test-3@test.com';
 
-const TEST_PUSH = {
-  steps: [],
-  error: false,
-  blocked: false,
-  allowPush: false,
-  authorised: false,
-  canceled: false,
-  rejected: false,
-  autoApproved: false,
-  autoRejected: false,
-  commitData: [],
-  id: '0000000000000000000000000000000000000000__1744380874110',
-  type: 'push',
-  method: 'get',
-  timestamp: 1744380903338,
-  project: TEST_ORG,
-  repoName: TEST_REPO + '.git',
-  url: TEST_URL,
-  repo: TEST_ORG + '/' + TEST_REPO + '.git',
-  user: TEST_USERNAME_2,
-  userEmail: TEST_EMAIL_2,
-  lastStep: null,
-  blockedMessage:
-    '\n\n\nGitProxy has received your push:\n\nhttp://localhost:8080/requests/0000000000000000000000000000000000000000__1744380874110\n\n\n',
-  _id: 'GIMEz8tU2KScZiTz',
-  attestation: null,
-};
+const TEST_PUSH: Action = new Action(
+  '0000000000000000000000000000000000000000__1744380874110',
+  'push',
+  'get',
+  1744380903338,
+  TEST_URL,
+);
+TEST_PUSH.project = TEST_ORG;
+TEST_PUSH.repoName = TEST_REPO + '.git';
+TEST_PUSH.repo = TEST_ORG + '/' + TEST_REPO + '.git';
+TEST_PUSH.user = TEST_USERNAME_2;
+TEST_PUSH.userEmail = TEST_EMAIL_2;
+TEST_PUSH.blockedMessage =
+  '\n\n\nGitProxy has received your push:\n\nhttp://localhost:8080/requests/0000000000000000000000000000000000000000__1744380874110\n\n\n';
 
 describe('Push API', () => {
   let app: Express;
   let cookie: string | null = null;
-  let testRepo: any;
+  let testRepo: db.Repo;
 
   const setCookie = (res: any) => {
     const cookies: string[] = res.headers['set-cookie'] ?? [];
@@ -101,18 +89,18 @@ describe('Push API', () => {
 
     // Create a new user for the approver
     await db.createUser(TEST_USERNAME_1, TEST_PASSWORD_1, TEST_EMAIL_1, TEST_USERNAME_1, false);
-    await db.addUserCanAuthorise(testRepo._id, TEST_USERNAME_1);
+    await db.addUserCanAuthorise(testRepo._id!, TEST_USERNAME_1);
 
     // create a new user for the committer
     await db.createUser(TEST_USERNAME_2, TEST_PASSWORD_2, TEST_EMAIL_2, TEST_USERNAME_2, false);
-    await db.addUserCanPush(testRepo._id, TEST_USERNAME_2);
+    await db.addUserCanPush(testRepo._id!, TEST_USERNAME_2);
 
     // logout of admin account
     await logout();
   });
 
   afterAll(async () => {
-    await db.deleteRepo(testRepo._id);
+    await db.deleteRepo(testRepo._id!);
     await db.deleteUser(TEST_USERNAME_1);
     await db.deleteUser(TEST_USERNAME_2);
 
@@ -135,7 +123,7 @@ describe('Push API', () => {
     });
 
     it('should allow an authorizer to approve a push', async () => {
-      await db.writeAudit(TEST_PUSH as any);
+      await db.writeAudit(TEST_PUSH);
       await loginAsApprover();
       const res = await request(app)
         .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
@@ -160,8 +148,10 @@ describe('Push API', () => {
 
     it('should NOT allow an authorizer to approve if attestation is incomplete', async () => {
       // make the approver also the committer
-      const testPush = { ...TEST_PUSH, user: TEST_USERNAME_1, userEmail: TEST_EMAIL_1 };
-      await db.writeAudit(testPush as any);
+      const testPush = Object.assign({}, TEST_PUSH);
+      testPush.user = TEST_USERNAME_1;
+      testPush.userEmail = TEST_EMAIL_1;
+      await db.writeAudit(testPush);
       await loginAsApprover();
       const res = await request(app)
         .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
@@ -186,8 +176,10 @@ describe('Push API', () => {
 
     it('should NOT allow an authorizer to approve if committer is unknown', async () => {
       // make the approver also the committer
-      const testPush = { ...TEST_PUSH, user: TEST_USERNAME_3, userEmail: TEST_EMAIL_3 };
-      await db.writeAudit(testPush as any);
+      const testPush = Object.assign({}, TEST_PUSH) as Action;
+      testPush.user = TEST_USERNAME_3;
+      testPush.userEmail = TEST_EMAIL_3;
+      await db.writeAudit(testPush);
       await loginAsApprover();
       const res = await request(app)
         .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
@@ -213,10 +205,10 @@ describe('Push API', () => {
 
   it('should NOT allow an authorizer to approve their own push', async () => {
     // make the approver also the committer
-    const testPush = { ...TEST_PUSH };
+    const testPush = Object.assign({}, TEST_PUSH) as Action;
     testPush.user = TEST_USERNAME_1;
     testPush.userEmail = TEST_EMAIL_1;
-    await db.writeAudit(testPush as any);
+    await db.writeAudit(testPush);
     await loginAsApprover();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
@@ -240,7 +232,7 @@ describe('Push API', () => {
   });
 
   it('should NOT allow a non-authorizer to approve a push', async () => {
-    await db.writeAudit(TEST_PUSH as any);
+    await db.writeAudit(TEST_PUSH);
     await loginAsCommitter();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
@@ -264,7 +256,7 @@ describe('Push API', () => {
   });
 
   it('should allow an authorizer to reject a push', async () => {
-    await db.writeAudit(TEST_PUSH as any);
+    await db.writeAudit(TEST_PUSH);
     await loginAsApprover();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
@@ -274,10 +266,10 @@ describe('Push API', () => {
 
   it('should NOT allow an authorizer to reject their own push', async () => {
     // make the approver also the committer
-    const testPush = { ...TEST_PUSH };
+    const testPush = Object.assign({}, TEST_PUSH) as Action;
     testPush.user = TEST_USERNAME_1;
     testPush.userEmail = TEST_EMAIL_1;
-    await db.writeAudit(testPush as any);
+    await db.writeAudit(testPush);
     await loginAsApprover();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
@@ -286,7 +278,7 @@ describe('Push API', () => {
   });
 
   it('should NOT allow a non-authorizer to reject a push', async () => {
-    await db.writeAudit(TEST_PUSH as any);
+    await db.writeAudit(TEST_PUSH);
     await loginAsCommitter();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
@@ -295,20 +287,22 @@ describe('Push API', () => {
   });
 
   it('should fetch all pushes', async () => {
-    await db.writeAudit(TEST_PUSH as any);
+    await db.writeAudit(TEST_PUSH);
     await loginAsApprover();
     const res = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
 
-    const push = res.body.find((p: any) => p.id === TEST_PUSH.id);
+    const push = res.body.find((p: Action) => p.id === TEST_PUSH.id);
     expect(push).toBeDefined();
-    expect(push).toEqual(TEST_PUSH);
+
+    // Check that all values in push are in TEST_PUSH, except for _id
+    expect(push).toMatchObject(TEST_PUSH);
     expect(push.canceled).toBe(false);
   });
 
   it('should allow a committer to cancel a push', async () => {
-    await db.writeAudit(TEST_PUSH as any);
+    await db.writeAudit(TEST_PUSH);
     await loginAsCommitter();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
@@ -316,14 +310,14 @@ describe('Push API', () => {
     expect(res.status).toBe(200);
 
     const pushes = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
-    const push = pushes.body.find((p: any) => p.id === TEST_PUSH.id);
+    const push = pushes.body.find((p: Action) => p.id === TEST_PUSH.id);
 
     expect(push).toBeDefined();
     expect(push.canceled).toBe(true);
   });
 
   it('should not allow a non-committer to cancel a push (even if admin)', async () => {
-    await db.writeAudit(TEST_PUSH as any);
+    await db.writeAudit(TEST_PUSH);
     await loginAsAdmin();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
@@ -331,7 +325,7 @@ describe('Push API', () => {
     expect(res.status).toBe(401);
 
     const pushes = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
-    const push = pushes.body.find((p: any) => p.id === TEST_PUSH.id);
+    const push = pushes.body.find((p: Action) => p.id === TEST_PUSH.id);
 
     expect(push).toBeDefined();
     expect(push.canceled).toBe(false);

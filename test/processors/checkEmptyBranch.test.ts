@@ -50,10 +50,10 @@ describe('checkEmptyBranch', () => {
 
   describe('exec', () => {
     let action: Action;
-    let req: any;
+    let req: Request;
 
     beforeEach(() => {
-      req = {};
+      req = {} as Request;
       action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
       action.proxyGitPath = '/tmp/gitproxy';
       action.repoName = 'test-repo';

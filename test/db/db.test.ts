@@ -15,6 +15,16 @@ vi.mock('../../src/config', () => ({
 import * as db from '../../src/db';
 import * as mongo from '../../src/db/mongo';
 
+const SAMPLE_REPO = {
+  project: 'myrepo',
+  name: 'myrepo',
+  url: 'https://github.com/myrepo.git',
+  users: {
+    canPush: ['alice'],
+    canAuthorise: ['bob'],
+  },
+};
+
 describe('db', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -27,11 +37,12 @@ describe('db', () => {
   describe('isUserPushAllowed', () => {
     it('returns true if user is in canPush', async () => {
       vi.mocked(mongo.getRepoByUrl).mockResolvedValue({
+        ...SAMPLE_REPO,
         users: {
           canPush: ['alice'],
           canAuthorise: [],
         },
-      } as any);
+      });
 
       const result = await db.isUserPushAllowed('myrepo', 'alice');
       expect(result).toBe(true);
@@ -39,11 +50,12 @@ describe('db', () => {
 
     it('returns true if user is in canAuthorise', async () => {
       vi.mocked(mongo.getRepoByUrl).mockResolvedValue({
+        ...SAMPLE_REPO,
         users: {
           canPush: [],
           canAuthorise: ['bob'],
         },
-      } as any);
+      });
 
       const result = await db.isUserPushAllowed('myrepo', 'bob');
       expect(result).toBe(true);
@@ -51,11 +63,12 @@ describe('db', () => {
 
     it('returns false if user is in neither', async () => {
       vi.mocked(mongo.getRepoByUrl).mockResolvedValue({
+        ...SAMPLE_REPO,
         users: {
           canPush: [],
           canAuthorise: [],
         },
-      } as any);
+      });
 
       const result = await db.isUserPushAllowed('myrepo', 'charlie');
       expect(result).toBe(false);

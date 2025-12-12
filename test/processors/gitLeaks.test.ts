@@ -1,4 +1,6 @@
-import { describe, it, expect, beforeEach, afterEach, vi, MockInstance } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { Request } from 'express';
+
 import { Action, Step } from '../../src/proxy/actions';
 
 vi.mock('../../src/config', async (importOriginal) => {
@@ -36,7 +38,7 @@ describe('gitleaks', () => {
   describe('exec', () => {
     let exec: typeof import('../../src/proxy/processors/push-action/gitleaks').exec;
     let action: Action;
-    let req: any;
+    let req: Request;
     let stepSpy: ReturnType<typeof vi.spyOn>;
     let logStub: ReturnType<typeof vi.spyOn>;
     let errorStub: ReturnType<typeof vi.spyOn>;
@@ -62,7 +64,7 @@ describe('gitleaks', () => {
       const gitleaksModule = await import('../../src/proxy/processors/push-action/gitleaks');
       exec = gitleaksModule.exec;
 
-      req = {};
+      req = {} as Request;
       action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
       action.proxyGitPath = '/tmp';
       action.repoName = 'test-repo';

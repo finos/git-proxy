@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Action, Step } from '../../src/proxy/actions';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
+import { Request } from 'express';
 
 vi.mock('child_process');
 vi.mock('fs');
@@ -35,12 +36,12 @@ describe('writePack', () => {
 
   describe('exec', () => {
     let action: Action;
-    let req: any;
+    let req: Request;
 
     beforeEach(() => {
       req = {
         body: 'pack data',
-      };
+      } as Request;
 
       action = new Action(
         '1234567890',
