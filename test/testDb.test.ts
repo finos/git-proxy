@@ -4,6 +4,7 @@ import { Repo, User } from '../src/db/types';
 import { Action } from '../src/proxy/actions/Action';
 import { Step } from '../src/proxy/actions/Step';
 import { AuthorisedRepo } from '../src/config/generated/config';
+import { EMPTY_COMMIT_HASH } from '../src/proxy/processors/constants';
 
 const TEST_REPO = {
   project: 'finos',
@@ -37,7 +38,7 @@ const TEST_PUSH = {
   autoApproved: false,
   autoRejected: false,
   commitData: [],
-  id: '0000000000000000000000000000000000000000__1744380874110',
+  id: `${EMPTY_COMMIT_HASH}__1744380874110`,
   type: 'push',
   method: 'get',
   timestamp: 1744380903338,
@@ -49,7 +50,7 @@ const TEST_PUSH = {
   userEmail: 'db-test@test.com',
   lastStep: null,
   blockedMessage:
-    '\n\n\nGitProxy has received your push:\n\nhttp://localhost:8080/requests/0000000000000000000000000000000000000000__1744380874110\n\n\n',
+    '\n\n\nGitProxy has received your push:\n\nhttp://localhost:8080/requests/${EMPTY_COMMIT_HASH}__1744380874110\n\n\n',
   _id: 'GIMEz8tU2KScZiTz',
   attestation: null,
 };

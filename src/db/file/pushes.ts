@@ -6,9 +6,6 @@ import { PushQuery } from '../types';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
-// these don't get coverage in tests as they have already been run once before the test
-/* istanbul ignore if */
-
 // export for testing purposes
 export let db: Datastore;
 if (process.env.NODE_ENV === 'test') {
