@@ -5,7 +5,7 @@ import { describe, it, beforeEach, afterEach, expect, vi, beforeAll, afterAll } 
 import { Action, Step } from '../src/proxy/actions';
 import * as chain from '../src/proxy/chain';
 import * as helper from '../src/proxy/routes/helper';
-import Proxy from '../src/proxy';
+import { Proxy } from '../src/proxy';
 import {
   handleMessage,
   validGitRequest,
@@ -15,7 +15,7 @@ import {
 } from '../src/proxy/routes';
 
 import * as db from '../src/db';
-import service from '../src/service';
+import { Service } from '../src/service';
 
 const TEST_DEFAULT_REPO = {
   url: 'https://github.com/finos/git-proxy.git',
@@ -73,7 +73,7 @@ describe.skip('proxy express application', () => {
   beforeAll(async () => {
     // start the API and proxy
     proxy = new Proxy();
-    apiApp = await service.start(proxy);
+    apiApp = await Service.start(proxy);
     await proxy.start();
 
     const res = await request(apiApp)
@@ -96,7 +96,7 @@ describe.skip('proxy express application', () => {
 
   afterAll(async () => {
     vi.restoreAllMocks();
-    await service.stop();
+    await Service.stop();
     await proxy.stop();
     await cleanupRepo(TEST_DEFAULT_REPO.url);
     await cleanupRepo(TEST_GITLAB_REPO.url);

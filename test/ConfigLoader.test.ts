@@ -1,7 +1,7 @@
 import { describe, it, beforeEach, afterEach, afterAll, expect, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { configFile } from '../src/config/file';
+import { getConfigFile } from '../src/config/file';
 import {
   ConfigLoader,
   isValidGitUrl,
@@ -39,6 +39,7 @@ describe('ConfigLoader', () => {
 
   afterAll(async () => {
     // reset config to default after all tests have run
+    const configFile = getConfigFile();
     console.log(`Restoring config to defaults from file ${configFile}`);
     configLoader = new ConfigLoader({});
     await configLoader.loadFromFile({

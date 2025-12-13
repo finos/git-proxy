@@ -1,5 +1,3 @@
-import * as db from '../../db';
-
 /** Regex used to analyze un-proxied Git URLs */
 const GIT_URL_REGEX = /(.+:\/\/)([^/]+)(\/.+\.git)(\/.+)*/;
 
@@ -173,22 +171,4 @@ export const validGitRequest = (gitPath: string, headers: any): boolean => {
     return agent.startsWith('git/') && accept.startsWith('application/x-git-');
   }
   return false;
-};
-
-/**
- * Collect the Set of all host (host and port if specified) that we
- * will be proxying requests for, to be used to initialize the proxy.
- *
- * @return {string[]} an array of origins
- */
-export const getAllProxiedHosts = async (): Promise<string[]> => {
-  const repos = await db.getRepos();
-  const origins = new Set<string>();
-  repos.forEach((repo) => {
-    const parsedUrl = processGitUrl(repo.url);
-    if (parsedUrl) {
-      origins.add(parsedUrl.host);
-    } // failures are logged by parsing util fn
-  });
-  return Array.from(origins);
 };
