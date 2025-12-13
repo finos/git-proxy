@@ -102,7 +102,6 @@ describe.skip('Proxy Module TLS Certificate Loading', () => {
       close: vi.fn(),
     } as any);
 
-
     const ProxyClass = (await import('../src/proxy/index')).Proxy;
     proxyModule = new ProxyClass();
   });

@@ -4,6 +4,7 @@ import * as db from '../src/db';
 import { Service } from '../src/service';
 import { Proxy } from '../src/proxy';
 import { Express } from 'express';
+import { EMPTY_COMMIT_HASH } from '../src/proxy/processors/constants';
 
 // dummy repo
 const TEST_ORG = 'finos';
@@ -32,7 +33,7 @@ const TEST_PUSH = {
   autoApproved: false,
   autoRejected: false,
   commitData: [],
-  id: '0000000000000000000000000000000000000000__1744380874110',
+  id: `${EMPTY_COMMIT_HASH}__1744380874110`,
   type: 'push',
   method: 'get',
   timestamp: 1744380903338,
@@ -44,7 +45,7 @@ const TEST_PUSH = {
   userEmail: TEST_EMAIL_2,
   lastStep: null,
   blockedMessage:
-    '\n\n\nGitProxy has received your push:\n\nhttp://localhost:8080/requests/0000000000000000000000000000000000000000__1744380874110\n\n\n',
+    '\n\n\nGitProxy has received your push:\n\nhttp://localhost:8080/requests/${EMPTY_COMMIT_HASH}__1744380874110\n\n\n',
   _id: 'GIMEz8tU2KScZiTz',
   attestation: null,
 };
@@ -128,8 +129,7 @@ describe('Push API', () => {
 
     it('should get 404 for unknown push', async () => {
       await loginAsApprover();
-      const commitId =
-        '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f';
+      const commitId = `${EMPTY_COMMIT_HASH}__79b4d8953cbc324bcc1eb53d6412ff89666c241f`;
       const res = await request(app).get(`/api/v1/push/${commitId}`).set('Cookie', `${cookie}`);
       expect(res.status).toBe(404);
     });
