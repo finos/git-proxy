@@ -1,6 +1,7 @@
 import { MongoClient, Db, Collection, Filter, Document, FindOptions } from 'mongodb';
 import { getDatabase } from '../../config';
 import MongoDBStore from 'connect-mongo';
+import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
 
 let _db: Db | null = null;
 
@@ -13,6 +14,11 @@ export const connect = async (collectionName: string): Promise<Collection> => {
   if (!_db) {
     if (!connectionString) {
       throw new Error('MongoDB connection string is not provided');
+    }
+
+    if (options?.authMechanismProperties?.AWS_CREDENTIAL_PROVIDER) {
+      // we break from the config types here as we're providing a function to the mongoDB client
+      (options.authMechanismProperties.AWS_CREDENTIAL_PROVIDER as any) = fromNodeProviderChain();
     }
 
     const client = new MongoClient(connectionString, options);

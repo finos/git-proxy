@@ -23,7 +23,7 @@ describe('Generated Config (QuickType)', () => {
         ],
         sink: [
           {
-            type: 'memory',
+            type: 'fs',
             enabled: true,
           },
         ],
