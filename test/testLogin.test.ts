@@ -1,8 +1,8 @@
 import request from 'supertest';
 import { beforeAll, afterAll, beforeEach, describe, it, expect } from 'vitest';
 import * as db from '../src/db';
-import service from '../src/service';
-import Proxy from '../src/proxy';
+import { Service } from '../src/service';
+import { Proxy } from '../src/proxy';
 import { Express } from 'express';
 
 describe('login', () => {
@@ -10,7 +10,7 @@ describe('login', () => {
   let cookie: string;
 
   beforeAll(async () => {
-    app = await service.start(new Proxy());
+    app = await Service.start(new Proxy());
     await db.deleteUser('login-test-user');
   });
 
@@ -237,6 +237,6 @@ describe('login', () => {
   });
 
   afterAll(() => {
-    service.httpServer.close();
+    Service.httpServer.close();
   });
 });
