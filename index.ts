@@ -4,10 +4,10 @@ import path from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import * as fs from 'fs';
-import { configFile, setConfigFile, validate } from './src/config/file';
+import { getConfigFile, setConfigFile, validate } from './src/config/file';
 import { initUserConfig } from './src/config';
-import Proxy from './src/proxy';
-import service from './src/service';
+import { Proxy } from './src/proxy';
+import { Service } from './src/service';
 
 const argv = yargs(hideBin(process.argv))
   .usage('Usage: $0 [options]')
@@ -30,9 +30,11 @@ const argv = yargs(hideBin(process.argv))
   .strict()
   .parseSync();
 
+console.log('Setting config file to: ' + (argv.c as string) || '');
 setConfigFile((argv.c as string) || '');
 initUserConfig();
 
+const configFile = getConfigFile();
 if (argv.v) {
   if (!fs.existsSync(configFile)) {
     console.error(
@@ -46,10 +48,14 @@ if (argv.v) {
   process.exit(0);
 }
 
+console.log('validating config');
 validate();
 
+console.log('Setting up the proxy and Service');
+
+// The deferred imports should cause these to be loaded on first access
 const proxy = new Proxy();
 proxy.start();
-service.start(proxy);
+Service.start(proxy);
 
-export { proxy, service };
+export { proxy, Service };

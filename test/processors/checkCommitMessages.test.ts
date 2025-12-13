@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { exec } from '../../src/proxy/processors/push-action/checkCommitMessages';
 import { Action } from '../../src/proxy/actions';
 import * as configModule from '../../src/config';
-import { Commit } from '../../src/proxy/actions/Action';
+import { CommitData } from '../../src/proxy/processors/types';
 
 vi.mock('../../src/config', async (importOriginal) => {
   const actual: any = await importOriginal();
@@ -41,7 +41,7 @@ describe('checkCommitMessages', () => {
     describe('Empty or invalid messages', () => {
       it('should block empty string commit messages', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: '' } as Commit];
+        action.commitData = [{ message: '' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -51,7 +51,7 @@ describe('checkCommitMessages', () => {
 
       it('should block null commit messages', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: null as any } as Commit];
+        action.commitData = [{ message: null as any } as CommitData];
 
         const result = await exec({}, action);
 
@@ -60,7 +60,7 @@ describe('checkCommitMessages', () => {
 
       it('should block undefined commit messages', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: undefined as any } as Commit];
+        action.commitData = [{ message: undefined as any } as CommitData];
 
         const result = await exec({}, action);
 
@@ -69,7 +69,7 @@ describe('checkCommitMessages', () => {
 
       it('should block non-string commit messages', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 123 as any } as Commit];
+        action.commitData = [{ message: 123 as any } as CommitData];
 
         const result = await exec({}, action);
 
@@ -81,7 +81,7 @@ describe('checkCommitMessages', () => {
 
       it('should block object commit messages', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: { text: 'fix: bug' } as any } as Commit];
+        action.commitData = [{ message: { text: 'fix: bug' } as any } as CommitData];
 
         const result = await exec({}, action);
 
@@ -90,7 +90,7 @@ describe('checkCommitMessages', () => {
 
       it('should block array commit messages', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: ['fix: bug'] as any } as Commit];
+        action.commitData = [{ message: ['fix: bug'] as any } as CommitData];
 
         const result = await exec({}, action);
 
@@ -101,7 +101,7 @@ describe('checkCommitMessages', () => {
     describe('Blocked literals', () => {
       it('should block messages containing blocked literals (exact case)', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add password to config' } as Commit];
+        action.commitData = [{ message: 'Add password to config' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -114,9 +114,9 @@ describe('checkCommitMessages', () => {
       it('should block messages containing blocked literals (case insensitive)', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'Add PASSWORD to config' } as Commit,
-          { message: 'Store Secret key' } as Commit,
-          { message: 'Update TOKEN value' } as Commit,
+          { message: 'Add PASSWORD to config' } as CommitData,
+          { message: 'Store Secret key' } as CommitData,
+          { message: 'Update TOKEN value' } as CommitData,
         ];
 
         const result = await exec({}, action);
@@ -126,7 +126,7 @@ describe('checkCommitMessages', () => {
 
       it('should block messages with literals in the middle of words', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Update mypassword123' } as Commit];
+        action.commitData = [{ message: 'Update mypassword123' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -135,7 +135,7 @@ describe('checkCommitMessages', () => {
 
       it('should block when multiple literals are present', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add password and secret token' } as Commit];
+        action.commitData = [{ message: 'Add password and secret token' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -146,7 +146,7 @@ describe('checkCommitMessages', () => {
     describe('Blocked patterns', () => {
       it('should block messages containing http URLs', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'See http://example.com for details' } as Commit];
+        action.commitData = [{ message: 'See http://example.com for details' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -155,7 +155,7 @@ describe('checkCommitMessages', () => {
 
       it('should block messages containing https URLs', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Update docs at https://docs.example.com' } as Commit];
+        action.commitData = [{ message: 'Update docs at https://docs.example.com' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -164,7 +164,9 @@ describe('checkCommitMessages', () => {
 
       it('should block messages with multiple URLs', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'See http://example.com and https://other.com' } as Commit];
+        action.commitData = [
+          { message: 'See http://example.com and https://other.com' } as CommitData,
+        ];
 
         const result = await exec({}, action);
 
@@ -176,7 +178,7 @@ describe('checkCommitMessages', () => {
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'SSN: 123-45-6789' } as Commit];
+        action.commitData = [{ message: 'SSN: 123-45-6789' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -188,7 +190,7 @@ describe('checkCommitMessages', () => {
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'This is private information' } as Commit];
+        action.commitData = [{ message: 'This is private information' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -199,7 +201,7 @@ describe('checkCommitMessages', () => {
     describe('Combined blocking (literals and patterns)', () => {
       it('should block when both literals and patterns match', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'password at http://example.com' } as Commit];
+        action.commitData = [{ message: 'password at http://example.com' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -211,7 +213,7 @@ describe('checkCommitMessages', () => {
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add secret key' } as Commit];
+        action.commitData = [{ message: 'Add secret key' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -223,7 +225,7 @@ describe('checkCommitMessages', () => {
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Visit http://example.com' } as Commit];
+        action.commitData = [{ message: 'Visit http://example.com' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -234,7 +236,7 @@ describe('checkCommitMessages', () => {
     describe('Allowed messages', () => {
       it('should allow valid commit messages', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'fix: resolve bug in user authentication' } as Commit];
+        action.commitData = [{ message: 'fix: resolve bug in user authentication' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -247,9 +249,9 @@ describe('checkCommitMessages', () => {
       it('should allow messages with no blocked content', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'feat: add new feature' } as Commit,
-          { message: 'chore: update dependencies' } as Commit,
-          { message: 'docs: improve documentation' } as Commit,
+          { message: 'feat: add new feature' } as CommitData,
+          { message: 'chore: update dependencies' } as CommitData,
+          { message: 'docs: improve documentation' } as CommitData,
         ];
 
         const result = await exec({}, action);
@@ -263,7 +265,7 @@ describe('checkCommitMessages', () => {
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Any message should pass' } as Commit];
+        action.commitData = [{ message: 'Any message should pass' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -275,9 +277,9 @@ describe('checkCommitMessages', () => {
       it('should handle multiple valid commits', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'feat: add feature A' } as Commit,
-          { message: 'fix: resolve issue B' } as Commit,
-          { message: 'chore: update config C' } as Commit,
+          { message: 'feat: add feature A' } as CommitData,
+          { message: 'fix: resolve issue B' } as CommitData,
+          { message: 'chore: update config C' } as CommitData,
         ];
 
         const result = await exec({}, action);
@@ -288,9 +290,9 @@ describe('checkCommitMessages', () => {
       it('should block when any commit is invalid', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'feat: add feature A' } as Commit,
-          { message: 'fix: add password to config' } as Commit,
-          { message: 'chore: update config C' } as Commit,
+          { message: 'feat: add feature A' } as CommitData,
+          { message: 'fix: add password to config' } as CommitData,
+          { message: 'chore: update config C' } as CommitData,
         ];
 
         const result = await exec({}, action);
@@ -301,9 +303,9 @@ describe('checkCommitMessages', () => {
       it('should block when multiple commits are invalid', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'Add password' } as Commit,
-          { message: 'Store secret' } as Commit,
-          { message: 'feat: valid message' } as Commit,
+          { message: 'Add password' } as CommitData,
+          { message: 'Store secret' } as CommitData,
+          { message: 'feat: valid message' } as CommitData,
         ];
 
         const result = await exec({}, action);
@@ -313,7 +315,10 @@ describe('checkCommitMessages', () => {
 
       it('should deduplicate commit messages', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'fix: bug' } as Commit, { message: 'fix: bug' } as Commit];
+        action.commitData = [
+          { message: 'fix: bug' } as CommitData,
+          { message: 'fix: bug' } as CommitData,
+        ];
 
         const result = await exec({}, action);
 
@@ -323,9 +328,9 @@ describe('checkCommitMessages', () => {
       it('should handle mix of duplicate valid and invalid messages', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'fix: bug' } as Commit,
-          { message: 'Add password' } as Commit,
-          { message: 'fix: bug' } as Commit,
+          { message: 'fix: bug' } as CommitData,
+          { message: 'Add password' } as CommitData,
+          { message: 'fix: bug' } as CommitData,
         ];
 
         const result = await exec({}, action);
@@ -337,7 +342,7 @@ describe('checkCommitMessages', () => {
     describe('Error handling and logging', () => {
       it('should set error flag on step when messages are illegal', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add password' } as Commit];
+        action.commitData = [{ message: 'Add password' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -346,7 +351,7 @@ describe('checkCommitMessages', () => {
 
       it('should log error message to step', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add password' } as Commit];
+        action.commitData = [{ message: 'Add password' } as CommitData];
 
         const result = await exec({}, action);
         const step = result.steps[0];
@@ -359,7 +364,7 @@ describe('checkCommitMessages', () => {
 
       it('should set detailed error message', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add secret' } as Commit];
+        action.commitData = [{ message: 'Add secret' } as CommitData];
 
         const result = await exec({}, action);
         const step = result.steps[0];
@@ -371,8 +376,8 @@ describe('checkCommitMessages', () => {
       it('should include all illegal messages in error', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'Add password' } as Commit,
-          { message: 'Store token' } as Commit,
+          { message: 'Add password' } as CommitData,
+          { message: 'Store token' } as CommitData,
         ];
 
         const result = await exec({}, action);
@@ -405,7 +410,7 @@ describe('checkCommitMessages', () => {
 
       it('should handle whitespace-only messages', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: '   ' } as Commit];
+        action.commitData = [{ message: '   ' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -415,7 +420,7 @@ describe('checkCommitMessages', () => {
       it('should handle very long commit messages', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
         const longMessage = 'fix: ' + 'a'.repeat(10000);
-        action.commitData = [{ message: longMessage } as Commit];
+        action.commitData = [{ message: longMessage } as CommitData];
 
         const result = await exec({}, action);
 
@@ -427,7 +432,7 @@ describe('checkCommitMessages', () => {
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Contains $pecial characters' } as Commit];
+        action.commitData = [{ message: 'Contains $pecial characters' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -436,7 +441,7 @@ describe('checkCommitMessages', () => {
 
       it('should handle unicode characters in messages', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'feat: 添加新功能 🎉' } as Commit];
+        action.commitData = [{ message: 'feat: 添加新功能 🎉' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -448,7 +453,7 @@ describe('checkCommitMessages', () => {
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Any message' } as Commit];
+        action.commitData = [{ message: 'Any message' } as CommitData];
 
         // test that it doesn't crash
         expect(() => exec({}, action)).not.toThrow();
@@ -464,7 +469,7 @@ describe('checkCommitMessages', () => {
     describe('Step management', () => {
       it('should create a step named "checkCommitMessages"', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'fix: bug' } as Commit];
+        action.commitData = [{ message: 'fix: bug' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -473,7 +478,7 @@ describe('checkCommitMessages', () => {
 
       it('should add step to action', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'fix: bug' } as Commit];
+        action.commitData = [{ message: 'fix: bug' } as CommitData];
 
         const initialStepCount = action.steps.length;
         const result = await exec({}, action);
@@ -483,7 +488,7 @@ describe('checkCommitMessages', () => {
 
       it('should return the same action object', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'fix: bug' } as Commit];
+        action.commitData = [{ message: 'fix: bug' } as CommitData];
 
         const result = await exec({}, action);
 
@@ -494,7 +499,7 @@ describe('checkCommitMessages', () => {
     describe('Request parameter', () => {
       it('should accept request parameter without using it', async () => {
         const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'fix: bug' } as Commit];
+        action.commitData = [{ message: 'fix: bug' } as CommitData];
         const mockRequest = { headers: {}, body: {} };
 
         const result = await exec(mockRequest, action);
