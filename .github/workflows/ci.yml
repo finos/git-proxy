@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         node-version: [20.x, 22.x, 24.x]
         mongodb-version: ['6.0', '7.0', '8.0']
@@ -91,3 +92,38 @@ jobs:
           wait-on: 'http://localhost:3000'
           wait-on-timeout: 120
           command: npm run cypress:run
+
+  # Execute a final job to collect the results and report a single check status
+  results:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    name: build result
+    needs: [build]
+    steps:
+      - name: Check build results
+        run: |
+          result="${{ needs.build.result }}"
+          if [[ $result == "success" || $result == "skipped" ]]; then
+            echo "### ✅ All builds passed" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          else
+            echo "### ❌ Some builds failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Parse failed matrix jobs
+        if: needs.build.result == 'failure'
+        run: |
+          echo "## Failed Matrix Combinations" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Node Version | MongoDB Version | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------------|-----------------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Parse the matrix results from the build job
+          results='${{ toJSON(needs.build.outputs) }}'
+
+          # Since we can't directly get individual matrix job statuses,
+          # we'll note that the build job failed
+          echo "| Multiple | Multiple | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ Check the [build job logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details on which specific matrix combinations failed." >> $GITHUB_STEP_SUMMARY
