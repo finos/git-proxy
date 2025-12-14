@@ -97,7 +97,7 @@ describe('user configuration', () => {
     const config = await import('../src/config');
     config.invalidateCache();
     const authMethods = config.getAuthMethods();
-    const oidcAuth = authMethods.find((method: any) => method.type === 'openidconnect');
+    const oidcAuth = authMethods.find((method) => method.type === 'openidconnect');
 
     expect(oidcAuth).toBeDefined();
     expect(oidcAuth?.enabled).toBe(true);

@@ -1,4 +1,5 @@
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
+import { Request } from 'express';
 import * as processor from '../src/proxy/processors/push-action/checkUserPushPermission';
 import { Action } from '../src/proxy/actions/Action';
 import * as db from '../src/db';
@@ -13,7 +14,8 @@ const TEST_EMAIL_2 = 'push-perms-test-2@test.com';
 const TEST_EMAIL_3 = 'push-perms-test-3@test.com';
 
 describe('CheckUserPushPermissions...', () => {
-  let testRepo: Repo | null = null;
+  let testRepo: db.Repo | null = null;
+  const req = {} as Request;
 
   beforeAll(async () => {
     testRepo = await db.createRepo({
@@ -23,12 +25,12 @@ describe('CheckUserPushPermissions...', () => {
     });
 
     await db.createUser(TEST_USERNAME_1, 'abc', TEST_EMAIL_1, TEST_USERNAME_1, false);
-    await db.addUserCanPush(testRepo._id, TEST_USERNAME_1);
+    await db.addUserCanPush(testRepo._id!, TEST_USERNAME_1);
     await db.createUser(TEST_USERNAME_2, 'abc', TEST_EMAIL_2, TEST_USERNAME_2, false);
   });
 
   afterAll(async () => {
-    await db.deleteRepo(testRepo._id);
+    if (testRepo) await db.deleteRepo(testRepo._id!);
     await db.deleteUser(TEST_USERNAME_1);
     await db.deleteUser(TEST_USERNAME_2);
   });
@@ -36,14 +38,14 @@ describe('CheckUserPushPermissions...', () => {
   it('A committer that is approved should be allowed to push...', async () => {
     const action = new Action('1', 'type', 'method', 1, TEST_URL);
     action.userEmail = TEST_EMAIL_1;
-    const { error } = await processor.exec(null as any, action);
+    const { error } = await processor.exec(req, action);
     expect(error).toBe(false);
   });
 
   it('A committer that is NOT approved should NOT be allowed to push...', async () => {
     const action = new Action('1', 'type', 'method', 1, TEST_URL);
     action.userEmail = TEST_EMAIL_2;
-    const { error, errorMessage } = await processor.exec(null as any, action);
+    const { error, errorMessage } = await processor.exec(req, action);
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');
   });
@@ -51,7 +53,7 @@ describe('CheckUserPushPermissions...', () => {
   it('An unknown committer should NOT be allowed to push...', async () => {
     const action = new Action('1', 'type', 'method', 1, TEST_URL);
     action.userEmail = TEST_EMAIL_3;
-    const { error, errorMessage } = await processor.exec(null as any, action);
+    const { error, errorMessage } = await processor.exec(req, action);
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');
   });

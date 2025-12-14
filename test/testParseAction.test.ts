@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as preprocessor from '../src/proxy/processors/pre-processor/parseAction';
 import * as db from '../src/db';
+import { Request } from 'express';
 
 let testRepo: db.Repo | null = null;
 
@@ -27,11 +28,11 @@ describe('Pre-processor: parseAction', () => {
   });
 
   it('should be able to parse a pull request into an action', async () => {
-    const req: any = {
+    const req = {
       originalUrl: '/github.com/finos/git-proxy.git/git-upload-pack',
       method: 'GET',
       headers: { 'content-type': 'application/x-git-upload-pack-request' },
-    };
+    } as Request;
 
     const action = await preprocessor.exec(req);
     expect(action.timestamp).toBeGreaterThan(0);
@@ -41,11 +42,11 @@ describe('Pre-processor: parseAction', () => {
   });
 
   it('should be able to parse a pull request with a legacy path into an action', async () => {
-    const req: any = {
+    const req = {
       originalUrl: '/finos/git-proxy.git/git-upload-pack',
       method: 'GET',
       headers: { 'content-type': 'application/x-git-upload-pack-request' },
-    };
+    } as Request;
 
     const action = await preprocessor.exec(req);
     expect(action.timestamp).toBeGreaterThan(0);
@@ -55,11 +56,11 @@ describe('Pre-processor: parseAction', () => {
   });
 
   it('should be able to parse a push request into an action', async () => {
-    const req: any = {
+    const req = {
       originalUrl: '/github.com/finos/git-proxy.git/git-receive-pack',
       method: 'POST',
       headers: { 'content-type': 'application/x-git-receive-pack-request' },
-    };
+    } as Request;
 
     const action = await preprocessor.exec(req);
     expect(action.timestamp).toBeGreaterThan(0);
@@ -69,11 +70,11 @@ describe('Pre-processor: parseAction', () => {
   });
 
   it('should be able to parse a push request with a legacy path into an action', async () => {
-    const req: any = {
+    const req = {
       originalUrl: '/finos/git-proxy.git/git-receive-pack',
       method: 'POST',
       headers: { 'content-type': 'application/x-git-receive-pack-request' },
-    };
+    } as Request;
 
     const action = await preprocessor.exec(req);
     expect(action.timestamp).toBeGreaterThan(0);

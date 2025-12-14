@@ -13,6 +13,9 @@ import {
 } from '../src/proxy/processors/push-action/parsePush';
 import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
 import { CommitContent } from '../src/proxy/processors/types';
+import { Action } from '../src/proxy/actions/Action';
+import { Request } from 'express';
+import { Step } from '../src/proxy/actions/Step';
 
 /**
  * Creates a simplified sample PACK buffer for testing.
@@ -160,7 +163,7 @@ function createMultiObjectSamplePackBuffer() {
   header.writeUInt32BE(2, 4); // Version
   header.writeUInt32BE(numEntries, 8); // Number of entries
 
-  const packContents = [];
+  const packContents: Buffer[] = [];
   for (let i = 0; i < numEntries; i++) {
     const commitContent = TEST_MULTI_OBJ_COMMIT_CONTENT[i];
     const originalContent = Buffer.from(commitContent.content, 'utf8');
@@ -225,8 +228,12 @@ const encodeOfsDeltaOffset = (distance: number) => {
  * @param {Buffer} [options.baseSha] - SHA-1 hash for ref_delta (20 bytes).
  * @return {Buffer} - Encoded header buffer.
  */
-function encodeGitObjectHeader(type: number, size: number, options: any = {}) {
-  const headerBytes = [];
+function encodeGitObjectHeader(
+  type: number,
+  size: number,
+  options: { baseOffset?: number; baseSha?: Buffer } = {},
+) {
+  const headerBytes: number[] = [];
 
   // First byte: type (3 bits), size (lower 4 bits), continuation bit
   const firstSizeBits = size & 0x0f;
@@ -301,7 +308,7 @@ function createEmptyPackBuffer() {
 
 describe('parsePackFile', () => {
   let action: any;
-  let req: any;
+  let req: Request;
 
   beforeEach(() => {
     // Mock Action and Step and spy on methods
@@ -312,10 +319,10 @@ describe('parsePackFile', () => {
       commitData: [],
       user: null,
       steps: [],
-      addStep: vi.fn(function (this: any, step: any) {
+      addStep: vi.fn(function (this: Action, step: Step) {
         this.steps.push(step);
       }),
-      setCommit: vi.fn(function (this: any, from: string, to: string) {
+      setCommit: vi.fn(function (this: Action, from: string, to: string) {
         this.commitFrom = from;
         this.commitTo = to;
       }),
@@ -323,7 +330,7 @@ describe('parsePackFile', () => {
 
     req = {
       body: null,
-    };
+    } as Request;
   });
 
   afterEach(() => {

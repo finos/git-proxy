@@ -1,4 +1,4 @@
-import request from 'supertest';
+import request, { Response } from 'supertest';
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import * as db from '../src/db';
 import service from '../src/service';
@@ -42,8 +42,8 @@ describe('Push API', () => {
   let cookie: string | null = null;
   let testRepo: db.Repo;
 
-  const setCookie = (res: any) => {
-    const cookies: string[] = res.headers['set-cookie'] ?? [];
+  const setCookie = (res: Response) => {
+    const cookies = res.headers['set-cookie'] ?? [];
     for (const x of cookies) {
       if (x.startsWith('connect')) {
         cookie = x.split(';')[0];
@@ -176,7 +176,7 @@ describe('Push API', () => {
 
     it('should NOT allow an authorizer to approve if committer is unknown', async () => {
       // make the approver also the committer
-      const testPush = Object.assign({}, TEST_PUSH) as Action;
+      const testPush = Object.assign({}, TEST_PUSH);
       testPush.user = TEST_USERNAME_3;
       testPush.userEmail = TEST_EMAIL_3;
       await db.writeAudit(testPush);
@@ -205,7 +205,7 @@ describe('Push API', () => {
 
   it('should NOT allow an authorizer to approve their own push', async () => {
     // make the approver also the committer
-    const testPush = Object.assign({}, TEST_PUSH) as Action;
+    const testPush = Object.assign({}, TEST_PUSH);
     testPush.user = TEST_USERNAME_1;
     testPush.userEmail = TEST_EMAIL_1;
     await db.writeAudit(testPush);
@@ -266,7 +266,7 @@ describe('Push API', () => {
 
   it('should NOT allow an authorizer to reject their own push', async () => {
     // make the approver also the committer
-    const testPush = Object.assign({}, TEST_PUSH) as Action;
+    const testPush = Object.assign({}, TEST_PUSH);
     testPush.user = TEST_USERNAME_1;
     testPush.userEmail = TEST_EMAIL_1;
     await db.writeAudit(testPush);
