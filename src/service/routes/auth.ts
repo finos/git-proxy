@@ -104,28 +104,31 @@ router.post(
 router.get('/openidconnect', passport.authenticate(authStrategies['openidconnect'].type));
 
 router.get('/openidconnect/callback', (req: Request, res: Response, next: NextFunction) => {
-  passport.authenticate(authStrategies['openidconnect'].type, (err: any, user: any, info: any) => {
-    if (err) {
-      console.error('Authentication error:', err);
-      return res.status(401).end();
-    }
-    if (!user) {
-      console.error('No user found:', info);
-      return res.status(401).end();
-    }
-    req.logIn(user, (err) => {
+  passport.authenticate(
+    authStrategies['openidconnect'].type,
+    (err: unknown, user: Partial<db.User>, info: unknown) => {
       if (err) {
-        console.error('Login error:', err);
+        console.error('Authentication error:', err);
         return res.status(401).end();
       }
-      console.log('Logged in successfully. User:', user);
-      return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
-    });
-  })(req, res, next);
+      if (!user) {
+        console.error('No user found:', info);
+        return res.status(401).end();
+      }
+      req.logIn(user, (err) => {
+        if (err) {
+          console.error('Login error:', err);
+          return res.status(401).end();
+        }
+        console.log('Logged in successfully. User:', user);
+        return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
+      });
+    },
+  )(req, res, next);
 });
 
 router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
-  req.logout((err: any) => {
+  req.logout((err: unknown) => {
     if (err) return next(err);
   });
   res.clearCookie('connect.sid');
@@ -175,11 +178,12 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
       user.gitAccount = req.body.gitAccount;
       db.updateUser(user);
       res.status(200).end();
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
       res
         .status(500)
         .send({
-          message: `Error updating git account: ${e.message}`,
+          message: `Error updating git account: ${msg}`,
         })
         .end();
     }
@@ -224,10 +228,11 @@ router.post('/create-user', async (req: Request, res: Response) => {
       message: 'User created successfully',
       username,
     });
-  } catch (error: any) {
-    console.error('Error creating user:', error);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`Error creating user: ${msg}`);
     res.status(400).send({
-      message: error.message || 'Failed to create user',
+      message: msg || 'Failed to create user',
     });
   }
 });

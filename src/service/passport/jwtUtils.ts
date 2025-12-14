@@ -70,8 +70,9 @@ export async function validateJwt(
     }
 
     return { verifiedPayload, error: null };
-  } catch (error: any) {
-    const errorMessage = `JWT validation failed: ${error.message}\n`;
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    const errorMessage = `JWT validation failed: ${msg}\n`;
     console.error(errorMessage);
     return { error: errorMessage, verifiedPayload: null };
   }

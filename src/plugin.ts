@@ -1,6 +1,7 @@
 import { Request } from 'express';
 
 import { Action } from './proxy/actions';
+import Module from 'node:module';
 
 const lpModule = import('load-plugin');
 /* eslint-disable @typescript-eslint/no-unused-expressions */
@@ -69,7 +70,7 @@ class PluginLoader {
       const moduleResults = await Promise.allSettled(modulePromises);
       const loadedModules = moduleResults
         .filter(
-          (result): result is PromiseFulfilledResult<any> =>
+          (result): result is PromiseFulfilledResult<Module> =>
             result.status === 'fulfilled' && result.value !== null,
         )
         .map((result) => result.value);
@@ -89,7 +90,7 @@ class PluginLoader {
        */
       const pluginTypeResults = settledPluginTypeResults
         .filter(
-          (result): result is PromiseFulfilledResult<any> =>
+          (result): result is PromiseFulfilledResult<PluginTypeResult> =>
             result.status === 'fulfilled' && result.value !== null,
         )
         .map((result) => result.value);
@@ -112,9 +113,9 @@ class PluginLoader {
   /**
    * Resolve & load a Node module from either a given specifier (file path, import specifier or package name) using load-plugin.
    * @param {string} target The module specifier to load
-   * @return {Promise<Module>} A resolved & loaded Module
+   * @return {Promise<unknown>} A resolved & loaded Module
    */
-  private async _loadPluginModule(target: string): Promise<any> {
+  private async _loadPluginModule(target: string): Promise<unknown> {
     const lp = await lpModule;
     const resolvedModuleFile = await lp.resolvePlugin(target);
     return await lp.loadPlugin(resolvedModuleFile);

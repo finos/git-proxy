@@ -25,15 +25,16 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
 
   try {
     config = await discovery(server, clientID, clientSecret);
-  } catch (error: any) {
-    console.error('Error during OIDC discovery:', error);
-    throw new Error('OIDC setup error (discovery): ' + error.message);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`Error during OIDC discovery: ${msg}`);
+    throw new Error(`OIDC setup error (discovery): ${msg}`);
   }
 
   try {
     const strategy = new Strategy(
       { callbackURL, config, scope },
-      async (tokenSet: any, done: (err: any, user?: any) => void) => {
+      async (tokenSet: any, done: (err: unknown, user?: Partial<db.User>) => void) => {
         const idTokenClaims = tokenSet.claims();
         const expectedSub = idTokenClaims.sub;
         const userInfo = await fetchUserInfo(config, tokenSet.access_token, expectedSub);
@@ -41,7 +42,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
       },
     );
 
-    strategy.currentUrl = function (request: any) {
+    strategy.currentUrl = function (request: Request) {
       const callbackUrl = new URL(callbackURL);
       const currentUrl = Strategy.prototype.currentUrl.call(this, request);
       currentUrl.host = callbackUrl.host;
@@ -51,7 +52,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
 
     passport.use(type, strategy);
 
-    passport.serializeUser((user: any, done) => {
+    passport.serializeUser((user: Partial<db.User>, done) => {
       done(null, user.oidcId || user.username);
     });
 
@@ -59,15 +60,16 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
       try {
         const user = await db.findUserByOIDC(id);
         done(null, user);
-      } catch (err) {
-        done(err as Error);
+      } catch (err: unknown) {
+        done(err);
       }
     });
 
     return passport;
-  } catch (error: any) {
-    console.error('Error during OIDC passport setup:', error);
-    throw new Error('OIDC setup error (strategy): ' + error.message);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`Error during OIDC passport setup: ${msg}`);
+    throw new Error(`OIDC setup error (strategy): ${msg}`);
   }
 };
 
@@ -79,9 +81,8 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
  */
 export const handleUserAuthentication = async (
   userInfo: UserInfoResponse,
-  done: (err: any, user?: any) => void,
+  done: (err: unknown, user?: Partial<db.User>) => void,
 ): Promise<void> => {
-  console.log('handleUserAuthentication called');
   try {
     const user = await db.findUserByOIDC(userInfo.sub);
 
@@ -100,21 +101,26 @@ export const handleUserAuthentication = async (
     }
 
     return done(null, user);
-  } catch (err) {
-    return done(err);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    return done(msg);
   }
 };
 
 /**
  * Extracts email from OIDC profile.
  * Different providers use different fields to store the email.
- * @param {any} profile - The user profile from the OIDC provider
+ * @param {UserInfoResponse} profile - The user profile from the OIDC provider
  * @return {string | null} - The email address from the profile
  */
-export const safelyExtractEmail = (profile: any): string | null => {
-  return (
-    profile.email || (profile.emails && profile.emails.length > 0 ? profile.emails[0].value : null)
-  );
+export const safelyExtractEmail = (profile: UserInfoResponse): string | null => {
+  if (profile.email) {
+    return profile.email;
+  }
+  if (profile.emails && Array.isArray(profile.emails) && profile.emails.length > 0) {
+    return (profile.emails[0] as { value: string }).value;
+  }
+  return null;
 };
 
 /**
