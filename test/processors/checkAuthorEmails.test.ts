@@ -89,7 +89,7 @@ describe('checkAuthorEmails', () => {
 
       it('should reject null/undefined email', async () => {
         vi.mocked(validator.isEmail).mockReturnValue(false);
-        mockAction.commitData = [{ ...SAMPLE_COMMIT, authorEmail: null as any }];
+        mockAction.commitData = [{ ...SAMPLE_COMMIT, authorEmail: null as unknown as string }];
 
         const result = await exec(mockReq, mockAction);
 

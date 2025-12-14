@@ -79,7 +79,7 @@ index 1234567..abcdefg 100644
   describe('Error conditions', () => {
     it('should handle non-string diff content', async () => {
       const action = new Action('non-string-test', 'push', 'POST', Date.now(), 'test/repo.git');
-      const diffStep = generateDiffStep(12345 as any);
+      const diffStep = generateDiffStep(12345 as unknown as string);
       action.steps = [diffStep as Step];
 
       const result = await exec({} as Request, action);

@@ -1,7 +1,8 @@
 import https from 'https';
-import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
+import { describe, it, beforeEach, afterEach, expect, vi, Mock } from 'vitest';
 import fs from 'fs';
 import { GitProxyConfig } from '../src/config/generated/config';
+import Proxy from '../src/proxy';
 
 /* 
   jescalada: these tests are currently causing the following error
@@ -17,7 +18,7 @@ import { GitProxyConfig } from '../src/config/generated/config';
   https://github.com/finos/git-proxy/issues/1294
 */
 describe.skip('Proxy Module TLS Certificate Loading', () => {
-  let proxyModule: any;
+  let proxyModule: Proxy;
   let mockConfig: any;
   let mockHttpServer: any;
   let mockHttpsServer: any;
@@ -91,7 +92,7 @@ describe.skip('Proxy Module TLS Certificate Loading', () => {
     }));
 
     vi.doMock('../src/proxy/chain', async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual = await importOriginal<typeof import('../src/proxy/chain')>();
       return {
         ...actual,
         chainPluginLoader: null,

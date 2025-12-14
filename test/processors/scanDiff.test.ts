@@ -258,7 +258,7 @@ describe('Scan commit diff', () => {
 
   it('should block push when diff is not a string', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [generateDiffStep(1337 as any)];
+    action.steps = [generateDiffStep(1337 as unknown as string)];
 
     const { error, errorMessage } = await processor.exec({} as Request, action);
 
