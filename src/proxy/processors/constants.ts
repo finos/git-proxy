@@ -1,3 +1,4 @@
+import { Repo } from '../../db/types';
 import { CommitData } from './types';
 
 export const BRANCH_PREFIX = 'refs/heads/';
@@ -16,4 +17,14 @@ export const SAMPLE_COMMIT: CommitData = {
   committerEmail: 'test@test.com',
   commitTimestamp: '1234567890',
   message: 'test',
+};
+
+export const SAMPLE_REPO = {
+  project: 'myrepo',
+  name: 'myrepo',
+  url: 'https://github.com/myrepo.git',
+  users: {
+    canPush: ['alice'],
+    canAuthorise: ['bob'],
+  },
 };

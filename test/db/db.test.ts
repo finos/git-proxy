@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
+import { SAMPLE_REPO } from '../../src/proxy/processors/constants';
 
 vi.mock('../../src/db/mongo', () => ({
   getRepoByUrl: vi.fn(),
@@ -14,16 +15,6 @@ vi.mock('../../src/config', () => ({
 
 import * as db from '../../src/db';
 import * as mongo from '../../src/db/mongo';
-
-const SAMPLE_REPO = {
-  project: 'myrepo',
-  name: 'myrepo',
-  url: 'https://github.com/myrepo.git',
-  users: {
-    canPush: ['alice'],
-    canAuthorise: ['bob'],
-  },
-};
 
 describe('db', () => {
   beforeEach(() => {
