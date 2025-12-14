@@ -1,3 +1,4 @@
+import { PassportStatic } from 'passport';
 import { describe, it, beforeEach, afterEach, expect, vi, type Mock } from 'vitest';
 
 import {
@@ -9,7 +10,7 @@ import {
 describe('OIDC auth method', () => {
   let dbStub: any;
   let passportStub: any;
-  let configure: any;
+  let configure: (passport: PassportStatic) => Promise<PassportStatic>;
   let discoveryStub: Mock;
   let fetchUserInfoStub: Mock;
 
@@ -44,7 +45,7 @@ describe('OIDC auth method', () => {
     discoveryStub = vi.fn().mockResolvedValue({ some: 'config' });
     fetchUserInfoStub = vi.fn();
 
-    const strategyCtorStub = function (_options: any, verifyFn: any) {
+    const strategyCtorStub = function (_options: unknown, _verifyFn: unknown) {
       return {
         name: 'openidconnect',
         currentUrl: vi.fn().mockReturnValue({}),
@@ -54,18 +55,14 @@ describe('OIDC auth method', () => {
     // First mock the dependencies
     vi.resetModules();
     vi.doMock('../src/config', async () => {
-      const actual = await vi.importActual<any>('../src/config');
+      const actual = await vi.importActual('../src/config');
       return {
         ...actual,
-        default: {
-          ...actual.default,
-          initUserConfig: vi.fn(),
-        },
         initUserConfig: vi.fn(),
       };
     });
     vi.doMock('fs', async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
         existsSync: vi.fn().mockReturnValue(true),
@@ -74,7 +71,7 @@ describe('OIDC auth method', () => {
     });
     vi.doMock('../../db', () => dbStub);
     vi.doMock('../../config', async () => {
-      const actual = await vi.importActual<any>('../src/config');
+      const actual = await vi.importActual('../src/config');
       return actual;
     });
     vi.doMock('openid-client', () => ({
@@ -130,19 +127,19 @@ describe('OIDC auth method', () => {
 
   describe('safelyExtractEmail', () => {
     it('should extract email from profile', () => {
-      const profile = { email: 'test@test.com' };
+      const profile = { sub: 'sub-test', email: 'test@test.com' };
       const email = safelyExtractEmail(profile);
       expect(email).toBe('test@test.com');
     });
 
     it('should extract email from profile with emails array', () => {
-      const profile = { emails: [{ value: 'test@test.com' }] };
+      const profile = { sub: 'sub-test', emails: [{ value: 'test@test.com' }] };
       const email = safelyExtractEmail(profile);
       expect(email).toBe('test@test.com');
     });
 
     it('should return null if no email in profile', () => {
-      const profile = { name: 'test' };
+      const profile = { sub: 'sub-test', name: 'test' };
       const email = safelyExtractEmail(profile);
       expect(email).toBeNull();
     });

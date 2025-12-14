@@ -1,10 +1,12 @@
-import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, Mock, MockInstance } from 'vitest';
 import axios from 'axios';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import * as jwkToBufferModule from 'jwk-to-pem';
 
 import { assignRoles, getJwks, validateJwt } from '../src/service/passport/jwtUtils';
 import { jwtAuthHandler } from '../src/service/passport/jwtAuthHandler';
+import { JwtConfig } from '../src/config/generated/config';
+import { NextFunction } from 'express';
 
 describe('getJwks', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -27,16 +29,17 @@ describe('getJwks', () => {
 });
 
 describe('validateJwt', () => {
-  let decodeStub: ReturnType<typeof vi.spyOn>;
-  let verifyStub: ReturnType<typeof vi.spyOn>;
-  let pemStub: ReturnType<typeof vi.fn>;
+  let decodeStub: MockInstance;
+  let verifyStub: MockInstance;
   let getJwksStub: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     const jwksResponse = { keys: [{ kid: 'test-key', kty: 'RSA', n: 'abc', e: 'AQAB' }] };
 
-    vi.mock('jwk-to-pem', () => {
+    vi.mock('jwk-to-pem', async (importOriginal) => {
+      const actual = await importOriginal<typeof jwkToBufferModule>();
       return {
+        ...actual,
         default: vi.fn().mockReturnValue('fake-public-key'),
       };
     });
@@ -46,22 +49,17 @@ describe('validateJwt', () => {
       .mockResolvedValueOnce({ data: jwksResponse });
 
     getJwksStub = vi.fn().mockResolvedValue(jwksResponse.keys);
-    decodeStub = vi.spyOn(jwt, 'decode') as any;
+    decodeStub = vi.spyOn(jwt, 'decode');
     verifyStub = vi.spyOn(jwt, 'verify') as any;
-    pemStub = vi.fn().mockReturnValue('fake-public-key');
-
-    (jwkToBufferModule.default as Mock).mockImplementation(pemStub);
   });
 
   afterEach(() => vi.restoreAllMocks());
 
   it('should validate a correct JWT', async () => {
     const mockJwk = { kid: '123', kty: 'RSA', n: 'abc', e: 'AQAB' };
-    const mockPem = 'fake-public-key';
 
     decodeStub.mockReturnValue({ header: { kid: '123' } });
     getJwksStub.mockResolvedValue([mockJwk]);
-    pemStub.mockReturnValue(mockPem);
     verifyStub.mockReturnValue({ azp: 'client-id', sub: 'user123' });
 
     const { verifiedPayload } = await validateJwt(
@@ -124,7 +122,7 @@ describe('assignRoles', () => {
     const user = { username: 'no-role-user', admin: undefined };
     const payload = { admin: 'admin' };
 
-    assignRoles(null as any, payload, user);
+    assignRoles(undefined, payload, user);
     expect(user.admin).toBeUndefined();
   });
 });
@@ -132,9 +130,8 @@ describe('assignRoles', () => {
 describe('jwtAuthHandler', () => {
   let req: any;
   let res: any;
-  let next: any;
-  let jwtConfig: any;
-  let validVerifyResponse: any;
+  let next: NextFunction;
+  let jwtConfig: JwtConfig;
 
   beforeEach(() => {
     req = { header: vi.fn(), isAuthenticated: vi.fn(), user: {} };
@@ -146,13 +143,6 @@ describe('jwtAuthHandler', () => {
       authorityURL: 'https://accounts.google.com',
       expectedAudience: 'expected-audience',
       roleMapping: { admin: { admin: 'admin' } },
-    };
-
-    validVerifyResponse = {
-      header: { kid: '123' },
-      azp: 'client-id',
-      sub: 'user123',
-      admin: 'admin',
     };
   });
 
@@ -174,8 +164,8 @@ describe('jwtAuthHandler', () => {
 
   it('should return 500 if authorityURL not configured', async () => {
     req.header.mockReturnValue('Bearer fake-token');
-    jwtConfig.authorityURL = null;
-    vi.spyOn(jwt, 'verify').mockReturnValue(validVerifyResponse);
+    jwtConfig.authorityURL = '';
+    vi.spyOn(jwt, 'verify').mockReturnValue();
 
     await jwtAuthHandler(jwtConfig)(req, res, next);
 
@@ -185,8 +175,8 @@ describe('jwtAuthHandler', () => {
 
   it('should return 500 if clientID not configured', async () => {
     req.header.mockReturnValue('Bearer fake-token');
-    jwtConfig.clientID = null;
-    vi.spyOn(jwt, 'verify').mockReturnValue(validVerifyResponse);
+    jwtConfig.clientID = '';
+    vi.spyOn(jwt, 'verify').mockReturnValue();
 
     await jwtAuthHandler(jwtConfig)(req, res, next);
 

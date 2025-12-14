@@ -1,4 +1,6 @@
 import { describe, it, beforeEach, expect, vi, type Mock, afterEach } from 'vitest';
+import { ADProfile } from '../src/service/passport/types.js';
+import ActiveDirectory from 'activedirectory2';
 
 let ldapStub: { isUserInAdGroup: Mock };
 let dbStub: { updateUser: Mock };
@@ -8,10 +10,10 @@ let passportStub: {
   deserializeUser: Mock;
 };
 let strategyCallback: (
-  req: any,
-  profile: any,
-  ad: any,
-  done: (err: any, user: any) => void,
+  req: Request,
+  profile: ADProfile,
+  ad: ActiveDirectory,
+  done: (err: unknown, user: unknown) => void,
 ) => void;
 
 const newConfig = JSON.stringify({
@@ -32,6 +34,9 @@ const newConfig = JSON.stringify({
 });
 
 describe('ActiveDirectory auth method', () => {
+  const mockReq = {} as Request;
+  const mockAd = {} as ActiveDirectory;
+
   beforeEach(async () => {
     ldapStub = {
       isUserInAdGroup: vi.fn(),
@@ -62,7 +67,7 @@ describe('ActiveDirectory auth method', () => {
     vi.doMock('../src/db', () => dbStub);
 
     vi.doMock('passport-activedirectory', () => ({
-      default: function (options: any, callback: (err: any, user: any) => void) {
+      default: function (_: unknown, callback: (err: unknown, user: unknown) => void) {
         strategyCallback = callback;
         return {
           name: 'ActiveDirectory',
@@ -87,7 +92,6 @@ describe('ActiveDirectory auth method', () => {
   });
 
   it('should authenticate a valid user and mark them as admin', async () => {
-    const mockReq = {};
     const mockProfile = {
       _json: {
         sAMAccountName: 'test-user',
@@ -98,13 +102,13 @@ describe('ActiveDirectory auth method', () => {
       displayName: 'Test User',
     };
 
-    (ldapStub.isUserInAdGroup as Mock)
+    ldapStub.isUserInAdGroup
       .mockResolvedValueOnce(true) // adminGroup check
       .mockResolvedValueOnce(true); // userGroup check
 
     const done = vi.fn();
 
-    await strategyCallback(mockReq, mockProfile, {}, done);
+    await strategyCallback(mockReq, mockProfile, mockAd, done);
 
     expect(done).toHaveBeenCalledOnce();
     const [err, user] = done.mock.calls[0];
@@ -121,7 +125,6 @@ describe('ActiveDirectory auth method', () => {
   });
 
   it('should fail if user is not in user group', async () => {
-    const mockReq = {};
     const mockProfile = {
       _json: {
         sAMAccountName: 'bad-user',
@@ -132,11 +135,11 @@ describe('ActiveDirectory auth method', () => {
       displayName: 'Bad User',
     };
 
-    (ldapStub.isUserInAdGroup as Mock).mockResolvedValueOnce(false);
+    ldapStub.isUserInAdGroup.mockResolvedValueOnce(false);
 
     const done = vi.fn();
 
-    await strategyCallback(mockReq, mockProfile, {}, done);
+    await strategyCallback(mockReq, mockProfile, mockAd, done);
 
     expect(done).toHaveBeenCalledOnce();
     const [err, user] = done.mock.calls[0];
@@ -147,7 +150,6 @@ describe('ActiveDirectory auth method', () => {
   });
 
   it('should handle LDAP errors gracefully', async () => {
-    const mockReq = {};
     const mockProfile = {
       _json: {
         sAMAccountName: 'error-user',
@@ -158,11 +160,11 @@ describe('ActiveDirectory auth method', () => {
       displayName: 'Error User',
     };
 
-    (ldapStub.isUserInAdGroup as Mock).mockRejectedValueOnce(new Error('LDAP error'));
+    ldapStub.isUserInAdGroup.mockRejectedValueOnce(new Error('LDAP error'));
 
     const done = vi.fn();
 
-    await strategyCallback(mockReq, mockProfile, {}, done);
+    await strategyCallback(mockReq, mockProfile, mockAd, done);
 
     expect(done).toHaveBeenCalledOnce();
     const [err, user] = done.mock.calls[0];
