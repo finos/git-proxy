@@ -31,8 +31,9 @@ const exec = async (req: Request, action: Action) => {
     step.log(`new idx files: ${newIdxFiles}`);
 
     step.setContent(content);
-  } catch (e: any) {
-    step.setError(e.toString('utf-8'));
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    step.setError(msg);
     throw e;
   } finally {
     action.addStep(step);

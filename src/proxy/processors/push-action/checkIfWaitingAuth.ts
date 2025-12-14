@@ -16,8 +16,9 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
         }
       }
     }
-  } catch (e: any) {
-    step.setError(e.toString('utf-8'));
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    step.setError(msg);
     throw e;
   } finally {
     action.addStep(step);

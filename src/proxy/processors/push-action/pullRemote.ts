@@ -47,8 +47,9 @@ const exec = async (req: Request, action: Action): Promise<Action> => {
 
     step.log(`Completed ${cmd}`);
     step.setContent(`Completed ${cmd}`);
-  } catch (e: any) {
-    step.setError(e.toString('utf-8'));
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    step.setError(msg);
     throw e;
   } finally {
     action.addStep(step);
