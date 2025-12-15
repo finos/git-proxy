@@ -114,8 +114,9 @@ describe.skip('Proxy Module TLS Certificate Loading', () => {
   afterEach(async () => {
     try {
       await proxyModule.stop();
-    } catch (err) {
-      console.error('Error occurred when stopping the proxy: ', err);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('Error occurred when stopping the proxy: ', msg);
     }
     vi.restoreAllMocks();
   });

@@ -16,18 +16,20 @@ const db = new Datastore({ filename: './.data/db/users.db', autoload: true });
 // Using a unique constraint with the index
 try {
   db.ensureIndex({ fieldName: 'username', unique: true });
-} catch (e) {
+} catch (error: unknown) {
+  const msg = error instanceof Error ? error.message : String(error);
   console.error(
     'Failed to build a unique index of usernames. Please check your database file for duplicate entries or delete the duplicate through the UI and restart. ',
-    e,
+    msg,
   );
 }
 try {
   db.ensureIndex({ fieldName: 'email', unique: true });
-} catch (e) {
+} catch (error: unknown) {
+  const msg = error instanceof Error ? error.message : String(error);
   console.error(
     'Failed to build a unique index of user email addresses. Please check your database file for duplicate entries or delete the duplicate through the UI and restart. ',
-    e,
+    msg,
   );
 }
 db.setAutocompactionInterval(COMPACTION_INTERVAL);

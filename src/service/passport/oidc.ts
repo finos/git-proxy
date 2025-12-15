@@ -60,8 +60,8 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
       try {
         const user = await db.findUserByOIDC(id);
         done(null, user);
-      } catch (err: unknown) {
-        done(err);
+      } catch (error: unknown) {
+        done(error);
       }
     });
 

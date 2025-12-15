@@ -63,8 +63,8 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
               const message = `User it not a member of ${userGroup}`;
               return done(message, null);
             }
-          } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : String(err);
+          } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
             const message = `An error occurred while checking if the user is a member of the user group: ${msg}`;
             return done(message, null);
           }
@@ -73,10 +73,10 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
           let isAdmin = false;
           try {
             isAdmin = await ldaphelper.isUserInAdGroup(req, profile, ad, domain, adminGroup);
-          } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : String(err);
+          } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
             const message = `An error occurred while checking if the user is a member of the admin group: ${msg}`;
-            console.error(message, err); // don't return an error for this case as you may still be a user
+            console.error(message, error); // don't return an error for this case as you may still be a user
           }
 
           profile.admin = isAdmin;
@@ -93,10 +93,10 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
           await db.updateUser(user);
 
           return done(null, user);
-        } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err);
+        } catch (error: unknown) {
+          const msg = error instanceof Error ? error.message : String(error);
           console.log(`Error authenticating AD user: ${msg}`);
-          return done(err, null);
+          return done(error, null);
         }
       },
     ),

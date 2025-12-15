@@ -24,11 +24,13 @@ const getUser = async (
 
     setUser?.(user);
     setIsLoading?.(false);
-  } catch (error) {
+  } catch (error: unknown) {
     const axiosError = error as AxiosError;
     if (axiosError.response?.status === 401) {
       setAuth?.(false);
     } else {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`Error fetching user: ${msg}`);
       setIsError?.(true);
     }
     setIsLoading?.(false);
@@ -49,7 +51,7 @@ const getUsers = async (
       getAxiosConfig(),
     );
     setUsers(response.data);
-  } catch (error) {
+  } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
       if (error.response?.status === 401) {
         setAuth(false);
@@ -59,7 +61,8 @@ const getUsers = async (
         setErrorMessage(`Error fetching users: ${msg}`);
       }
     } else {
-      setErrorMessage(`Error fetching users: ${(error as Error).message ?? 'Unknown error'}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      setErrorMessage(`Error fetching users: ${msg}`);
     }
   } finally {
     setIsLoading(false);
@@ -74,7 +77,8 @@ const updateUser = async (user: PublicUser): Promise<void> => {
     if (axios.isAxiosError(error)) {
       console.log(error.response?.data?.message);
     } else {
-      console.log(`Error updating user: ${error}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      console.log(`Error updating user: ${msg}`);
     }
     throw error;
   }

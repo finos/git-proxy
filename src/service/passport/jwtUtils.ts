@@ -17,8 +17,9 @@ export async function getJwks(authorityUrl: string): Promise<JwkKey[]> {
 
     const { data: jwks }: { data: JwksResponse } = await axios.get(jwksUri);
     return jwks.keys;
-  } catch (error) {
-    console.error('Error fetching JWKS:', error);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Error fetching JWKS:', msg);
     throw new Error('Failed to fetch JWKS');
   }
 }

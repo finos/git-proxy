@@ -17,10 +17,11 @@ if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 const db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
 try {
   db.ensureIndex({ fieldName: 'id', unique: true });
-} catch (e) {
+} catch (error: unknown) {
+  const msg = error instanceof Error ? error.message : String(error);
   console.error(
     'Failed to build a unique index of push id values. Please check your database file for duplicate entries or delete the duplicate through the UI and restart. ',
-    e,
+    msg,
   );
 }
 db.setAutocompactionInterval(COMPACTION_INTERVAL);

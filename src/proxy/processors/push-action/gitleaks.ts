@@ -67,7 +67,7 @@ async function fileIsReadable(path: PathLike): Promise<boolean> {
     }
     await fs.access(path, fs.constants.R_OK);
     return true;
-  } catch (e) {
+  } catch (error: unknown) {
     return false;
   }
 }
@@ -116,8 +116,9 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
   let config: ConfigOptions | undefined = undefined;
   try {
     config = await getPluginConfig();
-  } catch (e) {
-    console.error('failed to get gitleaks config, please fix the error:', e);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('failed to get gitleaks config, please fix the error:', msg);
     action.error = true;
     step.setError('failed setup gitleaks, please contact an administrator\n');
     action.addStep(step);
@@ -175,9 +176,10 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
       console.log('succeeded');
       console.log(gitleaks.stderr);
     }
-  } catch (e) {
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
     action.error = true;
-    step.setError('failed to spawn gitleaks, please contact an administrator\n');
+    step.setError(`failed to spawn gitleaks, please contact an administrator\n: ${msg}`);
     action.addStep(step);
     return action;
   }

@@ -79,8 +79,8 @@ export class ConfigLoader extends EventEmitter {
         fs.mkdirSync(this.cacheDir, { recursive: true });
         console.log(`Created cache directory at ${this.cacheDir}`);
         return true;
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
         console.error('Failed to create cache directory:', msg);
         return false;
       }

@@ -188,11 +188,10 @@ const repo = (proxy: Proxy) => {
             await theProxy?.stop();
             await theProxy?.start();
           }
-        } catch (e: unknown) {
-          if (e instanceof Error) {
-            console.error('Repository creation failed due to error: ', e.message);
-            console.error(e.stack);
-            res.status(500).send({ message: 'Failed to create repository due to error' });
+        } catch (error: unknown) {
+          if (error instanceof Error) {
+            console.error('Repository creation failed due to error: ', error.message);
+            console.error(error.stack);
           }
           res.status(500).send({ message: 'Failed to create repository due to error' });
         }

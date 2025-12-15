@@ -18,10 +18,11 @@ export const db = new Datastore({ filename: './.data/db/repos.db', autoload: tru
 
 try {
   db.ensureIndex({ fieldName: 'url', unique: true });
-} catch (e) {
+} catch (error: unknown) {
+  const msg = error instanceof Error ? error.message : String(error);
   console.error(
     'Failed to build a unique index of Repository URLs. Please check your database file for duplicate entries or delete the duplicate through the UI and restart. ',
-    e,
+    msg,
   );
 }
 

@@ -11,8 +11,9 @@ const isEmptyBranch = async (action: Action): Promise<boolean> => {
 
       const type = await git.raw(['cat-file', '-t', action.commitTo || '']);
       return type.trim() === 'commit';
-    } catch (err) {
-      console.log(`Commit ${action.commitTo} not found: ${err}`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.log(`Commit ${action.commitTo} not found: ${msg}`);
     }
   }
 

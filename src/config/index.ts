@@ -312,14 +312,16 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     await proxy.start();
 
     console.log('Services restarted with new configuration');
-  } catch (error) {
-    console.error('Failed to apply new configuration:', error);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Failed to apply new configuration:', msg);
     // Attempt to restart with previous config
     try {
       const proxy = require('../proxy');
       await proxy.start();
-    } catch (startError) {
-      console.error('Failed to restart services:', startError);
+    } catch (startError: unknown) {
+      const msg = startError instanceof Error ? startError.message : String(startError);
+      console.error('Failed to restart services:', msg);
     }
   }
 };
@@ -356,7 +358,8 @@ try {
   loadFullConfiguration();
   initializeConfigLoader();
   console.log('Configuration loaded successfully');
-} catch (error) {
-  console.error('Failed to load configuration:', error);
+} catch (error: unknown) {
+  const msg = error instanceof Error ? error.message : String(error);
+  console.error('Failed to load configuration:', msg);
   throw error;
 }

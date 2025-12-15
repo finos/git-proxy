@@ -62,13 +62,10 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       await addUser(repoId, username, type);
       handleSuccess();
       handleClose();
-    } catch (e) {
+    } catch (error: unknown) {
       setIsLoading(false);
-      if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError('An unknown error occurred');
-      }
+      const msg = error instanceof Error ? error.message : String(error);
+      setError(`Error adding user: ${msg}`);
     }
   };
 

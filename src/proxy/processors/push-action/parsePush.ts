@@ -101,8 +101,8 @@ async function exec(req: Request, action: Action): Promise<Action> {
     step.content = {
       meta: meta,
     };
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
     step.setError(`Unable to parse push. Please contact an administrator for support: ${msg}`);
   } finally {
     action.addStep(step);
@@ -504,9 +504,10 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
             offset++;
           }
         });
-      } catch (e) {
-        console.warn(`Error during decompression: ${JSON.stringify(e)}`);
-        error = new Error('Error during decompression', { cause: e });
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.warn(`Error during decompression: ${msg}`);
+        throw new Error(`Error during decompression: ${msg}`);
       }
     }
     const result = {

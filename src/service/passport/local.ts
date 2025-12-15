@@ -25,8 +25,8 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
           }
 
           return done(null, user);
-        } catch (err: unknown) {
-          return done(err);
+        } catch (error: unknown) {
+          return done(error);
         }
       },
     ),
@@ -40,8 +40,8 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
     try {
       const user = await db.findUser(username);
       done(null, user);
-    } catch (err: unknown) {
-      done(err, null);
+    } catch (error: unknown) {
+      done(error, null);
     }
   });
 

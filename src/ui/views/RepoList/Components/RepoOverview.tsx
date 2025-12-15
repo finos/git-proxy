@@ -31,12 +31,9 @@ const Repositories: React.FC<RepositoriesProps> = (props) => {
         await fetchRemoteRepositoryData(props.repo.project, props.repo.name, remoteUrl),
       );
     } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
       const errorMessage = `Unable to fetch repository data for ${props.repo.project}/${props.repo.name} from '${remoteUrl}' - this may occur if the project is private or from an SCM vendor that is not supported.`;
-      if (error instanceof Error) {
-        console.warn(errorMessage, error.message);
-      } else {
-        console.warn(errorMessage);
-      }
+      console.warn(errorMessage, msg);
     }
   };
 

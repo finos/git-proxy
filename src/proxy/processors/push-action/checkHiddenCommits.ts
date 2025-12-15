@@ -69,10 +69,10 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
       step.log('All pack commits are referenced in the introduced range.');
       step.setContent(`All ${packCommits.size} pack commits are within introduced commits.`);
     }
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
     step.setError(msg);
-    throw e;
+    throw error;
   } finally {
     action.addStep(step);
   }

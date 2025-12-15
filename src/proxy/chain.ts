@@ -48,9 +48,10 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
         break;
       }
     }
-  } catch (e) {
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
     action.error = true;
-    action.errorMessage = `An error occurred when executing the chain: ${e}`;
+    action.errorMessage = `An error occurred when executing the chain: ${msg}`;
     console.error(action.errorMessage);
   } finally {
     await proc.push.audit(req, action);

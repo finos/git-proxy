@@ -22,8 +22,9 @@ export const getUserInfo = async (): Promise<PublicUser | null> => {
     });
     if (!response.ok) throw new Error(`Failed to fetch user info: ${response.statusText}`);
     return await response.json();
-  } catch (error) {
-    console.error('Error fetching user info:', error);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Error fetching user info:', msg);
     return null;
   }
 };

@@ -67,8 +67,9 @@ const loginSuccessHandler = () => async (req: Request, res: Response) => {
       message: 'success',
       user: currentUser,
     });
-  } catch (e) {
-    console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.log(`service.routes.auth.login: Error logging user in ${msg}`);
     res.status(500).send('Failed to login').end();
   }
 };
@@ -178,8 +179,8 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
       user.gitAccount = req.body.gitAccount;
       db.updateUser(user);
       res.status(200).end();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
       res
         .status(500)
         .send({

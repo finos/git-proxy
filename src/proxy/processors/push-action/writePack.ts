@@ -31,10 +31,10 @@ const exec = async (req: Request, action: Action) => {
     step.log(`new idx files: ${newIdxFiles}`);
 
     step.setContent(content);
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
     step.setError(msg);
-    throw e;
+    throw error;
   } finally {
     action.addStep(step);
   }

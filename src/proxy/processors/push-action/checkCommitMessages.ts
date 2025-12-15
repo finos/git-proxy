@@ -41,8 +41,9 @@ const isMessageAllowed = (commitMessage: string): boolean => {
       console.log('Commit message is blocked via configured literals/patterns...');
       return false;
     }
-  } catch (error) {
-    console.log('Invalid regex pattern...');
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.log(`Invalid regex pattern... ${msg}`);
     return false;
   }
 
