@@ -17,32 +17,33 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
-        node-version: [20.x]
-        mongodb-version: [4.4]
+        node-version: [20.x, 22.x, 24.x]
+        mongodb-version: ['6.0', '7.0', '8.0']
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2 # v2.13.3
+        uses: step-security/harden-runner@df199fb7be9f65074067a9eb93f12bb4c5547cf2 # ratchet:step-security/harden-runner@v2.13.3
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # ratchet:actions/checkout@v6.0.1
         with:
           fetch-depth: 0
 
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        uses: actions/setup-node@395ad3262231945c25e8478fd5baf05154b1d79f # ratchet:actions/setup-node@v6.1.0
         with:
           node-version: ${{ matrix.node-version }}
 
       - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@315db7fe45ac2880b7758f1933e6e5d59afd5e94 # 1.12.1
+        uses: supercharge/mongodb-github-action@315db7fe45ac2880b7758f1933e6e5d59afd5e94 # ratchet:supercharge/mongodb-github-action@1.12.1
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
 
       - name: Install dependencies
-        run: npm i
+        run: npm ci
 
       # for now only check the types of the server
       # tsconfig isn't quite set up right to respect what vite accepts
@@ -60,7 +61,7 @@ jobs:
           npm run test-coverage-ci --workspaces --if-present
 
       - name: Upload test coverage report
-        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+        uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # ratchet:codecov/codecov-action@v5.5.1
         with:
           files: ./coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -72,22 +73,57 @@ jobs:
         run: npm run build-ui
 
       - name: Save build folder
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
         with:
-          name: build
+          name: build-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
           if-no-files-found: error
           path: build
 
       - name: Download the build folders
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # ratchet:actions/download-artifact@v5
         with:
-          name: build
+          name: build-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
           path: build
 
       - name: Run cypress test
-        uses: cypress-io/github-action@7ef72e250a9e564efb4ed4c2433971ada4cc38b4 # v6.10.4
+        uses: cypress-io/github-action@7ef72e250a9e564efb4ed4c2433971ada4cc38b4 # ratchet:cypress-io/github-action@v6.10.4
         with:
           start: npm start &
           wait-on: 'http://localhost:3000'
           wait-on-timeout: 120
-          run: npm run cypress:run
+          command: npm run cypress:run
+
+  # Execute a final job to collect the results and report a single check status
+  results:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    name: build result
+    needs: [build]
+    steps:
+      - name: Check build results
+        run: |
+          result="${{ needs.build.result }}"
+          if [[ $result == "success" || $result == "skipped" ]]; then
+            echo "### ✅ All builds passed" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          else
+            echo "### ❌ Some builds failed" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+      - name: Parse failed matrix jobs
+        if: needs.build.result == 'failure'
+        run: |
+          echo "## Failed Matrix Combinations" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Node Version | MongoDB Version | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------------|-----------------|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Parse the matrix results from the build job
+          results='${{ toJSON(needs.build.outputs) }}'
+
+          # Since we can't directly get individual matrix job statuses,
+          # we'll note that the build job failed
+          echo "| Multiple | Multiple | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ Check the [build job logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details on which specific matrix combinations failed." >> $GITHUB_STEP_SUMMARY
