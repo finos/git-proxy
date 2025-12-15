@@ -32,7 +32,7 @@
         },
         "gitleaks": {
           "type": "object",
-          "description": "Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin",
+          "description": "Configuration for the gitleaks [https://github.com/gitleaks/gitleaks](https://github.com/gitleaks/gitleaks) plugin",
           "properties": {
             "enabled": { "type": "boolean" },
             "ignoreGitleaksAllow": { "type": "boolean" },
@@ -192,17 +192,20 @@
                 "additionalProperties": false,
                 "properties": {
                   "text": {
-                    "type": "string"
+                    "type": "string",
+                    "description": "Tooltip text"
                   },
                   "links": {
                     "type": "array",
+                    "description": "An array of links to display under the tooltip text, providing additional context about the question",
                     "items": {
                       "type": "object",
                       "additionalProperties": false,
                       "properties": {
-                        "text": { "type": "string" },
-                        "url": { "type": "string", "format": "url" }
-                      }
+                        "text": { "type": "string", "description": "Link text" },
+                        "url": { "type": "string", "format": "url", "description": "Link URL" }
+                      },
+                      "required": ["text", "url"]
                     }
                   }
                 },
@@ -377,15 +380,56 @@
       "required": ["project", "name", "url"]
     },
     "database": {
-      "type": "object",
-      "properties": {
-        "type": { "type": "string" },
-        "enabled": { "type": "boolean" },
-        "connectionString": { "type": "string" },
-        "options": { "type": "object" },
-        "params": { "type": "object" }
-      },
-      "required": ["type", "enabled"]
+      "description": "Configuration entry for a database",
+      "oneOf": [
+        {
+          "type": "object",
+          "name": "MongoDB Config",
+          "description": "Connection properties for mongoDB. Options may be passed in either the connection string or broken out in the options object",
+          "properties": {
+            "type": { "type": "string", "const": "mongo" },
+            "enabled": { "type": "boolean" },
+            "connectionString": {
+              "type": "string",
+              "description": "mongoDB Client connection string, see [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)"
+            },
+            "options": {
+              "type": "object",
+              "description": "mongoDB Client connection options. Please note that only custom options are described here, see [https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/](https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/) for all config options.",
+              "properties": {
+                "authMechanismProperties": {
+                  "type": "object",
+                  "properties": {
+                    "AWS_CREDENTIAL_PROVIDER": {
+                      "type": "boolean",
+                      "description": "If set to true, the `fromNodeProviderChain()` function from @aws-sdk/credential-providers is passed as the `AWS_CREDENTIAL_PROVIDER`"
+                    }
+                  },
+                  "additionalProperties": true
+                }
+              },
+              "required": [],
+              "additionalProperties": true
+            }
+          },
+          "required": ["type", "enabled", "connectionString"]
+        },
+        {
+          "type": "object",
+          "name": "File-based DB Config",
+          "description": "Connection properties for an neDB file-based database",
+          "properties": {
+            "type": { "type": "string", "const": "fs" },
+            "enabled": { "type": "boolean" },
+            "params": {
+              "type": "object",
+              "description": "Legacy config property not currently used",
+              "deprecated": true
+            }
+          },
+          "required": ["type", "enabled"]
+        }
+      ]
     },
     "authenticationElement": {
       "type": "object",
