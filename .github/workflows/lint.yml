@@ -29,7 +29,9 @@ jobs:
           fetch-depth: 0
 
       - name: Install Dependencies
-        run: npm install --workspaces
+        run: |
+          npm ci --include=dev
+          npm ci --include=dev --workspaces --if-present
 
       - name: Code Linting
         run: |
