@@ -4,7 +4,7 @@ USER root
 
 WORKDIR /app
 
-COPY tsconfig.json tsconfig.publish.json proxy.config.json config.schema.json integration-test.config.json vite.config.ts package*.json index.html index.ts ./
+COPY tsconfig.json tsconfig.publish.json proxy.config.json config.schema.json test-e2e.proxy.config.json vite.config.ts package*.json index.html index.ts ./
 COPY src/ /app/src/
 COPY public/ /app/public/
 

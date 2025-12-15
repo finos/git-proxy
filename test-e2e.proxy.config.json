@@ -13,12 +13,12 @@
     {
       "project": "coopernetes",
       "name": "test-repo",
-      "url": "http://git-server:8080/coopernetes/test-repo.git"
+      "url": "https://git-server:8443/coopernetes/test-repo.git"
     },
     {
       "project": "finos",
       "name": "git-proxy",
-      "url": "http://git-server:8080/finos/git-proxy.git"
+      "url": "https://git-server:8443/finos/git-proxy.git"
     }
   ],
   "sink": [

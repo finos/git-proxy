@@ -191,26 +191,23 @@ export const getUsers = (query?: Partial<UserQuery>): Promise<User[]> => start()
 export const deleteUser = (username: string): Promise<void> => start().deleteUser(username);
 
 export const updateUser = (user: Partial<User>): Promise<void> => start().updateUser(user);
-
 /**
  * Collect the Set of all host (host and port if specified) that we
  * will be proxying requests for, to be used to initialize the proxy.
  *
- * @return {Promise<Array<{protocol: string, host: string}>>} an array of protocol+host combinations
+ * @return {string[]} an array of origins
  */
-export const getAllProxiedHosts = async (): Promise<Array<{ protocol: string; host: string }>> => {
+
+export const getAllProxiedHosts = async (): Promise<string[]> => {
   const repos = await getRepos();
-  const origins = new Map<string, string>(); // host -> protocol
+  const origins = new Set<string>();
   repos.forEach((repo) => {
     const parsedUrl = processGitUrl(repo.url);
     if (parsedUrl) {
-      // If this host doesn't exist yet, or if we find an HTTP repo (to prefer HTTP over HTTPS for mixed cases)
-      if (!origins.has(parsedUrl.host) || parsedUrl.protocol === 'http://') {
-        origins.set(parsedUrl.host, parsedUrl.protocol);
-      }
+      origins.add(parsedUrl.host);
     } // failures are logged by parsing util fn
   });
-  return Array.from(origins.entries()).map(([host, protocol]) => ({ protocol, host }));
+  return Array.from(origins);
 };
 
 export type { PushQuery, Repo, Sink, User } from './types';

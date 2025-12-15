@@ -163,15 +163,15 @@ const repo = (proxy: any) => {
           let newOrigin = true;
 
           const existingHosts = await getAllProxiedHosts();
-          existingHosts.forEach((hostInfo) => {
-            // Check if the request URL starts with the existing protocol+host combination
-            if (req.body.url.startsWith(`${hostInfo.protocol}${hostInfo.host}`)) {
+          existingHosts.forEach((host) => {
+            // Check if the request URL contains this host
+            if (req.body.url.includes(host)) {
               newOrigin = false;
             }
           });
 
           console.log(
-            `API request to proxy repository ${req.body.url} is for a new origin: ${newOrigin},\n\texisting origin list was: ${JSON.stringify(existingHosts.map((h) => `${h.protocol}${h.host}`))}`,
+            `API request to proxy repository ${req.body.url} is for a new origin: ${newOrigin},\n\texisting origin list was: ${JSON.stringify(existingHosts)}`,
           );
 
           // create the repository

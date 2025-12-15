@@ -50,24 +50,45 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
 
   /**
    * Helper function to login and get a session cookie
+   * Includes retry logic to handle connection reset issues
    */
-  async function login(username: string, password: string): Promise<string> {
-    const response = await fetch(`${testConfig.gitProxyUiUrl}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
+  async function login(username: string, password: string, retries = 3): Promise<string> {
+    let lastError: Error | null = null;
 
-    if (!response.ok) {
-      throw new Error(`Login failed: ${response.status}`);
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        // Small delay before retry to allow connection pool to reset
+        if (attempt > 1) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+
+        const response = await fetch(`${testConfig.gitProxyUiUrl}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Login failed: ${response.status}`);
+        }
+
+        const cookies = response.headers.get('set-cookie');
+        if (!cookies) {
+          throw new Error('No session cookie received');
+        }
+
+        return cookies;
+      } catch (error: any) {
+        lastError = error;
+        if (attempt < retries && error.cause?.code === 'UND_ERR_SOCKET') {
+          console.log(`[TEST] Login attempt ${attempt} failed with socket error, retrying...`);
+          continue;
+        }
+        throw error;
+      }
     }
 
-    const cookies = response.headers.get('set-cookie');
-    if (!cookies) {
-      throw new Error('No session cookie received');
-    }
-
-    return cookies;
+    throw lastError;
   }
 
   /**
@@ -247,7 +268,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
       // Get the test-repo repository and add permissions
       const repos = await getRepos(adminCookie);
       const testRepo = repos.find(
-        (r: any) => r.url === 'http://git-server:8080/coopernetes/test-repo.git',
+        (r: any) => r.url === 'https://git-server:8443/coopernetes/test-repo.git',
       );
 
       if (testRepo && testRepo._id) {
@@ -269,7 +290,8 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
     }
   }, testConfig.timeout);
 
-  describe('Repository push operations through git proxy', () => {
+  // Run tests sequentially to avoid conflicts when pushing to the same repo
+  describe.sequential('Repository push operations through git proxy', () => {
     it(
       'should handle push operations through git proxy (with proper authorization check)',
       async () => {
@@ -464,8 +486,8 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
             encoding: 'utf8',
           });
 
-          // Step 6: Push through git proxy (should succeed)
-          console.log('[TEST] Step 6: Pushing to git proxy with authorized user...');
+          // Step 6: Pull any upstream changes and push through git proxy
+          console.log('[TEST] Step 6: Pulling upstream changes and pushing to git proxy...');
 
           const currentBranch: string = execSync('git branch --show-current', {
             cwd: cloneDir,
@@ -473,6 +495,20 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
           }).trim();
 
           console.log(`[TEST] Current branch: ${currentBranch}`);
+
+          // Pull any upstream changes from previous tests before pushing
+          try {
+            execSync(`git pull --rebase origin ${currentBranch}`, {
+              cwd: cloneDir,
+              encoding: 'utf8',
+              timeout: 30000,
+              env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+            });
+            console.log('[TEST] Pulled upstream changes successfully');
+          } catch (pullError: any) {
+            // Ignore pull errors - may fail if no upstream changes or first push
+            console.log('[TEST] Pull skipped or no upstream changes');
+          }
 
           // Push through git proxy
           // Note: Git proxy may queue the push for approval rather than pushing immediately
@@ -594,12 +630,25 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
           const commitMessage: string = `Approved workflow test - ${timestamp}`;
           execSync(`git commit -m "${commitMessage}"`, { cwd: cloneDir, encoding: 'utf8' });
 
-          // Step 5: First push (should be queued for approval)
+          // Step 5: Pull upstream changes and push (should be queued for approval)
           console.log('[TEST] Step 5: Initial push to git proxy...');
           const currentBranch: string = execSync('git branch --show-current', {
             cwd: cloneDir,
             encoding: 'utf8',
           }).trim();
+
+          // Pull any upstream changes from previous tests before pushing
+          try {
+            execSync(`git pull --rebase origin ${currentBranch}`, {
+              cwd: cloneDir,
+              encoding: 'utf8',
+              timeout: 30000,
+              env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+            });
+            console.log('[TEST] Pulled upstream changes successfully');
+          } catch (pullError: any) {
+            console.log('[TEST] Pull skipped or no upstream changes');
+          }
 
           let pushOutput = '';
           let pushId: string | null = null;
