@@ -14,8 +14,8 @@ const TEST_EMAIL_2 = 'push-perms-test-2@test.com';
 const TEST_EMAIL_3 = 'push-perms-test-3@test.com';
 
 describe('CheckUserPushPermissions...', () => {
-  let testRepo: db.Repo | null = null;
   const req = {} as Request;
+  let testRepo: Required<db.Repo> | null = null;
 
   beforeAll(async () => {
     testRepo = await db.createRepo({
@@ -25,12 +25,12 @@ describe('CheckUserPushPermissions...', () => {
     });
 
     await db.createUser(TEST_USERNAME_1, 'abc', TEST_EMAIL_1, TEST_USERNAME_1, false);
-    await db.addUserCanPush(testRepo._id!, TEST_USERNAME_1);
+    await db.addUserCanPush(testRepo._id, TEST_USERNAME_1);
     await db.createUser(TEST_USERNAME_2, 'abc', TEST_EMAIL_2, TEST_USERNAME_2, false);
   });
 
   afterAll(async () => {
-    if (testRepo) await db.deleteRepo(testRepo._id!);
+    if (testRepo) await db.deleteRepo(testRepo._id);
     await db.deleteUser(TEST_USERNAME_1);
     await db.deleteUser(TEST_USERNAME_2);
   });

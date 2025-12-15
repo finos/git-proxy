@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 
 import * as db from '../../db';
 import { getProxyURL } from '../urls';
-import { getAllProxiedHosts } from '../../proxy/routes/helper';
+import { getAllProxiedHosts } from '../../db';
 import { RepoQuery } from '../../db/types';
 import { isAdminUser } from './utils';
 import Proxy from '../../proxy';

@@ -340,7 +340,7 @@ describe('validate config files', () => {
   });
 
   it('should validate using default config file when no path provided', () => {
-    const originalConfigFile = configFile.configFile;
+    const originalConfigFile = configFile.getConfigFile();
     const mainConfigPath = path.join(__dirname, '..', 'proxy.config.json');
     configFile.setConfigFile(mainConfigPath);
 
@@ -356,7 +356,7 @@ describe('setConfigFile function', () => {
   let originalConfigFile: string | undefined;
 
   beforeEach(() => {
-    originalConfigFile = configFile.configFile;
+    originalConfigFile = configFile.getConfigFile();
   });
 
   afterEach(() => {
@@ -366,7 +366,7 @@ describe('setConfigFile function', () => {
   it('should set the config file path', () => {
     const newPath = '/tmp/new-config.json';
     configFile.setConfigFile(newPath);
-    expect(configFile.configFile).toBe(newPath);
+    expect(configFile.getConfigFile()).toBe(newPath);
   });
 
   it('should allow changing config file multiple times', () => {
@@ -374,10 +374,10 @@ describe('setConfigFile function', () => {
     const secondPath = '/tmp/second-config.json';
 
     configFile.setConfigFile(firstPath);
-    expect(configFile.configFile).toBe(firstPath);
+    expect(configFile.getConfigFile()).toBe(firstPath);
 
     configFile.setConfigFile(secondPath);
-    expect(configFile.configFile).toBe(secondPath);
+    expect(configFile.getConfigFile()).toBe(secondPath);
   });
 });
 

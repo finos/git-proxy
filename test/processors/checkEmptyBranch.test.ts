@@ -1,7 +1,7 @@
 import { Request } from 'express';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Action } from '../../src/proxy/actions';
-import { SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
+import { EMPTY_COMMIT_HASH, SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
 
 vi.mock('simple-git');
 vi.mock('fs');
@@ -57,7 +57,7 @@ describe('checkEmptyBranch', () => {
       action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
       action.proxyGitPath = '/tmp/gitproxy';
       action.repoName = 'test-repo';
-      action.commitFrom = '0000000000000000000000000000000000000000';
+      action.commitFrom = EMPTY_COMMIT_HASH;
       action.commitTo = 'abcdef1234567890abcdef1234567890abcdef12';
       action.commitData = [];
     });

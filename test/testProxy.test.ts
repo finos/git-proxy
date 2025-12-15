@@ -80,7 +80,7 @@ import * as plugin from '../src/plugin';
 import * as fs from 'fs';
 
 // Import the class under test
-import Proxy from '../src/proxy/index';
+import { Proxy } from '../src/proxy/index';
 
 interface MockServer {
   listen: ReturnType<typeof vi.fn>;

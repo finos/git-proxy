@@ -6,39 +6,39 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./config": {
+      "types": "./dist/src/config/index.d.ts",
       "import": "./dist/src/config/index.js",
-      "require": "./dist/src/config/index.js",
-      "types": "./dist/src/config/index.d.ts"
+      "require": "./dist/src/config/index.js"
     },
     "./db": {
+      "types": "./dist/src/db/index.d.ts",
       "import": "./dist/src/db/index.js",
-      "require": "./dist/src/db/index.js",
-      "types": "./dist/src/db/index.d.ts"
+      "require": "./dist/src/db/index.js"
     },
     "./plugin": {
+      "types": "./dist/src/plugin.d.ts",
       "import": "./dist/src/plugin.js",
-      "require": "./dist/src/plugin.js",
-      "types": "./dist/src/plugin.d.ts"
+      "require": "./dist/src/plugin.js"
     },
     "./proxy": {
+      "types": "./dist/src/proxy/index.d.ts",
       "import": "./dist/src/proxy/index.js",
-      "require": "./dist/src/proxy/index.js",
-      "types": "./dist/src/proxy/index.d.ts"
+      "require": "./dist/src/proxy/index.js"
     },
     "./proxy/actions": {
+      "types": "./dist/src/proxy/actions/index.d.ts",
       "import": "./dist/src/proxy/actions/index.js",
-      "require": "./dist/src/proxy/actions/index.js",
-      "types": "./dist/src/proxy/actions/index.d.ts"
+      "require": "./dist/src/proxy/actions/index.js"
     },
     "./ui": {
+      "types": "./dist/src/ui/index.d.ts",
       "import": "./dist/src/ui/index.js",
-      "require": "./dist/src/ui/index.js",
-      "types": "./dist/src/ui/index.d.ts"
+      "require": "./dist/src/ui/index.js"
     }
   },
   "scripts": {
@@ -81,6 +81,7 @@
     "url": "https://github.com/finos/git-proxy"
   },
   "dependencies": {
+    "@aws-sdk/credential-providers": "^3.940.0",
     "@material-ui/core": "^4.12.4",
     "@material-ui/icons": "4.11.3",
     "@primer/octicons-react": "^19.21.0",
@@ -94,7 +95,7 @@
     "diff2html": "^3.4.52",
     "env-paths": "^3.0.0",
     "escape-string-regexp": "^5.0.0",
-    "express": "^4.21.2",
+    "express": "^5.1.0",
     "express-http-proxy": "^2.1.2",
     "express-rate-limit": "^8.2.1",
     "express-session": "^1.18.2",
@@ -129,12 +130,12 @@
     "@babel/preset-react": "^7.28.5",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
-    "@eslint/compat": "^1.4.1",
+    "@eslint/compat": "^2.0.0",
     "@eslint/js": "^9.39.1",
     "@eslint/json": "^0.14.0",
     "@types/activedirectory2": "^1.2.6",
     "@types/cors": "^2.8.19",
-    "@types/domutils": "^1.7.8",
+    "@types/domutils": "^2.1.0",
     "@types/express": "^5.0.5",
     "@types/express-http-proxy": "^1.6.7",
     "@types/express-session": "^1.18.2",
@@ -151,7 +152,7 @@
     "@types/validator": "^13.15.9",
     "@types/yargs": "^17.0.35",
     "@vitest/coverage-v8": "^3.2.4",
-    "@vitejs/plugin-react": "^4.7.0",
+    "@vitejs/plugin-react": "^5.1.1",
     "cypress": "^15.6.0",
     "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",

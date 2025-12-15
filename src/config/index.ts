@@ -5,7 +5,7 @@ import { GitProxyConfig, Convert } from './generated/config';
 import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
-import { configFile } from './file';
+import { getConfigFile } from './file';
 
 // Cache for current configuration
 let _currentConfig: GitProxyConfig | null = null;
@@ -52,7 +52,7 @@ function loadFullConfiguration(): GitProxyConfig {
   const defaultConfig = cleanUndefinedValues(rawDefaultConfig);
 
   let userSettings: Partial<GitProxyConfig> = {};
-  const userConfigFile = process.env.CONFIG_FILE || configFile;
+  const userConfigFile = process.env.CONFIG_FILE || getConfigFile();
 
   if (existsSync(userConfigFile)) {
     try {

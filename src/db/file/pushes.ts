@@ -1,4 +1,3 @@
-import fs from 'fs';
 import _ from 'lodash';
 import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
@@ -8,13 +7,13 @@ import { Attestation } from '../../proxy/processors/types';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
-// these don't get coverage in tests as they have already been run once before the test
-/* istanbul ignore if */
-if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
-/* istanbul ignore if */
-if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
-
-const db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
+// export for testing purposes
+export let db: Datastore;
+if (process.env.NODE_ENV === 'test') {
+  db = new Datastore({ inMemoryOnly: true, autoload: true });
+} else {
+  db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
+}
 try {
   db.ensureIndex({ fieldName: 'id', unique: true });
 } catch (error: unknown) {
