@@ -28,13 +28,14 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       .toString()
       .split(':');
 
+    // Note: setting singleBranch to true will cause issues when pushing to
+    // a non-default branch as commits from those branches won't be fetched
     await git.clone({
       fs,
       http: gitHttpClient,
       url: action.url,
       dir: `${action.proxyGitPath}/${action.repoName}`,
       onAuth: () => ({ username, password }),
-      singleBranch: true,
       depth: 1,
     });
 
