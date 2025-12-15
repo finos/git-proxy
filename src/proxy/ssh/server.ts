@@ -185,6 +185,10 @@ export class SSHServer {
 
       if (ctx.method === 'publickey') {
         const keyString = `${ctx.key.algo} ${ctx.key.data.toString('base64')}`;
+        console.log(
+          '[SSH] Attempting to find user by SSH key: ',
+          JSON.stringify(keyString, null, 2),
+        );
 
         (db as any)
           .findUserBySSHKey(keyString)

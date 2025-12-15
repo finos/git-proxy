@@ -146,6 +146,8 @@ export class SSHAgentProxy extends EventEmitter {
       throw new Error(`Unexpected response type: ${responseType}`);
     }
 
+    console.log('[AgentProxy] Identities response length: ', response.length);
+
     return this.parseIdentities(response);
   }
 

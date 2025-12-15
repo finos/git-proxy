@@ -69,6 +69,15 @@ export class LazySSHAgent extends BaseAgent {
         }
 
         const identities = await agentProxy.getIdentities();
+        console.log('[LazyAgent] Identities:', identities);
+        console.log('--------------------------------');
+        console.log('[LazyAgent] AgentProxy client details: ', {
+          agentChannel: this.client.agentChannel,
+          agentProxy: this.client.agentProxy,
+          agentForwardingEnabled: this.client.agentForwardingEnabled,
+          clientIp: this.client.clientIp,
+          authenticatedUser: this.client.authenticatedUser,
+        });
 
         // ssh2's AgentContext.init() calls parseKey() on every key we return.
         // We need to return the raw pubKeyBlob Buffer, which parseKey() can parse
