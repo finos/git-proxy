@@ -22,7 +22,7 @@ import { beforeAll } from 'vitest';
 
 // Environment configuration - can be overridden for different environments
 export const testConfig = {
-  gitProxyUrl: process.env.GIT_PROXY_URL || 'http://localhost:8000/git-server:8080',
+  gitProxyUrl: process.env.GIT_PROXY_URL || 'http://localhost:8000/git-server:8443',
   gitProxyUiUrl: process.env.GIT_PROXY_UI_URL || 'http://localhost:8081',
   timeout: parseInt(process.env.E2E_TIMEOUT || '30000'),
   maxRetries: parseInt(process.env.E2E_MAX_RETRIES || '30'),

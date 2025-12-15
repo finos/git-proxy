@@ -4,11 +4,11 @@ services:
     ports:
       - '8000:8000'
       - '8081:8081'
-    command: ['node', 'dist/index.js', '--config', '/app/integration-test.config.json']
+    command: ['node', 'dist/index.js', '--config', '/app/test-e2e.proxy.config.json']
     volumes:
-      - ./integration-test.config.json:/app/integration-test.config.json:ro
+      - ./test-e2e.proxy.config.json:/app/test-e2e.proxy.config.json:ro
       # If using Podman, you might need to add the :Z or :z option for SELinux
-      # - ./integration-test.config.json:/app/integration-test.config.json:ro,Z
+      # - ./test-e2e.proxy.config.json:/app/test-e2e.proxy.config.json:ro,Z
     depends_on:
       - mongodb
       - git-server
@@ -19,6 +19,7 @@ services:
       - GIT_PROXY_UI_PORT=8081
       - GIT_PROXY_SERVER_PORT=8000
       - NODE_OPTIONS=--trace-warnings
+      - NODE_TLS_REJECT_UNAUTHORIZED=0
       # Runtime environment variables for UI configuration
       # API_URL should point to the same origin as the UI (both on 8081)
       # Leave empty or unset for same-origin API access
@@ -29,7 +30,6 @@ services:
       #   - Comma-separated list = 'http://localhost:3000,https://example.com'
       #   - Unset/empty = Same-origin only (most secure)
       - ALLOWED_ORIGINS=
-
   mongodb:
     image: mongo:7
     ports:
@@ -44,7 +44,7 @@ services:
   git-server:
     build: localgit/
     ports:
-      - '8080:8080' # Add this line to expose the git server
+      - '8443:8443' # HTTPS git server
     environment:
       - GIT_HTTP_EXPORT_ALL=true
     networks:

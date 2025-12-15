@@ -4,10 +4,15 @@ RUN apt-get update && apt-get install -y \
     git \
     apache2-utils \
     python3 \
+    openssl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY httpd.conf /usr/local/apache2/conf/httpd.conf
 COPY git-capture-wrapper.py /usr/local/bin/git-capture-wrapper.py
+COPY generate-cert.sh /usr/local/bin/generate-cert.sh
+
+RUN chmod +x /usr/local/bin/generate-cert.sh \
+  && /usr/local/bin/generate-cert.sh
 
 RUN htpasswd -cb /usr/local/apache2/conf/.htpasswd admin admin123 \
   && htpasswd -b /usr/local/apache2/conf/.htpasswd testuser user123
@@ -20,6 +25,6 @@ RUN chmod +x /usr/local/bin/init-repos.sh \
   && chown www-data:www-data /var/git-captures \
   && /usr/local/bin/init-repos.sh
 
-EXPOSE 8080
+EXPOSE 8443
 
 CMD ["httpd-foreground"]

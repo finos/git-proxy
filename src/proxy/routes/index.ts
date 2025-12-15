@@ -180,24 +180,21 @@ const getRouter = async () => {
   const proxyKeys: string[] = [];
   const proxies: RequestHandler[] = [];
 
-  console.log(
-    `Initializing proxy router for origins: '${JSON.stringify(originsToProxy.map((o) => `${o.protocol}${o.host}`))}'`,
-  );
+  console.log(`Initializing proxy router for origins: '${JSON.stringify(originsToProxy)}'`);
 
   // we need to wrap multiple proxy middlewares in a custom middleware as middlewares
   // with path are processed in descending path order (/ then /github.com etc.) and
   // we want the fallback proxy to go last.
   originsToProxy.forEach((origin) => {
-    const fullOriginUrl = `${origin.protocol}${origin.host}`;
-    console.log(`\tsetting up origin: '${origin.host}' with protocol: '${origin.protocol}'`);
+    console.log(`\tsetting up origin: '${origin}'`);
 
-    proxyKeys.push(`/${origin.host}/`);
+    proxyKeys.push(`/${origin}/`);
     proxies.push(
-      proxy(fullOriginUrl, {
+      proxy('https://' + origin, {
         parseReqBody: false,
         preserveHostHdr: false,
         filter: proxyFilter,
-        proxyReqPathResolver: getRequestPathResolver(origin.protocol), // Use the correct protocol
+        proxyReqPathResolver: getRequestPathResolver('https://'), // no need to add host as it's in the URL
         proxyReqOptDecorator: proxyReqOptDecorator,
         proxyReqBodyDecorator: proxyReqBodyDecorator,
         proxyErrorHandler: proxyErrorHandler,
