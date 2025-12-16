@@ -69,14 +69,14 @@ graph TB
 - **Purpose**: Handles SSH Git operations
 - **Entry Point**: SSH2 server
 - **Key Features**:
-  - SSH key-based authentication
+  - SSH agent forwarding (uses client's SSH keys securely)
   - Stream-based pack data capture
-  - SSH user context preservation
+  - SSH user context preservation (keys never stored on proxy)
   - Error response formatting (stderr)
 
 ### 2. Security Processor Chain (`src/proxy/chain.ts`)
 
-The heart of GitProxy's security model - a shared 17-processor chain used by both protocols:
+The heart of GitProxy's security model - a shared 16-processor chain used by both protocols:
 
 ```typescript
 const pushActionChain = [
@@ -157,9 +157,9 @@ sequenceDiagram
 
     Client->>SSH Server: git-receive-pack 'repo'
     SSH Server->>Stream Handler: Capture pack data
-    Stream Handler->>Stream Handler: Buffer chunks (500MB limit)
+    Stream Handler->>Stream Handler: Buffer chunks (1GB limit, configurable)
     Stream Handler->>Chain: Execute security chain
-    Chain->>Chain: Run 17 processors
+    Chain->>Chain: Run 16 processors
     Chain->>Remote: Forward if approved
     Remote->>Client: Response
 ```
@@ -280,8 +280,8 @@ stream.end();
 #### SSH
 
 - **Streaming**: Custom buffer management
-- **Memory**: In-memory buffering up to 500MB
-- **Size Limit**: 500MB (configurable)
+- **Memory**: In-memory buffering up to 1GB
+- **Size Limit**: 1GB (configurable)
 
 ### Performance Optimizations
 
@@ -342,8 +342,8 @@ Developer → Load Balancer → Multiple GitProxy Instances → GitHub
 
 ### Data Protection
 
-- **Encryption**: SSH keys encrypted at rest
-- **Transit**: HTTPS/TLS for all communications
+- **Encryption**: TLS/HTTPS for all communications
+- **Transit**: SSH agent forwarding (keys never leave client)
 - **Secrets**: No secrets in logs or configuration
 
 ### Access Control
