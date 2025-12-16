@@ -320,9 +320,24 @@ export const getMaxPackSizeBytes = (): number => {
 };
 
 export const getSSHConfig = () => {
+  // Default host key paths - auto-generated if not present
+  const defaultHostKey = {
+    privateKeyPath: '.ssh/host_key',
+    publicKeyPath: '.ssh/host_key.pub',
+  };
+
   try {
     const config = loadFullConfiguration();
-    return config.ssh || { enabled: false };
+    const sshConfig = config.ssh || { enabled: false };
+
+    // Always ensure hostKey is present with defaults
+    // The hostKey identifies the proxy server to clients (like an SSL certificate)
+    // It is NOT user-configurable and will be auto-generated if missing
+    if (sshConfig.enabled) {
+      sshConfig.hostKey = sshConfig.hostKey || defaultHostKey;
+    }
+
+    return sshConfig;
   } catch (error) {
     // If config loading fails due to SSH validation, try to get SSH config directly from user config
     const userConfigFile = process.env.CONFIG_FILE || configFile;
@@ -330,7 +345,14 @@ export const getSSHConfig = () => {
       try {
         const userConfigContent = readFileSync(userConfigFile, 'utf-8');
         const userConfig = JSON.parse(userConfigContent);
-        return userConfig.ssh || { enabled: false };
+        const sshConfig = userConfig.ssh || { enabled: false };
+
+        // Always ensure hostKey is present with defaults
+        if (sshConfig.enabled) {
+          sshConfig.hostKey = sshConfig.hostKey || defaultHostKey;
+        }
+
+        return sshConfig;
       } catch (e) {
         console.error('Error loading SSH config:', e);
       }

@@ -280,3 +280,4 @@ test/keys/
 
 # Generated from testing
 /test/fixtures/test-package/package-lock.json
+.ssh/

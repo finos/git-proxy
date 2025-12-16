@@ -18,6 +18,91 @@ Complete documentation of the SSH proxy architecture and operation for Git.
 
 ---
 
+## SSH Host Key (Proxy Identity)
+
+### What is the Host Key?
+
+The **SSH host key** is the cryptographic identity of the proxy server, similar to an SSL/TLS certificate for HTTPS servers.
+
+**Purpose**: Identifies the proxy server to clients and prevents man-in-the-middle attacks.
+
+### Important Clarifications
+
+⚠️ **WHAT THE HOST KEY IS:**
+- The proxy server's identity (like an SSL certificate)
+- Used when clients connect TO the proxy
+- Verifies "this is the legitimate git-proxy server"
+- Auto-generated on first startup if missing
+
+⚠️ **WHAT THE HOST KEY IS NOT:**
+- NOT used for authenticating to GitHub/GitLab
+- NOT related to user SSH keys
+- NOT used for remote Git operations
+- Agent forwarding handles remote authentication (using the client's keys)
+
+### Authentication Flow
+
+```
+┌─────────────┐                    ┌─────────────┐                    ┌─────────────┐
+│  Developer  │                    │  Git Proxy  │                    │   GitHub    │
+│             │                    │             │                    │             │
+│ [User Key]  │  1. SSH Connect    │ [Host Key]  │                    │             │
+│             ├───────────────────→│             │                    │             │
+│             │  2. Verify Host Key│             │                    │             │
+│             │←──────────────────┤             │                    │             │
+│             │  3. Auth w/User Key│             │                    │             │
+│             ├───────────────────→│             │                    │             │
+│             │  ✓ Connected       │             │                    │             │
+│             │                    │             │  4. Connect w/     │             │
+│             │                    │             │  Agent Forwarding  │             │
+│             │                    │             ├───────────────────→│             │
+│             │                    │             │  5. GitHub requests│             │
+│             │                    │             │  signature         │             │
+│             │  6. Sign via agent │             │←──────────────────┤             │
+│             │←───────────────────┤             │                    │             │
+│             │  7. Signature      │             │  8. Forward sig    │             │
+│             ├───────────────────→│             ├───────────────────→│             │
+│             │                    │             │  ✓ Authenticated   │             │
+└─────────────┘                    └─────────────┘                    └─────────────┘
+
+Step 2: Client verifies proxy's HOST KEY
+Step 3: Client authenticates to proxy with USER KEY
+Steps 6-8: Proxy uses client's USER KEY (via agent) to authenticate to GitHub
+```
+
+### Configuration
+
+The host key is **automatically managed** by git-proxy and stored in `.ssh/host_key`:
+
+```
+.ssh/
+├── host_key           # Proxy's private key (auto-generated)
+└── host_key.pub       # Proxy's public key (auto-generated)
+```
+
+**Auto-generation**: The host key is automatically generated on first startup using Ed25519 (modern, secure, fast).
+
+**No user configuration needed**: The host key is an implementation detail and is not exposed in `proxy.config.json`.
+
+### First Connection Warning
+
+When clients first connect to the proxy, they'll see:
+
+```
+The authenticity of host '[localhost]:2222' can't be established.
+ED25519 key fingerprint is SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.
+Are you sure you want to continue connecting (yes/no)?
+```
+
+This is normal! It means the client is verifying the proxy's host key for the first time.
+
+⚠️ **Security**: If this message appears on subsequent connections (after the first), it could indicate:
+- The proxy's host key was regenerated
+- A potential man-in-the-middle attack
+- The proxy was reinstalled or migrated
+
+---
+
 ## Client → Proxy Communication
 
 ### Client Setup
