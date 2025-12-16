@@ -1,5 +1,4 @@
 import * as ssh2 from 'ssh2';
-import * as fs from 'fs';
 import * as bcrypt from 'bcryptjs';
 import { getSSHConfig, getMaxPackSizeBytes, getDomains } from '../../config';
 import { serverConfig } from '../../config/env';
@@ -15,6 +14,7 @@ import {
 import { ClientWithUser } from './types';
 import { createMockResponse } from './sshHelpers';
 import { processGitUrl } from '../routes/helper';
+import { ensureHostKey } from './hostKeyManager';
 
 export class SSHServer {
   private server: ssh2.Server;
@@ -23,16 +23,22 @@ export class SSHServer {
     const sshConfig = getSSHConfig();
     const privateKeys: Buffer[] = [];
 
+    // Ensure the SSH host key exists (generates automatically if needed)
+    // This key identifies the PROXY SERVER to connecting clients, similar to an SSL certificate.
+    // It is NOT used for authenticating to remote Git servers - agent forwarding handles that.
     try {
-      privateKeys.push(fs.readFileSync(sshConfig.hostKey.privateKeyPath));
+      const hostKey = ensureHostKey(sshConfig.hostKey);
+      privateKeys.push(hostKey);
     } catch (error) {
+      console.error('[SSH] Failed to initialize proxy host key');
       console.error(
-        `Error reading private key at ${sshConfig.hostKey.privateKeyPath}. Check your SSH host key configuration or disbale SSH.`,
+        `[SSH] ${error instanceof Error ? error.message : String(error)}`,
       );
+      console.error('[SSH] Cannot start SSH server without a valid host key.');
       process.exit(1);
     }
 
-    // TODO: Server config could go to config file
+    // Initialize SSH server with secure defaults
     this.server = new ssh2.Server(
       {
         hostKeys: privateKeys,
