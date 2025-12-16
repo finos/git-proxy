@@ -20,11 +20,17 @@ function calculateHostKeyFingerprint(keyBuffer: Buffer): string {
  */
 const DEFAULT_AGENT_FORWARDING_ERROR =
   'SSH agent forwarding is required.\n\n' +
-  'Configure it for this repository:\n' +
+  'Why? The proxy uses your SSH keys (via agent forwarding) to authenticate\n' +
+  'with GitHub/GitLab. Your keys never leave your machine - the proxy just\n' +
+  'forwards authentication requests to your local SSH agent.\n\n' +
+  'To enable agent forwarding for this repository:\n' +
   '  git config core.sshCommand "ssh -A"\n\n' +
   'Or globally for all repositories:\n' +
   '  git config --global core.sshCommand "ssh -A"\n\n' +
-  'Note: Configuring per-repository is more secure than using --global.';
+  'Also ensure SSH keys are loaded in your agent:\n' +
+  '  ssh-add -l  # List loaded keys\n' +
+  '  ssh-add ~/.ssh/id_ed25519  # Add your key if needed\n\n' +
+  'Note: Per-repository config is more secure than --global.';
 
 /**
  * Validate prerequisites for SSH connection to remote
