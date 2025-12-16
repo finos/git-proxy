@@ -14,6 +14,16 @@
       "project": "finos",
       "name": "git-proxy",
       "url": "https://github.com/finos/git-proxy.git"
+    },
+    {
+      "project": "fabiovincenzi",
+      "name": "test",
+      "url": "https://github.com/fabiovincenzi/test.git"
+    },
+    {
+      "project": "fabiovince01",
+      "name": "test1",
+      "url": "https://gitlab.com/fabiovince01/test1.git"
     }
   ],
   "limits": {
@@ -183,17 +193,7 @@
     ]
   },
   "ssh": {
-    "enabled": false,
-    "port": 2222,
-    "hostKey": {
-      "privateKeyPath": "test/.ssh/host_key",
-      "publicKeyPath": "test/.ssh/host_key.pub"
-    },
-    "clone": {
-      "serviceToken": {
-        "username": "",
-        "password": ""
-      }
-    }
+    "enabled": true,
+    "port": 2222
   }
 }
