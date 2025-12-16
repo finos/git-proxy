@@ -5,7 +5,7 @@ import { GitProxyConfig, Convert } from './generated/config';
 import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
-import { configFile } from './file';
+import { getConfigFile } from './file';
 import { GIGABYTE } from '../constants';
 
 // Cache for current configuration
@@ -54,7 +54,7 @@ function loadFullConfiguration(): GitProxyConfig {
   const defaultConfig = cleanUndefinedValues(rawDefaultConfig);
 
   let userSettings: Partial<GitProxyConfig> = {};
-  const userConfigFile = process.env.CONFIG_FILE || configFile;
+  const userConfigFile = process.env.CONFIG_FILE || getConfigFile();
 
   if (existsSync(userConfigFile)) {
     try {
@@ -340,7 +340,7 @@ export const getSSHConfig = () => {
     return sshConfig;
   } catch (error) {
     // If config loading fails due to SSH validation, try to get SSH config directly from user config
-    const userConfigFile = process.env.CONFIG_FILE || configFile;
+    const userConfigFile = process.env.CONFIG_FILE || getConfigFile();
     if (existsSync(userConfigFile)) {
       try {
         const userConfigContent = readFileSync(userConfigFile, 'utf-8');

@@ -126,7 +126,7 @@ export interface Sink {
   getUsers: (query?: Partial<UserQuery>) => Promise<User[]>;
   createUser: (user: User) => Promise<void>;
   deleteUser: (username: string) => Promise<void>;
-  updateUser: (user: User) => Promise<void>;
+  updateUser: (user: Partial<User>) => Promise<void>;
   addPublicKey: (username: string, publicKey: PublicKeyRecord) => Promise<void>;
   removePublicKey: (username: string, fingerprint: string) => Promise<void>;
   getPublicKeys: (username: string) => Promise<PublicKeyRecord[]>;

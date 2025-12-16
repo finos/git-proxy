@@ -51,12 +51,13 @@ export class PullRemoteHTTPS extends PullRemoteBase {
 
     step.log('Cloning repository over HTTPS using client credentials');
 
+    // Note: setting singleBranch to true will cause issues when pushing to
+    // a non-default branch as commits from those branches won't be fetched
     const cloneOptions: any = {
       fs,
       http: gitHttpClient,
       url: action.url,
       dir: `${action.proxyGitPath}/${action.repoName}`,
-      singleBranch: true,
       depth: 1,
       onAuth: () => credentials,
     };

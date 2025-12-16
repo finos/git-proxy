@@ -9,7 +9,7 @@ import lusca from 'lusca';
 import * as config from '../config';
 import * as db from '../db';
 import { serverConfig } from '../config/env';
-import Proxy from '../proxy';
+import { Proxy } from '../proxy';
 import routes from './routes';
 import { configure } from './passport';
 
@@ -74,7 +74,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.use(express.urlencoded({ extended: true }));
   app.use('/', routes(proxy));
   app.use('/', express.static(absBuildPath));
-  app.get('/*', (req, res) => {
+  app.get('/*path', (_req, res) => {
     res.sendFile(path.join(`${absBuildPath}/index.html`));
   });
 
@@ -109,7 +109,7 @@ async function stop() {
   _httpServer.close();
 }
 
-export default {
+export const Service = {
   start,
   stop,
   httpServer: _httpServer,

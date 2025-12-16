@@ -42,7 +42,7 @@ export default function UserProfile(): React.ReactElement {
   const [user, setUser] = useState<PublicUser | null>(null);
   const [auth, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isError, setIsError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [gitAccount, setGitAccount] = useState<string>('');
   const [sshKeys, setSshKeys] = useState<SSHKey[]>([]);
   const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
@@ -64,7 +64,7 @@ export default function UserProfile(): React.ReactElement {
         setGitAccount(user.gitAccount || '');
       },
       setAuth,
-      setIsError,
+      setErrorMessage,
       id,
     );
   }, [id]);
@@ -139,7 +139,7 @@ export default function UserProfile(): React.ReactElement {
   };
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Something went wrong ...</div>;
+  if (errorMessage) return <div>{errorMessage}</div>;
 
   if (!auth && window.location.pathname === '/dashboard/profile') {
     return <Navigate to='/login' />;
@@ -147,17 +147,14 @@ export default function UserProfile(): React.ReactElement {
   if (!user) return <div>No user data available</div>;
 
   const updateProfile = async (): Promise<void> => {
-    try {
-      const updatedData = {
-        ...user,
-        gitAccount: escapeHTML(gitAccount),
-      };
-      await updateUser(updatedData);
-      setUser(updatedData);
-      navigate(`/dashboard/profile`);
-    } catch {
-      setIsError(true);
-    }
+    const updatedData = {
+      ...user,
+      gitAccount: escapeHTML(gitAccount),
+    };
+    //does not reject and will display any errors that occur
+    await updateUser(updatedData, setErrorMessage, setIsLoading);
+    setUser(updatedData);
+    navigate(`/dashboard/profile`);
   };
 
   const UpdateButton = (): React.ReactElement => (

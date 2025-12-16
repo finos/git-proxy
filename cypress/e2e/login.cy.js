@@ -20,7 +20,7 @@ describe('Login page', () => {
   });
 
   it('should redirect to repo list on valid login', () => {
-    cy.intercept('GET', '**/api/auth/me').as('getUser');
+    cy.intercept('GET', '**/api/auth/profile').as('getUser');
 
     cy.get('[data-test="username"]').type('admin');
     cy.get('[data-test="password"]').type('admin');

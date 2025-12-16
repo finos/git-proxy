@@ -37,7 +37,7 @@ const getServerOptions = (): ServerOptions => ({
   cert: getTLSEnabled() && getTLSCertPemPath() ? fs.readFileSync(getTLSCertPemPath()!) : undefined,
 });
 
-export default class Proxy {
+export class Proxy {
   private httpServer: http.Server | null = null;
   private httpsServer: https.Server | null = null;
   private expressApp: Express | null = null;
