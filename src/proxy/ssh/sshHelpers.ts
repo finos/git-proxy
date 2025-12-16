@@ -27,9 +27,13 @@ const DEFAULT_AGENT_FORWARDING_ERROR =
   '  git config core.sshCommand "ssh -A"\n\n' +
   'Or globally for all repositories:\n' +
   '  git config --global core.sshCommand "ssh -A"\n\n' +
-  'Also ensure SSH keys are loaded in your agent:\n' +
-  '  ssh-add -l  # List loaded keys\n' +
-  '  ssh-add ~/.ssh/id_ed25519  # Add your key if needed\n\n' +
+  'Also ensure SSH agent is running and keys are loaded:\n' +
+  '  # Start ssh-agent if not running\n' +
+  '  eval $(ssh-agent -s)\n\n' +
+  '  # Add your SSH key\n' +
+  '  ssh-add ~/.ssh/id_ed25519\n\n' +
+  '  # Verify key is loaded\n' +
+  '  ssh-add -l\n\n' +
   'Note: Per-repository config is more secure than --global.';
 
 /**
