@@ -129,12 +129,6 @@ function mergeConfigurations(
   };
 }
 
-// Get configured proxy URL
-export const getProxyUrl = (): string | undefined => {
-  const config = loadFullConfiguration();
-  return config.proxyUrl;
-};
-
 // Gets a list of authorised repositories
 export const getAuthorisedList = () => {
   const config = loadFullConfiguration();
@@ -331,8 +325,7 @@ export const getSSHConfig = () => {
     const sshConfig = config.ssh || { enabled: false };
 
     // Always ensure hostKey is present with defaults
-    // The hostKey identifies the proxy server to clients (like an SSL certificate)
-    // It is NOT user-configurable and will be auto-generated if missing
+    // The hostKey identifies the proxy server to clients
     if (sshConfig.enabled) {
       sshConfig.hostKey = sshConfig.hostKey || defaultHostKey;
     }
@@ -359,11 +352,6 @@ export const getSSHConfig = () => {
     }
     return { enabled: false };
   }
-};
-
-export const getSSHProxyUrl = (): string | undefined => {
-  const proxyUrl = getProxyUrl();
-  return proxyUrl ? proxyUrl.replace('https://', 'git@') : undefined;
 };
 
 // Function to handle configuration updates

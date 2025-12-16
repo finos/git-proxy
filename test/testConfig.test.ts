@@ -298,7 +298,6 @@ describe('user configuration', () => {
 
     const config = await import('../src/config');
 
-    expect(() => config.getProxyUrl()).not.toThrow();
     expect(() => config.getCookieSecret()).not.toThrow();
     expect(() => config.getSessionMaxAgeHours()).not.toThrow();
     expect(() => config.getCommitConfig()).not.toThrow();
