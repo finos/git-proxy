@@ -181,7 +181,35 @@ async function executeRemoteGitCommand(
       console.error(`[executeRemoteGitCommand] Connection error:`, err);
       clearTimeout(timeout);
       if (clientStream) {
-        clientStream.stderr.write(`Connection error: ${err.message}\n`);
+        // Provide more helpful error messages based on the error type
+        let errorMessage = `Connection error: ${err.message}\n`;
+
+        // Detect authentication failures and provide actionable guidance
+        if (err.message.includes('All configured authentication methods failed')) {
+          errorMessage = `\n${'='.repeat(70)}\n`;
+          errorMessage += `SSH Authentication Failed: Your SSH key is not authorized on ${remoteHost}\n`;
+          errorMessage += `${'='.repeat(70)}\n\n`;
+          errorMessage += `The proxy successfully forwarded your SSH key, but ${remoteHost} rejected it.\n\n`;
+          errorMessage += `To fix this:\n`;
+          errorMessage += `  1. Verify your SSH key is loaded in ssh-agent:\n`;
+          errorMessage += `     $ ssh-add -l\n\n`;
+          errorMessage += `  2. Add your SSH public key to ${remoteHost}:\n`;
+          if (remoteHost.includes('github.com')) {
+            errorMessage += `     https://github.com/settings/keys\n\n`;
+          } else if (remoteHost.includes('gitlab.com')) {
+            errorMessage += `     https://gitlab.com/-/profile/keys\n\n`;
+          } else {
+            errorMessage += `     Check your Git hosting provider's SSH key settings\n\n`;
+          }
+          errorMessage += `  3. Copy your public key:\n`;
+          errorMessage += `     $ cat ~/.ssh/id_ed25519.pub\n`;
+          errorMessage += `     (or your specific key file)\n\n`;
+          errorMessage += `  4. Test direct connection:\n`;
+          errorMessage += `     $ ssh -T git@${remoteHost}\n\n`;
+          errorMessage += `${'='.repeat(70)}\n`;
+        }
+
+        clientStream.stderr.write(errorMessage);
         clientStream.exit(1);
         clientStream.end();
       }
