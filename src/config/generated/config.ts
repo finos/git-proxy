@@ -86,7 +86,9 @@ export interface GitProxyConfig {
    */
   sink?: Database[];
   /**
-   * SSH proxy server configuration
+   * SSH proxy server configuration. The proxy uses SSH agent forwarding to authenticate with
+   * remote Git servers (GitHub, GitLab, etc.) using the client's SSH keys. The proxy's own
+   * host key is auto-generated and only used to identify the proxy to connecting clients.
    */
   ssh?: SSH;
   /**
@@ -487,42 +489,28 @@ export interface Database {
 }
 
 /**
- * SSH proxy server configuration
+ * SSH proxy server configuration. The proxy uses SSH agent forwarding to authenticate with
+ * remote Git servers (GitHub, GitLab, etc.) using the client's SSH keys. The proxy's own
+ * host key is auto-generated and only used to identify the proxy to connecting clients.
  */
 export interface SSH {
   /**
-   * Custom error message shown when SSH agent forwarding is not enabled. If not specified, a
-   * default message with git config commands will be used. This allows organizations to
-   * customize instructions based on their security policies.
+   * Custom error message shown when SSH agent forwarding is not enabled or no keys are loaded
+   * in the client's SSH agent. If not specified, a default message with git config commands
+   * will be shown. This allows organizations to customize instructions based on their
+   * security policies.
    */
   agentForwardingErrorMessage?: string;
   /**
-   * Enable SSH proxy server
+   * Enable SSH proxy server. When enabled, clients can connect via SSH and the proxy will
+   * forward their SSH agent to authenticate with remote Git servers.
    */
   enabled: boolean;
   /**
-   * SSH host key configuration
-   */
-  hostKey?: HostKey;
-  /**
-   * Port for SSH proxy server to listen on
+   * Port for SSH proxy server to listen on. Clients connect to this port instead of directly
+   * to GitHub/GitLab.
    */
   port?: number;
-  [property: string]: any;
-}
-
-/**
- * SSH host key configuration
- */
-export interface HostKey {
-  /**
-   * Path to private SSH host key
-   */
-  privateKeyPath: string;
-  /**
-   * Path to public SSH host key
-   */
-  publicKeyPath: string;
   [property: string]: any;
 }
 
@@ -951,15 +939,7 @@ const typeMap: any = {
         typ: u(undefined, ''),
       },
       { json: 'enabled', js: 'enabled', typ: true },
-      { json: 'hostKey', js: 'hostKey', typ: u(undefined, r('HostKey')) },
       { json: 'port', js: 'port', typ: u(undefined, 3.14) },
-    ],
-    'any',
-  ),
-  HostKey: o(
-    [
-      { json: 'privateKeyPath', js: 'privateKeyPath', typ: '' },
-      { json: 'publicKeyPath', js: 'publicKeyPath', typ: '' },
     ],
     'any',
   ),
