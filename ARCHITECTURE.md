@@ -95,7 +95,6 @@ const pushActionChain = [
   proc.push.gitleaks, // Secret scanning
   proc.push.clearBareClone, // Cleanup
   proc.push.scanDiff, // Diff analysis
-  proc.push.captureSSHKey, // SSH key capture
   proc.push.blockForAuth, // Authorization workflow
 ];
 ```

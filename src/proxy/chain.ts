@@ -20,7 +20,6 @@ const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.gitleaks,
   proc.push.clearBareClone,
   proc.push.scanDiff,
-  proc.push.captureSSHKey,
   proc.push.blockForAuth,
 ];
 

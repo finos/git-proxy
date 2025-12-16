@@ -15,7 +15,6 @@ import { exec as checkAuthorEmails } from './checkAuthorEmails';
 import { exec as checkUserPushPermission } from './checkUserPushPermission';
 import { exec as clearBareClone } from './clearBareClone';
 import { exec as checkEmptyBranch } from './checkEmptyBranch';
-import { exec as captureSSHKey } from './captureSSHKey';
 
 export {
   parsePush,
@@ -35,5 +34,4 @@ export {
   checkUserPushPermission,
   clearBareClone,
   checkEmptyBranch,
-  captureSSHKey,
 };
