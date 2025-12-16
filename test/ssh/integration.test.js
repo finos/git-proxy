@@ -27,7 +27,6 @@ describe('SSH Pack Data Capture Integration Tests', () => {
         },
         port: 2222,
       }),
-      getProxyUrl: sinon.stub().returns('https://github.com'),
     };
 
     mockDb = {
@@ -45,10 +44,7 @@ describe('SSH Pack Data Capture Integration Tests', () => {
         email: 'test@example.com',
         gitAccount: 'testgit',
       },
-      userPrivateKey: {
-        keyType: 'ssh-rsa',
-        keyData: Buffer.from('test-key-data'),
-      },
+      agentForwardingEnabled: true,
       clientIp: '127.0.0.1',
     };
 
@@ -63,7 +59,6 @@ describe('SSH Pack Data Capture Integration Tests', () => {
 
     // Stub dependencies
     sinon.stub(config, 'getSSHConfig').callsFake(mockConfig.getSSHConfig);
-    sinon.stub(config, 'getProxyUrl').callsFake(mockConfig.getProxyUrl);
     sinon.stub(config, 'getMaxPackSizeBytes').returns(500 * MEGABYTE);
     sinon.stub(db, 'findUserBySSHKey').callsFake(mockDb.findUserBySSHKey);
     sinon.stub(db, 'findUser').callsFake(mockDb.findUser);
@@ -389,7 +384,6 @@ describe('SSH Pack Data Capture Integration Tests', () => {
       expect(req.protocol).to.equal('ssh');
       expect(req.user).to.deep.equal(mockClient.authenticatedUser);
       expect(req.sshUser.username).to.equal('test-user');
-      expect(req.sshUser.sshKeyInfo).to.deep.equal(mockClient.userPrivateKey);
     });
 
     it('should handle blocked pushes with custom message', async () => {

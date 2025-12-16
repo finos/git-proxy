@@ -57,7 +57,6 @@ describe('SSHServer', () => {
         },
         port: 2222,
       }),
-      getProxyUrl: sinon.stub().returns('https://github.com'),
     };
 
     mockDb = {
@@ -89,7 +88,6 @@ describe('SSHServer', () => {
 
     // Replace the real modules with our stubs
     sinon.stub(config, 'getSSHConfig').callsFake(mockConfig.getSSHConfig);
-    sinon.stub(config, 'getProxyUrl').callsFake(mockConfig.getProxyUrl);
     sinon.stub(config, 'getMaxPackSizeBytes').returns(1024 * 1024 * 1024);
     sinon.stub(db, 'findUserBySSHKey').callsFake(mockDb.findUserBySSHKey);
     sinon.stub(db, 'findUser').callsFake(mockDb.findUser);
@@ -175,7 +173,7 @@ describe('SSHServer', () => {
         on: sinon.stub(),
         end: sinon.stub(),
         username: null,
-        userPrivateKey: null,
+        agentForwardingEnabled: false,
         authenticatedUser: null,
         clientIp: null,
       };
@@ -299,10 +297,6 @@ describe('SSHServer', () => {
           username: 'test-user',
           email: 'test@example.com',
           gitAccount: 'testgit',
-        });
-        expect(mockClient.userPrivateKey).to.deep.equal({
-          keyType: 'ssh-rsa',
-          keyData: Buffer.from('mock-key-data'),
         });
       });
 
@@ -630,29 +624,6 @@ describe('SSHServer', () => {
       expect(mockStream.end.calledOnce).to.be.true;
     });
 
-    it('should handle missing proxy URL configuration', async () => {
-      mockConfig.getProxyUrl.returns(null);
-      // Allow chain to pass so we get to the proxy URL check
-      mockChain.executeChain.resolves({ error: false, blocked: false });
-
-      // Since the SSH server logs show the correct behavior is happening,
-      // we'll test for the expected behavior more reliably
-      let errorThrown = false;
-      try {
-        await server.handleCommand("git-upload-pack 'test/repo'", mockStream, mockClient);
-      } catch (error) {
-        errorThrown = true;
-      }
-
-      // The function should handle the error gracefully (not throw)
-      expect(errorThrown).to.be.false;
-
-      // At minimum, stderr.write should be called for error reporting
-      expect(mockStream.stderr.write.called).to.be.true;
-      expect(mockStream.exit.called).to.be.true;
-      expect(mockStream.end.called).to.be.true;
-    });
-
     it('should handle invalid git command format', async () => {
       await server.handleCommand('git-invalid-command repo', mockStream, mockClient);
 
@@ -822,117 +793,6 @@ describe('SSHServer', () => {
         end: sinon.stub(),
         on: sinon.stub(),
       };
-    });
-
-    it('should handle missing proxy URL', async () => {
-      mockConfig.getProxyUrl.returns(null);
-
-      try {
-        await server.connectToRemoteGitServer(
-          "git-upload-pack 'test/repo'",
-          mockStream,
-          mockClient,
-        );
-      } catch (error) {
-        expect(error.message).to.equal('No proxy URL configured');
-      }
-    });
-
-    it('should handle client with no userPrivateKey', async () => {
-      const { Client } = require('ssh2');
-      const mockSsh2Client = {
-        on: sinon.stub(),
-        connect: sinon.stub(),
-        exec: sinon.stub(),
-        end: sinon.stub(),
-      };
-
-      sinon.stub(Client.prototype, 'on').callsFake(mockSsh2Client.on);
-      sinon.stub(Client.prototype, 'connect').callsFake(mockSsh2Client.connect);
-      sinon.stub(Client.prototype, 'exec').callsFake(mockSsh2Client.exec);
-      sinon.stub(Client.prototype, 'end').callsFake(mockSsh2Client.end);
-
-      // Client with no userPrivateKey
-      mockClient.userPrivateKey = null;
-
-      // Mock ready event
-      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
-        callback();
-      });
-
-      const promise = server.connectToRemoteGitServer(
-        "git-upload-pack 'test/repo'",
-        mockStream,
-        mockClient,
-      );
-
-      // Should handle no key gracefully
-      expect(() => promise).to.not.throw();
-    });
-
-    it('should handle client with buffer userPrivateKey', async () => {
-      const { Client } = require('ssh2');
-      const mockSsh2Client = {
-        on: sinon.stub(),
-        connect: sinon.stub(),
-        exec: sinon.stub(),
-        end: sinon.stub(),
-      };
-
-      sinon.stub(Client.prototype, 'on').callsFake(mockSsh2Client.on);
-      sinon.stub(Client.prototype, 'connect').callsFake(mockSsh2Client.connect);
-      sinon.stub(Client.prototype, 'exec').callsFake(mockSsh2Client.exec);
-      sinon.stub(Client.prototype, 'end').callsFake(mockSsh2Client.end);
-
-      // Client with buffer userPrivateKey
-      mockClient.userPrivateKey = Buffer.from('test-key-data');
-
-      // Mock ready event
-      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
-        callback();
-      });
-
-      const promise = server.connectToRemoteGitServer(
-        "git-upload-pack 'test/repo'",
-        mockStream,
-        mockClient,
-      );
-
-      expect(() => promise).to.not.throw();
-    });
-
-    it('should handle client with object userPrivateKey', async () => {
-      const { Client } = require('ssh2');
-      const mockSsh2Client = {
-        on: sinon.stub(),
-        connect: sinon.stub(),
-        exec: sinon.stub(),
-        end: sinon.stub(),
-      };
-
-      sinon.stub(Client.prototype, 'on').callsFake(mockSsh2Client.on);
-      sinon.stub(Client.prototype, 'connect').callsFake(mockSsh2Client.connect);
-      sinon.stub(Client.prototype, 'exec').callsFake(mockSsh2Client.exec);
-      sinon.stub(Client.prototype, 'end').callsFake(mockSsh2Client.end);
-
-      // Client with object userPrivateKey
-      mockClient.userPrivateKey = {
-        keyType: 'ssh-rsa',
-        keyData: Buffer.from('test-key-data'),
-      };
-
-      // Mock ready event
-      mockSsh2Client.on.withArgs('ready').callsFake((event, callback) => {
-        callback();
-      });
-
-      const promise = server.connectToRemoteGitServer(
-        "git-upload-pack 'test/repo'",
-        mockStream,
-        mockClient,
-      );
-
-      expect(() => promise).to.not.throw();
     });
 
     it('should handle successful connection and command execution', async () => {
@@ -1377,10 +1237,7 @@ describe('SSHServer', () => {
           email: 'test@example.com',
           gitAccount: 'testgit',
         },
-        userPrivateKey: {
-          keyType: 'ssh-rsa',
-          keyData: Buffer.from('test-key-data'),
-        },
+        agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
       };
       mockStream = {
@@ -1528,10 +1385,7 @@ describe('SSHServer', () => {
           email: 'test@example.com',
           gitAccount: 'testgit',
         },
-        userPrivateKey: {
-          keyType: 'ssh-rsa',
-          keyData: Buffer.from('test-key-data'),
-        },
+        agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
       };
       mockStream = {
@@ -2069,25 +1923,6 @@ describe('SSHServer', () => {
 
       expect(mockRemoteStream.write.called).to.be.false; // Empty data not written
       expect(mockRemoteStream.end.calledOnce).to.be.true;
-    });
-
-    it('should handle missing proxy URL in forwarding', async () => {
-      mockConfig.getProxyUrl.returns(null);
-
-      try {
-        await server.forwardPackDataToRemote(
-          "git-receive-pack 'test/repo'",
-          mockStream,
-          mockClient,
-          Buffer.from('data'),
-        );
-      } catch (error) {
-        expect(error.message).to.equal('No proxy URL configured');
-        expect(mockStream.stderr.write.calledWith('Configuration error: No proxy URL configured\n'))
-          .to.be.true;
-        expect(mockStream.exit.calledWith(1)).to.be.true;
-        expect(mockStream.end.calledOnce).to.be.true;
-      }
     });
 
     it('should handle remote exec errors in forwarding', async () => {
