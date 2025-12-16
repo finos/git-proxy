@@ -99,9 +99,9 @@ GitProxy supports both **HTTP/HTTPS** and **SSH** protocols with identical secur
 ### SSH Support
 
 - ✅ SSH key-based authentication
+- ✅ SSH agent forwarding (uses client's SSH keys securely)
 - ✅ Pack data capture from SSH streams
 - ✅ Same 17-processor security chain as HTTPS
-- ✅ SSH key forwarding for approved pushes
 - ✅ Complete feature parity with HTTPS
 
 Both protocols provide the same level of security scanning, including:
