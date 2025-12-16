@@ -6,39 +6,39 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./config": {
+      "types": "./dist/src/config/index.d.ts",
       "import": "./dist/src/config/index.js",
-      "require": "./dist/src/config/index.js",
-      "types": "./dist/src/config/index.d.ts"
+      "require": "./dist/src/config/index.js"
     },
     "./db": {
+      "types": "./dist/src/db/index.d.ts",
       "import": "./dist/src/db/index.js",
-      "require": "./dist/src/db/index.js",
-      "types": "./dist/src/db/index.d.ts"
+      "require": "./dist/src/db/index.js"
     },
     "./plugin": {
+      "types": "./dist/src/plugin.d.ts",
       "import": "./dist/src/plugin.js",
-      "require": "./dist/src/plugin.js",
-      "types": "./dist/src/plugin.d.ts"
+      "require": "./dist/src/plugin.js"
     },
     "./proxy": {
+      "types": "./dist/src/proxy/index.d.ts",
       "import": "./dist/src/proxy/index.js",
-      "require": "./dist/src/proxy/index.js",
-      "types": "./dist/src/proxy/index.d.ts"
+      "require": "./dist/src/proxy/index.js"
     },
     "./proxy/actions": {
+      "types": "./dist/src/proxy/actions/index.d.ts",
       "import": "./dist/src/proxy/actions/index.js",
-      "require": "./dist/src/proxy/actions/index.js",
-      "types": "./dist/src/proxy/actions/index.d.ts"
+      "require": "./dist/src/proxy/actions/index.js"
     },
     "./ui": {
+      "types": "./dist/src/ui/index.d.ts",
       "import": "./dist/src/ui/index.js",
-      "require": "./dist/src/ui/index.js",
-      "types": "./dist/src/ui/index.d.ts"
+      "require": "./dist/src/ui/index.js"
     }
   },
   "scripts": {
