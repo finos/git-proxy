@@ -3,33 +3,22 @@ describe('Repo', () => {
   let repoName;
 
   describe('Anonymous users', () => {
-    it('Prevents anonymous users from adding repos', () => {
+    beforeEach(() => {
       cy.visit('/dashboard/repo');
-      cy.on('uncaught:exception', () => false);
+    });
 
-      // Try a different approach - look for elements that should exist for anonymous users
-      // and check that the add button specifically doesn't exist
-      cy.get('body').should('contain', 'Repositories');
-
-      // Check that we can find the table or container, but no add button
-      cy.get('body').then(($body) => {
-        if ($body.find('[data-testid="repo-list-view"]').length > 0) {
-          cy.get('[data-testid="repo-list-view"]')
-            .find('[data-testid="add-repo-button"]')
-            .should('not.exist');
-        } else {
-          // If repo-list-view doesn't exist, that might be the expected behavior for anonymous users
-          cy.log('repo-list-view not found - checking if this is expected for anonymous users');
-          // Just verify the page loaded by checking for a known element
-          cy.get('body').should('exist');
-        }
-      });
+    it('Prevents anonymous users from adding repos', () => {
+      cy.get('[data-testid="repo-list-view"]')
+        .find('[data-testid="add-repo-button"]')
+        .should('not.exist');
     });
   });
 
   describe('Regular users', () => {
-    before(() => {
+    beforeEach(() => {
       cy.login('user', 'user');
+
+      cy.visit('/dashboard/repo');
     });
 
     after(() => {
@@ -37,56 +26,21 @@ describe('Repo', () => {
     });
 
     it('Prevents regular users from adding repos', () => {
-      // Set up intercepts before visiting the page
-      cy.intercept('GET', '**/api/auth/me').as('authCheck');
-      cy.intercept('GET', '**/api/v1/repo*').as('getRepos');
-
-      cy.visit('/dashboard/repo');
-      cy.on('uncaught:exception', () => false);
-
-      // Wait for authentication (200 OK or 304 Not Modified are both valid)
-      cy.wait('@authCheck').then((interception) => {
-        expect([200, 304]).to.include(interception.response.statusCode);
-      });
-
-      // Wait for repos to load
-      cy.wait('@getRepos');
-
-      // Now check for the repo list view
-      cy.get('[data-testid="repo-list-view"]', { timeout: 10000 })
-        .should('exist')
+      cy.get('[data-testid="repo-list-view"]')
         .find('[data-testid="add-repo-button"]')
         .should('not.exist');
     });
   });
 
   describe('Admin users', () => {
-    before(() => {
-      cy.login('admin', 'admin');
-    });
-
     beforeEach(() => {
-      // Restore the session before each test
       cy.login('admin', 'admin');
+
+      cy.visit('/dashboard/repo');
     });
 
     it('Admin users can add repos', () => {
       repoName = `${Date.now()}`;
-
-      // Set up intercepts before visiting the page
-      cy.intercept('GET', '**/api/auth/me').as('authCheck');
-      cy.intercept('GET', '**/api/v1/repo*').as('getRepos');
-
-      cy.visit('/dashboard/repo');
-      cy.on('uncaught:exception', () => false);
-
-      // Wait for authentication (200 OK or 304 Not Modified are both valid)
-      cy.wait('@authCheck').then((interception) => {
-        expect([200, 304]).to.include(interception.response.statusCode);
-      });
-
-      // Wait for repos to load
-      cy.wait('@getRepos');
 
       cy.get('[data-testid="repo-list-view"]').find('[data-testid="add-repo-button"]').click();
 
@@ -105,21 +59,6 @@ describe('Repo', () => {
     });
 
     it('Displays an error when adding an existing repo', () => {
-      // Set up intercepts before visiting the page
-      cy.intercept('GET', '**/api/auth/me').as('authCheck');
-      cy.intercept('GET', '**/api/v1/repo*').as('getRepos');
-
-      cy.visit('/dashboard/repo');
-      cy.on('uncaught:exception', () => false);
-
-      // Wait for authentication (200 OK or 304 Not Modified are both valid)
-      cy.wait('@authCheck').then((interception) => {
-        expect([200, 304]).to.include(interception.response.statusCode);
-      });
-
-      // Wait for repos to load
-      cy.wait('@getRepos');
-
       cy.get('[data-testid="repo-list-view"]').find('[data-testid="add-repo-button"]').click();
 
       cy.get('[data-testid="add-repo-dialog"]').within(() => {

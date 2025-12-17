@@ -27,31 +27,17 @@
 // start of a login command with sessions
 // TODO: resolve issues with the CSRF token
 Cypress.Commands.add('login', (username, password) => {
-  cy.session(
-    [username, password],
-    () => {
-      cy.visit('/login');
-      cy.intercept('GET', '**/api/auth/me').as('getUser');
+  cy.session([username, password], () => {
+    cy.visit('/login');
+    cy.intercept('GET', '**/api/auth/profile').as('getUser');
 
-      cy.get('[data-test=username]').type(username);
-      cy.get('[data-test=password]').type(password);
-      cy.get('[data-test=login]').click();
+    cy.get('[data-test=username]').type(username);
+    cy.get('[data-test=password]').type(password);
+    cy.get('[data-test=login]').click();
 
-      cy.wait('@getUser');
-      cy.url().should('include', '/dashboard/repo');
-    },
-    {
-      validate() {
-        // Validate the session is still valid by checking auth status
-        cy.request({
-          url: 'http://localhost:8080/api/auth/me',
-          failOnStatusCode: false,
-        }).then((response) => {
-          expect([200, 304]).to.include(response.status);
-        });
-      },
-    },
-  );
+    cy.wait('@getUser');
+    cy.url().should('include', '/dashboard/repo');
+  });
 });
 
 Cypress.Commands.add('logout', () => {
