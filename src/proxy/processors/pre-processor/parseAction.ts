@@ -1,12 +1,10 @@
+import { Request } from 'express';
+
 import { Action } from '../../actions';
 import { processUrlPath } from '../../routes/helper';
 import * as db from '../../../db';
 
-const exec = async (req: {
-  originalUrl: string;
-  method: string;
-  headers: Record<string, string>;
-}) => {
+const exec = async (req: Request) => {
   const id = Date.now();
   const timestamp = id;
   let type = 'default';

@@ -2,10 +2,12 @@ import path from 'path';
 import simpleGit, { SimpleGit } from 'simple-git';
 import fs from 'fs/promises';
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
+import { Request } from 'express';
 
-import { Action } from '../../src/proxy/actions';
+import { Action, Step } from '../../src/proxy/actions';
 import { exec as getDiff } from '../../src/proxy/processors/push-action/getDiff';
 import { exec as scanDiff } from '../../src/proxy/processors/push-action/scanDiff';
+import { SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
 
 describe(
   'Force Push Integration Test',
@@ -14,6 +16,7 @@ describe(
     let git: SimpleGit;
     let initialCommitSHA: string;
     let rebasedCommitSHA: string;
+    let req: Request;
 
     beforeAll(async () => {
       tempDir = path.join(__dirname, '../temp-integration-repo');
@@ -45,6 +48,8 @@ describe(
 
       console.log(`Initial SHA: ${initialCommitSHA}`);
       console.log(`Rebased SHA: ${rebasedCommitSHA}`);
+
+      req = {} as Request;
     }, 10000);
 
     afterAll(async () => {
@@ -74,6 +79,7 @@ describe(
         action.commitTo = rebasedCommitSHA;
         action.commitData = [
           {
+            ...SAMPLE_COMMIT,
             parent: parentSHA,
             message: 'Add feature (rebased)',
             author: 'Test User',
@@ -84,10 +90,10 @@ describe(
           },
         ];
 
-        const afterGetDiff = await getDiff({}, action);
+        const afterGetDiff = await getDiff(req, action);
         expect(afterGetDiff.steps.length).toBeGreaterThan(0);
 
-        const diffStep = afterGetDiff.steps.find((s: any) => s.stepName === 'diff');
+        const diffStep = afterGetDiff.steps.find((s: Step) => s.stepName === 'diff');
         if (!diffStep) {
           throw new Error('Diff step not found');
         }
@@ -96,8 +102,8 @@ describe(
         expect(typeof diffStep.content).toBe('string');
         expect(diffStep.content.length).toBeGreaterThan(0);
 
-        const afterScanDiff = await scanDiff({}, afterGetDiff);
-        const scanStep = afterScanDiff.steps.find((s: any) => s.stepName === 'scanDiff');
+        const afterScanDiff = await scanDiff(req, afterGetDiff);
+        const scanStep = afterScanDiff.steps.find((s: Step) => s.stepName === 'scanDiff');
 
         expect(scanStep).toBeDefined();
         expect(scanStep?.error).toBe(false);
@@ -118,6 +124,7 @@ describe(
         action.commitTo = rebasedCommitSHA;
         action.commitData = [
           {
+            ...SAMPLE_COMMIT,
             parent: 'deadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
             message: 'Add feature (rebased)',
             author: 'Test User',
@@ -128,10 +135,10 @@ describe(
           },
         ];
 
-        const afterGetDiff = await getDiff({}, action);
+        const afterGetDiff = await getDiff(req, action);
         expect(afterGetDiff.steps.length).toBeGreaterThan(0);
 
-        const diffStep = afterGetDiff.steps.find((s: any) => s.stepName === 'diff');
+        const diffStep = afterGetDiff.steps.find((s: Step) => s.stepName === 'diff');
         if (!diffStep) {
           throw new Error('Diff step not found');
         }
@@ -144,8 +151,8 @@ describe(
         );
 
         // scanDiff should not block on missing diff due to error
-        const afterScanDiff = await scanDiff({}, afterGetDiff);
-        const scanStep = afterScanDiff.steps.find((s: any) => s.stepName === 'scanDiff');
+        const afterScanDiff = await scanDiff(req, afterGetDiff);
+        const scanStep = afterScanDiff.steps.find((s: Step) => s.stepName === 'scanDiff');
 
         expect(scanStep).toBeDefined();
         expect(scanStep?.error).toBe(false);
@@ -160,7 +167,7 @@ describe(
           'test/repo.git',
         );
 
-        const result = await scanDiff({}, action);
+        const result = await scanDiff(req, action);
 
         expect(result.steps.length).toBe(1);
         expect(result.steps[0].stepName).toBe('scanDiff');

@@ -18,38 +18,22 @@ const Dashboard: React.FC = () => {
     {
       tabName: 'Pending',
       tabIcon: Visibility,
-      tabContent: (
-        <PushesTable blocked={true} authorised={false} rejected={false} canceled={false} />
-      ),
+      tabContent: <PushesTable blocked handleError={handlePushTableError} />,
     },
     {
       tabName: 'Approved',
       tabIcon: CheckCircle,
-      tabContent: <PushesTable authorised={true} handleError={handlePushTableError} />,
+      tabContent: <PushesTable authorised handleError={handlePushTableError} />,
     },
     {
       tabName: 'Canceled',
       tabIcon: Cancel,
-      tabContent: (
-        <PushesTable
-          authorised={false}
-          rejected={false}
-          canceled={true}
-          handleError={handlePushTableError}
-        />
-      ),
+      tabContent: <PushesTable canceled handleError={handlePushTableError} />,
     },
     {
       tabName: 'Rejected',
       tabIcon: Block,
-      tabContent: (
-        <PushesTable
-          authorised={false}
-          rejected={true}
-          canceled={false}
-          handleError={handlePushTableError}
-        />
-      ),
+      tabContent: <PushesTable rejected handleError={handlePushTableError} />,
     },
   ];
 

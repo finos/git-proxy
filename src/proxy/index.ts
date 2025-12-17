@@ -110,7 +110,7 @@ export class Proxy {
         }
 
         resolve();
-      } catch (error) {
+      } catch (error: unknown) {
         reject(error);
       }
     });

@@ -1,5 +1,7 @@
-import { describe, it, beforeEach, expect, vi, Mock, afterAll } from 'vitest';
+import { Request } from 'express';
+import rawBody from 'raw-body';
 import { PassThrough } from 'stream';
+import { describe, it, beforeEach, expect, vi, Mock, afterAll } from 'vitest';
 
 // Tell Vitest to mock dependencies
 vi.mock('raw-body', () => ({
@@ -12,7 +14,6 @@ vi.mock('../src/proxy/chain', () => ({
 
 // Now import the module-under-test, which will receive the mocked deps
 import { extractRawBody, isPackPost } from '../src/proxy/routes';
-import rawBody from 'raw-body';
 import * as chain from '../src/proxy/chain';
 
 describe('extractRawBody middleware', () => {
@@ -63,20 +64,20 @@ describe('extractRawBody middleware', () => {
 
 describe('isPackPost()', () => {
   it('returns true for git-upload-pack POST', () => {
-    expect(isPackPost({ method: 'POST', url: '/a/b.git/git-upload-pack' } as any)).toBe(true);
+    expect(isPackPost({ method: 'POST', url: '/a/b.git/git-upload-pack' } as Request)).toBe(true);
   });
 
   it('returns true for git-upload-pack POST, with a gitlab style multi-level org', () => {
-    expect(isPackPost({ method: 'POST', url: '/a/bee/sea/dee.git/git-upload-pack' } as any)).toBe(
-      true,
-    );
+    expect(
+      isPackPost({ method: 'POST', url: '/a/bee/sea/dee.git/git-upload-pack' } as Request),
+    ).toBe(true);
   });
 
   it('returns true for git-upload-pack POST, with a bare (no org) repo URL', () => {
-    expect(isPackPost({ method: 'POST', url: '/a.git/git-upload-pack' } as any)).toBe(true);
+    expect(isPackPost({ method: 'POST', url: '/a.git/git-upload-pack' } as Request)).toBe(true);
   });
 
   it('returns false for other URLs', () => {
-    expect(isPackPost({ method: 'POST', url: '/info/refs' } as any)).toBe(false);
+    expect(isPackPost({ method: 'POST', url: '/info/refs' } as Request)).toBe(false);
   });
 });

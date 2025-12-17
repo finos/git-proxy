@@ -11,7 +11,7 @@ describe('apiBase', () => {
   const originalLocation = globalThis.location;
 
   beforeAll(() => {
-    globalThis.location = { origin: 'https://lovely-git-proxy.com' } as any;
+    globalThis.location = { origin: 'https://lovely-git-proxy.com' } as Location;
   });
 
   afterAll(() => {

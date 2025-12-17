@@ -210,8 +210,9 @@ export const fetchRemoteRepositoryData = async (
       const languages = languagesResponse.data;
       // Get the first key (primary language) from the ordered hash
       primaryLanguage = Object.keys(languages)[0];
-    } catch (languageError) {
-      console.warn('Could not fetch language data:', languageError);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.warn('Could not fetch language data:', msg);
     }
 
     return {

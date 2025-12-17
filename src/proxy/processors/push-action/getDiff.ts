@@ -1,9 +1,10 @@
-import { Action, Step } from '../../actions';
+import { Request } from 'express';
 import simpleGit from 'simple-git';
 
+import { Action, Step } from '../../actions';
 import { EMPTY_COMMIT_HASH } from '../constants';
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('diff');
 
   try {
@@ -33,8 +34,9 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     const diff = await git.diff([revisionRange]);
     step.log(diff);
     step.setContent(diff);
-  } catch (e: any) {
-    step.setError(e.toString('utf-8'));
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    step.setError(msg);
   } finally {
     action.addStep(step);
   }
