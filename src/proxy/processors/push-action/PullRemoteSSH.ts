@@ -59,7 +59,7 @@ export class PullRemoteSSH extends PullRemoteBase {
       await new Promise<void>((resolve, reject) => {
         const gitProc = spawn(
           'git',
-          ['clone', '--depth', '1', '--single-branch', sshUrl, action.repoName],
+          ['clone', '--depth', '1', '--single-branch', '--', sshUrl, action.repoName],
           {
             cwd: action.proxyGitPath,
             env: {

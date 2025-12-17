@@ -194,9 +194,9 @@ async function executeRemoteGitCommand(
           errorMessage += `  1. Verify your SSH key is loaded in ssh-agent:\n`;
           errorMessage += `     $ ssh-add -l\n\n`;
           errorMessage += `  2. Add your SSH public key to ${remoteHost}:\n`;
-          if (remoteHost.includes('github.com')) {
+          if (remoteHost === 'github.com') {
             errorMessage += `     https://github.com/settings/keys\n\n`;
-          } else if (remoteHost.includes('gitlab.com')) {
+          } else if (remoteHost === 'gitlab.com') {
             errorMessage += `     https://gitlab.com/-/profile/keys\n\n`;
           } else {
             errorMessage += `     Check your Git hosting provider's SSH key settings\n\n`;

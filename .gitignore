@@ -272,6 +272,7 @@ website/.docusaurus
 
 # Test SSH keys (generated during tests)
 test/keys/
+test/.ssh/
 
 # VS COde IDE
 .vscode/settings.json
@@ -279,3 +280,4 @@ test/keys/
 # Generated from testing
 /test/fixtures/test-package/package-lock.json
 .ssh/
+

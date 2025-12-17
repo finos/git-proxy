@@ -35,6 +35,15 @@ export interface HostKeyConfig {
 export function ensureHostKey(config: HostKeyConfig): Buffer {
   const { privateKeyPath, publicKeyPath } = config;
 
+  // Validate paths to prevent command injection
+  // Only allow alphanumeric, dots, slashes, underscores, hyphens
+  const safePathRegex = /^[a-zA-Z0-9._\-\/]+$/;
+  if (!safePathRegex.test(privateKeyPath) || !safePathRegex.test(publicKeyPath)) {
+    throw new Error(
+      `Invalid SSH host key path: paths must contain only alphanumeric characters, dots, slashes, underscores, and hyphens`,
+    );
+  }
+
   // Check if the private key already exists
   if (fs.existsSync(privateKeyPath)) {
     console.log(`[SSH] Using existing proxy host key: ${privateKeyPath}`);
