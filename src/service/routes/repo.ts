@@ -5,7 +5,7 @@ import { getProxyURL } from '../urls';
 import { getAllProxiedHosts } from '../../db';
 import { RepoQuery } from '../../db/types';
 import { isAdminUser } from './utils';
-import Proxy from '../../proxy';
+import { Proxy } from '../../proxy';
 
 // create a reference to the proxy service as arrow functions will lose track of the `proxy` parameter
 // used to restart the proxy when a new host is added
