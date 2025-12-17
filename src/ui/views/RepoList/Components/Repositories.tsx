@@ -32,14 +32,7 @@ interface GridContainerLayoutProps {
   key: string;
 }
 
-interface UserContextType {
-  user: {
-    admin: boolean;
-    [key: string]: any;
-  };
-}
-
-export default function Repositories(): JSX.Element {
+export default function Repositories(): React.ReactElement {
   const useStyles = makeStyles(styles as any);
   const classes = useStyles();
   const [repos, setRepos] = useState<RepoView[]>([]);

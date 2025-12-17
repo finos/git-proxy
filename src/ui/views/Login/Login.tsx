@@ -34,14 +34,9 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [authMethods, setAuthMethods] = useState<string[]>([]);
   const [usernamePasswordMethod, setUsernamePasswordMethod] = useState<string>('');
-  const [apiBaseUrl, setApiBaseUrl] = useState<string>('');
 
   useEffect(() => {
-    // Initialize API base URL
     getBaseUrl().then((baseUrl) => {
-      setApiBaseUrl(baseUrl);
-
-      // Fetch auth config
       axios.get(`${baseUrl}/api/auth/config`).then((response) => {
         const usernamePasswordMethod = response.data.usernamePasswordMethod;
         const otherMethods = response.data.otherMethods;
@@ -51,7 +46,7 @@ const Login: React.FC = () => {
 
         // Automatically login if only one non-username/password method is enabled
         if (!usernamePasswordMethod && otherMethods.length === 1) {
-          handleAuthMethodLogin(otherMethods[0], baseUrl);
+          handleAuthMethodLogin(otherMethods[0]);
         }
       });
     });
@@ -63,37 +58,40 @@ const Login: React.FC = () => {
     );
   }
 
-  function handleAuthMethodLogin(authMethod: string, baseUrl?: string): void {
-    const url = baseUrl || apiBaseUrl;
-    window.location.href = `${url}/api/auth/${authMethod}`;
+  function handleAuthMethodLogin(authMethod: string): void {
+    getBaseUrl().then((baseUrl) => {
+      window.location.href = `${baseUrl}/api/auth/${authMethod}`;
+    });
   }
 
   function handleSubmit(event: FormEvent): void {
     event.preventDefault();
     setIsLoading(true);
 
-    const loginUrl = `${apiBaseUrl}/api/auth/login`;
-    axios
-      .post<LoginResponse>(loginUrl, { username, password }, getAxiosConfig())
-      .then(() => {
-        window.sessionStorage.setItem('git.proxy.login', 'success');
-        setMessage('Success!');
-        setSuccess(true);
-        authContext.refreshUser().then(() => navigate(0));
-      })
-      .catch((error: AxiosError) => {
-        if (error.response?.status === 307) {
+    getBaseUrl().then((baseUrl) => {
+      const loginUrl = `${baseUrl}/api/auth/login`;
+      axios
+        .post<LoginResponse>(loginUrl, { username, password }, getAxiosConfig())
+        .then(() => {
           window.sessionStorage.setItem('git.proxy.login', 'success');
-          setGitAccountError(true);
-        } else if (error.response?.status === 403) {
-          setMessage(processAuthError(error, false));
-        } else {
-          setMessage('You entered an invalid username or password...');
-        }
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+          setMessage('Success!');
+          setSuccess(true);
+          authContext.refreshUser().then(() => navigate(0));
+        })
+        .catch((error: AxiosError) => {
+          if (error.response?.status === 307) {
+            window.sessionStorage.setItem('git.proxy.login', 'success');
+            setGitAccountError(true);
+          } else if (error.response?.status === 403) {
+            setMessage(processAuthError(error, false));
+          } else {
+            setMessage('You entered an invalid username or password...');
+          }
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    });
   }
 
   if (gitAccountError) {
