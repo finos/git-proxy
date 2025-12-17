@@ -93,7 +93,7 @@ describe('gitleaks', () => {
       );
       expect(errorStub).toHaveBeenCalledWith(
         'failed to get gitleaks config, please fix the error:',
-        expect.any(Error),
+        'Config error',
       );
     });
 
@@ -246,7 +246,7 @@ describe('gitleaks', () => {
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(true);
       expect(stepSpy).toHaveBeenCalledWith(
-        'failed to spawn gitleaks, please contact an administrator\n',
+        'failed to spawn gitleaks, please contact an administrator\n: Spawn error',
       );
     });
 

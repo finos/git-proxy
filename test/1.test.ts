@@ -12,7 +12,7 @@ import { describe, it, beforeAll, afterAll, beforeEach, afterEach, expect, vi } 
 import request from 'supertest';
 import { Service } from '../src/service';
 import * as db from '../src/db';
-import Proxy from '../src/proxy';
+import { Proxy } from '../src/proxy';
 import { Express } from 'express';
 
 // Create constants for values used in multiple tests
