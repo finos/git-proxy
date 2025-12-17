@@ -37,7 +37,6 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     step.setError(msg);
-    throw error;
   } finally {
     action.addStep(step);
   }
