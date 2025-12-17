@@ -91,7 +91,7 @@ const UserList: React.FC = () => {
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    {user.admin ? (
+                    {user?.admin ? (
                       <Check fontSize='small' color='primary' />
                     ) : (
                       <CloseRounded color='error' />

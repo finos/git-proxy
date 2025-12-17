@@ -139,7 +139,7 @@ export default function UserProfile(): React.ReactElement {
                 )}
                 <GridItem xs={2} sm={2} md={2}>
                   <FormLabel component='legend'>Administrator</FormLabel>
-                  {user.admin ? (
+                  {user?.admin ? (
                     <span style={{ color: 'green' }}>
                       <Check fontSize='small' />
                     </span>

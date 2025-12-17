@@ -101,7 +101,7 @@ const RepoDetails: React.FC = () => {
               justifyContent='flex-end'
               alignItems='center'
             >
-              {user.admin && (
+              {user?.admin && (
                 <Grid item>
                   <Button
                     variant='contained'
@@ -170,7 +170,7 @@ const RepoDetails: React.FC = () => {
                 <h3>
                   <Visibility /> Reviewers
                 </h3>
-                {user.admin && (
+                {user?.admin && (
                   <div style={{ textAlign: 'right' }}>
                     <AddUser repoId={repoId || ''} type='authorise' refreshFn={refresh} />
                   </div>
@@ -180,7 +180,7 @@ const RepoDetails: React.FC = () => {
                     <TableHead>
                       <TableRow>
                         <TableCell align='left'>Username</TableCell>
-                        {user.admin && <TableCell align='right'></TableCell>}
+                        {user?.admin && <TableCell align='right'></TableCell>}
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -189,7 +189,7 @@ const RepoDetails: React.FC = () => {
                           <TableCell align='left'>
                             <UserLink username={username} />
                           </TableCell>
-                          {user.admin && (
+                          {user?.admin && (
                             <TableCell align='right' component='th' scope='row'>
                               <Button
                                 variant='contained'
@@ -213,7 +213,7 @@ const RepoDetails: React.FC = () => {
                 <h3>
                   <Code /> Contributors
                 </h3>
-                {user.admin && (
+                {user?.admin && (
                   <div style={{ textAlign: 'right' }}>
                     <AddUser repoId={repoId || ''} type='push' refreshFn={refresh} />
                   </div>
@@ -223,7 +223,7 @@ const RepoDetails: React.FC = () => {
                     <TableHead>
                       <TableRow>
                         <TableCell align='left'>Username</TableCell>
-                        {user.admin && <TableCell align='right'></TableCell>}
+                        {user?.admin && <TableCell align='right'></TableCell>}
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -232,7 +232,7 @@ const RepoDetails: React.FC = () => {
                           <TableCell align='left'>
                             <UserLink username={username} />
                           </TableCell>
-                          {user.admin && (
+                          {user?.admin && (
                             <TableCell align='right' component='th' scope='row'>
                               <Button
                                 variant='contained'
