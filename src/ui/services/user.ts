@@ -87,30 +87,4 @@ const updateUser = async (
   }
 };
 
-const getUserLoggedIn = async (
-  setIsLoading: SetStateCallback<boolean>,
-  setIsAdmin: SetStateCallback<boolean>,
-  setIsError: SetStateCallback<boolean>,
-  setAuth: SetStateCallback<boolean>,
-): Promise<void> => {
-  try {
-    const baseUrl = await getBaseUrl();
-    const response: AxiosResponse<UserData> = await axios(
-      `${baseUrl}/api/auth/me`,
-      getAxiosConfig(),
-    );
-    const data = response.data;
-    setIsLoading(false);
-    setIsAdmin(data.admin || false);
-  } catch (error) {
-    setIsLoading(false);
-    const axiosError = error as AxiosError;
-    if (axiosError.response?.status === 401) {
-      setAuth(false);
-    } else {
-      setIsError(true);
-    }
-  }
-};
-
-export { getUser, getUsers, updateUser, getUserLoggedIn };
+export { getUser, getUsers, updateUser };
