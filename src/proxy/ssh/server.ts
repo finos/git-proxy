@@ -196,8 +196,7 @@ export class SSHServer {
           JSON.stringify(keyString, null, 2),
         );
 
-        (db as any)
-          .findUserBySSHKey(keyString)
+        db.findUserBySSHKey(keyString)
           .then((user: any) => {
             if (user) {
               console.log(
