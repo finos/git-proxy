@@ -37,7 +37,7 @@ export function ensureHostKey(config: HostKeyConfig): Buffer {
 
   // Validate paths to prevent command injection
   // Only allow alphanumeric, dots, slashes, underscores, hyphens
-  const safePathRegex = /^[a-zA-Z0-9._\-\/]+$/;
+  const safePathRegex = /^[a-zA-Z0-9._\-/]+$/;
   if (!safePathRegex.test(privateKeyPath) || !safePathRegex.test(publicKeyPath)) {
     throw new Error(
       `Invalid SSH host key path: paths must contain only alphanumeric characters, dots, slashes, underscores, and hyphens`,
@@ -59,7 +59,9 @@ export function ensureHostKey(config: HostKeyConfig): Buffer {
   // Generate a new host key
   console.log(`[SSH] Proxy host key not found at ${privateKeyPath}`);
   console.log('[SSH] Generating new SSH host key for the proxy server...');
-  console.log('[SSH] Note: This key identifies the proxy to connecting clients (like an SSL certificate)');
+  console.log(
+    '[SSH] Note: This key identifies the proxy to connecting clients (like an SSL certificate)',
+  );
 
   try {
     // Create directory if it doesn't exist
@@ -75,13 +77,10 @@ export function ensureHostKey(config: HostKeyConfig): Buffer {
     // - Faster key generation
     // - Better security properties
     console.log('[SSH] Generating Ed25519 host key...');
-    execSync(
-      `ssh-keygen -t ed25519 -f "${privateKeyPath}" -N "" -C "git-proxy-host-key"`,
-      {
-        stdio: 'pipe', // Suppress ssh-keygen output
-        timeout: 10000, // 10 second timeout
-      },
-    );
+    execSync(`ssh-keygen -t ed25519 -f "${privateKeyPath}" -N "" -C "git-proxy-host-key"`, {
+      stdio: 'pipe', // Suppress ssh-keygen output
+      timeout: 10000, // 10 second timeout
+    });
 
     console.log(`[SSH] ✓ Successfully generated proxy host key`);
     console.log(`[SSH]   Private key: ${privateKeyPath}`);
@@ -99,10 +98,7 @@ export function ensureHostKey(config: HostKeyConfig): Buffer {
     return fs.readFileSync(privateKeyPath);
   } catch (error) {
     // If generation fails, provide helpful error message
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : String(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
 
     console.error('[SSH] Failed to generate host key');
     console.error(`[SSH] Error: ${errorMessage}`);
@@ -110,12 +106,12 @@ export function ensureHostKey(config: HostKeyConfig): Buffer {
     console.error('[SSH] To fix this, you can either:');
     console.error('[SSH] 1. Install ssh-keygen (usually part of OpenSSH)');
     console.error('[SSH] 2. Manually generate a key:');
-    console.error(`[SSH]    ssh-keygen -t ed25519 -f "${privateKeyPath}" -N "" -C "git-proxy-host-key"`);
+    console.error(
+      `[SSH]    ssh-keygen -t ed25519 -f "${privateKeyPath}" -N "" -C "git-proxy-host-key"`,
+    );
     console.error('[SSH] 3. Disable SSH in proxy.config.json: "ssh": { "enabled": false }');
 
-    throw new Error(
-      `Failed to generate SSH host key: ${errorMessage}. See console for details.`,
-    );
+    throw new Error(`Failed to generate SSH host key: ${errorMessage}. See console for details.`);
   }
 }
 

@@ -1,6 +1,5 @@
-const chai = require('chai');
-const { KILOBYTE, MEGABYTE, GIGABYTE } = require('../../src/constants');
-const expect = chai.expect;
+import { describe, it, expect } from 'vitest';
+import { KILOBYTE, MEGABYTE, GIGABYTE } from '../../src/constants';
 
 describe('HTTP/HTTPS Performance Tests', () => {
   describe('Memory Usage Tests', () => {
@@ -21,8 +20,8 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const endMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = endMemory - startMemory;
 
-      expect(memoryIncrease).to.be.lessThan(KILOBYTE * 5); // Should use less than 5KB
-      expect(req.body.length).to.equal(KILOBYTE);
+      expect(memoryIncrease).toBeLessThan(KILOBYTE * 5); // Should use less than 5KB
+      expect(req.body.length).toBe(KILOBYTE);
     });
 
     it('should handle medium POST requests within reasonable limits', async () => {
@@ -42,8 +41,8 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const endMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = endMemory - startMemory;
 
-      expect(memoryIncrease).to.be.lessThan(15 * MEGABYTE); // Should use less than 15MB
-      expect(req.body.length).to.equal(10 * MEGABYTE);
+      expect(memoryIncrease).toBeLessThan(15 * MEGABYTE); // Should use less than 15MB
+      expect(req.body.length).toBe(10 * MEGABYTE);
     });
 
     it('should handle large POST requests up to size limit', async () => {
@@ -63,8 +62,8 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const endMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = endMemory - startMemory;
 
-      expect(memoryIncrease).to.be.lessThan(120 * MEGABYTE); // Should use less than 120MB
-      expect(req.body.length).to.equal(100 * MEGABYTE);
+      expect(memoryIncrease).toBeLessThan(120 * MEGABYTE); // Should use less than 120MB
+      expect(req.body.length).toBe(100 * MEGABYTE);
     });
 
     it('should reject requests exceeding size limit', async () => {
@@ -74,8 +73,8 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const maxPackSize = 1 * GIGABYTE;
       const requestSize = oversizedData.length;
 
-      expect(requestSize).to.be.greaterThan(maxPackSize);
-      expect(requestSize).to.equal(1200 * MEGABYTE);
+      expect(requestSize).toBeGreaterThan(maxPackSize);
+      expect(requestSize).toBe(1200 * MEGABYTE);
     });
   });
 
@@ -96,8 +95,8 @@ describe('HTTP/HTTPS Performance Tests', () => {
 
       const processingTime = Date.now() - startTime;
 
-      expect(processingTime).to.be.lessThan(100); // Should complete in less than 100ms
-      expect(req.body.length).to.equal(1 * KILOBYTE);
+      expect(processingTime).toBeLessThan(100); // Should complete in less than 100ms
+      expect(req.body.length).toBe(1 * KILOBYTE);
     });
 
     it('should process medium requests within acceptable time', async () => {
@@ -116,8 +115,8 @@ describe('HTTP/HTTPS Performance Tests', () => {
 
       const processingTime = Date.now() - startTime;
 
-      expect(processingTime).to.be.lessThan(1000); // Should complete in less than 1 second
-      expect(req.body.length).to.equal(10 * MEGABYTE);
+      expect(processingTime).toBeLessThan(1000); // Should complete in less than 1 second
+      expect(req.body.length).toBe(10 * MEGABYTE);
     });
 
     it('should process large requests within reasonable time', async () => {
@@ -136,14 +135,14 @@ describe('HTTP/HTTPS Performance Tests', () => {
 
       const processingTime = Date.now() - startTime;
 
-      expect(processingTime).to.be.lessThan(5000); // Should complete in less than 5 seconds
-      expect(req.body.length).to.equal(100 * MEGABYTE);
+      expect(processingTime).toBeLessThan(5000); // Should complete in less than 5 seconds
+      expect(req.body.length).toBe(100 * MEGABYTE);
     });
   });
 
   describe('Concurrent Request Tests', () => {
     it('should handle multiple small requests concurrently', async () => {
-      const requests = [];
+      const requests: Promise<any>[] = [];
       const startTime = Date.now();
 
       // Simulate 10 concurrent small requests
@@ -166,15 +165,15 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const results = await Promise.all(requests);
       const totalTime = Date.now() - startTime;
 
-      expect(results).to.have.length(10);
-      expect(totalTime).to.be.lessThan(1000); // Should complete all in less than 1 second
+      expect(results).toHaveLength(10);
+      expect(totalTime).toBeLessThan(1000); // Should complete all in less than 1 second
       results.forEach((result) => {
-        expect(result.body.length).to.equal(1 * KILOBYTE);
+        expect(result.body.length).toBe(1 * KILOBYTE);
       });
     });
 
     it('should handle mixed size requests concurrently', async () => {
-      const requests = [];
+      const requests: Promise<any>[] = [];
       const startTime = Date.now();
 
       // Simulate mixed operations
@@ -200,8 +199,8 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const results = await Promise.all(requests);
       const totalTime = Date.now() - startTime;
 
-      expect(results).to.have.length(9);
-      expect(totalTime).to.be.lessThan(2000); // Should complete all in less than 2 seconds
+      expect(results).toHaveLength(9);
+      expect(totalTime).toBeLessThan(2000); // Should complete all in less than 2 seconds
     });
   });
 
@@ -226,8 +225,8 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const memoryIncrease = endMemory - startMemory;
       const processingTime = endTime - startTime;
 
-      expect(processingTime).to.be.lessThan(100); // Should handle errors quickly
-      expect(memoryIncrease).to.be.lessThan(2 * KILOBYTE); // Should not leak memory (allow for GC timing)
+      expect(processingTime).toBeLessThan(100); // Should handle errors quickly
+      expect(memoryIncrease).toBeLessThan(2 * KILOBYTE); // Should not leak memory (allow for GC timing)
     });
 
     it('should handle malformed requests efficiently', async () => {
@@ -247,8 +246,8 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const isValid = malformedReq.url.includes('git-receive-pack');
       const processingTime = Date.now() - startTime;
 
-      expect(processingTime).to.be.lessThan(50); // Should validate quickly
-      expect(isValid).to.be.false;
+      expect(processingTime).toBeLessThan(50); // Should validate quickly
+      expect(isValid).toBe(false);
     });
   });
 
@@ -264,9 +263,9 @@ describe('HTTP/HTTPS Performance Tests', () => {
       data.fill(0); // Clear buffer
       const cleanedMemory = process.memoryUsage().heapUsed;
 
-      expect(_processedData.length).to.equal(10 * MEGABYTE);
+      expect(_processedData.length).toBe(10 * MEGABYTE);
       // Memory should be similar to start (allowing for GC timing)
-      expect(cleanedMemory - startMemory).to.be.lessThan(5 * MEGABYTE);
+      expect(cleanedMemory - startMemory).toBeLessThan(5 * MEGABYTE);
     });
 
     it('should handle multiple cleanup cycles without memory growth', async () => {
@@ -288,7 +287,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const memoryGrowth = finalMemory - initialMemory;
 
       // Memory growth should be minimal
-      expect(memoryGrowth).to.be.lessThan(10 * MEGABYTE); // Less than 10MB growth
+      expect(memoryGrowth).toBeLessThan(10 * MEGABYTE); // Less than 10MB growth
     });
   });
 
@@ -305,9 +304,9 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const endTime = Date.now();
       const loadTime = endTime - startTime;
 
-      expect(loadTime).to.be.lessThan(50); // Should load in less than 50ms
-      expect(testConfig).to.have.property('proxy');
-      expect(testConfig).to.have.property('limits');
+      expect(loadTime).toBeLessThan(50); // Should load in less than 50ms
+      expect(testConfig).toHaveProperty('proxy');
+      expect(testConfig).toHaveProperty('limits');
     });
 
     it('should validate configuration efficiently', async () => {
@@ -323,8 +322,8 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const endTime = Date.now();
       const validationTime = endTime - startTime;
 
-      expect(validationTime).to.be.lessThan(10); // Should validate in less than 10ms
-      expect(isValid).to.be.true;
+      expect(validationTime).toBeLessThan(10); // Should validate in less than 10ms
+      expect(isValid).toBe(true);
     });
   });
 
@@ -333,20 +332,20 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const startTime = Date.now();
 
       // Simulate middleware processing
-      const middleware = (req, res, next) => {
+      const middleware = (req: any, res: any, next: () => void) => {
         req.processed = true;
         next();
       };
 
-      const req = { method: 'POST', url: '/test' };
+      const req: any = { method: 'POST', url: '/test' };
       const res = {};
       const next = () => {};
 
       middleware(req, res, next);
       const processingTime = Date.now() - startTime;
 
-      expect(processingTime).to.be.lessThan(10); // Should process in less than 10ms
-      expect(req.processed).to.be.true;
+      expect(processingTime).toBeLessThan(10); // Should process in less than 10ms
+      expect(req.processed).toBe(true);
     });
 
     it('should handle multiple middleware efficiently', async () => {
@@ -354,21 +353,21 @@ describe('HTTP/HTTPS Performance Tests', () => {
 
       // Simulate multiple middleware
       const middlewares = [
-        (req, res, next) => {
+        (req: any, res: any, next: () => void) => {
           req.step1 = true;
           next();
         },
-        (req, res, next) => {
+        (req: any, res: any, next: () => void) => {
           req.step2 = true;
           next();
         },
-        (req, res, next) => {
+        (req: any, res: any, next: () => void) => {
           req.step3 = true;
           next();
         },
       ];
 
-      const req = { method: 'POST', url: '/test' };
+      const req: any = { method: 'POST', url: '/test' };
       const res = {};
       const next = () => {};
 
@@ -377,10 +376,10 @@ describe('HTTP/HTTPS Performance Tests', () => {
 
       const processingTime = Date.now() - startTime;
 
-      expect(processingTime).to.be.lessThan(50); // Should process all in less than 50ms
-      expect(req.step1).to.be.true;
-      expect(req.step2).to.be.true;
-      expect(req.step3).to.be.true;
+      expect(processingTime).toBeLessThan(50); // Should process all in less than 50ms
+      expect(req.step1).toBe(true);
+      expect(req.step2).toBe(true);
+      expect(req.step3).toBe(true);
     });
   });
 });
