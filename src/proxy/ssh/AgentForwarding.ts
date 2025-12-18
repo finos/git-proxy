@@ -86,6 +86,12 @@ export class LazySSHAgent extends BaseAgent {
 
         console.log(`[LazyAgent] Returning ${keys.length} identities`);
 
+        if (keys.length === 0) {
+          throw new Error(
+            'No identities found. Run ssh-add <key> on this terminal to add your SSH key.',
+          );
+        }
+
         // Close the temporary agent channel
         if (agentProxy) {
           agentProxy.close();

@@ -1,5 +1,4 @@
 import * as ssh2 from 'ssh2';
-import * as bcrypt from 'bcryptjs';
 import { getSSHConfig, getMaxPackSizeBytes, getDomains } from '../../config';
 import { serverConfig } from '../../config/env';
 import chain from '../chain';
@@ -39,7 +38,7 @@ export class SSHServer {
     // Initialize SSH server with secure defaults
     const serverOptions: SSH2ServerOptions = {
       hostKeys: privateKeys,
-      authMethods: ['publickey', 'password'],
+      authMethods: ['publickey'],
       keepaliveInterval: 20000, // 20 seconds is recommended for SSH connections
       keepaliveCountMax: 5, // Recommended for SSH connections is 3-5 attempts
       readyTimeout: 30000, // Longer ready timeout
@@ -217,42 +216,6 @@ export class SSHServer {
             console.error('[SSH] Database error during public key auth:', err);
             ctx.reject();
           });
-      } else if (ctx.method === 'password') {
-        db.findUser(ctx.username)
-          .then((user) => {
-            if (user && user.password) {
-              bcrypt.compare(
-                ctx.password,
-                user.password || '',
-                (err: Error | null, result?: boolean) => {
-                  if (err) {
-                    console.error('[SSH] Error comparing password:', err);
-                    ctx.reject();
-                  } else if (result) {
-                    console.log(
-                      `[SSH] Password authentication successful for user: ${user.username} from ${clientIp}`,
-                    );
-                    clientWithUser.authenticatedUser = {
-                      username: user.username,
-                      email: user.email,
-                      gitAccount: user.gitAccount,
-                    };
-                    ctx.accept();
-                  } else {
-                    console.log('[SSH] Password authentication failed - invalid password');
-                    ctx.reject();
-                  }
-                },
-              );
-            } else {
-              console.log('[SSH] Password authentication failed - user not found or no password');
-              ctx.reject();
-            }
-          })
-          .catch((err: Error) => {
-            console.error('[SSH] Database error during password auth:', err);
-            ctx.reject();
-          });
       } else {
         console.log('[SSH] Unsupported authentication method:', ctx.method);
         ctx.reject();
@@ -266,12 +229,12 @@ export class SSHServer {
       clearTimeout(connectionTimeout);
     });
 
-    client.on('session', (accept: () => ssh2.ServerChannel, reject: () => void) => {
+    client.on('session', (accept: () => ssh2.ServerChannel, _reject: () => void) => {
       const session = accept();
 
       session.on(
         'exec',
-        (accept: () => ssh2.ServerChannel, reject: () => void, info: { command: string }) => {
+        (accept: () => ssh2.ServerChannel, _reject: () => void, info: { command: string }) => {
           const stream = accept();
           this.handleCommand(info.command, stream, clientWithUser);
         },
