@@ -89,7 +89,7 @@ describe('SSHServer', () => {
       expect(startSpy).toHaveBeenCalled();
       const callArgs = startSpy.mock.calls[0];
       expect(callArgs[0]).toBe(2222);
-      expect(callArgs[1]).toBe('0.0.0.0');
+      expect(typeof callArgs[1]).toBe('function'); // Callback is second argument
     });
 
     it('should start listening on default port 2222 when not configured', () => {
@@ -107,7 +107,7 @@ describe('SSHServer', () => {
       expect(startSpy).toHaveBeenCalled();
       const callArgs = startSpy.mock.calls[0];
       expect(callArgs[0]).toBe(2222);
-      expect(callArgs[1]).toBe('0.0.0.0');
+      expect(typeof callArgs[1]).toBe('function'); // Callback is second argument
     });
 
     it('should stop the server', () => {

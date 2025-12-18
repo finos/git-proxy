@@ -372,7 +372,9 @@ export class SSHServer {
       const urlComponents = processGitUrl(fullUrl);
 
       if (!urlComponents) {
-        throw new Error(`Invalid repository path format: ${fullRepoPath} Make sure the repository URL is valid and ends with '.git'.`);
+        throw new Error(
+          `Invalid repository path format: ${fullRepoPath} Make sure the repository URL is valid and ends with '.git'.`,
+        );
       }
 
       const { host: remoteHost, repoPath } = urlComponents;
@@ -639,7 +641,7 @@ export class SSHServer {
     const sshConfig = getSSHConfig();
     const port = sshConfig.port || 2222;
 
-    this.server.listen(port, '0.0.0.0', () => {
+    this.server.listen(port, () => {
       console.log(`[SSH] Server listening on port ${port}`);
     });
   }
