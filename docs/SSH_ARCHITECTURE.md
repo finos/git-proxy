@@ -52,6 +52,8 @@ git remote add origin ssh://git@git-proxy.example.com:2222/github.com/org/repo.g
 git remote add origin ssh://git@git-proxy.example.com:2222/gitlab.com/org/repo.git
 ```
 
+> **⚠️ Important:** The repository URL must end with `.git` or the SSH server will reject it.
+
 **2. Generate SSH key (if not already present)**:
 
 ```bash
@@ -278,12 +280,14 @@ In **SSH**, everything happens in a single conversational session. The proxy mus
 The security chain independently clones and analyzes repositories **before** accepting pushes. The proxy uses the **same protocol** as the client connection:
 
 **SSH protocol:**
+
 - Security chain clones via SSH using agent forwarding
 - Uses the **client's SSH keys** (forwarded through agent)
 - Preserves user identity throughout the entire flow
 - Requires agent forwarding to be enabled
 
 **HTTPS protocol:**
+
 - Security chain clones via HTTPS using service token
 - Uses the **proxy's credentials** (configured service token)
 - Independent authentication from client
