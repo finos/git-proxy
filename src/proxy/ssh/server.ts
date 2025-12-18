@@ -372,7 +372,7 @@ export class SSHServer {
       const urlComponents = processGitUrl(fullUrl);
 
       if (!urlComponents) {
-        throw new Error(`Invalid repository path format: ${fullRepoPath}`);
+        throw new Error(`Invalid repository path format: ${fullRepoPath} Make sure the repository URL is valid and ends with '.git'.`);
       }
 
       const { host: remoteHost, repoPath } = urlComponents;
