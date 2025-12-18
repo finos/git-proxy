@@ -77,6 +77,9 @@ describe('pullRemote processor', () => {
           password: 'svc-token',
         },
       },
+      sshClient: {
+        agentForwardingEnabled: true,
+      },
     };
 
     await pullRemote(req, action);
