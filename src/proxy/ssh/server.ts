@@ -11,7 +11,7 @@ import {
   forwardPackDataToRemote,
   connectToRemoteGitServer,
 } from './GitProtocol';
-import { ClientWithUser } from './types';
+import { ClientWithUser, SSH2ServerOptions } from './types';
 import { createMockResponse } from './sshHelpers';
 import { processGitUrl } from '../routes/helper';
 import { ensureHostKey } from './hostKeyManager';
@@ -31,25 +31,25 @@ export class SSHServer {
       privateKeys.push(hostKey);
     } catch (error) {
       console.error('[SSH] Failed to initialize proxy host key');
-      console.error(
-        `[SSH] ${error instanceof Error ? error.message : String(error)}`,
-      );
+      console.error(`[SSH] ${error instanceof Error ? error.message : String(error)}`);
       console.error('[SSH] Cannot start SSH server without a valid host key.');
       process.exit(1);
     }
 
     // Initialize SSH server with secure defaults
+    const serverOptions: SSH2ServerOptions = {
+      hostKeys: privateKeys,
+      authMethods: ['publickey', 'password'],
+      keepaliveInterval: 20000, // 20 seconds is recommended for SSH connections
+      keepaliveCountMax: 5, // Recommended for SSH connections is 3-5 attempts
+      readyTimeout: 30000, // Longer ready timeout
+      debug: (msg: string) => {
+        console.debug('[SSH Debug]', msg);
+      },
+    };
+
     this.server = new ssh2.Server(
-      {
-        hostKeys: privateKeys,
-        authMethods: ['publickey', 'password'] as any,
-        keepaliveInterval: 20000, // 20 seconds is recommended for SSH connections
-        keepaliveCountMax: 5, // Recommended for SSH connections is 3-5 attempts
-        readyTimeout: 30000, // Longer ready timeout
-        debug: (msg: string) => {
-          console.debug('[SSH Debug]', msg);
-        },
-      } as any, // Cast to any to avoid strict type checking for now
+      serverOptions as any, // ssh2 types don't fully match our extended interface
       (client: ssh2.Connection, info: any) => {
         // Pass client connection info to the handler
         this.handleClient(client, { ip: info?.ip, family: info?.family });
@@ -339,6 +339,50 @@ export class SSHServer {
     }
   }
 
+  /**
+   * Validate repository path to prevent command injection and path traversal
+   * Only allows safe characters and ensures path ends with .git
+   */
+  private validateRepositoryPath(repoPath: string): void {
+    // Repository path should match pattern: host.com/org/repo.git
+    // Allow only: alphanumeric, dots, slashes, hyphens, underscores
+    // Must end with .git
+    const safeRepoPathRegex = /^[a-zA-Z0-9._\-/]+\.git$/;
+
+    if (!safeRepoPathRegex.test(repoPath)) {
+      throw new Error(
+        `Invalid repository path format: ${repoPath}. ` +
+          `Repository paths must contain only alphanumeric characters, dots, slashes, ` +
+          `hyphens, underscores, and must end with .git`,
+      );
+    }
+
+    // Prevent path traversal attacks
+    if (repoPath.includes('..') || repoPath.includes('//')) {
+      throw new Error(
+        `Invalid repository path: contains path traversal sequences. Path: ${repoPath}`,
+      );
+    }
+
+    // Ensure path contains at least host/org/repo.git structure
+    const pathSegments = repoPath.split('/');
+    if (pathSegments.length < 3) {
+      throw new Error(
+        `Invalid repository path: must contain at least host/org/repo.git. Path: ${repoPath}`,
+      );
+    }
+
+    // Validate hostname segment (first segment should look like a domain)
+    const hostname = pathSegments[0];
+    const hostnameRegex =
+      /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+    if (!hostnameRegex.test(hostname)) {
+      throw new Error(
+        `Invalid hostname in repository path: ${hostname}. Must be a valid domain name.`,
+      );
+    }
+  }
+
   private async handleGitCommand(
     command: string,
     stream: ssh2.ServerChannel,
@@ -356,6 +400,8 @@ export class SSHServer {
       if (fullRepoPath.startsWith('/')) {
         fullRepoPath = fullRepoPath.substring(1);
       }
+
+      this.validateRepositoryPath(fullRepoPath);
 
       // Parse full path to extract hostname and repository path
       // Input: 'github.com/user/repo.git' -> { host: 'github.com', repoPath: '/user/repo.git' }
@@ -421,18 +467,44 @@ export class SSHServer {
     const maxPackSizeDisplay = this.formatBytes(maxPackSize);
     const userName = client.authenticatedUser?.username || 'unknown';
 
+    const MAX_PACK_DATA_CHUNKS = 10000;
+
     const capabilities = await fetchGitHubCapabilities(command, client, remoteHost);
     stream.write(capabilities);
 
     const packDataChunks: Buffer[] = [];
     let totalBytes = 0;
 
+    // Create push timeout upfront (will be cleared in various error/completion handlers)
+    const pushTimeout = setTimeout(() => {
+      console.error(`[SSH] Push operation timeout for user ${userName}`);
+      stream.stderr.write('Error: Push operation timeout\n');
+      stream.exit(1);
+      stream.end();
+    }, 300000); // 5 minutes
+
     // Set up data capture from client stream
     const dataHandler = (data: Buffer) => {
       try {
         if (!Buffer.isBuffer(data)) {
           console.error(`[SSH] Invalid data type received: ${typeof data}`);
+          clearTimeout(pushTimeout);
           stream.stderr.write('Error: Invalid data format received\n');
+          stream.exit(1);
+          stream.end();
+          return;
+        }
+
+        // Check chunk count limit to prevent memory fragmentation
+        if (packDataChunks.length >= MAX_PACK_DATA_CHUNKS) {
+          console.error(
+            `[SSH] Too many data chunks: ${packDataChunks.length} >= ${MAX_PACK_DATA_CHUNKS}`,
+          );
+          clearTimeout(pushTimeout);
+          stream.stderr.write(
+            `Error: Exceeded maximum number of data chunks (${MAX_PACK_DATA_CHUNKS}). ` +
+              `This may indicate a memory fragmentation attack.\n`,
+          );
           stream.exit(1);
           stream.end();
           return;
@@ -443,6 +515,7 @@ export class SSHServer {
           console.error(
             `[SSH] Pack size limit exceeded: ${attemptedSize} (${this.formatBytes(attemptedSize)}) > ${maxPackSize} (${maxPackSizeDisplay})`,
           );
+          clearTimeout(pushTimeout);
           stream.stderr.write(
             `Error: Pack data exceeds maximum size limit (${maxPackSizeDisplay})\n`,
           );
@@ -456,6 +529,7 @@ export class SSHServer {
         // NOTE: Data is buffered, NOT sent to GitHub yet
       } catch (error) {
         console.error(`[SSH] Error processing data chunk:`, error);
+        clearTimeout(pushTimeout);
         stream.stderr.write(`Error: Failed to process data chunk: ${error}\n`);
         stream.exit(1);
         stream.end();
@@ -537,17 +611,11 @@ export class SSHServer {
 
     const errorHandler = (error: Error) => {
       console.error(`[SSH] Stream error during push:`, error);
+      clearTimeout(pushTimeout);
       stream.stderr.write(`Stream error: ${error.message}\n`);
       stream.exit(1);
       stream.end();
     };
-
-    const pushTimeout = setTimeout(() => {
-      console.error(`[SSH] Push operation timeout for user ${userName}`);
-      stream.stderr.write('Error: Push operation timeout\n');
-      stream.exit(1);
-      stream.end();
-    }, 300000); // 5 minutes
 
     // Clean up timeout when stream ends
     const timeoutAwareEndHandler = async () => {

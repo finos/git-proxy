@@ -314,20 +314,21 @@ export const getMaxPackSizeBytes = (): number => {
 };
 
 export const getSSHConfig = () => {
-  // Default host key paths - auto-generated if not present
+  // The proxy host key is auto-generated at startup if not present
+  // This key is only used to identify the proxy server to clients (like SSL cert)
+  // It is NOT configurable to ensure consistent behavior
   const defaultHostKey = {
-    privateKeyPath: '.ssh/host_key',
-    publicKeyPath: '.ssh/host_key.pub',
+    privateKeyPath: '.ssh/proxy_host_key',
+    publicKeyPath: '.ssh/proxy_host_key.pub',
   };
 
   try {
     const config = loadFullConfiguration();
     const sshConfig = config.ssh || { enabled: false };
 
-    // Always ensure hostKey is present with defaults
-    // The hostKey identifies the proxy server to clients
+    // The host key is a server identity, not user configuration
     if (sshConfig.enabled) {
-      sshConfig.hostKey = sshConfig.hostKey || defaultHostKey;
+      sshConfig.hostKey = defaultHostKey;
     }
 
     return sshConfig;
@@ -340,9 +341,8 @@ export const getSSHConfig = () => {
         const userConfig = JSON.parse(userConfigContent);
         const sshConfig = userConfig.ssh || { enabled: false };
 
-        // Always ensure hostKey is present with defaults
         if (sshConfig.enabled) {
-          sshConfig.hostKey = sshConfig.hostKey || defaultHostKey;
+          sshConfig.hostKey = defaultHostKey;
         }
 
         return sshConfig;
