@@ -46,6 +46,10 @@ describe('SSH Security Tests', () => {
 
   afterAll(() => {
     vi.restoreAllMocks();
+    // Clean up test keys
+    if (fs.existsSync(testKeysDir)) {
+      fs.rmSync(testKeysDir, { recursive: true, force: true });
+    }
   });
   describe('Repository Path Validation', () => {
     let server: SSHServer;

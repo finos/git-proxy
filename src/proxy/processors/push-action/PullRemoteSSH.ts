@@ -93,16 +93,17 @@ export class PullRemoteSSH extends PullRemoteBase {
       // Verify the fingerprint matches our hardcoded trusted fingerprint
       // Extract the public key portion
       const keyParts = actualHostKey.split(' ');
-      if (keyParts.length < 2) {
+      if (keyParts.length < 3) {
         throw new Error('Invalid ssh-keyscan output format');
       }
 
-      const publicKeyBase64 = keyParts[1];
+      const publicKeyBase64 = keyParts[2];
       const publicKeyBuffer = Buffer.from(publicKeyBase64, 'base64');
 
       // Calculate SHA256 fingerprint
       const hash = crypto.createHash('sha256').update(publicKeyBuffer).digest('base64');
-      const calculatedFingerprint = `SHA256:${hash}`;
+      // Remove base64 padding (=) to match standard SSH fingerprint format
+      const calculatedFingerprint = `SHA256:${hash.replace(/=+$/, '')}`;
 
       // Verify against hardcoded fingerprint
       if (calculatedFingerprint !== knownFingerprint) {
