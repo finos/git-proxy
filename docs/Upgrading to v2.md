@@ -1,0 +1,85 @@
+# Upgrading to GitProxy v2
+
+This guide attempts to cover everything needed for a seamless upgrade from GitProxy v1 (`1.19.2`) to v2.
+
+Most errors will be related to invalid database records added in v1 - mainly in the `user` and `repo` databases. As of writing, database migration files are not provided.
+
+## Noteworthy changes and their consequences
+
+Two important breaking changes were made:
+
+### Associate commits by email
+
+Commits are no longer associated by Git's `user.name`. Now, they're associated by email. [#973](github.com/finos/git-proxy/pull/973)
+
+In practice, pushes that were working in v1 may be blocked in v2 due to the change in requirements. The user's GitProxy email must match the commit's email (Git's `user.email`).
+
+### Support for GitLab and other Git hosts
+
+Added support for Git hosts other than GitHub. Eliminated assumptions about GitHub as the Git repository host. [#1043](https://github.com/finos/git-proxy/pull/1043)
+
+Repositories are no longer identified by name, but by internal ID instead. This means that multiple forks of the same repo are now supported, as well as repos for any other Git host (GitLab, etc.).
+
+However, as URL parsing is more strict, pushing to previously added GitHub repos may result in errors.
+
+## Troubleshooting typical errors
+
+Most of these errors can be easily **fixed by simply accessing the UI** to delete the offending repository, add it again, and restore all the allowed users. Manually editing the database entries is not recommended, but nevertheless a valid solution.
+
+If you encounter any errors not on this guide, feel free to [open a discussion](https://github.com/finos/git-proxy/discussions).
+
+### Errors when pushing to a repo that was working in v1:
+
+#### fatal: <repo-url>/info/refs not valid: is this git repository?
+
+`git push` returns:
+
+```
+fatal: <repo-url>/info/refs not valid: is this git repository?
+```
+
+This error happens when pushing to GitProxy with a mismatched URL.
+
+In v1, Git URLs without the trailing `.git` were considered valid:
+
+```
+"url": "https://github.com/my-org/my-repo"
+```
+
+In v2, URLs are automatically formatted when adding a repo. **Repos added in v1 must be edited or re-added to fix this error**:
+
+```
+"url": "https://github.com/my-org/my-repo.git"
+```
+
+#### Your push has been blocked (<email> is not allowed to push on repo <repo-url>)
+
+`git push` returns:
+
+```
+Your push has been blocked (<email> is not allowed to push on repo <repo-url>)
+```
+
+This error occurs when pushing to GitProxy without being in the `canPush` list. This error can also occur when no GitProxy users match the given email.
+
+In v1, authorised users were matched based on `gitAccount` (which was actually the Git `user.name` and mistakenly being used as the GitHub username in the UI):
+
+```
+"users":{"canPush":["John Doe"],"canAuthorise":["John Doe","admin"]}
+```
+
+In v2, authorised users are identified by their GitProxy username. The email associated with the push (Git `user.email`) must match their GitProxy email:
+
+Repo data:
+
+```
+{"users":{"canPush":["johndoe123"],"canAuthorise":["johndoe123","admin"]"}, ...}`
+```
+
+User data:
+
+```
+{"username":"johndoe123","gitAccount":"<does-not-matter>","email":"<email>", ...}
+```
+
+This is easily **solved by removing and re-adding the users from the dropdown list** in the UI (in the repository details page).
