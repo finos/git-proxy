@@ -163,9 +163,9 @@ const repo = (proxy: any) => {
           let newOrigin = true;
 
           const existingHosts = await getAllProxiedHosts();
-          existingHosts.forEach((h) => {
-            // assume SSL is in use and that our origins are missing the protocol
-            if (req.body.url.startsWith(`https://${h}`)) {
+          existingHosts.forEach((host) => {
+            // Check if the request URL contains this host
+            if (req.body.url.includes(host)) {
               newOrigin = false;
             }
           });
