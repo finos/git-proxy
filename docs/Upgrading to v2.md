@@ -83,3 +83,25 @@ User data:
 ```
 
 This is easily **solved by removing and re-adding the users from the dropdown list** in the UI (in the repository details page).
+
+## Other notable changes
+
+### Features
+
+- Replaced `getMissingData` action with `checkEmptyBranch` to handle empty branch processing in [#1134](https://github.com/finos/git-proxy/pull/1134)
+  - `getMissingData` was setting the `Commit` object's `committer` to the `author_name` which is not always true. Furthermore, the edge case that `getMissingData` was trying to solve was already covered by the `checkHiddenCommits` action
+  - `checkEmptyBranch` simply checks whether the branch has had any new commits (if not, the push will be rejected)
+- Added a settings page for configuring the JWT token to authenticate UI requests to API when `apiAuthentication` is enabled in [#1096](https://github.com/finos/git-proxy/pull/1096)
+  - Previously, requests from the UI were bypassing the JWT check if the user was logged in, and failing otherwise when `apiAuthentication` was set
+
+### Bugfixes
+
+- Fixed issue where requests for unknown repos were being forwarded to GitHub instead of being blocked as expected in [#1163](https://github.com/finos/git-proxy/issues/1163)
+  - Improved error handling on chain execution to ensure errors always block pushes
+  - Ensured `checkRepoInAuthList` is run for all requests
+- Fixed MongoDB client implementation issues (not awaiting promises, searching repos against the wrong field) in [#1167](https://github.com/finos/git-proxy/pull/1167)
+- Fixed issues with Git client not rendering error messages on rejected pushes in [#1178](https://github.com/finos/git-proxy/pull/1178)
+  - Reverted previous changes to status codes on rejected pushes since the Git client only renders errors on `200 OK`
+- Fixed Push table committer and author links, replaced links to profile with `mailto:` in [#1179](https://github.com/finos/git-proxy/pull/1179)
+- Fixed display errors when adding a new repo in [#1120](https://github.com/finos/git-proxy/pull/1120)
+  - Caused by an issue with server side errors being silently ignored
