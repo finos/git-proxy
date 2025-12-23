@@ -1,6 +1,6 @@
 import axios from 'axios';
+import { createPublicKey } from 'crypto';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
-import jwkToPem from 'jwk-to-pem';
 
 import { JwkKey, JwksResponse, JwtValidationResult } from './types';
 import { RoleMapping } from '../../config/generated/config';
@@ -53,7 +53,10 @@ export async function validateJwt(
       throw new Error('No matching key found in JWKS');
     }
 
-    const pubKey = jwkToPem(jwk as any);
+    const pubKey = createPublicKey({
+      key: jwk,
+      format: 'jwk',
+    });
 
     const verifiedPayload = jwt.verify(token, pubKey, {
       algorithms: ['RS256'],
