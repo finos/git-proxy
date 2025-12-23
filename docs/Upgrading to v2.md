@@ -4,7 +4,7 @@ This guide attempts to cover everything needed for a seamless upgrade from GitPr
 
 Most errors will be related to invalid database records added in v1 - mainly in the `user` and `repo` databases. As of writing, database migration files are not provided.
 
-## Noteworthy changes and their consequences
+## Breaking changes
 
 Two important breaking changes were made:
 
@@ -24,7 +24,7 @@ However, as URL parsing is more strict, pushing to previously added GitHub repos
 
 ## Troubleshooting typical errors
 
-Most of these errors can be easily **fixed by simply accessing the UI** to delete the offending repository, add it again, and restore all the allowed users. Manually editing the database entries is not recommended, but nevertheless a valid solution.
+Most of these errors can be easily **fixed by simply accessing the UI** to delete the offending repository, add it again, and restore all the allowed users. Manually editing the database entries is not recommended, but also works.
 
 If you encounter any errors not on this guide, feel free to [open a discussion](https://github.com/finos/git-proxy/discussions).
 
@@ -93,6 +93,8 @@ This is easily **solved by removing and re-adding the users from the dropdown li
   - `checkEmptyBranch` simply checks whether the branch has had any new commits (if not, the push will be rejected)
 - Added a settings page for configuring the JWT token to authenticate UI requests to API when `apiAuthentication` is enabled in [#1096](https://github.com/finos/git-proxy/pull/1096)
   - Previously, requests from the UI were bypassing the JWT check if the user was logged in, and failing otherwise when `apiAuthentication` was set
+- Added the ability to create new users via the GitProxy CLI in [#981](https://github.com/finos/git-proxy/pull/981)
+- Added `/healthcheck` endpoint for AWS Load Balancer support [#1197](https://github.com/finos/git-proxy/pull/1197)
 
 ### Bugfixes
 
@@ -105,3 +107,23 @@ This is easily **solved by removing and re-adding the users from the dropdown li
 - Fixed Push table committer and author links, replaced links to profile with `mailto:` in [#1179](https://github.com/finos/git-proxy/pull/1179)
 - Fixed display errors when adding a new repo in [#1120](https://github.com/finos/git-proxy/pull/1120)
   - Caused by an issue with server side errors being silently ignored
+- Fixed `--force` pushes failing due to the `getDiff` action blocking legitimate empty diffs in [#1182](https://github.com/finos/git-proxy/pull/1182)
+- Fixed incorrect error message on cloning unauthorized repos in [#1204](https://github.com/finos/git-proxy/pull/1204)
+  - Caused by improper Git protocol error handling for `GET /info/refs` requests, resulting in Git client receiving malformed `upload-pack` data
+- Fixed duplicated chain execution when pushing a PR that has been approved in [#1209](https://github.com/finos/git-proxy/pull/1209)
+  - Caused by an issue with raw body extraction on `POST git-pack` requests
+- Reimplemented push parsing to fix various issues related to packfile decoding in [#1187](https://github.com/finos/git-proxy/pull/1187)
+  - Fixed `Z_DATA_ERROR` when pushing
+  - Fixed Git object header parsing and packfile metadata reading
+  - Reimplemented decompression to better replicate how Git handles it (replaced inflating/deflating the object)
+- Fixed logout failure in production caused by UI defaulting to `http://localhost:3000` when `VITE_API_URI` is unset in [#1201](https://github.com/finos/git-proxy/pull/1201)
+  - Refactors API URL usages to rely on a single source of truth, sets default values
+- Fixed a potential denial-of-service vulnerability when pushing to an unknown repository in [#1095](https://github.com/finos/git-proxy/pull/1095)
+  - Caused by a bug in the MongoDB implementation `isUserPushAllowed` which assumed that the repository exists. If the repository wasn't found, the backend crash when attempting to access its properties
+- Fixed `MongoServerError` when updating user due to attempting to override the pre-existent `_id` in [#1230](https://github.com/finos/git-proxy/pull/1230)
+
+### Other improvements
+
+- Optimized push speed by performing shallow clones by default in [#1189](https://github.com/finos/git-proxy/pull/1189)
+  - Increased push speeds for larger repos [by around 30~50%](https://github.com/finos/git-proxy/issues/985)
+- Improved configuration validation and typing in [#1140](https://github.com/finos/git-proxy/pull/1140)
