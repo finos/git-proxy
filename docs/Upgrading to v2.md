@@ -95,6 +95,12 @@ This is easily **solved by removing and re-adding the users from the dropdown li
   - Previously, requests from the UI were bypassing the JWT check if the user was logged in, and failing otherwise when `apiAuthentication` was set
 - Added the ability to create new users via the GitProxy CLI in [#981](https://github.com/finos/git-proxy/pull/981)
 - Added `/healthcheck` endpoint for AWS Load Balancer support [#1197](https://github.com/finos/git-proxy/pull/1197)
+- Improved login page flexibility, error handling and visibility of available auth methods in [#1227](https://github.com/finos/git-proxy/pull/1227)
+- Added config schema for `commitConfig`, `attestationConfig` and `domains` in [#1243](https://github.com/finos/git-proxy/pull/1243)
+  - See the [schema reference](https://git-proxy.finos.org/docs/configuration/reference) for a detailed description of each
+  - Also removes the defunct `api.github` config element
+- Added confirmation dialog to `RepoDetails` page to prevent accidental repository deletions in [#1267](https://github.com/finos/git-proxy/pull/1267)
+- Added support for using AWS Credential Provider to authenticate MongoDB connections in [#1319](https://github.com/finos/git-proxy/pull/1319)
 
 ### Bugfixes
 
@@ -119,11 +125,28 @@ This is easily **solved by removing and re-adding the users from the dropdown li
 - Fixed logout failure in production caused by UI defaulting to `http://localhost:3000` when `VITE_API_URI` is unset in [#1201](https://github.com/finos/git-proxy/pull/1201)
   - Refactors API URL usages to rely on a single source of truth, sets default values
 - Fixed a potential denial-of-service vulnerability when pushing to an unknown repository in [#1095](https://github.com/finos/git-proxy/pull/1095)
-  - Caused by a bug in the MongoDB implementation `isUserPushAllowed` which assumed that the repository exists. If the repository wasn't found, the backend crash when attempting to access its properties
+  - Caused by a bug in the MongoDB implementation `isUserPushAllowed` which assumed that the repository exists. If the repository wasn't found, the backend crashed when attempting to access its properties
 - Fixed `MongoServerError` when updating user due to attempting to override the pre-existent `_id` in [#1230](https://github.com/finos/git-proxy/pull/1230)
+- Fixed error with `commitConfig.diff.block.literals` entry being matched as regular expressions instead in [#1251](https://github.com/finos/git-proxy/pull/1251)
+- Fixed infinite loop in `UserList` component causing excessive API requests and preventing proper rendering in [#1255](https://github.com/finos/git-proxy/pull/1255)
+- Fixed broken user links in `PushDetails` and `RepoDetails` components in [#1268](https://github.com/finos/git-proxy/pull/1268)
+  - Created `UserLink` component to centralise user navigation
+- Fixed pagination component to show correct page count when no data is available in [#1274](https://github.com/finos/git-proxy/pull/1274)
+- Fixed proxy startup failure due to default repo mismatch in [#1284](https://github.com/finos/git-proxy/pull/1284)
+  - Caused by matching repos by name instead of URL on calling `proxyPreparations`
+- Fixed error when making subsequent pushes to a new branch in [#1291](https://github.com/finos/git-proxy/pull/1291)
+  - `Error: fatal: Invalid revision range` was being thrown on valid pushes to new branches
+  - Caused by setting `singleBranch: true` when pulling the remote repo for optimization purposes
+  - Removal of this option does not affect pull/push times considerably. Rudimentary benchmarks show that despite removing the option, push speeds [are still considerably faster](https://github.com/finos/git-proxy/pull/1305#issuecomment-3611774012) than without the `depth: 1` optimization
+- Fixed misleading backend status codes and improved UI error handling in [#1293](https://github.com/finos/git-proxy/pull/1293)
+  - Also removed redundant `/api/auth/me` endpoint
+- Fixed race condition preventing MongoDB connection when loading configuration in [#1316](https://github.com/finos/git-proxy/pull/1316)
+  - Deferred retrieval of database config allowing the user configuration to be loaded before attempting to use it
+- Replaced `jwk-to-pem` dependency with native `crypto` to remove vulnerable dependency (`elliptic`) in [#1283](https://github.com/finos/git-proxy/pull/1283)
 
 ### Other improvements
 
 - Optimized push speed by performing shallow clones by default in [#1189](https://github.com/finos/git-proxy/pull/1189)
   - Increased push speeds for larger repos [by around 30~50%](https://github.com/finos/git-proxy/issues/985)
+  - Note: one of these options was later [removed due to a bug](https://github.com/finos/git-proxy/pull/1305), however [push speeds were largely unaffected](https://github.com/finos/git-proxy/pull/1305#issuecomment-3611774012)
 - Improved configuration validation and typing in [#1140](https://github.com/finos/git-proxy/pull/1140)
