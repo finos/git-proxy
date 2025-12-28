@@ -20,3 +20,9 @@ GitProxy has several main components:
   - Routes: All the API endpoints used by the UI and proxy to perform operations and fetch or modify GitProxy's state. Except for custom application development, there is no need for users or GitProxy administrators to interact with the API directly.
 - Configuration (`/src/config`): Loads and validates the configuration from `proxy.config.json`, or any provided config file. Allows customising several aspects of GitProxy, including databases, authentication methods, predefined allowed repositories, commit blocking rules and more. For a full list of configurable parameters, check the [config file schema reference](https://git-proxy.finos.org/docs/configuration/reference/).
 - UI (`/src/ui`): Allows user-friendly interactions with the application. Shows the list of pushes requiring approval, the list of repositories that users can contribute to, and more. Also allows users to easily review the changes in a push, and approve or reject it manually according to company policy.
+
+## Diagram
+
+These are all the core components in the project, along with some basic user interactions:
+
+![GitProxy Architecture Diagram](./img/architecture.png)
