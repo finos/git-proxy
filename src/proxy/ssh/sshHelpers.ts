@@ -2,8 +2,11 @@ import { getSSHConfig } from '../../config';
 import { KILOBYTE, MEGABYTE } from '../../constants';
 import { ClientWithUser } from './types';
 import { createLazyAgent } from './AgentForwarding';
-import { getKnownHosts, verifyHostKey } from './knownHosts';
+import { getKnownHosts, verifyHostKey, DEFAULT_KNOWN_HOSTS } from './knownHosts';
 import * as crypto from 'crypto';
+import { execSync } from 'child_process';
+import * as fs from 'fs';
+import * as path from 'path';
 
 /**
  * Calculate SHA-256 fingerprint from SSH host key Buffer
@@ -106,6 +109,134 @@ export function createSSHConnectionOptions(
   }
 
   return connectionOptions;
+}
+
+/**
+ * Create a known_hosts file with verified SSH host keys
+ * Fetches the actual host key and verifies it against hardcoded fingerprints
+ *
+ * This prevents MITM attacks by using pre-verified fingerprints
+ *
+ * @param tempDir Temporary directory to create the known_hosts file in
+ * @param sshUrl SSH URL (e.g., git@github.com:org/repo.git)
+ * @returns Path to the created known_hosts file
+ */
+export async function createKnownHostsFile(tempDir: string, sshUrl: string): Promise<string> {
+  const knownHostsPath = path.join(tempDir, 'known_hosts');
+
+  // Extract hostname from SSH URL (git@github.com:org/repo.git -> github.com)
+  const hostMatch = sshUrl.match(/git@([^:]+):/);
+  if (!hostMatch) {
+    throw new Error(`Cannot extract hostname from SSH URL: ${sshUrl}`);
+  }
+
+  const hostname = hostMatch[1];
+
+  // Get the known host key for this hostname from hardcoded fingerprints
+  const knownFingerprint = DEFAULT_KNOWN_HOSTS[hostname];
+  if (!knownFingerprint) {
+    throw new Error(
+      `No known host key for ${hostname}. ` +
+        `Supported hosts: ${Object.keys(DEFAULT_KNOWN_HOSTS).join(', ')}. ` +
+        `To add support for ${hostname}, add its ed25519 key fingerprint to DEFAULT_KNOWN_HOSTS.`,
+    );
+  }
+
+  // Fetch the actual host key from the remote server to get the public key
+  // We'll verify its fingerprint matches our hardcoded one
+  let actualHostKey: string;
+  try {
+    const output = execSync(`ssh-keyscan -t ed25519 ${hostname} 2>/dev/null`, {
+      encoding: 'utf-8',
+      timeout: 5000,
+    });
+
+    // Parse ssh-keyscan output: "hostname ssh-ed25519 AAAAC3Nz..."
+    const keyLine = output.split('\n').find((line) => line.includes('ssh-ed25519'));
+    if (!keyLine) {
+      throw new Error('No ed25519 key found in ssh-keyscan output');
+    }
+
+    actualHostKey = keyLine.trim();
+
+    // Verify the fingerprint matches our hardcoded trusted fingerprint
+    // Extract the public key portion
+    const keyParts = actualHostKey.split(' ');
+    if (keyParts.length < 3) {
+      throw new Error('Invalid ssh-keyscan output format');
+    }
+
+    const publicKeyBase64 = keyParts[2];
+    const publicKeyBuffer = Buffer.from(publicKeyBase64, 'base64');
+
+    // Calculate SHA256 fingerprint
+    const calculatedFingerprint = calculateHostKeyFingerprint(publicKeyBuffer);
+
+    // Verify against hardcoded fingerprint
+    if (calculatedFingerprint !== knownFingerprint) {
+      throw new Error(
+        `Host key verification failed for ${hostname}!\n` +
+          `Expected fingerprint: ${knownFingerprint}\n` +
+          `Received fingerprint: ${calculatedFingerprint}\n` +
+          `WARNING: This could indicate a man-in-the-middle attack!\n` +
+          `If the host key has legitimately changed, update DEFAULT_KNOWN_HOSTS.`,
+      );
+    }
+
+    console.log(`[SSH] ✓ Host key verification successful for ${hostname}`);
+    console.log(`[SSH]   Fingerprint: ${calculatedFingerprint}`);
+  } catch (error) {
+    throw new Error(
+      `Failed to verify host key for ${hostname}: ${error instanceof Error ? error.message : String(error)}`,
+    );
+  }
+
+  // Write the verified known_hosts file
+  await fs.promises.writeFile(knownHostsPath, actualHostKey + '\n', { mode: 0o600 });
+
+  return knownHostsPath;
+}
+
+/**
+ * Validate SSH agent socket path for security
+ * Ensures the path is absolute and contains no unsafe characters
+ */
+export function validateAgentSocketPath(socketPath: string | undefined): string {
+  if (!socketPath) {
+    throw new Error(
+      'SSH agent socket path not found. Ensure SSH agent is running and SSH_AUTH_SOCK is set.',
+    );
+  }
+
+  // Security: Prevent path traversal and command injection
+  // Allow only alphanumeric, dash, underscore, dot, forward slash
+  const unsafeCharPattern = /[^a-zA-Z0-9\-_./]/;
+  if (unsafeCharPattern.test(socketPath)) {
+    throw new Error('Invalid SSH agent socket path: contains unsafe characters');
+  }
+
+  // Ensure it's an absolute path
+  if (!socketPath.startsWith('/')) {
+    throw new Error('Invalid SSH agent socket path: must be an absolute path');
+  }
+
+  return socketPath;
+}
+
+/**
+ * Convert HTTPS Git URL to SSH format
+ * Example: https://github.com/org/repo.git -> git@github.com:org/repo.git
+ */
+export function convertToSSHUrl(httpsUrl: string): string {
+  try {
+    const url = new URL(httpsUrl);
+    const hostname = url.hostname;
+    const pathname = url.pathname.replace(/^\//, ''); // Remove leading slash
+
+    return `git@${hostname}:${pathname}`;
+  } catch (error) {
+    throw new Error(`Invalid repository URL: ${httpsUrl}`);
+  }
 }
 
 /**

@@ -1,10 +1,12 @@
 import { Action, Step } from '../../actions';
 import { PullRemoteBase, CloneResult } from './PullRemoteBase';
 import { ClientWithUser } from '../../ssh/types';
-import { DEFAULT_KNOWN_HOSTS } from '../../ssh/knownHosts';
+import {
+  validateAgentSocketPath,
+  convertToSSHUrl,
+  createKnownHostsFile,
+} from '../../ssh/sshHelpers';
 import { spawn } from 'child_process';
-import { execSync } from 'child_process';
-import * as crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -15,136 +17,6 @@ import os from 'os';
  */
 export class PullRemoteSSH extends PullRemoteBase {
   /**
-   * Validate agent socket path to prevent command injection
-   * Only allows safe characters in Unix socket paths
-   */
-  private validateAgentSocketPath(socketPath: string | undefined): string {
-    if (!socketPath) {
-      throw new Error(
-        'SSH agent socket path not found. ' +
-          'Ensure SSH_AUTH_SOCK is set or agent forwarding is enabled.',
-      );
-    }
-
-    // Unix socket paths should only contain alphanumeric, dots, slashes, underscores, hyphens
-    // and allow common socket path patterns like /tmp/ssh-*/agent.*
-    const safePathRegex = /^[a-zA-Z0-9/_.\-*]+$/;
-    if (!safePathRegex.test(socketPath)) {
-      throw new Error(
-        `Invalid SSH agent socket path: contains unsafe characters. Path: ${socketPath}`,
-      );
-    }
-
-    // Additional validation: path should start with / (absolute path)
-    if (!socketPath.startsWith('/')) {
-      throw new Error(
-        `Invalid SSH agent socket path: must be an absolute path. Path: ${socketPath}`,
-      );
-    }
-
-    return socketPath;
-  }
-
-  /**
-   * Create a secure known_hosts file with hardcoded verified host keys
-   * This prevents MITM attacks by using pre-verified fingerprints
-   *
-   * NOTE: We use hardcoded fingerprints from DEFAULT_KNOWN_HOSTS, NOT ssh-keyscan,
-   * because ssh-keyscan itself is vulnerable to MITM attacks.
-   */
-  private async createKnownHostsFile(tempDir: string, sshUrl: string): Promise<string> {
-    const knownHostsPath = path.join(tempDir, 'known_hosts');
-
-    // Extract hostname from SSH URL (git@github.com:org/repo.git -> github.com)
-    const hostMatch = sshUrl.match(/git@([^:]+):/);
-    if (!hostMatch) {
-      throw new Error(`Cannot extract hostname from SSH URL: ${sshUrl}`);
-    }
-
-    const hostname = hostMatch[1];
-
-    // Get the known host key for this hostname from hardcoded fingerprints
-    const knownFingerprint = DEFAULT_KNOWN_HOSTS[hostname];
-    if (!knownFingerprint) {
-      throw new Error(
-        `No known host key for ${hostname}. ` +
-          `Supported hosts: ${Object.keys(DEFAULT_KNOWN_HOSTS).join(', ')}. ` +
-          `To add support for ${hostname}, add its ed25519 key fingerprint to DEFAULT_KNOWN_HOSTS.`,
-      );
-    }
-
-    // Fetch the actual host key from the remote server to get the public key
-    // We'll verify its fingerprint matches our hardcoded one
-    let actualHostKey: string;
-    try {
-      const output = execSync(`ssh-keyscan -t ed25519 ${hostname} 2>/dev/null`, {
-        encoding: 'utf-8',
-        timeout: 5000,
-      });
-
-      // Parse ssh-keyscan output: "hostname ssh-ed25519 AAAAC3Nz..."
-      const keyLine = output.split('\n').find((line) => line.includes('ssh-ed25519'));
-      if (!keyLine) {
-        throw new Error('No ed25519 key found in ssh-keyscan output');
-      }
-
-      actualHostKey = keyLine.trim();
-
-      // Verify the fingerprint matches our hardcoded trusted fingerprint
-      // Extract the public key portion
-      const keyParts = actualHostKey.split(' ');
-      if (keyParts.length < 3) {
-        throw new Error('Invalid ssh-keyscan output format');
-      }
-
-      const publicKeyBase64 = keyParts[2];
-      const publicKeyBuffer = Buffer.from(publicKeyBase64, 'base64');
-
-      // Calculate SHA256 fingerprint
-      const hash = crypto.createHash('sha256').update(publicKeyBuffer).digest('base64');
-      // Remove base64 padding (=) to match standard SSH fingerprint format
-      const calculatedFingerprint = `SHA256:${hash.replace(/=+$/, '')}`;
-
-      // Verify against hardcoded fingerprint
-      if (calculatedFingerprint !== knownFingerprint) {
-        throw new Error(
-          `Host key verification failed for ${hostname}!\n` +
-            `Expected fingerprint: ${knownFingerprint}\n` +
-            `Received fingerprint: ${calculatedFingerprint}\n` +
-            `WARNING: This could indicate a man-in-the-middle attack!\n` +
-            `If the host key has legitimately changed, update DEFAULT_KNOWN_HOSTS.`,
-        );
-      }
-
-      console.log(`[SSH] ✓ Host key verification successful for ${hostname}`);
-      console.log(`[SSH]   Fingerprint: ${calculatedFingerprint}`);
-    } catch (error) {
-      throw new Error(
-        `Failed to verify host key for ${hostname}: ${error instanceof Error ? error.message : String(error)}`,
-      );
-    }
-
-    // Write the verified known_hosts file
-    await fs.promises.writeFile(knownHostsPath, actualHostKey + '\n', { mode: 0o600 });
-
-    return knownHostsPath;
-  }
-
-  /**
-   * Convert HTTPS URL to SSH URL
-   */
-  private convertToSSHUrl(httpsUrl: string): string {
-    // Convert https://github.com/org/repo.git to git@github.com:org/repo.git
-    const match = httpsUrl.match(/https:\/\/([^/]+)\/(.+)/);
-    if (!match) {
-      throw new Error(`Invalid repository URL: ${httpsUrl}`);
-    }
-
-    const [, host, repoPath] = match;
-    return `git@${host}:${repoPath}`;
-  }
-
-  /**
    * Clone repository using system git with SSH agent forwarding
    * Implements secure SSH configuration with host key verification
    */
@@ -153,7 +25,7 @@ export class PullRemoteSSH extends PullRemoteBase {
     action: Action,
     step: Step,
   ): Promise<void> {
-    const sshUrl = this.convertToSSHUrl(action.url);
+    const sshUrl = convertToSSHUrl(action.url);
 
     // Create parent directory
     await fs.promises.mkdir(action.proxyGitPath!, { recursive: true });
@@ -167,12 +39,12 @@ export class PullRemoteSSH extends PullRemoteBase {
     try {
       // Validate and get the agent socket path
       const rawAgentSocketPath = (client as any)._agent?._sock?.path || process.env.SSH_AUTH_SOCK;
-      const agentSocketPath = this.validateAgentSocketPath(rawAgentSocketPath);
+      const agentSocketPath = validateAgentSocketPath(rawAgentSocketPath);
 
       step.log(`Using SSH agent socket: ${agentSocketPath}`);
 
       // Create secure known_hosts file with verified host keys
-      const knownHostsPath = await this.createKnownHostsFile(tempDir, sshUrl);
+      const knownHostsPath = await createKnownHostsFile(tempDir, sshUrl);
       step.log(`Created secure known_hosts file with verified host keys`);
 
       // Create secure SSH config with StrictHostKeyChecking enabled
@@ -262,7 +134,7 @@ export class PullRemoteSSH extends PullRemoteBase {
       throw new Error(`SSH clone failed: ${message}`);
     }
 
-    const sshUrl = this.convertToSSHUrl(action.url);
+    const sshUrl = convertToSSHUrl(action.url);
 
     return {
       command: `git clone --depth 1 ${sshUrl}`,
