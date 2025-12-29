@@ -5,7 +5,6 @@ import * as path from 'path';
 import axios from 'axios';
 import { utils } from 'ssh2';
 import * as crypto from 'crypto';
-import { fileURLToPath } from 'url';
 
 const API_BASE_URL = process.env.GIT_PROXY_API_URL || 'http://localhost:3000';
 const GIT_PROXY_COOKIE_FILE = path.join(
@@ -167,7 +166,8 @@ Usage:
   }
 }
 
-// Execute main() only if this file is run directly (not imported in tests)
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+// Execute main() only if not in test environment
+// In tests, NODE_ENV is set to 'test' by vitest
+if (process.env.NODE_ENV !== 'test') {
   main();
 }
