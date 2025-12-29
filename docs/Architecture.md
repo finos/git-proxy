@@ -26,3 +26,32 @@ GitProxy has several main components:
 These are all the core components in the project, along with some basic user interactions:
 
 ![GitProxy Architecture Diagram](./img/architecture.png)
+
+### Pushing to GitProxy
+
+1. Alice (contributor) sets the GitProxy server as their Git remote
+2. Alice commits and pushes something to the proxy
+3. The Proxy module intercepts the request, and applies the Push Action Chain to process it
+4. The push goes through each step in the chain and either gets rejected, or gets added to the list of pushes pending approval
+5. Bob (admin/approver) reviews the push to ensure it complies with policy (Attestation), and approves/rejects it
+6. If approved, Alice can push once again to update the actual remote in the Git Host. If rejected, the push will be marked as "rejected", and Alice must update the PR and push again for re-approval
+
+### Approving/Rejecting a push
+
+1. Alice makes a push
+2. Bob (approver) logs into his GitProxy account through the UI
+3. Bob sees the push on the dashboard, pending review
+4. Bob can review the changes made (diff), commit messages and other push info
+5. Before approving/rejecting, Bob must review the attestation (list of questions about company policy)
+6. Bob can approve the push, allowing Alice to push again (to the actual remote), or reject the push and optionally provide a reason for rejection
+
+### Defining Policies
+
+Three types of policies can be applied to incoming pushes:
+
+- Default policies: These are already present in the GitProxy pull/push chain and require modifying source code to change their behaviour.
+  - For example, `checkUserPushPermission` which simply checks if the user's email exists in the GitProxy database, and if their user is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
+- Configurable policies: These are policies that can be easily configured through the GitProxy config (`proxy.config.json`).
+  - For example, `checkCommitMessages` which reads the configuration and matches the string patterns provided with the commit messages in the push in order to block it.
+- Custom policies (Plugins): Writing your own Push/Pull plugins provides more flexibility for implementing an organization's rules. For more information, see the guide on writing plugins.
+<!-- Todo: add link to plugin guide -->
