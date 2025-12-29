@@ -663,4 +663,246 @@ describe('SSHServer', () => {
       expect(connectSpy).toHaveBeenCalled();
     });
   });
+
+  describe('Git Protocol - Push Operations', () => {
+    let mockStream: any;
+    let mockClient: any;
+
+    beforeEach(() => {
+      mockStream = {
+        write: vi.fn(),
+        stderr: { write: vi.fn() },
+        exit: vi.fn(),
+        end: vi.fn(),
+        on: vi.fn(),
+        once: vi.fn(),
+      };
+
+      mockClient = {
+        authenticatedUser: {
+          username: 'test-user',
+          email: 'test@example.com',
+          gitAccount: 'testgit',
+        },
+        agentForwardingEnabled: true,
+        clientIp: '127.0.0.1',
+      };
+    });
+
+    it('should call fetchGitHubCapabilities and register handlers for push', async () => {
+      vi.spyOn(GitProtocol, 'fetchGitHubCapabilities').mockResolvedValue(
+        Buffer.from('capabilities'),
+      );
+
+      mockStream.on.mockImplementation(() => mockStream);
+      mockStream.once.mockImplementation(() => mockStream);
+
+      await server.handleCommand(
+        "git-receive-pack 'github.com/test/repo.git'",
+        mockStream,
+        mockClient,
+      );
+
+      expect(GitProtocol.fetchGitHubCapabilities).toHaveBeenCalled();
+      expect(mockStream.write).toHaveBeenCalledWith(Buffer.from('capabilities'));
+
+      // Verify event handlers are registered
+      expect(mockStream.on).toHaveBeenCalledWith('data', expect.any(Function));
+      expect(mockStream.on).toHaveBeenCalledWith('error', expect.any(Function));
+      expect(mockStream.once).toHaveBeenCalledWith('end', expect.any(Function));
+    });
+  });
+
+  describe('Agent Forwarding', () => {
+    let mockClient: any;
+    let mockSession: any;
+    let clientInfo: any;
+
+    beforeEach(() => {
+      mockSession = {
+        on: vi.fn(),
+        end: vi.fn(),
+      };
+
+      mockClient = {
+        on: vi.fn(),
+        end: vi.fn(),
+        username: null,
+        agentForwardingEnabled: false,
+        authenticatedUser: {
+          username: 'test-user',
+          email: 'test@example.com',
+        },
+        clientIp: null,
+      };
+      clientInfo = {
+        ip: '127.0.0.1',
+        family: 'IPv4',
+      };
+    });
+
+    it('should enable agent forwarding when auth-agent event is received', () => {
+      (server as any).handleClient(mockClient, clientInfo);
+
+      // Find the session handler
+      const sessionHandler = mockClient.on.mock.calls.find(
+        (call: any[]) => call[0] === 'session',
+      )?.[1];
+
+      expect(sessionHandler).toBeDefined();
+
+      // Accept the session to get the session object
+      const accept = vi.fn().mockReturnValue(mockSession);
+      sessionHandler(accept, vi.fn());
+
+      // Find the auth-agent handler registered on the session
+      const authAgentHandler = mockSession.on.mock.calls.find(
+        (call: any[]) => call[0] === 'auth-agent',
+      )?.[1];
+
+      expect(authAgentHandler).toBeDefined();
+
+      // Simulate auth-agent request with accept callback
+      const acceptAgent = vi.fn();
+      authAgentHandler(acceptAgent);
+
+      expect(acceptAgent).toHaveBeenCalled();
+      expect(mockClient.agentForwardingEnabled).toBe(true);
+    });
+
+    it('should handle keepalive global requests', () => {
+      (server as any).handleClient(mockClient, clientInfo);
+
+      // Find the global request handler (note: different from 'request')
+      const globalRequestHandler = mockClient.on.mock.calls.find(
+        (call: any[]) => call[0] === 'global request',
+      )?.[1];
+
+      expect(globalRequestHandler).toBeDefined();
+
+      const accept = vi.fn();
+      const reject = vi.fn();
+      const info = { type: 'keepalive@openssh.com' };
+
+      globalRequestHandler(accept, reject, info);
+
+      expect(accept).toHaveBeenCalled();
+      expect(reject).not.toHaveBeenCalled();
+    });
+
+    it('should reject non-keepalive global requests', () => {
+      (server as any).handleClient(mockClient, clientInfo);
+
+      const globalRequestHandler = mockClient.on.mock.calls.find(
+        (call: any[]) => call[0] === 'global request',
+      )?.[1];
+
+      const accept = vi.fn();
+      const reject = vi.fn();
+      const info = { type: 'other-request' };
+
+      globalRequestHandler(accept, reject, info);
+
+      expect(reject).toHaveBeenCalled();
+      expect(accept).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Session Handling', () => {
+    let mockClient: any;
+    let mockSession: any;
+
+    beforeEach(() => {
+      mockSession = {
+        on: vi.fn(),
+        end: vi.fn(),
+      };
+
+      mockClient = {
+        on: vi.fn(),
+        end: vi.fn(),
+        username: null,
+        agentForwardingEnabled: false,
+        authenticatedUser: {
+          username: 'test-user',
+          email: 'test@example.com',
+        },
+        clientIp: '127.0.0.1',
+      };
+    });
+
+    it('should accept session requests and register exec handler', () => {
+      (server as any).handleClient(mockClient, { ip: '127.0.0.1' });
+
+      const sessionHandler = mockClient.on.mock.calls.find(
+        (call: any[]) => call[0] === 'session',
+      )?.[1];
+
+      expect(sessionHandler).toBeDefined();
+
+      const accept = vi.fn().mockReturnValue(mockSession);
+      const reject = vi.fn();
+
+      sessionHandler(accept, reject);
+
+      expect(accept).toHaveBeenCalled();
+      expect(mockSession.on).toHaveBeenCalled();
+
+      // Verify that 'exec' handler was registered
+      const execCall = mockSession.on.mock.calls.find((call: any[]) => call[0] === 'exec');
+      expect(execCall).toBeDefined();
+
+      // Verify that 'auth-agent' handler was registered
+      const authAgentCall = mockSession.on.mock.calls.find(
+        (call: any[]) => call[0] === 'auth-agent',
+      );
+      expect(authAgentCall).toBeDefined();
+    });
+
+    it('should handle exec commands in session', async () => {
+      let execHandler: any;
+
+      mockSession.on.mockImplementation((event: string, handler: any) => {
+        if (event === 'exec') {
+          execHandler = handler;
+        }
+        return mockSession;
+      });
+
+      (server as any).handleClient(mockClient, { ip: '127.0.0.1' });
+
+      const sessionHandler = mockClient.on.mock.calls.find(
+        (call: any[]) => call[0] === 'session',
+      )?.[1];
+
+      const accept = vi.fn().mockReturnValue(mockSession);
+      sessionHandler(accept, vi.fn());
+
+      expect(execHandler).toBeDefined();
+
+      // Mock the exec handler
+      const mockStream = {
+        write: vi.fn(),
+        stderr: { write: vi.fn() },
+        exit: vi.fn(),
+        end: vi.fn(),
+        on: vi.fn(),
+        once: vi.fn(),
+      };
+
+      const acceptExec = vi.fn().mockReturnValue(mockStream);
+      const rejectExec = vi.fn();
+      const info = { command: "git-upload-pack 'test/repo.git'" };
+
+      vi.spyOn(chain.default, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: false,
+      } as any);
+      vi.spyOn(GitProtocol, 'connectToRemoteGitServer').mockResolvedValue(undefined);
+
+      execHandler(acceptExec, rejectExec, info);
+
+      expect(acceptExec).toHaveBeenCalled();
+    });
+  });
 });
