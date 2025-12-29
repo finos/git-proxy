@@ -26,30 +26,16 @@ const exec = async (req: {
   const pathBreakdown = processUrlPath(req.originalUrl);
   let url = 'https:/' + (pathBreakdown?.repoPath ?? 'NOT-FOUND');
 
-  // First, try to find a matching repository by checking both http:// and https:// protocols
-  const repoPath = pathBreakdown?.repoPath ?? 'NOT-FOUND';
-  const httpsUrl = 'https:/' + repoPath;
-  const httpUrl = 'http:/' + repoPath;
+  console.log(`Parse action calculated repo URL: ${url} for inbound URL path: ${req.originalUrl}`);
 
-  console.log(
-    `Parse action trying HTTPS repo URL: ${httpsUrl} for inbound URL path: ${req.originalUrl}`,
-  );
-
-  if (await db.getRepoByUrl(httpsUrl)) {
-    url = httpsUrl;
-  } else {
+  if (!(await db.getRepoByUrl(url))) {
+    // fallback for legacy proxy URLs
+    // legacy git proxy paths took the form: https://<git proxy domain>:<port>/<repoPath>
+    // by assuming the host was github.com
+    url = 'https://github.com' + (pathBreakdown?.repoPath ?? 'NOT-FOUND');
     console.log(
-      `Parse action trying HTTP repo URL: ${httpUrl} for inbound URL path: ${req.originalUrl}`,
+      `Parse action fallback calculated repo URL: ${url} for inbound URL path: ${req.originalUrl}`,
     );
-    if (await db.getRepoByUrl(httpUrl)) {
-      url = httpUrl;
-    } else {
-      // fallback for legacy proxy URLs - try github.com with https
-      url = 'https://github.com' + repoPath;
-      console.log(
-        `Parse action fallback calculated repo URL: ${url} for inbound URL path: ${req.originalUrl}`,
-      );
-    }
   }
 
   return new Action(id.toString(), type, req.method, timestamp, url);

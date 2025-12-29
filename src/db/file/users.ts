@@ -1,8 +1,15 @@
+import fs from 'fs';
 import Datastore from '@seald-io/nedb';
 
 import { User, UserQuery } from '../types';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
+
+// these don't get coverage in tests as they have already been run once before the test
+/* istanbul ignore if */
+if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
+/* istanbul ignore if */
+if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
 // export for testing purposes
 export let db: Datastore;
