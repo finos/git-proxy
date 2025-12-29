@@ -5,6 +5,7 @@ import * as path from 'path';
 import axios from 'axios';
 import { utils } from 'ssh2';
 import * as crypto from 'crypto';
+import { fileURLToPath } from 'url';
 
 const API_BASE_URL = process.env.GIT_PROXY_API_URL || 'http://localhost:3000';
 const GIT_PROXY_COOKIE_FILE = path.join(
@@ -27,7 +28,7 @@ interface ErrorWithResponse {
 
 // Calculate SHA-256 fingerprint from SSH public key
 // Note: This function is duplicated in src/service/routes/users.js to keep CLI and server independent
-function calculateFingerprint(publicKeyStr: string): string | null {
+export function calculateFingerprint(publicKeyStr: string): string | null {
   try {
     const parsed = utils.parseKey(publicKeyStr);
     if (!parsed || parsed instanceof Error) {
@@ -42,7 +43,7 @@ function calculateFingerprint(publicKeyStr: string): string | null {
   }
 }
 
-async function addSSHKey(username: string, keyPath: string): Promise<void> {
+export async function addSSHKey(username: string, keyPath: string): Promise<void> {
   try {
     // Check for authentication
     if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
@@ -88,7 +89,7 @@ async function addSSHKey(username: string, keyPath: string): Promise<void> {
   }
 }
 
-async function removeSSHKey(username: string, keyPath: string): Promise<void> {
+export async function removeSSHKey(username: string, keyPath: string): Promise<void> {
   try {
     // Check for authentication
     if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
@@ -140,26 +141,33 @@ async function removeSSHKey(username: string, keyPath: string): Promise<void> {
   }
 }
 
-// Parse command line arguments
-const args = process.argv.slice(2);
-const command = args[0];
-const username = args[1];
-const keyPath = args[2];
+export async function main(): Promise<void> {
+  // Parse command line arguments
+  const args = process.argv.slice(2);
+  const command = args[0];
+  const username = args[1];
+  const keyPath = args[2];
 
-if (!command || !username || !keyPath) {
-  console.log(`
+  if (!command || !username || !keyPath) {
+    console.log(`
 Usage:
   Add SSH key:    npx tsx src/cli/ssh-key.ts add <username> <path-to-public-key>
   Remove SSH key: npx tsx src/cli/ssh-key.ts remove <username> <path-to-public-key>
   `);
-  process.exit(1);
+    process.exit(1);
+  }
+
+  if (command === 'add') {
+    await addSSHKey(username, keyPath);
+  } else if (command === 'remove') {
+    await removeSSHKey(username, keyPath);
+  } else {
+    console.error('Invalid command. Use "add" or "remove"');
+    process.exit(1);
+  }
 }
 
-if (command === 'add') {
-  addSSHKey(username, keyPath);
-} else if (command === 'remove') {
-  removeSSHKey(username, keyPath);
-} else {
-  console.error('Invalid command. Use "add" or "remove"');
-  process.exit(1);
+// Execute main() only if this file is run directly (not imported in tests)
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main();
 }
