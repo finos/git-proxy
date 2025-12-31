@@ -10,8 +10,7 @@ GitProxy has several main components:
 
 - Proxy (`/src/proxy`): The actual proxy for Git. Git operations performed by users are intercepted here to apply the relevant **chain**. Also loads **plugins** and adds them to the chain. Runs by default on port `8000`.
   - Chain: A set of **processors** that are applied to an action (i.e. a `git push` operation) before requesting review from an approved user
-  - Processor: AKA `Step`. A specific step in the chain where certain rules are applied. See the list of default processors below for more details.`
-  <!-- Todo: link to processor list -->
+  - Processor: AKA `Step`. A specific step in the chain where certain rules are applied. See the [list of default processors](#processors) below for more details.`
   - Plugin: A custom processor that can be added externally to extend GitProxy's default policies. See the plugin guide for more details.
   <!-- Todo: Add link to plugin guide -->
 - Service/API (`/src/service`): Handles UI requests, user authentication to GitProxy (not to Git), database operations and some of the logic for rejection/approval. Runs by default on port `8080`.
@@ -309,3 +308,68 @@ Note that this message will show again even if the push had been previously reje
 <!-- Todo: Add image displaying successful chain execution -->
 
 Source: [/src/proxy/processors/push-action/blockForAuth.ts](/src/proxy/processors/push-action/blockForAuth.ts)
+
+### Authentication
+
+Currently, three different authentication methods are provided for interacting with the UI and adding users. This can be configured by editing the `authentication` array in `proxy.config.json`.
+
+#### Local
+
+Default username/password auth method. Note that this authentication method does not allow adding users directly from the UI (`/api/auth/create-user` must be used instead).
+
+Default accounts are provided for testing:
+
+- Admin: Username: `admin`, Password: `admin`
+- User: Username: `user`, Password: `user`
+
+#### ActiveDirectory
+
+Allows AD authentication and user management. The following parameters must be configured in `proxy.config.json`, and `enabled` must be set to `true`:
+
+```json
+{
+  "type": "ActiveDirectory",
+  "enabled": false,
+  "adminGroup": "",
+  "userGroup": "",
+  "domain": "",
+  "adConfig": {
+    "url": "",
+    "baseDN": "",
+    "searchBase": "",
+    "username": "",
+    "password": ""
+  }
+}
+```
+
+#### OpenID Connect
+
+Allows authenticating to OIDC. The following parameters must be configured in `proxy.config.json`, and `enabled` must be set to `true`:
+
+```json
+{
+  "type": "openidconnect",
+  "enabled": false,
+  "oidcConfig": {
+    "issuer": "",
+    "clientID": "",
+    "clientSecret": "",
+    "callbackURL": "",
+    "scope": ""
+  }
+}
+```
+
+When logging in for the first time, this will create a GitProxy user with the email associated to the OIDC, the user will be set to the local portion of the email.
+
+For example: logging in with myusername@mymail.com will create a new user with username set to `myusername`.
+
+#### Adding new methods
+
+New methods can be added by:
+
+1. Extending `/src/service/passport` with the relevant [passport.js strategy](https://www.passportjs.org/packages/).
+   - The strategy file must have a `configure` method and a `type` string to match with the config method. See the pre-existing methods in [`/src/service/passport`](/src/service/passport) for more details.
+2. Creating a `proxy.config.json` entry with the required configuration parameters
+3. Importing the new strategy and adding it to the `authStrategies` array in `/src/service/passport/index.ts`
