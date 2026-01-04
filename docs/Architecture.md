@@ -373,3 +373,234 @@ New methods can be added by:
    - The strategy file must have a `configure` method and a `type` string to match with the config method. See the pre-existing methods in [`/src/service/passport`](/src/service/passport) for more details.
 2. Creating a `proxy.config.json` entry with the required configuration parameters
 3. Importing the new strategy and adding it to the `authStrategies` array in `/src/service/passport/index.ts`
+
+### GitProxy Configuration
+
+Many of the proxy, API and UI behaviours are configurable. The most important ones will be covered here. For a comprehensive list of parameters, see the [config file schema reference](https://git-proxy.finos.org/docs/configuration/reference/).
+
+GitProxy ships with a default configuration which can be customised in various ways. See the [configuration guide](https://git-proxy.finos.org/docs/configuration/overview) for more details on providing custom config files and validating them.
+
+### Config parameters
+
+#### `cookieSecret`
+
+This is the secret that is passed in to `express-session` for signing the session ID cookie for the **GitProxy API Express app** (not the proxy itself).
+
+As per their documentation:
+
+> This is the secret used to sign the session ID cookie. The secret can be any type of value that is supported by Node.js `crypto.createHmac` (like a string or a Buffer). This can be either a single secret, or an array of multiple secrets. If an array of secrets is provided, only the first element will be used to sign the session ID cookie, while all the elements will be considered when verifying the signature in requests. The secret itself should be not easily parsed by a human and would best be a random set of characters.
+>
+> A best practice may include:
+>
+> - The use of environment variables to store the secret, ensuring the secret itself does not exist in your repository.
+> - Periodic updates of the secret, while ensuring the previous secret is in the array.
+>
+> Using a secret that cannot be guessed will reduce the ability to hijack a session to only guessing the session ID (as determined by the `genid` option).
+>
+> Changing the secret value will invalidate all existing sessions.
+> In order to rotate the secret without invalidating sessions, provide an array of secrets, with the new secret as first element of the array, and including previous secrets as the later elements.
+>
+> Note HMAC-256 is used to sign the session ID. For this reason, the secret should contain at least 32 bytes of entropy.
+
+#### `sessionMaxAgeHours`
+
+Specifies the number of hours to use when calculating the `Expires Set-Cookie` attribute **for the GitProxy API** (not the proxy itself).
+
+Default: `12`
+
+#### `api`
+
+Allows defining and configuring third-party APIs.
+
+Currently supports the following out-of-the-box:
+
+- ActiveDirectory auth configuration for querying via a REST API rather than LDAP
+- Gitleaks configuration
+
+#### `commitConfig`
+
+Used in [`checkCommitMessages`](#checkcommitmessages), [`checkAuthorEmails`](#checkauthoremails) and [`scanDiff`](#scandiff) processors to block pushes depending on the given rules.
+
+By default, no rules are applied.
+
+These are some sample values for allowing commits associated to one's own company/organization, and blocking commits containing sensitive information such as AWS tokens or SSH private keys:
+
+```json
+"commitConfig": {
+  "author": {
+    "email": {
+      "local": {
+        "block": "(test|noreply|do-not-reply)"
+      },
+      "domain": {
+        "allow": "(mycompany\\.com|myorg\\.io)$"
+      }
+    }
+  },
+  "message": {
+    "block": {
+      "literals": [
+        "password",
+        "secret",
+        "TODO",
+      ],
+      "patterns": [
+        "AKIA[0-9A-Z]{16}",
+        "postgresql://[^\\s]+:[^\\s]+@",
+        "mongodb://[^\\s]+:[^\\s]+@",
+      ]
+    }
+  },
+  "diff": {
+    "block": {
+      "literals": [
+        "DEBUG_MODE=true",
+        "-----BEGIN PRIVATE KEY-----",
+        "-----BEGIN RSA PRIVATE KEY-----"
+      ],
+      "patterns": [
+        "AKIA[0-9A-Z]{16}",
+      ],
+      "providers": {
+        "AWS Access Key": "AKIA[0-9A-Z]{16}",
+        "GitHub Token": "ghp_[a-zA-Z0-9]{36}",
+        "Google API Key": "AIza[0-9A-Za-z\\-_]{35}",
+        "JWT Token": "eyJ[a-zA-Z0-9_-]*\\.[a-zA-Z0-9_-]*\\.[a-zA-Z0-9_-]*",
+        "Private Key Pattern": "-----BEGIN (RSA |EC |DSA )?PRIVATE KEY-----"
+      }
+    }
+  }
+}
+```
+
+#### `attestationConfig`
+
+Allows configuring the attestation form displayed to reviewers. Reviewers must check each box to complete the review.
+
+Has a list of `questions`, each of which can be configured with a `label` and a `tooltip` with various `links`:
+
+```json
+"attestationConfig": {
+  "questions": [
+    {
+      "label": "I am happy for this to be pushed to the upstream repository",
+      "tooltip": {
+        "text": "Are you happy for this contribution to be pushed upstream?",
+        "links": []
+      }
+    },
+    {
+      "label": "I have read and agree to the Code of Conduct",
+      "tooltip": {
+        "text": "Please read the Code of Conduct before pushing your contribution.",
+        "links": [{
+          "text": "Code of Conduct",
+          "url": "https://www.finos.org/code-of-conduct"
+        }]
+      }
+    }
+  ]
+}
+```
+
+<!-- Todo: Add screenshot of attestation prompt -->
+
+#### `domains`
+
+Allows setting custom URLs for GitProxy interfaces in case these cannot be determined.
+
+This parameter is used in [`/src/service/urls.ts`](/src/service/urls.ts) to override URLs for the proxy (default: http://localhost:8000) and service (default: http://localhost:8080).
+
+Sample configuration:
+
+```json
+"domains": {
+  "proxy": "https://git-proxy.mydomain.com",
+  "service": "https://git-proxy-api.mydomain.com"
+}
+```
+
+#### `rateLimit`
+
+Defines the rate limiting parameters (`express-rate-limit`) for the GitProxy API (not the proxy).
+
+Sample values:
+
+```json
+"rateLimit": {
+  "windowMs": 60000,
+  "limit": 150
+}
+```
+
+This will limit the number of **requests made to the API** to 150 per minute.
+
+Optionally, a `statusCode` and a `message` can be specified to override the default responses.
+
+#### `privateOrganizations` (deprecated)
+
+Formerly used to block organizations, replaced by `commitConfig.diff.block.providers`.
+
+#### `urlShortener`
+
+Currently unused.
+
+#### `contactEmail`
+
+Sets the contact email for the Open Source Program Office in the attestation form:
+
+<!-- Todo: Add screenshot of attestation form -->
+
+#### `csrfProtection`
+
+Enables `lusca` Cross-Site Request Forgery protection for the API. This prevents third-party services from making requests to the API without proper CSRF token handling.
+
+For example, the Cypress UI tests need to call `getCSRFToken` before making requests:
+
+```js
+Cypress.Commands.add('getCSRFToken', () => {
+  return cy.request('GET', 'http://localhost:8080/api/v1/repo').then((res) => {
+    let cookies = res.headers['set-cookie'];
+
+    if (typeof cookies === 'string') {
+      cookies = [cookies];
+    }
+
+    if (!cookies) {
+      throw new Error('No cookies found in response');
+    }
+
+    const csrfCookie = cookies.find((c) => c.startsWith('csrf='));
+    if (!csrfCookie) {
+      throw new Error('No CSRF cookie found in response headers');
+    }
+
+    const token = csrfCookie.split('=')[1].split(';')[0];
+    return cy.wrap(decodeURIComponent(token));
+  });
+});
+```
+
+#### `plugins`
+
+Defines a list of plugins to integrate on GitProxy's push or pull actions. Accepted values are either a file path or a module name.
+
+See the plugin guide for more setup details.
+
+<!-- Todo: Link top plugin guide -->
+
+#### `authorisedList`
+
+Defines a list of repositories that are allowed to be pushed to through the proxy. Note that **repositories can also be added through the UI or manually editing the database**.
+
+Sample values:
+
+```json
+"authorisedList": [
+  {
+    "project": "my-organization",
+    "name": "my-repo",
+    "url": "https://github.com/my-organization/my-repo.git",
+  }
+]
+```
