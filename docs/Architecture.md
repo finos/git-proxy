@@ -14,8 +14,7 @@ GitProxy has several main components:
   - Plugin: A custom processor that can be added externally to extend GitProxy's default policies. See the plugin guide for more details.
   <!-- Todo: Add link to plugin guide -->
 - Service/API (`/src/service`): Handles UI requests, user authentication to GitProxy (not to Git), database operations and some of the logic for rejection/approval. Runs by default on port `8080`.
-  - Passport: The [library](https://www.passportjs.org/) used to authenticate to the GitProxy API (not the proxy itself - this depends on the Git `user.email`). Supports multiple authentication methods by default (Local, AD, OIDC).
-  <!-- Todo: Link to supported methods -->
+  - Passport: The [library](https://www.passportjs.org/) used to authenticate to the GitProxy API (not the proxy itself - this depends on the Git `user.email`). Supports multiple authentication methods by default ([Local](#local), [AD](#activedirectory), [OIDC](#openid-connect)).
   - Routes: All the API endpoints used by the UI and proxy to perform operations and fetch or modify GitProxy's state. Except for custom plugin and processor development, there is no need for users or GitProxy administrators to interact with the API directly.
 - Configuration (`/src/config`): Loads and validates the configuration from `proxy.config.json`, or any provided config file. Allows customising several aspects of GitProxy, including databases, authentication methods, predefined allowed repositories, commit blocking rules and more. For a full list of configurable parameters, check the [config file schema reference](https://git-proxy.finos.org/docs/configuration/reference/).
 - UI (`/src/ui`): Allows user-friendly interactions with the application. Shows the list of pushes requiring approval, the list of repositories that users can contribute to, and more. Also allows users to easily review the changes in a push, and approve or reject it manually according to company policy.
@@ -160,8 +159,6 @@ If the arrays are empty, the checks will pass and chain execution will continue.
 
 Note that invalid regex patterns will also fail the `isMessageAllowed` check.
 
-<!-- Todo: verify if this is the case and make an issue to improve error handling for this specifically. Also, the getCommitConfig is being called over and over for each commit message and can be optimized to fetch only once -->
-
 Source: [/src/proxy/processors/push-action/checkCommitMessages.ts](/src/proxy/processors/push-action/checkCommitMessages.ts)
 
 #### `checkAuthorEmails`
@@ -170,7 +167,7 @@ Similar to [`checkCommitMessages`](#checkcommitmessages), allows configuring all
 
 If neither of these are configured (set to empty strings), then the checks will pass and chain execution will continue.
 
-<!-- Todo: Check error handling for invalid regex -->
+Note that this processor will also fail on invalid regex in the configuration.
 
 Source: [/src/proxy/processors/push-action/checkAuthorEmails.ts](/src/proxy/processors/push-action/checkAuthorEmails.ts)
 
@@ -299,6 +296,8 @@ A **configurable** processor that blocks pushes containing diff (changes) that m
 
 This will scan every file changed and try to match the configured literals, patterns or providers. If any diff violations are found, the push is blocked.
 
+Note that this processor will fail if the configured regex patterns are invalid.
+
 Source: [/src/proxy/processors/push-action/scanDiff.ts](/src/proxy/processors/push-action/scanDiff.ts)
 
 #### `blockForAuth`
@@ -307,7 +306,7 @@ This action appends a message to be displayed after all the processors have fini
 
 Note that this message will show again even if the push had been previously rejected by a reviewer. After a manual rejection, pushing again creates a new `action` object so that the push can be re-reviewed and approved.
 
-<!-- Todo: Add image displaying successful chain execution -->
+![blockForAuth output](./img/blockForAuth_output.png)
 
 Source: [/src/proxy/processors/push-action/blockForAuth.ts](/src/proxy/processors/push-action/blockForAuth.ts)
 
@@ -505,7 +504,9 @@ Has a list of `questions`, each of which can be configured with a `label` and a 
 }
 ```
 
-<!-- Todo: Add screenshot of attestation prompt -->
+Given the previous configuration, the attestation prompt would look like this:
+
+![Attestation Prompt](./img/attestation_example.png)
 
 #### `domains`
 
@@ -551,7 +552,7 @@ Currently unused.
 
 Sets the contact email for the Open Source Program Office in the attestation form:
 
-<!-- Todo: Add screenshot of attestation form -->
+![Attestation Form](./img/attestation_example.png)
 
 #### `csrfProtection`
 
