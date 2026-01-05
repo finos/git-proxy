@@ -1,8 +1,12 @@
 # SSH Proxy Architecture
 
-Complete documentation of the SSH proxy architecture and operation for Git.
+Internal architecture and technical implementation details of the SSH proxy for Git.
 
-### Main Components
+**For user setup instructions**, see [SSH_SETUP.md](SSH_SETUP.md)
+
+---
+
+## Main Components
 
 ```
 ┌─────────────┐         ┌──────────────────┐         ┌──────────┐
@@ -22,92 +26,24 @@ Complete documentation of the SSH proxy architecture and operation for Git.
 
 The **SSH host key** is the proxy server's cryptographic identity. It identifies the proxy to clients and prevents man-in-the-middle attacks.
 
-**Auto-generated**: On first startup, git-proxy generates an Ed25519 host key stored in `.ssh/host_key` and `.ssh/host_key.pub`.
+**Auto-generated**: On first startup, git-proxy generates an Ed25519 host key:
+
+- Private key: `.ssh/proxy_host_key`
+- Public key: `.ssh/proxy_host_key.pub`
+
+These paths are relative to the directory where git-proxy is running (the `WorkingDirectory` in systemd or the container's working directory in Docker).
 
 **Important**: The host key is NOT used for authenticating to GitHub/GitLab. Agent forwarding handles remote authentication using the client's keys.
 
 **First connection warning**:
 
 ```
-The authenticity of host '[localhost]:2222' can't be established.
+The authenticity of host '[git-proxy.example.com]:2222' can't be established.
 ED25519 key fingerprint is SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.
 Are you sure you want to continue connecting (yes/no)?
 ```
 
 This is normal! If it appears on subsequent connections, it could indicate the proxy was reinstalled or a potential security issue.
-
----
-
-## Client → Proxy Communication
-
-### Client Setup
-
-**1. Configure Git remote**:
-
-```bash
-# For GitHub
-git remote add origin ssh://git@git-proxy.example.com:2222/github.com/org/repo.git
-
-# For GitLab
-git remote add origin ssh://git@git-proxy.example.com:2222/gitlab.com/org/repo.git
-```
-
-> **⚠️ Important:** The repository URL must end with `.git` or the SSH server will reject it.
-
-**2. Generate SSH key (if not already present)**:
-
-```bash
-# Check if you already have an SSH key
-ls -la ~/.ssh/id_*.pub
-
-# If no key exists, generate a new Ed25519 key
-ssh-keygen -t ed25519 -C "your_email@example.com"
-# Press Enter to accept default location (~/.ssh/id_ed25519)
-# Optionally set a passphrase for extra security
-```
-
-**3. Start ssh-agent and load key**:
-
-```bash
-eval $(ssh-agent -s)
-ssh-add ~/.ssh/id_ed25519
-ssh-add -l  # Verify key loaded
-```
-
-**⚠️ Important: ssh-agent is per-terminal session**
-
-**4. Register public key with proxy**:
-
-```bash
-cat ~/.ssh/id_ed25519.pub
-# Register via UI (http://localhost:8000) or database
-```
-
-**5. Configure SSH agent forwarding**:
-
-⚠️ **Security Note**: Choose the most appropriate method for your security requirements.
-
-**Option A: Per-repository (RECOMMENDED)**
-
-```bash
-# For existing repositories
-cd /path/to/your/repo
-git config core.sshCommand "ssh -A"
-
-# For cloning new repositories
-git clone -c core.sshCommand="ssh -A" ssh://git@git-proxy.example.com:2222/github.com/org/repo.git
-```
-
-**Option B: Per-host via SSH config**
-
-```
-Host git-proxy.example.com
-  ForwardAgent yes
-  IdentityFile ~/.ssh/id_ed25519
-  Port 2222
-```
-
-**Custom Error Messages**: Administrators can customize the agent forwarding error message via `ssh.agentForwardingErrorMessage` in the proxy configuration.
 
 ---
 

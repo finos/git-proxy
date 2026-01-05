@@ -68,11 +68,10 @@ $ npx -- @finos/git-proxy
 
 Clone a repository, set the remote to the GitProxy URL and push your changes:
 
+### Using HTTPS
+
 ```bash
-# Both HTTPS and SSH cloning are supported
 $ git clone https://github.com/octocat/Hello-World.git && cd Hello-World
-# Or use SSH:
-# $ git clone git@github.com:octocat/Hello-World.git && cd Hello-World
 # The below command is using the GitHub official CLI to fork the repo that is cloned.
 # You can also fork on the GitHub UI. For usage details on the CLI, see https://github.com/cli/cli
 $ gh repo fork
@@ -82,6 +81,25 @@ $ git remote add proxy http://localhost:8000/yourGithubUser/Hello-World.git
 # This fetches the repository's default branch and pushes it (https://stackoverflow.com/a/44750379).
 $ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
 ```
+
+### Using SSH
+
+```bash
+$ git clone https://github.com/octocat/Hello-World.git && cd Hello-World
+$ gh repo fork
+✓ Created fork yourGithubUser/Hello-World
+...
+# Configure Git remote for SSH proxy
+$ git remote add proxy ssh://git@localhost:2222/github.com/yourGithubUser/Hello-World.git
+# Enable SSH agent forwarding (required)
+$ git config core.sshCommand "ssh -A"
+# Push through the proxy
+$ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+```
+
+📖 **Full SSH setup guide**: [docs/SSH_SETUP.md](docs/SSH_SETUP.md)
+
+---
 
 Using the default configuration, GitProxy intercepts the push and _blocks_ it. To enable code pushing to your fork via GitProxy, add your repository URL into the GitProxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
 
