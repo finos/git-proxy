@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from 'axios';
 import { getAxiosConfig } from './auth';
-import { API_BASE } from '../apiBase';
+import { getBaseUrl } from './apiConfig';
 
 export interface SSHKey {
   fingerprint: string;
@@ -15,16 +15,18 @@ export interface SSHConfig {
 }
 
 export const getSSHConfig = async (): Promise<SSHConfig> => {
+  const baseUrl = await getBaseUrl();
   const response: AxiosResponse<SSHConfig> = await axios(
-    `${API_BASE}/api/v1/config/ssh`,
+    `${baseUrl}/api/v1/config/ssh`,
     getAxiosConfig(),
   );
   return response.data;
 };
 
 export const getSSHKeys = async (username: string): Promise<SSHKey[]> => {
+  const baseUrl = await getBaseUrl();
   const response: AxiosResponse<SSHKey[]> = await axios(
-    `${API_BASE}/api/v1/user/${username}/ssh-key-fingerprints`,
+    `${baseUrl}/api/v1/user/${username}/ssh-key-fingerprints`,
     getAxiosConfig(),
   );
   return response.data;
@@ -35,8 +37,9 @@ export const addSSHKey = async (
   publicKey: string,
   name: string,
 ): Promise<{ message: string; fingerprint: string }> => {
+  const baseUrl = await getBaseUrl();
   const response: AxiosResponse<{ message: string; fingerprint: string }> = await axios.post(
-    `${API_BASE}/api/v1/user/${username}/ssh-keys`,
+    `${baseUrl}/api/v1/user/${username}/ssh-keys`,
     { publicKey, name },
     getAxiosConfig(),
   );
@@ -44,8 +47,9 @@ export const addSSHKey = async (
 };
 
 export const deleteSSHKey = async (username: string, fingerprint: string): Promise<void> => {
+  const baseUrl = await getBaseUrl();
   await axios.delete(
-    `${API_BASE}/api/v1/user/${username}/ssh-keys/${encodeURIComponent(fingerprint)}`,
+    `${baseUrl}/api/v1/user/${username}/ssh-keys/${encodeURIComponent(fingerprint)}`,
     getAxiosConfig(),
   );
 };
