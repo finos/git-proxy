@@ -604,3 +604,111 @@ Sample values:
   }
 ]
 ```
+
+#### `sink`
+
+List of database sources. The first source with `enabled` set to `true` will be used. Currently, MongoDB and filesystem databases (`NeDB`) are supported. By default, the filesystem database is used.
+
+Each entry has its own unique configuration parameters.
+
+Extending GitProxy to support other databases requires adding the relevant handlers and setup to the [`/src/db`](/src/db/) directory. Feel free to [open an issue](https://github.com/finos/git-proxy/issues) requesting support for any specific databases - or [open a PR](https://github.com/finos/git-proxy/pulls) with the desired changes!
+
+#### `authentication`
+
+List of authentication methods. See the [authentication](#authentication) section for more details.
+
+#### `tempPassword`
+
+Currently unused.
+
+#### `apiAuthentication`
+
+Allows defining methods for authenticating to the API. This is useful for securing custom/automated solutions that rely on the GitProxy API, as well as adding an extra layer of security for the UI.
+
+Currently, only JWT auth is supported. See the [`jwtAuthHandler` middleware](/src/service/passport/jwtAuthHandler.ts) for more details.
+
+If `apiAuthentication` is left empty, API endpoints will be publicly accesible.
+
+<!-- Todo: Add JWT auth guide -->
+
+#### `tls`
+
+Allows configuring TLS (Transport Layer Security) **for the proxy** (not for the API):
+
+```json
+"tls": {
+  "enabled": true,
+  "key": "certs/key.pem",
+  "cert": "certs/cert.pem"
+}
+```
+
+#### `configurationSources`
+
+Allows setting custom sources for configuring GitProxy. Configuration can be customised through files, HTTP or Git servers.
+
+Furthermore, configuration can be reloaded periodically or merged from multiple sources.
+
+Sample values:
+
+```json
+"configurationSources": {
+  "enabled": true,
+  "reloadIntervalSeconds": 60,
+  "merge": true,
+  "sources": [
+    {
+      "type": "file",
+      "enabled": true,
+      "path": "./external-config.json"
+    },
+    {
+      "type": "http",
+      "enabled": true,
+      "url": "http://config-service.com/git-proxy-config",
+      "headers": {},
+      "auth": {
+        "type": "bearer",
+        "token": ""
+      }
+    },
+    {
+      "type": "git",
+      "enabled": true,
+      "repository": "https://git-server.com/project/git-proxy-config",
+      "branch": "main",
+      "path": "git-proxy/config.json",
+      "auth": {
+        "type": "ssh",
+        "privateKeyPath": "/path/to/.ssh/id_rsa"
+      }
+    }
+  ]
+},
+```
+
+#### `uiRouteAuth`
+
+Allows defining which UI routes require authentication to access. Rules are set through URL patterns, and can be set to require a logged-in user or an admin to access.
+
+If the default values are set to `enabled: true`, any routes matching `/dashboard/*` will require login, and any routes matching `/admin/*` will require a logged-in admin user:
+
+```json
+"uiRouteAuth": {
+  "enabled": true,
+  "rules": [
+    {
+      "pattern": "/dashboard/*",
+      "adminOnly": false,
+      "loginRequired": true
+    },
+    {
+      "pattern": "/admin/*",
+      "adminOnly": true,
+      "loginRequired": true
+    }
+  ]
+}
+```
+
+When the constraints are not met, the user will be redirected to the login page or a 401 Unauthorized page will be shown.
