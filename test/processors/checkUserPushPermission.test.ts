@@ -15,14 +15,10 @@ import { exec } from '../../src/proxy/processors/push-action/checkUserPushPermis
 describe('checkUserPushPermission', () => {
   let getUsersMock: Mock;
   let isUserPushAllowedMock: Mock;
-  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
-  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     getUsersMock = vi.mocked(getUsers);
     isUserPushAllowedMock = vi.mocked(isUserPushAllowed);
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -62,7 +58,7 @@ describe('checkUserPushPermission', () => {
       expect(stepLogSpy).toHaveBeenLastCalledWith(
         'User db-user@test.com is allowed to push on repo https://github.com/finos/git-proxy.git',
       );
-      expect(consoleLogSpy).toHaveBeenLastCalledWith(
+      expect(stepLogSpy).toHaveBeenCalledWith(
         'User db-user@test.com permission on Repo https://github.com/finos/git-proxy.git : true',
       );
     });
@@ -81,7 +77,7 @@ describe('checkUserPushPermission', () => {
         `Your push has been blocked (db-user@test.com is not allowed to push on repo https://github.com/finos/git-proxy.git)`,
       );
       expect(result.steps[0].errorMessage).toContain('Your push has been blocked');
-      expect(consoleLogSpy).toHaveBeenLastCalledWith('User not allowed to Push');
+      expect(stepLogSpy).toHaveBeenCalledWith('User not allowed to Push');
     });
 
     it('should reject push when no user found for git account', async () => {
@@ -110,7 +106,7 @@ describe('checkUserPushPermission', () => {
       expect(stepLogSpy).toHaveBeenLastCalledWith(
         'Your push has been blocked (there are multiple users with email db-user@test.com)',
       );
-      expect(consoleErrorSpy).toHaveBeenLastCalledWith(
+      expect(stepLogSpy).toHaveBeenCalledWith(
         'Multiple users found with email address db-user@test.com, ending',
       );
     });
