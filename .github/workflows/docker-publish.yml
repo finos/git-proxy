@@ -33,7 +33,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           username: finos
-          password: $${{ secrets.DOCKER_PASSWORD }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Publish Docker Image
         # if: github.ref == 'refs/heads/main' && github.repository == 'finos/git-proxy'
