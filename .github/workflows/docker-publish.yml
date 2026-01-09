@@ -29,14 +29,14 @@ jobs:
       #     severity: HIGH,CRITICAL
 
       - name: Log in to Docker Hub
-        if: github.ref == 'refs/heads/main' && github.repository == 'finos/git-proxy'
+        # if: github.ref == 'refs/heads/main' && github.repository == 'finos/git-proxy'
         uses: docker/login-action@v3
         with:
           username: finos
           password: $${{ secrets.DOCKER_PASSWORD }}
 
       - name: Publish Docker Image
-        if: github.ref == 'refs/heads/main' && github.repository == 'finos/git-proxy'
+        # if: github.ref == 'refs/heads/main' && github.repository == 'finos/git-proxy'
         shell: bash
         run: |
           docker push finos/git-proxy:latest
