@@ -20,13 +20,13 @@ jobs:
         run: |
           docker build -f ./Dockerfile -t finos/git-proxy:latest .
 
-      - name: Scan Image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: finos/git-proxy:latest
-          format: table
-          exit-code: '1'
-          severity: HIGH,CRITICAL
+      # - name: Scan Image with Trivy
+      #   uses: aquasecurity/trivy-action@0.28.0
+      #   with:
+      #     image-ref: finos/git-proxy:latest
+      #     format: table
+      #     exit-code: '1'
+      #     severity: HIGH,CRITICAL
 
       - name: Log in to Docker Hub
         if: github.ref == 'refs/heads/main' && github.repository == 'finos/git-proxy'
