@@ -1,0 +1,42 @@
+name: Build and Publish Docker Image
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  docker-build-publish:
+    name: Build and Publish Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Build Docker Image
+        shell: bash
+        run: |
+          docker build -f ./Dockerfile -t finos/git-proxy:latest .
+
+      - name: Scan Image with Trivy
+        uses: aquasecurity/trivy-action@v0.28.0
+        with:
+          image-ref: finos/git-proxy:latest
+          format: table
+          exit-code: '1'
+          severity: HIGH,CRITICAL
+
+      - name: Log in to Docker Hub
+        if: github.ref == 'refs/heads/main' && github.repository == 'finos/git-proxy'
+        uses: docker/login-action@v3
+        with:
+          username: finos
+          password: $${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Publish Docker Image
+        if: github.ref == 'refs/heads/main' && github.repository == 'finos/git-proxy'
+        shell: bash
+        run: |
+          docker push finos/git-proxy:latest
