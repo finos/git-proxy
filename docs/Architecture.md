@@ -225,7 +225,6 @@ Pre-receive hooks are a feature that allows blocking or automatically approving 
 This processor will block the push depending on the exit status of the pre-receive hook:
 
 - Exit status `0`: Sets the push to `autoApproved`, skipping the requirement for subsequent approval. Note that this doesn't affect the other processors, which may still block the push.
-<!-- Todo: confirm whether pushes that passed the prereceive can still be blocked -->
 - Exit status `1`: Sets the push to `autoRejected`, automatically rejecting the push regardless of whether the other processors succeed.
 - Exit status `2`: Requires subsequent approval as any regular push.
 
