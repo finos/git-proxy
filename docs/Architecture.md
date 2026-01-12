@@ -12,7 +12,6 @@ GitProxy has several main components:
   - Chain: A set of **processors** that are applied to an action (i.e. a `git push` operation) before requesting review from a user with permission to approve pushes
   - Processor: AKA `Step`. A specific step in the chain where certain rules are applied. See the [list of default processors](#processors) below for more details.`
   - Plugin: A custom processor that can be added externally to extend GitProxy's default policies. See the [plugin guide](https://git-proxy.finos.org/docs/development/plugins) for more details.
-  <!-- Todo: Add link to plugin guide -->
 - Service/API (`/src/service`): Handles UI requests, user authentication to GitProxy (not to Git), database operations and some of the logic for rejection/approval. Runs by default on port `8080`.
   - Passport: The [library](https://www.passportjs.org/) used to authenticate to the GitProxy API (not the proxy itself - this depends on the Git `user.email`). Supports multiple authentication methods by default ([Local](#local), [AD](#activedirectory), [OIDC](#openid-connect)).
   - Routes: All the API endpoints used by the UI and proxy to perform operations and fetch or modify GitProxy's state. Except for custom plugin and processor development, there is no need for users or GitProxy administrators to interact with the API directly.
@@ -52,9 +51,8 @@ Three types of policies can be applied to incoming pushes:
 - Configurable policies: These are policies that can be easily configured through the GitProxy config (`proxy.config.json` or a custom file).
   - For example, [`checkCommitMessages`](#checkcommitmessages) which reads the configuration and matches the string patterns provided with the commit messages in the push in order to block it.
 - Custom policies:
-  - Plugins: Push/pull plugins provide more flexibility for implementing an organization's rules. For more information, see the guide on writing your own plugins.
+  - Plugins: Push/pull plugins provide more flexibility for implementing an organization's rules. For more information, see the [guide on writing your own plugins](https://git-proxy.finos.org/docs/development/plugins).
   - Processors: Custom logic may require specific data within a push that isn't available at the end of the chain (where plugins are executed). In this case, the appropriate solution is to write a processor and add it to the correct place in the chain.
-  <!-- Todo: add link to plugin guide -->
 
 ## The nitty gritty
 
@@ -193,9 +191,7 @@ Source: [/src/proxy/processors/push-action/checkUserPushPermission.ts](/src/prox
 
 Clones the repository and temporarily stores it locally. For private repos, it obtains the authorization headers and uses them to authenticate the `git clone` operation.
 
-For security reasons, the cloned repository is deleted later in [`clearBareClone`](#clearbareclone).
-
-<!-- Todo: improve explanation for clearBareClone -->
+The cloned repository is deleted later in [`clearBareClone`](#clearbareclone). This is done for a few reasons, including security (removing existing user credentials), disk space management and multiuser support.
 
 Source: [/src/proxy/processors/push-action/pullRemote.ts](/src/proxy/processors/push-action/pullRemote.ts)
 
@@ -263,9 +259,16 @@ Source: [/src/proxy/processors/push-action/gitleaks.ts](/src/proxy/processors/pu
 
 #### `clearBareClone`
 
-Recursively removes the contents of `./.remote`, which is the location where the bare repository is cloned in [`pullRemote`](#pullremote). This exists to prevent tampering with Git data.
+Recursively removes the contents of `./.remote`, which is the location where the bare repository is cloned in [`pullRemote`](#pullremote). This exists for various reasons:
 
-<!-- Todo: improve the explanation of why clearBareClone is needed -->
+- Security (isolating credentials):
+  - Since repositories require `username` and `password` on clone, these variables must be removed to prevent leaking between requests.
+- Managing disk space:
+  - Without deletion, `./.remote` would grow indefinitely as new repositories are added/proxied
+  - Each action gets a unique directory for isolation in [`pullRemote`](#pullremote), which is then deleted in `clearBareClone`
+- Multiuser support:
+  - Manage access to different repositories for multiple users
+  - Prevent one user from accessing another user's cached session data
 
 Source: [/src/proxy/processors/push-action/clearBareClone.ts](/src/proxy/processors/push-action/clearBareClone.ts)
 
@@ -653,9 +656,7 @@ Cypress.Commands.add('getCSRFToken', () => {
 
 Defines a list of plugins to integrate on GitProxy's push or pull actions. Accepted values are either a file path or a module name.
 
-See the plugin guide for more setup details.
-
-<!-- Todo: Link top plugin guide -->
+See the [plugin guide](https://git-proxy.finos.org/docs/development/plugins) for more setup details.
 
 #### `authorisedList`
 
