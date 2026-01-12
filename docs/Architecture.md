@@ -96,6 +96,12 @@ This chain is executed when making any operation other than a `git push` or `git
 - [`checkRepoInAuthorisedList`](#checkrepoinauthorisedlist)
 <!-- Todo: add example and verify this from original PR -->
 
+#### Finally
+
+After processors in the chain are done executing, [`audit`](#audit) is called to store the action along with all of its execution steps in the database for auditing purposes.
+
+Then, if the action was auto-approved or auto-rejected as a result of running [`preReceive`](#prereceive), it will attempt to auto-approve or auto-reject it.
+
 ### Processors
 
 Processors (also known as push/pull actions) represent operations that each push or pull must go through in order to get approved or rejected.
@@ -311,6 +317,63 @@ Note that this message will show again even if the push had been previously reje
 ![blockForAuth output](./img/blockForAuth_output.png)
 
 Source: [/src/proxy/processors/push-action/blockForAuth.ts](/src/proxy/processors/push-action/blockForAuth.ts)
+
+#### `audit`
+
+This action is executed at the end of the chain. It stores in the database the entire `Action` object along with the list of `steps` that the action has gone through. It also stores any error messages that might have come up in one of the processors.
+
+Note: **`audit` does not write pull actions** to the DB.
+
+An action object (or entry in the pushes table) might look like this:
+
+```json
+{
+  "steps": [
+    {
+      "logs": [
+        "checkRepoInAuthorisedList - repo https://github.com/finos/git-proxy.git is in the authorisedList"
+      ],
+      "id": "73d47899-b1f8-45f0-9fd5-ef2535a07bbd",
+      "stepName": "checkRepoInAuthorisedList",
+      "content": null,
+      "error": false,
+      "errorMessage": null,
+      "blocked": false,
+      "blockedMessage": null
+    }
+  ],
+  "error": false,
+  "blocked": false,
+  "allowPush": false,
+  "authorised": false,
+  "canceled": false,
+  "rejected": false,
+  "autoApproved": false,
+  "autoRejected": false,
+  "commitData": [],
+  "id": "1763522405484",
+  "type": "default",
+  "method": "GET",
+  "timestamp": 1763522405484,
+  "url": "https://github.com/finos/git-proxy.git",
+  "repo": "https://github.com/finos/git-proxy.git",
+  "project": "finos",
+  "repoName": "git-proxy.git",
+  "lastStep": {
+    "logs": [
+      "checkRepoInAuthorisedList - repo https://github.com/finos/git-proxy.git is in the authorisedList"
+    ],
+    "id": "73d47899-b1f8-45f0-9fd5-ef2535a07bbd",
+    "stepName": "checkRepoInAuthorisedList",
+    "content": null,
+    "error": false,
+    "errorMessage": null,
+    "blocked": false,
+    "blockedMessage": null
+  },
+  "_id": "h69TOxN1AMsxd0xr"
+}
+```
 
 ### Authentication
 
