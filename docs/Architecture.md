@@ -217,7 +217,7 @@ Source: [/src/proxy/processors/push-action/checkIfWaitingAuth.ts](/src/proxy/pro
 
 #### `preReceive`
 
-Allows executing pre-receive hooks from `.sh` scripts located in the `./hooks` directory. **Also allows bypassing the manual approval process.** This enables admins to reuse GitHub enterprise commit policies and provide a seamless experience for contributors who no longer need to wait for approval or be aware of GitProxy intercepting their pushes.
+Allows executing pre-receive hooks from `.sh` scripts located in the `./hooks` directory. **Also allows automating the approval process.** This enables admins to reuse GitHub enterprise commit policies and provide a seamless experience for contributors who no longer need to wait for manual approval or be aware of GitProxy intercepting their pushes.
 
 Pre-receive hooks are a feature that allows blocking or automatically approving commits based on rules described in `.sh` scripts. GitHub provides a set of [sample rules](https://github.com/github/platform-samples/blob/master/pre-receive-hooks) to get started.
 
