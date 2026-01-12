@@ -22,7 +22,7 @@ GitProxy has several main components:
 
 These are all the core components in the project, along with some basic user interactions:
 
-![GitProxy Architecture Diagram](./img/architecture.png)
+![GitProxy Architecture Diagram](./img/GitProxy_Architecture.png)
 
 ### Pushing to GitProxy
 
