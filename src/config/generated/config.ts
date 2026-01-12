@@ -116,7 +116,8 @@ export interface GitProxyConfig {
  */
 export interface API {
   /**
-   * Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin
+   * Configuration for the gitleaks
+   * [https://github.com/gitleaks/gitleaks](https://github.com/gitleaks/gitleaks) plugin
    */
   gitleaks?: Gitleaks;
   /**
@@ -128,7 +129,8 @@ export interface API {
 }
 
 /**
- * Configuration for the gitleaks (https://github.com/gitleaks/gitleaks) plugin
+ * Configuration for the gitleaks
+ * [https://github.com/gitleaks/gitleaks](https://github.com/gitleaks/gitleaks) plugin
  */
 export interface Gitleaks {
   configPath?: string;
@@ -161,7 +163,7 @@ export interface Ls {
  */
 export interface AuthenticationElement {
   enabled: boolean;
-  type: Type;
+  type: AuthenticationElementType;
   /**
    * Additional Active Directory configuration supporting LDAP connection which can be used to
    * confirm group membership. For the full set of available options see the activedirectory 2
@@ -213,6 +215,10 @@ export interface AdConfig {
    */
   password: string;
   /**
+   * Override baseDN to query for users in other OUs or sub-trees.
+   */
+  searchBase?: string;
+  /**
    * Active Directory server to connect to, e.g. `ldap://ad.example.com`.
    */
   url: string;
@@ -251,7 +257,7 @@ export interface OidcConfig {
   [property: string]: any;
 }
 
-export enum Type {
+export enum AuthenticationElementType {
   ActiveDirectory = 'ActiveDirectory',
   Jwt = 'jwt',
   Local = 'local',
@@ -286,13 +292,26 @@ export interface Question {
  * and used to provide additional guidance to the reviewer.
  */
 export interface QuestionTooltip {
+  /**
+   * An array of links to display under the tooltip text, providing additional context about
+   * the question
+   */
   links?: Link[];
+  /**
+   * Tooltip text
+   */
   text: string;
 }
 
 export interface Link {
-  text?: string;
-  url?: string;
+  /**
+   * Link text
+   */
+  text: string;
+  /**
+   * Link URL
+   */
+  url: string;
 }
 
 export interface AuthorisedRepo {
@@ -476,13 +495,59 @@ export interface RateLimit {
   windowMs: number;
 }
 
+/**
+ * Configuration entry for a database
+ *
+ * Connection properties for mongoDB. Options may be passed in either the connection string
+ * or broken out in the options object
+ *
+ * Connection properties for an neDB file-based database
+ */
 export interface Database {
+  /**
+   * mongoDB Client connection string, see
+   * [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)
+   */
   connectionString?: string;
   enabled: boolean;
-  options?: { [key: string]: any };
+  /**
+   * mongoDB Client connection options. Please note that only custom options are described
+   * here, see
+   * [https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/](https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/)
+   * for all config options.
+   */
+  options?: Options;
+  type: DatabaseType;
+  /**
+   * Legacy config property not currently used
+   */
   params?: { [key: string]: any };
-  type: string;
   [property: string]: any;
+}
+
+/**
+ * mongoDB Client connection options. Please note that only custom options are described
+ * here, see
+ * [https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/](https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/)
+ * for all config options.
+ */
+export interface Options {
+  authMechanismProperties?: AuthMechanismProperties;
+  [property: string]: any;
+}
+
+export interface AuthMechanismProperties {
+  /**
+   * If set to true, the `fromNodeProviderChain()` function from @aws-sdk/credential-providers
+   * is passed as the `AWS_CREDENTIAL_PROVIDER`
+   */
+  AWS_CREDENTIAL_PROVIDER?: boolean;
+  [property: string]: any;
+}
+
+export enum DatabaseType {
+  FS = 'fs',
+  Mongo = 'mongo',
 }
 
 /**
@@ -766,7 +831,7 @@ const typeMap: any = {
   AuthenticationElement: o(
     [
       { json: 'enabled', js: 'enabled', typ: true },
-      { json: 'type', js: 'type', typ: r('Type') },
+      { json: 'type', js: 'type', typ: r('AuthenticationElementType') },
       { json: 'adConfig', js: 'adConfig', typ: u(undefined, r('AdConfig')) },
       { json: 'adminGroup', js: 'adminGroup', typ: u(undefined, '') },
       { json: 'domain', js: 'domain', typ: u(undefined, '') },
@@ -780,6 +845,7 @@ const typeMap: any = {
     [
       { json: 'baseDN', js: 'baseDN', typ: '' },
       { json: 'password', js: 'password', typ: '' },
+      { json: 'searchBase', js: 'searchBase', typ: u(undefined, '') },
       { json: 'url', js: 'url', typ: '' },
       { json: 'username', js: 'username', typ: '' },
     ],
@@ -825,8 +891,8 @@ const typeMap: any = {
   ),
   Link: o(
     [
-      { json: 'text', js: 'text', typ: u(undefined, '') },
-      { json: 'url', js: 'url', typ: u(undefined, '') },
+      { json: 'text', js: 'text', typ: '' },
+      { json: 'url', js: 'url', typ: '' },
     ],
     false,
   ),
@@ -901,10 +967,24 @@ const typeMap: any = {
     [
       { json: 'connectionString', js: 'connectionString', typ: u(undefined, '') },
       { json: 'enabled', js: 'enabled', typ: true },
-      { json: 'options', js: 'options', typ: u(undefined, m('any')) },
+      { json: 'options', js: 'options', typ: u(undefined, r('Options')) },
+      { json: 'type', js: 'type', typ: r('DatabaseType') },
       { json: 'params', js: 'params', typ: u(undefined, m('any')) },
-      { json: 'type', js: 'type', typ: '' },
     ],
+    'any',
+  ),
+  Options: o(
+    [
+      {
+        json: 'authMechanismProperties',
+        js: 'authMechanismProperties',
+        typ: u(undefined, r('AuthMechanismProperties')),
+      },
+    ],
+    'any',
+  ),
+  AuthMechanismProperties: o(
+    [{ json: 'AWS_CREDENTIAL_PROVIDER', js: 'AWS_CREDENTIAL_PROVIDER', typ: u(undefined, true) }],
     'any',
   ),
   TempPassword: o(
@@ -937,5 +1017,6 @@ const typeMap: any = {
     ],
     'any',
   ),
-  Type: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
+  AuthenticationElementType: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
+  DatabaseType: ['fs', 'mongo'],
 };

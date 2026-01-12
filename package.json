@@ -1,44 +1,44 @@
 {
   "name": "@finos/git-proxy",
-  "version": "2.0.0-rc.3",
+  "version": "2.0.0-rc.4",
   "description": "Deploy custom push protections and policies on top of Git.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./config": {
+      "types": "./dist/src/config/index.d.ts",
       "import": "./dist/src/config/index.js",
-      "require": "./dist/src/config/index.js",
-      "types": "./dist/src/config/index.d.ts"
+      "require": "./dist/src/config/index.js"
     },
     "./db": {
+      "types": "./dist/src/db/index.d.ts",
       "import": "./dist/src/db/index.js",
-      "require": "./dist/src/db/index.js",
-      "types": "./dist/src/db/index.d.ts"
+      "require": "./dist/src/db/index.js"
     },
     "./plugin": {
+      "types": "./dist/src/plugin.d.ts",
       "import": "./dist/src/plugin.js",
-      "require": "./dist/src/plugin.js",
-      "types": "./dist/src/plugin.d.ts"
+      "require": "./dist/src/plugin.js"
     },
     "./proxy": {
+      "types": "./dist/src/proxy/index.d.ts",
       "import": "./dist/src/proxy/index.js",
-      "require": "./dist/src/proxy/index.js",
-      "types": "./dist/src/proxy/index.d.ts"
+      "require": "./dist/src/proxy/index.js"
     },
     "./proxy/actions": {
+      "types": "./dist/src/proxy/actions/index.d.ts",
       "import": "./dist/src/proxy/actions/index.js",
-      "require": "./dist/src/proxy/actions/index.js",
-      "types": "./dist/src/proxy/actions/index.d.ts"
+      "require": "./dist/src/proxy/actions/index.js"
     },
     "./ui": {
+      "types": "./dist/src/ui/index.d.ts",
       "import": "./dist/src/ui/index.js",
-      "require": "./dist/src/ui/index.js",
-      "types": "./dist/src/ui/index.d.ts"
+      "require": "./dist/src/ui/index.js"
     }
   },
   "scripts": {
@@ -46,16 +46,19 @@
     "cli:js": "node ./packages/git-proxy-cli/dist/index.js",
     "client": "vite --config vite.config.ts",
     "clientinstall": "npm install --prefix client",
-    "server": "tsx index.ts",
+    "server": "ALLOWED_ORIGINS=* tsx index.ts",
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "build": "npm run generate-config-types && npm run build-ui && npm run build-ts",
     "build-ts": "tsc --project tsconfig.publish.json && ./scripts/fix-shebang.sh",
     "build-ui": "vite build",
     "check-types": "tsc",
     "check-types:server": "tsc --project tsconfig.publish.json --noEmit",
-    "test": "NODE_ENV=test ts-mocha './test/**/*.test.js' --exit",
-    "test-coverage": "nyc npm run test",
-    "test-coverage-ci": "nyc --reporter=lcovonly --reporter=text npm run test",
+    "test": "NODE_ENV=test vitest --run --dir ./test",
+    "test:e2e": "vitest run --config vitest.config.e2e.ts",
+    "test:e2e:watch": "vitest --config vitest.config.e2e.ts",
+    "test-coverage": "NODE_ENV=test vitest --run --dir ./test --coverage",
+    "test-coverage-ci": "NODE_ENV=test vitest --run --dir ./test --coverage.enabled=true --coverage.reporter=lcovonly --coverage.reporter=text",
+    "test-watch": "NODE_ENV=test vitest --dir ./test --watch",
     "prepare": "node ./scripts/prepare.js",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
@@ -80,12 +83,13 @@
     "url": "https://github.com/finos/git-proxy"
   },
   "dependencies": {
+    "@aws-sdk/credential-providers": "^3.940.0",
     "@material-ui/core": "^4.12.4",
     "@material-ui/icons": "4.11.3",
-    "@primer/octicons-react": "^19.19.0",
+    "@primer/octicons-react": "^19.21.0",
     "@seald-io/nedb": "^4.1.2",
-    "axios": "^1.12.2",
-    "bcryptjs": "^3.0.2",
+    "axios": "^1.13.2",
+    "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "concurrently": "^9.2.1",
     "connect-mongo": "^5.1.0",
@@ -93,13 +97,12 @@
     "diff2html": "^3.4.52",
     "env-paths": "^3.0.0",
     "escape-string-regexp": "^5.0.0",
-    "express": "^4.21.2",
+    "express": "^5.1.0",
     "express-http-proxy": "^2.1.2",
-    "express-rate-limit": "^8.1.0",
+    "express-rate-limit": "^8.2.1",
     "express-session": "^1.18.2",
     "history": "5.3.0",
     "jsonwebtoken": "^9.0.2",
-    "jwk-to-pem": "^2.0.7",
     "load-plugin": "^6.0.3",
     "lodash": "^4.17.21",
     "lusca": "^1.7.0",
@@ -111,75 +114,69 @@
     "passport-activedirectory": "^1.4.0",
     "passport-local": "^1.0.0",
     "perfect-scrollbar": "^1.5.6",
-    "prop-types": "15.8.1",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
     "react-html-parser": "^2.0.2",
-    "react-router-dom": "6.30.1",
-    "simple-git": "^3.28.0",
+    "react-router-dom": "6.30.2",
+    "simple-git": "^3.30.0",
+    "supertest": "^7.1.4",
     "uuid": "^11.1.0",
-    "validator": "^13.15.15",
+    "validator": "^13.15.23",
     "yargs": "^17.7.2"
   },
   "devDependencies": {
-    "@babel/core": "^7.28.4",
-    "@babel/preset-react": "^7.27.1",
+    "@babel/core": "^7.28.5",
+    "@babel/preset-react": "^7.28.5",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
-    "@eslint/compat": "^1.4.0",
-    "@eslint/js": "^9.37.0",
-    "@eslint/json": "^0.13.2",
+    "@eslint/compat": "^2.0.0",
+    "@eslint/js": "^9.39.1",
+    "@eslint/json": "^0.14.0",
     "@types/activedirectory2": "^1.2.6",
     "@types/cors": "^2.8.19",
-    "@types/domutils": "^1.7.8",
-    "@types/express": "^5.0.3",
+    "@types/domutils": "^2.1.0",
+    "@types/express": "^5.0.5",
     "@types/express-http-proxy": "^1.6.7",
     "@types/express-session": "^1.18.2",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/jwk-to-pem": "^2.0.3",
     "@types/lodash": "^4.17.20",
     "@types/lusca": "^1.7.5",
-    "@types/mocha": "^10.0.10",
-    "@types/node": "^22.18.10",
+    "@types/node": "^22.19.1",
     "@types/passport": "^1.0.17",
     "@types/passport-local": "^1.0.38",
     "@types/react-dom": "^17.0.26",
     "@types/react-html-parser": "^2.0.7",
-    "@types/sinon": "^17.0.4",
-    "@types/validator": "^13.15.3",
-    "@types/yargs": "^17.0.33",
-    "@vitejs/plugin-react": "^4.7.0",
-    "chai": "^4.5.0",
-    "chai-http": "^4.4.0",
-    "cypress": "^15.4.0",
-    "eslint": "^9.37.0",
+    "@types/supertest": "^6.0.3",
+    "@types/validator": "^13.15.9",
+    "@types/yargs": "^17.0.35",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@vitest/coverage-v8": "^3.2.4",
+    "cypress": "^15.6.0",
+    "eslint": "^9.39.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-cypress": "^5.2.0",
     "eslint-plugin-react": "^7.37.5",
     "fast-check": "^4.3.0",
-    "globals": "^16.4.0",
+    "globals": "^16.5.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.4",
-    "mocha": "^10.8.2",
+    "lint-staged": "^16.2.6",
     "nyc": "^17.1.0",
     "prettier": "^3.6.2",
-    "proxyquire": "^2.1.3",
     "quicktype": "^23.2.6",
-    "sinon": "^21.0.0",
-    "sinon-chai": "^3.7.0",
-    "ts-mocha": "^11.1.0",
+    "supertest": "^7.1.4",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.46.1",
-    "vite": "^4.5.14",
+    "typescript-eslint": "^8.46.4",
+    "vite": "^7.1.9",
+    "vitest": "^3.2.4",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "optionalDependencies": {
-    "@esbuild/darwin-arm64": "^0.25.11",
-    "@esbuild/darwin-x64": "^0.25.11",
-    "@esbuild/linux-x64": "0.25.11",
-    "@esbuild/win32-x64": "0.25.11"
+    "@esbuild/darwin-arm64": "^0.27.0",
+    "@esbuild/darwin-x64": "^0.27.0",
+    "@esbuild/linux-x64": "0.27.0",
+    "@esbuild/win32-x64": "0.27.0"
   },
   "browserslist": {
     "production": [
@@ -194,7 +191,7 @@
     ]
   },
   "engines": {
-    "node": ">=20.19.2"
+    "node": ">=20.18.2 || >=22.13.1 || >=24.0.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}": [

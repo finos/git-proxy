@@ -14,9 +14,10 @@ import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos } from '../db
 import { PluginLoader } from '../plugin';
 import chain from './chain';
 import { Repo } from '../db/types';
+import { serverConfig } from '../config/env';
 
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort, GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } =
-  require('../config/env').serverConfig;
+  serverConfig;
 
 interface ServerOptions {
   inflate: boolean;
@@ -26,15 +27,15 @@ interface ServerOptions {
   cert: Buffer | undefined;
 }
 
-const options: ServerOptions = {
+const getServerOptions = (): ServerOptions => ({
   inflate: true,
   limit: '100000kb',
   type: '*/*',
   key: getTLSEnabled() && getTLSKeyPemPath() ? fs.readFileSync(getTLSKeyPemPath()!) : undefined,
   cert: getTLSEnabled() && getTLSCertPemPath() ? fs.readFileSync(getTLSCertPemPath()!) : undefined,
-};
+});
 
-export default class Proxy {
+export class Proxy {
   private httpServer: http.Server | null = null;
   private httpsServer: https.Server | null = null;
   private expressApp: Express | null = null;
@@ -51,7 +52,7 @@ export default class Proxy {
     const allowedList: Repo[] = await getRepos();
 
     defaultAuthorisedRepoList.forEach(async (x) => {
-      const found = allowedList.find((y) => y.project === x.project && x.name === y.name);
+      const found = allowedList.find((y) => y.url === x.url);
       if (!found) {
         const repo = await createRepo(x);
         await addUserCanPush(repo._id!, 'admin');
@@ -71,15 +72,17 @@ export default class Proxy {
     await this.proxyPreparations();
     this.expressApp = await this.createApp();
     this.httpServer = http
-      .createServer(options as any, this.expressApp)
+      .createServer(getServerOptions() as any, this.expressApp)
       .listen(proxyHttpPort, () => {
         console.log(`HTTP Proxy Listening on ${proxyHttpPort}`);
       });
     // Start HTTPS server only if TLS is enabled
     if (getTLSEnabled()) {
-      this.httpsServer = https.createServer(options, this.expressApp).listen(proxyHttpsPort, () => {
-        console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
-      });
+      this.httpsServer = https
+        .createServer(getServerOptions(), this.expressApp)
+        .listen(proxyHttpsPort, () => {
+          console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
+        });
     }
   }
 

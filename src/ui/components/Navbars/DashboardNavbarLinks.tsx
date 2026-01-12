@@ -17,8 +17,7 @@ import { getUser } from '../../services/user';
 import axios from 'axios';
 import { getAxiosConfig } from '../../services/auth';
 import { PublicUser } from '../../../db/types';
-
-import { API_BASE } from '../../apiBase';
+import { getBaseUrl } from '../../services/apiConfig';
 
 const useStyles = makeStyles(styles);
 
@@ -28,11 +27,11 @@ const DashboardNavbarLinks: React.FC = () => {
   const [openProfile, setOpenProfile] = useState<HTMLElement | null>(null);
   const [, setAuth] = useState<boolean>(true);
   const [, setIsLoading] = useState<boolean>(true);
-  const [, setIsError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [user, setUser] = useState<PublicUser | null>(null);
 
   useEffect(() => {
-    getUser(setIsLoading, setUser, setAuth, setIsError);
+    getUser(setIsLoading, setUser, setAuth, setErrorMessage);
   }, []);
 
   const handleClickProfile = (event: React.MouseEvent<HTMLElement>) => {
@@ -53,7 +52,8 @@ const DashboardNavbarLinks: React.FC = () => {
 
   const logout = async () => {
     try {
-      const { data } = await axios.post(`${API_BASE}/api/auth/logout`, {}, getAxiosConfig());
+      const baseUrl = await getBaseUrl();
+      const { data } = await axios.post(`${baseUrl}/api/auth/logout`, {}, getAxiosConfig());
 
       if (!data.isAuth && !data.user) {
         setAuth(false);
@@ -66,6 +66,7 @@ const DashboardNavbarLinks: React.FC = () => {
 
   return (
     <div>
+      {errorMessage && <div className={classes.errorMessage}>{errorMessage}</div>}
       <div className={classes.manager}>
         <Button
           color={window.innerWidth > 959 ? 'transparent' : 'white'}
