@@ -221,6 +221,7 @@ Allows executing pre-receive hooks from `.sh` scripts located in the `./hooks` d
 
 Pre-receive hooks are a feature that allows blocking or automatically approving commits based on rules described in `.sh` scripts. GitHub provides a set of [sample rules](https://github.com/github/platform-samples/blob/master/pre-receive-hooks) to get started.
 
+**Important**: The pre-receive hook does not bypass the other processors in the chain. All processors continue to execute normally, and any of them can still block the push. The pre-receive hook only determines whether the push will be auto-approved, auto-rejected, or require manual review after all processors have completed.
 This processor will block the push depending on the exit status of the pre-receive hook:
 
 - Exit status `0`: Sets the push to `autoApproved`, skipping the requirement for subsequent approval. Note that this doesn't affect the other processors, which may still block the push.
