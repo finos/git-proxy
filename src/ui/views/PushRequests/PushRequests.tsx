@@ -4,7 +4,7 @@ import GridContainer from '../../components/Grid/GridContainer';
 import PushesTable from './components/PushesTable';
 import CustomTabs from '../../components/CustomTabs/CustomTabs';
 import Danger from '../../components/Typography/Danger';
-import { Visibility, CheckCircle, Cancel, Block } from '@material-ui/icons';
+import { Visibility, CheckCircle, Cancel, Block, Error } from '@material-ui/icons';
 import { TabItem } from '../../components/CustomTabs/CustomTabs';
 
 const Dashboard: React.FC = () => {
@@ -50,6 +50,11 @@ const Dashboard: React.FC = () => {
           handleError={handlePushTableError}
         />
       ),
+    },
+    {
+      tabName: 'Error',
+      tabIcon: Error,
+      tabContent: <PushesTable error={true} handleError={handlePushTableError} />,
     },
   ];
 

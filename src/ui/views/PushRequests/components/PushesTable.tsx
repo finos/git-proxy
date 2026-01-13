@@ -45,6 +45,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
       canceled: props.canceled ?? false,
       authorised: props.authorised ?? false,
       rejected: props.rejected ?? false,
+      error: props.error ?? false,
     };
     getPushes(setIsLoading, setPushes, setAuth, setIsError, props.handleError, query);
   }, [props]);
