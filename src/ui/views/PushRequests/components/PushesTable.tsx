@@ -40,13 +40,15 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
   const openPush = (pushId: string) => navigate(`/dashboard/push/${pushId}`, { replace: true });
 
   useEffect(() => {
-    const query = {
-      blocked: props.blocked ?? false,
-      canceled: props.canceled ?? false,
-      authorised: props.authorised ?? false,
-      rejected: props.rejected ?? false,
-      error: props.error ?? false,
-    };
+    const query: any = {};
+
+    // Only include filters that are explicitly set (not undefined)
+    if (props.blocked !== undefined) query.blocked = props.blocked;
+    if (props.canceled !== undefined) query.canceled = props.canceled;
+    if (props.authorised !== undefined) query.authorised = props.authorised;
+    if (props.rejected !== undefined) query.rejected = props.rejected;
+    if (props.error !== undefined) query.error = props.error;
+
     getPushes(setIsLoading, setPushes, setAuth, setIsError, props.handleError, query);
   }, [props]);
 
