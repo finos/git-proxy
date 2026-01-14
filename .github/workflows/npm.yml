@@ -2,9 +2,6 @@ name: Publish to NPM
 on:
   release:
     types: [published]
-  # Add push on PR for testing purposes
-  pull_request:
-    branches: [main]
 permissions:
   contents: read
   id-token: write
@@ -29,8 +26,6 @@ jobs:
 
       - name: Check if pre-release and publish to NPM
         run: |
-          unset NODE_AUTH_TOKEN
-          unset NPM_TOKEN
           VERSION=$(node -p "require('./package.json').version")
           if [[ "$VERSION" == *"-"* ]]; then
             echo "Publishing pre-release: $VERSION"
