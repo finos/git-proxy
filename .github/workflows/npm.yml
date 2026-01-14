@@ -31,10 +31,8 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           if [[ "$VERSION" == *"-"* ]]; then
             echo "Publishing pre-release: $VERSION"
-            npm publish --provenance --access=public --tag rc
+            npm publish --access=public --tag rc
           else
             echo "Publishing stable release: $VERSION"
-            npm publish --provenance --access=public
+            npm publish --access=public
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
