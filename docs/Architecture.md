@@ -692,13 +692,69 @@ Currently unused.
 
 #### `apiAuthentication`
 
-Allows defining methods for authenticating to the API. This is useful for securing custom/automated solutions that rely on the GitProxy API, as well as adding an extra layer of security for the UI.
-
-Currently, only JWT auth is supported. See the [`jwtAuthHandler` middleware](/src/service/passport/jwtAuthHandler.ts) for more details.
+Allows defining ways to authenticate to the API. This is useful for securing custom/automated solutions that rely on the GitProxy API, as well as adding an extra layer of security for the UI.
 
 If `apiAuthentication` is left empty, API endpoints will be publicly accesible.
 
-<!-- Todo: Add JWT auth guide -->
+Currently, only JWT auth is supported. This is implemented via the [`jwtAuthHandler` middleware](/src/service/passport/jwtAuthHandler.ts). Aside of validating incoming access tokens, it can also assign roles based on the token payload.
+
+##### Setting up JWT Authentication
+
+When JWT authentication is enabled, all incoming requests must provide a valid JWT access token in the UI. This can be set in the settings tab.
+
+If no token, or an invalid/expired token is set, requests will fail with a `401` Unauthorized response.
+
+The JWT auth configuration looks like this:
+
+```json
+{
+  "type": "jwt",
+  "enabled": true,
+  "jwtConfig": {
+    "authorityURL": "https://accounts.google.com",
+    "clientID": "my-client-id.apps.googleusercontent.com",
+    "expectedAudience": "https://accounts.google.com",
+    "roleMapping": {
+      "admin": {
+        "name": "John Doe"
+      }
+    }
+  }
+}
+```
+
+`authorityURL` must point to an OIDC issuer. This URL is used to fetch signing keys and to verify the token’s issuer. If this value is missing, the server will return a 500 error.
+
+`clientID` is required and used for token validation. If not configured, requests will fail with a server error.
+
+`expectedAudience` defines which audience (aud claim) the token must contain. When not explicitly set, the middleware falls back to using the `clientID` as expected audience. Tokens issued for a different audience will be rejected, even if they are otherwise valid.
+
+If the JWT cannot be verified, is expired, or doesn't match the expected issuer or audience, the API responds with `401 Unauthorized`.
+
+##### Role Mapping
+
+After a token is successfully validated, role assignment is done based on `roleMapping`. The decoded JWT payload is matched against these rules. Roles will be assigned when a key-value pair in the claims matches the ones in the configuration. These roles are then assigned to the `Request.user` value.
+
+For example, to assign `req.admin` to users whose name matches "John Doe":
+
+```json
+"roleMapping": {
+  "admin": {
+    "name": "John Doe",
+  }
+}
+```
+
+##### Errors
+
+If JWT authentication is enabled, requests may fail for various reasons, including:
+
+- Missing JWT token (must set token in UI Settings page)
+- Invalid or expired token
+- Mismatched issuer or audience
+- Missing required configuration in `proxy.config.json`
+
+To solve most of these, check that GitProxy's JWT configuration is correct, and that the user has set a valid JWT in the UI Settings page.
 
 #### `tls`
 
