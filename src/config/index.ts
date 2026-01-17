@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
-import { GitProxyConfig, Convert } from './generated/config';
+import { GitProxyConfig, Convert, CommitConfig } from './generated/config';
 import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
@@ -69,8 +69,25 @@ function loadFullConfiguration(): GitProxyConfig {
 
   _currentConfig = mergeConfigurations(defaultConfig, userSettings);
 
+  if (!validateConfig(_currentConfig)) {
+    console.error(
+      'Invalid configuration: Please check your configuration file and restart GitProxy.',
+    );
+    process.exit(1);
+  }
+
   return _currentConfig;
 }
+
+/**
+ * Performs additional custom validations on the configuration
+ *
+ * @param config The configuration to validate
+ * @returns true if the configuration is valid, false otherwise
+ */
+export const validateConfig = (config: GitProxyConfig): boolean => {
+  return validateCommitConfig(config.commitConfig ?? {});
+};
 
 /**
  * Merge configurations with environment variable overrides

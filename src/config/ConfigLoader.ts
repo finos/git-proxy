@@ -7,6 +7,7 @@ import { EventEmitter } from 'events';
 import envPaths from 'env-paths';
 import { GitProxyConfig, Convert } from './generated/config';
 import { Configuration, ConfigurationSource, FileSource, HttpSource, GitSource } from './types';
+import { validateConfig } from '.';
 
 const execFileAsync = promisify(execFile);
 
@@ -188,6 +189,11 @@ export class ConfigLoader extends EventEmitter {
         this.emit('configurationChanged', this.config);
       } else {
         console.log('Configuration has not changed, no update needed');
+      }
+
+      if (!validateConfig(newConfig)) {
+        console.error('Invalid configuration, skipping reload');
+        return;
       }
     } catch (error: any) {
       console.error('Error reloading configuration:', error);
