@@ -291,6 +291,59 @@ export const getRateLimit = () => {
   return config.rateLimit;
 };
 
+/**
+ * Validates that commit configuration uses valid regular expressions.
+ * @param config The commit configuration to validate
+ * @returns true if the commit configuration is valid, false otherwise
+ */
+export const validateCommitConfig = (config: CommitConfig): boolean => {
+  if (config.author?.email?.local?.block) {
+    try {
+      new RegExp(config.author?.email?.local?.block);
+    } catch (error: unknown) {
+      console.error(
+        `Invalid regular expression for author.email.local.block: ${config.author?.email?.local?.block}`,
+      );
+      return false;
+    }
+  }
+
+  if (config.author?.email?.domain?.allow) {
+    try {
+      new RegExp(config.author?.email?.domain?.allow);
+    } catch (error: unknown) {
+      console.error(
+        `Invalid regular expression for author.email.domain.allow: ${config.author?.email?.domain?.allow}`,
+      );
+      return false;
+    }
+  }
+
+  if (config.message?.block?.patterns) {
+    for (const pattern of config.message.block.patterns) {
+      try {
+        new RegExp(pattern);
+      } catch (error: unknown) {
+        console.error(`Invalid regular expression for message.block.patterns: ${pattern}`);
+        return false;
+      }
+    }
+  }
+
+  if (config.diff?.block?.patterns) {
+    for (const pattern of config.diff.block.patterns) {
+      try {
+        new RegExp(pattern);
+      } catch (error: unknown) {
+        console.error(`Invalid regular expression for diff.block.patterns: ${pattern}`);
+        return false;
+      }
+    }
+  }
+
+  return true;
+};
+
 // Function to handle configuration updates
 const handleConfigUpdate = async (newConfig: Configuration) => {
   console.log('Configuration updated from external source');
