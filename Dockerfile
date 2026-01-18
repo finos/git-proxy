@@ -31,8 +31,8 @@ RUN apt-get update && apt-get install -y \
     git tini \
     && rm -rf /var/lib/apt/lists/*
 
-RUN chown 1000:1000 /app/dist/build \
-    && chmod g+w /app/dist/build
+RUN mkdir -p /app/.data /app/.tmp \
+    && chown 1000:1000 /app/dist/build /app/.data /app/.tmp
 
 USER 1000
 
