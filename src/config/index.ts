@@ -74,7 +74,9 @@ function loadFullConfiguration(): GitProxyConfig {
     console.error(
       'Invalid configuration: Please check your configuration file and restart GitProxy.',
     );
-    process.exit(1);
+    throw new Error(
+      'Invalid configuration: Please check your configuration file and restart GitProxy.',
+    );
   }
 
   return _currentConfig;
