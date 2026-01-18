@@ -298,3 +298,265 @@ describe('add new repo', () => {
     await cleanupRepo(TEST_REPO_NAKED.url);
   });
 });
+
+describe('repo routes - edge cases', () => {
+  let app: any;
+  let proxy: any;
+  let adminCookie: string;
+  let nonAdminCookie: string;
+  let repoId: string;
+
+  const setCookie = function (res: any, cookieVar: 'admin' | 'nonAdmin') {
+    res.headers['set-cookie'].forEach((x: string) => {
+      if (x.startsWith('connect')) {
+        const value = x.split(';')[0];
+        if (cookieVar === 'admin') {
+          adminCookie = value;
+        } else {
+          nonAdminCookie = value;
+        }
+      }
+    });
+  };
+
+  beforeAll(async () => {
+    proxy = new Proxy();
+    app = await Service.start(proxy);
+
+    await cleanupRepo(TEST_REPO.url);
+    await db.deleteUser('testadmin');
+    await db.deleteUser('nonadmin');
+
+    await db.createUser('testadmin', 'password', 'testadmin@test.com', 'Test Admin', true);
+    await db.createUser('nonadmin', 'password', 'nonadmin@test.com', 'Non Admin', false);
+
+    // Login as admin and set cookies
+    const adminRes = await request(app).post('/api/auth/login').send({
+      username: 'admin',
+      password: 'admin',
+    });
+    setCookie(adminRes, 'admin');
+
+    // Login as non-admin and set cookies
+    const nonAdminRes = await request(app).post('/api/auth/login').send({
+      username: 'nonadmin',
+      password: 'password',
+    });
+    setCookie(nonAdminRes, 'nonAdmin');
+
+    // Create a test repo
+    await request(app).post('/api/v1/repo').set('Cookie', adminCookie).send(TEST_REPO);
+
+    const repo = await fetchRepoOrThrow(TEST_REPO.url);
+    repoId = repo._id!;
+  });
+
+  it('should return 401 when non-admin user tries to create repo', async () => {
+    const res = await request(app).post('/api/v1/repo').set('Cookie', nonAdminCookie).send({
+      url: 'https://github.com/test/unauthorized-repo.git',
+      name: 'unauthorized-repo',
+      project: 'test',
+      host: 'github.com',
+    });
+
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('You are not authorised to perform this action...');
+  });
+
+  it('should return 401 when unauthenticated user tries to create repo', async () => {
+    const res = await request(app).post('/api/v1/repo').send({
+      url: 'https://github.com/test/unauthenticated-repo.git',
+      name: 'unauthenticated-repo',
+      project: 'test',
+      host: 'github.com',
+    });
+
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('You are not authorised to perform this action...');
+  });
+
+  it('should return 400 when repo url is missing', async () => {
+    const res = await request(app).post('/api/v1/repo').set('Cookie', adminCookie).send({
+      name: 'no-url-repo',
+      project: 'test',
+      host: 'github.com',
+    });
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Repository url is required');
+  });
+
+  it('should return 400 when repo url is invalid', async () => {
+    const res = await request(app).post('/api/v1/repo').set('Cookie', adminCookie).send({
+      url: '',
+      name: 'invalid-repo',
+      project: 'test',
+      host: 'github.com',
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Repository url is required');
+  });
+
+  it('should return 401 when non-admin user tries to add push user', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/repo/${repoId}/user/push`)
+      .set('Cookie', nonAdminCookie)
+      .send({ username: 'testuser' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('You are not authorised to perform this action...');
+  });
+
+  it('should return 401 when unauthenticated user tries to add push user', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/repo/${repoId}/user/push`)
+      .send({ username: 'testuser' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('You are not authorised to perform this action...');
+  });
+
+  it('should return 401 when non-admin user tries to add authorise user', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/repo/${repoId}/user/authorise`)
+      .set('Cookie', nonAdminCookie)
+      .send({ username: 'testuser' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('You are not authorised to perform this action...');
+  });
+
+  it('should return 401 when unauthenticated user tries to add authorise user', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/repo/${repoId}/user/authorise`)
+      .send({ username: 'testuser' });
+
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('You are not authorised to perform this action...');
+  });
+
+  describe('DELETE /api/v1/repo/:id/user/push/:username', () => {
+    beforeAll(async () => {
+      // Add a user to remove
+      await db.addUserCanPush(repoId, 'testuser');
+    });
+
+    it('should return 401 when non-admin user tries to remove push user', async () => {
+      const res = await request(app)
+        .delete(`/api/v1/repo/${repoId}/user/push/testuser`)
+        .set('Cookie', nonAdminCookie)
+        .send();
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('You are not authorised to perform this action...');
+    });
+
+    it('should return 401 when unauthenticated user tries to remove push user', async () => {
+      const res = await request(app).delete(`/api/v1/repo/${repoId}/user/push/testuser`).send();
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('You are not authorised to perform this action...');
+    });
+
+    it('should return 400 when trying to remove non-existent user', async () => {
+      const res = await request(app)
+        .delete(`/api/v1/repo/${repoId}/user/push/nonexistentuser`)
+        .set('Cookie', adminCookie)
+        .send();
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('User does not exist');
+    });
+  });
+
+  describe('DELETE /api/v1/repo/:id/user/authorise/:username', () => {
+    beforeAll(async () => {
+      // Add a user to remove
+      await db.addUserCanAuthorise(repoId, 'testuser');
+    });
+
+    it('should return 401 when non-admin user tries to remove authorise user', async () => {
+      const res = await request(app)
+        .delete(`/api/v1/repo/${repoId}/user/authorise/testuser`)
+        .set('Cookie', nonAdminCookie)
+        .send();
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('You are not authorised to perform this action...');
+    });
+
+    it('should return 401 when unauthenticated user tries to remove authorise user', async () => {
+      const res = await request(app)
+        .delete(`/api/v1/repo/${repoId}/user/authorise/testuser`)
+        .send();
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('You are not authorised to perform this action...');
+    });
+
+    it('should return 400 when trying to remove non-existent user', async () => {
+      const res = await request(app)
+        .delete(`/api/v1/repo/${repoId}/user/authorise/nonexistentuser`)
+        .set('Cookie', adminCookie)
+        .send();
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('User does not exist');
+    });
+  });
+
+  describe('DELETE /api/v1/repo/:id/delete', () => {
+    it('should return 401 when non-admin user tries to delete repo', async () => {
+      const res = await request(app)
+        .delete(`/api/v1/repo/${repoId}/delete`)
+        .set('Cookie', nonAdminCookie)
+        .send();
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('You are not authorised to perform this action...');
+    });
+
+    it('should return 401 when unauthenticated user tries to delete repo', async () => {
+      const res = await request(app).delete(`/api/v1/repo/${repoId}/delete`).send();
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('You are not authorised to perform this action...');
+    });
+  });
+
+  describe('query params handling', () => {
+    it('should handle boolean query params correctly', async () => {
+      const res = await request(app)
+        .get('/api/v1/repo')
+        .set('Cookie', adminCookie)
+        .query({ someFlag: 'true' });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should ignore limit and skip query params in filtering', async () => {
+      const res = await request(app)
+        .get('/api/v1/repo')
+        .set('Cookie', adminCookie)
+        .query({ limit: '10', skip: '5' });
+
+      expect(res.status).toBe(200);
+    });
+
+    it('should handle empty query params', async () => {
+      const res = await request(app)
+        .get('/api/v1/repo')
+        .set('Cookie', adminCookie)
+        .query({ '': 'empty' });
+
+      expect(res.status).toBe(200);
+    });
+  });
+
+  afterAll(async () => {
+    await cleanupRepo(TEST_REPO.url);
+    await db.deleteUser('testuser');
+    await db.deleteUser('nonadmin');
+    await Service.httpServer.close();
+  });
+});
