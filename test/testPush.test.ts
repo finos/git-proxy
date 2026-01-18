@@ -121,7 +121,103 @@ describe('Push API', () => {
     Service.httpServer.close();
   });
 
-  describe('test push API', () => {
+  describe('GET /api/v1/push', () => {
+    afterEach(async () => {
+      await db.deletePush(TEST_PUSH.id);
+      if (cookie) await logout();
+    });
+
+    it('should fetch all pushes', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+      await loginAsApprover();
+      const res = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+
+      const push = res.body.find((p: any) => p.id === TEST_PUSH.id);
+      expect(push).toBeDefined();
+      expect(push).toEqual(TEST_PUSH);
+      expect(push.canceled).toBe(false);
+    });
+
+    it('should fetch pushes with query parameters', async () => {
+      const timestamp = Date.now();
+      const pushWithRejected = {
+        ...TEST_PUSH,
+        _id: `${EMPTY_COMMIT_HASH}__${timestamp}`,
+        rejected: true,
+        id: `${EMPTY_COMMIT_HASH}__${timestamp}`,
+      };
+      await db.writeAudit(TEST_PUSH as any);
+      await db.writeAudit(pushWithRejected as any);
+
+      await loginAsApprover();
+      const res = await request(app).get('/api/v1/push?rejected=true').set('Cookie', `${cookie}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+
+      const rejectedPushes = res.body.filter((p: any) => p.rejected === true);
+      expect(rejectedPushes.length).toBeGreaterThan(0);
+
+      await db.deletePush(pushWithRejected.id);
+    });
+
+    it('should handle query parameters with false boolean values', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+      await loginAsApprover();
+
+      const res = await request(app).get('/api/v1/push?canceled=false').set('Cookie', `${cookie}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('should handle multiple query parameters', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+      await loginAsApprover();
+
+      const res = await request(app)
+        .get('/api/v1/push?canceled=false&rejected=false&authorised=false')
+        .set('Cookie', `${cookie}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('should ignore limit and skip query parameters in filtering', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+      await loginAsApprover();
+
+      const res = await request(app).get('/api/v1/push?limit=10&skip=0').set('Cookie', `${cookie}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('should handle empty query keys', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+      await loginAsApprover();
+
+      const res = await request(app).get('/api/v1/push?=test').set('Cookie', `${cookie}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+
+    it('should return empty array when no pushes match query', async () => {
+      await loginAsApprover();
+
+      const res = await request(app)
+        .get('/api/v1/push?canceled=true&rejected=true')
+        .set('Cookie', `${cookie}`);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+  });
+
+  describe('GET /api/v1/push/:id', () => {
     afterEach(async () => {
       await db.deletePush(TEST_PUSH.id);
       if (cookie) await logout();
@@ -132,6 +228,25 @@ describe('Push API', () => {
       const commitId = `${EMPTY_COMMIT_HASH}__79b4d8953cbc324bcc1eb53d6412ff89666c241f`;
       const res = await request(app).get(`/api/v1/push/${commitId}`).set('Cookie', `${cookie}`);
       expect(res.status).toBe(404);
+      expect(res.body.message).toBe('not found');
+    });
+
+    it('should get a specific push by id', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+      await loginAsApprover();
+
+      const res = await request(app).get(`/api/v1/push/${TEST_PUSH.id}`).set('Cookie', `${cookie}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.id).toBe(TEST_PUSH.id);
+      expect(res.body).toEqual(TEST_PUSH);
+    });
+  });
+
+  describe('POST /api/v1/push/:id/authorise', () => {
+    afterEach(async () => {
+      await db.deletePush(TEST_PUSH.id);
+      if (cookie) await logout();
     });
 
     it('should allow an authorizer to approve a push', async () => {
@@ -158,10 +273,33 @@ describe('Push API', () => {
       expect(res.status).toBe(200);
     });
 
+    it('should NOT allow authorization without being logged in', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+
+      const res = await request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
+        .set('content-type', 'application/json')
+        .send({
+          params: {
+            attestation: [
+              {
+                label: 'I am happy for this to be pushed to the upstream repository',
+                tooltip: {
+                  text: 'Are you happy for this contribution to be pushed upstream?',
+                  links: [],
+                },
+                checked: true,
+              },
+            ],
+          },
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('Not logged in');
+    });
+
     it('should NOT allow an authorizer to approve if attestation is incomplete', async () => {
-      // make the approver also the committer
-      const testPush = { ...TEST_PUSH, user: TEST_USERNAME_1, userEmail: TEST_EMAIL_1 };
-      await db.writeAudit(testPush as any);
+      await db.writeAudit(TEST_PUSH as any);
       await loginAsApprover();
       const res = await request(app)
         .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
@@ -183,6 +321,33 @@ describe('Push API', () => {
         });
       expect(res.status).toBe(400);
       expect(res.body.message).toBe('Attestation is not complete');
+    });
+
+    it('should NOT allow authorization if push is not found', async () => {
+      await loginAsApprover();
+      const fakeId = `${EMPTY_COMMIT_HASH}__9999999999999`;
+
+      const res = await request(app)
+        .post(`/api/v1/push/${fakeId}/authorise`)
+        .set('Cookie', `${cookie}`)
+        .set('content-type', 'application/json')
+        .send({
+          params: {
+            attestation: [
+              {
+                label: 'I am happy for this to be pushed to the upstream repository',
+                tooltip: {
+                  text: 'Are you happy for this contribution to be pushed upstream?',
+                  links: [],
+                },
+                checked: true,
+              },
+            ],
+          },
+        });
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('Push request not found');
     });
 
     it('should NOT allow an authorizer to approve if committer is unknown', async () => {
@@ -213,153 +378,208 @@ describe('Push API', () => {
         "No user found with the committer's email address: push-test-3@test.com",
       );
     });
-  });
 
-  it('should NOT allow an authorizer to approve their own push', async () => {
-    // make the approver also the committer
-    const testPush = { ...TEST_PUSH };
-    testPush.user = TEST_USERNAME_1;
-    testPush.userEmail = TEST_EMAIL_1;
-    await db.writeAudit(testPush as any);
-    await loginAsApprover();
-    const res = await request(app)
-      .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
-      .set('Cookie', `${cookie}`)
-      .set('Content-Type', 'application/json')
-      .send({
-        params: {
-          attestation: [
-            {
-              label: 'I am happy for this to be pushed to the upstream repository',
-              tooltip: {
-                text: 'Are you happy for this contribution to be pushed upstream?',
-                links: [],
+    it('should NOT allow an authorizer to approve their own push', async () => {
+      // make the approver the committer
+      const testPush = { ...TEST_PUSH, user: TEST_USERNAME_1, userEmail: TEST_EMAIL_1 };
+      await db.writeAudit(testPush as any);
+      await loginAsApprover();
+      const res = await request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
+        .set('Cookie', `${cookie}`)
+        .set('Content-Type', 'application/json')
+        .send({
+          params: {
+            attestation: [
+              {
+                label: 'I am happy for this to be pushed to the upstream repository',
+                tooltip: {
+                  text: 'Are you happy for this contribution to be pushed upstream?',
+                  links: [],
+                },
+                checked: true,
               },
-              checked: true,
-            },
-          ],
-        },
-      });
-    expect(res.status).toBe(403);
-    expect(res.body.message).toBe('Cannot approve your own changes');
-  });
+            ],
+          },
+        });
+      expect(res.status).toBe(403);
+      expect(res.body.message).toBe('Cannot approve your own changes');
+    });
 
-  it('should NOT allow a non-authorizer to approve a push', async () => {
-    await db.writeAudit(TEST_PUSH as any);
-    await loginAsCommitter();
-    const res = await request(app)
-      .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
-      .set('Cookie', `${cookie}`)
-      .set('Content-Type', 'application/json')
-      .send({
-        params: {
-          attestation: [
-            {
-              label: 'I am happy for this to be pushed to the upstream repository',
-              tooltip: {
-                text: 'Are you happy for this contribution to be pushed upstream?',
-                links: [],
+    it('should NOT allow a non-authorizer to approve a push', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+      await loginAsCommitter();
+      const res = await request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
+        .set('Cookie', `${cookie}`)
+        .set('Content-Type', 'application/json')
+        .send({
+          params: {
+            attestation: [
+              {
+                label: 'I am happy for this to be pushed to the upstream repository',
+                tooltip: {
+                  text: 'Are you happy for this contribution to be pushed upstream?',
+                  links: [],
+                },
+                checked: true,
               },
-              checked: true,
-            },
-          ],
-        },
-      });
-    expect(res.status).toBe(403);
-    expect(res.body.message).toBe('Cannot approve your own changes');
+            ],
+          },
+        });
+      expect(res.status).toBe(403);
+      expect(res.body.message).toBe('Cannot approve your own changes');
+    });
   });
 
-  it('should allow an authorizer to reject a push', async () => {
-    await db.writeAudit(TEST_PUSH as any);
-    await loginAsApprover();
-    const res = await request(app)
-      .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
-      .set('Cookie', `${cookie}`);
-    expect(res.status).toBe(200);
+  describe('POST /api/v1/push/:id/reject', () => {
+    afterEach(async () => {
+      await db.deletePush(TEST_PUSH.id);
+      if (cookie) await logout();
+    });
+
+    it('should allow an authorizer to reject a push', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+      await loginAsApprover();
+      const res = await request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
+        .set('Cookie', `${cookie}`);
+      expect(res.status).toBe(200);
+    });
+
+    it('should NOT allow rejection without being logged in', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+
+      const res = await request(app).post(`/api/v1/push/${TEST_PUSH.id}/reject`);
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('Not logged in');
+    });
+
+    it('should NOT allow rejection if push is not found', async () => {
+      await loginAsApprover();
+      const fakeId = `${EMPTY_COMMIT_HASH}__9999999999999`;
+
+      const res = await request(app)
+        .post(`/api/v1/push/${fakeId}/reject`)
+        .set('Cookie', `${cookie}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('Push request not found');
+    });
+
+    it('should NOT allow rejection if push has no userEmail', async () => {
+      const testPush = { ...TEST_PUSH, userEmail: null, id: `${EMPTY_COMMIT_HASH}__1744380874112` };
+      await db.writeAudit(testPush as any);
+      await loginAsApprover();
+
+      const res = await request(app)
+        .post(`/api/v1/push/${testPush.id}/reject`)
+        .set('Cookie', `${cookie}`);
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Push request has no user email');
+
+      await db.deletePush(testPush.id);
+    });
+
+    it('should NOT allow rejection if committer user is not found', async () => {
+      const testPush = { ...TEST_PUSH, user: TEST_USERNAME_3, userEmail: TEST_EMAIL_3 };
+      await db.writeAudit(testPush as any);
+      await loginAsApprover();
+
+      const res = await request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
+        .set('Cookie', `${cookie}`);
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe(
+        "No user found with the committer's email address: push-test-3@test.com",
+      );
+    });
+
+    it('should NOT allow an authorizer to reject their own push', async () => {
+      const testPush = { ...TEST_PUSH, user: TEST_USERNAME_1, userEmail: TEST_EMAIL_1 };
+      await db.writeAudit(testPush as any);
+      await loginAsApprover();
+      const res = await request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
+        .set('Cookie', `${cookie}`);
+      expect(res.status).toBe(403);
+      expect(res.body.message).toBe('Cannot reject your own changes');
+    });
+
+    it('should NOT allow a non-authorizer to reject a push', async () => {
+      const pushWithOtherUser = { ...TEST_PUSH, user: TEST_USERNAME_1, userEmail: TEST_EMAIL_1 };
+      await db.writeAudit(pushWithOtherUser as any);
+      await loginAsCommitter();
+      const res = await request(app)
+        .post(`/api/v1/push/${pushWithOtherUser.id}/reject`)
+        .set('Cookie', `${cookie}`);
+      expect(res.status).toBe(403);
+      expect(res.body.message).toBe(
+        'User push-test-2 is not authorised to reject changes on this project',
+      );
+    });
   });
 
-  it('should NOT allow an authorizer to reject their own push', async () => {
-    // make the approver also the committer
-    const testPush = { ...TEST_PUSH };
-    testPush.user = TEST_USERNAME_1;
-    testPush.userEmail = TEST_EMAIL_1;
-    await db.writeAudit(testPush as any);
-    await loginAsApprover();
-    const res = await request(app)
-      .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
-      .set('Cookie', `${cookie}`);
-    expect(res.status).toBe(403);
-    expect(res.body.message).toBe('Cannot reject your own changes');
-  });
+  describe('POST /api/v1/push/:id/cancel', () => {
+    afterEach(async () => {
+      await db.deletePush(TEST_PUSH.id);
+      if (cookie) await logout();
+    });
 
-  it('should NOT allow a non-authorizer to reject a push', async () => {
-    const pushWithOtherUser = { ...TEST_PUSH };
-    pushWithOtherUser.user = TEST_USERNAME_1;
-    pushWithOtherUser.userEmail = TEST_EMAIL_1;
+    it('should allow a committer to cancel a push', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+      await loginAsCommitter();
+      const res = await request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
+        .set('Cookie', `${cookie}`);
+      expect(res.status).toBe(200);
 
-    await db.writeAudit(pushWithOtherUser as any);
-    await loginAsCommitter();
-    const res = await request(app)
-      .post(`/api/v1/push/${pushWithOtherUser.id}/reject`)
-      .set('Cookie', `${cookie}`);
-    expect(res.status).toBe(403);
-    expect(res.body.message).toBe(
-      'User push-test-2 is not authorised to reject changes on this project',
-    );
-  });
+      const pushes = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
+      const push = pushes.body.find((p: any) => p.id === TEST_PUSH.id);
 
-  it('should fetch all pushes', async () => {
-    await db.writeAudit(TEST_PUSH as any);
-    await loginAsApprover();
-    const res = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
-    expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+      expect(push).toBeDefined();
+      expect(push.canceled).toBe(true);
+    });
 
-    const push = res.body.find((p: any) => p.id === TEST_PUSH.id);
-    expect(push).toBeDefined();
-    expect(push).toEqual(TEST_PUSH);
-    expect(push.canceled).toBe(false);
-  });
+    it('should NOT allow cancellation without being logged in', async () => {
+      await db.writeAudit(TEST_PUSH as any);
 
-  it('should allow a committer to cancel a push', async () => {
-    await db.writeAudit(TEST_PUSH as any);
-    await loginAsCommitter();
-    const res = await request(app)
-      .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
-      .set('Cookie', `${cookie}`);
-    expect(res.status).toBe(200);
+      const res = await request(app).post(`/api/v1/push/${TEST_PUSH.id}/cancel`);
 
-    const pushes = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
-    const push = pushes.body.find((p: any) => p.id === TEST_PUSH.id);
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('Not logged in');
+    });
 
-    expect(push).toBeDefined();
-    expect(push.canceled).toBe(true);
-  });
+    it('should not allow a non-committer to cancel a push (even if admin)', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+      await loginAsAdmin();
+      const res = await request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
+        .set('Cookie', `${cookie}`);
+      expect(res.status).toBe(403);
+      expect(res.body.message).toBe(
+        'User admin not authorised to cancel push requests on this project',
+      );
 
-  it('should not allow a non-committer to cancel a push (even if admin)', async () => {
-    await db.writeAudit(TEST_PUSH as any);
-    await loginAsAdmin();
-    const res = await request(app)
-      .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
-      .set('Cookie', `${cookie}`);
-    expect(res.status).toBe(403);
-    expect(res.body.message).toBe(
-      'User admin not authorised to cancel push requests on this project',
-    );
+      const pushes = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
+      const push = pushes.body.find((p: any) => p.id === TEST_PUSH.id);
 
-    const pushes = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
-    const push = pushes.body.find((p: any) => p.id === TEST_PUSH.id);
-
-    expect(push).toBeDefined();
-    expect(push.canceled).toBe(false);
+      expect(push).toBeDefined();
+      expect(push.canceled).toBe(false);
+    });
   });
 
   afterAll(async () => {
-    const res = await request(app).post('/api/auth/logout').set('Cookie', `${cookie}`);
-    expect(res.status).toBe(200);
+    if (cookie) {
+      const res = await request(app).post('/api/auth/logout').set('Cookie', `${cookie}`);
+      expect(res.status).toBe(200);
+    }
 
     await Service.httpServer.close();
-    await db.deleteRepo(TEST_REPO);
+    await db.deleteRepo(testRepo._id);
     await db.deleteUser(TEST_USERNAME_1);
     await db.deleteUser(TEST_USERNAME_2);
     await db.deletePush(TEST_PUSH.id);
