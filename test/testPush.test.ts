@@ -430,6 +430,90 @@ describe('Push API', () => {
       expect(res.status).toBe(403);
       expect(res.body.message).toBe('Cannot approve your own changes');
     });
+
+    it('should return 404 if reviewer has no email address', async () => {
+      // Create a test user without an email address
+      const testUsername = 'no-email-user';
+      const testPassword = 'password123';
+
+      await db.writeAudit(TEST_PUSH as any);
+
+      await db.createUser(testUsername, testPassword, 'test@test.com', testUsername, false);
+      await db.updateUser({ username: testUsername, email: '' });
+      await db.addUserCanAuthorise(testRepo._id, testUsername);
+
+      await login(testUsername, testPassword);
+
+      const res = await request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
+        .set('Cookie', `${cookie}`)
+        .set('Content-Type', 'application/json')
+        .send({
+          params: {
+            attestation: [
+              {
+                label: 'I am happy for this to be pushed to the upstream repository',
+                tooltip: {
+                  text: 'Are you happy for this contribution to be pushed upstream?',
+                  links: [],
+                },
+                checked: true,
+              },
+            ],
+          },
+        });
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe(
+        `There was no registered email address for the reviewer: ${testUsername}`,
+      );
+
+      // Cleanup
+      await logout();
+      await db.deleteUser(testUsername);
+    });
+
+    it('should return 403 if user is not authorized to approve pushes on the project', async () => {
+      // Create a test user who is NOT authorized for this repo
+      const testUsername = 'unauthorized-user';
+      const testPassword = 'password123';
+      const testEmail = 'unauthorized@test.com';
+
+      await db.writeAudit(TEST_PUSH as any);
+
+      // Create user but DON'T add them as an authorizer for the repo
+      await db.createUser(testUsername, testPassword, testEmail, testUsername, false);
+
+      await login(testUsername, testPassword);
+
+      const res = await request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
+        .set('Cookie', `${cookie}`)
+        .set('Content-Type', 'application/json')
+        .send({
+          params: {
+            attestation: [
+              {
+                label: 'I am happy for this to be pushed to the upstream repository',
+                tooltip: {
+                  text: 'Are you happy for this contribution to be pushed upstream?',
+                  links: [],
+                },
+                checked: true,
+              },
+            ],
+          },
+        });
+
+      expect(res.status).toBe(403);
+      expect(res.body.message).toBe(
+        `User ${testUsername} not authorised to approve pushes on this project`,
+      );
+
+      // Cleanup
+      await logout();
+      await db.deleteUser(testUsername);
+    });
   });
 
   describe('POST /api/v1/push/:id/reject', () => {
