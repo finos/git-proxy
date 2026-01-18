@@ -1,11 +1,12 @@
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
-import { GitProxyConfig, Convert, CommitConfig } from './generated/config';
+import { GitProxyConfig, Convert } from './generated/config';
 import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
 import { getConfigFile } from './file';
+import { validateConfig } from './validators';
 
 // Cache for current configuration
 let _currentConfig: GitProxyConfig | null = null;
@@ -78,16 +79,6 @@ function loadFullConfiguration(): GitProxyConfig {
 
   return _currentConfig;
 }
-
-/**
- * Performs additional custom validations on the configuration
- *
- * @param config The configuration to validate
- * @returns true if the configuration is valid, false otherwise
- */
-export const validateConfig = (config: GitProxyConfig): boolean => {
-  return validateCommitConfig(config.commitConfig ?? {});
-};
 
 /**
  * Merge configurations with environment variable overrides
@@ -306,59 +297,6 @@ export const getUIRouteAuth = () => {
 export const getRateLimit = () => {
   const config = loadFullConfiguration();
   return config.rateLimit;
-};
-
-/**
- * Validates that commit configuration uses valid regular expressions.
- * @param config The commit configuration to validate
- * @returns true if the commit configuration is valid, false otherwise
- */
-export const validateCommitConfig = (config: CommitConfig): boolean => {
-  if (config.author?.email?.local?.block) {
-    try {
-      new RegExp(config.author?.email?.local?.block);
-    } catch (error: unknown) {
-      console.error(
-        `Invalid regular expression for author.email.local.block: ${config.author?.email?.local?.block}`,
-      );
-      return false;
-    }
-  }
-
-  if (config.author?.email?.domain?.allow) {
-    try {
-      new RegExp(config.author?.email?.domain?.allow);
-    } catch (error: unknown) {
-      console.error(
-        `Invalid regular expression for author.email.domain.allow: ${config.author?.email?.domain?.allow}`,
-      );
-      return false;
-    }
-  }
-
-  if (config.message?.block?.patterns) {
-    for (const pattern of config.message.block.patterns) {
-      try {
-        new RegExp(pattern);
-      } catch (error: unknown) {
-        console.error(`Invalid regular expression for message.block.patterns: ${pattern}`);
-        return false;
-      }
-    }
-  }
-
-  if (config.diff?.block?.patterns) {
-    for (const pattern of config.diff.block.patterns) {
-      try {
-        new RegExp(pattern);
-      } catch (error: unknown) {
-        console.error(`Invalid regular expression for diff.block.patterns: ${pattern}`);
-        return false;
-      }
-    }
-  }
-
-  return true;
 };
 
 // Function to handle configuration updates

@@ -7,7 +7,7 @@ import { EventEmitter } from 'events';
 import envPaths from 'env-paths';
 import { GitProxyConfig, Convert } from './generated/config';
 import { Configuration, ConfigurationSource, FileSource, HttpSource, GitSource } from './types';
-import { validateConfig } from '.';
+import { validateConfig } from './validators';
 
 const execFileAsync = promisify(execFile);
 
