@@ -20,7 +20,7 @@ const { GIT_PROXY_UI_PORT: uiPort } = serverConfig;
 const DEFAULT_SESSION_MAX_AGE_HOURS = 12;
 
 const app: Express = express();
-const _httpServer = http.createServer(app);
+let _httpServer: http.Server | null = null;
 
 /**
  * CORS Configuration
@@ -170,6 +170,7 @@ async function start(proxy: Proxy) {
 
   const app = await createApp(proxy);
 
+  _httpServer = http.createServer(app);
   _httpServer.listen(uiPort);
 
   console.log(`Service Listening on ${uiPort}`);
@@ -181,13 +182,28 @@ async function start(proxy: Proxy) {
 /**
  * Stops the proxy service.
  */
-async function stop() {
-  console.log(`Stopping Service Listening on ${uiPort}`);
-  _httpServer.close();
+async function stop(): Promise<void> {
+  if (!_httpServer) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve, reject) => {
+    console.log(`Stopping Service Listening on ${uiPort}`);
+    _httpServer!.close((err) => {
+      if (err) {
+        reject(err);
+      } else {
+        console.log('Service stopped');
+        resolve();
+      }
+    });
+  });
 }
 
 export const Service = {
   start,
   stop,
-  httpServer: _httpServer,
+  get httpServer() {
+    return _httpServer;
+  },
 };
