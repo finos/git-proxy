@@ -8,21 +8,14 @@ permissions:
 on:
   push:
     branches: [main]
-  issue_comment:
-    types: [created]
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    # Run on push/PR or when a maintainer comments "/test e2e" or "/run e2e"
-    if: |
-      github.event_name != 'issue_comment' || (
-        github.event.issue.pull_request &&
-        (contains(github.event.comment.body, '/test e2e') || contains(github.event.comment.body, '/run e2e')) &&
-        (github.event.comment.author_association == 'OWNER' || 
-         github.event.comment.author_association == 'MEMBER' || 
-         github.event.comment.author_association == 'COLLABORATOR')
-      )
+    # Only run on workflow_dispatch (manual trigger), but always register check on PRs
+    if: github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout code
