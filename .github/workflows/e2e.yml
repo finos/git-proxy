@@ -8,28 +8,16 @@ permissions:
 on:
   push:
     branches: [main]
-  issue_comment:
-    types: [created]
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    # Run on push/PR or when a maintainer comments "/test e2e" or "/run e2e"
-    if: |
-      github.event_name != 'issue_comment' || (
-        github.event.issue.pull_request &&
-        (contains(github.event.comment.body, '/test e2e') || contains(github.event.comment.body, '/run e2e')) &&
-        (github.event.comment.author_association == 'OWNER' || 
-         github.event.comment.author_association == 'MEMBER' || 
-         github.event.comment.author_association == 'COLLABORATOR')
-      )
 
     steps:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
-        with:
-          # When triggered by comment, checkout the PR branch
-          ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || github.ref }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
@@ -57,8 +45,11 @@ jobs:
 
       - name: Wait for services to be ready
         run: |
-          timeout 60 bash -c 'until docker compose ps | grep -q "Up"; do sleep 2; done'
-          sleep 10
+          timeout 60 bash -c '
+            while [ "$(docker compose ps | grep -c "Up")" -ne 3 ]; do
+              sleep 2
+            done
+          ' || { echo "Service readiness check failed:"; docker compose ps; exit 1; }
 
       - name: Run E2E tests
         run: npm run test:e2e

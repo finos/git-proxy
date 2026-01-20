@@ -54,14 +54,14 @@ export class Proxy {
     const defaultAuthorisedRepoList = getAuthorisedList();
     const allowedList: Repo[] = await getRepos();
 
-    defaultAuthorisedRepoList.forEach(async (x) => {
-      const found = allowedList.find((y) => y.url === x.url);
+    for (const defaultRepo of defaultAuthorisedRepoList) {
+      const found = allowedList.find((configuredRepo) => configuredRepo.url === defaultRepo.url);
       if (!found) {
-        const repo = await createRepo(x);
+        const repo = await createRepo(defaultRepo);
         await addUserCanPush(repo._id!, 'admin');
         await addUserCanAuthorise(repo._id!, 'admin');
       }
-    });
+    }
   }
 
   private async createApp() {
