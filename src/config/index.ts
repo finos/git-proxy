@@ -104,6 +104,9 @@ function mergeConfigurations(
     commitConfig: { ...defaultConfig.commitConfig, ...userSettings.commitConfig },
     attestationConfig: { ...defaultConfig.attestationConfig, ...userSettings.attestationConfig },
     rateLimit: userSettings.rateLimit || defaultConfig.rateLimit,
+    cache: userSettings.cache
+      ? { ...defaultConfig.cache, ...userSettings.cache }
+      : defaultConfig.cache,
     tls: tlsConfig,
     tempPassword: { ...defaultConfig.tempPassword, ...userSettings.tempPassword },
     // Preserve legacy SSL fields
@@ -197,6 +200,7 @@ export const logConfiguration = () => {
   console.log(`data sink = ${JSON.stringify(getDatabase())}`);
   console.log(`authentication = ${JSON.stringify(getAuthMethods())}`);
   console.log(`rateLimit = ${JSON.stringify(getRateLimit())}`);
+  console.log(`cache = ${JSON.stringify(getCacheConfig())}`);
 };
 
 export const getAPIs = () => {
@@ -289,6 +293,11 @@ export const getUIRouteAuth = () => {
 export const getRateLimit = () => {
   const config = loadFullConfiguration();
   return config.rateLimit;
+};
+
+export const getCacheConfig = () => {
+  const config = loadFullConfiguration();
+  return config.cache;
 };
 
 // Function to handle configuration updates
