@@ -15,14 +15,11 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     # Only run on workflow_dispatch (manual trigger), but always register check on PRs
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || github.ref_name == 'main'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4
-        with:
-          # When triggered by comment, checkout the PR branch
-          ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/head', github.event.issue.number) || github.ref }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435
