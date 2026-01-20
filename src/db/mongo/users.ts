@@ -1,8 +1,9 @@
 import { OptionalId, Document, ObjectId } from 'mongodb';
 import { toClass } from '../helper';
-import { User } from '../types';
+import { User, PublicKeyRecord } from '../types';
 import { connect } from './helper';
 import _ from 'lodash';
+import { DuplicateSSHKeyError } from '../../errors/DatabaseErrors';
 const collectionName = 'users';
 
 export const findUser = async function (username: string): Promise<User | null> {
@@ -46,6 +47,9 @@ export const deleteUser = async function (username: string): Promise<void> {
 export const createUser = async function (user: User): Promise<void> {
   user.username = user.username.toLowerCase();
   user.email = user.email.toLowerCase();
+  if (!user.publicKeys) {
+    user.publicKeys = [];
+  }
   const collection = await connect(collectionName);
   await collection.insertOne(user as OptionalId<Document>);
 };
@@ -57,9 +61,65 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
   if (user.email) {
     user.email = user.email.toLowerCase();
   }
+  if (!user.publicKeys) {
+    user.publicKeys = [];
+  }
   const { _id, ...userWithoutId } = user;
   const filter = _id ? { _id: new ObjectId(_id) } : { username: user.username };
   const options = { upsert: true };
   const collection = await connect(collectionName);
   await collection.updateOne(filter, { $set: userWithoutId }, options);
+};
+
+export const addPublicKey = async (username: string, publicKey: PublicKeyRecord): Promise<void> => {
+  // Check if this key already exists for any user
+  const existingUser = await findUserBySSHKey(publicKey.key);
+
+  if (existingUser && existingUser.username.toLowerCase() !== username.toLowerCase()) {
+    throw new DuplicateSSHKeyError(existingUser.username);
+  }
+
+  // Key doesn't exist for other users
+  const collection = await connect(collectionName);
+
+  const user = await collection.findOne({ username: username.toLowerCase() });
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const keyExists = user.publicKeys?.some(
+    (k: PublicKeyRecord) =>
+      k.key === publicKey.key || (k.fingerprint && k.fingerprint === publicKey.fingerprint),
+  );
+
+  if (keyExists) {
+    throw new Error('SSH key already exists');
+  }
+
+  await collection.updateOne(
+    { username: username.toLowerCase() },
+    { $push: { publicKeys: publicKey } },
+  );
+};
+
+export const removePublicKey = async (username: string, fingerprint: string): Promise<void> => {
+  const collection = await connect(collectionName);
+  await collection.updateOne(
+    { username: username.toLowerCase() },
+    { $pull: { publicKeys: { fingerprint: fingerprint } } },
+  );
+};
+
+export const findUserBySSHKey = async function (sshKey: string): Promise<User | null> {
+  const collection = await connect(collectionName);
+  const doc = await collection.findOne({ 'publicKeys.key': { $eq: sshKey } });
+  return doc ? toClass(doc, User.prototype) : null;
+};
+
+export const getPublicKeys = async (username: string): Promise<PublicKeyRecord[]> => {
+  const user = await findUser(username);
+  if (!user) {
+    throw new Error('User not found');
+  }
+  return user.publicKeys || [];
 };

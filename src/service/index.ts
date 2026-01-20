@@ -105,7 +105,7 @@ const corsOptions: cors.CorsOptions = {
 };
 
 /**
- * Internal function used to bootstrap the Git Proxy API's express application.
+ * Internal function used to bootstrap GitProxy's API express application.
  * @param {Proxy} proxy A reference to the proxy, used to restart it when necessary.
  * @return {Promise<Express>} the express application
  */
