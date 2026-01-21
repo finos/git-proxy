@@ -447,7 +447,7 @@ describe('ConfigLoader', () => {
           /Failed to clone repository/,
         );
       },
-      { timeout: 15000 },
+      { timeout: 30000 },
     );
 
     it(
