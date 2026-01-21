@@ -92,7 +92,9 @@ jobs:
           name: build-${{ matrix.os }}-node-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
           path: build
 
+      # Skip Cypress on Windows - e2e tests are properly handled by e2e.yml with Docker
       - name: Run cypress test
+        if: runner.os == 'Linux'
         uses: cypress-io/github-action@7ef72e250a9e564efb4ed4c2433971ada4cc38b4 # ratchet:cypress-io/github-action@v6.10.4
         with:
           start: npm start &
