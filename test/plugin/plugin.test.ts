@@ -9,7 +9,17 @@ const testPackagePath = join(__dirname, '../fixtures', 'test-package');
 describe('loading plugins from packages', () => {
   beforeAll(() => {
     // Use shell: true for cross-platform compatibility (npm.cmd on Windows)
-    spawnSync('npm', ['install'], { cwd: testPackagePath, timeout: 30000, shell: true });
+    const result = spawnSync('npm', ['install', '--install-links'], {
+      cwd: testPackagePath,
+      timeout: 60000,
+      shell: true,
+    });
+    if (result.error) {
+      console.error('npm install failed:', result.error);
+    }
+    if (result.stderr) {
+      console.error('npm install stderr:', result.stderr.toString());
+    }
   });
 
   describe('CommonJS syntax', () => {
