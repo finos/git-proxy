@@ -49,7 +49,7 @@
     "server": "ALLOWED_ORIGINS=* tsx index.ts",
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "build": "npm run generate-config-types && npm run build-ui && npm run build-ts",
-    "build-ts": "tsc --project tsconfig.publish.json && ./scripts/fix-shebang.sh",
+    "build-ts": "tsc --project tsconfig.publish.json && node scripts/fix-shebang.js",
     "build-ui": "vite build",
     "check-types": "tsc",
     "check-types:server": "tsc --project tsconfig.publish.json --noEmit",
