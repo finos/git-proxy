@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawnSync } from 'child_process';
-import { rmSync } from 'fs';
+import { rmSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { isCompatiblePlugin, PushActionPlugin, PluginLoader } from '../../src/plugin';
 
@@ -9,7 +9,33 @@ const testPackagePath = join(__dirname, '../fixtures', 'test-package');
 describe('loading plugins from packages', () => {
   beforeAll(() => {
     // Use shell: true for cross-platform compatibility (npm.cmd on Windows)
-    spawnSync('npm', ['install'], { cwd: testPackagePath, timeout: 30000, shell: true });
+    console.log('=== Plugin test debug info ===');
+    console.log('Test package path:', testPackagePath);
+    console.log('Platform:', process.platform);
+
+    const result = spawnSync('npm', ['install'], {
+      cwd: testPackagePath,
+      timeout: 30000,
+      shell: true,
+      encoding: 'utf-8',
+    });
+
+    console.log('npm install exit code:', result.status);
+    if (result.stdout) console.log('npm install stdout:', result.stdout);
+    if (result.stderr) console.log('npm install stderr:', result.stderr);
+    if (result.error) console.log('npm install error:', result.error);
+
+    const nodeModulesPath = join(testPackagePath, 'node_modules');
+    console.log('node_modules exists:', existsSync(nodeModulesPath));
+
+    if (existsSync(nodeModulesPath)) {
+      console.log('node_modules contents:', readdirSync(nodeModulesPath));
+      const finosPath = join(nodeModulesPath, '@finos');
+      if (existsSync(finosPath)) {
+        console.log('@finos contents:', readdirSync(finosPath));
+      }
+    }
+    console.log('=== End debug info ===');
   });
 
   describe('CommonJS syntax', () => {
