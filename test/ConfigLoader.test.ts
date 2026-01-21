@@ -213,7 +213,9 @@ describe('ConfigLoader', () => {
       } else if (process.platform === 'linux') {
         expect(configLoader.cacheDirPath).toContain('.cache');
       } else if (process.platform === 'win32') {
-        expect(configLoader.cacheDirPath).toContain('AppData/Local');
+        // Windows uses backslash in paths, so check for path components separately
+        expect(configLoader.cacheDirPath).toContain('AppData');
+        expect(configLoader.cacheDirPath).toContain('Local');
       }
     });
 

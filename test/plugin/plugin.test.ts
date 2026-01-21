@@ -8,7 +8,8 @@ const testPackagePath = join(__dirname, '../fixtures', 'test-package');
 
 describe('loading plugins from packages', () => {
   beforeAll(() => {
-    spawnSync('npm', ['install'], { cwd: testPackagePath, timeout: 5000 });
+    // Use shell: true for cross-platform compatibility (npm.cmd on Windows)
+    spawnSync('npm', ['install'], { cwd: testPackagePath, timeout: 30000, shell: true });
   });
 
   describe('CommonJS syntax', () => {
@@ -120,7 +121,8 @@ describe('loading plugins from packages', () => {
   );
 
   afterAll(() => {
-    rmSync(join(testPackagePath, 'node_modules'), { recursive: true });
+    // Use force: true to avoid error if node_modules doesn't exist
+    rmSync(join(testPackagePath, 'node_modules'), { recursive: true, force: true });
   });
 });
 
