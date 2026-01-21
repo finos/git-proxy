@@ -1,54 +1,29 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawnSync } from 'child_process';
-import { rmSync, existsSync, readdirSync } from 'fs';
+import { rmSync } from 'fs';
 import { join } from 'path';
+import { pathToFileURL } from 'url';
 import { isCompatiblePlugin, PushActionPlugin, PluginLoader } from '../../src/plugin';
+
+// On Windows, ESM requires file:// URLs instead of absolute paths
+const toPluginPath = (filePath: string): string => {
+  return process.platform === 'win32' ? pathToFileURL(filePath).href : filePath;
+};
 
 const testPackagePath = join(__dirname, '../fixtures', 'test-package');
 
 describe('loading plugins from packages', () => {
   beforeAll(() => {
     // Use shell: true for cross-platform compatibility (npm.cmd on Windows)
-    console.log('=== Plugin test debug info ===');
-    console.log('Test package path:', testPackagePath);
-    console.log('Platform:', process.platform);
-
-    const result = spawnSync('npm', ['install'], {
-      cwd: testPackagePath,
-      timeout: 30000,
-      shell: true,
-      encoding: 'utf-8',
-    });
-
-    console.log('npm install exit code:', result.status);
-    if (result.stdout) console.log('npm install stdout:', result.stdout);
-    if (result.stderr) console.log('npm install stderr:', result.stderr);
-    if (result.error) console.log('npm install error:', result.error);
-
-    const nodeModulesPath = join(testPackagePath, 'node_modules');
-    console.log('node_modules exists:', existsSync(nodeModulesPath));
-
-    if (existsSync(nodeModulesPath)) {
-      console.log('node_modules contents:', readdirSync(nodeModulesPath));
-      const finosPath = join(nodeModulesPath, '@finos');
-      if (existsSync(finosPath)) {
-        console.log('@finos contents:', readdirSync(finosPath));
-      }
-    }
-    console.log('=== End debug info ===');
+    spawnSync('npm', ['install'], { cwd: testPackagePath, timeout: 30000, shell: true });
   });
 
   describe('CommonJS syntax', () => {
     it(
       'should load plugins that are the default export (module.exports = pluginObj)',
       async () => {
-        const pluginPath = join(testPackagePath, 'default-export.js');
-        console.log('Loading plugin from:', pluginPath);
-        console.log('Plugin file exists:', existsSync(pluginPath));
-        const loader = new PluginLoader([pluginPath]);
+        const loader = new PluginLoader([toPluginPath(join(testPackagePath, 'default-export.js'))]);
         await loader.load();
-        console.log('Push plugins loaded:', loader.pushPlugins.length);
-        console.log('Pull plugins loaded:', loader.pullPlugins.length);
         expect(loader.pushPlugins.length).toBe(1);
         expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).toBe(true);
         expect(
@@ -61,7 +36,9 @@ describe('loading plugins from packages', () => {
     it(
       'should load multiple plugins from a module that match the plugin class (module.exports = { pluginFoo, pluginBar })',
       async () => {
-        const loader = new PluginLoader([join(testPackagePath, 'multiple-export.js')]);
+        const loader = new PluginLoader([
+          toPluginPath(join(testPackagePath, 'multiple-export.js')),
+        ]);
         await loader.load();
         expect(loader.pushPlugins.length).toBe(1);
         expect(loader.pullPlugins.length).toBe(1);
@@ -79,7 +56,7 @@ describe('loading plugins from packages', () => {
     it(
       'should load plugins that are subclassed from plugin classes',
       async () => {
-        const loader = new PluginLoader([join(testPackagePath, 'subclass.js')]);
+        const loader = new PluginLoader([toPluginPath(join(testPackagePath, 'subclass.js'))]);
         await loader.load();
         expect(loader.pushPlugins.length).toBe(1);
         expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).toBe(true);
@@ -95,7 +72,7 @@ describe('loading plugins from packages', () => {
     it(
       'should load plugins that are the default export (exports default pluginObj)',
       async () => {
-        const loader = new PluginLoader([join(testPackagePath, 'esm-export.js')]);
+        const loader = new PluginLoader([toPluginPath(join(testPackagePath, 'esm-export.js'))]);
         await loader.load();
         expect(loader.pushPlugins.length).toBe(1);
         expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).toBe(true);
@@ -106,7 +83,9 @@ describe('loading plugins from packages', () => {
       { timeout: 10000 },
     );
     it('should load multiple plugins from a module that match the plugin class (exports default { pluginFoo, pluginBar })', async () => {
-      const loader = new PluginLoader([join(testPackagePath, 'esm-multiple-export.js')]);
+      const loader = new PluginLoader([
+        toPluginPath(join(testPackagePath, 'esm-multiple-export.js')),
+      ]);
       await loader.load();
       expect(loader.pushPlugins.length).toBe(1);
       expect(loader.pullPlugins.length).toBe(1);
@@ -119,7 +98,7 @@ describe('loading plugins from packages', () => {
       ).toBe(true);
     });
     it('should load plugins that are subclassed from plugin classes (exports default class DummyPlugin extends PushActionPlugin {})', async () => {
-      const loader = new PluginLoader([join(testPackagePath, 'esm-subclass.js')]);
+      const loader = new PluginLoader([toPluginPath(join(testPackagePath, 'esm-subclass.js'))]);
       await loader.load();
       expect(loader.pushPlugins.length).toBe(1);
       expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).toBe(true);
@@ -132,7 +111,7 @@ describe('loading plugins from packages', () => {
   it(
     'should not load plugins that are not valid modules',
     async () => {
-      const loader = new PluginLoader([join(__dirname, './dummy.js')]);
+      const loader = new PluginLoader([toPluginPath(join(__dirname, './dummy.js'))]);
       await loader.load();
       expect(loader.pushPlugins.length).toBe(0);
       expect(loader.pullPlugins.length).toBe(0);
@@ -143,7 +122,7 @@ describe('loading plugins from packages', () => {
   it(
     'should not load plugins that are not extended from plugin objects',
     async () => {
-      const loader = new PluginLoader([join(__dirname, './fixtures/baz.js')]);
+      const loader = new PluginLoader([toPluginPath(join(__dirname, './fixtures/baz.js'))]);
       await loader.load();
       expect(loader.pushPlugins.length).toBe(0);
       expect(loader.pullPlugins.length).toBe(0);
