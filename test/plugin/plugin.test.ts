@@ -42,8 +42,13 @@ describe('loading plugins from packages', () => {
     it(
       'should load plugins that are the default export (module.exports = pluginObj)',
       async () => {
-        const loader = new PluginLoader([join(testPackagePath, 'default-export.js')]);
+        const pluginPath = join(testPackagePath, 'default-export.js');
+        console.log('Loading plugin from:', pluginPath);
+        console.log('Plugin file exists:', existsSync(pluginPath));
+        const loader = new PluginLoader([pluginPath]);
         await loader.load();
+        console.log('Push plugins loaded:', loader.pushPlugins.length);
+        console.log('Pull plugins loaded:', loader.pullPlugins.length);
         expect(loader.pushPlugins.length).toBe(1);
         expect(loader.pushPlugins.every((p) => isCompatiblePlugin(p))).toBe(true);
         expect(
