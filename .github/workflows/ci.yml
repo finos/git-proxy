@@ -41,6 +41,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      - name: Enable Windows Developer Mode
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
+
       - name: Install dependencies
         run: npm ci
 
