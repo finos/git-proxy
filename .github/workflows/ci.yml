@@ -21,10 +21,6 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
         node-version: [20.x, 22.x, 24.x]
-        mongodb-version: ['6.0.18', '7.0.16', '8.0.4']
-
-    env:
-      MONGODB_VERSION: ${{ matrix.mongodb-version }}
 
     steps:
       - name: Harden Runner
@@ -82,14 +78,14 @@ jobs:
       - name: Save build folder
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
         with:
-          name: build-${{ matrix.os }}-node-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
+          name: build-${{ matrix.os }}-node-${{ matrix.node-version }}
           if-no-files-found: error
           path: build
 
       - name: Download the build folders
         uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # ratchet:actions/download-artifact@v5
         with:
-          name: build-${{ matrix.os }}-node-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
+          name: build-${{ matrix.os }}-node-${{ matrix.node-version }}
           path: build
 
       # Skip Cypress on Windows - e2e tests are properly handled by e2e.yml with Docker
