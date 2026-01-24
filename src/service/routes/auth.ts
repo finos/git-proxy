@@ -144,7 +144,7 @@ router.get('/profile', async (req: Request, res: Response) => {
 
   const userVal = await db.findUser((req.user as User).username);
   if (!userVal) {
-    res.status(404).send('User not found').end();
+    res.status(404).send({ message: 'User not found' }).end();
     return;
   }
 
