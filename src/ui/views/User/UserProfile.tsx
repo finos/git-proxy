@@ -16,6 +16,7 @@ import { LogoGithubIcon } from '@primer/octicons-react';
 import CloseRounded from '@material-ui/icons/CloseRounded';
 import { Check, Save } from '@material-ui/icons';
 import { TextField, Theme } from '@material-ui/core';
+import Danger from '../../components/Typography/Danger';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
@@ -52,11 +53,13 @@ export default function UserProfile(): React.ReactElement {
   }, [id]);
 
   if (isLoading) return <div>Loading...</div>;
-  if (errorMessage) return <div>{errorMessage}</div>;
 
   if (!auth && window.location.pathname === '/dashboard/profile') {
     return <Navigate to='/login' />;
   }
+
+  if (errorMessage) return <Danger>{errorMessage}</Danger>;
+
   if (!user) return <div>No user data available</div>;
 
   const updateProfile = async (): Promise<void> => {
@@ -64,7 +67,8 @@ export default function UserProfile(): React.ReactElement {
       ...user,
       gitAccount: escapeHTML(gitAccount),
     };
-    //does not reject and will display any errors that occur
+
+    // Does not reject and will display any errors that occur
     await updateUser(updatedData, setErrorMessage, setIsLoading);
     setUser(updatedData);
     navigate(`/dashboard/profile`);
