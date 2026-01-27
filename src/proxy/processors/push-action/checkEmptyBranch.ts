@@ -2,7 +2,7 @@ import { Action, Step } from '../../actions';
 import simpleGit from 'simple-git';
 import { EMPTY_COMMIT_HASH } from '../constants';
 
-const isEmptyBranch = async (action: Action) => {
+const isEmptyBranch = async (action: Action, step: Step) => {
   if (action.commitFrom === EMPTY_COMMIT_HASH) {
     try {
       const git = simpleGit(`${action.proxyGitPath}/${action.repoName}`);
@@ -10,7 +10,7 @@ const isEmptyBranch = async (action: Action) => {
       const type = await git.raw(['cat-file', '-t', action.commitTo || '']);
       return type.trim() === 'commit';
     } catch (err) {
-      console.log(`Commit ${action.commitTo} not found: ${err}`);
+      step.log(`Commit ${action.commitTo} not found: ${err}`);
     }
   }
 
@@ -24,7 +24,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     return action;
   }
 
-  if (await isEmptyBranch(action)) {
+  if (await isEmptyBranch(action, step)) {
     step.setError('Push blocked: Empty branch. Please make a commit before pushing a new branch.');
     action.addStep(step);
     step.error = true;

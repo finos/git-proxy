@@ -116,7 +116,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   try {
     config = await getPluginConfig();
   } catch (e) {
-    console.error('failed to get gitleaks config, please fix the error:', e);
+    step.log(`failed to get gitleaks config, please fix the error: ${String(e)}`);
     action.error = true;
     step.setError('failed setup gitleaks, please contact an administrator\n');
     action.addStep(step);
@@ -124,14 +124,14 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   }
 
   if (!config.enabled) {
-    console.log('gitleaks is disabled, skipping');
+    step.log('gitleaks is disabled, skipping');
     action.addStep(step);
     return action;
   }
 
   const { commitFrom, commitTo } = action;
   const workingDir = `${action.proxyGitPath}/${action.repoName}`;
-  console.log(`Scanning range with gitleaks: ${commitFrom}:${commitTo}`, workingDir);
+  step.log(`Scanning range with gitleaks: ${commitFrom}:${commitTo}, ${workingDir}`);
 
   try {
     const gitRootCommit = await runCommand(workingDir, 'git', [
@@ -171,8 +171,8 @@ const exec = async (req: any, action: Action): Promise<Action> => {
         step.setError('\n' + gitleaks.stdout + gitleaks.stderr);
       }
     } else {
-      console.log('succeeded');
-      console.log(gitleaks.stderr);
+      step.log('succeeded');
+      step.log(gitleaks.stderr);
     }
   } catch (e) {
     action.error = true;

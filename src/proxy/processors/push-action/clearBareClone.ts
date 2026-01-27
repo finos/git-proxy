@@ -9,7 +9,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     if (err) {
       throw err;
     }
-    console.log(`.remote is deleted!`);
+    step.log(`.remote is deleted!`);
   });
 
   action.addStep(step);

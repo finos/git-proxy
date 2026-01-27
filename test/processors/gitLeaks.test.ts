@@ -43,6 +43,7 @@ describe('gitleaks', () => {
     let getAPIs: any;
     let fsModule: any;
     let spawn: any;
+    const stepLogSpy = vi.spyOn(Step.prototype, 'log');
 
     beforeEach(async () => {
       vi.clearAllMocks();
@@ -89,9 +90,8 @@ describe('gitleaks', () => {
       expect(stepSpy).toHaveBeenCalledWith(
         'failed setup gitleaks, please contact an administrator\n',
       );
-      expect(errorStub).toHaveBeenCalledWith(
-        'failed to get gitleaks config, please fix the error:',
-        expect.any(Error),
+      expect(stepLogSpy).toHaveBeenCalledWith(
+        expect.stringContaining('failed to get gitleaks config, please fix the error:'),
       );
     });
 
@@ -103,7 +103,7 @@ describe('gitleaks', () => {
       expect(result.error).toBe(false);
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(false);
-      expect(logStub).toHaveBeenCalledWith('gitleaks is disabled, skipping');
+      expect(JSON.stringify(result.steps[0])).toContain('gitleaks is disabled, skipping');
     });
 
     it('should handle successful scan with no findings', async () => {
@@ -140,12 +140,13 @@ describe('gitleaks', () => {
         } as any);
 
       const result = await exec(req, action);
+      const stepRes = JSON.stringify(result.steps[0]);
 
       expect(result.error).toBe(false);
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(false);
-      expect(logStub).toHaveBeenCalledWith('succeeded');
-      expect(logStub).toHaveBeenCalledWith('No leaks found');
+      expect(stepRes).toContain('succeeded');
+      expect(stepRes).toContain('No leaks found');
     });
 
     it('should handle scan with findings', async () => {
