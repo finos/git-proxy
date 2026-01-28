@@ -102,6 +102,9 @@ Changing the email address associated with commits can be accomplished via a num
   - Also removes the defunct `api.github` config element
 - Added confirmation dialog to `RepoDetails` page to prevent accidental repository deletions in [#1267](https://github.com/finos/git-proxy/pull/1267)
 - Added support for using AWS Credential Provider to authenticate MongoDB connections in [#1319](https://github.com/finos/git-proxy/pull/1319)
+- Optimized push speed by performing shallow clones by default in [#1189](https://github.com/finos/git-proxy/pull/1189)
+  - Increased push speeds for larger repos [by around 30~50%](https://github.com/finos/git-proxy/issues/985)
+- Improved configuration validation and typing in [#1140](https://github.com/finos/git-proxy/pull/1140)
 
 ### Bugfixes
 
@@ -144,10 +147,3 @@ Changing the email address associated with commits can be accomplished via a num
 - Fixed race condition preventing MongoDB connection when loading configuration in [#1316](https://github.com/finos/git-proxy/pull/1316)
   - Deferred retrieval of database config allowing the user configuration to be loaded before attempting to use it
 - Replaced `jwk-to-pem` dependency with native `crypto` to remove vulnerable dependency (`elliptic`) in [#1283](https://github.com/finos/git-proxy/pull/1283)
-
-### Other improvements
-
-- Optimized push speed by performing shallow clones by default in [#1189](https://github.com/finos/git-proxy/pull/1189)
-  - Increased push speeds for larger repos [by around 30~50%](https://github.com/finos/git-proxy/issues/985)
-  - Note: one of these options was later [removed due to a bug](https://github.com/finos/git-proxy/pull/1305), however [push speeds were largely unaffected](https://github.com/finos/git-proxy/pull/1305#issuecomment-3611774012)
-- Improved configuration validation and typing in [#1140](https://github.com/finos/git-proxy/pull/1140)
