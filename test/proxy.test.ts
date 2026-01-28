@@ -102,10 +102,7 @@ describe.skip('Proxy Module TLS Certificate Loading', () => {
       close: vi.fn(),
     } as any);
 
-    process.env.NODE_ENV = 'test';
-    process.env.GIT_PROXY_HTTPS_SERVER_PORT = '8443';
-
-    const ProxyClass = (await import('../src/proxy/index')).default;
+    const ProxyClass = (await import('../src/proxy/index')).Proxy;
     proxyModule = new ProxyClass();
   });
 

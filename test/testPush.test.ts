@@ -1,9 +1,10 @@
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import * as db from '../src/db';
-import service from '../src/service';
-import Proxy from '../src/proxy';
+import { Service } from '../src/service';
+import { Proxy } from '../src/proxy';
 import { Express } from 'express';
+import { EMPTY_COMMIT_HASH } from '../src/proxy/processors/constants';
 
 // dummy repo
 const TEST_ORG = 'finos';
@@ -32,7 +33,7 @@ const TEST_PUSH = {
   autoApproved: false,
   autoRejected: false,
   commitData: [],
-  id: '0000000000000000000000000000000000000000__1744380874110',
+  id: `${EMPTY_COMMIT_HASH}__1744380874110`,
   type: 'push',
   method: 'get',
   timestamp: 1744380903338,
@@ -44,7 +45,7 @@ const TEST_PUSH = {
   userEmail: TEST_EMAIL_2,
   lastStep: null,
   blockedMessage:
-    '\n\n\nGitProxy has received your push:\n\nhttp://localhost:8080/requests/0000000000000000000000000000000000000000__1744380874110\n\n\n',
+    '\n\n\nGitProxy has received your push:\n\nhttp://localhost:8080/requests/${EMPTY_COMMIT_HASH}__1744380874110\n\n\n',
   _id: 'GIMEz8tU2KScZiTz',
   attestation: null,
 };
@@ -89,7 +90,7 @@ describe('Push API', () => {
     await db.deleteUser(TEST_USERNAME_2);
 
     const proxy = new Proxy();
-    app = await service.start(proxy);
+    app = await Service.start(proxy);
     await loginAsAdmin();
 
     // set up a repo, user and push to test against
@@ -117,7 +118,7 @@ describe('Push API', () => {
     await db.deleteUser(TEST_USERNAME_2);
 
     vi.resetModules();
-    service.httpServer.close();
+    Service.httpServer.close();
   });
 
   describe('test push API', () => {
@@ -128,8 +129,7 @@ describe('Push API', () => {
 
     it('should get 404 for unknown push', async () => {
       await loginAsApprover();
-      const commitId =
-        '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f';
+      const commitId = `${EMPTY_COMMIT_HASH}__79b4d8953cbc324bcc1eb53d6412ff89666c241f`;
       const res = await request(app).get(`/api/v1/push/${commitId}`).set('Cookie', `${cookie}`);
       expect(res.status).toBe(404);
     });
@@ -181,7 +181,8 @@ describe('Push API', () => {
             ],
           },
         });
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Attestation is not complete');
     });
 
     it('should NOT allow an authorizer to approve if committer is unknown', async () => {
@@ -207,7 +208,10 @@ describe('Push API', () => {
             ],
           },
         });
-      expect(res.status).toBe(401);
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe(
+        "No user found with the committer's email address: push-test-3@test.com",
+      );
     });
   });
 
@@ -236,7 +240,8 @@ describe('Push API', () => {
           ],
         },
       });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe('Cannot approve your own changes');
   });
 
   it('should NOT allow a non-authorizer to approve a push', async () => {
@@ -260,7 +265,8 @@ describe('Push API', () => {
           ],
         },
       });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe('Cannot approve your own changes');
   });
 
   it('should allow an authorizer to reject a push', async () => {
@@ -282,16 +288,24 @@ describe('Push API', () => {
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
       .set('Cookie', `${cookie}`);
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe('Cannot reject your own changes');
   });
 
   it('should NOT allow a non-authorizer to reject a push', async () => {
-    await db.writeAudit(TEST_PUSH as any);
+    const pushWithOtherUser = { ...TEST_PUSH };
+    pushWithOtherUser.user = TEST_USERNAME_1;
+    pushWithOtherUser.userEmail = TEST_EMAIL_1;
+
+    await db.writeAudit(pushWithOtherUser as any);
     await loginAsCommitter();
     const res = await request(app)
-      .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
+      .post(`/api/v1/push/${pushWithOtherUser.id}/reject`)
       .set('Cookie', `${cookie}`);
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe(
+      'User push-test-2 is not authorised to reject changes on this project',
+    );
   });
 
   it('should fetch all pushes', async () => {
@@ -328,7 +342,10 @@ describe('Push API', () => {
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
       .set('Cookie', `${cookie}`);
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe(
+      'User admin not authorised to cancel push requests on this project',
+    );
 
     const pushes = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
     const push = pushes.body.find((p: any) => p.id === TEST_PUSH.id);
@@ -341,7 +358,7 @@ describe('Push API', () => {
     const res = await request(app).post('/api/auth/logout').set('Cookie', `${cookie}`);
     expect(res.status).toBe(200);
 
-    await service.httpServer.close();
+    await Service.httpServer.close();
     await db.deleteRepo(TEST_REPO);
     await db.deleteUser(TEST_USERNAME_1);
     await db.deleteUser(TEST_USERNAME_2);

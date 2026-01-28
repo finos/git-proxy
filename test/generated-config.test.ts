@@ -23,7 +23,7 @@ describe('Generated Config (QuickType)', () => {
         ],
         sink: [
           {
-            type: 'memory',
+            type: 'fs',
             enabled: true,
           },
         ],
@@ -96,9 +96,6 @@ describe('Generated Config (QuickType)', () => {
         sink: [
           {
             type: 'fs',
-            params: {
-              filepath: './.',
-            },
             enabled: true,
           },
         ],
@@ -149,7 +146,7 @@ describe('Generated Config (QuickType)', () => {
           { project: 'proj2', name: 'repo2', url: 'https://github.com/proj2/repo2.git' },
         ],
         authentication: [{ type: 'local', enabled: true }],
-        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
+        sink: [{ type: 'fs', enabled: true }],
         plugins: ['plugin1', 'plugin2'],
         privateOrganizations: ['org1', 'org2'],
       };
@@ -167,7 +164,7 @@ describe('Generated Config (QuickType)', () => {
         proxyUrl: 'https://proxy.example.com',
         cookieSecret: 'secret',
         authentication: [{ type: 'local', enabled: true }],
-        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
+        sink: [{ type: 'fs', enabled: true }],
         tls: {
           enabled: true,
           key: '/path/to/key.pem',
@@ -197,7 +194,7 @@ describe('Generated Config (QuickType)', () => {
         proxyUrl: 'https://proxy.example.com',
         cookieSecret: 'secret',
         authentication: [{ type: 'local', enabled: true }],
-        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
+        sink: [{ type: 'fs', enabled: true }],
 
         api: {
           ls: {
@@ -236,7 +233,7 @@ describe('Generated Config (QuickType)', () => {
         proxyUrl: 'https://proxy.example.com',
         cookieSecret: 'secret',
         authentication: [{ type: 'local', enabled: true }],
-        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
+        sink: [{ type: 'fs', enabled: true }],
 
         // Test different array structures
         authorisedList: [
@@ -267,7 +264,7 @@ describe('Generated Config (QuickType)', () => {
         proxyUrl: 'https://proxy.example.com',
         cookieSecret: 'secret',
         authentication: [{ type: 'local', enabled: true }],
-        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
+        sink: [{ type: 'fs', enabled: true }],
 
         sessionMaxAgeHours: 0,
         csrfProtection: false,
@@ -313,7 +310,7 @@ describe('Generated Config (QuickType)', () => {
         proxyUrl: 'https://proxy.example.com',
         cookieSecret: null,
         authentication: [{ type: 'local', enabled: true }],
-        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
+        sink: [{ type: 'fs', enabled: true }],
         contactEmail: null,
         urlShortener: null,
       };
@@ -328,7 +325,7 @@ describe('Generated Config (QuickType)', () => {
         proxyUrl: 'https://test.com',
         cookieSecret: 'secret',
         authentication: [{ type: 'local', enabled: true }],
-        sink: [{ type: 'fs', params: { filepath: './.' }, enabled: true }],
+        sink: [{ type: 'fs', enabled: true }],
         rateLimit: {
           windowMs: 60000,
           limit: 150,

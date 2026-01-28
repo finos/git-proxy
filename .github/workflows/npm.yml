@@ -19,22 +19,18 @@ jobs:
       # Setup .npmrc file to publish to npm
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: '22.x'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
       - run: npm ci
       - run: npm run build
-        env:
-          IS_PUBLISHING: 'YES'
 
       - name: Check if pre-release and publish to NPM
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if [[ "$VERSION" == *"-"* ]]; then
             echo "Publishing pre-release: $VERSION"
-            npm publish --provenance --access=public --tag rc
+            npm publish --access=public --tag rc
           else
             echo "Publishing stable release: $VERSION"
-            npm publish --provenance --access=public
+            npm publish --access=public
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
