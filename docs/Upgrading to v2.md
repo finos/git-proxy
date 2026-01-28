@@ -93,6 +93,7 @@ Changing the email address associated with commits can be accomplished via a num
   - `checkEmptyBranch` simply checks whether the branch has had any new commits (if not, the push will be rejected)
 - Added a settings page for configuring the JWT token to authenticate UI requests to API when `apiAuthentication` is enabled in [#1096](https://github.com/finos/git-proxy/pull/1096)
   - Previously, requests from the UI were bypassing the JWT check if the user was logged in, and failing otherwise when `apiAuthentication` was set
+  - For more details on setting JWT, check the [architecture documentation](./Architecture.md#setting-up-jwt-authentication):
 - Added the ability to create new users via the GitProxy CLI in [#981](https://github.com/finos/git-proxy/pull/981)
 - Added `/healthcheck` endpoint for AWS Load Balancer support [#1197](https://github.com/finos/git-proxy/pull/1197)
 - Improved login page flexibility, error handling and visibility of available auth methods in [#1227](https://github.com/finos/git-proxy/pull/1227)
