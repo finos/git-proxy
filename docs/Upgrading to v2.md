@@ -12,7 +12,7 @@ Two important breaking changes were made:
 
 Commits are no longer associated by Git's `user.name`. Now, they're associated by email (to match the handling of commits by GitHub, GitLab and other SCM providers), which allows Git Proxy to handle multiple SCM providers. [#973](github.com/finos/git-proxy/pull/973)
 
-In practice, pushes that were working in v1 may be blocked in v2 due to the change in requirements. The user's GitProxy email must match the commit's email (Git's `user.email`).
+In practice, pushes that were working in v1 (made with an improperly configured git client) may be blocked in v2 due to the change in requirements. The user's GitProxy email must match the commit's email (Git's `user.email`). This is often already required by a firm's contribution policy or to pass a CLA (Contributor License Agreement) check on a project.
 
 ### Support for GitLab and other Git hosts
 
