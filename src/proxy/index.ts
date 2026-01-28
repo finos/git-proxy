@@ -91,28 +91,42 @@ export class Proxy {
   }
 
   public stop(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        // Close HTTP server if it exists
-        if (this.httpServer) {
-          this.httpServer.close(() => {
-            console.log('HTTP server closed');
-            this.httpServer = null;
-          });
-        }
+    const closePromises: Promise<void>[] = [];
 
-        // Close HTTPS server if it exists
-        if (this.httpsServer) {
-          this.httpsServer.close(() => {
-            console.log('HTTPS server closed');
-            this.httpsServer = null;
+    // Close HTTP server if it exists
+    if (this.httpServer) {
+      closePromises.push(
+        new Promise((resolve, reject) => {
+          this.httpServer!.close((err) => {
+            if (err) {
+              reject(err);
+            } else {
+              console.log('HTTP server closed');
+              this.httpServer = null;
+              resolve();
+            }
           });
-        }
+        }),
+      );
+    }
 
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    });
+    // Close HTTPS server if it exists
+    if (this.httpsServer) {
+      closePromises.push(
+        new Promise((resolve, reject) => {
+          this.httpsServer!.close((err) => {
+            if (err) {
+              reject(err);
+            } else {
+              console.log('HTTPS server closed');
+              this.httpsServer = null;
+              resolve();
+            }
+          });
+        }),
+      );
+    }
+
+    return Promise.all(closePromises).then(() => {});
   }
 }
