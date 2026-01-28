@@ -16,7 +16,7 @@ In practice, pushes that were working in v1 (made with an improperly configured 
 
 ### Support for GitLab and other Git hosts
 
-Added support for Git hosts other than GitHub. Eliminated assumptions about GitHub as the Git repository host. [#1043](https://github.com/finos/git-proxy/pull/1043)
+Added support for Git SCM hosts other than GitHub. Eliminated assumptions about GitHub as the Git repository host. [#1043](https://github.com/finos/git-proxy/pull/1043)
 
 Repositories are no longer identified by name, but by internal ID instead. This means that multiple forks of the same repo are now supported, as well as repos for any other Git host (GitLab, etc.).
 
