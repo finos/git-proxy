@@ -20,7 +20,7 @@ Added support for Git SCM hosts other than GitHub. Eliminated assumptions about 
 
 Repositories are no longer identified by name, but by internal ID instead. This means that multiple forks of the same repo are now supported, as well as repos for other Git host (GitLab, etc.).
 
-However, as URL parsing is more strict, pushing to previously added GitHub repos may result in errors.
+From v2 onwards, Git Proxy git URLs include the domain of the git host (e.g. https://git-proxydomain.net:8443/org/project.git has changed to https://git-proxydomain.net:8443/github.com/org/project.git). Backwards compatibility was implemented to ensure that these older URLs don't break. However, users should be advised to update the URL used in their remote in case this is removed in a subsequent major release.
 
 ## Troubleshooting typical errors
 
