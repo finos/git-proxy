@@ -68,7 +68,7 @@ In v1, authorised users were matched based on `gitAccount` (which was actually t
 "users":{"canPush":["John Doe"],"canAuthorise":["John Doe","admin"]}
 ```
 
-In v2, authorised users are identified by their GitProxy username. The email associated with the push (Git `user.email`) must match their GitProxy email:
+In v2, authorised users are identified by the email address associated with their GitProxy username. The email associated with the push (Git config `user.email`) must match their GitProxy email:
 
 Repo data:
 
