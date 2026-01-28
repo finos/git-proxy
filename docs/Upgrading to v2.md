@@ -82,7 +82,7 @@ User data:
 {"username":"johndoe123","gitAccount":"<does-not-matter>","email":"<email>", ...}
 ```
 
-This is easily **solved by removing and re-adding the users from the dropdown list** in the UI (in the repository details page).
+Changing the email address associated with commits can be accomplished via a number of routes, including 'rewriting history' [using rebase](https://stackoverflow.com/questions/750172/how-do-i-change-the-author-and-committer-name-email-for-multiple-commits) (dangerous but preserves the commits) or creating new commits with the correct metadata (safer but involves creating a new history/branch).
 
 ## Other notable changes
 
