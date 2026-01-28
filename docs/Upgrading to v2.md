@@ -10,7 +10,7 @@ Two important breaking changes were made:
 
 ### Associate commits by email
 
-Commits are no longer associated by Git's `user.name`. Now, they're associated by email. [#973](github.com/finos/git-proxy/pull/973)
+Commits are no longer associated by Git's `user.name`. Now, they're associated by email (to match the handling of commits by GitHub, GitLab and other SCM providers), which allows Git Proxy to handle multiple SCM providers. [#973](github.com/finos/git-proxy/pull/973)
 
 In practice, pushes that were working in v1 may be blocked in v2 due to the change in requirements. The user's GitProxy email must match the commit's email (Git's `user.email`).
 
