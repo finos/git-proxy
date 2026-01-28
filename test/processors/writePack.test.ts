@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import path from 'path';
 import { Action, Step } from '../../src/proxy/actions';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
@@ -51,7 +52,8 @@ describe('writePack', () => {
         1234567890,
         'https://github.com/finos/git-proxy.git',
       );
-      action.proxyGitPath = '/path/to';
+      // Use path.join for cross-platform compatibility
+      action.proxyGitPath = path.join('path', 'to');
       action.repoName = 'repo';
     });
 
@@ -66,14 +68,14 @@ describe('writePack', () => {
         1,
         'git',
         ['config', 'receive.unpackLimit', '0'],
-        expect.objectContaining({ cwd: '/path/to/repo' }),
+        expect.objectContaining({ cwd: path.join('path', 'to', 'repo') }),
       );
       expect(spawnSyncMock).toHaveBeenNthCalledWith(
         2,
         'git',
         ['receive-pack', 'repo'],
         expect.objectContaining({
-          cwd: '/path/to',
+          cwd: path.join('path', 'to'),
           input: 'pack data',
         }),
       );
