@@ -5,7 +5,7 @@ name: CI
 
 on:
   push:
-    branches: [main, windows-failing-tests]
+    branches: [main]
   pull_request:
     branches: [main]
 

@@ -6,6 +6,7 @@ import { exec } from '../../src/proxy/processors/push-action/preReceive';
 // TODO: Replace with memfs to prevent test pollution issues
 vi.mock('fs', { spy: true });
 
+// Pre-receive hooks execute Unix shell scripts, which is not supported on Windows
 describe.skipIf(process.platform === 'win32')('Pre-Receive Hook Execution', () => {
   let action: any;
   let req: any;
