@@ -25,6 +25,7 @@ interface CustomTabsProps {
   tabs: TabItem[];
   rtlActive?: boolean;
   plainTabs?: boolean;
+  defaultTab?: number;
 }
 
 const CustomTabs: React.FC<CustomTabsProps> = ({
@@ -33,8 +34,9 @@ const CustomTabs: React.FC<CustomTabsProps> = ({
   tabs,
   title,
   rtlActive = false,
+  defaultTab = 0,
 }) => {
-  const [value, setValue] = useState(0);
+  const [value, setValue] = useState(defaultTab);
   const classes = useStyles();
 
   const handleChange = (event: React.ChangeEvent<unknown>, newValue: number) => {
