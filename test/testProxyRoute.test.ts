@@ -46,7 +46,7 @@ afterAll(() => {
   vi.resetModules();
 });
 
-describe.skip('proxy express application', () => {
+describe('proxy express application', () => {
   let apiApp: Express;
   let proxy: Proxy;
   let cookie: string;

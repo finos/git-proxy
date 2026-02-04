@@ -420,12 +420,7 @@
           "description": "Connection properties for an neDB file-based database",
           "properties": {
             "type": { "type": "string", "const": "fs" },
-            "enabled": { "type": "boolean" },
-            "params": {
-              "type": "object",
-              "description": "Legacy config property not currently used",
-              "deprecated": true
-            }
+            "enabled": { "type": "boolean" }
           },
           "required": ["type", "enabled"]
         }
