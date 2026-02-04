@@ -1,9 +1,8 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
 import { PublicUser } from '../../db/types';
-
-import { API_BASE } from '../apiBase';
 import { BackendResponse } from '../types';
+import { getBaseUrl, getApiV1BaseUrl } from './apiConfig';
 
 type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
 
@@ -14,9 +13,12 @@ const getUser = async (
   setErrorMessage?: SetStateCallback<string>,
   id: string | null = null,
 ): Promise<void> => {
-  let url = `${API_BASE}/api/auth/profile`;
+  const baseUrl = await getBaseUrl();
+  const apiV1BaseUrl = await getApiV1BaseUrl();
+
+  let url = `${baseUrl}/api/auth/profile`;
   if (id) {
-    url = `${API_BASE}/api/v1/user/${id}`;
+    url = `${apiV1BaseUrl}/user/${id}`;
   }
 
   try {
@@ -48,8 +50,9 @@ const getUsers = async (
   setIsLoading(true);
 
   try {
+    const apiV1BaseUrl = await getApiV1BaseUrl();
     const response: AxiosResponse<PublicUser[]> = await axios(
-      `${API_BASE}/api/v1/user`,
+      `${apiV1BaseUrl}/user`,
       getAxiosConfig(),
     );
     setUsers(response.data);
@@ -78,10 +81,13 @@ const updateUser = async (
   setIsLoading: SetStateCallback<boolean>,
 ): Promise<void> => {
   try {
-    await axios.post(`${API_BASE}/api/auth/gitAccount`, user, getAxiosConfig());
+    const baseUrl = await getBaseUrl();
+    await axios.post(`${baseUrl}/api/auth/gitAccount`, user, getAxiosConfig());
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
-      setErrorMessage(error.response?.data?.message);
+      const status = error.response?.status;
+      const msg = error.response?.data?.message;
+      setErrorMessage(`Error updating user: ${status} ${msg}`);
     } else {
       const msg = error instanceof Error ? error.message : String(error);
       setErrorMessage(`Error updating user: ${msg}`);

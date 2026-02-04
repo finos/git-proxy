@@ -1,0 +1,59 @@
+name: E2E Tests
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@7c525be6cc8a882d5163ce04293cac18617c709f
+
+      - name: Set up Docker Compose
+        uses: docker/setup-compose-action@e79596b1b4769557c41cc0bb1e796ebe62acd639
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Configure Git for CI
+        run: |
+          git config --global user.name "CI Runner"
+          git config --global user.email "ci@example.com"
+          git config --global init.defaultBranch main
+
+      - name: Build and start services with Docker Compose
+        run: docker compose up -d --build
+
+      - name: Wait for services to be ready
+        run: |
+          timeout 60 bash -c '
+            while [ "$(docker compose ps | grep -c "Up")" -ne 3 ]; do
+              sleep 2
+            done
+          ' || { echo "Service readiness check failed:"; docker compose ps; exit 1; }
+
+      - name: Run E2E tests
+        run: npm run test:e2e
+
+      - name: Stop services
+        if: always()
+        run: docker compose down -v

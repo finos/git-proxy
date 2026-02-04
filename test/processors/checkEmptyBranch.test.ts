@@ -38,9 +38,8 @@ describe('checkEmptyBranch', () => {
     });
 
     // import the module after mocks are set up
-    const checkEmptyBranch = await import(
-      '../../src/proxy/processors/push-action/checkEmptyBranch'
-    );
+    const checkEmptyBranch =
+      await import('../../src/proxy/processors/push-action/checkEmptyBranch');
     exec = checkEmptyBranch.exec;
   });
 

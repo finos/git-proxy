@@ -1,10 +1,8 @@
 import axios, { AxiosError } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
-import { API_BASE } from '../apiBase';
+import { getBaseUrl, getApiV1BaseUrl } from './apiConfig';
 import { Action, Step } from '../../proxy/actions';
 import { BackendResponse, PushActionView } from '../types';
-
-const API_V1_BASE = `${API_BASE}/api/v1`;
 
 const getPush = async (
   id: string,
@@ -13,7 +11,8 @@ const getPush = async (
   setAuth: (auth: boolean) => void,
   setIsError: (isError: boolean) => void,
 ): Promise<void> => {
-  const url = `${API_V1_BASE}/push/${id}`;
+  const apiV1Base = await getApiV1BaseUrl();
+  const url = `${apiV1Base}/push/${id}`;
   setIsLoading(true);
 
   await axios<Action>(url, getAxiosConfig())
@@ -44,7 +43,8 @@ const getPushes = async (
     rejected: false,
   },
 ): Promise<void> => {
-  const url = new URL(`${API_V1_BASE}/push`);
+  const apiV1Base = await getApiV1BaseUrl();
+  const url = new URL(`${apiV1Base}/push`);
 
   const stringifiedQuery = Object.fromEntries(
     Object.entries(query).map(([key, value]) => [key, value.toString()]),
@@ -78,7 +78,8 @@ const authorisePush = async (
   setUserAllowedToApprove: (userAllowedToApprove: boolean) => void,
   attestation: Array<{ label: string; checked: boolean }>,
 ): Promise<void> => {
-  const url = `${API_V1_BASE}/push/${id}/authorise`;
+  const apiV1Base = await getApiV1BaseUrl();
+  const url = `${apiV1Base}/push/${id}/authorise`;
   let errorMsg = '';
   let isUserAllowedToApprove = true;
   await axios
@@ -106,7 +107,8 @@ const rejectPush = async (
   setMessage: (message: string) => void,
   setUserAllowedToReject: (userAllowedToReject: boolean) => void,
 ): Promise<void> => {
-  const url = `${API_V1_BASE}/push/${id}/reject`;
+  const apiV1Base = await getApiV1BaseUrl();
+  const url = `${apiV1Base}/push/${id}/reject`;
   let errorMsg = '';
   let isUserAllowedToReject = true;
   await axios.post(url, {}, getAxiosConfig()).catch((error: AxiosError<BackendResponse>) => {
@@ -124,7 +126,8 @@ const cancelPush = async (
   setAuth: (auth: boolean) => void,
   setIsError: (isError: boolean) => void,
 ): Promise<void> => {
-  const url = `${API_BASE}/push/${id}/cancel`;
+  const baseUrl = await getBaseUrl();
+  const url = `${baseUrl}/push/${id}/cancel`;
   await axios.post(url, {}, getAxiosConfig()).catch((error: AxiosError<BackendResponse>) => {
     if (error.response && error.response.status === 401) {
       setAuth(false);

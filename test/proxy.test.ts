@@ -1,23 +1,11 @@
+import http from 'http';
 import https from 'https';
 import { describe, it, beforeEach, afterEach, expect, vi, Mock } from 'vitest';
 import fs from 'fs';
 import { GitProxyConfig } from '../src/config/generated/config';
-import Proxy from '../src/proxy';
+import { Proxy } from '../src/proxy';
 
-/* 
-  jescalada: these tests are currently causing the following error
-  when running tests in the CI or for the first time locally:
-  Error: listen EADDRINUSE: address already in use :::8000
-
-  This is likely due to improper test isolation or cleanup in another test file
-  especially related to proxy.start() and proxy.stop() calls
-
-  Related: skipped tests in testProxyRoute.test.ts - these have a race condition
-  where either these or those tests fail depending on execution order
-  TODO: Find root cause of this error and fix it 
-  https://github.com/finos/git-proxy/issues/1294
-*/
-describe.skip('Proxy Module TLS Certificate Loading', () => {
+describe('Proxy Module TLS Certificate Loading', () => {
   let proxyModule: Proxy;
   let mockConfig: any;
   let mockHttpServer: any;
@@ -84,12 +72,17 @@ describe.skip('Proxy Module TLS Certificate Loading', () => {
       };
     });
 
-    vi.doMock('../src/db', () => ({
-      getRepos: mockDb.getRepos,
-      createRepo: mockDb.createRepo,
-      addUserCanPush: mockDb.addUserCanPush,
-      addUserCanAuthorise: mockDb.addUserCanAuthorise,
-    }));
+    vi.doMock('../src/db', async (importOriginal) => {
+      const actual: any = await importOriginal();
+      return {
+        ...actual,
+        getRepos: mockDb.getRepos,
+        createRepo: mockDb.createRepo,
+        addUserCanPush: mockDb.addUserCanPush,
+        addUserCanAuthorise: mockDb.addUserCanAuthorise,
+        getAllProxiedHosts: vi.fn().mockResolvedValue([]),
+      };
+    });
 
     vi.doMock('../src/proxy/chain', async (importOriginal) => {
       const actual = await importOriginal<typeof import('../src/proxy/chain')>();
@@ -99,10 +92,9 @@ describe.skip('Proxy Module TLS Certificate Loading', () => {
       };
     });
 
-    vi.spyOn(https, 'createServer').mockReturnValue({
-      listen: vi.fn().mockReturnThis(),
-      close: vi.fn(),
-    } as any);
+    vi.spyOn(http, 'createServer').mockReturnValue(mockHttpServer);
+
+    vi.spyOn(https, 'createServer').mockReturnValue(mockHttpsServer);
 
     const ProxyClass = (await import('../src/proxy/index')).Proxy;
     proxyModule = new ProxyClass();

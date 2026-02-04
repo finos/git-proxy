@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import {
   TextField,
   IconButton,
@@ -31,33 +31,33 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default function SettingsView() {
+const SettingsView: React.FC = () => {
   const classes = useStyles();
 
-  const [jwtToken, setJwtToken] = useState('');
-  const [showToken, setShowToken] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [jwtToken, setJwtToken] = useState<string>('');
+  const [showToken, setShowToken] = useState<boolean>(false);
+  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
+  const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const savedToken = localStorage.getItem('ui_jwt_token');
     if (savedToken) setJwtToken(savedToken);
   }, []);
 
-  const handleSave = () => {
+  const handleSave = (): void => {
     localStorage.setItem('ui_jwt_token', jwtToken);
     setSnackbarMessage('JWT token saved');
     setSnackbarOpen(true);
   };
 
-  const handleClear = () => {
+  const handleClear = (): void => {
     setJwtToken('');
     localStorage.removeItem('ui_jwt_token');
     setSnackbarMessage('JWT token cleared');
     setSnackbarOpen(true);
   };
 
-  const toggleShowToken = () => {
+  const toggleShowToken = (): void => {
     setShowToken(!showToken);
   };
 
@@ -81,7 +81,7 @@ export default function SettingsView() {
                 variant='outlined'
                 placeholder='Enter your JWT token...'
                 value={jwtToken}
-                onChange={(e) => setJwtToken(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setJwtToken(e.target.value)}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position='end'>
@@ -98,7 +98,7 @@ export default function SettingsView() {
                 }}
               />
               <div className={classes.buttonRow}>
-                <Button color='default' onClick={handleClear}>
+                <Button onClick={handleClear}>
                   <Clear style={{ marginRight: '5px' }} />
                   Clear
                 </Button>
@@ -119,4 +119,6 @@ export default function SettingsView() {
       />
     </form>
   );
-}
+};
+
+export default SettingsView;

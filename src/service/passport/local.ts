@@ -5,6 +5,10 @@ import * as db from '../../db';
 
 export const type = 'local';
 
+// Dynamic import to always get the current db module instance
+// This is necessary for test environments where modules may be reset
+const getDb = () => import('../../db');
+
 export const configure = async (passport: PassportStatic): Promise<PassportStatic> => {
   passport.use(
     new LocalStrategy(
@@ -14,7 +18,8 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
         done: (err: unknown, user?: Partial<db.User>, info?: IVerifyOptions) => void,
       ) => {
         try {
-          const user = await db.findUser(username);
+          const dbModule = await getDb();
+          const user = await dbModule.findUser(username);
           if (!user) {
             return done(null, undefined, { message: 'Incorrect username.' });
           }
@@ -38,7 +43,8 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
 
   passport.deserializeUser(async (username: string, done) => {
     try {
-      const user = await db.findUser(username);
+      const dbModule = await getDb();
+      const user = await dbModule.findUser(username);
       done(null, user);
     } catch (error: unknown) {
       done(error, null);

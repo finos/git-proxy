@@ -1,8 +1,8 @@
 import { AxiosError } from 'axios';
 import { getCookie } from '../utils';
 import { PublicUser } from '../../db/types';
-import { API_BASE } from '../apiBase';
 import { BackendResponse } from '../types';
+import { getBaseUrl } from './apiConfig';
 
 interface AxiosConfig {
   withCredentials: boolean;
@@ -17,7 +17,8 @@ interface AxiosConfig {
  */
 export const getUserInfo = async (): Promise<PublicUser | null> => {
   try {
-    const response = await fetch(`${API_BASE}/api/auth/profile`, {
+    const baseUrl = await getBaseUrl();
+    const response = await fetch(`${baseUrl}/api/auth/profile`, {
       credentials: 'include', // Sends cookies
     });
     if (!response.ok) throw new Error(`Failed to fetch user info: ${response.statusText}`);

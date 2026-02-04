@@ -4,7 +4,7 @@ import GridContainer from '../../components/Grid/GridContainer';
 import PushesTable from './components/PushesTable';
 import CustomTabs from '../../components/CustomTabs/CustomTabs';
 import Danger from '../../components/Typography/Danger';
-import { Visibility, CheckCircle, Cancel, Block } from '@material-ui/icons';
+import { Visibility, CheckCircle, Cancel, Block, Error, List } from '@material-ui/icons';
 import { TabItem } from '../../components/CustomTabs/CustomTabs';
 
 const Dashboard: React.FC = () => {
@@ -15,6 +15,11 @@ const Dashboard: React.FC = () => {
   };
 
   const tabs: TabItem[] = [
+    {
+      tabName: 'All',
+      tabIcon: List,
+      tabContent: <PushesTable handleError={handlePushTableError} />,
+    },
     {
       tabName: 'Pending',
       tabIcon: Visibility,
@@ -35,6 +40,11 @@ const Dashboard: React.FC = () => {
       tabIcon: Block,
       tabContent: <PushesTable rejected handleError={handlePushTableError} />,
     },
+    {
+      tabName: 'Error',
+      tabIcon: Error,
+      tabContent: <PushesTable error={true} handleError={handlePushTableError} />,
+    },
   ];
 
   return (
@@ -43,7 +53,7 @@ const Dashboard: React.FC = () => {
       {!errorMessage && (
         <GridContainer>
           <GridItem xs={12} sm={12} md={12}>
-            <CustomTabs headerColor='primary' tabs={tabs} />
+            <CustomTabs headerColor='primary' tabs={tabs} defaultTab={1} />
           </GridItem>
         </GridContainer>
       )}

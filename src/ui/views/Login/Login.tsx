@@ -14,7 +14,7 @@ import axios, { AxiosError } from 'axios';
 import logo from '../../assets/img/git-proxy.png';
 import { Badge, CircularProgress, FormLabel, Snackbar } from '@material-ui/core';
 import { useAuth } from '../../auth/AuthProvider';
-import { API_BASE } from '../../apiBase';
+import { getBaseUrl } from '../../services/apiConfig';
 import { getAxiosConfig, processAuthError } from '../../services/auth';
 import { BackendResponse } from '../../types';
 
@@ -22,8 +22,6 @@ interface LoginResponse {
   username: string;
   password: string;
 }
-
-const loginUrl = `${API_BASE}/api/auth/login`;
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -39,17 +37,19 @@ const Login: React.FC = () => {
   const [usernamePasswordMethod, setUsernamePasswordMethod] = useState<string>('');
 
   useEffect(() => {
-    axios.get(`${API_BASE}/api/auth/config`).then((response) => {
-      const usernamePasswordMethod = response.data.usernamePasswordMethod;
-      const otherMethods = response.data.otherMethods;
+    getBaseUrl().then((baseUrl) => {
+      axios.get(`${baseUrl}/api/auth/config`).then((response) => {
+        const usernamePasswordMethod = response.data.usernamePasswordMethod;
+        const otherMethods = response.data.otherMethods;
 
-      setUsernamePasswordMethod(usernamePasswordMethod);
-      setAuthMethods(otherMethods);
+        setUsernamePasswordMethod(usernamePasswordMethod);
+        setAuthMethods(otherMethods);
 
-      // Automatically login if only one non-username/password method is enabled
-      if (!usernamePasswordMethod && otherMethods.length === 1) {
-        handleAuthMethodLogin(otherMethods[0]);
-      }
+        // Automatically login if only one non-username/password method is enabled
+        if (!usernamePasswordMethod && otherMethods.length === 1) {
+          handleAuthMethodLogin(otherMethods[0]);
+        }
+      });
     });
   }, []);
 
@@ -60,34 +60,39 @@ const Login: React.FC = () => {
   }
 
   function handleAuthMethodLogin(authMethod: string): void {
-    window.location.href = `${API_BASE}/api/auth/${authMethod}`;
+    getBaseUrl().then((baseUrl) => {
+      window.location.href = `${baseUrl}/api/auth/${authMethod}`;
+    });
   }
 
   function handleSubmit(event: FormEvent): void {
     event.preventDefault();
     setIsLoading(true);
 
-    axios
-      .post<LoginResponse>(loginUrl, { username, password }, getAxiosConfig())
-      .then(() => {
-        window.sessionStorage.setItem('git.proxy.login', 'success');
-        setMessage('Success!');
-        setSuccess(true);
-        authContext.refreshUser().then(() => navigate(0));
-      })
-      .catch((error: AxiosError<BackendResponse>) => {
-        if (error.response?.status === 307) {
+    getBaseUrl().then((baseUrl) => {
+      const loginUrl = `${baseUrl}/api/auth/login`;
+      axios
+        .post<LoginResponse>(loginUrl, { username, password }, getAxiosConfig())
+        .then(() => {
           window.sessionStorage.setItem('git.proxy.login', 'success');
-          setGitAccountError(true);
-        } else if (error.response?.status === 403) {
-          setMessage(processAuthError(error, false));
-        } else {
-          setMessage('You entered an invalid username or password...');
-        }
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+          setMessage('Success!');
+          setSuccess(true);
+          authContext.refreshUser().then(() => navigate(0));
+        })
+        .catch((error: AxiosError<BackendResponse>) => {
+          if (error.response?.status === 307) {
+            window.sessionStorage.setItem('git.proxy.login', 'success');
+            setGitAccountError(true);
+          } else if (error.response?.status === 403) {
+            setMessage(processAuthError(error, false));
+          } else {
+            setMessage('You entered an invalid username or password...');
+          }
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    });
   }
 
   if (gitAccountError) {
