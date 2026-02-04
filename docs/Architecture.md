@@ -92,7 +92,6 @@ Executed when a user makes a `git clone` or `git pull` to GitProxy:
 This chain is executed when making any operation other than a `git push` or `git pull`.
 
 - [`checkRepoInAuthorisedList`](#checkrepoinauthorisedlist)
-<!-- Todo: add example and verify this from original PR -->
 
 #### Finally
 
@@ -128,7 +127,7 @@ Source: [/src/proxy/processors/push-action/checkEmptyBranch.ts](/src/proxy/proce
 
 #### `checkCommitMessages`
 
-A **configurable** processor that blocks pushes containing commit messages that match the provided literals or patterns. These patterns can be configured in `proxy.config.json` or the active configuration file:
+A **configurable** processor that blocks pushes containing commit messages that match the provided literals or patterns. These patterns can be configured in the `commitConfig.message` entry in `proxy.config.json` or the active configuration file:
 
 ```json
 "commitConfig": {
@@ -142,7 +141,6 @@ A **configurable** processor that blocks pushes containing commit messages that 
       }
     }
   },
-  // Defines patterns/literals to block pushes based on their commit messages
   "message": {
     "block": {
       "literals": [],
@@ -275,7 +273,7 @@ Source: [/src/proxy/processors/push-action/clearBareClone.ts](/src/proxy/process
 
 #### `scanDiff`
 
-A **configurable** processor that blocks pushes containing diff (changes) that match the provided literals or patterns. These patterns can be configured in `proxy.config.json` or the active configuration file:
+A **configurable** processor that blocks pushes containing diff (changes) that match the provided literals or patterns. These patterns can be configured in the `commitConfig.diff` entry in `proxy.config.json` or the active configuration file:
 
 ```json
 "commitConfig": {
@@ -295,7 +293,6 @@ A **configurable** processor that blocks pushes containing diff (changes) that m
       "patterns": []
     }
   },
-  // Defines patterns/literals to block pushes based on their diff
   "diff": {
     "block": {
       "literals": [],
