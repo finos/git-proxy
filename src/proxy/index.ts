@@ -101,35 +101,51 @@ export class Proxy {
   }
 
   public stop(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        // Close HTTP server if it exists
-        if (this.httpServer) {
-          this.httpServer.close(() => {
-            console.log('HTTP server closed');
-            this.httpServer = null;
-          });
-        }
+    const closePromises: Promise<void>[] = [];
 
-        // Close HTTPS server if it exists
-        if (this.httpsServer) {
-          this.httpsServer.close(() => {
-            console.log('HTTPS server closed');
-            this.httpsServer = null;
+    // Close HTTP server if it exists
+    if (this.httpServer) {
+      closePromises.push(
+        new Promise((resolve, reject) => {
+          this.httpServer!.close((err) => {
+            if (err) {
+              reject(err);
+            } else {
+              console.log('HTTP server closed');
+              this.httpServer = null;
+              resolve();
+            }
           });
-        }
+        }),
+      );
+    }
 
-        // Close SSH server if it exists
-        if (this.sshServer) {
-          this.sshServer.stop();
-          console.log('SSH server stopped');
+    // Close HTTPS server if it exists
+    if (this.httpsServer) {
+      closePromises.push(
+        new Promise((resolve, reject) => {
+          this.httpsServer!.close((err) => {
+            if (err) {
+              reject(err);
+            } else {
+              console.log('HTTPS server closed');
+              this.httpsServer = null;
+              resolve();
+            }
+          });
+        }),
+      );
+    }
+
+    // Close SSH server if it exists
+    if (this.sshServer) {
+      closePromises.push(
+        this.sshServer.stop().then(() => {
           this.sshServer = null;
-        }
+        }),
+      );
+    }
 
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    });
+    return Promise.all(closePromises).then(() => {});
   }
 }

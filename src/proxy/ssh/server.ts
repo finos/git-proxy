@@ -646,12 +646,17 @@ export class SSHServer {
     });
   }
 
-  public stop(): void {
-    if (this.server) {
-      this.server.close(() => {
-        console.log('[SSH] Server stopped');
-      });
-    }
+  public stop(): Promise<void> {
+    return new Promise((resolve) => {
+      if (this.server) {
+        this.server.close(() => {
+          console.log('[SSH] Server stopped');
+          resolve();
+        });
+      } else {
+        resolve();
+      }
+    });
   }
 }
 
