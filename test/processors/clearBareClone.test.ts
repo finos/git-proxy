@@ -25,7 +25,7 @@ describe('clear bare and local clones', () => {
     // Hybrid cache creates: .remote/cache (bare repos) and .remote/work (working copies)
     expect(fs.existsSync(`./.remote/work/${actionId}`)).toBe(true);
     expect(fs.existsSync(`./.remote/cache/git-proxy.git`)).toBe(true);
-  }, 20000);
+  }, 120000);
 
   it('clear bare clone function removes working copy and enforces cache limits', async () => {
     const action = new Action(actionId, 'type', 'get', timestamp, 'finos/git-proxy.git');

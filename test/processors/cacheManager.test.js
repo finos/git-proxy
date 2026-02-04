@@ -1,7 +1,7 @@
-const { expect } = require('chai');
-const fs = require('fs');
-const path = require('path');
-const { CacheManager } = require('../../src/proxy/processors/push-action/cache-manager');
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+import { CacheManager } from '../../src/proxy/processors/push-action/cache-manager';
 
 describe('CacheManager', () => {
   let testCacheDir;
@@ -26,9 +26,9 @@ describe('CacheManager', () => {
   describe('getCacheStats', () => {
     it('should return empty stats for empty cache', () => {
       const stats = cacheManager.getCacheStats();
-      expect(stats.totalRepositories).to.equal(0);
-      expect(stats.totalSizeBytes).to.equal(0);
-      expect(stats.repositories).to.be.an('array').that.is.empty;
+      expect(stats.totalRepositories).toBe(0);
+      expect(stats.totalSizeBytes).toBe(0);
+      expect(stats.repositories).toEqual([]);
     });
 
     it('should calculate stats for repositories in cache', () => {
@@ -42,12 +42,12 @@ describe('CacheManager', () => {
       fs.writeFileSync(path.join(repo2, 'file2.txt'), 'b'.repeat(1024 * 1024)); // 1MB
 
       const stats = cacheManager.getCacheStats();
-      expect(stats.totalRepositories).to.equal(2);
-      expect(stats.totalSizeBytes).to.be.at.least(2 * 1024 * 1024); // At least 2MB total in bytes
-      expect(stats.repositories).to.have.lengthOf(2);
-      expect(stats.repositories[0]).to.have.property('name');
-      expect(stats.repositories[0]).to.have.property('sizeBytes');
-      expect(stats.repositories[0]).to.have.property('lastAccessed');
+      expect(stats.totalRepositories).toBe(2);
+      expect(stats.totalSizeBytes).toBeGreaterThanOrEqual(2 * 1024 * 1024); // At least 2MB total in bytes
+      expect(stats.repositories).toHaveLength(2);
+      expect(stats.repositories[0]).toHaveProperty('name');
+      expect(stats.repositories[0]).toHaveProperty('sizeBytes');
+      expect(stats.repositories[0]).toHaveProperty('lastAccessed');
     });
 
     it('should have timestamps for repositories', () => {
@@ -61,11 +61,11 @@ describe('CacheManager', () => {
       fs.writeFileSync(path.join(repo2, 'file2.txt'), 'test');
 
       const stats = cacheManager.getCacheStats();
-      expect(stats.repositories).to.have.lengthOf(2);
+      expect(stats.repositories).toHaveLength(2);
       // Each should have a valid timestamp
       stats.repositories.forEach((repo) => {
-        expect(repo.lastAccessed).to.be.instanceOf(Date);
-        expect(repo.lastAccessed.getTime()).to.be.greaterThan(0);
+        expect(repo.lastAccessed).toBeInstanceOf(Date);
+        expect(repo.lastAccessed.getTime()).toBeGreaterThan(0);
       });
     });
   });
@@ -88,7 +88,7 @@ describe('CacheManager', () => {
       const statsAfter = cacheManager.getCacheStats();
       const timeAfter = statsAfter.repositories[0].lastAccessed.getTime();
 
-      expect(timeAfter).to.be.greaterThan(timeBefore);
+      expect(timeAfter).toBeGreaterThan(timeBefore);
     });
 
     it('should not throw error for non-existent repository', async () => {
@@ -107,15 +107,15 @@ describe('CacheManager', () => {
       }
 
       const statsBefore = cacheManager.getCacheStats();
-      expect(statsBefore.totalRepositories).to.equal(4);
+      expect(statsBefore.totalRepositories).toBe(4);
 
       const result = await cacheManager.enforceLimits();
 
-      expect(result.removedRepos).to.have.lengthOf.at.least(1);
-      expect(result.freedBytes).to.be.at.least(0);
+      expect(result.removedRepos.length).toBeGreaterThanOrEqual(1);
+      expect(result.freedBytes).toBeGreaterThanOrEqual(0);
 
       const statsAfter = cacheManager.getCacheStats();
-      expect(statsAfter.totalRepositories).to.be.at.most(3);
+      expect(statsAfter.totalRepositories).toBeLessThanOrEqual(3);
     });
 
     it('should remove repositories when exceeding size limit', async () => {
@@ -125,15 +125,15 @@ describe('CacheManager', () => {
       fs.writeFileSync(path.join(repo1, 'largefile.txt'), 'a'.repeat(2 * 1024 * 1024)); // 2MB
 
       const statsBefore = cacheManager.getCacheStats();
-      expect(statsBefore.totalSizeBytes).to.be.greaterThan(1024 * 1024); // Greater than 1MB in bytes
+      expect(statsBefore.totalSizeBytes).toBeGreaterThan(1024 * 1024); // Greater than 1MB in bytes
 
       const result = await cacheManager.enforceLimits();
 
-      expect(result.removedRepos).to.have.lengthOf(1);
-      expect(result.freedBytes).to.be.greaterThan(1024 * 1024); // Greater than 1MB in bytes
+      expect(result.removedRepos).toHaveLength(1);
+      expect(result.freedBytes).toBeGreaterThan(1024 * 1024); // Greater than 1MB in bytes
 
       const statsAfter = cacheManager.getCacheStats();
-      expect(statsAfter.totalRepositories).to.equal(0);
+      expect(statsAfter.totalRepositories).toBe(0);
     });
 
     it('should not remove anything if limits not exceeded', async () => {
@@ -146,8 +146,8 @@ describe('CacheManager', () => {
 
       const result = await cacheManager.enforceLimits();
 
-      expect(result.removedRepos).to.be.empty;
-      expect(result.freedBytes).to.equal(0);
+      expect(result.removedRepos).toHaveLength(0);
+      expect(result.freedBytes).toBe(0);
     });
   });
 
@@ -155,7 +155,7 @@ describe('CacheManager', () => {
     it('should return cache configuration', () => {
       const config = cacheManager.getConfig();
 
-      expect(config).to.deep.equal({
+      expect(config).toEqual({
         maxSizeGB: 0.001,
         maxRepositories: 3,
         repoCacheDir: testCacheDir,
