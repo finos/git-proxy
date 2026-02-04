@@ -1,0 +1,11 @@
+* @finos/git-proxy-maintainers
+
+/plugins/ @coopernetes
+
+/src/service/passport @jescalada
+
+/src/service/passport/activeDirectory.ts @06kellyjac @kriswest
+
+/src/service/passport/ldahelper.ts @06kellyjac @kriswest
+
+/src/ui/ @jescalada
