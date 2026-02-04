@@ -8,11 +8,11 @@ As mentioned in [the README](/README.md), GitProxy is an application that interc
 
 GitProxy has several main components:
 
-- Proxy (`/src/proxy`): The actual proxy for Git. Git operations performed by users are intercepted here to apply the relevant **chain**. Also loads **plugins** and adds them to the chain. Runs by default on port `8000` or ``8443` if TLS is enabled.
+- Proxy (`/src/proxy`): The actual proxy for Git. Git operations performed by users are intercepted here to apply the relevant **chain**. Also loads **plugins** and adds them to the chain. Runs by default on port `8000` or `8443` if TLS is enabled. These can be changed through the `GIT_PROXY_SERVER_PORT` and `GIT_PROXY_HTTPS_SERVER_PORT` environment variables.
   - Chain: A set of **processors** that are applied to an action (i.e. a `git push` operation) before requesting review from a user with permission to approve pushes
   - Processor: AKA `Step`. A specific step in the chain where certain rules are applied. See the [list of default processors](#processors) below for more details.`
   - Plugin: A custom processor that can be added externally to extend GitProxy's default policies. See the [plugin guide](https://git-proxy.finos.org/docs/development/plugins) for more details.
-- Service/API (`/src/service`): Handles UI requests, user authentication to GitProxy (not to Git), database operations and some of the logic for rejection/approval. Runs by default on port `8080`.
+- Service/API (`/src/service`): Handles UI requests, user authentication to GitProxy (not to Git), database operations and some of the logic for rejection/approval. Runs by default on port `8080`, and can be configured with the `GIT_PROXY_UI_HOST` and `GIT_PROXY_UI_PORT` environment variables.
   - Passport: The [library](https://www.passportjs.org/) used to authenticate to the GitProxy API (not the proxy itself - this depends on the Git `user.email`). Supports multiple authentication methods by default ([Local](#local), [AD](#activedirectory), [OIDC](#openid-connect)).
   - Routes: All the API endpoints used by the UI and proxy to perform operations and fetch or modify GitProxy's state. Except for custom plugin and processor development, there is no need for users or GitProxy administrators to interact with the API directly.
 - Configuration (`/src/config`): Loads and validates the configuration from `proxy.config.json`, or any provided config file. Allows customising several aspects of GitProxy, including databases, authentication methods, predefined allowed repositories, commit blocking rules and more. For a full list of configurable parameters, check the [config file schema reference](https://git-proxy.finos.org/docs/configuration/reference/).
@@ -224,6 +224,7 @@ Allows executing pre-receive hooks from `.sh` scripts located in the `./hooks` d
 Pre-receive hooks are a feature that allows blocking or automatically approving commits based on rules described in `.sh` scripts. GitHub provides a set of [sample rules](https://github.com/github/platform-samples/blob/master/pre-receive-hooks) to get started.
 
 **Important**: The pre-receive hook does not bypass the other processors in the chain. All processors continue to execute normally, and any of them can still block the push. The pre-receive hook only determines whether the push will be auto-approved, auto-rejected, or require manual review after all processors have completed.
+
 This processor will block the push depending on the exit status of the pre-receive hook:
 
 - Exit status `0`: Sets the push to `autoApproved`. If no other processors block the push, the contributor can immediately push again to the upstream repository without waiting for manual approval.
@@ -837,3 +838,7 @@ If the default values are set to `enabled: true`, any routes matching `/dashboar
 ```
 
 When the constraints are not met, the user will be redirected to the login page or a 401 Unauthorized page will be shown.
+
+## Suggestions?
+
+If you have suggestions to improve this guide or fill in missing details, feel free to [raise an issue](https://github.com/finos/git-proxy/issues/new?template=feature_request.md) or open a PR with the desired changes.
