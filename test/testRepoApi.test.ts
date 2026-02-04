@@ -67,6 +67,20 @@ describe('add new repo', () => {
     return repo;
   };
 
+  const ensureUsersCanPush = async (users: string[]) => {
+    const repo = await fetchRepoOrThrow(TEST_REPO.url);
+    for (const user of users) {
+      if (!repo.users.canPush.includes(user)) await db.addUserCanPush(repoIds[0], user);
+    }
+  };
+
+  const ensureUsersCanAuthorise = async (users: string[]) => {
+    const repo = await fetchRepoOrThrow(TEST_REPO.url);
+    for (const user of users) {
+      if (!repo.users.canAuthorise.includes(user)) await db.addUserCanAuthorise(repoIds[0], user);
+    }
+  };
+
   beforeAll(async () => {
     proxy = new Proxy();
     app = await Service.start(proxy);
@@ -166,10 +180,7 @@ describe('add new repo', () => {
     await ensureTestRepoExists();
 
     // Ensure u1 is already a push user, then add u2
-    const repoBefore = await fetchRepoOrThrow(TEST_REPO.url);
-    if (!repoBefore.users.canPush.includes('u1')) {
-      await db.addUserCanPush(repoIds[0], 'u1');
-    }
+    await ensureUsersCanPush(['u1']);
 
     const res = await request(app)
       .patch(`/api/v1/repo/${repoIds[0]}/user/push`)
@@ -187,9 +198,7 @@ describe('add new repo', () => {
     await ensureTestRepoExists();
 
     // Ensure 2 push users exist
-    const repoBefore = await fetchRepoOrThrow(TEST_REPO.url);
-    if (!repoBefore.users.canPush.includes('u1')) await db.addUserCanPush(repoIds[0], 'u1');
-    if (!repoBefore.users.canPush.includes('u2')) await db.addUserCanPush(repoIds[0], 'u2');
+    await ensureUsersCanPush(['u1', 'u2']);
 
     const res = await request(app)
       .patch(`/api/v1/repo/${repoIds[0]}/user/push`)
@@ -205,9 +214,7 @@ describe('add new repo', () => {
     await ensureTestRepoExists();
 
     // Ensure u1 and u2 are push users
-    const repoBefore = await fetchRepoOrThrow(TEST_REPO.url);
-    if (!repoBefore.users.canPush.includes('u1')) await db.addUserCanPush(repoIds[0], 'u1');
-    if (!repoBefore.users.canPush.includes('u2')) await db.addUserCanPush(repoIds[0], 'u2');
+    await ensureUsersCanPush(['u1', 'u2']);
 
     const res = await request(app)
       .delete(`/api/v1/repo/${repoIds[0]}/user/push/u2`)
@@ -243,10 +250,7 @@ describe('add new repo', () => {
     await ensureTestRepoExists();
 
     // Ensure u1 is already an authorise user
-    const repoBefore = await fetchRepoOrThrow(TEST_REPO.url);
-    if (!repoBefore.users.canAuthorise.includes('u1')) {
-      await db.addUserCanAuthorise(repoIds[0], 'u1');
-    }
+    await ensureUsersCanAuthorise(['u1']);
 
     const res = await request(app)
       .patch(`/api/v1/repo/${repoIds[0]}/user/authorise`)
@@ -264,11 +268,7 @@ describe('add new repo', () => {
     await ensureTestRepoExists();
 
     // Ensure 2 authorise users exist
-    const repoBefore = await fetchRepoOrThrow(TEST_REPO.url);
-    if (!repoBefore.users.canAuthorise.includes('u1'))
-      await db.addUserCanAuthorise(repoIds[0], 'u1');
-    if (!repoBefore.users.canAuthorise.includes('u2'))
-      await db.addUserCanAuthorise(repoIds[0], 'u2');
+    await ensureUsersCanAuthorise(['u1', 'u2']);
 
     const res = await request(app)
       .patch(`/api/v1/repo/${repoIds[0]}/user/authorise`)
@@ -284,11 +284,7 @@ describe('add new repo', () => {
     await ensureTestRepoExists();
 
     // Ensure u1 and u2 are authorise users
-    const repoBefore = await fetchRepoOrThrow(TEST_REPO.url);
-    if (!repoBefore.users.canAuthorise.includes('u1'))
-      await db.addUserCanAuthorise(repoIds[0], 'u1');
-    if (!repoBefore.users.canAuthorise.includes('u2'))
-      await db.addUserCanAuthorise(repoIds[0], 'u2');
+    await ensureUsersCanAuthorise(['u1', 'u2']);
 
     const res = await request(app)
       .delete(`/api/v1/repo/${repoIds[0]}/user/authorise/u2`)
