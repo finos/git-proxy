@@ -46,7 +46,7 @@ describe('checkCommitMessages', () => {
         const result = await exec({}, action);
 
         expect(result.steps[0].error).toBe(true);
-        expect(consoleLogSpy).toHaveBeenCalledWith('No commit message included...');
+        expect(result.steps[0].logs.join('\n')).toContain('No commit message included...');
       });
 
       it('should block null commit messages', async () => {
@@ -74,7 +74,7 @@ describe('checkCommitMessages', () => {
         const result = await exec({}, action);
 
         expect(result.steps[0].error).toBe(true);
-        expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect(JSON.stringify(result.steps[0])).toContain(
           'A non-string value has been captured for the commit message...',
         );
       });
@@ -106,7 +106,7 @@ describe('checkCommitMessages', () => {
         const result = await exec({}, action);
 
         expect(result.steps[0].error).toBe(true);
-        expect(consoleLogSpy).toHaveBeenCalledWith(
+        expect(JSON.stringify(result.steps[0])).toContain(
           'Commit message is blocked via configured literals/patterns...',
         );
       });
@@ -241,8 +241,8 @@ describe('checkCommitMessages', () => {
         const result = await exec({}, action);
 
         expect(result.steps[0].error).toBe(false);
-        expect(consoleLogSpy).toHaveBeenCalledWith(
-          expect.stringContaining('The following commit messages are legal:'),
+        expect(JSON.stringify(result.steps[0])).toContain(
+          'The following commit messages are legal:',
         );
       });
 

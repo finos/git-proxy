@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { exec } from '../../src/proxy/processors/push-action/checkAuthorEmails';
-import { Action } from '../../src/proxy/actions';
+import { Action, Step } from '../../src/proxy/actions';
 import * as configModule from '../../src/config';
 import * as validator from 'validator';
 import { CommitData } from '../../src/proxy/processors/types';
@@ -47,7 +47,7 @@ describe('checkAuthorEmails', () => {
     });
 
     // mock console.log to suppress output and verify calls
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    consoleLogSpy = vi.spyOn(Step.prototype, 'log').mockImplementation(() => {});
 
     // setup mock action
     mockAction = {
