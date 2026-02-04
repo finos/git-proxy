@@ -29,9 +29,8 @@ vi.mock('../../../src/db/helper', () => ({
 }));
 
 describe('MongoDB Push Handler', async () => {
-  const { getPushes, getPush, deletePush, writeAudit, authorise, reject, cancel } = await import(
-    '../../../src/db/mongo/pushes'
-  );
+  const { getPushes, getPush, deletePush, writeAudit, authorise, reject, cancel } =
+    await import('../../../src/db/mongo/pushes');
 
   const TEST_PUSH = {
     id: 'test-push-123',
