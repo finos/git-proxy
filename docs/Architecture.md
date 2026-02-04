@@ -226,7 +226,7 @@ Pre-receive hooks are a feature that allows blocking or automatically approving 
 **Important**: The pre-receive hook does not bypass the other processors in the chain. All processors continue to execute normally, and any of them can still block the push. The pre-receive hook only determines whether the push will be auto-approved, auto-rejected, or require manual review after all processors have completed.
 This processor will block the push depending on the exit status of the pre-receive hook:
 
-- Exit status `0`: Sets the push to `autoApproved`, skipping the requirement for subsequent approval. Note that this doesn't affect the other processors, which may still block the push.
+- Exit status `0`: Sets the push to `autoApproved`. If no other processors block the push, the contributor can immediately push again to the upstream repository without waiting for manual approval.
 - Exit status `1`: Sets the push to `autoRejected`, automatically rejecting the push after the chain completes, regardless of whether the other processors would have allowed it.
 - Exit status `2`: Requires subsequent manual approval as any regular push, even if all processors succeed.
 
