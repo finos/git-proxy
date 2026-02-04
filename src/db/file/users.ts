@@ -1,7 +1,8 @@
 import fs from 'fs';
 import Datastore from '@seald-io/nedb';
 
-import { User, UserQuery } from '../types';
+import { User, UserQuery, PublicKeyRecord } from '../types';
+import { DuplicateSSHKeyError, UserNotFoundError } from '../../errors/DatabaseErrors';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -95,6 +96,9 @@ export const findUserByOIDC = function (oidcId: string): Promise<User | null> {
 export const createUser = function (user: User): Promise<void> {
   user.username = user.username.toLowerCase();
   user.email = user.email.toLowerCase();
+  if (!user.publicKeys) {
+    user.publicKeys = [];
+  }
   return new Promise((resolve, reject) => {
     db.insert(user, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -180,5 +184,96 @@ export const getUsers = (query: Partial<UserQuery> = {}): Promise<User[]> => {
         resolve(docs);
       }
     });
+  });
+};
+
+export const addPublicKey = (username: string, publicKey: PublicKeyRecord): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    // Check if this key already exists for any user
+    findUserBySSHKey(publicKey.key)
+      .then((existingUser) => {
+        if (existingUser && existingUser.username.toLowerCase() !== username.toLowerCase()) {
+          reject(new DuplicateSSHKeyError(existingUser.username));
+          return;
+        }
+
+        // Key doesn't exist for other users
+        return findUser(username);
+      })
+      .then((user) => {
+        if (!user) {
+          reject(new UserNotFoundError(username));
+          return;
+        }
+        if (!user.publicKeys) {
+          user.publicKeys = [];
+        }
+
+        // Check if key already exists (by key content or fingerprint)
+        const keyExists = user.publicKeys.some(
+          (k) =>
+            k.key === publicKey.key || (k.fingerprint && k.fingerprint === publicKey.fingerprint),
+        );
+
+        if (keyExists) {
+          reject(new Error('SSH key already exists'));
+          return;
+        }
+
+        user.publicKeys.push(publicKey);
+        updateUser(user)
+          .then(() => resolve())
+          .catch(reject);
+      })
+      .catch(reject);
+  });
+};
+
+export const removePublicKey = (username: string, fingerprint: string): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    findUser(username)
+      .then((user) => {
+        if (!user) {
+          reject(new Error('User not found'));
+          return;
+        }
+        if (!user.publicKeys) {
+          user.publicKeys = [];
+          resolve();
+          return;
+        }
+        user.publicKeys = user.publicKeys.filter((k) => k.fingerprint !== fingerprint);
+        updateUser(user)
+          .then(() => resolve())
+          .catch(reject);
+      })
+      .catch(reject);
+  });
+};
+
+export const findUserBySSHKey = (sshKey: string): Promise<User | null> => {
+  return new Promise<User | null>((resolve, reject) => {
+    db.findOne({ 'publicKeys.key': sshKey }, (err: Error | null, doc: User) => {
+      // ignore for code coverage as neDB rarely returns errors even for an invalid query
+      /* istanbul ignore if */
+      if (err) {
+        reject(err);
+      } else {
+        if (!doc) {
+          resolve(null);
+        } else {
+          resolve(doc);
+        }
+      }
+    });
+  });
+};
+
+export const getPublicKeys = (username: string): Promise<PublicKeyRecord[]> => {
+  return findUser(username).then((user) => {
+    if (!user) {
+      throw new Error('User not found');
+    }
+    return user.publicKeys || [];
   });
 };
