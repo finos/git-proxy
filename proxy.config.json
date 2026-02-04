@@ -22,9 +22,6 @@
   "sink": [
     {
       "type": "fs",
-      "params": {
-        "filepath": "./."
-      },
       "enabled": true
     },
     {

@@ -517,10 +517,6 @@ export interface Database {
    */
   options?: Options;
   type: DatabaseType;
-  /**
-   * Legacy config property not currently used
-   */
-  params?: { [key: string]: any };
   [property: string]: any;
 }
 
@@ -988,7 +984,6 @@ const typeMap: any = {
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'options', js: 'options', typ: u(undefined, r('Options')) },
       { json: 'type', js: 'type', typ: r('DatabaseType') },
-      { json: 'params', js: 'params', typ: u(undefined, m('any')) },
     ],
     'any',
   ),
