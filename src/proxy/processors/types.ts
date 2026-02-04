@@ -1,8 +1,10 @@
+import { Request } from 'express';
+
 import { Question } from '../../config/generated/config';
 import { Action } from '../actions';
 
 export interface Processor {
-  exec(req: any, action: Action): Promise<Action>;
+  exec(req: Request, action: Action): Promise<Action>;
   metadata: ProcessorMetadata;
 }
 
@@ -13,10 +15,11 @@ export interface ProcessorMetadata {
 export type Attestation = {
   reviewer: {
     username: string;
-    gitAccount: string;
+    email: string;
   };
   timestamp: string | Date;
   questions: Question[];
+  automated?: boolean;
 };
 
 export type CommitContent = {

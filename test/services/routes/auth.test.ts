@@ -1,6 +1,6 @@
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import request from 'supertest';
-import express, { Express } from 'express';
+import express, { Express, Request, Response } from 'express';
 import authRoutes from '../../../src/service/routes/auth';
 import * as db from '../../../src/db';
 
@@ -200,9 +200,12 @@ describe('Auth API', () => {
       const sendSpy = vi.fn();
       const res = {
         send: sendSpy,
-      } as any;
+      };
 
-      await authRoutes.loginSuccessHandler()({ user } as any, res);
+      await authRoutes.loginSuccessHandler()(
+        { user } as unknown as Request,
+        res as unknown as Response,
+      );
 
       expect(sendSpy).toHaveBeenCalledOnce();
       expect(sendSpy).toHaveBeenCalledWith({

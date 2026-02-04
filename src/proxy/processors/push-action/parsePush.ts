@@ -1,7 +1,9 @@
-import { Action, Step } from '../../actions';
+import { Request } from 'express';
 import fs from 'fs';
 import lod from 'lodash';
 import { createInflate } from 'zlib';
+
+import { Action, Step } from '../../actions';
 import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
 import {
   BRANCH_PREFIX,
@@ -27,11 +29,11 @@ const EIGHTH_BIT_MASK = 0x80;
 
 /**
  * Executes the parsing of a push request.
- * @param {*} req - The request object containing the push data.
+ * @param {Request} req - The Express Request object containing the push data.
  * @param {Action} action - The action object to be modified.
  * @return {Promise<Action>} The modified action object.
  */
-async function exec(req: any, action: Action): Promise<Action> {
+async function exec(req: Request, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
   try {
     if (!req.body || req.body.length === 0) {
@@ -81,7 +83,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     const [meta, contentBuff] = getPackMeta(buf);
     const contents = await getContents(contentBuff, meta.entries);
 
-    action.commitData = getCommitData(contents as any);
+    action.commitData = getCommitData(contents);
 
     if (action.commitData.length === 0) {
       step.log('No commit data found when parsing push.');
@@ -99,10 +101,9 @@ async function exec(req: any, action: Action): Promise<Action> {
     step.content = {
       meta: meta,
     };
-  } catch (e: any) {
-    step.setError(
-      `Unable to parse push. Please contact an administrator for support: ${e.toString('utf-8')}`,
-    );
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    step.setError(`Unable to parse push. Please contact an administrator for support: ${msg}`);
   } finally {
     action.addStep(step);
   }
@@ -476,8 +477,8 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
     };
 
     // stop on errors, except maybe buffer errors?
-    const onError = (e: any) => {
-      error = e;
+    const onError = (e: unknown) => {
+      error = e instanceof Error ? e : new Error(String(e));
       console.warn(`Error during inflation: ${JSON.stringify(e)}`);
       error = new Error('Error during inflation', { cause: e });
       inflater.end();
@@ -503,9 +504,10 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
             offset++;
           }
         });
-      } catch (e) {
-        console.warn(`Error during decompression: ${JSON.stringify(e)}`);
-        error = new Error('Error during decompression', { cause: e });
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.warn(`Error during decompression: ${msg}`);
+        throw new Error(`Error during decompression: ${msg}`);
       }
     }
     const result = {

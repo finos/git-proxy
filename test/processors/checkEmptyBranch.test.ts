@@ -1,13 +1,14 @@
+import { Request } from 'express';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Action } from '../../src/proxy/actions';
-import { EMPTY_COMMIT_HASH } from '../../src/proxy/processors/constants';
+import { EMPTY_COMMIT_HASH, SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
 
 vi.mock('simple-git');
 vi.mock('fs');
 
 describe('checkEmptyBranch', () => {
-  let exec: (req: any, action: Action) => Promise<Action>;
-  let simpleGitMock: any;
+  let exec: (req: Request, action: Action) => Promise<Action>;
+  let simpleGitMock: ReturnType<typeof vi.fn>;
   let gitRawMock: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
@@ -25,7 +26,7 @@ describe('checkEmptyBranch', () => {
 
     // mocking fs to prevent simple-git from validating directories
     vi.doMock('fs', async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
         existsSync: vi.fn().mockReturnValue(true),
@@ -48,10 +49,10 @@ describe('checkEmptyBranch', () => {
 
   describe('exec', () => {
     let action: Action;
-    let req: any;
+    let req: Request;
 
     beforeEach(() => {
-      req = {};
+      req = {} as Request;
       action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
       action.proxyGitPath = '/tmp/gitproxy';
       action.repoName = 'test-repo';
@@ -61,7 +62,7 @@ describe('checkEmptyBranch', () => {
     });
 
     it('should pass through if commitData is already populated', async () => {
-      action.commitData = [{ message: 'Existing commit' }] as any;
+      action.commitData = [{ ...SAMPLE_COMMIT, message: 'Existing commit' }];
 
       const result = await exec(req, action);
 

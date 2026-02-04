@@ -5,11 +5,12 @@ import { getProxyURL } from '../urls';
 import { getAllProxiedHosts } from '../../db';
 import { RepoQuery } from '../../db/types';
 import { isAdminUser } from './utils';
+import { Proxy } from '../../proxy';
 
 // create a reference to the proxy service as arrow functions will lose track of the `proxy` parameter
 // used to restart the proxy when a new host is added
-let theProxy: any = null;
-const repo = (proxy: any) => {
+let theProxy: Proxy | null = null;
+const repo = (proxy: Proxy) => {
   theProxy = proxy;
   const router = express.Router();
 
@@ -131,8 +132,8 @@ const repo = (proxy: any) => {
       if (currentHosts.length < previousHosts.length) {
         // restart the proxy
         console.log('Restarting the proxy to remove a host');
-        await theProxy.stop();
-        await theProxy.start();
+        await theProxy?.stop();
+        await theProxy?.start();
       }
 
       res.send({ message: 'deleted' });
@@ -184,19 +185,17 @@ const repo = (proxy: any) => {
           // restart the proxy if we're proxying a new domain
           if (newOrigin) {
             console.log('Restarting the proxy to handle an additional host');
-            await theProxy.stop();
-            await theProxy.start();
+            await theProxy?.stop();
+            await theProxy?.start();
           }
-        } catch (e: any) {
-          console.error('Repository creation failed due to error: ', e.message ? e.message : e);
-          console.error(e.stack);
+        } catch (error: unknown) {
+          if (error instanceof Error) {
+            console.error('Repository creation failed due to error: ', error.message);
+            console.error(error.stack);
+          }
           res.status(500).send({ message: 'Failed to create repository due to error' });
         }
       }
-    } else {
-      res.status(401).send({
-        message: 'You are not authorised to perform this action...',
-      });
     }
   });
 

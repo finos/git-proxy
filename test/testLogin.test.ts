@@ -232,7 +232,7 @@ describe('login', () => {
         });
 
       expect(failCreateRes.status).toBe(500);
-      expect(failCreateRes.body.message).toBe('user newuser already exists');
+      expect(failCreateRes.body.message).toBe('Failed to create user: user newuser already exists');
     });
   });
 

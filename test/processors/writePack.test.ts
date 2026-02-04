@@ -2,26 +2,25 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Action, Step } from '../../src/proxy/actions';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
+import { Request } from 'express';
 
 vi.mock('child_process');
 vi.mock('fs');
 
 describe('writePack', () => {
-  let exec: any;
-  let readdirSyncMock: any;
-  let spawnSyncMock: any;
-  let stepLogSpy: any;
-  let stepSetContentSpy: any;
-  let stepSetErrorSpy: any;
+  let exec: typeof import('../../src/proxy/processors/push-action/writePack').exec;
+  let readdirSyncMock: ReturnType<typeof vi.fn>;
+  let spawnSyncMock: ReturnType<typeof vi.fn>;
+  let stepLogSpy: ReturnType<typeof vi.spyOn>;
+  let stepSetContentSpy: ReturnType<typeof vi.spyOn>;
+  let stepSetErrorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(async () => {
     vi.clearAllMocks();
 
     spawnSyncMock = vi.mocked(childProcess.spawnSync);
     readdirSyncMock = vi.mocked(fs.readdirSync);
-    readdirSyncMock
-      .mockReturnValueOnce(['old1.idx'] as any)
-      .mockReturnValueOnce(['old1.idx', 'new1.idx'] as any);
+    readdirSyncMock.mockReturnValueOnce(['old1.idx']).mockReturnValueOnce(['old1.idx', 'new1.idx']);
 
     stepLogSpy = vi.spyOn(Step.prototype, 'log');
     stepSetContentSpy = vi.spyOn(Step.prototype, 'setContent');
@@ -37,12 +36,12 @@ describe('writePack', () => {
 
   describe('exec', () => {
     let action: Action;
-    let req: any;
+    let req: Request;
 
     beforeEach(() => {
       req = {
         body: 'pack data',
-      };
+      } as Request;
 
       action = new Action(
         '1234567890',
