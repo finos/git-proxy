@@ -10,15 +10,13 @@ const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.checkCommitMessages,
   proc.push.checkAuthorEmails,
   proc.push.checkUserPushPermission,
-  proc.push.pullRemote,
+  proc.push.pullRemote, // cleanup is handled after chain execution if successful
   proc.push.writePack,
   proc.push.checkHiddenCommits,
   proc.push.checkIfWaitingAuth,
   proc.push.preReceive,
   proc.push.getDiff,
-  // run before clear remote
   proc.push.gitleaks,
-  proc.push.clearBareClone,
   proc.push.scanDiff,
   proc.push.blockForAuth,
 ];
@@ -32,6 +30,7 @@ const defaultActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
 ];
 
 let pluginsInserted = false;
+let checkoutCleanUpRequired = false;
 
 export const executeChain = async (req: any, res: any): Promise<Action> => {
   let action: Action = {} as Action;
@@ -44,6 +43,10 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
       action = await fn(req, action);
       if (!action.continue() || action.allowPush) {
         break;
+      } else if (fn === proc.push.pullRemote) {
+        //if the pull was successful then record the fact we need to clean it up again
+        // pullRemote should cleanup unsuccessful clones itself
+        checkoutCleanUpRequired = true;
       }
     }
   } catch (e) {
@@ -51,11 +54,16 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
     action.errorMessage = `An error occurred when executing the chain: ${e}`;
     console.error(action.errorMessage);
   } finally {
+    //clean up the clone created
+    if (checkoutCleanUpRequired) {
+      action = await proc.push.clearBareClone(req, action);
+    }
+
     await proc.push.audit(req, action);
     if (action.autoApproved) {
-      attemptAutoApproval(action);
+      await attemptAutoApproval(action);
     } else if (action.autoRejected) {
-      attemptAutoRejection(action);
+      await attemptAutoRejection(action);
     }
   }
 
