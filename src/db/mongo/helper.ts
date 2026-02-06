@@ -4,6 +4,17 @@ import MongoDBStore from 'connect-mongo';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
 
 let _db: Db | null = null;
+let _client: MongoClient | null = null;
+
+export const resetConnection = async (): Promise<void> => {
+  if (_client) {
+    await _client.close();
+    _client = null;
+    _db = null;
+  }
+};
+
+export const getDb = (): Db | null => _db;
 
 export const connect = async (collectionName: string): Promise<Collection> => {
   //retrieve config at point of use (rather than import)
@@ -21,9 +32,9 @@ export const connect = async (collectionName: string): Promise<Collection> => {
       (options.authMechanismProperties.AWS_CREDENTIAL_PROVIDER as any) = fromNodeProviderChain();
     }
 
-    const client = new MongoClient(connectionString, options);
-    await client.connect();
-    _db = client.db();
+    _client = new MongoClient(connectionString, options);
+    await _client.connect();
+    _db = _client.db();
   }
 
   return _db.collection(collectionName);
