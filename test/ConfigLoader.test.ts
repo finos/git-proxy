@@ -213,7 +213,9 @@ describe('ConfigLoader', () => {
       } else if (process.platform === 'linux') {
         expect(configLoader.cacheDirPath).toContain('.cache');
       } else if (process.platform === 'win32') {
-        expect(configLoader.cacheDirPath).toContain('AppData/Local');
+        // Windows uses backslash in paths, so check for path components separately
+        expect(configLoader.cacheDirPath).toContain('AppData');
+        expect(configLoader.cacheDirPath).toContain('Local');
       }
     });
 
@@ -430,61 +432,88 @@ describe('ConfigLoader', () => {
       );
     });
 
-    it('should throw error if repository is a valid URL but not a git repository', async () => {
-      const source: ConfigurationSource = {
-        type: 'git',
-        repository: 'https://github.com/finos/made-up-test-repo.git',
-        path: 'proxy.config.json',
-        branch: 'main',
-        enabled: true,
-      };
+    it(
+      'should throw error if repository is a valid URL but not a git repository',
+      async () => {
+        const source: ConfigurationSource = {
+          type: 'git',
+          repository: 'https://github.com/finos/made-up-test-repo.git',
+          path: 'proxy.config.json',
+          branch: 'main',
+          enabled: true,
+        };
 
-      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
-        /Failed to clone repository/,
-      );
-    });
+        // Clean up cached clone of the fake repo so the test works regardless of order
+        const envPaths = (await import('env-paths')).default;
+        const paths = envPaths('git-proxy', { suffix: '' });
+        const repoDirName = Buffer.from(source.repository)
+          .toString('base64')
+          .replace(/[^a-zA-Z0-9]/g, '_');
+        const repoDir = path.join(paths.cache, 'git-config-cache', repoDirName);
+        if (fs.existsSync(repoDir)) {
+          fs.rmSync(repoDir, { recursive: true });
+        }
 
-    it('should throw error if repository is a valid git repo but the branch does not exist', async () => {
-      const source: ConfigurationSource = {
-        type: 'git',
-        repository: 'https://github.com/finos/git-proxy.git',
-        path: 'proxy.config.json',
-        branch: 'branch-does-not-exist',
-        enabled: true,
-      };
+        await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+          /Failed to clone repository/,
+        );
+      },
+      { timeout: 30000 },
+    );
 
-      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
-        /Failed to checkout branch/,
-      );
-    });
+    it(
+      'should throw error if repository is a valid git repo but the branch does not exist',
+      async () => {
+        const source: ConfigurationSource = {
+          type: 'git',
+          repository: 'https://github.com/finos/git-proxy.git',
+          path: 'proxy.config.json',
+          branch: 'branch-does-not-exist',
+          enabled: true,
+        };
 
-    it('should throw error if config path was not found', async () => {
-      const source: ConfigurationSource = {
-        type: 'git',
-        repository: 'https://github.com/finos/git-proxy.git',
-        path: 'path-not-found.json',
-        branch: 'main',
-        enabled: true,
-      };
+        await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+          /Failed to checkout branch/,
+        );
+      },
+      { timeout: 30000 },
+    );
 
-      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
-        /Configuration file not found at/,
-      );
-    });
+    it(
+      'should throw error if config path was not found',
+      async () => {
+        const source: ConfigurationSource = {
+          type: 'git',
+          repository: 'https://github.com/finos/git-proxy.git',
+          path: 'path-not-found.json',
+          branch: 'main',
+          enabled: true,
+        };
 
-    it('should throw error if config file is not valid JSON', async () => {
-      const source: ConfigurationSource = {
-        type: 'git',
-        repository: 'https://github.com/finos/git-proxy.git',
-        path: 'test/fixtures/baz.js',
-        branch: 'main',
-        enabled: true,
-      };
+        await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+          /Configuration file not found at/,
+        );
+      },
+      { timeout: 30000 },
+    );
 
-      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
-        /Failed to read or parse configuration file/,
-      );
-    });
+    it(
+      'should throw error if config file is not valid JSON',
+      async () => {
+        const source: ConfigurationSource = {
+          type: 'git',
+          repository: 'https://github.com/finos/git-proxy.git',
+          path: 'test/fixtures/baz.js',
+          branch: 'main',
+          enabled: true,
+        };
+
+        await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+          /Failed to read or parse configuration file/,
+        );
+      },
+      { timeout: 30000 },
+    );
   });
 
   describe('deepMerge', () => {
