@@ -367,6 +367,26 @@
           }
         }
       }
+    },
+    "cache": {
+      "description": "Configuration for bare repository cache (hybrid cache system)",
+      "type": "object",
+      "properties": {
+        "maxSizeGB": {
+          "type": "number",
+          "description": "Maximum cache size in gigabytes (default 2GB)"
+        },
+        "maxRepositories": {
+          "type": "number",
+          "description": "Maximum number of repositories in cache (default 50)"
+        },
+        "cacheDir": {
+          "type": "string",
+          "description": "Directory path for bare repository cache (default ./.remote/cache)"
+        }
+      },
+      "required": ["maxSizeGB", "maxRepositories", "cacheDir"],
+      "additionalProperties": false
     }
   },
   "definitions": {
