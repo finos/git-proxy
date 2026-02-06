@@ -1,0 +1,315 @@
+# Deployment Guide
+
+This guide covers installing, configuring, and running GitProxy in both development and production environments.
+
+For configuration details, see the [Configuration Overview](/docs/configuration/overview) and [Configuration Reference](/docs/configuration/reference).
+
+---
+
+## Prerequisites
+
+### System Requirements
+
+- **Node.js**: >= 20.18.2, >= 22.13.1, or >= 24.0.0
+- **Git**: Required for cloning and pack operations
+- **Operating System**: Linux, macOS, or Windows
+
+### Database Options
+
+GitProxy supports two database backends (configured in `proxy.config.json` under `"sink"`):
+
+1. **NeDB (File-based)** — Default, suitable for development and single-server use
+   - No external dependencies
+   - Data stored in `./.data/db/` (hardcoded path, not configurable)
+   - Sessions are in-memory only (lost on restart)
+
+2. **MongoDB** — Recommended for production
+   - Requires MongoDB 7.0+
+   - Supports persistent sessions
+   - Required for multi-instance deployments
+
+### Optional Dependencies
+
+- **[Gitleaks](https://github.com/gitleaks/gitleaks)** — For secret scanning. Must be installed separately; it is not bundled with GitProxy or the Docker image.
+- **Docker** — For containerized deployment
+
+---
+
+## Quick Start
+
+### 1. Install GitProxy
+
+```bash
+npm install -g @finos/git-proxy
+```
+
+:::tip Quick testing with npx
+For quick local testing before committing to a full installation, you can use `npx` without installing globally:
+
+```bash
+npx -- @finos/git-proxy --config ./proxy.config.json
+```
+
+For persistent deployments, prefer `npm install -g` with version pinning (e.g., `npm install -g @finos/git-proxy@2.x.x`). See [Usage](/docs/usage) for more details.
+:::
+
+### 2. Create a Configuration File
+
+Create `proxy.config.json` in your working directory:
+
+```json
+{
+  "authorisedList": [
+    {
+      "project": "my-org",
+      "name": "my-repo",
+      "url": "https://github.com/my-org/my-repo.git"
+    }
+  ]
+}
+```
+
+:::warning
+Repository URLs **must** include the `.git` suffix. Without it, you will get `fatal: info/refs not valid` errors.
+:::
+
+### 3. Start GitProxy
+
+```bash
+git-proxy --config ./proxy.config.json
+```
+
+Expected output:
+```
+Listening on 8000
+Service Listening on 8080
+```
+
+GitProxy runs two servers:
+
+- **Proxy server** on port 8000 — intercepts git operations
+- **Service/UI server** on port 8080 — web dashboard and REST API
+
+### 4. Configure Your Git Client
+
+In your local repository, add GitProxy as a remote:
+
+```bash
+cd /path/to/my-repo
+git remote add proxy http://localhost:8000/my-org/my-repo.git
+```
+
+Or replace the existing origin:
+```bash
+git remote set-url origin http://localhost:8000/my-org/my-repo.git
+```
+
+### 5. Test a Push
+
+```bash
+git add .
+git commit -m "test: validate gitproxy integration"
+git push proxy main
+```
+
+You should receive a message with a review URL:
+```
+remote: GitProxy has received your push
+remote: Shareable Link
+remote: http://localhost:8080/dashboard/push/000000__b12557
+```
+
+### 6. Approve the Push
+
+1. Navigate to http://localhost:8080 in your browser
+2. Log in with default credentials (**development only**):
+   - Username: `admin`
+   - Password: `admin`
+3. Review the push and approve it
+4. Push again to forward to upstream:
+   ```bash
+   git push proxy main
+   ```
+
+---
+
+## Docker Deployment
+
+### Using the Published Image
+
+A Docker image is published to [Docker Hub](https://hub.docker.com/r/finos/git-proxy):
+
+```bash
+docker run -d \
+  --name git-proxy \
+  -p 8000:8000 \
+  -p 8080:8080 \
+  -v $(pwd)/proxy.config.json:/app/proxy.config.json:ro \
+  finos/git-proxy:latest
+```
+
+### Building from Source
+
+```bash
+git clone https://github.com/finos/git-proxy.git
+cd git-proxy
+docker build -t git-proxy:local .
+```
+
+The Dockerfile uses a multi-stage build with Node.js 20, installs `git` and `tini`, and runs as a non-root user (UID 1000). Ports 8000 (proxy) and 8080 (UI/API) are exposed.
+
+View logs:
+```bash
+docker logs -f git-proxy
+```
+
+### Runtime Environment Variables
+
+The following environment variables can be set at container runtime:
+
+| Variable                 | Default      | Description                                              |
+| ------------------------ | ------------ | -------------------------------------------------------- |
+| `GIT_PROXY_SERVER_PORT`  | `8000`       | Proxy server port                                        |
+| `GIT_PROXY_UI_PORT`      | `8080`       | UI/API server port                                       |
+| `ALLOWED_ORIGINS`        | (empty)      | CORS allowed origins (comma-separated, or `*` for all)   |
+| `API_URL`                | (empty)      | API URL for the UI (leave empty for same-origin)         |
+| `NODE_ENV`               | `production` | Node environment                                         |
+
+Example with environment variables:
+```bash
+docker run -d \
+  --name git-proxy \
+  -p 8000:8000 \
+  -p 8080:8080 \
+  -e GIT_PROXY_UI_PORT=8080 \
+  -e ALLOWED_ORIGINS="https://gitproxy.example.com" \
+  -e NODE_ENV=production \
+  -v $(pwd)/proxy.config.json:/app/proxy.config.json:ro \
+  git-proxy:local
+```
+
+### Persistent Data
+
+When using the file-based database (NeDB), mount a volume for the data directory:
+
+```bash
+docker run -d \
+  --name git-proxy \
+  -p 8000:8000 \
+  -p 8080:8080 \
+  -v $(pwd)/proxy.config.json:/app/proxy.config.json:ro \
+  -v $(pwd)/data:/app/.data \
+  git-proxy:local
+```
+
+When using MongoDB, no additional data volumes are needed for GitProxy itself — data is stored in MongoDB.
+
+---
+
+## Git Client Configuration
+
+### Setting GitProxy as a Remote
+
+#### Option 1: Add as a new remote
+
+```bash
+cd /path/to/repository
+git remote add proxy http://gitproxy.example.com:8000/org/repo.git
+git push proxy main
+```
+
+#### Option 2: Replace origin
+
+```bash
+git remote set-url origin http://gitproxy.example.com:8000/org/repo.git
+git push origin main
+```
+
+### Credential Management
+
+GitProxy prompts for credentials on each push. To cache credentials:
+
+**macOS:**
+```bash
+git config --global credential.helper osxkeychain
+```
+
+**Windows:**
+```bash
+git config --global credential.helper manager
+```
+
+**Linux:**
+```bash
+git config --global credential.helper store
+```
+
+**Required credentials for pushing through GitProxy to GitHub:**
+- GitHub username
+- Personal Access Token (PAT) with at minimum `public_repo` scope
+
+### SSH Support
+
+GitProxy currently supports HTTPS only. SSH protocol support is under active development.
+
+---
+
+## Production Considerations
+
+### MongoDB for Production
+
+Switch from the default file-based database to MongoDB for production use:
+
+```json
+{
+  "sink": [
+    {
+      "type": "mongo",
+      "connectionString": "mongodb://user:password@mongodb-host:27017/gitproxy",
+      "options": {
+        "ssl": true,
+        "tlsAllowInvalidCertificates": false
+      },
+      "enabled": true
+    }
+  ]
+}
+```
+
+**Recommendations:**
+- Use MongoDB 7.0 or later
+- Enable authentication and TLS/SSL
+- Configure replica sets for high availability
+- Schedule regular backups of audit data (`mongodump`)
+
+### Health Checks
+
+GitProxy provides health check endpoints on both servers:
+
+- **`/healthcheck`** on the proxy port (8000) — returns `200 OK` with text body `"OK"`
+- **`/api/v1/healthcheck`** on the service port (8080) — returns `200 OK` with JSON body `{"message":"ok"}`
+
+Use these for load balancer health probes, container orchestration liveness/readiness checks, or uptime monitoring.
+
+### Monitoring
+
+GitProxy does not currently ship with built-in metrics or structured logging. Recommended monitoring points:
+
+- **Health endpoints** — poll `/healthcheck` and `/api/v1/healthcheck`
+- **Process health** — monitor Node.js process uptime and memory usage
+- **Database connectivity** — monitor MongoDB connection status
+- **Push activity** — query the pushes collection for approval/rejection rates
+
+### Backup
+
+**MongoDB:**
+```bash
+mongodump --uri="mongodb://localhost:27017/gitproxy" --out=/backup/$(date +%Y%m%d)
+```
+
+**File-based (NeDB):**
+```bash
+tar -czf gitproxy-backup-$(date +%Y%m%d).tar.gz ./.data
+```
+
+Always version-control your `proxy.config.json`.
