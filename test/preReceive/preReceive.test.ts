@@ -29,8 +29,7 @@ describe.skipIf(process.platform === 'win32')('Pre-Receive Hook Execution', () =
   });
 
   afterEach(() => {
-    vi.resetModules();
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should catch and handle unexpected errors', async () => {

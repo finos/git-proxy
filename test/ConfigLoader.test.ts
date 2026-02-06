@@ -443,6 +443,17 @@ describe('ConfigLoader', () => {
           enabled: true,
         };
 
+        // Clean up cached clone of the fake repo so the test works regardless of order
+        const envPaths = (await import('env-paths')).default;
+        const paths = envPaths('git-proxy', { suffix: '' });
+        const repoDirName = Buffer.from(source.repository)
+          .toString('base64')
+          .replace(/[^a-zA-Z0-9]/g, '_');
+        const repoDir = path.join(paths.cache, 'git-config-cache', repoDirName);
+        if (fs.existsSync(repoDir)) {
+          fs.rmSync(repoDir, { recursive: true });
+        }
+
         await expect(configLoader.loadFromSource(source)).rejects.toThrow(
           /Failed to clone repository/,
         );
