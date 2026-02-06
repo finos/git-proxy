@@ -53,6 +53,7 @@
     "build-ui": "vite build",
     "check-types": "tsc",
     "check-types:server": "tsc --project tsconfig.publish.json --noEmit",
+    "test-shuffle": "NODE_ENV=test vitest --run --dir ./test --sequence.shuffle",
     "test": "cross-env NODE_ENV=test vitest --run --dir ./test",
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
     "test:e2e:watch": "vitest --config vitest.config.e2e.ts",
