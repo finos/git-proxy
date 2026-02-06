@@ -13,6 +13,7 @@ import Button from '../../components/CustomButtons/Button';
 import Diff from './components/Diff';
 import Attestation from './components/Attestation';
 import AttestationView from './components/AttestationView';
+import Reject from './components/Reject';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableHead from '@material-ui/core/TableHead';
@@ -62,9 +63,9 @@ const Dashboard: React.FC = () => {
     }
   };
 
-  const reject = async () => {
+  const reject = async (reason: string) => {
     if (!id) return;
-    await rejectPush(id, setMessage, setUserAllowedToReject);
+    await rejectPush(id, setMessage, setUserAllowedToReject, reason);
     if (isUserAllowedToReject) {
       navigate('/dashboard/push/');
     }
@@ -153,9 +154,7 @@ const Dashboard: React.FC = () => {
                   <Button color='warning' onClick={cancel}>
                     Cancel
                   </Button>
-                  <Button color='danger' onClick={reject}>
-                    Reject
-                  </Button>
+                  <Reject rejectFn={reject} />
                   <Attestation approveFn={authorise} />
                 </div>
               )}

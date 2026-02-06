@@ -45,6 +45,7 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
 
   const id = req.params.id;
   const { username } = req.user as { username: string };
+  const { reason } = req.body;
 
   // Get the push request
   const push = await getValidPushOrRespond(id, res);
@@ -72,7 +73,9 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
 
   if (isAllowed) {
     const result = await db.reject(id, null);
-    console.log(`User ${username} rejected push request for ${id}`);
+    console.log(
+      `User ${username} rejected push request for ${id}${reason ? ` with reason: ${reason}` : ''}`,
+    );
     res.send(result);
   } else {
     res.status(403).send({

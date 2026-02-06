@@ -99,12 +99,13 @@ const rejectPush = async (
   id: string,
   setMessage: (message: string) => void,
   setUserAllowedToReject: (userAllowedToReject: boolean) => void,
+  reason?: string,
 ): Promise<void> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = `${apiV1Base}/push/${id}/reject`;
   let errorMsg = '';
   let isUserAllowedToReject = true;
-  await axios.post(url, {}, getAxiosConfig()).catch((error: any) => {
+  await axios.post(url, { reason }, getAxiosConfig()).catch((error: any) => {
     if (error.response && error.response.status === 401) {
       errorMsg = 'You are not authorised to reject...';
       isUserAllowedToReject = false;
