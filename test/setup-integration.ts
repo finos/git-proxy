@@ -51,16 +51,19 @@ afterEach(async () => {
     for (const collection of COLLECTIONS) {
       try {
         await db.collection(collection).deleteMany({});
-      } catch {
-        // Collection might not exist yet, ignore
+      } catch (error) {
+        console.warn(
+          `Failed to clear collection "${collection}" during integration test cleanup`,
+          error,
+        );
       }
     }
   }
 
   try {
     await resetConnection();
-  } catch {
-    // Ignore if connection wasn't established
+  } catch (error) {
+    console.warn('Failed to reset MongoDB connection during integration test cleanup', error);
   }
   invalidateCache();
 });
@@ -68,8 +71,8 @@ afterEach(async () => {
 afterAll(async () => {
   try {
     await resetConnection();
-  } catch {
-    // Ignore if connection wasn't established
+  } catch (error) {
+    console.warn('Failed to reset MongoDB connection during integration test cleanup', error);
   }
 
   if (client) {
@@ -79,8 +82,8 @@ afterAll(async () => {
           `mongodb://localhost:27017/${DEFAULT_TEST_DB_NAME}`,
       );
       await client.db(dbName).dropDatabase();
-    } catch {
-      // Ignore if database doesn't exist
+    } catch (error) {
+      console.warn('Failed to drop MongoDB test database during cleanup', error);
     }
     await client.close();
     client = null;
