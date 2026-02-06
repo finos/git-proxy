@@ -432,7 +432,7 @@ describe('ConfigLoader', () => {
       );
     });
 
-it(
+    it(
       'should throw error if repository is a valid URL but not a git repository',
       async () => {
         const source: ConfigurationSource = {
