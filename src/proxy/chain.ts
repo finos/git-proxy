@@ -56,10 +56,11 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
   } finally {
     //clean up the clone created
     if (checkoutCleanUpRequired) {
-      action = await proc.push.clearBareClone(req, action);
+      action = await proc.post.clearBareClone(req, action);
     }
 
-    await proc.push.audit(req, action);
+    action = await proc.post.audit(req, action);
+
     if (action.autoApproved) {
       await attemptAutoApproval(action);
     } else if (action.autoRejected) {
