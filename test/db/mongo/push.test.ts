@@ -97,7 +97,7 @@ describe('MongoDB Push Handler', async () => {
             rejected: 1,
             repo: 1,
             repoName: 1,
-            timepstamp: 1,
+            timestamp: 1,
             type: 1,
             url: 1,
           },

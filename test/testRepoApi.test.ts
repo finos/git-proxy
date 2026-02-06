@@ -324,10 +324,8 @@ describe('repo routes - edge cases', () => {
     app = await Service.start(proxy);
 
     await cleanupRepo(TEST_REPO.url);
-    await db.deleteUser('testadmin');
     await db.deleteUser('nonadmin');
 
-    await db.createUser('testadmin', 'password', 'testadmin@test.com', 'Test Admin', true);
     await db.createUser('nonadmin', 'password', 'nonadmin@test.com', 'Non Admin', false);
 
     // Login as admin and set cookies
