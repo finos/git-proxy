@@ -47,6 +47,13 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
   const { username } = req.user as { username: string };
   const { reason } = req.body;
 
+  if (!reason || !reason.trim()) {
+    res.status(400).send({
+      message: 'Rejection reason is required',
+    });
+    return;
+  }
+
   // Get the push request
   const push = await getValidPushOrRespond(id, res);
   if (!push) return;
