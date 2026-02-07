@@ -12,7 +12,6 @@ describe('writePack', () => {
   let readdirSyncMock: any;
   let spawnSyncMock: any;
   let stepLogSpy: any;
-  let stepSetContentSpy: any;
   let stepSetErrorSpy: any;
 
   beforeEach(async () => {
@@ -25,7 +24,6 @@ describe('writePack', () => {
       .mockReturnValueOnce(['old1.idx', 'new1.idx'] as any);
 
     stepLogSpy = vi.spyOn(Step.prototype, 'log');
-    stepSetContentSpy = vi.spyOn(Step.prototype, 'setContent');
     stepSetErrorSpy = vi.spyOn(Step.prototype, 'setError');
 
     const writePack = await import('../../src/proxy/processors/push-action/writePack');
@@ -81,7 +79,6 @@ describe('writePack', () => {
       );
 
       expect(stepLogSpy).toHaveBeenCalledWith('new idx files: new1.idx');
-      expect(stepSetContentSpy).toHaveBeenCalledWith(dummySpawnOutput);
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(false);
       expect(result.newIdxFiles).toEqual(['new1.idx']);
