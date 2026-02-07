@@ -79,7 +79,26 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
   const isAllowed = await db.canUserApproveRejectPush(id, username);
 
   if (isAllowed) {
-    const result = await db.reject(id, null);
+    const reviewerList = await db.getUsers({ username });
+    const reviewerEmail = reviewerList[0].email;
+
+    if (!reviewerEmail) {
+      res.status(404).send({
+        message: `There was no registered email address for the reviewer: ${username}`,
+      });
+      return;
+    }
+
+    const rejection = {
+      reason,
+      timestamp: new Date(),
+      reviewer: {
+        username,
+        reviewerEmail,
+      },
+    };
+
+    const result = await db.reject(id, rejection);
     console.log(
       `User ${username} rejected push request for ${id}${reason ? ` with reason: ${reason}` : ''}`,
     );

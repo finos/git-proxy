@@ -167,8 +167,8 @@ export const deletePush = (id: string): Promise<void> => start().deletePush(id);
 export const authorise = (id: string, attestation: any): Promise<{ message: string }> =>
   start().authorise(id, attestation);
 export const cancel = (id: string): Promise<{ message: string }> => start().cancel(id);
-export const reject = (id: string, attestation: any): Promise<{ message: string }> =>
-  start().reject(id, attestation);
+export const reject = (id: string, rejection: any): Promise<{ message: string }> =>
+  start().reject(id, rejection);
 export const getRepos = (query?: Partial<RepoQuery>): Promise<Repo[]> => start().getRepos(query);
 export const getRepo = (name: string): Promise<Repo | null> => start().getRepo(name);
 export const getRepoByUrl = (url: string): Promise<Repo | null> => start().getRepoByUrl(url);
