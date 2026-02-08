@@ -13,6 +13,7 @@ import Button from '../../components/CustomButtons/Button';
 import Diff from './components/Diff';
 import Attestation from './components/Attestation';
 import AttestationInfo from './components/AttestationInfo';
+import RejectionInfo from './components/RejectionInfo';
 import Reject from './components/Reject';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -162,6 +163,7 @@ const Dashboard: React.FC = () => {
                 attestation={attestation}
                 setAttestation={setAttestation}
               />
+              <RejectionInfo push={push} />
             </CardHeader>
             <CardBody>
               <GridContainer>
