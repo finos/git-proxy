@@ -12,7 +12,7 @@ import CardFooter from '../../components/Card/CardFooter';
 import Button from '../../components/CustomButtons/Button';
 import Diff from './components/Diff';
 import Attestation from './components/Attestation';
-import AttestationView from './components/AttestationView';
+import AttestationInfo from './components/AttestationInfo';
 import Reject from './components/Reject';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -22,11 +22,9 @@ import TableCell from '@material-ui/core/TableCell';
 import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/git-push';
 import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
-import Tooltip from '@material-ui/core/Tooltip';
-import { AttestationFormData, PushActionView } from '../../types';
+import { PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
 import { generateEmailLink, getGitProvider } from '../../utils';
-import UserLink from '../../components/UserLink/UserLink';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -158,85 +156,12 @@ const Dashboard: React.FC = () => {
                   <Attestation approveFn={authorise} />
                 </div>
               )}
-              {push.attestation && push.authorised && (
-                <div
-                  style={{
-                    background: '#eee',
-                    padding: '10px 20px 10px 20px',
-                    borderRadius: '10px',
-                    color: 'black',
-                    marginTop: '15px',
-                    float: 'right',
-                    position: 'relative',
-                    textAlign: 'left',
-                  }}
-                >
-                  <span style={{ position: 'absolute', top: 0, right: 0 }}>
-                    <CheckCircle
-                      style={{
-                        cursor: push.autoApproved ? 'default' : 'pointer',
-                        transform: 'scale(0.65)',
-                        opacity: push.autoApproved ? 0.5 : 1,
-                      }}
-                      onClick={() => {
-                        if (!push.autoApproved) {
-                          setAttestation(true);
-                        }
-                      }}
-                      htmlColor='green'
-                    />
-                  </span>
-
-                  {push.autoApproved ? (
-                    <div style={{ paddingTop: '15px' }}>
-                      <p>
-                        <strong>Auto-approved by system</strong>
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      {isGitHub && (
-                        <UserLink username={push.attestation.reviewer.username}>
-                          <img
-                            style={{ width: '45px', borderRadius: '20px' }}
-                            src={`https://github.com/${push.attestation.reviewer.gitAccount}.png`}
-                          />
-                        </UserLink>
-                      )}
-                      <div>
-                        <p>
-                          {isGitHub && (
-                            <UserLink username={push.attestation.reviewer.username}>
-                              {push.attestation.reviewer.gitAccount}
-                            </UserLink>
-                          )}
-                          {!isGitHub && <UserLink username={push.attestation.reviewer.username} />}{' '}
-                          approved this contribution
-                        </p>
-                      </div>
-                    </>
-                  )}
-
-                  <Tooltip
-                    title={moment(push.attestation.timestamp).format(
-                      'dddd, MMMM Do YYYY, h:mm:ss a',
-                    )}
-                    arrow
-                  >
-                    <kbd style={{ color: 'black', float: 'right' }}>
-                      {moment(push.attestation.timestamp).fromNow()}
-                    </kbd>
-                  </Tooltip>
-
-                  {!push.autoApproved && (
-                    <AttestationView
-                      data={push.attestation as AttestationFormData}
-                      attestation={attestation}
-                      setAttestation={setAttestation}
-                    />
-                  )}
-                </div>
-              )}
+              <AttestationInfo
+                push={push}
+                isGitHub={isGitHub}
+                attestation={attestation}
+                setAttestation={setAttestation}
+              />
             </CardHeader>
             <CardBody>
               <GridContainer>
