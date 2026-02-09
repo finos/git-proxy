@@ -232,7 +232,7 @@ describe('ConfigLoader', () => {
 
       await configLoader.reloadConfiguration();
 
-      expect(changeEventSpy).toHaveBeenCalledOnce();
+      expect(changeEventSpy).not.toHaveBeenCalled();
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Invalid regular expression for commitConfig.author.email.local.block: [invalid(regex',
