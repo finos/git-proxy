@@ -182,18 +182,18 @@ export class ConfigLoader extends EventEmitter {
           )
         : { ...this.config, ...validConfigs[validConfigs.length - 1] }; // Use last config for override
 
-      // Emit change event if config changed
+      if (!validateConfig(newConfig)) {
+        console.error('Invalid configuration, skipping reload');
+        return;
+      }
+
+      // Emit change event if config changed and is valid
       if (JSON.stringify(newConfig) !== JSON.stringify(this.config)) {
         console.log('Configuration has changed, updating and emitting change event');
         this.config = newConfig;
         this.emit('configurationChanged', this.config);
       } else {
         console.log('Configuration has not changed, no update needed');
-      }
-
-      if (!validateConfig(newConfig)) {
-        console.error('Invalid configuration, skipping reload');
-        return;
       }
     } catch (error: any) {
       console.error('Error reloading configuration:', error);
