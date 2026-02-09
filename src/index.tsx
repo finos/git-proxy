@@ -1,9 +1,20 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+
+// Styles
+import 'font-awesome/css/font-awesome.min.css';
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
+import 'material-design-icons/iconfont/material-icons.css';
+import 'diff2html/bundles/css/diff2html.min.css';
+
+// Auth provider
 import { AuthProvider } from './ui/auth/AuthProvider';
 
-// core components
+// Core components
 import Dashboard from './ui/layouts/Dashboard';
 import Login from './ui/views/Login/Login';
 import './ui/assets/css/material-dashboard-react.css';
