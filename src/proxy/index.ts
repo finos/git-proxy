@@ -71,18 +71,26 @@ export class Proxy {
   public async start() {
     await this.proxyPreparations();
     this.expressApp = await this.createApp();
-    this.httpServer = http
-      .createServer(getServerOptions() as any, this.expressApp)
-      .listen(proxyHttpPort, () => {
+    await new Promise<void>((resolve, reject) => {
+      const server = http.createServer(getServerOptions() as any, this.expressApp!);
+      server.on('error', reject);
+      server.listen(proxyHttpPort, () => {
         console.log(`HTTP Proxy Listening on ${proxyHttpPort}`);
+        resolve();
       });
+      this.httpServer = server;
+    });
     // Start HTTPS server only if TLS is enabled
     if (getTLSEnabled()) {
-      this.httpsServer = https
-        .createServer(getServerOptions(), this.expressApp)
-        .listen(proxyHttpsPort, () => {
+      await new Promise<void>((resolve, reject) => {
+        const server = https.createServer(getServerOptions(), this.expressApp!);
+        server.on('error', reject);
+        server.listen(proxyHttpsPort, () => {
           console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
+          resolve();
         });
+        this.httpsServer = server;
+      });
     }
   }
 
@@ -91,28 +99,42 @@ export class Proxy {
   }
 
   public stop(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        // Close HTTP server if it exists
-        if (this.httpServer) {
-          this.httpServer.close(() => {
-            console.log('HTTP server closed');
-            this.httpServer = null;
-          });
-        }
+    const closePromises: Promise<void>[] = [];
 
-        // Close HTTPS server if it exists
-        if (this.httpsServer) {
-          this.httpsServer.close(() => {
-            console.log('HTTPS server closed');
-            this.httpsServer = null;
+    // Close HTTP server if it exists
+    if (this.httpServer) {
+      closePromises.push(
+        new Promise((resolve, reject) => {
+          this.httpServer!.close((err) => {
+            if (err) {
+              reject(err);
+            } else {
+              console.log('HTTP server closed');
+              this.httpServer = null;
+              resolve();
+            }
           });
-        }
+        }),
+      );
+    }
 
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    });
+    // Close HTTPS server if it exists
+    if (this.httpsServer) {
+      closePromises.push(
+        new Promise((resolve, reject) => {
+          this.httpsServer!.close((err) => {
+            if (err) {
+              reject(err);
+            } else {
+              console.log('HTTPS server closed');
+              this.httpsServer = null;
+              resolve();
+            }
+          });
+        }),
+      );
+    }
+
+    return Promise.all(closePromises).then(() => {});
   }
 }

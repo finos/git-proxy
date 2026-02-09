@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('auth methods', () => {
   beforeEach(() => {
+    vi.doUnmock('fs');
     vi.resetModules();
   });
 

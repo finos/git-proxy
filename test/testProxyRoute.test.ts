@@ -46,7 +46,7 @@ afterAll(() => {
   vi.resetModules();
 });
 
-describe.skip('proxy express application', () => {
+describe('proxy express application', () => {
   let apiApp: Express;
   let proxy: Proxy;
   let cookie: string;
@@ -103,6 +103,12 @@ describe.skip('proxy express application', () => {
   });
 
   it('should proxy requests for the default GitHub repository', async () => {
+    // Ensure default repo exists
+    const repo = await db.getRepoByUrl(TEST_DEFAULT_REPO.url);
+    if (!repo) {
+      await request(apiApp).post('/api/v1/repo').set('Cookie', cookie).send(TEST_DEFAULT_REPO);
+    }
+
     // proxy a fetch request
     const res = await request(proxy.getExpressApp()!)
       .get(`${TEST_DEFAULT_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
@@ -126,6 +132,9 @@ describe.skip('proxy express application', () => {
 
   it('should restart and proxy for a new host when project is ADDED', async () => {
     // Tests that the proxy restarts properly after a project with a URL at a new host is added
+
+    // Clean up any existing gitlab repos first
+    await cleanupRepo(TEST_GITLAB_REPO.url);
 
     // check that we don't have *any* repos at gitlab.com setup
     const numExisting = (await db.getRepos({ url: /https:\/\/gitlab\.com/ as any })).length;
@@ -160,8 +169,12 @@ describe.skip('proxy express application', () => {
     // We are testing that the proxy stops proxying requests for a particular origin
     // The chain is stubbed and will always passthrough requests, hence, we are only checking what hosts are proxied.
 
-    // the gitlab test repo should already exist
+    // Ensure the gitlab test repo exists (create it if a previous test didn't)
     let repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    if (!repo) {
+      await request(apiApp).post('/api/v1/repo').set('Cookie', cookie).send(TEST_GITLAB_REPO);
+      repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
+    }
     expect(repo).not.toBeNull();
 
     // delete the gitlab test repo, which should force the proxy to restart and stop proxying gitlab.com
@@ -174,9 +187,6 @@ describe.skip('proxy express application', () => {
     // confirm that its gone from the DB
     repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
     expect(repo).toBeNull();
-
-    // give the proxy half a second to restart
-    await new Promise((r) => setTimeout(r, 500));
 
     // try (and fail) to proxy a request to gitlab.com
     const res2 = await request(proxy.getExpressApp()!)
@@ -222,8 +232,10 @@ describe.skip('proxy express application', () => {
     const repo = await db.getRepoByUrl(TEST_DEFAULT_REPO.url);
     expect(repo).toBeNull();
 
-    // Restart the proxy
+    // Restart the proxy - wait for server to fully close before restarting
     await proxy.stop();
+    // Small delay to ensure port is released
+    await new Promise((r) => setTimeout(r, 200));
     await proxy.start();
 
     // Check that the default repo was created in the db
@@ -232,6 +244,7 @@ describe.skip('proxy express application', () => {
 
     // Check that the default repo isn't duplicated on subsequent restarts
     await proxy.stop();
+    await new Promise((r) => setTimeout(r, 200));
     await proxy.start();
 
     const allRepos = await db.getRepos();
