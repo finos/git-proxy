@@ -19,6 +19,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      # Authenticate to Docker Hub to avoid pull rate limits.
+      # Skipped on fork PRs where secrets are unavailable — those runs
+      # fall back to unauthenticated pulls and may be rate-limited.
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        with:
+          username: finos
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@7c525be6cc8a882d5163ce04293cac18617c709f
 
