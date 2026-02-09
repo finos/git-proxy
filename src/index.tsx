@@ -1,6 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+
+// Import styles
+import 'chartist/dist/chartist.min.css';
+import 'font-awesome/css/font-awesome.min.css';
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
+import 'material-design-icons/iconfont/material-icons.css';
+import 'diff2html/bundles/css/diff2html.min.css';
 import { AuthProvider } from './ui/auth/AuthProvider';
 
 // core components
