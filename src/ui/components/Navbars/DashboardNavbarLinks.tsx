@@ -27,11 +27,10 @@ const DashboardNavbarLinks: React.FC = () => {
   const [openProfile, setOpenProfile] = useState<HTMLElement | null>(null);
   const [, setAuth] = useState<boolean>(true);
   const [, setIsLoading] = useState<boolean>(true);
-  const [, setErrorMessage] = useState<string>('');
   const [user, setUser] = useState<PublicUser | null>(null);
 
   useEffect(() => {
-    getUser(setIsLoading, setUser, setAuth, setErrorMessage);
+    getUser(setIsLoading, setUser, setAuth);
   }, []);
 
   const handleClickProfile = (event: React.MouseEvent<HTMLElement>) => {

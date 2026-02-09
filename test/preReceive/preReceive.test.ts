@@ -3,12 +3,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import path from 'path';
 import * as fs from 'fs';
 import { exec } from '../../src/proxy/processors/push-action/preReceive';
-import { Action, Step } from '../../src/proxy/actions';
+import { Action } from '../../src/proxy/actions';
 
 // TODO: Replace with memfs to prevent test pollution issues
 vi.mock('fs', { spy: true });
 
-describe('Pre-Receive Hook Execution', () => {
+// Pre-receive hooks execute Unix shell scripts, which is not supported on Windows
+describe.skipIf(process.platform === 'win32')('Pre-Receive Hook Execution', () => {
   let action: Action;
   let req: Request;
 
@@ -25,8 +26,7 @@ describe('Pre-Receive Hook Execution', () => {
   });
 
   afterEach(() => {
-    vi.resetModules();
-    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should catch and handle unexpected errors', async () => {

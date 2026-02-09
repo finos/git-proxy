@@ -1,7 +1,7 @@
 import { Request } from 'express';
 import rawBody from 'raw-body';
 import { PassThrough } from 'stream';
-import { describe, it, beforeEach, expect, vi, Mock, afterAll } from 'vitest';
+import { describe, it, beforeEach, expect, vi, Mock } from 'vitest';
 
 // Tell Vitest to mock dependencies
 vi.mock('raw-body', () => ({
@@ -22,6 +22,9 @@ describe('extractRawBody middleware', () => {
   let next: Mock;
 
   beforeEach(() => {
+    (rawBody as Mock).mockClear();
+    (chain.executeChain as Mock).mockClear();
+
     req = new PassThrough();
     req.method = 'POST';
     req.url = '/proj/foo.git/git-upload-pack';
@@ -34,11 +37,6 @@ describe('extractRawBody middleware', () => {
     };
 
     next = vi.fn();
-  });
-
-  afterAll(() => {
-    (rawBody as Mock).mockClear();
-    (chain.executeChain as Mock).mockClear();
   });
 
   it('skips non-pack posts', async () => {

@@ -42,6 +42,7 @@ describe('Proxy Module TLS Certificate Loading', () => {
       close: vi.fn().mockImplementation((cb) => {
         if (cb) cb();
       }),
+      on: vi.fn().mockReturnThis(),
     };
 
     mockHttpsServer = {
@@ -52,6 +53,7 @@ describe('Proxy Module TLS Certificate Loading', () => {
       close: vi.fn().mockImplementation((cb) => {
         if (cb) cb();
       }),
+      on: vi.fn().mockReturnThis(),
     };
 
     vi.doMock('../src/plugin', () => {

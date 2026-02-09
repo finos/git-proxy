@@ -179,20 +179,19 @@ const repo = (proxy: Proxy) => {
           const repoDetails = await db.createRepo(req.body);
           const proxyURL = getProxyURL(req);
 
-          // return data on the new repoistory (including it's _id and the proxyUrl)
-          res.send({ ...repoDetails, proxyURL, message: 'created' });
-
           // restart the proxy if we're proxying a new domain
           if (newOrigin) {
             console.log('Restarting the proxy to handle an additional host');
             await theProxy?.stop();
             await theProxy?.start();
           }
+
+          // return data on the new repository (including it's _id and the proxyUrl)
+          res.send({ ...repoDetails, proxyURL, message: 'created' });
         } catch (error: unknown) {
-          if (error instanceof Error) {
-            console.error('Repository creation failed due to error: ', error.message);
-            console.error(error.stack);
-          }
+          const msg = error instanceof Error ? error.message : String(error);
+          console.error('Repository creation failed due to error: ', msg);
+          console.error(error instanceof Error ? error.stack : undefined);
           res.status(500).send({ message: 'Failed to create repository due to error' });
         }
       }

@@ -17,6 +17,13 @@ const exec = async (
   const step = new Step('executeExternalPreReceiveHook');
   let stderrTrimmed = '';
 
+  // Pre-receive hooks execute Unix shell scripts, which is not supported on Windows
+  if (process.platform === 'win32') {
+    step.log('Warning: Pre-receive hooks are not supported on Windows, skipping execution.');
+    action.addStep(step);
+    return action;
+  }
+
   try {
     const resolvedPath = path.resolve(hookFilePath);
     const hookDir = path.dirname(resolvedPath);

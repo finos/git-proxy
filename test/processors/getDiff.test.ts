@@ -33,6 +33,16 @@ describe('getDiff', () => {
   });
 
   it('should get diff between commits', async () => {
+    // Ensure we have a known state: write initial content, then modify it
+    await fs.writeFile(path.join(tempDir, 'test.txt'), 'initial content');
+    await git.add('.');
+    // Use --allow-empty or amend to handle case where content is already 'initial content'
+    try {
+      await git.commit('reset to initial');
+    } catch {
+      // no changes to commit - that's fine
+    }
+
     await fs.writeFile(path.join(tempDir, 'test.txt'), 'modified content');
     await git.add('.');
     await git.commit('second commit');
@@ -52,6 +62,15 @@ describe('getDiff', () => {
   });
 
   it('should get diff between commits with no changes', async () => {
+    // Create a known two-commit state: initial -> same content commit
+    await fs.writeFile(path.join(tempDir, 'test-nochange.txt'), 'initial content');
+    await git.add('.');
+    await git.commit('base commit for no-change test');
+
+    await fs.writeFile(path.join(tempDir, 'test-nochange2.txt'), 'more initial content');
+    await git.add('.');
+    await git.commit('second commit for no-change test');
+
     const action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
     action.proxyGitPath = __dirname; // Temp dir parent path
     action.repoName = 'temp-test-repo';

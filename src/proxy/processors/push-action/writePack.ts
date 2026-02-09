@@ -20,7 +20,7 @@ const exec = async (req: Request, action: Action) => {
       encoding: 'utf-8',
     });
     const before = new Set(fs.readdirSync(packDir).filter((f) => f.endsWith('.idx')));
-    const content = spawnSync('git', ['receive-pack', action.repoName], {
+    spawnSync('git', ['receive-pack', action.repoName], {
       cwd: action.proxyGitPath,
       input: req.body,
     });
@@ -29,8 +29,6 @@ const exec = async (req: Request, action: Action) => {
     ];
     action.newIdxFiles = newIdxFiles;
     step.log(`new idx files: ${newIdxFiles}`);
-
-    step.setContent(content);
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : String(error);
     step.setError(msg);
