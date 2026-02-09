@@ -119,8 +119,8 @@ const cancelPush = async (
   setAuth: (auth: boolean) => void,
   setIsError: (isError: boolean) => void,
 ): Promise<void> => {
-  const baseUrl = await getBaseUrl();
-  const url = `${baseUrl}/push/${id}/cancel`;
+  const apiV1Base = await getApiV1BaseUrl();
+  const url = `${apiV1Base}/push/${id}/cancel`;
   await axios.post(url, {}, getAxiosConfig()).catch((error: any) => {
     if (error.response && error.response.status === 401) {
       setAuth(false);
