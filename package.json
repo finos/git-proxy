@@ -92,7 +92,6 @@
     "@seald-io/nedb": "^4.1.2",
     "axios": "^1.13.4",
     "bcryptjs": "^3.0.3",
-    "chartist": "^0.11.0",
     "clsx": "^2.1.1",
     "concurrently": "^9.2.1",
     "connect-mongo": "^5.1.0",
