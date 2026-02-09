@@ -94,7 +94,7 @@ class Action {
   }
 
   /**
-   * Set the commit range for the action. Changes the action.id to be based on the
+   * Set the commit range for the action. Changes the action.id to be based on
    * the commit details.
    * @param {string} commitFrom the starting commit
    * @param {string} commitTo the ending commit

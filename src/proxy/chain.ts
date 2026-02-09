@@ -30,10 +30,10 @@ const defaultActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
 ];
 
 let pluginsInserted = false;
-let checkoutCleanUpRequired = false;
 
 export const executeChain = async (req: any, res: any): Promise<Action> => {
   let action: Action = {} as Action;
+  let checkoutCleanUpRequired = false;
 
   try {
     action = await proc.pre.parseAction(req);
