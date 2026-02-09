@@ -9,6 +9,9 @@ export default ({ mode }: { mode: string }) => {
     },
     server: {
       port: 3000,
+      watch: {
+        ignored: ['**/.data/**', '**/.remote/**', '**/.tmp/**'],
+      },
     },
     plugins: [react()],
     define: {
