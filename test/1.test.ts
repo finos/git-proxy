@@ -69,6 +69,8 @@ describe('init', () => {
 
   // Example test: use vi.doMock to override the config module
   it('should return an array of enabled auth methods when overridden', async () => {
+    // Clear module cache so vi.doMock takes effect on the fresh import below
+    vi.resetModules();
     // fs must be mocked BEFORE importing the config module
     // We also mock existsSync to ensure the file "exists"
     vi.doMock('fs', async (importOriginal) => {
