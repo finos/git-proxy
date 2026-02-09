@@ -11,14 +11,14 @@
   },
   "authorisedList": [
     {
-      "project": "coopernetes",
+      "project": "test-owner",
       "name": "test-repo",
-      "url": "https://git-server:8443/coopernetes/test-repo.git"
+      "url": "https://git-server:8443/test-owner/test-repo.git"
     },
     {
-      "project": "finos",
-      "name": "git-proxy",
-      "url": "https://git-server:8443/finos/git-proxy.git"
+      "project": "e2e-org",
+      "name": "sample-repo",
+      "url": "https://git-server:8443/e2e-org/sample-repo.git"
     }
   ],
   "sink": [
