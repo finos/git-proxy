@@ -13,7 +13,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  build:
+  # Ubuntu build with MongoDB matrix (9 combinations: 3 Node × 3 MongoDB)
+  build-ubuntu:
     runs-on: ubuntu-latest
 
     strategy:
@@ -38,7 +39,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@315db7fe45ac2880b7758f1933e6e5d59afd5e94 # ratchet:supercharge/mongodb-github-action@1.12.1
+        uses: supercharge/mongodb-github-action@90004df786821b6308fb02299e5835d0dae05d0d # 1.12.0
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
 
@@ -71,24 +72,21 @@ jobs:
         with:
           files: ./coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
-      # - name: Exit if coverage condition not met
-      #   if: ${{ steps.test.outputs.exit_code }} != 0
-      #   run: exit ${{ steps.test.outputs.exit_code }}
 
       - name: Build frontend
         run: npm run build-ui
 
       - name: Save build folder
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # ratchet:actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: build-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
+          name: build-ubuntu-node-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
           if-no-files-found: error
           path: build
 
       - name: Download the build folders
-        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # ratchet:actions/download-artifact@v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
-          name: build-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
+          name: build-ubuntu-node-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
           path: build
 
       - name: Run cypress test
@@ -99,37 +97,80 @@ jobs:
           wait-on-timeout: 120
           command: npm run cypress:run
 
+  # Windows build - single combination for development support
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e3f713f2d8f53843e71c69a996d56f51aa9adfb9 # v2.14.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 # v6.2.0
+        with:
+          node-version: 24.x
+
+      - name: Enable Windows Developer Mode
+        shell: powershell
+        run: |
+          reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Types (Server)
+        run: npm run check-types:server
+
+      - name: Build TypeScript
+        run: npm run build-ts
+
+      - name: Test
+        id: test
+        shell: bash
+        run: |
+          npm run test-coverage-ci
+          npm run test-coverage-ci --workspaces --if-present
+
+      - name: Build frontend
+        run: npm run build-ui
+
   # Execute a final job to collect the results and report a single check status
   results:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     name: build result
-    needs: [build]
+    needs: [build-ubuntu, build-windows]
     steps:
       - name: Check build results
         run: |
-          result="${{ needs.build.result }}"
-          if [[ $result == "success" || $result == "skipped" ]]; then
+          ubuntu_result="${{ needs.build-ubuntu.result }}"
+          windows_result="${{ needs.build-windows.result }}"
+          if [[ ($ubuntu_result == "success" || $ubuntu_result == "skipped") && ($windows_result == "success" || $windows_result == "skipped") ]]; then
             echo "### ✅ All builds passed" >> $GITHUB_STEP_SUMMARY
             exit 0
           else
             echo "### ❌ Some builds failed" >> $GITHUB_STEP_SUMMARY
+            echo "- Ubuntu: $ubuntu_result" >> $GITHUB_STEP_SUMMARY
+            echo "- Windows: $windows_result" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
       - name: Parse failed matrix jobs
-        if: needs.build.result == 'failure'
+        if: needs.build-ubuntu.result == 'failure' || needs.build-windows.result == 'failure'
         run: |
           echo "## Failed Matrix Combinations" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Node Version | MongoDB Version | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|--------------|-----------------|--------|" >> $GITHUB_STEP_SUMMARY
-
-          # Parse the matrix results from the build job
-          results='${{ toJSON(needs.build.outputs) }}'
+          echo "| OS | Node Version | MongoDB Version | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|----|--------------|-----------------|--------|" >> $GITHUB_STEP_SUMMARY
 
           # Since we can't directly get individual matrix job statuses,
           # we'll note that the build job failed
-          echo "| Multiple | Multiple | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
+          echo "| Multiple | Multiple | Multiple | ❌ Failed |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "⚠️ Check the [build job logs](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details on which specific matrix combinations failed." >> $GITHUB_STEP_SUMMARY
