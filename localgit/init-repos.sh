@@ -3,7 +3,7 @@ set -e  # Exit on any error
 
 # Create the git repositories directories for multiple owners
 BASE_DIR="${BASE_DIR:-"/var/git"}"
-OWNERS=("coopernetes" "finos")
+OWNERS=("test-owner" "e2e-org")
 TEMP_DIR="/tmp/git-init"
 
 # Create base directory and owner subdirectories
@@ -27,11 +27,11 @@ create_bare_repo() {
     local owner="$1"
     local repo_name="$2"
     local repo_dir="$BASE_DIR/$owner"
-    
+
     echo "Creating $repo_name in $owner's directory..."
     cd "$repo_dir" || exit 1
     git init --bare --initial-branch=main "$repo_name"
-    
+
     # Configure for HTTP access
     cd "$repo_dir/$repo_name" || exit 1
     git config http.receivepack true
@@ -47,7 +47,7 @@ add_content_to_repo() {
     local repo_name="$2"
     local repo_path="$BASE_DIR/$owner/$repo_name"
     local work_dir="$TEMP_DIR/${owner}-${repo_name%-.*}-work"
-    
+
     echo "Adding content to $owner/$repo_name..."
     cd "$TEMP_DIR" || exit 1
     git clone "$repo_path" "$work_dir"
@@ -55,15 +55,15 @@ add_content_to_repo() {
 }
 
 # Create repositories with simple content
-echo "=== Creating coopernetes/test-repo.git ==="
-create_bare_repo "coopernetes" "test-repo.git"
-add_content_to_repo "coopernetes" "test-repo.git"
+echo "=== Creating test-owner/test-repo.git ==="
+create_bare_repo "test-owner" "test-repo.git"
+add_content_to_repo "test-owner" "test-repo.git"
 
 # Create a simple README
 cat > README.md << 'EOF'
 # Test Repository
 
-This is a test repository for the git proxy, simulating coopernetes/test-repo.
+A dummy repository used for GitProxy end-to-end testing.
 EOF
 
 # Create a simple text file
@@ -75,29 +75,29 @@ git add .
 git commit -m "Initial commit with basic content"
 git push origin main
 
-echo "=== Creating finos/git-proxy.git ==="
-create_bare_repo "finos" "git-proxy.git"
-add_content_to_repo "finos" "git-proxy.git"
+echo "=== Creating e2e-org/sample-repo.git ==="
+create_bare_repo "e2e-org" "sample-repo.git"
+add_content_to_repo "e2e-org" "sample-repo.git"
 
 # Create a simple README
 cat > README.md << 'EOF'
-# Git Proxy
+# Sample Repository
 
-This is a test instance of the FINOS Git Proxy project for isolated e2e testing.
+A dummy repository used for GitProxy end-to-end testing.
 EOF
 
-# Create a simple package.json to simulate the real project structure
+# Create a simple package.json to simulate a project structure
 cat > package.json << 'EOF'
 {
-  "name": "git-proxy",
+  "name": "sample-repo",
   "version": "1.0.0",
-  "description": "A proxy for Git operations",
+  "description": "A sample project for e2e testing",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": ["git", "proxy", "finos"],
-  "author": "FINOS",
+  "keywords": ["git", "proxy", "test"],
+  "author": "Test",
   "license": "Apache-2.0"
 }
 EOF
