@@ -171,11 +171,7 @@ function Home() {
           <div className='col col--4'>
             <div className='col-demo'>
               {' '}
-              <Avatar
-                name='Jamie Slome'
-                description='Emeritus Maintainer'
-                username='JamieSlome'
-              />
+              <Avatar name='Jamie Slome' description='Emeritus Maintainer' username='JamieSlome' />
             </div>
           </div>
           <div className='col col--4'>
