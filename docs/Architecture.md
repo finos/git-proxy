@@ -340,7 +340,7 @@ Source: [/src/proxy/processors/push-action/blockForAuth.ts](/src/proxy/processor
 
 #### `audit`
 
-This action is executed at the end of the chain. It stores in the database the entire `Action` object along with the list of `steps` that the action has gone through. It also stores any error messages that might have come up in one of the processors.
+This action is executed after a chain has been executed. It stores in the database the entire `Action` object along with the list of `steps` that the action has gone through and their associated logs or error messages that occurred during processing of the chaind.
 
 Note: **`audit` does not write pull actions** to the DB.
 
