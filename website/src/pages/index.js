@@ -173,7 +173,7 @@ function Home() {
               {' '}
               <Avatar
                 name='Jamie Slome'
-                description='Open Source Operations at Citi'
+                description='Emeritus Maintainer'
                 username='JamieSlome'
               />
             </div>
