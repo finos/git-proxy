@@ -677,7 +677,7 @@ See the [plugin guide](https://git-proxy.finos.org/docs/development/plugins) for
 
 #### `authorisedList`
 
-Defines a list of repositories that are allowed to be pushed to through the proxy. Note that **repositories can also be added through the UI or manually editing the database**.
+Defines a initial list of repositories that are allowed to be pushed to through the proxy. Note that **repositories can also be added through the UI, API or by manually editing the database**.
 
 Sample values:
 
