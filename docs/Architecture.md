@@ -719,7 +719,7 @@ Currently, only JWT auth is supported. This is implemented via the [`jwtAuthHand
 
 When JWT authentication is enabled, all incoming requests must provide a valid JWT access token in the UI. This can be set in the settings tab.
 
-If no token, or an invalid/expired token is set, requests will fail with a `401` Unauthorized response.
+If no token, or an invalid/expired token is sent, requests will fail with a `401` Unauthorized response.
 
 The JWT auth configuration looks like this:
 
