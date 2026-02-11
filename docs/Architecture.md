@@ -8,7 +8,7 @@ As mentioned in [the README](/README.md), GitProxy is an application that interc
 
 GitProxy has several main components:
 
-- Proxy (`/src/proxy`): The actual proxy for Git. Git operations performed by users are intercepted here to apply the relevant **chain**. Also loads **plugins** and adds them to the chain. Runs by default on port `8000` or `8443` if TLS is enabled. These can be changed through the `GIT_PROXY_SERVER_PORT` and `GIT_PROXY_HTTPS_SERVER_PORT` environment variables.
+- HTTP Proxy Express app (`/src/proxy`): The actual proxy server for Git. Git operations performed by users are intercepted here, processed by various Express middleware (such as URL rewriting) and applies the relevant **chain** of actions to the payload. Customized functionality in the form of **plugins** are inserted and added to this chain as well. 
   - Chain: A set of **processors** that are applied to an action (i.e. a `git push` operation) before requesting review from a user with permission to approve pushes
   - Processor: AKA `Step`. A specific step in the chain where certain rules are applied. See the [list of default processors](#processors) below for more details.`
   - Plugin: A custom processor that can be added externally to extend GitProxy's default policies. See the [plugin guide](https://git-proxy.finos.org/docs/development/plugins) for more details.
