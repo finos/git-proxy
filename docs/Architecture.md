@@ -77,7 +77,6 @@ Executed when a user makes a `git push` to GitProxy. These are the actions in `p
 - [`preReceive`](#prereceive)
 - [`getDiff`](#getdiff)
 - [`gitleaks`](#gitleaks)
-- [`clearBareClone`](#clearbareclone)
 - [`scanDiff`](#scandiff)
 - [`blockForAuth`](#blockforauth)
 
