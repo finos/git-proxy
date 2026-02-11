@@ -47,7 +47,7 @@ These are all the core components in the project, along with some basic user int
 Three types of policies can be applied to incoming pushes:
 
 - Default policies: These are already present in the GitProxy pull/push chain and require modifying source code to change their behaviour.
-  - For example, [`checkUserPushPermission`](#checkuserpushpermission) which simply checks if the user's email exists in the GitProxy database, and if their user is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
+  - For example, [`checkUserPushPermission`](#checkuserpushpermission) which simply checks if the pusher's email exists in the GitProxy database, and if their user is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
 - Configurable policies: These are policies that can be easily configured through the GitProxy config (`proxy.config.json` or a custom file).
   - For example, [`checkCommitMessages`](#checkcommitmessages) which reads the configuration and matches the string patterns provided with the commit messages in the push in order to block it.
 - Custom policies:
@@ -90,7 +90,7 @@ Executed when a user makes a `git clone` or `git pull` to GitProxy:
 
 - [`checkRepoInAuthorisedList`](#checkrepoinauthorisedlist)
 
-At present the pull action chain is only checking that the repository is configured in Git Proxy, ensuring that it will block pull requests for unknown repositories.
+At present, the pull action chain is only checking that the repository is configured in GitProxy. This ensures it will block pull requests for unknown repositories.
 
 #### Default action chain
 
@@ -98,7 +98,7 @@ This chain is executed when making any operation other than a `git push` or `git
 
 - [`checkRepoInAuthorisedList`](#checkrepoinauthorisedlist)
 
-At present the default action chain is only checking that the repository is configured in Git Proxy, ensuring that it will block all git client requests for unknown repositories.
+The default action chain, much like the pull chain, is only checking that the repository is configured in GitProxy. This ensures it will block all git client requests for unknown repositories.
 
 ### Post-processors
 
@@ -174,7 +174,7 @@ A **configurable** processor that blocks pushes containing commit messages that 
 
 If the arrays are empty, the checks will pass and chain execution will continue.
 
-Note that invalid regex patterns will also fail the `isMessageAllowed` check.
+Note that invalid regex patterns will throw an error during proxy startup. These must be fixed in order to initialize GitProxy.
 
 Source: [/src/proxy/processors/push-action/checkCommitMessages.ts](/src/proxy/processors/push-action/checkCommitMessages.ts)
 
@@ -184,19 +184,21 @@ Similar to [`checkCommitMessages`](#checkcommitmessages), allows configuring all
 
 If neither of these are configured (set to empty strings), then the checks will pass and chain execution will continue.
 
-Note that this processor will also fail on invalid regex in the configuration.
+Note that invalid regex patterns will throw an error during proxy startup. These must be fixed in order to initialize GitProxy.
 
 Source: [/src/proxy/processors/push-action/checkAuthorEmails.ts](/src/proxy/processors/push-action/checkAuthorEmails.ts)
 
 #### `checkUserPushPermission`
 
-Checks if the push has an valid user email associated to it, and if that user is allowed to push to that specific repo.
+Checks if the push has a valid user email associated to it (the email of the user making the push, **not the individual commit authors**), and if that user is allowed to push to that specific repo.
 
 This step will fail on various scenarios such as:
 
 - Push has no email associated to it (potentially a push parsing error)
 - The email associated to the push matches multiple GitProxy users
 - The user with the given email isn't in the repo's contributor list (`canPush`)
+
+Note: The _pusher_ can potentially be a different user from the _commit author(s)_. In order to filter the commit authors, you must use the `commitConfig.author` config entry. See [`checkAuthorEmails`](#checkauthoremails) for more details.
 
 Source: [/src/proxy/processors/push-action/checkUserPushPermission.ts](/src/proxy/processors/push-action/checkUserPushPermission.ts)
 
@@ -208,7 +210,7 @@ For private repos, `pullRemote` uses the authorization headers from the push and
 
 In the event that the clone fails, pullRemote will automatically delete the _.remote/\*_ directory that it created - unless that failure was caused by a concurrent request for the same push (so that the earlier request can complete if it is going to).
 
-If the clone succeeds then the chain will schedule deletion of the clone by [`clearBareClone`](#clearbareclone) after processing of the chain completes. This ensures that disk space used is recovered, subsequent pushes of the same SHA don't conflict and that user credentials cached in the git clone are removed.
+If the clone succeeds then the chain will schedule deletion of the clone by [`clearBareClone`](#clearbareclone) after processing of the chain completes. This ensures that disk space used is recovered, subsequent pushes of the same SHA don't conflict and that user credentials cached in the `git clone` are removed.
 
 Source: [/src/proxy/processors/push-action/pullRemote.ts](/src/proxy/processors/push-action/pullRemote.ts)
 
@@ -309,7 +311,7 @@ A **configurable** processor that blocks pushes containing diff (changes) that m
 
 This will scan every file changed and try to match the configured literals, patterns or providers. If any diff violations are found, the push is blocked.
 
-Note that this processor will fail if the configured regex patterns are invalid.
+Note that invalid regex patterns will throw an error during proxy startup. These must be fixed in order to initialize GitProxy.
 
 Source: [/src/proxy/processors/push-action/scanDiff.ts](/src/proxy/processors/push-action/scanDiff.ts)
 
@@ -325,7 +327,7 @@ Source: [/src/proxy/processors/push-action/blockForAuth.ts](/src/proxy/processor
 
 #### `audit`
 
-This action is executed after a chain has been executed. It stores in the database the entire `Action` object along with the list of `steps` that the action has gone through and their associated logs or error messages that occurred during processing of the chaind.
+This action is executed after a chain has been executed. It stores in the database the entire `Action` object along with the list of `steps` that the action has gone through and their associated logs or error messages that occurred during processing of the chain.
 
 Note: **`audit` does not write pull actions** to the DB.
 
