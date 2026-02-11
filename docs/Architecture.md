@@ -194,7 +194,9 @@ Source: [/src/proxy/processors/push-action/checkUserPushPermission.ts](/src/prox
 
 #### `pullRemote`
 
-Clones the repository and temporarily stores it locally. For private repos, it obtains the authorization headers and uses them to authenticate the `git clone` operation.
+Clones the repository and temporarily stores it locally in a subdirectory of the _.remote_ folder in the deployment. Each clone is named using the base and head SHA of the push, ensuring a unique clone for each different push. The path to the subdirectory is set in the action as the `proxyGitPath` property and is used in subsequent steps.
+
+For private repos, `pullRemote` uses the authorization headers from the push and uses them to authenticate the `git clone` operation.
 
 The cloned repository is deleted later in [`clearBareClone`](#clearbareclone). This is done for a few reasons, including security (removing existing user credentials), disk space management and multiuser support.
 
