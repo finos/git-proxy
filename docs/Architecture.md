@@ -122,7 +122,7 @@ Source: [/src/proxy/processors/push-action/checkRepoInAuthorisedList.ts](/src/pr
 
 Parses the push request data which comes from the Git client as a buffer that contains packet line data. If anything unexpected happens during parsing, such as malformed pack data or multiple ref updates in a single push, the push will get rejected.
 
-Also handles extraction of push contents, such as commit and committer data.
+Also handles extraction of push contents, such as the details of the individual commits contained in the push and the details of `committer` (the user attempting to push the commits through the proxy).
 
 Source: [/src/proxy/processors/push-action/parsePush.ts](/src/proxy/processors/push-action/parsePush.ts)
 
