@@ -335,7 +335,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
 
 // Initialize config loader
 function initializeConfigLoader() {
-  const config = loadFullConfiguration() as Configuration;
+  const config = loadFullConfiguration();
   _configLoader = new ConfigLoader(config);
 
   // Handle configuration updates
@@ -362,7 +362,6 @@ export const reloadConfiguration = async () => {
 
 // Initialize configuration on module load
 try {
-  loadFullConfiguration();
   initializeConfigLoader();
   console.log('Configuration loaded successfully');
 } catch (error) {
