@@ -8,7 +8,7 @@ As mentioned in [the README](/README.md), GitProxy is an application that interc
 
 GitProxy has several main components:
 
-- HTTP Proxy Express app (`/src/proxy`): The actual proxy server for Git. Git operations performed by users are intercepted here, processed by various Express middleware (such as URL rewriting) and applies the relevant **chain** of actions to the payload. Customized functionality in the form of **plugins** are inserted and added to this chain as well. 
+- HTTP Proxy Express app (`/src/proxy`): The actual proxy server for Git. Git operations performed by users are intercepted here, processed by various Express middleware (such as URL rewriting) and applies the relevant **chain** of actions to the payload. Customized functionality in the form of **plugins** are inserted and added to this chain as well.
   - Chain: A set of **processors** that are applied to an action (i.e. a `git push` operation) before requesting review from a user with permission to approve pushes
   - Processor: AKA `Step`. A specific step in the chain where certain rules are applied. See the [list of default processors](#processors) below for more details.`
   - Plugin: A custom processor that can be added externally to extend GitProxy's default policies. See the [plugin guide](https://git-proxy.finos.org/docs/development/plugins) for more details.
@@ -56,6 +56,10 @@ Three types of policies can be applied to incoming pushes:
 
 ## The nitty gritty
 
+### Pre-processors
+
+Pre-processors run before executing the chain. Currently, only executes [`parseAction`](#parseaction), which is in charge of classifying requests as push/pull/default and creating the `Action` object used by the chain.
+
 ### Action Chains
 
 Action chains are a list of processors that a Git operation goes through before awaiting approval. Three action chains are currently available:
@@ -85,7 +89,6 @@ Executed when a user makes a `git push` to GitProxy. These are the actions in `p
 Executed when a user makes a `git clone` or `git pull` to GitProxy:
 
 - [`checkRepoInAuthorisedList`](#checkrepoinauthorisedlist)
-- 
 
 At present the pull action chain is only checking that the repository is configured in Git Proxy, ensuring that it will block pull requests for unknown repositories.
 
@@ -94,15 +97,14 @@ At present the pull action chain is only checking that the repository is configu
 This chain is executed when making any operation other than a `git push` or `git pull`.
 
 - [`checkRepoInAuthorisedList`](#checkrepoinauthorisedlist)
-- 
 
 At present the default action chain is only checking that the repository is configured in Git Proxy, ensuring that it will block all git client requests for unknown repositories.
 
-#### Finally
+### Post-processors
 
-After processors in the chain are done executing, [`audit`](#audit) is called to store the action along with all of its execution steps in the database for auditing purposes. 
+After processors in the chain are done executing, [`audit`](#audit) is called to store the action along with all of its execution steps in the database for auditing purposes.
 
-If [`pullRemote`](#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/*_ folder created does not conflict with any future pushes involving the same SHA.
+If [`pullRemote`](#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes involving the same SHA.
 
 Finally, if the action was auto-approved or auto-rejected as a result of running [`preReceive`](#prereceive), it will attempt to auto-approve or auto-reject it.
 
@@ -111,6 +113,12 @@ Finally, if the action was auto-approved or auto-rejected as a result of running
 Processors (also known as push/pull actions) represent operations that each push or pull must go through in order to get approved or rejected.
 
 Processors do not necessarily represent policies. Some processors are just operations that help fetch or process data: For example, [`pullRemote`](#pullremote) simply clones the remote repository from the Git host.
+
+#### `parseAction`
+
+A pre-processor that classifies the request into a pull, a push or "default" if it fails to match these. This allows GitProxy to run the correct chain (`pushActionChain`, `pullActionChain` or `defaultActionChain`). Then, it creates an Action object which is used by the selected chain.
+
+This action also handles fallbacks for v1 legacy proxy URLs.
 
 #### `checkRepoInAuthorisedList`
 
@@ -198,7 +206,7 @@ Clones the repository and temporarily stores it locally in a subdirectory of the
 
 For private repos, `pullRemote` uses the authorization headers from the push and uses them to authenticate the `git clone` operation.
 
-In the event that the clone fails, pullRemote will automatically delete the _.remote/*_ directory that it created - unless that failure was caused by a concurrent request for the same push (so that the earlier request can complete if it is going to). 
+In the event that the clone fails, pullRemote will automatically delete the _.remote/\*_ directory that it created - unless that failure was caused by a concurrent request for the same push (so that the earlier request can complete if it is going to).
 
 If the clone succeeds then the chain will schedule deletion of the clone by [`clearBareClone`](#clearbareclone) after processing of the chain completes. This ensures that disk space used is recovered, subsequent pushes of the same SHA don't conflict and that user credentials cached in the git clone are removed.
 
@@ -266,29 +274,6 @@ The following parameters can be configured:
 This processor runs the Gitleaks check starting from the root commit to the `commitFrom` value present in the push. If the Gitleaks check fails (nonzero exit code), or otherwise cannot spawn, the push will be blocked.
 
 Source: [/src/proxy/processors/push-action/gitleaks.ts](/src/proxy/processors/push-action/gitleaks.ts)
-
-#### `clearBareClone`
-
-Recursively removes the contents of `./.remote`, which is the location where the bare repository is cloned in [`pullRemote`](#pullremote). This exists for various reasons:
-
-- Security (isolating credentials):
-  - Since repositories require `username` and `password` on clone, these variables must be removed to prevent leaking between requests.
-- Managing disk space:
-  - Without deletion, `./.remote` would grow indefinitely as new repositories are added/proxied
-  - Each action gets a unique directory for isolation in [`pullRemote`](#pullremote), which is then deleted in `clearBareClone`
-- Multiuser support:
-  - Manage access to different repositories for multiple users
-  - Prevent one user from accessing another user's cached session data
-
-Recursively removes the contents of the (modified) repository clone stored in `./.remote` by [`pullRemote`](#pullremote) and indivated by the `proxyGitPath` property of the `Action`. This clean-up is necessary for:
- 
-- Security (cached credentials):
-  - Since repositories require a git username and password or personal access token (PAT) on clone and these are cached in the clone, they must be removed to prevent leakage.
-- Managing disk space:
-  - Without deletion, `./.remote` would grow indefinitely as new repository clones are added for each push (rather than each repository!)
-  - Each action gets a unique directory for isolation in [`pullRemote`](#pullremote), which allows pushes to the same repository for multiple users to be processed concurrently without conflicts or confusion over credentials. 
-
-Source: [/src/proxy/processors/push-action/clearBareClone.ts](/src/proxy/processors/post-processor/clearBareClone.ts)
 
 #### `scanDiff`
 
@@ -394,6 +379,20 @@ An action object (or entry in the pushes table) might look like this:
   "_id": "h69TOxN1AMsxd0xr"
 }
 ```
+
+#### `clearBareClone`
+
+Recursively removes the contents of the (modified) repository clone stored in `./.remote` by [`pullRemote`](#pullremote) and indivated by the `proxyGitPath` property of the `Action`. This clean-up is necessary for:
+
+- Security (cached credentials):
+  - Since repositories require a git username and password or personal access token (PAT) on clone and these are cached in the clone, they must be removed to prevent leakage.
+- Managing disk space:
+  - Without deletion, `./.remote` would grow indefinitely as new repository clones are added for each push (rather than each repository!)
+  - Each action gets a unique directory for isolation in [`pullRemote`](#pullremote), which allows pushes to the same repository for multiple users to be processed concurrently without conflicts or confusion over credentials.
+
+`clearBareClone` runs only if `pullRemote` was successful.
+
+Source: [/src/proxy/processors/post-processor/clearBareClone.ts](/src/proxy/processors/post-processor/clearBareClone.ts)
 
 ### Authentication
 
