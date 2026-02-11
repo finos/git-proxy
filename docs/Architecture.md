@@ -22,6 +22,12 @@ GitProxy has several main components:
 
 These are all the core components in the project, along with some basic user interactions:
 
+<!-- Note: this diagram can be edited in https://diagrams.net.
+
+Just upload the GitProxy_Architecture.drawio file available in /docs/img, edit the diagram and then export it as PNG.
+
+Don't forget to save and update the attached .drawio (XML)! -->
+
 ![GitProxy Architecture Diagram](./img/GitProxy_Architecture.png)
 
 ### Pushing to GitProxy
