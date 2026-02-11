@@ -280,7 +280,15 @@ Recursively removes the contents of `./.remote`, which is the location where the
   - Manage access to different repositories for multiple users
   - Prevent one user from accessing another user's cached session data
 
-Source: [/src/proxy/processors/push-action/clearBareClone.ts](/src/proxy/processors/push-action/clearBareClone.ts)
+Recursively removes the contents of the (modified) repository clone stored in `./.remote` by [`pullRemote`](#pullremote) and indivated by the `proxyGitPath` property of the `Action`. This clean-up is necessary for:
+ 
+- Security (cached credentials):
+  - Since repositories require a git username and password or personal access token (PAT) on clone and these are cached in the clone, they must be removed to prevent leakage.
+- Managing disk space:
+  - Without deletion, `./.remote` would grow indefinitely as new repository clones are added for each push (rather than each repository!)
+  - Each action gets a unique directory for isolation in [`pullRemote`](#pullremote), which allows pushes to the same repository for multiple users to be processed concurrently without conflicts or confusion over credentials. 
+
+Source: [/src/proxy/processors/push-action/clearBareClone.ts](/src/proxy/processors/post-processor/clearBareClone.ts)
 
 #### `scanDiff`
 
