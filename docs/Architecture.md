@@ -635,7 +635,7 @@ Currently unused.
 
 #### `contactEmail`
 
-Sets the contact email for the Open Source Program Office in the attestation form:
+Sets the contact email for the Open Source Program Office (or equivalent organisational contact) in the attestation form:
 
 ![Attestation Form](./img/attestation_example.png)
 
