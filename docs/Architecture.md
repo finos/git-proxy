@@ -94,9 +94,11 @@ This chain is executed when making any operation other than a `git push` or `git
 
 #### Finally
 
-After processors in the chain are done executing, [`audit`](#audit) is called to store the action along with all of its execution steps in the database for auditing purposes.
+After processors in the chain are done executing, [`audit`](#audit) is called to store the action along with all of its execution steps in the database for auditing purposes. 
 
-Then, if the action was auto-approved or auto-rejected as a result of running [`preReceive`](#prereceive), it will attempt to auto-approve or auto-reject it.
+If [`pullRemote`](#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/*_ folder created does not conflict with any future pushes involving the same SHA.
+
+Finally, if the action was auto-approved or auto-rejected as a result of running [`preReceive`](#prereceive), it will attempt to auto-approve or auto-reject it.
 
 ### Processors
 
