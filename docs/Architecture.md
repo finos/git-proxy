@@ -94,6 +94,9 @@ At present the pull action chain is only checking that the repository is configu
 This chain is executed when making any operation other than a `git push` or `git pull`.
 
 - [`checkRepoInAuthorisedList`](#checkrepoinauthorisedlist)
+- 
+
+At present the default action chain is only checking that the repository is configured in Git Proxy, ensuring that it will block all git client requests for unknown repositories.
 
 #### Finally
 
