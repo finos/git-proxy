@@ -57,7 +57,6 @@
     "test": "cross-env NODE_ENV=test vitest --run --dir ./test",
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
     "test:e2e:watch": "vitest --config vitest.config.e2e.ts",
-<<<<<<< ours
     "test-coverage": "cross-env NODE_ENV=test vitest --run --dir ./test --coverage",
     "test-coverage-ci": "cross-env NODE_ENV=test vitest --run --dir ./test --coverage.enabled=true --coverage.reporter=lcovonly --coverage.reporter=text",
     "test:integration": "NODE_ENV=test vitest --run --config vitest.config.integration.ts",
