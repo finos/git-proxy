@@ -332,7 +332,7 @@ Source: [/src/proxy/processors/push-action/scanDiff.ts](/src/proxy/processors/pu
 
 This action appends a message to be displayed after all the processors have finished on a pre-approval push.
 
-Note that this message will show again even if the push had been previously rejected by a reviewer. After a manual rejection, pushing again creates a new `action` object so that the push can be re-reviewed and approved.
+Note that this message will show again even if the push had been previously rejected by a reviewer or cancelled and resubmitted by the committer. After a manual rejection, pushing again creates a new `action` object so that the push can be re-reviewed and approved.
 
 ![blockForAuth output](./img/blockForAuth_output.png)
 
