@@ -198,7 +198,9 @@ Clones the repository and temporarily stores it locally in a subdirectory of the
 
 For private repos, `pullRemote` uses the authorization headers from the push and uses them to authenticate the `git clone` operation.
 
-The cloned repository is deleted later in [`clearBareClone`](#clearbareclone). This is done for a few reasons, including security (removing existing user credentials), disk space management and multiuser support.
+In the event that the clone fails, pullRemote will automatically delete the _.remote/*_ directory that it created - unless that failure was caused by a concurrent request for the same push (so that the earlier request can complete if it is going to). 
+
+If the clone succeeds then the chain will schedule deletion of the clone by [`clearBareClone`](#clearbareclone) after processing of the chain completes. This ensures that disk space used is recovered, subsequent pushes of the same SHA don't conflict and that user credentials cached in the git clone are removed.
 
 Source: [/src/proxy/processors/push-action/pullRemote.ts](/src/proxy/processors/push-action/pullRemote.ts)
 
