@@ -85,6 +85,9 @@ Executed when a user makes a `git push` to GitProxy. These are the actions in `p
 Executed when a user makes a `git clone` or `git pull` to GitProxy:
 
 - [`checkRepoInAuthorisedList`](#checkrepoinauthorisedlist)
+- 
+
+At present the pull action chain is only checking that the repository is configured in Git Proxy, ensuring that it will block pull requests for unknown repositories.
 
 #### Default action chain
 
