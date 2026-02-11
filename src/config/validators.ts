@@ -65,5 +65,16 @@ function validateCommitConfig(config: GitProxyConfig): boolean {
     }
   }
 
+  if (config.commitConfig?.diff?.block?.providers) {
+    for (const [key, value] of Object.entries(config.commitConfig.diff.block.providers)) {
+      try {
+        new RegExp(value);
+      } catch (error: unknown) {
+        console.error(`Invalid regular expression for commitConfig.diff.block.providers: ${value}`);
+        return false;
+      }
+    }
+  }
+
   return true;
 }

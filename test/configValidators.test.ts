@@ -231,6 +231,20 @@ describe('validators', () => {
       expect(consoleErrorSpy).not.toHaveBeenCalled();
     });
 
+    it('should handle empty providers object for diff.block.providers', () => {
+      const config: GitProxyConfig = {
+        commitConfig: {
+          diff: {
+            block: {
+              providers: {},
+            },
+          },
+        },
+      };
+      expect(validateConfig(config)).toBe(true);
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    });
+
     it('should handle empty patterns array for message.block.patterns', () => {
       const config: GitProxyConfig = {
         commitConfig: {
@@ -347,6 +361,36 @@ describe('validators', () => {
           message: {
             block: {
               patterns: ['[\\u4e00-\\u9fff]+', '\\p{Emoji}'],
+            },
+          },
+        },
+      };
+      expect(validateConfig(config)).toBe(true);
+      expect(consoleErrorSpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle invalid regex with special characters in providers', () => {
+      const config: GitProxyConfig = {
+        commitConfig: {
+          diff: {
+            block: {
+              providers: { type: '???' },
+            },
+          },
+        },
+      };
+      expect(validateConfig(config)).toBe(false);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Invalid regular expression for commitConfig.diff.block.providers: ???',
+      );
+    });
+
+    it('should work with valid regex in providers', () => {
+      const config: GitProxyConfig = {
+        commitConfig: {
+          diff: {
+            block: {
+              providers: { type: 'valid' },
             },
           },
         },
