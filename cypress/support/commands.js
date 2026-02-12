@@ -45,7 +45,8 @@ Cypress.Commands.add('logout', () => {
 });
 
 Cypress.Commands.add('getCSRFToken', () => {
-  return cy.request('GET', 'http://localhost:8080/api/v1/repo').then((res) => {
+  const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
+  return cy.request('GET', `${apiBaseUrl}/api/v1/repo`).then((res) => {
     let cookies = res.headers['set-cookie'];
 
     if (typeof cookies === 'string') {
@@ -63,5 +64,90 @@ Cypress.Commands.add('getCSRFToken', () => {
 
     const token = csrfCookie.split('=')[1].split(';')[0];
     return cy.wrap(decodeURIComponent(token));
+  });
+});
+
+Cypress.Commands.add('createUser', (username, password, email, gitAccount) => {
+  const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
+  cy.request({
+    method: 'POST',
+    url: `${apiBaseUrl}/api/auth/create-user`,
+    body: { username, password, email, gitAccount, admin: false },
+    failOnStatusCode: false,
+  });
+});
+
+Cypress.Commands.add('addUserPushPermission', (repoId, username) => {
+  const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
+  cy.request({
+    method: 'PATCH',
+    url: `${apiBaseUrl}/api/v1/repo/${repoId}/user/push`,
+    body: { username },
+    failOnStatusCode: false,
+  });
+});
+
+Cypress.Commands.add('addUserAuthorisePermission', (repoId, username) => {
+  const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
+  cy.request({
+    method: 'PATCH',
+    url: `${apiBaseUrl}/api/v1/repo/${repoId}/user/authorise`,
+    body: { username },
+    failOnStatusCode: false,
+  });
+});
+
+Cypress.Commands.add('getTestRepoId', () => {
+  const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
+  cy.request('GET', `${apiBaseUrl}/api/v1/repo`).then((res) => {
+    const repo = res.body.find(
+      (r) => r.url === 'https://git-server:8443/coopernetes/test-repo.git',
+    );
+    if (!repo) {
+      throw new Error('coopernetes/test-repo not found in database');
+    }
+    return cy.wrap(repo._id);
+  });
+});
+
+Cypress.Commands.add('createPush', (gitUser, gitPassword, gitEmail, uniqueSuffix) => {
+  const proxyUrl = Cypress.env('GIT_PROXY_URL') || 'http://localhost:8000';
+  const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
+  const repoUrl = `${proxyUrl.replace('://', `://${gitUser}:${gitPassword}@`)}/${gitServerTarget}/coopernetes/test-repo.git`;
+  const cloneDir = `/tmp/cypress-push-${uniqueSuffix}`;
+
+  cy.exec(`rm -rf ${cloneDir}`, { failOnNonZeroExit: false });
+  cy.exec(`git clone ${repoUrl} ${cloneDir}`, {
+    timeout: 30000,
+    env: { GIT_TERMINAL_PROMPT: '0', NODE_TLS_REJECT_UNAUTHORIZED: '0' },
+  });
+  cy.exec(`git -C ${cloneDir} config user.name "${gitUser}"`);
+  cy.exec(`git -C ${cloneDir} config user.email "${gitEmail}"`);
+
+  // Pull any upstream changes to avoid conflicts from previous test runs
+  cy.exec(`git -C ${cloneDir} pull --rebase origin main`, {
+    failOnNonZeroExit: false,
+    timeout: 30000,
+    env: { GIT_TERMINAL_PROMPT: '0', NODE_TLS_REJECT_UNAUTHORIZED: '0' },
+  });
+
+  const timestamp = Date.now();
+  cy.exec(
+    `echo "test-${uniqueSuffix}-${timestamp}" > ${cloneDir}/cypress-test-${uniqueSuffix}.txt`,
+  );
+  cy.exec(`git -C ${cloneDir} add .`);
+  cy.exec(`git -C ${cloneDir} commit -m "cypress e2e test: ${uniqueSuffix}"`);
+  cy.exec(`git -C ${cloneDir} push origin main 2>&1`, {
+    failOnNonZeroExit: false,
+    timeout: 30000,
+    env: { GIT_TERMINAL_PROMPT: '0', NODE_TLS_REJECT_UNAUTHORIZED: '0' },
+  }).then((result) => {
+    const output = result.stdout + result.stderr;
+    const match = output.match(/dashboard\/push\/([a-f0-9_]+)/);
+    if (!match) {
+      throw new Error(`Could not extract push ID from git output:\n${output}`);
+    }
+    cy.exec(`rm -rf ${cloneDir}`, { failOnNonZeroExit: false });
+    return cy.wrap(match[1]);
   });
 });
