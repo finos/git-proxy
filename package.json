@@ -59,6 +59,7 @@
     "test:e2e:watch": "vitest --config vitest.config.e2e.ts",
     "test-coverage": "cross-env NODE_ENV=test vitest --run --dir ./test --coverage",
     "test-coverage-ci": "cross-env NODE_ENV=test vitest --run --dir ./test --coverage.enabled=true --coverage.reporter=lcovonly --coverage.reporter=text",
+    "test:integration": "NODE_ENV=test vitest --run --config vitest.config.integration.ts",
     "test-watch": "cross-env NODE_ENV=test vitest --dir ./test --watch",
     "prepare": "node ./scripts/prepare.js",
     "lint": "eslint",
