@@ -54,6 +54,19 @@ jobs:
       - name: Run E2E tests
         run: npm run test:e2e
 
+      - name: Run Cypress E2E tests
+        run: npx cypress run --env API_BASE_URL=http://localhost:8081,GIT_PROXY_URL=http://localhost:8000,GIT_SERVER_TARGET=git-server:8443
+        env:
+          CYPRESS_BASE_URL: http://localhost:8081
+
+      - name: Upload Cypress screenshots on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+          retention-days: 7
+
       - name: Stop services
         if: always()
         run: docker compose down -v
