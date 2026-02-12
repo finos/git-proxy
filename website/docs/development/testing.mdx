@@ -4,7 +4,67 @@ title: Testing
 
 ## Testing
 
-As of v1.19.2, GitProxy uses [Mocha](https://mochajs.org/) (`ts-mocha`) as the test runner, and [Chai](https://www.chaijs.com/) for unit test assertions. User interface tests are written in [Cypress](https://docs.cypress.io), and some fuzz testing is done with [`fast-check`](https://fast-check.dev/).
+GitProxy uses [Vitest](https://vitest.dev/) as the test runner. User interface tests are written in [Cypress](https://docs.cypress.io), and some fuzz testing is done with [`fast-check`](https://fast-check.dev/).
+
+### Running Tests
+
+```bash
+# Run unit tests
+npm test
+
+# Run tests with coverage
+npm run test-coverage
+
+# Run MongoDB integration tests (requires MongoDB)
+RUN_MONGO_TESTS=true npm run test:integration
+```
+
+### Running Integration Tests with MongoDB
+
+The CI pipeline runs integration tests against a real MongoDB instance. To replicate this locally:
+
+#### 1. Start MongoDB with Docker
+
+Run MongoDB:
+
+```bash
+docker run -d --name mongodb-test -p 27017:27017 mongo:7
+```
+
+#### 2. Run the Integration Tests
+
+```bash
+RUN_MONGO_TESTS=true npm run test:integration
+```
+
+The `RUN_MONGO_TESTS=true` environment variable is required to enable the MongoDB-specific tests locally. In CI, this is set in the workflow step that runs integration tests.
+
+#### 3. Cleanup
+
+```bash
+docker stop mongodb-test && docker rm mongodb-test
+```
+
+### Full CI-like Test Run
+
+To replicate the full CI test sequence locally:
+
+```bash
+# Start MongoDB
+docker run -d --name mongodb-test -p 27017:27017 mongo:7
+
+# Build TypeScript (required for plugin tests)
+npm run build-ts
+
+# Run coverage tests
+npm run test-coverage
+
+# Run MongoDB integration tests
+RUN_MONGO_TESTS=true npm run test:integration
+
+# Cleanup
+docker stop mongodb-test && docker rm mongodb-test
+```
 
 ### Unit testing with Mocha and Chai
 
