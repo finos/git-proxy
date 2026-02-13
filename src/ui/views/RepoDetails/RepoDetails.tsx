@@ -46,7 +46,6 @@ const RepoDetails: React.FC = () => {
   const classes = useStyles();
   const [repo, setRepo] = useState<RepoView | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<boolean>(false);
-  const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -55,9 +54,22 @@ const RepoDetails: React.FC = () => {
   const { id: repoId } = useParams<{ id: string }>();
 
   useEffect(() => {
-    if (repoId) {
-      getRepo(setIsLoading, setRepo, setAuth, setIsError, setErrorMessage, repoId);
-    }
+    if (!repoId) return;
+    const load = async () => {
+      setIsLoading(true);
+      const result = await getRepo(repoId);
+      if (result.success && result.data) {
+        setRepo(result.data);
+      } else if (result.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      } else {
+        setIsError(true);
+        setErrorMessage(result.message || 'Something went wrong...');
+      }
+      setIsLoading(false);
+    };
+    load();
   }, [repoId]);
 
   useEffect(() => {
@@ -69,7 +81,10 @@ const RepoDetails: React.FC = () => {
   const removeUser = async (userToRemove: string, action: 'authorise' | 'push') => {
     if (!repoId) return;
     await deleteUser(userToRemove, repoId, action);
-    getRepo(setIsLoading, setRepo, setAuth, setIsError, setErrorMessage, repoId);
+    const result = await getRepo(repoId);
+    if (result.success && result.data) {
+      setRepo(result.data);
+    }
   };
 
   const removeRepository = async (id: string) => {
@@ -77,9 +92,11 @@ const RepoDetails: React.FC = () => {
     navigate('/dashboard/repo', { replace: true });
   };
 
-  const refresh = () => {
-    if (repoId) {
-      getRepo(setIsLoading, setRepo, setAuth, setIsError, setErrorMessage, repoId);
+  const refresh = async () => {
+    if (!repoId) return;
+    const result = await getRepo(repoId);
+    if (result.success && result.data) {
+      setRepo(result.data);
     }
   };
 

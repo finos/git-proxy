@@ -1,26 +1,9 @@
 import axios from 'axios';
-import { getAxiosConfig, processAuthError } from './auth.js';
+import { getAxiosConfig } from './auth.js';
 import { Repo } from '../../db/types';
 import { RepoView } from '../types';
 import { getApiV1BaseUrl } from './apiConfig';
-
-interface ServiceError {
-  status?: number;
-  message: string;
-}
-
-const getServiceError = (error: any, fallbackMessage: string): ServiceError => {
-  const status = error?.response?.status;
-  const responseMessage = error?.response?.data?.message;
-  const message =
-    typeof responseMessage === 'string' && responseMessage.trim().length > 0
-      ? responseMessage
-      : error?.message || fallbackMessage;
-  return { status, message };
-};
-
-const formatErrorMessage = (prefix: string, status: number | undefined, message: string): string =>
-  `${prefix}: ${status ? `${status} ` : ''}${message}`;
+import { ServiceResult, getServiceError, errorResult, successResult } from './errors';
 
 const canAddUser = async (repoId: string, user: string, action: string) => {
   const apiV1Base = await getApiV1BaseUrl();
@@ -49,89 +32,44 @@ class DupUserValidationError extends Error {
 }
 
 const getRepos = async (
-  setIsLoading: (isLoading: boolean) => void,
-  setRepos: (repos: RepoView[]) => void,
-  setAuth: (auth: boolean) => void,
-  setIsError: (isError: boolean) => void,
-  setErrorMessage: (errorMessage: string) => void,
   query: Record<string, boolean> = {},
-): Promise<void> => {
+): Promise<ServiceResult<RepoView[]>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo`);
   url.search = new URLSearchParams(query as any).toString();
-  setIsLoading(true);
-  await axios<RepoView[]>(url.toString(), getAxiosConfig())
-    .then((response) => {
-      const sortedRepos = response.data.sort((a: RepoView, b: RepoView) =>
-        a.name.localeCompare(b.name),
-      );
-      setRepos(sortedRepos);
-    })
-    .catch((error: any) => {
-      setIsError(true);
-      const { status, message } = getServiceError(error, 'Unknown error');
-      if (status === 401) {
-        setAuth(false);
-        setErrorMessage(processAuthError(error));
-      } else {
-        setErrorMessage(formatErrorMessage('Error fetching repos', status, message));
-      }
-    })
-    .finally(() => {
-      setIsLoading(false);
-    });
+
+  try {
+    const response = await axios<RepoView[]>(url.toString(), getAxiosConfig());
+    const sortedRepos = response.data.sort((a: RepoView, b: RepoView) =>
+      a.name.localeCompare(b.name),
+    );
+    return successResult(sortedRepos);
+  } catch (error: any) {
+    return errorResult(error, 'Failed to load repositories');
+  }
 };
 
-const getRepo = async (
-  setIsLoading: (isLoading: boolean) => void,
-  setRepo: (repo: RepoView) => void,
-  setAuth: (auth: boolean) => void,
-  setIsError: (isError: boolean) => void,
-  setErrorMessage: (errorMessage: string) => void,
-  id: string,
-): Promise<void> => {
+const getRepo = async (id: string): Promise<ServiceResult<RepoView>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${id}`);
-  setIsLoading(true);
-  await axios<RepoView>(url.toString(), getAxiosConfig())
-    .then((response) => {
-      const repo = response.data;
-      setRepo(repo);
-    })
-    .catch((error: any) => {
-      const { status, message } = getServiceError(error, 'Unknown error');
-      setIsError(true);
-      if (status === 401) {
-        setAuth(false);
-        setErrorMessage(processAuthError(error));
-      } else {
-        setErrorMessage(formatErrorMessage('Error fetching repo', status, message));
-      }
-    })
-    .finally(() => {
-      setIsLoading(false);
-    });
+
+  try {
+    const response = await axios<RepoView>(url.toString(), getAxiosConfig());
+    return successResult(response.data);
+  } catch (error: any) {
+    return errorResult(error, 'Failed to load repository');
+  }
 };
 
-const addRepo = async (
-  repo: RepoView,
-): Promise<{ success: boolean; message?: string; repo: RepoView | null }> => {
+const addRepo = async (repo: RepoView): Promise<ServiceResult<RepoView>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo`);
 
   try {
     const response = await axios.post<RepoView>(url.toString(), repo, getAxiosConfig());
-    return {
-      success: true,
-      repo: response.data,
-    };
+    return successResult(response.data);
   } catch (error: any) {
-    const { message } = getServiceError(error, 'Failed to add repository');
-    return {
-      success: false,
-      message,
-      repo: null,
-    };
+    return errorResult(error, 'Failed to add repository');
   }
 };
 

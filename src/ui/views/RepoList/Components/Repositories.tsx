@@ -37,7 +37,6 @@ export default function Repositories(): React.ReactElement {
   const classes = useStyles();
   const [repos, setRepos] = useState<RepoView[]>([]);
   const [filteredRepos, setFilteredRepos] = useState<RepoView[]>([]);
-  const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -49,16 +48,22 @@ export default function Repositories(): React.ReactElement {
     navigate(`/dashboard/repo/${repoId}`, { replace: true });
 
   useEffect(() => {
-    getRepos(
-      setIsLoading,
-      (repos: RepoView[]) => {
-        setRepos(repos);
-        setFilteredRepos(repos);
-      },
-      setAuth,
-      setIsError,
-      setErrorMessage,
-    );
+    const load = async () => {
+      setIsLoading(true);
+      const result = await getRepos();
+      if (result.success && result.data) {
+        setRepos(result.data);
+        setFilteredRepos(result.data);
+      } else if (result.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      } else {
+        setIsError(true);
+        setErrorMessage(result.message || 'Failed to load repositories');
+      }
+      setIsLoading(false);
+    };
+    load();
   }, []);
 
   const refresh = async (repo: RepoView): Promise<void> => {

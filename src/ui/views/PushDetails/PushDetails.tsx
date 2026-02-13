@@ -19,7 +19,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/git-push';
-import type { PushActionResult } from '../../services/git-push';
+import type { ServiceResult } from '../../services/errors';
 import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
@@ -27,18 +27,18 @@ import { AttestationFormData, PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
 import { generateEmailLink, getGitProvider } from '../../utils';
 import UserLink from '../../components/UserLink/UserLink';
+import Danger from '../../components/Typography/Danger';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [push, setPush] = useState<PushActionView | null>(null);
-  const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [message, setMessage] = useState('');
   const [attestation, setAttestation] = useState(false);
   const navigate = useNavigate();
 
-  const handlePushActionFailure = (result: PushActionResult) => {
+  const handleActionFailure = (result: ServiceResult) => {
     if (result.status === 401) {
       navigate('/login', { replace: true });
       return;
@@ -47,9 +47,22 @@ const Dashboard: React.FC = () => {
   };
 
   useEffect(() => {
-    if (id) {
-      getPush(id, setIsLoading, setPush, setAuth, setIsError);
-    }
+    if (!id) return;
+    const load = async () => {
+      setIsLoading(true);
+      const result = await getPush(id);
+      if (result.success && result.data) {
+        setPush(result.data);
+      } else if (result.status === 401) {
+        navigate('/login', { replace: true });
+        return;
+      } else {
+        setIsError(true);
+        setMessage(result.message || 'Something went wrong...');
+      }
+      setIsLoading(false);
+    };
+    load();
   }, [id]);
 
   const authorise = async (attestationData: Array<{ label: string; checked: boolean }>) => {
@@ -59,7 +72,7 @@ const Dashboard: React.FC = () => {
       navigate('/dashboard/push/');
       return;
     }
-    handlePushActionFailure(result);
+    handleActionFailure(result);
   };
 
   const reject = async () => {
@@ -69,7 +82,7 @@ const Dashboard: React.FC = () => {
       navigate('/dashboard/push/');
       return;
     }
-    handlePushActionFailure(result);
+    handleActionFailure(result);
   };
 
   const cancel = async () => {
@@ -79,11 +92,11 @@ const Dashboard: React.FC = () => {
       navigate(`/dashboard/push/`);
       return;
     }
-    handlePushActionFailure(result);
+    handleActionFailure(result);
   };
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Something went wrong ...</div>;
+  if (isError) return <Danger>{message || 'Something went wrong ...'}</Danger>;
   if (!push) return <div>No push data found</div>;
 
   let headerData: { title: string; color: CardHeaderColor } = {
