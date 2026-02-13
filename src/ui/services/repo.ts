@@ -4,6 +4,24 @@ import { Repo } from '../../db/types';
 import { RepoView } from '../types';
 import { getApiV1BaseUrl } from './apiConfig';
 
+interface ServiceError {
+  status?: number;
+  message: string;
+}
+
+const getServiceError = (error: any, fallbackMessage: string): ServiceError => {
+  const status = error?.response?.status;
+  const responseMessage = error?.response?.data?.message;
+  const message =
+    typeof responseMessage === 'string' && responseMessage.trim().length > 0
+      ? responseMessage
+      : error?.message || fallbackMessage;
+  return { status, message };
+};
+
+const formatErrorMessage = (prefix: string, status: number | undefined, message: string): string =>
+  `${prefix}: ${status ? `${status} ` : ''}${message}`;
+
 const canAddUser = async (repoId: string, user: string, action: string) => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}`);
@@ -18,7 +36,8 @@ const canAddUser = async (repoId: string, user: string, action: string) => {
       }
     })
     .catch((error: any) => {
-      throw error;
+      const { message } = getServiceError(error, 'Failed to validate repo permissions');
+      throw new Error(message);
     });
 };
 
@@ -50,11 +69,12 @@ const getRepos = async (
     })
     .catch((error: any) => {
       setIsError(true);
-      if (error.response && error.response.status === 401) {
+      const { status, message } = getServiceError(error, 'Unknown error');
+      if (status === 401) {
         setAuth(false);
         setErrorMessage(processAuthError(error));
       } else {
-        setErrorMessage(`Error fetching repos: ${error.response.data.message}`);
+        setErrorMessage(formatErrorMessage('Error fetching repos', status, message));
       }
     })
     .finally(() => {
@@ -67,6 +87,7 @@ const getRepo = async (
   setRepo: (repo: RepoView) => void,
   setAuth: (auth: boolean) => void,
   setIsError: (isError: boolean) => void,
+  setErrorMessage: (errorMessage: string) => void,
   id: string,
 ): Promise<void> => {
   const apiV1Base = await getApiV1BaseUrl();
@@ -78,10 +99,13 @@ const getRepo = async (
       setRepo(repo);
     })
     .catch((error: any) => {
-      if (error.response && error.response.status === 401) {
+      const { status, message } = getServiceError(error, 'Unknown error');
+      setIsError(true);
+      if (status === 401) {
         setAuth(false);
+        setErrorMessage(processAuthError(error));
       } else {
-        setIsError(true);
+        setErrorMessage(formatErrorMessage('Error fetching repo', status, message));
       }
     })
     .finally(() => {
@@ -102,9 +126,10 @@ const addRepo = async (
       repo: response.data,
     };
   } catch (error: any) {
+    const { message } = getServiceError(error, 'Failed to add repository');
     return {
       success: false,
-      message: error.response?.data?.message || error.message,
+      message,
       repo: null,
     };
   }
@@ -117,8 +142,9 @@ const addUser = async (repoId: string, user: string, action: string): Promise<vo
     const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}`);
     const data = { username: user };
     await axios.patch(url.toString(), data, getAxiosConfig()).catch((error: any) => {
-      console.log(error.response.data.message);
-      throw error;
+      const { message } = getServiceError(error, 'Failed to add user');
+      console.log(message);
+      throw new Error(message);
     });
   } else {
     console.log('Duplicate user can not be added');
@@ -131,8 +157,9 @@ const deleteUser = async (user: string, repoId: string, action: string): Promise
   const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}/${user}`);
 
   await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
-    console.log(error.response.data.message);
-    throw error;
+    const { message } = getServiceError(error, 'Failed to remove user');
+    console.log(message);
+    throw new Error(message);
   });
 };
 
@@ -141,8 +168,9 @@ const deleteRepo = async (repoId: string): Promise<void> => {
   const url = new URL(`${apiV1Base}/repo/${repoId}/delete`);
 
   await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
-    console.log(error.response.data.message);
-    throw error;
+    const { message } = getServiceError(error, 'Failed to delete repository');
+    console.log(message);
+    throw new Error(message);
   });
 };
 

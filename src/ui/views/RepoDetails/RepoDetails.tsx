@@ -27,6 +27,7 @@ import { RepoView, SCMRepositoryMetadata } from '../../types';
 import { UserContextType } from '../../context';
 import UserLink from '../../components/UserLink/UserLink';
 import DeleteRepoDialog from './Components/DeleteRepoDialog';
+import Danger from '../../components/Typography/Danger';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -48,13 +49,14 @@ const RepoDetails: React.FC = () => {
   const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [remoteRepoData, setRemoteRepoData] = useState<SCMRepositoryMetadata | null>(null);
   const { user } = useContext<UserContextType>(UserContext);
   const { id: repoId } = useParams<{ id: string }>();
 
   useEffect(() => {
     if (repoId) {
-      getRepo(setIsLoading, setRepo, setAuth, setIsError, repoId);
+      getRepo(setIsLoading, setRepo, setAuth, setIsError, setErrorMessage, repoId);
     }
   }, [repoId]);
 
@@ -67,7 +69,7 @@ const RepoDetails: React.FC = () => {
   const removeUser = async (userToRemove: string, action: 'authorise' | 'push') => {
     if (!repoId) return;
     await deleteUser(userToRemove, repoId, action);
-    getRepo(setIsLoading, setRepo, setAuth, setIsError, repoId);
+    getRepo(setIsLoading, setRepo, setAuth, setIsError, setErrorMessage, repoId);
   };
 
   const removeRepository = async (id: string) => {
@@ -77,12 +79,12 @@ const RepoDetails: React.FC = () => {
 
   const refresh = () => {
     if (repoId) {
-      getRepo(setIsLoading, setRepo, setAuth, setIsError, repoId);
+      getRepo(setIsLoading, setRepo, setAuth, setIsError, setErrorMessage, repoId);
     }
   };
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Something went wrong ...</div>;
+  if (isError) return <Danger>{errorMessage || 'Something went wrong ...'}</Danger>;
   if (!repo) return <div>No repository data found</div>;
 
   const { url: remoteUrl, proxyURL } = repo || {};

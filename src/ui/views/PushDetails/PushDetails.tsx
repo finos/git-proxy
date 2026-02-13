@@ -19,6 +19,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/git-push';
+import type { PushActionResult } from '../../services/git-push';
 import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
 import Tooltip from '@material-ui/core/Tooltip';
@@ -37,15 +38,12 @@ const Dashboard: React.FC = () => {
   const [attestation, setAttestation] = useState(false);
   const navigate = useNavigate();
 
-  let isUserAllowedToApprove = true;
-  let isUserAllowedToReject = true;
-
-  const setUserAllowedToApprove = (userAllowedToApprove: boolean) => {
-    isUserAllowedToApprove = userAllowedToApprove;
-  };
-
-  const setUserAllowedToReject = (userAllowedToReject: boolean) => {
-    isUserAllowedToReject = userAllowedToReject;
+  const handlePushActionFailure = (result: PushActionResult) => {
+    if (result.status === 401) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    setMessage(result.message || 'Something went wrong...');
   };
 
   useEffect(() => {
@@ -56,24 +54,32 @@ const Dashboard: React.FC = () => {
 
   const authorise = async (attestationData: Array<{ label: string; checked: boolean }>) => {
     if (!id) return;
-    await authorisePush(id, setMessage, setUserAllowedToApprove, attestationData);
-    if (isUserAllowedToApprove) {
+    const result = await authorisePush(id, attestationData);
+    if (result.success) {
       navigate('/dashboard/push/');
+      return;
     }
+    handlePushActionFailure(result);
   };
 
   const reject = async () => {
     if (!id) return;
-    await rejectPush(id, setMessage, setUserAllowedToReject);
-    if (isUserAllowedToReject) {
+    const result = await rejectPush(id);
+    if (result.success) {
       navigate('/dashboard/push/');
+      return;
     }
+    handlePushActionFailure(result);
   };
 
   const cancel = async () => {
     if (!id) return;
-    await cancelPush(id, setAuth, setIsError);
-    navigate(`/dashboard/push/`);
+    const result = await cancelPush(id);
+    if (result.success) {
+      navigate(`/dashboard/push/`);
+      return;
+    }
+    handlePushActionFailure(result);
   };
 
   if (isLoading) return <div>Loading...</div>;
