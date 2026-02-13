@@ -23,7 +23,7 @@ import * as path from 'path';
 
 const LICENSE_HEADER_FILE = './scripts/license-header.txt';
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx'];
-const IGNORE_DIRS = ['node_modules', 'dist', 'build', '.git'];
+const IGNORE_DIRS = ['node_modules', 'dist', 'build', '.git', 'generated'];
 
 function readLicenseHeader(): string {
   return fs.readFileSync(LICENSE_HEADER_FILE, 'utf-8');
@@ -75,6 +75,7 @@ function processDirectory(dirPath: string, licenseHeader: string): void {
 
     if (entry.isDirectory()) {
       if (!IGNORE_DIRS.includes(entry.name)) {
+        console.log(`Processing directory: ${fullPath} ${entry.name}`);
         processDirectory(fullPath, licenseHeader);
       }
     } else if (entry.isFile()) {
