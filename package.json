@@ -69,7 +69,8 @@
     "gen-schema-doc": "node ./scripts/doc-schema.js",
     "cypress:run": "cypress run",
     "cypress:open": "cypress open",
-    "generate-config-types": "quicktype --src-lang schema --lang typescript --out src/config/generated/config.ts --top-level GitProxyConfig config.schema.json && ts-node scripts/add-banner.ts src/config/generated/config.ts && prettier --write src/config/generated/config.ts"
+    "generate-config-types": "quicktype --src-lang schema --lang typescript --out src/config/generated/config.ts --top-level GitProxyConfig config.schema.json && ts-node scripts/add-banner.ts src/config/generated/config.ts && prettier --write src/config/generated/config.ts",
+    "add-license-headers": "node scripts/add-license-headers.ts"
   },
   "bin": {
     "git-proxy": "./dist/index.js",
