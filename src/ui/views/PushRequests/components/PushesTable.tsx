@@ -53,6 +53,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
       if (result.success && result.data) {
         setPushes(result.data);
       } else if (result.status === 401) {
+        setIsLoading(false);
         navigate('/login', { replace: true });
         return;
       } else if (props.handleError) {

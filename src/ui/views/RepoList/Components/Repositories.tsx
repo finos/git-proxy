@@ -55,6 +55,7 @@ export default function Repositories(): React.ReactElement {
         setRepos(result.data);
         setFilteredRepos(result.data);
       } else if (result.status === 401) {
+        setIsLoading(false);
         navigate('/login', { replace: true });
         return;
       } else {

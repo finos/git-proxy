@@ -61,6 +61,7 @@ const RepoDetails: React.FC = () => {
       if (result.success && result.data) {
         setRepo(result.data);
       } else if (result.status === 401) {
+        setIsLoading(false);
         navigate('/login', { replace: true });
         return;
       } else {
@@ -84,6 +85,11 @@ const RepoDetails: React.FC = () => {
     const result = await getRepo(repoId);
     if (result.success && result.data) {
       setRepo(result.data);
+    } else if (result.status === 401) {
+      navigate('/login', { replace: true });
+    } else {
+      setIsError(true);
+      setErrorMessage(result.message || 'Failed to refresh repository data');
     }
   };
 
@@ -97,6 +103,11 @@ const RepoDetails: React.FC = () => {
     const result = await getRepo(repoId);
     if (result.success && result.data) {
       setRepo(result.data);
+    } else if (result.status === 401) {
+      navigate('/login', { replace: true });
+    } else {
+      setIsError(true);
+      setErrorMessage(result.message || 'Failed to refresh repository data');
     }
   };
 

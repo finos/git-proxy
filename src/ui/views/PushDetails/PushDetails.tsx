@@ -54,6 +54,7 @@ const Dashboard: React.FC = () => {
       if (result.success && result.data) {
         setPush(result.data);
       } else if (result.status === 401) {
+        setIsLoading(false);
         navigate('/login', { replace: true });
         return;
       } else {
