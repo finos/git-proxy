@@ -16,7 +16,6 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
   before(() => {
     // Setup: login as admin, create test users, assign permissions
     cy.login('admin', 'admin');
-    cy.visit('/'); // Ensure session cookies are active for cy.request calls
 
     cy.createUser(testUser.username, testUser.password, testUser.email, testUser.gitAccount);
     cy.createUser(

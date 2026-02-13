@@ -24,6 +24,15 @@
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 
+/**
+ * Helper to get the API base URL for cy.request calls.
+ * cy.request with relative URLs may not resolve correctly in all environments,
+ * so we use absolute URLs constructed from Cypress.config('baseUrl').
+ */
+function getApiBaseUrl() {
+  return Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
+}
+
 // start of a login command with sessions
 // TODO: resolve issues with the CSRF token
 Cypress.Commands.add('login', (username, password) => {
@@ -45,7 +54,7 @@ Cypress.Commands.add('logout', () => {
 });
 
 Cypress.Commands.add('getCSRFToken', () => {
-  return cy.request('GET', '/api/v1/repo').then((res) => {
+  return cy.request('GET', `${getApiBaseUrl()}/api/v1/repo`).then((res) => {
     let cookies = res.headers['set-cookie'];
 
     if (typeof cookies === 'string') {
@@ -70,7 +79,7 @@ Cypress.Commands.add('getCSRFToken', () => {
 Cypress.Commands.add('createUser', (username, password, email, gitAccount) => {
   cy.request({
     method: 'POST',
-    url: '/api/auth/create-user',
+    url: `${getApiBaseUrl()}/api/auth/create-user`,
     body: { username, password, email, gitAccount, admin: false },
     failOnStatusCode: false,
   });
@@ -79,7 +88,7 @@ Cypress.Commands.add('createUser', (username, password, email, gitAccount) => {
 Cypress.Commands.add('addUserPushPermission', (repoId, username) => {
   cy.request({
     method: 'PATCH',
-    url: `/api/v1/repo/${repoId}/user/push`,
+    url: `${getApiBaseUrl()}/api/v1/repo/${repoId}/user/push`,
     body: { username },
     failOnStatusCode: false,
   });
@@ -88,27 +97,28 @@ Cypress.Commands.add('addUserPushPermission', (repoId, username) => {
 Cypress.Commands.add('addUserAuthorisePermission', (repoId, username) => {
   cy.request({
     method: 'PATCH',
-    url: `/api/v1/repo/${repoId}/user/authorise`,
+    url: `${getApiBaseUrl()}/api/v1/repo/${repoId}/user/authorise`,
     body: { username },
     failOnStatusCode: false,
   });
 });
 
 Cypress.Commands.add('getTestRepoId', () => {
+  const url = `${getApiBaseUrl()}/api/v1/repo`;
   cy.request({
     method: 'GET',
-    url: '/api/v1/repo',
+    url,
     headers: { Accept: 'application/json' },
     failOnStatusCode: false,
   }).then((res) => {
     if (res.status !== 200) {
       throw new Error(
-        `GET /api/v1/repo returned status ${res.status}: ${JSON.stringify(res.body).slice(0, 500)}`,
+        `GET ${url} returned status ${res.status}: ${JSON.stringify(res.body).slice(0, 500)}`,
       );
     }
     if (!Array.isArray(res.body)) {
       throw new Error(
-        `GET /api/v1/repo returned non-array (${typeof res.body}): ${JSON.stringify(res.body).slice(0, 500)}`,
+        `GET ${url} returned non-array (${typeof res.body}): ${JSON.stringify(res.body).slice(0, 500)}`,
       );
     }
     const repo = res.body.find(

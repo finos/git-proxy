@@ -87,9 +87,10 @@ describe('Repo', () => {
         const gitProxyUrl = Cypress.env('GIT_PROXY_URL') || 'http://localhost:8000';
         cloneURL = `${gitProxyUrl}/github.com/cypress-test/${repoName}.git`;
 
+        const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
         cy.request({
           method: 'POST',
-          url: '/api/v1/repo',
+          url: `${apiBaseUrl}/api/v1/repo`,
           body: {
             project: 'cypress-test',
             name: repoName,
@@ -146,7 +147,7 @@ describe('Repo', () => {
       cy.getCSRFToken().then((csrfToken) => {
         cy.request({
           method: 'DELETE',
-          url: `/api/v1/repo/${repoName}/delete`,
+          url: `${Cypress.env('API_BASE_URL') || Cypress.config('baseUrl')}/api/v1/repo/${repoName}/delete`,
           headers: {
             cookie: cookies?.join('; ') || '',
             'X-CSRF-TOKEN': csrfToken,
