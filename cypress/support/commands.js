@@ -45,21 +45,21 @@ Cypress.Commands.add('logout', () => {
 });
 
 Cypress.Commands.add('getCSRFToken', () => {
-  const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
-  return cy.request('GET', `${apiBaseUrl}/api/v1/repo`).then((res) => {
+  return cy.request('GET', '/api/v1/repo').then((res) => {
     let cookies = res.headers['set-cookie'];
 
     if (typeof cookies === 'string') {
       cookies = [cookies];
     }
 
+    // CSRF protection is disabled when NODE_ENV=test (Docker/CI)
     if (!cookies) {
-      throw new Error('No cookies found in response');
+      return cy.wrap('');
     }
 
     const csrfCookie = cookies.find((c) => c.startsWith('csrf='));
     if (!csrfCookie) {
-      throw new Error('No CSRF cookie found in response headers');
+      return cy.wrap('');
     }
 
     const token = csrfCookie.split('=')[1].split(';')[0];
@@ -68,43 +68,56 @@ Cypress.Commands.add('getCSRFToken', () => {
 });
 
 Cypress.Commands.add('createUser', (username, password, email, gitAccount) => {
-  const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
   cy.request({
     method: 'POST',
-    url: `${apiBaseUrl}/api/auth/create-user`,
+    url: '/api/auth/create-user',
     body: { username, password, email, gitAccount, admin: false },
     failOnStatusCode: false,
   });
 });
 
 Cypress.Commands.add('addUserPushPermission', (repoId, username) => {
-  const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
   cy.request({
     method: 'PATCH',
-    url: `${apiBaseUrl}/api/v1/repo/${repoId}/user/push`,
+    url: `/api/v1/repo/${repoId}/user/push`,
     body: { username },
     failOnStatusCode: false,
   });
 });
 
 Cypress.Commands.add('addUserAuthorisePermission', (repoId, username) => {
-  const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
   cy.request({
     method: 'PATCH',
-    url: `${apiBaseUrl}/api/v1/repo/${repoId}/user/authorise`,
+    url: `/api/v1/repo/${repoId}/user/authorise`,
     body: { username },
     failOnStatusCode: false,
   });
 });
 
 Cypress.Commands.add('getTestRepoId', () => {
-  const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
-  cy.request('GET', `${apiBaseUrl}/api/v1/repo`).then((res) => {
+  cy.request({
+    method: 'GET',
+    url: '/api/v1/repo',
+    headers: { Accept: 'application/json' },
+    failOnStatusCode: false,
+  }).then((res) => {
+    if (res.status !== 200) {
+      throw new Error(
+        `GET /api/v1/repo returned status ${res.status}: ${JSON.stringify(res.body).slice(0, 500)}`,
+      );
+    }
+    if (!Array.isArray(res.body)) {
+      throw new Error(
+        `GET /api/v1/repo returned non-array (${typeof res.body}): ${JSON.stringify(res.body).slice(0, 500)}`,
+      );
+    }
     const repo = res.body.find(
       (r) => r.url === 'https://git-server:8443/coopernetes/test-repo.git',
     );
     if (!repo) {
-      throw new Error('coopernetes/test-repo not found in database');
+      throw new Error(
+        `coopernetes/test-repo not found in database. Repos: ${res.body.map((r) => r.url).join(', ')}`,
+      );
     }
     return cy.wrap(repo._id);
   });

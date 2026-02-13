@@ -89,7 +89,7 @@ describe('Repo', () => {
 
         cy.request({
           method: 'POST',
-          url: `${Cypress.env('API_BASE_URL') || Cypress.config('baseUrl')}/api/v1/repo`,
+          url: '/api/v1/repo',
           body: {
             project: 'cypress-test',
             name: repoName,
@@ -146,7 +146,7 @@ describe('Repo', () => {
       cy.getCSRFToken().then((csrfToken) => {
         cy.request({
           method: 'DELETE',
-          url: `${Cypress.env('API_BASE_URL') || Cypress.config('baseUrl')}/api/v1/repo/${repoName}/delete`,
+          url: `/api/v1/repo/${repoName}/delete`,
           headers: {
             cookie: cookies?.join('; ') || '',
             'X-CSRF-TOKEN': csrfToken,
