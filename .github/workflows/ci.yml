@@ -39,7 +39,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@90004df786821b6308fb02299e5835d0dae05d0d # 1.12.0
+        uses: supercharge/mongodb-github-action@315db7fe45ac2880b7758f1933e6e5d59afd5e94 # 1.12.1
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
 
@@ -60,6 +60,12 @@ jobs:
         run: |
           npm run test-coverage-ci
           npm run test-coverage-ci --workspaces --if-present
+
+      - name: MongoDB Integration Tests
+        env:
+          RUN_MONGO_TESTS: 'true'
+          GIT_PROXY_MONGO_CONNECTION_STRING: mongodb://localhost:27017/git-proxy-test
+        run: npm run test:integration
 
       - name: Upload test coverage report
         uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
