@@ -43,6 +43,16 @@ export class Proxy {
   constructor() {}
 
   private async proxyPreparations() {
+    // Clean-up the .remote folder in case anything was in-progress when we shut down
+    const remoteDir = './.remote';
+    if (fs.existsSync(remoteDir)) {
+      console.log('Cleaning up the existing .remote dir...');
+      // Recursively remove the contents of ./.remote and ignore exceptions
+      fs.rmSync(remoteDir, { recursive: true, force: true, retryDelay: 100 });
+    }
+    console.log('Creating the .remote dir...');
+    fs.mkdirSync(remoteDir);
+
     const plugins = getPlugins();
     const pluginLoader = new PluginLoader(plugins);
     await pluginLoader.load();

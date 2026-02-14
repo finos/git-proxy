@@ -1,5 +1,6 @@
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { PluginLoader } from '../src/plugin';
+import { Action } from '../src/proxy/actions';
 
 const mockLoader = {
   pushPlugins: [
@@ -11,10 +12,9 @@ const mockLoader = {
 };
 
 const initMockPushProcessors = () => {
-  const mockPushProcessors = {
+  return {
     parsePush: vi.fn(),
     checkEmptyBranch: vi.fn(),
-    audit: vi.fn(),
     checkRepoInAuthorisedList: vi.fn(),
     checkCommitMessages: vi.fn(),
     checkAuthorEmails: vi.fn(),
@@ -30,7 +30,13 @@ const initMockPushProcessors = () => {
     scanDiff: vi.fn(),
     blockForAuth: vi.fn(),
   };
-  return mockPushProcessors;
+};
+
+const initMockPostProcessors = () => {
+  return {
+    audit: vi.fn(),
+    clearBareClone: vi.fn(),
+  };
 };
 
 const mockPreProcessors = {
@@ -42,17 +48,20 @@ describe('proxy chain', function () {
   let chain: any;
   let db: any;
   let mockPushProcessors: any;
+  let mockPostProcessors: any;
 
   beforeEach(async () => {
     vi.resetModules();
 
     // Initialize the mocks
     mockPushProcessors = initMockPushProcessors();
+    mockPostProcessors = initMockPostProcessors();
 
     // Mock the processors module
     vi.doMock('../src/proxy/processors', async () => ({
       pre: mockPreProcessors,
       push: mockPushProcessors,
+      post: mockPostProcessors,
     }));
 
     vi.doMock('../src/db', async () => ({
@@ -67,6 +76,17 @@ describe('proxy chain', function () {
     chain = chainModule.default;
 
     chain.chainPluginLoader = new PluginLoader([]);
+
+    //mock all processors as pass-through by default
+    const passThroughImpl = (req: any, action: Action) => {
+      return action;
+    };
+    Object.keys(mockPushProcessors).forEach((key) => {
+      mockPushProcessors[key].mockImplementation(passThroughImpl);
+    });
+    Object.keys(mockPostProcessors).forEach((key) => {
+      mockPostProcessors[key].mockImplementation(passThroughImpl);
+    });
   });
 
   afterEach(() => {
@@ -101,16 +121,11 @@ describe('proxy chain', function () {
   it('executeChain should stop executing if action has continue returns false', async () => {
     const req = {};
     const continuingAction = { type: 'push', continue: () => true, allowPush: false };
-    mockPreProcessors.parseAction.mockResolvedValue({ type: 'push' });
+    const action = { type: 'push' } as Action;
+    mockPreProcessors.parseAction.mockResolvedValue(action);
+
     mockPushProcessors.parsePush.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkEmptyBranch.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkRepoInAuthorisedList.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkCommitMessages.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkAuthorEmails.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkUserPushPermission.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkHiddenCommits.mockResolvedValue(continuingAction);
-    mockPushProcessors.pullRemote.mockResolvedValue(continuingAction);
-    mockPushProcessors.writePack.mockResolvedValue(continuingAction);
+
     // this stops the chain from further execution
     mockPushProcessors.checkIfWaitingAuth.mockResolvedValue({
       type: 'push',
@@ -120,37 +135,42 @@ describe('proxy chain', function () {
 
     const result = await chain.executeChain(req);
 
+    //all processors upto checkIfWaitingAuth should have run + clearBareClone & audit
     expect(mockPreProcessors.parseAction).toHaveBeenCalled();
     expect(mockPushProcessors.parsePush).toHaveBeenCalled();
+    expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
     expect(mockPushProcessors.checkCommitMessages).toHaveBeenCalled();
     expect(mockPushProcessors.checkAuthorEmails).toHaveBeenCalled();
     expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
-    expect(mockPushProcessors.checkIfWaitingAuth).toHaveBeenCalled();
     expect(mockPushProcessors.pullRemote).toHaveBeenCalled();
-    expect(mockPushProcessors.checkHiddenCommits).toHaveBeenCalled();
     expect(mockPushProcessors.writePack).toHaveBeenCalled();
-    expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
-    expect(mockPushProcessors.audit).toHaveBeenCalled();
+    expect(mockPushProcessors.checkHiddenCommits).toHaveBeenCalled();
+    expect(mockPushProcessors.checkIfWaitingAuth).toHaveBeenCalled();
+
+    expect(mockPushProcessors.preReceive).not.toHaveBeenCalled();
+    expect(mockPushProcessors.getDiff).not.toHaveBeenCalled();
+    expect(mockPushProcessors.gitleaks).not.toHaveBeenCalled();
+    expect(mockPushProcessors.scanDiff).not.toHaveBeenCalled();
+    expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+
+    expect(mockPostProcessors.audit).toHaveBeenCalled();
+    expect(mockPostProcessors.clearBareClone).toHaveBeenCalled();
 
     expect(result.type).toBe('push');
     expect(result.allowPush).toBe(false);
     expect(result.continue).toBeTypeOf('function');
+    expect(result.continue()).toBe(false);
   });
 
   it('executeChain should stop executing if action has allowPush is set to true', async () => {
     const req = {};
     const continuingAction = { type: 'push', continue: () => true, allowPush: false };
-    mockPreProcessors.parseAction.mockResolvedValue({ type: 'push' });
+    const action = { type: 'push' } as Action;
+    mockPreProcessors.parseAction.mockResolvedValue(action);
+
     mockPushProcessors.parsePush.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkEmptyBranch.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkRepoInAuthorisedList.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkCommitMessages.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkAuthorEmails.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkUserPushPermission.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkHiddenCommits.mockResolvedValue(continuingAction);
-    mockPushProcessors.pullRemote.mockResolvedValue(continuingAction);
-    mockPushProcessors.writePack.mockResolvedValue(continuingAction);
+
     // this stops the chain from further execution
     mockPushProcessors.checkIfWaitingAuth.mockResolvedValue({
       type: 'push',
@@ -160,6 +180,7 @@ describe('proxy chain', function () {
 
     const result = await chain.executeChain(req);
 
+    //all processors upto checkIfWaitingAuth should have run + clearBareClone & audit
     expect(mockPreProcessors.parseAction).toHaveBeenCalled();
     expect(mockPushProcessors.parsePush).toHaveBeenCalled();
     expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
@@ -167,40 +188,37 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.checkCommitMessages).toHaveBeenCalled();
     expect(mockPushProcessors.checkAuthorEmails).toHaveBeenCalled();
     expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
-    expect(mockPushProcessors.checkIfWaitingAuth).toHaveBeenCalled();
     expect(mockPushProcessors.pullRemote).toHaveBeenCalled();
-    expect(mockPushProcessors.checkHiddenCommits).toHaveBeenCalled();
     expect(mockPushProcessors.writePack).toHaveBeenCalled();
-    expect(mockPushProcessors.audit).toHaveBeenCalled();
+    expect(mockPushProcessors.checkHiddenCommits).toHaveBeenCalled();
+    expect(mockPushProcessors.checkIfWaitingAuth).toHaveBeenCalled();
+
+    expect(mockPushProcessors.preReceive).not.toHaveBeenCalled();
+    expect(mockPushProcessors.getDiff).not.toHaveBeenCalled();
+    expect(mockPushProcessors.gitleaks).not.toHaveBeenCalled();
+    expect(mockPushProcessors.scanDiff).not.toHaveBeenCalled();
+    expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+
+    expect(mockPostProcessors.audit).toHaveBeenCalled();
+    expect(mockPostProcessors.clearBareClone).toHaveBeenCalled();
 
     expect(result.type).toBe('push');
     expect(result.allowPush).toBe(true);
     expect(result.continue).toBeTypeOf('function');
+    expect(result.continue()).toBe(true);
   });
 
   it('executeChain should execute all steps if all actions succeed', async () => {
     const req = {};
     const continuingAction = { type: 'push', continue: () => true, allowPush: false };
-    mockPreProcessors.parseAction.mockResolvedValue({ type: 'push' });
+    const action = { type: 'push' } as Action;
+    mockPreProcessors.parseAction.mockResolvedValue(action);
+
     mockPushProcessors.parsePush.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkEmptyBranch.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkRepoInAuthorisedList.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkCommitMessages.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkAuthorEmails.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkUserPushPermission.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkIfWaitingAuth.mockResolvedValue(continuingAction);
-    mockPushProcessors.pullRemote.mockResolvedValue(continuingAction);
-    mockPushProcessors.writePack.mockResolvedValue(continuingAction);
-    mockPushProcessors.checkHiddenCommits.mockResolvedValue(continuingAction);
-    mockPushProcessors.preReceive.mockResolvedValue(continuingAction);
-    mockPushProcessors.getDiff.mockResolvedValue(continuingAction);
-    mockPushProcessors.gitleaks.mockResolvedValue(continuingAction);
-    mockPushProcessors.clearBareClone.mockResolvedValue(continuingAction);
-    mockPushProcessors.scanDiff.mockResolvedValue(continuingAction);
-    mockPushProcessors.blockForAuth.mockResolvedValue(continuingAction);
 
     const result = await chain.executeChain(req);
 
+    //all processors upto checkIfWaitingAuth should have run + clearBareClone & audit
     expect(mockPreProcessors.parseAction).toHaveBeenCalled();
     expect(mockPushProcessors.parsePush).toHaveBeenCalled();
     expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
@@ -208,21 +226,23 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.checkCommitMessages).toHaveBeenCalled();
     expect(mockPushProcessors.checkAuthorEmails).toHaveBeenCalled();
     expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
-    expect(mockPushProcessors.checkIfWaitingAuth).toHaveBeenCalled();
     expect(mockPushProcessors.pullRemote).toHaveBeenCalled();
-    expect(mockPushProcessors.checkHiddenCommits).toHaveBeenCalled();
     expect(mockPushProcessors.writePack).toHaveBeenCalled();
+    expect(mockPushProcessors.checkHiddenCommits).toHaveBeenCalled();
+    expect(mockPushProcessors.checkIfWaitingAuth).toHaveBeenCalled();
     expect(mockPushProcessors.preReceive).toHaveBeenCalled();
     expect(mockPushProcessors.getDiff).toHaveBeenCalled();
     expect(mockPushProcessors.gitleaks).toHaveBeenCalled();
-    expect(mockPushProcessors.clearBareClone).toHaveBeenCalled();
     expect(mockPushProcessors.scanDiff).toHaveBeenCalled();
     expect(mockPushProcessors.blockForAuth).toHaveBeenCalled();
-    expect(mockPushProcessors.audit).toHaveBeenCalled();
+
+    expect(mockPostProcessors.audit).toHaveBeenCalled();
+    expect(mockPostProcessors.clearBareClone).toHaveBeenCalled();
 
     expect(result.type).toBe('push');
     expect(result.allowPush).toBe(false);
     expect(result.continue).toBeTypeOf('function');
+    expect(result.continue()).toBe(true);
   });
 
   it('executeChain should run the expected steps for pulls', async () => {
@@ -235,12 +255,14 @@ describe('proxy chain', function () {
 
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
     expect(mockPushProcessors.parsePush).not.toHaveBeenCalled();
+    expect(mockPostProcessors.audit).toHaveBeenCalled();
+    expect(mockPostProcessors.clearBareClone).not.toHaveBeenCalled();
     expect(result.type).toBe('pull');
   });
 
   it('executeChain should handle errors and still call audit', async () => {
     const req = {};
-    const action = { type: 'push', continue: () => true, allowPush: true };
+    const action = { type: 'push', continue: () => true, allowPush: false };
 
     processors.pre.parseAction.mockResolvedValue(action);
     mockPushProcessors.parsePush.mockRejectedValue(new Error('Audit error'));
@@ -251,10 +273,26 @@ describe('proxy chain', function () {
       // Ignore the error
     }
 
-    expect(mockPushProcessors.audit).toHaveBeenCalled();
+    expect(mockPostProcessors.audit).toHaveBeenCalled();
   });
 
-  it('executeChain should always run at least checkRepoInAuthList', async () => {
+  it('executeChain should handle errors after pullRemote and still call clearBareClone', async () => {
+    const req = {};
+    const action = { type: 'push', continue: () => true, allowPush: false };
+
+    processors.pre.parseAction.mockResolvedValue(action);
+    mockPushProcessors.writePack.mockRejectedValue(new Error('writePack error'));
+
+    try {
+      await chain.executeChain(req);
+    } catch {
+      // Ignore the error
+    }
+
+    expect(mockPostProcessors.clearBareClone).toHaveBeenCalled();
+  });
+
+  it('executeChain should always run at least checkRepoInAuthList and audit', async () => {
     const req = {};
     const action = { type: 'foo', continue: () => true, allowPush: true };
 
@@ -263,6 +301,7 @@ describe('proxy chain', function () {
 
     await chain.executeChain(req);
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
+    expect(mockPostProcessors.audit).toHaveBeenCalled();
   });
 
   it('should approve push automatically and record in the database', async () => {
@@ -278,16 +317,6 @@ describe('proxy chain', function () {
     };
 
     mockPreProcessors.parseAction.mockResolvedValue(action);
-    mockPushProcessors.parsePush.mockResolvedValue(action);
-    mockPushProcessors.checkEmptyBranch.mockResolvedValue(action);
-    mockPushProcessors.checkRepoInAuthorisedList.mockResolvedValue(action);
-    mockPushProcessors.checkCommitMessages.mockResolvedValue(action);
-    mockPushProcessors.checkAuthorEmails.mockResolvedValue(action);
-    mockPushProcessors.checkUserPushPermission.mockResolvedValue(action);
-    mockPushProcessors.checkIfWaitingAuth.mockResolvedValue(action);
-    mockPushProcessors.pullRemote.mockResolvedValue(action);
-    mockPushProcessors.writePack.mockResolvedValue(action);
-    mockPushProcessors.checkHiddenCommits.mockResolvedValue(action);
 
     mockPushProcessors.preReceive.mockResolvedValue({
       ...action,
@@ -295,12 +324,6 @@ describe('proxy chain', function () {
       allowPush: true,
       autoApproved: true,
     });
-
-    mockPushProcessors.getDiff.mockResolvedValue(action);
-    mockPushProcessors.gitleaks.mockResolvedValue(action);
-    mockPushProcessors.clearBareClone.mockResolvedValue(action);
-    mockPushProcessors.scanDiff.mockResolvedValue(action);
-    mockPushProcessors.blockForAuth.mockResolvedValue(action);
 
     const dbSpy = vi.spyOn(db, 'authorise').mockResolvedValue({
       message: `authorised ${action.id}`,
@@ -327,16 +350,6 @@ describe('proxy chain', function () {
     };
 
     mockPreProcessors.parseAction.mockResolvedValue(action);
-    mockPushProcessors.parsePush.mockResolvedValue(action);
-    mockPushProcessors.checkEmptyBranch.mockResolvedValue(action);
-    mockPushProcessors.checkRepoInAuthorisedList.mockResolvedValue(action);
-    mockPushProcessors.checkCommitMessages.mockResolvedValue(action);
-    mockPushProcessors.checkAuthorEmails.mockResolvedValue(action);
-    mockPushProcessors.checkUserPushPermission.mockResolvedValue(action);
-    mockPushProcessors.checkIfWaitingAuth.mockResolvedValue(action);
-    mockPushProcessors.pullRemote.mockResolvedValue(action);
-    mockPushProcessors.writePack.mockResolvedValue(action);
-    mockPushProcessors.checkHiddenCommits.mockResolvedValue(action);
 
     mockPushProcessors.preReceive.mockResolvedValue({
       ...action,
@@ -344,12 +357,6 @@ describe('proxy chain', function () {
       allowPush: true,
       autoRejected: true,
     });
-
-    mockPushProcessors.getDiff.mockResolvedValue(action);
-    mockPushProcessors.gitleaks.mockResolvedValue(action);
-    mockPushProcessors.clearBareClone.mockResolvedValue(action);
-    mockPushProcessors.scanDiff.mockResolvedValue(action);
-    mockPushProcessors.blockForAuth.mockResolvedValue(action);
 
     const dbSpy = vi.spyOn(db, 'reject').mockResolvedValue({
       message: `reject ${action.id}`,
@@ -375,16 +382,6 @@ describe('proxy chain', function () {
     };
 
     mockPreProcessors.parseAction.mockResolvedValue(action);
-    mockPushProcessors.parsePush.mockResolvedValue(action);
-    mockPushProcessors.checkEmptyBranch.mockResolvedValue(action);
-    mockPushProcessors.checkRepoInAuthorisedList.mockResolvedValue(action);
-    mockPushProcessors.checkCommitMessages.mockResolvedValue(action);
-    mockPushProcessors.checkAuthorEmails.mockResolvedValue(action);
-    mockPushProcessors.checkUserPushPermission.mockResolvedValue(action);
-    mockPushProcessors.checkIfWaitingAuth.mockResolvedValue(action);
-    mockPushProcessors.pullRemote.mockResolvedValue(action);
-    mockPushProcessors.writePack.mockResolvedValue(action);
-    mockPushProcessors.checkHiddenCommits.mockResolvedValue(action);
 
     mockPushProcessors.preReceive.mockResolvedValue({
       ...action,
@@ -392,12 +389,6 @@ describe('proxy chain', function () {
       allowPush: true,
       autoApproved: true,
     });
-
-    mockPushProcessors.getDiff.mockResolvedValue(action);
-    mockPushProcessors.gitleaks.mockResolvedValue(action);
-    mockPushProcessors.clearBareClone.mockResolvedValue(action);
-    mockPushProcessors.scanDiff.mockResolvedValue(action);
-    mockPushProcessors.blockForAuth.mockResolvedValue(action);
 
     const error = new Error('Database error');
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -421,16 +412,6 @@ describe('proxy chain', function () {
     };
 
     mockPreProcessors.parseAction.mockResolvedValue(action);
-    mockPushProcessors.parsePush.mockResolvedValue(action);
-    mockPushProcessors.checkEmptyBranch.mockResolvedValue(action);
-    mockPushProcessors.checkRepoInAuthorisedList.mockResolvedValue(action);
-    mockPushProcessors.checkCommitMessages.mockResolvedValue(action);
-    mockPushProcessors.checkAuthorEmails.mockResolvedValue(action);
-    mockPushProcessors.checkUserPushPermission.mockResolvedValue(action);
-    mockPushProcessors.checkIfWaitingAuth.mockResolvedValue(action);
-    mockPushProcessors.pullRemote.mockResolvedValue(action);
-    mockPushProcessors.writePack.mockResolvedValue(action);
-    mockPushProcessors.checkHiddenCommits.mockResolvedValue(action);
 
     mockPushProcessors.preReceive.mockResolvedValue({
       ...action,
@@ -438,12 +419,6 @@ describe('proxy chain', function () {
       allowPush: false,
       autoRejected: true,
     });
-
-    mockPushProcessors.getDiff.mockResolvedValue(action);
-    mockPushProcessors.gitleaks.mockResolvedValue(action);
-    mockPushProcessors.clearBareClone.mockResolvedValue(action);
-    mockPushProcessors.scanDiff.mockResolvedValue(action);
-    mockPushProcessors.blockForAuth.mockResolvedValue(action);
 
     const error = new Error('Database error');
     const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
