@@ -109,6 +109,15 @@ describe('Auth API', () => {
       expect(res.status).toBe(403);
     });
 
+    it('should return 404 Not Found if user is not found', async () => {
+      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+        username: 'non-existent-user',
+        gitAccount: 'UPDATED_GIT_ACCOUNT',
+      });
+
+      expect(res.status).toBe(404);
+    });
+
     it('should return 200 OK if user is an admin and updates git account for authenticated user', async () => {
       const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
 
@@ -246,6 +255,44 @@ describe('Auth API', () => {
         title: '',
         gitAccount: '',
         admin: false,
+      });
+    });
+
+    it('should return 404 Not Found if user is not found', async () => {
+      const res = await request(newApp('non-existent-user')).get('/auth/profile');
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ message: 'User not found' });
+    });
+  });
+
+  describe('GET /', () => {
+    it('should return 200 OK and the auth endpoints', async () => {
+      const res = await request(newApp()).get('/auth');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        login: {
+          action: 'post',
+          uri: '/api/auth/login',
+        },
+        profile: {
+          action: 'get',
+          uri: '/api/auth/profile',
+        },
+        logout: {
+          action: 'post',
+          uri: '/api/auth/logout',
+        },
+      });
+    });
+  });
+
+  describe('GET /config', () => {
+    it('should return 200 OK and the default auth config', async () => {
+      const res = await request(newApp()).get('/auth/config');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        usernamePasswordMethod: 'local',
+        otherMethods: [],
       });
     });
   });
