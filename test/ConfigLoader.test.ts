@@ -614,7 +614,7 @@ describe('ConfigLoader', () => {
         };
 
         await expect(configLoader.loadFromSource(source)).rejects.toThrow(
-          /Failed to read or parse configuration file/,
+          /Invalid configuration format in git/,
         );
       },
       { timeout: 30000 },
@@ -812,7 +812,7 @@ describe('ConfigLoader Error Handling', () => {
         enabled: true,
         path: tempConfigFile,
       }),
-    ).rejects.toThrow(/Invalid configuration file format/);
+    ).rejects.toThrow(/Invalid configuration format in file/);
   });
 
   it('should handle HTTP request errors', async () => {
@@ -838,6 +838,7 @@ describe('ConfigLoader Error Handling', () => {
         enabled: true,
         url: 'http://config-service/config',
       }),
-    ).rejects.toThrow(/Invalid configuration format from HTTP source/);
+      // Check that the error message CONTAINS the following string:
+    ).rejects.toThrow(/Invalid configuration format in HTTP: http:\/\/config-service\/config/);
   });
 });
