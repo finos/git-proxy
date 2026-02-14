@@ -1,5 +1,6 @@
 {
   "cookieSecret": "integration-test-cookie-secret",
+  "csrfProtection": false,
   "sessionMaxAgeHours": 12,
   "rateLimit": {
     "windowMs": 60000,

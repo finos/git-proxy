@@ -146,14 +146,14 @@ const Dashboard: React.FC = () => {
             <CardHeader color={headerData.color} stats icon>
               <CardIcon color={headerData.color}>
                 {generateIcon(headerData.title)}
-                <h3>{headerData.title}</h3>
+                <h3 data-testid='push-status'>{headerData.title}</h3>
               </CardIcon>
               {!(push.canceled || push.rejected || push.authorised) && (
                 <div style={{ display: 'inline-flex', padding: '20px' }}>
-                  <Button color='warning' onClick={cancel}>
+                  <Button color='warning' onClick={cancel} data-testid='push-cancel-btn'>
                     Cancel
                   </Button>
-                  <Button color='danger' onClick={reject}>
+                  <Button color='danger' onClick={reject} data-testid='push-reject-btn'>
                     Reject
                   </Button>
                   <Attestation approveFn={authorise} />
