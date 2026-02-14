@@ -38,7 +38,7 @@ function extractShebang(fileContent: string): string {
 }
 
 function hasLicenseHeader(fileContent: string, licenseHeader: string): boolean {
-  const normalizedContent = fileContent.trim().substring(0, 500);
+  const normalizedContent = fileContent.trim().substring(0, 200);
 
   return (
     normalizedContent.includes('@license') ||
