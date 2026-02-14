@@ -1,4 +1,4 @@
-import { GitProxyConfig } from './generated/config';
+import { Convert, GitProxyConfig } from './generated/config';
 
 const validationChain = [validateCommitConfig];
 
@@ -77,4 +77,22 @@ function validateCommitConfig(config: GitProxyConfig): boolean {
   }
 
   return true;
+}
+
+export async function loadConfig(
+  context: string,
+  loader: () => Promise<string>,
+): Promise<GitProxyConfig> {
+  const raw = await loader();
+  return parseGitProxyConfig(raw, context);
+}
+
+function parseGitProxyConfig(raw: string, context: string): GitProxyConfig {
+  try {
+    return Convert.toGitProxyConfig(raw);
+  } catch (error) {
+    throw new Error(
+      `Invalid configuration format in ${context}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    );
+  }
 }
