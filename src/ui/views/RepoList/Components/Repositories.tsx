@@ -117,7 +117,7 @@ export default function Repositories(): React.ReactElement {
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <Danger>{errorMessage}</Danger>;
 
-  const addrepoButton = user.admin ? (
+  const addrepoButton = user?.admin ? (
     <GridItem>
       <NewRepo onSuccess={refresh} />
     </GridItem>

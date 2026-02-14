@@ -5,14 +5,20 @@ const attemptAutoApproval = async (action: Action) => {
   try {
     const attestation = {
       timestamp: new Date(),
-      autoApproved: true,
+      automated: true,
+      questions: [],
+      reviewer: {
+        username: 'system',
+        email: 'system@git-proxy.com',
+      },
     };
     await authorise(action.id, attestation);
     console.log('Push automatically approved by system.');
 
     return true;
-  } catch (error: any) {
-    console.error('Error during auto-approval:', error.message);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Error during auto-approval:', msg);
     return false;
   }
 };
@@ -21,14 +27,20 @@ const attemptAutoRejection = async (action: Action) => {
   try {
     const attestation = {
       timestamp: new Date(),
-      autoApproved: true,
+      automated: true,
+      questions: [],
+      reviewer: {
+        username: 'system',
+        email: 'system@git-proxy.com',
+      },
     };
     await reject(action.id, attestation);
     console.log('Push automatically rejected by system.');
 
     return true;
-  } catch (error: any) {
-    console.error('Error during auto-rejection:', error.message);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error('Error during auto-rejection:', msg);
     return false;
   }
 };

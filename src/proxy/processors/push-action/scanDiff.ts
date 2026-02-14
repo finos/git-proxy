@@ -1,7 +1,9 @@
+import escapeStringRegexp from 'escape-string-regexp';
+import { Request } from 'express';
+import parseDiff, { File } from 'parse-diff';
+
 import { Action, Step } from '../../actions';
 import { getCommitConfig, getPrivateOrganizations } from '../../../config';
-import parseDiff, { File } from 'parse-diff';
-import escapeStringRegexp from 'escape-string-regexp';
 
 const commitConfig = getCommitConfig();
 const privateOrganizations = getPrivateOrganizations();
@@ -154,7 +156,7 @@ const formatMatches = (matches: Match[]) => {
   });
 };
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('scanDiff');
 
   const { steps, commitFrom, commitTo } = action;

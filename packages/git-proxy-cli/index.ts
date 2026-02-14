@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import fs from 'fs';
@@ -47,12 +47,15 @@ async function login(username: string, password: string) {
     const user = `"${response.data.username}" <${response.data.email}>`;
     const isAdmin = response.data.admin ? ' (admin)' : '';
     console.log(`Login ${user}${isAdmin}: OK`);
-  } catch (error: any) {
-    if (error.response) {
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response) {
       console.error(`Error: Login '${username}': '${error.response.status}'`);
       process.exitCode = 1;
-    } else {
+    } else if (error instanceof Error) {
       console.error(`Error: Login '${username}': '${error.message}'`);
+      process.exitCode = 2;
+    } else {
+      console.error(`Error: Login '${username}': '${error}'`);
       process.exitCode = 2;
     }
   }
@@ -165,8 +168,9 @@ async function getGitPushes(filters: Partial<PushQuery>) {
     });
 
     console.log(util.inspect(records, false, null, false));
-  } catch (error: any) {
-    console.error(`Error: List: '${error.message}'`);
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`Error: List: '${msg}'`);
     process.exitCode = 2;
   }
 }
@@ -207,12 +211,12 @@ async function authoriseGitPush(id: string) {
     );
 
     console.log(`Authorise: ID: '${id}': OK`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     // default error
-    let errorMessage = `Error: Authorise: '${error.message}'`;
+    let errorMessage = `Error: Authorise: '${error instanceof Error ? error.message : String(error)}'`;
     process.exitCode = 2;
 
-    if (error.response) {
+    if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
           errorMessage = 'Error: Authorise: Authentication required';
@@ -254,12 +258,12 @@ async function rejectGitPush(id: string) {
     );
 
     console.log(`Reject: ID: '${id}': OK`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     // default error
-    let errorMessage = `Error: Reject: '${error.message}'`;
+    let errorMessage = `Error: Reject: '${error instanceof Error ? error.message : String(error)}'`;
     process.exitCode = 2;
 
-    if (error.response) {
+    if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
           errorMessage = 'Error: Reject: Authentication required';
@@ -301,12 +305,12 @@ async function cancelGitPush(id: string) {
     );
 
     console.log(`Cancel: ID: '${id}': OK`);
-  } catch (error: any) {
+  } catch (error: unknown) {
     // default error
-    let errorMessage = `Error: Cancel: '${error.message}'`;
+    let errorMessage = `Error: Cancel: '${error instanceof Error ? error.message : String(error)}'`;
     process.exitCode = 2;
 
-    if (error.response) {
+    if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
           errorMessage = 'Error: Cancel: Authentication required';
@@ -338,8 +342,9 @@ async function logout() {
           headers: { Cookie: cookies },
         },
       );
-    } catch (error: any) {
-      console.log(`Warning: Logout: '${error.message}'`);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.log(`Warning: Logout: '${msg}'`);
     }
   }
 
@@ -362,10 +367,10 @@ async function reloadConfig() {
     await axios.post(`${baseUrl}/api/v1/admin/reload-config`, {}, { headers: { Cookie: cookies } });
 
     console.log('Configuration reloaded successfully');
-  } catch (error: any) {
-    const errorMessage = `Error: Reload config: '${error.message}'`;
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error(`Error: Reload config: '${msg}'`);
     process.exitCode = 2;
-    console.error(errorMessage);
   }
 }
 
@@ -408,11 +413,11 @@ async function createUser(
     );
 
     console.log(`User '${username}' created successfully`);
-  } catch (error: any) {
-    let errorMessage = `Error: Create User: '${error.message}'`;
+  } catch (error: unknown) {
+    let errorMessage = `Error: Create User: '${error instanceof Error ? error.message : String(error)}'`;
     process.exitCode = 2;
 
-    if (error.response) {
+    if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
           errorMessage = 'Error: Create User: Authentication required';
