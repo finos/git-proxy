@@ -31,7 +31,7 @@ services:
       #   - Unset/empty = Same-origin only (most secure)
       - ALLOWED_ORIGINS=
   mongodb:
-    image: mongo:7@sha256:606f8e029603330411a7dd10b5ffd50eefc297fc80cee89f10a455e496a76ae7
+    image: mongo:7@sha256:6159d784bc2ed3e6e97648bb28d93d43cf9660401c1230f4f340d14d68421119
     ports:
       - '27017:27017'
     networks:
