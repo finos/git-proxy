@@ -51,7 +51,6 @@ function addLicenseHeader(filePath: string, licenseHeader: string): void {
   let shebang = '';
 
   if (hasLicenseHeader(content, licenseHeader)) {
-    console.log(`Skipping ${filePath} (already has header)`);
     return;
   }
 
@@ -75,7 +74,6 @@ function processDirectory(dirPath: string, licenseHeader: string): void {
 
     if (entry.isDirectory()) {
       if (!IGNORE_DIRS.includes(entry.name)) {
-        console.log(`Processing directory: ${fullPath} ${entry.name}`);
         processDirectory(fullPath, licenseHeader);
       }
     } else if (entry.isFile()) {
@@ -89,6 +87,7 @@ function processDirectory(dirPath: string, licenseHeader: string): void {
 
 function main(): void {
   try {
+    console.log('Executing scripts/add-license-headers.ts');
     console.log('Reading license header...');
     const licenseHeader = readLicenseHeader();
 

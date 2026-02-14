@@ -46,3 +46,6 @@ jobs:
             echo "Generated config types are out of date. Run 'npm run generate-config-types' locally and commit the changes."
             exit 1
           fi
+
+      - name: Check license headers
+        run: npm run check-license-headers
