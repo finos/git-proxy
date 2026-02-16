@@ -1,17 +1,2 @@
 # Default — maintainers own everything
 * @finos/git-proxy-maintainers
-
-# Sub-areas (must ALSO include maintainers!)
-/plugins/ @finos/git-proxy-maintainers @coopernetes
-
-/src/proxy/processors @finos/git-proxy-maintainers @kriswest @grovesy
-
-/src/service/passport @finos/git-proxy-maintainers @jescalada
-/src/service/passport/activeDirectory.ts @finos/git-proxy-maintainers @06kellyjac @kriswest
-/src/service/passport/ldaphelper.ts @finos/git-proxy-maintainers @06kellyjac @kriswest
-
-/src/ui/ @finos/git-proxy-maintainers @jescalada @andypols @kriswest
-
-# Governance
-.github/ @finos/git-proxy-maintainers @finos/finos-admins
-.github/workflows/ @finos/git-proxy-maintainers @finos/finos-admins
