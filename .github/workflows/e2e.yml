@@ -51,6 +51,15 @@ jobs:
             done
           ' || { echo "Service readiness check failed:"; docker compose ps; exit 1; }
 
+      - name: Debug git-proxy config
+        run: |
+          echo "=== Container env ==="
+          docker compose exec -T git-proxy sh -c 'echo CONFIG_FILE=$CONFIG_FILE && echo NODE_ENV=$NODE_ENV'
+          echo "=== Config file check ==="
+          docker compose exec -T git-proxy sh -c 'ls -la /app/test-e2e.proxy.config.json 2>&1 || echo "FILE NOT FOUND"'
+          echo "=== Server logs (last 30 lines) ==="
+          docker compose logs git-proxy --tail=30
+
       - name: Run E2E tests
         run: npm run test:e2e
 
@@ -58,6 +67,10 @@ jobs:
         run: npx cypress run --env API_BASE_URL=http://localhost:8081,GIT_PROXY_URL=http://localhost:8000,GIT_SERVER_TARGET=git-server:8443
         env:
           CYPRESS_BASE_URL: http://localhost:8081
+
+      - name: Dump git-proxy logs on failure
+        if: failure()
+        run: docker compose logs git-proxy --tail=100
 
       - name: Upload Cypress screenshots on failure
         uses: actions/upload-artifact@v4
