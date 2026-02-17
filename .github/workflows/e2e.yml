@@ -51,41 +51,8 @@ jobs:
             done
           ' || { echo "Service readiness check failed:"; docker compose ps; exit 1; }
 
-      - name: Debug git-proxy config
-        run: |
-          echo "=== Container env ==="
-          docker compose exec -T git-proxy sh -c 'echo CONFIG_FILE=$CONFIG_FILE && echo NODE_ENV=$NODE_ENV'
-          echo "=== Config file check ==="
-          docker compose exec -T git-proxy sh -c 'ls -la /app/test-e2e.proxy.config.json 2>&1 || echo "FILE NOT FOUND"'
-          echo "=== Config file content ==="
-          docker compose exec -T git-proxy sh -c 'cat /app/test-e2e.proxy.config.json 2>&1 || echo "CANNOT READ"'
-          echo "=== Server logs (last 50 lines) ==="
-          docker compose logs git-proxy --tail=50
-          echo "=== Host: what is listening on port 8081 ==="
-          ss -tlnp | grep 8081 || echo "nothing found with ss"
-          echo "=== Host: curl API repos endpoint ==="
-          curl -s http://localhost:8081/api/v1/repo | head -c 500 || echo "curl failed"
-          echo ""
-          echo "=== Host: curl healthcheck ==="
-          curl -s http://localhost:8081/api/v1/healthcheck || echo "healthcheck failed"
-
       - name: Run E2E tests
         run: npm run test:e2e
-
-      - name: Pre-Cypress diagnostics
-        run: |
-          echo "=== All node processes ==="
-          ps aux | grep node | grep -v grep || echo "no node processes"
-          echo "=== Ports 8000, 8080, 8081 ==="
-          ss -tlnp | grep -E ':(8000|8080|8081)\b' || echo "nothing found"
-          echo "=== Kill any host node servers (not Docker) ==="
-          pkill -f 'tsx index.ts' || true
-          pkill -f 'concurrently' || true
-          sleep 1
-          echo "=== After cleanup: ports ==="
-          ss -tlnp | grep -E ':(8000|8080|8081)\b' || echo "nothing found"
-          echo "=== Verify Docker repos API ==="
-          curl -s http://localhost:8081/api/v1/repo | python3 -m json.tool || echo "curl failed"
 
       - name: Run Cypress E2E tests
         run: npx cypress run --env API_BASE_URL=http://localhost:8081,GIT_PROXY_URL=http://localhost:8000,GIT_SERVER_TARGET=git-server:8443
