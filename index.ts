@@ -5,7 +5,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import * as fs from 'fs';
 import { getConfigFile, setConfigFile, validate } from './src/config/file';
-import { initUserConfig } from './src/config';
+import { initUserConfig, logConfiguration } from './src/config';
 import { Proxy } from './src/proxy';
 import { Service } from './src/service';
 
@@ -33,6 +33,7 @@ const argv = yargs(hideBin(process.argv))
 console.log('Setting config file to: ' + (argv.c as string) || '');
 setConfigFile((argv.c as string) || '');
 initUserConfig();
+logConfiguration();
 
 const configFile = getConfigFile();
 if (argv.v) {

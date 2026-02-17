@@ -24,6 +24,7 @@ COPY --from=builder /out/node_modules/ /app/node_modules/
 COPY --from=builder /out/dist/ /app/dist/
 COPY --from=builder /out/build /app/dist/build/
 COPY proxy.config.json config.schema.json ./
+COPY test-e2e.proxy.config.json /app/test-e2e.proxy.config.json
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 
 USER root

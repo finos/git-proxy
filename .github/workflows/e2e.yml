@@ -57,8 +57,17 @@ jobs:
           docker compose exec -T git-proxy sh -c 'echo CONFIG_FILE=$CONFIG_FILE && echo NODE_ENV=$NODE_ENV'
           echo "=== Config file check ==="
           docker compose exec -T git-proxy sh -c 'ls -la /app/test-e2e.proxy.config.json 2>&1 || echo "FILE NOT FOUND"'
-          echo "=== Server logs (last 30 lines) ==="
-          docker compose logs git-proxy --tail=30
+          echo "=== Config file content ==="
+          docker compose exec -T git-proxy sh -c 'cat /app/test-e2e.proxy.config.json 2>&1 || echo "CANNOT READ"'
+          echo "=== Server logs (last 50 lines) ==="
+          docker compose logs git-proxy --tail=50
+          echo "=== Host: what is listening on port 8081 ==="
+          ss -tlnp | grep 8081 || echo "nothing found with ss"
+          echo "=== Host: curl API repos endpoint ==="
+          curl -s http://localhost:8081/api/v1/repo | head -c 500 || echo "curl failed"
+          echo ""
+          echo "=== Host: curl healthcheck ==="
+          curl -s http://localhost:8081/api/v1/healthcheck || echo "healthcheck failed"
 
       - name: Run E2E tests
         run: npm run test:e2e

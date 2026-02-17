@@ -54,6 +54,11 @@ function loadFullConfiguration(): GitProxyConfig {
   let userSettings: Partial<GitProxyConfig> = {};
   const userConfigFile = process.env.CONFIG_FILE || getConfigFile();
 
+  console.log(
+    `[CONFIG] Resolving user config: CONFIG_FILE=${process.env.CONFIG_FILE}, getConfigFile()=${getConfigFile()}, resolved=${userConfigFile}`,
+  );
+  console.log(`[CONFIG] File exists: ${existsSync(userConfigFile)}`);
+
   if (existsSync(userConfigFile)) {
     try {
       const userConfigContent = readFileSync(userConfigFile, 'utf-8');
@@ -61,10 +66,18 @@ function loadFullConfiguration(): GitProxyConfig {
       // Don't use QuickType validation for partial configurations
       const rawUserConfig = JSON.parse(userConfigContent);
       userSettings = cleanUndefinedValues(rawUserConfig);
+      console.log(`[CONFIG] Loaded user config with keys: ${Object.keys(userSettings).join(', ')}`);
+      if (userSettings.authorisedList) {
+        console.log(
+          `[CONFIG] authorisedList from user config: ${JSON.stringify(userSettings.authorisedList)}`,
+        );
+      }
     } catch (error) {
       console.error(`Error loading user config from ${userConfigFile}:`, error);
       throw error;
     }
+  } else {
+    console.log(`[CONFIG] User config file not found at ${userConfigFile}, using defaults only`);
   }
 
   _currentConfig = mergeConfigurations(defaultConfig, userSettings);
