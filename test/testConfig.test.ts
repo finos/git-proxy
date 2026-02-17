@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, MockInstance } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import defaultSettings from '../proxy.config.json';
@@ -451,5 +451,105 @@ describe('Configuration Update Handling', () => {
     process.env = oldEnv;
 
     vi.resetModules();
+  });
+});
+
+describe('loadFullConfiguration', () => {
+  let tempDir: string;
+  let tempUserFile: string;
+  let oldEnv: NodeJS.ProcessEnv;
+  let consoleErrorSpy: MockInstance<typeof console.error>;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    oldEnv = { ...process.env };
+    tempDir = fs.mkdtempSync('gitproxy-test');
+    tempUserFile = path.join(tempDir, 'test-settings.json');
+
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const fileModule = await import('../src/config/file');
+    fileModule.setConfigFile(tempUserFile);
+  });
+
+  afterEach(() => {
+    if (fs.existsSync(tempUserFile)) {
+      fs.rmSync(tempUserFile);
+    }
+    if (fs.existsSync(tempDir)) {
+      fs.rmdirSync(tempDir);
+    }
+    process.env = { ...oldEnv };
+    consoleErrorSpy.mockRestore();
+    vi.resetModules();
+  });
+
+  describe('validation', () => {
+    it('should load successfully when user config contains valid regex patterns', async () => {
+      const validUser = {
+        commitConfig: {
+          author: {
+            email: {
+              local: {
+                block: '^admin.*',
+              },
+              domain: {
+                allow: '.*@example\\.com$',
+              },
+            },
+          },
+          message: {
+            block: {
+              patterns: ['^WIP:', 'TODO', '[Tt]est'],
+            },
+          },
+          diff: {
+            block: {
+              patterns: ['password', 'secret.*key'],
+            },
+          },
+        },
+      };
+      fs.writeFileSync(tempUserFile, JSON.stringify(validUser));
+
+      const config = await import('../src/config');
+      config.invalidateCache();
+
+      expect(() => {
+        config.reloadConfiguration(); // Calls loadFullConfiguration
+      }).not.toThrow();
+
+      expect(consoleErrorSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Invalid regular expression'),
+      );
+      expect(consoleErrorSpy).not.toHaveBeenCalledWith(
+        'Invalid configuration: Please check your configuration file and restart GitProxy.',
+      );
+    });
+
+    it('should throw error when config file has invalid commitConfig entry', async () => {
+      const invalidConfig = {
+        commitConfig: {
+          author: {
+            email: {
+              local: {
+                block: '[invalid(regex',
+              },
+            },
+          },
+        },
+      };
+
+      fs.writeFileSync(tempUserFile, JSON.stringify(invalidConfig));
+
+      // Needed since loadFullConfiguration is executed on import too
+      await expect(import('../src/config')).rejects.toThrow(
+        'Invalid configuration: Please check your configuration file and restart GitProxy.',
+      );
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Invalid regular expression for commitConfig.author.email.local.block: [invalid(regex',
+      );
+    });
   });
 });

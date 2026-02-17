@@ -6,6 +6,7 @@ import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
 import { getConfigFile } from './file';
+import { validateConfig } from './validators';
 
 // Cache for current configuration
 let _currentConfig: GitProxyConfig | null = null;
@@ -81,6 +82,15 @@ function loadFullConfiguration(): GitProxyConfig {
   }
 
   _currentConfig = mergeConfigurations(defaultConfig, userSettings);
+
+  if (!validateConfig(_currentConfig)) {
+    console.error(
+      'Invalid configuration: Please check your configuration file and restart GitProxy.',
+    );
+    throw new Error(
+      'Invalid configuration: Please check your configuration file and restart GitProxy.',
+    );
+  }
 
   return _currentConfig;
 }
@@ -338,7 +348,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
 
 // Initialize config loader
 function initializeConfigLoader() {
-  const config = loadFullConfiguration() as Configuration;
+  const config = loadFullConfiguration();
   _configLoader = new ConfigLoader(config);
 
   // Handle configuration updates
@@ -365,7 +375,6 @@ export const reloadConfiguration = async () => {
 
 // Initialize configuration on module load
 try {
-  loadFullConfiguration();
   initializeConfigLoader();
   console.log('Configuration loaded successfully');
 } catch (error) {
