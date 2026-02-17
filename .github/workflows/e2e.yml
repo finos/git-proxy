@@ -72,6 +72,21 @@ jobs:
       - name: Run E2E tests
         run: npm run test:e2e
 
+      - name: Pre-Cypress diagnostics
+        run: |
+          echo "=== All node processes ==="
+          ps aux | grep node | grep -v grep || echo "no node processes"
+          echo "=== Ports 8000, 8080, 8081 ==="
+          ss -tlnp | grep -E ':(8000|8080|8081)\b' || echo "nothing found"
+          echo "=== Kill any host node servers (not Docker) ==="
+          pkill -f 'tsx index.ts' || true
+          pkill -f 'concurrently' || true
+          sleep 1
+          echo "=== After cleanup: ports ==="
+          ss -tlnp | grep -E ':(8000|8080|8081)\b' || echo "nothing found"
+          echo "=== Verify Docker repos API ==="
+          curl -s http://localhost:8081/api/v1/repo | python3 -m json.tool || echo "curl failed"
+
       - name: Run Cypress E2E tests
         run: npx cypress run --env API_BASE_URL=http://localhost:8081,GIT_PROXY_URL=http://localhost:8000,GIT_SERVER_TARGET=git-server:8443
         env:
