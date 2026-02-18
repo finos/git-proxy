@@ -76,6 +76,27 @@ jobs:
       - name: Build frontend
         run: npm run build-ui
 
+      - name: Save build folder
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: build-ubuntu-node-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
+          if-no-files-found: error
+          path: build
+
+      - name: Download the build folders
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: build-ubuntu-node-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
+          path: build
+
+      - name: Run cypress test
+        uses: cypress-io/github-action@f790eee7a50d9505912f50c2095510be7de06aa7 # v6.10.9
+        with:
+          start: npm start &
+          wait-on: 'http://localhost:3000'
+          wait-on-timeout: 120
+          command: npm run cypress:run
+
   # Windows build - single combination for development support
   build-windows:
     runs-on: windows-latest

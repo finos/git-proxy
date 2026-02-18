@@ -55,16 +55,19 @@ jobs:
         run: npm run test:e2e
 
       - name: Run Cypress E2E tests
-        run: npx cypress run --env API_BASE_URL=http://localhost:8081,GIT_PROXY_URL=http://localhost:8000,GIT_SERVER_TARGET=git-server:8443
+        run: npm run cypress:run:docker
         env:
           CYPRESS_BASE_URL: http://localhost:8081
+          CYPRESS_API_BASE_URL: http://localhost:8081
+          CYPRESS_GIT_PROXY_URL: http://localhost:8000
+          CYPRESS_GIT_SERVER_TARGET: git-server:8443
 
       - name: Dump git-proxy logs on failure
         if: failure()
         run: docker compose logs git-proxy --tail=100
 
       - name: Upload Cypress screenshots on failure
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
           name: cypress-screenshots

@@ -3,6 +3,7 @@ const { defineConfig } = require('cypress');
 module.exports = defineConfig({
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL || 'http://localhost:3000',
+    specPattern: 'cypress/e2e/*.cy.{js,ts}',
     chromeWebSecurity: false, // Required for OIDC testing
     env: {
       API_BASE_URL: process.env.CYPRESS_API_BASE_URL || 'http://localhost:8080',
