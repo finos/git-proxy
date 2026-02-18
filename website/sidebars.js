@@ -17,6 +17,7 @@ module.exports = {
     },
     'installation',
     'usage',
+    'deployment',
     {
       type: 'category',
       label: 'Configuration',
