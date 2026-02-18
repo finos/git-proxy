@@ -50,7 +50,7 @@ describe('errors utility functions', () => {
       });
     });
 
-    it('ignores empty string response messages', () => {
+    it('uses response code when response message is empty', () => {
       const error = {
         response: {
           status: 500,
@@ -65,11 +65,11 @@ describe('errors utility functions', () => {
 
       expect(result).toEqual({
         status: 500,
-        message: 'Server error',
+        message: 'Unknown error occurred, response code: 500',
       });
     });
 
-    it('ignores non-string response messages', () => {
+    it('uses response code when response message is non-string', () => {
       const error = {
         response: {
           status: 400,
@@ -84,7 +84,7 @@ describe('errors utility functions', () => {
 
       expect(result).toEqual({
         status: 400,
-        message: 'Bad request error',
+        message: 'Unknown error occurred, response code: 400',
       });
     });
   });

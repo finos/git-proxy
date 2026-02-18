@@ -14,7 +14,9 @@ export const getServiceError = (
   const message =
     typeof responseMessage === 'string' && responseMessage.trim().length > 0
       ? responseMessage
-      : error?.message || fallbackMessage;
+      : status
+        ? `Unknown error occurred, response code: ${status}`
+        : error?.message || fallbackMessage;
   return { status, message };
 };
 

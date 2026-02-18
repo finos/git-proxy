@@ -11,9 +11,12 @@ const getPush = async (id: string): Promise<ServiceResult<PushActionView>> => {
 
   try {
     const response = await axios<Action>(url, getAxiosConfig());
-    const data: Action & { diff?: Step } = response.data;
-    data.diff = data.steps.find((x: Step) => x.stepName === 'diff');
-    return successResult(data as PushActionView);
+    const data: Action = response.data;
+    const actionView: PushActionView = {
+      ...data,
+      diff: data.steps.find((x: Step) => x.stepName === 'diff')!,
+    };
+    return successResult(actionView);
   } catch (error: any) {
     return errorResult(error, 'Failed to load push');
   }
@@ -33,7 +36,7 @@ const getPushes = async (
 
   try {
     const response = await axios<Action[]>(url.toString(), getAxiosConfig());
-    return successResult(response.data as PushActionView[]);
+    return successResult(response.data as unknown as PushActionView[]);
   } catch (error: any) {
     return errorResult(error, 'Failed to load pushes');
   }
