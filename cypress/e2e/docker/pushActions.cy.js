@@ -33,19 +33,19 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
     cy.logout();
   });
 
-  describe('Approve flow', () => {
-    let pushId;
+  afterEach(() => {
+    cy.logout();
+  });
 
-    before(() => {
+  describe('Approve flow', () => {
+    beforeEach(() => {
       const suffix = `approve-${Date.now()}`;
-      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).then((id) => {
-        pushId = id;
-      });
+      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
     });
 
-    it('should approve a pending push via attestation dialog', () => {
+    it('should approve a pending push via attestation dialog', function () {
       cy.login(approverUser.username, approverUser.password);
-      cy.visit(`/dashboard/push/${pushId}`);
+      cy.visit(`/dashboard/push/${this.pushId}`);
 
       // Verify push is Pending
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
@@ -77,34 +77,28 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
       // Should navigate back to push list
       cy.url().should('include', '/dashboard/push');
-      cy.url().should('not.include', pushId);
+      cy.url().should('not.include', this.pushId);
 
       // Verify push is now Approved by revisiting its detail page
-      cy.visit(`/dashboard/push/${pushId}`);
+      cy.visit(`/dashboard/push/${this.pushId}`);
       cy.get('[data-testid="push-status"]').should('contain', 'Approved');
 
       // Action buttons should no longer be visible for an approved push
       cy.get('[data-testid="push-cancel-btn"]').should('not.exist');
       cy.get('[data-testid="push-reject-btn"]').should('not.exist');
       cy.get('[data-testid="attestation-open-btn"]').should('not.exist');
-
-      cy.logout();
     });
   });
 
   describe('Reject flow', () => {
-    let pushId;
-
-    before(() => {
+    beforeEach(() => {
       const suffix = `reject-${Date.now()}`;
-      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).then((id) => {
-        pushId = id;
-      });
+      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
     });
 
-    it('should reject a pending push', () => {
+    it('should reject a pending push', function () {
       cy.login(approverUser.username, approverUser.password);
-      cy.visit(`/dashboard/push/${pushId}`);
+      cy.visit(`/dashboard/push/${this.pushId}`);
 
       // Verify push is Pending
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
@@ -114,35 +108,29 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
       // Should navigate back to push list
       cy.url().should('include', '/dashboard/push');
-      cy.url().should('not.include', pushId);
+      cy.url().should('not.include', this.pushId);
 
       // Verify push is now Rejected
-      cy.visit(`/dashboard/push/${pushId}`);
+      cy.visit(`/dashboard/push/${this.pushId}`);
       cy.get('[data-testid="push-status"]').should('contain', 'Rejected');
 
       // Action buttons should no longer be visible
       cy.get('[data-testid="push-cancel-btn"]').should('not.exist');
       cy.get('[data-testid="push-reject-btn"]').should('not.exist');
       cy.get('[data-testid="attestation-open-btn"]').should('not.exist');
-
-      cy.logout();
     });
   });
 
   describe('Cancel flow', () => {
-    let pushId;
-
-    before(() => {
+    beforeEach(() => {
       const suffix = `cancel-${Date.now()}`;
-      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).then((id) => {
-        pushId = id;
-      });
+      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
     });
 
-    it('should cancel a pending push', () => {
+    it('should cancel a pending push', function () {
       // Cancel can be done by the push author
       cy.login(testUser.username, testUser.password);
-      cy.visit(`/dashboard/push/${pushId}`);
+      cy.visit(`/dashboard/push/${this.pushId}`);
 
       // Verify push is Pending
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
@@ -154,32 +142,26 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
       cy.url().should('include', '/dashboard/push');
 
       // Verify push is now Canceled
-      cy.visit(`/dashboard/push/${pushId}`);
+      cy.visit(`/dashboard/push/${this.pushId}`);
       cy.get('[data-testid="push-status"]').should('contain', 'Canceled');
 
       // Action buttons should no longer be visible
       cy.get('[data-testid="push-cancel-btn"]').should('not.exist');
       cy.get('[data-testid="push-reject-btn"]').should('not.exist');
       cy.get('[data-testid="attestation-open-btn"]').should('not.exist');
-
-      cy.logout();
     });
   });
 
   describe('Negative: unauthorized approve', () => {
-    let pushId;
-
-    before(() => {
+    beforeEach(() => {
       const suffix = `neg-approve-${Date.now()}`;
-      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).then((id) => {
-        pushId = id;
-      });
+      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
     });
 
-    it('should not change push state when user lacks canAuthorise permission', () => {
+    it('should not change push state when user lacks canAuthorise permission', function () {
       // Login as testuser (has canPush but NOT canAuthorise)
       cy.login(testUser.username, testUser.password);
-      cy.visit(`/dashboard/push/${pushId}`);
+      cy.visit(`/dashboard/push/${this.pushId}`);
 
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
 
@@ -200,27 +182,21 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
       // only handles 401 errors in authorisePush/rejectPush. The 403 is silently
       // ignored and the user is navigated away without feedback. Once the UI properly
       // handles 403, this test should assert a snackbar error message is shown.
-      cy.visit(`/dashboard/push/${pushId}`);
+      cy.visit(`/dashboard/push/${this.pushId}`);
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
-
-      cy.logout();
     });
   });
 
   describe('Negative: unauthorized reject', () => {
-    let pushId;
-
-    before(() => {
+    beforeEach(() => {
       const suffix = `neg-reject-${Date.now()}`;
-      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).then((id) => {
-        pushId = id;
-      });
+      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
     });
 
-    it('should not change push state when user lacks canAuthorise permission', () => {
+    it('should not change push state when user lacks canAuthorise permission', function () {
       // Login as testuser
       cy.login(testUser.username, testUser.password);
-      cy.visit(`/dashboard/push/${pushId}`);
+      cy.visit(`/dashboard/push/${this.pushId}`);
 
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
 
@@ -229,26 +205,20 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
       // TODO: Same issue as unauthorized approve — UI ignores 403 from server.
       // Once fixed, assert snackbar error message is shown.
-      cy.visit(`/dashboard/push/${pushId}`);
+      cy.visit(`/dashboard/push/${this.pushId}`);
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
-
-      cy.logout();
     });
   });
 
   describe('Attestation dialog cancel does not cancel the push', () => {
-    let pushId;
-
-    before(() => {
+    beforeEach(() => {
       const suffix = `dialog-cancel-${Date.now()}`;
-      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).then((id) => {
-        pushId = id;
-      });
+      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
     });
 
-    it('should close attestation dialog without affecting push status', () => {
+    it('should close attestation dialog without affecting push status', function () {
       cy.login(approverUser.username, approverUser.password);
-      cy.visit(`/dashboard/push/${pushId}`);
+      cy.visit(`/dashboard/push/${this.pushId}`);
 
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
 
@@ -267,8 +237,6 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
       cy.get('[data-testid="push-cancel-btn"]').should('be.visible');
       cy.get('[data-testid="push-reject-btn"]').should('be.visible');
       cy.get('[data-testid="attestation-open-btn"]').should('be.visible');
-
-      cy.logout();
     });
   });
 });

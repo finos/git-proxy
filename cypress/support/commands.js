@@ -61,13 +61,15 @@ Cypress.Commands.add('getCSRFToken', () => {
       cookies = [cookies];
     }
 
-    // CSRF protection is disabled when NODE_ENV=test (Docker/CI)
     if (!cookies) {
+      // No Set-Cookie header: CSRF protection is disabled (expected in NODE_ENV=test).
+      cy.log('getCSRFToken: no cookies in response, assuming CSRF is disabled');
       return cy.wrap('');
     }
 
     const csrfCookie = cookies.find((c) => c.startsWith('csrf='));
     if (!csrfCookie) {
+      cy.log('getCSRFToken: no csrf cookie found, assuming CSRF is disabled');
       return cy.wrap('');
     }
 
