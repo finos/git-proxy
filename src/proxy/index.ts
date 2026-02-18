@@ -71,18 +71,26 @@ export class Proxy {
   public async start() {
     await this.proxyPreparations();
     this.expressApp = await this.createApp();
-    this.httpServer = http
-      .createServer(getServerOptions() as any, this.expressApp)
-      .listen(proxyHttpPort, () => {
+    await new Promise<void>((resolve, reject) => {
+      const server = http.createServer(getServerOptions() as any, this.expressApp!);
+      server.on('error', reject);
+      server.listen(proxyHttpPort, () => {
         console.log(`HTTP Proxy Listening on ${proxyHttpPort}`);
+        resolve();
       });
+      this.httpServer = server;
+    });
     // Start HTTPS server only if TLS is enabled
     if (getTLSEnabled()) {
-      this.httpsServer = https
-        .createServer(getServerOptions(), this.expressApp)
-        .listen(proxyHttpsPort, () => {
+      await new Promise<void>((resolve, reject) => {
+        const server = https.createServer(getServerOptions(), this.expressApp!);
+        server.on('error', reject);
+        server.listen(proxyHttpsPort, () => {
           console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
+          resolve();
         });
+        this.httpsServer = server;
+      });
     }
   }
 
