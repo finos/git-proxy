@@ -50,7 +50,7 @@ Cypress.Commands.add('login', (username, password) => {
 });
 
 Cypress.Commands.add('logout', () => {
-  Cypress.session.clearAllSavedSessions();
+  cy.clearCookies();
 });
 
 Cypress.Commands.add('getCSRFToken', () => {
