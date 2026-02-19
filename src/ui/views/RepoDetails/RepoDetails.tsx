@@ -81,7 +81,13 @@ const RepoDetails: React.FC = () => {
 
   const removeUser = async (userToRemove: string, action: 'authorise' | 'push') => {
     if (!repoId) return;
-    await deleteUser(userToRemove, repoId, action);
+    try {
+      await deleteUser(userToRemove, repoId, action);
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err.message || 'Failed to remove user');
+      return;
+    }
     const result = await getRepo(repoId);
     if (result.success && result.data) {
       setRepo(result.data);
@@ -94,7 +100,13 @@ const RepoDetails: React.FC = () => {
   };
 
   const removeRepository = async (id: string) => {
-    await deleteRepo(id);
+    try {
+      await deleteRepo(id);
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err.message || 'Failed to delete repository');
+      return;
+    }
     navigate('/dashboard/repo', { replace: true });
   };
 
