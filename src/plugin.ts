@@ -3,7 +3,7 @@ import { Request } from 'express';
 import { Action } from './proxy/actions';
 import Module from 'node:module';
 
-const lpModule = import('load-plugin');
+import {loadPlugin, resolvePlugin} from 'load-plugin'
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 ('use strict');
 
