@@ -30,6 +30,9 @@ const exec = async (req: Request, action: Action): Promise<Action> => {
       step.log(`Executing ${cmd}`);
 
       const authHeader = req.headers?.authorization;
+      if (!authHeader) {
+        throw new Error('Authorization header is required');
+      }
       const [username, password] = Buffer.from(authHeader.split(' ')[1], 'base64')
         .toString()
         .split(':');
