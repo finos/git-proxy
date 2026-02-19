@@ -5,8 +5,9 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { EventEmitter } from 'events';
 import envPaths from 'env-paths';
-import { GitProxyConfig, Convert } from './generated/config';
+import { GitProxyConfig } from './generated/config';
 import { Configuration, ConfigurationSource, FileSource, HttpSource, GitSource } from './types';
+import { loadConfig, validateConfig } from './validators';
 
 const execFileAsync = promisify(execFile);
 
@@ -149,7 +150,7 @@ export class ConfigLoader extends EventEmitter {
       );
       console.log(`Found ${enabledSources.length} enabled configuration sources`);
 
-      const configs = await Promise.all(
+      const loadedConfigs = await Promise.all(
         enabledSources.map(async (source: ConfigurationSource) => {
           try {
             console.log(`Loading configuration from ${source.type} source`);
@@ -163,10 +164,12 @@ export class ConfigLoader extends EventEmitter {
       );
 
       // Filter out null results from failed loads
-      const validConfigs = configs.filter((config): config is GitProxyConfig => config !== null);
+      const nonNullConfigs = loadedConfigs.filter(
+        (config): config is GitProxyConfig => config !== null,
+      );
 
-      if (validConfigs.length === 0) {
-        console.log('No valid configurations loaded from any source');
+      if (nonNullConfigs.length === 0) {
+        console.log('All loaded configurations are empty, skipping reload');
         return;
       }
 
@@ -175,15 +178,20 @@ export class ConfigLoader extends EventEmitter {
       console.log(`Using ${shouldMerge ? 'merge' : 'override'} strategy for configuration`);
 
       const newConfig = shouldMerge
-        ? validConfigs.reduce(
+        ? nonNullConfigs.reduce(
             (acc, curr) => {
               return this.deepMerge(acc, curr) as Configuration;
             },
             { ...this.config },
           )
-        : { ...this.config, ...validConfigs[validConfigs.length - 1] }; // Use last config for override
+        : { ...this.config, ...nonNullConfigs[nonNullConfigs.length - 1] }; // Use last config for override
 
-      // Emit change event if config changed
+      if (!validateConfig(newConfig)) {
+        console.error('Invalid configuration, skipping reload');
+        return;
+      }
+
+      // Emit change event if config changed and is valid
       if (JSON.stringify(newConfig) !== JSON.stringify(this.config)) {
         console.log('Configuration has changed, updating and emitting change event');
         this.config = newConfig;
@@ -221,15 +229,7 @@ export class ConfigLoader extends EventEmitter {
       throw new Error('Invalid configuration file path');
     }
     console.log(`Loading configuration from file: ${configPath}`);
-    const content = await fs.promises.readFile(configPath, 'utf8');
-
-    // Use QuickType to validate and parse the configuration
-    try {
-      return Convert.toGitProxyConfig(content);
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      throw new Error(`Invalid configuration file format: ${msg}`);
-    }
+    return loadConfig(`file: ${configPath}`, async () => fs.promises.readFile(configPath, 'utf8'));
   }
 
   async loadFromHttp(source: HttpSource): Promise<GitProxyConfig> {
@@ -239,17 +239,10 @@ export class ConfigLoader extends EventEmitter {
       ...(source.auth?.type === 'bearer' ? { Authorization: `Bearer ${source.auth.token}` } : {}),
     };
 
-    const response = await axios.get(source.url, { headers });
-
-    // Use QuickType to validate and parse the configuration from HTTP response
-    try {
-      const configJson =
-        typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
-      return Convert.toGitProxyConfig(configJson);
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      throw new Error(`Invalid configuration format from HTTP source: ${msg}`);
-    }
+    return loadConfig(`HTTP: ${source.url}`, async () => {
+      const response = await axios.get(source.url, { headers });
+      return typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+    });
   }
 
   async loadFromGit(source: GitSource): Promise<GitProxyConfig> {
@@ -348,18 +341,7 @@ export class ConfigLoader extends EventEmitter {
       throw new Error(`Configuration file not found at ${configPath}`);
     }
 
-    try {
-      const content = await fs.promises.readFile(configPath, 'utf8');
-
-      // Use QuickType to validate and parse the configuration from Git
-      const config = Convert.toGitProxyConfig(content);
-      console.log('Configuration loaded successfully from Git');
-      return config;
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      console.error('Failed to read or parse configuration file:', msg);
-      throw new Error(`Failed to read or parse configuration file: ${msg}`);
-    }
+    return loadConfig(`git: ${configPath}`, async () => fs.promises.readFile(configPath, 'utf8'));
   }
 
   deepMerge(target: Record<string, any>, source: Record<string, any>): Record<string, any> {

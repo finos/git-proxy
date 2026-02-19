@@ -192,6 +192,111 @@ describe('ConfigLoader', () => {
 
       expect(spy).not.toHaveBeenCalled();
     });
+
+    it('should skip reload and log error when configuration is invalid', async () => {
+      const invalidConfig = {
+        proxyUrl: 'https://test.com',
+        commitConfig: {
+          author: {
+            email: {
+              local: {
+                block: '[invalid(regex',
+              },
+            },
+          },
+        },
+      };
+
+      fs.writeFileSync(tempConfigFile, JSON.stringify(invalidConfig));
+
+      const initialConfig: Configuration = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+          reloadIntervalSeconds: 0,
+        },
+      };
+
+      configLoader = new ConfigLoader(initialConfig);
+
+      const changeEventSpy = vi.fn();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      configLoader.on('configurationChanged', changeEventSpy);
+
+      await configLoader.reloadConfiguration();
+
+      expect(changeEventSpy).not.toHaveBeenCalled();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Invalid regular expression for commitConfig.author.email.local.block: [invalid(regex',
+      );
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Invalid configuration, skipping reload');
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should successfully reload when configuration is valid', async () => {
+      const validConfig = {
+        proxyUrl: 'https://test.com',
+        commitConfig: {
+          author: {
+            email: {
+              local: {
+                block: '^admin.*', // Valid regex pattern
+              },
+            },
+          },
+          message: {
+            block: {
+              patterns: ['WIP:', 'TODO'],
+            },
+          },
+        },
+      };
+
+      fs.writeFileSync(tempConfigFile, JSON.stringify(validConfig));
+
+      const initialConfig: Configuration = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+          reloadIntervalSeconds: 0,
+        },
+      };
+
+      configLoader = new ConfigLoader(initialConfig);
+
+      const changeEventSpy = vi.fn();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      configLoader.on('configurationChanged', changeEventSpy);
+
+      await configLoader.reloadConfiguration();
+
+      expect(changeEventSpy).toHaveBeenCalledOnce();
+      expect(changeEventSpy.mock.calls[0][0]).toMatchObject(validConfig);
+
+      expect(consoleErrorSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Invalid regular expression'),
+      );
+      expect(consoleErrorSpy).not.toHaveBeenCalledWith('Invalid configuration, skipping reload');
+
+      consoleErrorSpy.mockRestore();
+    });
   });
 
   describe('initialize', () => {
@@ -509,7 +614,7 @@ describe('ConfigLoader', () => {
         };
 
         await expect(configLoader.loadFromSource(source)).rejects.toThrow(
-          /Failed to read or parse configuration file/,
+          /Invalid configuration format in git/,
         );
       },
       { timeout: 30000 },
@@ -694,7 +799,7 @@ describe('ConfigLoader Error Handling', () => {
         enabled: true,
         path: tempConfigFile,
       }),
-    ).rejects.toThrow(/Invalid configuration file format/);
+    ).rejects.toThrow(/Invalid configuration format in file/);
   });
 
   it('should handle HTTP request errors', async () => {
@@ -720,6 +825,7 @@ describe('ConfigLoader Error Handling', () => {
         enabled: true,
         url: 'http://config-service/config',
       }),
-    ).rejects.toThrow(/Invalid configuration format from HTTP source/);
+      // Check that the error message CONTAINS the following string:
+    ).rejects.toThrow(/Invalid configuration format in HTTP: http:\/\/config-service\/config/);
   });
 });

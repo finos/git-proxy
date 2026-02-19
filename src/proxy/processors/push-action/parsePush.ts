@@ -65,6 +65,8 @@ async function exec(req: Request, action: Action): Promise<Action> {
     // Strip everything after NUL, which is cap-list from
     // https://git-scm.com/docs/http-protocol#_smart_server_response
     action.branch = ref.replace(/\0.*/, '').trim();
+
+    // Note this will change the action.id to be based on the commits
     action.setCommit(oldCommit, newCommit);
 
     // Check if the offset is valid and if there's data after it
