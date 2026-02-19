@@ -116,9 +116,8 @@ class PluginLoader {
    * @return {Promise<unknown>} A resolved & loaded Module
    */
   private async _loadPluginModule(target: string): Promise<unknown> {
-    const lp = await lpModule;
-    const resolvedModuleFile = await lp.resolvePlugin(target);
-    return await lp.loadPlugin(resolvedModuleFile);
+const resolvedModuleFile = await resolvePlugin(target);
+return loadPlugin(resolvedModuleFile);
   }
 
   /**
