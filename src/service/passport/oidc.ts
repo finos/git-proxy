@@ -2,6 +2,7 @@ import * as db from '../../db';
 import { PassportStatic } from 'passport';
 import { getAuthMethods } from '../../config';
 import { type UserInfoResponse } from 'openid-client';
+import { handleAndLogError } from '../../utils/errors';
 
 export const type = 'openidconnect';
 
@@ -26,8 +27,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
   try {
     config = await discovery(server, clientID, clientSecret);
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error(`Error during OIDC discovery: ${msg}`);
+    const msg = handleAndLogError(error, 'Error during OIDC discovery');
     throw new Error(`OIDC setup error (discovery): ${msg}`);
   }
 
@@ -67,8 +67,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
 
     return passport;
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error(`Error during OIDC passport setup: ${msg}`);
+    const msg = handleAndLogError(error, 'Error during OIDC passport setup');
     throw new Error(`OIDC setup error (strategy): ${msg}`);
   }
 };
@@ -102,7 +101,7 @@ export const handleUserAuthentication = async (
 
     return done(null, user);
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = handleAndLogError(error, 'Error during OIDC user authentication');
     return done(msg);
   }
 };

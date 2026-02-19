@@ -3,6 +3,7 @@ import React from 'react';
 import { GitHubRepositoryMetadata, GitLabRepositoryMetadata, SCMRepositoryMetadata } from './types';
 import { CommitData } from '../proxy/processors/types';
 import moment from 'moment';
+import { getErrorMessage } from '../utils/errors';
 
 /**
  * Retrieve a decoded cookie value from `document.cookie` with given `name`.
@@ -211,7 +212,7 @@ export const fetchRemoteRepositoryData = async (
       // Get the first key (primary language) from the ordered hash
       primaryLanguage = Object.keys(languages)[0];
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
+      const msg = getErrorMessage(error);
       console.warn('Could not fetch language data:', msg);
     }
 

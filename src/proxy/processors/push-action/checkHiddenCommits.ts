@@ -3,6 +3,7 @@ import { Action, Step } from '../../actions';
 import { spawnSync } from 'child_process';
 import { EMPTY_COMMIT_HASH } from '../constants';
 import { Request } from 'express';
+import { getErrorMessage } from '../../../utils/errors';
 
 const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('checkHiddenCommits');
@@ -70,7 +71,7 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
       step.setContent(`All ${packCommits.size} pack commits are within introduced commits.`);
     }
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = getErrorMessage(error);
     step.setError(msg);
     throw error;
   } finally {

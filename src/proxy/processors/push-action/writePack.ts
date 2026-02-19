@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { Action, Step } from '../../actions';
+import { getErrorMessage } from '../../../utils/errors';
 
 const exec = async (req: Request, action: Action) => {
   const step = new Step('writePack');
@@ -30,7 +31,7 @@ const exec = async (req: Request, action: Action) => {
     action.newIdxFiles = newIdxFiles;
     step.log(`new idx files: ${newIdxFiles}`);
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = getErrorMessage(error);
     step.setError(msg);
     throw error;
   } finally {

@@ -3,7 +3,8 @@ import { Request } from 'express';
 import { Action } from './proxy/actions';
 import Module from 'node:module';
 
-import {loadPlugin, resolvePlugin} from 'load-plugin'
+import { loadPlugin, resolvePlugin } from 'load-plugin';
+import { handleAndLogError } from './utils/errors';
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 ('use strict');
 
@@ -105,8 +106,7 @@ class PluginLoader {
         console.log(`Loaded plugin: ${plugin.constructor.name}`);
       });
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      console.error(`Error loading plugins: ${msg}`);
+      handleAndLogError(error, 'Error loading plugins');
     }
   }
 
@@ -116,8 +116,8 @@ class PluginLoader {
    * @return {Promise<unknown>} A resolved & loaded Module
    */
   private async _loadPluginModule(target: string): Promise<unknown> {
-const resolvedModuleFile = await resolvePlugin(target);
-return loadPlugin(resolvedModuleFile);
+    const resolvedModuleFile = await resolvePlugin(target);
+    return loadPlugin(resolvedModuleFile);
   }
 
   /**

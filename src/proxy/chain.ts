@@ -4,6 +4,7 @@ import { PluginLoader } from '../plugin';
 import { Action } from './actions';
 import * as proc from './processors';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
+import { getErrorMessage, handleAndLogError } from '../utils/errors';
 
 const pushActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.parsePush,
@@ -52,10 +53,9 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
       }
     }
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = handleAndLogError(error, 'An error occurred when executing the chain');
     action.error = true;
-    action.errorMessage = `An error occurred when executing the chain: ${msg}`;
-    console.error(action.errorMessage);
+    action.errorMessage = msg;
   } finally {
     //clean up the clone created
     if (checkoutCleanUpRequired) {

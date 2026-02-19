@@ -8,6 +8,7 @@ import envPaths from 'env-paths';
 import { GitProxyConfig } from './generated/config';
 import { Configuration, ConfigurationSource, FileSource, HttpSource, GitSource } from './types';
 import { loadConfig, validateConfig } from './validators';
+import { handleAndLogError, handleAndThrowError } from '../utils/errors';
 
 const execFileAsync = promisify(execFile);
 
@@ -81,8 +82,7 @@ export class ConfigLoader extends EventEmitter {
         console.log(`Created cache directory at ${this.cacheDir}`);
         return true;
       } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
-        console.error('Failed to create cache directory:', msg);
+        handleAndLogError(error, 'Failed to create cache directory');
         return false;
       }
     }
@@ -156,8 +156,7 @@ export class ConfigLoader extends EventEmitter {
             console.log(`Loading configuration from ${source.type} source`);
             return await this.loadFromSource(source);
           } catch (error: unknown) {
-            const msg = error instanceof Error ? error.message : String(error);
-            console.error(`Error loading from ${source.type} source:`, msg);
+            handleAndLogError(error, `Error loading from ${source.type} source`);
             return null;
           }
         }),
@@ -200,8 +199,7 @@ export class ConfigLoader extends EventEmitter {
         console.log('Configuration has not changed, no update needed');
       }
     } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      console.error('Error reloading configuration:', msg);
+      handleAndLogError(error, 'Error reloading configuration');
       this.emit('configurationError', error);
     } finally {
       this.isReloading = false;
@@ -301,9 +299,7 @@ export class ConfigLoader extends EventEmitter {
         await execFileAsync('git', ['clone', source.repository, repoDir], execOptions);
         console.log('Repository cloned successfully');
       } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
-        console.error('Failed to clone repository:', msg);
-        throw new Error(`Failed to clone repository: ${msg}`);
+        handleAndThrowError(error, 'Failed to clone repository');
       }
     } else {
       console.log(`Pulling latest changes from ${source.repository}`);
@@ -311,9 +307,7 @@ export class ConfigLoader extends EventEmitter {
         await execFileAsync('git', ['pull'], { cwd: repoDir });
         console.log('Repository pulled successfully');
       } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
-        console.error('Failed to pull repository:', msg);
-        throw new Error(`Failed to pull repository: ${msg}`);
+        handleAndThrowError(error, 'Failed to pull repository');
       }
     }
 
@@ -324,9 +318,7 @@ export class ConfigLoader extends EventEmitter {
         await execFileAsync('git', ['checkout', source.branch], { cwd: repoDir });
         console.log(`Branch ${source.branch} checked out successfully`);
       } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
-        console.error(`Failed to checkout branch ${source.branch}:`, msg);
-        throw new Error(`Failed to checkout branch ${source.branch}: ${msg}`);
+        handleAndThrowError(error, `Failed to checkout branch ${source.branch}`);
       }
     }
 

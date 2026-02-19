@@ -4,6 +4,7 @@ import git from 'isomorphic-git';
 import gitHttpClient from 'isomorphic-git/http/node';
 
 import { Action, Step } from '../../actions';
+import { getErrorMessage } from '../../../utils/errors';
 
 const dir = './.remote';
 
@@ -46,14 +47,14 @@ const exec = async (req: Request, action: Action): Promise<Action> => {
 
       step.log(`Completed ${cmd}`);
       step.setContent(`Completed ${cmd}`);
-    } catch (e: any) {
-      step.setError(e.toString('utf-8'));
+    } catch (error: unknown) {
+      step.setError(getErrorMessage(error));
 
       //clean-up the check out folder so it doesn't block subsequent attempts
       fs.rmSync(action.proxyGitPath, { recursive: true, force: true });
       step.log(`.remote is deleted!`);
 
-      throw e;
+      throw error;
     } finally {
       action.addStep(step);
     }

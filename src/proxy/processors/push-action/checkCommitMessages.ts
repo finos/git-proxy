@@ -2,6 +2,7 @@ import { Request } from 'express';
 
 import { Action, Step } from '../../actions';
 import { getCommitConfig } from '../../../config';
+import { handleAndLogError } from '../../../utils/errors';
 
 const isMessageAllowed = (commitMessage: string): boolean => {
   try {
@@ -42,8 +43,7 @@ const isMessageAllowed = (commitMessage: string): boolean => {
       return false;
     }
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.log(`Invalid regex pattern... ${msg}`);
+    handleAndLogError(error, 'Error checking commit messages');
     return false;
   }
 

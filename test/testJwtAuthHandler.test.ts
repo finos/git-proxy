@@ -247,7 +247,7 @@ describe('JWT', () => {
       await jwtAuthHandler(jwtConfig)(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.send).toHaveBeenCalledWith(expect.stringMatching(/JWT validation failed:/));
+      expect(res.send).toHaveBeenCalledWith(expect.stringMatching(/Invalid JWT:/));
     });
   });
 });

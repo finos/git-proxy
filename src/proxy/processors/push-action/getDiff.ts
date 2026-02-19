@@ -3,6 +3,7 @@ import simpleGit from 'simple-git';
 
 import { Action, Step } from '../../actions';
 import { EMPTY_COMMIT_HASH } from '../constants';
+import { getErrorMessage } from '../../../utils/errors';
 
 const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('diff');
@@ -35,7 +36,7 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
     step.log(diff);
     step.setContent(diff);
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = getErrorMessage(error);
     step.setError(msg);
   } finally {
     action.addStep(step);

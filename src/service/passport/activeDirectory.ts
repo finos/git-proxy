@@ -7,6 +7,7 @@ import * as ldaphelper from './ldaphelper';
 import * as db from '../../db';
 import { getAuthMethods } from '../../config';
 import { ADProfile } from './types';
+import { handleAndLogError } from '../../utils/errors';
 
 export const type = 'activedirectory';
 
@@ -64,8 +65,10 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
               return done(message, null);
             }
           } catch (error: unknown) {
-            const msg = error instanceof Error ? error.message : String(error);
-            const message = `An error occurred while checking if the user is a member of the user group: ${msg}`;
+            const message = handleAndLogError(
+              error,
+              'An error occurred while checking if the user is a member of the user group',
+            );
             return done(message, null);
           }
 
@@ -74,9 +77,10 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
           try {
             isAdmin = await ldaphelper.isUserInAdGroup(req, profile, ad, domain, adminGroup);
           } catch (error: unknown) {
-            const msg = error instanceof Error ? error.message : String(error);
-            const message = `An error occurred while checking if the user is a member of the admin group: ${msg}`;
-            console.error(message, error); // don't return an error for this case as you may still be a user
+            handleAndLogError(
+              error,
+              'An error occurred while checking if the user is a member of the admin group',
+            );
           }
 
           profile.admin = isAdmin;
@@ -94,9 +98,8 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
 
           return done(null, user);
         } catch (error: unknown) {
-          const msg = error instanceof Error ? error.message : String(error);
-          console.log(`Error authenticating AD user: ${msg}`);
-          return done(error, null);
+          const message = handleAndLogError(error, 'Error authenticating AD user');
+          return done(message, null);
         }
       },
     ),

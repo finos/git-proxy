@@ -4,6 +4,7 @@ import { describe, it, beforeAll, afterAll } from 'vitest';
 
 import { setConfigFile } from '../../../src/config/file';
 import { SAMPLE_REPO } from '../../../src/proxy/processors/constants';
+import { handleAndLogError } from '../../../src/utils/errors';
 
 setConfigFile(path.join(process.cwd(), 'test', 'testCli.proxy.config.json'));
 
@@ -583,8 +584,7 @@ describe('test git-proxy-cli', function () {
         try {
           await helper.removeUserFromDb(uniqueUsername);
         } catch (error: unknown) {
-          const msg = error instanceof Error ? error.message : String(error);
-          console.error(`Error cleaning up user: ${msg}`);
+          handleAndLogError(error, 'Error cleaning up user');
         }
       }
     });
@@ -614,8 +614,7 @@ describe('test git-proxy-cli', function () {
         try {
           await helper.removeUserFromDb(uniqueUsername);
         } catch (error: unknown) {
-          const msg = error instanceof Error ? error.message : String(error);
-          console.error(`Error cleaning up user: ${msg}`);
+          handleAndLogError(error, 'Error cleaning up user');
         }
       }
     });

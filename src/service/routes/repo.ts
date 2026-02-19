@@ -6,6 +6,7 @@ import { getAllProxiedHosts } from '../../db';
 import { RepoQuery } from '../../db/types';
 import { isAdminUser } from './utils';
 import { Proxy } from '../../proxy';
+import { handleAndLogError } from '../../utils/errors';
 
 // create a reference to the proxy service as arrow functions will lose track of the `proxy` parameter
 // used to restart the proxy when a new host is added
@@ -189,10 +190,8 @@ const repo = (proxy: Proxy) => {
           // return data on the new repository (including it's _id and the proxyUrl)
           res.send({ ...repoDetails, proxyURL, message: 'created' });
         } catch (error: unknown) {
-          const msg = error instanceof Error ? error.message : String(error);
-          console.error('Repository creation failed due to error: ', msg);
-          console.error(error instanceof Error ? error.stack : undefined);
-          res.status(500).send({ message: 'Failed to create repository due to error' });
+          const msg = handleAndLogError(error, 'Repository creation failed');
+          res.status(500).send({ message: msg });
         }
       }
     }

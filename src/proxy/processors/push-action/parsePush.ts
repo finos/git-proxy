@@ -12,6 +12,7 @@ import {
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
 } from '../constants';
+import { getErrorMessage } from '../../../utils/errors';
 
 const dir = './.tmp/';
 
@@ -104,7 +105,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
       meta: meta,
     };
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = getErrorMessage(error);
     step.setError(`Unable to parse push. Please contact an administrator for support: ${msg}`);
   } finally {
     action.addStep(step);

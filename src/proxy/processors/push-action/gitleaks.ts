@@ -5,6 +5,7 @@ import { Request } from 'express';
 
 import { Action, Step } from '../../actions';
 import { getAPIs } from '../../../config';
+import { getErrorMessage, handleAndLogError } from '../../../utils/errors';
 const EXIT_CODE = 99;
 
 function runCommand(
@@ -117,8 +118,7 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
   try {
     config = await getPluginConfig();
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error('failed to get gitleaks config, please fix the error:', msg);
+    handleAndLogError(error, 'failed to get gitleaks config, please fix the error');
     action.error = true;
     step.setError('failed setup gitleaks, please contact an administrator\n');
     action.addStep(step);
@@ -177,7 +177,7 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
       console.log(gitleaks.stderr);
     }
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = getErrorMessage(error);
     action.error = true;
     step.setError(`failed to spawn gitleaks, please contact an administrator\n: ${msg}`);
     action.addStep(step);

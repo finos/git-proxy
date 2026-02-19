@@ -10,6 +10,7 @@ import { User } from '../../db/types';
 import { AuthenticationElement } from '../../config/generated/config';
 
 import { isAdminUser, toPublicUser } from './utils';
+import { handleAndLogError } from '../../utils/errors';
 
 const router = express.Router();
 const passport = getPassport();
@@ -67,9 +68,8 @@ const loginSuccessHandler = () => async (req: Request, res: Response) => {
       user: currentUser,
     });
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.log(`service.routes.auth.login: Error logging user in ${msg}`);
-    res.status(500).send('Failed to login').end();
+    const msg = handleAndLogError(error, 'Error logging user in');
+    res.status(500).send(`Failed to login: ${msg}`).end();
   }
 };
 
@@ -209,11 +209,11 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
     db.updateUser(user);
     res.status(200).end();
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = handleAndLogError(error, 'Failed to update git account');
     res
       .status(500)
       .send({
-        message: `Failed to update git account: ${msg}`,
+        message: msg,
       })
       .end();
   }
@@ -253,11 +253,13 @@ router.post('/create-user', async (req: Request, res: Response) => {
       })
       .end();
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error('Error creating user:', msg);
-    res.status(500).send({
-      message: `Failed to create user: ${msg}`,
-    });
+    const msg = handleAndLogError(error, 'Failed to create user');
+    res
+      .status(500)
+      .send({
+        message: msg,
+      })
+      .end();
   }
 });
 

@@ -1,4 +1,5 @@
 import { authorise, reject } from '../../db';
+import { handleAndLogError } from '../../utils/errors';
 import { Action } from './Action';
 
 const attemptAutoApproval = async (action: Action) => {
@@ -17,8 +18,7 @@ const attemptAutoApproval = async (action: Action) => {
 
     return true;
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error('Error during auto-approval:', msg);
+    handleAndLogError(error, 'Error during auto-approval');
     return false;
   }
 };
@@ -39,8 +39,7 @@ const attemptAutoRejection = async (action: Action) => {
 
     return true;
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error('Error during auto-rejection:', msg);
+    handleAndLogError(error, 'Error during auto-rejection');
     return false;
   }
 };

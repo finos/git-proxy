@@ -92,8 +92,7 @@ describe('gitleaks', () => {
         'failed setup gitleaks, please contact an administrator\n',
       );
       expect(errorStub).toHaveBeenCalledWith(
-        'failed to get gitleaks config, please fix the error:',
-        'Config error',
+        'failed to get gitleaks config, please fix the error: Config error',
       );
     });
 

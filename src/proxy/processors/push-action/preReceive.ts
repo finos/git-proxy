@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { Action, Step } from '../../actions';
+import { getErrorMessage } from '../../../utils/errors';
 
 const sanitizeInput = (_req: Request, action: Action): string => {
   return `${action.commitFrom} ${action.commitTo} ${action.branch} \n`;
@@ -72,7 +73,7 @@ const exec = async (
     }
     return action;
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
+    const msg = getErrorMessage(error);
     step.error = true;
     step.log('Push failed, pre-receive hook returned an error.');
     step.setError(`Hook execution error: ${stderrTrimmed || msg}`);

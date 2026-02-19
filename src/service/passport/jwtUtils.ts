@@ -4,6 +4,7 @@ import jwt, { type JwtPayload } from 'jsonwebtoken';
 
 import { JwkKey, JwksResponse, JwtValidationResult } from './types';
 import { RoleMapping } from '../../config/generated/config';
+import { handleAndLogError } from '../../utils/errors';
 
 /**
  * Obtain the JSON Web Key Set (JWKS) from the OIDC authority.
@@ -18,8 +19,7 @@ export async function getJwks(authorityUrl: string): Promise<JwkKey[]> {
     const { data: jwks }: { data: JwksResponse } = await axios.get(jwksUri);
     return jwks.keys;
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error('Error fetching JWKS:', msg);
+    handleAndLogError(error, 'Error fetching JWKS');
     throw new Error('Failed to fetch JWKS');
   }
 }
@@ -75,9 +75,7 @@ export async function validateJwt(
 
     return { verifiedPayload, error: null };
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    const errorMessage = `JWT validation failed: ${msg}\n`;
-    console.error(errorMessage);
+    const errorMessage = handleAndLogError(error, 'JWT validation failed');
     return { error: errorMessage, verifiedPayload: null };
   }
 }
