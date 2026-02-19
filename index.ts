@@ -48,7 +48,7 @@ if (argv.v) {
   process.exit(0);
 }
 
-console.log('validating config');
+console.log('Validating config');
 validate();
 
 console.log('Setting up the proxy and Service');
