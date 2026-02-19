@@ -505,9 +505,9 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
           }
         });
       } catch (error: unknown) {
-        const msg = error instanceof Error ? error.message : String(error);
-        console.warn(`Error during decompression: ${msg}`);
-        throw new Error(`Error during decompression: ${msg}`);
+        const msg = `Error during decompression: ${error instanceof Error ? error.message : String(error)}`;
+        console.warn(msg);
+        throw new Error(msg);
       }
     }
     const result = {
