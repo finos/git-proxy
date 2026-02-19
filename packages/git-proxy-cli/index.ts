@@ -51,9 +51,10 @@ async function login(username: string, password: string) {
     if (isAxiosError(error) && error.response) {
       console.error(`Error: Login '${username}': '${error.response.status}'`);
       process.exitCode = 1;
-    } else if (error instanceof Error) {
-        console.error(`Error: Login '${username}': '${error instanceof Error ? error.message : String(error)'`);
-        process.exitCode = 2;
+    } else {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`Error: Login '${username}': '${msg}'`);
+      process.exitCode = 2;
     }
   }
 }
