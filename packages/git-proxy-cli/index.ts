@@ -52,11 +52,8 @@ async function login(username: string, password: string) {
       console.error(`Error: Login '${username}': '${error.response.status}'`);
       process.exitCode = 1;
     } else if (error instanceof Error) {
-      console.error(`Error: Login '${username}': '${error.message}'`);
-      process.exitCode = 2;
-    } else {
-      console.error(`Error: Login '${username}': '${error}'`);
-      process.exitCode = 2;
+        console.error(`Error: Login '${username}': '${error instanceof Error ? error.message : String(error)'`);
+        process.exitCode = 2;
     }
   }
 }
