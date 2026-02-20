@@ -123,8 +123,9 @@ Cypress.Commands.add('getTestRepoId', () => {
         `GET ${url} returned non-array (${typeof res.body}): ${JSON.stringify(res.body).slice(0, 500)}`,
       );
     }
+    const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
     const repo = res.body.find(
-      (r) => r.url === 'https://git-server:8443/coopernetes/test-repo.git',
+      (r) => r.url === `https://${gitServerTarget}/coopernetes/test-repo.git`,
     );
     if (!repo) {
       throw new Error(
@@ -138,13 +139,22 @@ Cypress.Commands.add('getTestRepoId', () => {
 Cypress.Commands.add('createPush', (gitUser, gitPassword, gitEmail, uniqueSuffix) => {
   const proxyUrl = Cypress.env('GIT_PROXY_URL') || 'http://localhost:8000';
   const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
-  const repoUrl = `${proxyUrl.replace('://', `://${gitUser}:${gitPassword}@`)}/${gitServerTarget}/coopernetes/test-repo.git`;
+  const repoUrl = `${proxyUrl}/${gitServerTarget}/coopernetes/test-repo.git`;
   const cloneDir = `/tmp/cypress-push-${uniqueSuffix}`;
+
+  // Pass credentials via GIT_CONFIG_* env vars to avoid exposing them in command output
+  const gitCredentialEnv = {
+    GIT_TERMINAL_PROMPT: '0',
+    NODE_TLS_REJECT_UNAUTHORIZED: '0',
+    GIT_CONFIG_COUNT: '1',
+    GIT_CONFIG_KEY_0: `url.${proxyUrl.replace('://', `://${gitUser}:${gitPassword}@`)}.insteadOf`,
+    GIT_CONFIG_VALUE_0: proxyUrl,
+  };
 
   cy.exec(`rm -rf ${cloneDir}`, { failOnNonZeroExit: false });
   cy.exec(`git clone ${repoUrl} ${cloneDir}`, {
     timeout: 30000,
-    env: { GIT_TERMINAL_PROMPT: '0', NODE_TLS_REJECT_UNAUTHORIZED: '0' },
+    env: gitCredentialEnv,
   });
   cy.exec(`git -C ${cloneDir} config user.name "${gitUser}"`);
   cy.exec(`git -C ${cloneDir} config user.email "${gitEmail}"`);
@@ -153,7 +163,7 @@ Cypress.Commands.add('createPush', (gitUser, gitPassword, gitEmail, uniqueSuffix
   cy.exec(`git -C ${cloneDir} pull --rebase origin main`, {
     failOnNonZeroExit: false,
     timeout: 30000,
-    env: { GIT_TERMINAL_PROMPT: '0', NODE_TLS_REJECT_UNAUTHORIZED: '0' },
+    env: gitCredentialEnv,
   });
 
   const timestamp = Date.now();
@@ -165,7 +175,7 @@ Cypress.Commands.add('createPush', (gitUser, gitPassword, gitEmail, uniqueSuffix
   cy.exec(`git -C ${cloneDir} push origin main 2>&1`, {
     failOnNonZeroExit: false,
     timeout: 30000,
-    env: { GIT_TERMINAL_PROMPT: '0', NODE_TLS_REJECT_UNAUTHORIZED: '0' },
+    env: gitCredentialEnv,
   }).then((result) => {
     const output = result.stdout + result.stderr;
     const match = output.match(/dashboard\/push\/([a-f0-9_]+)/);

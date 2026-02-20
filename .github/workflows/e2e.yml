@@ -56,6 +56,7 @@ jobs:
 
       - name: Run Cypress E2E tests
         run: npm run cypress:run:docker
+        timeout-minutes: 10
         env:
           CYPRESS_BASE_URL: http://localhost:8081
           CYPRESS_API_BASE_URL: http://localhost:8081
