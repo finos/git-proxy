@@ -89,12 +89,13 @@ describe('writePack', () => {
         throw error;
       });
 
-      await expect(exec(req, action)).rejects.toThrow('git error');
+      const result = await exec(req, action);
 
       expect(stepSetErrorSpy).toHaveBeenCalledOnce();
       expect(stepSetErrorSpy).toHaveBeenCalledWith(expect.stringContaining('git error'));
-      expect(action.steps).toHaveLength(1);
-      expect(action.steps[0].error).toBe(true);
+
+      expect(result.steps).toHaveLength(1);
+      expect(result.steps[0].error).toBe(true);
     });
 
     it('should always add the step to the action even if error occurs', async () => {
@@ -102,9 +103,10 @@ describe('writePack', () => {
         throw new Error('git error');
       });
 
-      await expect(exec(req, action)).rejects.toThrow('git error');
+      const result = await exec(req, action);
 
-      expect(action.steps).toHaveLength(1);
+      expect(result.steps).toHaveLength(1);
+      expect(result.steps[0].error).toBe(true);
     });
 
     it('should have the correct displayName', () => {

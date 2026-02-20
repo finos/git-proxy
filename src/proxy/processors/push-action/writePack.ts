@@ -33,7 +33,6 @@ const exec = async (req: Request, action: Action) => {
   } catch (error: unknown) {
     const msg = getErrorMessage(error);
     step.setError(msg);
-    throw error;
   } finally {
     action.addStep(step);
   }
