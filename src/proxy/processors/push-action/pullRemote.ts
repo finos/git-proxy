@@ -31,7 +31,9 @@ const exec = async (req: Request, action: Action): Promise<Action> => {
 
       const authHeader = req.headers?.authorization;
       if (!authHeader) {
-        throw new Error('Authorization header is required');
+        throw new Error(
+          'Authorization header is required for pullRemote. Make sure to provide valid credentials as anonymous pulls are not currently supported.',
+        );
       }
       const [username, password] = Buffer.from(authHeader.split(' ')[1], 'base64')
         .toString()
@@ -56,8 +58,6 @@ const exec = async (req: Request, action: Action): Promise<Action> => {
       //clean-up the check out folder so it doesn't block subsequent attempts
       fs.rmSync(action.proxyGitPath, { recursive: true, force: true });
       step.log(`.remote is deleted!`);
-
-      throw error;
     } finally {
       action.addStep(step);
     }
