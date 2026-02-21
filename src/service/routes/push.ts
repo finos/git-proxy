@@ -23,7 +23,7 @@ router.get('/', async (req: Request, res: Response) => {
   res.send(await db.getPushes(query));
 });
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
   const id = req.params.id;
   const push = await db.getPush(id);
   if (push) {
@@ -35,7 +35,7 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:id/reject', async (req: Request, res: Response) => {
+router.post('/:id/reject', async (req: Request<{ id: string }>, res: Response) => {
   if (!req.user) {
     res.status(401).send({
       message: 'Not logged in',
@@ -81,7 +81,7 @@ router.post('/:id/reject', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:id/authorise', async (req: Request, res: Response) => {
+router.post('/:id/authorise', async (req: Request<{ id: string }>, res: Response) => {
   if (!req.user) {
     res.status(401).send({
       message: 'Not logged in',
@@ -168,7 +168,7 @@ router.post('/:id/authorise', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:id/cancel', async (req: Request, res: Response) => {
+router.post('/:id/cancel', async (req: Request<{ id: string }>, res: Response) => {
   if (!req.user) {
     res.status(401).send({
       message: 'Not logged in',
