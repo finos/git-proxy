@@ -2,7 +2,7 @@ import { connect, findDocuments, findOneDocument } from './helper';
 import { Action } from '../../proxy/actions';
 import { toClass } from '../helper';
 import { PushQuery } from '../types';
-import { Attestation } from '../../proxy/processors/types';
+import { CompletedAttestation } from '../../proxy/processors/types';
 
 const collectionName = 'pushes';
 
@@ -66,7 +66,7 @@ export const writeAudit = async (action: Action): Promise<void> => {
 
 export const authorise = async (
   id: string,
-  attestation?: Attestation,
+  attestation?: CompletedAttestation,
 ): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
@@ -83,7 +83,7 @@ export const authorise = async (
 
 export const reject = async (
   id: string,
-  attestation?: Attestation,
+  attestation?: CompletedAttestation,
 ): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {

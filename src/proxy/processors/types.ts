@@ -12,6 +12,11 @@ export interface ProcessorMetadata {
   displayName: string;
 }
 
+export interface AttestationAnswer {
+  label: string;
+  checked: boolean;
+}
+
 export type Attestation = {
   reviewer: {
     username: string;
@@ -19,6 +24,16 @@ export type Attestation = {
   };
   timestamp: string | Date;
   questions: Question[];
+  automated?: boolean;
+};
+
+export type CompletedAttestation = {
+  reviewer: {
+    username: string;
+    email: string;
+  };
+  timestamp: string | Date;
+  answers: AttestationAnswer[];
   automated?: boolean;
 };
 

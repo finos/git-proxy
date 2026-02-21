@@ -1,13 +1,14 @@
 import { authorise, reject } from '../../db';
 import { handleAndLogError } from '../../utils/errors';
+import { CompletedAttestation } from '../processors/types';
 import { Action } from './Action';
 
 const attemptAutoApproval = async (action: Action) => {
   try {
-    const attestation = {
+    const attestation: CompletedAttestation = {
       timestamp: new Date(),
       automated: true,
-      questions: [],
+      answers: [],
       reviewer: {
         username: 'system',
         email: 'system@git-proxy.com',
@@ -25,10 +26,10 @@ const attemptAutoApproval = async (action: Action) => {
 
 const attemptAutoRejection = async (action: Action) => {
   try {
-    const attestation = {
+    const attestation: CompletedAttestation = {
       timestamp: new Date(),
       automated: true,
-      questions: [],
+      answers: [],
       reviewer: {
         username: 'system',
         email: 'system@git-proxy.com',

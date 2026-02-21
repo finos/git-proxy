@@ -3,7 +3,7 @@ import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
 import { PushQuery } from '../types';
-import { Attestation } from '../../proxy/processors/types';
+import { CompletedAttestation } from '../../proxy/processors/types';
 import { handleAndLogError } from '../../utils/errors';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
@@ -101,7 +101,7 @@ export const writeAudit = async (action: Action): Promise<void> => {
 
 export const authorise = async (
   id: string,
-  attestation?: Attestation,
+  attestation?: CompletedAttestation,
 ): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
@@ -118,7 +118,7 @@ export const authorise = async (
 
 export const reject = async (
   id: string,
-  attestation?: Attestation,
+  attestation?: CompletedAttestation,
 ): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
