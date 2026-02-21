@@ -35,9 +35,6 @@ const useStyles = makeStyles((theme) => ({
       width: '100%',
     },
   },
-  table: {
-    minWidth: 200,
-  },
 }));
 
 const RepoDetails: React.FC = () => {
@@ -176,7 +173,7 @@ const RepoDetails: React.FC = () => {
                   </div>
                 )}
                 <TableContainer component={Paper}>
-                  <Table className={classes.table} aria-label='simple table'>
+                  <Table aria-label='List of repository reviewers'>
                     <TableHead>
                       <TableRow>
                         <TableCell align='left'>Username</TableCell>
@@ -219,7 +216,7 @@ const RepoDetails: React.FC = () => {
                   </div>
                 )}
                 <TableContainer component={Paper}>
-                  <Table className={classes.table} aria-label='contributors table'>
+                  <Table aria-label='List of repository contributors'>
                     <TableHead>
                       <TableRow>
                         <TableCell align='left'>Username</TableCell>
