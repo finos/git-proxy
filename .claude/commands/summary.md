@@ -3,7 +3,7 @@ Generate a concise implementation summary for a PR description.
 Steps:
 
 1. First, run the `/docs` command to ensure documentation is up to date with the branch changes
-2. Run `git diff master...HEAD --stat` and `git log master..HEAD --oneline` to understand all changes on this branch
+2. Run `git diff main...HEAD --stat` and `git log main..HEAD --oneline` to understand all changes on this branch
 3. Read the changed files to understand what was implemented and why
 4. Get the current branch name: `git rev-parse --abbrev-ref HEAD`
 5. Write a summary suitable for a GitHub PR description

@@ -23,20 +23,20 @@ The argument is an issue number (e.g. `/implement 42`) or a full GitHub URL (e.g
 1. List all configured remotes: `git remote -v`
 2. If there is more than one remote, ask the programmer which remote to use as upstream using AskUserQuestion (list the remote names as options).
    If there is only one remote, use it automatically.
-3. Fetch and update master from the chosen remote:
+3. Fetch and update main from the chosen remote:
    ```
    git fetch <remote>
-   git checkout master
-   git pull <remote> master
+   git checkout main
+   git pull <remote> main
    ```
-4. Create a new branch from master. The branch name must follow this convention:
+4. Create a new branch from main. The branch name must follow this convention:
    - Format: `<type>/<short-slug>` where `<type>` is a Conventional Commits type (`feat`, `fix`, `refactor`, `docs`, `chore`, etc.) and `<short-slug>` is a kebab-case summary derived from the issue title (3-5 words max).
    - Examples: `feat/dynamic-allocation-support`, `fix/event-watcher-reconnect`, `refactor/pod-spec-converter`
    - Pick the type based on the issue labels and description (e.g. a bug report maps to `fix/`, a feature request to `feat/`).
    ```
    git checkout -b <type>/<short-slug>
    ```
-5. Confirm to the programmer: "Created branch `<branch-name>` from `<remote>/master`."
+5. Confirm to the programmer: "Created branch `<branch-name>` from `<remote>/main`."
 
 ## Phase 3: Plan
 

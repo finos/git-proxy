@@ -15,7 +15,7 @@ Issue format:
 - `### Steps to Reproduce` — numbered list (if applicable)
 - `### Expected Behavior` — 1-2 sentences
 - `### Actual Behavior` — include relevant log snippets in code blocks, keep them short (trim stack traces to the key lines)
-- `### Potential Root Cause` — based on your codebase investigation, explain where the issue likely lives. Link to source code using upstream GitHub URLs: `https://github.com/finos/git-proxy/blob/master/...#L<start>-L<end>`.
+- `### Potential Root Cause` — based on your codebase investigation, explain where the issue likely lives. Link to source code using upstream GitHub URLs: `https://github.com/finos/git-proxy/blob/main/...#L<start>-L<end>`.
 - `### Affected Files` — table with file links and one-line role descriptions
 - `### Additional Context` — bullet points for version info, related code paths, or anything else useful
 
