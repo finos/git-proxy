@@ -2,6 +2,7 @@ import fs from 'fs';
 import Datastore from '@seald-io/nedb';
 
 import { User, UserQuery } from '../types';
+import { handleAndLogError } from '../../utils/errors';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -22,18 +23,18 @@ if (process.env.NODE_ENV === 'test') {
 // Using a unique constraint with the index
 try {
   db.ensureIndex({ fieldName: 'username', unique: true });
-} catch (e) {
-  console.error(
+} catch (error: unknown) {
+  handleAndLogError(
+    error,
     'Failed to build a unique index of usernames. Please check your database file for duplicate entries or delete the duplicate through the UI and restart. ',
-    e,
   );
 }
 try {
   db.ensureIndex({ fieldName: 'email', unique: true });
-} catch (e) {
-  console.error(
+} catch (error: unknown) {
+  handleAndLogError(
+    error,
     'Failed to build a unique index of user email addresses. Please check your database file for duplicate entries or delete the duplicate through the UI and restart. ',
-    e,
   );
 }
 db.setAutocompactionInterval(COMPACTION_INTERVAL);

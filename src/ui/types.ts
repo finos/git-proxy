@@ -1,8 +1,14 @@
+import { CSSProperties } from '@material-ui/core/styles/withStyles';
+
 import { Action } from '../proxy/actions';
 import { Step } from '../proxy/actions/Step';
 import { Repo } from '../db/types';
 import { Attestation } from '../proxy/processors/types';
 import { Question } from '../config/generated/config';
+
+export interface BackendResponse {
+  message: string;
+}
 
 export interface PushActionView extends Action {
   diff: Step;
@@ -27,8 +33,8 @@ export interface Route {
   layout: string;
   name: string;
   rtlName?: string;
-  component: React.ComponentType<any>;
-  icon?: string | React.ComponentType<any>;
+  component: React.ComponentType;
+  icon?: string | React.ComponentType;
   visible?: boolean;
 }
 
@@ -89,3 +95,5 @@ export interface SCMRepositoryMetadata {
   profileUrl?: string;
   avatarUrl?: string;
 }
+
+export type CSSProperty = React.CSSProperties | CSSProperties;

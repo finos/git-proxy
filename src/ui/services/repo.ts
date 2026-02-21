@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth.js';
 import { Repo } from '../../db/types';
-import { RepoView } from '../types';
+import { BackendResponse, RepoView } from '../types';
 import { getApiV1BaseUrl } from './apiConfig';
 
 const canAddUser = async (repoId: string, user: string, action: string) => {
@@ -17,7 +17,7 @@ const canAddUser = async (repoId: string, user: string, action: string) => {
         return !repo.users.canPush.includes(user);
       }
     })
-    .catch((error: any) => {
+    .catch((error: AxiosError<BackendResponse>) => {
       throw error;
     });
 };
@@ -35,11 +35,12 @@ const getRepos = async (
   setAuth: (auth: boolean) => void,
   setIsError: (isError: boolean) => void,
   setErrorMessage: (errorMessage: string) => void,
-  query: Record<string, boolean> = {},
+  query: Record<string, string> = {},
 ): Promise<void> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo`);
-  url.search = new URLSearchParams(query as any).toString();
+  url.search = new URLSearchParams(query).toString();
+
   setIsLoading(true);
   await axios<RepoView[]>(url.toString(), getAxiosConfig())
     .then((response) => {
@@ -48,13 +49,13 @@ const getRepos = async (
       );
       setRepos(sortedRepos);
     })
-    .catch((error: any) => {
+    .catch((error: AxiosError<BackendResponse>) => {
       setIsError(true);
       if (error.response && error.response.status === 401) {
         setAuth(false);
         setErrorMessage(processAuthError(error));
       } else {
-        setErrorMessage(`Error fetching repos: ${error.response.data.message}`);
+        setErrorMessage(`Error fetching repos: ${error.response?.data?.message ?? error.message}`);
       }
     })
     .finally(() => {
@@ -77,7 +78,7 @@ const getRepo = async (
       const repo = response.data;
       setRepo(repo);
     })
-    .catch((error: any) => {
+    .catch((error: AxiosError) => {
       if (error.response && error.response.status === 401) {
         setAuth(false);
       } else {
@@ -101,12 +102,16 @@ const addRepo = async (
       success: true,
       repo: response.data,
     };
-  } catch (error: any) {
-    return {
-      success: false,
-      message: error.response?.data?.message || error.message,
-      repo: null,
-    };
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      return {
+        success: false,
+        message: error.response?.data?.message ?? error.message,
+        repo: null,
+      };
+    } else {
+      throw error;
+    }
   }
 };
 
@@ -116,8 +121,7 @@ const addUser = async (repoId: string, user: string, action: string): Promise<vo
     const apiV1Base = await getApiV1BaseUrl();
     const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}`);
     const data = { username: user };
-    await axios.patch(url.toString(), data, getAxiosConfig()).catch((error: any) => {
-      console.log(error.response.data.message);
+    await axios.patch(url.toString(), data, getAxiosConfig()).catch((error: AxiosError<string>) => {
       throw error;
     });
   } else {
@@ -130,8 +134,7 @@ const deleteUser = async (user: string, repoId: string, action: string): Promise
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}/${user}`);
 
-  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
-    console.log(error.response.data.message);
+  await axios.delete(url.toString(), getAxiosConfig()).catch((error: AxiosError<string>) => {
     throw error;
   });
 };
@@ -140,8 +143,7 @@ const deleteRepo = async (repoId: string): Promise<void> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}/delete`);
 
-  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
-    console.log(error.response.data.message);
+  await axios.delete(url.toString(), getAxiosConfig()).catch((error: AxiosError<string>) => {
     throw error;
   });
 };

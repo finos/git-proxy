@@ -1,8 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { Request } from 'express';
+
 import { Action, Step } from '../../src/proxy/actions';
 
 vi.mock('../../src/config', async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = await importOriginal<typeof import('../../src/config')>();
   return {
     ...actual,
     getAPIs: vi.fn(),
@@ -10,7 +12,7 @@ vi.mock('../../src/config', async (importOriginal) => {
 });
 
 vi.mock('node:fs/promises', async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = await importOriginal<typeof import('node:fs/promises')>();
   return {
     ...actual,
     default: {
@@ -25,7 +27,7 @@ vi.mock('node:fs/promises', async (importOriginal) => {
 });
 
 vi.mock('node:child_process', async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = await importOriginal<typeof import('node:child_process')>();
   return {
     ...actual,
     spawn: vi.fn(),
@@ -34,14 +36,14 @@ vi.mock('node:child_process', async (importOriginal) => {
 
 describe('gitleaks', () => {
   describe('exec', () => {
-    let exec: any;
+    let exec: typeof import('../../src/proxy/processors/push-action/gitleaks').exec;
     let action: Action;
-    let req: any;
-    let stepSpy: any;
-    let logStub: any;
-    let errorStub: any;
-    let getAPIs: any;
-    let fsModule: any;
+    let req: Request;
+    let stepSpy: ReturnType<typeof vi.spyOn>;
+    let logStub: ReturnType<typeof vi.spyOn>;
+    let errorStub: ReturnType<typeof vi.spyOn>;
+    let getAPIs: typeof import('../../src/config').getAPIs;
+    let fsModule: typeof import('node:fs/promises');
     let spawn: any;
 
     beforeEach(async () => {
@@ -62,7 +64,7 @@ describe('gitleaks', () => {
       const gitleaksModule = await import('../../src/proxy/processors/push-action/gitleaks');
       exec = gitleaksModule.exec;
 
-      req = {};
+      req = {} as Request;
       action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
       action.proxyGitPath = '/tmp';
       action.repoName = 'test-repo';
@@ -90,8 +92,7 @@ describe('gitleaks', () => {
         'failed setup gitleaks, please contact an administrator\n',
       );
       expect(errorStub).toHaveBeenCalledWith(
-        'failed to get gitleaks config, please fix the error:',
-        expect.any(Error),
+        'failed to get gitleaks config, please fix the error: Config error',
       );
     });
 
@@ -129,7 +130,7 @@ describe('gitleaks', () => {
           },
           stdout: { on: (_: string, cb: (stdout: string) => void) => cb(gitRootCommitMock.stdout) },
           stderr: { on: (_: string, cb: (stderr: string) => void) => cb(gitRootCommitMock.stderr) },
-        } as any)
+        })
         .mockReturnValueOnce({
           on: (event: string, cb: (exitCode: number) => void) => {
             if (event === 'close') cb(gitleaksMock.exitCode);
@@ -137,7 +138,7 @@ describe('gitleaks', () => {
           },
           stdout: { on: (_: string, cb: (stdout: string) => void) => cb(gitleaksMock.stdout) },
           stderr: { on: (_: string, cb: (stderr: string) => void) => cb(gitleaksMock.stderr) },
-        } as any);
+        });
 
       const result = await exec(req, action);
 
@@ -171,7 +172,7 @@ describe('gitleaks', () => {
           },
           stdout: { on: (_: string, cb: (stdout: string) => void) => cb(gitRootCommitMock.stdout) },
           stderr: { on: (_: string, cb: (stderr: string) => void) => cb(gitRootCommitMock.stderr) },
-        } as any)
+        })
         .mockReturnValueOnce({
           on: (event: string, cb: (exitCode: number) => void) => {
             if (event === 'close') cb(gitleaksMock.exitCode);
@@ -179,7 +180,7 @@ describe('gitleaks', () => {
           },
           stdout: { on: (_: string, cb: (stdout: string) => void) => cb(gitleaksMock.stdout) },
           stderr: { on: (_: string, cb: (stderr: string) => void) => cb(gitleaksMock.stderr) },
-        } as any);
+        });
 
       const result = await exec(req, action);
 
@@ -212,7 +213,7 @@ describe('gitleaks', () => {
           },
           stdout: { on: (_: string, cb: (stdout: string) => void) => cb(gitRootCommitMock.stdout) },
           stderr: { on: (_: string, cb: (stderr: string) => void) => cb(gitRootCommitMock.stderr) },
-        } as any)
+        })
         .mockReturnValueOnce({
           on: (event: string, cb: (exitCode: number) => void) => {
             if (event === 'close') cb(gitleaksMock.exitCode);
@@ -220,7 +221,7 @@ describe('gitleaks', () => {
           },
           stdout: { on: (_: string, cb: (stdout: string) => void) => cb(gitleaksMock.stdout) },
           stderr: { on: (_: string, cb: (stderr: string) => void) => cb(gitleaksMock.stderr) },
-        } as any);
+        });
 
       const result = await exec(req, action);
 
@@ -244,7 +245,7 @@ describe('gitleaks', () => {
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(true);
       expect(stepSpy).toHaveBeenCalledWith(
-        'failed to spawn gitleaks, please contact an administrator\n',
+        'failed to spawn gitleaks, please contact an administrator\n: Spawn error',
       );
     });
 
@@ -265,7 +266,7 @@ describe('gitleaks', () => {
         },
         stdout: { on: (_: string, cb: (stdout: string) => void) => cb('') },
         stderr: { on: (_: string, cb: (stderr: string) => void) => cb('') },
-      } as any);
+      });
 
       const result = await exec(req, action);
 
@@ -305,7 +306,7 @@ describe('gitleaks', () => {
           },
           stdout: { on: (_: string, cb: (stdout: string) => void) => cb(gitRootCommitMock.stdout) },
           stderr: { on: (_: string, cb: (stderr: string) => void) => cb(gitRootCommitMock.stderr) },
-        } as any)
+        })
         .mockReturnValueOnce({
           on: (event: string, cb: (exitCode: number) => void) => {
             if (event === 'close') cb(gitleaksMock.exitCode);
@@ -313,7 +314,7 @@ describe('gitleaks', () => {
           },
           stdout: { on: (_: string, cb: (stdout: string) => void) => cb(gitleaksMock.stdout) },
           stderr: { on: (_: string, cb: (stderr: string) => void) => cb(gitleaksMock.stderr) },
-        } as any);
+        });
 
       const result = await exec(req, action);
 

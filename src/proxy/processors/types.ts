@@ -1,8 +1,10 @@
+import { Request } from 'express';
+
 import { Question } from '../../config/generated/config';
 import { Action } from '../actions';
 
 export interface Processor {
-  exec(req: any, action: Action): Promise<Action>;
+  exec(req: Request, action: Action): Promise<Action>;
   metadata: ProcessorMetadata;
 }
 
@@ -10,13 +12,29 @@ export interface ProcessorMetadata {
   displayName: string;
 }
 
+export interface AttestationAnswer {
+  label: string;
+  checked: boolean;
+}
+
 export type Attestation = {
   reviewer: {
     username: string;
-    gitAccount: string;
+    email: string;
   };
   timestamp: string | Date;
   questions: Question[];
+  automated?: boolean;
+};
+
+export type CompletedAttestation = {
+  reviewer: {
+    username: string;
+    email: string;
+  };
+  timestamp: string | Date;
+  answers: AttestationAnswer[];
+  automated?: boolean;
 };
 
 export type CommitContent = {

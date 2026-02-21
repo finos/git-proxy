@@ -75,9 +75,9 @@ const AttestationView: React.FC<AttestationViewProps> = ({ attestation, setAttes
           </span>
         </div>
         <p style={{ fontSize: '15px', paddingLeft: '34px' }}>
-          Prior to making this code contribution publicly accessible via GitHub, this code
-          contribution was reviewed and approved by{' '}
-          <UserLink username={data.reviewer.username}>{data.reviewer.gitAccount}</UserLink>. As a
+          Prior to making this code contribution publicly accessible, this code contribution was
+          reviewed and approved by{' '}
+          <UserLink username={data.reviewer.username}>{data.reviewer.username}</UserLink>. As a
           reviewer, it was their responsibility to confirm that open sourcing this contribution
           followed the requirements of the company open source contribution policy.
         </p>
@@ -85,8 +85,8 @@ const AttestationView: React.FC<AttestationViewProps> = ({ attestation, setAttes
       <DialogContent>
         <p>
           <span>
-            <UserLink username={data.reviewer.username}>{data.reviewer.gitAccount}</UserLink>{' '}
-            approved this contribution{' '}
+            <UserLink username={data.reviewer.username}>{data.reviewer.email}</UserLink> approved
+            this contribution{' '}
             <Tooltip title={moment(data.timestamp).format('dddd, MMMM Do YYYY, h:mm:ss a')} arrow>
               <kbd
                 style={{

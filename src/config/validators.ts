@@ -1,3 +1,4 @@
+import { getErrorMessage } from '../utils/errors';
 import { Convert, GitProxyConfig } from './generated/config';
 
 const validationChain = [validateCommitConfig];
@@ -103,9 +104,7 @@ export async function loadConfig(
 function parseGitProxyConfig(raw: string, context: string): GitProxyConfig {
   try {
     return Convert.toGitProxyConfig(raw);
-  } catch (error) {
-    throw new Error(
-      `Invalid configuration format in ${context}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-    );
+  } catch (error: unknown) {
+    throw new Error(`Invalid configuration format in ${context}: ${getErrorMessage}`);
   }
 }
