@@ -227,7 +227,7 @@ function validateAttestation(answers: AttestationAnswer[], config: AttestationCo
 
   const configLabels = new Set(configQuestions.map((q) => q.label));
 
-  return answers.every((answer) => configLabels.has(answer.label) && answer.checked === true);
+  return answers.every((answer) => configLabels.has(answer.label) && !!answer.checked);
 }
 
 export default router;
