@@ -8,11 +8,7 @@ import { isAdminUser } from './utils';
 import { Proxy } from '../../proxy';
 import { handleAndLogError } from '../../utils/errors';
 
-// create a reference to the proxy service as arrow functions will lose track of the `proxy` parameter
-// used to restart the proxy when a new host is added
-let theProxy: Proxy | null = null;
-const repo = (proxy: Proxy) => {
-  theProxy = proxy;
+function repo(proxy: Proxy) {
   const router = express.Router();
 
   router.get('/', async (req: Request, res: Response) => {
@@ -139,8 +135,8 @@ const repo = (proxy: Proxy) => {
       if (currentHosts.length < previousHosts.length) {
         // restart the proxy
         console.log('Restarting the proxy to remove a host');
-        await theProxy?.stop();
-        await theProxy?.start();
+        await proxy.stop();
+        await proxy.start();
       }
 
       res.send({ message: 'deleted' });
@@ -189,8 +185,8 @@ const repo = (proxy: Proxy) => {
           // restart the proxy if we're proxying a new domain
           if (newOrigin) {
             console.log('Restarting the proxy to handle an additional host');
-            await theProxy?.stop();
-            await theProxy?.start();
+            await proxy.stop();
+            await proxy.start();
           }
 
           // return data on the new repository (including it's _id and the proxyUrl)
@@ -204,6 +200,6 @@ const repo = (proxy: Proxy) => {
   });
 
   return router;
-};
+}
 
 export default repo;
