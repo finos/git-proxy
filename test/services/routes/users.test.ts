@@ -62,4 +62,12 @@ describe('Users API', () => {
       admin: false,
     });
   });
+
+  it('GET /users/:id should return 404 Not Found if user is not found', async () => {
+    vi.restoreAllMocks();
+
+    const res = await request(app).get('/users/non-existent');
+    expect(res.status).toBe(404);
+    expect(res.body).toEqual({ message: 'User non-existent not found' });
+  });
 });
