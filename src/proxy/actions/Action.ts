@@ -1,6 +1,6 @@
 import { processGitURLForNameAndOrg, processUrlPath } from '../routes/helper';
 import { Step } from './Step';
-import { Attestation, CommitData } from '../processors/types';
+import { Attestation, CommitData, Rejection } from '../processors/types';
 
 /**
  * Class representing a Push.
@@ -34,6 +34,7 @@ class Action {
   user?: string;
   userEmail?: string;
   attestation?: Attestation;
+  rejection?: Rejection;
   lastStep?: Step;
   proxyGitPath?: string;
   newIdxFiles?: string[];
@@ -94,7 +95,8 @@ class Action {
   }
 
   /**
-   * Set the commit range for the action.
+   * Set the commit range for the action. Changes the action.id to be based on
+   * the commit details.
    * @param {string} commitFrom the starting commit
    * @param {string} commitTo the ending commit
    */
