@@ -13,7 +13,7 @@ module.exports = {
       },
       collapsible: true,
       collapsed: false,
-      items: ['quickstart/intercept', 'quickstart/approve'],
+      items: ['quickstart/usage', 'quickstart/intercept', 'quickstart/approve'],
     },
     'installation',
     'usage',
