@@ -32,14 +32,14 @@ const repo = (proxy: any) => {
     res.send(qd.map((d) => ({ ...d, proxyURL })));
   });
 
-  router.get('/:id', async (req: Request, res: Response) => {
+  router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
     const proxyURL = getProxyURL(req);
     const _id = req.params.id;
     const qd = await db.getRepoById(_id);
     res.send({ ...qd, proxyURL });
   });
 
-  router.patch('/:id/user/push', async (req: Request, res: Response) => {
+  router.patch('/:id/user/push', async (req: Request<{ id: string }>, res: Response) => {
     if (isAdminUser(req.user)) {
       const _id = req.params.id;
       const username = req.body.username.toLowerCase();
@@ -59,7 +59,7 @@ const repo = (proxy: any) => {
     }
   });
 
-  router.patch('/:id/user/authorise', async (req: Request, res: Response) => {
+  router.patch('/:id/user/authorise', async (req: Request<{ id: string }>, res: Response) => {
     if (isAdminUser(req.user)) {
       const _id = req.params.id;
       const username = req.body.username;
@@ -79,47 +79,53 @@ const repo = (proxy: any) => {
     }
   });
 
-  router.delete('/:id/user/authorise/:username', async (req: Request, res: Response) => {
-    if (isAdminUser(req.user)) {
-      const _id = req.params.id;
-      const username = req.params.username;
-      const user = await db.findUser(username);
+  router.delete(
+    '/:id/user/authorise/:username',
+    async (req: Request<{ id: string; username: string }>, res: Response) => {
+      if (isAdminUser(req.user)) {
+        const _id = req.params.id;
+        const username = req.params.username;
+        const user = await db.findUser(username);
 
-      if (!user) {
-        res.status(400).send({ error: 'User does not exist' });
-        return;
+        if (!user) {
+          res.status(400).send({ error: 'User does not exist' });
+          return;
+        }
+
+        await db.removeUserCanAuthorise(_id, username);
+        res.send({ message: 'created' });
+      } else {
+        res.status(401).send({
+          message: 'You are not authorised to perform this action...',
+        });
       }
+    },
+  );
 
-      await db.removeUserCanAuthorise(_id, username);
-      res.send({ message: 'created' });
-    } else {
-      res.status(401).send({
-        message: 'You are not authorised to perform this action...',
-      });
-    }
-  });
+  router.delete(
+    '/:id/user/push/:username',
+    async (req: Request<{ id: string; username: string }>, res: Response) => {
+      if (isAdminUser(req.user)) {
+        const _id = req.params.id;
+        const username = req.params.username;
+        const user = await db.findUser(username);
 
-  router.delete('/:id/user/push/:username', async (req: Request, res: Response) => {
-    if (isAdminUser(req.user)) {
-      const _id = req.params.id;
-      const username = req.params.username;
-      const user = await db.findUser(username);
+        if (!user) {
+          res.status(400).send({ error: 'User does not exist' });
+          return;
+        }
 
-      if (!user) {
-        res.status(400).send({ error: 'User does not exist' });
-        return;
+        await db.removeUserCanPush(_id, username);
+        res.send({ message: 'created' });
+      } else {
+        res.status(401).send({
+          message: 'You are not authorised to perform this action...',
+        });
       }
+    },
+  );
 
-      await db.removeUserCanPush(_id, username);
-      res.send({ message: 'created' });
-    } else {
-      res.status(401).send({
-        message: 'You are not authorised to perform this action...',
-      });
-    }
-  });
-
-  router.delete('/:id/delete', async (req: Request, res: Response) => {
+  router.delete('/:id/delete', async (req: Request<{ id: string }>, res: Response) => {
     if (isAdminUser(req.user)) {
       const _id = req.params.id;
 
