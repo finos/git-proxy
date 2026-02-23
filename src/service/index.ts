@@ -1,6 +1,8 @@
 import express, { Express } from 'express';
 import session from 'express-session';
 import http from 'http';
+import https from 'https';
+import fs from 'fs';
 import cors from 'cors';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
@@ -15,12 +17,24 @@ import { configure } from './passport';
 
 const limiter = rateLimit(config.getRateLimit());
 
-const { GIT_PROXY_UI_PORT: uiPort } = serverConfig;
+const { GIT_PROXY_UI_PORT: uiPort, GIT_PROXY_HTTPS_UI_PORT: uiHttpsPort } = serverConfig;
 
 const DEFAULT_SESSION_MAX_AGE_HOURS = 12;
 
 const app: Express = express();
 let _httpServer: http.Server | null = null;
+let _httpsServer: https.Server | null = null;
+
+const getServiceTLSOptions = () => ({
+  key:
+    config.getTLSEnabled() && config.getTLSKeyPemPath()
+      ? fs.readFileSync(config.getTLSKeyPemPath()!)
+      : undefined,
+  cert:
+    config.getTLSEnabled() && config.getTLSCertPemPath()
+      ? fs.readFileSync(config.getTLSCertPemPath()!)
+      : undefined,
+});
 
 /**
  * CORS Configuration
@@ -176,6 +190,18 @@ async function start(proxy: Proxy) {
   console.log(`Service Listening on ${uiPort}`);
   app.emit('ready');
 
+  if (config.getTLSEnabled()) {
+    await new Promise<void>((resolve, reject) => {
+      const server = https.createServer(getServiceTLSOptions(), app);
+      server.on('error', reject);
+      server.listen(uiHttpsPort, () => {
+        console.log(`HTTPS Service Listening on ${uiHttpsPort}`);
+        resolve();
+      });
+      _httpsServer = server;
+    });
+  }
+
   return app;
 }
 
@@ -183,22 +209,42 @@ async function start(proxy: Proxy) {
  * Stops the proxy service.
  */
 async function stop(): Promise<void> {
-  if (!_httpServer) {
-    return Promise.resolve();
+  const closePromises: Promise<void>[] = [];
+
+  if (_httpServer) {
+    closePromises.push(
+      new Promise((resolve, reject) => {
+        console.log(`Stopping Service Listening on ${uiPort}`);
+        _httpServer!.close((err) => {
+          if (err) {
+            reject(err);
+          } else {
+            console.log('Service stopped');
+            _httpServer = null;
+            resolve();
+          }
+        });
+      }),
+    );
   }
 
-  return new Promise((resolve, reject) => {
-    console.log(`Stopping Service Listening on ${uiPort}`);
-    _httpServer!.close((err) => {
-      if (err) {
-        reject(err);
-      } else {
-        console.log('Service stopped');
-        _httpServer = null;
-        resolve();
-      }
-    });
-  });
+  if (_httpsServer) {
+    closePromises.push(
+      new Promise((resolve, reject) => {
+        _httpsServer!.close((err) => {
+          if (err) {
+            reject(err);
+          } else {
+            console.log('HTTPS Service stopped');
+            _httpsServer = null;
+            resolve();
+          }
+        });
+      }),
+    );
+  }
+
+  return Promise.all(closePromises).then(() => {});
 }
 
 export const Service = {
@@ -206,5 +252,8 @@ export const Service = {
   stop,
   get httpServer() {
     return _httpServer;
+  },
+  get httpsServer() {
+    return _httpsServer;
   },
 };
