@@ -214,6 +214,17 @@ function Home() {
             </div>
           </div>
         </div>
+        <div className='row margin-bottom--xl'>
+          <div className='col col--4'>
+            <div className='col-demo'>
+              <Avatar
+                name='Andy Pols'
+                description='CTO at Qube Research & Technologies'
+                username='andypols'
+              />
+            </div>
+          </div>
+        </div>
       </div>
       <div className='container text--center'>
         <h1 className='margin-top--md'>
