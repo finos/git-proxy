@@ -27,7 +27,6 @@ import { AttestationFormData, PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
 import { generateEmailLink, getGitProvider } from '../../utils';
 import UserLink from '../../components/UserLink/UserLink';
-import Danger from '../../components/Typography/Danger';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -97,7 +96,7 @@ const Dashboard: React.FC = () => {
   };
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <Danger>{message || 'Something went wrong ...'}</Danger>;
+  if (isError) throw new Error(message || 'Something went wrong ...');
   if (!push) return <div>No push data found</div>;
 
   let headerData: { title: string; color: CardHeaderColor } = {
