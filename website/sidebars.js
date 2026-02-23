@@ -16,7 +16,6 @@ module.exports = {
       items: ['quickstart/usage', 'quickstart/intercept', 'quickstart/approve'],
     },
     'installation',
-    'usage',
     {
       type: 'category',
       label: 'Configuration',
