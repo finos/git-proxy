@@ -16,6 +16,7 @@ services:
       - git-network
     environment:
       - NODE_ENV=test
+      - CONFIG_FILE=/app/test-e2e.proxy.config.json
       - GIT_PROXY_UI_PORT=8081
       - GIT_PROXY_SERVER_PORT=8000
       - NODE_OPTIONS=--trace-warnings
