@@ -17,6 +17,38 @@ module.exports = {
     posts: [
       {
         platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7384600028029419520',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7296172481868955648',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7367207134180106240',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7368312868221423618',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7354140689141575683',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7269738545248927744',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7363921020300210177',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7251398809258201088',
+      },
+      {
+        platform: 'linkedin',
         url: 'https://www.linkedin.com/embed/feed/update/urn:li:share:7092203565380722688',
       },
       {
@@ -66,6 +98,10 @@ module.exports = {
       {
         platform: 'linkedin',
         url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7196479537872859137',
+      },
+      {
+        platform: 'linkedin',
+        url: 'https://www.linkedin.com/embed/feed/update/urn:li:activity:7386982216444264448',
       },
     ],
   },
