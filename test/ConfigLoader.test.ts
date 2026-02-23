@@ -732,6 +732,9 @@ describe('Validation Helpers', () => {
       expect(isValidGitUrl('not-a-git-url')).toBe(false);
       expect(isValidGitUrl('http://github.com/user/repo')).toBe(false);
       expect(isValidGitUrl('')).toBe(false);
+      expect(isValidGitUrl(null as unknown as string)).toBe(false);
+      expect(isValidGitUrl(undefined as unknown as string)).toBe(false);
+      expect(isValidGitUrl(123 as unknown as string)).toBe(false);
     });
   });
 
@@ -749,6 +752,14 @@ describe('Validation Helpers', () => {
       expect(isValidPath('')).toBe(false);
       expect(isValidPath('\0invalid')).toBe(false);
       expect(isValidPath('\u0000')).toBe(false);
+      expect(isValidPath(null as unknown as string)).toBe(false);
+      expect(isValidPath(undefined as unknown as string)).toBe(false);
+
+      // Additional edge cases
+      expect(isValidPath({} as unknown as string)).toBe(false);
+      expect(isValidPath([] as unknown as string)).toBe(false);
+      expect(isValidPath(123 as unknown as string)).toBe(false);
+      expect(isValidPath(true as unknown as string)).toBe(false);
     });
   });
 
@@ -767,6 +778,8 @@ describe('Validation Helpers', () => {
       expect(isValidBranchName('branch with spaces')).toBe(false);
       expect(isValidBranchName('')).toBe(false);
       expect(isValidBranchName('branch..name')).toBe(false);
+      expect(isValidBranchName(null as unknown as string)).toBe(false);
+      expect(isValidBranchName(undefined as unknown as string)).toBe(false);
     });
   });
 });

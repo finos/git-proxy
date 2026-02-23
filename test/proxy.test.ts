@@ -76,7 +76,7 @@ describe('Proxy Module TLS Certificate Loading', () => {
     });
 
     vi.doMock('../src/db', async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual = await importOriginal<typeof import('../src/db')>();
       return {
         ...actual,
         getRepos: mockDb.getRepos,
