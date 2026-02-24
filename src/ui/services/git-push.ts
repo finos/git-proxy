@@ -65,12 +65,12 @@ const authorisePush = async (
   }
 };
 
-const rejectPush = async (id: string): Promise<ServiceResult> => {
+const rejectPush = async (id: string, reason?: string): Promise<ServiceResult> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = `${apiV1Base}/push/${id}/reject`;
 
   try {
-    await axios.post(url, {}, getAxiosConfig());
+    await axios.post(url, { reason }, getAxiosConfig());
     return successResult();
   } catch (error: any) {
     return errorResult(error, 'Failed to reject push request');

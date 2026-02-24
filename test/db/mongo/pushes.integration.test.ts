@@ -219,7 +219,7 @@ describe.runIf(shouldRunMongoTests)('MongoDB Pushes Integration Tests', () => {
       expect(updated?.authorised).toBe(false);
       expect(updated?.canceled).toBe(false);
       expect(updated?.rejected).toBe(true);
-      expect(updated?.attestation).toEqual({ reason: 'policy violation' });
+      expect(updated?.rejection).toEqual({ reason: 'policy violation' });
     });
 
     it('should throw error for non-existent push', async () => {

@@ -200,7 +200,7 @@ describe('git-push service', () => {
       expect(result).toEqual({ success: true });
       expect(axiosMock.post).toHaveBeenCalledWith(
         'http://localhost:8080/api/v1/push/push-456/reject',
-        {},
+        { reason: undefined },
         expect.any(Object),
       );
     });
