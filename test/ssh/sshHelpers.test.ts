@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import path from 'path';
 import {
   validateAgentSocketPath,
   convertToSSHUrl,
@@ -130,7 +131,7 @@ describe('sshHelpers', () => {
 
       const knownHostsPath = await createKnownHostsFile(tempDir, sshUrl);
 
-      expect(knownHostsPath).toBe('/tmp/test-dir/known_hosts');
+      expect(knownHostsPath).toBe(path.join(tempDir, 'known_hosts'));
       expect(childProcessStub.execSync).toHaveBeenCalledWith(
         'ssh-keyscan -t ed25519 github.com 2>/dev/null',
         expect.objectContaining({
@@ -139,7 +140,7 @@ describe('sshHelpers', () => {
         }),
       );
       expect(fsStub.promises.writeFile).toHaveBeenCalledWith(
-        '/tmp/test-dir/known_hosts',
+        path.join(tempDir, 'known_hosts'),
         expect.stringContaining('github.com ssh-ed25519'),
         { mode: 0o600 },
       );
@@ -155,7 +156,7 @@ describe('sshHelpers', () => {
 
       const knownHostsPath = await createKnownHostsFile(tempDir, sshUrl);
 
-      expect(knownHostsPath).toBe('/tmp/test-dir/known_hosts');
+      expect(knownHostsPath).toBe(path.join(tempDir, 'known_hosts'));
       expect(childProcessStub.execSync).toHaveBeenCalledWith(
         'ssh-keyscan -t ed25519 gitlab.com 2>/dev/null',
         expect.anything(),
