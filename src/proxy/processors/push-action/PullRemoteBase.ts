@@ -24,6 +24,13 @@ export abstract class PullRemoteBase {
    */
   protected async setupDirectories(action: Action): Promise<void> {
     action.proxyGitPath = `${PullRemoteBase.REMOTE_DIR}/${action.id}`;
+
+    if (fs.existsSync(action.proxyGitPath)) {
+      throw new Error(
+        'The checkout folder already exists - we may be processing a concurrent request for this push. If this issue persists the proxy may need to be restarted.',
+      );
+    }
+
     await this.ensureDirectory(PullRemoteBase.REMOTE_DIR);
     await this.ensureDirectory(action.proxyGitPath);
   }
@@ -54,6 +61,13 @@ export abstract class PullRemoteBase {
     } catch (e: any) {
       const message = e instanceof Error ? e.message : (e?.toString?.('utf-8') ?? String(e));
       step.setError(message);
+
+      // Clean up the checkout folder so it doesn't block subsequent attempts
+      if (action.proxyGitPath && fs.existsSync(action.proxyGitPath)) {
+        fs.rmSync(action.proxyGitPath, { recursive: true, force: true });
+        step.log('.remote is deleted!');
+      }
+
       throw e;
     } finally {
       action.addStep(step);
