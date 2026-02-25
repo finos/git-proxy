@@ -4,7 +4,18 @@ import { Repo } from '../db/types';
 import { Attestation } from '../proxy/processors/types';
 import { Question } from '../config/generated/config';
 
-export interface PushActionView extends Action {
+type ActionMethods =
+  | 'addStep'
+  | 'getLastStep'
+  | 'setCommit'
+  | 'setBranch'
+  | 'setMessage'
+  | 'setAllowPush'
+  | 'setAutoApproval'
+  | 'setAutoRejection'
+  | 'continue';
+
+export interface PushActionView extends Omit<Action, ActionMethods> {
   diff: Step;
 }
 
