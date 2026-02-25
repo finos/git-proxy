@@ -3,7 +3,7 @@ describe('Login page', () => {
     cy.visit('/login');
   });
 
-  it('should have git proxy logo', () => {
+  it('should have GitProxy logo', () => {
     cy.get('[data-test="git-proxy-logo"]').should('exist');
   });
 

@@ -38,6 +38,8 @@ vi.mock('../src/config', () => ({
   getTLSCertPemPath: vi.fn(),
   getPlugins: vi.fn(),
   getAuthorisedList: vi.fn(),
+  getSSHConfig: vi.fn(() => ({ enabled: false })),
+  getMaxPackSizeBytes: vi.fn(() => 500 * 1024 * 1024),
 }));
 
 vi.mock('../src/db', () => ({

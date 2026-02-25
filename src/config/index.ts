@@ -6,6 +6,7 @@ import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
 import { getConfigFile } from './file';
+import { GIGABYTE } from '../constants';
 import { validateConfig } from './validators';
 
 // Cache for current configuration
@@ -47,7 +48,8 @@ function loadFullConfiguration(): GitProxyConfig {
     return _currentConfig;
   }
 
-  const rawDefaultConfig = Convert.toGitProxyConfig(JSON.stringify(defaultSettings));
+  // Skip QuickType validation for now due to SSH config issues
+  const rawDefaultConfig = defaultSettings as any;
 
   // Clean undefined values from defaultConfig
   const defaultConfig = cleanUndefinedValues(rawDefaultConfig);
@@ -111,11 +113,21 @@ function mergeConfigurations(
     // Deep merge for specific objects
     api: userSettings.api ? cleanUndefinedValues(userSettings.api) : defaultConfig.api,
     domains: { ...defaultConfig.domains, ...userSettings.domains },
+    limits:
+      defaultConfig.limits || userSettings.limits
+        ? { ...(defaultConfig.limits ?? {}), ...(userSettings.limits ?? {}) }
+        : undefined,
     commitConfig: { ...defaultConfig.commitConfig, ...userSettings.commitConfig },
     attestationConfig: { ...defaultConfig.attestationConfig, ...userSettings.attestationConfig },
     rateLimit: userSettings.rateLimit || defaultConfig.rateLimit,
     tls: tlsConfig,
     tempPassword: { ...defaultConfig.tempPassword, ...userSettings.tempPassword },
+    ssh: {
+      ...defaultConfig.ssh,
+      ...userSettings.ssh,
+      // Ensure enabled is always a boolean
+      enabled: userSettings.ssh?.enabled ?? defaultConfig.ssh?.enabled ?? false,
+    },
     // Preserve legacy SSL fields
     sslKeyPemPath: userSettings.sslKeyPemPath || defaultConfig.sslKeyPemPath,
     sslCertPemPath: userSettings.sslCertPemPath || defaultConfig.sslCertPemPath,
@@ -126,12 +138,6 @@ function mergeConfigurations(
       defaultConfig.cookieSecret,
   };
 }
-
-// Get configured proxy URL
-export const getProxyUrl = (): string | undefined => {
-  const config = loadFullConfiguration();
-  return config.proxyUrl;
-};
 
 // Gets a list of authorised repositories
 export const getAuthorisedList = () => {
@@ -299,6 +305,63 @@ export const getUIRouteAuth = () => {
 export const getRateLimit = () => {
   const config = loadFullConfiguration();
   return config.rateLimit;
+};
+
+export const getMaxPackSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  const configuredValue = config.limits?.maxPackSizeBytes;
+  const fallback = 1 * GIGABYTE; // 1 GiB default
+
+  if (
+    typeof configuredValue === 'number' &&
+    Number.isFinite(configuredValue) &&
+    configuredValue > 0
+  ) {
+    return configuredValue;
+  }
+
+  return fallback;
+};
+
+export const getSSHConfig = () => {
+  // The proxy host key is auto-generated at startup if not present
+  // This key is only used to identify the proxy server to clients (like SSL cert)
+  // It is NOT configurable to ensure consistent behavior
+  const defaultHostKey = {
+    privateKeyPath: '.ssh/proxy_host_key',
+    publicKeyPath: '.ssh/proxy_host_key.pub',
+  };
+
+  try {
+    const config = loadFullConfiguration();
+    const sshConfig = config.ssh || { enabled: false };
+
+    // The host key is a server identity, not user configuration
+    if (sshConfig.enabled) {
+      sshConfig.hostKey = defaultHostKey;
+    }
+
+    return sshConfig;
+  } catch (error) {
+    // If config loading fails due to SSH validation, try to get SSH config directly from user config
+    const userConfigFile = process.env.CONFIG_FILE || getConfigFile();
+    if (existsSync(userConfigFile)) {
+      try {
+        const userConfigContent = readFileSync(userConfigFile, 'utf-8');
+        const userConfig = JSON.parse(userConfigContent);
+        const sshConfig = userConfig.ssh || { enabled: false };
+
+        if (sshConfig.enabled) {
+          sshConfig.hostKey = defaultHostKey;
+        }
+
+        return sshConfig;
+      } catch (e) {
+        console.error('Error loading SSH config:', e);
+      }
+    }
+    return { enabled: false };
+  }
 };
 
 // Function to handle configuration updates

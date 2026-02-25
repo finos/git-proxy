@@ -8,9 +8,11 @@ import {
   CopyIcon,
   TerminalIcon,
 } from '@primer/octicons-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PopperPlacementType } from '@material-ui/core/Popper';
 import Button from './Button';
+import { Tabs, Tab } from '@material-ui/core';
+import { getSSHConfig, SSHConfig } from '../../services/ssh';
 
 interface CodeActionButtonProps {
   cloneURL: string;
@@ -21,6 +23,39 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
   const [open, setOpen] = useState<boolean>(false);
   const [placement, setPlacement] = useState<PopperPlacementType>();
   const [isCopied, setIsCopied] = useState<boolean>(false);
+  const [selectedTab, setSelectedTab] = useState<number>(0);
+  const [sshConfig, setSshConfig] = useState<SSHConfig | null>(null);
+  const [sshURL, setSSHURL] = useState<string>('');
+
+  // Load SSH config on mount
+  useEffect(() => {
+    const loadSSHConfig = async () => {
+      try {
+        const config = await getSSHConfig();
+        setSshConfig(config);
+
+        // Calculate SSH URL from HTTPS URL
+        if (config.enabled && cloneURL) {
+          const url = new URL(cloneURL);
+          const hostname = url.hostname; // proxy hostname
+          const path = url.pathname.substring(1); // remove leading /
+          // Keep full path including remote hostname (e.g., 'github.com/user/repo.git')
+          // This matches HTTPS behavior and allows backend to extract hostname
+
+          // For non-standard SSH ports, use ssh:// URL format
+          // For standard port 22, use git@host:path format
+          if (config.port !== 22) {
+            setSSHURL(`ssh://git@${hostname}:${config.port}/${path}`);
+          } else {
+            setSSHURL(`git@${hostname}:${path}`);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading SSH config:', error);
+      }
+    };
+    loadSSHConfig();
+  }, [cloneURL]);
 
   const handleClick =
     (newPlacement: PopperPlacementType) => (event: React.MouseEvent<HTMLElement>) => {
@@ -33,6 +68,15 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
   const handleClickAway = () => {
     setOpen(false);
   };
+
+  const handleTabChange = (_event: React.ChangeEvent<unknown>, newValue: number) => {
+    setSelectedTab(newValue);
+    setIsCopied(false);
+  };
+
+  const currentURL = selectedTab === 0 ? cloneURL : sshURL;
+  const currentCloneCommand =
+    selectedTab === 0 ? `git clone ${cloneURL}` : `git clone -c core.sshCommand="ssh -A" ${sshURL}`;
 
   return (
     <>
@@ -58,7 +102,7 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
         style={{
           border: '1px solid rgba(211, 211, 211, 0.3)',
           borderRadius: '5px',
-          minWidth: '300px',
+          minWidth: '350px',
           maxWidth: '450px',
           zIndex: 99,
         }}
@@ -70,7 +114,20 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
               <span style={{ paddingLeft: '5px', fontSize: '14px', fontWeight: 'bold' }}>
                 Clone
               </span>
-              <div style={{ marginTop: '5px', maxWidth: '299px' }}>
+              {/* Tabs for HTTPS/SSH */}
+              {sshConfig?.enabled && (
+                <Tabs
+                  value={selectedTab}
+                  onChange={handleTabChange}
+                  indicatorColor='primary'
+                  textColor='primary'
+                  style={{ marginTop: '10px' }}
+                >
+                  <Tab label='HTTPS' style={{ minWidth: '80px', fontSize: '12px' }} />
+                  <Tab label='SSH' style={{ minWidth: '80px', fontSize: '12px' }} />
+                </Tabs>
+              )}
+              <div style={{ marginTop: '10px', maxWidth: '380px' }}>
                 <div
                   style={{
                     padding: '3px 8px 3px 8px',
@@ -89,7 +146,7 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
                       width: '90%',
                     }}
                   >
-                    {cloneURL}
+                    {currentURL}
                   </span>
                   <span
                     style={{
@@ -100,7 +157,7 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
                       <span
                         style={{ cursor: 'pointer' }}
                         onClick={() => {
-                          navigator.clipboard.writeText(`git clone ${cloneURL}`);
+                          navigator.clipboard.writeText(currentCloneCommand);
                           setIsCopied(true);
                         }}
                       >
@@ -117,7 +174,9 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
               </div>
               <div style={{ marginTop: '5px' }}>
                 <span style={{ fontWeight: 'lighter', fontSize: '12px', opacity: 0.9 }}>
-                  Use Git and run this command in your IDE or Terminal 👍
+                  {selectedTab === 0
+                    ? 'Use Git and run this command in your IDE or Terminal 👍'
+                    : 'The -A flag enables SSH agent forwarding for authentication 🔐'}
                 </span>
               </div>
             </div>
