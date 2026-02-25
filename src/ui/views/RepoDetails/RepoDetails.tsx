@@ -27,6 +27,7 @@ import { RepoView, SCMRepositoryMetadata } from '../../types';
 import { UserContextType } from '../../context';
 import UserLink from '../../components/UserLink/UserLink';
 import DeleteRepoDialog from './Components/DeleteRepoDialog';
+import Danger from '../../components/Typography/Danger';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -45,17 +46,31 @@ const RepoDetails: React.FC = () => {
   const classes = useStyles();
   const [repo, setRepo] = useState<RepoView | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<boolean>(false);
-  const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [remoteRepoData, setRemoteRepoData] = useState<SCMRepositoryMetadata | null>(null);
   const { user } = useContext<UserContextType>(UserContext);
   const { id: repoId } = useParams<{ id: string }>();
 
   useEffect(() => {
-    if (repoId) {
-      getRepo(setIsLoading, setRepo, setAuth, setIsError, repoId);
-    }
+    if (!repoId) return;
+    const load = async () => {
+      setIsLoading(true);
+      const result = await getRepo(repoId);
+      if (result.success && result.data) {
+        setRepo(result.data);
+      } else if (result.status === 401) {
+        setIsLoading(false);
+        navigate('/login', { replace: true });
+        return;
+      } else {
+        setIsError(true);
+        setErrorMessage(result.message || 'Something went wrong...');
+      }
+      setIsLoading(false);
+    };
+    load();
   }, [repoId]);
 
   useEffect(() => {
@@ -66,23 +81,50 @@ const RepoDetails: React.FC = () => {
 
   const removeUser = async (userToRemove: string, action: 'authorise' | 'push') => {
     if (!repoId) return;
-    await deleteUser(userToRemove, repoId, action);
-    getRepo(setIsLoading, setRepo, setAuth, setIsError, repoId);
+    try {
+      await deleteUser(userToRemove, repoId, action);
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err.message || 'Failed to remove user');
+      return;
+    }
+    const result = await getRepo(repoId);
+    if (result.success && result.data) {
+      setRepo(result.data);
+    } else if (result.status === 401) {
+      navigate('/login', { replace: true });
+    } else {
+      setIsError(true);
+      setErrorMessage(result.message || 'Failed to refresh repository data');
+    }
   };
 
   const removeRepository = async (id: string) => {
-    await deleteRepo(id);
+    try {
+      await deleteRepo(id);
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err.message || 'Failed to delete repository');
+      return;
+    }
     navigate('/dashboard/repo', { replace: true });
   };
 
-  const refresh = () => {
-    if (repoId) {
-      getRepo(setIsLoading, setRepo, setAuth, setIsError, repoId);
+  const refresh = async () => {
+    if (!repoId) return;
+    const result = await getRepo(repoId);
+    if (result.success && result.data) {
+      setRepo(result.data);
+    } else if (result.status === 401) {
+      navigate('/login', { replace: true });
+    } else {
+      setIsError(true);
+      setErrorMessage(result.message || 'Failed to refresh repository data');
     }
   };
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Something went wrong ...</div>;
+  if (isError) return <Danger>{errorMessage || 'Something went wrong ...'}</Danger>;
   if (!repo) return <div>No repository data found</div>;
 
   const { url: remoteUrl, proxyURL } = repo || {};
