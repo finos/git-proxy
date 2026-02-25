@@ -91,10 +91,18 @@ async function exec(req: any, action: Action): Promise<Action> {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }
 
-      const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
-      console.log(`Push Request received from user ${committer} with email ${committerEmail}`);
-      action.user = committer;
-      action.userEmail = committerEmail;
+      if (req.user) {
+        console.log(
+          `Push Request received from user ${req.user.username} with email ${req.user.email}`,
+        );
+        action.user = req.user.username;
+        action.userEmail = req.user.email;
+      } else {
+        const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
+        console.log(`Push Request received from user ${committer} with email ${committerEmail}`);
+        action.user = committer;
+        action.userEmail = committerEmail;
+      }
     }
 
     step.content = {
