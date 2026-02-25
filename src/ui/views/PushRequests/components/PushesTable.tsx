@@ -30,9 +30,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
   const [pushes, setPushes] = useState<PushActionView[]>([]);
   const [filteredData, setFilteredData] = useState<PushActionView[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [, setIsError] = useState(false);
   const navigate = useNavigate();
-  const [, setAuth] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,7 +47,21 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
     if (props.rejected !== undefined) query.rejected = props.rejected;
     if (props.error !== undefined) query.error = props.error;
 
-    getPushes(setIsLoading, setPushes, setAuth, setIsError, props.handleError, query);
+    const load = async () => {
+      setIsLoading(true);
+      const result = await getPushes(query);
+      if (result.success && result.data) {
+        setPushes(result.data);
+      } else if (result.status === 401) {
+        setIsLoading(false);
+        navigate('/login', { replace: true });
+        return;
+      } else if (props.handleError) {
+        props.handleError(result.message || 'Failed to load pushes');
+      }
+      setIsLoading(false);
+    };
+    load();
   }, [props]);
 
   useEffect(() => {

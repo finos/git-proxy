@@ -108,7 +108,7 @@ export interface Sink {
   deletePush: (id: string) => Promise<void>;
   authorise: (id: string, attestation: any) => Promise<{ message: string }>;
   cancel: (id: string) => Promise<{ message: string }>;
-  reject: (id: string, attestation: any) => Promise<{ message: string }>;
+  reject: (id: string, rejection: any) => Promise<{ message: string }>;
   getRepos: (query?: Partial<RepoQuery>) => Promise<Repo[]>;
   getRepo: (name: string) => Promise<Repo | null>;
   getRepoByUrl: (url: string) => Promise<Repo | null>;

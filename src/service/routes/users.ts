@@ -30,7 +30,7 @@ router.get('/', async (req: Request, res: Response) => {
   res.send(users.map(toPublicUser));
 });
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
   const username = req.params.id.toLowerCase();
   console.log(`Retrieving details for user: ${username}`);
   const user = await db.findUser(username);

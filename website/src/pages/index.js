@@ -165,21 +165,13 @@ function Home() {
           <div className='col col--4'>
             <div className='col-demo'>
               {' '}
-              <Avatar
-                name='Jamie Slome'
-                description='Open Source Operations at Citi'
-                username='JamieSlome'
-              />
+              <Avatar name='Paul Groves' description='Director at Citi' username='grovesy' />
             </div>
           </div>
           <div className='col col--4'>
             <div className='col-demo'>
               {' '}
-              <Avatar
-                name='Thomas Cooper'
-                description='Director, OSS Development at RBC'
-                username='coopernetes'
-              />
+              <Avatar name='Jamie Slome' description='Emeritus Maintainer' username='JamieSlome' />
             </div>
           </div>
           <div className='col col--4'>
@@ -189,6 +181,46 @@ function Home() {
                 name='Juan Escalada'
                 description='Open Source Software Engineer at G-Research'
                 username='jescalada'
+              />
+            </div>
+          </div>
+        </div>
+        <div className='row margin-bottom--xl'>
+          <div className='col col--4'>
+            <div className='col-demo'>
+              <Avatar
+                name='Kris West'
+                description='Principal Engineer at NatWest Group'
+                username='kriswest'
+              />
+            </div>
+          </div>
+          <div className='col col--4'>
+            <div className='col-demo'>
+              <Avatar
+                name='Thomas Cooper'
+                description='Director, OSS Development at RBC'
+                username='coopernetes'
+              />
+            </div>
+          </div>
+          <div className='col col--4'>
+            <div className='col-demo'>
+              <Avatar
+                name='Jack Kelly'
+                description='Senior Consultant at ControlPlane'
+                username='06kellyjac'
+              />
+            </div>
+          </div>
+        </div>
+        <div className='row margin-bottom--xl'>
+          <div className='col col--4'>
+            <div className='col-demo'>
+              <Avatar
+                name='Andy Pols'
+                description='Engineer at Qube Research & Technologies'
+                username='andypols'
               />
             </div>
           </div>
