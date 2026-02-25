@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth.js';
 import { Repo } from '../../db/types';
 import { RepoView } from '../types';
@@ -7,19 +7,13 @@ import { getApiV1BaseUrl } from './apiConfig';
 const canAddUser = async (repoId: string, user: string, action: string) => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}`);
-  return axios
-    .get<Repo>(url.toString(), getAxiosConfig())
-    .then((response) => {
-      const repo = response.data;
-      if (action === 'authorise') {
-        return !repo.users.canAuthorise.includes(user);
-      } else {
-        return !repo.users.canPush.includes(user);
-      }
-    })
-    .catch((error: any) => {
-      throw error;
-    });
+  const response = await axios.get<Repo>(url.toString(), getAxiosConfig());
+  const repo = response.data;
+  if (action === 'authorise') {
+    return !repo.users.canAuthorise.includes(user);
+  } else {
+    return !repo.users.canPush.includes(user);
+  }
 };
 
 class DupUserValidationError extends Error {
@@ -41,25 +35,23 @@ const getRepos = async (
   const url = new URL(`${apiV1Base}/repo`);
   url.search = new URLSearchParams(query as any).toString();
   setIsLoading(true);
-  await axios<RepoView[]>(url.toString(), getAxiosConfig())
-    .then((response) => {
-      const sortedRepos = response.data.sort((a: RepoView, b: RepoView) =>
-        a.name.localeCompare(b.name),
-      );
-      setRepos(sortedRepos);
-    })
-    .catch((error: any) => {
-      setIsError(true);
-      if (error.response && error.response.status === 401) {
-        setAuth(false);
-        setErrorMessage(processAuthError(error));
-      } else {
-        setErrorMessage(`Error fetching repos: ${error.response.data.message}`);
-      }
-    })
-    .finally(() => {
-      setIsLoading(false);
-    });
+  try {
+    const response = await axios<RepoView[]>(url.toString(), getAxiosConfig());
+    const sortedRepos = response.data.sort((a: RepoView, b: RepoView) =>
+      a.name.localeCompare(b.name),
+    );
+    setRepos(sortedRepos);
+  } catch (error: unknown) {
+    setIsError(true);
+    if (error instanceof AxiosError && error.response?.status === 401) {
+      setAuth(false);
+      setErrorMessage(processAuthError(error));
+    } else if (error instanceof AxiosError) {
+      setErrorMessage(`Error fetching repos: ${error.response?.data?.message}`);
+    }
+  } finally {
+    setIsLoading(false);
+  }
 };
 
 const getRepo = async (
@@ -72,21 +64,19 @@ const getRepo = async (
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${id}`);
   setIsLoading(true);
-  await axios<RepoView>(url.toString(), getAxiosConfig())
-    .then((response) => {
-      const repo = response.data;
-      setRepo(repo);
-    })
-    .catch((error: any) => {
-      if (error.response && error.response.status === 401) {
-        setAuth(false);
-      } else {
-        setIsError(true);
-      }
-    })
-    .finally(() => {
-      setIsLoading(false);
-    });
+  try {
+    const response = await axios<RepoView>(url.toString(), getAxiosConfig());
+    const repo = response.data;
+    setRepo(repo);
+  } catch (error: unknown) {
+    if (error instanceof AxiosError && error.response?.status === 401) {
+      setAuth(false);
+    } else {
+      setIsError(true);
+    }
+  } finally {
+    setIsLoading(false);
+  }
 };
 
 const addRepo = async (
@@ -116,10 +106,14 @@ const addUser = async (repoId: string, user: string, action: string): Promise<vo
     const apiV1Base = await getApiV1BaseUrl();
     const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}`);
     const data = { username: user };
-    await axios.patch(url.toString(), data, getAxiosConfig()).catch((error: any) => {
-      console.log(error.response.data.message);
+    try {
+      await axios.patch(url.toString(), data, getAxiosConfig());
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        console.log(error.response?.data?.message);
+      }
       throw error;
-    });
+    }
   } else {
     console.log('Duplicate user can not be added');
     throw new DupUserValidationError('Duplicate user can not be added');
@@ -130,20 +124,28 @@ const deleteUser = async (user: string, repoId: string, action: string): Promise
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}/${user}`);
 
-  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
-    console.log(error.response.data.message);
+  try {
+    await axios.delete(url.toString(), getAxiosConfig());
+  } catch (error: unknown) {
+    if (error instanceof AxiosError) {
+      console.log(error.response?.data?.message);
+    }
     throw error;
-  });
+  }
 };
 
 const deleteRepo = async (repoId: string): Promise<void> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}/delete`);
 
-  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
-    console.log(error.response.data.message);
+  try {
+    await axios.delete(url.toString(), getAxiosConfig());
+  } catch (error: unknown) {
+    if (error instanceof AxiosError) {
+      console.log(error.response?.data?.message);
+    }
     throw error;
-  });
+  }
 };
 
 export { addUser, deleteUser, getRepos, getRepo, addRepo, deleteRepo };

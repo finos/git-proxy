@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
 import { getBaseUrl, getApiV1BaseUrl } from './apiConfig';
 import { Action, Step } from '../../proxy/actions';
@@ -20,8 +20,8 @@ const getPush = async (
     const data: Action & { diff?: Step } = response.data;
     data.diff = data.steps.find((x: Step) => x.stepName === 'diff');
     setPush(data as PushActionView);
-  } catch (error: any) {
-    if (error.response?.status === 401) setAuth(false);
+  } catch (error: unknown) {
+    if (error instanceof AxiosError && error.response?.status === 401) setAuth(false);
     else setIsError(true);
   } finally {
     setIsLoading(false);
@@ -50,13 +50,13 @@ const getPushes = async (
   try {
     const response = await axios<Action[]>(url.toString(), getAxiosConfig());
     setPushes(response.data as PushActionView[]);
-  } catch (error: any) {
+  } catch (error: unknown) {
     setIsError(true);
 
-    if (error.response?.status === 401) {
+    if (error instanceof AxiosError && error.response?.status === 401) {
       setAuth(false);
       setErrorMessage(processAuthError(error));
-    } else {
+    } else if (error instanceof AxiosError) {
       const message = error.response?.data?.message || error.message;
       setErrorMessage(`Error fetching pushes: ${message}`);
     }
@@ -75,8 +75,8 @@ const authorisePush = async (
   const url = `${apiV1Base}/push/${id}/authorise`;
   let errorMsg = '';
   let isUserAllowedToApprove = true;
-  await axios
-    .post(
+  try {
+    await axios.post(
       url,
       {
         params: {
@@ -84,13 +84,13 @@ const authorisePush = async (
         },
       },
       getAxiosConfig(),
-    )
-    .catch((error: any) => {
-      if (error.response && error.response.status === 401) {
-        errorMsg = 'You are not authorised to approve...';
-        isUserAllowedToApprove = false;
-      }
-    });
+    );
+  } catch (error: unknown) {
+    if (error instanceof AxiosError && error.response?.status === 401) {
+      errorMsg = 'You are not authorised to approve...';
+      isUserAllowedToApprove = false;
+    }
+  }
   setMessage(errorMsg);
   setUserAllowedToApprove(isUserAllowedToApprove);
 };
@@ -104,12 +104,14 @@ const rejectPush = async (
   const url = `${apiV1Base}/push/${id}/reject`;
   let errorMsg = '';
   let isUserAllowedToReject = true;
-  await axios.post(url, {}, getAxiosConfig()).catch((error: any) => {
-    if (error.response && error.response.status === 401) {
+  try {
+    await axios.post(url, {}, getAxiosConfig());
+  } catch (error: unknown) {
+    if (error instanceof AxiosError && error.response?.status === 401) {
       errorMsg = 'You are not authorised to reject...';
       isUserAllowedToReject = false;
     }
-  });
+  }
   setMessage(errorMsg);
   setUserAllowedToReject(isUserAllowedToReject);
 };
@@ -121,13 +123,15 @@ const cancelPush = async (
 ): Promise<void> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = `${apiV1Base}/push/${id}/cancel`;
-  await axios.post(url, {}, getAxiosConfig()).catch((error: any) => {
-    if (error.response && error.response.status === 401) {
+  try {
+    await axios.post(url, {}, getAxiosConfig());
+  } catch (error: unknown) {
+    if (error instanceof AxiosError && error.response?.status === 401) {
       setAuth(false);
     } else {
       setIsError(true);
     }
-  });
+  }
 };
 
 export { getPush, getPushes, authorisePush, rejectPush, cancelPush };
