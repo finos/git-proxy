@@ -11,6 +11,8 @@ interface AxiosConfig {
   };
 }
 
+const IS_DEV = process.env.NODE_ENV !== 'production';
+
 /**
  * Gets the current user's information
  */
@@ -20,10 +22,17 @@ export const getUserInfo = async (): Promise<PublicUser | null> => {
     const response = await fetch(`${baseUrl}/api/auth/profile`, {
       credentials: 'include', // Sends cookies
     });
-    if (!response.ok) throw new Error(`Failed to fetch user info: ${response.statusText}`);
+    if (!response.ok) {
+      if (response.status === 401) {
+        return null;
+      }
+      throw new Error(`Failed to fetch user info: ${response.statusText}`);
+    }
     return await response.json();
   } catch (error) {
-    console.error('Error fetching user info:', error);
+    if (IS_DEV) {
+      console.warn('Error fetching user info:', error);
+    }
     return null;
   }
 };
