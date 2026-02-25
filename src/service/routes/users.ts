@@ -47,37 +47,40 @@ router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
 });
 
 // Get SSH key fingerprints for a user
-router.get('/:username/ssh-key-fingerprints', async (req: Request, res: Response) => {
-  if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
+router.get(
+  '/:username/ssh-key-fingerprints',
+  async (req: Request<{ username: string }>, res: Response) => {
+    if (!req.user) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
 
-  const { username, admin } = req.user as { username: string; admin: boolean };
-  const targetUsername = req.params.username.toLowerCase();
+    const { username, admin } = req.user as { username: string; admin: boolean };
+    const targetUsername = req.params.username.toLowerCase();
 
-  // Only allow users to view their own keys, or admins to view any keys
-  if (username !== targetUsername && !admin) {
-    res.status(403).json({ error: 'Not authorized to view keys for this user' });
-    return;
-  }
+    // Only allow users to view their own keys, or admins to view any keys
+    if (username !== targetUsername && !admin) {
+      res.status(403).json({ error: 'Not authorized to view keys for this user' });
+      return;
+    }
 
-  try {
-    const publicKeys = await db.getPublicKeys(targetUsername);
-    const keyFingerprints = publicKeys.map((keyRecord) => ({
-      fingerprint: keyRecord.fingerprint,
-      name: keyRecord.name,
-      addedAt: keyRecord.addedAt,
-    }));
-    res.json(keyFingerprints);
-  } catch (error) {
-    console.error('Error retrieving SSH keys:', error);
-    res.status(500).json({ error: 'Failed to retrieve SSH keys' });
-  }
-});
+    try {
+      const publicKeys = await db.getPublicKeys(targetUsername);
+      const keyFingerprints = publicKeys.map((keyRecord) => ({
+        fingerprint: keyRecord.fingerprint,
+        name: keyRecord.name,
+        addedAt: keyRecord.addedAt,
+      }));
+      res.json(keyFingerprints);
+    } catch (error) {
+      console.error('Error retrieving SSH keys:', error);
+      res.status(500).json({ error: 'Failed to retrieve SSH keys' });
+    }
+  },
+);
 
 // Add SSH public key
-router.post('/:username/ssh-keys', async (req: Request, res: Response) => {
+router.post('/:username/ssh-keys', async (req: Request<{ username: string }>, res: Response) => {
   if (!req.user) {
     res.status(401).json({ error: 'Authentication required' });
     return;
@@ -137,36 +140,39 @@ router.post('/:username/ssh-keys', async (req: Request, res: Response) => {
 });
 
 // Remove SSH public key by fingerprint
-router.delete('/:username/ssh-keys/:fingerprint', async (req: Request, res: Response) => {
-  if (!req.user) {
-    res.status(401).json({ error: 'Authentication required' });
-    return;
-  }
-
-  const { username, admin } = req.user as { username: string; admin: boolean };
-  const targetUsername = req.params.username.toLowerCase();
-  const fingerprint = req.params.fingerprint;
-
-  // Only allow users to remove keys from their own account, or admins to remove from any account
-  if (username !== targetUsername && !admin) {
-    res.status(403).json({ error: 'Not authorized to remove keys for this user' });
-    return;
-  }
-
-  console.log('Removing SSH key', { targetUsername, fingerprint });
-  try {
-    await db.removePublicKey(targetUsername, fingerprint);
-    res.status(200).json({ message: 'SSH key removed successfully' });
-  } catch (error: any) {
-    console.error('Error removing SSH key:', error);
-
-    // Return specific error message
-    if (error.message === 'User not found') {
-      res.status(404).json({ error: 'User not found' });
-    } else {
-      res.status(500).json({ error: error.message || 'Failed to remove SSH key' });
+router.delete(
+  '/:username/ssh-keys/:fingerprint',
+  async (req: Request<{ username: string; fingerprint: string }>, res: Response) => {
+    if (!req.user) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
     }
-  }
-});
+
+    const { username, admin } = req.user as { username: string; admin: boolean };
+    const targetUsername = req.params.username.toLowerCase();
+    const fingerprint = req.params.fingerprint;
+
+    // Only allow users to remove keys from their own account, or admins to remove from any account
+    if (username !== targetUsername && !admin) {
+      res.status(403).json({ error: 'Not authorized to remove keys for this user' });
+      return;
+    }
+
+    console.log('Removing SSH key', { targetUsername, fingerprint });
+    try {
+      await db.removePublicKey(targetUsername, fingerprint);
+      res.status(200).json({ message: 'SSH key removed successfully' });
+    } catch (error: any) {
+      console.error('Error removing SSH key:', error);
+
+      // Return specific error message
+      if (error.message === 'User not found') {
+        res.status(404).json({ error: 'User not found' });
+      } else {
+        res.status(500).json({ error: error.message || 'Failed to remove SSH key' });
+      }
+    }
+  },
+);
 
 export default router;
