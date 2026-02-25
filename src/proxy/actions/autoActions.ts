@@ -1,6 +1,6 @@
 import { authorise, reject } from '../../db';
 import { handleAndLogError } from '../../utils/errors';
-import { CompletedAttestation } from '../processors/types';
+import { CompletedAttestation, Rejection } from '../processors/types';
 import { Action } from './Action';
 
 const attemptAutoApproval = async (action: Action) => {
@@ -26,16 +26,16 @@ const attemptAutoApproval = async (action: Action) => {
 
 const attemptAutoRejection = async (action: Action) => {
   try {
-    const attestation: CompletedAttestation = {
+    const rejection: Rejection = {
       timestamp: new Date(),
       automated: true,
-      answers: [],
       reviewer: {
         username: 'system',
         email: 'system@git-proxy.com',
       },
+      reason: 'Auto-rejected by system',
     };
-    await reject(action.id, attestation);
+    await reject(action.id, rejection);
     console.log('Push automatically rejected by system.');
 
     return true;
