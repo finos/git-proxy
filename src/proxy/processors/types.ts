@@ -17,24 +17,25 @@ export interface AttestationAnswer {
   checked: boolean;
 }
 
-export type Attestation = {
+type AttestationBase = {
   reviewer: {
     username: string;
     email: string;
   };
   timestamp: string | Date;
-  questions: Question[];
   automated?: boolean;
 };
 
-export type CompletedAttestation = {
-  reviewer: {
-    username: string;
-    email: string;
-  };
-  timestamp: string | Date;
+export type Attestation = AttestationBase & {
+  questions: Question[];
+};
+
+export type CompletedAttestation = AttestationBase & {
   answers: AttestationAnswer[];
-  automated?: boolean;
+};
+
+export type Rejection = AttestationBase & {
+  reason: string;
 };
 
 export type CommitContent = {

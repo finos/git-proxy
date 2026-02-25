@@ -1,6 +1,6 @@
 import { Action } from '../proxy/actions/Action';
 import MongoDBStore from 'connect-mongo';
-import { CompletedAttestation } from '../proxy/processors/types';
+import { CompletedAttestation, Rejection } from '../proxy/processors/types';
 
 export type PushQuery = {
   error: boolean;
@@ -99,7 +99,7 @@ export interface Sink {
   deletePush: (id: string) => Promise<void>;
   authorise: (id: string, attestation?: CompletedAttestation) => Promise<{ message: string }>;
   cancel: (id: string) => Promise<{ message: string }>;
-  reject: (id: string, attestation?: CompletedAttestation) => Promise<{ message: string }>;
+  reject: (id: string, rejection: Rejection) => Promise<{ message: string }>;
   getRepos: (query?: Partial<RepoQuery>) => Promise<Repo[]>;
   getRepo: (name: string) => Promise<Repo | null>;
   getRepoByUrl: (url: string) => Promise<Repo | null>;

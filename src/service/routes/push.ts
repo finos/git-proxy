@@ -3,7 +3,7 @@ import * as db from '../../db';
 import { PushQuery } from '../../db/types';
 import { AttestationConfig } from '../../config/generated/config';
 import { getAttestationConfig } from '../../config';
-import { AttestationAnswer } from '../../proxy/processors/types';
+import { AttestationAnswer, Rejection } from '../../proxy/processors/types';
 
 interface AuthoriseRequest {
   params: {
@@ -54,6 +54,14 @@ router.post('/:id/reject', async (req: Request<{ id: string }>, res: Response) =
 
   const id = req.params.id;
   const { username } = req.user as { username: string };
+  const { reason } = req.body;
+
+  if (!reason || !reason.trim()) {
+    res.status(400).send({
+      message: 'Rejection reason is required',
+    });
+    return;
+  }
 
   // Get the push request
   const push = await getValidPushOrRespond(id, res);
@@ -80,8 +88,29 @@ router.post('/:id/reject', async (req: Request<{ id: string }>, res: Response) =
   const isAllowed = await db.canUserApproveRejectPush(id, username);
 
   if (isAllowed) {
-    const result = await db.reject(id);
-    console.log(`User ${username} rejected push request for ${id}`);
+    const reviewerList = await db.getUsers({ username });
+    const reviewerEmail = reviewerList[0].email;
+
+    if (!reviewerEmail) {
+      res.status(404).send({
+        message: `There was no registered email address for the reviewer: ${username}`,
+      });
+      return;
+    }
+
+    const rejection: Rejection = {
+      reason,
+      timestamp: new Date(),
+      reviewer: {
+        username,
+        email: reviewerEmail,
+      },
+    };
+
+    const result = await db.reject(id, rejection);
+    console.log(
+      `User ${username} rejected push request for ${id}${reason ? ` with reason: ${reason}` : ''}`,
+    );
     res.send(result);
   } else {
     res.status(403).send({

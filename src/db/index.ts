@@ -6,7 +6,7 @@ import * as mongo from './mongo';
 import * as neDb from './file';
 import { Action } from '../proxy/actions/Action';
 import MongoDBStore from 'connect-mongo';
-import { CompletedAttestation } from '../proxy/processors/types';
+import { CompletedAttestation, Rejection } from '../proxy/processors/types';
 import { processGitUrl } from '../proxy/routes/helper';
 import { initializeFolders } from './file/helper';
 
@@ -170,10 +170,8 @@ export const authorise = (
   attestation?: CompletedAttestation,
 ): Promise<{ message: string }> => start().authorise(id, attestation);
 export const cancel = (id: string): Promise<{ message: string }> => start().cancel(id);
-export const reject = (
-  id: string,
-  attestation?: CompletedAttestation,
-): Promise<{ message: string }> => start().reject(id, attestation);
+export const reject = (id: string, rejection: Rejection): Promise<{ message: string }> =>
+  start().reject(id, rejection);
 export const getRepos = (query?: Partial<RepoQuery>): Promise<Repo[]> => start().getRepos(query);
 export const getRepo = (name: string): Promise<Repo | null> => start().getRepo(name);
 export const getRepoByUrl = (url: string): Promise<Repo | null> => start().getRepoByUrl(url);

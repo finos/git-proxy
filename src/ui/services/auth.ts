@@ -3,6 +3,7 @@ import { getCookie } from '../utils';
 import { PublicUser } from '../../db/types';
 import { BackendResponse } from '../types';
 import { getBaseUrl } from './apiConfig';
+import { getErrorMessage } from '../../utils/errors';
 
 interface AxiosConfig {
   withCredentials: boolean;
@@ -11,6 +12,8 @@ interface AxiosConfig {
     Authorization?: string;
   };
 }
+
+const IS_DEV = process.env.NODE_ENV !== 'production';
 
 /**
  * Gets the current user's information
@@ -21,11 +24,17 @@ export const getUserInfo = async (): Promise<PublicUser | null> => {
     const response = await fetch(`${baseUrl}/api/auth/profile`, {
       credentials: 'include', // Sends cookies
     });
-    if (!response.ok) throw new Error(`Failed to fetch user info: ${response.statusText}`);
+    if (!response.ok) {
+      if (response.status === 401) {
+        return null;
+      }
+      throw new Error(`Failed to fetch user info: ${response.statusText}`);
+    }
     return await response.json();
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    console.error('Error fetching user info:', msg);
+    if (IS_DEV) {
+      console.warn('Error fetching user info:', getErrorMessage(error));
+    }
     return null;
   }
 };

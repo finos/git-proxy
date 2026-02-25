@@ -3,6 +3,7 @@ import { getAxiosConfig, processAuthError } from './auth';
 import { PublicUser } from '../../db/types';
 import { BackendResponse } from '../types';
 import { getBaseUrl, getApiV1BaseUrl } from './apiConfig';
+import { getServiceError, formatErrorMessage } from './errors';
 
 type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
 
@@ -28,14 +29,12 @@ const getUser = async (
     setUser?.(user);
     setIsLoading?.(false);
   } catch (error: unknown) {
-    const axiosError = error as AxiosError<BackendResponse>;
-    const status = axiosError.response?.status;
+    const { status, message } = getServiceError(error, 'Unknown error');
     if (status === 401) {
       setAuth?.(false);
-      setErrorMessage?.(processAuthError(axiosError));
+      setErrorMessage?.(processAuthError(error as AxiosError<BackendResponse>));
     } else {
-      const msg = error instanceof Error ? error.message : String(error);
-      setErrorMessage?.(`Error fetching user: ${msg}`);
+      setErrorMessage?.(formatErrorMessage('Error fetching user', status, message));
     }
     setIsLoading?.(false);
   }
@@ -56,19 +55,13 @@ const getUsers = async (
       getAxiosConfig(),
     );
     setUsers(response.data);
-  } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
-      if (status === 401) {
-        setAuth(false);
-        setErrorMessage(processAuthError(error));
-      } else {
-        const msg = error.response?.data?.message ?? error.message;
-        setErrorMessage(`Error fetching users: ${status} ${msg}`);
-      }
+  } catch (error) {
+    const { status, message } = getServiceError(error, 'Unknown error');
+    if (status === 401) {
+      setAuth(false);
+      setErrorMessage(processAuthError(error as AxiosError<BackendResponse>));
     } else {
-      const msg = error instanceof Error ? error.message : String(error);
-      setErrorMessage(`Error fetching users: ${msg}`);
+      setErrorMessage(formatErrorMessage('Error fetching users', status, message));
     }
   } finally {
     setIsLoading(false);
@@ -84,14 +77,8 @@ const updateUser = async (
     const baseUrl = await getBaseUrl();
     await axios.post(`${baseUrl}/api/auth/gitAccount`, user, getAxiosConfig());
   } catch (error: unknown) {
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
-      const msg = error.response?.data?.message;
-      setErrorMessage(`Error updating user: ${status} ${msg}`);
-    } else {
-      const msg = error instanceof Error ? error.message : String(error);
-      setErrorMessage(`Error updating user: ${msg}`);
-    }
+    const { status, message } = getServiceError(error, 'Unknown error');
+    setErrorMessage(formatErrorMessage('Error updating user', status, message));
     setIsLoading(false);
   }
 };

@@ -12,72 +12,91 @@ import CardFooter from '../../components/Card/CardFooter';
 import Button from '../../components/CustomButtons/Button';
 import Diff from './components/Diff';
 import Attestation from './components/Attestation';
-import AttestationView from './components/AttestationView';
+import AttestationInfo from './components/AttestationInfo';
+import RejectionInfo from './components/RejectionInfo';
+import Reject from './components/Reject';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/git-push';
+import type { ServiceResult } from '../../services/errors';
 import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
 import Snackbar from '@material-ui/core/Snackbar';
-import Tooltip from '@material-ui/core/Tooltip';
-import { AttestationFormData, PushActionView } from '../../types';
+import { PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
 import { generateEmailLink, getGitProvider } from '../../utils';
-import UserLink from '../../components/UserLink/UserLink';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [push, setPush] = useState<PushActionView | null>(null);
-  const [, setAuth] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [message, setMessage] = useState('');
   const [attestation, setAttestation] = useState(false);
   const navigate = useNavigate();
 
-  let isUserAllowedToApprove = true;
-  let isUserAllowedToReject = true;
-
-  const setUserAllowedToApprove = (userAllowedToApprove: boolean) => {
-    isUserAllowedToApprove = userAllowedToApprove;
-  };
-
-  const setUserAllowedToReject = (userAllowedToReject: boolean) => {
-    isUserAllowedToReject = userAllowedToReject;
+  const handleActionFailure = (result: ServiceResult) => {
+    if (result.status === 401) {
+      navigate('/login', { replace: true });
+      return;
+    }
+    setMessage(result.message || 'Something went wrong...');
   };
 
   useEffect(() => {
-    if (id) {
-      getPush(id, setIsLoading, setPush, setAuth, setIsError);
-    }
+    if (!id) return;
+    const load = async () => {
+      setIsLoading(true);
+      const result = await getPush(id);
+      if (result.success && result.data) {
+        setPush(result.data);
+      } else if (result.status === 401) {
+        setIsLoading(false);
+        navigate('/login', { replace: true });
+        return;
+      } else {
+        setIsError(true);
+        setMessage(result.message || 'Something went wrong...');
+      }
+      setIsLoading(false);
+    };
+    load();
   }, [id]);
 
   const authorise = async (attestationData: Array<{ label: string; checked: boolean }>) => {
     if (!id) return;
-    await authorisePush(id, setMessage, setUserAllowedToApprove, attestationData);
-    if (isUserAllowedToApprove) {
+    const result = await authorisePush(id, attestationData);
+    if (result.success) {
       navigate('/dashboard/push/');
+      return;
     }
+    handleActionFailure(result);
   };
 
-  const reject = async () => {
+  const reject = async (reason: string) => {
     if (!id) return;
-    await rejectPush(id, setMessage, setUserAllowedToReject);
-    if (isUserAllowedToReject) {
+    const result = await rejectPush(id, reason);
+    if (result.success) {
       navigate('/dashboard/push/');
+      return;
     }
+    handleActionFailure(result);
   };
 
   const cancel = async () => {
     if (!id) return;
-    await cancelPush(id, setAuth, setIsError);
-    navigate(`/dashboard/push/`);
+    const result = await cancelPush(id);
+    if (result.success) {
+      navigate(`/dashboard/push/`);
+      return;
+    }
+    handleActionFailure(result);
   };
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Something went wrong ...</div>;
+  if (isError) throw new Error(message || 'Something went wrong ...');
   if (!push) return <div>No push data found</div>;
 
   let headerData: { title: string; color: CardHeaderColor } = {
@@ -153,86 +172,17 @@ const Dashboard: React.FC = () => {
                   <Button color='warning' onClick={cancel}>
                     Cancel
                   </Button>
-                  <Button color='danger' onClick={reject}>
-                    Reject
-                  </Button>
+                  <Reject rejectFn={reject} />
                   <Attestation approveFn={authorise} />
                 </div>
               )}
-              {push.attestation && push.authorised && (
-                <div
-                  style={{
-                    background: '#eee',
-                    padding: '10px 20px 10px 20px',
-                    borderRadius: '10px',
-                    color: 'black',
-                    marginTop: '15px',
-                    float: 'right',
-                    position: 'relative',
-                    textAlign: 'left',
-                  }}
-                >
-                  <span style={{ position: 'absolute', top: 0, right: 0 }}>
-                    <CheckCircle
-                      style={{
-                        cursor: push.autoApproved ? 'default' : 'pointer',
-                        transform: 'scale(0.65)',
-                        opacity: push.autoApproved ? 0.5 : 1,
-                      }}
-                      onClick={() => {
-                        if (!push.autoApproved) {
-                          setAttestation(true);
-                        }
-                      }}
-                      htmlColor='green'
-                    />
-                  </span>
-
-                  {push.autoApproved ? (
-                    <div style={{ paddingTop: '15px' }}>
-                      <p>
-                        <strong>Auto-approved by system</strong>
-                      </p>
-                    </div>
-                  ) : (
-                    <>
-                      {isGitHub && (
-                        <UserLink username={push.attestation.reviewer.username}>
-                          <img
-                            style={{ width: '45px', borderRadius: '20px' }}
-                            src={`https://github.com/${push.attestation.reviewer.username}.png`}
-                          />
-                        </UserLink>
-                      )}
-                      <div>
-                        <p>
-                          <UserLink username={push.attestation.reviewer.username} /> approved this
-                          contribution
-                        </p>
-                      </div>
-                    </>
-                  )}
-
-                  <Tooltip
-                    title={moment(push.attestation.timestamp).format(
-                      'dddd, MMMM Do YYYY, h:mm:ss a',
-                    )}
-                    arrow
-                  >
-                    <kbd style={{ color: 'black', float: 'right' }}>
-                      {moment(push.attestation.timestamp).fromNow()}
-                    </kbd>
-                  </Tooltip>
-
-                  {!push.autoApproved && (
-                    <AttestationView
-                      data={push.attestation as AttestationFormData}
-                      attestation={attestation}
-                      setAttestation={setAttestation}
-                    />
-                  )}
-                </div>
-              )}
+              <AttestationInfo
+                push={push}
+                isGitHub={isGitHub}
+                attestation={attestation}
+                setAttestation={setAttestation}
+              />
+              <RejectionInfo push={push} />
             </CardHeader>
             <CardBody>
               <GridContainer>

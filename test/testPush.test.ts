@@ -266,8 +266,31 @@ describe('Push API', () => {
     await loginAsApprover();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
-      .set('Cookie', `${cookie}`);
+      .set('Cookie', `${cookie}`)
+      .send({ reason: 'This contribution does not meet our standards' });
     expect(res.status).toBe(200);
+  });
+
+  it('should NOT allow an authorizer to reject a push without a reason', async () => {
+    await db.writeAudit(TEST_PUSH as any);
+    await loginAsApprover();
+    const res = await request(app)
+      .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
+      .set('Cookie', `${cookie}`)
+      .send({});
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Rejection reason is required');
+  });
+
+  it('should NOT allow an authorizer to reject a push with empty reason', async () => {
+    await db.writeAudit(TEST_PUSH as any);
+    await loginAsApprover();
+    const res = await request(app)
+      .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
+      .set('Cookie', `${cookie}`)
+      .send({ reason: '   ' });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Rejection reason is required');
   });
 
   it('should NOT allow an authorizer to reject their own push', async () => {
@@ -279,7 +302,8 @@ describe('Push API', () => {
     await loginAsApprover();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
-      .set('Cookie', `${cookie}`);
+      .set('Cookie', `${cookie}`)
+      .send({ reason: 'Testing rejection' });
     expect(res.status).toBe(403);
     expect(res.body.message).toBe('Cannot reject your own changes');
   });
@@ -293,7 +317,8 @@ describe('Push API', () => {
     await loginAsCommitter();
     const res = await request(app)
       .post(`/api/v1/push/${pushWithOtherUser.id}/reject`)
-      .set('Cookie', `${cookie}`);
+      .set('Cookie', `${cookie}`)
+      .send({ reason: 'Testing rejection' });
     expect(res.status).toBe(403);
     expect(res.body.message).toBe(
       'User push-test-2 is not authorised to reject changes on this project',
