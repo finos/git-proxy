@@ -13,10 +13,13 @@ module.exports = {
       },
       collapsible: true,
       collapsed: false,
-      items: ['quickstart/intercept', 'quickstart/approve'],
+      items: [
+        'quickstart/installation',
+        'quickstart/usage',
+        'quickstart/intercept',
+        'quickstart/approve',
+      ],
     },
-    'installation',
-    'usage',
     {
       type: 'category',
       label: 'Configuration',
