@@ -85,8 +85,8 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
     }
 
     const result = await addRepo(repo);
-    if (result.success && result.repo) {
-      handleSuccess(result.repo);
+    if (result.success && result.data) {
+      handleSuccess(result.data);
       handleClose();
     } else {
       setError(result.message || 'Failed to add repository');
