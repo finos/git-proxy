@@ -9,6 +9,7 @@
     "group:linters",
     "group:nodeJs"
   ],
+  "ignorePaths": ["experimental/**"],
   "additionalBranchPrefix": "{{parentDir}}-",
   "commitMessageSuffix": "- {{parentDir}} - {{packageFile}}",
   "packageRules": [
