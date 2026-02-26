@@ -1,23 +1,26 @@
-import { Action, Step } from '../../actions';
+import { Request } from 'express';
 import simpleGit from 'simple-git';
-import { EMPTY_COMMIT_HASH } from '../constants';
 
-const isEmptyBranch = async (action: Action) => {
+import { Action, Step } from '../../actions';
+import { EMPTY_COMMIT_HASH } from '../constants';
+import { handleAndLogError } from '../../../utils/errors';
+
+const isEmptyBranch = async (action: Action): Promise<boolean> => {
   if (action.commitFrom === EMPTY_COMMIT_HASH) {
     try {
       const git = simpleGit(`${action.proxyGitPath}/${action.repoName}`);
 
       const type = await git.raw(['cat-file', '-t', action.commitTo || '']);
       return type.trim() === 'commit';
-    } catch (err) {
-      console.log(`Commit ${action.commitTo} not found: ${err}`);
+    } catch (error: unknown) {
+      handleAndLogError(error, `Error checking if branch is empty`);
     }
   }
 
   return false;
 };
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('checkEmptyBranch');
 
   if (action.commitData && action.commitData.length > 0) {

@@ -1,4 +1,5 @@
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
+import { SAMPLE_REPO } from '../../src/proxy/processors/constants';
 
 vi.mock('../../src/db/mongo', () => ({
   getRepoByUrl: vi.fn(),
@@ -27,11 +28,12 @@ describe('db', () => {
   describe('isUserPushAllowed', () => {
     it('returns true if user is in canPush', async () => {
       vi.mocked(mongo.getRepoByUrl).mockResolvedValue({
+        ...SAMPLE_REPO,
         users: {
           canPush: ['alice'],
           canAuthorise: [],
         },
-      } as any);
+      });
 
       const result = await db.isUserPushAllowed('myrepo', 'alice');
       expect(result).toBe(true);
@@ -39,11 +41,12 @@ describe('db', () => {
 
     it('returns true if user is in canAuthorise', async () => {
       vi.mocked(mongo.getRepoByUrl).mockResolvedValue({
+        ...SAMPLE_REPO,
         users: {
           canPush: [],
           canAuthorise: ['bob'],
         },
-      } as any);
+      });
 
       const result = await db.isUserPushAllowed('myrepo', 'bob');
       expect(result).toBe(true);
@@ -51,11 +54,12 @@ describe('db', () => {
 
     it('returns false if user is in neither', async () => {
       vi.mocked(mongo.getRepoByUrl).mockResolvedValue({
+        ...SAMPLE_REPO,
         users: {
           canPush: [],
           canAuthorise: [],
         },
-      } as any);
+      });
 
       const result = await db.isUserPushAllowed('myrepo', 'charlie');
       expect(result).toBe(false);

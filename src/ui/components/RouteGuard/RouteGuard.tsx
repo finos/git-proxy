@@ -6,7 +6,7 @@ import { UIRouteAuth } from '../../../config/generated/config';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
 interface RouteGuardProps {
-  component: React.ComponentType<any>;
+  component: React.ComponentType;
   fullRoutePath: string;
 }
 

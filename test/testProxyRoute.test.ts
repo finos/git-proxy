@@ -373,7 +373,7 @@ describe('proxyFilter', () => {
 
       await proxyFilter?.(mockReq as Request, mockRes as Response);
 
-      expect((mockReq as any).body).toEqual(Buffer.from('test data'));
+      expect(mockReq.body).toEqual(Buffer.from('test data'));
       expect((mockReq as any).bodyRaw).toBeUndefined();
     });
   });

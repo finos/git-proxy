@@ -2,6 +2,7 @@ import { connect, findDocuments, findOneDocument } from './helper';
 import { Action } from '../../proxy/actions';
 import { toClass } from '../helper';
 import { PushQuery } from '../types';
+import { CompletedAttestation, Rejection } from '../../proxy/processors/types';
 
 const collectionName = 'pushes';
 
@@ -43,7 +44,7 @@ export const getPushes = async (
 };
 
 export const getPush = async (id: string): Promise<Action | null> => {
-  const doc = await findOneDocument<any>(collectionName, { id });
+  const doc = await findOneDocument<Action>(collectionName, { id });
   return doc ? (toClass(doc, Action.prototype) as Action) : null;
 };
 
@@ -63,7 +64,10 @@ export const writeAudit = async (action: Action): Promise<void> => {
   await collection.updateOne({ id: data.id }, { $set: data }, options);
 };
 
-export const authorise = async (id: string, attestation: any): Promise<{ message: string }> => {
+export const authorise = async (
+  id: string,
+  attestation?: CompletedAttestation,
+): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -77,7 +81,7 @@ export const authorise = async (id: string, attestation: any): Promise<{ message
   return { message: `authorised ${id}` };
 };
 
-export const reject = async (id: string, rejection: any): Promise<{ message: string }> => {
+export const reject = async (id: string, rejection: Rejection): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);

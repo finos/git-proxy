@@ -1,11 +1,14 @@
-import { Action, Step } from '../../actions';
+import { Request } from 'express';
 import fs from 'fs';
 import git from 'isomorphic-git';
 import gitHttpClient from 'isomorphic-git/http/node';
 
+import { Action, Step } from '../../actions';
+import { getErrorMessage } from '../../../utils/errors';
+
 const dir = './.remote';
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (req: Request, action: Action): Promise<Action> => {
   const step = new Step('pullRemote');
   action.proxyGitPath = `${dir}/${action.id}`;
 
@@ -27,6 +30,11 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       step.log(`Executing ${cmd}`);
 
       const authHeader = req.headers?.authorization;
+      if (!authHeader) {
+        throw new Error(
+          'Authorization header is required for pullRemote. Make sure to provide valid credentials as anonymous pulls are not currently supported.',
+        );
+      }
       const [username, password] = Buffer.from(authHeader.split(' ')[1], 'base64')
         .toString()
         .split(':');
@@ -44,14 +52,12 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
       step.log(`Completed ${cmd}`);
       step.setContent(`Completed ${cmd}`);
-    } catch (e: any) {
-      step.setError(e.toString('utf-8'));
+    } catch (error: unknown) {
+      step.setError(getErrorMessage(error));
 
       //clean-up the check out folder so it doesn't block subsequent attempts
       fs.rmSync(action.proxyGitPath, { recursive: true, force: true });
       step.log(`.remote is deleted!`);
-
-      throw e;
     } finally {
       action.addStep(step);
     }

@@ -10,6 +10,7 @@ import { User } from '../../db/types';
 import { AuthenticationElement } from '../../config/generated/config';
 
 import { isAdminUser, toPublicUser } from './utils';
+import { handleAndLogError } from '../../utils/errors';
 
 const router = express.Router();
 const passport = getPassport();
@@ -66,9 +67,9 @@ const loginSuccessHandler = () => async (req: Request, res: Response) => {
       message: 'success',
       user: currentUser,
     });
-  } catch (e) {
-    console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
-    res.status(500).send('Failed to login').end();
+  } catch (error: unknown) {
+    const msg = handleAndLogError(error, 'Error logging user in');
+    res.status(500).send(`Failed to login: ${msg}`).end();
   }
 };
 
@@ -103,28 +104,31 @@ router.post(
 router.get('/openidconnect', passport.authenticate(authStrategies['openidconnect'].type));
 
 router.get('/openidconnect/callback', (req: Request, res: Response, next: NextFunction) => {
-  passport.authenticate(authStrategies['openidconnect'].type, (err: any, user: any, info: any) => {
-    if (err) {
-      console.error('Authentication error:', err);
-      return res.status(500).end();
-    }
-    if (!user) {
-      console.error('No user found:', info);
-      return res.status(401).end();
-    }
-    req.logIn(user, (err) => {
+  passport.authenticate(
+    authStrategies['openidconnect'].type,
+    (err: unknown, user: Partial<db.User>, info: unknown) => {
       if (err) {
-        console.error('Login error:', err);
+        console.error('Authentication error:', err);
         return res.status(500).end();
       }
-      console.log('Logged in successfully. User:', user);
-      return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
-    });
-  })(req, res, next);
+      if (!user) {
+        console.error('No user found:', info);
+        return res.status(401).end();
+      }
+      req.logIn(user, (err) => {
+        if (err) {
+          console.error('Login error:', err);
+          return res.status(500).end();
+        }
+        console.log('Logged in successfully. User:', user);
+        return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
+      });
+    },
+  )(req, res, next);
 });
 
 router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
-  req.logout((err: any) => {
+  req.logout((err: unknown) => {
     if (err) return next(err);
   });
   res.clearCookie('connect.sid');
@@ -204,11 +208,12 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
     user.gitAccount = req.body.gitAccount;
     db.updateUser(user);
     res.status(200).end();
-  } catch (e: any) {
+  } catch (error: unknown) {
+    const msg = handleAndLogError(error, 'Failed to update git account');
     res
       .status(500)
       .send({
-        message: `Failed to update git account: ${e.message}`,
+        message: msg,
       })
       .end();
   }
@@ -247,11 +252,14 @@ router.post('/create-user', async (req: Request, res: Response) => {
         username,
       })
       .end();
-  } catch (error: any) {
-    console.error('Error creating user:', error);
-    res.status(500).send({
-      message: error.message || 'Failed to create user',
-    });
+  } catch (error: unknown) {
+    const msg = handleAndLogError(error, 'Failed to create user');
+    res
+      .status(500)
+      .send({
+        message: msg,
+      })
+      .end();
   }
 });
 

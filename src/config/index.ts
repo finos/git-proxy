@@ -7,6 +7,7 @@ import { Configuration } from './types';
 import { serverConfig } from './env';
 import { getConfigFile } from './file';
 import { validateConfig } from './validators';
+import { handleAndLogError, handleAndThrowError } from '../utils/errors';
 
 // Cache for current configuration
 let _currentConfig: GitProxyConfig | null = null;
@@ -62,9 +63,8 @@ function loadFullConfiguration(): GitProxyConfig {
       // Don't use QuickType validation for partial configurations
       const rawUserConfig = JSON.parse(userConfigContent);
       userSettings = cleanUndefinedValues(rawUserConfig);
-    } catch (error) {
-      console.error(`Error loading user config from ${userConfigFile}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      handleAndThrowError(error, `Error loading user config from ${userConfigFile}`);
     }
   }
 
@@ -321,14 +321,14 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     await proxy.start();
 
     console.log('Services restarted with new configuration');
-  } catch (error) {
-    console.error('Failed to apply new configuration:', error);
+  } catch (error: unknown) {
+    handleAndLogError(error, 'Failed to apply new configuration');
     // Attempt to restart with previous config
     try {
       const proxy = require('../proxy');
       await proxy.start();
-    } catch (startError) {
-      console.error('Failed to restart services:', startError);
+    } catch (startError: unknown) {
+      handleAndLogError(startError, 'Failed to restart services');
     }
   }
 };
@@ -364,7 +364,7 @@ export const reloadConfiguration = async () => {
 try {
   initializeConfigLoader();
   console.log('Configuration loaded successfully');
-} catch (error) {
-  console.error('Failed to load configuration:', error);
+} catch (error: unknown) {
+  handleAndThrowError(error, 'Failed to load configuration');
   throw error;
 }

@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { getAxiosConfig } from './auth.js';
 import { Repo } from '../../db/types';
-import { RepoView } from '../types';
+import { BackendResponse, RepoView } from '../types';
 import { getApiV1BaseUrl } from './apiConfig';
 import { ServiceResult, getServiceError, errorResult, successResult } from './errors';
 
@@ -18,7 +18,7 @@ const canAddUser = async (repoId: string, user: string, action: string) => {
         return !repo.users.canPush.includes(user);
       }
     })
-    .catch((error: any) => {
+    .catch((error: unknown) => {
       const { message } = getServiceError(error, 'Failed to validate repo permissions');
       throw new Error(message);
     });
@@ -44,7 +44,7 @@ const getRepos = async (
       a.name.localeCompare(b.name),
     );
     return successResult(sortedRepos);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return errorResult(error, 'Failed to load repositories');
   }
 };
@@ -56,7 +56,7 @@ const getRepo = async (id: string): Promise<ServiceResult<RepoView>> => {
   try {
     const response = await axios<RepoView>(url.toString(), getAxiosConfig());
     return successResult(response.data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return errorResult(error, 'Failed to load repository');
   }
 };
@@ -68,7 +68,7 @@ const addRepo = async (repo: RepoView): Promise<ServiceResult<RepoView>> => {
   try {
     const response = await axios.post<RepoView>(url.toString(), repo, getAxiosConfig());
     return successResult(response.data);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return errorResult(error, 'Failed to add repository');
   }
 };
@@ -79,7 +79,7 @@ const addUser = async (repoId: string, user: string, action: string): Promise<vo
     const apiV1Base = await getApiV1BaseUrl();
     const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}`);
     const data = { username: user };
-    await axios.patch(url.toString(), data, getAxiosConfig()).catch((error: any) => {
+    await axios.patch(url.toString(), data, getAxiosConfig()).catch((error: unknown) => {
       const { message } = getServiceError(error, 'Failed to add user');
       console.log(message);
       throw new Error(message);
@@ -94,7 +94,7 @@ const deleteUser = async (user: string, repoId: string, action: string): Promise
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}/${user}`);
 
-  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
+  await axios.delete(url.toString(), getAxiosConfig()).catch((error: unknown) => {
     const { message } = getServiceError(error, 'Failed to remove user');
     console.log(message);
     throw new Error(message);
@@ -105,7 +105,7 @@ const deleteRepo = async (repoId: string): Promise<void> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}/delete`);
 
-  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
+  await axios.delete(url.toString(), getAxiosConfig()).catch((error: unknown) => {
     const { message } = getServiceError(error, 'Failed to delete repository');
     console.log(message);
     throw new Error(message);

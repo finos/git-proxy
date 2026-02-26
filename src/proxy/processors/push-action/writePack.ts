@@ -1,9 +1,12 @@
-import path from 'path';
-import { Action, Step } from '../../actions';
 import { spawnSync } from 'child_process';
+import { Request } from 'express';
 import fs from 'fs';
+import path from 'path';
 
-const exec = async (req: any, action: Action) => {
+import { Action, Step } from '../../actions';
+import { getErrorMessage } from '../../../utils/errors';
+
+const exec = async (req: Request, action: Action) => {
   const step = new Step('writePack');
   try {
     if (!action.proxyGitPath || !action.repoName) {
@@ -18,7 +21,7 @@ const exec = async (req: any, action: Action) => {
       encoding: 'utf-8',
     });
     const before = new Set(fs.readdirSync(packDir).filter((f) => f.endsWith('.idx')));
-    const content = spawnSync('git', ['receive-pack', action.repoName], {
+    spawnSync('git', ['receive-pack', action.repoName], {
       cwd: action.proxyGitPath,
       input: req.body,
     });
@@ -27,9 +30,9 @@ const exec = async (req: any, action: Action) => {
     ];
     action.newIdxFiles = newIdxFiles;
     step.log(`new idx files: ${newIdxFiles}`);
-  } catch (e: any) {
-    step.setError(e.toString('utf-8'));
-    throw e;
+  } catch (error: unknown) {
+    const msg = getErrorMessage(error);
+    step.setError(msg);
   } finally {
     action.addStep(step);
   }

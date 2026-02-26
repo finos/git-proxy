@@ -1,3 +1,5 @@
+import { IncomingHttpHeaders } from 'http';
+
 /** Regex used to analyze un-proxied Git URLs */
 const GIT_URL_REGEX = /(.+:\/\/)([^/]+)(\/.+\.git)(\/.+)*/;
 
@@ -150,7 +152,7 @@ export const processGitURLForNameAndOrg = (gitUrl: string): GitNameBreakdown | n
  * @return {boolean} If true, this is a valid and expected git request.
  * Otherwise, false.
  */
-export const validGitRequest = (gitPath: string, headers: any): boolean => {
+export const validGitRequest = (gitPath: string, headers: IncomingHttpHeaders): boolean => {
   const { 'user-agent': agent, accept } = headers;
   if (!agent) {
     return false;

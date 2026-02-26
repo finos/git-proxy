@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fc from 'fast-check';
 import { Action, Step } from '../../src/proxy/actions';
 import type { Mock } from 'vitest';
+import { Request } from 'express';
 
 vi.mock('../../src/db', () => ({
   getUsers: vi.fn(),
@@ -32,11 +33,11 @@ describe('checkUserPushPermission', () => {
 
   describe('exec', () => {
     let action: Action;
-    let req: any;
+    let req: Request;
     let stepLogSpy: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-      req = {};
+      req = {} as Request;
       action = new Action(
         '1234567890',
         'push',

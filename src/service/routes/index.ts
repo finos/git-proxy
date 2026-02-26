@@ -7,8 +7,9 @@ import users from './users';
 import healthcheck from './healthcheck';
 import config from './config';
 import { jwtAuthHandler } from '../passport/jwtAuthHandler';
+import { Proxy } from '../../proxy';
 
-const routes = (proxy: any) => {
+const routes = (proxy: Proxy) => {
   const router = express.Router();
   router.use('/api', home);
   router.use('/api/auth', auth.router);

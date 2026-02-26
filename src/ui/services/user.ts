@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
 import { PublicUser } from '../../db/types';
+import { BackendResponse } from '../types';
 import { getBaseUrl, getApiV1BaseUrl } from './apiConfig';
 import { getServiceError, formatErrorMessage } from './errors';
 
@@ -27,11 +28,11 @@ const getUser = async (
 
     setUser?.(user);
     setIsLoading?.(false);
-  } catch (error) {
+  } catch (error: unknown) {
     const { status, message } = getServiceError(error, 'Unknown error');
     if (status === 401) {
       setAuth?.(false);
-      setErrorMessage?.(processAuthError(error as AxiosError));
+      setErrorMessage?.(processAuthError(error as AxiosError<BackendResponse>));
     } else {
       setErrorMessage?.(formatErrorMessage('Error fetching user', status, message));
     }
@@ -58,7 +59,7 @@ const getUsers = async (
     const { status, message } = getServiceError(error, 'Unknown error');
     if (status === 401) {
       setAuth(false);
-      setErrorMessage(processAuthError(error as AxiosError));
+      setErrorMessage(processAuthError(error as AxiosError<BackendResponse>));
     } else {
       setErrorMessage(formatErrorMessage('Error fetching users', status, message));
     }
@@ -75,7 +76,7 @@ const updateUser = async (
   try {
     const baseUrl = await getBaseUrl();
     await axios.post(`${baseUrl}/api/auth/gitAccount`, user, getAxiosConfig());
-  } catch (error) {
+  } catch (error: unknown) {
     const { status, message } = getServiceError(error, 'Unknown error');
     setErrorMessage(formatErrorMessage('Error updating user', status, message));
     setIsLoading(false);

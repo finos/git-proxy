@@ -7,6 +7,7 @@ import * as ldaphelper from './ldaphelper';
 import * as db from '../../db';
 import { getAuthMethods } from '../../config';
 import { ADProfile } from './types';
+import { handleAndLogError } from '../../utils/errors';
 
 export const type = 'activedirectory';
 
@@ -43,7 +44,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
         req: Request & { user?: ADProfile },
         profile: ADProfile,
         ad: ActiveDirectory,
-        done: (err: any, user: any) => void,
+        done: (err: unknown, user: unknown) => void,
       ) {
         try {
           profile.username = profile._json.sAMAccountName?.toLowerCase();
@@ -63,8 +64,11 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
               const message = `User it not a member of ${userGroup}`;
               return done(message, null);
             }
-          } catch (err: any) {
-            const message = `An error occurred while checking if the user is a member of the user group: ${err.message}`;
+          } catch (error: unknown) {
+            const message = handleAndLogError(
+              error,
+              'An error occurred while checking if the user is a member of the user group',
+            );
             return done(message, null);
           }
 
@@ -72,9 +76,11 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
           let isAdmin = false;
           try {
             isAdmin = await ldaphelper.isUserInAdGroup(req, profile, ad, domain, adminGroup);
-          } catch (err: any) {
-            const message = `An error occurred while checking if the user is a member of the admin group: ${err.message}`;
-            console.error(message, err); // don't return an error for this case as you may still be a user
+          } catch (error: unknown) {
+            handleAndLogError(
+              error,
+              'An error occurred while checking if the user is a member of the admin group',
+            );
           }
 
           profile.admin = isAdmin;
@@ -91,19 +97,25 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
           await db.updateUser(user);
 
           return done(null, user);
-        } catch (err: any) {
-          console.log(`Error authenticating AD user: ${err.message}`);
-          return done(err, null);
+        } catch (error: unknown) {
+          const message = handleAndLogError(error, 'Error authenticating AD user');
+          return done(message, null);
         }
       },
     ),
   );
 
-  passport.serializeUser(function (user: any, done: (err: any, user: any) => void) {
+  passport.serializeUser(function (
+    user: Partial<db.User>,
+    done: (err: unknown, user: Partial<db.User>) => void,
+  ) {
     done(null, user);
   });
 
-  passport.deserializeUser(function (user: any, done: (err: any, user: any) => void) {
+  passport.deserializeUser(function (
+    user: Partial<db.User>,
+    done: (err: unknown, user: Partial<db.User>) => void,
+  ) {
     done(null, user);
   });
 

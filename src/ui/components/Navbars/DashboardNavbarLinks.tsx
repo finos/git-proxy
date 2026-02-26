@@ -58,8 +58,9 @@ const DashboardNavbarLinks: React.FC = () => {
         setAuth(false);
         navigate(0);
       }
-    } catch (error) {
-      console.error('Logout failed:', error);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('Logout failed:', msg);
     }
   };
 

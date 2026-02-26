@@ -1,3 +1,4 @@
+import { Express } from 'express';
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as db from '../src/db';
@@ -43,8 +44,8 @@ const fetchRepoOrThrow = async (url: string) => {
 };
 
 describe('add new repo', () => {
-  let app: any;
-  let proxy: any;
+  let app: Express;
+  let proxy: Proxy;
   let cookie: string;
   const repoIds: string[] = [];
 

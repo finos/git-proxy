@@ -1,8 +1,11 @@
 import path from 'path';
 import { Action, Step } from '../../actions';
 import { spawnSync } from 'child_process';
+import { EMPTY_COMMIT_HASH } from '../constants';
+import { Request } from 'express';
+import { getErrorMessage } from '../../../utils/errors';
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('checkHiddenCommits');
 
   try {
@@ -16,8 +19,7 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
     // build introducedCommits set
     const introducedCommits = new Set<string>();
-    const revRange =
-      oldOid === '0000000000000000000000000000000000000000' ? newOid : `${oldOid}..${newOid}`;
+    const revRange = oldOid === EMPTY_COMMIT_HASH ? newOid : `${oldOid}..${newOid}`;
     const revList = spawnSync('git', ['rev-list', revRange], { cwd: repoPath, encoding: 'utf-8' })
       .stdout.trim()
       .split('\n')
@@ -68,9 +70,10 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       step.log('All pack commits are referenced in the introduced range.');
       step.setContent(`All ${packCommits.size} pack commits are within introduced commits.`);
     }
-  } catch (e: any) {
-    step.setError(e.message);
-    throw e;
+  } catch (error: unknown) {
+    const msg = getErrorMessage(error);
+    step.setError(msg);
+    throw error;
   } finally {
     action.addStep(step);
   }
