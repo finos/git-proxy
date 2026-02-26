@@ -2,55 +2,58 @@
 title: Contributing
 ---
 
-Here's how to get setup for contributing to GitProxy.
+GitProxy is a [FINOS](https://www.finos.org/) project. We welcome contributions from anyone in the community.
 
-## Setup
-The GitProxy project relies on the following pre-requisites:
+For developer setup, building, testing, and coding guidelines, see [`CONTRIBUTING.md`](https://github.com/finos/git-proxy/blob/main/CONTRIBUTING.md) in the repository.
 
-- [Node](https://nodejs.org/en/download) (20+)
-- [npm](https://npmjs.com/) (8+)
-- [git](https://git-scm.com/downloads) or equivalent Git client. It must support HTTP/S.
+## Contribution Process
 
-Once you have the above tools installed & setup, clone the repository and run:
+1. **Check for existing issues** — search [open issues](https://github.com/finos/git-proxy/issues) to see if someone is already working on what you have in mind.
+2. **Open an issue** — if nothing exists, [create one](https://github.com/finos/git-proxy/issues/new) describing the change and the problem it solves.
+3. **Discuss** — respond to questions or suggestions from maintainers and other contributors.
+4. **Fork & submit a PR** — prepare your contribution on a feature branch and open a pull request against `main`.
 
-```bash
-$ npm install
-```
+If this is your first open source contribution, the [first-contributions guide](https://github.com/firstcontributions/first-contributions#first-contributions) is a great starting point.
 
-This will install the full project's dependencies. Once complete, you can run the app locally:
+## Contributor License Agreement (CLA)
 
-```bash
-$ npm run start  # Run both proxy server & dashboard UI
-$ npm run server # Run only the proxy server
-$ npm run client # Run only the UI
-```
+All contributors must have a CLA on file with FINOS before pull requests can be merged. Review the FINOS [contribution requirements](https://community.finos.org/docs/governance/Software-Projects/contribution) and submit (or have your employer submit) the required CLA via [EasyCLA](https://community.finos.org/docs/governance/Software-Projects/easycla).
 
-## Testing
+## Governance
 
-Currently, we use Mocha and Chai for unit testing and Cypress for E2E testing. For more details on how to use these testing libraries, check out our [Testing documentation](testing).
+The project is governed by the [Linux Foundation Antitrust Policy](https://www.linuxfoundation.org/antitrust-policy/) and the FINOS [IP Policy](https://community.finos.org/assets/files/IP-Policy-fe5925025fc0a57b1cbed64f86b26a73.pdf), [Code of Conduct](https://www.finos.org/code-of-conduct), [Collaborative Principles](https://github.com/finos/git-proxy/blob/main/Collaborative-Principles.md), and [Community Meeting Procedures](https://community.finos.org/docs/journey/engage#meet-the-community).
 
-### Patch coverage requirements
+### Roles
 
-Newly introduced changes **must have over 80% unit test coverage**. This is enforced by our CI, and in practice, only few exceptions (such as emergency fixes) are allowed to skip this requirement. Make sure to add thorough unit tests to your PR to help reviewers approve your PR more quickly!
+- **Contributor** — anyone who submits a contribution (code, issues, comments, documentation, media, or any combination).
+- **Maintainer** — a Contributor who, by virtue of their contribution history, has been given write access to the repository and may merge approved contributions.
+- **Lead Maintainer** — the project's interface with the FINOS team and Board. Responsible for communicating on behalf of the project and for ensuring the project is following FINOS policies and procedures.
 
-## Configuration schema
-The configuration for GitProxy includes a JSON Schema ([`config.schema.json`](https://github.com/finos/git-proxy/blob/main/config.schema.json)) to define the expected properties used by the application. When adding new configuration properties to GitProxy, ensure that the schema is updated with any new, removed or changed properties. See [JSON Schema docs for specific syntax](https://json-schema.org/docs).
+### Contribution Rules
 
-When updating the configuration schema, you must also re-generate the reference doc used here on the site. To generate the reference documentation, [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) is used to output the Markdown.
+- All contributions **must** be submitted as pull requests, including contributions by Maintainers.
+- All pull requests **must** be reviewed by a Maintainer (other than the contributor) before being merged.
+- Pull requests for non-trivial contributions **must** remain open long enough for all Maintainers to review and comment.
+- After the review period, if no Maintainer objects, any Maintainer **may** merge.
+- If any Maintainer objects, the Maintainers **should** try to reach consensus through discussion. If consensus cannot be reached or the contribution is deemed inappropriate or otherwise unable to be accepted into the project, the pull request will be closed.
 
-1. Install [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans?tab=readme-ov-file#installation) (requires Python)
-2. Run `npm run gen-schema-doc`.
+If a pull request is closed due to objections, the contributor may address the concerns and re-open it for review. We encourage contributors to engage in good faith with any feedback and to seek help from the community if needed. If a contributor feels that their contribution was unfairly rejected, they may request a review by the Maintainer team and/or raise the issue in the community meeting.
 
-## Submitting a pull request
-<!-- Instructions for forking and PRs + note about FINOS CLA as a pre-req before merging -->
+### Becoming a Maintainer
 
-## About FINOS contributions
-<!-- Notes around signing the CLA. See existing CONTRIBUTING.md -->
+Any Contributor who has made a substantial contribution may apply (or be nominated) to become a Maintainer. Existing Maintainers approve nominations via the voting process above.
 
 ## Community Meetings
-Join our [fortnightly Zoom meeting](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595) on Monday, 4PM BST (odd week numbers).  
-🌍 [Convert to your local time](https://www.timeanddate.com/worldclock)  
-[Click here](https://calendar.google.com/calendar/event?action=TEMPLATE&tmeid=MTRvbzM0NG01dWNvNGc4OGJjNWphM2ZtaTZfMjAyNTA2MDJUMTUwMDAwWiBzYW0uaG9sbWVzQGNvbnRyb2wtcGxhbmUuaW8&tmsrc=sam.holmes%40control-plane.io&scp=ALL) for the recurring Google Calendar meeting invite. 
-Alternatively, send an e-mail to [help@finos.org](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595#:~:text=Need-,an,-invite%3F) to get a calendar invitation. 
+
+Join our [fortnightly Zoom meeting](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595) on Monday, 4PM BST (odd week numbers).
+[Convert to your local time](https://www.timeanddate.com/worldclock).
+[Add to Google Calendar](https://calendar.google.com/calendar/event?action=TEMPLATE&tmeid=MTRvbzM0NG01dWNvNGc4OGJjNWphM2ZtaTZfMjAyNTA2MDJUMTUwMDAwWiBzYW0uaG9sbWVzQGNvbnRyb2wtcGxhbmUuaW8&tmsrc=sam.holmes%40control-plane.io&scp=ALL).
+Alternatively, email [help@finos.org](mailto:help@finos.org) for a calendar invitation.
 
 Previous recordings available at: https://openprofile.dev
+
+## Contact
+
+- **Slack**: [#git-proxy](https://finos-lf.slack.com/archives/C06LXNW0W76) on the FINOS Slack workspace
+- **Issues**: [github.com/finos/git-proxy/issues](https://github.com/finos/git-proxy/issues)
+- **Mailing list**: [git-proxy+subscribe@lists.finos.org](mailto:git-proxy+subscribe@lists.finos.org)

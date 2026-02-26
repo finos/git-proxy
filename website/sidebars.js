@@ -46,7 +46,7 @@ module.exports = {
       },
       collapsible: true,
       collapsed: false,
-      items: ['development/contributing', 'development/plugins', 'development/testing'],
+      items: ['development/contributing', 'development/plugins'],
     },
   ],
 };

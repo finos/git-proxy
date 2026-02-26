@@ -41,15 +41,13 @@ jobs:
           git config --global init.defaultBranch main
 
       - name: Build and start services with Docker Compose
-        run: docker compose up -d --build
+        run: docker compose up -d --build --wait || true
 
-      - name: Wait for services to be ready
+      - name: Debug service state
+        if: always()
         run: |
-          timeout 60 bash -c '
-            while [ "$(docker compose ps | grep -c "Up")" -ne 3 ]; do
-              sleep 2
-            done
-          ' || { echo "Service readiness check failed:"; docker compose ps; exit 1; }
+          docker compose ps
+          docker compose logs
 
       - name: Run E2E tests
         run: npm run test:e2e

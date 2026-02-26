@@ -10,8 +10,10 @@ services:
       # If using Podman, you might need to add the :Z or :z option for SELinux
       # - ./test-e2e.proxy.config.json:/app/test-e2e.proxy.config.json:ro,Z
     depends_on:
-      - mongodb
-      - git-server
+      mongodb:
+        condition: service_healthy
+      git-server:
+        condition: service_healthy
     networks:
       - git-network
     environment:
@@ -30,6 +32,12 @@ services:
       #   - Comma-separated list = 'http://localhost:3000,https://example.com'
       #   - Unset/empty = Same-origin only (most secure)
       - ALLOWED_ORIGINS=
+    healthcheck:
+      test: ['CMD-SHELL', 'curl -sf http://localhost:8081/api/v1/healthcheck || exit 1']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
   mongodb:
     image: mongo:7@sha256:606f8e029603330411a7dd10b5ffd50eefc297fc80cee89f10a455e496a76ae7
     ports:
@@ -40,6 +48,12 @@ services:
       - MONGO_INITDB_DATABASE=gitproxy
     volumes:
       - mongodb_data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
 
   git-server:
     build: localgit/
@@ -50,6 +64,16 @@ services:
     networks:
       - git-network
     hostname: git-server
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'GIT_TERMINAL_PROMPT=0 GIT_SSL_NO_VERIFY=1 git ls-remote https://admin:admin123@localhost:8443/test-owner/test-repo.git HEAD || exit 1',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
 
 networks:
   git-network:
