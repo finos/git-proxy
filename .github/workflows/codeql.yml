@@ -34,14 +34,14 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@c0fc915677567258ee3c194d03ffe7ae3dc8d741 # ratchet:github/codeql-action/init@v4
+        uses: github/codeql-action/init@0ec47d036c68ae0cf94c629009b1029407111281 # ratchet:github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@c0fc915677567258ee3c194d03ffe7ae3dc8d741 # ratchet:github/codeql-action/autobuild@v4
+        uses: github/codeql-action/autobuild@0ec47d036c68ae0cf94c629009b1029407111281 # ratchet:github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@c0fc915677567258ee3c194d03ffe7ae3dc8d741 # ratchet:github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@0ec47d036c68ae0cf94c629009b1029407111281 # ratchet:github/codeql-action/analyze@v4
         with:
           category: '/language:${{matrix.language}}'
