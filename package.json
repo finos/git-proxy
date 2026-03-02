@@ -125,7 +125,6 @@
     "react-html-parser": "^2.0.2",
     "react-router-dom": "6.30.3",
     "simple-git": "^3.30.0",
-    "supertest": "^7.2.2",
     "uuid": "^13.0.0",
     "validator": "^13.15.26",
     "yargs": "^17.7.2"
