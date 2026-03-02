@@ -268,7 +268,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
       // Get the test-repo repository and add permissions
       const repos = await getRepos(adminCookie);
       const testRepo = repos.find(
-        (r: any) => r.url === 'https://git-server:8443/coopernetes/test-repo.git',
+        (r: any) => r.url === 'https://git-server:8443/test-owner/test-repo.git',
       );
 
       if (testRepo && testRepo._id) {
@@ -299,11 +299,11 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
         const baseUrl = new URL(testConfig.gitProxyUrl);
         baseUrl.username = testConfig.gitUsername;
         baseUrl.password = testConfig.gitPassword;
-        const repoUrl = `${baseUrl.toString()}/coopernetes/test-repo.git`;
+        const repoUrl = `${baseUrl.toString()}/test-owner/test-repo.git`;
         const cloneDir: string = path.join(tempDir, 'test-repo-push');
 
         console.log(
-          `[TEST] Testing push operation to ${testConfig.gitProxyUrl}/coopernetes/test-repo.git`,
+          `[TEST] Testing push operation to ${testConfig.gitProxyUrl}/test-owner/test-repo.git`,
         );
 
         try {
@@ -421,7 +421,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
         const baseUrl = new URL(testConfig.gitProxyUrl);
         baseUrl.username = authorizedUser.username;
         baseUrl.password = authorizedUser.password;
-        const repoUrl = `${baseUrl.toString()}/coopernetes/test-repo.git`;
+        const repoUrl = `${baseUrl.toString()}/test-owner/test-repo.git`;
         const cloneDir: string = path.join(tempDir, 'test-repo-authorized-push');
 
         console.log(`[TEST] Testing authorized push with user ${authorizedUser.username}`);
@@ -583,7 +583,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
         const baseUrl = new URL(testConfig.gitProxyUrl);
         baseUrl.username = authorizedUser.username;
         baseUrl.password = authorizedUser.password;
-        const repoUrl = `${baseUrl.toString()}/coopernetes/test-repo.git`;
+        const repoUrl = `${baseUrl.toString()}/test-owner/test-repo.git`;
         const cloneDir: string = path.join(tempDir, 'test-repo-approved-push');
 
         console.log(

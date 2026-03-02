@@ -126,19 +126,19 @@ Loaded plugin: FooPlugin
 To develop a new plugin, you must add `@finos/git-proxy` as a [peer dependency](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#peerdependencies). The plugin & proxy classes can then be imported from `@finos/git-proxy` via the following extension points:
 
 ```js
-import { PushActionPlugin } from '@finos/git-proxy/src/plugin.js'
+import { PushActionPlugin } from '@finos/git-proxy/plugin'
 ```
 - Use this class to execute as an action in the proxy chain during a `git push`
 
 
 ```js
-import { PullActionPlugin } from '@finos/git-proxy/src/plugin.js'
+import { PullActionPlugin } from '@finos/git-proxy/plugin'
 ```
 - Use this class to execute as an action in the proxy chain during a `git fetch`
 
 
 ```js
-import { Step, Action } from '@finos/git-proxy/src/proxy/actions/index.js'
+import { Step, Action } from '@finos/git-proxy/proxy/actions'
 ```
 - These are internal classes which act as carriers for `git` state during proxying. Plugins should modify the passed in `Action` for affecting any global state of the git operation and add its own custom `Step` object to capture the plugin's own internal state (logs, errored/blocked status, etc).
 
@@ -149,7 +149,7 @@ Please see the [sample plugin package included in the repo](https://github.com/f
 If your plugin relies on custom state, it is recommended to create subclasses in the following manner:
 
 ```javascript
-import { PushActionPlugin } from "@finos/git-proxy/src/plugin.js";
+import { PushActionPlugin } from "@finos/git-proxy/plugin";
 
 class FooPlugin extends PushActionPlugin {
   constructor() {
@@ -183,8 +183,8 @@ $ npm install --save-peer @finos/git-proxy
 2. Create a new JavaScript file for your plugin. The file should export an instance of `PushActionPlugin` or `PullActionPlugin`:
 
 ```javascript
-import { PushActionPlugin } from "@finos/git-proxy/src/plugin.js";
-import { Step } from "@finos/git-proxy/src/proxy/actions/index.js";
+import { PushActionPlugin } from "@finos/git-proxy/plugin";
+import { Step } from "@finos/git-proxy/proxy/actions";
 
 //Note: Only use a default export if you do not rely on any state. Otherwise, create a sub-class of [Push/Pull]ActionPlugin
 export default new PushActionPlugin(function(req, action) {

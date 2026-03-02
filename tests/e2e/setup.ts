@@ -19,14 +19,14 @@
  */
 
 import { beforeAll } from 'vitest';
+import { execSync } from 'child_process';
 
 // Environment configuration - can be overridden for different environments
 export const testConfig = {
   gitProxyUrl: process.env.GIT_PROXY_URL || 'http://localhost:8000/git-server:8443',
   gitProxyUiUrl: process.env.GIT_PROXY_UI_URL || 'http://localhost:8081',
+  gitServerUrl: process.env.GIT_SERVER_URL || 'https://localhost:8443',
   timeout: parseInt(process.env.E2E_TIMEOUT || '30000'),
-  maxRetries: parseInt(process.env.E2E_MAX_RETRIES || '30'),
-  retryDelay: parseInt(process.env.E2E_RETRY_DELAY || '2000'),
   // Git credentials for authentication
   gitUsername: process.env.GIT_USERNAME || 'admin',
   gitPassword: process.env.GIT_PASSWORD || 'admin123',
@@ -39,96 +39,75 @@ export const testConfig = {
       : 'http://localhost:8000/'),
 };
 
+const INFRA_HINT =
+  'The E2E test infrastructure is not running. ' +
+  'Start it with: docker compose up -d\n' +
+  'See CONTRIBUTING.md for details.';
+
 /**
- * Configures git credentials for authentication in a temporary directory
- * @param {string} tempDir - The temporary directory to configure git in
+ * Verifies GitProxy is reachable by hitting its healthcheck endpoint.
+ * Fails immediately instead of retrying — if the infrastructure isn't
+ * running we want to fail fast with a helpful message.
  */
-export function configureGitCredentials(tempDir: string): void {
-  const { execSync } = require('child_process');
-
+async function checkGitProxy(): Promise<void> {
+  const healthUrl = `${testConfig.gitProxyUiUrl}/api/v1/healthcheck`;
   try {
-    // Configure git credentials using URL rewriting
-    const baseUrlParsed = new URL(testConfig.gitProxyBaseUrl);
-
-    // Initialize git if not already done
-    try {
-      execSync('git rev-parse --git-dir', { cwd: tempDir, encoding: 'utf8', stdio: 'pipe' });
-    } catch {
-      execSync('git init', { cwd: tempDir, encoding: 'utf8' });
+    const response = await fetch(healthUrl, {
+      method: 'GET',
+      signal: AbortSignal.timeout(5000),
+    });
+    if (response.ok || response.status < 500) {
+      console.log(`GitProxy is reachable at ${testConfig.gitProxyUiUrl}`);
+      return;
     }
-
-    // Configure multiple URL patterns to catch all variations
-    const patterns = [
-      // Most important: the proxy server itself (this is what's asking for auth)
-      {
-        insteadOf: `${baseUrlParsed.protocol}//${baseUrlParsed.host}`,
-        credUrl: `${baseUrlParsed.protocol}//${testConfig.gitUsername}:${testConfig.gitPassword}@${baseUrlParsed.host}`,
-      },
-      // Base URL with trailing slash
-      {
-        insteadOf: testConfig.gitProxyBaseUrl,
-        credUrl: `${baseUrlParsed.protocol}//${testConfig.gitUsername}:${testConfig.gitPassword}@${baseUrlParsed.host}${baseUrlParsed.pathname}`,
-      },
-      // Base URL without trailing slash
-      {
-        insteadOf: testConfig.gitProxyBaseUrl.replace(/\/$/, ''),
-        credUrl: `${baseUrlParsed.protocol}//${testConfig.gitUsername}:${testConfig.gitPassword}@${baseUrlParsed.host}`,
-      },
-    ];
-
-    for (const pattern of patterns) {
-      execSync(`git config url."${pattern.credUrl}".insteadOf "${pattern.insteadOf}"`, {
-        cwd: tempDir,
-        encoding: 'utf8',
-      });
-    }
-  } catch (error) {
-    console.error('Failed to configure git credentials:', error);
-    throw error;
+    throw new Error(`Healthcheck returned HTTP ${response.status}`);
+  } catch (error: any) {
+    console.error(`Error reaching GitProxy at ${healthUrl}: ${error}`);
+    throw new Error(`GitProxy is not reachable at ${healthUrl}.\n${INFRA_HINT}`);
   }
 }
 
-export async function waitForService(
-  url: string,
-  maxAttempts?: number,
-  delay?: number,
-): Promise<void> {
-  const attempts = maxAttempts || testConfig.maxRetries;
-  const retryDelay = delay || testConfig.retryDelay;
-
-  for (let i = 0; i < attempts; i++) {
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: { Accept: 'application/json' },
-      });
-      if (response.ok || response.status < 500) {
-        console.log(`Service at ${url} is ready`);
-        return;
-      }
-    } catch (error) {
-      // Service not ready yet
-    }
-
-    if (i < attempts - 1) {
-      console.log(`Waiting for service at ${url}... (attempt ${i + 1}/${attempts})`);
-      await new Promise((resolve) => setTimeout(resolve, retryDelay));
-    }
+/**
+ * Verifies the local git server is reachable by running `git ls-remote`
+ * against a known test repository.
+ */
+function checkGitServer(): void {
+  const authedUrl = new URL(testConfig.gitServerUrl);
+  authedUrl.username = testConfig.gitUsername;
+  authedUrl.password = testConfig.gitPassword;
+  authedUrl.pathname = '/test-owner/test-repo.git';
+  const repoUrl = `${testConfig.gitServerUrl}/test-owner/test-repo.git`;
+  try {
+    execSync(`git ls-remote ${authedUrl.href}`, {
+      encoding: 'utf8',
+      timeout: 10000,
+      env: {
+        ...process.env,
+        GIT_TERMINAL_PROMPT: '0',
+        GIT_SSL_NO_VERIFY: '1',
+      },
+      stdio: 'pipe',
+    });
+    console.log(`Git server is reachable at ${testConfig.gitServerUrl}`);
+  } catch (error: any) {
+    console.error(`Error reaching Git server at ${repoUrl}: ${error}`);
+    throw new Error(`Git server is not reachable at ${repoUrl}.\n${INFRA_HINT}`);
   }
-
-  throw new Error(`Service at ${url} failed to become ready after ${attempts} attempts`);
 }
 
 beforeAll(async () => {
   console.log('Setting up e2e test environment...');
   console.log(`Git Proxy URL: ${testConfig.gitProxyUrl}`);
   console.log(`Git Proxy UI URL: ${testConfig.gitProxyUiUrl}`);
+  console.log(`Git Server URL: ${testConfig.gitServerUrl}`);
   console.log(`Git Username: ${testConfig.gitUsername}`);
   console.log(`Git Proxy Base URL: ${testConfig.gitProxyBaseUrl}`);
 
-  // Wait for the git proxy UI service to be ready
-  // Note: Docker Compose should be started externally (e.g., in CI or manually)
-  await waitForService(`${testConfig.gitProxyUiUrl}/api/v1/healthcheck`);
+  // Pre-flight: verify both services are reachable before running any tests.
+  // These checks fail fast so developers get a clear error instead of
+  // waiting through retries when the Docker environment isn't running.
+  await checkGitProxy();
+  checkGitServer();
 
   console.log('E2E test environment is ready');
 }, testConfig.timeout);
