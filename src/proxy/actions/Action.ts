@@ -1,6 +1,6 @@
 import { processGitURLForNameAndOrg, processUrlPath } from '../routes/helper';
 import { Step } from './Step';
-import { Attestation, CommitData } from '../processors/types';
+import { Attestation, CommitData, Rejection } from '../processors/types';
 
 /**
  * Class representing a Push.
@@ -34,6 +34,7 @@ class Action {
   user?: string;
   userEmail?: string;
   attestation?: Attestation;
+  rejection?: Rejection;
   lastStep?: Step;
   proxyGitPath?: string;
   newIdxFiles?: string[];
