@@ -68,8 +68,8 @@ describe('MongoDB Helper', () => {
       const result = await connect('testCollection');
 
       expect(MongoClient).toHaveBeenCalledWith('mongodb://localhost:27017/testdb', {});
-      expect(mockClient.connect).toHaveBeenCalled();
-      expect(mockClient.db).toHaveBeenCalled();
+      expect(mockClient.connect).toHaveBeenCalledTimes(1);
+      expect(mockClient.db).toHaveBeenCalledTimes(1);
       expect(mockDb.collection).toHaveBeenCalledWith('testCollection');
       expect(result).toBe(mockCollection);
     });
@@ -82,15 +82,19 @@ describe('MongoDB Helper', () => {
 
       const { connect } = await import('../../../src/db/mongo/helper');
 
-      await connect('collection1');
+      const result = await connect('collection1');
 
-      vi.clearAllMocks();
-      mockDb.collection.mockReturnValue(mockCollection);
+      expect(MongoClient).toHaveBeenCalledWith('mongodb://localhost:27017/testdb', {});
+      expect(mockClient.connect).toHaveBeenCalledTimes(1);
+      expect(mockClient.db).toHaveBeenCalledTimes(1);
+      expect(mockDb.collection).toHaveBeenCalledWith('collection1');
+      expect(result).toBe(mockCollection);
 
+      // Accessing a different collection should reuse the existing db connection
       await connect('collection2');
-
-      expect(MongoClient).not.toHaveBeenCalled();
-      expect(mockClient.connect).not.toHaveBeenCalled();
+      expect(MongoClient).toHaveBeenCalledTimes(1);
+      expect(mockClient.connect).toHaveBeenCalledTimes(1);
+      expect(mockClient.db).toHaveBeenCalledTimes(1);
       expect(mockDb.collection).toHaveBeenCalledWith('collection2');
     });
 
