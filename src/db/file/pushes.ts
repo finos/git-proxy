@@ -36,7 +36,7 @@ export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => {
   return new Promise((resolve, reject) => {
     db.find(query)
       .sort({ timestamp: -1 })
-      .exec((err: Error, docs: Action[]) => {
+      .exec((err, docs) => {
         // ignore for code coverage as neDB rarely returns errors even for an invalid query
         /* istanbul ignore if */
         if (err) {
