@@ -101,6 +101,9 @@ describe('MongoDB Push Handler', async () => {
             type: 1,
             url: 1,
           },
+          sort: {
+            timestamp: -1,
+          },
         },
       );
       expect(result).toEqual(mockPushes);
