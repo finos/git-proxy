@@ -77,7 +77,7 @@ jobs:
         run: npm run build-ui
 
       - name: Save build folder
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         with:
           name: build-ubuntu-node-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
           if-no-files-found: error
@@ -90,7 +90,7 @@ jobs:
           path: build
 
       - name: Run cypress test
-        uses: cypress-io/github-action@f790eee7a50d9505912f50c2095510be7de06aa7 # v6.10.9
+        uses: cypress-io/github-action@bc22e01685c56e89e7813fd8e26f33dc47f87e15 # v7.1.5
         with:
           start: npm start &
           wait-on: 'http://localhost:3000'
