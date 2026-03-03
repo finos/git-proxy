@@ -229,8 +229,8 @@ describe('MongoDB Push Handler', async () => {
       mockFindOneDocument.mockResolvedValue({ ...TEST_PUSH });
       mockUpdateOne.mockResolvedValue({ modifiedCount: 1 });
 
-      const attestation = { signature: 'test-sig' };
-      const result = await reject(TEST_PUSH.id, attestation);
+      const rejection = { signature: 'test-sig' };
+      const result = await reject(TEST_PUSH.id, rejection);
 
       expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', { id: TEST_PUSH.id });
       expect(mockConnect).toHaveBeenCalledWith('pushes');
@@ -241,7 +241,7 @@ describe('MongoDB Push Handler', async () => {
             authorised: false,
             canceled: false,
             rejected: true,
-            attestation: attestation,
+            rejection: rejection,
           }),
         },
         { upsert: true },
