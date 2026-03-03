@@ -88,7 +88,7 @@
     "@aws-sdk/credential-providers": "^3.980.0",
     "@fontsource/roboto": "^5.2.9",
     "@material-ui/core": "^4.12.4",
-    "@material-ui/icons": "4.11.3",
+    "@mui/icons-material": "5.0.0",
     "@primer/octicons-react": "^19.21.2",
     "@seald-io/nedb": "^4.1.2",
     "axios": "^1.13.4",
