@@ -39,6 +39,7 @@ export const getPushes = async (
       type: 1,
       url: 1,
     },
+    sort: { timestamp: -1 },
   });
 };
 
