@@ -35,7 +35,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
   const itemsPerPage = 5;
   const [searchTerm, setSearchTerm] = useState('');
 
-  const openPush = (pushId: string) => navigate(`/dashboard/push/${pushId}`, { replace: true });
+  const openPush = (pushId: string) => navigate(`/dashboard/push/${pushId}`);
 
   useEffect(() => {
     const query: any = {};
