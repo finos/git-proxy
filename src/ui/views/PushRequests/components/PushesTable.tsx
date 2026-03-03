@@ -113,7 +113,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {[...currentItems].reverse().map((row) => {
+            {currentItems.map((row) => {
               const repoFullName = trimTrailingDotGit(row.repo);
               const repoBranch = trimPrefixRefsHeads(row.branch ?? '');
               const repoUrl = row.url;
