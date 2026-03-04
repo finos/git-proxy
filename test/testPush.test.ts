@@ -336,6 +336,34 @@ describe('Push API', () => {
     expect(res.body.message).toBe('Cannot reject your own changes');
   });
 
+  it('should throw 400 if rejecting a push with empty user email', async () => {
+    const testPush = { ...TEST_PUSH };
+    testPush.userEmail = '';
+    await db.writeAudit(testPush as any);
+    await loginAsApprover();
+    const res = await request(app)
+      .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
+      .set('Cookie', `${cookie}`)
+      .send({ reason: 'Testing rejection' });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toBe('Push request has no user email');
+  });
+
+  it('should throw 404 if committer of push is not found', async () => {
+    const testPush = { ...TEST_PUSH };
+    testPush.userEmail = 'non-existent-email@test.com';
+    await db.writeAudit(testPush as any);
+    await loginAsApprover();
+    const res = await request(app)
+      .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
+      .set('Cookie', `${cookie}`)
+      .send({ reason: 'Testing rejection' });
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe(
+      "No user found with the committer's email address: non-existent-email@test.com",
+    );
+  });
+
   it('should NOT allow a non-authorizer to reject a push', async () => {
     const pushWithOtherUser = { ...TEST_PUSH };
     pushWithOtherUser.user = TEST_USERNAME_1;
@@ -350,6 +378,36 @@ describe('Push API', () => {
     expect(res.status).toBe(403);
     expect(res.body.message).toBe(
       'User push-test-2 is not authorised to reject changes on this project',
+    );
+  });
+
+  it('should NOT allow a non-authorizer to approve a push', async () => {
+    const pushWithOtherUser = { ...TEST_PUSH };
+    pushWithOtherUser.user = TEST_USERNAME_1;
+    pushWithOtherUser.userEmail = TEST_EMAIL_1;
+
+    await db.writeAudit(pushWithOtherUser as any);
+    await loginAsCommitter();
+    const res = await request(app)
+      .post(`/api/v1/push/${pushWithOtherUser.id}/authorise`)
+      .set('Cookie', `${cookie}`)
+      .send({
+        params: {
+          attestation: [
+            {
+              label: 'I am happy for this to be pushed to the upstream repository',
+              tooltip: {
+                text: 'Are you happy for this contribution to be pushed upstream?',
+                links: [],
+              },
+              checked: true,
+            },
+          ],
+        },
+      });
+    expect(res.status).toBe(403);
+    expect(res.body.message).toBe(
+      'User push-test-2 not authorised to approve pushes on this project',
     );
   });
 
