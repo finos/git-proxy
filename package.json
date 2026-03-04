@@ -137,7 +137,7 @@
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/compat": "^2.0.2",
     "@eslint/js": "^9.39.2",
-    "@eslint/json": "^0.14.0",
+    "@eslint/json": "^1.0.1",
     "@types/activedirectory2": "^1.2.6",
     "@types/cors": "^2.8.19",
     "@types/domutils": "^2.1.0",

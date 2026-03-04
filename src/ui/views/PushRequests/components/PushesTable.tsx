@@ -35,7 +35,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
   const itemsPerPage = 5;
   const [searchTerm, setSearchTerm] = useState('');
 
-  const openPush = (pushId: string) => navigate(`/dashboard/push/${pushId}`, { replace: true });
+  const openPush = (pushId: string) => navigate(`/dashboard/push/${pushId}`);
 
   useEffect(() => {
     const query: any = {};
@@ -113,7 +113,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {[...currentItems].reverse().map((row) => {
+            {currentItems.map((row) => {
               const repoFullName = trimTrailingDotGit(row.repo);
               const repoBranch = trimPrefixRefsHeads(row.branch ?? '');
               const repoUrl = row.url;
