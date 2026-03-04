@@ -103,8 +103,20 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
       // Verify push is Pending
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
 
-      // Click Reject
+      // Open reject dialog
       cy.get('[data-testid="push-reject-btn"]').click();
+
+      // Confirm button should be disabled until reason is provided
+      cy.get('[data-testid="push-reject-confirm-btn"]').should('be.disabled');
+
+      // Fill in rejection reason
+      cy.get('#reason').type('Rejecting for test purposes');
+
+      // Confirm button should now be enabled
+      cy.get('[data-testid="push-reject-confirm-btn"]').should('not.be.disabled');
+
+      // Confirm rejection
+      cy.get('[data-testid="push-reject-confirm-btn"]').click();
 
       // Should navigate back to push list
       cy.url().should('include', '/dashboard/push');
