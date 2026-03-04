@@ -12,6 +12,7 @@ import Button from '../../components/CustomButtons/Button';
 import CustomTabs from '../../components/CustomTabs/CustomTabs';
 import CommitDataTable from './components/CommitDataTable';
 import Diff from './components/Diff';
+import StepsTimeline from './components/StepsTimeline';
 import Attestation from './components/Attestation';
 import AttestationInfo from './components/AttestationInfo';
 import RejectionInfo from './components/RejectionInfo';
@@ -20,6 +21,7 @@ import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/g
 import type { ServiceResult } from '../../services/errors';
 import { CheckCircle, Visibility, Cancel, Block, List as ListIcon } from '@material-ui/icons';
 import CodeIcon from '@material-ui/icons/Code';
+import TimelineIcon from '@material-ui/icons/Timeline';
 import Snackbar from '@material-ui/core/Snackbar';
 import { PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
@@ -244,6 +246,11 @@ const Dashboard: React.FC = () => {
                 tabName: 'Changes',
                 tabIcon: CodeIcon,
                 tabContent: <Diff diff={push.diff?.content || ''} />,
+              },
+              {
+                tabName: 'Steps',
+                tabIcon: TimelineIcon,
+                tabContent: <StepsTimeline steps={push.steps} />,
               },
             ]}
           />
