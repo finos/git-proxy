@@ -125,11 +125,11 @@ Cypress.Commands.add('getTestRepoId', () => {
     }
     const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
     const repo = res.body.find(
-      (r) => r.url === `https://${gitServerTarget}/coopernetes/test-repo.git`,
+      (r) => r.url === `https://${gitServerTarget}/test-owner/test-repo.git`,
     );
     if (!repo) {
       throw new Error(
-        `coopernetes/test-repo not found in database. Repos: ${res.body.map((r) => r.url).join(', ')}`,
+        `test-owner/test-repo not found in database. Repos: ${res.body.map((r) => r.url).join(', ')}`,
       );
     }
     return cy.wrap(repo._id);
@@ -173,7 +173,7 @@ Cypress.Commands.add('deleteRepo', (repoId) => {
 Cypress.Commands.add('createPush', (gitUser, gitPassword, gitEmail, uniqueSuffix) => {
   const proxyUrl = Cypress.env('GIT_PROXY_URL') || 'http://localhost:8000';
   const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
-  const repoUrl = `${proxyUrl}/${gitServerTarget}/coopernetes/test-repo.git`;
+  const repoUrl = `${proxyUrl}/${gitServerTarget}/test-owner/test-repo.git`;
   const cloneDir = `/tmp/cypress-push-${uniqueSuffix}`;
 
   // Pass credentials via GIT_CONFIG_* env vars to avoid exposing them in command output
