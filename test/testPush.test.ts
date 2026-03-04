@@ -116,9 +116,13 @@ describe('Push API', () => {
     await db.deleteRepo(testRepo._id);
     await db.deleteUser(TEST_USERNAME_1);
     await db.deleteUser(TEST_USERNAME_2);
+    await db.deletePush(TEST_PUSH.id);
 
     vi.resetModules();
-    Service.httpServer.close();
+    await Service.httpServer.close();
+
+    const res = await request(app).post('/api/auth/logout').set('Cookie', `${cookie}`);
+    expect(res.status).toBe(200);
   });
 
   describe('test push API', () => {
@@ -377,16 +381,5 @@ describe('Push API', () => {
 
     expect(push).toBeDefined();
     expect(push.canceled).toBe(false);
-  });
-
-  afterAll(async () => {
-    const res = await request(app).post('/api/auth/logout').set('Cookie', `${cookie}`);
-    expect(res.status).toBe(200);
-
-    await Service.httpServer.close();
-    await db.deleteRepo(TEST_REPO);
-    await db.deleteUser(TEST_USERNAME_1);
-    await db.deleteUser(TEST_USERNAME_2);
-    await db.deletePush(TEST_PUSH.id);
   });
 });
