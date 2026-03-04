@@ -19,4 +19,8 @@ router.get('/uiRouteAuth', (_req: Request, res: Response) => {
   res.send(config.getUIRouteAuth());
 });
 
+router.get('/ssh', (_req: Request, res: Response) => {
+  res.send(config.getSSHConfig());
+});
+
 export default router;

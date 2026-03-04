@@ -1,64 +1,37 @@
-import { Action, Step } from '../../actions';
-import fs from 'fs';
-import git from 'isomorphic-git';
-import gitHttpClient from 'isomorphic-git/http/node';
+import { Action } from '../../actions';
+import { PullRemoteHTTPS } from './PullRemoteHTTPS';
+import { PullRemoteSSH } from './PullRemoteSSH';
+import { PullRemoteBase } from './PullRemoteBase';
 
-const dir = './.remote';
-
-const exec = async (req: any, action: Action): Promise<Action> => {
-  const step = new Step('pullRemote');
-  action.proxyGitPath = `${dir}/${action.id}`;
-
-  //the specific checkout folder should not exist
-  // - fail out if it does to avoid concurrent processing of conflicting requests
-  if (fs.existsSync(action.proxyGitPath)) {
-    const errMsg =
-      'The checkout folder already exists - we may be processing a concurrent request for this push. If this issue persists the proxy may need to be restarted.';
-    // do not delete the folder so that the other request can complete if its going to
-    step.setError(errMsg);
-    action.addStep(step);
-    throw new Error(errMsg);
-  } else {
-    try {
-      step.log(`Creating folder ${action.proxyGitPath}`);
-      fs.mkdirSync(action.proxyGitPath, 0o755);
-
-      const cmd = `git clone ${action.url}`;
-      step.log(`Executing ${cmd}`);
-
-      const authHeader = req.headers?.authorization;
-      const [username, password] = Buffer.from(authHeader.split(' ')[1], 'base64')
-        .toString()
-        .split(':');
-
-      // Note: setting singleBranch to true will cause issues when pushing to
-      // a non-default branch as commits from those branches won't be fetched
-      await git.clone({
-        fs,
-        http: gitHttpClient,
-        url: action.url,
-        dir: `${action.proxyGitPath}/${action.repoName}`,
-        onAuth: () => ({ username, password }),
-        depth: 1,
-      });
-
-      step.log(`Completed ${cmd}`);
-      step.setContent(`Completed ${cmd}`);
-    } catch (e: any) {
-      step.setError(e.toString('utf-8'));
-
-      //clean-up the check out folder so it doesn't block subsequent attempts
-      fs.rmSync(action.proxyGitPath, { recursive: true, force: true });
-      step.log(`.remote is deleted!`);
-
-      throw e;
-    } finally {
-      action.addStep(step);
+/**
+ * Factory function to select appropriate pull remote implementation
+ *
+ * Strategy:
+ * - SSH protocol requires agent forwarding (no fallback)
+ * - HTTPS protocol uses Basic Auth credentials
+ */
+function createPullRemote(req: any, action: Action): PullRemoteBase {
+  if (action.protocol === 'ssh') {
+    if (!req?.sshClient?.agentForwardingEnabled || !req?.sshClient) {
+      throw new Error(
+        'SSH clone requires agent forwarding to be enabled. ' +
+          'Please ensure your SSH client is configured with agent forwarding (ssh -A).',
+      );
     }
+    return new PullRemoteSSH();
   }
-  return action;
+
+  return new PullRemoteHTTPS();
+}
+
+/**
+ * Execute pull remote operation
+ * Delegates to appropriate implementation based on protocol and capabilities
+ */
+const exec = async (req: any, action: Action): Promise<Action> => {
+  const pullRemote = createPullRemote(req, action);
+  return await pullRemote.exec(req, action);
 };
 
 exec.displayName = 'pullRemote.exec';
-
 export { exec };
