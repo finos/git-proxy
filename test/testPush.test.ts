@@ -273,6 +273,14 @@ describe('Push API', () => {
     expect(res.body.message).toBe('Cannot approve your own changes');
   });
 
+  it('should return 401 if not logged in when approving a push', async () => {
+    const res = await request(app)
+      .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
+      .send({ reason: 'Testing approval' });
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('Not logged in');
+  });
+
   it('should allow an authorizer to reject a push', async () => {
     await db.writeAudit(TEST_PUSH as any);
     await loginAsApprover();
@@ -337,6 +345,24 @@ describe('Push API', () => {
     );
   });
 
+  it("should return 404 if rejecting a push that doesn't exist", async () => {
+    await loginAsApprover();
+    const res = await request(app)
+      .post(`/api/v1/push/non-existent-push/reject`)
+      .set('Cookie', `${cookie}`)
+      .send({ reason: 'Testing rejection' });
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe('Push request not found');
+  });
+
+  it('should return 401 if not logged in when rejecting a push', async () => {
+    const res = await request(app)
+      .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
+      .send({ reason: 'Testing rejection' });
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('Not logged in');
+  });
+
   it('should fetch all pushes', async () => {
     await db.writeAudit(TEST_PUSH as any);
     await loginAsApprover();
@@ -381,5 +407,13 @@ describe('Push API', () => {
 
     expect(push).toBeDefined();
     expect(push.canceled).toBe(false);
+  });
+
+  it('should return 401 if not logged in when cancelling a push', async () => {
+    const res = await request(app)
+      .post(`/api/v1/push/${TEST_PUSH.id}/cancel`)
+      .send({ reason: 'Testing rejection' });
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe('Not logged in');
   });
 });
