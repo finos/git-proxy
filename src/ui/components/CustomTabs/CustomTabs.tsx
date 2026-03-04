@@ -8,6 +8,7 @@ import CardBody from '../Card/CardBody';
 import CardHeader from '../Card/CardHeader';
 import styles from '../../assets/jss/material-dashboard-react/components/customTabsStyle';
 import { SvgIconProps } from '@material-ui/core';
+import Badge from '@material-ui/core/Badge';
 
 const useStyles = makeStyles(styles as any);
 
@@ -17,6 +18,7 @@ export type TabItem = {
   tabName: string;
   tabIcon?: React.ComponentType<SvgIconProps>;
   tabContent: React.ReactNode;
+  badge?: number;
 };
 
 interface CustomTabsProps {
@@ -65,6 +67,13 @@ const CustomTabs: React.FC<CustomTabsProps> = ({
         >
           {tabs.map((prop, key) => {
             const icon = prop.tabIcon ? { icon: <prop.tabIcon /> } : {};
+            const label = prop.badge ? (
+              <Badge badgeContent={prop.badge} color='error'>
+                {prop.tabName}
+              </Badge>
+            ) : (
+              prop.tabName
+            );
             return (
               <Tab
                 classes={{
@@ -73,7 +82,7 @@ const CustomTabs: React.FC<CustomTabsProps> = ({
                   wrapper: classes.tabWrapper,
                 }}
                 key={key}
-                label={prop.tabName}
+                label={label}
                 {...icon}
               />
             );

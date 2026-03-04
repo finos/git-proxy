@@ -98,6 +98,8 @@ const Dashboard: React.FC = () => {
   if (isError) throw new Error(message || 'Something went wrong ...');
   if (!push) return <div>No push data found</div>;
 
+  const errorCount = push.steps.filter((step) => step.error).length;
+
   let headerData: { title: string; color: CardHeaderColor } = {
     title: 'Pending',
     color: 'warning',
@@ -251,6 +253,7 @@ const Dashboard: React.FC = () => {
                 tabName: 'Steps',
                 tabIcon: TimelineIcon,
                 tabContent: <StepsTimeline steps={push.steps} />,
+                badge: errorCount > 0 ? errorCount : undefined,
               },
             ]}
           />
