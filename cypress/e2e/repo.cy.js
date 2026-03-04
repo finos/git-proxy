@@ -2,6 +2,11 @@ describe('Repo', () => {
   let cookies;
   let repoName;
 
+  before(() => {
+    cy.login('admin', 'admin');
+    cy.cleanupTestRepos();
+  });
+
   describe('Anonymous users', () => {
     beforeEach(() => {
       cy.visit('/dashboard/repo');
@@ -54,8 +59,6 @@ describe('Repo', () => {
       });
 
       cy.contains('a', `cypress-test/${repoName}`, { timeout: 10000 }).click();
-
-      // cy.get('[data-testid="delete-repo-button"]').click();
     });
 
     it('Displays an error when adding an existing repo', () => {
@@ -147,7 +150,7 @@ describe('Repo', () => {
       cy.getCSRFToken().then((csrfToken) => {
         cy.request({
           method: 'DELETE',
-          url: `${Cypress.env('API_BASE_URL') || Cypress.config('baseUrl')}/api/v1/repo/${repoName}/delete`,
+          url: `${Cypress.env('API_BASE_URL') || Cypress.config('baseUrl')}/api/v1/repo/${repoId}/delete`,
           headers: {
             cookie: cookies?.join('; ') || '',
             'X-CSRF-TOKEN': csrfToken,

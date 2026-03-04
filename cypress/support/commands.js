@@ -136,6 +136,40 @@ Cypress.Commands.add('getTestRepoId', () => {
   });
 });
 
+Cypress.Commands.add('cleanupTestRepos', () => {
+  cy.getCSRFToken().then((csrfToken) => {
+    cy.request({
+      method: 'GET',
+      url: `${getApiBaseUrl()}/api/v1/repo`,
+      failOnStatusCode: false,
+    }).then((res) => {
+      if (res.status !== 200 || !Array.isArray(res.body)) return;
+      const testRepos = res.body.filter((r) => r.project === 'cypress-test');
+      testRepos.forEach((repo) => {
+        cy.request({
+          method: 'DELETE',
+          url: `${getApiBaseUrl()}/api/v1/repo/${repo._id}/delete`,
+          headers: { 'X-CSRF-TOKEN': csrfToken },
+          failOnStatusCode: false,
+        });
+      });
+    });
+  });
+});
+
+Cypress.Commands.add('deleteRepo', (repoId) => {
+  cy.getCSRFToken().then((csrfToken) => {
+    cy.request({
+      method: 'DELETE',
+      url: `${getApiBaseUrl()}/api/v1/repo/${repoId}/delete`,
+      headers: {
+        'X-CSRF-TOKEN': csrfToken,
+      },
+      failOnStatusCode: false,
+    });
+  });
+});
+
 Cypress.Commands.add('createPush', (gitUser, gitPassword, gitEmail, uniqueSuffix) => {
   const proxyUrl = Cypress.env('GIT_PROXY_URL') || 'http://localhost:8000';
   const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
