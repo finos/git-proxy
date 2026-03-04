@@ -1,19 +1,27 @@
-import axios, { AxiosError } from 'axios';
-import { getAxiosConfig, processAuthError } from './auth.js';
+import axios from 'axios';
+import { getAxiosConfig } from './auth.js';
 import { Repo } from '../../db/types';
 import { RepoView } from '../types';
 import { getApiV1BaseUrl } from './apiConfig';
+import { ServiceResult, getServiceError, errorResult, successResult } from './errors';
 
 const canAddUser = async (repoId: string, user: string, action: string) => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}`);
-  const response = await axios.get<Repo>(url.toString(), getAxiosConfig());
-  const repo = response.data;
-  if (action === 'authorise') {
-    return !repo.users.canAuthorise.includes(user);
-  } else {
-    return !repo.users.canPush.includes(user);
-  }
+  return axios
+    .get<Repo>(url.toString(), getAxiosConfig())
+    .then((response) => {
+      const repo = response.data;
+      if (action === 'authorise') {
+        return !repo.users.canAuthorise.includes(user);
+      } else {
+        return !repo.users.canPush.includes(user);
+      }
+    })
+    .catch((error: any) => {
+      const { message } = getServiceError(error, 'Failed to validate repo permissions');
+      throw new Error(message);
+    });
 };
 
 class DupUserValidationError extends Error {
@@ -24,79 +32,44 @@ class DupUserValidationError extends Error {
 }
 
 const getRepos = async (
-  setIsLoading: (isLoading: boolean) => void,
-  setRepos: (repos: RepoView[]) => void,
-  setAuth: (auth: boolean) => void,
-  setIsError: (isError: boolean) => void,
-  setErrorMessage: (errorMessage: string) => void,
   query: Record<string, boolean> = {},
-): Promise<void> => {
+): Promise<ServiceResult<RepoView[]>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo`);
   url.search = new URLSearchParams(query as any).toString();
-  setIsLoading(true);
+
   try {
     const response = await axios<RepoView[]>(url.toString(), getAxiosConfig());
     const sortedRepos = response.data.sort((a: RepoView, b: RepoView) =>
       a.name.localeCompare(b.name),
     );
-    setRepos(sortedRepos);
-  } catch (error: unknown) {
-    setIsError(true);
-    if (error instanceof AxiosError && error.response?.status === 401) {
-      setAuth(false);
-      setErrorMessage(processAuthError(error));
-    } else if (error instanceof AxiosError) {
-      setErrorMessage(`Error fetching repos: ${error.response?.data?.message}`);
-    }
-  } finally {
-    setIsLoading(false);
+    return successResult(sortedRepos);
+  } catch (error: any) {
+    return errorResult(error, 'Failed to load repositories');
   }
 };
 
-const getRepo = async (
-  setIsLoading: (isLoading: boolean) => void,
-  setRepo: (repo: RepoView) => void,
-  setAuth: (auth: boolean) => void,
-  setIsError: (isError: boolean) => void,
-  id: string,
-): Promise<void> => {
+const getRepo = async (id: string): Promise<ServiceResult<RepoView>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${id}`);
-  setIsLoading(true);
+
   try {
     const response = await axios<RepoView>(url.toString(), getAxiosConfig());
-    const repo = response.data;
-    setRepo(repo);
-  } catch (error: unknown) {
-    if (error instanceof AxiosError && error.response?.status === 401) {
-      setAuth(false);
-    } else {
-      setIsError(true);
-    }
-  } finally {
-    setIsLoading(false);
+    return successResult(response.data);
+  } catch (error: any) {
+    return errorResult(error, 'Failed to load repository');
   }
 };
 
-const addRepo = async (
-  repo: RepoView,
-): Promise<{ success: boolean; message?: string; repo: RepoView | null }> => {
+const addRepo = async (repo: RepoView): Promise<ServiceResult<RepoView>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo`);
 
   try {
     const response = await axios.post<RepoView>(url.toString(), repo, getAxiosConfig());
-    return {
-      success: true,
-      repo: response.data,
-    };
+    return successResult(response.data);
   } catch (error: any) {
-    return {
-      success: false,
-      message: error.response?.data?.message || error.message,
-      repo: null,
-    };
+    return errorResult(error, 'Failed to add repository');
   }
 };
 
@@ -106,14 +79,11 @@ const addUser = async (repoId: string, user: string, action: string): Promise<vo
     const apiV1Base = await getApiV1BaseUrl();
     const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}`);
     const data = { username: user };
-    try {
-      await axios.patch(url.toString(), data, getAxiosConfig());
-    } catch (error: unknown) {
-      if (error instanceof AxiosError) {
-        console.log(error.response?.data?.message);
-      }
-      throw error;
-    }
+    await axios.patch(url.toString(), data, getAxiosConfig()).catch((error: any) => {
+      const { message } = getServiceError(error, 'Failed to add user');
+      console.log(message);
+      throw new Error(message);
+    });
   } else {
     console.log('Duplicate user can not be added');
     throw new DupUserValidationError('Duplicate user can not be added');
@@ -124,28 +94,22 @@ const deleteUser = async (user: string, repoId: string, action: string): Promise
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}/${user}`);
 
-  try {
-    await axios.delete(url.toString(), getAxiosConfig());
-  } catch (error: unknown) {
-    if (error instanceof AxiosError) {
-      console.log(error.response?.data?.message);
-    }
-    throw error;
-  }
+  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
+    const { message } = getServiceError(error, 'Failed to remove user');
+    console.log(message);
+    throw new Error(message);
+  });
 };
 
 const deleteRepo = async (repoId: string): Promise<void> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}/delete`);
 
-  try {
-    await axios.delete(url.toString(), getAxiosConfig());
-  } catch (error: unknown) {
-    if (error instanceof AxiosError) {
-      console.log(error.response?.data?.message);
-    }
-    throw error;
-  }
+  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
+    const { message } = getServiceError(error, 'Failed to delete repository');
+    console.log(message);
+    throw new Error(message);
+  });
 };
 
 export { addUser, deleteUser, getRepos, getRepo, addRepo, deleteRepo };
