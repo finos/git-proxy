@@ -237,7 +237,7 @@ const Dashboard: React.FC = () => {
         </GridItem>
         <GridItem xs={12} sm={12} md={12}>
           <CustomTabs
-            headerColor={headerData.color}
+            headerColor='primary'
             tabs={[
               {
                 tabName: 'Commits',
