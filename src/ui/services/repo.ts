@@ -8,20 +8,18 @@ import { ServiceResult, getServiceError, errorResult, successResult } from './er
 const canAddUser = async (repoId: string, user: string, action: string) => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}`);
-  return axios
-    .get<Repo>(url.toString(), getAxiosConfig())
-    .then((response) => {
-      const repo = response.data;
-      if (action === 'authorise') {
-        return !repo.users.canAuthorise.includes(user);
-      } else {
-        return !repo.users.canPush.includes(user);
-      }
-    })
-    .catch((error: any) => {
-      const { message } = getServiceError(error, 'Failed to validate repo permissions');
-      throw new Error(message);
-    });
+  try {
+    const response = await axios.get<Repo>(url.toString(), getAxiosConfig());
+    const repo = response.data;
+    if (action === 'authorise') {
+      return !repo.users.canAuthorise.includes(user);
+    } else {
+      return !repo.users.canPush.includes(user);
+    }
+  } catch (error: any) {
+    const { message } = getServiceError(error, 'Failed to validate repo permissions');
+    throw new Error(message);
+  }
 };
 
 class DupUserValidationError extends Error {
@@ -79,11 +77,13 @@ const addUser = async (repoId: string, user: string, action: string): Promise<vo
     const apiV1Base = await getApiV1BaseUrl();
     const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}`);
     const data = { username: user };
-    await axios.patch(url.toString(), data, getAxiosConfig()).catch((error: any) => {
+    try {
+      await axios.patch(url.toString(), data, getAxiosConfig());
+    } catch (error: any) {
       const { message } = getServiceError(error, 'Failed to add user');
       console.log(message);
       throw new Error(message);
-    });
+    }
   } else {
     console.log('Duplicate user can not be added');
     throw new DupUserValidationError('Duplicate user can not be added');
@@ -94,22 +94,26 @@ const deleteUser = async (user: string, repoId: string, action: string): Promise
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}/${user}`);
 
-  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
+  try {
+    await axios.delete(url.toString(), getAxiosConfig());
+  } catch (error: any) {
     const { message } = getServiceError(error, 'Failed to remove user');
     console.log(message);
     throw new Error(message);
-  });
+  }
 };
 
 const deleteRepo = async (repoId: string): Promise<void> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}/delete`);
 
-  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
+  try {
+    await axios.delete(url.toString(), getAxiosConfig());
+  } catch (error: any) {
     const { message } = getServiceError(error, 'Failed to delete repository');
     console.log(message);
     throw new Error(message);
-  });
+  }
 };
 
 export { addUser, deleteUser, getRepos, getRepo, addRepo, deleteRepo };
