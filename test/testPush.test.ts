@@ -131,6 +131,14 @@ describe('Push API', () => {
       if (cookie) await logout();
     });
 
+    it('should fetch a push by id', async () => {
+      await db.writeAudit(TEST_PUSH as any);
+      await loginAsApprover();
+      const res = await request(app).get(`/api/v1/push/${TEST_PUSH.id}`).set('Cookie', `${cookie}`);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual(TEST_PUSH);
+    });
+
     it('should get 404 for unknown push', async () => {
       await loginAsApprover();
       const commitId = `${EMPTY_COMMIT_HASH}__79b4d8953cbc324bcc1eb53d6412ff89666c241f`;
@@ -374,6 +382,29 @@ describe('Push API', () => {
     expect(push).toBeDefined();
     expect(push).toEqual(TEST_PUSH);
     expect(push.canceled).toBe(false);
+  });
+
+  it('should admit filter options when fetching pushes', async () => {
+    const testPush = { ...TEST_PUSH };
+    testPush.error = true;
+    testPush.blocked = true;
+    await db.writeAudit(testPush as any);
+    await loginAsApprover();
+
+    // Search for the overridden push
+    const res = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`).query({
+      limit: 1,
+      skip: 0,
+      error: true,
+      blocked: true,
+    });
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+
+    const push = res.body.find((p: any) => p.id === TEST_PUSH.id);
+    expect(push).toBeDefined();
+    expect(push.error).toBe(true);
+    expect(push.blocked).toBe(true);
   });
 
   it('should allow a committer to cancel a push', async () => {
