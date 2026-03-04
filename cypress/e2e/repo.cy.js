@@ -5,6 +5,7 @@ describe('Repo', () => {
   before(() => {
     cy.login('admin', 'admin');
     cy.cleanupTestRepos();
+    cy.logout();
   });
 
   describe('Anonymous users', () => {
