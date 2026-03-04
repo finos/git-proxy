@@ -411,6 +411,29 @@ describe('Push API', () => {
     );
   });
 
+  it("should return 404 if approving a push that doesn't exist", async () => {
+    await loginAsApprover();
+    const res = await request(app)
+      .post(`/api/v1/push/non-existent-push/authorise`)
+      .set('Cookie', `${cookie}`)
+      .send({
+        params: {
+          attestation: [
+            {
+              label: 'I am happy for this to be pushed to the upstream repository',
+              tooltip: {
+                text: 'Are you happy for this contribution to be pushed upstream?',
+                links: [],
+              },
+              checked: true,
+            },
+          ],
+        },
+      });
+    expect(res.status).toBe(404);
+    expect(res.body.message).toBe('Push request not found');
+  });
+
   it("should return 404 if rejecting a push that doesn't exist", async () => {
     await loginAsApprover();
     const res = await request(app)
