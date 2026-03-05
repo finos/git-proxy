@@ -28,7 +28,7 @@ const UserList: React.FC = () => {
   const itemsPerPage = 5;
   const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const openUser = (username: string) => navigate(`/dashboard/user/${username}`, { replace: true });
+  const openUser = (username: string) => navigate(`/dashboard/user/${username}`);
 
   useEffect(() => {
     getUsers(setIsLoading, setUsers, setAuth, setErrorMessage);

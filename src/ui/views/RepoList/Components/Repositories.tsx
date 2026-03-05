@@ -44,8 +44,7 @@ export default function Repositories(): React.ReactElement {
   const itemsPerPage: number = 5;
   const navigate = useNavigate();
   const { user } = useContext<UserContextType>(UserContext);
-  const openRepo = (repoId: string): void =>
-    navigate(`/dashboard/repo/${repoId}`, { replace: true });
+  const openRepo = (repoId: string): void => navigate(`/dashboard/repo/${repoId}`);
 
   useEffect(() => {
     const load = async () => {
