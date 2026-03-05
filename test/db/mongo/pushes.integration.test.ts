@@ -59,7 +59,7 @@ describe.runIf(shouldRunMongoTests)('MongoDB Pushes Integration Tests', () => {
 
     it('should throw error for invalid id', async () => {
       const action = createTestAction();
-      (action as any).id = 123;
+      action.id = 123 as unknown as string;
 
       await expect(writeAudit(action)).rejects.toThrow('Invalid id');
     });

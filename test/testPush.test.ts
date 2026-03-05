@@ -292,7 +292,7 @@ describe('Push API', () => {
   });
 
   it('should NOT allow an authorizer to reject a push without a reason', async () => {
-    await db.writeAudit(TEST_PUSH as any);
+    await db.writeAudit(TEST_PUSH);
     await loginAsApprover();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
@@ -303,7 +303,7 @@ describe('Push API', () => {
   });
 
   it('should NOT allow an authorizer to reject a push with empty reason', async () => {
-    await db.writeAudit(TEST_PUSH as any);
+    await db.writeAudit(TEST_PUSH);
     await loginAsApprover();
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
@@ -476,7 +476,7 @@ describe('Push API', () => {
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
 
-    const push = res.body.find((p: any) => p.id === TEST_PUSH.id);
+    const push = res.body.find((p: Action) => p.id === TEST_PUSH.id);
     expect(push).toBeDefined();
     expect(push.error).toBe(true);
     expect(push.blocked).toBe(true);
