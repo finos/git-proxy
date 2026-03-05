@@ -96,7 +96,7 @@ customize for your environment, see the [project's documentation](https://git-pr
 
 ## Contributing
 
-Your contributions are at the core of making this a truly open source project. Any contributions you make are **greatly appreciated**. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more information.
+Your contributions are at the core of making this a truly open source project. Any contributions you make are **greatly appreciated**. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more information. For AI-assisted development (Cursor/Claude), see [`CLAUDE.md`](CLAUDE.md) and the [`.claude/commands`](.claude/commands) directory.
 
 ## Security
 
