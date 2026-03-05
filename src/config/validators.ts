@@ -105,6 +105,6 @@ function parseGitProxyConfig(raw: string, context: string): GitProxyConfig {
   try {
     return Convert.toGitProxyConfig(raw);
   } catch (error: unknown) {
-    throw new Error(`Invalid configuration format in ${context}: ${getErrorMessage}`);
+    throw new Error(`Invalid configuration format in ${context}: ${getErrorMessage(error)}`);
   }
 }
