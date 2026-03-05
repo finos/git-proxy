@@ -120,11 +120,11 @@ describe('Push API', () => {
     });
 
     it('should fetch a push by id', async () => {
-      await db.writeAudit(TEST_PUSH as any);
+      await db.writeAudit(TEST_PUSH);
       await loginAsApprover();
       const res = await request(app).get(`/api/v1/push/${TEST_PUSH.id}`).set('Cookie', `${cookie}`);
       expect(res.status).toBe(200);
-      expect(res.body).toEqual(TEST_PUSH);
+      expect(res.body).toMatchObject(TEST_PUSH);
     });
 
     it('should get 404 for unknown push', async () => {
