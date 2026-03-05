@@ -1,6 +1,10 @@
-import { Action } from './proxy/actions';
+import { Request } from 'express';
 
-const lpModule = import('load-plugin');
+import { Action } from './proxy/actions';
+import Module from 'node:module';
+
+import { loadPlugin, resolvePlugin } from 'load-plugin';
+import { handleAndLogError } from './utils/errors';
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 ('use strict');
 
@@ -67,7 +71,7 @@ class PluginLoader {
       const moduleResults = await Promise.allSettled(modulePromises);
       const loadedModules = moduleResults
         .filter(
-          (result): result is PromiseFulfilledResult<any> =>
+          (result): result is PromiseFulfilledResult<Module> =>
             result.status === 'fulfilled' && result.value !== null,
         )
         .map((result) => result.value);
@@ -87,7 +91,7 @@ class PluginLoader {
        */
       const pluginTypeResults = settledPluginTypeResults
         .filter(
-          (result): result is PromiseFulfilledResult<any> =>
+          (result): result is PromiseFulfilledResult<PluginTypeResult> =>
             result.status === 'fulfilled' && result.value !== null,
         )
         .map((result) => result.value);
@@ -101,20 +105,19 @@ class PluginLoader {
       combinedPlugins.forEach((plugin) => {
         console.log(`Loaded plugin: ${plugin.constructor.name}`);
       });
-    } catch (error) {
-      console.error(`Error loading plugins: ${error}`);
+    } catch (error: unknown) {
+      handleAndLogError(error, 'Error loading plugins');
     }
   }
 
   /**
    * Resolve & load a Node module from either a given specifier (file path, import specifier or package name) using load-plugin.
    * @param {string} target The module specifier to load
-   * @return {Promise<Module>} A resolved & loaded Module
+   * @return {Promise<unknown>} A resolved & loaded Module
    */
-  private async _loadPluginModule(target: string): Promise<any> {
-    const lp = await lpModule;
-    const resolvedModuleFile = await lp.resolvePlugin(target);
-    return await lp.loadPlugin(resolvedModuleFile);
+  private async _loadPluginModule(target: string): Promise<unknown> {
+    const resolvedModuleFile = await resolvePlugin(target);
+    return loadPlugin(resolvedModuleFile);
   }
 
   /**
@@ -177,7 +180,7 @@ class ProxyPlugin {
  */
 class PushActionPlugin extends ProxyPlugin {
   isGitProxyPushActionPlugin: boolean;
-  exec: (req: any, action: Action) => Promise<any>;
+  exec: (req: Request, action: Action) => Promise<Action>;
 
   /**
    * Wrapper class which contains at least one function executed as part of the action chain for git push operations.
@@ -193,7 +196,7 @@ class PushActionPlugin extends ProxyPlugin {
    *   - Takes in an Action object as the second parameter (`action`).
    *   - Returns a Promise that resolves to an Action.
    */
-  constructor(exec: (req: any, action: Action) => Promise<any>) {
+  constructor(exec: (req: Request, action: Action) => Promise<Action>) {
     super();
     this.isGitProxyPushActionPlugin = true;
     this.exec = exec;
@@ -205,7 +208,7 @@ class PushActionPlugin extends ProxyPlugin {
  */
 class PullActionPlugin extends ProxyPlugin {
   isGitProxyPullActionPlugin: boolean;
-  exec: (req: any, action: Action) => Promise<any>;
+  exec: (req: Request, action: Action) => Promise<Action>;
 
   /**
    * Wrapper class which contains at least one function executed as part of the action chain for git pull operations.
@@ -221,7 +224,7 @@ class PullActionPlugin extends ProxyPlugin {
    *   - Takes in an Action object as the second parameter (`action`).
    *   - Returns a Promise that resolves to an Action.
    */
-  constructor(exec: (req: any, action: Action) => Promise<any>) {
+  constructor(exec: (req: Request, action: Action) => Promise<Action>) {
     super();
     this.isGitProxyPullActionPlugin = true;
     this.exec = exec;

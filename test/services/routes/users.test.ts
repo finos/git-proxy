@@ -18,14 +18,19 @@ describe('Users API', () => {
         password: 'secret-hashed-password',
         email: 'alice@example.com',
         displayName: 'Alice Walker',
+        gitAccount: '',
+        admin: false,
       },
-    ] as any);
+    ]);
 
     vi.spyOn(db, 'findUser').mockResolvedValue({
       username: 'bob',
       password: 'hidden',
       email: 'bob@example.com',
-    } as any);
+      displayName: '',
+      gitAccount: '',
+      admin: false,
+    });
   });
 
   afterEach(() => {

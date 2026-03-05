@@ -1,13 +1,15 @@
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { exec as checkHidden } from '../src/proxy/processors/push-action/checkHiddenCommits';
 import { Action } from '../src/proxy/actions';
+import { EMPTY_COMMIT_HASH } from '../src/proxy/processors/constants';
+import { Request } from 'express';
 
 // must hoist these before mocking the modules
 const mockSpawnSync = vi.hoisted(() => vi.fn());
 const mockReaddirSync = vi.hoisted(() => vi.fn());
 
 vi.mock('child_process', async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = await importOriginal<typeof import('child_process')>();
   return {
     ...actual,
     spawnSync: mockSpawnSync,
@@ -15,7 +17,7 @@ vi.mock('child_process', async (importOriginal) => {
 });
 
 vi.mock('fs', async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = await importOriginal<typeof import('fs')>();
   return {
     ...actual,
     readdirSync: mockReaddirSync,
@@ -24,6 +26,7 @@ vi.mock('fs', async (importOriginal) => {
 
 describe('checkHiddenCommits.exec', () => {
   let action: Action;
+  let req: Request;
 
   beforeEach(() => {
     // reset all mocks before each test
@@ -32,9 +35,10 @@ describe('checkHiddenCommits.exec', () => {
     // prepare a fresh Action
     action = new Action('some-id', 'push', 'POST', Date.now(), 'repo.git');
     action.proxyGitPath = '/fake';
-    action.commitFrom = '0000000000000000000000000000000000000000';
+    action.commitFrom = EMPTY_COMMIT_HASH;
     action.commitTo = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
     action.newIdxFiles = ['pack-test.idx'];
+    req = { body: '' } as Request;
   });
 
   afterEach(() => {
@@ -53,7 +57,7 @@ describe('checkHiddenCommits.exec', () => {
 
     mockReaddirSync.mockReturnValue(['pack-test.idx']);
 
-    await checkHidden({ body: '' }, action);
+    await checkHidden(req, action);
 
     const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
     expect(step?.logs).toContain(`checkHiddenCommits - Referenced commits: 0`);
@@ -78,7 +82,7 @@ describe('checkHiddenCommits.exec', () => {
 
     mockReaddirSync.mockReturnValue(['pack-test.idx']);
 
-    await checkHidden({ body: '' }, action);
+    await checkHidden(req, action);
 
     const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
     expect(step?.logs).toContain('checkHiddenCommits - Referenced commits: 1');
@@ -100,7 +104,7 @@ describe('checkHiddenCommits.exec', () => {
 
     mockReaddirSync.mockReturnValue(['pack-test.idx']);
 
-    await checkHidden({ body: '' }, action);
+    await checkHidden(req, action);
     const step = action.steps.find((s) => s.stepName === 'checkHiddenCommits');
 
     expect(step?.logs).toContain('checkHiddenCommits - Total introduced commits: 2');
@@ -112,9 +116,9 @@ describe('checkHiddenCommits.exec', () => {
   });
 
   it('throws if commitFrom or commitTo is missing', async () => {
-    delete (action as any).commitFrom;
+    delete action.commitFrom;
 
-    await expect(checkHidden({ body: '' }, action)).rejects.toThrow(
+    await expect(checkHidden(req, action)).rejects.toThrow(
       /Both action.commitFrom and action.commitTo must be defined/,
     );
   });

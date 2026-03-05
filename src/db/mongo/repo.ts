@@ -1,11 +1,11 @@
 import _ from 'lodash';
-import { Repo } from '../types';
+import { Repo, RepoQuery } from '../types';
 import { connect } from './helper';
 import { toClass } from '../helper';
 import { ObjectId, OptionalId, Document } from 'mongodb';
 const collectionName = 'repos';
 
-export const getRepos = async (query: any = {}): Promise<Repo[]> => {
+export const getRepos = async (query: Partial<RepoQuery> = {}): Promise<Repo[]> => {
   const collection = await connect(collectionName);
   const docs = await collection.find(query).toArray();
   return _.chain(docs)

@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { Strategy as LocalStrategy } from 'passport-local';
+import { IVerifyOptions, Strategy as LocalStrategy } from 'passport-local';
 import type { PassportStatic } from 'passport';
 import * as db from '../../db';
 
@@ -15,29 +15,29 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
       async (
         username: string,
         password: string,
-        done: (err: any, user?: any, info?: any) => void,
+        done: (err: unknown, user?: Partial<db.User>, info?: IVerifyOptions) => void,
       ) => {
         try {
           const dbModule = await getDb();
           const user = await dbModule.findUser(username);
           if (!user) {
-            return done(null, false, { message: 'Incorrect username.' });
+            return done(null, undefined, { message: 'Incorrect username.' });
           }
 
           const passwordCorrect = await bcrypt.compare(password, user.password ?? '');
           if (!passwordCorrect) {
-            return done(null, false, { message: 'Incorrect password.' });
+            return done(null, undefined, { message: 'Incorrect password.' });
           }
 
           return done(null, user);
-        } catch (err) {
-          return done(err);
+        } catch (error: unknown) {
+          return done(error);
         }
       },
     ),
   );
 
-  passport.serializeUser((user: any, done) => {
+  passport.serializeUser((user: Partial<db.User>, done) => {
     done(null, user.username);
   });
 
@@ -46,8 +46,8 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
       const dbModule = await getDb();
       const user = await dbModule.findUser(username);
       done(null, user);
-    } catch (err) {
-      done(err, null);
+    } catch (error: unknown) {
+      done(error, null);
     }
   });
 

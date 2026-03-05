@@ -11,7 +11,9 @@ export const AuthProvider: React.FC<React.PropsWithChildren<object>> = ({ childr
     try {
       const data = await getUserInfo();
       setUser(data);
-    } catch (error) {
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error(`Error refreshing user: ${msg}`);
       setUser(null);
     } finally {
       setIsLoading(false);

@@ -374,9 +374,9 @@ describe('ConfigLoader', () => {
       configLoader = new ConfigLoader(mockConfig);
 
       // private property overridden for testing
-      (configLoader as any).reloadTimer = setInterval(() => {}, 1000);
+      configLoader['reloadTimer'] = setInterval(() => {}, 1000);
       await configLoader.start();
-      expect((configLoader as any).reloadTimer).toBe(null);
+      expect(configLoader['reloadTimer']).toBe(null);
     });
 
     it('should run reloadConfiguration multiple times on short reload interval', async () => {
@@ -422,10 +422,10 @@ describe('ConfigLoader', () => {
       configLoader = new ConfigLoader(mockConfig);
 
       // private property overridden for testing
-      (configLoader as any).reloadTimer = setInterval(() => {}, 1000);
-      expect((configLoader as any).reloadTimer).not.toBe(null);
+      configLoader['reloadTimer'] = setInterval(() => {}, 1000);
+      expect(configLoader['reloadTimer']).not.toBe(null);
       await configLoader.stop();
-      expect((configLoader as any).reloadTimer).toBe(null);
+      expect(configLoader['reloadTimer']).toBe(null);
     });
   });
 
@@ -524,15 +524,15 @@ describe('ConfigLoader', () => {
     });
 
     it('should throw error if configuration source is invalid', async () => {
-      const source: ConfigurationSource = {
-        type: 'invalid' as any, // invalid type
+      const source = {
+        type: 'invalid', // invalid type
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'proxy.config.json',
         branch: 'main',
         enabled: true,
       };
 
-      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+      await expect(configLoader.loadFromSource(source as ConfigurationSource)).rejects.toThrow(
         /Unsupported configuration source type/,
       );
     });
@@ -732,9 +732,9 @@ describe('Validation Helpers', () => {
       expect(isValidGitUrl('not-a-git-url')).toBe(false);
       expect(isValidGitUrl('http://github.com/user/repo')).toBe(false);
       expect(isValidGitUrl('')).toBe(false);
-      expect(isValidGitUrl(null as any)).toBe(false);
-      expect(isValidGitUrl(undefined as any)).toBe(false);
-      expect(isValidGitUrl(123 as any)).toBe(false);
+      expect(isValidGitUrl(null as unknown as string)).toBe(false);
+      expect(isValidGitUrl(undefined as unknown as string)).toBe(false);
+      expect(isValidGitUrl(123 as unknown as string)).toBe(false);
     });
   });
 
@@ -750,16 +750,16 @@ describe('Validation Helpers', () => {
 
       // Invalid paths
       expect(isValidPath('')).toBe(false);
-      expect(isValidPath(null as any)).toBe(false);
-      expect(isValidPath(undefined as any)).toBe(false);
-
-      // Additional edge cases
-      expect(isValidPath({} as any)).toBe(false);
-      expect(isValidPath([] as any)).toBe(false);
-      expect(isValidPath(123 as any)).toBe(false);
-      expect(isValidPath(true as any)).toBe(false);
       expect(isValidPath('\0invalid')).toBe(false);
       expect(isValidPath('\u0000')).toBe(false);
+      expect(isValidPath(null as unknown as string)).toBe(false);
+      expect(isValidPath(undefined as unknown as string)).toBe(false);
+
+      // Additional edge cases
+      expect(isValidPath({} as unknown as string)).toBe(false);
+      expect(isValidPath([] as unknown as string)).toBe(false);
+      expect(isValidPath(123 as unknown as string)).toBe(false);
+      expect(isValidPath(true as unknown as string)).toBe(false);
     });
   });
 
@@ -777,9 +777,9 @@ describe('Validation Helpers', () => {
       expect(isValidBranchName('-invalid')).toBe(false);
       expect(isValidBranchName('branch with spaces')).toBe(false);
       expect(isValidBranchName('')).toBe(false);
-      expect(isValidBranchName(null as any)).toBe(false);
-      expect(isValidBranchName(undefined as any)).toBe(false);
       expect(isValidBranchName('branch..name')).toBe(false);
+      expect(isValidBranchName(null as unknown as string)).toBe(false);
+      expect(isValidBranchName(undefined as unknown as string)).toBe(false);
     });
   });
 });

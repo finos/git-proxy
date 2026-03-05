@@ -1,8 +1,8 @@
-import axios from 'axios';
-import { getAxiosConfig } from './auth';
-import { getApiV1BaseUrl } from './apiConfig';
+import axios, { AxiosError } from 'axios';
+import { getAxiosConfig, processAuthError } from './auth';
+import { getBaseUrl, getApiV1BaseUrl } from './apiConfig';
 import { Action, Step } from '../../proxy/actions';
-import { PushActionView } from '../types';
+import { BackendResponse, PushActionView } from '../types';
 import { ServiceResult, errorResult, successResult } from './errors';
 
 const getPush = async (id: string): Promise<ServiceResult<PushActionView>> => {
@@ -17,7 +17,7 @@ const getPush = async (id: string): Promise<ServiceResult<PushActionView>> => {
       diff: data.steps.find((x: Step) => x.stepName === 'diff')!,
     };
     return successResult(actionView);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return errorResult(error, 'Failed to load push');
   }
 };
@@ -32,12 +32,16 @@ const getPushes = async (
 ): Promise<ServiceResult<PushActionView[]>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/push`);
-  url.search = new URLSearchParams(query as any).toString();
+
+  const stringifiedQuery = Object.fromEntries(
+    Object.entries(query).map(([key, value]) => [key, value.toString()]),
+  );
+  url.search = new URLSearchParams(stringifiedQuery).toString();
 
   try {
     const response = await axios<Action[]>(url.toString(), getAxiosConfig());
     return successResult(response.data as unknown as PushActionView[]);
-  } catch (error: any) {
+  } catch (error: unknown) {
     return errorResult(error, 'Failed to load pushes');
   }
 };
@@ -60,7 +64,7 @@ const authorisePush = async (
       getAxiosConfig(),
     );
     return successResult();
-  } catch (error: any) {
+  } catch (error: unknown) {
     return errorResult(error, 'Failed to approve push request');
   }
 };
@@ -72,7 +76,7 @@ const rejectPush = async (id: string, reason?: string): Promise<ServiceResult> =
   try {
     await axios.post(url, { reason }, getAxiosConfig());
     return successResult();
-  } catch (error: any) {
+  } catch (error: unknown) {
     return errorResult(error, 'Failed to reject push request');
   }
 };
@@ -84,7 +88,7 @@ const cancelPush = async (id: string): Promise<ServiceResult> => {
   try {
     await axios.post(url, {}, getAxiosConfig());
     return successResult();
-  } catch (error: any) {
+  } catch (error: unknown) {
     return errorResult(error, 'Failed to cancel push request');
   }
 };

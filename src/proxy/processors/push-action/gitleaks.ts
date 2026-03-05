@@ -1,9 +1,11 @@
+import { spawn } from 'node:child_process';
+import { PathLike } from 'node:fs';
+import fs from 'node:fs/promises';
+import { Request } from 'express';
+
 import { Action, Step } from '../../actions';
 import { getAPIs } from '../../../config';
-import { spawn } from 'node:child_process';
-import fs from 'node:fs/promises';
-import { PathLike } from 'node:fs';
-
+import { getErrorMessage, handleAndLogError } from '../../../utils/errors';
 const EXIT_CODE = 99;
 
 function runCommand(
@@ -66,7 +68,7 @@ async function fileIsReadable(path: PathLike): Promise<boolean> {
     }
     await fs.access(path, fs.constants.R_OK);
     return true;
-  } catch (e) {
+  } catch (error: unknown) {
     return false;
   }
 }
@@ -109,14 +111,14 @@ const getPluginConfig = async (): Promise<ConfigOptions> => {
   };
 };
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('gitleaks');
 
   let config: ConfigOptions | undefined = undefined;
   try {
     config = await getPluginConfig();
-  } catch (e) {
-    console.error('failed to get gitleaks config, please fix the error:', e);
+  } catch (error: unknown) {
+    handleAndLogError(error, 'failed to get gitleaks config, please fix the error');
     action.error = true;
     step.setError('failed setup gitleaks, please contact an administrator\n');
     action.addStep(step);
@@ -174,9 +176,10 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       console.log('succeeded');
       console.log(gitleaks.stderr);
     }
-  } catch (e) {
+  } catch (error: unknown) {
+    const msg = getErrorMessage(error);
     action.error = true;
-    step.setError('failed to spawn gitleaks, please contact an administrator\n');
+    step.setError(`failed to spawn gitleaks, please contact an administrator\n: ${msg}`);
     action.addStep(step);
     return action;
   }

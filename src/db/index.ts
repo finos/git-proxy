@@ -6,6 +6,7 @@ import * as mongo from './mongo';
 import * as neDb from './file';
 import { Action } from '../proxy/actions/Action';
 import MongoDBStore from 'connect-mongo';
+import { CompletedAttestation, Rejection } from '../proxy/processors/types';
 import { processGitUrl } from '../proxy/routes/helper';
 import { initializeFolders } from './file/helper';
 
@@ -164,10 +165,12 @@ export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => start
 export const writeAudit = (action: Action): Promise<void> => start().writeAudit(action);
 export const getPush = (id: string): Promise<Action | null> => start().getPush(id);
 export const deletePush = (id: string): Promise<void> => start().deletePush(id);
-export const authorise = (id: string, attestation: any): Promise<{ message: string }> =>
-  start().authorise(id, attestation);
+export const authorise = (
+  id: string,
+  attestation?: CompletedAttestation,
+): Promise<{ message: string }> => start().authorise(id, attestation);
 export const cancel = (id: string): Promise<{ message: string }> => start().cancel(id);
-export const reject = (id: string, rejection: any): Promise<{ message: string }> =>
+export const reject = (id: string, rejection: Rejection): Promise<{ message: string }> =>
   start().reject(id, rejection);
 export const getRepos = (query?: Partial<RepoQuery>): Promise<Repo[]> => start().getRepos(query);
 export const getRepo = (name: string): Promise<Repo | null> => start().getRepo(name);

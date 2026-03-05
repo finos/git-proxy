@@ -1,3 +1,4 @@
+import { Request } from 'express';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Action } from '../../src/proxy/actions';
 import * as checkIfWaitingAuthModule from '../../src/proxy/processors/push-action/checkIfWaitingAuth';
@@ -20,10 +21,10 @@ describe('checkIfWaitingAuth', () => {
 
   describe('exec', () => {
     let action: Action;
-    let req: any;
+    let req: Request;
 
     beforeEach(() => {
-      req = {};
+      req = {} as Request;
       action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
     });
 

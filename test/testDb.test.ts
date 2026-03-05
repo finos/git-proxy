@@ -4,7 +4,7 @@ import { Repo, User } from '../src/db/types';
 import { Action } from '../src/proxy/actions/Action';
 import { Step } from '../src/proxy/actions/Step';
 import { AuthorisedRepo } from '../src/config/generated/config';
-import { EMPTY_COMMIT_HASH } from '../src/proxy/processors/constants';
+import { SAMPLE_REPO } from '../src/proxy/processors/constants';
 
 const TEST_REPO = {
   project: 'finos',
@@ -27,33 +27,15 @@ const TEST_USER = {
   admin: true,
 };
 
-const TEST_PUSH = {
-  steps: [],
-  error: false,
-  blocked: true,
-  allowPush: false,
-  authorised: false,
-  canceled: true,
-  rejected: false,
-  autoApproved: false,
-  autoRejected: false,
-  commitData: [],
-  id: `${EMPTY_COMMIT_HASH}__1744380874110`,
-  type: 'push',
-  method: 'get',
-  timestamp: 1744380903338,
-  project: 'finos',
-  repoName: 'db-test-repo.git',
-  url: TEST_REPO.url,
-  repo: 'finos/db-test-repo.git',
-  user: 'db-test-user',
-  userEmail: 'db-test@test.com',
-  lastStep: null,
-  blockedMessage:
-    '\n\n\nGitProxy has received your push:\n\nhttp://localhost:8080/requests/${EMPTY_COMMIT_HASH}__1744380874110\n\n\n',
-  _id: 'GIMEz8tU2KScZiTz',
-  attestation: null,
-};
+const TEST_PUSH = new Action(
+  '0000000000000000000000000000000000000000__1744380874110',
+  'push',
+  'get',
+  1744380903338,
+  TEST_REPO.url,
+);
+TEST_PUSH.user = TEST_USER.username;
+TEST_PUSH.userEmail = TEST_USER.email;
 
 const TEST_REPO_DOT_GIT = {
   project: 'finos',
@@ -63,12 +45,15 @@ const TEST_REPO_DOT_GIT = {
 
 // the same as TEST_PUSH but with .git somewhere valid within the name
 // to ensure a global replace isn't done when trimming, just to the end
-const TEST_PUSH_DOT_GIT = {
-  ...TEST_PUSH,
-  repoName: 'db.git-test-repo.git',
-  url: 'https://github.com/finos/db.git-test-repo.git',
-  repo: 'finos/db.git-test-repo.git',
-};
+const TEST_PUSH_DOT_GIT = new Action(
+  '0000000000000000000000000000000000000000__1744380874110',
+  'push',
+  'get',
+  1744380903338,
+  'https://github.com/finos/db.git-test-repo.git',
+);
+TEST_PUSH_DOT_GIT.project = 'finos';
+TEST_PUSH_DOT_GIT.repoName = 'db.git-test-repo.git';
 
 /**
  * Clean up response data from the DB by removing an extraneous properties,
@@ -84,7 +69,6 @@ const cleanResponseData = <T extends object>(example: T, responses: T[] | T): T[
     return responses.map((response) => {
       const cleanResponse: Partial<T> = {};
       columns.forEach((col) => {
-        // @ts-expect-error dynamic indexing
         cleanResponse[col] = response[col];
       });
       return cleanResponse as T;
@@ -92,7 +76,6 @@ const cleanResponseData = <T extends object>(example: T, responses: T[] | T): T[
   } else if (typeof responses === 'object') {
     const cleanResponse: Partial<T> = {};
     columns.forEach((col) => {
-      // @ts-expect-error dynamic indexing
       cleanResponse[col] = responses[col];
     });
     return cleanResponse as T;
@@ -244,7 +227,7 @@ describe('Database clients', () => {
 
     await db.createRepo(TEST_REPO);
     const repos = await db.getRepos();
-    const cleanRepos = cleanResponseData(TEST_REPO, repos) as (typeof TEST_REPO)[];
+    const cleanRepos = cleanResponseData(TEST_REPO, repos);
     expect(cleanRepos).toContainEqual(TEST_REPO);
   });
 
@@ -254,12 +237,10 @@ describe('Database clients', () => {
     // uppercase the filter value to confirm db client is lowercasing inputs
     const repos = await db.getRepos({ name: TEST_REPO.name.toUpperCase() });
     const cleanRepos = cleanResponseData(TEST_REPO, repos);
-    // @ts-expect-error dynamic indexing
     expect(cleanRepos[0]).toEqual(TEST_REPO);
 
     const repos2 = await db.getRepos({ url: TEST_REPO.url });
     const cleanRepos2 = cleanResponseData(TEST_REPO, repos2);
-    // @ts-expect-error dynamic indexing
     expect(cleanRepos2[0]).toEqual(TEST_REPO);
 
     const repos3 = await db.getRepos();
@@ -334,7 +315,7 @@ describe('Database clients', () => {
     // null username
     await expect(
       db.createUser(
-        null as any,
+        null as unknown as string,
         TEST_USER.password,
         TEST_USER.email,
         TEST_USER.gitAccount,
@@ -352,7 +333,7 @@ describe('Database clients', () => {
       db.createUser(
         TEST_USER.username,
         TEST_USER.password,
-        null as any,
+        null as unknown as string,
         TEST_USER.gitAccount,
         TEST_USER.admin,
       ),
@@ -431,12 +412,10 @@ describe('Database clients', () => {
     const users = await db.getUsers({ username: TEST_USER.username.toUpperCase() });
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
-    // @ts-expect-error dynamic indexing
     expect(cleanUsers[0]).toEqual(TEST_USER_CLEAN);
 
     const users2 = await db.getUsers({ email: TEST_USER.email.toUpperCase() });
     const cleanUsers2 = cleanResponseData(TEST_USER_CLEAN, users2);
-    // @ts-expect-error dynamic indexing
     expect(cleanUsers2[0]).toEqual(TEST_USER_CLEAN);
   });
 
@@ -587,43 +566,43 @@ describe('Database clients', () => {
     });
 
     it('should be able to create a push', async () => {
-      await db.writeAudit(TEST_PUSH as any);
+      await db.writeAudit(TEST_PUSH);
       const pushes = await db.getPushes({});
-      const cleanPushes = cleanResponseData(TEST_PUSH, pushes as any);
+      const cleanPushes = cleanResponseData(TEST_PUSH, pushes);
       expect(cleanPushes).toContainEqual(TEST_PUSH);
     }, 20000);
 
     it('should be able to delete a push', async () => {
       // Create push
-      await db.writeAudit(TEST_PUSH as any);
+      await db.writeAudit(TEST_PUSH);
       await db.deletePush(TEST_PUSH.id);
       const pushes = await db.getPushes({});
-      const cleanPushes = cleanResponseData(TEST_PUSH, pushes as any);
+      const cleanPushes = cleanResponseData(TEST_PUSH, pushes);
       expect(cleanPushes).not.toContainEqual(TEST_PUSH);
     });
 
     it('should be able to authorise a push', async () => {
-      await db.writeAudit(TEST_PUSH as any);
-      const msg = await db.authorise(TEST_PUSH.id, null);
+      await db.writeAudit(TEST_PUSH);
+      const msg = await db.authorise(TEST_PUSH.id, undefined);
       expect(msg).toHaveProperty('message');
     });
 
     it('should throw an error when authorising a non-existent a push', async () => {
-      await expect(db.authorise(TEST_PUSH.id, null)).rejects.toThrow();
+      await expect(db.authorise(TEST_PUSH.id, undefined)).rejects.toThrow();
     });
 
     it('should be able to reject a push', async () => {
-      await db.writeAudit(TEST_PUSH as any);
-      const msg = await db.reject(TEST_PUSH.id, null);
+      await db.writeAudit(TEST_PUSH);
+      const msg = await db.reject(TEST_PUSH.id, undefined);
       expect(msg).toHaveProperty('message');
     });
 
     it('should throw an error when rejecting a non-existent a push', async () => {
-      await expect(db.reject(TEST_PUSH.id, null)).rejects.toThrow();
+      await expect(db.reject(TEST_PUSH.id, undefined)).rejects.toThrow();
     });
 
     it('should be able to cancel a push', async () => {
-      await db.writeAudit(TEST_PUSH as any);
+      await db.writeAudit(TEST_PUSH);
       const msg = await db.cancel(TEST_PUSH.id);
       expect(msg).toHaveProperty('message');
     });
@@ -644,7 +623,7 @@ describe('Database clients', () => {
       expect(allowed).toBe(false);
 
       // create the push - user should already exist and not authorised to push
-      await db.writeAudit(TEST_PUSH as any);
+      await db.writeAudit(TEST_PUSH);
       allowed = await db.canUserCancelPush(TEST_PUSH.id, TEST_USER.username);
       expect(allowed).toBe(false);
 
@@ -667,7 +646,7 @@ describe('Database clients', () => {
       expect(allowed).toBe(false);
 
       // push does not exist yet, should return false
-      await db.writeAudit(TEST_PUSH as any);
+      await db.writeAudit(TEST_PUSH);
       allowed = await db.canUserApproveRejectPush(TEST_PUSH.id, TEST_USER.username);
       expect(allowed).toBe(false);
 
@@ -696,7 +675,7 @@ describe('Database clients', () => {
     expect(allowed).toBe(false);
 
     // create the push - user should already exist and not authorised to push
-    await db.writeAudit(TEST_PUSH_DOT_GIT as any);
+    await db.writeAudit(TEST_PUSH_DOT_GIT);
     allowed = await db.canUserApproveRejectPush(TEST_PUSH_DOT_GIT.id, TEST_USER.username);
     expect(allowed).toBe(false);
 

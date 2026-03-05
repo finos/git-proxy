@@ -6,6 +6,7 @@ import { executeChain } from '../chain';
 import { processUrlPath, validGitRequest } from './helper';
 import { getAllProxiedHosts } from '../../db';
 import { ProxyOptions } from 'express-http-proxy';
+import { getErrorMessage, handleAndLogError } from '../../utils/errors';
 
 enum ActionType {
   ALLOWED = 'Allowed',
@@ -47,10 +48,10 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
     }
 
     // For POST pack requests, use the raw body extracted by extractRawBody middleware
-    if (isPackPost(req) && (req as any).bodyRaw) {
-      (req as any).body = (req as any).bodyRaw;
+    if (isPackPost(req) && req.bodyRaw) {
+      req.body = req.bodyRaw;
       // Clean up the bodyRaw property before forwarding the request
-      delete (req as any).bodyRaw;
+      delete req.bodyRaw;
     }
 
     const action = await executeChain(req, res);
@@ -68,8 +69,8 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
 
     // this is the only case where we do not respond directly, instead we return true to proxy the request
     return true;
-  } catch (e) {
-    const message = `Error occurred in proxy filter function ${(e as Error).message ?? e}`;
+  } catch (error: unknown) {
+    const message = handleAndLogError(error, 'Error occurred in proxy filter function');
 
     logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ERROR, message);
     sendErrorResponse(req, res, message);
@@ -162,12 +163,17 @@ const extractRawBody = async (req: Request, res: Response, next: NextFunction) =
 
   try {
     const buf = await getRawBody(pluginStream, { limit: '1gb' });
-    (req as any).bodyRaw = buf;
-    (req as any).pipe = (dest: any, opts: any) => proxyStream.pipe(dest, opts);
+    req.bodyRaw = buf;
+    req.pipe = (dest, opts) => proxyStream.pipe(dest, opts);
     next();
-  } catch (e) {
-    console.error(e);
-    proxyStream.destroy(e as Error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(error.message);
+      proxyStream.destroy(error);
+    } else {
+      console.error(String(error));
+      proxyStream.destroy(new Error(String(error)));
+    }
     res.status(500).end('Proxy error');
   }
 };
