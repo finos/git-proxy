@@ -18,7 +18,7 @@ jobs:
       - name: 'Setup Node.js'
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
-          node-version: '22.x'
+          node-version: '24.x'
       - name: 'Run depcheck'
         run: |
           npx depcheck --skip-missing --ignores="tsx,@babel/*,@commitlint/*,eslint,eslint-*,husky,ts-node,concurrently,nyc,prettier,typescript,tsconfig-paths,vite-tsconfig-paths,quicktype,history,@types/domutils,@vitest/coverage-v8,cross-env"
