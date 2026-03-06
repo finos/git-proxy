@@ -27,11 +27,10 @@ const DashboardNavbarLinks: React.FC = () => {
   const [openProfile, setOpenProfile] = useState<HTMLElement | null>(null);
   const [, setAuth] = useState<boolean>(true);
   const [, setIsLoading] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string>('');
   const [user, setUser] = useState<PublicUser | null>(null);
 
   useEffect(() => {
-    getUser(setIsLoading, setUser, setAuth, setErrorMessage);
+    getUser(setIsLoading, setUser, setAuth);
   }, []);
 
   const handleClickProfile = (event: React.MouseEvent<HTMLElement>) => {
@@ -66,7 +65,6 @@ const DashboardNavbarLinks: React.FC = () => {
 
   return (
     <div>
-      {errorMessage && <div className={classes.errorMessage}>{errorMessage}</div>}
       <div className={classes.manager}>
         <Button
           color={window.innerWidth > 959 ? 'transparent' : 'white'}

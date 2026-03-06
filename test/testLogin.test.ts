@@ -7,7 +7,23 @@ import { Express } from 'express';
 
 describe('login', () => {
   let app: Express;
-  let cookie: string;
+
+  const loginAsAdmin = async (): Promise<string> => {
+    const res = await request(app).post('/api/auth/login').send({
+      username: 'admin',
+      password: 'admin',
+    });
+    expect(res.status).toBe(200);
+    expect(res.headers['set-cookie']).toBeDefined();
+
+    let cookie = '';
+    (res.headers['set-cookie'] as unknown as string[]).forEach((x: string) => {
+      if (x.startsWith('connect')) {
+        cookie = x.split(';')[0];
+      }
+    });
+    return cookie;
+  };
 
   beforeAll(async () => {
     app = await Service.start(new Proxy());
@@ -21,27 +37,18 @@ describe('login', () => {
     });
 
     it('should be able to login', async () => {
-      const res = await request(app).post('/api/auth/login').send({
-        username: 'admin',
-        password: 'admin',
-      });
-
-      expect(res.status).toBe(200);
-      expect(res.headers['set-cookie']).toBeDefined();
-
-      (res.headers['set-cookie'] as unknown as string[]).forEach((x: string) => {
-        if (x.startsWith('connect')) {
-          cookie = x.split(';')[0];
-        }
-      });
+      const cookie = await loginAsAdmin();
+      expect(cookie).toBeTruthy();
     });
 
     it('should now be able to access the user metadata', async () => {
+      const cookie = await loginAsAdmin();
       const res = await request(app).get('/api/auth/profile').set('Cookie', cookie);
       expect(res.status).toBe(200);
     });
 
     it('should be able to set the git account', async () => {
+      const cookie = await loginAsAdmin();
       const res = await request(app).post('/api/auth/gitAccount').set('Cookie', cookie).send({
         username: 'admin',
         gitAccount: 'new-account',
@@ -50,6 +57,7 @@ describe('login', () => {
     });
 
     it('should throw an error if the username is not provided when setting the git account', async () => {
+      const cookie = await loginAsAdmin();
       const res = await request(app).post('/api/auth/gitAccount').set('Cookie', cookie).send({
         gitAccount: 'new-account',
       });
@@ -57,11 +65,15 @@ describe('login', () => {
     });
 
     it('should now be able to logout', async () => {
+      const cookie = await loginAsAdmin();
       const res = await request(app).post('/api/auth/logout').set('Cookie', cookie);
       expect(res.status).toBe(200);
     });
 
     it('test cannot access profile page', async () => {
+      // Login, then logout, then verify we can't access profile
+      const cookie = await loginAsAdmin();
+      await request(app).post('/api/auth/logout').set('Cookie', cookie);
       const res = await request(app).get('/api/auth/profile').set('Cookie', cookie);
       expect(res.status).toBe(401);
     });
@@ -236,7 +248,7 @@ describe('login', () => {
     });
   });
 
-  afterAll(() => {
-    Service.httpServer.close();
+  afterAll(async () => {
+    await Service.stop();
   });
 });

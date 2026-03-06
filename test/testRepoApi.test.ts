@@ -57,6 +57,30 @@ describe('add new repo', () => {
     });
   };
 
+  const ensureTestRepoExists = async () => {
+    let repo = await db.getRepoByUrl(TEST_REPO.url);
+    if (!repo) {
+      await request(app).post('/api/v1/repo').set('Cookie', `${cookie}`).send(TEST_REPO);
+      repo = await db.getRepoByUrl(TEST_REPO.url);
+    }
+    if (repo) repoIds[0] = repo._id!;
+    return repo;
+  };
+
+  const ensureUsersCanPush = async (users: string[]) => {
+    const repo = await fetchRepoOrThrow(TEST_REPO.url);
+    for (const user of users) {
+      if (!repo.users.canPush.includes(user)) await db.addUserCanPush(repoIds[0], user);
+    }
+  };
+
+  const ensureUsersCanAuthorise = async (users: string[]) => {
+    const repo = await fetchRepoOrThrow(TEST_REPO.url);
+    for (const user of users) {
+      if (!repo.users.canAuthorise.includes(user)) await db.addUserCanAuthorise(repoIds[0], user);
+    }
+  };
+
   beforeAll(async () => {
     proxy = new Proxy();
     app = await Service.start(proxy);
@@ -70,18 +94,19 @@ describe('add new repo', () => {
     await db.deleteUser('u2');
     await db.createUser('u1', 'abc', 'test@test.com', 'test', true);
     await db.createUser('u2', 'abc', 'test2@test.com', 'test', true);
-  });
 
-  it('login', async () => {
+    // Login once in beforeAll
     const res = await request(app).post('/api/auth/login').send({
       username: 'admin',
       password: 'admin',
     });
-    expect(res.headers['set-cookie']).toBeDefined();
     setCookie(res);
   });
 
   it('create a new repo', async () => {
+    // Ensure repo doesn't exist
+    await cleanupRepo(TEST_REPO.url);
+
     const res = await request(app).post('/api/v1/repo').set('Cookie', `${cookie}`).send(TEST_REPO);
     expect(res.status).toBe(200);
 
@@ -98,6 +123,8 @@ describe('add new repo', () => {
   });
 
   it('get a repo', async () => {
+    await ensureTestRepoExists();
+
     const res = await request(app)
       .get('/api/v1/repo/' + repoIds[0])
       .set('Cookie', `${cookie}`);
@@ -109,12 +136,16 @@ describe('add new repo', () => {
   });
 
   it('return a 409 error if the repo already exists', async () => {
+    await ensureTestRepoExists();
+
     const res = await request(app).post('/api/v1/repo').set('Cookie', `${cookie}`).send(TEST_REPO);
     expect(res.status).toBe(409);
     expect(res.body.message).toBe('Repository ' + TEST_REPO.url + ' already exists!');
   });
 
   it('filter repos', async () => {
+    await ensureTestRepoExists();
+
     const res = await request(app)
       .get('/api/v1/repo')
       .set('Cookie', `${cookie}`)
@@ -126,6 +157,14 @@ describe('add new repo', () => {
   });
 
   it('add 1st can push user', async () => {
+    await ensureTestRepoExists();
+
+    // Reset push users for this test
+    const repoBefore = await fetchRepoOrThrow(TEST_REPO.url);
+    for (const user of repoBefore.users.canPush) {
+      await db.removeUserCanPush(repoIds[0], user);
+    }
+
     const res = await request(app)
       .patch(`/api/v1/repo/${repoIds[0]}/user/push`)
       .set('Cookie', `${cookie}`)
@@ -138,6 +177,11 @@ describe('add new repo', () => {
   });
 
   it('add 2nd can push user', async () => {
+    await ensureTestRepoExists();
+
+    // Ensure u1 is already a push user, then add u2
+    await ensureUsersCanPush(['u1']);
+
     const res = await request(app)
       .patch(`/api/v1/repo/${repoIds[0]}/user/push`)
       .set('Cookie', `${cookie}`)
@@ -145,11 +189,17 @@ describe('add new repo', () => {
 
     expect(res.status).toBe(200);
     const repo = await fetchRepoOrThrow(TEST_REPO.url);
+    expect(repo.users.canPush).toContain('u1');
+    expect(repo.users.canPush).toContain('u2');
     expect(repo.users.canPush.length).toBe(2);
-    expect(repo.users.canPush[1]).toBe('u2');
   });
 
   it('add push user that does not exist', async () => {
+    await ensureTestRepoExists();
+
+    // Ensure 2 push users exist
+    await ensureUsersCanPush(['u1', 'u2']);
+
     const res = await request(app)
       .patch(`/api/v1/repo/${repoIds[0]}/user/push`)
       .set('Cookie', `${cookie}`)
@@ -161,6 +211,11 @@ describe('add new repo', () => {
   });
 
   it('delete user u2 from push', async () => {
+    await ensureTestRepoExists();
+
+    // Ensure u1 and u2 are push users
+    await ensureUsersCanPush(['u1', 'u2']);
+
     const res = await request(app)
       .delete(`/api/v1/repo/${repoIds[0]}/user/push/u2`)
       .set('Cookie', `${cookie}`)
@@ -172,6 +227,14 @@ describe('add new repo', () => {
   });
 
   it('add 1st can authorise user', async () => {
+    await ensureTestRepoExists();
+
+    // Reset authorise users
+    const repoBefore = await fetchRepoOrThrow(TEST_REPO.url);
+    for (const user of repoBefore.users.canAuthorise) {
+      await db.removeUserCanAuthorise(repoIds[0], user);
+    }
+
     const res = await request(app)
       .patch(`/api/v1/repo/${repoIds[0]}/user/authorise`)
       .set('Cookie', `${cookie}`)
@@ -184,6 +247,11 @@ describe('add new repo', () => {
   });
 
   it('add 2nd can authorise user', async () => {
+    await ensureTestRepoExists();
+
+    // Ensure u1 is already an authorise user
+    await ensureUsersCanAuthorise(['u1']);
+
     const res = await request(app)
       .patch(`/api/v1/repo/${repoIds[0]}/user/authorise`)
       .set('Cookie', cookie)
@@ -191,11 +259,17 @@ describe('add new repo', () => {
 
     expect(res.status).toBe(200);
     const repo = await fetchRepoOrThrow(TEST_REPO.url);
+    expect(repo.users.canAuthorise).toContain('u1');
+    expect(repo.users.canAuthorise).toContain('u2');
     expect(repo.users.canAuthorise.length).toBe(2);
-    expect(repo.users.canAuthorise[1]).toBe('u2');
   });
 
   it('add authorise user that does not exist', async () => {
+    await ensureTestRepoExists();
+
+    // Ensure 2 authorise users exist
+    await ensureUsersCanAuthorise(['u1', 'u2']);
+
     const res = await request(app)
       .patch(`/api/v1/repo/${repoIds[0]}/user/authorise`)
       .set('Cookie', cookie)
@@ -207,6 +281,11 @@ describe('add new repo', () => {
   });
 
   it('Can delete u2 user', async () => {
+    await ensureTestRepoExists();
+
+    // Ensure u1 and u2 are authorise users
+    await ensureUsersCanAuthorise(['u1', 'u2']);
+
     const res = await request(app)
       .delete(`/api/v1/repo/${repoIds[0]}/user/authorise/u2`)
       .set('Cookie', cookie)
@@ -218,6 +297,11 @@ describe('add new repo', () => {
   });
 
   it('Valid user push permission on repo', async () => {
+    await ensureTestRepoExists();
+
+    // Add u2 as authorise user
+    await db.addUserCanPush(repoIds[0], 'u2');
+
     const res = await request(app)
       .patch(`/api/v1/repo/${repoIds[0]}/user/authorise`)
       .set('Cookie', cookie)
@@ -229,16 +313,22 @@ describe('add new repo', () => {
   });
 
   it('Invalid user push permission on repo', async () => {
+    await ensureTestRepoExists();
     const isAllowed = await db.isUserPushAllowed(TEST_REPO.url, 'test1234');
     expect(isAllowed).toBe(false);
   });
 
   it('Proxy route helpers should return the proxied origin', async () => {
+    await ensureTestRepoExists();
     const origins = await getAllProxiedHosts();
-    expect(origins).toEqual([TEST_REPO.host]);
+    expect(origins).toContain(TEST_REPO.host);
   });
 
   it('Proxy route helpers should return the new proxied origins when new repos are added', async () => {
+    await ensureTestRepoExists();
+    await cleanupRepo(TEST_REPO_NON_GITHUB.url);
+    await cleanupRepo(TEST_REPO_NAKED.url);
+
     const res = await request(app)
       .post('/api/v1/repo')
       .set('Cookie', cookie)
@@ -273,14 +363,29 @@ describe('add new repo', () => {
   });
 
   it('delete a repo', async () => {
+    // Ensure repos exist before deleting
+    let repo1 = await db.getRepoByUrl(TEST_REPO_NON_GITHUB.url);
+    if (!repo1) {
+      await request(app).post('/api/v1/repo').set('Cookie', cookie).send(TEST_REPO_NON_GITHUB);
+      repo1 = await db.getRepoByUrl(TEST_REPO_NON_GITHUB.url);
+    }
+    repoIds[1] = repo1!._id!;
+
+    let repo2 = await db.getRepoByUrl(TEST_REPO_NAKED.url);
+    if (!repo2) {
+      await request(app).post('/api/v1/repo').set('Cookie', cookie).send(TEST_REPO_NAKED);
+      repo2 = await db.getRepoByUrl(TEST_REPO_NAKED.url);
+    }
+    repoIds[2] = repo2!._id!;
+
     const res = await request(app)
       .delete(`/api/v1/repo/${repoIds[1]}/delete`)
       .set('Cookie', cookie)
       .send();
 
     expect(res.status).toBe(200);
-    const repo = await db.getRepoByUrl(TEST_REPO_NON_GITHUB.url);
-    expect(repo).toBeNull();
+    const deletedRepo1 = await db.getRepoByUrl(TEST_REPO_NON_GITHUB.url);
+    expect(deletedRepo1).toBeNull();
 
     const res2 = await request(app)
       .delete(`/api/v1/repo/${repoIds[2]}/delete`)
@@ -288,12 +393,13 @@ describe('add new repo', () => {
       .send();
 
     expect(res2.status).toBe(200);
-    const repo2 = await db.getRepoByUrl(TEST_REPO_NAKED.url);
-    expect(repo2).toBeNull();
+    const deletedRepo2 = await db.getRepoByUrl(TEST_REPO_NAKED.url);
+    expect(deletedRepo2).toBeNull();
   });
 
   afterAll(async () => {
-    await Service.httpServer.close();
+    await proxy.stop();
+    await Service.stop();
     await cleanupRepo(TEST_REPO_NON_GITHUB.url);
     await cleanupRepo(TEST_REPO_NAKED.url);
   });

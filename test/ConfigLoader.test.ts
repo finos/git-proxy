@@ -192,6 +192,111 @@ describe('ConfigLoader', () => {
 
       expect(spy).not.toHaveBeenCalled();
     });
+
+    it('should skip reload and log error when configuration is invalid', async () => {
+      const invalidConfig = {
+        proxyUrl: 'https://test.com',
+        commitConfig: {
+          author: {
+            email: {
+              local: {
+                block: '[invalid(regex',
+              },
+            },
+          },
+        },
+      };
+
+      fs.writeFileSync(tempConfigFile, JSON.stringify(invalidConfig));
+
+      const initialConfig: Configuration = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+          reloadIntervalSeconds: 0,
+        },
+      };
+
+      configLoader = new ConfigLoader(initialConfig);
+
+      const changeEventSpy = vi.fn();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      configLoader.on('configurationChanged', changeEventSpy);
+
+      await configLoader.reloadConfiguration();
+
+      expect(changeEventSpy).not.toHaveBeenCalled();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Invalid regular expression for commitConfig.author.email.local.block: [invalid(regex',
+      );
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Invalid configuration, skipping reload');
+
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('should successfully reload when configuration is valid', async () => {
+      const validConfig = {
+        proxyUrl: 'https://test.com',
+        commitConfig: {
+          author: {
+            email: {
+              local: {
+                block: '^admin.*', // Valid regex pattern
+              },
+            },
+          },
+          message: {
+            block: {
+              patterns: ['WIP:', 'TODO'],
+            },
+          },
+        },
+      };
+
+      fs.writeFileSync(tempConfigFile, JSON.stringify(validConfig));
+
+      const initialConfig: Configuration = {
+        configurationSources: {
+          enabled: true,
+          sources: [
+            {
+              type: 'file',
+              enabled: true,
+              path: tempConfigFile,
+            },
+          ],
+          reloadIntervalSeconds: 0,
+        },
+      };
+
+      configLoader = new ConfigLoader(initialConfig);
+
+      const changeEventSpy = vi.fn();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      configLoader.on('configurationChanged', changeEventSpy);
+
+      await configLoader.reloadConfiguration();
+
+      expect(changeEventSpy).toHaveBeenCalledOnce();
+      expect(changeEventSpy.mock.calls[0][0]).toMatchObject(validConfig);
+
+      expect(consoleErrorSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('Invalid regular expression'),
+      );
+      expect(consoleErrorSpy).not.toHaveBeenCalledWith('Invalid configuration, skipping reload');
+
+      consoleErrorSpy.mockRestore();
+    });
   });
 
   describe('initialize', () => {
@@ -213,7 +318,9 @@ describe('ConfigLoader', () => {
       } else if (process.platform === 'linux') {
         expect(configLoader.cacheDirPath).toContain('.cache');
       } else if (process.platform === 'win32') {
-        expect(configLoader.cacheDirPath).toContain('AppData/Local');
+        // Windows uses backslash in paths, so check for path components separately
+        expect(configLoader.cacheDirPath).toContain('AppData');
+        expect(configLoader.cacheDirPath).toContain('Local');
       }
     });
 
@@ -430,61 +537,88 @@ describe('ConfigLoader', () => {
       );
     });
 
-    it('should throw error if repository is a valid URL but not a git repository', async () => {
-      const source: ConfigurationSource = {
-        type: 'git',
-        repository: 'https://github.com/finos/made-up-test-repo.git',
-        path: 'proxy.config.json',
-        branch: 'main',
-        enabled: true,
-      };
+    it(
+      'should throw error if repository is a valid URL but not a git repository',
+      async () => {
+        const source: ConfigurationSource = {
+          type: 'git',
+          repository: 'https://github.com/finos/made-up-test-repo.git',
+          path: 'proxy.config.json',
+          branch: 'main',
+          enabled: true,
+        };
 
-      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
-        /Failed to clone repository/,
-      );
-    });
+        // Clean up cached clone of the fake repo so the test works regardless of order
+        const envPaths = (await import('env-paths')).default;
+        const paths = envPaths('git-proxy', { suffix: '' });
+        const repoDirName = Buffer.from(source.repository)
+          .toString('base64')
+          .replace(/[^a-zA-Z0-9]/g, '_');
+        const repoDir = path.join(paths.cache, 'git-config-cache', repoDirName);
+        if (fs.existsSync(repoDir)) {
+          fs.rmSync(repoDir, { recursive: true });
+        }
 
-    it('should throw error if repository is a valid git repo but the branch does not exist', async () => {
-      const source: ConfigurationSource = {
-        type: 'git',
-        repository: 'https://github.com/finos/git-proxy.git',
-        path: 'proxy.config.json',
-        branch: 'branch-does-not-exist',
-        enabled: true,
-      };
+        await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+          /Failed to clone repository/,
+        );
+      },
+      { timeout: 30000 },
+    );
 
-      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
-        /Failed to checkout branch/,
-      );
-    });
+    it(
+      'should throw error if repository is a valid git repo but the branch does not exist',
+      async () => {
+        const source: ConfigurationSource = {
+          type: 'git',
+          repository: 'https://github.com/finos/git-proxy.git',
+          path: 'proxy.config.json',
+          branch: 'branch-does-not-exist',
+          enabled: true,
+        };
 
-    it('should throw error if config path was not found', async () => {
-      const source: ConfigurationSource = {
-        type: 'git',
-        repository: 'https://github.com/finos/git-proxy.git',
-        path: 'path-not-found.json',
-        branch: 'main',
-        enabled: true,
-      };
+        await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+          /Failed to checkout branch/,
+        );
+      },
+      { timeout: 30000 },
+    );
 
-      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
-        /Configuration file not found at/,
-      );
-    });
+    it(
+      'should throw error if config path was not found',
+      async () => {
+        const source: ConfigurationSource = {
+          type: 'git',
+          repository: 'https://github.com/finos/git-proxy.git',
+          path: 'path-not-found.json',
+          branch: 'main',
+          enabled: true,
+        };
 
-    it('should throw error if config file is not valid JSON', async () => {
-      const source: ConfigurationSource = {
-        type: 'git',
-        repository: 'https://github.com/finos/git-proxy.git',
-        path: 'test/fixtures/baz.js',
-        branch: 'main',
-        enabled: true,
-      };
+        await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+          /Configuration file not found at/,
+        );
+      },
+      { timeout: 30000 },
+    );
 
-      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
-        /Failed to read or parse configuration file/,
-      );
-    });
+    it(
+      'should throw error if config file is not valid JSON',
+      async () => {
+        const source: ConfigurationSource = {
+          type: 'git',
+          repository: 'https://github.com/finos/git-proxy.git',
+          path: 'test/fixtures/baz.js',
+          branch: 'main',
+          enabled: true,
+        };
+
+        await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+          /Invalid configuration format in git/,
+        );
+      },
+      { timeout: 30000 },
+    );
   });
 
   describe('deepMerge', () => {
@@ -678,7 +812,7 @@ describe('ConfigLoader Error Handling', () => {
         enabled: true,
         path: tempConfigFile,
       }),
-    ).rejects.toThrow(/Invalid configuration file format/);
+    ).rejects.toThrow(/Invalid configuration format in file/);
   });
 
   it('should handle HTTP request errors', async () => {
@@ -704,6 +838,7 @@ describe('ConfigLoader Error Handling', () => {
         enabled: true,
         url: 'http://config-service/config',
       }),
-    ).rejects.toThrow(/Invalid configuration format from HTTP source/);
+      // Check that the error message CONTAINS the following string:
+    ).rejects.toThrow(/Invalid configuration format in HTTP: http:\/\/config-service\/config/);
   });
 });

@@ -34,19 +34,21 @@ const defaultPushQuery: Partial<PushQuery> = {
 export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => {
   if (!query) query = defaultPushQuery;
   return new Promise((resolve, reject) => {
-    db.find(query, (err: Error, docs: Action[]) => {
-      // ignore for code coverage as neDB rarely returns errors even for an invalid query
-      /* istanbul ignore if */
-      if (err) {
-        reject(err);
-      } else {
-        resolve(
-          _.chain(docs)
-            .map((x) => toClass(x, Action.prototype))
-            .value(),
-        );
-      }
-    });
+    db.find(query)
+      .sort({ timestamp: -1 })
+      .exec((err, docs) => {
+        // ignore for code coverage as neDB rarely returns errors even for an invalid query
+        /* istanbul ignore if */
+        if (err) {
+          reject(err);
+        } else {
+          resolve(
+            _.chain(docs)
+              .map((x) => toClass(x, Action.prototype))
+              .value(),
+          );
+        }
+      });
   });
 };
 
@@ -111,7 +113,7 @@ export const authorise = async (id: string, attestation: any): Promise<{ message
   return { message: `authorised ${id}` };
 };
 
-export const reject = async (id: string, attestation: any): Promise<{ message: string }> => {
+export const reject = async (id: string, rejection: any): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -120,7 +122,7 @@ export const reject = async (id: string, attestation: any): Promise<{ message: s
   action.authorised = false;
   action.canceled = false;
   action.rejected = true;
-  action.attestation = attestation;
+  action.rejection = rejection;
   await writeAudit(action);
   return { message: `reject ${id}` };
 };

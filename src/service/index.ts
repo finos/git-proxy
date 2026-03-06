@@ -194,6 +194,7 @@ async function stop(): Promise<void> {
         reject(err);
       } else {
         console.log('Service stopped');
+        _httpServer = null;
         resolve();
       }
     });
