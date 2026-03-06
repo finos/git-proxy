@@ -37,6 +37,13 @@ const gitignorePath = fileURLToPath(
   ),
 );
 
+const licenseHeaderPath = fileURLToPath(
+  new URL(
+    'licenseHeader.js',
+    import.meta.url,
+  ),
+);
+
 export default defineConfig(
   includeIgnoreFile(gitignorePath, 'Imported .gitignore patterns'),
   {
@@ -186,7 +193,7 @@ export default defineConfig(
     files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
     plugins: { 'license-header': licenseHeader },
     rules: {
-      'license-header/header': ['error', './licenseHeader.js'],
+      'license-header/header': ['error', licenseHeaderPath],
     },
     ignores: ['**/licenseHeader.js'],
   },
