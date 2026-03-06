@@ -5,6 +5,7 @@ export type ServerConfig = {
   GIT_PROXY_HTTPS_SERVER_PORT: string | number;
   GIT_PROXY_UI_HOST: string;
   GIT_PROXY_UI_PORT: string | number;
+  GIT_PROXY_HTTPS_UI_PORT: string | number;
   GIT_PROXY_COOKIE_SECRET: string | undefined;
   GIT_PROXY_MONGO_CONNECTION_STRING: string;
 };
