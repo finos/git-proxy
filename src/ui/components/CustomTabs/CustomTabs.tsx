@@ -7,16 +7,17 @@ import Card from '../Card/Card';
 import CardBody from '../Card/CardBody';
 import CardHeader from '../Card/CardHeader';
 import styles from '../../assets/jss/material-dashboard-react/components/customTabsStyle';
+import { SvgIconProps } from '@material-ui/core';
 
 const useStyles = makeStyles(styles as any);
 
 type HeaderColor = 'warning' | 'success' | 'danger' | 'info' | 'primary' | 'rose';
 
-interface TabItem {
+export type TabItem = {
   tabName: string;
-  tabIcon?: React.ComponentType;
+  tabIcon?: React.ComponentType<SvgIconProps>;
   tabContent: React.ReactNode;
-}
+};
 
 interface CustomTabsProps {
   headerColor?: HeaderColor;
@@ -24,6 +25,7 @@ interface CustomTabsProps {
   tabs: TabItem[];
   rtlActive?: boolean;
   plainTabs?: boolean;
+  defaultTab?: number;
 }
 
 const CustomTabs: React.FC<CustomTabsProps> = ({
@@ -32,8 +34,9 @@ const CustomTabs: React.FC<CustomTabsProps> = ({
   tabs,
   title,
   rtlActive = false,
+  defaultTab = 0,
 }) => {
-  const [value, setValue] = useState(0);
+  const [value, setValue] = useState(defaultTab);
   const classes = useStyles();
 
   const handleChange = (event: React.ChangeEvent<unknown>, newValue: number) => {

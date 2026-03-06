@@ -1,25 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { getUserInfo } from '../services/auth';
-
-// Interface for when we convert to TypeScript
-// interface AuthContextType {
-//   user: any;
-//   setUser: (user: any) => void;
-//   refreshUser: () => Promise<void>;
-//   isLoading: boolean;
-// }
-
-interface AuthContextType {
-  user: any;
-  setUser: React.Dispatch<any>;
-  refreshUser: () => Promise<void>;
-  isLoading: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { PublicUser } from '../../db/types';
+import { AuthContext } from '../context';
 
 export const AuthProvider: React.FC<React.PropsWithChildren<object>> = ({ children }) => {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<PublicUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUser = async () => {

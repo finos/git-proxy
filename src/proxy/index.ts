@@ -14,9 +14,10 @@ import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos } from '../db
 import { PluginLoader } from '../plugin';
 import chain from './chain';
 import { Repo } from '../db/types';
+import { serverConfig } from '../config/env';
 
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort, GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } =
-  require('../config/env').serverConfig;
+  serverConfig;
 
 interface ServerOptions {
   inflate: boolean;
@@ -26,15 +27,15 @@ interface ServerOptions {
   cert: Buffer | undefined;
 }
 
-const options: ServerOptions = {
+const getServerOptions = (): ServerOptions => ({
   inflate: true,
   limit: '100000kb',
   type: '*/*',
   key: getTLSEnabled() && getTLSKeyPemPath() ? fs.readFileSync(getTLSKeyPemPath()!) : undefined,
   cert: getTLSEnabled() && getTLSCertPemPath() ? fs.readFileSync(getTLSCertPemPath()!) : undefined,
-};
+});
 
-export default class Proxy {
+export class Proxy {
   private httpServer: http.Server | null = null;
   private httpsServer: https.Server | null = null;
   private expressApp: Express | null = null;
@@ -42,6 +43,16 @@ export default class Proxy {
   constructor() {}
 
   private async proxyPreparations() {
+    // Clean-up the .remote folder in case anything was in-progress when we shut down
+    const remoteDir = './.remote';
+    if (fs.existsSync(remoteDir)) {
+      console.log('Cleaning up the existing .remote dir...');
+      // Recursively remove the contents of ./.remote and ignore exceptions
+      fs.rmSync(remoteDir, { recursive: true, force: true, retryDelay: 100 });
+    }
+    console.log('Creating the .remote dir...');
+    fs.mkdirSync(remoteDir);
+
     const plugins = getPlugins();
     const pluginLoader = new PluginLoader(plugins);
     await pluginLoader.load();
@@ -50,14 +61,14 @@ export default class Proxy {
     const defaultAuthorisedRepoList = getAuthorisedList();
     const allowedList: Repo[] = await getRepos();
 
-    defaultAuthorisedRepoList.forEach(async (x) => {
-      const found = allowedList.find((y) => y.project === x.project && x.name === y.name);
+    for (const defaultRepo of defaultAuthorisedRepoList) {
+      const found = allowedList.find((configuredRepo) => configuredRepo.url === defaultRepo.url);
       if (!found) {
-        const repo = await createRepo(x);
+        const repo = await createRepo(defaultRepo);
         await addUserCanPush(repo._id!, 'admin');
         await addUserCanAuthorise(repo._id!, 'admin');
       }
-    });
+    }
   }
 
   private async createApp() {
@@ -70,15 +81,25 @@ export default class Proxy {
   public async start() {
     await this.proxyPreparations();
     this.expressApp = await this.createApp();
-    this.httpServer = http
-      .createServer(options as any, this.expressApp)
-      .listen(proxyHttpPort, () => {
+    await new Promise<void>((resolve, reject) => {
+      const server = http.createServer(getServerOptions() as any, this.expressApp!);
+      server.on('error', reject);
+      server.listen(proxyHttpPort, () => {
         console.log(`HTTP Proxy Listening on ${proxyHttpPort}`);
+        resolve();
       });
+      this.httpServer = server;
+    });
     // Start HTTPS server only if TLS is enabled
     if (getTLSEnabled()) {
-      this.httpsServer = https.createServer(options, this.expressApp).listen(proxyHttpsPort, () => {
-        console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
+      await new Promise<void>((resolve, reject) => {
+        const server = https.createServer(getServerOptions(), this.expressApp!);
+        server.on('error', reject);
+        server.listen(proxyHttpsPort, () => {
+          console.log(`HTTPS Proxy Listening on ${proxyHttpsPort}`);
+          resolve();
+        });
+        this.httpsServer = server;
       });
     }
   }
@@ -88,28 +109,42 @@ export default class Proxy {
   }
 
   public stop(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      try {
-        // Close HTTP server if it exists
-        if (this.httpServer) {
-          this.httpServer.close(() => {
-            console.log('HTTP server closed');
-            this.httpServer = null;
-          });
-        }
+    const closePromises: Promise<void>[] = [];
 
-        // Close HTTPS server if it exists
-        if (this.httpsServer) {
-          this.httpsServer.close(() => {
-            console.log('HTTPS server closed');
-            this.httpsServer = null;
+    // Close HTTP server if it exists
+    if (this.httpServer) {
+      closePromises.push(
+        new Promise((resolve, reject) => {
+          this.httpServer!.close((err) => {
+            if (err) {
+              reject(err);
+            } else {
+              console.log('HTTP server closed');
+              this.httpServer = null;
+              resolve();
+            }
           });
-        }
+        }),
+      );
+    }
 
-        resolve();
-      } catch (error) {
-        reject(error);
-      }
-    });
+    // Close HTTPS server if it exists
+    if (this.httpsServer) {
+      closePromises.push(
+        new Promise((resolve, reject) => {
+          this.httpsServer!.close((err) => {
+            if (err) {
+              reject(err);
+            } else {
+              console.log('HTTPS server closed');
+              this.httpsServer = null;
+              resolve();
+            }
+          });
+        }),
+      );
+    }
+
+    return Promise.all(closePromises).then(() => {});
   }
 }

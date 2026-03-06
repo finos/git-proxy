@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 const { execFileSync } = require('child_process');
 const { writeFileSync, readFileSync, mkdtempSync } = require('fs');
 const { tmpdir } = require('os');

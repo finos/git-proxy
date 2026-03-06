@@ -9,15 +9,13 @@ const branchPushChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.checkCommitMessages,
   proc.push.checkAuthorEmails,
   proc.push.checkUserPushPermission,
-  proc.push.pullRemote,
+  proc.push.pullRemote, // cleanup is handled after chain execution if successful
   proc.push.writePack,
   proc.push.checkHiddenCommits,
   proc.push.checkIfWaitingAuth,
   proc.push.preReceive,
   proc.push.getDiff,
-  // run before clear remote
   proc.push.gitleaks,
-  proc.push.clearBareClone,
   proc.push.scanDiff,
   proc.push.blockForAuth,
 ];
@@ -45,6 +43,7 @@ let pluginsInserted = false;
 
 export const executeChain = async (req: any, res: any): Promise<Action> => {
   let action: Action = {} as Action;
+  let checkoutCleanUpRequired = false;
 
   try {
     // 1) Initialize basic action fields
@@ -61,6 +60,10 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
       action = await fn(req, action);
       if (!action.continue() || action.allowPush) {
         break;
+      } else if (fn === proc.push.pullRemote) {
+        //if the pull was successful then record the fact we need to clean it up again
+        // pullRemote should cleanup unsuccessful clones itself
+        checkoutCleanUpRequired = true;
       }
     }
   } catch (e) {
@@ -68,11 +71,17 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
     action.errorMessage = `An error occurred when executing the chain: ${e}`;
     console.error(action.errorMessage);
   } finally {
-    await proc.push.audit(req, action);
+    //clean up the clone created
+    if (checkoutCleanUpRequired) {
+      action = await proc.post.clearBareClone(req, action);
+    }
+
+    action = await proc.post.audit(req, action);
+
     if (action.autoApproved) {
-      attemptAutoApproval(action);
+      await attemptAutoApproval(action);
     } else if (action.autoRejected) {
-      attemptAutoRejection(action);
+      await attemptAutoRejection(action);
     }
   }
 
@@ -129,6 +138,7 @@ export const getChain = async (
     // This is set to true so that we don't re-insert the plugins into the chain
     pluginsInserted = true;
   }
+
   switch (action.type) {
     case RequestType.PULL:
       return pullActionChain;

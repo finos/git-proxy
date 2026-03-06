@@ -4,26 +4,11 @@ import { green } from '@material-ui/core/colors';
 import { Help } from '@material-ui/icons';
 import { Grid, Tooltip, Checkbox, FormGroup, FormControlLabel } from '@material-ui/core';
 import { Theme } from '@material-ui/core/styles';
-
-interface TooltipLink {
-  text: string;
-  url: string;
-}
-
-interface TooltipContent {
-  text: string;
-  links?: TooltipLink[];
-}
-
-export interface FormQuestion {
-  label: string;
-  checked: boolean;
-  tooltip: TooltipContent;
-}
+import { QuestionFormData } from '../../../types';
 
 interface AttestationFormProps {
-  formData: FormQuestion[];
-  passFormData: (data: FormQuestion[]) => void;
+  formData: QuestionFormData[];
+  passFormData: (data: QuestionFormData[]) => void;
 }
 
 const styles = (theme: Theme) => ({

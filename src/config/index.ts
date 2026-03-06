@@ -2,9 +2,11 @@ import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
 import { GitProxyConfig, Convert } from './generated/config';
-import { ConfigLoader, Configuration } from './ConfigLoader';
+import { ConfigLoader } from './ConfigLoader';
+import { Configuration } from './types';
 import { serverConfig } from './env';
-import { configFile } from './file';
+import { getConfigFile } from './file';
+import { validateConfig } from './validators';
 
 // Cache for current configuration
 let _currentConfig: GitProxyConfig | null = null;
@@ -51,7 +53,7 @@ function loadFullConfiguration(): GitProxyConfig {
   const defaultConfig = cleanUndefinedValues(rawDefaultConfig);
 
   let userSettings: Partial<GitProxyConfig> = {};
-  const userConfigFile = process.env.CONFIG_FILE || configFile;
+  const userConfigFile = process.env.CONFIG_FILE || getConfigFile();
 
   if (existsSync(userConfigFile)) {
     try {
@@ -67,6 +69,15 @@ function loadFullConfiguration(): GitProxyConfig {
   }
 
   _currentConfig = mergeConfigurations(defaultConfig, userSettings);
+
+  if (!validateConfig(_currentConfig)) {
+    console.error(
+      'Invalid configuration: Please check your configuration file and restart GitProxy.',
+    );
+    throw new Error(
+      'Invalid configuration: Please check your configuration file and restart GitProxy.',
+    );
+  }
 
   return _currentConfig;
 }
@@ -156,7 +167,7 @@ export const getDatabase = () => {
  * Get the list of enabled authentication methods
  *
  * At least one authentication method must be enabled.
- * @return {Authentication[]} List of enabled authentication methods
+ * @return List of enabled authentication methods
  */
 export const getAuthMethods = () => {
   const config = loadFullConfiguration();
@@ -175,7 +186,7 @@ export const getAuthMethods = () => {
  * Get the list of enabled authentication methods for API endpoints
  *
  * If no API authentication methods are enabled, all endpoints are public.
- * @return {Authentication[]} List of enabled authentication methods
+ * @return List of enabled authentication methods
  */
 export const getAPIAuthMethods = () => {
   const config = loadFullConfiguration();
@@ -203,14 +214,19 @@ export const getAPIs = () => {
   return config.api || {};
 };
 
-export const getCookieSecret = (): string | undefined => {
+export const getCookieSecret = (): string => {
   const config = loadFullConfiguration();
+
+  if (!config.cookieSecret) {
+    throw new Error('cookieSecret is not set!');
+  }
+
   return config.cookieSecret;
 };
 
-export const getSessionMaxAgeHours = (): number | undefined => {
+export const getSessionMaxAgeHours = (): number => {
   const config = loadFullConfiguration();
-  return config.sessionMaxAgeHours;
+  return config.sessionMaxAgeHours || 24;
 };
 
 // Get commit related configuration
@@ -319,7 +335,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
 
 // Initialize config loader
 function initializeConfigLoader() {
-  const config = loadFullConfiguration() as Configuration;
+  const config = loadFullConfiguration();
   _configLoader = new ConfigLoader(config);
 
   // Handle configuration updates
@@ -346,7 +362,6 @@ export const reloadConfiguration = async () => {
 
 // Initialize configuration on module load
 try {
-  loadFullConfiguration();
   initializeConfigLoader();
   console.log('Configuration loaded successfully');
 } catch (error) {

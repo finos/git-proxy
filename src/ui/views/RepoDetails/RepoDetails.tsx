@@ -18,29 +18,16 @@ import { makeStyles } from '@material-ui/core/styles';
 import AddUser from './Components/AddUser';
 import { Code, Delete, RemoveCircle, Visibility } from '@material-ui/icons';
 import { useNavigate, useParams } from 'react-router-dom';
-import { UserContext } from '../../../context';
+import { UserContext } from '../../context';
 import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
 import { trimTrailingDotGit } from '../../../db/helper';
 import { fetchRemoteRepositoryData } from '../../utils';
-import { SCMRepositoryMetadata } from '../../../types/models';
 
-interface RepoData {
-  _id: string;
-  project: string;
-  name: string;
-  proxyURL: string;
-  url: string;
-  users: {
-    canAuthorise: string[];
-    canPush: string[];
-  };
-}
-
-export interface UserContextType {
-  user: {
-    admin: boolean;
-  };
-}
+import { RepoView, SCMRepositoryMetadata } from '../../types';
+import { UserContextType } from '../../context';
+import UserLink from '../../components/UserLink/UserLink';
+import DeleteRepoDialog from './Components/DeleteRepoDialog';
+import Danger from '../../components/Typography/Danger';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -57,48 +44,90 @@ const useStyles = makeStyles((theme) => ({
 const RepoDetails: React.FC = () => {
   const navigate = useNavigate();
   const classes = useStyles();
-  const [data, setData] = useState<RepoData | null>(null);
-  const [, setAuth] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
-  const [remoteRepoData, setRemoteRepoData] = React.useState<SCMRepositoryMetadata | null>(null);
+  const [repo, setRepo] = useState<RepoView | null>(null);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [remoteRepoData, setRemoteRepoData] = useState<SCMRepositoryMetadata | null>(null);
   const { user } = useContext<UserContextType>(UserContext);
   const { id: repoId } = useParams<{ id: string }>();
 
   useEffect(() => {
-    if (repoId) {
-      getRepo(setIsLoading, setData, setAuth, setIsError, repoId);
-    }
+    if (!repoId) return;
+    const load = async () => {
+      setIsLoading(true);
+      const result = await getRepo(repoId);
+      if (result.success && result.data) {
+        setRepo(result.data);
+      } else if (result.status === 401) {
+        setIsLoading(false);
+        navigate('/login', { replace: true });
+        return;
+      } else {
+        setIsError(true);
+        setErrorMessage(result.message || 'Something went wrong...');
+      }
+      setIsLoading(false);
+    };
+    load();
   }, [repoId]);
 
   useEffect(() => {
-    if (data) {
-      fetchRemoteRepositoryData(data.project, data.name, data.url).then(setRemoteRepoData);
+    if (repo) {
+      fetchRemoteRepositoryData(repo.project, repo.name, repo.url).then(setRemoteRepoData);
     }
-  }, [data]);
+  }, [repo]);
 
   const removeUser = async (userToRemove: string, action: 'authorise' | 'push') => {
     if (!repoId) return;
-    await deleteUser(userToRemove, repoId, action);
-    getRepo(setIsLoading, setData, setAuth, setIsError, repoId);
+    try {
+      await deleteUser(userToRemove, repoId, action);
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err.message || 'Failed to remove user');
+      return;
+    }
+    const result = await getRepo(repoId);
+    if (result.success && result.data) {
+      setRepo(result.data);
+    } else if (result.status === 401) {
+      navigate('/login', { replace: true });
+    } else {
+      setIsError(true);
+      setErrorMessage(result.message || 'Failed to refresh repository data');
+    }
   };
 
   const removeRepository = async (id: string) => {
-    await deleteRepo(id);
+    try {
+      await deleteRepo(id);
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err.message || 'Failed to delete repository');
+      return;
+    }
     navigate('/dashboard/repo', { replace: true });
   };
 
-  const refresh = () => {
-    if (repoId) {
-      getRepo(setIsLoading, setData, setAuth, setIsError, repoId);
+  const refresh = async () => {
+    if (!repoId) return;
+    const result = await getRepo(repoId);
+    if (result.success && result.data) {
+      setRepo(result.data);
+    } else if (result.status === 401) {
+      navigate('/login', { replace: true });
+    } else {
+      setIsError(true);
+      setErrorMessage(result.message || 'Failed to refresh repository data');
     }
   };
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Something went wrong ...</div>;
-  if (!data) return <div>No repository data found</div>;
+  if (isError) return <Danger>{errorMessage || 'Something went wrong ...'}</Danger>;
+  if (!repo) return <div>No repository data found</div>;
 
-  const { url: remoteUrl, proxyURL } = data || {};
+  const { url: remoteUrl, proxyURL } = repo || {};
   const parsedUrl = new URL(remoteUrl);
   const cloneURL = `${proxyURL}/${parsedUrl.host}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`;
 
@@ -120,7 +149,7 @@ const RepoDetails: React.FC = () => {
                     variant='contained'
                     color='secondary'
                     data-testid='delete-repo-button'
-                    onClick={() => removeRepository(data._id)}
+                    onClick={() => setConfirmDeleteOpen(true)}
                   >
                     <Delete />
                   </Button>
@@ -138,7 +167,7 @@ const RepoDetails: React.FC = () => {
                       width='75px'
                       style={{ borderRadius: '5px' }}
                       src={remoteRepoData.avatarUrl}
-                      alt={`${data.project} logo`}
+                      alt={`${repo.project} logo`}
                     />
                   </GridItem>
                 )}
@@ -148,29 +177,29 @@ const RepoDetails: React.FC = () => {
                   <h4>
                     {remoteRepoData?.profileUrl && (
                       <a href={remoteRepoData.profileUrl} target='_blank' rel='noopener noreferrer'>
-                        {data.project}
+                        {repo.project}
                       </a>
                     )}
-                    {!remoteRepoData?.profileUrl && <span>{data.project}</span>}
+                    {!remoteRepoData?.profileUrl && <span>{repo.project}</span>}
                   </h4>
                 </GridItem>
                 <GridItem xs={12} sm={2} md={2}>
                   <FormLabel component='legend'>Name</FormLabel>
                   <h4>
                     <a
-                      href={trimTrailingDotGit(data.url)}
+                      href={trimTrailingDotGit(repo.url)}
                       target='_blank'
                       rel='noopener noreferrer'
                     >
-                      {data.name}
+                      {repo.name}
                     </a>
                   </h4>
                 </GridItem>
                 <GridItem xs={12} sm={6} md={6}>
                   <FormLabel component='legend'>URL</FormLabel>
                   <h4>
-                    <a href={data.url} target='_blank' rel='noopener noreferrer'>
-                      {trimTrailingDotGit(data.url)}
+                    <a href={repo.url} target='_blank' rel='noopener noreferrer'>
+                      {trimTrailingDotGit(repo.url)}
                     </a>
                   </h4>
                 </GridItem>
@@ -197,17 +226,17 @@ const RepoDetails: React.FC = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {data.users.canAuthorise.map((row) => (
-                        <TableRow key={row}>
+                      {repo.users?.canAuthorise?.map((username) => (
+                        <TableRow key={username}>
                           <TableCell align='left'>
-                            <a href={`/dashboard/user/${row}`}>{row}</a>
+                            <UserLink username={username} />
                           </TableCell>
                           {user.admin && (
                             <TableCell align='right' component='th' scope='row'>
                               <Button
                                 variant='contained'
                                 color='secondary'
-                                onClick={() => removeUser(row, 'authorise')}
+                                onClick={() => removeUser(username, 'authorise')}
                               >
                                 <RemoveCircle />
                               </Button>
@@ -240,17 +269,17 @@ const RepoDetails: React.FC = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {data.users.canPush.map((row) => (
-                        <TableRow key={row}>
+                      {repo.users?.canPush?.map((username) => (
+                        <TableRow key={username}>
                           <TableCell align='left'>
-                            <a href={`/dashboard/user/${row}`}>{row}</a>
+                            <UserLink username={username} />
                           </TableCell>
                           {user.admin && (
                             <TableCell align='right' component='th' scope='row'>
                               <Button
                                 variant='contained'
                                 color='secondary'
-                                onClick={() => removeUser(row, 'push')}
+                                onClick={() => removeUser(username, 'push')}
                               >
                                 <RemoveCircle />
                               </Button>
@@ -266,6 +295,13 @@ const RepoDetails: React.FC = () => {
           </CardBody>
         </Card>
       </GridItem>
+
+      <DeleteRepoDialog
+        repoName={repo.name}
+        open={confirmDeleteOpen}
+        onClose={() => setConfirmDeleteOpen(false)}
+        onConfirm={() => removeRepository(repo._id!)}
+      />
     </GridContainer>
   );
 };

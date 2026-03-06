@@ -1,6 +1,7 @@
 import fs from 'fs';
 import Datastore from '@seald-io/nedb';
-import { User } from '../types';
+
+import { User, UserQuery } from '../types';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -10,7 +11,13 @@ if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
 /* istanbul ignore if */
 if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
 
-const db = new Datastore({ filename: './.data/db/users.db', autoload: true });
+// export for testing purposes
+export let db: Datastore;
+if (process.env.NODE_ENV === 'test') {
+  db = new Datastore({ inMemoryOnly: true, autoload: true });
+} else {
+  db = new Datastore({ filename: './.data/db/users.db', autoload: true });
+}
 
 // Using a unique constraint with the index
 try {
@@ -115,11 +122,14 @@ export const deleteUser = (username: string): Promise<void> => {
   });
 };
 
-export const updateUser = (user: User): Promise<void> => {
-  user.username = user.username.toLowerCase();
+export const updateUser = (user: Partial<User>): Promise<void> => {
+  if (user.username) {
+    user.username = user.username.toLowerCase();
+  }
   if (user.email) {
     user.email = user.email.toLowerCase();
   }
+
   return new Promise((resolve, reject) => {
     // The mongo db adaptor adds fields to existing documents, where this adaptor replaces the document
     //   hence, retrieve and merge documents to avoid dropping fields (such as the gitaccount)
@@ -153,7 +163,7 @@ export const updateUser = (user: User): Promise<void> => {
   });
 };
 
-export const getUsers = (query: any = {}): Promise<User[]> => {
+export const getUsers = (query: Partial<UserQuery> = {}): Promise<User[]> => {
   if (query.username) {
     query.username = query.username.toLowerCase();
   }

@@ -1,4 +1,3 @@
-import fs from 'fs';
 import _ from 'lodash';
 import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
@@ -7,13 +6,13 @@ import { PushQuery } from '../types';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
-// these don't get coverage in tests as they have already been run once before the test
-/* istanbul ignore if */
-if (!fs.existsSync('./.data')) fs.mkdirSync('./.data');
-/* istanbul ignore if */
-if (!fs.existsSync('./.data/db')) fs.mkdirSync('./.data/db');
-
-const db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
+// export for testing purposes
+export let db: Datastore;
+if (process.env.NODE_ENV === 'test') {
+  db = new Datastore({ inMemoryOnly: true, autoload: true });
+} else {
+  db = new Datastore({ filename: './.data/db/pushes.db', autoload: true });
+}
 try {
   db.ensureIndex({ fieldName: 'id', unique: true });
 } catch (e) {
@@ -24,14 +23,15 @@ try {
 }
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
-const defaultPushQuery: PushQuery = {
+const defaultPushQuery: Partial<PushQuery> = {
   error: false,
   blocked: true,
   allowPush: false,
   authorised: false,
+  type: 'push',
 };
 
-export const getPushes = (query: PushQuery): Promise<Action[]> => {
+export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => {
   if (!query) query = defaultPushQuery;
   return new Promise((resolve, reject) => {
     db.find(query, (err: Error, docs: Action[]) => {
@@ -111,7 +111,7 @@ export const authorise = async (id: string, attestation: any): Promise<{ message
   return { message: `authorised ${id}` };
 };
 
-export const reject = async (id: string, attestation: any): Promise<{ message: string }> => {
+export const reject = async (id: string, rejection: any): Promise<{ message: string }> => {
   const action = await getPush(id);
   if (!action) {
     throw new Error(`push ${id} not found`);
@@ -120,7 +120,7 @@ export const reject = async (id: string, attestation: any): Promise<{ message: s
   action.authorised = false;
   action.canceled = false;
   action.rejected = true;
-  action.attestation = attestation;
+  action.rejection = rejection;
   await writeAudit(action);
   return { message: `reject ${id}` };
 };

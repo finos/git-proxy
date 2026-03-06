@@ -1,35 +1,20 @@
 import { processGitURLForNameAndOrg, processUrlPath } from '../routes/helper';
 import { Step } from './Step';
+import { Attestation, CommitData, Rejection } from '../processors/types';
 import { TagData } from '../../types/models';
 
 export enum RequestType {
-  // eslint-disable-next-line no-unused-vars
   PUSH = 'push',
-  // eslint-disable-next-line no-unused-vars
+
   PULL = 'pull',
 }
 
 export enum ActionType {
-  // eslint-disable-next-line no-unused-vars
   COMMIT = 'commit',
-  // eslint-disable-next-line no-unused-vars
-  TAG = 'tag',
-  // eslint-disable-next-line no-unused-vars
-  BRANCH = 'branch',
-}
 
-/**
- * Represents a commit.
- */
-export interface CommitData {
-  message: string;
-  committer: string;
-  committerEmail: string;
-  tree: string;
-  parent: string;
-  author: string;
-  authorEmail: string;
-  commitTimestamp?: string;
+  TAG = 'tag',
+
+  BRANCH = 'branch',
 }
 
 /**
@@ -64,7 +49,8 @@ class Action {
   author?: string;
   user?: string;
   userEmail?: string;
-  attestation?: string;
+  attestation?: Attestation;
+  rejection?: Rejection;
   lastStep?: Step;
   proxyGitPath?: string;
   tag?: string;
@@ -127,7 +113,8 @@ class Action {
   }
 
   /**
-   * Set the commit range for the action.
+   * Set the commit range for the action. Changes the action.id to be based on
+   * the commit details.
    * @param {string} commitFrom the starting commit
    * @param {string} commitTo the ending commit
    */

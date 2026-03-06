@@ -21,24 +21,26 @@ export interface GitProxyConfig {
    * List of authentication sources for API endpoints. May be empty, in which case all
    * endpoints are public.
    */
-  apiAuthentication?: Authentication[];
+  apiAuthentication?: AuthenticationElement[];
   /**
-   * Customisable questions to add to attestation form
+   * Configuration for the attestation form displayed to reviewers. Reviewers will need to
+   * check the box next to each question in order to complete the review attestation.
    */
-  attestationConfig?: { [key: string]: any };
+  attestationConfig?: AttestationConfig;
   /**
    * List of authentication sources. The first source in the configuration with enabled=true
    * will be used.
    */
-  authentication?: Authentication[];
+  authentication?: AuthenticationElement[];
   /**
    * List of repositories that are authorised to be pushed to through the proxy.
    */
   authorisedList?: AuthorisedRepo[];
   /**
-   * Enforce rules and patterns on commits including e-mail and message
+   * Block commits based on rules defined over author/committer e-mail addresses, commit
+   * message content and diff content
    */
-  commitConfig?: { [key: string]: any };
+  commitConfig?: CommitConfig;
   configurationSources?: any;
   /**
    * Customisable e-mail address to share in proxy responses and warnings
@@ -50,22 +52,23 @@ export interface GitProxyConfig {
    */
   csrfProtection?: boolean;
   /**
-   * Provide domains to use alternative to the defaults
+   * Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL
    */
-  domains?: { [key: string]: any };
+  domains?: Domains;
   /**
    * List of plugins to integrate on GitProxy's push or pull actions. Each value is either a
    * file path or a module name.
    */
   plugins?: string[];
   /**
-   * Pattern searches for listed private organizations are disabled
+   * Provider searches for listed private organizations are disabled, see
+   * commitConfig.diff.block.providers
    */
   privateOrganizations?: any[];
   /**
-   * Used in early versions of git proxy to configure the remote host that traffic is proxied
-   * to. In later versions, the repository URL is used to determine the domain proxied,
-   * allowing multiple hosts to be proxied by one instance.
+   * Deprecated: Used in early versions of git proxy to configure the remote host that traffic
+   * is proxied to. In later versions, the repository URL is used to determine the domain
+   * proxied, allowing multiple hosts to be proxied by one instance.
    */
   proxyUrl?: string;
   /**
@@ -108,18 +111,28 @@ export interface GitProxyConfig {
  * Third party APIs
  */
 export interface API {
-  github?: Github;
+  /**
+   * Configuration for the gitleaks
+   * [https://github.com/gitleaks/gitleaks](https://github.com/gitleaks/gitleaks) plugin
+   */
+  gitleaks?: Gitleaks;
   /**
    * Configuration used in conjunction with ActiveDirectory auth, which relates to a REST API
    * used to check user group membership, as opposed to direct querying via LDAP.<br />If this
    * configuration is set direct querying of group membership via LDAP will be disabled.
    */
   ls?: Ls;
-  [property: string]: any;
 }
 
-export interface Github {
-  baseUrl?: string;
+/**
+ * Configuration for the gitleaks
+ * [https://github.com/gitleaks/gitleaks](https://github.com/gitleaks/gitleaks) plugin
+ */
+export interface Gitleaks {
+  configPath?: string;
+  enabled?: boolean;
+  ignoreGitleaksAllow?: boolean;
+  noColor?: boolean;
   [property: string]: any;
 }
 
@@ -139,15 +152,14 @@ export interface Ls {
    * membership of.</li><li>"&lt;id&gt;": The username to check group membership for.</li></ul>
    */
   userInADGroup?: string;
-  [property: string]: any;
 }
 
 /**
  * Configuration for an authentication source
  */
-export interface Authentication {
+export interface AuthenticationElement {
   enabled: boolean;
-  type: Type;
+  type: AuthenticationElementType;
   /**
    * Additional Active Directory configuration supporting LDAP connection which can be used to
    * confirm group membership. For the full set of available options see the activedirectory 2
@@ -199,6 +211,10 @@ export interface AdConfig {
    */
   password: string;
   /**
+   * Override baseDN to query for users in other OUs or sub-trees.
+   */
+  searchBase?: string;
+  /**
    * Active Directory server to connect to, e.g. `ldap://ad.example.com`.
    */
   url: string;
@@ -215,6 +231,13 @@ export interface AdConfig {
 export interface JwtConfig {
   authorityURL: string;
   clientID: string;
+  expectedAudience?: string;
+  roleMapping?: RoleMapping;
+  [property: string]: any;
+}
+
+export interface RoleMapping {
+  admin?: { [key: string]: any };
   [property: string]: any;
 }
 
@@ -230,17 +253,201 @@ export interface OidcConfig {
   [property: string]: any;
 }
 
-export enum Type {
+export enum AuthenticationElementType {
   ActiveDirectory = 'ActiveDirectory',
   Jwt = 'jwt',
   Local = 'local',
   Openidconnect = 'openidconnect',
 }
 
+/**
+ * Configuration for the attestation form displayed to reviewers. Reviewers will need to
+ * check the box next to each question in order to complete the review attestation.
+ */
+export interface AttestationConfig {
+  /**
+   * Customisable attestation questions to add to attestation form.
+   */
+  questions?: Question[];
+}
+
+export interface Question {
+  /**
+   * The text of the question that will be displayed to the reviewer
+   */
+  label: string;
+  /**
+   * A tooltip and optional set of links that will be displayed on mouseover of the question
+   * and used to provide additional guidance to the reviewer.
+   */
+  tooltip: QuestionTooltip;
+}
+
+/**
+ * A tooltip and optional set of links that will be displayed on mouseover of the question
+ * and used to provide additional guidance to the reviewer.
+ */
+export interface QuestionTooltip {
+  /**
+   * An array of links to display under the tooltip text, providing additional context about
+   * the question
+   */
+  links?: Link[];
+  /**
+   * Tooltip text
+   */
+  text: string;
+}
+
+export interface Link {
+  /**
+   * Link text
+   */
+  text: string;
+  /**
+   * Link URL
+   */
+  url: string;
+}
+
 export interface AuthorisedRepo {
   name: string;
   project: string;
   url: string;
+  [property: string]: any;
+}
+
+/**
+ * Block commits based on rules defined over author/committer e-mail addresses, commit
+ * message content and diff content
+ */
+export interface CommitConfig {
+  /**
+   * Rules applied to commit authors
+   */
+  author?: Author;
+  /**
+   * Rules applied to commit diff content
+   */
+  diff?: Diff;
+  /**
+   * Rules applied to commit messages
+   */
+  message?: Message;
+}
+
+/**
+ * Rules applied to commit authors
+ */
+export interface Author {
+  /**
+   * Rules applied to author email addresses
+   */
+  email?: Email;
+}
+
+/**
+ * Rules applied to author email addresses
+ */
+export interface Email {
+  /**
+   * Rules applied to the domain portion of the email address (i.e. section after the @ symbol)
+   */
+  domain?: Domain;
+  /**
+   * Rules applied to the local portion of the email address (i.e. section before the @ symbol)
+   */
+  local?: Local;
+}
+
+/**
+ * Rules applied to the domain portion of the email address (i.e. section after the @ symbol)
+ */
+export interface Domain {
+  /**
+   * Allow only commits where the domain part of the email address matches this regular
+   * expression
+   */
+  allow?: string;
+}
+
+/**
+ * Rules applied to the local portion of the email address (i.e. section before the @ symbol)
+ */
+export interface Local {
+  /**
+   * Block commits with author email addresses where the first part matches this regular
+   * expression
+   */
+  block?: string;
+}
+
+/**
+ * Rules applied to commit diff content
+ */
+export interface Diff {
+  /**
+   * Block commits where the commit diff matches any of the given patterns
+   */
+  block?: DiffBlock;
+}
+
+/**
+ * Block commits where the commit diff matches any of the given patterns
+ */
+export interface DiffBlock {
+  /**
+   * Block commits where the commit diff content contains any of the given string literals
+   */
+  literals?: string[];
+  /**
+   * Block commits where the commit diff content matches any of the given regular expressions
+   */
+  patterns?: any[];
+  /**
+   * Block commits where the commit diff content matches any of the given regular expressions,
+   * except where the repository path (project/organisation) matches one of the listed
+   * privateOrganisations. The keys in this array are listed as the block type in logs.
+   */
+  providers?: { [key: string]: string };
+}
+
+/**
+ * Rules applied to commit messages
+ */
+export interface Message {
+  /**
+   * Block commits where the commit message matches any of the given patterns
+   */
+  block?: MessageBlock;
+}
+
+/**
+ * Block commits where the commit message matches any of the given patterns
+ */
+export interface MessageBlock {
+  /**
+   * Block commits where the commit message contains any of the given string literals
+   */
+  literals?: string[];
+  /**
+   * Block commits where the commit message matches any of the given regular expressions
+   */
+  patterns?: string[];
+}
+
+/**
+ * Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL
+ */
+export interface Domains {
+  /**
+   * Override for the default proxy URL, should include the protocol
+   */
+  proxy?: string;
+  /**
+   * Override for the service UI URL, should include the protocol
+   */
+  service?: string;
   [property: string]: any;
 }
 
@@ -266,13 +473,55 @@ export interface RateLimit {
   windowMs: number;
 }
 
+/**
+ * Configuration entry for a database
+ *
+ * Connection properties for mongoDB. Options may be passed in either the connection string
+ * or broken out in the options object
+ *
+ * Connection properties for an neDB file-based database
+ */
 export interface Database {
+  /**
+   * mongoDB Client connection string, see
+   * [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)
+   */
   connectionString?: string;
   enabled: boolean;
-  options?: { [key: string]: any };
-  params?: { [key: string]: any };
-  type: string;
+  /**
+   * mongoDB Client connection options. Please note that only custom options are described
+   * here, see
+   * [https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/](https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/)
+   * for all config options.
+   */
+  options?: Options;
+  type: DatabaseType;
   [property: string]: any;
+}
+
+/**
+ * mongoDB Client connection options. Please note that only custom options are described
+ * here, see
+ * [https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/](https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/)
+ * for all config options.
+ */
+export interface Options {
+  authMechanismProperties?: AuthMechanismProperties;
+  [property: string]: any;
+}
+
+export interface AuthMechanismProperties {
+  /**
+   * If set to true, the `fromNodeProviderChain()` function from @aws-sdk/credential-providers
+   * is passed as the `AWS_CREDENTIAL_PROVIDER`
+   */
+  AWS_CREDENTIAL_PROVIDER?: boolean;
+  [property: string]: any;
+}
+
+export enum DatabaseType {
+  FS = 'fs',
+  Mongo = 'mongo',
 }
 
 /**
@@ -501,17 +750,25 @@ const typeMap: any = {
       {
         json: 'apiAuthentication',
         js: 'apiAuthentication',
-        typ: u(undefined, a(r('Authentication'))),
+        typ: u(undefined, a(r('AuthenticationElement'))),
       },
-      { json: 'attestationConfig', js: 'attestationConfig', typ: u(undefined, m('any')) },
-      { json: 'authentication', js: 'authentication', typ: u(undefined, a(r('Authentication'))) },
+      {
+        json: 'attestationConfig',
+        js: 'attestationConfig',
+        typ: u(undefined, r('AttestationConfig')),
+      },
+      {
+        json: 'authentication',
+        js: 'authentication',
+        typ: u(undefined, a(r('AuthenticationElement'))),
+      },
       { json: 'authorisedList', js: 'authorisedList', typ: u(undefined, a(r('AuthorisedRepo'))) },
-      { json: 'commitConfig', js: 'commitConfig', typ: u(undefined, m('any')) },
+      { json: 'commitConfig', js: 'commitConfig', typ: u(undefined, r('CommitConfig')) },
       { json: 'configurationSources', js: 'configurationSources', typ: u(undefined, 'any') },
       { json: 'contactEmail', js: 'contactEmail', typ: u(undefined, '') },
       { json: 'cookieSecret', js: 'cookieSecret', typ: u(undefined, '') },
       { json: 'csrfProtection', js: 'csrfProtection', typ: u(undefined, true) },
-      { json: 'domains', js: 'domains', typ: u(undefined, m('any')) },
+      { json: 'domains', js: 'domains', typ: u(undefined, r('Domains')) },
       { json: 'plugins', js: 'plugins', typ: u(undefined, a('')) },
       { json: 'privateOrganizations', js: 'privateOrganizations', typ: u(undefined, a('any')) },
       { json: 'proxyUrl', js: 'proxyUrl', typ: u(undefined, '') },
@@ -529,17 +786,25 @@ const typeMap: any = {
   ),
   API: o(
     [
-      { json: 'github', js: 'github', typ: u(undefined, r('Github')) },
+      { json: 'gitleaks', js: 'gitleaks', typ: u(undefined, r('Gitleaks')) },
       { json: 'ls', js: 'ls', typ: u(undefined, r('Ls')) },
+    ],
+    false,
+  ),
+  Gitleaks: o(
+    [
+      { json: 'configPath', js: 'configPath', typ: u(undefined, '') },
+      { json: 'enabled', js: 'enabled', typ: u(undefined, true) },
+      { json: 'ignoreGitleaksAllow', js: 'ignoreGitleaksAllow', typ: u(undefined, true) },
+      { json: 'noColor', js: 'noColor', typ: u(undefined, true) },
     ],
     'any',
   ),
-  Github: o([{ json: 'baseUrl', js: 'baseUrl', typ: u(undefined, '') }], 'any'),
-  Ls: o([{ json: 'userInADGroup', js: 'userInADGroup', typ: u(undefined, '') }], 'any'),
-  Authentication: o(
+  Ls: o([{ json: 'userInADGroup', js: 'userInADGroup', typ: u(undefined, '') }], false),
+  AuthenticationElement: o(
     [
       { json: 'enabled', js: 'enabled', typ: true },
-      { json: 'type', js: 'type', typ: r('Type') },
+      { json: 'type', js: 'type', typ: r('AuthenticationElementType') },
       { json: 'adConfig', js: 'adConfig', typ: u(undefined, r('AdConfig')) },
       { json: 'adminGroup', js: 'adminGroup', typ: u(undefined, '') },
       { json: 'domain', js: 'domain', typ: u(undefined, '') },
@@ -553,6 +818,7 @@ const typeMap: any = {
     [
       { json: 'baseDN', js: 'baseDN', typ: '' },
       { json: 'password', js: 'password', typ: '' },
+      { json: 'searchBase', js: 'searchBase', typ: u(undefined, '') },
       { json: 'url', js: 'url', typ: '' },
       { json: 'username', js: 'username', typ: '' },
     ],
@@ -562,9 +828,12 @@ const typeMap: any = {
     [
       { json: 'authorityURL', js: 'authorityURL', typ: '' },
       { json: 'clientID', js: 'clientID', typ: '' },
+      { json: 'expectedAudience', js: 'expectedAudience', typ: u(undefined, '') },
+      { json: 'roleMapping', js: 'roleMapping', typ: u(undefined, r('RoleMapping')) },
     ],
     'any',
   ),
+  RoleMapping: o([{ json: 'admin', js: 'admin', typ: u(undefined, m('any')) }], 'any'),
   OidcConfig: o(
     [
       { json: 'callbackURL', js: 'callbackURL', typ: '' },
@@ -575,11 +844,78 @@ const typeMap: any = {
     ],
     'any',
   ),
+  AttestationConfig: o(
+    [{ json: 'questions', js: 'questions', typ: u(undefined, a(r('Question'))) }],
+    false,
+  ),
+  Question: o(
+    [
+      { json: 'label', js: 'label', typ: '' },
+      { json: 'tooltip', js: 'tooltip', typ: r('QuestionTooltip') },
+    ],
+    false,
+  ),
+  QuestionTooltip: o(
+    [
+      { json: 'links', js: 'links', typ: u(undefined, a(r('Link'))) },
+      { json: 'text', js: 'text', typ: '' },
+    ],
+    false,
+  ),
+  Link: o(
+    [
+      { json: 'text', js: 'text', typ: '' },
+      { json: 'url', js: 'url', typ: '' },
+    ],
+    false,
+  ),
   AuthorisedRepo: o(
     [
       { json: 'name', js: 'name', typ: '' },
       { json: 'project', js: 'project', typ: '' },
       { json: 'url', js: 'url', typ: '' },
+    ],
+    'any',
+  ),
+  CommitConfig: o(
+    [
+      { json: 'author', js: 'author', typ: u(undefined, r('Author')) },
+      { json: 'diff', js: 'diff', typ: u(undefined, r('Diff')) },
+      { json: 'message', js: 'message', typ: u(undefined, r('Message')) },
+    ],
+    false,
+  ),
+  Author: o([{ json: 'email', js: 'email', typ: u(undefined, r('Email')) }], false),
+  Email: o(
+    [
+      { json: 'domain', js: 'domain', typ: u(undefined, r('Domain')) },
+      { json: 'local', js: 'local', typ: u(undefined, r('Local')) },
+    ],
+    false,
+  ),
+  Domain: o([{ json: 'allow', js: 'allow', typ: u(undefined, '') }], false),
+  Local: o([{ json: 'block', js: 'block', typ: u(undefined, '') }], false),
+  Diff: o([{ json: 'block', js: 'block', typ: u(undefined, r('DiffBlock')) }], false),
+  DiffBlock: o(
+    [
+      { json: 'literals', js: 'literals', typ: u(undefined, a('')) },
+      { json: 'patterns', js: 'patterns', typ: u(undefined, a('any')) },
+      { json: 'providers', js: 'providers', typ: u(undefined, m('')) },
+    ],
+    false,
+  ),
+  Message: o([{ json: 'block', js: 'block', typ: u(undefined, r('MessageBlock')) }], false),
+  MessageBlock: o(
+    [
+      { json: 'literals', js: 'literals', typ: u(undefined, a('')) },
+      { json: 'patterns', js: 'patterns', typ: u(undefined, a('')) },
+    ],
+    false,
+  ),
+  Domains: o(
+    [
+      { json: 'proxy', js: 'proxy', typ: u(undefined, '') },
+      { json: 'service', js: 'service', typ: u(undefined, '') },
     ],
     'any',
   ),
@@ -596,10 +932,23 @@ const typeMap: any = {
     [
       { json: 'connectionString', js: 'connectionString', typ: u(undefined, '') },
       { json: 'enabled', js: 'enabled', typ: true },
-      { json: 'options', js: 'options', typ: u(undefined, m('any')) },
-      { json: 'params', js: 'params', typ: u(undefined, m('any')) },
-      { json: 'type', js: 'type', typ: '' },
+      { json: 'options', js: 'options', typ: u(undefined, r('Options')) },
+      { json: 'type', js: 'type', typ: r('DatabaseType') },
     ],
+    'any',
+  ),
+  Options: o(
+    [
+      {
+        json: 'authMechanismProperties',
+        js: 'authMechanismProperties',
+        typ: u(undefined, r('AuthMechanismProperties')),
+      },
+    ],
+    'any',
+  ),
+  AuthMechanismProperties: o(
+    [{ json: 'AWS_CREDENTIAL_PROVIDER', js: 'AWS_CREDENTIAL_PROVIDER', typ: u(undefined, true) }],
     'any',
   ),
   TempPassword: o(
@@ -632,5 +981,6 @@ const typeMap: any = {
     ],
     'any',
   ),
-  Type: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
+  AuthenticationElementType: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
+  DatabaseType: ['fs', 'mongo'],
 };

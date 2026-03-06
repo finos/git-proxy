@@ -1,61 +1,58 @@
-import { Options as RateLimitOptions } from 'express-rate-limit';
+import { GitProxyConfig } from './generated/config';
 
-export interface UserSettings {
-  uiRouteAuth: Record<string, unknown>;
-  authorisedList: AuthorisedRepo[];
-  sink: Database[];
-  authentication: Authentication[];
-  apiAuthentication: Authentication[];
-  tempPassword?: TempPasswordConfig;
-  proxyUrl: string;
-  api: Record<string, any>;
-  cookieSecret: string;
-  sessionMaxAgeHours: number;
-  tls?: TLSConfig;
-  sslCertPemPath?: string; // deprecated
-  sslKeyPemPath?: string; // deprecated
-  plugins: any[];
-  commitConfig: Record<string, unknown>;
-  attestationConfig: Record<string, unknown>;
-  privateOrganizations: any[];
-  urlShortener: string;
-  contactEmail: string;
-  csrfProtection: boolean;
-  domains: Record<string, unknown>;
-  rateLimit: RateLimitConfig;
+export type ServerConfig = {
+  GIT_PROXY_SERVER_PORT: string | number;
+  GIT_PROXY_HTTPS_SERVER_PORT: string | number;
+  GIT_PROXY_UI_HOST: string;
+  GIT_PROXY_UI_PORT: string | number;
+  GIT_PROXY_COOKIE_SECRET: string | undefined;
+  GIT_PROXY_MONGO_CONNECTION_STRING: string;
+};
+
+interface GitAuth {
+  type: 'ssh';
+  privateKeyPath: string;
 }
 
-export interface TLSConfig {
-  enabled?: boolean;
-  cert?: string;
-  key?: string;
+interface HttpAuth {
+  type: 'bearer';
+  token: string;
 }
 
-export interface AuthorisedRepo {
-  project: string;
-  name: string;
+interface BaseSource {
+  type: 'file' | 'http' | 'git';
+  enabled: boolean;
+}
+
+export interface FileSource extends BaseSource {
+  type: 'file';
+  path: string;
+}
+
+export interface HttpSource extends BaseSource {
+  type: 'http';
   url: string;
+  headers?: Record<string, string>;
+  auth?: HttpAuth;
 }
 
-export interface Database {
-  type: string;
+export interface GitSource extends BaseSource {
+  type: 'git';
+  repository: string;
+  branch?: string;
+  path: string;
+  auth?: GitAuth;
+}
+
+export type ConfigurationSource = FileSource | HttpSource | GitSource;
+
+interface ConfigurationSources {
   enabled: boolean;
-  connectionString?: string;
-  params?: Record<string, unknown>;
-  options?: Record<string, unknown>;
+  sources: ConfigurationSource[];
+  reloadIntervalSeconds: number;
+  merge?: boolean;
 }
 
-export interface Authentication {
-  type: string;
-  enabled: boolean;
-  options?: Record<string, unknown>;
+export interface Configuration extends GitProxyConfig {
+  configurationSources?: ConfigurationSources;
 }
-
-export interface TempPasswordConfig {
-  sendEmail: boolean;
-  emailConfig: Record<string, unknown>;
-}
-
-export type RateLimitConfig = Partial<
-  Pick<RateLimitOptions, 'windowMs' | 'limit' | 'message' | 'statusCode'>
->;
