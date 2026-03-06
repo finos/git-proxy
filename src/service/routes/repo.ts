@@ -54,7 +54,7 @@ const repo = (proxy: any) => {
       res.send({ message: 'created' });
     } else {
       res.status(401).send({
-        message: 'You are not authorised to perform this action...',
+        message: 'You are not authorised to perform this action.',
       });
     }
   });
@@ -74,7 +74,7 @@ const repo = (proxy: any) => {
       res.send({ message: 'created' });
     } else {
       res.status(401).send({
-        message: 'You are not authorised to perform this action...',
+        message: 'You are not authorised to perform this action.',
       });
     }
   });
@@ -96,7 +96,7 @@ const repo = (proxy: any) => {
         res.send({ message: 'created' });
       } else {
         res.status(401).send({
-          message: 'You are not authorised to perform this action...',
+          message: 'You are not authorised to perform this action.',
         });
       }
     },
@@ -119,7 +119,7 @@ const repo = (proxy: any) => {
         res.send({ message: 'created' });
       } else {
         res.status(401).send({
-          message: 'You are not authorised to perform this action...',
+          message: 'You are not authorised to perform this action.',
         });
       }
     },
@@ -144,7 +144,7 @@ const repo = (proxy: any) => {
       res.send({ message: 'deleted' });
     } else {
       res.status(401).send({
-        message: 'You are not authorised to perform this action...',
+        message: 'You are not authorised to perform this action.',
       });
     }
   });
@@ -201,7 +201,7 @@ const repo = (proxy: any) => {
       }
     } else {
       res.status(401).send({
-        message: 'You are not authorised to perform this action...',
+        message: 'You are not authorised to perform this action.',
       });
     }
   });

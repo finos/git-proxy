@@ -85,10 +85,10 @@ const Login: React.FC = () => {
         } else if (error.response?.status === 403) {
           setMessage(processAuthError(error, false));
         } else {
-          setMessage('You entered an invalid username or password...');
+          setMessage('You entered an invalid username or password.');
         }
       } else {
-        setMessage('You entered an invalid username or password...');
+        setMessage('You entered an invalid username or password.');
       }
     } finally {
       setIsLoading(false);

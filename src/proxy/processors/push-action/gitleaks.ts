@@ -90,8 +90,7 @@ const getPluginConfig = async (): Promise<ConfigOptions> => {
     if (userConfigPath.length > 0 && (await fileIsReadable(userConfigPath))) {
       configPath = userConfigPath;
     } else {
-      console.error('could not read file at the config path provided, will not be fed to gitleaks');
-      throw new Error("could not check user's config path");
+      throw new Error(`Unable to read file at the provided config path: ${userConfigPath}`);
     }
   }
 
@@ -116,22 +115,22 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   try {
     config = await getPluginConfig();
   } catch (e) {
-    console.error('failed to get gitleaks config, please fix the error:', e);
+    step.setError(`Failed to get gitleaks config: ${e}`);
     action.error = true;
-    step.setError('failed setup gitleaks, please contact an administrator\n');
+    step.setError('Failed to setup gitleaks, please contact an administrator.');
     action.addStep(step);
     return action;
   }
 
   if (!config.enabled) {
-    console.log('gitleaks is disabled, skipping');
+    step.log('Gitleaks is disabled, skipping.');
     action.addStep(step);
     return action;
   }
 
   const { commitFrom, commitTo } = action;
   const workingDir = `${action.proxyGitPath}/${action.repoName}`;
-  console.log(`Scanning range with gitleaks: ${commitFrom}:${commitTo}`, workingDir);
+  step.log(`Scanning range with gitleaks: ${commitFrom}:${commitTo} in ${workingDir}`);
 
   try {
     const gitRootCommit = await runCommand(workingDir, 'git', [
@@ -164,19 +163,19 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       // any failure
       step.error = true;
       if (gitleaks.exitCode !== EXIT_CODE) {
-        step.setError('failed to run gitleaks, please contact an administrator\n');
+        step.setError('Failed to run gitleaks, please contact an administrator.');
       } else {
         // exit code matched our gitleaks findings exit code
         // newline prefix to avoid tab indent at the start
         step.setError('\n' + gitleaks.stdout + gitleaks.stderr);
       }
     } else {
-      console.log('succeeded');
-      console.log(gitleaks.stderr);
+      step.log('Succeeded.');
+      step.log(`Gitleaks output: ${gitleaks.stderr}`);
     }
   } catch (e) {
     action.error = true;
-    step.setError('failed to spawn gitleaks, please contact an administrator\n');
+    step.setError('Failed to spawn gitleaks, please contact an administrator.');
     action.addStep(step);
     return action;
   }
