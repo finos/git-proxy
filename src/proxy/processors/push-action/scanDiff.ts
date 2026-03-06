@@ -33,19 +33,23 @@ type Match = {
   content: string;
 };
 
-const getDiffViolations = (diff: string, organization: string): Match[] | string | null => {
+const getDiffViolations = (
+  diff: string,
+  organization: string,
+  step: Step,
+): Match[] | string | null => {
   // Commit diff is empty, i.e. '', null or undefined
   if (!diff) {
-    console.log('No commit diff found, but this may be legitimate (empty diff)');
+    step.log('No commit diff found, but this may be legitimate (empty diff).');
     // Empty diff is not necessarily a violation - could be legitimate
     // (e.g., cherry-pick with no changes, reverts, etc.)
     return null;
   }
 
-  // Validation for configured block pattern(s) check...
+  // Validation for configured block pattern(s) check
   if (typeof diff !== 'string') {
-    console.log('A non-string value has been captured for the commit diff...');
-    return 'A non-string value has been captured for the commit diff...';
+    step.log('A non-string value has been captured for the commit diff.');
+    return 'A non-string value has been captured for the commit diff.';
   }
 
   const parsedDiff = parseDiff(diff);
@@ -54,7 +58,7 @@ const getDiffViolations = (diff: string, organization: string): Match[] | string
   const res = collectMatches(parsedDiff, combinedMatches);
   // Diff matches configured block pattern(s)
   if (res.length > 0) {
-    console.log('Diff is blocked via configured literals/patterns/providers...');
+    step.log('Diff is blocked via configured literals/patterns/providers.');
     // combining matches with file and line number
     return res;
   }
@@ -158,12 +162,12 @@ const exec = async (req: any, action: Action): Promise<Action> => {
   const step = new Step('scanDiff');
 
   const { steps, commitFrom, commitTo } = action;
-  console.log(`Scanning diff: ${commitFrom}:${commitTo}`);
+  step.log(`Scanning diff: ${commitFrom}:${commitTo}`);
 
   const diff = steps.find((s) => s.stepName === 'diff')?.content;
 
-  console.log(diff);
-  const diffViolations = getDiffViolations(diff, action.project);
+  step.log(diff);
+  const diffViolations = getDiffViolations(diff, action.project, step);
 
   if (diffViolations) {
     const formattedMatches = Array.isArray(diffViolations)
@@ -175,14 +179,9 @@ const exec = async (req: any, action: Action): Promise<Action> => {
     errorMsg.push(formattedMatches);
     errorMsg.push('\n');
 
-    console.log(`The following diff is illegal: ${commitFrom}:${commitTo}`);
-
     step.error = true;
     step.log(`The following diff is illegal: ${commitFrom}:${commitTo}`);
     step.setError(errorMsg.join('\n'));
-
-    action.addStep(step);
-    return action;
   }
 
   action.addStep(step);

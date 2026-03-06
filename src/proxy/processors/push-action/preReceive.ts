@@ -63,14 +63,12 @@ const exec = async (
       step.log('Push requires manual approval.');
       action.addStep(step);
     } else {
-      step.error = true;
       step.log(`Unexpected hook status: ${status}`);
       step.setError(stdoutTrimmed || 'Unknown pre-receive hook error.');
       action.addStep(step);
     }
     return action;
   } catch (error: any) {
-    step.error = true;
     step.log('Push failed, pre-receive hook returned an error.');
     step.setError(`Hook execution error: ${stderrTrimmed || error.message}`);
     action.addStep(step);

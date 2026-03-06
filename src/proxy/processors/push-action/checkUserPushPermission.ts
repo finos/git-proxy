@@ -31,7 +31,6 @@ const validateUser = async (userEmail: string, action: Action, step: Step): Prom
   const list = await getUsers({ email: userEmail });
 
   if (list.length > 1) {
-    console.error(`Multiple users found with email address ${userEmail}, ending`);
     step.error = true;
     step.log(
       `Multiple Users have email <${userEmail}> so we cannot uniquely identify the user, ending`,
@@ -43,15 +42,14 @@ const validateUser = async (userEmail: string, action: Action, step: Step): Prom
     action.addStep(step);
     return action;
   } else if (list.length == 0) {
-    console.error(`No user with email address ${userEmail} found`);
+    step.log(`No user with email address ${userEmail} found`);
   } else {
     isUserAllowed = await isUserPushAllowed(action.url, list[0].username);
   }
 
-  console.log(`User ${userEmail} permission on Repo ${action.url} : ${isUserAllowed}`);
+  step.log(`User ${userEmail} permission on Repo ${action.url}: ${isUserAllowed}`);
 
   if (!isUserAllowed) {
-    console.log('User not allowed to Push');
     step.error = true;
     step.log(`User ${userEmail} is not allowed to push on repo ${action.url}, ending`);
     step.setError(
