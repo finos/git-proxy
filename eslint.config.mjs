@@ -9,6 +9,7 @@ import react from 'eslint-plugin-react';
 import json from '@eslint/json';
 import cypress from 'eslint-plugin-cypress';
 import prettierConfig from 'eslint-config-prettier/flat';
+import licenseHeader from 'eslint-plugin-license-header';
 
 // paths shouldn't start with ./
 
@@ -161,6 +162,15 @@ export default defineConfig(
     rules: {
       // TODO: fix and remove 'warn' override
       'cypress/unsafe-to-chain-command': 'warn',
+    },
+  },
+
+  {
+    name: 'license-header',
+    files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
+    plugins: { 'license-header': licenseHeader },
+    rules: {
+      'license-header/header': ['error', './licenseHeader.js'],
     },
   },
 
