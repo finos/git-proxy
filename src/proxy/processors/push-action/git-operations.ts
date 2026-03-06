@@ -6,6 +6,18 @@ import fs from 'fs';
  */
 
 /**
+ * Build spawn environment, mapping NODE_TLS_REJECT_UNAUTHORIZED=0 to GIT_SSL_NO_VERIFY=1
+ * so native git commands respect the same TLS settings as the Node.js process.
+ */
+function buildEnv(): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
+    env.GIT_SSL_NO_VERIFY = '1';
+  }
+  return env;
+}
+
+/**
  * Build URL with credentials if provided
  */
 function buildAuthUrl(url: string, username?: string, password?: string): string {
@@ -65,7 +77,7 @@ export async function clone(options: CloneOptions): Promise<void> {
 
   args.push(authUrl, dir);
 
-  const result = spawnSync('git', args, { stdio: 'pipe' });
+  const result = spawnSync('git', args, { stdio: 'pipe', env: buildEnv() });
   if (result.status !== 0) {
     throw new Error(`Git clone failed: ${result.stderr?.toString() || 'Unknown error'}`);
   }
@@ -97,7 +109,7 @@ export async function fetch(options: FetchOptions): Promise<void> {
   args.push(authUrl);
   args.push('+refs/heads/*:refs/heads/*'); // Fetch all branches
 
-  const result = spawnSync('git', args, { stdio: 'pipe' });
+  const result = spawnSync('git', args, { stdio: 'pipe', env: buildEnv() });
   if (result.status !== 0) {
     throw new Error(`Git fetch failed: ${result.stderr?.toString() || 'Unknown error'}`);
   }
@@ -166,7 +178,7 @@ export async function cloneLocal(options: {
 
   args.push(sourceDir, targetDir);
 
-  const result = spawnSync('git', args, { stdio: 'pipe' });
+  const result = spawnSync('git', args, { stdio: 'pipe', env: buildEnv() });
   if (result.status !== 0) {
     throw new Error(`Git local clone failed: ${result.stderr?.toString() || 'Unknown error'}`);
   }
