@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import fs from 'fs';
 import { exec as pullRemote } from '../../src/proxy/processors/push-action/pullRemote';
-import { exec as clearBareClone } from '../../src/proxy/processors/push-action/clearBareClone';
+import { exec as clearBareClone } from '../../src/proxy/processors/post-processor/clearBareClone';
 import { Action } from '../../src/proxy/actions/Action';
 import { cacheManager } from '../../src/proxy/processors/push-action/cache-manager';
 
