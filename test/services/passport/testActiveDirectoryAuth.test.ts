@@ -58,8 +58,8 @@ describe('ActiveDirectory auth method', () => {
     });
 
     // mock ldaphelper before importing activeDirectory
-    vi.doMock('../src/service/passport/ldaphelper', () => ldapStub);
-    vi.doMock('../src/db', () => dbStub);
+    vi.doMock('../../../src/service/passport/ldaphelper', () => ldapStub);
+    vi.doMock('../../../src/db', () => dbStub);
 
     vi.doMock('passport-activedirectory', () => ({
       default: function (options: any, callback: (err: any, user: any) => void) {
@@ -72,12 +72,12 @@ describe('ActiveDirectory auth method', () => {
     }));
 
     // First import config
-    const config = await import('../src/config');
+    const config = await import('../../../src/config/index.js');
     config.initUserConfig();
-    vi.doMock('../src/config', () => config);
+    vi.doMock('../../../src/config', () => config);
 
     // then configure activeDirectory
-    const { configure } = await import('../src/service/passport/activeDirectory.js');
+    const { configure } = await import('../../../src/service/passport/activeDirectory.js');
     configure(passportStub as any);
   });
 
