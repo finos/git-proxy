@@ -1,3 +1,19 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 // @ts-check
 import { fileURLToPath } from 'node:url';
 import { includeIgnoreFile } from '@eslint/compat';
@@ -9,6 +25,7 @@ import react from 'eslint-plugin-react';
 import json from '@eslint/json';
 import cypress from 'eslint-plugin-cypress';
 import prettierConfig from 'eslint-config-prettier/flat';
+import licenseHeader from 'eslint-plugin-license-header';
 
 // paths shouldn't start with ./
 
@@ -16,6 +33,13 @@ const gitignorePath = fileURLToPath(
   new URL(
     '.gitignore',
     // @ts-expect-error ts doesn't respect this file as a module, can ignore
+    import.meta.url,
+  ),
+);
+
+const licenseHeaderPath = fileURLToPath(
+  new URL(
+    'licenseHeader.js',
     import.meta.url,
   ),
 );
@@ -162,6 +186,16 @@ export default defineConfig(
       // TODO: fix and remove 'warn' override
       'cypress/unsafe-to-chain-command': 'warn',
     },
+  },
+
+  {
+    name: 'license-header',
+    files: ['**/*.{js,jsx,mjs,cjs,ts,tsx}'],
+    plugins: { 'license-header': licenseHeader },
+    rules: {
+      'license-header/header': ['error', licenseHeaderPath],
+    },
+    ignores: ['**/licenseHeader.js'],
   },
 
   // disables rules which prettier controls
