@@ -24,7 +24,6 @@ vi.mock('validator', async (importOriginal) => {
 describe('checkAuthorEmails', () => {
   let mockAction: Action;
   let mockReq: any;
-  let consoleLogSpy: any;
 
   beforeEach(async () => {
     // setup default mocks
@@ -46,13 +45,11 @@ describe('checkAuthorEmails', () => {
       },
     });
 
-    // mock console.log to suppress output and verify calls
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
     // setup mock action
     mockAction = {
       commitData: [],
       addStep: vi.fn(),
+      steps: [],
     } as unknown as Action;
 
     mockReq = {};
@@ -368,9 +365,10 @@ describe('checkAuthorEmails', () => {
         { authorEmail: 'user2@example.com' } as CommitData, // Duplicate
       ];
 
-      await exec(mockReq, mockAction);
+      const result = await exec(mockReq, mockAction);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(
+      const step = vi.mocked(result.addStep).mock.calls[0][0];
+      expect(step.logs[0]).toContain(
         'The following commit author e-mails are legal: user1@example.com,user2@example.com,user3@example.com',
       );
     });
@@ -406,10 +404,12 @@ describe('checkAuthorEmails', () => {
         { authorEmail: 'user2@example.com' } as CommitData,
       ];
 
-      await exec(mockReq, mockAction);
+      const result = await exec(mockReq, mockAction);
 
-      expect(consoleLogSpy).toHaveBeenCalledWith(
-        'The following commit author e-mails are legal: user1@example.com,user2@example.com',
+      const step = vi.mocked(result.addStep).mock.calls[0][0];
+
+      expect(step.logs[0]).toContain(
+        'checkAuthorEmails - The following commit author e-mails are legal: user1@example.com,user2@example.com',
       );
     });
 
