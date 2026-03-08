@@ -1,8 +1,24 @@
-import axios, { AxiosError } from 'axios';
-import { getAxiosConfig, processAuthError } from './auth';
-import { getBaseUrl, getApiV1BaseUrl } from './apiConfig';
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import axios from 'axios';
+import { getAxiosConfig } from './auth';
+import { getApiV1BaseUrl } from './apiConfig';
 import { Action, Step } from '../../proxy/actions';
-import { BackendResponse, PushActionView } from '../types';
+import { PushActionView } from '../types';
 import { ServiceResult, errorResult, successResult } from './errors';
 
 const getPush = async (id: string): Promise<ServiceResult<PushActionView>> => {
