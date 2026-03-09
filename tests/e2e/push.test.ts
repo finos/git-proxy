@@ -1,21 +1,17 @@
 /**
- * @license
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -268,7 +264,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
       // Get the test-repo repository and add permissions
       const repos = await getRepos(adminCookie);
       const testRepo = repos.find(
-        (r: any) => r.url === 'https://git-server:8443/coopernetes/test-repo.git',
+        (r: any) => r.url === 'https://git-server:8443/test-owner/test-repo.git',
       );
 
       if (testRepo && testRepo._id) {
@@ -299,11 +295,11 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
         const baseUrl = new URL(testConfig.gitProxyUrl);
         baseUrl.username = testConfig.gitUsername;
         baseUrl.password = testConfig.gitPassword;
-        const repoUrl = `${baseUrl.toString()}/coopernetes/test-repo.git`;
+        const repoUrl = `${baseUrl.toString()}/test-owner/test-repo.git`;
         const cloneDir: string = path.join(tempDir, 'test-repo-push');
 
         console.log(
-          `[TEST] Testing push operation to ${testConfig.gitProxyUrl}/coopernetes/test-repo.git`,
+          `[TEST] Testing push operation to ${testConfig.gitProxyUrl}/test-owner/test-repo.git`,
         );
 
         try {
@@ -421,7 +417,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
         const baseUrl = new URL(testConfig.gitProxyUrl);
         baseUrl.username = authorizedUser.username;
         baseUrl.password = authorizedUser.password;
-        const repoUrl = `${baseUrl.toString()}/coopernetes/test-repo.git`;
+        const repoUrl = `${baseUrl.toString()}/test-owner/test-repo.git`;
         const cloneDir: string = path.join(tempDir, 'test-repo-authorized-push');
 
         console.log(`[TEST] Testing authorized push with user ${authorizedUser.username}`);
@@ -583,7 +579,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
         const baseUrl = new URL(testConfig.gitProxyUrl);
         baseUrl.username = authorizedUser.username;
         baseUrl.password = authorizedUser.password;
-        const repoUrl = `${baseUrl.toString()}/coopernetes/test-repo.git`;
+        const repoUrl = `${baseUrl.toString()}/test-owner/test-repo.git`;
         const cloneDir: string = path.join(tempDir, 'test-repo-approved-push');
 
         console.log(

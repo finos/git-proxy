@@ -1,21 +1,17 @@
 /**
- * @license
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License. You may obtain a copy of the License at
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing,
- * software distributed under the License is distributed on an
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- * KIND, either express or implied.  See the License for the
- * specific language governing permissions and limitations
- * under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
@@ -37,17 +33,17 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
 
   describe('Repository fetching through git proxy', () => {
     it(
-      'should successfully fetch coopernetes/test-repo through git proxy',
+      'should successfully fetch test-owner/test-repo through git proxy',
       async () => {
         // Build URL with embedded credentials for reliable authentication
         const baseUrl = new URL(testConfig.gitProxyUrl);
         baseUrl.username = testConfig.gitUsername;
         baseUrl.password = testConfig.gitPassword;
-        const repoUrl = `${baseUrl.toString()}/coopernetes/test-repo.git`;
+        const repoUrl = `${baseUrl.toString()}/test-owner/test-repo.git`;
         const cloneDir: string = path.join(tempDir, 'test-repo-clone');
 
         console.log(
-          `[TEST] Cloning ${testConfig.gitProxyUrl}/coopernetes/test-repo.git to ${cloneDir}`,
+          `[TEST] Cloning ${testConfig.gitProxyUrl}/test-owner/test-repo.git to ${cloneDir}`,
         );
 
         try {
@@ -73,7 +69,7 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
           const readmePath: string = path.join(cloneDir, 'README.md');
           expect(fs.existsSync(readmePath)).toBe(true);
 
-          console.log('[TEST] Successfully fetched and verified coopernetes/test-repo');
+          console.log('[TEST] Successfully fetched and verified test-owner/test-repo');
         } catch (error) {
           console.error('[TEST] Failed to clone repository:', error);
           throw error;
@@ -83,16 +79,18 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
     );
 
     it(
-      'should successfully fetch finos/git-proxy through git proxy',
+      'should successfully fetch e2e-org/sample-repo through git proxy',
       async () => {
         // Build URL with embedded credentials for reliable authentication
         const baseUrl = new URL(testConfig.gitProxyUrl);
         baseUrl.username = testConfig.gitUsername;
         baseUrl.password = testConfig.gitPassword;
-        const repoUrl = `${baseUrl.toString()}/finos/git-proxy.git`;
-        const cloneDir: string = path.join(tempDir, 'git-proxy-clone');
+        const repoUrl = `${baseUrl.toString()}/e2e-org/sample-repo.git`;
+        const cloneDir: string = path.join(tempDir, 'sample-repo-clone');
 
-        console.log(`[TEST] Cloning ${testConfig.gitProxyUrl}/finos/git-proxy.git to ${cloneDir}`);
+        console.log(
+          `[TEST] Cloning ${testConfig.gitProxyUrl}/e2e-org/sample-repo.git to ${cloneDir}`,
+        );
 
         try {
           const gitCloneCommand: string = `git clone ${repoUrl} ${cloneDir}`;
@@ -120,7 +118,7 @@ describe('Git Proxy E2E - Repository Fetch Tests', () => {
           const readmePath: string = path.join(cloneDir, 'README.md');
           expect(fs.existsSync(readmePath)).toBe(true);
 
-          console.log('[TEST] Successfully fetched and verified finos/git-proxy');
+          console.log('[TEST] Successfully fetched and verified e2e-org/sample-repo');
         } catch (error) {
           console.error('[TEST] Failed to clone repository:', error);
           throw error;

@@ -1,3 +1,19 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import moment from 'moment';
@@ -30,14 +46,12 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
   const [pushes, setPushes] = useState<PushActionView[]>([]);
   const [filteredData, setFilteredData] = useState<PushActionView[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [, setIsError] = useState(false);
   const navigate = useNavigate();
-  const [, setAuth] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
   const [searchTerm, setSearchTerm] = useState('');
 
-  const openPush = (pushId: string) => navigate(`/dashboard/push/${pushId}`, { replace: true });
+  const openPush = (pushId: string) => navigate(`/dashboard/push/${pushId}`);
 
   useEffect(() => {
     const query: any = {};
@@ -49,7 +63,21 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
     if (props.rejected !== undefined) query.rejected = props.rejected;
     if (props.error !== undefined) query.error = props.error;
 
-    getPushes(setIsLoading, setPushes, setAuth, setIsError, props.handleError, query);
+    const load = async () => {
+      setIsLoading(true);
+      const result = await getPushes(query);
+      if (result.success && result.data) {
+        setPushes(result.data);
+      } else if (result.status === 401) {
+        setIsLoading(false);
+        navigate('/login', { replace: true });
+        return;
+      } else if (props.handleError) {
+        props.handleError(result.message || 'Failed to load pushes');
+      }
+      setIsLoading(false);
+    };
+    load();
   }, [props]);
 
   useEffect(() => {
@@ -101,7 +129,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {[...currentItems].reverse().map((row) => {
+            {currentItems.map((row) => {
               const repoFullName = trimTrailingDotGit(row.repo);
               const repoBranch = trimPrefixRefsHeads(row.branch ?? '');
               const repoUrl = row.url;
