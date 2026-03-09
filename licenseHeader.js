@@ -13,10 +13,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import { existsSync, mkdirSync } from 'fs';
-
-export const getSessionStore = (): undefined => undefined;
-export const initializeFolders = () => {
-  if (!existsSync('./.data/db')) mkdirSync('./.data/db', { recursive: true });
-};
