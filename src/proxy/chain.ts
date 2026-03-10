@@ -69,7 +69,7 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
       }
     }
   } catch (error: unknown) {
-    const msg = handleAndLogError(error, 'An error occurred when executing the chain');
+    const msg = handleAndLogError(error, 'An unexpected error occurred when executing the chain');
     action.error = true;
     action.errorMessage = msg;
   } finally {
