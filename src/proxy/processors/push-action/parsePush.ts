@@ -497,9 +497,9 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
 
     // stop on errors, except maybe buffer errors?
     const onError = (e: unknown) => {
-      error = e instanceof Error ? e : new Error(String(e));
-      console.warn(`Error during inflation: ${JSON.stringify(e)}`);
-      error = new Error('Error during inflation', { cause: e });
+      const msg = getErrorMessage(e);
+      console.warn(`Error during inflation: ${msg}`);
+      error = new Error(`Error during inflation: ${msg}`);
       inflater.end();
       done = true;
       if (currentWriteResolve) currentWriteResolve();
@@ -523,10 +523,10 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
             offset++;
           }
         });
-      } catch (error: unknown) {
-        const msg = `Error during decompression: ${error instanceof Error ? error.message : String(error)}`;
-        console.warn(msg);
-        throw new Error(msg);
+      } catch (e: unknown) {
+        const msg = getErrorMessage(e);
+        console.warn(`Error during decompression: ${msg}`);
+        error = new Error(`Error during decompression: ${msg}`);
       }
     }
     const result = {
