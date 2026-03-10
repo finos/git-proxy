@@ -90,7 +90,7 @@ const exec = async (
     return action;
   } catch (error: unknown) {
     const msg = getErrorMessage(error);
-    const stdErrSuffix = stderrTrimmed ? `\n${stderrTrimmed}` : '';
+    const stdErrSuffix = stderrTrimmed ? `\nHook stderr: ${stderrTrimmed}` : '';
     step.error = true;
     step.log('Push failed, pre-receive hook returned an error.');
     step.setError(`Hook execution error: ${msg}${stdErrSuffix}`);
