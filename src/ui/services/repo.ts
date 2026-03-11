@@ -1,3 +1,19 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import axios from 'axios';
 import { getAxiosConfig } from './auth.js';
 import { Repo } from '../../db/types';
@@ -8,20 +24,18 @@ import { ServiceResult, getServiceError, errorResult, successResult } from './er
 const canAddUser = async (repoId: string, user: string, action: string) => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}`);
-  return axios
-    .get<Repo>(url.toString(), getAxiosConfig())
-    .then((response) => {
-      const repo = response.data;
-      if (action === 'authorise') {
-        return !repo.users.canAuthorise.includes(user);
-      } else {
-        return !repo.users.canPush.includes(user);
-      }
-    })
-    .catch((error: any) => {
-      const { message } = getServiceError(error, 'Failed to validate repo permissions');
-      throw new Error(message);
-    });
+  try {
+    const response = await axios.get<Repo>(url.toString(), getAxiosConfig());
+    const repo = response.data;
+    if (action === 'authorise') {
+      return !repo.users.canAuthorise.includes(user);
+    } else {
+      return !repo.users.canPush.includes(user);
+    }
+  } catch (error: any) {
+    const { message } = getServiceError(error, 'Failed to validate repo permissions');
+    throw new Error(message);
+  }
 };
 
 class DupUserValidationError extends Error {
@@ -79,11 +93,13 @@ const addUser = async (repoId: string, user: string, action: string): Promise<vo
     const apiV1Base = await getApiV1BaseUrl();
     const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}`);
     const data = { username: user };
-    await axios.patch(url.toString(), data, getAxiosConfig()).catch((error: any) => {
+    try {
+      await axios.patch(url.toString(), data, getAxiosConfig());
+    } catch (error: any) {
       const { message } = getServiceError(error, 'Failed to add user');
       console.log(message);
       throw new Error(message);
-    });
+    }
   } else {
     console.log('Duplicate user can not be added');
     throw new DupUserValidationError('Duplicate user can not be added');
@@ -94,22 +110,26 @@ const deleteUser = async (user: string, repoId: string, action: string): Promise
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}/user/${action}/${user}`);
 
-  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
+  try {
+    await axios.delete(url.toString(), getAxiosConfig());
+  } catch (error: any) {
     const { message } = getServiceError(error, 'Failed to remove user');
     console.log(message);
     throw new Error(message);
-  });
+  }
 };
 
 const deleteRepo = async (repoId: string): Promise<void> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${repoId}/delete`);
 
-  await axios.delete(url.toString(), getAxiosConfig()).catch((error: any) => {
+  try {
+    await axios.delete(url.toString(), getAxiosConfig());
+  } catch (error: any) {
     const { message } = getServiceError(error, 'Failed to delete repository');
     console.log(message);
     throw new Error(message);
-  });
+  }
 };
 
 export { addUser, deleteUser, getRepos, getRepo, addRepo, deleteRepo };

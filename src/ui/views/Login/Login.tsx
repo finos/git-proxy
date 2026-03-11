@@ -1,3 +1,19 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React, { useState, FormEvent, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import FormControl from '@material-ui/core/FormControl';
@@ -36,20 +52,21 @@ const Login: React.FC = () => {
   const [usernamePasswordMethod, setUsernamePasswordMethod] = useState<string>('');
 
   useEffect(() => {
-    getBaseUrl().then((baseUrl) => {
-      axios.get(`${baseUrl}/api/auth/config`).then((response) => {
-        const usernamePasswordMethod = response.data.usernamePasswordMethod;
-        const otherMethods = response.data.otherMethods;
+    const fetchAuthConfig = async () => {
+      const baseUrl = await getBaseUrl();
+      const response = await axios.get(`${baseUrl}/api/auth/config`);
+      const usernamePasswordMethod = response.data.usernamePasswordMethod;
+      const otherMethods = response.data.otherMethods;
 
-        setUsernamePasswordMethod(usernamePasswordMethod);
-        setAuthMethods(otherMethods);
+      setUsernamePasswordMethod(usernamePasswordMethod);
+      setAuthMethods(otherMethods);
 
-        // Automatically login if only one non-username/password method is enabled
-        if (!usernamePasswordMethod && otherMethods.length === 1) {
-          handleAuthMethodLogin(otherMethods[0]);
-        }
-      });
-    });
+      // Automatically login if only one non-username/password method is enabled
+      if (!usernamePasswordMethod && otherMethods.length === 1) {
+        await handleAuthMethodLogin(otherMethods[0]);
+      }
+    };
+    fetchAuthConfig();
   }, []);
 
   function validateForm(): boolean {
@@ -58,40 +75,40 @@ const Login: React.FC = () => {
     );
   }
 
-  function handleAuthMethodLogin(authMethod: string): void {
-    getBaseUrl().then((baseUrl) => {
-      window.location.href = `${baseUrl}/api/auth/${authMethod}`;
-    });
+  async function handleAuthMethodLogin(authMethod: string): Promise<void> {
+    const baseUrl = await getBaseUrl();
+    window.location.href = `${baseUrl}/api/auth/${authMethod}`;
   }
 
-  function handleSubmit(event: FormEvent): void {
+  async function handleSubmit(event: FormEvent): Promise<void> {
     event.preventDefault();
     setIsLoading(true);
 
-    getBaseUrl().then((baseUrl) => {
+    try {
+      const baseUrl = await getBaseUrl();
       const loginUrl = `${baseUrl}/api/auth/login`;
-      axios
-        .post<LoginResponse>(loginUrl, { username, password }, getAxiosConfig())
-        .then(() => {
+      await axios.post<LoginResponse>(loginUrl, { username, password }, getAxiosConfig());
+      window.sessionStorage.setItem('git.proxy.login', 'success');
+      setMessage('Success!');
+      setSuccess(true);
+      await authContext.refreshUser();
+      navigate(0);
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        if (error.response?.status === 307) {
           window.sessionStorage.setItem('git.proxy.login', 'success');
-          setMessage('Success!');
-          setSuccess(true);
-          authContext.refreshUser().then(() => navigate(0));
-        })
-        .catch((error: AxiosError) => {
-          if (error.response?.status === 307) {
-            window.sessionStorage.setItem('git.proxy.login', 'success');
-            setGitAccountError(true);
-          } else if (error.response?.status === 403) {
-            setMessage(processAuthError(error, false));
-          } else {
-            setMessage('You entered an invalid username or password...');
-          }
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    });
+          setGitAccountError(true);
+        } else if (error.response?.status === 403) {
+          setMessage(processAuthError(error, false));
+        } else {
+          setMessage('You entered an invalid username or password...');
+        }
+      } else {
+        setMessage('You entered an invalid username or password...');
+      }
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   if (gitAccountError) {
