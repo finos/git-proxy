@@ -77,9 +77,6 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
   if (user.email) {
     user.email = user.email.toLowerCase();
   }
-  if (!user.publicKeys) {
-    user.publicKeys = [];
-  }
   const { _id, ...userWithoutId } = user;
   const filter = _id ? { _id: new ObjectId(_id) } : { username: user.username };
   const options = { upsert: true };
