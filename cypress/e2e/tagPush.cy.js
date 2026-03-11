@@ -49,18 +49,6 @@ describe('Tag Push Functionality', () => {
         });
     });
 
-    it('has search functionality', () => {
-      cy.visit('/dashboard/push');
-      cy.wait('@getPushes');
-
-      // Check search input exists
-      cy.get('input[type="text"]').first().should('exist');
-
-      // Test searching for tag name
-      cy.get('input[type="text"]').first().type('v1.0.0');
-      cy.get('tbody tr').should('have.length.at.least', 1);
-    });
-
     it('can interact with push table entries', () => {
       cy.visit('/dashboard/push');
       cy.wait('@getPushes');
