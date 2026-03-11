@@ -275,3 +275,6 @@ website/.docusaurus
 
 # Generated from testing
 /test/fixtures/test-package/package-lock.json
+
+# Agentic AI generated files
+/plans
