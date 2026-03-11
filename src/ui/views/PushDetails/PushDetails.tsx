@@ -268,7 +268,7 @@ const Dashboard: React.FC = () => {
               {
                 tabName: 'Steps',
                 tabIcon: TimelineIcon,
-                tabContent: <StepsTimeline steps={push.steps} />,
+                tabContent: <StepsTimeline steps={push.steps ?? []} />,
                 badge: errorCount > 0 ? errorCount : undefined,
               },
             ]}
