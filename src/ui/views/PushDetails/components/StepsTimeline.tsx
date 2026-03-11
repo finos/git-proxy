@@ -135,18 +135,13 @@ const useStyles = makeStyles((theme) => ({
 
 interface StepsTimelineProps {
   steps: StepData[];
-  expandStepId?: string;
 }
 
-const StepsTimeline: React.FC<StepsTimelineProps> = ({ steps, expandStepId }) => {
+const StepsTimeline: React.FC<StepsTimelineProps> = ({ steps }) => {
   const classes = useStyles();
-  const [expanded, setExpanded] = useState<string | false>(false);
-
-  React.useEffect(() => {
-    if (expandStepId) {
-      setExpanded(expandStepId);
-    }
-  }, [expandStepId]);
+  const [expanded, setExpanded] = useState<string | false>(
+    () => steps.find((s) => s.error)?.id ?? false,
+  );
 
   const isLargeStep = (stepName: string) => stepName === 'writePack' || stepName === 'diff';
 
