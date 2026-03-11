@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-import { Action, Step } from '../../actions';
+import { Action, Step, ActionType } from '../../actions';
 import fs from 'fs';
 import lod from 'lodash';
 import { createInflate } from 'zlib';
 import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
+import { TagData } from '../../../types/models';
 import {
   BRANCH_PREFIX,
+  TAG_PREFIX,
   EMPTY_COMMIT_HASH,
   PACK_SIGNATURE,
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
+  GIT_OBJECT_TYPE_TAG,
 } from '../constants';
 
 const dir = './.tmp/';
@@ -54,13 +57,13 @@ async function exec(req: any, action: Action): Promise<Action> {
       throw new Error('No body found in request');
     }
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
-    const refUpdates = packetLines.filter((line) => line.includes(BRANCH_PREFIX));
+    const refUpdates = packetLines.filter((line) => line.includes('refs/'));
 
     if (refUpdates.length !== 1) {
-      step.log('Invalid number of branch updates.');
+      step.log('Invalid number of ref updates.');
       step.log(`Expected 1, but got ${refUpdates.length}`);
       throw new Error(
-        'Your push has been blocked. Please make sure you are pushing to a single branch.',
+        'Your push has been blocked. Multi-ref pushes (multiple tags and/or branches) are not supported yet. Please push one ref at a time.',
       );
     } else {
       console.log(`refUpdates: ${JSON.stringify(refUpdates, null, 2)}`);
@@ -78,7 +81,21 @@ async function exec(req: any, action: Action): Promise<Action> {
 
     // Strip everything after NUL, which is cap-list from
     // https://git-scm.com/docs/http-protocol#_smart_server_response
-    action.branch = ref.replace(/\0.*/, '').trim();
+    const refName = ref.replace(/\0.*/, '').trim();
+    const isTag = refName.startsWith(TAG_PREFIX);
+    const isBranch = refName.startsWith(BRANCH_PREFIX);
+
+    action.branch = isBranch ? refName : undefined;
+    action.tag = isTag ? refName : undefined;
+
+    // Set actionType based on what type of push this is
+    if (isTag) {
+      action.actionType = ActionType.TAG;
+    } else if (isBranch) {
+      action.actionType = ActionType.BRANCH;
+    } else {
+      action.actionType = ActionType.COMMIT;
+    }
 
     // Note this will change the action.id to be based on the commits
     action.setCommit(oldCommit, newCommit);
@@ -99,19 +116,32 @@ async function exec(req: any, action: Action): Promise<Action> {
     const [meta, contentBuff] = getPackMeta(buf);
     const contents = await getContents(contentBuff, meta.entries);
 
-    action.commitData = getCommitData(contents as any);
+    const ParsedObjects = {
+      commits: [] as CommitData[],
+      tags: [] as TagData[],
+    };
 
-    if (action.commitData.length === 0) {
-      step.log('No commit data found when parsing push.');
-    } else {
+    for (const obj of contents) {
+      if (obj.type === GIT_OBJECT_TYPE_COMMIT) ParsedObjects.commits.push(...getCommitData([obj]));
+      else if (obj.type === GIT_OBJECT_TYPE_TAG) ParsedObjects.tags.push(parseTag(obj));
+    }
+
+    action.commitData = ParsedObjects.commits;
+    action.tagData = ParsedObjects.tags;
+
+    if (action.commitData.length) {
       if (action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }
-
       const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
       console.log(`Push Request received from user ${committer} with email ${committerEmail}`);
       action.user = committer;
       action.userEmail = committerEmail;
+    } else if (action.tagData?.length) {
+      action.user = action.tagData.at(-1)!.tagger;
+      action.userEmail = action.tagData.at(-1)!.taggerEmail;
+    } else {
+      step.log('No commit data found when parsing push.');
     }
 
     step.content = {
@@ -119,12 +149,50 @@ async function exec(req: any, action: Action): Promise<Action> {
     };
   } catch (e: any) {
     step.setError(
-      `Unable to parse push. Please contact an administrator for support: ${e.toString('utf-8')}`,
+      `Unable to parse push. Please contact an administrator for support: ${e.message || e.toString()}`,
     );
   } finally {
     action.addStep(step);
   }
   return action;
+}
+
+function parseTag(x: CommitContent): TagData {
+  const lines = x.content.split('\n');
+  const object = lines
+    .find((l) => l.startsWith('object '))
+    ?.slice(7)
+    .trim();
+  const typeLine = lines
+    .find((l) => l.startsWith('type '))
+    ?.slice(5)
+    .trim(); // commit | tree | blob
+  const tagName = lines
+    .find((l) => l.startsWith('tag '))
+    ?.slice(4)
+    .trim();
+  const rawTagger = lines
+    .find((l) => l.startsWith('tagger '))
+    ?.slice(7)
+    .trim();
+  if (!rawTagger) throw new Error('Invalid tag object: no tagger line');
+
+  const taggerInfo = parsePersonLine(rawTagger);
+
+  const messageIndex = lines.indexOf('');
+  const message = lines.slice(messageIndex + 1).join('\n');
+
+  if (!object || !typeLine || !tagName || !taggerInfo.name) throw new Error('Invalid tag object');
+
+  return {
+    object,
+    type: typeLine,
+    tagName,
+    tagger: taggerInfo.name,
+    taggerEmail: taggerInfo.email,
+    timestamp: taggerInfo.timestamp,
+    message,
+  };
 }
 
 /**
@@ -587,4 +655,4 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
 
 exec.displayName = 'parsePush.exec';
 
-export { exec, getCommitData, getContents, getPackMeta, parsePacketLines };
+export { exec, getCommitData, getContents, getPackMeta, parsePacketLines, parseTag };
