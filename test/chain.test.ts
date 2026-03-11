@@ -16,7 +16,7 @@
 
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { PluginLoader } from '../src/plugin';
-import { Action } from '../src/proxy/actions';
+import { Action, ActionType, RequestType } from '../src/proxy/actions';
 
 const mockLoader = {
   pushPlugins: [
@@ -113,14 +113,14 @@ describe('proxy chain', function () {
   it('getChain should set pluginLoaded if loader is undefined', async () => {
     chain.chainPluginLoader = undefined;
     const actual = await chain.getChain({ type: 'push' });
-    expect(actual).toEqual(chain.pushActionChain);
+    expect(actual).toEqual(chain.branchPushChain);
     expect(chain.chainPluginLoader).toBeUndefined();
     expect(chain.pluginsInserted).toBe(true);
   });
 
   it('getChain should load plugins from an initialized PluginLoader', async () => {
     chain.chainPluginLoader = mockLoader;
-    const initialChain = [...chain.pushActionChain];
+    const initialChain = [...chain.branchPushChain];
     const actual = await chain.getChain({ type: 'push' });
     expect(actual.length).toBeGreaterThan(initialChain.length);
     expect(chain.pluginsInserted).toBe(true);
@@ -443,5 +443,59 @@ describe('proxy chain', function () {
     await chain.executeChain(req);
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error during auto-rejection:', error.message);
+  });
+
+  it('returns pullActionChain for pull actions', async () => {
+    const action = new Action(
+      '1',
+      RequestType.PULL,
+      'GET',
+      Date.now(),
+      'http://github.com/owner/repo.git',
+    );
+    const pullChain = await chain.getChain(action);
+    expect(pullChain).toEqual(chain.pullActionChain);
+  });
+
+  it('returns tagPushChain when action.type is push and action.actionType is TAG', async () => {
+    const action = new Action(
+      '2',
+      RequestType.PUSH,
+      'POST',
+      Date.now(),
+      'http://github.com/owner/repo.git',
+    );
+    action.actionType = ActionType.TAG;
+    const tagChain = await chain.getChain(action);
+    expect(tagChain).toEqual(chain.tagPushChain);
+  });
+
+  it('returns branchPushChain when action.type is push and actionType is BRANCH', async () => {
+    const action = new Action(
+      '3',
+      RequestType.PUSH,
+      'POST',
+      Date.now(),
+      'http://github.com/owner/repo.git',
+    );
+    action.actionType = ActionType.BRANCH;
+    const branchChain = await chain.getChain(action);
+    expect(branchChain).toEqual(chain.branchPushChain);
+  });
+
+  it('getChain should return tagPushChain if loader is undefined for tag pushes', async () => {
+    chain.chainPluginLoader = undefined;
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: ActionType.TAG });
+    expect(actual).toEqual(chain.tagPushChain);
+    expect(chain.chainPluginLoader).toBeUndefined();
+    expect(chain.pluginsInserted).toBe(true);
+  });
+
+  it('getChain should load tag plugins from an initialized PluginLoader', async () => {
+    chain.chainPluginLoader = mockLoader;
+    const initialChain = [...chain.tagPushChain];
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: ActionType.TAG });
+    expect(actual.length).toBeGreaterThan(initialChain.length);
+    expect(chain.pluginsInserted).toBe(true);
   });
 });

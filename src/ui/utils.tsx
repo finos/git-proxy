@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import axios from 'axios';
 import React from 'react';
+import axios from 'axios';
 import { GitHubRepositoryMetadata, GitLabRepositoryMetadata, SCMRepositoryMetadata } from './types';
 import { CommitData } from '../proxy/processors/types';
 import moment from 'moment';
@@ -119,20 +119,22 @@ export const getUserProfileUrl = (username: string, provider: string, hostname: 
  * @param {string} username The username.
  * @param {string} provider The name of the SCM provider.
  * @param {string} hostname The hostname of the SCM provider.
- * @return {string} A string containing an HTML A tag pointing to the user's profile, if possible, degrading to just the username or 'N/A' when not (e.g. because the SCM provider is unknown).
+ * @return {JSX.Element} A JSX element containing a link to the user's profile, if possible, degrading to just the username or 'N/A' when not (e.g. because the SCM provider is unknown).
  */
 export const getUserProfileLink = (username: string, provider: string, hostname: string) => {
   if (username) {
-    let profileData = '';
     const profileUrl = getUserProfileUrl(username, provider, hostname);
     if (profileUrl) {
-      profileData = `<a href="${profileUrl}" rel='noreferrer' target='_blank'>${username}</a>`;
+      return (
+        <a href={profileUrl} rel='noreferrer' target='_blank'>
+          {username}
+        </a>
+      );
     } else {
-      profileData = `<span>${username}</span>`;
+      return <span>{username}</span>;
     }
-    return profileData;
   } else {
-    return 'N/A';
+    return <span>N/A</span>;
   }
 };
 
