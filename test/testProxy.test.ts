@@ -17,7 +17,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi, afterAll } from 'vitest';
 
 vi.mock('http', async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = await importOriginal<typeof import('http')>();
   return {
     ...actual,
     createServer: vi.fn(() => ({
@@ -31,7 +31,7 @@ vi.mock('http', async (importOriginal) => {
 });
 
 vi.mock('https', async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = await importOriginal<typeof import('https')>();
   return {
     ...actual,
     createServer: vi.fn(() => ({
@@ -79,7 +79,7 @@ vi.mock('../src/config/env', () => ({
 }));
 
 vi.mock('fs', async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = await importOriginal<typeof import('fs')>();
   return {
     ...actual,
     readFileSync: vi.fn(),
@@ -229,7 +229,7 @@ describe('Proxy', () => {
       const app = proxy.getExpressApp();
       expect(app).not.toBeNull();
       expect(app).toBeTypeOf('function');
-      expect((app as any).use).toBeTypeOf('function');
+      expect(app?.use).toBeTypeOf('function');
 
       await proxy.stop();
     });

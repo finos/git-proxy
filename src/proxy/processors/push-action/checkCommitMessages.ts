@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+import { Request } from 'express';
+
 import { Action, Step } from '../../actions';
 import { getCommitConfig } from '../../../config';
+import { handleAndLogError } from '../../../utils/errors';
 
 const isMessageAllowed = (commitMessage: string): boolean => {
   try {
@@ -55,8 +58,8 @@ const isMessageAllowed = (commitMessage: string): boolean => {
       console.log('Commit message is blocked via configured literals/patterns...');
       return false;
     }
-  } catch (error) {
-    console.log('Invalid regex pattern...');
+  } catch (error: unknown) {
+    handleAndLogError(error, 'Error checking commit messages');
     return false;
   }
 
@@ -64,7 +67,7 @@ const isMessageAllowed = (commitMessage: string): boolean => {
 };
 
 // Execute if the repo is approved
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('checkCommitMessages');
 
   const uniqueCommitMessages = [...new Set(action.commitData?.map((commit) => commit.message))];

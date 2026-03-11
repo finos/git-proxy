@@ -27,7 +27,6 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { getUsers } from '../../../services/user';
 import Pagination from '../../../components/Pagination/Pagination';
 import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
@@ -35,10 +34,7 @@ import Search from '../../../components/Search/Search';
 import Danger from '../../../components/Typography/Danger';
 import { PublicUser } from '../../../../db/types';
 
-const useStyles = makeStyles(styles as any);
-
 const UserList: React.FC = () => {
-  const classes = useStyles();
   const [users, setUsers] = useState<PublicUser[]>([]);
   const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -82,7 +78,7 @@ const UserList: React.FC = () => {
       <GridItem xs={12} sm={12} md={12}>
         <Search onSearch={handleSearch} placeholder='Search users...' />
         <TableContainer component={Paper}>
-          <Table className={classes.table} aria-label='simple table'>
+          <Table aria-label='simple table'>
             <TableHead>
               <TableRow>
                 <TableCell align='left'>Name</TableCell>
@@ -111,7 +107,7 @@ const UserList: React.FC = () => {
                     </a>
                   </TableCell>
                   <TableCell align='left'>
-                    {user.admin ? (
+                    {user?.admin ? (
                       <Check fontSize='small' color='primary' />
                     ) : (
                       <CloseRounded color='error' />

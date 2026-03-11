@@ -16,6 +16,7 @@
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import crypto from 'crypto';
+import { Request } from 'express';
 import * as processor from '../../src/proxy/processors/push-action/scanDiff';
 import { Action, Step } from '../../src/proxy/actions';
 import * as config from '../../src/config';
@@ -93,7 +94,7 @@ const TEST_REPO = {
   project: 'private-org-test',
   name: 'repo.git',
   url: 'https://github.com/private-org-test/repo.git',
-  _id: undefined as any,
+  _id: '',
 };
 
 describe('Scan commit diff', () => {
@@ -133,7 +134,7 @@ describe('Scan commit diff', () => {
     action.setBranch('b');
     action.setMessage('Message');
 
-    const { error, errorMessage } = await processor.exec(null, action);
+    const { error, errorMessage } = await processor.exec({} as Request, action);
 
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');
@@ -146,7 +147,7 @@ describe('Scan commit diff', () => {
     action.steps = [diffStep];
     action.setCommit('8b97e49', 'de18d43');
 
-    const { error, errorMessage } = await processor.exec(null, action);
+    const { error, errorMessage } = await processor.exec({} as Request, action);
 
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');
@@ -161,7 +162,7 @@ describe('Scan commit diff', () => {
     action.steps = [diffStep];
     action.setCommit('8b97e49', 'de18d43');
 
-    const { error, errorMessage } = await processor.exec(null, action);
+    const { error, errorMessage } = await processor.exec({} as Request, action);
 
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');
@@ -180,7 +181,7 @@ describe('Scan commit diff', () => {
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
-    const { error, errorMessage } = await processor.exec(null, action);
+    const { error, errorMessage } = await processor.exec({} as Request, action);
 
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');
@@ -193,7 +194,7 @@ describe('Scan commit diff', () => {
     );
     action.steps = [diffStep];
 
-    const { error, errorMessage } = await processor.exec(null, action);
+    const { error, errorMessage } = await processor.exec({} as Request, action);
 
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');
@@ -208,7 +209,7 @@ describe('Scan commit diff', () => {
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
-    const { error, errorMessage } = await processor.exec(null, action);
+    const { error, errorMessage } = await processor.exec({} as Request, action);
 
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');
@@ -223,7 +224,7 @@ describe('Scan commit diff', () => {
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
-    const { error, errorMessage } = await processor.exec(null, action);
+    const { error, errorMessage } = await processor.exec({} as Request, action);
 
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');
@@ -240,7 +241,7 @@ describe('Scan commit diff', () => {
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
-    const { error, errorMessage } = await processor.exec(null, action);
+    const { error, errorMessage } = await processor.exec({} as Request, action);
 
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');
@@ -254,7 +255,7 @@ describe('Scan commit diff', () => {
       action.commitFrom = '38cdc3e';
       action.commitTo = '8a9c321';
 
-      const { error, errorMessage } = await processor.exec(null, action);
+      const { error, errorMessage } = await processor.exec({} as Request, action);
 
       expect(error).toBe(true);
       expect(errorMessage).toContain('Your push has been blocked');
@@ -265,7 +266,7 @@ describe('Scan commit diff', () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     action.steps = [generateDiffStep(null)];
 
-    const result = await processor.exec(null, action);
+    const result = await processor.exec({} as Request, action);
     const scanDiffStep = result.steps.find((s) => s.stepName === 'scanDiff');
 
     expect(scanDiffStep?.error).toBe(false);
@@ -273,9 +274,9 @@ describe('Scan commit diff', () => {
 
   it('should block push when diff is not a string', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.steps = [generateDiffStep(1337 as any)];
+    action.steps = [generateDiffStep(1337 as unknown as string)];
 
-    const { error, errorMessage } = await processor.exec(null, action);
+    const { error, errorMessage } = await processor.exec({} as Request, action);
 
     expect(error).toBe(true);
     expect(errorMessage).toContain('Your push has been blocked');
@@ -287,7 +288,7 @@ describe('Scan commit diff', () => {
     action.commitFrom = '38cdc3e';
     action.commitTo = '8a9c321';
 
-    const { error } = await processor.exec(null, action);
+    const { error } = await processor.exec({} as Request, action);
 
     expect(error).toBe(false);
   });
@@ -303,7 +304,7 @@ describe('Scan commit diff', () => {
     const diffStep = generateDiffStep(generateDiff('AKIAIOSFODNN7EXAMPLE'));
     action.steps = [diffStep];
 
-    const { error } = await processor.exec(null, action);
+    const { error } = await processor.exec({} as Request, action);
 
     expect(error).toBe(false);
   });
