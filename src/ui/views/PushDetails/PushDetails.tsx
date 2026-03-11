@@ -114,7 +114,7 @@ const Dashboard: React.FC = () => {
   if (isError) throw new Error(message || 'Something went wrong ...');
   if (!push) return <div>No push data found</div>;
 
-  const errorCount = push.steps.filter((step) => step.error).length;
+  const errorCount = push.steps?.filter((step) => step.error).length ?? 0;
 
   let headerData: { title: string; color: CardHeaderColor } = {
     title: 'Pending',
