@@ -118,11 +118,9 @@ const collectMatches = (parsedDiff: File[], combinedMatches: CombinedMatch[]): M
   const allMatches: Record<string, RawMatch> = {};
   parsedDiff.forEach((file) => {
     const fileName = file.to || file.from;
-    console.log('CHANGE', file.chunks);
 
     file.chunks.forEach((chunk) => {
       chunk.changes.forEach((change) => {
-        console.log('CHANGE', change);
         if (change.type === 'add') {
           // store line number
           const lineNumber = change.ln;
