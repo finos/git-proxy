@@ -39,7 +39,7 @@ services:
       retries: 12
       start_period: 10s
   mongodb:
-    image: mongo:7@sha256:606f8e029603330411a7dd10b5ffd50eefc297fc80cee89f10a455e496a76ae7
+    image: mongo:8@sha256:3a7947f3211e70c045ebff7e94293298bc3fa4e08e5cfcb8cb32ca0d06e06635
     ports:
       - '27017:27017'
     networks:
