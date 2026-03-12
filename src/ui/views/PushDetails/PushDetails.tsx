@@ -24,25 +24,24 @@ import Card from '../../components/Card/Card';
 import CardIcon from '../../components/Card/CardIcon';
 import CardBody from '../../components/Card/CardBody';
 import CardHeader, { CardHeaderColor } from '../../components/Card/CardHeader';
-import CardFooter from '../../components/Card/CardFooter';
 import Button from '../../components/CustomButtons/Button';
+import CustomTabs from '../../components/CustomTabs/CustomTabs';
+import CommitDataTable from './components/CommitDataTable';
 import Diff from './components/Diff';
+import StepsTimeline from './components/StepsTimeline';
 import Attestation from './components/Attestation';
 import AttestationInfo from './components/AttestationInfo';
 import RejectionInfo from './components/RejectionInfo';
 import Reject from './components/Reject';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import TableCell from '@material-ui/core/TableCell';
 import { getPush, authorisePush, rejectPush, cancelPush } from '../../services/git-push';
 import type { ServiceResult } from '../../services/errors';
-import { CheckCircle, Visibility, Cancel, Block } from '@material-ui/icons';
+import { CheckCircle, Visibility, Cancel, Block, List as ListIcon } from '@material-ui/icons';
+import CodeIcon from '@material-ui/icons/Code';
+import TimelineIcon from '@material-ui/icons/Timeline';
 import Snackbar from '@material-ui/core/Snackbar';
 import { PushActionView } from '../../types';
 import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
-import { generateEmailLink, getGitProvider } from '../../utils';
+import { getGitProvider } from '../../utils';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -114,6 +113,8 @@ const Dashboard: React.FC = () => {
   if (isLoading) return <div>Loading...</div>;
   if (isError) throw new Error(message || 'Something went wrong ...');
   if (!push) return <div>No push data found</div>;
+
+  const errorCount = push.steps?.filter((step) => step.error).length ?? 0;
 
   let headerData: { title: string; color: CardHeaderColor } = {
     title: 'Pending',
@@ -249,44 +250,29 @@ const Dashboard: React.FC = () => {
               </GridContainer>
             </CardBody>
           </Card>
-          <Card>
-            <CardHeader color={headerData.color} stats icon>
-              <h3>{headerData.title}</h3>
-            </CardHeader>
-            <CardBody>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Timestamp</TableCell>
-                    <TableCell>Committer</TableCell>
-                    <TableCell>Author</TableCell>
-                    <TableCell>Message</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {push.commitData?.map((c) => (
-                    <TableRow key={c.commitTimestamp}>
-                      <TableCell>
-                        {moment.unix(Number(c.commitTimestamp || 0)).toString()}
-                      </TableCell>
-                      <TableCell>{generateEmailLink(c.committer, c.committerEmail)}</TableCell>
-                      <TableCell>{generateEmailLink(c.author, c.authorEmail)}</TableCell>
-                      <TableCell>{c.message}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardBody>
-          </Card>
         </GridItem>
         <GridItem xs={12} sm={12} md={12}>
-          <Card>
-            <CardHeader />
-            <CardBody>
-              <Diff diff={push.diff.content} />
-            </CardBody>
-            <CardFooter />
-          </Card>
+          <CustomTabs
+            headerColor='primary'
+            tabs={[
+              {
+                tabName: 'Commits',
+                tabIcon: ListIcon,
+                tabContent: <CommitDataTable commitData={push.commitData || []} />,
+              },
+              {
+                tabName: 'Changes',
+                tabIcon: CodeIcon,
+                tabContent: <Diff diff={push.diff?.content || ''} />,
+              },
+              {
+                tabName: 'Steps',
+                tabIcon: TimelineIcon,
+                tabContent: <StepsTimeline steps={push.steps ?? []} />,
+                badge: errorCount > 0 ? errorCount : undefined,
+              },
+            ]}
+          />
         </GridItem>
       </GridContainer>
     </div>
