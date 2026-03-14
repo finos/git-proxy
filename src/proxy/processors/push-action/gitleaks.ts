@@ -21,7 +21,7 @@ import { Request } from 'express';
 
 import { Action, Step } from '../../actions';
 import { getAPIs } from '../../../config';
-import { getErrorMessage, handleAndLogError, handleErrorAndLogInStep } from '../../../utils/errors';
+import { handleErrorAndLogInStep } from '../../../utils/errors';
 const EXIT_CODE = 99;
 
 function runCommand(

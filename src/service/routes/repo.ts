@@ -22,6 +22,7 @@ import { getAllProxiedHosts } from '../../db';
 import { RepoQuery } from '../../db/types';
 import { isAdminUser } from './utils';
 import { Proxy } from '../../proxy';
+import { handleErrorAndLog } from '../../utils/errors';
 
 function repo(proxy: Proxy) {
   const router = express.Router();
@@ -170,7 +171,7 @@ function repo(proxy: Proxy) {
   router.post('/', async (req: Request, res: Response) => {
     if (!isAdminUser(req.user)) {
       res.status(401).send({
-        message: 'You are not authorised to perform this action...',
+        message: 'You are not authorised to perform this action.',
       });
       return;
     }
@@ -218,7 +219,7 @@ function repo(proxy: Proxy) {
         // return data on the new repository (including it's _id and the proxyUrl)
         res.send({ ...repoDetails, proxyURL, message: 'created' });
       } catch (error: unknown) {
-        const msg = handleAndLogError(error, 'Repository creation failed');
+        const msg = handleErrorAndLog(error, 'Repository creation failed');
         res.status(500).send({ message: msg });
       }
     }

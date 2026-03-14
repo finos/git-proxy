@@ -24,7 +24,7 @@ import util from 'util';
 
 import { PushQuery } from '@finos/git-proxy/db';
 import { Action } from '@finos/git-proxy/proxy/actions';
-import { handleAndLogError } from '@finos/git-proxy/utils/errors';
+import { handleErrorAndLog } from '@finos/git-proxy/utils/errors';
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
@@ -70,7 +70,7 @@ async function login(username: string, password: string) {
       console.error(`Error: Login '${username}': '${error.response.status}'`);
       process.exitCode = 1;
     } else {
-      handleAndLogError(error, `Error: Login '${username}'`);
+      handleErrorAndLog(error, `Error: Login '${username}'`);
       process.exitCode = 2;
     }
   }
@@ -184,7 +184,7 @@ async function getGitPushes(filters: Partial<PushQuery>) {
 
     console.log(util.inspect(records, false, null, false));
   } catch (error: unknown) {
-    handleAndLogError(error, 'Error: List');
+    handleErrorAndLog(error, 'Error: List');
     process.exitCode = 2;
   }
 }
@@ -237,7 +237,7 @@ async function authoriseGitPush(id: string) {
           process.exitCode = 4;
       }
     } else {
-      handleAndLogError(error, `Error: Authorise: '${id}'`);
+      handleErrorAndLog(error, `Error: Authorise: '${id}'`);
       process.exitCode = 2;
     }
   }
@@ -282,7 +282,7 @@ async function rejectGitPush(id: string) {
           process.exitCode = 4;
       }
     } else {
-      handleAndLogError(error, `Error: Reject: '${id}'`);
+      handleErrorAndLog(error, `Error: Reject: '${id}'`);
       process.exitCode = 2;
     }
   }
@@ -327,7 +327,7 @@ async function cancelGitPush(id: string) {
           process.exitCode = 4;
       }
     } else {
-      handleAndLogError(error, `Error: Cancel: '${id}'`);
+      handleErrorAndLog(error, `Error: Cancel: '${id}'`);
       process.exitCode = 2;
     }
   }
@@ -351,7 +351,7 @@ async function logout() {
         },
       );
     } catch (error: unknown) {
-      handleAndLogError(error, 'Warning: Logout');
+      handleErrorAndLog(error, 'Warning: Logout');
     }
   }
 
@@ -375,7 +375,7 @@ async function reloadConfig() {
 
     console.log('Configuration reloaded successfully');
   } catch (error: unknown) {
-    handleAndLogError(error, 'Error: Reload config');
+    handleErrorAndLog(error, 'Error: Reload config');
     process.exitCode = 2;
   }
 }
@@ -432,7 +432,7 @@ async function createUser(
           break;
       }
     } else {
-      handleAndLogError(error, `Error: Create User: '${username}'`);
+      handleErrorAndLog(error, `Error: Create User: '${username}'`);
       process.exitCode = 2;
     }
   }
