@@ -32,6 +32,7 @@ import { Badge, CircularProgress, FormLabel, Snackbar } from '@material-ui/core'
 import { useAuth } from '../../auth/AuthProvider';
 import { getBaseUrl } from '../../services/apiConfig';
 import { getAxiosConfig, processAuthError } from '../../services/auth';
+import { BackendResponse } from '../../types';
 
 interface LoginResponse {
   username: string;

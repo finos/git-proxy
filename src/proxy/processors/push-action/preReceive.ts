@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
+import { spawnSync } from 'child_process';
+import { Request } from 'express';
 import fs from 'fs';
 import path from 'path';
-import { Action, Step } from '../../actions';
-import { spawnSync } from 'child_process';
 
-const sanitizeInput = (_req: any, action: Action): string => {
+import { Action, Step } from '../../actions';
+import { getErrorMessage } from '../../../utils/errors';
+
+const sanitizeInput = (_req: Request, action: Action): string => {
   return `${action.commitFrom} ${action.commitTo} ${action.branch} \n`;
 };
 
 const exec = async (
-  req: any,
+  req: Request,
   action: Action,
   hookFilePath: string = './hooks/pre-receive.sh',
 ): Promise<Action> => {
@@ -84,9 +87,11 @@ const exec = async (
       action.addStep(step);
     }
     return action;
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const msg = getErrorMessage(error);
+    const stdErrSuffix = stderrTrimmed ? `\nHook stderr: ${stderrTrimmed}` : '';
     step.log('Push failed, pre-receive hook returned an error.');
-    step.setError(`Hook execution error: ${stderrTrimmed || error.message}`);
+    step.setError(`Hook execution error: ${msg}${stdErrSuffix}`);
     action.addStep(step);
     return action;
   }

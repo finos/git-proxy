@@ -14,12 +14,14 @@
  * limitations under the License.
  */
 
+import { spawn } from 'node:child_process';
+import { PathLike } from 'node:fs';
+import fs from 'node:fs/promises';
+import { Request } from 'express';
+
 import { Action, Step } from '../../actions';
 import { getAPIs } from '../../../config';
-import { spawn } from 'node:child_process';
-import fs from 'node:fs/promises';
-import { PathLike } from 'node:fs';
-
+import { getErrorMessage, handleAndLogError, handleErrorAndLogInStep } from '../../../utils/errors';
 const EXIT_CODE = 99;
 
 function runCommand(
@@ -82,7 +84,7 @@ async function fileIsReadable(path: PathLike): Promise<boolean> {
     }
     await fs.access(path, fs.constants.R_OK);
     return true;
-  } catch (e) {
+  } catch (error: unknown) {
     return false;
   }
 }
@@ -124,16 +126,14 @@ const getPluginConfig = async (): Promise<ConfigOptions> => {
   };
 };
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('gitleaks');
 
   let config: ConfigOptions | undefined = undefined;
   try {
     config = await getPluginConfig();
-  } catch (e) {
-    step.setError(`Failed to get gitleaks config: ${e}`);
-    action.error = true;
-    step.setError('Failed to setup gitleaks, please contact an administrator.');
+  } catch (error: unknown) {
+    handleErrorAndLogInStep(step, error, 'Failed to get gitleaks config');
     action.addStep(step);
     return action;
   }
@@ -177,7 +177,6 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
     if (gitleaks.exitCode !== 0) {
       // any failure
-      step.error = true;
       if (gitleaks.exitCode !== EXIT_CODE) {
         step.setError('Failed to run gitleaks, please contact an administrator.');
       } else {
@@ -189,11 +188,8 @@ const exec = async (req: any, action: Action): Promise<Action> => {
       step.log('Succeeded.');
       step.log(`Gitleaks output: ${gitleaks.stderr}`);
     }
-  } catch (e) {
-    action.error = true;
-    step.setError('Failed to spawn gitleaks, please contact an administrator.');
-    action.addStep(step);
-    return action;
+  } catch (error: unknown) {
+    handleErrorAndLogInStep(step, error, 'Failed to spawn gitleaks');
   }
 
   action.addStep(step);
