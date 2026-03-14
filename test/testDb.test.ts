@@ -41,6 +41,7 @@ const TEST_USER = {
   gitAccount: 'db-test-user',
   email: 'db-test@test.com',
   admin: true,
+  mustChangePassword: false,
 };
 
 const TEST_PUSH = new Action(

@@ -20,13 +20,13 @@ import express, { Express, Request, Response } from 'express';
 import authRoutes from '../../../src/service/routes/auth';
 import * as db from '../../../src/db';
 
-const newApp = (username?: string): Express => {
+const newApp = (username?: string, options?: { mustChangePassword?: boolean }): Express => {
   const app = express();
   app.use(express.json());
 
   if (username) {
     app.use((req, _res, next) => {
-      req.user = { username };
+      req.user = { username, mustChangePassword: options?.mustChangePassword };
       next();
     });
   }
@@ -206,6 +206,103 @@ describe('Auth API', () => {
         gitAccount: 'UPDATED_GIT_ACCOUNT',
         password: '',
         title: '',
+      });
+    });
+
+    it('should return 428 when password change is required', async () => {
+      const res = await request(newApp('alice', { mustChangePassword: true }))
+        .post('/auth/gitAccount')
+        .send({
+          username: 'alice',
+          gitAccount: 'UPDATED_GIT_ACCOUNT',
+        });
+
+      expect(res.status).toBe(428);
+      expect(res.body).toEqual({
+        message: 'Password change required before accessing this endpoint',
+      });
+    });
+  });
+
+  describe('POST /change-password', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('should return 401 if user is not logged in', async () => {
+      const res = await request(newApp()).post('/auth/change-password').send({
+        currentPassword: 'admin',
+        newPassword: 'new-password-123',
+      });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('should return 400 for invalid payload', async () => {
+      const res = await request(newApp('alice')).post('/auth/change-password').send({
+        currentPassword: 'admin',
+        newPassword: 'short',
+      });
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should return 404 if user is not found', async () => {
+      vi.spyOn(db, 'findUser').mockResolvedValue(null);
+
+      const res = await request(newApp('alice')).post('/auth/change-password').send({
+        currentPassword: 'admin-password',
+        newPassword: 'new-password-123',
+      });
+
+      expect(res.status).toBe(404);
+    });
+
+    it('should return 401 when current password is incorrect', async () => {
+      const bcrypt = await import('bcryptjs');
+      const hashedPassword = await bcrypt.default.hash('correct-password', 10);
+      vi.spyOn(db, 'findUser').mockResolvedValue({
+        username: 'alice',
+        password: hashedPassword,
+        email: 'alice@example.com',
+        displayName: 'Alice Munro',
+        gitAccount: 'ORIGINAL_GIT_ACCOUNT',
+        admin: true,
+        title: '',
+      } as any);
+
+      const res = await request(newApp('alice')).post('/auth/change-password').send({
+        currentPassword: 'wrong-password',
+        newPassword: 'new-password-123',
+      });
+
+      expect(res.status).toBe(401);
+    });
+
+    it('should reset mustChangePassword after successful password update', async () => {
+      const bcrypt = await import('bcryptjs');
+      const hashedPassword = await bcrypt.default.hash('admin', 10);
+      const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
+      vi.spyOn(db, 'findUser').mockResolvedValue({
+        username: 'alice',
+        password: hashedPassword,
+        email: 'alice@example.com',
+        displayName: 'Alice Munro',
+        gitAccount: 'ORIGINAL_GIT_ACCOUNT',
+        admin: true,
+        title: '',
+      } as any);
+
+      const res = await request(newApp('alice')).post('/auth/change-password').send({
+        currentPassword: 'admin',
+        newPassword: 'new-password-123',
+      });
+
+      expect(res.status).toBe(200);
+      expect(updateUserSpy).toHaveBeenCalledWith({
+        username: 'alice',
+        password: expect.any(String),
+        mustChangePassword: false,
       });
     });
   });
