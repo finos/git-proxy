@@ -54,6 +54,6 @@ describe('Login page', () => {
 
     cy.get('.MuiSnackbarContent-message')
       .should('be.visible')
-      .and('contain', 'You entered an invalid username or password...');
+      .and('contain', 'You entered an invalid username or password.');
   });
 });
