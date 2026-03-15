@@ -71,7 +71,7 @@ const Attestation: React.FC<AttestationProps> = ({ approveFn }) => {
 
   return (
     <div>
-      <Button color='success' onClick={handleClickOpen}>
+      <Button color='success' onClick={handleClickOpen} data-testid='attestation-open-btn'>
         Approve
       </Button>
       <Dialog
@@ -81,6 +81,7 @@ const Attestation: React.FC<AttestationProps> = ({ approveFn }) => {
         onClose={handleClose}
         aria-labelledby='alert-dialog-title'
         aria-describedby='alert-dialog-description'
+        data-testid='attestation-dialog'
         style={{ margin: '0px 15px 0px 15px', padding: '20px' }}
       >
         <span
@@ -110,7 +111,7 @@ const Attestation: React.FC<AttestationProps> = ({ approveFn }) => {
           <AttestationForm formData={formData} passFormData={setFormData} />
         </DialogContent>
         <DialogActions style={{ paddingTop: '15px', margin: '15px' }}>
-          <Button color='warning' onClick={handleClose}>
+          <Button color='warning' onClick={handleClose} data-testid='attestation-cancel-btn'>
             Cancel
           </Button>
           <Button
@@ -118,6 +119,7 @@ const Attestation: React.FC<AttestationProps> = ({ approveFn }) => {
             onClick={handleApprove}
             autoFocus
             disabled={!formData.every((question) => question.checked)}
+            data-testid='attestation-confirm-btn'
           >
             <CheckCircle /> Approve
           </Button>
