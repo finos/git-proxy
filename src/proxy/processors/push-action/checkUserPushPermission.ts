@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+import { Request } from 'express';
+
 import { Action, Step } from '../../actions';
 import { getUsers, isUserPushAllowed } from '../../../db';
 
 // Execute if the repo is approved
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('checkUserPushPermission');
   const userEmail = action.userEmail;
 

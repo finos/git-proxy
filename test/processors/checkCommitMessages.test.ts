@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
+import { Request } from 'express';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { exec } from '../../src/proxy/processors/push-action/checkCommitMessages';
 import { Action } from '../../src/proxy/actions';
 import * as configModule from '../../src/config';
-import { CommitData } from '../../src/proxy/processors/types';
+import { SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
 
 vi.mock('../../src/config', async (importOriginal) => {
-  const actual: any = await importOriginal();
+  const actual = await importOriginal<typeof import('../../src/config')>();
   return {
     ...actual,
     getCommitConfig: vi.fn(() => ({})),
@@ -29,6 +30,8 @@ vi.mock('../../src/config', async (importOriginal) => {
 });
 
 describe('checkCommitMessages', () => {
+  let action: Action;
+  let req: Request;
   let consoleLogSpy: ReturnType<typeof vi.spyOn>;
   let mockCommitConfig: any;
 
@@ -47,6 +50,9 @@ describe('checkCommitMessages', () => {
     };
 
     vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
+
+    action = new Action('test', 'test', 'test', 1, 'test');
+    req = {} as Request;
   });
 
   afterEach(() => {
@@ -56,38 +62,34 @@ describe('checkCommitMessages', () => {
   describe('isMessageAllowed', () => {
     describe('Empty or invalid messages', () => {
       it('should block empty string commit messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: '' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: '' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
         expect(consoleLogSpy).toHaveBeenCalledWith('No commit message included...');
       });
 
       it('should block null commit messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: null as any } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: null as unknown as string }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
 
       it('should block undefined commit messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: undefined as any } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: undefined as unknown as string }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
 
       it('should block non-string commit messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 123 as any } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 123 as unknown as string }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
         expect(consoleLogSpy).toHaveBeenCalledWith(
@@ -96,19 +98,19 @@ describe('checkCommitMessages', () => {
       });
 
       it('should block object commit messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: { text: 'fix: bug' } as any } as CommitData];
+        action.commitData = [
+          { ...SAMPLE_COMMIT, message: { text: 'fix: bug' } as unknown as string },
+        ];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
 
       it('should block array commit messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: ['fix: bug'] as any } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: ['fix: bug'] as unknown as string }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
@@ -116,10 +118,9 @@ describe('checkCommitMessages', () => {
 
     describe('Blocked literals', () => {
       it('should block messages containing blocked literals (exact case)', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add password to config' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'Add password to config' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
         expect(consoleLogSpy).toHaveBeenCalledWith(
@@ -128,32 +129,29 @@ describe('checkCommitMessages', () => {
       });
 
       it('should block messages containing blocked literals (case insensitive)', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'Add PASSWORD to config' } as CommitData,
-          { message: 'Store Secret key' } as CommitData,
-          { message: 'Update TOKEN value' } as CommitData,
+          { ...SAMPLE_COMMIT, message: 'Add PASSWORD to config' },
+          { ...SAMPLE_COMMIT, message: 'Store Secret key' },
+          { ...SAMPLE_COMMIT, message: 'Update TOKEN value' },
         ];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
 
       it('should block messages with literals in the middle of words', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Update mypassword123' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'Update mypassword123' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
 
       it('should block when multiple literals are present', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add password and secret token' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'Add password and secret token' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
@@ -161,30 +159,29 @@ describe('checkCommitMessages', () => {
 
     describe('Blocked patterns', () => {
       it('should block messages containing http URLs', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'See http://example.com for details' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'See http://example.com for details' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
 
       it('should block messages containing https URLs', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Update docs at https://docs.example.com' } as CommitData];
+        action.commitData = [
+          { ...SAMPLE_COMMIT, message: 'Update docs at https://docs.example.com' },
+        ];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
 
       it('should block messages with multiple URLs', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'See http://example.com and https://other.com' } as CommitData,
+          { ...SAMPLE_COMMIT, message: 'See http://example.com and https://other.com' },
         ];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
@@ -193,10 +190,9 @@ describe('checkCommitMessages', () => {
         mockCommitConfig.message.block.patterns = ['\\d{3}-\\d{2}-\\d{4}'];
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'SSN: 123-45-6789' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'SSN: 123-45-6789' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
@@ -205,10 +201,9 @@ describe('checkCommitMessages', () => {
         mockCommitConfig.message.block.patterns = ['PRIVATE'];
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'This is private information' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'This is private information' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
@@ -216,10 +211,9 @@ describe('checkCommitMessages', () => {
 
     describe('Combined blocking (literals and patterns)', () => {
       it('should block when both literals and patterns match', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'password at http://example.com' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'password at http://example.com' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
@@ -228,10 +222,9 @@ describe('checkCommitMessages', () => {
         mockCommitConfig.message.block.patterns = [];
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add secret key' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'Add secret key' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
@@ -240,10 +233,9 @@ describe('checkCommitMessages', () => {
         mockCommitConfig.message.block.literals = [];
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Visit http://example.com' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'Visit http://example.com' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
@@ -251,10 +243,11 @@ describe('checkCommitMessages', () => {
 
     describe('Allowed messages', () => {
       it('should allow valid commit messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'fix: resolve bug in user authentication' } as CommitData];
+        action.commitData = [
+          { ...SAMPLE_COMMIT, message: 'fix: resolve bug in user authentication' },
+        ];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(false);
         expect(consoleLogSpy).toHaveBeenCalledWith(
@@ -263,14 +256,13 @@ describe('checkCommitMessages', () => {
       });
 
       it('should allow messages with no blocked content', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'feat: add new feature' } as CommitData,
-          { message: 'chore: update dependencies' } as CommitData,
-          { message: 'docs: improve documentation' } as CommitData,
+          { ...SAMPLE_COMMIT, message: 'feat: add new feature' },
+          { ...SAMPLE_COMMIT, message: 'chore: update dependencies' },
+          { ...SAMPLE_COMMIT, message: 'docs: improve documentation' },
         ];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(false);
       });
@@ -280,10 +272,9 @@ describe('checkCommitMessages', () => {
         mockCommitConfig.message.block.patterns = [];
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Any message should pass' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'Any message should pass' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(false);
       });
@@ -291,65 +282,60 @@ describe('checkCommitMessages', () => {
 
     describe('Multiple commits', () => {
       it('should handle multiple valid commits', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'feat: add feature A' } as CommitData,
-          { message: 'fix: resolve issue B' } as CommitData,
-          { message: 'chore: update config C' } as CommitData,
+          { ...SAMPLE_COMMIT, message: 'feat: add feature A' },
+          { ...SAMPLE_COMMIT, message: 'fix: resolve issue B' },
+          { ...SAMPLE_COMMIT, message: 'chore: update config C' },
         ];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(false);
       });
 
       it('should block when any commit is invalid', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'feat: add feature A' } as CommitData,
-          { message: 'fix: add password to config' } as CommitData,
-          { message: 'chore: update config C' } as CommitData,
+          { ...SAMPLE_COMMIT, message: 'feat: add feature A' },
+          { ...SAMPLE_COMMIT, message: 'fix: add password to config' },
+          { ...SAMPLE_COMMIT, message: 'chore: update config C' },
         ];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
 
       it('should block when multiple commits are invalid', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'Add password' } as CommitData,
-          { message: 'Store secret' } as CommitData,
-          { message: 'feat: valid message' } as CommitData,
+          { ...SAMPLE_COMMIT, message: 'Add password' },
+          { ...SAMPLE_COMMIT, message: 'Store secret' },
+          { ...SAMPLE_COMMIT, message: 'feat: valid message' },
         ];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
 
       it('should deduplicate commit messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'fix: bug' } as CommitData,
-          { message: 'fix: bug' } as CommitData,
+          { ...SAMPLE_COMMIT, message: 'fix: bug' },
+          { ...SAMPLE_COMMIT, message: 'fix: bug' },
         ];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(false);
       });
 
       it('should handle mix of duplicate valid and invalid messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'fix: bug' } as CommitData,
-          { message: 'Add password' } as CommitData,
-          { message: 'fix: bug' } as CommitData,
+          { ...SAMPLE_COMMIT, message: 'fix: bug' },
+          { ...SAMPLE_COMMIT, message: 'Add password' },
+          { ...SAMPLE_COMMIT, message: 'fix: bug' },
         ];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
@@ -357,19 +343,17 @@ describe('checkCommitMessages', () => {
 
     describe('Error handling and logging', () => {
       it('should set error flag on step when messages are illegal', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add password' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'Add password' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
 
       it('should log error message to step', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add password' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'Add password' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
         const step = result.steps[0];
 
         // first log is the "push blocked" message
@@ -379,10 +363,9 @@ describe('checkCommitMessages', () => {
       });
 
       it('should set detailed error message', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Add secret' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'Add secret' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
         const step = result.steps[0];
 
         expect(step.errorMessage).toContain('Your push has been blocked');
@@ -390,13 +373,12 @@ describe('checkCommitMessages', () => {
       });
 
       it('should include all illegal messages in error', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [
-          { message: 'Add password' } as CommitData,
-          { message: 'Store token' } as CommitData,
+          { ...SAMPLE_COMMIT, message: 'Add password' },
+          { ...SAMPLE_COMMIT, message: 'Store token' },
         ];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
         const step = result.steps[0];
 
         expect(step.errorMessage).toContain('Add password');
@@ -406,39 +388,35 @@ describe('checkCommitMessages', () => {
 
     describe('Edge cases', () => {
       it('should handle action with no commitData', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = undefined;
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         // should handle gracefully
         expect(result.steps).toHaveLength(1);
       });
 
       it('should handle action with empty commitData array', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
         action.commitData = [];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(false);
       });
 
       it('should handle whitespace-only messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: '   ' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: '   ' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(false);
       });
 
       it('should handle very long commit messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
         const longMessage = 'fix: ' + 'a'.repeat(10000);
-        action.commitData = [{ message: longMessage } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: longMessage }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(false);
       });
@@ -447,19 +425,17 @@ describe('checkCommitMessages', () => {
         mockCommitConfig.message.block.literals = ['$pecial', 'char*'];
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Contains $pecial characters' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'Contains $pecial characters' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
       });
 
       it('should handle unicode characters in messages', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'feat: 添加新功能 🎉' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'feat: 添加新功能 🎉' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(false);
       });
@@ -468,11 +444,10 @@ describe('checkCommitMessages', () => {
         mockCommitConfig.message.block.patterns = ['[invalid'];
         vi.mocked(configModule.getCommitConfig).mockReturnValue(mockCommitConfig);
 
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'Any message' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'Any message' }];
 
         // test that it doesn't crash
-        expect(() => exec({}, action)).not.toThrow();
+        expect(() => exec(req, action)).not.toThrow();
       });
     });
 
@@ -484,29 +459,26 @@ describe('checkCommitMessages', () => {
 
     describe('Step management', () => {
       it('should create a step named "checkCommitMessages"', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'fix: bug' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'fix: bug' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps[0].stepName).toBe('checkCommitMessages');
       });
 
       it('should add step to action', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'fix: bug' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'fix: bug' }];
 
         const initialStepCount = action.steps.length;
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result.steps.length).toBe(initialStepCount + 1);
       });
 
       it('should return the same action object', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'fix: bug' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'fix: bug' }];
 
-        const result = await exec({}, action);
+        const result = await exec(req, action);
 
         expect(result).toBe(action);
       });
@@ -514,11 +486,10 @@ describe('checkCommitMessages', () => {
 
     describe('Request parameter', () => {
       it('should accept request parameter without using it', async () => {
-        const action = new Action('test', 'test', 'test', 1, 'test');
-        action.commitData = [{ message: 'fix: bug' } as CommitData];
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'fix: bug' }];
         const mockRequest = { headers: {}, body: {} };
 
-        const result = await exec(mockRequest, action);
+        const result = await exec(mockRequest as Request, action);
 
         expect(result.steps[0].error).toBe(false);
       });
