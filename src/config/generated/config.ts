@@ -102,6 +102,10 @@ export interface GitProxyConfig {
    */
   uiRouteAuth?: UIRouteAuth;
   /**
+   * Configuration for routing outbound requests to upstream Git hosts via an HTTP(S) proxy.
+   */
+  upstreamProxy?: UpstreamProxy;
+  /**
    * Customisable URL shortener to share in proxy responses and warnings
    */
   urlShortener?: string;
@@ -563,6 +567,24 @@ export interface RouteAuthRule {
   [property: string]: any;
 }
 
+/**
+ * Configuration for routing outbound requests to upstream Git hosts via an HTTP(S) proxy.
+ */
+export interface UpstreamProxy {
+  /**
+   * Whether to use an outbound HTTP(S) proxy for upstream Git hosts.
+   */
+  enabled?: boolean;
+  /**
+   * Additional hostnames or domain suffixes that should bypass the upstream proxy.
+   */
+  noProxy?: string[];
+  /**
+   * Proxy URL used for outbound connections to upstream Git hosts when set.
+   */
+  url?: string;
+}
+
 // Converts JSON strings to/from your types
 // and asserts the results of JSON.parse at runtime
 export class Convert {
@@ -780,6 +802,7 @@ const typeMap: any = {
       { json: 'tempPassword', js: 'tempPassword', typ: u(undefined, r('TempPassword')) },
       { json: 'tls', js: 'tls', typ: u(undefined, r('TLS')) },
       { json: 'uiRouteAuth', js: 'uiRouteAuth', typ: u(undefined, r('UIRouteAuth')) },
+      { json: 'upstreamProxy', js: 'upstreamProxy', typ: u(undefined, r('UpstreamProxy')) },
       { json: 'urlShortener', js: 'urlShortener', typ: u(undefined, '') },
     ],
     false,
@@ -980,6 +1003,14 @@ const typeMap: any = {
       { json: 'pattern', js: 'pattern', typ: u(undefined, '') },
     ],
     'any',
+  ),
+  UpstreamProxy: o(
+    [
+      { json: 'enabled', js: 'enabled', typ: u(undefined, true) },
+      { json: 'noProxy', js: 'noProxy', typ: u(undefined, a('')) },
+      { json: 'url', js: 'url', typ: u(undefined, '') },
+    ],
+    false,
   ),
   AuthenticationElementType: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
   DatabaseType: ['fs', 'mongo'],

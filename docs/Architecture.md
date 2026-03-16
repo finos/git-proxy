@@ -222,6 +222,26 @@ Currently supports the following out-of-the-box:
 - ActiveDirectory auth configuration for querying via a REST API rather than LDAP
 - Gitleaks configuration
 
+#### `upstreamProxy`
+
+Configures routing of outbound requests from the GitProxy server to upstream Git hosts (e.g. GitHub, GitLab) via an HTTP(S) proxy. Use this when the server runs in an environment where direct Internet access is not allowed and all traffic must go through a corporate web proxy ("proxying the proxy").
+
+- **`enabled`** (boolean): When `true`, outbound connections to upstream Git hosts use the configured proxy. When `false`, the proxy is not used even if `url` or environment variables are set.
+- **`url`** (string): The HTTP(S) proxy URL (e.g. `http://proxy.corp.local:8080` or `http://user:pass@proxy.corp.local:8080`). If omitted, GitProxy falls back to the `HTTPS_PROXY`, `https_proxy`, `HTTP_PROXY` or `http_proxy` environment variables (first defined wins).
+- **`noProxy`** (array of strings, optional): Hostnames or domain suffixes for which the proxy should be bypassed (e.g. internal Git hosts). Combined with the `NO_PROXY` / `no_proxy` environment variable.
+
+Example:
+
+```json
+"upstreamProxy": {
+  "enabled": true,
+  "url": "http://proxy.corp.local:8080",
+  "noProxy": ["github.corp.local", "gitlab.corp.local"]
+}
+```
+
+If `upstreamProxy` is not configured, setting only `HTTPS_PROXY` (or `HTTP_PROXY`) in the environment will also enable use of that proxy for outbound connections, unless `enabled` is explicitly set to `false` in config.
+
 #### `commitConfig`
 
 Used in [`checkCommitMessages`](./Processors.md#checkcommitmessages), [`checkAuthorEmails`](./Processors.md#checkauthoremails) and [`scanDiff`](./Processors.md#scandiff) processors to block pushes depending on the given rules.
