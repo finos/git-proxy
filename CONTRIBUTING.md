@@ -23,12 +23,12 @@ For project governance, roles, and voting procedures, see the [Governance sectio
 
 ## Prerequisites
 
-| Tool                                                                                                       | Version                        | Notes                       |
-| ---------------------------------------------------------------------------------------------------------- | ------------------------------ | --------------------------- |
-| [Node.js](https://nodejs.org/en/download)                                                                  | 20.18.2+, 22.13.1+, or 24.0.0+ | Check with `node -v`        |
-| [npm](https://npmjs.com/)                                                                                  | 8+                             | Bundled with Node.js        |
-| [Git](https://git-scm.com/downloads)                                                                       | Any recent version             | Must support HTTP/S         |
-| [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/) | Any recent version             | Required for E2E tests only |
+| Tool                                                                                                       | Version              | Notes                       |
+| ---------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------- |
+| [Node.js](https://nodejs.org/en/download)                                                                  | 22.13.1+, or 24.0.0+ | Check with `node -v`        |
+| [npm](https://npmjs.com/)                                                                                  | 8+                   | Bundled with Node.js        |
+| [Git](https://git-scm.com/downloads)                                                                       | Any recent version   | Must support HTTP/S         |
+| [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/) | Any recent version   | Required for E2E tests only |
 
 ## Getting Started
 
@@ -387,7 +387,7 @@ GitProxy uses a JSON Schema ([config.schema.json](config.schema.json)) to define
 
 The following checks must pass before a PR can be merged:
 
-- **Unit tests**: Run across a matrix of Node.js (20, 22, 24) and MongoDB (6.0, 7.0, 8.0) versions on Ubuntu, plus a Windows build
+- **Unit tests**: Run across a matrix of the latest 2 Node.js (22, 24) and MongoDB (6.0, 7.0, 8.0) versions on Ubuntu, plus a Windows build
 - **E2E tests**: Docker-based end-to-end tests
 - **Cypress tests**: UI end-to-end tests
 - **Lint & format**: ESLint, Prettier, TypeScript type checks
