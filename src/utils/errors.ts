@@ -14,18 +14,25 @@
  * limitations under the License.
  */
 
+import { Step } from '../proxy/actions/Step';
+
 export const getErrorMessage = (error: unknown) => {
   return error instanceof Error ? error.message : String(error);
 };
 
-export const handleAndLogError = (error: unknown, messagePrefix?: string): string => {
+export const handleErrorAndLog = (error: unknown, messagePrefix?: string): string => {
   const msg = `${messagePrefix ? `${messagePrefix}: ` : ''}${getErrorMessage(error)}`;
   console.error(msg);
   return msg;
 };
 
-export const handleAndThrowError = (error: unknown, message?: string) => {
+export const handleErrorAndThrow = (error: unknown, message?: string) => {
   const msg = getErrorMessage(error);
   console.error(message);
   throw new Error(`${message ? `${message}: ` : ''}${msg}`);
+};
+
+export const handleErrorAndLogInStep = (step: Step, error: unknown, messagePrefix?: string) => {
+  const msg = `${messagePrefix ? `${messagePrefix}: ` : ''}${getErrorMessage(error)}`;
+  step.setError(msg);
 };
