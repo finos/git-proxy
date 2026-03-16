@@ -20,7 +20,8 @@ import { CheckCircle } from '@material-ui/icons';
 import Tooltip from '@material-ui/core/Tooltip';
 import UserLink from '../../../components/UserLink/UserLink';
 import AttestationView from './AttestationView';
-import { AttestationFormData, PushActionView } from '../../../types';
+import { PushActionView } from '../../../types';
+import { CompletedAttestation } from '../../../../proxy/processors/types';
 
 interface AttestationInfoProps {
   push: PushActionView;
@@ -109,7 +110,7 @@ const AttestationInfo: React.FC<AttestationInfoProps> = ({
 
       {!push.autoApproved && (
         <AttestationView
-          data={push.attestation as AttestationFormData}
+          data={push.attestation as CompletedAttestation}
           attestation={attestation}
           setAttestation={setAttestation}
         />
