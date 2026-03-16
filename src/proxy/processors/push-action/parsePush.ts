@@ -65,8 +65,6 @@ async function exec(req: Request, action: Action): Promise<Action> {
       throw new Error(
         'Your push has been blocked. Please make sure you are pushing to a single branch.',
       );
-    } else {
-      console.log(`parsePush refUpdates: ${JSON.stringify(refUpdates, null, 2)}`);
     }
 
     const [commitParts] = refUpdates[0].split('\0');
