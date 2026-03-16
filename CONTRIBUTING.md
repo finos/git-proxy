@@ -23,6 +23,8 @@ For project governance, roles, and voting procedures, see the [Governance sectio
 
 ## Prerequisites
 
+We actively support and test against the latest two LTS Node versions, currently 22 and 24. When a new LTS version rolls out (26, 28, etc.), we deprecate the oldest one.
+
 | Tool                                                                                                       | Version              | Notes                       |
 | ---------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------- |
 | [Node.js](https://nodejs.org/en/download)                                                                  | 22.13.1+, or 24.0.0+ | Check with `node -v`        |
