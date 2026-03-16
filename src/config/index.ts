@@ -149,6 +149,12 @@ export const getProxyUrl = (): string | undefined => {
   return config.proxyUrl;
 };
 
+// Get upstream proxy configuration
+export const getUpstreamProxyConfig = () => {
+  const config = loadFullConfiguration();
+  return config.upstreamProxy || {};
+};
+
 // Gets a list of authorised repositories
 export const getAuthorisedList = () => {
   const config = loadFullConfiguration();

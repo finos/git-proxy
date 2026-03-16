@@ -23,6 +23,9 @@ import { processUrlPath, validGitRequest } from './helper';
 import { getAllProxiedHosts } from '../../db';
 import { ProxyOptions } from 'express-http-proxy';
 import { getErrorMessage, handleAndLogError } from '../../utils/errors';
+import { getUpstreamProxyConfig } from '../../config';
+import { HttpsProxyAgent } from 'https-proxy-agent';
+import { OutgoingHttpHeaders, RequestOptions } from 'http';
 
 enum ActionType {
   ALLOWED = 'Allowed',
@@ -144,7 +147,100 @@ const getRequestPathResolver: (prefix: string) => ProxyOptions['proxyReqPathReso
   };
 };
 
-const proxyReqOptDecorator: ProxyOptions['proxyReqOptDecorator'] = (proxyReqOpts) => proxyReqOpts;
+const getEnvProxyUrl = () =>
+  process.env.HTTPS_PROXY ||
+  process.env.https_proxy ||
+  process.env.HTTP_PROXY ||
+  process.env.http_proxy;
+
+const getEnvNoProxyList = (): string[] => {
+  const noProxy = process.env.NO_PROXY || process.env.no_proxy;
+  if (!noProxy) {
+    return [];
+  }
+  return noProxy
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+};
+
+const hostMatchesNoProxy = (host: string | null | undefined, noProxyList: string[]): boolean => {
+  if (!host) {
+    return false;
+  }
+
+  const hostname = host.split(':')[0];
+
+  return noProxyList.some((pattern) => {
+    if (!pattern) {
+      return false;
+    }
+    const trimmed = pattern.trim();
+    if (trimmed === '') {
+      return false;
+    }
+
+    // Exact match
+    if (hostname === trimmed) {
+      return true;
+    }
+
+    // Domain suffix match, e.g. example.com matches foo.example.com
+    if (hostname.endsWith(`.${trimmed}`)) {
+      return true;
+    }
+
+    return false;
+  });
+};
+
+const buildUpstreamProxyAgent = (
+  proxyReqOpts: Omit<RequestOptions, 'headers'> & {
+    headers: OutgoingHttpHeaders;
+  },
+) => {
+  const upstreamProxyConfig = getUpstreamProxyConfig();
+
+  const configuredUrl = upstreamProxyConfig.url;
+  const envUrl = getEnvProxyUrl();
+
+  const proxyUrl = configuredUrl || envUrl;
+
+  // If nothing is configured, do not use a proxy
+  if (!proxyUrl) {
+    return undefined;
+  }
+
+  // If config explicitly disabled the proxy, do not use it
+  if (upstreamProxyConfig.enabled === false) {
+    return undefined;
+  }
+
+  const host: string | null | undefined = proxyReqOpts.host || proxyReqOpts.hostname;
+
+  const configNoProxy = upstreamProxyConfig.noProxy ? upstreamProxyConfig.noProxy : [];
+  const envNoProxy = getEnvNoProxyList();
+  const combinedNoProxy = [...configNoProxy, ...envNoProxy];
+
+  if (hostMatchesNoProxy(host, combinedNoProxy)) {
+    return undefined;
+  }
+
+  return new HttpsProxyAgent(proxyUrl);
+};
+
+const proxyReqOptDecorator: ProxyOptions['proxyReqOptDecorator'] = (proxyReqOpts, _srcReq) => {
+  const agent = buildUpstreamProxyAgent(proxyReqOpts);
+
+  if (!agent) {
+    return proxyReqOpts;
+  }
+
+  return {
+    ...proxyReqOpts,
+    agent,
+  };
+};
 
 const proxyReqBodyDecorator: ProxyOptions['proxyReqBodyDecorator'] = (bodyContent, srcReq) => {
   if (srcReq.method === 'GET') {
@@ -273,4 +369,5 @@ export {
   isPackPost,
   extractRawBody,
   validGitRequest,
+  buildUpstreamProxyAgent,
 };
