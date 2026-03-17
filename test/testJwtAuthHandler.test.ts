@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
 import axios from 'axios';
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { NextFunction } from 'express';
+import jwt, { JwtPayload } from 'jsonwebtoken';
+import { describe, it, expect, vi, beforeEach, afterEach, MockInstance } from 'vitest';
 
 import { assignRoles, getJwks, validateJwt } from '../src/service/passport/jwtUtils';
 import { jwtAuthHandler } from '../src/service/passport/jwtAuthHandler';
+import { JwtConfig, RoleMapping } from '../src/config/generated/config';
 
 function generateRsaKeyPair() {
   return crypto.generateKeyPairSync('rsa', {
@@ -58,9 +60,9 @@ describe('JWT', () => {
   });
 
   describe('validateJwt', () => {
-    let decodeStub: any;
-    let verifyStub: any;
-    let getJwksStub: any;
+    let decodeStub: MockInstance;
+    let verifyStub: MockInstance;
+    let getJwksStub: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
       const jwksResponse = { keys: [{ kid: 'test-key', kty: 'RSA', n: 'abc', e: 'AQAB' }] };
@@ -182,7 +184,7 @@ describe('JWT', () => {
       const user = { username: 'no-role-user', admin: undefined };
       const payload = { admin: 'admin' };
 
-      assignRoles(null as any, payload, user);
+      assignRoles({} as RoleMapping, payload, user);
       expect(user.admin).toBeUndefined();
     });
   });
@@ -190,9 +192,9 @@ describe('JWT', () => {
   describe('jwtAuthHandler', () => {
     let req: any;
     let res: any;
-    let next: any;
-    let jwtConfig: any;
-    let validVerifyResponse: any;
+    let next: NextFunction;
+    let jwtConfig: JwtConfig;
+    let validVerifyResponse: JwtPayload;
 
     beforeEach(() => {
       req = { header: vi.fn(), isAuthenticated: vi.fn(), user: {} };
@@ -261,7 +263,7 @@ describe('JWT', () => {
       await jwtAuthHandler(jwtConfig)(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.send).toHaveBeenCalledWith(expect.stringMatching(/JWT validation failed:/));
+      expect(res.send).toHaveBeenCalledWith(expect.stringMatching(/Invalid JWT:/));
     });
   });
 });

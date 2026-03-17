@@ -14,19 +14,10 @@
  * limitations under the License.
  */
 
-import { Request } from 'express';
+import { Readable } from 'stream';
 
-import { writeAudit } from '../../../db';
-import { Action } from '../../actions';
-
-const exec = async (_req: Request, action: Action) => {
-  if (action.type !== 'pull') {
-    await writeAudit(action);
+declare module 'express-serve-static-core' {
+  interface Request {
+    bodyRaw?: Buffer;
   }
-
-  return action;
-};
-
-exec.displayName = 'audit.exec';
-
-export { exec };
+}
