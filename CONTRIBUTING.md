@@ -399,6 +399,12 @@ The following checks must pass before a PR can be merged:
 
 All contributors must have a CLA on file with FINOS before PRs can be merged. Review the FINOS [contribution requirements](https://finosfoundation.atlassian.net/wiki/spaces/FINOS/pages/75530375/Contribution+Compliance+Requirements) and submit the required CLA.
 
+## Releases
+
+Our release process starts with making a [planning document](./.github/ISSUE_TEMPLATE/release_planning.md) for every minor/major release. Here, we plan the issues and PRs to include. We aim to release on a quarterly basis, but emergency patches/releases outside the usual schedule may also be done arbitrarily.
+
+If you'd like to include a certain feature, issue or PR in a given release, feel free to comment on the relevant planning issue. We also discuss PRs for the next release in our Community Meetings - that's another great place to make suggestions!
+
 ## Community
 
 - **Slack**: [#git-proxy](https://finos-lf.slack.com/archives/C06LXNW0W76) on the FINOS Slack workspace
