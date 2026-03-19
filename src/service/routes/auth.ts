@@ -332,16 +332,11 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
     }
 
     user.gitAccount = req.body.gitAccount;
-    db.updateUser(user);
-    res.status(200).end();
+    await db.updateUser(user);
+    return res.status(200).send({ message: 'Git account updated successfully' }).end();
   } catch (error: unknown) {
     const msg = handleErrorAndLog(error, 'Failed to update git account');
-    res
-      .status(500)
-      .send({
-        message: msg,
-      })
-      .end();
+    return res.status(500).send({ message: msg }).end();
   }
 });
 
