@@ -29,6 +29,10 @@ interface CommitDataTableProps {
 }
 
 const CommitDataTable: React.FC<CommitDataTableProps> = ({ commitData }) => {
+  if (commitData.length === 0) {
+    return <p>No commits found for this push.</p>;
+  }
+
   return (
     <Table>
       <TableHead>
