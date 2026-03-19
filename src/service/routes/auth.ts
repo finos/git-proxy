@@ -25,9 +25,8 @@ import * as passportAD from '../passport/activeDirectory';
 
 import { User } from '../../db/types';
 import { AuthenticationElement } from '../../config/generated/config';
-
 import { isAdminUser, mustChangePassword, toPublicUser } from './utils';
-import { handleAndLogError } from '../../utils/errors';
+import { handleErrorAndLog } from '../../utils/errors';
 
 const router = express.Router();
 const passport = getPassport();
@@ -111,7 +110,7 @@ const loginSuccessHandler = () => async (req: Request, res: Response) => {
       user: currentUser,
     });
   } catch (error: unknown) {
-    const msg = handleAndLogError(error, 'Error logging user in');
+    const msg = handleErrorAndLog(error, 'Error logging user in');
     res.status(500).send(`Failed to login: ${msg}`).end();
   }
 };
@@ -244,7 +243,7 @@ router.post('/change-password', async (req: Request, res: Response) => {
     });
 
     req.session?.regenerate((err: unknown) => {
-      handleAndLogError(err, 'Failed to regenerate session');
+      handleErrorAndLog(err, 'Failed to regenerate session');
       res.status(500).send({ message: 'Failed to regenerate session' }).end();
       return;
     });
@@ -252,7 +251,7 @@ router.post('/change-password', async (req: Request, res: Response) => {
 
     res.status(200).send({ message: 'Password updated successfully' }).end();
   } catch (error: unknown) {
-    const msg = handleAndLogError(error, 'Failed to update password');
+    const msg = handleErrorAndLog(error, 'Failed to update password');
     res
       .status(500)
       .send({
@@ -336,7 +335,7 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
     db.updateUser(user);
     res.status(200).end();
   } catch (error: unknown) {
-    const msg = handleAndLogError(error, 'Failed to update git account');
+    const msg = handleErrorAndLog(error, 'Failed to update git account');
     res
       .status(500)
       .send({
@@ -380,7 +379,7 @@ router.post('/create-user', async (req: Request, res: Response) => {
       })
       .end();
   } catch (error: unknown) {
-    const msg = handleAndLogError(error, 'Failed to create user');
+    const msg = handleErrorAndLog(error, 'Failed to create user');
     res
       .status(500)
       .send({

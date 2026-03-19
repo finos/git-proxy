@@ -19,7 +19,7 @@ import simpleGit from 'simple-git';
 
 import { Action, Step } from '../../actions';
 import { EMPTY_COMMIT_HASH } from '../constants';
-import { handleAndLogError } from '../../../utils/errors';
+import { handleErrorAndLog } from '../../../utils/errors';
 
 const isEmptyBranch = async (action: Action): Promise<boolean> => {
   if (action.commitFrom === EMPTY_COMMIT_HASH) {
@@ -29,7 +29,7 @@ const isEmptyBranch = async (action: Action): Promise<boolean> => {
       const type = await git.raw(['cat-file', '-t', action.commitTo || '']);
       return type.trim() === 'commit';
     } catch (error: unknown) {
-      handleAndLogError(error, `Error checking if branch is empty`);
+      handleErrorAndLog(error, `Error checking if branch is empty`);
     }
   }
 

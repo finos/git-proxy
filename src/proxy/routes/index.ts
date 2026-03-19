@@ -22,7 +22,7 @@ import { executeChain } from '../chain';
 import { processUrlPath, validGitRequest } from './helper';
 import { getAllProxiedHosts } from '../../db';
 import { ProxyOptions } from 'express-http-proxy';
-import { getErrorMessage, handleAndLogError } from '../../utils/errors';
+import { handleErrorAndLog } from '../../utils/errors';
 
 enum ActionType {
   ALLOWED = 'Allowed',
@@ -86,7 +86,7 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
     // this is the only case where we do not respond directly, instead we return true to proxy the request
     return true;
   } catch (error: unknown) {
-    const message = handleAndLogError(error, 'Error occurred in proxy filter function');
+    const message = handleErrorAndLog(error, 'Error occurred in proxy filter function');
 
     logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ERROR, message);
     sendErrorResponse(req, res, message);

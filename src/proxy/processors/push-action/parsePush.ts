@@ -65,8 +65,6 @@ async function exec(req: Request, action: Action): Promise<Action> {
       throw new Error(
         'Your push has been blocked. Please make sure you are pushing to a single branch.',
       );
-    } else {
-      console.log(`refUpdates: ${JSON.stringify(refUpdates, null, 2)}`);
     }
 
     const [commitParts] = refUpdates[0].split('\0');
@@ -112,7 +110,9 @@ async function exec(req: Request, action: Action): Promise<Action> {
       }
 
       const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
-      console.log(`Push Request received from user ${committer} with email ${committerEmail}`);
+      // Note: This is not always the pusher's email, it's the last committer's email.
+      // See https://github.com/finos/git-proxy/issues/1400
+      step.log(`Push request received from user ${committer} with email ${committerEmail}`);
       action.user = committer;
       action.userEmail = committerEmail;
     }
