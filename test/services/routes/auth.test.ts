@@ -225,6 +225,15 @@ describe('Auth API', () => {
       });
     });
 
+    it('should skip password change requirement if path is in PASSWORD_CHANGE_ALLOWED_PATHS', async () => {
+      const res = await request(newApp('alice', { mustChangePassword: true })).get('/auth/config');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        usernamePasswordMethod: 'local',
+        otherMethods: [],
+      });
+    });
+
     it('should return 500 if an error occurs', async () => {
       vi.spyOn(db, 'updateUser').mockRejectedValue(new Error('Error'));
       vi.spyOn(db, 'findUser').mockResolvedValue({
