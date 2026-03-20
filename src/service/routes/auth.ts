@@ -178,7 +178,7 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
   res.send({ isAuth: req.isAuthenticated(), user: req.user });
 });
 
-router.post('/change-password', async (req: Request, res: Response) => {
+router.post('/change-password', async (req: Request, res: Response, next: NextFunction) => {
   if (!req.user) {
     res
       .status(401)
@@ -243,16 +243,11 @@ router.post('/change-password', async (req: Request, res: Response) => {
       mustChangePassword: false,
     });
 
-    await new Promise<void>((resolve, reject) => {
-      req.session?.regenerate((err: unknown) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      });
+    // Logout is added by passport and not present in test environment
+    req.logout?.((err: unknown) => {
+      if (err) return next(err);
     });
-
+    res.clearCookie('connect.sid');
     (req.user as User).mustChangePassword = false;
 
     res.status(200).send({ message: 'Password updated successfully' }).end();

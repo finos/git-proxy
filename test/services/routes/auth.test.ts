@@ -298,6 +298,9 @@ describe('Auth API', () => {
         newPassword: 'new-password-123',
       });
 
+      expect(res.body).toEqual({
+        message: 'Password updated successfully',
+      });
       expect(res.status).toBe(200);
       expect(updateUserSpy).toHaveBeenCalledWith({
         username: 'alice',
