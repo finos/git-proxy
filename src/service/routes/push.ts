@@ -20,6 +20,7 @@ import { PushQuery } from '../../db/types';
 import { AttestationConfig } from '../../config/generated/config';
 import { getAttestationConfig } from '../../config';
 import { AttestationAnswer, Rejection } from '../../proxy/processors/types';
+import { parsePaginationParams } from './utils';
 
 interface AuthoriseRequest {
   params: {
@@ -30,22 +31,20 @@ interface AuthoriseRequest {
 const router = express.Router();
 
 router.get('/', async (req: Request, res: Response) => {
-  const query: Partial<PushQuery> = {
-    type: 'push',
-  };
+  const query: Partial<PushQuery> = { type: 'push' };
+  const pagination = parsePaginationParams(req);
 
   for (const key in req.query) {
-    if (!key) continue;
-    if (key === 'limit' || key === 'skip') continue;
-
-    const rawValue = req.query[key];
+    if (!key || ['page', 'limit', 'search', 'sortBy', 'sortOrder'].includes(key)) continue;
+    const rawValue = req.query[key] as string;
     let parsedValue: boolean | undefined;
     if (rawValue === 'false') parsedValue = false;
     if (rawValue === 'true') parsedValue = true;
-    query[key] = parsedValue ?? rawValue?.toString();
+    query[key] = parsedValue ?? rawValue;
   }
 
-  res.send(await db.getPushes(query));
+  const result = await db.getPushes(query, pagination);
+  res.send(result);
 });
 
 router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
@@ -85,7 +84,7 @@ router.post('/:id/reject', async (req: Request<{ id: string }>, res: Response) =
 
   // Get the committer of the push via their email
   const committerEmail = push.userEmail;
-  const list = await db.getUsers({ email: committerEmail });
+  const { data: list } = await db.getUsers({ email: committerEmail });
 
   if (list.length === 0) {
     res.status(404).send({
@@ -104,7 +103,11 @@ router.post('/:id/reject', async (req: Request<{ id: string }>, res: Response) =
   const isAllowed = await db.canUserApproveRejectPush(id, username);
 
   if (isAllowed) {
-    const reviewerList = await db.getUsers({ username });
+    const { data: reviewerList } = await db.getUsers({ username });
+    if (reviewerList.length === 0) {
+      res.status(404).send({ message: `Reviewer ${username} not found` });
+      return;
+    }
     const reviewerEmail = reviewerList[0].email;
 
     if (!reviewerEmail) {
@@ -171,7 +174,7 @@ router.post(
     // Get the committer of the push via their email address
     const committerEmail = push.userEmail;
 
-    const list = await db.getUsers({ email: committerEmail });
+    const { data: list } = await db.getUsers({ email: committerEmail });
 
     if (list.length === 0) {
       res.status(404).send({
@@ -193,7 +196,11 @@ router.post(
     if (isAllowed) {
       console.log(`User ${username} approved push request for ${id}`);
 
-      const reviewerList = await db.getUsers({ username });
+      const { data: reviewerList } = await db.getUsers({ username });
+      if (reviewerList.length === 0) {
+        res.status(404).send({ message: `Reviewer ${username} not found` });
+        return;
+      }
       const reviewerEmail = reviewerList[0].email;
 
       if (!reviewerEmail) {
