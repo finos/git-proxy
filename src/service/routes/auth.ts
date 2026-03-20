@@ -242,6 +242,11 @@ router.post('/change-password', async (req: Request, res: Response) => {
       password: hashedPassword,
       mustChangePassword: false,
     });
+    req.session?.regenerate((err: unknown) => {
+      handleErrorAndLog(err, 'Failed to regenerate session');
+      res.status(500).send({ message: 'Failed to regenerate session' }).end();
+      return;
+    });
     (req.user as User).mustChangePassword = false;
 
     res.status(200).send({ message: 'Password updated successfully' }).end();
