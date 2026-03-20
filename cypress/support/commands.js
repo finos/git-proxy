@@ -134,18 +134,17 @@ Cypress.Commands.add('getTestRepoId', () => {
         `GET ${url} returned status ${res.status}: ${JSON.stringify(res.body).slice(0, 500)}`,
       );
     }
-    if (!Array.isArray(res.body)) {
+    const repos = res.body.data ?? res.body;
+    if (!Array.isArray(repos)) {
       throw new Error(
-        `GET ${url} returned non-array (${typeof res.body}): ${JSON.stringify(res.body).slice(0, 500)}`,
+        `GET ${url} returned unexpected shape: ${JSON.stringify(res.body).slice(0, 500)}`,
       );
     }
     const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';
-    const repo = res.body.find(
-      (r) => r.url === `https://${gitServerTarget}/test-owner/test-repo.git`,
-    );
+    const repo = repos.find((r) => r.url === `https://${gitServerTarget}/test-owner/test-repo.git`);
     if (!repo) {
       throw new Error(
-        `test-owner/test-repo not found in database. Repos: ${res.body.map((r) => r.url).join(', ')}`,
+        `test-owner/test-repo not found in database. Repos: ${repos.map((r) => r.url).join(', ')}`,
       );
     }
     return cy.wrap(repo._id);
@@ -159,8 +158,9 @@ Cypress.Commands.add('cleanupTestRepos', () => {
       url: `${getApiBaseUrl()}/api/v1/repo`,
       failOnStatusCode: false,
     }).then((res) => {
-      if (res.status !== 200 || !Array.isArray(res.body)) return;
-      const testRepos = res.body.filter((r) => r.project === 'cypress-test');
+      const repos = res.body.data ?? res.body;
+      if (res.status !== 200 || !Array.isArray(repos)) return;
+      const testRepos = repos.filter((r) => r.project === 'cypress-test');
       testRepos.forEach((repo) => {
         cy.request({
           method: 'DELETE',
