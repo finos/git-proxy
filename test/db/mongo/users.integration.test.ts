@@ -117,10 +117,10 @@ describe.runIf(shouldRunMongoTests)('MongoDB Users Integration Tests', () => {
       await createUser(createTestUser({ username: 'getusers1' }));
       await createUser(createTestUser({ username: 'getusers2' }));
 
-      const result = await getUsers();
+      const { data } = await getUsers();
 
-      expect(result.length).toBeGreaterThanOrEqual(2);
-      result.forEach((user) => {
+      expect(data.length).toBeGreaterThanOrEqual(2);
+      data.forEach((user) => {
         expect(user.password).toBeUndefined();
       });
     });
@@ -129,19 +129,19 @@ describe.runIf(shouldRunMongoTests)('MongoDB Users Integration Tests', () => {
       await createUser(createTestUser({ username: 'filteruser', email: 'filter@test.com' }));
       await createUser(createTestUser({ username: 'otheruser', email: 'other@test.com' }));
 
-      const result = await getUsers({ username: 'FilterUser' });
+      const { data } = await getUsers({ username: 'FilterUser' });
 
-      expect(result.length).toBe(1);
-      expect(result[0].username).toBe('filteruser');
+      expect(data.length).toBe(1);
+      expect(data[0].username).toBe('filteruser');
     });
 
     it('should filter by email (lowercased)', async () => {
       await createUser(createTestUser({ username: 'emailfilter', email: 'unique-email@test.com' }));
 
-      const result = await getUsers({ email: 'Unique-Email@TEST.com' });
+      const { data } = await getUsers({ email: 'Unique-Email@TEST.com' });
 
-      expect(result.length).toBe(1);
-      expect(result[0].email).toBe('unique-email@test.com');
+      expect(data.length).toBe(1);
+      expect(data[0].email).toBe('unique-email@test.com');
     });
   });
 
