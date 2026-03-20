@@ -149,25 +149,23 @@ describe('repo service additional functions', () => {
   });
 
   describe('getRepos', () => {
-    it('returns sorted repos on success', async () => {
+    it('returns repos on success', async () => {
       const reposData = [
-        { name: 'zebra-repo', project: 'org', url: 'https://example.com/org/zebra-repo.git' },
         { name: 'alpha-repo', project: 'org', url: 'https://example.com/org/alpha-repo.git' },
+        { name: 'zebra-repo', project: 'org', url: 'https://example.com/org/zebra-repo.git' },
       ];
+      const pagedData = { data: reposData, total: 2 };
 
-      axiosMock.mockResolvedValue({ data: reposData });
+      axiosMock.mockResolvedValue({ data: pagedData });
 
       const result = await getRepos();
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual([
-        { name: 'alpha-repo', project: 'org', url: 'https://example.com/org/alpha-repo.git' },
-        { name: 'zebra-repo', project: 'org', url: 'https://example.com/org/zebra-repo.git' },
-      ]);
+      expect(result.data).toEqual(pagedData);
     });
 
     it('passes query parameters correctly', async () => {
-      axiosMock.mockResolvedValue({ data: [] });
+      axiosMock.mockResolvedValue({ data: { data: [], total: 0 } });
 
       await getRepos({ active: true });
 
