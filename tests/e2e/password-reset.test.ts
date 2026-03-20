@@ -127,6 +127,7 @@ describe.sequential('Git Proxy E2E - Password reset flow', () => {
           }),
         },
       );
+      expect(changePasswordResponse.body).toEqual({ message: 'Password updated successfully' });
       expect(changePasswordResponse.status).toBe(200);
 
       // Access should be restored after password update.
