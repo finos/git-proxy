@@ -15,7 +15,16 @@
  */
 
 import { AuthorisedRepo } from '../config/generated/config';
-import { PushQuery, Repo, RepoQuery, Sink, User, UserQuery } from './types';
+import {
+  PaginatedResult,
+  PaginationOptions,
+  PushQuery,
+  Repo,
+  RepoQuery,
+  Sink,
+  User,
+  UserQuery,
+} from './types';
 import * as bcrypt from 'bcryptjs';
 import * as config from '../config';
 import * as mongo from './mongo';
@@ -177,7 +186,10 @@ export const canUserCancelPush = async (id: string, user: string) => {
 };
 
 export const getSessionStore = (): MongoDBStore | undefined => start().getSessionStore();
-export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => start().getPushes(query);
+export const getPushes = (
+  query: Partial<PushQuery>,
+  pagination?: PaginationOptions,
+): Promise<PaginatedResult<Action>> => start().getPushes(query, pagination);
 export const writeAudit = (action: Action): Promise<void> => start().writeAudit(action);
 export const getPush = (id: string): Promise<Action | null> => start().getPush(id);
 export const deletePush = (id: string): Promise<void> => start().deletePush(id);
@@ -188,7 +200,10 @@ export const authorise = (
 export const cancel = (id: string): Promise<{ message: string }> => start().cancel(id);
 export const reject = (id: string, rejection: Rejection): Promise<{ message: string }> =>
   start().reject(id, rejection);
-export const getRepos = (query?: Partial<RepoQuery>): Promise<Repo[]> => start().getRepos(query);
+export const getRepos = (
+  query?: Partial<RepoQuery>,
+  pagination?: PaginationOptions,
+): Promise<PaginatedResult<Repo>> => start().getRepos(query, pagination);
 export const getRepo = (name: string): Promise<Repo | null> => start().getRepo(name);
 export const getRepoByUrl = (url: string): Promise<Repo | null> => start().getRepoByUrl(url);
 export const getRepoById = (_id: string): Promise<Repo | null> => start().getRepoById(_id);
@@ -206,7 +221,10 @@ export const findUserByEmail = (email: string): Promise<User | null> =>
   start().findUserByEmail(email);
 export const findUserByOIDC = (oidcId: string): Promise<User | null> =>
   start().findUserByOIDC(oidcId);
-export const getUsers = (query?: Partial<UserQuery>): Promise<User[]> => start().getUsers(query);
+export const getUsers = (
+  query?: Partial<UserQuery>,
+  pagination?: PaginationOptions,
+): Promise<PaginatedResult<User>> => start().getUsers(query, pagination);
 export const deleteUser = (username: string): Promise<void> => start().deleteUser(username);
 
 export const updateUser = (user: Partial<User>): Promise<void> => start().updateUser(user);
@@ -218,7 +236,7 @@ export const updateUser = (user: Partial<User>): Promise<void> => start().update
  */
 
 export const getAllProxiedHosts = async (): Promise<string[]> => {
-  const repos = await getRepos();
+  const { data: repos } = await getRepos();
   const origins = new Set<string>();
   repos.forEach((repo) => {
     const parsedUrl = processGitUrl(repo.url);
@@ -229,4 +247,4 @@ export const getAllProxiedHosts = async (): Promise<string[]> => {
   return Array.from(origins);
 };
 
-export type { PushQuery, Repo, Sink, User } from './types';
+export type { PaginatedResult, PaginationOptions, PushQuery, Repo, Sink, User } from './types';
