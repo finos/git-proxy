@@ -171,7 +171,7 @@ describe('Proxy', () => {
     vi.mocked(config.getAuthorisedList).mockReturnValue([
       { project: 'test-proj', name: 'test-repo', url: 'test-url' },
     ]);
-    vi.mocked(db.getRepos).mockResolvedValue([]);
+    vi.mocked(db.getRepos).mockResolvedValue({ data: [], total: 0 });
     vi.mocked(db.createRepo).mockResolvedValue({
       _id: 'mock-repo-id',
       project: 'test-proj',

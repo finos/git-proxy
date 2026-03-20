@@ -14,6 +14,31 @@
  * limitations under the License.
  */
 
+import { PaginationOptions } from './types';
+
+export const escapeRegex = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export const buildSearchFilter = (
+  baseQuery: Record<string, unknown>,
+  searchFields: string[],
+  search?: string,
+): Record<string, unknown> => {
+  if (!search) return baseQuery;
+  const regex = new RegExp(escapeRegex(search), 'i');
+  return { ...baseQuery, $or: searchFields.map((f) => ({ [f]: regex })) };
+};
+
+export const buildSort = (
+  pagination: PaginationOptions | undefined,
+  defaultField: string,
+  defaultDir: 1 | -1,
+): Record<string, 1 | -1> => {
+  const field = pagination?.sortBy ?? defaultField;
+  const dir =
+    pagination?.sortOrder === 'asc' ? 1 : pagination?.sortOrder === 'desc' ? -1 : defaultDir;
+  return { [field]: dir };
+};
+
 export const toClass = function <T, U>(obj: T, proto: U): U {
   const out = JSON.parse(JSON.stringify(obj));
   out.__proto__ = proto;

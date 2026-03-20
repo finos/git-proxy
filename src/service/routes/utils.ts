@@ -14,12 +14,30 @@
  * limitations under the License.
  */
 
+import { Request } from 'express';
+import { PaginationOptions } from '../../db/types';
 import { PublicUser, User as DbUser } from '../../db/types';
 
 interface User extends Express.User {
   username: string;
   admin?: boolean;
 }
+
+export const parsePaginationParams = (req: Request, defaultLimit = 10): PaginationOptions => {
+  const rawLimit = parseInt(req.query['limit'] as string, 10);
+  const rawPage = parseInt(req.query['page'] as string, 10);
+
+  const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? defaultLimit : rawLimit));
+  const page = Math.max(1, isNaN(rawPage) ? 1 : rawPage);
+  const skip = (page - 1) * limit;
+
+  const pagination: PaginationOptions = { skip, limit };
+  if (req.query['search']) pagination.search = req.query['search'] as string;
+  if (req.query['sortBy']) pagination.sortBy = req.query['sortBy'] as string;
+  if (req.query['sortOrder'])
+    pagination.sortOrder = req.query['sortOrder'] === 'desc' ? 'desc' : 'asc';
+  return pagination;
+};
 
 export function isAdminUser(user?: Express.User): user is User & { admin: true } {
   return user !== null && user !== undefined && (user as User).admin === true;

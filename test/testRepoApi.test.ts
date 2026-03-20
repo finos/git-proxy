@@ -168,9 +168,9 @@ describe('add new repo', () => {
       .set('Cookie', `${cookie}`)
       .query({ url: TEST_REPO.url });
     expect(res.status).toBe(200);
-    expect(res.body[0].project).toBe(TEST_REPO.project);
-    expect(res.body[0].name).toBe(TEST_REPO.name);
-    expect(res.body[0].url).toBe(TEST_REPO.url);
+    expect(res.body.data[0].project).toBe(TEST_REPO.project);
+    expect(res.body.data[0].name).toBe(TEST_REPO.name);
+    expect(res.body.data[0].url).toBe(TEST_REPO.url);
   });
 
   it('add 1st can push user', async () => {

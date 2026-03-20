@@ -106,12 +106,12 @@ async function getGitPushes(filters: Partial<PushQuery>) {
 
   try {
     const cookies = JSON.parse(fs.readFileSync(GIT_PROXY_COOKIE_FILE, 'utf8'));
-    const { data } = await axios.get<Action[]>(`${baseUrl}/api/v1/push/`, {
+    const response = await axios.get<{ data: Action[]; total: number }>(`${baseUrl}/api/v1/push/`, {
       headers: { Cookie: cookies },
       params: filters,
     });
 
-    const records = data.map((push: Action) => {
+    const records = response.data.data.map((push: Action) => {
       const {
         id,
         repo,

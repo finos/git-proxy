@@ -15,8 +15,40 @@
  */
 
 import { existsSync, mkdirSync } from 'fs';
+import Datastore from '@seald-io/nedb';
+import { PaginatedResult } from '../types';
 
 export const getSessionStore = (): undefined => undefined;
 export const initializeFolders = () => {
   if (!existsSync('./.data/db')) mkdirSync('./.data/db', { recursive: true });
+};
+
+export const paginatedFind = <T>(
+  db: Datastore,
+  filter: Record<string, unknown>,
+  sort: Record<string, 1 | -1>,
+  skip: number,
+  limit: number,
+): Promise<PaginatedResult<T>> => {
+  const countPromise = new Promise<number>((resolve, reject) => {
+    db.count(filter as any, (err: Error | null, count: number) => {
+      /* istanbul ignore if */
+      if (err) reject(err);
+      else resolve(count);
+    });
+  });
+
+  const dataPromise = new Promise<T[]>((resolve, reject) => {
+    db.find(filter as any)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .exec((err: Error | null, docs: any[]) => {
+        /* istanbul ignore if */
+        if (err) reject(err);
+        else resolve(docs);
+      });
+  });
+
+  return Promise.all([dataPromise, countPromise]).then(([data, total]) => ({ data, total }));
 };

@@ -17,9 +17,16 @@
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
 import { MongoClient } from 'mongodb';
 
+const mockSort = vi.fn();
+const mockSkip = vi.fn();
+const mockLimit = vi.fn();
+const mockToArray = vi.fn();
+const mockCountDocuments = vi.fn();
+
 const mockCollection = {
   find: vi.fn(),
   findOne: vi.fn(),
+  countDocuments: mockCountDocuments,
 };
 
 const mockDb = {
@@ -30,8 +37,6 @@ const mockClient = {
   connect: vi.fn().mockResolvedValue(undefined),
   db: vi.fn(() => mockDb),
 };
-
-const mockToArray = vi.fn();
 
 vi.mock('mongodb', async () => {
   const actual = await vi.importActual('mongodb');
@@ -62,7 +67,11 @@ vi.mock('connect-mongo', () => ({
 describe('MongoDB Helper', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockCollection.find.mockReturnValue({ toArray: mockToArray });
+    mockSort.mockReturnValue({ skip: mockSkip, limit: mockLimit, toArray: mockToArray });
+    mockSkip.mockReturnValue({ limit: mockLimit, toArray: mockToArray });
+    mockLimit.mockReturnValue({ toArray: mockToArray });
+    // Default find returns toArray directly (for findDocuments) and sort chain (for paginatedFind)
+    mockCollection.find.mockReturnValue({ toArray: mockToArray, sort: mockSort });
 
     // Clear cached db
     vi.resetModules();
@@ -307,6 +316,83 @@ describe('MongoDB Helper', () => {
       const result = await findOneDocument('testCollection', { id: 999 });
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe('paginatedFind', () => {
+    beforeEach(async () => {
+      mockGetDatabase.mockReturnValue({
+        connectionString: 'mongodb://localhost:27017/testdb',
+        options: {},
+      });
+    });
+
+    it('should return data and total', async () => {
+      const docs = [{ id: 1 }, { id: 2 }];
+      mockCountDocuments.mockResolvedValue(2);
+      mockToArray.mockResolvedValue(docs);
+
+      const { connect, paginatedFind } = await import('../../../src/db/mongo/helper');
+      const collection = await connect('testCollection');
+      const result = await paginatedFind(collection, {}, { name: 1 }, 0, 0);
+
+      expect(result).toEqual({ data: docs, total: 2 });
+    });
+
+    it('should apply skip when skip > 0', async () => {
+      mockCountDocuments.mockResolvedValue(10);
+      mockToArray.mockResolvedValue([]);
+
+      const { connect, paginatedFind } = await import('../../../src/db/mongo/helper');
+      const collection = await connect('testCollection');
+      await paginatedFind(collection, {}, {}, 5, 0);
+
+      expect(mockSkip).toHaveBeenCalledWith(5);
+    });
+
+    it('should apply limit when limit > 0', async () => {
+      mockCountDocuments.mockResolvedValue(10);
+      mockToArray.mockResolvedValue([]);
+
+      const { connect, paginatedFind } = await import('../../../src/db/mongo/helper');
+      const collection = await connect('testCollection');
+      await paginatedFind(collection, {}, {}, 0, 10);
+
+      expect(mockLimit).toHaveBeenCalledWith(10);
+    });
+
+    it('should not apply skip when skip is 0', async () => {
+      mockCountDocuments.mockResolvedValue(5);
+      mockToArray.mockResolvedValue([]);
+
+      const { connect, paginatedFind } = await import('../../../src/db/mongo/helper');
+      const collection = await connect('testCollection');
+      await paginatedFind(collection, {}, {}, 0, 0);
+
+      expect(mockSkip).not.toHaveBeenCalled();
+    });
+
+    it('should pass projection to find when provided', async () => {
+      mockCountDocuments.mockResolvedValue(1);
+      mockToArray.mockResolvedValue([{ id: 1 }]);
+      const projection = { _id: 0, name: 1 };
+
+      const { connect, paginatedFind } = await import('../../../src/db/mongo/helper');
+      const collection = await connect('testCollection');
+      await paginatedFind(collection, {}, {}, 0, 0, projection);
+
+      expect(mockCollection.find).toHaveBeenCalledWith({}, { projection });
+    });
+
+    it('should not pass projection when not provided', async () => {
+      mockCountDocuments.mockResolvedValue(1);
+      mockToArray.mockResolvedValue([]);
+
+      const { connect, paginatedFind } = await import('../../../src/db/mongo/helper');
+      const collection = await connect('testCollection');
+      await paginatedFind(collection, {}, {}, 0, 0);
+
+      expect(mockCollection.find).toHaveBeenCalledWith({}, undefined);
     });
   });
 

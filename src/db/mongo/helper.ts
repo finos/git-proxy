@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import { MongoClient, Db, Collection, Filter, Document, FindOptions } from 'mongodb';
+import { MongoClient, Db, Collection, Filter, Document, FindOptions, Sort } from 'mongodb';
+import { PaginatedResult } from '../types';
 import { getDatabase } from '../../config';
 import MongoDBStore from 'connect-mongo';
 import { fromNodeProviderChain } from '@aws-sdk/credential-providers';
@@ -54,6 +55,22 @@ export const connect = async (collectionName: string): Promise<Collection> => {
   }
 
   return _db.collection(collectionName);
+};
+
+export const paginatedFind = async <T>(
+  collection: Collection,
+  filter: Filter<Document>,
+  sort: Sort,
+  skip: number,
+  limit: number,
+  projection?: Document,
+): Promise<PaginatedResult<T>> => {
+  const total = await collection.countDocuments(filter);
+  const cursor = collection.find(filter, projection ? { projection } : undefined).sort(sort);
+  if (skip) cursor.skip(skip);
+  if (limit) cursor.limit(limit);
+  const data = (await cursor.toArray()) as T[];
+  return { data, total };
 };
 
 export const findDocuments = async <T>(

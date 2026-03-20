@@ -46,7 +46,7 @@ const validateUser = async (userEmail: string, action: Action, step: Step): Prom
   let isUserAllowed = false;
 
   // Find the user associated with this email address
-  const list = await getUsers({ email: userEmail });
+  const { data: list } = await getUsers({ email: userEmail });
 
   if (list.length > 1) {
     step.error = true;
