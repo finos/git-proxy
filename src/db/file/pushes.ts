@@ -17,8 +17,9 @@
 import _ from 'lodash';
 import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
-import { toClass } from '../helper';
-import { PushQuery } from '../types';
+import { toClass, buildSearchFilter, buildSort } from '../helper';
+import { paginatedFind } from './helper';
+import { PaginatedResult, PaginationOptions, PushQuery } from '../types';
 import { CompletedAttestation, Rejection } from '../../proxy/processors/types';
 import { handleErrorAndLog } from '../../utils/errors';
 
@@ -49,25 +50,27 @@ const defaultPushQuery: Partial<PushQuery> = {
   type: 'push',
 };
 
-export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => {
+export const getPushes = (
+  query: Partial<PushQuery>,
+  pagination?: PaginationOptions,
+): Promise<PaginatedResult<Action>> => {
   if (!query) query = defaultPushQuery;
-  return new Promise((resolve, reject) => {
-    db.find(query)
-      .sort({ timestamp: -1 })
-      .exec((err, docs) => {
-        // ignore for code coverage as neDB rarely returns errors even for an invalid query
-        /* istanbul ignore if */
-        if (err) {
-          reject(err);
-        } else {
-          resolve(
-            _.chain(docs)
-              .map((x) => toClass(x, Action.prototype))
-              .value(),
-          );
-        }
-      });
-  });
+
+  const baseQuery = buildSearchFilter(
+    { ...query },
+    ['repo', 'branch', 'commitTo', 'user'],
+    pagination?.search,
+  );
+  const sort = buildSort(pagination, 'timestamp', -1);
+  const skip = pagination?.skip ?? 0;
+  const limit = pagination?.limit ?? 0;
+
+  return paginatedFind<Action>(db, baseQuery, sort, skip, limit).then(({ data, total }) => ({
+    data: _.chain(data)
+      .map((x) => toClass(x, Action.prototype))
+      .value(),
+    total,
+  }));
 };
 
 export const getPush = async (id: string): Promise<Action | null> => {
@@ -157,5 +160,5 @@ export const cancel = async (id: string): Promise<{ message: string }> => {
   action.canceled = true;
   action.rejected = false;
   await writeAudit(action);
-  return { message: `cancel ${id}` };
+  return { message: `canceled ${id}` };
 };
