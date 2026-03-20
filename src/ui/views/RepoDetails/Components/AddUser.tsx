@@ -52,7 +52,6 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
 }) => {
   const [username, setUsername] = useState<string>('');
   const [users, setUsers] = useState<PublicUser[]>([]);
-  const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [error, setError] = useState<string>('');
@@ -90,7 +89,17 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   };
 
   useEffect(() => {
-    getUsers(setIsLoading, setUsers, setAuth, setErrorMessage);
+    const load = async () => {
+      setIsLoading(true);
+      const result = await getUsers();
+      if (result.success && result.data) {
+        setUsers(result.data.data);
+      } else {
+        setErrorMessage(result.message || 'Failed to load users');
+      }
+      setIsLoading(false);
+    };
+    load();
   }, []);
 
   if (errorMessage) return <Danger>{errorMessage}</Danger>;

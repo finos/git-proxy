@@ -25,7 +25,7 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-import { getPushes } from '../../../services/git-push';
+import { getPushes, PaginationParams } from '../../../services/git-push';
 import { KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
 import Pagination from '../../../components/Pagination/Pagination';
@@ -44,30 +44,35 @@ interface PushesTableProps {
 
 const PushesTable: React.FC<PushesTableProps> = (props) => {
   const [pushes, setPushes] = useState<PushActionView[]>([]);
-  const [filteredData, setFilteredData] = useState<PushActionView[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
 
   const openPush = (pushId: string) => navigate(`/dashboard/push/${pushId}`);
 
   useEffect(() => {
-    const query: any = {};
-
-    // Only include filters that are explicitly set (not undefined)
+    const query: Record<string, boolean | string> = {};
     if (props.blocked !== undefined) query.blocked = props.blocked;
     if (props.canceled !== undefined) query.canceled = props.canceled;
     if (props.authorised !== undefined) query.authorised = props.authorised;
     if (props.rejected !== undefined) query.rejected = props.rejected;
     if (props.errored !== undefined) query.errored = props.errored;
 
+    const pagination: PaginationParams = {
+      page: currentPage,
+      limit: itemsPerPage,
+      search: searchTerm || undefined,
+    };
+
     const load = async () => {
       setIsLoading(true);
-      const result = await getPushes(query);
+      const result = await getPushes(query, pagination);
       if (result.success && result.data) {
-        setPushes(result.data);
+        setPushes(result.data.data);
+        setTotalItems(result.data.total);
       } else if (result.status === 401) {
         setIsLoading(false);
         navigate('/login', { replace: true });
@@ -78,35 +83,29 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
       setIsLoading(false);
     };
     load();
-  }, [props]);
+  }, [
+    props.blocked,
+    props.canceled,
+    props.authorised,
+    props.rejected,
+    props.errored,
+    currentPage,
+    itemsPerPage,
+    searchTerm,
+  ]);
 
-  useEffect(() => {
-    setFilteredData(pushes);
-  }, [pushes]);
-
-  useEffect(() => {
-    const lowerCaseTerm = searchTerm.toLowerCase();
-    const filtered = searchTerm
-      ? pushes.filter(
-          (item) =>
-            item.repo.toLowerCase().includes(lowerCaseTerm) ||
-            item.commitTo?.toLowerCase().includes(lowerCaseTerm) ||
-            item.commitData?.[0]?.message.toLowerCase().includes(lowerCaseTerm),
-        )
-      : pushes;
-    setFilteredData(filtered);
+  const handleSearch = (term: string) => {
+    setSearchTerm(term.trim());
     setCurrentPage(1);
-  }, [searchTerm, pushes]);
-
-  const handleSearch = (term: string) => setSearchTerm(term.trim());
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
   };
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
+  const handlePageChange = (page: number) => setCurrentPage(page);
+  const handleItemsPerPageChange = (n: number) => {
+    setItemsPerPage(n);
+    setCurrentPage(1);
+  };
+
+  const currentItems = pushes;
 
   if (isLoading) return <div>Loading...</div>;
 
@@ -114,7 +113,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
     <div>
       <Search onSearch={handleSearch} />
       <TableContainer component={Paper}>
-        <Table aria-label='simple table'>
+        <Table size='small' aria-label='simple table'>
           <TableHead>
             <TableRow>
               <TableCell align='left'>Timestamp</TableCell>
@@ -193,9 +192,10 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
       </TableContainer>
       <Pagination
         itemsPerPage={itemsPerPage}
-        totalItems={filteredData.length}
+        totalItems={totalItems}
         currentPage={currentPage}
         onPageChange={handlePageChange}
+        onItemsPerPageChange={handleItemsPerPageChange}
       />
     </div>
   );

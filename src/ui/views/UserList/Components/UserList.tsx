@@ -28,6 +28,7 @@ import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 import { getUsers } from '../../../services/user';
+import { PaginationParams } from '../../../services/git-push';
 import Pagination from '../../../components/Pagination/Pagination';
 import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
@@ -36,40 +37,51 @@ import { PublicUser } from '../../../../db/types';
 
 const UserList: React.FC = () => {
   const [users, setUsers] = useState<PublicUser[]>([]);
-  const [, setAuth] = useState<boolean>(true);
+  const [totalItems, setTotalItems] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 5;
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10);
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   const openUser = (username: string) => navigate(`/dashboard/user/${username}`);
 
   useEffect(() => {
-    getUsers(setIsLoading, setUsers, setAuth, setErrorMessage);
-  }, []);
+    const load = async () => {
+      setIsLoading(true);
+      const pagination: PaginationParams = {
+        page: currentPage,
+        limit: itemsPerPage,
+        search: searchQuery || undefined,
+      };
+      const result = await getUsers(pagination);
+      if (result.success && result.data) {
+        setUsers(result.data.data);
+        setTotalItems(result.data.total);
+      } else if (result.status === 401) {
+        navigate('/login', { replace: true });
+      } else {
+        setErrorMessage(result.message || 'Failed to load users');
+      }
+      setIsLoading(false);
+    };
+    load();
+  }, [currentPage, itemsPerPage, searchQuery]);
 
   if (isLoading) return <div>Loading...</div>;
   if (errorMessage) return <Danger>{errorMessage}</Danger>;
 
-  const filteredUsers = users.filter(
-    (user) =>
-      (user.displayName && user.displayName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase())),
-  );
+  const currentItems = users;
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
-  const totalItems = filteredUsers.length;
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+  const handlePageChange = (page: number) => setCurrentPage(page);
+  const handleItemsPerPageChange = (n: number) => {
+    setItemsPerPage(n);
+    setCurrentPage(1);
   };
 
   const handleSearch = (query: string) => {
-    setSearchQuery(query);
+    setSearchQuery(query.trim());
     setCurrentPage(1);
   };
 
@@ -78,7 +90,7 @@ const UserList: React.FC = () => {
       <GridItem xs={12} sm={12} md={12}>
         <Search onSearch={handleSearch} placeholder='Search users...' />
         <TableContainer component={Paper}>
-          <Table aria-label='simple table'>
+          <Table size='small' aria-label='simple table'>
             <TableHead>
               <TableRow>
                 <TableCell align='left'>Name</TableCell>
@@ -132,6 +144,7 @@ const UserList: React.FC = () => {
           totalItems={totalItems}
           itemsPerPage={itemsPerPage}
           onPageChange={handlePageChange}
+          onItemsPerPageChange={handleItemsPerPageChange}
         />
       </GridItem>
     </GridContainer>
