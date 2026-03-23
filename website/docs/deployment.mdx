@@ -10,7 +10,7 @@ For configuration details, see the [Configuration Overview](/docs/configuration/
 
 ### System Requirements
 
-- **Node.js**: >= 20.18.2, >= 22.13.1, or >= 24.0.0
+- **Node.js**: >= 22.13.1, or >= 24.0.0
 - **Git**: Required for cloning and pack operations
 - **Operating System**: Linux, macOS, or Windows
 
@@ -158,7 +158,7 @@ cd git-proxy
 docker build -t git-proxy:local .
 ```
 
-The Dockerfile uses a multi-stage build with Node.js 20, installs `git` and `tini`, and runs as a non-root user (UID 1000). Ports 8000 (proxy) and 8080 (UI/API) are exposed.
+The Dockerfile uses a multi-stage build with Node.js 22, installs `git` and `tini`, and runs as a non-root user (UID 1000). Ports 8000 (proxy) and 8080 (UI/API) are exposed.
 
 View logs:
 ```bash
