@@ -57,8 +57,6 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
   const illegalEmails = uniqueAuthorEmails.filter((email) => !isEmailAllowed(email));
 
   if (illegalEmails.length > 0) {
-    console.log(`The following commit author e-mails are illegal: ${illegalEmails}`);
-
     step.error = true;
     step.log(`The following commit author e-mails are illegal: ${illegalEmails}`);
     step.setError(
@@ -69,7 +67,7 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
     return action;
   }
 
-  console.log(`The following commit author e-mails are legal: ${uniqueAuthorEmails}`);
+  step.log(`The following commit author e-mails are legal: ${uniqueAuthorEmails}`);
   action.addStep(step);
   return action;
 };
