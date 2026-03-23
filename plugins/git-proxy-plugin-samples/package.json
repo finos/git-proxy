@@ -16,6 +16,6 @@
     "express": "^5.2.1"
   },
   "peerDependencies": {
-    "@finos/git-proxy": "^1.19.2"
+    "@finos/git-proxy": "^2.0.0-rc.5"
   }
 }

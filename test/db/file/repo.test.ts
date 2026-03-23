@@ -35,8 +35,8 @@ describe('File DB', () => {
         url: 'http://example.com/sample-repo.git',
       };
 
-      vi.spyOn(repoModule.db, 'findOne').mockImplementation((query: any, cb: any) =>
-        cb(null, repoData),
+      vi.spyOn(repoModule.db, 'findOne').mockImplementation(
+        (_: unknown, cb: (err: Error | null, doc: any) => void) => cb(null, repoData),
       );
 
       const result = await repoModule.getRepo('Sample');
@@ -52,8 +52,8 @@ describe('File DB', () => {
         url: 'https://github.com/finos/git-proxy.git',
       };
 
-      vi.spyOn(repoModule.db, 'findOne').mockImplementation((query: any, cb: any) =>
-        cb(null, repoData),
+      vi.spyOn(repoModule.db, 'findOne').mockImplementation(
+        (_: unknown, cb: (err: Error | null, doc: any) => void) => cb(null, repoData),
       );
 
       const result = await repoModule.getRepoByUrl('https://github.com/finos/git-proxy.git');
@@ -63,7 +63,9 @@ describe('File DB', () => {
     it('should return null if the repo is not found', async () => {
       const spy = vi
         .spyOn(repoModule.db, 'findOne')
-        .mockImplementation((query: any, cb: any) => cb(null, null));
+        .mockImplementation((_: unknown, cb: (err: Error | null, doc: any) => void) =>
+          cb(null, null),
+        );
 
       const result = await repoModule.getRepoByUrl('https://github.com/finos/missing-repo.git');
 
@@ -75,8 +77,8 @@ describe('File DB', () => {
     });
 
     it('should reject if the database returns an error', async () => {
-      vi.spyOn(repoModule.db, 'findOne').mockImplementation((query: any, cb: any) =>
-        cb(new Error('DB error')),
+      vi.spyOn(repoModule.db, 'findOne').mockImplementation(
+        (_: unknown, cb: (err: Error | null, doc: any) => void) => cb(new Error('DB error'), null),
       );
 
       await expect(

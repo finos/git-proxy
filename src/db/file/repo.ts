@@ -19,6 +19,7 @@ import _ from 'lodash';
 
 import { Repo, RepoQuery } from '../types';
 import { toClass } from '../helper';
+import { handleErrorAndLog } from '../../utils/errors';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -31,10 +32,10 @@ if (process.env.NODE_ENV === 'test') {
 }
 try {
   db.ensureIndex({ fieldName: 'url', unique: true });
-} catch (e) {
-  console.error(
+} catch (error: unknown) {
+  handleErrorAndLog(
+    error,
     'Failed to build a unique index of Repository URLs. Please check your database file for duplicate entries or delete the duplicate through the UI and restart. ',
-    e,
   );
 }
 
