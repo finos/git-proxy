@@ -29,7 +29,7 @@ export const parsePaginationParams = (req: Request, defaultLimit = 10): Paginati
 
   const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? defaultLimit : rawLimit));
   const page = Math.max(1, isNaN(rawPage) ? 1 : rawPage);
-  const skip = (page - 1) * limit;
+  const skip = Math.min(10000, (page - 1) * limit);
 
   const pagination: PaginationOptions = { skip, limit };
   if (req.query['search']) pagination.search = req.query['search'] as string;
