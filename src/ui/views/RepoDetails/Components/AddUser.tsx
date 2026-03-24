@@ -18,6 +18,8 @@ import React, { useState, useEffect } from 'react';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 import FormHelperText from '@material-ui/core/FormHelperText';
+import TextField from '@material-ui/core/TextField';
+import ListSubheader from '@material-ui/core/ListSubheader';
 import GridItem from '../../../components/Grid/GridItem';
 import GridContainer from '../../../components/Grid/GridContainer';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -53,6 +55,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   const [username, setUsername] = useState<string>('');
   const [users, setUsers] = useState<PublicUser[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [filterText, setFilterText] = useState<string>('');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [tip, setTip] = useState<boolean>(false);
@@ -91,7 +94,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
   useEffect(() => {
     const load = async () => {
       setIsLoading(true);
-      const result = await getUsers();
+      const result = await getUsers({ limit: 100 });
       if (result.success && result.data) {
         setUsers(result.data.data);
       } else {
@@ -101,6 +104,14 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
     };
     load();
   }, []);
+
+  const filteredUsers = filterText
+    ? users.filter(
+        (u) =>
+          u.username.toLowerCase().includes(filterText.toLowerCase()) ||
+          (u.gitAccount || '').toLowerCase().includes(filterText.toLowerCase()),
+      )
+    : users;
 
   if (errorMessage) return <Danger>{errorMessage}</Danger>;
 
@@ -140,8 +151,19 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                     value={username}
                     onChange={handleChange}
                     disabled={isLoading}
+                    onClose={() => setFilterText('')}
                   >
-                    {users.map((user) => (
+                    <ListSubheader>
+                      <TextField
+                        autoFocus
+                        placeholder='Search...'
+                        value={filterText}
+                        onChange={(e) => setFilterText(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        fullWidth
+                      />
+                    </ListSubheader>
+                    {filteredUsers.map((user) => (
                       <MenuItem key={user.username} value={user.username}>
                         {user.username} / {user.gitAccount}
                       </MenuItem>
