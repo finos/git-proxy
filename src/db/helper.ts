@@ -32,8 +32,13 @@ export const buildSort = (
   pagination: PaginationOptions | undefined,
   defaultField: string,
   defaultDir: 1 | -1,
+  allowedFields?: string[],
 ): Record<string, 1 | -1> => {
-  const field = pagination?.sortBy ?? defaultField;
+  const requestedField = pagination?.sortBy;
+  const field =
+    requestedField && (!allowedFields || allowedFields.includes(requestedField))
+      ? requestedField
+      : defaultField;
   const dir =
     pagination?.sortOrder === 'asc' ? 1 : pagination?.sortOrder === 'desc' ? -1 : defaultDir;
   return { [field]: dir };

@@ -198,7 +198,12 @@ export const getUsers = (
     ['username', 'displayName', 'email', 'gitAccount'],
     pagination?.search,
   );
-  const sort = buildSort(pagination, 'username', 1);
+  const sort = buildSort(pagination, 'username', 1, [
+    'username',
+    'displayName',
+    'email',
+    'gitAccount',
+  ]);
   const skip = pagination?.skip ?? 0;
   const limit = pagination?.limit ?? 0;
 

@@ -52,7 +52,7 @@ export const getRepos = async (
   }
 
   const baseQuery = buildSearchFilter({ ...query }, ['name', 'project', 'url'], pagination?.search);
-  const sort = buildSort(pagination, 'name', 1);
+  const sort = buildSort(pagination, 'name', 1, ['name', 'project', 'url']);
   const skip = pagination?.skip ?? 0;
   const limit = pagination?.limit ?? 0;
 

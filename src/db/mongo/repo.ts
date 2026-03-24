@@ -27,7 +27,7 @@ export const getRepos = async (
   pagination?: PaginationOptions,
 ): Promise<PaginatedResult<Repo>> => {
   const filter = buildSearchFilter({ ...query }, ['name', 'project', 'url'], pagination?.search);
-  const sort = buildSort(pagination, 'name', 1);
+  const sort = buildSort(pagination, 'name', 1, ['name', 'project', 'url']);
   const skip = pagination?.skip ?? 0;
   const limit = pagination?.limit ?? 0;
 

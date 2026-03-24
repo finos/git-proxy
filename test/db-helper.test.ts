@@ -89,6 +89,24 @@ describe('db helpers', () => {
         buildSort({ skip: 0, limit: 10, sortBy: 'email', sortOrder: 'desc' }, 'name', 1),
       ).toEqual({ email: -1 });
     });
+
+    it('uses sortBy when it is in the allowlist', () => {
+      expect(
+        buildSort({ skip: 0, limit: 10, sortBy: 'email' }, 'name', 1, ['email', 'username']),
+      ).toEqual({ email: 1 });
+    });
+
+    it('falls back to default field when sortBy is not in the allowlist', () => {
+      expect(
+        buildSort({ skip: 0, limit: 10, sortBy: 'password' }, 'name', 1, ['email', 'username']),
+      ).toEqual({ name: 1 });
+    });
+
+    it('uses default field when allowlist is provided but sortBy is not set', () => {
+      expect(buildSort({ skip: 0, limit: 10 }, 'name', 1, ['email', 'username'])).toEqual({
+        name: 1,
+      });
+    });
   });
 
   describe('trimPrefixRefsHeads', () => {

@@ -63,7 +63,13 @@ export const getPushes = async (
     ['repo', 'branch', 'commitTo', 'user'],
     pagination?.search,
   );
-  const sort = buildSort(pagination, 'timestamp', -1);
+  const sort = buildSort(pagination, 'timestamp', -1, [
+    'timestamp',
+    'repo',
+    'branch',
+    'commitTo',
+    'user',
+  ]);
   const skip = pagination?.skip ?? 0;
   const limit = pagination?.limit ?? 0;
 
