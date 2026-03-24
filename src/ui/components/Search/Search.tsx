@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { TextField } from '@material-ui/core';
 import './Search.css';
 import InputAdornment from '@material-ui/core/InputAdornment';
@@ -23,13 +23,26 @@ import SearchIcon from '@material-ui/icons/Search';
 interface SearchProps {
   onSearch: (query: string) => void;
   placeholder?: string;
+  debounceMs?: number;
 }
 
-const Search: React.FC<SearchProps> = ({ onSearch, placeholder = 'Search...' }) => {
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const query = event.target.value;
-    onSearch(query);
-  };
+const Search: React.FC<SearchProps> = ({
+  onSearch,
+  placeholder = 'Search...',
+  debounceMs = 300,
+}) => {
+  const [value, setValue] = useState('');
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    timerRef.current = setTimeout(() => {
+      onSearch(value);
+    }, debounceMs);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [value, debounceMs, onSearch]);
 
   return (
     <div style={{ margin: '20px 0' }}>
@@ -38,7 +51,8 @@ const Search: React.FC<SearchProps> = ({ onSearch, placeholder = 'Search...' }) 
         variant='outlined'
         fullWidth
         margin='normal'
-        onChange={handleSearchChange}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
         placeholder={placeholder}
         InputProps={{
           startAdornment: (
