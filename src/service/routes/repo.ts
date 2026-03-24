@@ -61,6 +61,10 @@ function repo(proxy: Proxy) {
     }
 
     const _id = req.params.id;
+    if (!req.body.username || typeof req.body.username !== 'string') {
+      res.status(400).send({ error: 'Username is required' });
+      return;
+    }
     const username = req.body.username.toLowerCase();
     const user = await db.findUser(username);
 
@@ -82,6 +86,10 @@ function repo(proxy: Proxy) {
     }
 
     const _id = req.params.id;
+    if (!req.body.username || typeof req.body.username !== 'string') {
+      res.status(400).send({ error: 'Username is required' });
+      return;
+    }
     const username = req.body.username.toLowerCase();
     const user = await db.findUser(username);
 
