@@ -65,11 +65,12 @@ export const paginatedFind = async <T>(
   limit: number,
   projection?: Document,
 ): Promise<PaginatedResult<T>> => {
-  const total = await collection.countDocuments(filter);
+  const countPromise = limit > 0 ? collection.countDocuments(filter) : Promise.resolve(null);
   const cursor = collection.find(filter, projection ? { projection } : undefined).sort(sort);
   if (skip) cursor.skip(skip);
   if (limit) cursor.limit(limit);
-  const data = (await cursor.toArray()) as T[];
+  const [data, count] = await Promise.all([cursor.toArray() as Promise<T[]>, countPromise]);
+  const total = count ?? data.length;
   return { data, total };
 };
 

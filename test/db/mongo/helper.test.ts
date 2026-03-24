@@ -327,16 +327,29 @@ describe('MongoDB Helper', () => {
       });
     });
 
-    it('should return data and total', async () => {
+    it('should return data and total when limit > 0', async () => {
       const docs = [{ id: 1 }, { id: 2 }];
       mockCountDocuments.mockResolvedValue(2);
       mockToArray.mockResolvedValue(docs);
 
       const { connect, paginatedFind } = await import('../../../src/db/mongo/helper');
       const collection = await connect('testCollection');
+      const result = await paginatedFind(collection, {}, { name: 1 }, 0, 10);
+
+      expect(mockCountDocuments).toHaveBeenCalledTimes(1);
+      expect(result).toEqual({ data: docs, total: 2 });
+    });
+
+    it('should skip countDocuments and return total equal to data.length when limit is 0', async () => {
+      const docs = [{ id: 1 }, { id: 2 }];
+      mockToArray.mockResolvedValue(docs);
+
+      const { connect, paginatedFind } = await import('../../../src/db/mongo/helper');
+      const collection = await connect('testCollection');
       const result = await paginatedFind(collection, {}, { name: 1 }, 0, 0);
 
-      expect(result).toEqual({ data: docs, total: 2 });
+      expect(mockCountDocuments).not.toHaveBeenCalled();
+      expect(result).toEqual({ data: docs, total: docs.length });
     });
 
     it('should apply skip when skip > 0', async () => {

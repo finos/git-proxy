@@ -50,5 +50,7 @@ export const paginatedFind = <T>(
       });
   });
 
-  return Promise.all([dataPromise, countPromise]).then(([data, total]) => ({ data, total }));
+  return limit > 0
+    ? Promise.all([dataPromise, countPromise]).then(([data, total]) => ({ data, total }))
+    : dataPromise.then((data) => ({ data, total: data.length }));
 };
