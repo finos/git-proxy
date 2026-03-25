@@ -48,6 +48,7 @@ interface GridContainerLayoutProps {
   onFilterChange: (filterOption: FilterOption, sortOrder: SortOrder) => void;
   tableId: string;
   key: string;
+  isLoading: boolean;
 }
 
 export default function Repositories(): React.ReactElement {
@@ -80,7 +81,7 @@ export default function Repositories(): React.ReactElement {
       };
       const result = await getRepos({}, pagination);
       if (result.success && result.data) {
-        setRepos(result.data.data);
+        setRepos(result.data.repos);
         setTotalItems(result.data.total);
       } else if (result.status === 401) {
         setIsLoading(false);
@@ -124,7 +125,6 @@ export default function Repositories(): React.ReactElement {
   };
   const paginatedRepos = repos;
 
-  if (isLoading) return <div>Loading...</div>;
   if (isError) return <Danger>{errorMessage}</Danger>;
 
   const addrepoButton = user?.admin ? (
@@ -149,6 +149,7 @@ export default function Repositories(): React.ReactElement {
     onItemsPerPageChange: handleItemsPerPageChange,
     onFilterChange: handleFilterChange,
     tableId: 'RepoListTable',
+    isLoading: isLoading,
   });
 }
 
@@ -159,39 +160,47 @@ function getGridContainerLayOut(props: GridContainerLayoutProps): React.ReactEle
       <GridItem xs={12} sm={12} md={12}>
         <Search onSearch={props.onSearch} />
         <Filtering onFilterChange={props.onFilterChange} />
-        <TableContainer
-          style={{ background: 'transparent', borderRadius: '5px', border: '1px solid #d0d7de' }}
-        >
-          <Table
-            size='small'
-            id={props.tableId}
-            className={props.classes.table}
-            aria-label='simple table'
-          >
-            <TableBody>
-              {props.repos.map((repo) => {
-                if (repo.url) {
-                  return (
-                    <RepoOverview
-                      repo={{ ...repo, proxyURL: repo.proxyURL || '' }}
-                      key={repo._id}
-                    />
-                  );
-                }
-                return null;
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </GridItem>
-      <GridItem xs={12} sm={12} md={12}>
-        <Pagination
-          currentPage={props.currentPage}
-          totalItems={props.totalItems}
-          itemsPerPage={props.itemsPerPage}
-          onPageChange={props.onPageChange}
-          onItemsPerPageChange={props.onItemsPerPageChange}
-        />
+        {props.isLoading ? (
+          <div>Loading...</div>
+        ) : (
+          <>
+            <TableContainer
+              style={{
+                background: 'transparent',
+                borderRadius: '5px',
+                border: '1px solid #d0d7de',
+              }}
+            >
+              <Table
+                size='small'
+                id={props.tableId}
+                className={props.classes.table}
+                aria-label='simple table'
+              >
+                <TableBody>
+                  {props.repos.map((repo) => {
+                    if (repo.url) {
+                      return (
+                        <RepoOverview
+                          repo={{ ...repo, proxyURL: repo.proxyURL || '' }}
+                          key={repo._id}
+                        />
+                      );
+                    }
+                    return null;
+                  })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Pagination
+              currentPage={props.currentPage}
+              totalItems={props.totalItems}
+              itemsPerPage={props.itemsPerPage}
+              onPageChange={props.onPageChange}
+              onItemsPerPageChange={props.onItemsPerPageChange}
+            />
+          </>
+        )}
       </GridItem>
     </GridContainer>
   );

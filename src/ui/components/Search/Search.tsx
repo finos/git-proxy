@@ -33,16 +33,20 @@ const Search: React.FC<SearchProps> = ({
 }) => {
   const [value, setValue] = useState('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onSearchRef = useRef(onSearch);
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
 
   useEffect(() => {
     timerRef.current = setTimeout(() => {
-      onSearch(value);
+      onSearchRef.current(value);
     }, debounceMs);
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [value, debounceMs, onSearch]);
+  }, [value, debounceMs]);
 
   return (
     <div style={{ margin: '20px 0' }}>

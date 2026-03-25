@@ -57,7 +57,7 @@ const UserList: React.FC = () => {
       };
       const result = await getUsers(pagination);
       if (result.success && result.data) {
-        setUsers(result.data.data);
+        setUsers(result.data.users);
         setTotalItems(result.data.total);
       } else if (result.status === 401) {
         navigate('/login', { replace: true });
@@ -69,7 +69,6 @@ const UserList: React.FC = () => {
     load();
   }, [currentPage, itemsPerPage, searchQuery]);
 
-  if (isLoading) return <div>Loading...</div>;
   if (errorMessage) return <Danger>{errorMessage}</Danger>;
 
   const currentItems = users;
@@ -89,63 +88,69 @@ const UserList: React.FC = () => {
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
         <Search onSearch={handleSearch} placeholder='Search users...' />
-        <TableContainer component={Paper}>
-          <Table size='small' aria-label='simple table'>
-            <TableHead>
-              <TableRow>
-                <TableCell align='left'>Name</TableCell>
-                <TableCell align='left'>Role</TableCell>
-                <TableCell align='left'>E-mail</TableCell>
-                <TableCell align='left'>GitHub Username</TableCell>
-                <TableCell align='left'>Administrator</TableCell>
-                <TableCell align='left'></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {currentItems.map((user) => (
-                <TableRow key={user.username}>
-                  <TableCell align='left'>{user.displayName}</TableCell>
-                  <TableCell align='left'>{user.title}</TableCell>
-                  <TableCell align='left'>
-                    <a href={`mailto:${user.email}`}>{user.email}</a>
-                  </TableCell>
-                  <TableCell align='left'>
-                    <a
-                      href={`https://github.com/${user.gitAccount}`}
-                      target='_blank'
-                      rel='noreferrer'
-                    >
-                      {user.gitAccount}
-                    </a>
-                  </TableCell>
-                  <TableCell align='left'>
-                    {user?.admin ? (
-                      <Check fontSize='small' color='primary' />
-                    ) : (
-                      <CloseRounded color='error' />
-                    )}
-                  </TableCell>
-                  <TableCell component='th' scope='row'>
-                    <Button
-                      variant='contained'
-                      color='primary'
-                      onClick={() => openUser(user.username)}
-                    >
-                      <KeyboardArrowRight />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <Pagination
-          currentPage={currentPage}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={handlePageChange}
-          onItemsPerPageChange={handleItemsPerPageChange}
-        />
+        {isLoading ? (
+          <div>Loading...</div>
+        ) : (
+          <>
+            <TableContainer component={Paper}>
+              <Table size='small' aria-label='simple table'>
+                <TableHead>
+                  <TableRow>
+                    <TableCell align='left'>Name</TableCell>
+                    <TableCell align='left'>Role</TableCell>
+                    <TableCell align='left'>E-mail</TableCell>
+                    <TableCell align='left'>GitHub Username</TableCell>
+                    <TableCell align='left'>Administrator</TableCell>
+                    <TableCell align='left'></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {currentItems.map((user) => (
+                    <TableRow key={user.username}>
+                      <TableCell align='left'>{user.displayName}</TableCell>
+                      <TableCell align='left'>{user.title}</TableCell>
+                      <TableCell align='left'>
+                        <a href={`mailto:${user.email}`}>{user.email}</a>
+                      </TableCell>
+                      <TableCell align='left'>
+                        <a
+                          href={`https://github.com/${user.gitAccount}`}
+                          target='_blank'
+                          rel='noreferrer'
+                        >
+                          {user.gitAccount}
+                        </a>
+                      </TableCell>
+                      <TableCell align='left'>
+                        {user?.admin ? (
+                          <Check fontSize='small' color='primary' />
+                        ) : (
+                          <CloseRounded color='error' />
+                        )}
+                      </TableCell>
+                      <TableCell component='th' scope='row'>
+                        <Button
+                          variant='contained'
+                          color='primary'
+                          onClick={() => openUser(user.username)}
+                        >
+                          <KeyboardArrowRight />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          </>
+        )}
       </GridItem>
     </GridContainer>
   );
