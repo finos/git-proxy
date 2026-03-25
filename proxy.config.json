@@ -156,6 +156,11 @@
       }
     }
   ],
+  "upstreamProxy": {
+    "enabled": true,
+    "url": "http://localhost:8081",
+    "noProxy": []
+  },
   "tls": {
     "enabled": false,
     "key": "certs/key.pem",

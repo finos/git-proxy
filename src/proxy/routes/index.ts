@@ -22,7 +22,7 @@ import { executeChain } from '../chain';
 import { processUrlPath, validGitRequest } from './helper';
 import { getAllProxiedHosts } from '../../db';
 import { ProxyOptions } from 'express-http-proxy';
-import { getErrorMessage, handleErrorAndLog } from '../../utils/errors';
+import { handleErrorAndLog } from '../../utils/errors';
 import { getUpstreamProxyConfig } from '../../config';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { OutgoingHttpHeaders, RequestOptions } from 'http';
@@ -175,7 +175,10 @@ const hostMatchesNoProxy = (host: string | null | undefined, noProxyList: string
     if (!pattern) {
       return false;
     }
-    const trimmed = pattern.trim();
+
+    const trimmed = pattern.trim().replace(/^\./, ''); // strip leading dot
+    if (trimmed === '*') return true; // wildcard - bypass all
+
     if (trimmed === '') {
       return false;
     }
@@ -194,39 +197,40 @@ const hostMatchesNoProxy = (host: string | null | undefined, noProxyList: string
   });
 };
 
+// WARNING: proxyUrl may contain plaintext credentials in the userinfo portion
+// (e.g. http://user:pass@proxy.corp.local:8080). Never log it directly — use
+// redactProxyUrl() from config for any log statements involving this value.
+let _cachedProxyAgent: { proxyUrl: string; agent: HttpsProxyAgent<string> } | null = null;
+
+const getOrCreateProxyAgent = (proxyUrl: string): HttpsProxyAgent<string> => {
+  if (!_cachedProxyAgent || _cachedProxyAgent.proxyUrl !== proxyUrl) {
+    _cachedProxyAgent = { proxyUrl, agent: new HttpsProxyAgent(proxyUrl) };
+  }
+  return _cachedProxyAgent.agent;
+};
+
 const buildUpstreamProxyAgent = (
   proxyReqOpts: Omit<RequestOptions, 'headers'> & {
     headers: OutgoingHttpHeaders;
   },
 ) => {
-  const upstreamProxyConfig = getUpstreamProxyConfig();
+  const { enabled, url, noProxy } = getUpstreamProxyConfig();
 
-  const configuredUrl = upstreamProxyConfig.url;
-  const envUrl = getEnvProxyUrl();
+  const proxyUrl = url || getEnvProxyUrl();
 
-  const proxyUrl = configuredUrl || envUrl;
-
-  // If nothing is configured, do not use a proxy
-  if (!proxyUrl) {
-    return undefined;
-  }
-
-  // If config explicitly disabled the proxy, do not use it
-  if (upstreamProxyConfig.enabled === false) {
+  if (enabled === false || !proxyUrl) {
     return undefined;
   }
 
   const host: string | null | undefined = proxyReqOpts.host || proxyReqOpts.hostname;
 
-  const configNoProxy = upstreamProxyConfig.noProxy ? upstreamProxyConfig.noProxy : [];
-  const envNoProxy = getEnvNoProxyList();
-  const combinedNoProxy = [...configNoProxy, ...envNoProxy];
+  const combinedNoProxy = [...(noProxy || []), ...getEnvNoProxyList()];
 
   if (hostMatchesNoProxy(host, combinedNoProxy)) {
     return undefined;
   }
 
-  return new HttpsProxyAgent(proxyUrl);
+  return getOrCreateProxyAgent(proxyUrl);
 };
 
 const proxyReqOptDecorator: ProxyOptions['proxyReqOptDecorator'] = (proxyReqOpts, _srcReq) => {
@@ -370,4 +374,5 @@ export {
   extractRawBody,
   validGitRequest,
   buildUpstreamProxyAgent,
+  hostMatchesNoProxy,
 };
