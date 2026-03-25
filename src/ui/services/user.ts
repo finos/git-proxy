@@ -26,7 +26,12 @@ import {
   errorResult,
   successResult,
 } from './errors';
-import { PaginationParams, PagedResponse } from './git-push';
+import { PaginationParams } from './git-push';
+
+export type PagedUserResponse = {
+  users: PublicUser[];
+  total: number;
+};
 
 type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
 
@@ -65,7 +70,7 @@ const getUser = async (
 
 const getUsers = async (
   pagination: PaginationParams = {},
-): Promise<ServiceResult<PagedResponse<PublicUser>>> => {
+): Promise<ServiceResult<PagedUserResponse>> => {
   try {
     const apiV1BaseUrl = await getApiV1BaseUrl();
     const url = new URL(`${apiV1BaseUrl}/user`);
@@ -77,11 +82,11 @@ const getUsers = async (
     if (pagination.sortOrder) params['sortOrder'] = pagination.sortOrder;
     url.search = new URLSearchParams(params).toString();
 
-    const response: AxiosResponse<PagedResponse<PublicUser>> = await axios(
+    const response: AxiosResponse<{ users: PublicUser[]; total: number }> = await axios(
       url.toString(),
       getAxiosConfig(),
     );
-    return successResult(response.data);
+    return successResult({ users: response.data.users, total: response.data.total });
   } catch (error: unknown) {
     return errorResult(error, 'Failed to load users');
   }

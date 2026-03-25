@@ -96,7 +96,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
       setIsLoading(true);
       const result = await getUsers({ limit: 100 });
       if (result.success && result.data) {
-        setUsers(result.data.data);
+        setUsers(result.data.users);
       } else {
         setErrorMessage(result.message || 'Failed to load users');
       }

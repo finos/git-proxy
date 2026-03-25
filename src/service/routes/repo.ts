@@ -42,7 +42,7 @@ function repo(proxy: Proxy) {
     }
 
     const { data, total } = await db.getRepos(query, pagination);
-    res.send({ data: data.map((d) => ({ ...d, proxyURL })), total });
+    res.send({ repos: data.map((d) => ({ ...d, proxyURL })), total });
   });
 
   router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {

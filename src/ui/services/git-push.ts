@@ -46,8 +46,8 @@ export type PaginationParams = {
   sortOrder?: 'asc' | 'desc';
 };
 
-export type PagedResponse<T> = {
-  data: T[];
+export type PagedPushResponse = {
+  pushes: PushActionView[];
   total: number;
 };
 
@@ -59,7 +59,7 @@ const getPushes = async (
     rejected: false,
   },
   pagination: PaginationParams = {},
-): Promise<ServiceResult<PagedResponse<PushActionView>>> => {
+): Promise<ServiceResult<PagedPushResponse>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/push`);
 
@@ -74,9 +74,14 @@ const getPushes = async (
   url.search = new URLSearchParams(params).toString();
 
   try {
-    const response = await axios<PagedResponse<Action>>(url.toString(), getAxiosConfig());
-    const paged = response.data as unknown as PagedResponse<PushActionView>;
-    return successResult(paged);
+    const response = await axios<{ pushes: Action[]; total: number }>(
+      url.toString(),
+      getAxiosConfig(),
+    );
+    return successResult({
+      pushes: response.data.pushes as unknown as PushActionView[],
+      total: response.data.total,
+    });
   } catch (error: unknown) {
     return errorResult(error, 'Failed to load pushes');
   }

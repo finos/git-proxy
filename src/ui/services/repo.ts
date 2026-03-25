@@ -46,12 +46,17 @@ class DupUserValidationError extends Error {
   }
 }
 
-import { PaginationParams, PagedResponse } from './git-push';
+import { PaginationParams } from './git-push';
+
+export type PagedRepoResponse = {
+  repos: RepoView[];
+  total: number;
+};
 
 const getRepos = async (
   query: Record<string, boolean> = {},
   pagination: PaginationParams = {},
-): Promise<ServiceResult<PagedResponse<RepoView>>> => {
+): Promise<ServiceResult<PagedRepoResponse>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo`);
 
@@ -66,8 +71,11 @@ const getRepos = async (
   url.search = new URLSearchParams(params).toString();
 
   try {
-    const response = await axios<PagedResponse<RepoView>>(url.toString(), getAxiosConfig());
-    return successResult(response.data);
+    const response = await axios<{ repos: RepoView[]; total: number }>(
+      url.toString(),
+      getAxiosConfig(),
+    );
+    return successResult({ repos: response.data.repos, total: response.data.total });
   } catch (error: unknown) {
     return errorResult(error, 'Failed to load repositories');
   }

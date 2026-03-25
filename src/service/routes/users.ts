@@ -24,7 +24,7 @@ router.get('/', async (req: Request, res: Response) => {
   console.log('fetching users');
   const pagination = parsePaginationParams(req);
   const { data, total } = await db.getUsers({}, pagination);
-  res.send({ data: data.map(toPublicUser), total });
+  res.send({ users: data.map(toPublicUser), total });
 });
 
 router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {

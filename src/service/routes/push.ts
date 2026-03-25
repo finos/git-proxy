@@ -43,8 +43,8 @@ router.get('/', async (req: Request, res: Response) => {
     query[key] = parsedValue ?? rawValue;
   }
 
-  const result = await db.getPushes(query, pagination);
-  res.send(result);
+  const { data, total } = await db.getPushes(query, pagination);
+  res.send({ pushes: data, total });
 });
 
 router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
