@@ -157,7 +157,7 @@ export const getProxyUrl = (): string | undefined => {
  * Never log a raw proxy URL — always pass it through this helper first.
  */
 export const redactProxyUrl = (url: string): string => {
-  return url.replace(/(https?:\/\/)[^@]+@/, '$1<redacted>@');
+  return url.replace(/^(https?:\/\/)[^@]+@/, '$1<redacted>@');
 };
 
 // Get upstream proxy configuration
