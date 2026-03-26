@@ -154,7 +154,7 @@ describe('repo service additional functions', () => {
         { name: 'alpha-repo', project: 'org', url: 'https://example.com/org/alpha-repo.git' },
         { name: 'zebra-repo', project: 'org', url: 'https://example.com/org/zebra-repo.git' },
       ];
-      const pagedData = { data: reposData, total: 2 };
+      const pagedData = { repos: reposData, total: 2 };
 
       axiosMock.mockResolvedValue({ data: pagedData });
 
@@ -165,7 +165,7 @@ describe('repo service additional functions', () => {
     });
 
     it('passes query parameters correctly', async () => {
-      axiosMock.mockResolvedValue({ data: { data: [], total: 0 } });
+      axiosMock.mockResolvedValue({ data: { repos: [], total: 0 } });
 
       await getRepos({ active: true });
 

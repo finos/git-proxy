@@ -147,7 +147,7 @@ describe('user service', () => {
   describe('getUsers', () => {
     it('fetches all users successfully', async () => {
       const pagedData = {
-        data: [
+        users: [
           { id: 'user-1', username: 'alice', email: 'alice@example.com' },
           { id: 'user-2', username: 'bob', email: 'bob@example.com' },
         ],

@@ -61,7 +61,7 @@ describe('Users API', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({
-      data: [
+      users: [
         {
           username: 'alice',
           displayName: 'Alice Walker',
