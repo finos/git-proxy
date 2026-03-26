@@ -176,4 +176,46 @@ describe('Repo', () => {
       });
     });
   });
+
+  describe('Pagination and search', () => {
+    beforeEach(() => {
+      cy.login('admin', 'admin');
+      cy.visit('/dashboard/repo');
+    });
+
+    it('sends search param to API when typing in search box', () => {
+      cy.intercept('GET', '**/api/v1/repo*').as('getRepos');
+
+      cy.get('input[type="text"]').first().type('finos');
+
+      cy.wait('@getRepos').its('request.url').should('include', 'search=finos');
+    });
+
+    it('sends page=2 to API when clicking Next', () => {
+      cy.intercept('GET', '**/api/v1/repo*').as('getRepos');
+
+      cy.wait('@getRepos');
+
+      cy.contains('button', 'Next').then(($btn) => {
+        if (!$btn.is(':disabled')) {
+          cy.intercept('GET', '**/api/v1/repo*').as('getReposPage2');
+          cy.contains('button', 'Next').click();
+          cy.wait('@getReposPage2').its('request.url').should('include', 'page=2');
+        }
+      });
+    });
+
+    it('sends updated limit to API when changing items per page', () => {
+      cy.intercept('GET', '**/api/v1/repo*').as('getRepos');
+
+      cy.wait('@getRepos');
+
+      cy.intercept('GET', '**/api/v1/repo*').as('getReposLimited');
+
+      cy.get('.paginationContainer').find('.MuiSelect-root').click();
+      cy.get('[data-value="25"]').click();
+
+      cy.wait('@getReposLimited').its('request.url').should('include', 'limit=25');
+    });
+  });
 });

@@ -134,7 +134,7 @@ Cypress.Commands.add('getTestRepoId', () => {
         `GET ${url} returned status ${res.status}: ${JSON.stringify(res.body).slice(0, 500)}`,
       );
     }
-    const repos = res.body.data ?? res.body;
+    const repos = res.body.repos ?? res.body.data ?? res.body;
     if (!Array.isArray(repos)) {
       throw new Error(
         `GET ${url} returned unexpected shape: ${JSON.stringify(res.body).slice(0, 500)}`,
@@ -158,7 +158,7 @@ Cypress.Commands.add('cleanupTestRepos', () => {
       url: `${getApiBaseUrl()}/api/v1/repo`,
       failOnStatusCode: false,
     }).then((res) => {
-      const repos = res.body.data ?? res.body;
+      const repos = res.body.repos ?? res.body.data ?? res.body;
       if (res.status !== 200 || !Array.isArray(repos)) return;
       const testRepos = repos.filter((r) => r.project === 'cypress-test');
       testRepos.forEach((repo) => {
