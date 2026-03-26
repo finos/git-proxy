@@ -20,7 +20,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 import IconButton from '@material-ui/core/IconButton';
 import { ArrowUpward, ArrowDownward } from '@material-ui/icons';
 
-export type FilterOption = 'Date Modified' | 'Date Created' | 'Alphabetical' | 'Sort by';
+export type FilterOption = 'Alphabetical' | 'Sort by';
 export type SortOrder = 'asc' | 'desc';
 
 interface FilteringProps {
@@ -59,8 +59,6 @@ const Filtering: React.FC<FilteringProps> = ({ onFilterChange }) => {
         <MenuItem value='Sort by' disabled>
           Sort by
         </MenuItem>
-        <MenuItem value='Date Modified'>Date Modified</MenuItem>
-        <MenuItem value='Date Created'>Date Created</MenuItem>
         <MenuItem value='Alphabetical'>Alphabetical</MenuItem>
       </Select>
       {selectedOption !== 'Sort by' && (

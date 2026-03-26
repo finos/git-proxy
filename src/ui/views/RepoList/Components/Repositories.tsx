@@ -110,8 +110,6 @@ export default function Repositories(): React.ReactElement {
   const handleFilterChange = (filterOption: FilterOption, order: SortOrder): void => {
     const fieldMap: Record<string, string> = {
       Alphabetical: 'name',
-      'Date Modified': 'lastModified',
-      'Date Created': 'dateCreated',
     };
     setSortBy(fieldMap[filterOption] ?? 'name');
     setSortOrder(order === 'desc' ? 'desc' : 'asc');
