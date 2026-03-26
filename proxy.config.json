@@ -157,7 +157,7 @@
     }
   ],
   "upstreamProxy": {
-    "enabled": true,
+    "enabled": false,
     "url": "http://localhost:8081",
     "noProxy": []
   },
