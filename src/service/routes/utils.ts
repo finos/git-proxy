@@ -23,19 +23,34 @@ interface User extends Express.User {
   admin?: boolean;
 }
 
+interface PaginationQuery {
+  page?: string;
+  limit?: string;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: string;
+}
+
 export const parsePaginationParams = (req: Request, defaultLimit = 10): PaginationOptions => {
-  const rawLimit = parseInt(req.query['limit'] as string, 10);
-  const rawPage = parseInt(req.query['page'] as string, 10);
+  const {
+    page: rawPageStr,
+    limit: rawLimitStr,
+    search,
+    sortBy,
+    sortOrder,
+  } = req.query as PaginationQuery;
+
+  const rawLimit = parseInt(rawLimitStr ?? '', 10);
+  const rawPage = parseInt(rawPageStr ?? '', 10);
 
   const limit = Math.min(100, Math.max(1, isNaN(rawLimit) ? defaultLimit : rawLimit));
   const page = Math.max(1, isNaN(rawPage) ? 1 : rawPage);
   const skip = Math.min(10000, (page - 1) * limit);
 
   const pagination: PaginationOptions = { skip, limit };
-  if (req.query['search']) pagination.search = req.query['search'] as string;
-  if (req.query['sortBy']) pagination.sortBy = req.query['sortBy'] as string;
-  if (req.query['sortOrder'])
-    pagination.sortOrder = req.query['sortOrder'] === 'desc' ? 'desc' : 'asc';
+  if (search) pagination.search = search;
+  if (sortBy) pagination.sortBy = sortBy;
+  if (sortOrder) pagination.sortOrder = sortOrder === 'desc' ? 'desc' : 'asc';
   return pagination;
 };
 
