@@ -184,11 +184,13 @@ describe('Repo', () => {
     });
 
     it('sends search param to API when typing in search box', () => {
-      cy.intercept('GET', '**/api/v1/repo*').as('getRepos');
+      cy.intercept('GET', '**/api/v1/repo*').as('initialLoad');
+      cy.wait('@initialLoad');
 
+      cy.intercept('GET', '**/api/v1/repo*').as('searchRequest');
       cy.get('input[type="text"]').first().type('finos');
 
-      cy.wait('@getRepos').its('request.url').should('include', 'search=finos');
+      cy.wait('@searchRequest').its('request.url').should('include', 'search=finos');
     });
 
     it('sends page=2 to API when clicking Next', () => {
