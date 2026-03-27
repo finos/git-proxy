@@ -2,7 +2,7 @@
 
 This guide explains GitProxy's various components, and how they communicate with each other when performing a `git push`.
 
-As mentioned in [the README](/README.md), GitProxy is an application that intercepts pushes and applies rules/policies to ensure they're compliant. Although a number of policies are available by default, these can be extended by using plugins.
+As mentioned in [the README](https://github.com/finos/git-proxy/blob/main/README.md), GitProxy is an application that intercepts pushes and applies rules/policies to ensure they're compliant. Although a number of policies are available by default, these can be extended by using plugins.
 
 ## Overview
 
@@ -24,11 +24,11 @@ These are all the core components in the project, along with some basic user int
 
 <!-- Note: this diagram can be edited in https://diagrams.net.
 
-Just upload the GitProxy_Architecture.drawio file available in /docs/img, edit the diagram and then export it as PNG.
+Just upload the GitProxy_Architecture.drawio file available in /website/static/img, edit the diagram and then export it as PNG.
 
 Don't forget to save and update the attached .drawio (XML)! -->
 
-![GitProxy Architecture Diagram](./img/GitProxy_Architecture.png)
+![GitProxy Architecture Diagram](../../static/img/GitProxy_Architecture.png)
 
 ### Pushing to GitProxy
 
@@ -175,7 +175,7 @@ For example: logging in with myusername@mymail.com will create a new user with u
 New methods can be added by:
 
 1. Extending `/src/service/passport` with the relevant [passport.js strategy](https://www.passportjs.org/packages/).
-   - The strategy file must have a `configure` method and a `type` string to match with the config method. See the pre-existing methods in [`/src/service/passport`](/src/service/passport) for more details.
+   - The strategy file must have a `configure` method and a `type` string to match with the config method. See the pre-existing methods in [`/src/service/passport`](https://github.com/finos/git-proxy/blob/main/src/service/passport) for more details.
 2. Creating a `proxy.config.json` entry with the required configuration parameters
 3. Importing the new strategy and adding it to the `authStrategies` array in `/src/service/passport/index.ts`
 
@@ -310,13 +310,13 @@ Has a list of `questions`, each of which can be configured with a `label` and a 
 
 Given the previous configuration, the attestation prompt would look like this:
 
-![Attestation Prompt](./img/attestation_example.png)
+![Attestation Prompt](../../static/img/attestation_example.png)
 
 #### `domains`
 
 Allows setting custom URLs for GitProxy interfaces in case these cannot be determined.
 
-This parameter is used in [`/src/service/urls.ts`](/src/service/urls.ts) to override URLs for the proxy (default: http://localhost:8000) and service (default: http://localhost:8080).
+This parameter is used in [`/src/service/urls.ts`](https://github.com/finos/git-proxy/blob/main/src/service/urls.ts) to override URLs for the proxy (default: http://localhost:8000) and service (default: http://localhost:8080).
 
 Sample configuration:
 
@@ -356,7 +356,7 @@ Currently unused.
 
 Sets the contact email for the Open Source Program Office (or equivalent organisational contact) in the attestation form:
 
-![Attestation Form](./img/attestation_example.png)
+![Attestation Form](../../static/img/attestation_example.png)
 
 #### `csrfProtection`
 
@@ -416,7 +416,7 @@ List of database sources. The first source with `enabled` set to `true` will be 
 
 Each entry has its own unique configuration parameters.
 
-Extending GitProxy to support other databases requires adding the relevant handlers and setup to the [`/src/db`](/src/db/) directory. Feel free to [open an issue](https://github.com/finos/git-proxy/issues) requesting support for any specific databases - or [open a PR](https://github.com/finos/git-proxy/pulls) with the desired changes!
+Extending GitProxy to support other databases requires adding the relevant handlers and setup to the [`/src/db`](https://github.com/finos/git-proxy/blob/main/src/db/) directory. Feel free to [open an issue](https://github.com/finos/git-proxy/issues) requesting support for any specific databases - or [open a PR](https://github.com/finos/git-proxy/pulls) with the desired changes!
 
 #### `authentication`
 
@@ -432,7 +432,7 @@ Allows defining ways to authenticate to the API. This is useful for securing cus
 
 If `apiAuthentication` is left empty, API endpoints will be publicly accesible.
 
-Currently, only JWT auth is supported. This is implemented via the [`jwtAuthHandler` middleware](/src/service/passport/jwtAuthHandler.ts). Aside of validating incoming access tokens, it can also assign roles based on the token payload.
+Currently, only JWT auth is supported. This is implemented via the [`jwtAuthHandler` middleware](https://github.com/finos/git-proxy/blob/main/src/service/passport/jwtAuthHandler.ts). Aside of validating incoming access tokens, it can also assign roles based on the token payload.
 
 ##### Setting up JWT Authentication
 
