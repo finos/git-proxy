@@ -197,7 +197,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
   /**
    * Helper function to get repositories
    */
-  async function getRepos(sessionCookie: string): Promise<{ data: any[]; total: number }> {
+  async function getRepos(sessionCookie: string): Promise<{ repos: any[]; total: number }> {
     const response = await fetch(`${testConfig.gitProxyUiUrl}/api/v1/repo`, {
       headers: { Cookie: sessionCookie },
     });
@@ -262,7 +262,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
       }
 
       // Get the test-repo repository and add permissions
-      const { data: repos } = await getRepos(adminCookie);
+      const { repos } = await getRepos(adminCookie);
       const testRepo = repos.find(
         (r: any) => r.url === 'https://git-server:8443/test-owner/test-repo.git',
       );
