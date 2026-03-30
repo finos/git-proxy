@@ -1,4 +1,4 @@
-# CLAUDE.md — GitProxy
+# AGENTS.md — GitProxy
 
 ## Project Overview
 
