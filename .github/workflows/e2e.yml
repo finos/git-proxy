@@ -20,15 +20,15 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@9cd4410b76a77e8054419e70095df406556617a8
+        uses: docker/setup-buildx-action@d91f340399fb2345e3e45f5461e116862b08261d
 
       - name: Set up Docker Compose
-        uses: docker/setup-compose-action@112d3e30db3bf437d207fea57f22510569d1ab97
+        uses: docker/setup-compose-action@e29e0ecd235838be5f2e823f8f512a72dc55f662
 
       - name: Set up Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
         with:
-          node-version: '20'
+          node-version: '24'
           cache: 'npm'
 
       - name: Install dependencies
@@ -66,7 +66,7 @@ jobs:
         run: docker compose logs git-proxy --tail=100
 
       - name: Upload Cypress screenshots on failure
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
         if: failure()
         with:
           name: cypress-screenshots
