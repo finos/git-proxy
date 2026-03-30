@@ -103,6 +103,7 @@ Follow these rules strictly when drafting replies:
 - Show exact reply text before queuing it
 - The programmer can modify any reply at any point
 - Always checkout with `--detach` to avoid creating local branches
+- Never push while in detached state. Before any push, explicitly checkout the target branch after programmer confirmation
 - After everything is done, return to the original branch
 - No emojis in any output
 - No markdown headings in any output or posted content
