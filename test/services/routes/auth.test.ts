@@ -1,6 +1,22 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import request from 'supertest';
-import express, { Express } from 'express';
+import express, { Express, Request, Response } from 'express';
 import authRoutes from '../../../src/service/routes/auth';
 import * as db from '../../../src/db';
 
@@ -109,6 +125,15 @@ describe('Auth API', () => {
       expect(res.status).toBe(403);
     });
 
+    it('should return 404 Not Found if user is not found', async () => {
+      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+        username: 'non-existent-user',
+        gitAccount: 'UPDATED_GIT_ACCOUNT',
+      });
+
+      expect(res.status).toBe(404);
+    });
+
     it('should return 200 OK if user is an admin and updates git account for authenticated user', async () => {
       const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
 
@@ -200,9 +225,12 @@ describe('Auth API', () => {
       const sendSpy = vi.fn();
       const res = {
         send: sendSpy,
-      } as any;
+      };
 
-      await authRoutes.loginSuccessHandler()({ user } as any, res);
+      await authRoutes.loginSuccessHandler()(
+        { user } as unknown as Request,
+        res as unknown as Response,
+      );
 
       expect(sendSpy).toHaveBeenCalledOnce();
       expect(sendSpy).toHaveBeenCalledWith({
@@ -246,6 +274,44 @@ describe('Auth API', () => {
         title: '',
         gitAccount: '',
         admin: false,
+      });
+    });
+
+    it('should return 404 Not Found if user is not found', async () => {
+      const res = await request(newApp('non-existent-user')).get('/auth/profile');
+      expect(res.status).toBe(404);
+      expect(res.body).toEqual({ message: 'User not found' });
+    });
+  });
+
+  describe('GET /', () => {
+    it('should return 200 OK and the auth endpoints', async () => {
+      const res = await request(newApp()).get('/auth');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        login: {
+          action: 'post',
+          uri: '/api/auth/login',
+        },
+        profile: {
+          action: 'get',
+          uri: '/api/auth/profile',
+        },
+        logout: {
+          action: 'post',
+          uri: '/api/auth/logout',
+        },
+      });
+    });
+  });
+
+  describe('GET /config', () => {
+    it('should return 200 OK and the default auth config', async () => {
+      const res = await request(newApp()).get('/auth/config');
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({
+        usernamePasswordMethod: 'local',
+        otherMethods: [],
       });
     });
   });

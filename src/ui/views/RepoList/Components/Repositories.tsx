@@ -1,3 +1,19 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React, { useState, useEffect, useContext } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import { useNavigate } from 'react-router-dom';
@@ -37,7 +53,6 @@ export default function Repositories(): React.ReactElement {
   const classes = useStyles();
   const [repos, setRepos] = useState<RepoView[]>([]);
   const [filteredRepos, setFilteredRepos] = useState<RepoView[]>([]);
-  const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isError, setIsError] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>('');
@@ -45,20 +60,26 @@ export default function Repositories(): React.ReactElement {
   const itemsPerPage: number = 5;
   const navigate = useNavigate();
   const { user } = useContext<UserContextType>(UserContext);
-  const openRepo = (repoId: string): void =>
-    navigate(`/dashboard/repo/${repoId}`, { replace: true });
+  const openRepo = (repoId: string): void => navigate(`/dashboard/repo/${repoId}`);
 
   useEffect(() => {
-    getRepos(
-      setIsLoading,
-      (repos: RepoView[]) => {
-        setRepos(repos);
-        setFilteredRepos(repos);
-      },
-      setAuth,
-      setIsError,
-      setErrorMessage,
-    );
+    const load = async () => {
+      setIsLoading(true);
+      const result = await getRepos();
+      if (result.success && result.data) {
+        setRepos(result.data);
+        setFilteredRepos(result.data);
+      } else if (result.status === 401) {
+        setIsLoading(false);
+        navigate('/login', { replace: true });
+        return;
+      } else {
+        setIsError(true);
+        setErrorMessage(result.message || 'Failed to load repositories');
+      }
+      setIsLoading(false);
+    };
+    load();
   }, []);
 
   const refresh = async (repo: RepoView): Promise<void> => {
@@ -117,7 +138,7 @@ export default function Repositories(): React.ReactElement {
   if (isLoading) return <div>Loading...</div>;
   if (isError) return <Danger>{errorMessage}</Danger>;
 
-  const addrepoButton = user.admin ? (
+  const addrepoButton = user?.admin ? (
     <GridItem>
       <NewRepo onSuccess={refresh} />
     </GridItem>

@@ -1,8 +1,26 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { Request } from 'express';
+
 import { Action, Step } from '../../actions';
 import { getUsers, isUserPushAllowed } from '../../../db';
 
 // Execute if the repo is approved
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('checkUserPushPermission');
   const userEmail = action.userEmail;
 
@@ -31,7 +49,6 @@ const validateUser = async (userEmail: string, action: Action, step: Step): Prom
   const list = await getUsers({ email: userEmail });
 
   if (list.length > 1) {
-    console.error(`Multiple users found with email address ${userEmail}, ending`);
     step.error = true;
     step.log(
       `Multiple Users have email <${userEmail}> so we cannot uniquely identify the user, ending`,
@@ -43,15 +60,14 @@ const validateUser = async (userEmail: string, action: Action, step: Step): Prom
     action.addStep(step);
     return action;
   } else if (list.length == 0) {
-    console.error(`No user with email address ${userEmail} found`);
+    step.log(`No user with email address ${userEmail} found`);
   } else {
     isUserAllowed = await isUserPushAllowed(action.url, list[0].username);
   }
 
-  console.log(`User ${userEmail} permission on Repo ${action.url} : ${isUserAllowed}`);
+  step.log(`User ${userEmail} permission on Repo ${action.url}: ${isUserAllowed}`);
 
   if (!isUserAllowed) {
-    console.log('User not allowed to Push');
     step.error = true;
     step.log(`User ${userEmail} is not allowed to push on repo ${action.url}, ending`);
     step.setError(

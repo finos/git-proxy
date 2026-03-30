@@ -1,10 +1,43 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { CSSProperties } from '@material-ui/core/styles/withStyles';
+
 import { Action } from '../proxy/actions';
 import { Step } from '../proxy/actions/Step';
 import { Repo } from '../db/types';
 import { Attestation } from '../proxy/processors/types';
 import { Question } from '../config/generated/config';
 
-export interface PushActionView extends Action {
+type ActionMethods =
+  | 'addStep'
+  | 'getLastStep'
+  | 'setCommit'
+  | 'setBranch'
+  | 'setMessage'
+  | 'setAllowPush'
+  | 'setAutoApproval'
+  | 'setAutoRejection'
+  | 'continue';
+
+export interface BackendResponse {
+  message: string;
+}
+
+export interface PushActionView extends Omit<Action, ActionMethods> {
   diff: Step;
 }
 
@@ -27,8 +60,8 @@ export interface Route {
   layout: string;
   name: string;
   rtlName?: string;
-  component: React.ComponentType<any>;
-  icon?: string | React.ComponentType<any>;
+  component: React.ComponentType;
+  icon?: string | React.ComponentType;
   visible?: boolean;
 }
 
@@ -89,3 +122,5 @@ export interface SCMRepositoryMetadata {
   profileUrl?: string;
   avatarUrl?: string;
 }
+
+export type CSSProperty = React.CSSProperties | CSSProperties;

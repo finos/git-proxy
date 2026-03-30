@@ -1,9 +1,31 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 const { defineConfig } = require('cypress');
 
 module.exports = defineConfig({
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL || 'http://localhost:3000',
+    specPattern: 'cypress/e2e/*.cy.{js,ts}',
     chromeWebSecurity: false, // Required for OIDC testing
+    env: {
+      API_BASE_URL: process.env.CYPRESS_API_BASE_URL || 'http://localhost:8080',
+      GIT_PROXY_URL: process.env.CYPRESS_GIT_PROXY_URL || 'http://localhost:8000',
+      GIT_SERVER_TARGET: process.env.CYPRESS_GIT_SERVER_TARGET || 'git-server:8443',
+    },
     setupNodeEvents(on, config) {
       on('task', {
         log(message) {

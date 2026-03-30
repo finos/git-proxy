@@ -1,3 +1,19 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React, { useState, useEffect, useContext } from 'react';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
@@ -27,6 +43,7 @@ import { RepoView, SCMRepositoryMetadata } from '../../types';
 import { UserContextType } from '../../context';
 import UserLink from '../../components/UserLink/UserLink';
 import DeleteRepoDialog from './Components/DeleteRepoDialog';
+import Danger from '../../components/Typography/Danger';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -35,9 +52,6 @@ const useStyles = makeStyles((theme) => ({
       width: '100%',
     },
   },
-  table: {
-    minWidth: 200,
-  },
 }));
 
 const RepoDetails: React.FC = () => {
@@ -45,17 +59,31 @@ const RepoDetails: React.FC = () => {
   const classes = useStyles();
   const [repo, setRepo] = useState<RepoView | null>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<boolean>(false);
-  const [, setAuth] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [remoteRepoData, setRemoteRepoData] = useState<SCMRepositoryMetadata | null>(null);
   const { user } = useContext<UserContextType>(UserContext);
   const { id: repoId } = useParams<{ id: string }>();
 
   useEffect(() => {
-    if (repoId) {
-      getRepo(setIsLoading, setRepo, setAuth, setIsError, repoId);
-    }
+    if (!repoId) return;
+    const load = async () => {
+      setIsLoading(true);
+      const result = await getRepo(repoId);
+      if (result.success && result.data) {
+        setRepo(result.data);
+      } else if (result.status === 401) {
+        setIsLoading(false);
+        navigate('/login', { replace: true });
+        return;
+      } else {
+        setIsError(true);
+        setErrorMessage(result.message || 'Something went wrong...');
+      }
+      setIsLoading(false);
+    };
+    load();
   }, [repoId]);
 
   useEffect(() => {
@@ -66,23 +94,50 @@ const RepoDetails: React.FC = () => {
 
   const removeUser = async (userToRemove: string, action: 'authorise' | 'push') => {
     if (!repoId) return;
-    await deleteUser(userToRemove, repoId, action);
-    getRepo(setIsLoading, setRepo, setAuth, setIsError, repoId);
+    try {
+      await deleteUser(userToRemove, repoId, action);
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err.message || 'Failed to remove user');
+      return;
+    }
+    const result = await getRepo(repoId);
+    if (result.success && result.data) {
+      setRepo(result.data);
+    } else if (result.status === 401) {
+      navigate('/login', { replace: true });
+    } else {
+      setIsError(true);
+      setErrorMessage(result.message || 'Failed to refresh repository data');
+    }
   };
 
   const removeRepository = async (id: string) => {
-    await deleteRepo(id);
+    try {
+      await deleteRepo(id);
+    } catch (err: any) {
+      setIsError(true);
+      setErrorMessage(err.message || 'Failed to delete repository');
+      return;
+    }
     navigate('/dashboard/repo', { replace: true });
   };
 
-  const refresh = () => {
-    if (repoId) {
-      getRepo(setIsLoading, setRepo, setAuth, setIsError, repoId);
+  const refresh = async () => {
+    if (!repoId) return;
+    const result = await getRepo(repoId);
+    if (result.success && result.data) {
+      setRepo(result.data);
+    } else if (result.status === 401) {
+      navigate('/login', { replace: true });
+    } else {
+      setIsError(true);
+      setErrorMessage(result.message || 'Failed to refresh repository data');
     }
   };
 
   if (isLoading) return <div>Loading...</div>;
-  if (isError) return <div>Something went wrong ...</div>;
+  if (isError) return <Danger>{errorMessage || 'Something went wrong ...'}</Danger>;
   if (!repo) return <div>No repository data found</div>;
 
   const { url: remoteUrl, proxyURL } = repo || {};
@@ -101,7 +156,7 @@ const RepoDetails: React.FC = () => {
               justifyContent='flex-end'
               alignItems='center'
             >
-              {user.admin && (
+              {user?.admin && (
                 <Grid item>
                   <Button
                     variant='contained'
@@ -170,17 +225,17 @@ const RepoDetails: React.FC = () => {
                 <h3>
                   <Visibility /> Reviewers
                 </h3>
-                {user.admin && (
+                {user?.admin && (
                   <div style={{ textAlign: 'right' }}>
                     <AddUser repoId={repoId || ''} type='authorise' refreshFn={refresh} />
                   </div>
                 )}
                 <TableContainer component={Paper}>
-                  <Table className={classes.table} aria-label='simple table'>
+                  <Table aria-label='List of repository reviewers'>
                     <TableHead>
                       <TableRow>
                         <TableCell align='left'>Username</TableCell>
-                        {user.admin && <TableCell align='right'></TableCell>}
+                        {user?.admin && <TableCell align='right'></TableCell>}
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -189,7 +244,7 @@ const RepoDetails: React.FC = () => {
                           <TableCell align='left'>
                             <UserLink username={username} />
                           </TableCell>
-                          {user.admin && (
+                          {user?.admin && (
                             <TableCell align='right' component='th' scope='row'>
                               <Button
                                 variant='contained'
@@ -213,17 +268,17 @@ const RepoDetails: React.FC = () => {
                 <h3>
                   <Code /> Contributors
                 </h3>
-                {user.admin && (
+                {user?.admin && (
                   <div style={{ textAlign: 'right' }}>
                     <AddUser repoId={repoId || ''} type='push' refreshFn={refresh} />
                   </div>
                 )}
                 <TableContainer component={Paper}>
-                  <Table className={classes.table} aria-label='contributors table'>
+                  <Table aria-label='List of repository contributors'>
                     <TableHead>
                       <TableRow>
                         <TableCell align='left'>Username</TableCell>
-                        {user.admin && <TableCell align='right'></TableCell>}
+                        {user?.admin && <TableCell align='right'></TableCell>}
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -232,7 +287,7 @@ const RepoDetails: React.FC = () => {
                           <TableCell align='left'>
                             <UserLink username={username} />
                           </TableCell>
-                          {user.admin && (
+                          {user?.admin && (
                             <TableCell align='right' component='th' scope='row'>
                               <Button
                                 variant='contained'

@@ -1,10 +1,28 @@
-import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import axios from 'axios';
-import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { NextFunction } from 'express';
+import jwt, { JwtPayload } from 'jsonwebtoken';
+import { describe, it, expect, vi, beforeEach, afterEach, MockInstance } from 'vitest';
 
 import { assignRoles, getJwks, validateJwt } from '../src/service/passport/jwtUtils';
 import { jwtAuthHandler } from '../src/service/passport/jwtAuthHandler';
+import { JwtConfig, RoleMapping } from '../src/config/generated/config';
 
 function generateRsaKeyPair() {
   return crypto.generateKeyPairSync('rsa', {
@@ -42,9 +60,9 @@ describe('JWT', () => {
   });
 
   describe('validateJwt', () => {
-    let decodeStub: any;
-    let verifyStub: any;
-    let getJwksStub: any;
+    let decodeStub: MockInstance;
+    let verifyStub: MockInstance;
+    let getJwksStub: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
       const jwksResponse = { keys: [{ kid: 'test-key', kty: 'RSA', n: 'abc', e: 'AQAB' }] };
@@ -166,7 +184,7 @@ describe('JWT', () => {
       const user = { username: 'no-role-user', admin: undefined };
       const payload = { admin: 'admin' };
 
-      assignRoles(null as any, payload, user);
+      assignRoles({} as RoleMapping, payload, user);
       expect(user.admin).toBeUndefined();
     });
   });
@@ -174,9 +192,9 @@ describe('JWT', () => {
   describe('jwtAuthHandler', () => {
     let req: any;
     let res: any;
-    let next: any;
-    let jwtConfig: any;
-    let validVerifyResponse: any;
+    let next: NextFunction;
+    let jwtConfig: JwtConfig;
+    let validVerifyResponse: JwtPayload;
 
     beforeEach(() => {
       req = { header: vi.fn(), isAuthenticated: vi.fn(), user: {} };
@@ -245,7 +263,7 @@ describe('JWT', () => {
       await jwtAuthHandler(jwtConfig)(req, res, next);
 
       expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.send).toHaveBeenCalledWith(expect.stringMatching(/JWT validation failed:/));
+      expect(res.send).toHaveBeenCalledWith(expect.stringMatching(/Invalid JWT:/));
     });
   });
 });

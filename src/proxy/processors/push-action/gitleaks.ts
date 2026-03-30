@@ -1,9 +1,27 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { spawn } from 'node:child_process';
+import { PathLike } from 'node:fs';
+import fs from 'node:fs/promises';
+import { Request } from 'express';
+
 import { Action, Step } from '../../actions';
 import { getAPIs } from '../../../config';
-import { spawn } from 'node:child_process';
-import fs from 'node:fs/promises';
-import { PathLike } from 'node:fs';
-
+import { handleErrorAndLogInStep } from '../../../utils/errors';
 const EXIT_CODE = 99;
 
 function runCommand(
@@ -66,7 +84,7 @@ async function fileIsReadable(path: PathLike): Promise<boolean> {
     }
     await fs.access(path, fs.constants.R_OK);
     return true;
-  } catch (e) {
+  } catch (error: unknown) {
     return false;
   }
 }
@@ -90,8 +108,7 @@ const getPluginConfig = async (): Promise<ConfigOptions> => {
     if (userConfigPath.length > 0 && (await fileIsReadable(userConfigPath))) {
       configPath = userConfigPath;
     } else {
-      console.error('could not read file at the config path provided, will not be fed to gitleaks');
-      throw new Error("could not check user's config path");
+      throw new Error(`Unable to read file at the provided config path: ${userConfigPath}`);
     }
   }
 
@@ -109,29 +126,27 @@ const getPluginConfig = async (): Promise<ConfigOptions> => {
   };
 };
 
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('gitleaks');
 
   let config: ConfigOptions | undefined = undefined;
   try {
     config = await getPluginConfig();
-  } catch (e) {
-    console.error('failed to get gitleaks config, please fix the error:', e);
-    action.error = true;
-    step.setError('failed setup gitleaks, please contact an administrator\n');
+  } catch (error: unknown) {
+    handleErrorAndLogInStep(step, error, 'Failed to get gitleaks config');
     action.addStep(step);
     return action;
   }
 
   if (!config.enabled) {
-    console.log('gitleaks is disabled, skipping');
+    step.log('Gitleaks is disabled, skipping.');
     action.addStep(step);
     return action;
   }
 
   const { commitFrom, commitTo } = action;
   const workingDir = `${action.proxyGitPath}/${action.repoName}`;
-  console.log(`Scanning range with gitleaks: ${commitFrom}:${commitTo}`, workingDir);
+  step.log(`Scanning range with gitleaks: ${commitFrom}:${commitTo} in ${workingDir}`);
 
   try {
     const gitRootCommit = await runCommand(workingDir, 'git', [
@@ -162,23 +177,19 @@ const exec = async (req: any, action: Action): Promise<Action> => {
 
     if (gitleaks.exitCode !== 0) {
       // any failure
-      step.error = true;
       if (gitleaks.exitCode !== EXIT_CODE) {
-        step.setError('failed to run gitleaks, please contact an administrator\n');
+        step.setError('Failed to run gitleaks, please contact an administrator.');
       } else {
         // exit code matched our gitleaks findings exit code
         // newline prefix to avoid tab indent at the start
         step.setError('\n' + gitleaks.stdout + gitleaks.stderr);
       }
     } else {
-      console.log('succeeded');
-      console.log(gitleaks.stderr);
+      step.log('Succeeded.');
+      step.log(`Gitleaks output: ${gitleaks.stderr}`);
     }
-  } catch (e) {
-    action.error = true;
-    step.setError('failed to spawn gitleaks, please contact an administrator\n');
-    action.addStep(step);
-    return action;
+  } catch (error: unknown) {
+    handleErrorAndLogInStep(step, error, 'Failed to spawn gitleaks');
   }
 
   action.addStep(step);

@@ -1,5 +1,22 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import fc from 'fast-check';
+import { Request } from 'express';
 
 import { exec } from '../../src/proxy/processors/push-action/blockForAuth';
 import { Step, Action } from '../../src/proxy/actions';
@@ -7,7 +24,7 @@ import * as urls from '../../src/service/urls';
 
 describe('blockForAuth.exec', () => {
   let mockAction: Action;
-  let mockReq: any;
+  let mockReq: Request;
 
   beforeEach(() => {
     // create a fake Action with spies
@@ -16,7 +33,7 @@ describe('blockForAuth.exec', () => {
       addStep: vi.fn(),
     } as unknown as Action;
 
-    mockReq = { some: 'req' };
+    mockReq = { some: 'req' } as unknown as Request;
 
     // mock getServiceUIURL
     vi.spyOn(urls, 'getServiceUIURL').mockReturnValue('http://mocked-service-ui');
@@ -32,7 +49,7 @@ describe('blockForAuth.exec', () => {
     expect(urls.getServiceUIURL).toHaveBeenCalledWith(mockReq);
     expect(mockAction.addStep).toHaveBeenCalledTimes(1);
 
-    const stepArg = (mockAction.addStep as any).mock.calls[0][0];
+    const stepArg = vi.mocked(mockAction.addStep).mock.calls[0][0];
     expect(stepArg).toBeInstanceOf(Step);
     expect(stepArg.stepName).toBe('authBlock');
 
@@ -42,7 +59,7 @@ describe('blockForAuth.exec', () => {
   it('should set the async block message with the correct format', async () => {
     await exec(mockReq, mockAction);
 
-    const stepArg = (mockAction.addStep as any).mock.calls[0][0];
+    const stepArg = vi.mocked(mockAction.addStep).mock.calls[0][0];
     const blockMessage = (stepArg as Step).blockedMessage;
 
     expect(blockMessage).toContain('GitProxy has received your push ✅');
@@ -62,7 +79,7 @@ describe('blockForAuth.exec', () => {
     it('should not crash on random req', () => {
       fc.assert(
         fc.property(fc.anything(), (req) => {
-          exec(req, mockAction);
+          exec(req as Request, mockAction);
         }),
         { numRuns: 1000 },
       );

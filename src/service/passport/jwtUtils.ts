@@ -1,9 +1,26 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import axios from 'axios';
 import { createPublicKey } from 'crypto';
 import jwt, { type JwtPayload } from 'jsonwebtoken';
 
 import { JwkKey, JwksResponse, JwtValidationResult } from './types';
 import { RoleMapping } from '../../config/generated/config';
+import { handleErrorAndLog } from '../../utils/errors';
 
 /**
  * Obtain the JSON Web Key Set (JWKS) from the OIDC authority.
@@ -17,8 +34,8 @@ export async function getJwks(authorityUrl: string): Promise<JwkKey[]> {
 
     const { data: jwks }: { data: JwksResponse } = await axios.get(jwksUri);
     return jwks.keys;
-  } catch (error) {
-    console.error('Error fetching JWKS:', error);
+  } catch (error: unknown) {
+    handleErrorAndLog(error, 'Error fetching JWKS');
     throw new Error('Failed to fetch JWKS');
   }
 }
@@ -73,9 +90,8 @@ export async function validateJwt(
     }
 
     return { verifiedPayload, error: null };
-  } catch (error: any) {
-    const errorMessage = `JWT validation failed: ${error.message}\n`;
-    console.error(errorMessage);
+  } catch (error: unknown) {
+    const errorMessage = handleErrorAndLog(error, 'JWT validation failed');
     return { error: errorMessage, verifiedPayload: null };
   }
 }

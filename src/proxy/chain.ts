@@ -1,9 +1,28 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { Request, Response } from 'express';
+
 import { PluginLoader } from '../plugin';
 import { Action } from './actions';
 import * as proc from './processors';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
+import { handleErrorAndLog } from '../utils/errors';
 
-const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
+const pushActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.parsePush,
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
@@ -21,17 +40,17 @@ const pushActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.blockForAuth,
 ];
 
-const pullActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
+const pullActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.checkRepoInAuthorisedList,
 ];
 
-const defaultActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
+const defaultActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.checkRepoInAuthorisedList,
 ];
 
 let pluginsInserted = false;
 
-export const executeChain = async (req: any, res: any): Promise<Action> => {
+export const executeChain = async (req: Request, _res: Response): Promise<Action> => {
   let action: Action = {} as Action;
   let checkoutCleanUpRequired = false;
 
@@ -49,10 +68,10 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
         checkoutCleanUpRequired = true;
       }
     }
-  } catch (e) {
+  } catch (error: unknown) {
+    const msg = handleErrorAndLog(error, 'An unexpected error occurred when executing the chain');
     action.error = true;
-    action.errorMessage = `An error occurred when executing the chain: ${e}`;
-    console.error(action.errorMessage);
+    action.errorMessage = msg;
   } finally {
     //clean up the clone created
     if (checkoutCleanUpRequired) {
@@ -79,7 +98,7 @@ let chainPluginLoader: PluginLoader;
 
 export const getChain = async (
   action: Action,
-): Promise<((req: any, action: Action) => Promise<Action>)[]> => {
+): Promise<((req: Request, action: Action) => Promise<Action>)[]> => {
   if (chainPluginLoader === undefined) {
     console.error(
       'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',

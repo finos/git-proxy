@@ -1,6 +1,6 @@
 {
   "name": "@finos/git-proxy",
-  "version": "2.0.0-rc.4",
+  "version": "2.0.0-rc.5",
   "description": "Deploy custom push protections and policies on top of Git.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -60,7 +60,7 @@
     "test-coverage": "cross-env NODE_ENV=test vitest --run --dir ./test --coverage",
     "test-coverage-ci": "cross-env NODE_ENV=test vitest --run --dir ./test --coverage.enabled=true --coverage.reporter=lcovonly --coverage.reporter=text",
     "test:integration": "NODE_ENV=test vitest --run --config vitest.config.integration.ts",
-    "test-watch": "cross-env NODE_ENV=test vitest --dir ./test --watch",
+    "test:watch": "cross-env NODE_ENV=test vitest --dir ./test --watch",
     "prepare": "node ./scripts/prepare.js",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
@@ -68,6 +68,7 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --config ./.prettierrc",
     "gen-schema-doc": "node ./scripts/doc-schema.js",
     "cypress:run": "cypress run",
+    "cypress:run:docker": "cypress run --config specPattern='cypress/e2e/docker/**/*.cy.{js,ts}'",
     "cypress:open": "cypress open",
     "generate-config-types": "quicktype --src-lang schema --lang typescript --out src/config/generated/config.ts --top-level GitProxyConfig config.schema.json && ts-node scripts/add-banner.ts src/config/generated/config.ts && prettier --write src/config/generated/config.ts"
   },
@@ -125,7 +126,6 @@
     "react-html-parser": "^2.0.2",
     "react-router-dom": "6.30.3",
     "simple-git": "^3.30.0",
-    "supertest": "^7.2.2",
     "uuid": "^13.0.0",
     "validator": "^13.15.26",
     "yargs": "^17.7.2"
@@ -137,7 +137,7 @@
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/compat": "^2.0.2",
     "@eslint/js": "^9.39.2",
-    "@eslint/json": "^0.14.0",
+    "@eslint/json": "^1.0.1",
     "@types/activedirectory2": "^1.2.6",
     "@types/cors": "^2.8.19",
     "@types/domutils": "^2.1.0",
@@ -162,6 +162,7 @@
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-cypress": "^5.2.1",
+    "eslint-plugin-license-header": "^0.9.0",
     "eslint-plugin-react": "^7.37.5",
     "fast-check": "^4.5.3",
     "globals": "^16.5.0",
@@ -198,7 +199,7 @@
     ]
   },
   "engines": {
-    "node": ">=20.18.2 || >=22.13.1 || >=24.0.0"
+    "node": ">=22.13.1 || >=24.0.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}": [

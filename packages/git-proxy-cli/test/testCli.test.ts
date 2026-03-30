@@ -1,10 +1,26 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import * as helper from './testCliUtils';
 import path from 'path';
 import { describe, it, beforeAll, afterAll } from 'vitest';
 
 import { setConfigFile } from '../../../src/config/file';
-
-import { Repo } from '../../../src/db/types';
+import { SAMPLE_REPO } from '../../../src/proxy/processors/constants';
+import { handleErrorAndLog } from '../../../src/utils/errors';
 
 setConfigFile(path.join(process.cwd(), 'test', 'testCli.proxy.config.json'));
 
@@ -14,6 +30,7 @@ const GHOST_PUSH_ID =
   '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f';
 // repo for test cases
 const TEST_REPO_CONFIG = {
+  ...SAMPLE_REPO,
   project: 'finos',
   name: 'git-proxy-test',
   url: 'https://github.com/finos/git-proxy-test.git',
@@ -220,7 +237,7 @@ describe('test git-proxy-cli', function () {
     const pushId = `auth000000000000000000000000000000000000__${Date.now()}`;
 
     beforeAll(async function () {
-      await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
+      await helper.addRepoToDb(TEST_REPO_CONFIG);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
@@ -297,7 +314,7 @@ describe('test git-proxy-cli', function () {
     const pushId = `cancel0000000000000000000000000000000000__${Date.now()}`;
 
     beforeAll(async function () {
-      await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
+      await helper.addRepoToDb(TEST_REPO_CONFIG);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_USER, TEST_EMAIL, TEST_REPO);
     });
@@ -420,7 +437,7 @@ describe('test git-proxy-cli', function () {
     const pushId = `reject0000000000000000000000000000000000__${Date.now()}`;
 
     beforeAll(async function () {
-      await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
+      await helper.addRepoToDb(TEST_REPO_CONFIG);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
@@ -582,8 +599,8 @@ describe('test git-proxy-cli', function () {
         // Clean up the created user
         try {
           await helper.removeUserFromDb(uniqueUsername);
-        } catch (error: any) {
-          // Ignore cleanup errors
+        } catch (error: unknown) {
+          handleErrorAndLog(error, 'Error cleaning up user');
         }
       }
     });
@@ -612,8 +629,8 @@ describe('test git-proxy-cli', function () {
         // Clean up the created user
         try {
           await helper.removeUserFromDb(uniqueUsername);
-        } catch (error: any) {
-          console.error('Error cleaning up user', error);
+        } catch (error: unknown) {
+          handleErrorAndLog(error, 'Error cleaning up user');
         }
       }
     });
@@ -625,7 +642,7 @@ describe('test git-proxy-cli', function () {
     const pushId = `0000000000000000000000000000000000000000__${Date.now()}`;
 
     beforeAll(async function () {
-      await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
+      await helper.addRepoToDb(TEST_REPO_CONFIG);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });

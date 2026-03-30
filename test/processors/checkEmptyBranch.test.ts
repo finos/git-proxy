@@ -1,13 +1,30 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { Request } from 'express';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Action } from '../../src/proxy/actions';
-import { EMPTY_COMMIT_HASH } from '../../src/proxy/processors/constants';
+import { EMPTY_COMMIT_HASH, SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
 
 vi.mock('simple-git');
 vi.mock('fs');
 
 describe('checkEmptyBranch', () => {
-  let exec: (req: any, action: Action) => Promise<Action>;
-  let simpleGitMock: any;
+  let exec: (req: Request, action: Action) => Promise<Action>;
+  let simpleGitMock: ReturnType<typeof vi.fn>;
   let gitRawMock: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
@@ -25,7 +42,7 @@ describe('checkEmptyBranch', () => {
 
     // mocking fs to prevent simple-git from validating directories
     vi.doMock('fs', async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
         existsSync: vi.fn().mockReturnValue(true),
@@ -48,10 +65,10 @@ describe('checkEmptyBranch', () => {
 
   describe('exec', () => {
     let action: Action;
-    let req: any;
+    let req: Request;
 
     beforeEach(() => {
-      req = {};
+      req = {} as Request;
       action = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo');
       action.proxyGitPath = '/tmp/gitproxy';
       action.repoName = 'test-repo';
@@ -61,7 +78,7 @@ describe('checkEmptyBranch', () => {
     });
 
     it('should pass through if commitData is already populated', async () => {
-      action.commitData = [{ message: 'Existing commit' }] as any;
+      action.commitData = [{ ...SAMPLE_COMMIT, message: 'Existing commit' }];
 
       const result = await exec(req, action);
 

@@ -1,6 +1,28 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 describe('Repo', () => {
   let cookies;
   let repoName;
+
+  before(() => {
+    cy.login('admin', 'admin');
+    cy.cleanupTestRepos();
+    cy.logout();
+  });
 
   describe('Anonymous users', () => {
     beforeEach(() => {
@@ -54,8 +76,6 @@ describe('Repo', () => {
       });
 
       cy.contains('a', `cypress-test/${repoName}`, { timeout: 10000 }).click();
-
-      // cy.get('[data-testid="delete-repo-button"]').click();
     });
 
     it('Displays an error when adding an existing repo', () => {
@@ -84,11 +104,13 @@ describe('Repo', () => {
       // Create a new repo
       cy.getCSRFToken().then((csrfToken) => {
         repoName = `${Date.now()}`;
-        cloneURL = `http://localhost:8000/github.com/cypress-test/${repoName}.git`;
+        const gitProxyUrl = Cypress.env('GIT_PROXY_URL') || 'http://localhost:8000';
+        cloneURL = `${gitProxyUrl}/github.com/cypress-test/${repoName}.git`;
 
+        const apiBaseUrl = Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
         cy.request({
           method: 'POST',
-          url: 'http://localhost:8080/api/v1/repo',
+          url: `${apiBaseUrl}/api/v1/repo`,
           body: {
             project: 'cypress-test',
             name: repoName,
@@ -145,7 +167,7 @@ describe('Repo', () => {
       cy.getCSRFToken().then((csrfToken) => {
         cy.request({
           method: 'DELETE',
-          url: `http://localhost:8080/api/v1/repo/${repoName}/delete`,
+          url: `${Cypress.env('API_BASE_URL') || Cypress.config('baseUrl')}/api/v1/repo/${repoId}/delete`,
           headers: {
             cookie: cookies?.join('; ') || '',
             'X-CSRF-TOKEN': csrfToken,

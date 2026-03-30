@@ -1,7 +1,24 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import fs from 'fs';
 import util from 'util';
 import { exec } from 'child_process';
 import { expect } from 'vitest';
+import { Request } from 'express';
 
 import Proxy from '../../../src/proxy';
 import { Action } from '../../../src/proxy/actions/Action';
@@ -10,11 +27,23 @@ import { exec as execProcessor } from '../../../src/proxy/processors/push-action
 import * as db from '../../../src/db';
 import { Repo } from '../../../src/db/types';
 import service from '../../../src/service';
+import { CommitData } from '../../../src/proxy/processors/types';
 
 const execAsync = util.promisify(exec);
 
 // cookie file name
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
+
+/**
+ * Type guard to check if error is from child_process exec
+ */
+function isExecError(error: unknown): error is Error & {
+  code: number;
+  stdout: string;
+  stderr: string;
+} {
+  return error instanceof Error && 'code' in error && 'stdout' in error && 'stderr' in error;
+}
 
 /**
  * @async
@@ -54,27 +83,28 @@ async function runCli(
         expect(stderr).toContain(expectedErrorMessage);
       });
     }
-  } catch (error: any) {
-    const exitCode = error.code;
-    if (!exitCode) {
-      // an AssertionError is thrown from failing some of the expectations
-      // in the 'try' block: forward it to Mocha to process
+  } catch (error: unknown) {
+    if (isExecError(error)) {
+      const exitCode = error.code;
+
+      if (debug) {
+        console.log(`error.stdout: ${error.stdout}`);
+        console.log(`error.stderr: ${error.stderr}`);
+      }
+      expect(exitCode).toEqual(expectedExitCode);
+      if (expectedMessages) {
+        expectedMessages.forEach((expectedMessage) => {
+          expect(error.stdout).toContain(expectedMessage);
+        });
+      }
+      if (expectedErrorMessages) {
+        expectedErrorMessages.forEach((expectedErrorMessage) => {
+          expect(error.stderr).toContain(expectedErrorMessage);
+        });
+      }
+    } else {
+      // Assertion error, forward to Vitest to process
       throw error;
-    }
-    if (debug) {
-      console.log(`error.stdout: ${error.stdout}`);
-      console.log(`error.stderr: ${error.stderr}`);
-    }
-    expect(exitCode).toEqual(expectedExitCode);
-    if (expectedMessages) {
-      expectedMessages.forEach((expectedMessage) => {
-        expect(error.stdout).toContain(expectedMessage);
-      });
-    }
-    if (expectedErrorMessages) {
-      expectedErrorMessages.forEach((expectedErrorMessage) => {
-        expect(error.stderr).toContain(expectedErrorMessage);
-      });
     }
   } finally {
     if (debug) {
@@ -214,7 +244,7 @@ async function addGitPushToDb(
     `\n\n\nGitProxy has received your push:\n\nhttp://localhost:8080/requests/${id}\n\n\n`, // blockedMessage
     null, // content
   );
-  const commitData = [];
+  const commitData: CommitData[] = [];
   commitData.push({
     tree: 'tree test',
     parent: 'parent',
@@ -223,10 +253,11 @@ async function addGitPushToDb(
     message: 'message',
     authorEmail: 'authorEmail',
     committerEmail: 'committerEmail',
+    commitTimestamp: '1234567890',
   });
   action.commitData = commitData;
   action.addStep(step);
-  const result = await execProcessor(null, action);
+  const result = await execProcessor({} as Request, action);
   if (debug) {
     console.log(`New git push added to DB: ${util.inspect(result)}`);
   }

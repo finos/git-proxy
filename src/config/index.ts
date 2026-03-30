@@ -1,3 +1,19 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
@@ -7,6 +23,7 @@ import { Configuration } from './types';
 import { serverConfig } from './env';
 import { getConfigFile } from './file';
 import { validateConfig } from './validators';
+import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
 
 // Cache for current configuration
 let _currentConfig: GitProxyConfig | null = null;
@@ -62,9 +79,8 @@ function loadFullConfiguration(): GitProxyConfig {
       // Don't use QuickType validation for partial configurations
       const rawUserConfig = JSON.parse(userConfigContent);
       userSettings = cleanUndefinedValues(rawUserConfig);
-    } catch (error) {
-      console.error(`Error loading user config from ${userConfigFile}:`, error);
-      throw error;
+    } catch (error: unknown) {
+      handleErrorAndThrow(error, `Error loading user config from ${userConfigFile}`);
     }
   }
 
@@ -321,14 +337,14 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     await proxy.start();
 
     console.log('Services restarted with new configuration');
-  } catch (error) {
-    console.error('Failed to apply new configuration:', error);
+  } catch (error: unknown) {
+    handleErrorAndLog(error, 'Failed to apply new configuration');
     // Attempt to restart with previous config
     try {
       const proxy = require('../proxy');
       await proxy.start();
-    } catch (startError) {
-      console.error('Failed to restart services:', startError);
+    } catch (startError: unknown) {
+      handleErrorAndLog(startError, 'Failed to restart services');
     }
   }
 };
@@ -364,7 +380,7 @@ export const reloadConfiguration = async () => {
 try {
   initializeConfigLoader();
   console.log('Configuration loaded successfully');
-} catch (error) {
-  console.error('Failed to load configuration:', error);
+} catch (error: unknown) {
+  handleErrorAndThrow(error, 'Failed to load configuration');
   throw error;
 }

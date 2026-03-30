@@ -1,23 +1,29 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import http from 'http';
 import https from 'https';
-import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
+import { describe, it, beforeEach, afterEach, expect, vi, Mock } from 'vitest';
 import fs from 'fs';
+import { GitProxyConfig } from '../src/config/generated/config';
+import { Proxy } from '../src/proxy';
+import { handleAndLogError } from '../src/utils/errors';
 
-/* 
-  jescalada: these tests are currently causing the following error
-  when running tests in the CI or for the first time locally:
-  Error: listen EADDRINUSE: address already in use :::8000
-
-  This is likely due to improper test isolation or cleanup in another test file
-  especially related to proxy.start() and proxy.stop() calls
-
-  Related: skipped tests in testProxyRoute.test.ts - these have a race condition
-  where either these or those tests fail depending on execution order
-  TODO: Find root cause of this error and fix it 
-  https://github.com/finos/git-proxy/issues/1294
-*/
 describe('Proxy Module TLS Certificate Loading', () => {
-  let proxyModule: any;
+  let proxyModule: Proxy;
   let mockConfig: any;
   let mockHttpServer: any;
   let mockHttpsServer: any;
@@ -74,7 +80,7 @@ describe('Proxy Module TLS Certificate Loading', () => {
     });
 
     vi.doMock('../src/config', async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual = await importOriginal<GitProxyConfig>();
       return {
         ...actual,
         getTLSEnabled: mockConfig.getTLSEnabled,
@@ -86,7 +92,7 @@ describe('Proxy Module TLS Certificate Loading', () => {
     });
 
     vi.doMock('../src/db', async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual = await importOriginal<typeof import('../src/db')>();
       return {
         ...actual,
         getRepos: mockDb.getRepos,
@@ -98,7 +104,7 @@ describe('Proxy Module TLS Certificate Loading', () => {
     });
 
     vi.doMock('../src/proxy/chain', async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual = await importOriginal<typeof import('../src/proxy/chain')>();
       return {
         ...actual,
         chainPluginLoader: null,
@@ -116,8 +122,8 @@ describe('Proxy Module TLS Certificate Loading', () => {
   afterEach(async () => {
     try {
       await proxyModule.stop();
-    } catch (err) {
-      console.error('Error occurred when stopping the proxy: ', err);
+    } catch (error: unknown) {
+      handleAndLogError(error, 'Error occurred when stopping the proxy');
     }
     vi.restoreAllMocks();
   });

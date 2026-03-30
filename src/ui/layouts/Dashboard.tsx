@@ -1,3 +1,19 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, Navigate, useParams } from 'react-router-dom';
 import PerfectScrollbar from 'perfect-scrollbar';
@@ -9,10 +25,11 @@ import Sidebar from '../components/Sidebar/Sidebar';
 import routes from '../../routes';
 import styles from '../assets/jss/material-dashboard-react/layouts/dashboardStyle';
 import logo from '../assets/img/git-proxy.png';
-import { UserContext } from '../context';
+import { UserContext, UserContextType } from '../context';
 import { getUser } from '../services/user';
 import { Route as RouteType } from '../types';
 import { PublicUser } from '../../db/types';
+import { ErrorBoundary } from '../components/ErrorBoundary/ErrorBoundary';
 
 interface DashboardProps {
   [key: string]: any;
@@ -28,7 +45,7 @@ const Dashboard: React.FC<DashboardProps> = ({ ...rest }) => {
   const mainPanel = useRef<HTMLDivElement>(null);
   const [color] = useState<'purple' | 'blue' | 'green' | 'orange' | 'red'>('blue');
   const [mobileOpen, setMobileOpen] = useState<boolean>(false);
-  const [user, setUser] = useState<PublicUser>({} as PublicUser);
+  const [user, setUser] = useState<PublicUser | null>(null);
   const { id } = useParams<{ id?: string }>();
 
   const handleDrawerToggle = () => setMobileOpen((prev) => !prev);
@@ -82,7 +99,7 @@ const Dashboard: React.FC<DashboardProps> = ({ ...rest }) => {
   }, [id]);
 
   return (
-    <UserContext.Provider value={{ user, setUser } as any}>
+    <UserContext.Provider value={{ user, setUser } as UserContextType}>
       <div className={classes.wrapper}>
         <Sidebar
           background='#1a1a1a'
@@ -95,16 +112,18 @@ const Dashboard: React.FC<DashboardProps> = ({ ...rest }) => {
         />
         <div className={classes.mainPanel} ref={mainPanel}>
           <Navbar routes={routes} handleDrawerToggle={handleDrawerToggle} {...rest} />
-          {isMapRoute() ? (
-            <div className={classes.map}>{switchRoutes}</div>
-          ) : (
-            <>
-              <div className={classes.content}>
-                <div className={classes.container}>{switchRoutes}</div>
-              </div>
-              <Footer />
-            </>
-          )}
+          <ErrorBoundary name='Dashboard'>
+            {isMapRoute() ? (
+              <div className={classes.map}>{switchRoutes}</div>
+            ) : (
+              <>
+                <div className={classes.content}>
+                  <div className={classes.container}>{switchRoutes}</div>
+                </div>
+                <Footer />
+              </>
+            )}
+          </ErrorBoundary>
         </div>
       </div>
     </UserContext.Provider>

@@ -1,3 +1,19 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import express, { Request, Response, NextFunction } from 'express';
 import { getPassport, authStrategies } from '../passport';
 import { getAuthMethods } from '../../config';
@@ -10,6 +26,7 @@ import { User } from '../../db/types';
 import { AuthenticationElement } from '../../config/generated/config';
 
 import { isAdminUser, toPublicUser } from './utils';
+import { handleErrorAndLog } from '../../utils/errors';
 
 const router = express.Router();
 const passport = getPassport();
@@ -66,9 +83,9 @@ const loginSuccessHandler = () => async (req: Request, res: Response) => {
       message: 'success',
       user: currentUser,
     });
-  } catch (e) {
-    console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
-    res.status(500).send('Failed to login').end();
+  } catch (error: unknown) {
+    const msg = handleErrorAndLog(error, 'Error logging user in');
+    res.status(500).send(`Failed to login: ${msg}`).end();
   }
 };
 
@@ -103,28 +120,31 @@ router.post(
 router.get('/openidconnect', passport.authenticate(authStrategies['openidconnect'].type));
 
 router.get('/openidconnect/callback', (req: Request, res: Response, next: NextFunction) => {
-  passport.authenticate(authStrategies['openidconnect'].type, (err: any, user: any, info: any) => {
-    if (err) {
-      console.error('Authentication error:', err);
-      return res.status(500).end();
-    }
-    if (!user) {
-      console.error('No user found:', info);
-      return res.status(401).end();
-    }
-    req.logIn(user, (err) => {
+  passport.authenticate(
+    authStrategies['openidconnect'].type,
+    (err: unknown, user: Partial<db.User>, info: unknown) => {
       if (err) {
-        console.error('Login error:', err);
+        console.error('Authentication error:', err);
         return res.status(500).end();
       }
-      console.log('Logged in successfully. User:', user);
-      return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
-    });
-  })(req, res, next);
+      if (!user) {
+        console.error('No user found:', info);
+        return res.status(401).end();
+      }
+      req.logIn(user, (err) => {
+        if (err) {
+          console.error('Login error:', err);
+          return res.status(500).end();
+        }
+        console.log('Logged in successfully. User:', user);
+        return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
+      });
+    },
+  )(req, res, next);
 });
 
 router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
-  req.logout((err: any) => {
+  req.logout((err: unknown) => {
     if (err) return next(err);
   });
   res.clearCookie('connect.sid');
@@ -144,7 +164,7 @@ router.get('/profile', async (req: Request, res: Response) => {
 
   const userVal = await db.findUser((req.user as User).username);
   if (!userVal) {
-    res.status(404).send('User not found').end();
+    res.status(404).send({ message: 'User not found' }).end();
     return;
   }
 
@@ -204,11 +224,12 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
     user.gitAccount = req.body.gitAccount;
     db.updateUser(user);
     res.status(200).end();
-  } catch (e: any) {
+  } catch (error: unknown) {
+    const msg = handleErrorAndLog(error, 'Failed to update git account');
     res
       .status(500)
       .send({
-        message: `Failed to update git account: ${e.message}`,
+        message: msg,
       })
       .end();
   }
@@ -247,11 +268,14 @@ router.post('/create-user', async (req: Request, res: Response) => {
         username,
       })
       .end();
-  } catch (error: any) {
-    console.error('Error creating user:', error);
-    res.status(500).send({
-      message: error.message || 'Failed to create user',
-    });
+  } catch (error: unknown) {
+    const msg = handleErrorAndLog(error, 'Failed to create user');
+    res
+      .status(500)
+      .send({
+        message: msg,
+      })
+      .end();
   }
 });
 

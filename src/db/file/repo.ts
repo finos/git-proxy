@@ -1,8 +1,25 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import Datastore from '@seald-io/nedb';
 import _ from 'lodash';
 
 import { Repo, RepoQuery } from '../types';
 import { toClass } from '../helper';
+import { handleErrorAndLog } from '../../utils/errors';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -15,10 +32,10 @@ if (process.env.NODE_ENV === 'test') {
 }
 try {
   db.ensureIndex({ fieldName: 'url', unique: true });
-} catch (e) {
-  console.error(
+} catch (error: unknown) {
+  handleErrorAndLog(
+    error,
     'Failed to build a unique index of Repository URLs. Please check your database file for duplicate entries or delete the duplicate through the UI and restart. ',
-    e,
   );
 }
 

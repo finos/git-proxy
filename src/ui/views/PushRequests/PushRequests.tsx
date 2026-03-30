@@ -1,3 +1,19 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React, { useState } from 'react';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
@@ -23,43 +39,27 @@ const Dashboard: React.FC = () => {
     {
       tabName: 'Pending',
       tabIcon: Visibility,
-      tabContent: (
-        <PushesTable blocked={true} authorised={false} rejected={false} canceled={false} />
-      ),
+      tabContent: <PushesTable blocked handleError={handlePushTableError} />,
     },
     {
       tabName: 'Approved',
       tabIcon: CheckCircle,
-      tabContent: <PushesTable authorised={true} handleError={handlePushTableError} />,
+      tabContent: <PushesTable authorised handleError={handlePushTableError} />,
     },
     {
       tabName: 'Canceled',
       tabIcon: Cancel,
-      tabContent: (
-        <PushesTable
-          authorised={false}
-          rejected={false}
-          canceled={true}
-          handleError={handlePushTableError}
-        />
-      ),
+      tabContent: <PushesTable canceled handleError={handlePushTableError} />,
     },
     {
       tabName: 'Rejected',
       tabIcon: Block,
-      tabContent: (
-        <PushesTable
-          authorised={false}
-          rejected={true}
-          canceled={false}
-          handleError={handlePushTableError}
-        />
-      ),
+      tabContent: <PushesTable rejected handleError={handlePushTableError} />,
     },
     {
       tabName: 'Error',
       tabIcon: Error,
-      tabContent: <PushesTable error={true} handleError={handlePushTableError} />,
+      tabContent: <PushesTable errored handleError={handlePushTableError} />,
     },
   ];
 

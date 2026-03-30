@@ -1,8 +1,25 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import * as preprocessor from '../src/proxy/processors/pre-processor/parseAction';
 import * as db from '../src/db';
+import { Request } from 'express';
 
-let testRepo: any = null;
+let testRepo: db.Repo | null = null;
 
 const TEST_REPO = {
   url: 'https://github.com/finos/git-proxy.git',
@@ -31,7 +48,7 @@ describe('Pre-processor: parseAction', () => {
       originalUrl: '/github.com/finos/git-proxy.git/git-upload-pack',
       method: 'GET',
       headers: { 'content-type': 'application/x-git-upload-pack-request' },
-    };
+    } as Request;
 
     const action = await preprocessor.exec(req);
     expect(action.timestamp).toBeGreaterThan(0);
@@ -45,7 +62,7 @@ describe('Pre-processor: parseAction', () => {
       originalUrl: '/finos/git-proxy.git/git-upload-pack',
       method: 'GET',
       headers: { 'content-type': 'application/x-git-upload-pack-request' },
-    };
+    } as Request;
 
     const action = await preprocessor.exec(req);
     expect(action.timestamp).toBeGreaterThan(0);
@@ -59,7 +76,7 @@ describe('Pre-processor: parseAction', () => {
       originalUrl: '/github.com/finos/git-proxy.git/git-receive-pack',
       method: 'POST',
       headers: { 'content-type': 'application/x-git-receive-pack-request' },
-    };
+    } as Request;
 
     const action = await preprocessor.exec(req);
     expect(action.timestamp).toBeGreaterThan(0);
@@ -73,7 +90,7 @@ describe('Pre-processor: parseAction', () => {
       originalUrl: '/finos/git-proxy.git/git-receive-pack',
       method: 'POST',
       headers: { 'content-type': 'application/x-git-receive-pack-request' },
-    };
+    } as Request;
 
     const action = await preprocessor.exec(req);
     expect(action.timestamp).toBeGreaterThan(0);

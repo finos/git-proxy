@@ -1,3 +1,19 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import * as fs from 'fs';
 import * as path from 'path';
 import axios from 'axios';
@@ -8,6 +24,7 @@ import envPaths from 'env-paths';
 import { GitProxyConfig } from './generated/config';
 import { Configuration, ConfigurationSource, FileSource, HttpSource, GitSource } from './types';
 import { loadConfig, validateConfig } from './validators';
+import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
 
 const execFileAsync = promisify(execFile);
 
@@ -21,7 +38,7 @@ function isValidPath(filePath: string): boolean {
   try {
     path.resolve(filePath);
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     return false;
   }
 }
@@ -80,8 +97,8 @@ export class ConfigLoader extends EventEmitter {
         fs.mkdirSync(this.cacheDir, { recursive: true });
         console.log(`Created cache directory at ${this.cacheDir}`);
         return true;
-      } catch (err) {
-        console.error('Failed to create cache directory:', err);
+      } catch (error: unknown) {
+        handleErrorAndLog(error, 'Failed to create cache directory');
         return false;
       }
     }
@@ -154,8 +171,8 @@ export class ConfigLoader extends EventEmitter {
           try {
             console.log(`Loading configuration from ${source.type} source`);
             return await this.loadFromSource(source);
-          } catch (error: any) {
-            console.error(`Error loading from ${source.type} source:`, error.message);
+          } catch (error: unknown) {
+            handleErrorAndLog(error, `Error loading from ${source.type} source`);
             return null;
           }
         }),
@@ -197,8 +214,8 @@ export class ConfigLoader extends EventEmitter {
       } else {
         console.log('Configuration has not changed, no update needed');
       }
-    } catch (error: any) {
-      console.error('Error reloading configuration:', error);
+    } catch (error: unknown) {
+      handleErrorAndLog(error, 'Error reloading configuration');
       this.emit('configurationError', error);
     } finally {
       this.isReloading = false;
@@ -297,18 +314,16 @@ export class ConfigLoader extends EventEmitter {
       try {
         await execFileAsync('git', ['clone', source.repository, repoDir], execOptions);
         console.log('Repository cloned successfully');
-      } catch (error: any) {
-        console.error('Failed to clone repository:', error.message);
-        throw new Error(`Failed to clone repository: ${error.message}`);
+      } catch (error: unknown) {
+        handleErrorAndThrow(error, 'Failed to clone repository');
       }
     } else {
       console.log(`Pulling latest changes from ${source.repository}`);
       try {
         await execFileAsync('git', ['pull'], { cwd: repoDir });
         console.log('Repository pulled successfully');
-      } catch (error: any) {
-        console.error('Failed to pull repository:', error.message);
-        throw new Error(`Failed to pull repository: ${error.message}`);
+      } catch (error: unknown) {
+        handleErrorAndThrow(error, 'Failed to pull repository');
       }
     }
 
@@ -318,9 +333,8 @@ export class ConfigLoader extends EventEmitter {
       try {
         await execFileAsync('git', ['checkout', source.branch], { cwd: repoDir });
         console.log(`Branch ${source.branch} checked out successfully`);
-      } catch (error: any) {
-        console.error(`Failed to checkout branch ${source.branch}:`, error.message);
-        throw new Error(`Failed to checkout branch ${source.branch}: ${error.message}`);
+      } catch (error: unknown) {
+        handleErrorAndThrow(error, `Failed to checkout branch ${source.branch}`);
       }
     }
 

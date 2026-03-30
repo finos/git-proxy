@@ -1,14 +1,33 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { spawnSync } from 'child_process';
+import { Request } from 'express';
 import fs from 'fs';
 import path from 'path';
-import { Action, Step } from '../../actions';
-import { spawnSync } from 'child_process';
 
-const sanitizeInput = (_req: any, action: Action): string => {
+import { Action, Step } from '../../actions';
+import { getErrorMessage } from '../../../utils/errors';
+
+const sanitizeInput = (_req: Request, action: Action): string => {
   return `${action.commitFrom} ${action.commitTo} ${action.branch} \n`;
 };
 
 const exec = async (
-  req: any,
+  req: Request,
   action: Action,
   hookFilePath: string = './hooks/pre-receive.sh',
 ): Promise<Action> => {
@@ -63,16 +82,16 @@ const exec = async (
       step.log('Push requires manual approval.');
       action.addStep(step);
     } else {
-      step.error = true;
       step.log(`Unexpected hook status: ${status}`);
       step.setError(stdoutTrimmed || 'Unknown pre-receive hook error.');
       action.addStep(step);
     }
     return action;
-  } catch (error: any) {
-    step.error = true;
+  } catch (error: unknown) {
+    const msg = getErrorMessage(error);
+    const stdErrSuffix = stderrTrimmed ? `\nHook stderr: ${stderrTrimmed}` : '';
     step.log('Push failed, pre-receive hook returned an error.');
-    step.setError(`Hook execution error: ${stderrTrimmed || error.message}`);
+    step.setError(`Hook execution error: ${msg}${stdErrSuffix}`);
     action.addStep(step);
     return action;
   }
