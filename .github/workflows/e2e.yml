@@ -17,6 +17,8 @@ jobs:
     strategy:
       matrix:
         suite: [vitest, cypress]
+    env:
+      BUILDX_CACHE_SCOPE: ${{ matrix.suite }}-build
 
     steps:
       - name: Checkout code
@@ -24,6 +26,11 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d91f340399fb2345e3e45f5461e116862b08261d
+        with:
+          install: true
+
+      - name: Expose GitHub Runtime for Docker Cache
+        uses: crazy-max/ghaction-github-runtime@3cb05d89e1f492524af3d41a1c98c83bc3025124 # v3
 
       - name: Set up Docker Compose
         uses: docker/setup-compose-action@e29e0ecd235838be5f2e823f8f512a72dc55f662
@@ -44,7 +51,7 @@ jobs:
           git config --global init.defaultBranch main
 
       - name: Build and start services with Docker Compose
-        run: docker compose up -d --build --wait || true
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build --wait
 
       - name: Debug service state
         if: failure()
