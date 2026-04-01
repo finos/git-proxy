@@ -506,6 +506,90 @@
           "required": ["type", "enabled", "oidcConfig"]
         },
         {
+          "title": "LDAP Auth Config",
+          "description": "Configuration for generic LDAP authentication using ldapts.",
+          "properties": {
+            "type": { "type": "string", "const": "ldap" },
+            "enabled": { "type": "boolean" },
+            "ldapConfig": {
+              "type": "object",
+              "description": "LDAP connection and search configuration.",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "description": "LDAP server URL, e.g. `ldap://ldap.example.com` or `ldaps://ldap.example.com`."
+                },
+                "bindDN": {
+                  "type": "string",
+                  "description": "DN of the service account used to search for users, e.g. `cn=admin,dc=example,dc=com`."
+                },
+                "bindPassword": {
+                  "type": "string",
+                  "description": "Password for the service account."
+                },
+                "searchBase": {
+                  "type": "string",
+                  "description": "Base DN for user searches, e.g. `ou=people,dc=example,dc=com`."
+                },
+                "searchFilter": {
+                  "type": "string",
+                  "description": "LDAP search filter template. Use `{{username}}` as a placeholder for the login username. e.g. `(uid={{username}})`."
+                },
+                "userGroupDN": {
+                  "type": "string",
+                  "description": "DN of the group a user must belong to in order to log in."
+                },
+                "adminGroupDN": {
+                  "type": "string",
+                  "description": "DN of the admin group. Members of this group are granted admin privileges."
+                },
+                "groupSearchBase": {
+                  "type": "string",
+                  "description": "Base DN for group membership searches. If omitted, each group's own DN (`userGroupDN` or `adminGroupDN`) is used as the search base."
+                },
+                "groupSearchFilter": {
+                  "type": "string",
+                  "description": "LDAP filter for group membership checks. Use `{{dn}}` as a placeholder for the user's DN. Defaults to `(member={{dn}})`."
+                },
+                "usernameAttribute": {
+                  "type": "string",
+                  "description": "LDAP attribute to use as the username. Defaults to `uid`."
+                },
+                "emailAttribute": {
+                  "type": "string",
+                  "description": "LDAP attribute for the user's email. Defaults to `mail`."
+                },
+                "displayNameAttribute": {
+                  "type": "string",
+                  "description": "LDAP attribute for the user's display name. Defaults to `cn`."
+                },
+                "titleAttribute": {
+                  "type": "string",
+                  "description": "LDAP attribute for the user's title. Defaults to `title`."
+                },
+                "starttls": {
+                  "type": "boolean",
+                  "description": "Use STARTTLS to upgrade an ldap:// connection to TLS. Defaults to false."
+                },
+                "tlsOptions": {
+                  "type": "object",
+                  "description": "Node.js TLS options passed to the ldapts client (e.g. `rejectUnauthorized`, `ca`)."
+                }
+              },
+              "required": [
+                "url",
+                "bindDN",
+                "bindPassword",
+                "searchBase",
+                "searchFilter",
+                "userGroupDN",
+                "adminGroupDN"
+              ]
+            }
+          },
+          "required": ["type", "enabled", "ldapConfig"]
+        },
+        {
           "title": "JWT Auth Config",
           "description": "Configuration for JWT authentication.",
           "properties": {
