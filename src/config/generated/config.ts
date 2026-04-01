@@ -190,6 +190,10 @@ export interface AuthenticationElement {
    * Additional JWT configuration.
    */
   jwtConfig?: JwtConfig;
+  /**
+   * LDAP connection and search configuration.
+   */
+  ldapConfig?: LDAPConfig;
   [property: string]: any;
 }
 
@@ -242,6 +246,92 @@ export interface RoleMapping {
 }
 
 /**
+ * LDAP connection and search configuration.
+ */
+export interface LDAPConfig {
+  /**
+   * DN of the admin group. Members of this group are granted admin privileges.
+   */
+  adminGroupDN: string;
+  /**
+   * DN of the service account used to search for users, e.g. `cn=admin,dc=example,dc=com`.
+   */
+  bindDN: string;
+  /**
+   * Password for the service account.
+   */
+  bindPassword: string;
+  /**
+   * LDAP client connection timeout in milliseconds.
+   */
+  connectTimeout?: number;
+  /**
+   * LDAP attribute for the user's display name. Defaults to `cn`.
+   */
+  displayNameAttribute?: string;
+  /**
+   * LDAP attribute for the user's email. Defaults to `mail`.
+   */
+  emailAttribute?: string;
+  /**
+   * Base DN for group membership searches. If omitted, each group's own DN (`userGroupDN` or
+   * `adminGroupDN`) is used as the search base.
+   */
+  groupSearchBase?: string;
+  /**
+   * LDAP filter for group membership checks. Use `{{dn}}` as a placeholder for the user's DN
+   * and `{{username}}` as a placeholder for the login username. Defaults to `(member={{dn}})`.
+   */
+  groupSearchFilter?: string;
+  /**
+   * Base DN for user searches, e.g. `ou=people,dc=example,dc=com`.
+   */
+  searchBase: string;
+  /**
+   * LDAP search filter template. Use `{{username}}` as a placeholder for the login username.
+   * e.g. `(uid={{username}})`.
+   */
+  searchFilter: string;
+  /**
+   * Maximum number of LDAP search entries to return.
+   */
+  searchSizeLimit?: number;
+  /**
+   * LDAP search time limit in seconds.
+   */
+  searchTimeLimit?: number;
+  /**
+   * Use STARTTLS to upgrade an ldap:// connection to TLS. Defaults to false.
+   */
+  starttls?: boolean;
+  /**
+   * LDAP client operation timeout in milliseconds.
+   */
+  timeout?: number;
+  /**
+   * LDAP attribute for the user's title. Defaults to `title`.
+   */
+  titleAttribute?: string;
+  /**
+   * Node.js TLS options passed to the ldapts client (e.g. `rejectUnauthorized`, `ca`).
+   */
+  tlsOptions?: { [key: string]: any };
+  /**
+   * LDAP server URL, e.g. `ldap://ldap.example.com` or `ldaps://ldap.example.com`.
+   */
+  url: string;
+  /**
+   * DN of the group a user must belong to in order to log in.
+   */
+  userGroupDN: string;
+  /**
+   * LDAP attribute to use as the username. Defaults to `uid`.
+   */
+  usernameAttribute?: string;
+  [property: string]: any;
+}
+
+/**
  * Additional OIDC configuration.
  */
 export interface OidcConfig {
@@ -256,6 +346,7 @@ export interface OidcConfig {
 export enum AuthenticationElementType {
   ActiveDirectory = 'ActiveDirectory',
   Jwt = 'jwt',
+  LDAP = 'ldap',
   Local = 'local',
   Openidconnect = 'openidconnect',
 }
@@ -811,6 +902,7 @@ const typeMap: any = {
       { json: 'userGroup', js: 'userGroup', typ: u(undefined, '') },
       { json: 'oidcConfig', js: 'oidcConfig', typ: u(undefined, r('OidcConfig')) },
       { json: 'jwtConfig', js: 'jwtConfig', typ: u(undefined, r('JwtConfig')) },
+      { json: 'ldapConfig', js: 'ldapConfig', typ: u(undefined, r('LDAPConfig')) },
     ],
     'any',
   ),
@@ -834,6 +926,30 @@ const typeMap: any = {
     'any',
   ),
   RoleMapping: o([{ json: 'admin', js: 'admin', typ: u(undefined, m('any')) }], 'any'),
+  LDAPConfig: o(
+    [
+      { json: 'adminGroupDN', js: 'adminGroupDN', typ: '' },
+      { json: 'bindDN', js: 'bindDN', typ: '' },
+      { json: 'bindPassword', js: 'bindPassword', typ: '' },
+      { json: 'connectTimeout', js: 'connectTimeout', typ: u(undefined, 3.14) },
+      { json: 'displayNameAttribute', js: 'displayNameAttribute', typ: u(undefined, '') },
+      { json: 'emailAttribute', js: 'emailAttribute', typ: u(undefined, '') },
+      { json: 'groupSearchBase', js: 'groupSearchBase', typ: u(undefined, '') },
+      { json: 'groupSearchFilter', js: 'groupSearchFilter', typ: u(undefined, '') },
+      { json: 'searchBase', js: 'searchBase', typ: '' },
+      { json: 'searchFilter', js: 'searchFilter', typ: '' },
+      { json: 'searchSizeLimit', js: 'searchSizeLimit', typ: u(undefined, 3.14) },
+      { json: 'searchTimeLimit', js: 'searchTimeLimit', typ: u(undefined, 3.14) },
+      { json: 'starttls', js: 'starttls', typ: u(undefined, true) },
+      { json: 'timeout', js: 'timeout', typ: u(undefined, 3.14) },
+      { json: 'titleAttribute', js: 'titleAttribute', typ: u(undefined, '') },
+      { json: 'tlsOptions', js: 'tlsOptions', typ: u(undefined, m('any')) },
+      { json: 'url', js: 'url', typ: '' },
+      { json: 'userGroupDN', js: 'userGroupDN', typ: '' },
+      { json: 'usernameAttribute', js: 'usernameAttribute', typ: u(undefined, '') },
+    ],
+    'any',
+  ),
   OidcConfig: o(
     [
       { json: 'callbackURL', js: 'callbackURL', typ: '' },
@@ -981,6 +1097,6 @@ const typeMap: any = {
     ],
     'any',
   ),
-  AuthenticationElementType: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
+  AuthenticationElementType: ['ActiveDirectory', 'jwt', 'ldap', 'local', 'openidconnect'],
   DatabaseType: ['fs', 'mongo'],
 };
