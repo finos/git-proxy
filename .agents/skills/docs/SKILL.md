@@ -1,3 +1,8 @@
+---
+name: docs
+description: Update existing project documentation to reflect the current state of the branch
+---
+
 Update existing project documentation to reflect the current state of the branch.
 
 Read `AGENTS.md` first. It is the canonical project guide for this repository.
@@ -6,7 +11,7 @@ Steps:
 
 1. Run `git diff main...HEAD --stat` and `git log main..HEAD --oneline` to understand what changed on this branch
 2. Read the changed files to understand what was added, removed, or modified
-3. Read the current documentation files: `README.md`, `docs/Architecture.md`, `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`, `.cursor/rules/00-core.mdc`
+3. Read the current documentation files: `README.md`, `docs/Architecture.md`, `AGENTS.md`, `CLAUDE.md`, `.github/copilot-instructions.md`
 4. Identify documentation that is now outdated or missing based on the branch changes
 5. Apply minimal, targeted edits to bring docs in line with the code
 
@@ -17,7 +22,6 @@ What to update:
 - **AGENTS.md** — canonical project architecture, invariants, testing commands, and AI-agent workflow guidance
 - **CLAUDE.md** — Claude-specific entry point that should remain aligned with `AGENTS.md`
 - **.github/copilot-instructions.md** — short Copilot-compatible summary of the highest-priority repo rules
-- **.cursor/rules/00-core.mdc** — Cursor-compatible summary that should stay aligned with `AGENTS.md`
 
 Principles:
 

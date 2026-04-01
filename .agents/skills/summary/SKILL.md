@@ -1,10 +1,15 @@
+---
+name: summary
+description: Generate a concise implementation summary for a PR description
+---
+
 Generate a concise implementation summary for a PR description.
 
 Read `AGENTS.md` first. It is the canonical project guide for this repository.
 
 Steps:
 
-1. First, run the `/docs` command to ensure documentation is up to date with the branch changes
+1. First, run the `/docs` skill to ensure documentation is up to date with the branch changes
 2. Run `git diff main...HEAD --stat` and `git log main..HEAD --oneline` to understand all changes on this branch
 3. Read the changed files to understand what was implemented and why
 4. Get the current branch name: `git rev-parse --abbrev-ref HEAD`

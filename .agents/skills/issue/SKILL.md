@@ -1,3 +1,8 @@
+---
+name: issue
+description: Create a GitHub issue markdown file from a bug report, feature request, or discussion context
+---
+
 Create a GitHub issue markdown file from the details provided by the user.
 
 Read `AGENTS.md` first. It is the canonical project guide for this repository.

@@ -1,3 +1,8 @@
+---
+name: address-review
+description: Address review comments on a GitHub pull request
+---
+
 Address review comments on a GitHub pull request.
 
 Read `AGENTS.md` first. It is the canonical project guide for this repository.

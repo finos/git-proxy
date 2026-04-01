@@ -1,3 +1,8 @@
+---
+name: lint
+description: Check and fix code formatting using ESLint and Prettier
+---
+
 Check and fix code formatting using ESLint and Prettier.
 
 Read `AGENTS.md` first. It is the canonical project guide for this repository.

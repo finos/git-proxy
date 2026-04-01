@@ -1,3 +1,8 @@
+---
+name: commit
+description: Create a conventional commit for the current staged/unstaged changes
+---
+
 Create a git commit for the current staged/unstaged changes using Conventional Commits.
 
 Read `AGENTS.md` first. It is the canonical project guide for this repository.

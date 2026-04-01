@@ -1,3 +1,8 @@
+---
+name: implement
+description: Implement a GitHub issue end-to-end: fetch, plan, code with approval, commit incrementally, and generate a PR summary
+---
+
 Implement a GitHub issue end-to-end: fetch the issue, plan, code with approval, commit incrementally, and generate a PR summary.
 
 Read `AGENTS.md` first. It is the canonical project guide for this repository.
