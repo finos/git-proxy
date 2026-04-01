@@ -1,5 +1,7 @@
 Implement a GitHub issue end-to-end: fetch the issue, plan, code with approval, commit incrementally, and generate a PR summary.
 
+Read `AGENTS.md` first. It is the canonical project guide for this repository.
+
 The argument is an issue number (e.g. `/implement 42`) or a full GitHub URL (e.g. `/implement https://github.com/finos/git-proxy/issues/42`). If no argument is given, ask the user.
 
 ## Phase 1: Fetch issue

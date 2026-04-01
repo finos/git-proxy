@@ -1,5 +1,7 @@
 Check and fix code formatting using ESLint and Prettier.
 
+Read `AGENTS.md` first. It is the canonical project guide for this repository.
+
 Steps:
 
 1. Run `npm run format:check` to see if there are formatting violations

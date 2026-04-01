@@ -1,0 +1,14 @@
+---
+description: Core GitProxy repository rules
+alwaysApply: true
+---
+
+# GitProxy Core Rules
+
+`AGENTS.md` is the canonical project guide for this repository. Read it and apply it as the source of truth.
+
+- Preserve the chain-of-processors architecture and separation between proxy, service, config, and UI.
+- Never bypass approval gating, `blockForAuth`, waiting-authorization checks, or audit logging.
+- Keep processors idempotent, operate through the `Action` object, and respect chain ordering dependencies.
+- For config changes, update schema validation, preserve backward-compatible defaults, and avoid silent security regressions.
+- Validate changes with the repo commands from `AGENTS.md` and prefer targeted tests when possible.

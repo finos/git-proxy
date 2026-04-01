@@ -1,5 +1,7 @@
 Address review comments on a GitHub pull request.
 
+Read `AGENTS.md` first. It is the canonical project guide for this repository.
+
 The argument is a PR number (e.g. `/address-review 98`). If no number is given, ask the user.
 
 ## Phase 1: Fetch and display comments

@@ -1,5 +1,7 @@
 Create a GitHub issue markdown file from the details provided by the user.
 
+Read `AGENTS.md` first. It is the canonical project guide for this repository.
+
 The user will describe a bug, feature request, or discussion context (e.g. Slack conversations, error logs, reproduction steps). Your job is to turn that into a well-structured issue and save it to `plans/`.
 
 Steps:

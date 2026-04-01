@@ -1,5 +1,7 @@
 Generate a concise implementation summary for a PR description.
 
+Read `AGENTS.md` first. It is the canonical project guide for this repository.
+
 Steps:
 
 1. First, run the `/docs` command to ensure documentation is up to date with the branch changes

@@ -1,5 +1,7 @@
 Create a git commit for the current staged/unstaged changes using Conventional Commits.
 
+Read `AGENTS.md` first. It is the canonical project guide for this repository.
+
 Rules:
 
 1. Run `git status` and `git diff` to understand what changed
