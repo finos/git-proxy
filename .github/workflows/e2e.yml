@@ -88,3 +88,18 @@ jobs:
       - name: Stop services
         if: always()
         run: docker compose down -v
+
+  results:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    name: e2e
+    needs: [e2e]
+    steps:
+      - name: Check e2e results
+        run: |
+          result="${{ needs.e2e.result }}"
+          if [[ "$result" == "success" || "$result" == "skipped" ]]; then
+            exit 0
+          else
+            exit 1
+          fi
