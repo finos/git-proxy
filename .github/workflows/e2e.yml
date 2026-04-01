@@ -14,6 +14,9 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        suite: [vitest, cypress]
 
     steps:
       - name: Checkout code
@@ -44,15 +47,17 @@ jobs:
         run: docker compose up -d --build --wait || true
 
       - name: Debug service state
-        if: always()
+        if: failure()
         run: |
           docker compose ps
           docker compose logs
 
-      - name: Run E2E tests
+      - name: Run vitest E2E tests
+        if: matrix.suite == 'vitest'
         run: npm run test:e2e
 
       - name: Run Cypress E2E tests
+        if: matrix.suite == 'cypress'
         run: npm run cypress:run:docker
         timeout-minutes: 10
         env:
@@ -67,7 +72,7 @@ jobs:
 
       - name: Upload Cypress screenshots on failure
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
-        if: failure()
+        if: failure() && matrix.suite == 'cypress'
         with:
           name: cypress-screenshots
           path: cypress/screenshots
