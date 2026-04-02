@@ -43,7 +43,7 @@ jobs:
           mongodb-version: ${{ matrix.mongodb-version }}
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-fund
 
       # for now only check the types of the server
       # tsconfig isn't quite set up right to respect what vite accepts
@@ -110,7 +110,7 @@ jobs:
           reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-fund
 
       - name: Check Types (Server)
         run: npm run check-types:server
