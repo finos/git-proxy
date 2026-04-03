@@ -10,7 +10,7 @@ GitProxy has several main components:
 
 - HTTP Proxy Express app (`/src/proxy`): The actual proxy server for Git. Git operations performed by users are intercepted here, processed by various Express middleware (such as URL rewriting) and applies the relevant **chain** of actions to the payload. Customized functionality in the form of **plugins** are inserted and added to this chain as well.
   - Chain: A set of **processors** that are applied to an action (i.e. a `git push` operation) before requesting review from a user with permission to approve pushes
-  - Processor: AKA `Step`. A specific step in the chain where certain rules are applied. See the [list of default processors](./Processors.md) for more details.`
+  - Processor: AKA `Step`. A specific step in the chain where certain rules are applied. See the [list of default processors](./processors.md) for more details.`
   - Plugin: A custom processor that can be added externally to extend GitProxy's default policies. See the [plugin guide](https://git-proxy.finos.org/docs/development/plugins) for more details.
 - Backend-for-frontend (BFF) Service API, Express app (`/src/service`): Handles UI requests, user authentication to GitProxy (not to Git), database operations and some of the logic for rejection/approval. Runs by default on port `8080`, and can be configured with the `GIT_PROXY_UI_HOST` and `GIT_PROXY_UI_PORT` environment variables.
   - Passport: The [library](https://www.passportjs.org/) used to authenticate to the GitProxy API (not the proxy itself - this depends on the Git `user.email`). Supports multiple authentication methods by default ([Local](#local), [AD](#activedirectory), [OIDC](#openid-connect)).
@@ -53,9 +53,9 @@ Don't forget to save and update the attached .drawio (XML)! -->
 Three types of policies can be applied to incoming pushes:
 
 - Default policies: These are already present in the GitProxy pull/push chain and require modifying source code to change their behaviour.
-  - For example, [`checkUserPushPermission`](./Processors.md#checkuserpushpermission) which simply checks if the pusher's email exists in the GitProxy database, and if their user is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
+  - For example, [`checkUserPushPermission`](./processors.md#checkuserpushpermission) which simply checks if the pusher's email exists in the GitProxy database, and if their user is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
 - Configurable policies: These are policies that can be easily configured through the GitProxy config (`proxy.config.json` or a custom file).
-  - For example, [`checkCommitMessages`](./Processors.md#checkcommitmessages) which reads the configuration and matches the string patterns provided with the commit messages in the push in order to block it.
+  - For example, [`checkCommitMessages`](./processors.md#checkcommitmessages) which reads the configuration and matches the string patterns provided with the commit messages in the push in order to block it.
 - Custom policies:
   - Plugins: Push/pull plugins provide more flexibility for implementing an organization's rules. For more information, see the [guide on writing your own plugins](https://git-proxy.finos.org/docs/development/plugins).
   - Processors: Custom logic may require specific data within a push that isn't available at the end of the chain (where plugins are executed). In this case, the appropriate solution is to write a processor and add it to the correct place in the chain.
@@ -64,7 +64,7 @@ Three types of policies can be applied to incoming pushes:
 
 ### Pre-processors
 
-Pre-processors run before executing the chain. Currently, only executes [`parseAction`](./Processors.md#parseaction), which is in charge of classifying requests as push/pull/default and creating the `Action` object used by the chain.
+Pre-processors run before executing the chain. Currently, only executes [`parseAction`](./processors.md#parseaction), which is in charge of classifying requests as push/pull/default and creating the `Action` object used by the chain.
 
 ### Action Chains
 
@@ -74,27 +74,27 @@ Action chains are a list of processors that a Git operation goes through before 
 
 Executed when a user makes a `git push` to GitProxy. These are the actions in `pushActionChain`, by order of execution:
 
-- [`parsePush`](./Processors.md#parsepush)
-- [`checkEmptyBranch`](./Processors.md#checkemptybranch)
-- [`checkRepoInAuthorisedList`](./Processors.md#checkrepoinauthorisedlist)
-- [`checkCommitMessages`](./Processors.md#checkcommitmessages)
-- [`checkAuthorEmails`](./Processors.md#checkauthoremails)
-- [`checkUserPushPermission`](./Processors.md#checkuserpushpermission)
-- [`pullRemote`](./Processors.md#pullremote)
-- [`writePack`](./Processors.md#writepack)
-- [`checkHiddenCommits`](./Processors.md#checkhiddencommits)
-- [`checkIfWaitingAuth`](./Processors.md#checkifwaitingauth)
-- [`preReceive`](./Processors.md#prereceive)
-- [`getDiff`](./Processors.md#getdiff)
-- [`gitleaks`](./Processors.md#gitleaks)
-- [`scanDiff`](./Processors.md#scandiff)
-- [`blockForAuth`](./Processors.md#blockforauth)
+- [`parsePush`](./processors.md#parsepush)
+- [`checkEmptyBranch`](./processors.md#checkemptybranch)
+- [`checkRepoInAuthorisedList`](./processors.md#checkrepoinauthorisedlist)
+- [`checkCommitMessages`](./processors.md#checkcommitmessages)
+- [`checkAuthorEmails`](./processors.md#checkauthoremails)
+- [`checkUserPushPermission`](./processors.md#checkuserpushpermission)
+- [`pullRemote`](./processors.md#pullremote)
+- [`writePack`](./processors.md#writepack)
+- [`checkHiddenCommits`](./processors.md#checkhiddencommits)
+- [`checkIfWaitingAuth`](./processors.md#checkifwaitingauth)
+- [`preReceive`](./processors.md#prereceive)
+- [`getDiff`](./processors.md#getdiff)
+- [`gitleaks`](./processors.md#gitleaks)
+- [`scanDiff`](./processors.md#scandiff)
+- [`blockForAuth`](./processors.md#blockforauth)
 
 #### Pull action chain
 
 Executed when a user makes a `git clone` or `git pull` to GitProxy:
 
-- [`checkRepoInAuthorisedList`](./Processors.md#checkrepoinauthorisedlist)
+- [`checkRepoInAuthorisedList`](./processors.md#checkrepoinauthorisedlist)
 
 At present, the pull action chain is only checking that the repository is configured in GitProxy. This ensures it will block pull requests for unknown repositories.
 
@@ -102,17 +102,17 @@ At present, the pull action chain is only checking that the repository is config
 
 This chain is executed when making any operation other than a `git push` or `git pull`.
 
-- [`checkRepoInAuthorisedList`](./Processors.md#checkrepoinauthorisedlist)
+- [`checkRepoInAuthorisedList`](./processors.md#checkrepoinauthorisedlist)
 
 The default action chain, much like the pull chain, is only checking that the repository is configured in GitProxy. This ensures it will block all git client requests for unknown repositories.
 
 ### Post-processors
 
-After processors in the chain are done executing, [`audit`](./Processors.md#audit) is called to store the action along with all of its execution steps in the database for auditing purposes.
+After processors in the chain are done executing, [`audit`](./processors.md#audit) is called to store the action along with all of its execution steps in the database for auditing purposes.
 
-If [`pullRemote`](./Processors.md#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](./Processors.md#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes involving the same SHA.
+If [`pullRemote`](./processors.md#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](./processors.md#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes involving the same SHA.
 
-Finally, if the action was auto-approved or auto-rejected as a result of running [`preReceive`](./Processors.md#prereceive), it will attempt to auto-approve or auto-reject it.
+Finally, if the action was auto-approved or auto-rejected as a result of running [`preReceive`](./processors.md#prereceive), it will attempt to auto-approve or auto-reject it.
 
 ### Authentication
 
@@ -224,7 +224,7 @@ Currently supports the following out-of-the-box:
 
 #### `commitConfig`
 
-Used in [`checkCommitMessages`](./Processors.md#checkcommitmessages), [`checkAuthorEmails`](./Processors.md#checkauthoremails) and [`scanDiff`](./Processors.md#scandiff) processors to block pushes depending on the given rules.
+Used in [`checkCommitMessages`](./processors.md#checkcommitmessages), [`checkAuthorEmails`](./processors.md#checkauthoremails) and [`scanDiff`](./processors.md#scandiff) processors to block pushes depending on the given rules.
 
 By default, no rules are applied.
 
