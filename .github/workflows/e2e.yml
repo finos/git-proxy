@@ -14,6 +14,11 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        suite: [vitest, cypress]
+    env:
+      BUILDX_CACHE_SCOPE: ${{ matrix.suite }}-build
 
     steps:
       - name: Checkout code
@@ -21,6 +26,11 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d91f340399fb2345e3e45f5461e116862b08261d
+        with:
+          install: true
+
+      - name: Expose GitHub Runtime for Docker Cache
+        uses: crazy-max/ghaction-github-runtime@3cb05d89e1f492524af3d41a1c98c83bc3025124 # v3
 
       - name: Set up Docker Compose
         uses: docker/setup-compose-action@e29e0ecd235838be5f2e823f8f512a72dc55f662
@@ -41,18 +51,20 @@ jobs:
           git config --global init.defaultBranch main
 
       - name: Build and start services with Docker Compose
-        run: docker compose up -d --build --wait || true
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build --wait
 
       - name: Debug service state
-        if: always()
+        if: failure()
         run: |
           docker compose ps
           docker compose logs
 
-      - name: Run E2E tests
+      - name: Run vitest E2E tests
+        if: matrix.suite == 'vitest'
         run: npm run test:e2e
 
       - name: Run Cypress E2E tests
+        if: matrix.suite == 'cypress'
         run: npm run cypress:run:docker
         timeout-minutes: 10
         env:
@@ -67,7 +79,7 @@ jobs:
 
       - name: Upload Cypress screenshots on failure
         uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
-        if: failure()
+        if: failure() && matrix.suite == 'cypress'
         with:
           name: cypress-screenshots
           path: cypress/screenshots
@@ -76,3 +88,18 @@ jobs:
       - name: Stop services
         if: always()
         run: docker compose down -v
+
+  results:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    name: e2e
+    needs: [e2e]
+    steps:
+      - name: Check e2e results
+        run: |
+          result="${{ needs.e2e.result }}"
+          if [[ "$result" == "success" || "$result" == "skipped" ]]; then
+            exit 0
+          else
+            exit 1
+          fi
