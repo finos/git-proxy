@@ -37,7 +37,7 @@ module.exports = {
       ],
     },
     'deployment',
-    'Upgrading to v2',
+    'upgrading-to-v2',
     {
       type: 'category',
       label: 'Configuration',
