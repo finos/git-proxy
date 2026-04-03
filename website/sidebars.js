@@ -64,7 +64,7 @@ module.exports = {
       },
       collapsible: true,
       collapsed: false,
-      items: ['architecture/Architecture', 'architecture/Processors'],
+      items: ['architecture/architecture', 'architecture/processors'],
     },
     {
       type: 'category',
