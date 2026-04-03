@@ -13,14 +13,49 @@ The argument is a PR number (e.g. `/address-review 98`). If no number is given, 
 
 1. Save the current branch name: `git rev-parse --abbrev-ref HEAD`
 2. Checkout the PR branch: `gh pr checkout <number> --detach`
-3. Fetch all review comments:
+3. Fetch review data (pick one):
+
+   **REST (simple):** Lists inline review comments; it does **not** include per-thread `resolved` status, so you cannot rely on it alone to skip resolved threads.
 
 ```
 gh api repos/{owner}/{repo}/pulls/<number>/comments --paginate
 ```
 
-4. Group comments by file. For each comment, extract: `id`, `path`, `line` (or `original_line`), `body`, `user.login`, `in_reply_to_id` (to detect threads).
-5. Filter out threads that are already resolved or where the last message is from the PR author (likely already addressed).
+**GraphQL (for filtering resolved threads):** Returns `reviewThreads` with `isResolved`, `isOutdated`, paths/lines, and nested comments—use this when step 5 must honor “already resolved.” Paginate with `cursor` (use `null` or omit for the first page; then pass `reviewThreads.pageInfo.endCursor` while `hasNextPage` is true).
+
+```
+gh api graphql -f query='
+query($owner:String!, $repo:String!, $number:Int!, $cursor:String) {
+  repository(owner:$owner, name:$repo) {
+    pullRequest(number:$number) {
+      reviewThreads(first:100, after:$cursor) {
+        pageInfo { hasNextPage endCursor }
+        nodes {
+          isResolved
+          isOutdated
+          path
+          line
+          originalLine
+          comments(first:100) {
+            nodes {
+              databaseId
+              body
+              author { login }
+              createdAt
+              url
+            }
+          }
+        }
+      }
+    }
+  }
+}' -F owner={owner} -F repo={repo} -F number=<number> -F cursor=<cursor>
+```
+
+First page: pass JSON `null` for `cursor` (see `gh help api` / your shell for how `gh` expects null). Later pages: set `cursor` to the previous response’s `reviewThreads.pageInfo.endCursor` until `hasNextPage` is false.
+
+4. Group comments by file. For each comment, extract: `id`, `path`, `line` (or `original_line`), `body`, `user.login`, `in_reply_to_id` (to detect threads). If you used GraphQL, map `databaseId` to `id` and thread fields as needed.
+5. Filter out threads that are already resolved (when using GraphQL method).
 6. Present a numbered summary to the programmer:
 
 ```
