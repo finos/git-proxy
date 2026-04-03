@@ -42,6 +42,7 @@
   "overrides": {
     "serialize-javascript": "^7.0.5",
     "uuid": "^14.0.0",
-    "webpack": "~5.105.0"
+    "webpack": "~5.105.0",
+    "lodash": "^4.18.0"
   }
 }
