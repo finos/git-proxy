@@ -92,7 +92,7 @@ customize for your environment, see the [project's documentation](https://git-pr
 - [Installation](https://git-proxy.finos.org/docs/installation)
 - [Configuration](https://git-proxy.finos.org/docs/category/configuration)
 - [Contributing](https://git-proxy.finos.org/docs/development/contributing)
-- [Testing](https://git-proxy.finos.org/docs/development/testing)
+- [Testing](https://github.com/finos/git-proxy/blob/main/CONTRIBUTING.md#testing)
 - [Architecture](https://git-proxy.finos.org/docs/category/architecture/)
 - [Upgrading to v2](https://git-proxy.finos.org/docs/upgrading-to-v2)
 
