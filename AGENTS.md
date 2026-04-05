@@ -366,6 +366,19 @@ All source files must include the Apache 2.0 license header (see any existing fi
 
 ---
 
+## Tool Integration
+
+This file is the canonical project guide. Tool-specific entry points:
+
+- Claude Code: `CLAUDE.md` (bridge) + `.claude/skills/`
+- GitHub Copilot: `.github/copilot-instructions.md`
+- OpenCode: `.opencode/commands/`
+- Gemini CLI: `GEMINI.md` (bridge)
+- Cursor: `.cursor/rules/00-core.mdc` + `.cursor/commands/`
+- Codex: `AGENTS.md` primary — (Codex does not have a dedicated convention file)
+
+---
+
 ## Agent Workflow
 
 **The main agent must act as an orchestrator.** Never do work inline that can be delegated to a subagent.
