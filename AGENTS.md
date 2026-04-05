@@ -36,7 +36,7 @@ npm run format:check
 npm run format
 ```
 
-**Stack: **
+**Stack:** TypeScript, Node >=22, Express 5, React 16, Vitest 3, NeDB / MongoDB
 
 ---
 
