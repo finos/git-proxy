@@ -14,7 +14,7 @@ This action also handles fallbacks for v1 legacy proxy URLs.
 
 Checks if the URL of the repo being pushed to is present in the GitProxy repo database. If no repo URL in the database matches, the push is blocked.
 
-Source: [/src/proxy/processors/push-action/checkRepoInAuthorisedList.ts](/src/proxy/processors/push-action/checkRepoInAuthorisedList.ts)
+Source: [/src/proxy/processors/push-action/checkRepoInAuthorisedList.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/checkRepoInAuthorisedList.ts)
 
 ## `parsePush`
 
@@ -22,13 +22,13 @@ Parses the push request data which comes from the Git client as a buffer that co
 
 Also handles extraction of push contents, such as the details of the individual commits contained in the push and the details of `committer` (the user attempting to push the commits through the proxy).
 
-Source: [/src/proxy/processors/push-action/parsePush.ts](/src/proxy/processors/push-action/parsePush.ts)
+Source: [/src/proxy/processors/push-action/parsePush.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/parsePush.ts)
 
 ## `checkEmptyBranch`
 
 Checks if the push contains any commit data, or is just an empty branch push (pushing a new branch without any additional commits). Empty branch pushes are blocked because subsequent processors require commit data to work correctly.
 
-Source: [/src/proxy/processors/push-action/checkEmptyBranch.ts](/src/proxy/processors/push-action/checkEmptyBranch.ts)
+Source: [/src/proxy/processors/push-action/checkEmptyBranch.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/checkEmptyBranch.ts)
 
 ## `checkCommitMessages`
 
@@ -66,7 +66,7 @@ If the arrays are empty, the checks will pass and chain execution will continue.
 
 Note that invalid regex patterns will throw an error during proxy startup. These must be fixed in order to initialize GitProxy.
 
-Source: [/src/proxy/processors/push-action/checkCommitMessages.ts](/src/proxy/processors/push-action/checkCommitMessages.ts)
+Source: [/src/proxy/processors/push-action/checkCommitMessages.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/checkCommitMessages.ts)
 
 ## `checkAuthorEmails`
 
@@ -76,7 +76,7 @@ If neither of these are configured (set to empty strings), then the checks will 
 
 Note that invalid regex patterns will throw an error during proxy startup. These must be fixed in order to initialize GitProxy.
 
-Source: [/src/proxy/processors/push-action/checkAuthorEmails.ts](/src/proxy/processors/push-action/checkAuthorEmails.ts)
+Source: [/src/proxy/processors/push-action/checkAuthorEmails.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/checkAuthorEmails.ts)
 
 #### `checkUserPushPermission`
 
@@ -90,7 +90,7 @@ This step will fail on various scenarios such as:
 
 Note: The _pusher_ can potentially be a different user from the _commit author(s)_. In order to filter the commit authors, you must use the `commitConfig.author` config entry. See [`checkAuthorEmails`](#checkauthoremails) for more details.
 
-Source: [/src/proxy/processors/push-action/checkUserPushPermission.ts](/src/proxy/processors/push-action/checkUserPushPermission.ts)
+Source: [/src/proxy/processors/push-action/checkUserPushPermission.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/checkUserPushPermission.ts)
 
 ## `pullRemote`
 
@@ -102,7 +102,7 @@ In the event that the clone fails, pullRemote will automatically delete the _.re
 
 If the clone succeeds then the chain will schedule deletion of the clone by [`clearBareClone`](#clearbareclone) after processing of the chain completes. This ensures that disk space used is recovered, subsequent pushes of the same SHA don't conflict and that user credentials cached in the `git clone` are removed.
 
-Source: [/src/proxy/processors/push-action/pullRemote.ts](/src/proxy/processors/push-action/pullRemote.ts)
+Source: [/src/proxy/processors/push-action/pullRemote.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/pullRemote.ts)
 
 ## `writePack`
 
@@ -110,7 +110,7 @@ Executes `git receive-pack` with the incoming pack data from the request body in
 
 Note that `writePack` sets Git's `receive.unpackLimit` to `0`, which forces Git to always create pack files instead of unpacking objects individually.
 
-Source: [/src/proxy/processors/push-action/writePack.ts](/src/proxy/processors/push-action/writePack.ts)
+Source: [/src/proxy/processors/push-action/writePack.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/writePack.ts)
 
 ## `checkHiddenCommits`
 
@@ -118,13 +118,13 @@ Detects "hidden" commits in a push, which is possible if the pack file in the pu
 
 It calls `git verify-pack` on each of the new `.idx` files found in [`writePack`](#writepack). If any unreferenced commits are present, the push is blocked.
 
-Source: [/src/proxy/processors/push-action/checkHiddenCommits.ts](/src/proxy/processors/push-action/checkHiddenCommits.ts)
+Source: [/src/proxy/processors/push-action/checkHiddenCommits.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/checkHiddenCommits.ts)
 
 ## `checkIfWaitingAuth`
 
 Checks if the action has been authorised (approved by a reviewer). If so, allows the push to continue to the remote. It simply continues chain execution if the push hasn't been approved.
 
-Source: [/src/proxy/processors/push-action/checkIfWaitingAuth.ts](/src/proxy/processors/push-action/checkIfWaitingAuth.ts)
+Source: [/src/proxy/processors/push-action/checkIfWaitingAuth.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/checkIfWaitingAuth.ts)
 
 ## `preReceive`
 
@@ -142,7 +142,7 @@ This processor will block the push depending on the exit status of the pre-recei
 
 For detailed setup instructions and examples, see the [Pre-Receive Hook configuration guide](https://git-proxy.finos.org/docs/configuration/pre-receive/).
 
-Source: [/src/proxy/processors/push-action/preReceive.ts](/src/proxy/processors/push-action/preReceive.ts)
+Source: [/src/proxy/processors/push-action/preReceive.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/preReceive.ts)
 
 ## `getDiff`
 
@@ -150,7 +150,7 @@ Executes `git diff` to obtain the diff for the given revision range. If there ar
 
 The data extracted in this step is later used in [`scanDiff`](#scandiff).
 
-Source: [/src/proxy/processors/push-action/getDiff.ts](/src/proxy/processors/push-action/getDiff.ts)
+Source: [/src/proxy/processors/push-action/getDiff.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/getDiff.ts)
 
 ## `gitleaks`
 
@@ -165,7 +165,7 @@ The following parameters can be configured:
 
 This processor runs the Gitleaks check starting from the root commit to the `commitFrom` value present in the push. If the Gitleaks check fails (nonzero exit code), or otherwise cannot spawn, the push will be blocked.
 
-Source: [/src/proxy/processors/push-action/gitleaks.ts](/src/proxy/processors/push-action/gitleaks.ts)
+Source: [/src/proxy/processors/push-action/gitleaks.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/gitleaks.ts)
 
 ## `scanDiff`
 
@@ -203,7 +203,7 @@ This will scan every file changed and try to match the configured literals, patt
 
 Note that invalid regex patterns will throw an error during proxy startup. These must be fixed in order to initialize GitProxy.
 
-Source: [/src/proxy/processors/push-action/scanDiff.ts](/src/proxy/processors/push-action/scanDiff.ts)
+Source: [/src/proxy/processors/push-action/scanDiff.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/scanDiff.ts)
 
 ## `blockForAuth`
 
@@ -211,9 +211,9 @@ This action appends a message to be displayed after all the processors have fini
 
 Note that this message will show again even if the push had been previously rejected by a reviewer or cancelled and resubmitted by the committer. After a manual rejection, pushing again creates a new `action` object so that the push can be re-reviewed and approved.
 
-![blockForAuth output](./img/blockForAuth_output.png)
+![blockForAuth output](../../static/img/blockForAuth_output.png)
 
-Source: [/src/proxy/processors/push-action/blockForAuth.ts](/src/proxy/processors/push-action/blockForAuth.ts)
+Source: [/src/proxy/processors/push-action/blockForAuth.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/blockForAuth.ts)
 
 ## `audit`
 
@@ -284,4 +284,4 @@ Recursively removes the contents of the (modified) repository clone stored in `.
 
 `clearBareClone` runs only if `pullRemote` was successful.
 
-Source: [/src/proxy/processors/post-processor/clearBareClone.ts](/src/proxy/processors/post-processor/clearBareClone.ts)
+Source: [/src/proxy/processors/post-processor/clearBareClone.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/post-processor/clearBareClone.ts)

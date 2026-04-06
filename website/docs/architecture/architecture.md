@@ -2,7 +2,7 @@
 
 This guide explains GitProxy's various components, and how they communicate with each other when performing a `git push`.
 
-As mentioned in [the README](/README.md), GitProxy is an application that intercepts pushes and applies rules/policies to ensure they're compliant. Although a number of policies are available by default, these can be extended by using plugins.
+As mentioned in [the README](https://github.com/finos/git-proxy/blob/main/README.md), GitProxy is an application that intercepts pushes and applies rules/policies to ensure they're compliant. Although a number of policies are available by default, these can be extended by using plugins.
 
 ## Overview
 
@@ -10,7 +10,7 @@ GitProxy has several main components:
 
 - HTTP Proxy Express app (`/src/proxy`): The actual proxy server for Git. Git operations performed by users are intercepted here, processed by various Express middleware (such as URL rewriting) and applies the relevant **chain** of actions to the payload. Customized functionality in the form of **plugins** are inserted and added to this chain as well.
   - Chain: A set of **processors** that are applied to an action (i.e. a `git push` operation) before requesting review from a user with permission to approve pushes
-  - Processor: AKA `Step`. A specific step in the chain where certain rules are applied. See the [list of default processors](./Processors.md) for more details.`
+  - Processor: AKA `Step`. A specific step in the chain where certain rules are applied. See the [list of default processors](/docs/architecture/processors.md) for more details.`
   - Plugin: A custom processor that can be added externally to extend GitProxy's default policies. See the [plugin guide](https://git-proxy.finos.org/docs/development/plugins) for more details.
 - Backend-for-frontend (BFF) Service API, Express app (`/src/service`): Handles UI requests, user authentication to GitProxy (not to Git), database operations and some of the logic for rejection/approval. Runs by default on port `8080`, and can be configured with the `GIT_PROXY_UI_HOST` and `GIT_PROXY_UI_PORT` environment variables.
   - Passport: The [library](https://www.passportjs.org/) used to authenticate to the GitProxy API (not the proxy itself - this depends on the Git `user.email`). Supports multiple authentication methods by default ([Local](#local), [AD](#activedirectory), [OIDC](#openid-connect)).
@@ -24,11 +24,11 @@ These are all the core components in the project, along with some basic user int
 
 <!-- Note: this diagram can be edited in https://diagrams.net.
 
-Just upload the GitProxy_Architecture.drawio file available in /docs/img, edit the diagram and then export it as PNG.
+Just upload the GitProxy_Architecture.drawio file available in /website/static/img, edit the diagram and then export it as PNG.
 
 Don't forget to save and update the attached .drawio (XML)! -->
 
-![GitProxy Architecture Diagram](./img/GitProxy_Architecture.png)
+![GitProxy Architecture Diagram](../../static/img/GitProxy_Architecture.png)
 
 ### Pushing to GitProxy
 
@@ -53,9 +53,9 @@ Don't forget to save and update the attached .drawio (XML)! -->
 Three types of policies can be applied to incoming pushes:
 
 - Default policies: These are already present in the GitProxy pull/push chain and require modifying source code to change their behaviour.
-  - For example, [`checkUserPushPermission`](./Processors.md#checkuserpushpermission) which simply checks if the pusher's email exists in the GitProxy database, and if their user is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
+  - For example, [`checkUserPushPermission`](/docs/architecture/processors.md#checkuserpushpermission) which simply checks if the pusher's email exists in the GitProxy database, and if their user is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
 - Configurable policies: These are policies that can be easily configured through the GitProxy config (`proxy.config.json` or a custom file).
-  - For example, [`checkCommitMessages`](./Processors.md#checkcommitmessages) which reads the configuration and matches the string patterns provided with the commit messages in the push in order to block it.
+  - For example, [`checkCommitMessages`](/docs/architecture/processors.md#checkcommitmessages) which reads the configuration and matches the string patterns provided with the commit messages in the push in order to block it.
 - Custom policies:
   - Plugins: Push/pull plugins provide more flexibility for implementing an organization's rules. For more information, see the [guide on writing your own plugins](https://git-proxy.finos.org/docs/development/plugins).
   - Processors: Custom logic may require specific data within a push that isn't available at the end of the chain (where plugins are executed). In this case, the appropriate solution is to write a processor and add it to the correct place in the chain.
@@ -64,7 +64,7 @@ Three types of policies can be applied to incoming pushes:
 
 ### Pre-processors
 
-Pre-processors run before executing the chain. Currently, only executes [`parseAction`](./Processors.md#parseaction), which is in charge of classifying requests as push/pull/default and creating the `Action` object used by the chain.
+Pre-processors run before executing the chain. Currently, only executes [`parseAction`](/docs/architecture/processors.md#parseaction), which is in charge of classifying requests as push/pull/default and creating the `Action` object used by the chain.
 
 ### Action Chains
 
@@ -74,27 +74,27 @@ Action chains are a list of processors that a Git operation goes through before 
 
 Executed when a user makes a `git push` to GitProxy. These are the actions in `pushActionChain`, by order of execution:
 
-- [`parsePush`](./Processors.md#parsepush)
-- [`checkEmptyBranch`](./Processors.md#checkemptybranch)
-- [`checkRepoInAuthorisedList`](./Processors.md#checkrepoinauthorisedlist)
-- [`checkCommitMessages`](./Processors.md#checkcommitmessages)
-- [`checkAuthorEmails`](./Processors.md#checkauthoremails)
-- [`checkUserPushPermission`](./Processors.md#checkuserpushpermission)
-- [`pullRemote`](./Processors.md#pullremote)
-- [`writePack`](./Processors.md#writepack)
-- [`checkHiddenCommits`](./Processors.md#checkhiddencommits)
-- [`checkIfWaitingAuth`](./Processors.md#checkifwaitingauth)
-- [`preReceive`](./Processors.md#prereceive)
-- [`getDiff`](./Processors.md#getdiff)
-- [`gitleaks`](./Processors.md#gitleaks)
-- [`scanDiff`](./Processors.md#scandiff)
-- [`blockForAuth`](./Processors.md#blockforauth)
+- [`parsePush`](/docs/architecture/processors.md#parsepush)
+- [`checkEmptyBranch`](/docs/architecture/processors.md#checkemptybranch)
+- [`checkRepoInAuthorisedList`](/docs/architecture/processors.md#checkrepoinauthorisedlist)
+- [`checkCommitMessages`](/docs/architecture/processors.md#checkcommitmessages)
+- [`checkAuthorEmails`](/docs/architecture/processors.md#checkauthoremails)
+- [`checkUserPushPermission`](/docs/architecture/processors.md#checkuserpushpermission)
+- [`pullRemote`](/docs/architecture/processors.md#pullremote)
+- [`writePack`](/docs/architecture/processors.md#writepack)
+- [`checkHiddenCommits`](/docs/architecture/processors.md#checkhiddencommits)
+- [`checkIfWaitingAuth`](/docs/architecture/processors.md#checkifwaitingauth)
+- [`preReceive`](/docs/architecture/processors.md#prereceive)
+- [`getDiff`](/docs/architecture/processors.md#getdiff)
+- [`gitleaks`](/docs/architecture/processors.md#gitleaks)
+- [`scanDiff`](/docs/architecture/processors.md#scandiff)
+- [`blockForAuth`](/docs/architecture/processors.md#blockforauth)
 
 #### Pull action chain
 
 Executed when a user makes a `git clone` or `git pull` to GitProxy:
 
-- [`checkRepoInAuthorisedList`](./Processors.md#checkrepoinauthorisedlist)
+- [`checkRepoInAuthorisedList`](/docs/architecture/processors.md#checkrepoinauthorisedlist)
 
 At present, the pull action chain is only checking that the repository is configured in GitProxy. This ensures it will block pull requests for unknown repositories.
 
@@ -102,17 +102,17 @@ At present, the pull action chain is only checking that the repository is config
 
 This chain is executed when making any operation other than a `git push` or `git pull`.
 
-- [`checkRepoInAuthorisedList`](./Processors.md#checkrepoinauthorisedlist)
+- [`checkRepoInAuthorisedList`](/docs/architecture/processors.md#checkrepoinauthorisedlist)
 
 The default action chain, much like the pull chain, is only checking that the repository is configured in GitProxy. This ensures it will block all git client requests for unknown repositories.
 
 ### Post-processors
 
-After processors in the chain are done executing, [`audit`](./Processors.md#audit) is called to store the action along with all of its execution steps in the database for auditing purposes.
+After processors in the chain are done executing, [`audit`](/docs/architecture/processors.md#audit) is called to store the action along with all of its execution steps in the database for auditing purposes.
 
-If [`pullRemote`](./Processors.md#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](./Processors.md#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes involving the same SHA.
+If [`pullRemote`](/docs/architecture/processors.md#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](/docs/architecture/processors.md#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes involving the same SHA.
 
-Finally, if the action was auto-approved or auto-rejected as a result of running [`preReceive`](./Processors.md#prereceive), it will attempt to auto-approve or auto-reject it.
+Finally, if the action was auto-approved or auto-rejected as a result of running [`preReceive`](/docs/architecture/processors.md#prereceive), it will attempt to auto-approve or auto-reject it.
 
 ### Authentication
 
@@ -175,7 +175,7 @@ For example: logging in with myusername@mymail.com will create a new user with u
 New methods can be added by:
 
 1. Extending `/src/service/passport` with the relevant [passport.js strategy](https://www.passportjs.org/packages/).
-   - The strategy file must have a `configure` method and a `type` string to match with the config method. See the pre-existing methods in [`/src/service/passport`](/src/service/passport) for more details.
+   - The strategy file must have a `configure` method and a `type` string to match with the config method. See the pre-existing methods in [`/src/service/passport`](https://github.com/finos/git-proxy/blob/main/src/service/passport) for more details.
 2. Creating a `proxy.config.json` entry with the required configuration parameters
 3. Importing the new strategy and adding it to the `authStrategies` array in `/src/service/passport/index.ts`
 
@@ -224,7 +224,7 @@ Currently supports the following out-of-the-box:
 
 #### `commitConfig`
 
-Used in [`checkCommitMessages`](./Processors.md#checkcommitmessages), [`checkAuthorEmails`](./Processors.md#checkauthoremails) and [`scanDiff`](./Processors.md#scandiff) processors to block pushes depending on the given rules.
+Used in [`checkCommitMessages`](/docs/architecture/processors.md#checkcommitmessages), [`checkAuthorEmails`](/docs/architecture/processors.md#checkauthoremails) and [`scanDiff`](/docs/architecture/processors.md#scandiff) processors to block pushes depending on the given rules.
 
 By default, no rules are applied.
 
@@ -310,13 +310,13 @@ Has a list of `questions`, each of which can be configured with a `label` and a 
 
 Given the previous configuration, the attestation prompt would look like this:
 
-![Attestation Prompt](./img/attestation_example.png)
+![Attestation Prompt](../../static/img/attestation_example.png)
 
 #### `domains`
 
 Allows setting custom URLs for GitProxy interfaces in case these cannot be determined.
 
-This parameter is used in [`/src/service/urls.ts`](/src/service/urls.ts) to override URLs for the proxy (default: http://localhost:8000) and service (default: http://localhost:8080).
+This parameter is used in [`/src/service/urls.ts`](https://github.com/finos/git-proxy/blob/main/src/service/urls.ts) to override URLs for the proxy (default: http://localhost:8000) and service (default: http://localhost:8080).
 
 Sample configuration:
 
@@ -356,7 +356,7 @@ Currently unused.
 
 Sets the contact email for the Open Source Program Office (or equivalent organisational contact) in the attestation form:
 
-![Attestation Form](./img/attestation_example.png)
+![Attestation Form](../../static/img/attestation_example.png)
 
 #### `csrfProtection`
 
@@ -416,7 +416,7 @@ List of database sources. The first source with `enabled` set to `true` will be 
 
 Each entry has its own unique configuration parameters.
 
-Extending GitProxy to support other databases requires adding the relevant handlers and setup to the [`/src/db`](/src/db/) directory. Feel free to [open an issue](https://github.com/finos/git-proxy/issues) requesting support for any specific databases - or [open a PR](https://github.com/finos/git-proxy/pulls) with the desired changes!
+Extending GitProxy to support other databases requires adding the relevant handlers and setup to the [`/src/db`](https://github.com/finos/git-proxy/blob/main/src/db/) directory. Feel free to [open an issue](https://github.com/finos/git-proxy/issues) requesting support for any specific databases - or [open a PR](https://github.com/finos/git-proxy/pulls) with the desired changes!
 
 #### `authentication`
 
@@ -432,7 +432,7 @@ Allows defining ways to authenticate to the API. This is useful for securing cus
 
 If `apiAuthentication` is left empty, API endpoints will be publicly accesible.
 
-Currently, only JWT auth is supported. This is implemented via the [`jwtAuthHandler` middleware](/src/service/passport/jwtAuthHandler.ts). Aside of validating incoming access tokens, it can also assign roles based on the token payload.
+Currently, only JWT auth is supported. This is implemented via the [`jwtAuthHandler` middleware](https://github.com/finos/git-proxy/blob/main/src/service/passport/jwtAuthHandler.ts). Aside of validating incoming access tokens, it can also assign roles based on the token payload.
 
 ##### Setting up JWT Authentication
 

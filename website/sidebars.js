@@ -36,6 +36,8 @@ module.exports = {
         'quickstart/approve',
       ],
     },
+    'deployment',
+    'upgrading-to-v2',
     {
       type: 'category',
       label: 'Configuration',
@@ -50,7 +52,20 @@ module.exports = {
       collapsed: false,
       items: ['configuration/overview', 'configuration/reference', 'configuration/pre-receive'],
     },
-    'deployment',
+    {
+      type: 'category',
+      label: 'Architecture',
+      link: {
+        type: 'generated-index',
+        title: 'Architecture',
+        slug: '/category/architecture',
+        keywords: ['architecture'],
+        image: '/img/github-mark.png',
+      },
+      collapsible: true,
+      collapsed: false,
+      items: ['architecture/architecture', 'architecture/processors'],
+    },
     {
       type: 'category',
       label: 'Development',

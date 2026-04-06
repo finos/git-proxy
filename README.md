@@ -1,7 +1,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/finos/git-proxy">
-    <img src="./docs/img/logo.png" alt="Logo" height="95">
+    <img src="./website/static/img/logo.png" alt="Logo" height="95">
   </a>
   
   <br />
@@ -92,7 +92,9 @@ customize for your environment, see the [project's documentation](https://git-pr
 - [Installation](https://git-proxy.finos.org/docs/quickstart/installation)
 - [Configuration](https://git-proxy.finos.org/docs/category/configuration)
 - [Contributing](https://git-proxy.finos.org/docs/development/contributing)
-- [Testing](https://git-proxy.finos.org/docs/development/testing)
+- [Testing](https://github.com/finos/git-proxy/blob/main/CONTRIBUTING.md#testing)
+- [Architecture](https://git-proxy.finos.org/docs/category/architecture/)
+- [Upgrading to v2](https://git-proxy.finos.org/docs/upgrading-to-v2)
 
 ## Contributing
 
