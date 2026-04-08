@@ -76,6 +76,11 @@
     "git-proxy": "./dist/index.js",
     "git-proxy-all": "concurrently 'npm run server' 'npm run client'"
   },
+  "files": [
+    "dist",
+    "config.schema.json",
+    "NOTICE"
+  ],
   "workspaces": [
     "./packages/git-proxy-cli"
   ],
