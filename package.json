@@ -39,6 +39,11 @@
       "types": "./dist/src/ui/index.d.ts",
       "import": "./dist/src/ui/index.js",
       "require": "./dist/src/ui/index.js"
+    },
+    "./utils/errors": {
+      "types": "./dist/src/utils/errors.d.ts",
+      "import": "./dist/src/utils/errors.js",
+      "require": "./dist/src/utils/errors.js"
     }
   },
   "scripts": {
