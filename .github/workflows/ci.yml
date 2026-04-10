@@ -54,6 +54,11 @@ jobs:
       - name: Build TypeScript
         run: npm run build-ts
 
+      - name: Build CLI
+        run: |
+          npm run build -w @finos/git-proxy-cli
+          npm rebuild @finos/git-proxy-cli
+
       - name: Test
         id: test
         run: |
@@ -117,6 +122,11 @@ jobs:
 
       - name: Build TypeScript
         run: npm run build-ts
+
+      - name: Build CLI
+        run: |
+          npm run build -w @finos/git-proxy-cli
+          npm rebuild @finos/git-proxy-cli
 
       - name: Test
         id: test
