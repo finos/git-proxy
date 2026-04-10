@@ -504,7 +504,10 @@ describe('repo routes - edge cases', () => {
     });
 
     expect(res.status).toBe(400);
-    expect(res.body.message).toBe('Repository url is required');
+    expect(res.body.message).toBe('Validation failed');
+    expect(res.body.details).toBeDefined();
+    expect(res.body.details['body.url']).toBeDefined();
+    expect(res.body.details['body.url'].message).toBe("'url' is required");
   });
 
   it('should return 400 when repo url is invalid', async () => {
@@ -678,6 +681,6 @@ describe('repo routes - edge cases', () => {
     await cleanupRepo(TEST_REPO.url);
     await db.deleteUser('testuser');
     await db.deleteUser('nonadmin');
-    await Service.httpServer.close();
+    await Service.httpServer?.close();
   });
 });

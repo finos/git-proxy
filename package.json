@@ -49,8 +49,9 @@
     "server": "ALLOWED_ORIGINS=* tsx index.ts",
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "build": "npm run generate-config-types && npm run build-ui && npm run build-ts",
-    "build-ts": "tsc --project tsconfig.publish.json && node scripts/fix-shebang.js",
+    "build-ts": "npm run build-tsoa && tsc --project tsconfig.publish.json && node scripts/fix-shebang.js",
     "build-ui": "vite build",
+    "build-tsoa": "tsoa spec-and-routes",
     "check-types": "tsc",
     "check-types:server": "tsc --project tsconfig.publish.json --noEmit",
     "test-shuffle": "NODE_ENV=test vitest --run --dir ./test --sequence.shuffle",
@@ -131,6 +132,7 @@
     "react-html-parser": "^2.0.2",
     "react-router-dom": "6.30.3",
     "simple-git": "^3.30.0",
+    "tsoa": "^7.0.0-alpha.0",
     "uuid": "^13.0.0",
     "validator": "^13.15.26",
     "yargs": "^17.7.2"

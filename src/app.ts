@@ -14,14 +14,8 @@
  * limitations under the License.
  */
 
-import express, { Request, Response } from 'express';
+import express from 'express';
 
-const router = express.Router();
-
-router.get('/', (_req: Request, res: Response) => {
-  res.send({
-    message: 'ok',
-  });
-});
-
-export default router;
+// Minimal entry point used by tsoa for controller/spec discovery.
+// The actual configured Express app lives in src/service/index.ts.
+export const app = express();

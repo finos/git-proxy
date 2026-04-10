@@ -16,22 +16,53 @@
 
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import request from 'supertest';
-import express, { Express, Request, Response } from 'express';
-import authRoutes from '../../../src/service/routes/auth';
+import express, { Express } from 'express';
+import { RegisterRoutes } from '../../../src/service/generatedRoutes';
 import * as db from '../../../src/db';
+import { ValidateError } from 'tsoa';
 
-const newApp = (username?: string): Express => {
+/**
+ * Builds a minimal Express app with tsoa routes registered.
+ * When `username` is supplied the request is pre-authenticated via middleware,
+ * simulating a session-authenticated user.
+ */
+const newApp = (username?: string, isAdmin = false): Express => {
   const app = express();
   app.use(express.json());
 
   if (username) {
     app.use((req, _res, next) => {
-      req.user = { username };
+      req.user = { username, admin: isAdmin };
+      (req as any).isAuthenticated = () => true;
+      next();
+    });
+  } else {
+    app.use((_req, _res, next) => {
+      (_req as any).isAuthenticated = () => false;
       next();
     });
   }
 
-  app.use('/auth', authRoutes.router);
+  // Generic error handler so tsoa thrown errors propagate as HTTP responses.
+  RegisterRoutes(app);
+
+  // tsoa validation errors
+  app.use((err: any, _req: any, res: any, next: any) => {
+    if (err instanceof ValidateError) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        details: err.fields,
+      });
+    }
+    next(err);
+  });
+
+  // Generic error handler so tsoa thrown errors propagate as HTTP responses.
+  app.use((err: any, _req: any, res: any, next: any) => {
+    if (res.headersSent) return next(err);
+    res.status(err.status ?? 500).json({ message: err.message });
+  });
+
   return app;
 };
 
@@ -40,7 +71,7 @@ describe('Auth API', () => {
     vi.restoreAllMocks();
   });
 
-  describe('POST /gitAccount', () => {
+  describe('POST /api/auth/gitAccount', () => {
     beforeEach(() => {
       vi.spyOn(db, 'findUser').mockImplementation((username: string) => {
         if (username === 'alice') {
@@ -73,7 +104,7 @@ describe('Auth API', () => {
     });
 
     it('should return 401 Unauthorized if authenticated user not in request', async () => {
-      const res = await request(newApp()).post('/auth/gitAccount').send({
+      const res = await request(newApp()).post('/api/auth/gitAccount').send({
         username: 'alice',
         gitAccount: '',
       });
@@ -82,7 +113,7 @@ describe('Auth API', () => {
     });
 
     it('should return 400 Bad Request if username is missing', async () => {
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+      const res = await request(newApp('alice', true)).post('/api/auth/gitAccount').send({
         gitAccount: 'UPDATED_GIT_ACCOUNT',
       });
 
@@ -90,7 +121,7 @@ describe('Auth API', () => {
     });
 
     it('should return 400 Bad Request if username is undefined', async () => {
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+      const res = await request(newApp('alice', true)).post('/api/auth/gitAccount').send({
         username: undefined,
         gitAccount: 'UPDATED_GIT_ACCOUNT',
       });
@@ -99,7 +130,7 @@ describe('Auth API', () => {
     });
 
     it('should return 400 Bad Request if username is null', async () => {
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+      const res = await request(newApp('alice', true)).post('/api/auth/gitAccount').send({
         username: null,
         gitAccount: 'UPDATED_GIT_ACCOUNT',
       });
@@ -108,7 +139,7 @@ describe('Auth API', () => {
     });
 
     it('should return 400 Bad Request if username is an empty string', async () => {
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+      const res = await request(newApp('alice', true)).post('/api/auth/gitAccount').send({
         username: '',
         gitAccount: 'UPDATED_GIT_ACCOUNT',
       });
@@ -117,7 +148,7 @@ describe('Auth API', () => {
     });
 
     it('should return 403 Forbidden if user is not an admin', async () => {
-      const res = await request(newApp('bob')).post('/auth/gitAccount').send({
+      const res = await request(newApp('bob')).post('/api/auth/gitAccount').send({
         username: 'alice',
         gitAccount: 'UPDATED_GIT_ACCOUNT',
       });
@@ -126,7 +157,7 @@ describe('Auth API', () => {
     });
 
     it('should return 404 Not Found if user is not found', async () => {
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+      const res = await request(newApp('alice', true)).post('/api/auth/gitAccount').send({
         username: 'non-existent-user',
         gitAccount: 'UPDATED_GIT_ACCOUNT',
       });
@@ -137,7 +168,7 @@ describe('Auth API', () => {
     it('should return 200 OK if user is an admin and updates git account for authenticated user', async () => {
       const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
 
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+      const res = await request(newApp('alice', true)).post('/api/auth/gitAccount').send({
         username: 'alice',
         gitAccount: 'UPDATED_GIT_ACCOUNT',
       });
@@ -158,7 +189,7 @@ describe('Auth API', () => {
     it("should prevent non-admin users from changing a different user's gitAccount", async () => {
       const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
 
-      const res = await request(newApp('bob')).post('/auth/gitAccount').send({
+      const res = await request(newApp('bob')).post('/api/auth/gitAccount').send({
         username: 'phil',
         gitAccount: 'UPDATED_GIT_ACCOUNT',
       });
@@ -170,7 +201,7 @@ describe('Auth API', () => {
     it("should allow admin users to change a different user's gitAccount", async () => {
       const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
 
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+      const res = await request(newApp('alice', true)).post('/api/auth/gitAccount').send({
         username: 'bob',
         gitAccount: 'UPDATED_GIT_ACCOUNT',
       });
@@ -191,7 +222,7 @@ describe('Auth API', () => {
     it('should allow non-admin users to update their own gitAccount', async () => {
       const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
 
-      const res = await request(newApp('bob')).post('/auth/gitAccount').send({
+      const res = await request(newApp('bob')).post('/api/auth/gitAccount').send({
         username: 'bob',
         gitAccount: 'UPDATED_GIT_ACCOUNT',
       });
@@ -210,46 +241,9 @@ describe('Auth API', () => {
     });
   });
 
-  describe('loginSuccessHandler', () => {
-    it('should log in user and return public user data', async () => {
-      const user = {
-        username: 'bob',
-        password: 'secret',
-        email: 'bob@example.com',
-        displayName: 'Bob',
-        admin: false,
-        gitAccount: '',
-        title: '',
-      };
-
-      const sendSpy = vi.fn();
-      const res = {
-        send: sendSpy,
-      };
-
-      await authRoutes.loginSuccessHandler()(
-        { user } as unknown as Request,
-        res as unknown as Response,
-      );
-
-      expect(sendSpy).toHaveBeenCalledOnce();
-      expect(sendSpy).toHaveBeenCalledWith({
-        message: 'success',
-        user: {
-          admin: false,
-          displayName: 'Bob',
-          email: 'bob@example.com',
-          gitAccount: '',
-          title: '',
-          username: 'bob',
-        },
-      });
-    });
-  });
-
-  describe('GET /profile', () => {
+  describe('GET /api/auth/profile', () => {
     it('should return 401 Unauthorized if user is not logged in', async () => {
-      const res = await request(newApp()).get('/auth/profile');
+      const res = await request(newApp()).get('/api/auth/profile');
 
       expect(res.status).toBe(401);
     });
@@ -265,7 +259,7 @@ describe('Auth API', () => {
         title: '',
       });
 
-      const res = await request(newApp('alice')).get('/auth/profile');
+      const res = await request(newApp('alice')).get('/api/auth/profile');
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
         username: 'alice',
@@ -278,15 +272,17 @@ describe('Auth API', () => {
     });
 
     it('should return 404 Not Found if user is not found', async () => {
-      const res = await request(newApp('non-existent-user')).get('/auth/profile');
+      vi.spyOn(db, 'findUser').mockResolvedValue(null);
+
+      const res = await request(newApp('non-existent-user')).get('/api/auth/profile');
       expect(res.status).toBe(404);
       expect(res.body).toEqual({ message: 'User not found' });
     });
   });
 
-  describe('GET /', () => {
+  describe('GET /api/auth', () => {
     it('should return 200 OK and the auth endpoints', async () => {
-      const res = await request(newApp()).get('/auth');
+      const res = await request(newApp()).get('/api/auth');
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
         login: {
@@ -305,9 +301,9 @@ describe('Auth API', () => {
     });
   });
 
-  describe('GET /config', () => {
+  describe('GET /api/auth/config', () => {
     it('should return 200 OK and the default auth config', async () => {
-      const res = await request(newApp()).get('/auth/config');
+      const res = await request(newApp()).get('/api/auth/config');
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
         usernamePasswordMethod: 'local',

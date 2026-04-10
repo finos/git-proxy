@@ -1,0 +1,26 @@
+{
+  "entryFile": "src/app.ts",
+  "noImplicitAdditionalProperties": "ignore",
+  "controllerPathGlobs": ["src/service/controllers/**/*Controller.ts"],
+  "spec": {
+    "outputDirectory": "dist",
+    "specVersion": 3,
+    "securityDefinitions": {
+      "jwt": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "info": {
+      "title": "Git Proxy API",
+      "version": "1.0.0"
+    }
+  },
+  "routes": {
+    "routesDir": "src/service",
+    "routesFileName": "generatedRoutes.ts",
+    "authenticationModule": "./src/service/authentication",
+    "middleware": "express"
+  }
+}

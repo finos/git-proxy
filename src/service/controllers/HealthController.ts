@@ -14,18 +14,20 @@
  * limitations under the License.
  */
 
-import express, { Request, Response } from 'express';
+import { Controller, Get, Route, Tags } from 'tsoa';
 
-const router = express.Router();
+interface HealthResponse {
+  message: 'ok';
+}
 
-const resource = {
-  healthcheck: '/api/v1/healthcheck',
-  push: '/api/v1/push',
-  auth: '/api/auth',
-};
-
-router.get('/', (_req: Request, res: Response) => {
-  res.send(resource);
-});
-
-export default router;
+/**
+ * Service health check.
+ */
+@Route('api/v1/healthcheck')
+@Tags('Health')
+export class HealthController extends Controller {
+  @Get('/')
+  public check(): HealthResponse {
+    return { message: 'ok' };
+  }
+}
