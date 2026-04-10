@@ -204,6 +204,13 @@ let _cachedProxyAgent: { proxyUrl: string; agent: HttpsProxyAgent<string> } | nu
 
 const getOrCreateProxyAgent = (proxyUrl: string): HttpsProxyAgent<string> => {
   if (!_cachedProxyAgent || _cachedProxyAgent.proxyUrl !== proxyUrl) {
+    try {
+      new URL(proxyUrl);
+    } catch {
+      throw new Error(
+        `Invalid upstream proxy URL: check your upstreamProxy.url config or HTTPS_PROXY env var`,
+      );
+    }
     _cachedProxyAgent = { proxyUrl, agent: new HttpsProxyAgent(proxyUrl) };
   }
   return _cachedProxyAgent.agent;
