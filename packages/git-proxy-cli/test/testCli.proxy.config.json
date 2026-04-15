@@ -24,6 +24,14 @@
       "enabled": false
     }
   ],
+  "attestationConfig": {
+    "questions": [
+      {
+        "label": "Authorising via GitProxy CLI",
+        "required": true
+      }
+    ]
+  },
   "authentication": [
     {
       "type": "local",

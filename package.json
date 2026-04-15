@@ -39,6 +39,11 @@
       "types": "./dist/src/ui/index.d.ts",
       "import": "./dist/src/ui/index.js",
       "require": "./dist/src/ui/index.js"
+    },
+    "./utils/errors": {
+      "types": "./dist/src/utils/errors.d.ts",
+      "import": "./dist/src/utils/errors.js",
+      "require": "./dist/src/utils/errors.js"
     }
   },
   "scripts": {
@@ -76,6 +81,11 @@
     "git-proxy": "./dist/index.js",
     "git-proxy-all": "concurrently 'npm run server' 'npm run client'"
   },
+  "files": [
+    "dist",
+    "config.schema.json",
+    "NOTICE"
+  ],
   "workspaces": [
     "./packages/git-proxy-cli"
   ],
@@ -157,6 +167,7 @@
     "@types/yargs": "^17.0.35",
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^3.2.4",
+    "c8": "^11.0.0",
     "cross-env": "^10.1.0",
     "cypress": "^15.9.0",
     "eslint": "^9.39.2",

@@ -43,7 +43,7 @@ jobs:
           mongodb-version: ${{ matrix.mongodb-version }}
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-fund
 
       # for now only check the types of the server
       # tsconfig isn't quite set up right to respect what vite accepts
@@ -53,6 +53,11 @@ jobs:
 
       - name: Build TypeScript
         run: npm run build-ts
+
+      - name: Build CLI
+        run: |
+          npm run build -w @finos/git-proxy-cli
+          npm rebuild @finos/git-proxy-cli
 
       - name: Test
         id: test
@@ -69,28 +74,17 @@ jobs:
       - name: Upload test coverage report
         uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5.5.3
         with:
-          files: ./coverage/lcov.info
+          files: ./coverage/lcov.info,./coverage-cli/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Build frontend
         run: npm run build-ui
 
-      - name: Save build folder
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
-        with:
-          name: build-ubuntu-node-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
-          if-no-files-found: error
-          path: build
-
-      - name: Download the build folders
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
-        with:
-          name: build-ubuntu-node-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
-          path: build
-
       - name: Run cypress test
         uses: cypress-io/github-action@4c06c48f3ffea349b7189aa06dfcda47a9fa7b92 # v7.1.8
         with:
+          # skip the action's internal npm ci — dependencies are already installed above
+          install: false
           start: npm start &
           wait-on: 'http://localhost:3000'
           wait-on-timeout: 120
@@ -121,13 +115,18 @@ jobs:
           reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-fund
 
       - name: Check Types (Server)
         run: npm run check-types:server
 
       - name: Build TypeScript
         run: npm run build-ts
+
+      - name: Build CLI
+        run: |
+          npm run build -w @finos/git-proxy-cli
+          npm rebuild @finos/git-proxy-cli
 
       - name: Test
         id: test
