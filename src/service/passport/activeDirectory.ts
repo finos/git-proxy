@@ -23,7 +23,7 @@ import * as ldaphelper from './ldaphelper';
 import * as db from '../../db';
 import { getAuthMethods } from '../../config';
 import { ADProfile } from './types';
-import { handleAndLogError } from '../../utils/errors';
+import { handleErrorAndLog } from '../../utils/errors';
 
 export const type = 'activedirectory';
 
@@ -81,7 +81,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
               return done(message, null);
             }
           } catch (error: unknown) {
-            const message = handleAndLogError(
+            const message = handleErrorAndLog(
               error,
               'An error occurred while checking if the user is a member of the user group',
             );
@@ -93,7 +93,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
           try {
             isAdmin = await ldaphelper.isUserInAdGroup(req, profile, ad, domain, adminGroup);
           } catch (error: unknown) {
-            handleAndLogError(
+            handleErrorAndLog(
               error,
               'An error occurred while checking if the user is a member of the admin group',
             );
@@ -114,7 +114,7 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
 
           return done(null, user);
         } catch (error: unknown) {
-          const message = handleAndLogError(error, 'Error authenticating AD user');
+          const message = handleErrorAndLog(error, 'Error authenticating AD user');
           return done(message, null);
         }
       },

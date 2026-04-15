@@ -29,7 +29,7 @@ const TEST_USERNAME_2 = 'push-perms-test-2';
 const TEST_EMAIL_2 = 'push-perms-test-2@test.com';
 const TEST_EMAIL_3 = 'push-perms-test-3@test.com';
 
-describe('CheckUserPushPermissions...', () => {
+describe('checkUserPushPermission', () => {
   const req = {} as Request;
   let testRepo: Required<db.Repo> | null = null;
 
@@ -51,14 +51,14 @@ describe('CheckUserPushPermissions...', () => {
     await db.deleteUser(TEST_USERNAME_2);
   });
 
-  it('A committer that is approved should be allowed to push...', async () => {
+  it('allows pushes from an approved committer', async () => {
     const action = new Action('1', 'type', 'method', 1, TEST_URL);
     action.userEmail = TEST_EMAIL_1;
     const { error } = await processor.exec(req, action);
     expect(error).toBe(false);
   });
 
-  it('A committer that is NOT approved should NOT be allowed to push...', async () => {
+  it('blocks pushes from an unapproved committer', async () => {
     const action = new Action('1', 'type', 'method', 1, TEST_URL);
     action.userEmail = TEST_EMAIL_2;
     const { error, errorMessage } = await processor.exec(req, action);
@@ -66,7 +66,7 @@ describe('CheckUserPushPermissions...', () => {
     expect(errorMessage).toContain('Your push has been blocked');
   });
 
-  it('An unknown committer should NOT be allowed to push...', async () => {
+  it('blocks pushes from an unknown committer', async () => {
     const action = new Action('1', 'type', 'method', 1, TEST_URL);
     action.userEmail = TEST_EMAIL_3;
     const { error, errorMessage } = await processor.exec(req, action);

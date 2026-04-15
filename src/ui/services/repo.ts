@@ -42,7 +42,7 @@ const canAddUser = async (repoId: string, user: string, action: string) => {
 class DupUserValidationError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'The user already has this role...';
+    this.name = 'The user already has this role.';
   }
 }
 

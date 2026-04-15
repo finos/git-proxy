@@ -22,7 +22,7 @@ import { getAllProxiedHosts } from '../../db';
 import { RepoQuery } from '../../db/types';
 import { isAdminUser } from './utils';
 import { Proxy } from '../../proxy';
-import { handleAndLogError } from '../../utils/errors';
+import { handleErrorAndLog } from '../../utils/errors';
 
 function repo(proxy: Proxy) {
   const router = express.Router();
@@ -56,7 +56,7 @@ function repo(proxy: Proxy) {
   router.patch('/:id/user/push', async (req: Request<{ id: string }>, res: Response) => {
     if (!isAdminUser(req.user)) {
       res.status(401).send({
-        message: 'You are not authorised to perform this action...',
+        message: 'You are not authorised to perform this action.',
       });
       return;
     }
@@ -77,7 +77,7 @@ function repo(proxy: Proxy) {
   router.patch('/:id/user/authorise', async (req: Request<{ id: string }>, res: Response) => {
     if (!isAdminUser(req.user)) {
       res.status(401).send({
-        message: 'You are not authorised to perform this action...',
+        message: 'You are not authorised to perform this action.',
       });
       return;
     }
@@ -100,7 +100,7 @@ function repo(proxy: Proxy) {
     async (req: Request<{ id: string; username: string }>, res: Response) => {
       if (!isAdminUser(req.user)) {
         res.status(401).send({
-          message: 'You are not authorised to perform this action...',
+          message: 'You are not authorised to perform this action.',
         });
         return;
       }
@@ -124,7 +124,7 @@ function repo(proxy: Proxy) {
     async (req: Request<{ id: string; username: string }>, res: Response) => {
       if (!isAdminUser(req.user)) {
         res.status(401).send({
-          message: 'You are not authorised to perform this action...',
+          message: 'You are not authorised to perform this action.',
         });
         return;
       }
@@ -146,7 +146,7 @@ function repo(proxy: Proxy) {
   router.delete('/:id/delete', async (req: Request<{ id: string }>, res: Response) => {
     if (!isAdminUser(req.user)) {
       res.status(401).send({
-        message: 'You are not authorised to perform this action...',
+        message: 'You are not authorised to perform this action.',
       });
       return;
     }
@@ -171,7 +171,7 @@ function repo(proxy: Proxy) {
   router.post('/', async (req: Request, res: Response) => {
     if (!isAdminUser(req.user)) {
       res.status(401).send({
-        message: 'You are not authorised to perform this action...',
+        message: 'You are not authorised to perform this action.',
       });
       return;
     }
@@ -219,7 +219,7 @@ function repo(proxy: Proxy) {
         // return data on the new repository (including it's _id and the proxyUrl)
         res.send({ ...repoDetails, proxyURL, message: 'created' });
       } catch (error: unknown) {
-        const msg = handleAndLogError(error, 'Repository creation failed');
+        const msg = handleErrorAndLog(error, 'Repository creation failed');
         res.status(500).send({ message: msg });
       }
     }

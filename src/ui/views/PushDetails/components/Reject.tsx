@@ -49,7 +49,7 @@ const Reject: React.FC<RejectProps> = ({ rejectFn }) => {
 
   return (
     <div>
-      <Button color='danger' onClick={handleClickOpen}>
+      <Button color='danger' onClick={handleClickOpen} data-testid='push-reject-btn'>
         Reject
       </Button>
       <Dialog
@@ -104,7 +104,12 @@ const Reject: React.FC<RejectProps> = ({ rejectFn }) => {
           <Button color='warning' onClick={handleClose}>
             Cancel
           </Button>
-          <Button color='danger' onClick={handleReject} disabled={!reason.trim()}>
+          <Button
+            color='danger'
+            onClick={handleReject}
+            disabled={!reason.trim()}
+            data-testid='push-reject-confirm-btn'
+          >
             <Block /> Reject
           </Button>
         </DialogActions>

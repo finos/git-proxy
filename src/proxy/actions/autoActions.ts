@@ -15,7 +15,7 @@
  */
 
 import { authorise, reject } from '../../db';
-import { handleAndLogError } from '../../utils/errors';
+import { handleErrorAndLog } from '../../utils/errors';
 import { CompletedAttestation, Rejection } from '../processors/types';
 import { Action } from './Action';
 
@@ -35,7 +35,7 @@ const attemptAutoApproval = async (action: Action) => {
 
     return true;
   } catch (error: unknown) {
-    handleAndLogError(error, 'Error during auto-approval');
+    handleErrorAndLog(error, 'Error during auto-approval');
     return false;
   }
 };
@@ -56,7 +56,7 @@ const attemptAutoRejection = async (action: Action) => {
 
     return true;
   } catch (error: unknown) {
-    handleAndLogError(error, 'Error during auto-rejection');
+    handleErrorAndLog(error, 'Error during auto-rejection');
     return false;
   }
 };

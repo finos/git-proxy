@@ -19,7 +19,7 @@ import { loadPlugin, resolvePlugin } from 'load-plugin';
 import Module from 'node:module';
 
 import { Action } from './proxy/actions';
-import { handleAndLogError } from './utils/errors';
+import { handleErrorAndLog } from './utils/errors';
 
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 ('use strict');
@@ -122,7 +122,7 @@ class PluginLoader {
         console.log(`Loaded plugin: ${plugin.constructor.name}`);
       });
     } catch (error: unknown) {
-      handleAndLogError(error, 'Error loading plugins');
+      handleErrorAndLog(error, 'Error loading plugins');
     }
   }
 

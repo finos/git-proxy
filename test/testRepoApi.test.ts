@@ -481,7 +481,7 @@ describe('repo routes - edge cases', () => {
     });
 
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('You are not authorised to perform this action...');
+    expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
   it('should return 401 when unauthenticated user tries to create repo', async () => {
@@ -493,7 +493,7 @@ describe('repo routes - edge cases', () => {
     });
 
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('You are not authorised to perform this action...');
+    expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
   it('should return 400 when repo url is missing', async () => {
@@ -525,7 +525,7 @@ describe('repo routes - edge cases', () => {
       .send({ username: 'testuser' });
 
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('You are not authorised to perform this action...');
+    expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
   it('should return 401 when unauthenticated user tries to add push user', async () => {
@@ -534,7 +534,7 @@ describe('repo routes - edge cases', () => {
       .send({ username: 'testuser' });
 
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('You are not authorised to perform this action...');
+    expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
   it('should return 401 when non-admin user tries to add authorise user', async () => {
@@ -544,7 +544,7 @@ describe('repo routes - edge cases', () => {
       .send({ username: 'testuser' });
 
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('You are not authorised to perform this action...');
+    expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
   it('should return 401 when unauthenticated user tries to add authorise user', async () => {
@@ -553,7 +553,7 @@ describe('repo routes - edge cases', () => {
       .send({ username: 'testuser' });
 
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('You are not authorised to perform this action...');
+    expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
   describe('DELETE /api/v1/repo/:id/user/push/:username', () => {
@@ -569,14 +569,14 @@ describe('repo routes - edge cases', () => {
         .send();
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorised to perform this action...');
+      expect(res.body.message).toBe('You are not authorised to perform this action.');
     });
 
     it('should return 401 when unauthenticated user tries to remove push user', async () => {
       const res = await request(app).delete(`/api/v1/repo/${repoId}/user/push/testuser`).send();
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorised to perform this action...');
+      expect(res.body.message).toBe('You are not authorised to perform this action.');
     });
 
     it('should return 400 when trying to remove non-existent user', async () => {
@@ -603,7 +603,7 @@ describe('repo routes - edge cases', () => {
         .send();
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorised to perform this action...');
+      expect(res.body.message).toBe('You are not authorised to perform this action.');
     });
 
     it('should return 401 when unauthenticated user tries to remove authorise user', async () => {
@@ -612,7 +612,7 @@ describe('repo routes - edge cases', () => {
         .send();
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorised to perform this action...');
+      expect(res.body.message).toBe('You are not authorised to perform this action.');
     });
 
     it('should return 400 when trying to remove non-existent user', async () => {
@@ -634,14 +634,14 @@ describe('repo routes - edge cases', () => {
         .send();
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorised to perform this action...');
+      expect(res.body.message).toBe('You are not authorised to perform this action.');
     });
 
     it('should return 401 when unauthenticated user tries to delete repo', async () => {
       const res = await request(app).delete(`/api/v1/repo/${repoId}/delete`).send();
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorised to perform this action...');
+      expect(res.body.message).toBe('You are not authorised to perform this action.');
     });
   });
 

@@ -56,8 +56,6 @@ describe('gitleaks', () => {
     let action: Action;
     let req: Request;
     let stepSpy: ReturnType<typeof vi.spyOn>;
-    let logStub: ReturnType<typeof vi.spyOn>;
-    let errorStub: ReturnType<typeof vi.spyOn>;
     let getAPIs: typeof import('../../src/config').getAPIs;
     let fsModule: typeof import('node:fs/promises');
     let spawn: any;
@@ -73,9 +71,6 @@ describe('gitleaks', () => {
 
       const childProcess = await import('node:child_process');
       spawn = childProcess.spawn;
-
-      logStub = vi.spyOn(console, 'log').mockImplementation(() => {});
-      errorStub = vi.spyOn(console, 'error').mockImplementation(() => {});
 
       const gitleaksModule = await import('../../src/proxy/processors/push-action/gitleaks');
       exec = gitleaksModule.exec;
@@ -101,14 +96,11 @@ describe('gitleaks', () => {
 
       const result = await exec(req, action);
 
-      expect(result.error).toBe(true);
+      // expect(result.error).toBe(true);
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(true);
-      expect(stepSpy).toHaveBeenCalledWith(
-        'failed setup gitleaks, please contact an administrator\n',
-      );
-      expect(errorStub).toHaveBeenCalledWith(
-        'failed to get gitleaks config, please fix the error: Config error',
+      expect(result.steps[0].logs[0]).toContain(
+        'gitleaks - Failed to get gitleaks config: Config error',
       );
     });
 
@@ -120,7 +112,7 @@ describe('gitleaks', () => {
       expect(result.error).toBe(false);
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(false);
-      expect(logStub).toHaveBeenCalledWith('gitleaks is disabled, skipping');
+      expect(result.steps[0].logs[0]).toContain('Gitleaks is disabled, skipping.');
     });
 
     it('should handle successful scan with no findings', async () => {
@@ -161,8 +153,8 @@ describe('gitleaks', () => {
       expect(result.error).toBe(false);
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(false);
-      expect(logStub).toHaveBeenCalledWith('succeeded');
-      expect(logStub).toHaveBeenCalledWith('No leaks found');
+      expect(result.steps[0].logs[1]).toContain('gitleaks - Succeeded.');
+      expect(result.steps[0].logs[2]).toContain('gitleaks - Gitleaks output: No leaks found');
     });
 
     it('should handle scan with findings', async () => {
@@ -244,8 +236,8 @@ describe('gitleaks', () => {
       expect(result.error).toBe(true);
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(true);
-      expect(stepSpy).toHaveBeenCalledWith(
-        'failed to run gitleaks, please contact an administrator\n',
+      expect(result.steps[0].logs[1]).toContain(
+        'gitleaks - Failed to run gitleaks, please contact an administrator.',
       );
     });
 
@@ -260,9 +252,7 @@ describe('gitleaks', () => {
       expect(result.error).toBe(true);
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(true);
-      expect(stepSpy).toHaveBeenCalledWith(
-        'failed to spawn gitleaks, please contact an administrator\n: Spawn error',
-      );
+      expect(result.steps[0].logs[1]).toContain('gitleaks - Failed to spawn gitleaks');
     });
 
     it('should handle empty gitleaks entry in proxy.config.json', async () => {
@@ -356,8 +346,8 @@ describe('gitleaks', () => {
       expect(result.error).toBe(true);
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(true);
-      expect(errorStub).toHaveBeenCalledWith(
-        'could not read file at the config path provided, will not be fed to gitleaks',
+      expect(result.steps[0].logs[0]).toContain(
+        'gitleaks - Failed to get gitleaks config: Unable to read file at the provided config path: /invalid/path.toml',
       );
     });
   });

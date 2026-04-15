@@ -50,6 +50,7 @@ module.exports = {
       collapsed: false,
       items: ['configuration/overview', 'configuration/reference', 'configuration/pre-receive'],
     },
+    'deployment',
     {
       type: 'category',
       label: 'Development',

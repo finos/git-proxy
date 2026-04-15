@@ -24,7 +24,7 @@ import util from 'util';
 
 import { PushQuery } from '@finos/git-proxy/db';
 import { Action } from '@finos/git-proxy/proxy/actions';
-import { handleAndLogError } from '@finos/git-proxy/utils/errors';
+import { handleErrorAndLog } from '@finos/git-proxy/utils/errors';
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
@@ -70,7 +70,7 @@ async function login(username: string, password: string) {
       console.error(`Error: Login '${username}': '${error.response.status}'`);
       process.exitCode = 1;
     } else {
-      handleAndLogError(error, `Error: Login '${username}'`);
+      handleErrorAndLog(error, `Error: Login '${username}'`);
       process.exitCode = 2;
     }
   }
@@ -184,7 +184,7 @@ async function getGitPushes(filters: Partial<PushQuery>) {
 
     console.log(util.inspect(records, false, null, false));
   } catch (error: unknown) {
-    handleAndLogError(error, 'Error: List');
+    handleErrorAndLog(error, 'Error: List');
     process.exitCode = 2;
   }
 }
@@ -229,15 +229,22 @@ async function authoriseGitPush(id: string) {
     if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
+        case 403:
           console.error('Error: Authorise: Authentication required');
           process.exitCode = 3;
           break;
         case 404:
           console.error(`Error: Authorise: ID: '${id}': Not Found`);
           process.exitCode = 4;
+          break;
+        default:
+          console.error(
+            `Error: Authorise: '${error.response.status}': ${error.response.data?.message || error.message}`,
+          );
+          process.exitCode = 5;
       }
     } else {
-      handleAndLogError(error, `Error: Authorise: '${id}'`);
+      handleErrorAndLog(error, `Error: Authorise: '${id}'`);
       process.exitCode = 2;
     }
   }
@@ -247,7 +254,7 @@ async function authoriseGitPush(id: string) {
  * Reject git push by ID
  * @param {string} id The ID of the git push to reject
  */
-async function rejectGitPush(id: string) {
+async function rejectGitPush(id: string, reason: string) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     console.error('Error: Reject: Authentication required');
     process.exitCode = 1;
@@ -263,7 +270,7 @@ async function rejectGitPush(id: string) {
 
     await axios.post(
       `${baseUrl}/api/v1/push/${id}/reject`,
-      {},
+      { reason },
       {
         headers: { Cookie: cookies },
       },
@@ -274,15 +281,22 @@ async function rejectGitPush(id: string) {
     if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
+        case 403:
           console.error('Error: Reject: Authentication required');
           process.exitCode = 3;
           break;
         case 404:
           console.error(`Error: Reject: ID: '${id}': Not Found`);
           process.exitCode = 4;
+          break;
+        default:
+          console.error(
+            `Error: Reject: '${error.response.status}': ${error.response.data?.message || error.message}`,
+          );
+          process.exitCode = 5;
       }
     } else {
-      handleAndLogError(error, `Error: Reject: '${id}'`);
+      handleErrorAndLog(error, `Error: Reject: '${id}'`);
       process.exitCode = 2;
     }
   }
@@ -319,15 +333,22 @@ async function cancelGitPush(id: string) {
     if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
+        case 403:
           console.error('Error: Cancel: Authentication required');
           process.exitCode = 3;
           break;
         case 404:
           console.error(`Error: Cancel: ID: '${id}': Not Found`);
           process.exitCode = 4;
+          break;
+        default:
+          console.error(
+            `Error: Cancel: '${error.response.status}': ${error.response.data?.message || error.message}`,
+          );
+          process.exitCode = 5;
       }
     } else {
-      handleAndLogError(error, `Error: Cancel: '${id}'`);
+      handleErrorAndLog(error, `Error: Cancel: '${id}'`);
       process.exitCode = 2;
     }
   }
@@ -351,7 +372,7 @@ async function logout() {
         },
       );
     } catch (error: unknown) {
-      handleAndLogError(error, 'Warning: Logout');
+      handleErrorAndLog(error, 'Warning: Logout');
     }
   }
 
@@ -375,7 +396,7 @@ async function reloadConfig() {
 
     console.log('Configuration reloaded successfully');
   } catch (error: unknown) {
-    handleAndLogError(error, 'Error: Reload config');
+    handleErrorAndLog(error, 'Error: Reload config');
     process.exitCode = 2;
   }
 }
@@ -423,6 +444,7 @@ async function createUser(
     if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
+        case 403:
           console.error('Error: Create User: Authentication required');
           process.exitCode = 3;
           break;
@@ -432,7 +454,7 @@ async function createUser(
           break;
       }
     } else {
-      handleAndLogError(error, `Error: Create User: '${username}'`);
+      handleErrorAndLog(error, `Error: Create User: '${username}'`);
       process.exitCode = 2;
     }
   }
@@ -563,9 +585,14 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
         demandOption: true,
         type: 'string',
       },
+      reason: {
+        describe: 'Reason for rejection',
+        type: 'string',
+        default: 'Rejected via GitProxy CLI',
+      },
     },
     handler(argv) {
-      rejectGitPush(argv.id);
+      rejectGitPush(argv.id, argv.reason);
     },
   })
   .command({

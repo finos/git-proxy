@@ -32,13 +32,9 @@ vi.mock('../../src/config', async (importOriginal) => {
 describe('checkCommitMessages', () => {
   let action: Action;
   let req: Request;
-  let consoleLogSpy: ReturnType<typeof vi.spyOn>;
   let mockCommitConfig: any;
 
   beforeEach(() => {
-    // spy on console.log to verify calls
-    consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
     // default mock config
     mockCommitConfig = {
       message: {
@@ -67,7 +63,7 @@ describe('checkCommitMessages', () => {
         const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
-        expect(consoleLogSpy).toHaveBeenCalledWith('No commit message included...');
+        expect(result.steps[0].logs).toContain('checkCommitMessages - No commit message included.');
       });
 
       it('should block null commit messages', async () => {
@@ -92,8 +88,8 @@ describe('checkCommitMessages', () => {
         const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
-        expect(consoleLogSpy).toHaveBeenCalledWith(
-          'A non-string value has been captured for the commit message...',
+        expect(result.steps[0].logs).toContain(
+          'checkCommitMessages - A non-string value has been captured for the commit message.',
         );
       });
 
@@ -123,8 +119,8 @@ describe('checkCommitMessages', () => {
         const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
-        expect(consoleLogSpy).toHaveBeenCalledWith(
-          'Commit message is blocked via configured literals/patterns...',
+        expect(result.steps[0].logs).toContain(
+          'checkCommitMessages - Commit message is blocked via configured literals/patterns.',
         );
       });
 
@@ -250,8 +246,8 @@ describe('checkCommitMessages', () => {
         const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(false);
-        expect(consoleLogSpy).toHaveBeenCalledWith(
-          expect.stringContaining('The following commit messages are legal:'),
+        expect(result.steps[0].logs).toContain(
+          'checkCommitMessages - The following commit messages are legal: fix: resolve bug in user authentication',
         );
       });
 
@@ -358,7 +354,7 @@ describe('checkCommitMessages', () => {
 
         // first log is the "push blocked" message
         expect(step.logs[1]).toContain(
-          'The following commit messages are illegal: ["Add password"]',
+          'checkCommitMessages - The following commit messages are illegal: Add password',
         );
       });
 

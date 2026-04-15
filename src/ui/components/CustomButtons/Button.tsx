@@ -78,7 +78,7 @@ export default function RegularButton(props: RegularButtonProps) {
   });
 
   return (
-    <Button {...rest} classes={muiClasses} className={btnClasses}>
+    <Button {...rest} disabled={disabled} classes={muiClasses} className={btnClasses}>
       {children}
     </Button>
   );

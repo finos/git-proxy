@@ -20,7 +20,7 @@ import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
 import { PushQuery } from '../types';
 import { CompletedAttestation, Rejection } from '../../proxy/processors/types';
-import { handleAndLogError } from '../../utils/errors';
+import { handleErrorAndLog } from '../../utils/errors';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -34,7 +34,7 @@ if (process.env.NODE_ENV === 'test') {
 try {
   db.ensureIndex({ fieldName: 'id', unique: true });
 } catch (error: unknown) {
-  handleAndLogError(
+  handleErrorAndLog(
     error,
     'Failed to build a unique index of push id values. Please check your database file for duplicate entries or delete the duplicate through the UI and restart. ',
   );

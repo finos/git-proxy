@@ -89,7 +89,7 @@ For detailed step-by-step instructions for how to install, deploy & configure Gi
 customize for your environment, see the [project's documentation](https://git-proxy.finos.org/docs/):
 
 - [Quickstart](https://git-proxy.finos.org/docs/category/quickstart/)
-- [Installation](https://git-proxy.finos.org/docs/installation)
+- [Installation](https://git-proxy.finos.org/docs/quickstart/installation)
 - [Configuration](https://git-proxy.finos.org/docs/category/configuration)
 - [Contributing](https://git-proxy.finos.org/docs/development/contributing)
 - [Testing](https://git-proxy.finos.org/docs/development/testing)

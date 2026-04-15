@@ -20,7 +20,7 @@ import { PluginLoader } from '../plugin';
 import { Action } from './actions';
 import * as proc from './processors';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
-import { handleAndLogError } from '../utils/errors';
+import { handleErrorAndLog } from '../utils/errors';
 
 const pushActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.parsePush,
@@ -69,7 +69,7 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
       }
     }
   } catch (error: unknown) {
-    const msg = handleAndLogError(error, 'An unexpected error occurred when executing the chain');
+    const msg = handleErrorAndLog(error, 'An unexpected error occurred when executing the chain');
     action.error = true;
     action.errorMessage = msg;
   } finally {

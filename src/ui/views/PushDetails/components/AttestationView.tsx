@@ -28,12 +28,12 @@ import { withStyles } from '@material-ui/core/styles';
 import { green } from '@material-ui/core/colors';
 import { setURLShortenerData } from '../../../services/config';
 import UserLink from '../../../components/UserLink/UserLink';
-import { AttestationFormData } from '../../../types';
+import { CompletedAttestation } from '../../../../proxy/processors/types';
 
 export interface AttestationViewProps {
   attestation: boolean;
   setAttestation: (value: boolean) => void;
-  data: AttestationFormData;
+  data: CompletedAttestation;
 }
 
 const StyledFormControlLabel = withStyles({
@@ -120,7 +120,7 @@ const AttestationView: React.FC<AttestationViewProps> = ({ attestation, setAttes
           style={{ margin: '0px 15px 0px 35px', rowGap: '20px', padding: '20px' }}
           row={false}
         >
-          {data.questions.map((question, index) => (
+          {data.answers.map((question, index) => (
             <div key={index}>
               <StyledFormControlLabel
                 control={<GreenCheckbox checked={question.checked} />}

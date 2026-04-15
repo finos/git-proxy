@@ -18,21 +18,21 @@ import { Request } from 'express';
 
 import { Action, Step } from '../../actions';
 import { getCommitConfig } from '../../../config';
-import { handleAndLogError } from '../../../utils/errors';
+import { handleErrorAndLogInStep } from '../../../utils/errors';
 
-const isMessageAllowed = (commitMessage: string): boolean => {
+const isMessageAllowed = (commitMessage: string, step: Step): boolean => {
   try {
     const commitConfig = getCommitConfig();
 
     // Commit message is empty, i.e. '', null or undefined
     if (!commitMessage) {
-      console.log('No commit message included...');
+      step.log('No commit message included.');
       return false;
     }
 
     // Validation for configured block pattern(s) check...
     if (typeof commitMessage !== 'string') {
-      console.log('A non-string value has been captured for the commit message...');
+      step.log('A non-string value has been captured for the commit message.');
       return false;
     }
 
@@ -55,11 +55,11 @@ const isMessageAllowed = (commitMessage: string): boolean => {
 
     // Commit message matches configured block pattern(s)
     if (literalMatches.length || patternMatches.length) {
-      console.log('Commit message is blocked via configured literals/patterns...');
+      step.log('Commit message is blocked via configured literals/patterns.');
       return false;
     }
   } catch (error: unknown) {
-    handleAndLogError(error, 'Error checking commit messages');
+    handleErrorAndLogInStep(step, error, 'Error checking commit messages');
     return false;
   }
 
@@ -72,11 +72,11 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
 
   const uniqueCommitMessages = [...new Set(action.commitData?.map((commit) => commit.message))];
 
-  const illegalMessages = uniqueCommitMessages.filter((message) => !isMessageAllowed(message));
+  const illegalMessages = uniqueCommitMessages.filter(
+    (message) => !isMessageAllowed(message, step),
+  );
 
   if (illegalMessages.length > 0) {
-    console.log(`The following commit messages are illegal: ${illegalMessages}`);
-
     step.error = true;
     step.log(`The following commit messages are illegal: ${illegalMessages}`);
     step.setError(
@@ -87,7 +87,7 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
     return action;
   }
 
-  console.log(`The following commit messages are legal: ${uniqueCommitMessages}`);
+  step.log(`The following commit messages are legal: ${uniqueCommitMessages}`);
   action.addStep(step);
   return action;
 };
