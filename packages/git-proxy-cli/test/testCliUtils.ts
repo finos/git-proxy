@@ -186,7 +186,7 @@ async function removeCookiesFile() {
  * @param {boolean} debug Print debug messages to console if true.
  */
 async function addRepoToDb(newRepo: Repo, debug = false) {
-  const repos = await db.getRepos();
+  const { data: repos } = await db.getRepos();
   const found = repos.find((y) => y.project === newRepo.project && newRepo.name === y.name);
   if (!found) {
     await db.createRepo(newRepo);
