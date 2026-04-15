@@ -13,7 +13,8 @@
   "scripts": {
     "build": "tsc",
     "lint": "eslint \"./*.ts\" --fix",
-    "test": "cd ../.. && vitest --run --dir packages/git-proxy-cli/test"
+    "test": "cd ../.. && vitest --run --dir packages/git-proxy-cli/test",
+    "test-coverage-ci": "cd ../.. && c8 --reports-dir ./coverage-cli --include \"packages/git-proxy-cli/dist/**\" --exclude \"packages/git-proxy-cli/test/**\" --reporter lcovonly --reporter text vitest --run --dir packages/git-proxy-cli/test --test-timeout 15000"
   },
   "author": "Miklos Sagi",
   "license": "Apache-2.0",
