@@ -1,6 +1,6 @@
 name: Security Review
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, reopened]
   issue_comment:
     types: [created]
