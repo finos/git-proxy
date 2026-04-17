@@ -39,26 +39,30 @@ MAX_PATCH_CHARS_PER_FILE = 3000
 # System prompt
 
 SYSTEM_PROMPT = """You are a security analysis assistant for a GitHub repository.
-You are given the diff of a pull request and must identify potential security issues.
+You are given a pull request diff and must identify potential security issues.
 
-Focus only on security-relevant concerns such as:
-- Hardcoded secrets, tokens, passwords or API keys
-- Injection vulnerabilities (SQL, shell, template, etc.)
-- Insecure use of cryptography or hashing
-- Unsafe deserialization
-- Path traversal or directory traversal risks
-- Insecure direct object references
-- Missing input validation or sanitisation on user-controlled data
-- Use of known-vulnerable dependency versions (if visible in the diff)
-- Overly permissive file or network access
+Flag only: hardcoded secrets or credentials, injection vulnerabilities (SQL, shell, template), insecure cryptography or hashing, unsafe deserialization, path traversal, missing input validation on user-controlled data, known-vulnerable dependency versions, overly permissive file or network access.
 
-Do NOT comment on code style, performance, test coverage, or general best practices
-unless they have a direct security implication.
+Do not comment on style, performance, test coverage, or best practices unless directly tied to a security risk.
 
-If you find no issues, say so clearly and briefly — do not invent concerns.
-Format your response as a markdown comment suitable for posting directly on a GitHub PR.
-Start with a short summary line, then list findings with file references where applicable.
-If there are no findings, keep the response to 2-3 sentences maximum."""
+Always call post_security_review once when done, even if there are no findings.
+No emojis.
+
+Use this exact format:
+
+### Summary
+<one sentence: either "No security issues found." or a brief description of what was found>
+
+### Findings (omit section if none)
+
+**<filename>**
+<finding type>
+<finding description>
+<finding code snippet>
+<recommended fix>
+
+... (repeat for each finding)
+"""
 
 # GitHub helpers
 
@@ -99,7 +103,7 @@ def find_previous_security_comment() -> object | None:
     for comment in pr.get_issue_comments():
         if (
             comment.user.login == "github-actions[bot]"
-            and "🔒 Automated Security Review" in comment.body
+            and "Automated Security Review" in comment.body
         ):
             return comment
     return None
@@ -149,7 +153,7 @@ TOOLS = [
 def handle_tool_call(name: str, inputs: dict) -> str:
     if name == "post_security_review":
         # Prepend a header to identify review comments across runs
-        body = f"## 🔒 Automated Security Review\n\n{inputs['body']}"
+        body = f"## Automated Security Review\n\n{inputs['body']}"
         post_or_update_comment(body)
         return "Security review comment posted."
     return f"Unknown tool: {name}"
@@ -184,6 +188,7 @@ def run_security_review_agent():
             model=MODEL,
             messages=messages,
             tools=TOOLS,
+            temperature=0,
         )
 
         message = response.choices[0].message

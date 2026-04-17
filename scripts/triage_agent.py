@@ -116,21 +116,23 @@ TOOLS = [
 # System prompt
 
 SYSTEM_PROMPT = """You are an issue triage assistant for a GitHub repository.
-Given a new issue and a list of existing open issues, you must:
+Given a new issue and a list of existing open issues, follow these steps in order.
+No emojis.
 
-1. Check whether the new issue is a duplicate of an existing one.
-   - If it clearly is the same issue, call mark_duplicate and stop — do not label or acknowledge further.
-   - If it seems related but could be distinct, call suggest_possible_duplicate. That comment
-     will serve as the acknowledgment too, so do NOT post a separate acknowledgment afterward.
-2. Otherwise, classify it by applying appropriate labels
-   (bug, feature-request, question, documentation, needs-info, good-first-issue).
-3. If the issue is missing key info (steps to reproduce for bugs, use case for features, etc.),
-   post a friendly comment asking for it.
-4. If no possible duplicate was flagged, post a short acknowledgment comment so the
-   author knows their issue was received. Do NOT post comments on administrative issues
-   such as meeting minutes, roadmaps, etc.
+1. DUPLICATE CHECK: If the issue clearly duplicates an existing one, call mark_duplicate and stop.
+   If it seems related but distinct, call suggest_possible_duplicate and continue triage.
+2. LABEL: Apply appropriate labels (bug, enhancement, question, documentation, needs-info, good-first-issue, etc.).
+3. NEEDS INFO: If the issue lacks key details (reproduction steps for bugs, use case for features), post a comment asking for them using this format:
 
-Keep comments concise and friendly."""
+Thanks for opening this issue. To help us investigate, please provide:
+- <specific missing detail>
+... (repeat for each missing detail)
+
+4. ACKNOWLEDGE: If no duplicate was flagged and no needs-info comment was posted, acknowledge receipt with this format:
+
+Thanks for the report. We will take a look.
+
+Do not post acknowledgments on administrative issues such as meeting minutes or roadmaps."""
 
 # GitHub helpers
 
@@ -172,9 +174,9 @@ def post_comment(body: str) -> str:
 def mark_duplicate(original_issue_number: int, reason: str) -> str:
     original = repo.get_issue(original_issue_number)
     issue.create_comment(
-        f"Thanks for the report! This looks like a duplicate of #{original_issue_number} "
+        f"This looks like a duplicate of #{original_issue_number} "
         f"({original.html_url}).\n\n> {reason}\n\n"
-        f"Please edit this issue to add any distinguishing details if you believe it's not a duplicate."
+        f"If you believe it is distinct, please edit this issue with any additional details."
     )
     issue.add_to_labels("duplicate")
     return f"Marked as duplicate of #{original_issue_number}."
@@ -183,9 +185,9 @@ def mark_duplicate(original_issue_number: int, reason: str) -> str:
 def suggest_possible_duplicate(related_issue_number: int, reason: str) -> str:
     related = repo.get_issue(related_issue_number)
     issue.create_comment(
-        f"Hey! This might be related to #{related_issue_number} "
-        f"({related.html_url}) — {reason}\n\n"
-        f"Feel free to check if that one already covers what you're reporting!"
+        f"This may be related to #{related_issue_number} "
+        f"({related.html_url}): {reason}\n\n"
+        f"Please check if that issue already covers what you are reporting."
     )
     return f"Flagged as possibly related to #{related_issue_number}."
 
@@ -230,6 +232,7 @@ def run_triage_agent():
             model=MODEL,
             messages=messages,
             tools=TOOLS,
+            temperature=0,
         )
 
         message = response.choices[0].message
