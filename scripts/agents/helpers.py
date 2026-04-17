@@ -1,3 +1,7 @@
+import os
+import json
+import litellm
+
 def validate_api_keys():
     valid_api_keys = ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY"]
     if not any(os.environ.get(k) for k in valid_api_keys):

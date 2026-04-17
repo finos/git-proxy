@@ -1,6 +1,4 @@
 import os
-import json
-import litellm
 from github import Github, Auth
 from helpers import validate_env_vars, validate_api_keys, run_agent
 
