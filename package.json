@@ -97,7 +97,7 @@
   },
   "dependencies": {
     "@aws-sdk/credential-providers": "^3.980.0",
-    "@headlessui/react": "^2.2.9",
+    "@headlessui/react": "^2.2.10",
     "@heroicons/react": "^2.2.0",
     "@primer/octicons-react": "^19.23.1",
     "@primer/primitives": "^11.6.0",
