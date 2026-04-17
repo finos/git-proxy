@@ -20,14 +20,14 @@ jobs:
           MODEL: ${{ secrets.MODEL }}
           # Only API key for the chosen model is required
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # Obtained automatically by GH Actions
-          AUTHOR_USERNAME: ${{ github.event.pull_request.user.login }}
           AUTHOR_ASSOCIATION: ${{ github.event.pull_request.author_association }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPO_NAME: ${{ github.repository }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
+          AUTHOR_USERNAME: ${{ github.event.pull_request.user.login }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          REPO_NAME: ${{ github.repository }}
         run: python scripts/pr_checker_agent.py

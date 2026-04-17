@@ -9,7 +9,8 @@ gh = Github(auth=Auth.Token(os.environ["GITHUB_TOKEN"]))
 repo = gh.get_repo(os.environ["REPO_NAME"])
 issue = repo.get_issue(int(os.environ["ISSUE_NUMBER"]))
 
-LATEST_ISSUES_LIMIT = 100
+LATEST_ISSUES_LIMIT = int(os.environ["LATEST_ISSUES_LIMIT"], 100)
+AVAILABLE_LABELS = os.environ.get("AVAILABLE_LABELS", "bug,enhancement,question,documentation,needs-info")
 MODEL = os.environ["MODEL"]
 
 for env_var in ["GITHUB_TOKEN", "REPO_NAME", "ISSUE_NUMBER", "ISSUE_TITLE", "ISSUE_BODY", "MODEL"]:
@@ -29,10 +30,7 @@ TOOLS = [
             "name": "apply_label",
             "description": (
                 "Apply one or more labels to the issue. "
-                "Use labels like: automation, bug, dependencies, "
-                "documentation, enhancement, good-first-issue, "
-                "meeting, needs-info, plugins, protocol, question, "
-                "security, tech-debt, testing."
+                "Use labels like: " + AVAILABLE_LABELS
             ),
             "parameters": {
                 "type": "object",

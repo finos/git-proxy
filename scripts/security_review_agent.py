@@ -18,23 +18,19 @@ valid_api_keys = ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY"]
 if not any(os.environ.get(api_key) for api_key in valid_api_keys):
     raise ValueError("No API key is set")
 
+IGNORED_FILENAMES = set(os.environ.get(
+    "IGNORED_FILENAMES",
+    "package-lock.json,yarn.lock,poetry.lock,Gemfile.lock,Cargo.lock,composer.lock,pnpm-lock.yaml,pip.lock"
+).split(","))
 
-# Exclude files that are not useful for security analysis
-IGNORED_FILENAMES = {
-    "package-lock.json",
-    "yarn.lock",
-    "poetry.lock",
-    "Gemfile.lock",
-    "Cargo.lock",
-    "composer.lock",
-    "pnpm-lock.yaml",
-    "pip.lock",
-}
-
-IGNORED_EXTENSIONS = {".lock", ".sum"}
+# Extensions must include a leading dot
+IGNORED_EXTENSIONS = set(os.environ.get(
+    "IGNORED_EXTENSIONS",
+    ".lock,.sum"
+).split(","))
 
 # Truncate very large diffs like generated files to prevent bloating the prompt
-MAX_PATCH_CHARS_PER_FILE = 3000
+MAX_PATCH_CHARS_PER_FILE = int(os.environ.get("MAX_PATCH_CHARS_PER_FILE", 3000))
 
 # System prompt
 

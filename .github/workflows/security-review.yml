@@ -28,15 +28,18 @@ jobs:
       - run: pip install litellm PyGithub
       - name: Run security review agent
         env:
+          IGNORED_EXTENSIONS: .lock,.sum
+          IGNORED_FILENAMES: package-lock.json,yarn.lock,poetry.lock,Gemfile.lock,Cargo.lock,composer.lock,pnpm-lock.yaml,pip.lock
+          MAX_PATCH_CHARS_PER_FILE: 3000
           # e.g: "claude-sonnet-4-6", "gpt-4o", etc.
           MODEL: ${{ secrets.MODEL }}
           # Only API key for the chosen model is required
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           # Obtained automatically by GH Actions
-          REPO_NAME: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          REPO_NAME: ${{ github.repository }}
           TRIGGER: ${{ github.event_name }}
         run: python scripts/security_review_agent.py
