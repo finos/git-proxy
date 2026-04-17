@@ -38,21 +38,53 @@ const getPush = async (id: string): Promise<ServiceResult<PushActionView>> => {
   }
 };
 
-const getPushes = async (
-  query = {
-    blocked: true,
-    canceled: false,
-    authorised: false,
-    rejected: false,
-  },
-): Promise<ServiceResult<PushActionView[]>> => {
+export type GetPushesQuery = {
+  blocked?: boolean;
+  canceled?: boolean;
+  authorised?: boolean;
+  rejected?: boolean;
+  error?: boolean;
+  url?: string;
+};
+
+const getPushesDefaultFilters: Record<string, boolean> = {
+  blocked: true,
+  canceled: false,
+  authorised: false,
+  rejected: false,
+};
+
+const getUserActivity = async (username: string): Promise<ServiceResult<PushActionView[]>> => {
+  const apiV1Base = await getApiV1BaseUrl();
+  const path = `${apiV1Base}/user/${encodeURIComponent(username)}/activity`;
+  try {
+    const response = await axios<Action[]>(path, getAxiosConfig());
+    return successResult(response.data as unknown as PushActionView[]);
+  } catch (error: unknown) {
+    return errorResult(error, 'Failed to load user activity');
+  }
+};
+
+const getPushes = async (query?: GetPushesQuery): Promise<ServiceResult<PushActionView[]>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/push`);
 
-  const stringifiedQuery = Object.fromEntries(
-    Object.entries(query).map(([key, value]) => [key, value.toString()]),
-  );
-  url.search = new URLSearchParams(stringifiedQuery).toString();
+  const params = new URLSearchParams();
+  if (query === undefined) {
+    for (const [key, value] of Object.entries(getPushesDefaultFilters)) {
+      params.set(key, String(value));
+    }
+  } else {
+    for (const [key, value] of Object.entries(query)) {
+      if (value === undefined) continue;
+      params.set(key, typeof value === 'boolean' ? value.toString() : value);
+    }
+  }
+
+  const qs = params.toString();
+  if (qs) {
+    url.search = qs;
+  }
 
   try {
     const response = await axios<Action[]>(url.toString(), getAxiosConfig());
@@ -109,4 +141,28 @@ const cancelPush = async (id: string): Promise<ServiceResult> => {
   }
 };
 
-export { getPush, getPushes, authorisePush, rejectPush, cancelPush };
+const getPushPermissions = async (
+  id: string,
+): Promise<ServiceResult<{ canCancel: boolean; canApproveReject: boolean }>> => {
+  const apiV1Base = await getApiV1BaseUrl();
+  const url = `${apiV1Base}/push/${id}/permissions`;
+  try {
+    const response = await axios<{ canCancel: boolean; canApproveReject: boolean }>(
+      url,
+      getAxiosConfig(),
+    );
+    return successResult(response.data);
+  } catch (error: unknown) {
+    return errorResult(error, 'Failed to load push permissions');
+  }
+};
+
+export {
+  getPush,
+  getPushes,
+  getPushPermissions,
+  getUserActivity,
+  authorisePush,
+  rejectPush,
+  cancelPush,
+};
