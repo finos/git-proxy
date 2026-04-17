@@ -30,4 +30,4 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_TITLE: ${{ github.event.pull_request.title }}
           REPO_NAME: ${{ github.repository }}
-        run: python scripts/pr_checker_agent.py
+        run: python scripts/agents/pr_checker_agent.py

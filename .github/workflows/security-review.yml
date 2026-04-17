@@ -42,4 +42,4 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
           REPO_NAME: ${{ github.repository }}
           TRIGGER: ${{ github.event_name }}
-        run: python scripts/security_review_agent.py
+        run: python scripts/agents/security_review_agent.py

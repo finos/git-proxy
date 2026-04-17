@@ -2,6 +2,7 @@ import os
 import json
 import litellm
 from github import Github, Auth
+from helpers import validate_env_vars, validate_api_keys, run_agent
 
 # Setup
 
@@ -13,13 +14,8 @@ LATEST_ISSUES_LIMIT = int(os.environ["LATEST_ISSUES_LIMIT"], 100)
 AVAILABLE_LABELS = os.environ.get("AVAILABLE_LABELS", "bug,enhancement,question,documentation,needs-info")
 MODEL = os.environ["MODEL"]
 
-for env_var in ["GITHUB_TOKEN", "REPO_NAME", "ISSUE_NUMBER", "ISSUE_TITLE", "ISSUE_BODY", "MODEL"]:
-    if not os.environ[env_var]:
-        raise ValueError(f"{env_var} is not set")
-
-valid_api_keys = ["ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY"]
-if not any(os.environ.get(api_key) for api_key in valid_api_keys):
-    raise ValueError("No API key is set")
+validate_env_vars(["GITHUB_TOKEN", "REPO_NAME", "ISSUE_NUMBER", "ISSUE_TITLE", "ISSUE_BODY", "MODEL"])
+validate_api_keys()
 
 # Tools
 
@@ -224,33 +220,7 @@ def run_triage_agent():
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": build_initial_message()},
     ]
-
-    while True:
-        response = litellm.completion(
-            model=MODEL,
-            messages=messages,
-            tools=TOOLS,
-            temperature=0,
-        )
-
-        message = response.choices[0].message
-        messages.append(message.model_dump(exclude_none=True))
-
-        finish_reason = response.choices[0].finish_reason
-        if finish_reason == "stop" or not message.tool_calls:
-            break
-
-        tool_results = []
-        for tool_call in message.tool_calls:
-            inputs = json.loads(tool_call.function.arguments)
-            result = handle_tool_call(tool_call.function.name, inputs)
-            tool_results.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": result,
-            })
-
-        messages.extend(tool_results)
+    run_agent(messages, TOOLS, handle_tool_call, MODEL)
 
 
 if __name__ == "__main__":
