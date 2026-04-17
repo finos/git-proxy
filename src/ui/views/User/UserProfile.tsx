@@ -14,186 +14,251 @@
  * limitations under the License.
  */
 
-import React, { useState, useEffect, useContext } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import GridItem from '../../components/Grid/GridItem';
-import GridContainer from '../../components/Grid/GridContainer';
-import Card from '../../components/Card/Card';
-import CardBody from '../../components/Card/CardBody';
-import Button from '../../components/CustomButtons/Button';
-import FormLabel from '@material-ui/core/FormLabel';
-import { getUser, updateUser } from '../../services/user';
-import { UserContext, UserContextType } from '../../context';
+import React, { useState, useMemo, useCallback } from 'react';
+import { Navigate, useParams, useLocation } from 'react-router';
+import { GearIcon, ListUnorderedIcon } from '@primer/octicons-react';
+import { Label, Link as PrimerLink, Spinner, Stack, Text } from '@primer/react';
+import { GitProxyUnderlinePanels } from '../../components/GitProxyUnderlineTabs';
+
+import { useAuth } from '../../auth/AuthProvider';
+import TimedBanner from '../../components/TimedBanner/TimedBanner';
+import Danger from '../../components/Typography/Danger';
+import { sortRepoViews } from '../../services/repo';
+import { useRepoViewsListQuery } from '../../query/useRepoViewsListQuery';
+import PushesTable from '../PushRequests/components/PushesTable';
+import { useUserQuery } from '../../query/useUserQuery';
+import { useUserActivityQuery } from '../../query/useUserActivityQuery';
 
 import { PublicUser } from '../../../db/types';
-import { makeStyles } from '@material-ui/core/styles';
 
-import { LogoGithubIcon } from '@primer/octicons-react';
-import CloseRounded from '@material-ui/icons/CloseRounded';
-import { Check, Save } from '@material-ui/icons';
-import { TextField, Theme } from '@material-ui/core';
+const externalLinkClass =
+  'text-sm text-[#0969da] underline underline-offset-2 decoration-[#0969da]/80 hover:text-[#0550ae]';
 
-const useStyles = makeStyles((theme: Theme) => ({
-  root: {
-    '& .MuiTextField-root': {
-      margin: theme.spacing(1),
-      width: '100%',
-    },
-  },
-}));
+/** Route param can be missing under nested dashboard routes; pathname is authoritative for `/dashboard/user/:id`. */
+const dashboardUserProfileId = (pathname: string): string | undefined => {
+  const m = /^\/dashboard\/user\/([^/]+)\/?$/.exec(pathname);
+  return m?.[1];
+};
+
+const ProfileField = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}): React.ReactElement => (
+  <Stack direction='vertical' gap='condensed' padding='none'>
+    <Text className='text-sm font-semibold text-(--fgColor-default)'>{label}</Text>
+    <div className='text-sm text-(--fgColor-default)'>{children}</div>
+  </Stack>
+);
+
+const ACTIVITY_ITEMS_PER_PAGE = 100;
+
+type ProfileMainTab = 'activity' | 'settings';
 
 export default function UserProfile(): React.ReactElement {
-  const classes = useStyles();
-  const [user, setUser] = useState<PublicUser | null>(null);
-  const [auth, setAuth] = useState<boolean>(true);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [gitAccount, setGitAccount] = useState<string>('');
-  const navigate = useNavigate();
-  const { id } = useParams<{ id?: string }>();
-  const { user: loggedInUser } = useContext<UserContextType>(UserContext);
-  const isOwnProfile = !id;
+  const { user: sessionUser } = useAuth();
+  const [showEmailSavedBanner, setShowEmailSavedBanner] = useState<boolean>(false);
+  const [localUser, setLocalUser] = useState<PublicUser | null>(null);
+  const [formErrorMessage, setFormErrorMessage] = useState<string>('');
+  const { data: repoListRaw } = useRepoViewsListQuery(true);
+  const registeredRepos = useMemo(
+    () => (repoListRaw ? sortRepoViews(repoListRaw, 'name-asc') : []),
+    [repoListRaw],
+  );
+  const [mainTab, setMainTab] = useState<ProfileMainTab>('activity');
+  const [activityPage, setActivityPage] = useState<number>(1);
+  const { id: idParam } = useParams<{ id?: string }>();
+  const { pathname } = useLocation();
+  const id = dashboardUserProfileId(pathname) ?? (idParam?.trim() || undefined);
 
-  useEffect(() => {
-    getUser(
-      setIsLoading,
-      (user: PublicUser) => {
-        setUser(user);
-        setGitAccount(user.gitAccount || '');
-      },
-      setAuth,
-      setErrorMessage,
-      id,
+  const { data: fetchedUser, isLoading, error: userError } = useUserQuery(id ?? null);
+
+  // Allow optimistic updates to user (e.g. after email save) without a refetch
+  const user = localUser ?? fetchedUser ?? null;
+
+  const activityUsername = useMemo(() => {
+    const fromRoute = id?.trim();
+    if (fromRoute) return fromRoute;
+    return user?.username?.trim() ?? '';
+  }, [id, user?.username]);
+
+  const {
+    data: activityRows = [],
+    isLoading: activityLoading,
+    error: activityError,
+  } = useUserActivityQuery(activityUsername || undefined);
+
+  const maxActivityPage = Math.max(1, Math.ceil(activityRows.length / ACTIVITY_ITEMS_PER_PAGE));
+  const effectiveActivityPage = Math.min(activityPage, maxActivityPage);
+
+  const handleActivityPageChange = useCallback((next: number) => {
+    setActivityPage(next);
+  }, []);
+
+  const isOwnProfile =
+    Boolean(sessionUser) &&
+    (id == null ||
+      id === '' ||
+      (sessionUser != null && sessionUser.username.toLowerCase() === (id ?? '').toLowerCase()));
+  const isSessionAdmin = Boolean(sessionUser?.admin);
+  const showSettingsTab = isOwnProfile || isSessionAdmin;
+
+  if (isLoading) {
+    return (
+      <div className='flex w-full min-w-0 items-center gap-2'>
+        <Spinner />
+      </div>
     );
-  }, [id]);
-
-  if (isLoading) return <div>Loading...</div>;
-
-  if (!auth && window.location.pathname === '/dashboard/profile') {
-    return <Navigate to='/login' />;
   }
 
-  if (errorMessage) throw new Error(errorMessage);
+  if (userError) {
+    const status = (userError as any)?.response?.status;
+    if (status === 401 && window.location.pathname === '/dashboard/profile') {
+      return <Navigate to='/login' />;
+    }
+    return <Danger>{userError.message}</Danger>;
+  }
 
-  if (!user) return <div>No user data available</div>;
+  if (!user) {
+    return (
+      <Text
+        as='p'
+        size='medium'
+        weight='normal'
+        className='m-0 min-w-0 w-full text-[var(--fgColor-default)]'
+      >
+        No user data available
+      </Text>
+    );
+  }
 
-  const updateProfile = async (): Promise<void> => {
-    const updatedData = {
-      ...user,
-      gitAccount: escapeHTML(gitAccount),
-    };
+  const profileNameLabel = user.displayName?.trim() || user.username;
+  const roleText = user.title?.trim() ?? '';
+  const emailText = user.email?.trim() ?? '';
 
-    // Does not reject and will display any errors that occur
-    await updateUser(updatedData, setErrorMessage, setIsLoading);
-    setUser(updatedData);
-    navigate(`/dashboard/profile`);
-  };
-
-  const UpdateButton = (): React.ReactElement => (
-    <Button variant='outlined' color='success' onClick={updateProfile}>
-      <Save />
-      Update
-    </Button>
+  const activitySection = (
+    <Stack direction='vertical' gap='normal' padding='none' className='min-w-0 w-full'>
+      {!activityLoading && !activityError && activityRows.length > 0 ? (
+        <Text
+          as='p'
+          size='medium'
+          weight='normal'
+          className='m-0 min-w-0 w-full text-[var(--fgColor-default)]'
+        >
+          Pushes committed with this user&apos;s registered emails, or that they approved in the
+          dashboard.
+        </Text>
+      ) : null}
+      {activityError ? <Danger>{activityError.message}</Danger> : null}
+      {!activityError ? (
+        <div className='min-w-0 w-full'>
+          {!activityLoading && activityRows.length === 0 ? (
+            <Text
+              as='p'
+              size='medium'
+              weight='normal'
+              className='m-0 min-w-0 w-full text-[var(--fgColor-default)]'
+            >
+              No activity yet.
+            </Text>
+          ) : (
+            <PushesTable
+              registeredRepos={registeredRepos}
+              rows={activityRows}
+              isLoading={activityLoading}
+              currentPage={effectiveActivityPage}
+              onPageChange={handleActivityPageChange}
+              showStatus
+            />
+          )}
+        </div>
+      ) : null}
+    </Stack>
   );
 
-  const escapeHTML = (str: string): string => {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
-      .replace(/\\/g, '&#39;')
-      .replace(/\//g, '&#x2F;');
-  };
+  const settingsSection = (
+    <Stack direction='vertical' gap='spacious' padding='none' className='min-w-0'>
+      {formErrorMessage ? <Danger>{formErrorMessage}</Danger> : null}
+      {roleText ? (
+        <Stack direction='vertical' gap='normal' padding='none' className='min-w-0'>
+          <ProfileField label='Role'>{roleText}</ProfileField>
+        </Stack>
+      ) : null}
+    </Stack>
+  );
 
   return (
-    <form className={classes.root} noValidate autoComplete='off'>
-      <GridContainer>
-        <GridItem xs={12} sm={12} md={12}>
-          <Card>
-            <CardBody
-              style={{
-                padding: '20px',
-              }}
-            >
-              <GridContainer
-                style={{
-                  paddingTop: '10px',
-                }}
+    <div className='w-full min-w-0'>
+      <Stack direction='vertical' gap='spacious' padding='none'>
+        <TimedBanner
+          open={showEmailSavedBanner}
+          onDismiss={() => setShowEmailSavedBanner(false)}
+          title='External email saved'
+          description={
+            isOwnProfile
+              ? 'Your external email has been updated.'
+              : "This user's external email has been updated."
+          }
+        />
+        <Stack direction='vertical' gap='condensed' padding='none' className='min-w-0'>
+          <Stack direction='horizontal' gap='normal' padding='none' align='center' wrap='wrap'>
+            <Text as='h1' className='m-0! text-xl! font-semibold! tracking-tight!'>
+              {profileNameLabel}
+            </Text>
+            {user.admin ? (
+              <Label variant='accent' size='small'>
+                Admin
+              </Label>
+            ) : null}
+          </Stack>
+          {emailText ? (
+            <Text className='mt-1 block text-sm text-(--fgColor-muted)'>
+              <PrimerLink className={externalLinkClass} href={`mailto:${emailText}`}>
+                {emailText}
+              </PrimerLink>
+            </Text>
+          ) : null}
+        </Stack>
+
+        {user && activityUsername ? (
+          <Stack direction='vertical' gap='normal' padding='none' className='min-w-0 w-full'>
+            {showSettingsTab ? (
+              <GitProxyUnderlinePanels
+                aria-label='Profile sections'
+                loadingCounters={activityLoading && mainTab === 'activity'}
+                className='min-w-0 w-full'
               >
-                {user.gitAccount && (
-                  <GridItem xs={1} sm={1} md={1}>
-                    <img
-                      width={'75px'}
-                      style={{ borderRadius: '5px' }}
-                      src={`https://github.com/${user.gitAccount}.png`}
-                      alt={`${user.displayName}'s GitHub avatar`}
-                    />
-                  </GridItem>
-                )}
-                <GridItem xs={2} sm={2} md={2}>
-                  <FormLabel component='legend'>Name</FormLabel>
-                  {user.displayName}
-                </GridItem>
-                <GridItem xs={2} sm={2} md={2}>
-                  <FormLabel component='legend'>Role</FormLabel>
-                  {user.title}
-                </GridItem>
-                <GridItem xs={2} sm={2} md={2}>
-                  <FormLabel component='legend'>E-mail</FormLabel>
-                  <a href={`mailto:${user.email}`}>{user.email}</a>
-                </GridItem>
-                {user.gitAccount && (
-                  <GridItem xs={2} sm={2} md={2}>
-                    <FormLabel component='legend'>GitHub Username</FormLabel>
-                    <a
-                      href={`https://github.com/${user.gitAccount}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
-                      {user.gitAccount}
-                    </a>
-                  </GridItem>
-                )}
-                <GridItem xs={2} sm={2} md={2}>
-                  <FormLabel component='legend'>Administrator</FormLabel>
-                  {user?.admin ? (
-                    <span style={{ color: 'green' }}>
-                      <Check fontSize='small' />
-                    </span>
-                  ) : (
-                    <CloseRounded color='error' />
-                  )}
-                </GridItem>
-              </GridContainer>
-              {isOwnProfile || loggedInUser.admin ? (
-                <div style={{ marginTop: '50px' }}>
-                  <hr style={{ opacity: 0.2 }} />
-                  <div style={{ marginTop: '25px' }}>
-                    <FormLabel component='legend'>
-                      What is your <LogoGithubIcon /> username?
-                    </FormLabel>
-                    <div style={{ textAlign: 'right' }}>
-                      <TextField
-                        id='gitAccount'
-                        aria-describedby='gitAccount-helper-text'
-                        variant='outlined'
-                        placeholder='Enter a new GitHub username...'
-                        value={gitAccount}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setGitAccount(e.target.value)
-                        }
-                      />
-                      <UpdateButton />
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-            </CardBody>
-          </Card>
-        </GridItem>
-      </GridContainer>
-    </form>
+                <GitProxyUnderlinePanels.Tab
+                  icon={ListUnorderedIcon}
+                  counter={activityRows.length}
+                  aria-selected={mainTab === 'activity'}
+                  onSelect={() => {
+                    setMainTab('activity');
+                  }}
+                >
+                  Activity
+                </GitProxyUnderlinePanels.Tab>
+                <GitProxyUnderlinePanels.Tab
+                  icon={GearIcon}
+                  aria-selected={mainTab === 'settings'}
+                  onSelect={() => {
+                    setMainTab('settings');
+                  }}
+                >
+                  Settings
+                </GitProxyUnderlinePanels.Tab>
+              </GitProxyUnderlinePanels>
+            ) : null}
+            {showSettingsTab
+              ? mainTab === 'activity'
+                ? activitySection
+                : settingsSection
+              : activitySection}
+          </Stack>
+        ) : null}
+      </Stack>
+    </div>
   );
 }

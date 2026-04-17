@@ -14,133 +14,129 @@
  * limitations under the License.
  */
 
-import React, { useEffect } from 'react';
-import { Snackbar, TableCell, TableRow } from '@material-ui/core';
-import GridContainer from '../../../components/Grid/GridContainer';
-import GridItem from '../../../components/Grid/GridItem';
-import { CodeReviewIcon, LawIcon, PeopleIcon } from '@primer/octicons-react';
+import React from 'react';
+import { Link, Stack, Text } from '@primer/react';
+import { LawIcon, RepoIcon } from '@primer/octicons-react';
+import ActivityBadgeGroup from '../../../components/ActivityBadgeGroup/ActivityBadgeGroup';
 import CodeActionButton from '../../../components/CustomButtons/CodeActionButton';
 import { languageColors } from '../../../../constants/languageColors';
-import { RepoView, SCMRepositoryMetadata } from '../../../types';
-import { fetchRemoteRepositoryData } from '../../../utils';
+import { RepoView } from '../../../types';
+import { useRepoScmMetadataQuery } from '../../../query/useRepoScmMetadataQuery';
+import { DEFAULT_ACTIVITY_TAB, type ActivityTab } from '../../PushRequests/activityListQuery';
 
-export interface RepositoriesProps {
-  repo: RepoView;
-  [key: string]: unknown;
+export function cloneURLForRepo(repo: RepoView): string {
+  const { url: remoteUrl, proxyURL } = repo;
+  const parsedUrl = new URL(remoteUrl);
+  return `${proxyURL}/${parsedUrl.host}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`;
 }
 
-const Repositories: React.FC<RepositoriesProps> = (props) => {
-  const [remoteRepoData, setRemoteRepoData] = React.useState<SCMRepositoryMetadata | null>(null);
-  const [errorMessage] = React.useState('');
-  const [snackbarOpen, setSnackbarOpen] = React.useState(false);
+function isAbsoluteHttpUrl(href: string): boolean {
+  return href.startsWith('http://') || href.startsWith('https://');
+}
 
-  useEffect(() => {
-    prepareRemoteRepositoryData();
-  }, [props.repo.project, props.repo.name, props.repo.url]);
+/** Deep-link to Activity with optional repo filter; omits default `pending` tab query. */
+function activityListHref(repoId: string, tab: ActivityTab): string {
+  const params = new URLSearchParams();
+  params.set('repo', repoId);
+  if (tab !== 'all' && tab !== DEFAULT_ACTIVITY_TAB) {
+    params.set('tab', tab);
+  }
+  return `/dashboard/push?${params.toString()}`;
+}
 
-  const prepareRemoteRepositoryData = async () => {
-    try {
-      const { url: remoteUrl } = props.repo;
-      if (!remoteUrl) return;
+/** GitHub org repositories–style primary cell (name, fork line, description, metadata row). */
+export function RepositoryMainCell({ repo }: { repo: RepoView }): React.ReactElement {
+  const { data: remoteRepoData } = useRepoScmMetadataQuery(repo._id);
 
-      setRemoteRepoData(
-        await fetchRemoteRepositoryData(props.repo.project, props.repo.name, remoteUrl),
-      );
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      const errorMessage = `Unable to fetch repository data for ${props.repo.project}/${props.repo.name} from '${remoteUrl}' - this may occur if the project is private or from an SCM vendor that is not supported.`;
-      console.warn(errorMessage, msg);
-    }
-  };
+  const mutedMeta = 'text-xs font-light text-[var(--fgColor-muted)] whitespace-nowrap';
 
-  const { url: remoteUrl, proxyURL } = props?.repo || {};
-  const parsedUrl = new URL(remoteUrl);
-  const cloneURL = `${proxyURL}/${parsedUrl.host}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`;
+  const avatarUrl = remoteRepoData?.avatarUrl;
 
   return (
-    <TableRow>
-      <TableCell>
-        <div style={{ padding: '15px' }}>
-          <a href={`/dashboard/repo/${props.repo._id}`}>
-            <span style={{ fontSize: '17px' }}>
-              {props.repo.project}/{props.repo.name}
-            </span>
-          </a>
-          {remoteRepoData?.parentName && (
-            <span
-              style={{
-                fontSize: '11.5px',
-                display: 'block',
-                opacity: 0.8,
-              }}
-            >
-              Forked from{' '}
-              <a
-                style={{
-                  fontWeight: 'normal',
-                  color: 'inherit',
-                }}
+    <Stack direction='horizontal' gap='normal' padding='none' align='start' className='min-w-0'>
+      <div
+        className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-md${
+          avatarUrl ? '' : ' border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)]'
+        }`}
+      >
+        {avatarUrl ? (
+          <img src={avatarUrl} alt='' className='h-full w-full object-cover' />
+        ) : (
+          <RepoIcon size={16} className='text-[var(--fgColor-muted)]' aria-hidden />
+        )}
+      </div>
+      <Stack direction='vertical' gap='condensed' padding='none' className='min-w-0'>
+        <Text as='div' size='medium' weight='semibold'>
+          <Link
+            href={`/dashboard/repo/${repo._id}`}
+            className='!text-[var(--fgColor-accent)] no-underline hover:underline'
+          >
+            {repo.project}/{repo.name}
+          </Link>
+        </Text>
+        {remoteRepoData?.parentName ? (
+          <Text as='div' className='text-xs font-light leading-default text-[var(--fgColor-muted)]'>
+            Forked from{' '}
+            {remoteRepoData.parentUrl ? (
+              <Link
                 href={remoteRepoData.parentUrl}
+                muted
+                className='hover:underline'
+                {...(isAbsoluteHttpUrl(remoteRepoData.parentUrl)
+                  ? { target: '_blank', rel: 'noopener noreferrer' }
+                  : {})}
               >
                 {remoteRepoData.parentName}
-              </a>
-            </span>
-          )}
-          {remoteRepoData?.description && (
-            <p style={{ maxWidth: '80%' }}>{remoteRepoData.description}</p>
-          )}
-          <GridContainer>
-            {remoteRepoData?.language && (
-              <GridItem>
-                <span
-                  style={{
-                    height: '12px',
-                    width: '12px',
-                    backgroundColor: `${languageColors[remoteRepoData.language] || '#ccc'}`,
-                    borderRadius: '50px',
-                    display: 'inline-block',
-                    marginRight: '5px',
-                  }}
-                ></span>
-                {remoteRepoData.language}
-              </GridItem>
+              </Link>
+            ) : (
+              remoteRepoData.parentName
             )}
-            {remoteRepoData?.license && (
-              <GridItem>
-                <LawIcon size='small' />{' '}
-                <span style={{ marginLeft: '5px' }}>{remoteRepoData.license}</span>
-              </GridItem>
-            )}
-            <GridItem>
-              <PeopleIcon size='small' />{' '}
-              <span style={{ marginLeft: '5px' }}>{props.repo?.users?.canPush?.length || 0}</span>
-            </GridItem>
-            <GridItem>
-              <CodeReviewIcon size='small' />{' '}
-              <span style={{ marginLeft: '5px' }}>
-                {props.repo?.users?.canAuthorise?.length || 0}
-              </span>
-            </GridItem>
-            {remoteRepoData?.lastUpdated && (
-              <GridItem>Last updated {remoteRepoData.lastUpdated}</GridItem>
-            )}
-          </GridContainer>
-        </div>
-      </TableCell>
-      <TableCell align='right'>
-        <div style={{ padding: '15px' }}>
-          <CodeActionButton cloneURL={cloneURL} />
-        </div>
-      </TableCell>
-      <Snackbar
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        open={snackbarOpen}
-        autoHideDuration={6000}
-        onClose={() => setSnackbarOpen(false)}
-        message={errorMessage}
-      />
-    </TableRow>
+          </Text>
+        ) : null}
+        {remoteRepoData?.description ? (
+          <Text
+            as='p'
+            size='medium'
+            weight='normal'
+            className='m-0 min-w-0 w-full text-[var(--fgColor-default)]'
+          >
+            {remoteRepoData.description}
+          </Text>
+        ) : null}
+        <Stack direction='horizontal' gap='condensed' wrap='wrap' align='center' padding='none'>
+          {remoteRepoData?.language ? (
+            <Text as='span' className={mutedMeta}>
+              <span
+                style={{
+                  height: 12,
+                  width: 12,
+                  backgroundColor: languageColors[remoteRepoData.language] || '#ccc',
+                  borderRadius: '50%',
+                  display: 'inline-block',
+                  marginRight: 6,
+                  verticalAlign: 'middle',
+                }}
+              />
+              {remoteRepoData.language}
+            </Text>
+          ) : null}
+          {remoteRepoData?.license ? (
+            <Text as='span' className={`${mutedMeta} inline-flex items-center gap-1`}>
+              <LawIcon size='small' /> {remoteRepoData.license}
+            </Text>
+          ) : null}
+        </Stack>
+        {repo.activity && repo._id ? (
+          <ActivityBadgeGroup
+            activity={repo.activity}
+            hrefForStatus={(status) => activityListHref(repo._id!, status)}
+          />
+        ) : null}
+      </Stack>
+    </Stack>
   );
-};
+}
 
-export default Repositories;
+export function RepositoryActionCell({ repo }: { repo: RepoView }): React.ReactElement {
+  return <CodeActionButton cloneURL={cloneURLForRepo(repo)} />;
+}

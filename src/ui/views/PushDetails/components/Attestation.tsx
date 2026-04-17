@@ -14,28 +14,51 @@
  * limitations under the License.
  */
 
-import React, { useEffect, useState } from 'react';
-import Dialog from '@material-ui/core/Dialog';
-import DialogContent from '@material-ui/core/DialogContent';
-import DialogActions from '@material-ui/core/DialogActions';
-import { CheckCircle, ErrorOutline } from '@material-ui/icons';
-import Button from '../../../components/CustomButtons/Button';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Banner, Button, Dialog, IconButton, Stack, Text } from '@primer/react';
+import type { DialogHeaderProps } from '@primer/react';
+import { XIcon } from '@primer/octicons-react';
 import AttestationForm from './AttestationForm';
-import {
-  setAttestationConfigData,
-  setURLShortenerData,
-  setEmailContactData,
-} from '../../../services/config';
+import { setAttestationConfigData, setEmailContactData } from '../../../services/config';
 import { QuestionFormData } from '../../../types';
 
 interface AttestationProps {
   approveFn: (data: { label: string; checked: boolean }[]) => void;
+  disabled?: boolean;
 }
 
-const Attestation: React.FC<AttestationProps> = ({ approveFn }) => {
+const AttestationDialogHeader = ({
+  dialogLabelId,
+  title,
+  subtitle,
+  dialogDescriptionId,
+  onClose,
+}: DialogHeaderProps) => (
+  <Dialog.Header>
+    <div className='flex'>
+      <div className='flex min-w-0 flex-1 flex-col px-2 py-1.5'>
+        <Dialog.Title
+          id={dialogLabelId}
+          className='text-base! leading-snug! text-(--fgColor-default)!'
+        >
+          {title ?? 'Dialog'}
+        </Dialog.Title>
+        {subtitle ? <Dialog.Subtitle id={dialogDescriptionId}>{subtitle}</Dialog.Subtitle> : null}
+      </div>
+      <IconButton
+        icon={XIcon}
+        aria-label='Close'
+        variant='invisible'
+        onClick={() => onClose('close-button')}
+        unsafeDisableTooltip
+      />
+    </div>
+  </Dialog.Header>
+);
+
+const Attestation = ({ approveFn, disabled }: AttestationProps) => {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState<QuestionFormData[]>([]);
-  const [urlShortener, setURLShortener] = useState<string>('');
   const [contactEmail, setContactEmail] = useState<string>('');
 
   useEffect(() => {
@@ -43,23 +66,14 @@ const Attestation: React.FC<AttestationProps> = ({ approveFn }) => {
       setAttestationConfigData(setFormData);
     }
 
-    if (open) {
-      if (!urlShortener) {
-        setURLShortenerData(setURLShortener);
-      }
-      if (!contactEmail) {
-        setEmailContactData(setContactEmail);
-      }
+    if (open && !contactEmail) {
+      setEmailContactData(setContactEmail);
     }
-  }, [open, urlShortener, contactEmail]);
+  }, [open, contactEmail]);
 
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = () => {
+  const handleDialogClose = useCallback((_gesture: 'close-button' | 'escape') => {
     setOpen(false);
-  };
+  }, []);
 
   const handleApprove = () => {
     const data = formData.map((question) => ({
@@ -67,65 +81,85 @@ const Attestation: React.FC<AttestationProps> = ({ approveFn }) => {
       checked: question.checked,
     }));
     approveFn(data);
+    handleDialogClose('close-button');
   };
 
   return (
-    <div>
-      <Button color='success' onClick={handleClickOpen} data-testid='attestation-open-btn'>
+    <>
+      <Button
+        variant='primary'
+        onClick={() => setOpen(true)}
+        disabled={disabled}
+        data-testid='attestation-open-btn'
+      >
         Approve
       </Button>
-      <Dialog
-        fullWidth
-        maxWidth='md'
-        open={open}
-        onClose={handleClose}
-        aria-labelledby='alert-dialog-title'
-        aria-describedby='alert-dialog-description'
-        data-testid='attestation-dialog'
-        style={{ margin: '0px 15px 0px 15px', padding: '20px' }}
-      >
-        <span
-          style={{
-            background: '#eeeeee',
-            borderRadius: '10px',
-            margin: '24px 24px',
-            padding: '24px 24px',
-            color: 'black',
-          }}
+      {open ? (
+        <Dialog
+          title='Approve contribution'
+          onClose={handleDialogClose}
+          renderHeader={AttestationDialogHeader}
+          width='large'
+          height='auto'
         >
-          <div style={{ display: 'flex', flexDirection: 'row' }}>
-            <ErrorOutline fontSize='medium' htmlColor='black' />
-            <span style={{ fontSize: '16px', paddingLeft: '10px', fontWeight: 'bold' }}>
-              You are about to approve a contribution for publication to GitHub
-            </span>
-          </div>
-          <p style={{ fontSize: '15px', paddingLeft: '34px' }}>
-            Feeling uneasy with approving this contribution?
-            <br />
-            Review the company open source contribution policy or{' '}
-            <a href={`mailto:${contactEmail}`}>contact the Open Source Program Office</a>.
-          </p>
-        </span>
-        <DialogContent style={{ margin: '0px 15px 0px 0px' }}>
-          <p>By approving this contribution, I confirm that:</p>
-          <AttestationForm formData={formData} passFormData={setFormData} />
-        </DialogContent>
-        <DialogActions style={{ paddingTop: '15px', margin: '15px' }}>
-          <Button color='warning' onClick={handleClose} data-testid='attestation-cancel-btn'>
-            Cancel
-          </Button>
-          <Button
-            color='success'
-            onClick={handleApprove}
-            autoFocus
-            disabled={!formData.every((question) => question.checked)}
-            data-testid='attestation-confirm-btn'
-          >
-            <CheckCircle /> Approve
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </div>
+          <Dialog.Body>
+            <div data-testid='attestation-dialog' className='min-w-0'>
+              <Stack direction='vertical' gap='normal' padding='none'>
+                <Banner variant='info' layout='compact'>
+                  <Banner.Title
+                    as='h2'
+                    className='text-base! font-semibold! text-(--fgColor-default)!'
+                  >
+                    You are about to approve this contribution for publication
+                  </Banner.Title>
+                  <Banner.Description>
+                    <Text as='span' className='text-base! text-(--fgColor-default)!'>
+                      If you are unsure, review your organization&apos;s open source contribution
+                      policy or{' '}
+                      {contactEmail.trim() ? (
+                        <a
+                          href={`mailto:${contactEmail.trim()}`}
+                          className='text-(--fgColor-accent) underline hover:no-underline'
+                        >
+                          contact the Open Source Program Office
+                        </a>
+                      ) : (
+                        'contact the Open Source Program Office'
+                      )}
+                      .
+                    </Text>
+                  </Banner.Description>
+                </Banner>
+                <Text as='p' className='m-0 text-base! text-(--fgColor-default)!'>
+                  By approving, I confirm that:
+                </Text>
+                <AttestationForm formData={formData} passFormData={setFormData} />
+              </Stack>
+            </div>
+          </Dialog.Body>
+          <Dialog.Footer>
+            <div className='flex w-full justify-end gap-2'>
+              <Button
+                type='button'
+                onClick={() => handleDialogClose('close-button')}
+                data-testid='attestation-cancel-btn'
+              >
+                Cancel
+              </Button>
+              <Button
+                type='button'
+                variant='primary'
+                onClick={handleApprove}
+                disabled={!formData.every((question) => question.checked)}
+                data-testid='attestation-confirm-btn'
+              >
+                Approve
+              </Button>
+            </div>
+          </Dialog.Footer>
+        </Dialog>
+      ) : null}
+    </>
   );
 };
 
