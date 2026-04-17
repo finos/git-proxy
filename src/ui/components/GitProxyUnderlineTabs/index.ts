@@ -14,27 +14,6 @@
  * limitations under the License.
  */
 
-import React, { ReactNode } from 'react';
-import { makeStyles, Theme } from '@material-ui/core/styles';
-import Grid, { GridProps } from '@material-ui/core/Grid';
-
-const useStyles = makeStyles((theme: Theme) => ({
-  grid: {
-    padding: '0 15px !important',
-  },
-}));
-
-export interface GridItemProps extends GridProps {
-  children?: ReactNode;
-}
-
-const GridItem: React.FC<GridItemProps> = ({ children, ...rest }) => {
-  const classes = useStyles();
-  return (
-    <Grid item {...rest} className={classes.grid}>
-      {children}
-    </Grid>
-  );
-};
-
-export default GridItem;
+export { GITPROXY_PRIMER_UNDERLINE_TAB_STRIP_CLASS } from './gitProxyUnderlineTabStripClass';
+export { GitProxyUnderlineNav } from './GitProxyUnderlineNav';
+export { GitProxyUnderlinePanels } from './GitProxyUnderlinePanels';
