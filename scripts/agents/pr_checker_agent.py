@@ -56,7 +56,7 @@ Rules:
 
 When posting a comment, always use this exact structure (omit sections that don't apply):
 
-<one sentence greeting> (first-time contributors only)
+Thanks for the contribution!
 
 <what is unclear and what to add>
 

@@ -52,6 +52,8 @@ Use this exact format:
 <recommended fix>
 
 ... (repeat for each finding)
+
+Disclaimer: This review is AI-generated. Please validate the findings before fixing.
 """
 
 # GitHub helpers
