@@ -72,7 +72,7 @@ describe('Repo', () => {
         cy.get('[data-testid="repo-url-input"]').type(
           `https://github.com/cypress-test/${repoName}.git`,
         );
-        cy.get('[data-testid="add-repo-button"]').click();
+        cy.get('[data-testid="add-repo-submit"]').click();
       });
 
       cy.contains('a', `cypress-test/${repoName}`, { timeout: 10000 }).click();
@@ -85,7 +85,7 @@ describe('Repo', () => {
         cy.get('[data-testid="repo-project-input"]').type('finos');
         cy.get('[data-testid="repo-name-input"]').type('git-proxy');
         cy.get('[data-testid="repo-url-input"]').type('https://github.com/finos/git-proxy.git');
-        cy.get('[data-testid="add-repo-button"]').click();
+        cy.get('[data-testid="add-repo-submit"]').click();
       });
 
       cy.get('[data-testid="repo-error"]')
