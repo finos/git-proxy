@@ -14,26 +14,9 @@
  * limitations under the License.
  */
 
-import React from 'react';
-import { Link } from 'react-router';
-
-interface UserLinkProps {
-  username?: string | null;
-  children?: React.ReactNode;
-}
-
-function getUserProfilePath(username: string): string {
-  return `/dashboard/user/${username}`;
-}
-
-const UserLink = ({ username, children }: UserLinkProps) => {
-  const trimmedUsername = username?.trim() ?? '';
-  const content = children ?? trimmedUsername ?? null;
-  if (!content) {
-    return null;
-  }
-
-  return <Link to={getUserProfilePath(trimmedUsername)}>{content}</Link>;
-};
-
-export default UserLink;
+/**
+ * Tailwind + CSS in `tailwind.css` (`.gitproxy-primer-underline-tabs`) implement GitHub-style
+ * tab typography; this class must be present on the Primer UnderlineWrapper root.
+ */
+export const GITPROXY_PRIMER_UNDERLINE_TAB_STRIP_CLASS =
+  'gitproxy-primer-underline-tabs !bg-[var(--bgColor-default)]';

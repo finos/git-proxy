@@ -15,11 +15,11 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate } from 'react-router';
+import { Spinner, Text } from '@primer/react';
 import { useAuth } from '../../auth/AuthProvider';
 import { setUIRouteAuthData } from '../../services/config';
 import { UIRouteAuth } from '../../../config/generated/config';
-import CircularProgress from '@material-ui/core/CircularProgress';
 
 interface RouteGuardProps {
   component: React.ComponentType;
@@ -50,7 +50,12 @@ const RouteGuard = ({ component: Component, fullRoutePath }: RouteGuardProps) =>
   }, [fullRoutePath]);
 
   if (!authChecked || isLoading) {
-    return <CircularProgress />;
+    return (
+      <div className='flex w-full min-w-0 items-center gap-2'>
+        <Spinner />
+        <Text>Loading…</Text>
+      </div>
+    );
   }
 
   if (loginRequired && !user) {
