@@ -18,7 +18,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Navigate, useParams, useLocation } from 'react-router';
 import { GearIcon, ListUnorderedIcon } from '@primer/octicons-react';
 import { Label, Link as PrimerLink, Spinner, Stack, Text } from '@primer/react';
-import { GitProxyUnderlinePanels } from '../../components/GitProxyUnderlineTabs';
+import { GitProxyUnderlineNav } from '../../components/GitProxyUnderlineTabs';
 
 import { useAuth } from '../../auth/AuthProvider';
 import TimedBanner from '../../components/TimedBanner/TimedBanner';
@@ -225,31 +225,35 @@ export default function UserProfile(): React.ReactElement {
         {user && activityUsername ? (
           <Stack direction='vertical' gap='normal' padding='none' className='min-w-0 w-full'>
             {showSettingsTab ? (
-              <GitProxyUnderlinePanels
-                aria-label='Profile sections'
-                loadingCounters={activityLoading && mainTab === 'activity'}
-                className='min-w-0 w-full'
-              >
-                <GitProxyUnderlinePanels.Tab
-                  icon={ListUnorderedIcon}
-                  counter={activityRows.length}
-                  aria-selected={mainTab === 'activity'}
-                  onSelect={() => {
+              <GitProxyUnderlineNav aria-label='Profile sections' className='min-w-0 w-full'>
+                <GitProxyUnderlineNav.Item
+                  href='#'
+                  leadingVisual={<ListUnorderedIcon />}
+                  counter={activityLoading ? undefined : activityRows.length}
+                  aria-current={mainTab === 'activity' ? 'page' : undefined}
+                  onSelect={(
+                    e: React.MouseEvent<HTMLAnchorElement> | React.KeyboardEvent<HTMLAnchorElement>,
+                  ) => {
+                    e.preventDefault();
                     setMainTab('activity');
                   }}
                 >
                   Activity
-                </GitProxyUnderlinePanels.Tab>
-                <GitProxyUnderlinePanels.Tab
-                  icon={GearIcon}
-                  aria-selected={mainTab === 'settings'}
-                  onSelect={() => {
+                </GitProxyUnderlineNav.Item>
+                <GitProxyUnderlineNav.Item
+                  href='#'
+                  leadingVisual={<GearIcon />}
+                  aria-current={mainTab === 'settings' ? 'page' : undefined}
+                  onSelect={(
+                    e: React.MouseEvent<HTMLAnchorElement> | React.KeyboardEvent<HTMLAnchorElement>,
+                  ) => {
+                    e.preventDefault();
                     setMainTab('settings');
                   }}
                 >
                   Settings
-                </GitProxyUnderlinePanels.Tab>
-              </GitProxyUnderlinePanels>
+                </GitProxyUnderlineNav.Item>
+              </GitProxyUnderlineNav>
             ) : null}
             {showSettingsTab
               ? mainTab === 'activity'
