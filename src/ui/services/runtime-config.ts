@@ -66,26 +66,28 @@ export const getApiBaseUrl = async (): Promise<string> => {
 
   // Priority order:
   // 1. Runtime config apiUrl (set at deployment)
-  // 2. Vite dev on localhost:3000 → same origin + `/api` proxy (avoids CORS when the API runs with default ALLOWED_ORIGINS)
-  // 3. Build-time VITE_API_URI (e.g. UI on another host/port talking to a known API)
+  // 2. Build-time VITE_API_URI (.env.development usually points at Express, e.g. http://localhost:8080)
+  // 3. Vite dev on localhost:3000 → same origin; vite.config must proxy /api → git-proxy HTTP port
   // 4. Browser: same origin; Node/tests: localhost:8080
   if (config.apiUrl) {
     return config.apiUrl;
   }
 
+  // Must run before the localhost:3000 branch: otherwise /api hits Vite and returns index.html (JSON parse errors).
+  // @ts-expect-error - import.meta.env is available in Vite but not in CommonJS tsconfig
+  const viteApiUri = import.meta.env?.VITE_API_URI as string | undefined;
+  if (typeof viteApiUri === 'string' && viteApiUri.trim() !== '') {
+    return viteApiUri.replace(/\/+$/, '');
+  }
+
   if (typeof location !== 'undefined') {
     const currentHost = location.hostname;
     if (currentHost === 'localhost' && location.port === '3000') {
-      // Vite dev server: same-origin; vite.config proxies /api → backend (see VITE_DEV_API_PROXY)
-      console.log('Development mode detected: using Vite dev origin for API (see server.proxy)');
+      console.log(
+        'Development mode: using Vite origin; ensure server.proxy forwards /api to git-proxy (see vite.config)',
+      );
       return location.origin;
     }
-  }
-
-  // @ts-expect-error - import.meta.env is available in Vite but not in CommonJS tsconfig
-  if (import.meta.env?.VITE_API_URI) {
-    // @ts-expect-error - Vite env variable
-    return import.meta.env.VITE_API_URI as string;
   }
 
   if (typeof location !== 'undefined') {
