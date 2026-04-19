@@ -24,7 +24,7 @@ import { ServiceResult, getServiceError, errorResult, successResult } from './er
 import { SCMRepositoryMetadata } from '../types';
 
 const compareRepoName = (a: RepoView, b: RepoView, direction: 'asc' | 'desc'): number => {
-  const cmp = a.name.localeCompare(b.name);
+  const cmp = (a.name ?? '').localeCompare(b.name ?? '');
   return direction === 'asc' ? cmp : -cmp;
 };
 

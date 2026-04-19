@@ -177,6 +177,7 @@ const PushesTable = ({
   activityTab,
 }: PushesTableProps) => {
   const navigate = useNavigate();
+  const safeRows = Array.isArray(rows) ? rows : [];
 
   const showApprovedBy = activityTab == null || activityTab === 'all' || activityTab === 'approved';
   const showRejectedBy = activityTab == null || activityTab === 'all' || activityTab === 'rejected';
@@ -205,12 +206,12 @@ const PushesTable = ({
     return m;
   }, [registeredRepos]);
 
-  const maxPage = Math.max(1, Math.ceil(rows.length / ITEMS_PER_PAGE));
+  const maxPage = Math.max(1, Math.ceil(safeRows.length / ITEMS_PER_PAGE));
   const effectivePage = Math.min(currentPage, maxPage);
 
   const indexOfLastItem = effectivePage * ITEMS_PER_PAGE;
   const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-  const currentItems = rows.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = safeRows.slice(indexOfFirstItem, indexOfLastItem);
 
   const tableRows: PushTableRow[] = useMemo(
     () => currentItems.map((row) => ({ ...row, id: row.id })),
@@ -528,7 +529,7 @@ const PushesTable = ({
       <div className='mt-auto shrink-0'>
         <Pagination
           itemsPerPage={ITEMS_PER_PAGE}
-          totalItems={rows.length}
+          totalItems={safeRows.length}
           currentPage={effectivePage}
           onPageChange={onPageChange}
         />

@@ -25,6 +25,7 @@ import MongoDBStore from 'connect-mongo';
 import { CompletedAttestation, Rejection } from '../proxy/processors/types';
 import { processGitUrl } from '../proxy/routes/helper';
 import { initializeFolders } from './file/helper';
+import { collectUserProfileEmailVariants } from './userProfilePushQuery';
 
 let _sink: Sink | null = null;
 
@@ -178,6 +179,15 @@ export const canUserCancelPush = async (id: string, user: string) => {
 
 export const getSessionStore = (): MongoDBStore | undefined => start().getSessionStore();
 export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => start().getPushes(query);
+export const getPushesForUserProfile = async (username: string): Promise<Action[]> => {
+  const normalized = username.toLowerCase();
+  const user = await findUser(normalized);
+  if (!user) {
+    return [];
+  }
+  const emailVariants = collectUserProfileEmailVariants(user);
+  return start().getPushesForUserProfile(emailVariants, user.username);
+};
 export const writeAudit = (action: Action): Promise<void> => start().writeAudit(action);
 export const getPush = (id: string): Promise<Action | null> => start().getPush(id);
 export const deletePush = (id: string): Promise<void> => start().deletePush(id);

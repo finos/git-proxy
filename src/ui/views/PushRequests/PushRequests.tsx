@@ -105,7 +105,7 @@ const PushRequests = () => {
   const repoDisplayIndex = useMemo(() => buildRepoDisplayIndex(registeredRepos), [registeredRepos]);
 
   const searchFiltered = useMemo(() => {
-    let list = allPushes;
+    let list = Array.isArray(allPushes) ? allPushes : [];
     if (repoIdFilter) {
       const r = registeredRepos.find((x) => x._id === repoIdFilter);
       if (r?.url) {
