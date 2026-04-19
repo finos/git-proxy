@@ -110,6 +110,7 @@ export interface PublicUser {
 export interface Sink {
   getSessionStore: () => MongoDBStore | undefined;
   getPushes: (query: Partial<PushQuery>) => Promise<Action[]>;
+  getPushesForUserProfile: (emailVariants: string[], profileUsername: string) => Promise<Action[]>;
   writeAudit: (action: Action) => Promise<void>;
   getPush: (id: string) => Promise<Action | null>;
   deletePush: (id: string) => Promise<void>;

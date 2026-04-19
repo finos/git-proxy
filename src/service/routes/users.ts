@@ -26,6 +26,19 @@ router.get('/', async (req: Request, res: Response) => {
   res.send(users.map(toPublicUser));
 });
 
+router.get('/:id/activity', async (req: Request<{ id: string }>, res: Response) => {
+  const username = req.params.id.toLowerCase();
+  if (!(await db.findUser(username))) {
+    res
+      .status(404)
+      .send({ message: `User ${username} not found` })
+      .end();
+    return;
+  }
+  const pushes = await db.getPushesForUserProfile(username);
+  res.send(pushes);
+});
+
 router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
   const username = req.params.id.toLowerCase();
   console.log(`Retrieving details for user: ${username}`);

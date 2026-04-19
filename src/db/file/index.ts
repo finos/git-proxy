@@ -21,7 +21,16 @@ import * as helper from './helper';
 
 export const { getSessionStore } = helper;
 
-export const { getPushes, writeAudit, getPush, deletePush, authorise, cancel, reject } = pushes;
+export const {
+  getPushes,
+  getPushesForUserProfile,
+  writeAudit,
+  getPush,
+  deletePush,
+  authorise,
+  cancel,
+  reject,
+} = pushes;
 
 export const {
   getRepos,

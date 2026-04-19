@@ -47,6 +47,8 @@ describe('Users API', () => {
       gitAccount: '',
       admin: false,
     });
+
+    vi.spyOn(db, 'getPushesForUserProfile').mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -90,5 +92,19 @@ describe('Users API', () => {
     const res = await request(app).get('/users/non-existent');
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ message: 'User non-existent not found' });
+  });
+
+  it('GET /users/:id/activity returns pushes and 404 when user missing', async () => {
+    const samplePush = { id: 'push-1', type: 'push', timestamp: 1 } as any;
+    vi.mocked(db.getPushesForUserProfile).mockResolvedValue([samplePush]);
+
+    const ok = await request(app).get('/users/bob/activity');
+    expect(ok.status).toBe(200);
+    expect(ok.body).toEqual([samplePush]);
+    expect(db.getPushesForUserProfile).toHaveBeenCalledWith('bob');
+
+    vi.mocked(db.findUser).mockResolvedValueOnce(null);
+    const missing = await request(app).get('/users/nobody/activity');
+    expect(missing.status).toBe(404);
   });
 });

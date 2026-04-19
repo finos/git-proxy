@@ -95,22 +95,28 @@ export function matchesActivityTab(row: PushActionView, tab: ActivityTab): boole
   return activityPrimaryStatusTab(row) === tab;
 }
 
+function asPushRows(pushes: unknown): PushActionView[] {
+  return Array.isArray(pushes) ? pushes : [];
+}
+
 export function filterActivityBySearch(
   pushes: PushActionView[],
   filterRaw: string,
   index: RepoDisplayIndex,
 ): PushActionView[] {
+  const rows = asPushRows(pushes);
   const q = filterRaw.trim().toLowerCase();
-  if (!q) return pushes;
-  return pushes.filter((item) => activityMatchesSearch(item, q, index));
+  if (!q) return rows;
+  return rows.filter((item) => activityMatchesSearch(item, q, index));
 }
 
 export type ActivityTabCounts = Record<ActivityTab, number>;
 
 export function countActivitiesByTab(searchFiltered: PushActionView[]): ActivityTabCounts {
+  const rows = asPushRows(searchFiltered);
   const counts = {} as ActivityTabCounts;
   for (const tab of ACTIVITY_TAB_VALUES) {
-    counts[tab] = searchFiltered.filter((row) => matchesActivityTab(row, tab)).length;
+    counts[tab] = rows.filter((row) => matchesActivityTab(row, tab)).length;
   }
   return counts;
 }
@@ -119,5 +125,5 @@ export function filterActivitiesForTab(
   searchFiltered: PushActionView[],
   tab: ActivityTab,
 ): PushActionView[] {
-  return searchFiltered.filter((row) => matchesActivityTab(row, tab));
+  return asPushRows(searchFiltered).filter((row) => matchesActivityTab(row, tab));
 }

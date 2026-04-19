@@ -21,6 +21,7 @@ import { toClass } from '../helper';
 import { PushQuery } from '../types';
 import { CompletedAttestation, Rejection } from '../../proxy/processors/types';
 import { handleErrorAndLog } from '../../utils/errors';
+import { buildUserProfilePushFilter } from '../userProfilePushQuery';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -56,6 +57,29 @@ export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => {
       .sort({ timestamp: -1 })
       .exec((err, docs) => {
         // ignore for code coverage as neDB rarely returns errors even for an invalid query
+        /* istanbul ignore if */
+        if (err) {
+          reject(err);
+        } else {
+          resolve(
+            _.chain(docs)
+              .map((x) => toClass(x, Action.prototype))
+              .value(),
+          );
+        }
+      });
+  });
+};
+
+export const getPushesForUserProfile = (
+  emailVariants: string[],
+  profileUsername: string,
+): Promise<Action[]> => {
+  const filter = buildUserProfilePushFilter(emailVariants, profileUsername);
+  return new Promise((resolve, reject) => {
+    db.find(filter)
+      .sort({ timestamp: -1 })
+      .exec((err, docs) => {
         /* istanbul ignore if */
         if (err) {
           reject(err);
