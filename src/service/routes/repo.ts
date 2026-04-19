@@ -23,6 +23,7 @@ import { RepoQuery } from '../../db/types';
 import { isAdminUser } from './utils';
 import { Proxy } from '../../proxy';
 import { handleErrorAndLog } from '../../utils/errors';
+import { getCachedScmRepositoryMetadata } from '../scmMetadata';
 
 function repo(proxy: Proxy) {
   const router = express.Router();
@@ -44,6 +45,17 @@ function repo(proxy: Proxy) {
 
     const qd = await db.getRepos(query);
     res.send(qd.map((d) => ({ ...d, proxyURL })));
+  });
+
+  router.get('/:id/scm-metadata', async (req: Request<{ id: string }>, res: Response) => {
+    const _id = req.params.id;
+    const qd = await db.getRepoById(_id);
+    if (!qd) {
+      res.status(404).send({ message: 'Repository not found' });
+      return;
+    }
+    const metadata = await getCachedScmRepositoryMetadata(qd.project, qd.name, qd.url);
+    res.json(metadata);
   });
 
   router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
