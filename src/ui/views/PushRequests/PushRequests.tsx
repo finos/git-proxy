@@ -18,7 +18,7 @@ import React, { type FC, useCallback, useMemo, useState } from 'react';
 import { useClientPagination } from '../../hooks/useClientPagination';
 import { useSearchParams } from 'react-router';
 import { PageHeader, Stack } from '@primer/react';
-import { GitProxyUnderlinePanels } from '../../components/GitProxyUnderlineTabs';
+import { GitProxyUnderlineNav } from '../../components/GitProxyUnderlineTabs';
 import type { IconProps } from '@primer/octicons-react';
 import {
   AlertIcon,
@@ -34,7 +34,6 @@ import ListFilterInput from '../../components/ListFilterInput/ListFilterInput';
 import { sortRepoViews } from '../../services/repo';
 import { useRepoViewsListQuery } from '../../query/useRepoViewsListQuery';
 import { usePushesQuery } from '../../query/usePushesQuery';
-import { RepoView } from '../../types';
 import { canonicalRemoteUrl } from '../../utils/parseGitRemoteUrl';
 import {
   applyActivityListUrlPatch,
@@ -162,28 +161,36 @@ const PushRequests = () => {
                       name='activity-filter'
                     />
                   </div>
-                  <GitProxyUnderlinePanels
+                  <GitProxyUnderlineNav
                     aria-label='Filter activity by status'
-                    loadingCounters={isLoadingPushes}
                     className='min-w-0 w-full'
                   >
-                    {ACTIVITY_TABS.map((tab) => (
-                      <GitProxyUnderlinePanels.Tab
-                        key={tab.id}
-                        icon={tab.NavIcon}
-                        counter={tabCounts[tab.id]}
-                        aria-selected={tab.id === activeTab}
-                        onSelect={() =>
-                          setSearchParams(
-                            (prev) => applyActivityListUrlPatch(prev, { tab: tab.id, page: 1 }),
-                            { replace: true },
-                          )
-                        }
-                      >
-                        {tab.label}
-                      </GitProxyUnderlinePanels.Tab>
-                    ))}
-                  </GitProxyUnderlinePanels>
+                    {ACTIVITY_TABS.map((tab) => {
+                      const NavIcon = tab.NavIcon;
+                      return (
+                        <GitProxyUnderlineNav.Item
+                          key={tab.id}
+                          href='#'
+                          leadingVisual={<NavIcon />}
+                          counter={isLoadingPushes ? undefined : tabCounts[tab.id]}
+                          aria-current={tab.id === activeTab ? 'page' : undefined}
+                          onSelect={(
+                            e:
+                              | React.MouseEvent<HTMLAnchorElement>
+                              | React.KeyboardEvent<HTMLAnchorElement>,
+                          ) => {
+                            e.preventDefault();
+                            setSearchParams(
+                              (prev) => applyActivityListUrlPatch(prev, { tab: tab.id, page: 1 }),
+                              { replace: true },
+                            );
+                          }}
+                        >
+                          {tab.label}
+                        </GitProxyUnderlineNav.Item>
+                      );
+                    })}
+                  </GitProxyUnderlineNav>
                 </Stack>
               </PageHeader.Navigation>
             </PageHeader>
