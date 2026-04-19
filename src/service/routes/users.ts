@@ -22,8 +22,17 @@ import { toPublicUser } from './utils';
 
 router.get('/', async (req: Request, res: Response) => {
   console.log('fetching users');
-  const users = await db.getUsers();
-  res.send(users.map(toPublicUser));
+  const [users, activityCounts] = await Promise.all([
+    db.getUsers(),
+    db.getUserActivityTabCountsByUsername(),
+  ]);
+  res.send(
+    users.map((u) => {
+      const pub = toPublicUser(u);
+      const activity = activityCounts.get(u.username.toLowerCase());
+      return activity ? { ...pub, activity } : pub;
+    }),
+  );
 });
 
 router.get('/:id/activity', async (req: Request<{ id: string }>, res: Response) => {

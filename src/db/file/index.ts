@@ -24,6 +24,7 @@ export const { getSessionStore } = helper;
 export const {
   getPushes,
   getPushesForUserProfile,
+  getRepoPushRollupsByCanonicalUrl,
   writeAudit,
   getPush,
   deletePush,

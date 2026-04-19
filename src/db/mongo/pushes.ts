@@ -14,14 +14,103 @@
  * limitations under the License.
  */
 
+import { activityPrimaryStatusFromFlags } from '../../activity/activityPrimaryStatus';
+import { canonicalRemoteUrl } from '../../activity/canonicalRemoteUrl';
 import { connect, findDocuments, findOneDocument } from './helper';
 import { Action } from '../../proxy/actions';
 import { toClass } from '../helper';
-import { PushQuery } from '../types';
+import {
+  PushQuery,
+  RepoActivityTabCounts,
+  RepoPushRollupsByCanonicalUrl,
+  emptyRepoActivityTabCounts,
+} from '../types';
 import { CompletedAttestation, Rejection } from '../../proxy/processors/types';
 import { buildUserProfilePushFilter } from '../userProfilePushQuery';
 
 const collectionName = 'pushes';
+
+function bumpCount(
+  m: Map<string, RepoActivityTabCounts>,
+  canonicalKey: string,
+  tab: keyof RepoActivityTabCounts,
+): void {
+  if (!canonicalKey) {
+    return;
+  }
+  let row = m.get(canonicalKey);
+  if (!row) {
+    row = emptyRepoActivityTabCounts();
+    m.set(canonicalKey, row);
+  }
+  row[tab] += 1;
+}
+
+function bumpMaxTimestampMs(
+  m: Map<string, number>,
+  canonicalKey: string,
+  timestamp: unknown,
+): void {
+  if (!canonicalKey) {
+    return;
+  }
+  const ts = typeof timestamp === 'number' ? timestamp : NaN;
+  if (!Number.isFinite(ts)) {
+    return;
+  }
+  const prev = m.get(canonicalKey);
+  if (prev === undefined || ts > prev) {
+    m.set(canonicalKey, ts);
+  }
+}
+
+/**
+ * Scan all push rows: tab counts and max timestamps per canonical remote URL (matches Activity UI).
+ * Uses a tight projection and in-Node canonicalization for DocumentDB compatibility.
+ */
+export const getRepoPushRollupsByCanonicalUrl =
+  async (): Promise<RepoPushRollupsByCanonicalUrl> => {
+    const collection = await connect(collectionName);
+    const cursor = collection.find(
+      { type: 'push' },
+      {
+        projection: {
+          url: 1,
+          error: 1,
+          rejected: 1,
+          canceled: 1,
+          authorised: 1,
+          blocked: 1,
+          allowPush: 1,
+          timestamp: 1,
+        },
+      },
+    );
+    const tabCounts = new Map<string, RepoActivityTabCounts>();
+    const latestPendingReviewAtMs = new Map<string, number>();
+    const latestPushAtMs = new Map<string, number>();
+    for await (const doc of cursor) {
+      const url = typeof doc.url === 'string' ? doc.url : '';
+      const key = canonicalRemoteUrl(url);
+      if (!key) {
+        continue;
+      }
+      const tab = activityPrimaryStatusFromFlags({
+        error: doc.error === true,
+        rejected: doc.rejected === true,
+        canceled: doc.canceled === true,
+        authorised: doc.authorised === true,
+        blocked: doc.blocked === true,
+        allowPush: doc.allowPush === true,
+      });
+      bumpCount(tabCounts, key, tab);
+      bumpMaxTimestampMs(latestPushAtMs, key, doc.timestamp);
+      if (tab === 'pending') {
+        bumpMaxTimestampMs(latestPendingReviewAtMs, key, doc.timestamp);
+      }
+    }
+    return { tabCounts, latestPendingReviewAtMs, latestPushAtMs };
+  };
 
 const defaultPushQuery: Partial<PushQuery> = {
   error: false,

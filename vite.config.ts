@@ -20,12 +20,18 @@ import { defineConfig, loadEnv } from 'vite';
 
 export default ({ mode }: { mode: string }) => {
   const env = loadEnv(mode, process.cwd(), '');
+  const apiPort = env.GIT_PROXY_UI_PORT || '8080';
+  const apiTarget = `http://127.0.0.1:${apiPort}`;
   return defineConfig({
     build: {
       outDir: 'build',
     },
     server: {
       port: 3000,
+      proxy: {
+        '/api': { target: apiTarget, changeOrigin: true },
+        '/runtime-config.json': { target: apiTarget, changeOrigin: true },
+      },
       watch: {
         ignored: ['**/.data/**', '**/.remote/**', '**/.tmp/**'],
       },

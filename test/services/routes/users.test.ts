@@ -49,6 +49,8 @@ describe('Users API', () => {
     });
 
     vi.spyOn(db, 'getPushesForUserProfile').mockResolvedValue([]);
+
+    vi.spyOn(db, 'getUserActivityTabCountsByUsername').mockResolvedValue(new Map());
   });
 
   afterEach(() => {
