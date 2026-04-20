@@ -14,21 +14,8 @@
  * limitations under the License.
  */
 
-// @vitest-environment jsdom
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router';
-import React from 'react';
-import { useRepoQuery } from '../../src/ui/query/useRepoQuery';
-
-const navigateMock = vi.fn();
-
-vi.mock('react-router', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react-router')>();
-  return { ...actual, useNavigate: () => navigateMock };
-});
+import { fetchRepo } from '../../src/ui/query/useRepoQuery';
 
 vi.mock('../../src/ui/services/repo', () => ({
   getRepo: vi.fn(),
@@ -37,18 +24,9 @@ vi.mock('../../src/ui/services/repo', () => ({
 import { getRepo } from '../../src/ui/services/repo';
 const getRepoMock = getRepo as ReturnType<typeof vi.fn>;
 
-function wrapper({ children }: { children: React.ReactNode }) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  return React.createElement(
-    QueryClientProvider,
-    { client },
-    React.createElement(MemoryRouter, null, children),
-  );
-}
+describe('fetchRepo', () => {
+  const navigate = vi.fn();
 
-describe('useRepoQuery', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -57,21 +35,18 @@ describe('useRepoQuery', () => {
     const repoData = { name: 'test-repo', project: 'org' };
     getRepoMock.mockResolvedValue({ success: true, data: repoData });
 
-    const { result } = renderHook(() => useRepoQuery('repo-1'), { wrapper });
+    const result = await fetchRepo('repo-1', navigate);
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual(repoData);
+    expect(result).toEqual(repoData);
     expect(getRepoMock).toHaveBeenCalledWith('repo-1');
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('navigates to /login and throws on 401', async () => {
     getRepoMock.mockResolvedValue({ success: false, status: 401, message: 'Not logged in' });
 
-    const { result } = renderHook(() => useRepoQuery('repo-1'), { wrapper });
-
-    await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(navigateMock).toHaveBeenCalledWith('/login', { replace: true });
-    expect((result.current.error as Error).message).toBe('Not logged in');
+    await expect(fetchRepo('repo-1', navigate)).rejects.toThrow('Not logged in');
+    expect(navigate).toHaveBeenCalledWith('/login', { replace: true });
   });
 
   it('throws with message on non-401 failure', async () => {
@@ -81,17 +56,15 @@ describe('useRepoQuery', () => {
       message: 'User not authorised on this repository',
     });
 
-    const { result } = renderHook(() => useRepoQuery('repo-1'), { wrapper });
-
-    await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(navigateMock).not.toHaveBeenCalled();
-    expect((result.current.error as Error).message).toBe('User not authorised on this repository');
+    await expect(fetchRepo('repo-1', navigate)).rejects.toThrow(
+      'User not authorised on this repository',
+    );
+    expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('is disabled when id is undefined', () => {
-    const { result } = renderHook(() => useRepoQuery(undefined), { wrapper });
+  it('throws fallback message when result has no message', async () => {
+    getRepoMock.mockResolvedValue({ success: false, status: 500 });
 
-    expect(result.current.fetchStatus).toBe('idle');
-    expect(getRepoMock).not.toHaveBeenCalled();
+    await expect(fetchRepo('repo-1', navigate)).rejects.toThrow('Failed to load repository');
   });
 });

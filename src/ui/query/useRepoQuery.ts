@@ -20,21 +20,26 @@ import { getRepo } from '../services/repo';
 import { repoQueryKeys } from './repoQueryKeys';
 import { RepoView } from '../types';
 
+export async function fetchRepo(
+  id: string,
+  navigate: (path: string, opts?: object) => void,
+): Promise<RepoView> {
+  const result = await getRepo(id);
+  if (result.success && result.data) {
+    return result.data;
+  }
+  if (result.status === 401) {
+    navigate('/login', { replace: true });
+  }
+  throw new Error(result.message || 'Failed to load repository');
+}
+
 export function useRepoQuery(id: string | undefined) {
   const navigate = useNavigate();
 
   return useQuery<RepoView>({
     queryKey: repoQueryKeys.detail(id ?? ''),
-    queryFn: async () => {
-      const result = await getRepo(id!);
-      if (result.success && result.data) {
-        return result.data;
-      }
-      if (result.status === 401) {
-        navigate('/login', { replace: true });
-      }
-      throw new Error(result.message || 'Failed to load repository');
-    },
+    queryFn: () => fetchRepo(id!, navigate),
     enabled: Boolean(id),
   });
 }

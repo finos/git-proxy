@@ -14,21 +14,8 @@
  * limitations under the License.
  */
 
-// @vitest-environment jsdom
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router';
-import React from 'react';
-import { useRepoViewsListQuery } from '../../src/ui/query/useRepoViewsListQuery';
-
-const navigateMock = vi.fn();
-
-vi.mock('react-router', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react-router')>();
-  return { ...actual, useNavigate: () => navigateMock };
-});
+import { fetchRepoViewsList } from '../../src/ui/query/useRepoViewsListQuery';
 
 vi.mock('../../src/ui/services/repo', () => ({
   fetchRepoViews: vi.fn(),
@@ -37,18 +24,9 @@ vi.mock('../../src/ui/services/repo', () => ({
 import { fetchRepoViews } from '../../src/ui/services/repo';
 const fetchRepoViewsMock = fetchRepoViews as ReturnType<typeof vi.fn>;
 
-function wrapper({ children }: { children: React.ReactNode }) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false } },
-  });
-  return React.createElement(
-    QueryClientProvider,
-    { client },
-    React.createElement(MemoryRouter, null, children),
-  );
-}
+describe('fetchRepoViewsList', () => {
+  const navigate = vi.fn();
 
-describe('useRepoViewsListQuery', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -60,10 +38,10 @@ describe('useRepoViewsListQuery', () => {
     ];
     fetchRepoViewsMock.mockResolvedValue({ success: true, data: reposData });
 
-    const { result } = renderHook(() => useRepoViewsListQuery(true), { wrapper });
+    const result = await fetchRepoViewsList(navigate);
 
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(result.current.data).toEqual(reposData);
+    expect(result).toEqual(reposData);
+    expect(navigate).not.toHaveBeenCalled();
   });
 
   it('navigates to /login and throws on 401', async () => {
@@ -73,11 +51,8 @@ describe('useRepoViewsListQuery', () => {
       message: 'Not authenticated',
     });
 
-    const { result } = renderHook(() => useRepoViewsListQuery(true), { wrapper });
-
-    await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(navigateMock).toHaveBeenCalledWith('/login', { replace: true });
-    expect((result.current.error as Error).message).toBe('Not authenticated');
+    await expect(fetchRepoViewsList(navigate)).rejects.toThrow('Not authenticated');
+    expect(navigate).toHaveBeenCalledWith('/login', { replace: true });
   });
 
   it('throws with message on non-401 failure', async () => {
@@ -87,17 +62,13 @@ describe('useRepoViewsListQuery', () => {
       message: 'Database connection failed',
     });
 
-    const { result } = renderHook(() => useRepoViewsListQuery(true), { wrapper });
-
-    await waitFor(() => expect(result.current.isError).toBe(true));
-    expect(navigateMock).not.toHaveBeenCalled();
-    expect((result.current.error as Error).message).toBe('Database connection failed');
+    await expect(fetchRepoViewsList(navigate)).rejects.toThrow('Database connection failed');
+    expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('is disabled when enabled is false', () => {
-    const { result } = renderHook(() => useRepoViewsListQuery(false), { wrapper });
+  it('throws fallback message when result has no message', async () => {
+    fetchRepoViewsMock.mockResolvedValue({ success: false, status: 500 });
 
-    expect(result.current.fetchStatus).toBe('idle');
-    expect(fetchRepoViewsMock).not.toHaveBeenCalled();
+    await expect(fetchRepoViewsList(navigate)).rejects.toThrow('Failed to load repositories');
   });
 });
