@@ -61,6 +61,7 @@ const CodeActionButton = ({ cloneURL }: CodeActionButtonProps) => {
               {cloneURL}
             </span>
             <IconButton
+              data-testid='repo-url'
               icon={isCopied ? CheckIcon : CopyIcon}
               variant='invisible'
               aria-label={isCopied ? 'Copied to clipboard' : 'Copy URL to clipboard'}

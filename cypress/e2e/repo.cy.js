@@ -66,7 +66,7 @@ describe('Repo', () => {
 
       cy.get('[data-testid="repo-list-view"]').find('[data-testid="add-repo-button"]').click();
 
-      cy.get('[data-testid="add-repo-dialog"]').within(() => {
+      cy.get('[role="dialog"]').within(() => {
         cy.get('[data-testid="repo-project-input"]').type('cypress-test');
         cy.get('[data-testid="repo-name-input"]').type(repoName);
         cy.get('[data-testid="repo-url-input"]').type(
@@ -81,7 +81,7 @@ describe('Repo', () => {
     it('Displays an error when adding an existing repo', () => {
       cy.get('[data-testid="repo-list-view"]').find('[data-testid="add-repo-button"]').click();
 
-      cy.get('[data-testid="add-repo-dialog"]').within(() => {
+      cy.get('[role="dialog"]').within(() => {
         cy.get('[data-testid="repo-project-input"]').type('finos');
         cy.get('[data-testid="repo-name-input"]').type('git-proxy');
         cy.get('[data-testid="repo-url-input"]').type('https://github.com/finos/git-proxy.git');
@@ -127,38 +127,28 @@ describe('Repo', () => {
       });
     });
 
-    it('Opens tooltip with correct content and can copy', () => {
+    it('Opens Code overlay with correct content and can copy', () => {
       cy.visit('/dashboard/repo');
       cy.on('uncaught:exception', () => false);
 
-      const tooltipQuery = 'div[role="tooltip"]';
-
-      // Check the tooltip isn't open to start with
-      cy.get(tooltipQuery).should('not.exist');
+      // Overlay should not be visible initially
+      cy.contains('span', cloneURL).should('not.exist');
 
       // Find the repo's Code button and click it
       cy.get(`a[href="/dashboard/repo/${repoId}"]`)
         .closest('tr')
-        .find('span')
-        .contains('Code')
+        .contains('button', 'Code')
         .should('exist')
         .click();
 
-      // Check tooltip is open and contains the correct clone URL
-      cy.get(tooltipQuery)
-        .should('exist')
-        .find('span')
-        .contains(cloneURL)
-        .should('exist')
-        .parent()
-        .find('span')
-        .next()
-        .get('svg.octicon-copy')
-        .should('exist')
-        .click();
+      // Verify overlay shows correct clone URL
+      cy.contains('span', cloneURL).should('be.visible');
 
+      // Click the copy to clipboard button (sibling of the clone URL span)
+      cy.contains('span', cloneURL).parent().find('button').click();
+
+      // Verify icon changes from copy to check (confirming clipboard copy)
       cy.get('svg.octicon-copy').should('not.exist');
-
       cy.get('svg.octicon-check').should('exist');
     });
 
