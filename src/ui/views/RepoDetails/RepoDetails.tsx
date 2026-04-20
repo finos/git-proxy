@@ -47,6 +47,15 @@ import { usePushesQuery } from '../../query/usePushesQuery';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { repoQueryKeys } from '../../query/repoQueryKeys';
 
+const isGitHubUrl = (url: string | undefined): boolean => {
+  try {
+    const { hostname } = new URL(url ?? '');
+    return hostname === 'github.com' || hostname.endsWith('.github.com');
+  } catch {
+    return false;
+  }
+};
+
 const RepoDetails = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -140,8 +149,8 @@ const RepoDetails = () => {
   const parsedUrl = new URL(remoteUrl);
   const cloneURL = `${proxyURL}/${parsedUrl.host}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`;
   const orgHref = remoteRepoData?.profileUrl;
-  const repoHref = remoteRepoData?.htmlUrl?.includes('github.com')
-    ? remoteRepoData.htmlUrl
+  const repoHref = isGitHubUrl(remoteRepoData?.htmlUrl)
+    ? remoteRepoData?.htmlUrl
     : trimTrailingDotGit(repo.url);
 
   return (
