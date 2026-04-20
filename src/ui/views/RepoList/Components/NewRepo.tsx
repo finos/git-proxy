@@ -155,11 +155,11 @@ const AddRepositoryDialog = ({ open, onClose, onSuccess }: AddRepositoryDialogPr
       renderHeader={AddRepositoryDialogHeader}
       width='large'
       height='auto'
+      data-testid='add-repo-dialog'
     >
       <Dialog.Body>
         <form
           id={FORM_ID}
-          data-testid='add-repo-dialog'
           onSubmit={(e) => {
             e.preventDefault();
             void add();
