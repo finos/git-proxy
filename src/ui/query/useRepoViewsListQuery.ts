@@ -18,6 +18,20 @@ import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import { fetchRepoViews } from '../services/repo';
 import { repoQueryKeys } from './repoQueryKeys';
+import { RepoView } from '../types';
+
+export async function fetchRepoViewsList(
+  navigate: (path: string, opts?: object) => void,
+): Promise<RepoView[]> {
+  const result = await fetchRepoViews();
+  if (result.success && result.data) {
+    return result.data;
+  }
+  if (result.status === 401) {
+    navigate('/login', { replace: true });
+  }
+  throw new Error(result.message || 'Failed to load repositories');
+}
 
 /**
  * Shared cache for GET /repo (unsorted). Consumers apply {@link sortRepoViews} locally.
@@ -27,16 +41,7 @@ export function useRepoViewsListQuery(enabled: boolean) {
 
   return useQuery({
     queryKey: repoQueryKeys.list(),
-    queryFn: async () => {
-      const result = await fetchRepoViews();
-      if (result.success && result.data) {
-        return result.data;
-      }
-      if (result.status === 401) {
-        navigate('/login', { replace: true });
-      }
-      throw new Error(result.message || 'Failed to load repositories');
-    },
+    queryFn: () => fetchRepoViewsList(navigate),
     enabled,
   });
 }
