@@ -15,6 +15,7 @@
  */
 
 import express, { Request, Response, NextFunction } from 'express';
+import bcrypt from 'bcryptjs';
 import { getPassport, authStrategies } from '../passport';
 import { getAuthMethods } from '../../config';
 
@@ -24,8 +25,7 @@ import * as passportAD from '../passport/activeDirectory';
 
 import { User } from '../../db/types';
 import { AuthenticationElement } from '../../config/generated/config';
-
-import { isAdminUser, toPublicUser } from './utils';
+import { isAdminUser, mustChangePassword, toPublicUser } from './utils';
 import { handleErrorAndLog } from '../../utils/errors';
 
 const router = express.Router();
@@ -33,6 +33,32 @@ const passport = getPassport();
 
 const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
   process.env;
+
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_CHANGE_ALLOWED_PATHS = new Set([
+  '/',
+  '/config',
+  '/login',
+  '/logout',
+  '/profile',
+  '/change-password',
+  '/openidconnect',
+  '/openidconnect/callback',
+]);
+
+router.use((req: Request, res: Response, next: NextFunction) => {
+  if (!mustChangePassword(req.user)) {
+    return next();
+  }
+
+  if (PASSWORD_CHANGE_ALLOWED_PATHS.has(req.path)) {
+    return next();
+  }
+
+  return res.status(428).send({
+    message: 'Password change required before accessing this endpoint',
+  });
+});
 
 router.get('/', (_req: Request, res: Response) => {
   res.status(200).json({
@@ -151,6 +177,85 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
   res.send({ isAuth: req.isAuthenticated(), user: req.user });
 });
 
+router.post('/change-password', async (req: Request, res: Response) => {
+  if (!req.user) {
+    res
+      .status(401)
+      .send({
+        message: 'Not logged in',
+      })
+      .end();
+    return;
+  }
+
+  const { currentPassword, newPassword } = req.body ?? {};
+  if (
+    typeof currentPassword !== 'string' ||
+    typeof newPassword !== 'string' ||
+    currentPassword.trim().length === 0 ||
+    newPassword.trim().length < PASSWORD_MIN_LENGTH
+  ) {
+    res
+      .status(400)
+      .send({
+        message: `currentPassword and newPassword are required, and newPassword must be at least ${PASSWORD_MIN_LENGTH} characters`,
+      })
+      .end();
+    return;
+  }
+
+  if (currentPassword === newPassword) {
+    res
+      .status(400)
+      .send({
+        message: 'newPassword must be different from currentPassword',
+      })
+      .end();
+    return;
+  }
+
+  try {
+    const user = await db.findUser((req.user as User).username);
+    if (!user) {
+      res.status(404).send({ message: 'User not found' }).end();
+      return;
+    }
+
+    if (!user.password) {
+      res
+        .status(400)
+        .send({ message: 'Password changes are not supported for this account' })
+        .end();
+      return;
+    }
+
+    const currentPasswordCorrect = await bcrypt.compare(currentPassword, user.password ?? '');
+    if (!currentPasswordCorrect) {
+      res.status(401).send({ message: 'Current password is incorrect' }).end();
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.updateUser({
+      username: user.username,
+      password: hashedPassword,
+      mustChangePassword: false,
+    });
+
+    (req.user as User).mustChangePassword = false;
+
+    res.status(200).send({ message: 'Password updated successfully' }).end();
+  } catch (error: unknown) {
+    const msg = handleErrorAndLog(error, 'Failed to update password');
+    res
+      .status(500)
+      .send({
+        message: msg,
+      })
+      .end();
+  }
+});
+
 router.get('/profile', async (req: Request, res: Response) => {
   if (!req.user) {
     res
@@ -222,16 +327,11 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
     }
 
     user.gitAccount = req.body.gitAccount;
-    db.updateUser(user);
-    res.status(200).end();
+    await db.updateUser(user);
+    return res.status(200).send({ message: 'Git account updated successfully' }).end();
   } catch (error: unknown) {
     const msg = handleErrorAndLog(error, 'Failed to update git account');
-    res
-      .status(500)
-      .send({
-        message: msg,
-      })
-      .end();
+    return res.status(500).send({ message: msg }).end();
   }
 });
 
