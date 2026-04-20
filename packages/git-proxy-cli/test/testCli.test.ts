@@ -19,10 +19,14 @@ import path from 'path';
 import { describe, it, beforeAll, afterAll } from 'vitest';
 
 import { setConfigFile } from '../../../src/config/file';
+import { invalidateCache } from '../../../src/config';
 import { SAMPLE_REPO } from '../../../src/proxy/processors/constants';
 import { handleErrorAndLog } from '../../../src/utils/errors';
 
-setConfigFile(path.join(process.cwd(), 'test', 'testCli.proxy.config.json'));
+setConfigFile(
+  path.join(process.cwd(), 'packages', 'git-proxy-cli', 'test', 'testCli.proxy.config.json'),
+);
+invalidateCache();
 
 /* test constants */
 // push ID which does not exist
@@ -774,7 +778,7 @@ describe('test git-proxy-cli', function () {
         let expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 
-        cli = `${CLI_PATH} reject --id ${pushId}`;
+        cli = `${CLI_PATH} reject --id ${pushId} --reason "Rejected via CLI test"`;
         expectedExitCode = 0;
         expectedMessages = [`Reject: ID: '${pushId}': OK`];
         expectedErrorMessages = null;
