@@ -80,6 +80,7 @@ web_modules/
 # dotenv environment variables file
 .env
 .env.test
+.claude/worktrees/
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -276,3 +277,6 @@ website/.docusaurus
 
 # Generated from testing
 /test/fixtures/test-package/package-lock.json
+
+# Agentic AI generated files
+/plans

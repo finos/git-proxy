@@ -96,7 +96,7 @@ customize for your environment, see the [project's documentation](https://git-pr
 
 ## Contributing
 
-Your contributions are at the core of making this a truly open source project. Any contributions you make are **greatly appreciated**. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more information.
+Your contributions are at the core of making this a truly open source project. Any contributions you make are **greatly appreciated**. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for more information. For AI-assisted development, start with [`AGENTS.md`](AGENTS.md). Tool-specific entry points are provided in [`CLAUDE.md`](CLAUDE.md), [`.cursor/rules/00-core.mdc`](.cursor/rules/00-core.mdc), and [`.github/copilot-instructions.md`](.github/copilot-instructions.md). Shared slash-command prompts live in [`.agents/commands`](.agents/commands), with tool-native entry points in [`.claude/commands`](.claude/commands) and [`.cursor/commands`](.cursor/commands).
 
 ## Security
 
