@@ -21,6 +21,7 @@ import { getAuthMethods } from '../../config';
 import * as db from '../../db';
 import * as passportLocal from '../passport/local';
 import * as passportAD from '../passport/activeDirectory';
+import * as passportLdap from '../passport/ldap';
 
 import { User } from '../../db/types';
 import { AuthenticationElement } from '../../config/generated/config';
@@ -52,7 +53,7 @@ router.get('/', (_req: Request, res: Response) => {
 });
 
 // login strategies that will work with /login e.g. take username and password
-const appropriateLoginStrategies = [passportLocal.type, passportAD.type];
+const appropriateLoginStrategies = [passportLocal.type, passportAD.type, passportLdap.type];
 // getLoginStrategy fetches the enabled auth methods and identifies if there's an appropriate
 // auth method for username and password login. If there isn't it returns null, if there is it
 // returns the first.
