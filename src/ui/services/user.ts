@@ -160,20 +160,6 @@ const resolveDisplayNameByUsername = async (username: string): Promise<string | 
   }
 };
 
-const updateUser = async (
-  user: PublicUser,
-  setErrorMessage: SetStateCallback<string>,
-): Promise<void> => {
-  try {
-    const baseUrl = await getBaseUrl();
-    await axios.post(`${baseUrl}/api/auth/gitAccount`, user, getAxiosConfig());
-  } catch (error: unknown) {
-    const { status, message } = getServiceError(error, 'Unknown error');
-    setErrorMessage(formatErrorMessage('Error updating user', status, message));
-    throw error;
-  }
-};
-
 export {
   getUser,
   getUsers,
@@ -181,5 +167,4 @@ export {
   sortUsers,
   resolveUsernameByEmail,
   resolveDisplayNameByUsername,
-  updateUser,
 };
