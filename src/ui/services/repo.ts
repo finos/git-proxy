@@ -18,7 +18,6 @@ import axios from 'axios';
 import { getAxiosConfig } from './auth.js';
 import { Repo } from '../../db/types';
 import { RepoView } from '../types';
-import type { RepoSortField } from '../views/RepoList/Components/repoSortField';
 import { getApiV1BaseUrl } from './apiConfig';
 import { ServiceResult, getServiceError, errorResult, successResult } from './errors';
 import { SCMRepositoryMetadata } from '../types';
@@ -147,17 +146,6 @@ const fetchRepoViews = async (): Promise<ServiceResult<RepoView[]>> => {
   }
 };
 
-const getRepos = async (
-  sort: RepoSortField,
-  currentUsername?: string | null,
-): Promise<ServiceResult<RepoView[]>> => {
-  const result = await fetchRepoViews();
-  if (!result.success || !result.data) {
-    return result;
-  }
-  return successResult(sortRepoViews(result.data, sort, currentUsername));
-};
-
 const getRepo = async (id: string): Promise<ServiceResult<RepoView>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo/${id}`);
@@ -245,13 +233,4 @@ const deleteRepo = async (repoId: string): Promise<void> => {
   }
 };
 
-export {
-  addUser,
-  deleteUser,
-  getRepos,
-  fetchRepoViews,
-  getRepo,
-  getRepoScmMetadata,
-  addRepo,
-  deleteRepo,
-};
+export { addUser, deleteUser, fetchRepoViews, getRepo, getRepoScmMetadata, addRepo, deleteRepo };
