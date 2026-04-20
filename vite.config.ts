@@ -28,10 +28,6 @@ export default ({ mode }: { mode: string }) => {
     },
     server: {
       port: 3000,
-      proxy: {
-        '/api': { target: apiTarget, changeOrigin: true },
-        '/runtime-config.json': { target: apiTarget, changeOrigin: true },
-      },
       watch: {
         ignored: ['**/.data/**', '**/.remote/**', '**/.tmp/**'],
       },
