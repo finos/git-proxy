@@ -171,6 +171,7 @@
     "cross-env": "^10.1.0",
     "eslint": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
+    "cypress": "^15.9.0",
     "eslint-plugin-cypress": "^5.2.1",
     "eslint-plugin-license-header": "^0.9.0",
     "eslint-plugin-react": "^7.37.5",
