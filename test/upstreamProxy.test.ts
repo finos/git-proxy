@@ -16,7 +16,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { buildUpstreamProxyAgent } from '../src/proxy/routes';
+import { buildUpstreamProxyAgent, getOrCreateProxyAgent } from '../src/proxy/routes';
 import * as config from '../src/config';
 
 vi.mock('../src/config', async (importOriginal) => {
@@ -25,6 +25,42 @@ vi.mock('../src/config', async (importOriginal) => {
     ...actual,
     getUpstreamProxyConfig: vi.fn(),
   };
+});
+
+describe('getOrCreateProxyAgent', () => {
+  it('accepts http:// URLs', () => {
+    expect(() => getOrCreateProxyAgent('http://proxy.example.com:8080')).not.toThrow();
+  });
+
+  it('accepts https:// URLs', () => {
+    expect(() => getOrCreateProxyAgent('https://proxy.example.com:8080')).not.toThrow();
+  });
+
+  it('rejects socks5:// URLs with a descriptive error', () => {
+    expect(() => getOrCreateProxyAgent('socks5://proxy.example.com:1080')).toThrow(
+      /unsupported.*scheme.*socks5/i,
+    );
+  });
+
+  it('rejects ftp:// URLs with a descriptive error', () => {
+    expect(() => getOrCreateProxyAgent('ftp://proxy.example.com:21')).toThrow(
+      /unsupported.*scheme.*ftp/i,
+    );
+  });
+
+  it('rejects URLs without a protocol (no scheme)', () => {
+    expect(() => getOrCreateProxyAgent('localhost:8081')).toThrow(
+      /Unsupported upstream proxy URL scheme/i,
+    );
+  });
+
+  it('rejects URLs with an empty hostname', () => {
+    expect(() => getOrCreateProxyAgent('http://:8080')).toThrow(/invalid upstream proxy url/i);
+  });
+
+  it('rejects completely invalid URL strings', () => {
+    expect(() => getOrCreateProxyAgent('not a url at all')).toThrow(/invalid upstream proxy url/i);
+  });
 });
 
 describe('buildUpstreamProxyAgent', () => {
@@ -69,7 +105,7 @@ describe('buildUpstreamProxyAgent', () => {
 
   it('creates an agent when only HTTPS_PROXY is set and config is empty', () => {
     process.env.HTTPS_PROXY = 'http://env-proxy.example.com:8080';
-    vi.mocked(config.getUpstreamProxyConfig).mockReturnValue({});
+    vi.mocked(config.getUpstreamProxyConfig).mockReturnValue({ enabled: true });
 
     const agent = buildUpstreamProxyAgent({ host: 'github.com', headers: {} });
     expect(agent).toBeDefined();

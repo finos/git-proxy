@@ -204,11 +204,22 @@ let _cachedProxyAgent: { proxyUrl: string; agent: HttpsProxyAgent<string> } | nu
 
 const getOrCreateProxyAgent = (proxyUrl: string): HttpsProxyAgent<string> => {
   if (!_cachedProxyAgent || _cachedProxyAgent.proxyUrl !== proxyUrl) {
+    let parsed: URL;
     try {
-      new URL(proxyUrl);
+      parsed = new URL(proxyUrl);
     } catch {
       throw new Error(
         `Invalid upstream proxy URL: check your upstreamProxy.url config or HTTPS_PROXY env var`,
+      );
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      throw new Error(
+        `Unsupported upstream proxy URL scheme "${parsed.protocol.replace(/:$/, '')}": only http and https are supported`,
+      );
+    }
+    if (!parsed.hostname) {
+      throw new Error(
+        `Invalid upstream proxy URL: hostname is missing — check your upstreamProxy.url config or HTTPS_PROXY env var`,
       );
     }
     _cachedProxyAgent = { proxyUrl, agent: new HttpsProxyAgent(proxyUrl) };
@@ -225,7 +236,8 @@ const buildUpstreamProxyAgent = (
 
   const proxyUrl = url || getEnvProxyUrl();
 
-  if (enabled === false || !proxyUrl) {
+  // If enabled is not existant or false
+  if (enabled === undefined || enabled === false || !proxyUrl) {
     return undefined;
   }
 
@@ -382,4 +394,5 @@ export {
   validGitRequest,
   buildUpstreamProxyAgent,
   hostMatchesNoProxy,
+  getOrCreateProxyAgent,
 };
