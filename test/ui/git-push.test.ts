@@ -117,12 +117,12 @@ describe('git-push service', () => {
         { id: 'push-2', steps: [] },
       ];
 
-      axiosMock.mockResolvedValue({ data: pushesData });
+      axiosMock.mockResolvedValue({ data: { pushes: pushesData, total: pushesData.length } });
 
       const result = await getPushes();
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(pushesData);
+      expect(result.data).toEqual({ pushes: pushesData, total: pushesData.length });
       expect(axiosMock).toHaveBeenCalledWith(
         'http://localhost:8080/api/v1/push?blocked=true&canceled=false&authorised=false&rejected=false',
         expect.any(Object),
@@ -132,7 +132,7 @@ describe('git-push service', () => {
     it('returns array of pushes with custom query params', async () => {
       const pushesData = [{ id: 'push-1', steps: [] }];
 
-      axiosMock.mockResolvedValue({ data: pushesData });
+      axiosMock.mockResolvedValue({ data: { pushes: pushesData, total: pushesData.length } });
 
       const result = await getPushes({
         blocked: false,
@@ -142,7 +142,7 @@ describe('git-push service', () => {
       });
 
       expect(result.success).toBe(true);
-      expect(result.data).toEqual(pushesData);
+      expect(result.data).toEqual({ pushes: pushesData, total: pushesData.length });
       expect(axiosMock).toHaveBeenCalledWith(
         'http://localhost:8080/api/v1/push?blocked=false&canceled=true&authorised=true&rejected=false',
         expect.any(Object),

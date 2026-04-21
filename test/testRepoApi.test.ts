@@ -168,9 +168,9 @@ describe('add new repo', () => {
       .set('Cookie', `${cookie}`)
       .query({ url: TEST_REPO.url });
     expect(res.status).toBe(200);
-    expect(res.body[0].project).toBe(TEST_REPO.project);
-    expect(res.body[0].name).toBe(TEST_REPO.name);
-    expect(res.body[0].url).toBe(TEST_REPO.url);
+    expect(res.body.repos[0].project).toBe(TEST_REPO.project);
+    expect(res.body.repos[0].name).toBe(TEST_REPO.name);
+    expect(res.body.repos[0].url).toBe(TEST_REPO.url);
   });
 
   it('add 1st can push user', async () => {
@@ -537,6 +537,26 @@ describe('repo routes - edge cases', () => {
     expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
+  it('should return 400 when username is missing from push user body', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/repo/${repoId}/user/push`)
+      .set('Cookie', adminCookie)
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Username is required');
+  });
+
+  it('should return 400 when username is not a string in push user body', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/repo/${repoId}/user/push`)
+      .set('Cookie', adminCookie)
+      .send({ username: 123 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Username is required');
+  });
+
   it('should return 401 when non-admin user tries to add authorise user', async () => {
     const res = await request(app)
       .patch(`/api/v1/repo/${repoId}/user/authorise`)
@@ -554,6 +574,26 @@ describe('repo routes - edge cases', () => {
 
     expect(res.status).toBe(401);
     expect(res.body.message).toBe('You are not authorised to perform this action.');
+  });
+
+  it('should return 400 when username is missing from authorise user body', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/repo/${repoId}/user/authorise`)
+      .set('Cookie', adminCookie)
+      .send({});
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Username is required');
+  });
+
+  it('should return 400 when username is not a string in authorise user body', async () => {
+    const res = await request(app)
+      .patch(`/api/v1/repo/${repoId}/user/authorise`)
+      .set('Cookie', adminCookie)
+      .send({ username: 123 });
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('Username is required');
   });
 
   describe('DELETE /api/v1/repo/:id/user/push/:username', () => {

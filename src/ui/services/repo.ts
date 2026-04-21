@@ -46,19 +46,36 @@ class DupUserValidationError extends Error {
   }
 }
 
+import { PaginationParams } from './git-push';
+
+export type PagedRepoResponse = {
+  repos: RepoView[];
+  total: number;
+};
+
 const getRepos = async (
   query: Record<string, boolean> = {},
-): Promise<ServiceResult<RepoView[]>> => {
+  pagination: PaginationParams = {},
+): Promise<ServiceResult<PagedRepoResponse>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo`);
-  url.search = new URLSearchParams(query as any).toString();
+
+  const params: Record<string, string> = Object.fromEntries(
+    Object.entries(query).map(([k, v]) => [k, v.toString()]),
+  );
+  if (pagination.page) params['page'] = String(pagination.page);
+  if (pagination.limit) params['limit'] = String(pagination.limit);
+  if (pagination.search) params['search'] = pagination.search;
+  if (pagination.sortBy) params['sortBy'] = pagination.sortBy;
+  if (pagination.sortOrder) params['sortOrder'] = pagination.sortOrder;
+  url.search = new URLSearchParams(params).toString();
 
   try {
-    const response = await axios<RepoView[]>(url.toString(), getAxiosConfig());
-    const sortedRepos = response.data.sort((a: RepoView, b: RepoView) =>
-      a.name.localeCompare(b.name),
+    const response = await axios<{ repos: RepoView[]; total: number }>(
+      url.toString(),
+      getAxiosConfig(),
     );
-    return successResult(sortedRepos);
+    return successResult({ repos: response.data.repos, total: response.data.total });
   } catch (error: unknown) {
     return errorResult(error, 'Failed to load repositories');
   }

@@ -465,9 +465,9 @@ describe('Push API', () => {
     await loginAsApprover();
     const res = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(Array.isArray(res.body.pushes)).toBe(true);
 
-    const push = res.body.find((p: Action) => p.id === TEST_PUSH.id);
+    const push = res.body.pushes.find((p: Action) => p.id === TEST_PUSH.id);
     expect(push).toBeDefined();
 
     // Check that all values in push are in TEST_PUSH, except for _id
@@ -485,14 +485,13 @@ describe('Push API', () => {
     // Search for the overridden push
     const res = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`).query({
       limit: 1,
-      skip: 0,
       error: true,
       blocked: true,
     });
     expect(res.status).toBe(200);
-    expect(Array.isArray(res.body)).toBe(true);
+    expect(Array.isArray(res.body.pushes)).toBe(true);
 
-    const push = res.body.find((p: Action) => p.id === TEST_PUSH.id);
+    const push = res.body.pushes.find((p: Action) => p.id === TEST_PUSH.id);
     expect(push).toBeDefined();
     expect(push.error).toBe(true);
     expect(push.blocked).toBe(true);
@@ -507,7 +506,7 @@ describe('Push API', () => {
     expect(res.status).toBe(200);
 
     const pushes = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
-    const push = pushes.body.find((p: Action) => p.id === TEST_PUSH.id);
+    const push = pushes.body.pushes.find((p: Action) => p.id === TEST_PUSH.id);
 
     expect(push).toBeDefined();
     expect(push.canceled).toBe(true);
@@ -525,7 +524,7 @@ describe('Push API', () => {
     );
 
     const pushes = await request(app).get('/api/v1/push').set('Cookie', `${cookie}`);
-    const push = pushes.body.find((p: Action) => p.id === TEST_PUSH.id);
+    const push = pushes.body.pushes.find((p: Action) => p.id === TEST_PUSH.id);
 
     expect(push).toBeDefined();
     expect(push.canceled).toBe(false);

@@ -17,8 +17,10 @@
 import fs from 'fs';
 import Datastore from '@seald-io/nedb';
 
-import { User, UserQuery } from '../types';
+import { PaginatedResult, PaginationOptions, User, UserQuery } from '../types';
 import { handleErrorAndLog } from '../../utils/errors';
+import { buildSearchFilter, buildSort } from '../helper';
+import { paginatedFind } from './helper';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
 
@@ -180,22 +182,30 @@ export const updateUser = (user: Partial<User>): Promise<void> => {
   });
 };
 
-export const getUsers = (query: Partial<UserQuery> = {}): Promise<User[]> => {
+export const getUsers = (
+  query: Partial<UserQuery> = {},
+  pagination?: PaginationOptions,
+): Promise<PaginatedResult<User>> => {
   if (query.username) {
     query.username = query.username.toLowerCase();
   }
   if (query.email) {
     query.email = query.email.toLowerCase();
   }
-  return new Promise<User[]>((resolve, reject) => {
-    db.find(query, (err: Error, docs: User[]) => {
-      // ignore for code coverage as neDB rarely returns errors even for an invalid query
-      /* istanbul ignore if */
-      if (err) {
-        reject(err);
-      } else {
-        resolve(docs);
-      }
-    });
-  });
+
+  const baseQuery = buildSearchFilter(
+    { ...query },
+    ['username', 'displayName', 'email', 'gitAccount'],
+    pagination?.search,
+  );
+  const sort = buildSort(pagination, 'username', 1, [
+    'username',
+    'displayName',
+    'email',
+    'gitAccount',
+  ]);
+  const skip = pagination?.skip ?? 0;
+  const limit = pagination?.limit ?? 0;
+
+  return paginatedFind<User>(db, baseQuery, sort, skip, limit);
 };

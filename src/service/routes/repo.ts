@@ -20,7 +20,7 @@ import * as db from '../../db';
 import { getProxyURL } from '../urls';
 import { getAllProxiedHosts } from '../../db';
 import { RepoQuery } from '../../db/types';
-import { isAdminUser } from './utils';
+import { isAdminUser, parsePaginationParams } from './utils';
 import { Proxy } from '../../proxy';
 import { handleErrorAndLog } from '../../utils/errors';
 
@@ -30,20 +30,19 @@ function repo(proxy: Proxy) {
   router.get('/', async (req: Request, res: Response) => {
     const proxyURL = getProxyURL(req);
     const query: Partial<RepoQuery> = {};
+    const pagination = parsePaginationParams(req);
 
     for (const key in req.query) {
-      if (!key) continue;
-      if (key === 'limit' || key === 'skip') continue;
-
-      const rawValue = req.query[key];
+      if (!key || ['page', 'limit', 'search', 'sortBy', 'sortOrder'].includes(key)) continue;
+      const rawValue = req.query[key] as string;
       let parsedValue: boolean | undefined;
       if (rawValue === 'false') parsedValue = false;
       if (rawValue === 'true') parsedValue = true;
-      query[key] = parsedValue ?? rawValue?.toString();
+      query[key] = parsedValue ?? rawValue;
     }
 
-    const qd = await db.getRepos(query);
-    res.send(qd.map((d) => ({ ...d, proxyURL })));
+    const { data, total } = await db.getRepos(query, pagination);
+    res.send({ repos: data.map((d) => ({ ...d, proxyURL })), total });
   });
 
   router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
@@ -62,6 +61,10 @@ function repo(proxy: Proxy) {
     }
 
     const _id = req.params.id;
+    if (!req.body.username || typeof req.body.username !== 'string') {
+      res.status(400).send({ error: 'Username is required' });
+      return;
+    }
     const username = req.body.username.toLowerCase();
     const user = await db.findUser(username);
 
@@ -83,7 +86,11 @@ function repo(proxy: Proxy) {
     }
 
     const _id = req.params.id;
-    const username = req.body.username;
+    if (!req.body.username || typeof req.body.username !== 'string') {
+      res.status(400).send({ error: 'Username is required' });
+      return;
+    }
+    const username = req.body.username.toLowerCase();
     const user = await db.findUser(username);
 
     if (!user) {

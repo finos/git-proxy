@@ -75,7 +75,7 @@ export class Proxy {
     chain.chainPluginLoader = pluginLoader;
     // Check to see if the default repos are in the repo list
     const defaultAuthorisedRepoList = getAuthorisedList();
-    const allowedList: Repo[] = await getRepos();
+    const { data: allowedList } = await getRepos();
 
     for (const defaultRepo of defaultAuthorisedRepoList) {
       const found = allowedList.find((configuredRepo) => configuredRepo.url === defaultRepo.url);

@@ -242,7 +242,7 @@ describe('Database clients', () => {
     if (existing) await db.deleteRepo(existing._id!);
 
     await db.createRepo(TEST_REPO);
-    const repos = await db.getRepos();
+    const { data: repos } = await db.getRepos();
     const cleanRepos = cleanResponseData(TEST_REPO, repos);
     expect(cleanRepos).toContainEqual(TEST_REPO);
   });
@@ -251,16 +251,16 @@ describe('Database clients', () => {
     await ensureRepoExists();
 
     // uppercase the filter value to confirm db client is lowercasing inputs
-    const repos = await db.getRepos({ name: TEST_REPO.name.toUpperCase() });
+    const { data: repos } = await db.getRepos({ name: TEST_REPO.name.toUpperCase() });
     const cleanRepos = cleanResponseData(TEST_REPO, repos);
     expect(cleanRepos[0]).toEqual(TEST_REPO);
 
-    const repos2 = await db.getRepos({ url: TEST_REPO.url });
+    const { data: repos2 } = await db.getRepos({ url: TEST_REPO.url });
     const cleanRepos2 = cleanResponseData(TEST_REPO, repos2);
     expect(cleanRepos2[0]).toEqual(TEST_REPO);
 
-    const repos3 = await db.getRepos();
-    const repos4 = await db.getRepos({});
+    const { data: repos3 } = await db.getRepos();
+    const { data: repos4 } = await db.getRepos({});
     expect(repos3).toEqual(expect.arrayContaining(repos4));
     expect(repos4).toEqual(expect.arrayContaining(repos3));
   });
@@ -284,7 +284,7 @@ describe('Database clients', () => {
     const repo = await ensureRepoExists();
 
     await db.deleteRepo(repo._id);
-    const repos = await db.getRepos();
+    const { data: repos } = await db.getRepos();
     const cleanRepos = cleanResponseData(TEST_REPO, repos);
     expect(cleanRepos).not.toContainEqual(TEST_REPO);
   });
@@ -378,7 +378,7 @@ describe('Database clients', () => {
       TEST_USER.gitAccount,
       TEST_USER.admin,
     );
-    const users = await db.getUsers();
+    const { data: users } = await db.getUsers();
     // remove password as it will have been hashed
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
@@ -425,12 +425,12 @@ describe('Database clients', () => {
   it('should be able to filter getUsers', async () => {
     await ensureUserExists();
 
-    const users = await db.getUsers({ username: TEST_USER.username.toUpperCase() });
+    const { data: users } = await db.getUsers({ username: TEST_USER.username.toUpperCase() });
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
     expect(cleanUsers[0]).toEqual(TEST_USER_CLEAN);
 
-    const users2 = await db.getUsers({ email: TEST_USER.email.toUpperCase() });
+    const { data: users2 } = await db.getUsers({ email: TEST_USER.email.toUpperCase() });
     const cleanUsers2 = cleanResponseData(TEST_USER_CLEAN, users2);
     expect(cleanUsers2[0]).toEqual(TEST_USER_CLEAN);
   });
@@ -439,7 +439,7 @@ describe('Database clients', () => {
     await ensureUserExists();
 
     await db.deleteUser(TEST_USER.username);
-    const users = await db.getUsers();
+    const { data: users } = await db.getUsers();
     const cleanUsers = cleanResponseData(TEST_USER, users as any);
     expect(cleanUsers).not.toContainEqual(TEST_USER);
   });
@@ -473,7 +473,7 @@ describe('Database clients', () => {
 
     await db.updateUser(updateToApply);
 
-    const users = await db.getUsers();
+    const { data: users } = await db.getUsers();
     const cleanUsers = cleanResponseData(updatedUser, users);
     expect(cleanUsers).toContainEqual(updatedUser);
 
@@ -485,7 +485,7 @@ describe('Database clients', () => {
     await db.deleteUser(TEST_USER.username);
 
     await db.updateUser(TEST_USER);
-    const users = await db.getUsers();
+    const { data: users } = await db.getUsers();
     // remove password as it will have been hashed
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
@@ -583,7 +583,7 @@ describe('Database clients', () => {
 
     it('should be able to create a push', async () => {
       await db.writeAudit(TEST_PUSH);
-      const pushes = await db.getPushes({});
+      const { data: pushes } = await db.getPushes({});
       const cleanPushes = cleanResponseData(TEST_PUSH, pushes);
       expect(cleanPushes).toContainEqual(TEST_PUSH);
     }, 20000);
@@ -592,7 +592,7 @@ describe('Database clients', () => {
       // Create push
       await db.writeAudit(TEST_PUSH);
       await db.deletePush(TEST_PUSH.id);
-      const pushes = await db.getPushes({});
+      const { data: pushes } = await db.getPushes({});
       const cleanPushes = cleanResponseData(TEST_PUSH, pushes);
       expect(cleanPushes).not.toContainEqual(TEST_PUSH);
     });
