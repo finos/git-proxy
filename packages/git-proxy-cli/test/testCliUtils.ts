@@ -20,13 +20,13 @@ import { exec } from 'child_process';
 import { expect } from 'vitest';
 import { Request } from 'express';
 
-import Proxy from '../../../src/proxy';
+import { Proxy } from '../../../src/proxy';
 import { Action } from '../../../src/proxy/actions/Action';
 import { Step } from '../../../src/proxy/actions/Step';
-import { exec as execProcessor } from '../../../src/proxy/processors/push-action/audit';
+import { exec as execProcessor } from '../../../src/proxy/processors/post-processor/audit';
 import * as db from '../../../src/db';
 import { Repo } from '../../../src/db/types';
-import service from '../../../src/service';
+import { Service as service } from '../../../src/service';
 import { CommitData } from '../../../src/proxy/processors/types';
 
 const execAsync = util.promisify(exec);
