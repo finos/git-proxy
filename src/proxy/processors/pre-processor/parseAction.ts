@@ -14,36 +14,13 @@
  * limitations under the License.
  */
 
+import { Request } from 'express';
+
 import { Action } from '../../actions';
 import { processUrlPath } from '../../routes/helper';
 import * as db from '../../../db';
 
-const exec = async (req: {
-  originalUrl: string;
-  method: string;
-  headers: Record<string, string>;
-  protocol?: 'https' | 'ssh';
-  sshUser?: {
-    username: string;
-    email?: string;
-    gitAccount?: string;
-    sshKeyInfo?: {
-      keyType: string;
-      keyData: Buffer;
-    };
-  };
-  authContext?: {
-    cloneServiceToken?: {
-      username: string;
-      password: string;
-    };
-    sshKey?: {
-      keyType?: string;
-      keyData?: Buffer;
-      privateKey?: Buffer;
-    };
-  };
-}) => {
+const exec = async (req: Request) => {
   const id = Date.now();
   const timestamp = id;
   let type = 'default';

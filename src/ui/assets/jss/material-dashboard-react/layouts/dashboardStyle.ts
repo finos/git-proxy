@@ -43,7 +43,7 @@ const appStyle = (theme: Theme): AppStyleProps => ({
     ...transition,
     maxHeight: '100%',
     width: '100%',
-    WebkitOverflowScrolling: 'touch' as any,
+    WebkitOverflowScrolling: 'touch',
   },
   content: {
     marginTop: '70px',

@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-import { Action, Step } from '../../actions';
+import { Request } from 'express';
 import fs from 'fs';
 import lod from 'lodash';
 import { createInflate } from 'zlib';
+
+import { Action, Step } from '../../actions';
 import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
 import {
   BRANCH_PREFIX,
@@ -27,6 +29,7 @@ import {
   GIT_OBJECT_TYPE_COMMIT,
 } from '../constants';
 import { parsePacketLines } from '../pktLineParser';
+import { getErrorMessage } from '../../../utils/errors';
 
 const dir = './.tmp/';
 
@@ -44,11 +47,11 @@ const EIGHTH_BIT_MASK = 0x80;
 
 /**
  * Executes the parsing of a push request.
- * @param {*} req - The request object containing the push data.
+ * @param {Request} req - The Express Request object containing the push data.
  * @param {Action} action - The action object to be modified.
  * @return {Promise<Action>} The modified action object.
  */
-async function exec(req: any, action: Action): Promise<Action> {
+async function exec(req: Request, action: Action): Promise<Action> {
   const step = new Step('parsePackFile');
   try {
     if (!req.body || req.body.length === 0) {
@@ -63,8 +66,6 @@ async function exec(req: any, action: Action): Promise<Action> {
       throw new Error(
         'Your push has been blocked. Please make sure you are pushing to a single branch.',
       );
-    } else {
-      console.log(`refUpdates: ${JSON.stringify(refUpdates, null, 2)}`);
     }
 
     const [commitParts] = refUpdates[0].split('\0');
@@ -100,7 +101,7 @@ async function exec(req: any, action: Action): Promise<Action> {
     const [meta, contentBuff] = getPackMeta(buf);
     const contents = await getContents(contentBuff, meta.entries);
 
-    action.commitData = getCommitData(contents as any);
+    action.commitData = getCommitData(contents);
 
     if (action.commitData.length === 0) {
       step.log('No commit data found when parsing push.');
@@ -110,14 +111,15 @@ async function exec(req: any, action: Action): Promise<Action> {
       }
 
       if (req.user) {
-        console.log(
-          `Push Request received from user ${req.user.username} with email ${req.user.email}`,
-        );
-        action.user = req.user.username;
-        action.userEmail = req.user.email;
+        const { username, email } = req.user as { username: string; email?: string };
+        step.log(`Push request received from authenticated user ${username} with email ${email}`);
+        action.user = username;
+        action.userEmail = email;
       } else {
         const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
-        console.log(`Push Request received from user ${committer} with email ${committerEmail}`);
+        // Note: This is not always the pusher's email, it's the last committer's email.
+        // See https://github.com/finos/git-proxy/issues/1400
+        step.log(`Push request received from user ${committer} with email ${committerEmail}`);
         action.user = committer;
         action.userEmail = committerEmail;
       }
@@ -126,10 +128,9 @@ async function exec(req: any, action: Action): Promise<Action> {
     step.content = {
       meta: meta,
     };
-  } catch (e: any) {
-    step.setError(
-      `Unable to parse push. Please contact an administrator for support: ${e.toString('utf-8')}`,
-    );
+  } catch (error: unknown) {
+    const msg = getErrorMessage(error);
+    step.setError(`Unable to parse push. Please contact an administrator for support: ${msg}`);
   } finally {
     action.addStep(step);
   }
@@ -503,10 +504,10 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
     };
 
     // stop on errors, except maybe buffer errors?
-    const onError = (e: any) => {
-      error = e;
-      console.warn(`Error during inflation: ${JSON.stringify(e)}`);
-      error = new Error('Error during inflation', { cause: e });
+    const onError = (e: unknown) => {
+      const msg = getErrorMessage(e);
+      console.warn(`Error during inflation: ${msg}`);
+      error = new Error(`Error during inflation: ${msg}`);
       inflater.end();
       done = true;
       if (currentWriteResolve) currentWriteResolve();
@@ -530,9 +531,10 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
             offset++;
           }
         });
-      } catch (e) {
-        console.warn(`Error during decompression: ${JSON.stringify(e)}`);
-        error = new Error('Error during decompression', { cause: e });
+      } catch (e: unknown) {
+        const msg = getErrorMessage(e);
+        console.warn(`Error during decompression: ${msg}`);
+        error = new Error(`Error during decompression: ${msg}`);
       }
     }
     const result = {

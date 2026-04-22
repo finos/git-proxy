@@ -16,7 +16,7 @@
 
 import { OptionalId, Document, ObjectId } from 'mongodb';
 import { toClass } from '../helper';
-import { User, PublicKeyRecord } from '../types';
+import { User, UserQuery, PublicKeyRecord } from '../types';
 import { connect } from './helper';
 import _ from 'lodash';
 import { DuplicateSSHKeyError } from '../../errors/DatabaseErrors';
@@ -40,7 +40,7 @@ export const findUserByOIDC = async function (oidcId: string): Promise<User | nu
   return doc ? toClass(doc, User.prototype) : null;
 };
 
-export const getUsers = async function (query: any = {}): Promise<User[]> {
+export const getUsers = async function (query: Partial<UserQuery> = {}): Promise<User[]> {
   if (query.username) {
     query.username = query.username.toLowerCase();
   }

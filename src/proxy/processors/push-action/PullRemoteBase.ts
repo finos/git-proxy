@@ -16,6 +16,7 @@
 
 import { Action, Step } from '../../actions';
 import fs from 'fs';
+import { getErrorMessage } from '../../../utils/errors';
 
 export type CloneResult = {
   command: string;
@@ -74,9 +75,8 @@ export abstract class PullRemoteBase {
       action.pullAuthStrategy = result.strategy;
       step.log(`Completed ${result.command}`);
       step.setContent(`Completed ${result.command}`);
-    } catch (e: any) {
-      const message = e instanceof Error ? e.message : (e?.toString?.('utf-8') ?? String(e));
-      step.setError(message);
+    } catch (error: unknown) {
+      step.setError(getErrorMessage(error));
 
       // Clean up the checkout folder so it doesn't block subsequent attempts
       if (action.proxyGitPath && fs.existsSync(action.proxyGitPath)) {
@@ -84,7 +84,7 @@ export abstract class PullRemoteBase {
         step.log('.remote is deleted!');
       }
 
-      throw e;
+      throw error;
     } finally {
       action.addStep(step);
     }

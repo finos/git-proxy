@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { Request } from 'express';
+
 import { Action } from '../../actions';
 import { PullRemoteHTTPS } from './PullRemoteHTTPS';
 import { PullRemoteSSH } from './PullRemoteSSH';
@@ -26,7 +28,7 @@ import { PullRemoteBase } from './PullRemoteBase';
  * - SSH protocol requires agent forwarding (no fallback)
  * - HTTPS protocol uses Basic Auth credentials
  */
-function createPullRemote(req: any, action: Action): PullRemoteBase {
+function createPullRemote(req: Request, action: Action): PullRemoteBase {
   if (action.protocol === 'ssh') {
     if (!req?.sshClient?.agentForwardingEnabled || !req?.sshClient) {
       throw new Error(
@@ -44,7 +46,7 @@ function createPullRemote(req: any, action: Action): PullRemoteBase {
  * Execute pull remote operation
  * Delegates to appropriate implementation based on protocol and capabilities
  */
-const exec = async (req: any, action: Action): Promise<Action> => {
+const exec = async (req: Request, action: Action): Promise<Action> => {
   const pullRemote = createPullRemote(req, action);
   return await pullRemote.exec(req, action);
 };
