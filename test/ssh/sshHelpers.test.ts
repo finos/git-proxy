@@ -31,7 +31,7 @@ import { ClientWithUser } from '../../src/proxy/ssh/types';
 const { childProcessStub, fsStub } = vi.hoisted(() => {
   return {
     childProcessStub: {
-      execSync: vi.fn(),
+      execFileSync: vi.fn(),
     },
     fsStub: {
       promises: {
@@ -45,7 +45,7 @@ vi.mock('child_process', async () => {
   const actual = await vi.importActual<typeof import('child_process')>('child_process');
   return {
     ...actual,
-    execSync: childProcessStub.execSync,
+    execFileSync: childProcessStub.execFileSync,
   };
 });
 
@@ -141,15 +141,16 @@ describe('sshHelpers', () => {
       const sshUrl = 'git@github.com:org/repo.git';
 
       // Mock execSync to return GitHub's ed25519 key
-      childProcessStub.execSync.mockReturnValue(
+      childProcessStub.execFileSync.mockReturnValue(
         'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl\n',
       );
 
       const knownHostsPath = await createKnownHostsFile(tempDir, sshUrl);
 
       expect(knownHostsPath).toBe(path.join(tempDir, 'known_hosts'));
-      expect(childProcessStub.execSync).toHaveBeenCalledWith(
-        'ssh-keyscan -t ed25519 github.com 2>/dev/null',
+      expect(childProcessStub.execFileSync).toHaveBeenCalledWith(
+        'ssh-keyscan',
+        ['-t', 'ed25519', 'github.com'],
         expect.objectContaining({
           encoding: 'utf-8',
           timeout: 5000,
@@ -166,15 +167,16 @@ describe('sshHelpers', () => {
       const tempDir = '/tmp/test-dir';
       const sshUrl = 'git@gitlab.com:org/repo.git';
 
-      childProcessStub.execSync.mockReturnValue(
+      childProcessStub.execFileSync.mockReturnValue(
         'gitlab.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAfuCHKVTjquxvt6CM6tdG4SLp1Btn/nOeHHE5UOzRdf\n',
       );
 
       const knownHostsPath = await createKnownHostsFile(tempDir, sshUrl);
 
       expect(knownHostsPath).toBe(path.join(tempDir, 'known_hosts'));
-      expect(childProcessStub.execSync).toHaveBeenCalledWith(
-        'ssh-keyscan -t ed25519 gitlab.com 2>/dev/null',
+      expect(childProcessStub.execFileSync).toHaveBeenCalledWith(
+        'ssh-keyscan',
+        ['-t', 'ed25519', 'gitlab.com'],
         expect.anything(),
       );
     });
@@ -186,6 +188,24 @@ describe('sshHelpers', () => {
       await expect(createKnownHostsFile(tempDir, invalidUrl)).rejects.toThrow(
         'Cannot extract hostname from SSH URL',
       );
+    });
+
+    it.each([
+      'github.com;ls',
+      'github.com$(whoami)',
+      'github.com|cat',
+      'github.com`id`',
+      'github com',
+      '-github.com',
+      'github.com/extra',
+    ])('should reject shell-metacharacter hostname %s', async (badHost) => {
+      const tempDir = '/tmp/test-dir';
+      const sshUrl = `git@${badHost}:org/repo.git`;
+
+      await expect(createKnownHostsFile(tempDir, sshUrl)).rejects.toThrow(
+        /Invalid hostname extracted from SSH URL|Cannot extract hostname/,
+      );
+      expect(childProcessStub.execFileSync).not.toHaveBeenCalled();
     });
 
     it('should throw error for unsupported hostname', async () => {
@@ -202,7 +222,7 @@ describe('sshHelpers', () => {
       const sshUrl = 'git@github.com:org/repo.git';
 
       // Return a key with different fingerprint
-      childProcessStub.execSync.mockReturnValue(
+      childProcessStub.execFileSync.mockReturnValue(
         'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBadFingerprint123456789\n',
       );
 
@@ -215,7 +235,7 @@ describe('sshHelpers', () => {
       const tempDir = '/tmp/test-dir';
       const sshUrl = 'git@github.com:org/repo.git';
 
-      childProcessStub.execSync.mockImplementation(() => {
+      childProcessStub.execFileSync.mockImplementation(() => {
         throw new Error('Connection timeout');
       });
 
@@ -228,7 +248,7 @@ describe('sshHelpers', () => {
       const tempDir = '/tmp/test-dir';
       const sshUrl = 'git@github.com:org/repo.git';
 
-      childProcessStub.execSync.mockReturnValue('github.com ssh-rsa AAAA...\n'); // No ed25519 key
+      childProcessStub.execFileSync.mockReturnValue('github.com ssh-rsa AAAA...\n'); // No ed25519 key
 
       await expect(createKnownHostsFile(tempDir, sshUrl)).rejects.toThrow(
         'No ed25519 key found in ssh-keyscan output',
@@ -249,7 +269,7 @@ describe('sshHelpers', () => {
       const sshUrl = 'git@github.com:org/repo.git';
 
       // Mock ssh-keyscan to return invalid output (only 2 parts instead of 3)
-      childProcessStub.execSync.mockReturnValue('github.com ssh-ed25519\n'); // Missing key data
+      childProcessStub.execFileSync.mockReturnValue('github.com ssh-ed25519\n'); // Missing key data
 
       await expect(createKnownHostsFile(tempDir, sshUrl)).rejects.toThrow(
         'Invalid ssh-keyscan output format',

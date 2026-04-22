@@ -20,7 +20,7 @@ import { ClientWithUser } from './types';
 import { createLazyAgent } from './AgentForwarding';
 import { getKnownHosts, verifyHostKey, DEFAULT_KNOWN_HOSTS } from './knownHosts';
 import * as crypto from 'crypto';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -148,6 +148,15 @@ export async function createKnownHostsFile(tempDir: string, sshUrl: string): Pro
 
   const hostname = hostMatch[1];
 
+  // Defense in depth: validate hostname shape before passing it to a child process.
+  // Even though execFileSync below does not invoke a shell, a malformed hostname
+  // could still reach ssh-keyscan or be written verbatim into the known_hosts file.
+  const hostnameRegex =
+    /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*$/;
+  if (!hostnameRegex.test(hostname)) {
+    throw new Error(`Invalid hostname extracted from SSH URL: ${hostname}`);
+  }
+
   // Get the known host key for this hostname from hardcoded fingerprints
   const knownFingerprint = DEFAULT_KNOWN_HOSTS[hostname];
   if (!knownFingerprint) {
@@ -162,9 +171,10 @@ export async function createKnownHostsFile(tempDir: string, sshUrl: string): Pro
   // We'll verify its fingerprint matches our hardcoded one
   let actualHostKey: string;
   try {
-    const output = execSync(`ssh-keyscan -t ed25519 ${hostname} 2>/dev/null`, {
+    const output = execFileSync('ssh-keyscan', ['-t', 'ed25519', hostname], {
       encoding: 'utf-8',
       timeout: 5000,
+      stdio: ['ignore', 'pipe', 'ignore'],
     });
 
     // Parse ssh-keyscan output: "hostname ssh-ed25519 AAAAC3Nz..."
