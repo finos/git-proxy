@@ -23,7 +23,7 @@ import { PACKET_SIZE } from './constants';
  * @return {[string[], number]} An array containing the parsed lines and the offset after the last parsed line/flush packet.
  */
 export const parsePacketLines = (buffer: Buffer): [string[], number] => {
-  if (!Buffer.isBuffer(buffer)) {
+  if (typeof buffer === 'string' || Array.isArray(buffer) || !Buffer.isBuffer(buffer)) {
     throw new Error('parsePacketLines expected a Buffer');
   }
   const lines: string[] = [];

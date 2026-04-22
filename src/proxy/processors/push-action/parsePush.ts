@@ -57,7 +57,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
     if (!req.body || req.body.length === 0) {
       throw new Error('No body found in request');
     }
-    if (!Buffer.isBuffer(req.body)) {
+    if (typeof req.body === 'string' || Array.isArray(req.body) || !Buffer.isBuffer(req.body)) {
       throw new Error('Request body must be a Buffer');
     }
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
