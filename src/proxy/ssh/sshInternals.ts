@@ -36,7 +36,6 @@ import * as ssh2 from 'ssh2';
 
 const ssh2Version: string = (() => {
   try {
-     
     return require('ssh2/package.json').version;
   } catch {
     return 'unknown';
@@ -133,7 +132,6 @@ export function getChannelModule(): ChannelModule {
 
   let mod: Partial<ChannelModule>;
   try {
-     
     mod = require('ssh2/lib/Channel');
   } catch (err) {
     fail(`cannot require('ssh2/lib/Channel'): ${err instanceof Error ? err.message : String(err)}`);
