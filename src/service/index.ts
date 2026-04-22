@@ -26,8 +26,11 @@ import * as config from '../config';
 import * as db from '../db';
 import { serverConfig } from '../config/env';
 import { Proxy } from '../proxy';
-import routes from './routes';
+import { RegisterRoutes } from './generatedRoutes';
+import { setProxy } from './proxyStore';
 import { configure } from './passport';
+import { ValidateError } from 'tsoa';
+import type { Request, Response, NextFunction } from 'express';
 
 const limiter = rateLimit(config.getRateLimit());
 
@@ -165,7 +168,33 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.use(passport.session());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use('/', routes(proxy));
+
+  // Make the Proxy instance available to controllers before registering routes.
+  if (proxy) setProxy(proxy);
+  RegisterRoutes(app);
+
+  // Error handlers — must be registered after routes.
+  // Handle tsoa validation errors (missing/invalid fields).
+  app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
+    if (err instanceof ValidateError) {
+      return res.status(400).json({
+        message: 'Validation failed',
+        details: err.fields,
+      });
+    }
+    next(err);
+  });
+  // Handle HTTP errors thrown from controllers (objects with a .status property).
+  app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
+    const httpErr = err as { status?: number; message?: string };
+    const status = typeof httpErr.status === 'number' ? httpErr.status : 500;
+    const message = httpErr.message ?? 'Internal server error';
+    if (!res.headersSent) {
+      return res.status(status).json({ message });
+    }
+    next(err);
+  });
+
   app.use('/', express.static(absBuildPath));
   app.get('/*path', (_req, res) => {
     res.sendFile(path.join(`${absBuildPath}/index.html`));

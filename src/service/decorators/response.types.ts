@@ -14,18 +14,12 @@
  * limitations under the License.
  */
 
-import express, { Request, Response } from 'express';
+import { TsoaResponse } from 'tsoa';
 
-const router = express.Router();
-
-const resource = {
-  healthcheck: '/api/v1/healthcheck',
-  push: '/api/v1/push',
-  auth: '/api/auth',
-};
-
-router.get('/', (_req: Request, res: Response) => {
-  res.send(resource);
-});
-
-export default router;
+export type UnauthorisedResponse = TsoaResponse<401, { message: string }>;
+export type ForbiddenResponse = TsoaResponse<403, { message: string }>;
+export type NotFoundResponse = TsoaResponse<404, { message: string }>;
+export type ValidationErrorResponse = TsoaResponse<400, { message: string }>;
+export type ConflictResponse = TsoaResponse<409, { message: string }>;
+export type InternalServerErrorResponse = TsoaResponse<500, { message: string }>;
+export type UserNotFoundResponse = TsoaResponse<400, { error: string }>;
