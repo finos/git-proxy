@@ -24,8 +24,16 @@
 
 import { SSHAgentProxy } from './AgentProxy';
 import { ClientWithUser } from './types';
+import {
+  getProtocol,
+  getChannelManager,
+  findAvailableChannelId,
+  getChannelModule,
+} from './sshInternals';
 
-// Import BaseAgent from ssh2 for custom agent implementation
+// Import BaseAgent from ssh2 for custom agent implementation.
+// Like the other accesses in ./sshInternals, this path is not in ssh2's
+// package.json "exports". Verified working on ssh2 ~1.17.0.
 const { BaseAgent } = require('ssh2/lib/agent.js');
 
 /**
@@ -204,45 +212,51 @@ export class LazySSHAgent extends BaseAgent {
 export async function openTemporaryAgentChannel(
   client: ClientWithUser,
 ): Promise<SSHAgentProxy | null> {
-  // Access internal protocol handler (not exposed in public API)
-  const proto = (client as any)._protocol;
-  if (!proto) {
-    console.error('[SSH] No protocol found on client connection');
+  // All ssh2 internals access goes through ./sshInternals, which throws a
+  // clear version-aware error if the internal API has changed.
+  let proto;
+  let chanMgr;
+  let channelModule;
+  try {
+    proto = getProtocol(client);
+    chanMgr = getChannelManager(client);
+    channelModule = getChannelModule();
+  } catch (err) {
+    console.error('[SSH]', err instanceof Error ? err.message : String(err));
     return null;
   }
 
-  // Find next available channel ID by checking internal ChannelManager
-  // This prevents conflicts with channels that ssh2 might be managing
-  const chanMgr = (client as any)._chanMgr;
-  let localChan = 1; // Start from 1 (0 is typically main session)
-
-  if (chanMgr && chanMgr._channels) {
-    // Find first available channel ID
-    while (chanMgr._channels[localChan] !== undefined) {
-      localChan++;
-    }
-  }
+  // 0 is typically the main session, start scanning from 1
+  const localChan = findAvailableChannelId(chanMgr, 1);
 
   console.log(`[SSH] Opening agent channel with ID ${localChan}`);
 
   return new Promise((resolve) => {
-    const originalHandler = (proto as any)._handlers.CHANNEL_OPEN_CONFIRMATION;
-    const handlerWrapper = (self: any, info: any) => {
+    const originalHandler = proto._handlers.CHANNEL_OPEN_CONFIRMATION;
+
+    const restoreHandler = () => {
       if (originalHandler) {
-        originalHandler(self, info);
+        proto._handlers.CHANNEL_OPEN_CONFIRMATION = originalHandler;
+      } else {
+        delete proto._handlers.CHANNEL_OPEN_CONFIRMATION;
+      }
+    };
+
+    const handlerWrapper = (...args: unknown[]) => {
+      if (originalHandler) {
+        originalHandler(...args);
       }
 
-      if (info.recipient === localChan) {
+      const info = args[1] as {
+        recipient?: number;
+        sender: number;
+        window: number;
+        packetSize: number;
+      };
+      if (info?.recipient === localChan) {
         clearTimeout(timeout);
+        restoreHandler();
 
-        // Restore original handler
-        if (originalHandler) {
-          (proto as any)._handlers.CHANNEL_OPEN_CONFIRMATION = originalHandler;
-        } else {
-          delete (proto as any)._handlers.CHANNEL_OPEN_CONFIRMATION;
-        }
-
-        // Create a Channel object manually
         try {
           const channelInfo = {
             type: 'auth-agent@openssh.com',
@@ -260,18 +274,15 @@ export async function openTemporaryAgentChannel(
             },
           };
 
-          const { Channel } = require('ssh2/lib/Channel');
-          const channel = new Channel(client, channelInfo, { server: true });
+          const channel = new channelModule.Channel(client, channelInfo, { server: true });
 
           // Register channel with ChannelManager
-          const chanMgr = (client as any)._chanMgr;
-          if (chanMgr) {
-            chanMgr._channels[localChan] = channel;
-            chanMgr._count++;
-          }
+          chanMgr._channels[localChan] = channel;
+          chanMgr._count++;
 
-          // Create the agent proxy
-          const agentProxy = new SSHAgentProxy(channel);
+          const agentProxy = new SSHAgentProxy(
+            channel as ConstructorParameters<typeof SSHAgentProxy>[0],
+          );
           resolve(agentProxy);
         } catch (err) {
           console.error('[SSH] Failed to create Channel/AgentProxy:', err);
@@ -280,22 +291,15 @@ export async function openTemporaryAgentChannel(
       }
     };
 
-    // Install our handler
-    (proto as any)._handlers.CHANNEL_OPEN_CONFIRMATION = handlerWrapper;
+    proto._handlers.CHANNEL_OPEN_CONFIRMATION = handlerWrapper;
 
     const timeout = setTimeout(() => {
       console.error('[SSH] Timeout waiting for channel confirmation');
-      if (originalHandler) {
-        (proto as any)._handlers.CHANNEL_OPEN_CONFIRMATION = originalHandler;
-      } else {
-        delete (proto as any)._handlers.CHANNEL_OPEN_CONFIRMATION;
-      }
+      restoreHandler();
       resolve(null);
     }, 5000);
 
-    // Send the channel open request
-    const { MAX_WINDOW, PACKET_SIZE } = require('ssh2/lib/Channel');
-    proto.openssh_authAgent(localChan, MAX_WINDOW, PACKET_SIZE);
+    proto.openssh_authAgent(localChan, channelModule.MAX_WINDOW, channelModule.PACKET_SIZE);
   });
 }
 

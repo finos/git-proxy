@@ -30,6 +30,7 @@ import { ClientWithUser, SSH2ServerOptions } from './types';
 import { createMockResponse } from './sshHelpers';
 import { processGitUrl } from '../routes/helper';
 import { ensureHostKey } from './hostKeyManager';
+import { getProtocol, getSessionOutgoingChannelId } from './sshInternals';
 
 export class SSHServer {
   private server: ssh2.Server;
@@ -264,17 +265,18 @@ export class SSHServer {
         if (typeof accept === 'function') {
           accept();
         } else {
-          // Client sent wantReply=false, manually send CHANNEL_SUCCESS
+          // Client sent wantReply=false, manually send CHANNEL_SUCCESS via ssh2 internals.
           try {
-            const channelInfo = (session as any)._chanInfo;
-            if (channelInfo && channelInfo.outgoing && channelInfo.outgoing.id !== undefined) {
-              const proto = (client as any)._protocol || (client as any)._sock;
-              if (proto && typeof proto.channelSuccess === 'function') {
-                proto.channelSuccess(channelInfo.outgoing.id);
-              }
+            const outgoingChannelId = getSessionOutgoingChannelId(session);
+            if (outgoingChannelId !== undefined) {
+              const proto = getProtocol(client);
+              proto.channelSuccess(outgoingChannelId);
             }
           } catch (err) {
-            console.error('[SSH] Failed to send CHANNEL_SUCCESS:', err);
+            console.error(
+              '[SSH] Failed to send CHANNEL_SUCCESS:',
+              err instanceof Error ? err.message : String(err),
+            );
           }
         }
 

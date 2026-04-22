@@ -341,9 +341,11 @@ describe('AgentForwarding', () => {
         _protocol: {
           _handlers: {},
           openssh_authAgent: vi.fn(),
+          channelSuccess: vi.fn(),
         },
         _chanMgr: {
           _channels: {},
+          _count: 0,
         },
       };
 
@@ -361,6 +363,7 @@ describe('AgentForwarding', () => {
         _protocol: {
           _handlers: {},
           openssh_authAgent: vi.fn(),
+          channelSuccess: vi.fn(),
         },
         _chanMgr: {
           _channels: {
@@ -368,6 +371,7 @@ describe('AgentForwarding', () => {
             2: 'occupied',
             // Channel 3 should be used
           },
+          _count: 2,
         },
       };
 
@@ -393,9 +397,11 @@ describe('AgentForwarding', () => {
         _protocol: {
           _handlers: {},
           openssh_authAgent: vi.fn(),
+          channelSuccess: vi.fn(),
         },
         _chanMgr: {
           _channels: {},
+          _count: 0,
         },
       };
 
@@ -410,7 +416,7 @@ describe('AgentForwarding', () => {
       await promise;
     }, 6000);
 
-    it('should handle client without chanMgr', async () => {
+    it('should return null when client has no chanMgr', async () => {
       const { openTemporaryAgentChannel } = await import('../../src/proxy/ssh/AgentForwarding');
 
       const mockClient: any = {
@@ -418,20 +424,15 @@ describe('AgentForwarding', () => {
         _protocol: {
           _handlers: {},
           openssh_authAgent: vi.fn(),
+          channelSuccess: vi.fn(),
         },
-        // No _chanMgr
+        // No _chanMgr — the internals guard should reject and return null
       };
 
-      const promise = openTemporaryAgentChannel(mockClient);
+      const result = await openTemporaryAgentChannel(mockClient);
 
-      // Should use default channel ID 1
-      expect(mockClient._protocol.openssh_authAgent).toHaveBeenCalledWith(
-        1,
-        expect.any(Number),
-        expect.any(Number),
-      );
-
-      await promise;
-    }, 6000);
+      expect(result).toBeNull();
+      expect(mockClient._protocol.openssh_authAgent).not.toHaveBeenCalled();
+    });
   });
 });
