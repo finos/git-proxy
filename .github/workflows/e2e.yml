@@ -21,6 +21,11 @@ jobs:
       BUILDX_CACHE_SCOPE: ${{ matrix.suite }}-build
 
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        with:
+          egress-policy: audit
+
       - name: Checkout code
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
@@ -95,6 +100,11 @@ jobs:
     name: e2e
     needs: [e2e]
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@8d3c67de8e2fe68ef647c8db1e6a09f647780f40 # v2.19.0
+        with:
+          egress-policy: audit
+
       - name: Check e2e results
         run: |
           result="${{ needs.e2e.result }}"
