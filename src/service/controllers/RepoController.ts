@@ -28,32 +28,26 @@ import {
   Security,
   Tags,
 } from 'tsoa';
-import type { TsoaResponse } from 'tsoa';
 import type { Request as ExpressRequest } from 'express';
 import * as db from '../../db';
-import { Repo, RepoQuery } from '../../db/types';
+import { RepoQuery } from '../../db/types';
 import { getProxyURL } from '../urls';
 import { isAdminUser } from '../routes/utils';
 import { getProxy } from '../proxyStore';
 import { handleErrorAndLog } from '../../utils/errors';
-import { MessageResponse } from '../models';
-
-interface UsernameBody {
-  username: string;
-}
-
-interface CreateRepoBody {
-  url: string;
-  name: string;
-  project: string;
-}
-
-interface RepoWithProxy extends Repo {
-  proxyURL: string;
-}
+import { MessageResponse } from '../interfaces/common.interfaces';
+import { UsernameBody, CreateRepoBody, RepoWithProxy } from '../interfaces/repo.interfaces';
+import {
+  ConflictResponse,
+  InternalServerErrorResponse,
+  NotFoundResponse,
+  UnauthorisedResponse,
+  UserNotFoundResponse,
+  ValidationErrorResponse,
+} from '../decorators/response.types';
 
 /**
- * Repository management (JWT-protected).
+ * Repository management.
  */
 @Route('api/v1/repo')
 @Security('jwt')
@@ -89,7 +83,7 @@ export class RepoController extends Controller {
   public async getRepo(
     @Path() id: string,
     @Request() req: ExpressRequest,
-    @Res() notFoundResponse: TsoaResponse<404, { message: string }>,
+    @Res() notFoundResponse: NotFoundResponse,
   ): Promise<RepoWithProxy> {
     const proxyURL = getProxyURL(req);
     const repo = await db.getRepoById(id);
@@ -106,10 +100,10 @@ export class RepoController extends Controller {
   public async createRepo(
     @Body() body: CreateRepoBody,
     @Request() req: ExpressRequest,
-    @Res() unauthorisedResponse: TsoaResponse<401, { message: string }>,
-    @Res() validationErrorResponse: TsoaResponse<400, { message: string }>,
-    @Res() conflictResponse: TsoaResponse<409, { message: string }>,
-    @Res() internalServerErrorResponse: TsoaResponse<500, { message: string }>,
+    @Res() unauthorisedResponse: UnauthorisedResponse,
+    @Res() validationErrorResponse: ValidationErrorResponse,
+    @Res() conflictResponse: ConflictResponse,
+    @Res() internalServerErrorResponse: InternalServerErrorResponse,
   ): Promise<RepoWithProxy & MessageResponse> {
     if (!isAdminUser(req.user)) {
       return unauthorisedResponse(401, {
@@ -170,8 +164,8 @@ export class RepoController extends Controller {
     @Path() id: string,
     @Body() body: UsernameBody,
     @Request() req: ExpressRequest,
-    @Res() unauthorisedResponse: TsoaResponse<401, { message: string }>,
-    @Res() userNotFoundResponse: TsoaResponse<400, { error: string }>,
+    @Res() unauthorisedResponse: UnauthorisedResponse,
+    @Res() userNotFoundResponse: UserNotFoundResponse,
   ): Promise<MessageResponse> {
     if (!isAdminUser(req.user)) {
       return unauthorisedResponse(401, {
@@ -197,8 +191,8 @@ export class RepoController extends Controller {
     @Path() id: string,
     @Body() body: UsernameBody,
     @Request() req: ExpressRequest,
-    @Res() unauthorisedResponse: TsoaResponse<401, { message: string }>,
-    @Res() userNotFoundResponse: TsoaResponse<400, { error: string }>,
+    @Res() unauthorisedResponse: UnauthorisedResponse,
+    @Res() userNotFoundResponse: UserNotFoundResponse,
   ): Promise<MessageResponse> {
     if (!isAdminUser(req.user)) {
       return unauthorisedResponse(401, {
@@ -223,8 +217,8 @@ export class RepoController extends Controller {
     @Path() id: string,
     @Path() username: string,
     @Request() req: ExpressRequest,
-    @Res() unauthorisedResponse: TsoaResponse<401, { message: string }>,
-    @Res() userNotFoundResponse: TsoaResponse<400, { error: string }>,
+    @Res() unauthorisedResponse: UnauthorisedResponse,
+    @Res() userNotFoundResponse: UserNotFoundResponse,
   ): Promise<MessageResponse> {
     if (!isAdminUser(req.user)) {
       return unauthorisedResponse(401, {
@@ -249,8 +243,8 @@ export class RepoController extends Controller {
     @Path() id: string,
     @Path() username: string,
     @Request() req: ExpressRequest,
-    @Res() unauthorisedResponse: TsoaResponse<401, { message: string }>,
-    @Res() userNotFoundResponse: TsoaResponse<400, { error: string }>,
+    @Res() unauthorisedResponse: UnauthorisedResponse,
+    @Res() userNotFoundResponse: UserNotFoundResponse,
   ): Promise<MessageResponse> {
     if (!isAdminUser(req.user)) {
       return unauthorisedResponse(401, {
@@ -274,7 +268,7 @@ export class RepoController extends Controller {
   public async deleteRepo(
     @Path() id: string,
     @Request() req: ExpressRequest,
-    @Res() unauthorisedResponse: TsoaResponse<401, { message: string }>,
+    @Res() unauthorisedResponse: UnauthorisedResponse,
   ): Promise<MessageResponse> {
     if (!isAdminUser(req.user)) {
       return unauthorisedResponse(401, {

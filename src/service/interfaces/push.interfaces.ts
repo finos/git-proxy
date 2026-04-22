@@ -14,21 +14,15 @@
  * limitations under the License.
  */
 
-import { Controller, Get, Route, Tags } from 'tsoa';
-import { ApiResources } from '../interfaces/home.interfaces';
+import { AttestationAnswer } from '../../proxy/processors/types';
 
-/**
- * API home — lists available resource URIs.
- */
-@Route('api')
-@Tags('Home')
-export class HomeController extends Controller {
-  @Get('/')
-  public getResources(): ApiResources {
-    return {
-      healthcheck: '/api/v1/healthcheck',
-      push: '/api/v1/push',
-      auth: '/api/auth',
-    };
-  }
+export interface RejectBody {
+  /** The reason for rejecting the push request. */
+  reason: string;
+}
+
+export interface AuthoriseBody {
+  params: {
+    attestation: AttestationAnswer[];
+  };
 }

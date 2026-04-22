@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-import { Controller, Get, Route, Tags } from 'tsoa';
-import { ApiResources } from '../interfaces/home.interfaces';
+import { Repo } from '../../db/types';
 
-/**
- * API home — lists available resource URIs.
- */
-@Route('api')
-@Tags('Home')
-export class HomeController extends Controller {
-  @Get('/')
-  public getResources(): ApiResources {
-    return {
-      healthcheck: '/api/v1/healthcheck',
-      push: '/api/v1/push',
-      auth: '/api/auth',
-    };
-  }
+export interface UsernameBody {
+  username: string;
+}
+
+export interface CreateRepoBody {
+  url: string;
+  name: string;
+  project: string;
+}
+
+export interface RepoWithProxy extends Repo {
+  proxyURL: string;
 }

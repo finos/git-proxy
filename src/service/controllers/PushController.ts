@@ -14,19 +14,7 @@
  * limitations under the License.
  */
 
-import {
-  Body,
-  Controller,
-  Get,
-  Path,
-  Post,
-  Request,
-  Res,
-  Route,
-  Security,
-  Tags,
-  TsoaResponse,
-} from 'tsoa';
+import { Body, Controller, Get, Path, Post, Request, Res, Route, Security, Tags } from 'tsoa';
 import type { Request as ExpressRequest } from 'express';
 import * as db from '../../db';
 import { PushQuery } from '../../db/types';
@@ -34,27 +22,17 @@ import { AttestationConfig } from '../../config/generated/config';
 import { getAttestationConfig } from '../../config';
 import { Action } from '../../proxy/actions/Action';
 import { AttestationAnswer, Rejection } from '../../proxy/processors/types';
-import { MessageResponse } from '../models';
-
-interface RejectBody {
-  /** The reason for rejecting the push request. */
-  reason: string;
-}
-
-/** Attestation answer as sent by the UI (may include display-only fields). */
-interface AttestationAnswerRequest {
-  label: string;
-  checked: boolean;
-}
-
-interface AuthoriseBody {
-  params: {
-    attestation: AttestationAnswerRequest[];
-  };
-}
+import { MessageResponse } from '../interfaces/common.interfaces';
+import { RejectBody, AuthoriseBody } from '../interfaces/push.interfaces';
+import {
+  ForbiddenResponse,
+  NotFoundResponse,
+  UnauthorisedResponse,
+  ValidationErrorResponse,
+} from '../decorators/response.types';
 
 /**
- * Push request management (JWT-protected).
+ * Push request management.
  */
 @Route('api/v1/push')
 @Security('jwt')
@@ -88,7 +66,7 @@ export class PushController extends Controller {
   @Get('/{id}')
   public async getPush(
     @Path() id: string,
-    @Res() notFoundResponse: TsoaResponse<404, { message: string }>,
+    @Res() notFoundResponse: NotFoundResponse,
   ): Promise<Action> {
     const push = await db.getPush(id);
     if (!push) {
@@ -105,10 +83,10 @@ export class PushController extends Controller {
     @Path() id: string,
     @Body() body: RejectBody,
     @Request() req: ExpressRequest,
-    @Res() unauthorisedResponse: TsoaResponse<401, { message: string }>,
-    @Res() validationErrorResponse: TsoaResponse<400, { message: string }>,
-    @Res() notFoundResponse: TsoaResponse<404, { message: string }>,
-    @Res() forbiddenResponse: TsoaResponse<403, { message: string }>,
+    @Res() unauthorisedResponse: UnauthorisedResponse,
+    @Res() validationErrorResponse: ValidationErrorResponse,
+    @Res() notFoundResponse: NotFoundResponse,
+    @Res() forbiddenResponse: ForbiddenResponse,
   ): Promise<MessageResponse> {
     if (!req.user) {
       return unauthorisedResponse(401, { message: 'Not logged in' });
@@ -180,10 +158,10 @@ export class PushController extends Controller {
     @Path() id: string,
     @Body() body: AuthoriseBody,
     @Request() req: ExpressRequest,
-    @Res() unauthorisedResponse: TsoaResponse<401, { message: string }>,
-    @Res() validationErrorResponse: TsoaResponse<400, { message: string }>,
-    @Res() notFoundResponse: TsoaResponse<404, { message: string }>,
-    @Res() forbiddenResponse: TsoaResponse<403, { message: string }>,
+    @Res() unauthorisedResponse: UnauthorisedResponse,
+    @Res() validationErrorResponse: ValidationErrorResponse,
+    @Res() notFoundResponse: NotFoundResponse,
+    @Res() forbiddenResponse: ForbiddenResponse,
   ): Promise<MessageResponse> {
     if (!req.user) {
       return unauthorisedResponse(401, { message: 'Not logged in' });
@@ -250,8 +228,8 @@ export class PushController extends Controller {
   public async cancelPush(
     @Path() id: string,
     @Request() req: ExpressRequest,
-    @Res() unauthorisedResponse: TsoaResponse<401, { message: string }>,
-    @Res() forbiddenResponse: TsoaResponse<403, { message: string }>,
+    @Res() unauthorisedResponse: UnauthorisedResponse,
+    @Res() forbiddenResponse: ForbiddenResponse,
   ): Promise<MessageResponse> {
     if (!req.user) {
       return unauthorisedResponse(401, { message: 'Not logged in' });

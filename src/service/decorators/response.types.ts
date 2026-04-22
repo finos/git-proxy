@@ -14,21 +14,12 @@
  * limitations under the License.
  */
 
-import { Controller, Get, Route, Tags } from 'tsoa';
-import { ApiResources } from '../interfaces/home.interfaces';
+import { TsoaResponse } from 'tsoa';
 
-/**
- * API home — lists available resource URIs.
- */
-@Route('api')
-@Tags('Home')
-export class HomeController extends Controller {
-  @Get('/')
-  public getResources(): ApiResources {
-    return {
-      healthcheck: '/api/v1/healthcheck',
-      push: '/api/v1/push',
-      auth: '/api/auth',
-    };
-  }
-}
+export type UnauthorisedResponse = TsoaResponse<401, { message: string }>;
+export type ForbiddenResponse = TsoaResponse<403, { message: string }>;
+export type NotFoundResponse = TsoaResponse<404, { message: string }>;
+export type ValidationErrorResponse = TsoaResponse<400, { message: string }>;
+export type ConflictResponse = TsoaResponse<409, { message: string }>;
+export type InternalServerErrorResponse = TsoaResponse<500, { message: string }>;
+export type UserNotFoundResponse = TsoaResponse<400, { error: string }>;

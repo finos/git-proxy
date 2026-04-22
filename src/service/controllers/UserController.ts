@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-import { Controller, Get, Path, Res, Route, Security, Tags, TsoaResponse } from 'tsoa';
+import { Controller, Get, Path, Res, Route, Security, Tags } from 'tsoa';
 import * as db from '../../db';
 import { PublicUser } from '../../db/types';
 import { toPublicUser } from '../routes/utils';
+import { NotFoundResponse } from '../decorators/response.types';
 
 /**
- * User listing (JWT-protected).
+ * User listing.
  */
 @Route('api/v1/user')
 @Security('jwt')
@@ -42,7 +43,7 @@ export class UserController extends Controller {
   @Get('/{id}')
   public async getUser(
     @Path() id: string,
-    @Res() notFoundResponse: TsoaResponse<404, { message: string }>,
+    @Res() notFoundResponse: NotFoundResponse,
   ): Promise<PublicUser> {
     const username = id.toLowerCase();
     console.log(`Retrieving details for user: ${username}`);

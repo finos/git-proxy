@@ -28,7 +28,6 @@ import type { RoleMapping } from '../config/generated/config';
 export async function expressAuthentication(
   request: Request,
   securityName: string,
-
   _scopes?: string[],
 ): Promise<unknown> {
   if (securityName === 'jwt') {

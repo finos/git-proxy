@@ -33,12 +33,10 @@ const newApp = (username?: string, isAdmin = false): Express => {
   if (username) {
     app.use((req, _res, next) => {
       req.user = { username, admin: isAdmin };
-      (req as any).isAuthenticated = () => true;
       next();
     });
   } else {
     app.use((_req, _res, next) => {
-      (_req as any).isAuthenticated = () => false;
       next();
     });
   }

@@ -15,18 +15,7 @@
  */
 
 import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from 'express';
-import {
-  Body,
-  Controller,
-  Get,
-  Middlewares,
-  Post,
-  Request,
-  Res,
-  Route,
-  Tags,
-  TsoaResponse,
-} from 'tsoa';
+import { Body, Controller, Get, Middlewares, Post, Request, Res, Route, Tags } from 'tsoa';
 import { getPassport, authStrategies } from '../passport';
 import { getAuthMethods } from '../../config';
 import * as db from '../../db';
@@ -37,6 +26,22 @@ import { AuthenticationElement } from '../../config/generated/config';
 import { isAdminUser, toPublicUser } from '../routes/utils';
 import { handleErrorAndLog } from '../../utils/errors';
 import { PublicUser } from '../../db/types';
+import {
+  AuthResources,
+  AuthConfigResponse,
+  LoginResponse,
+  LogoutResponse,
+  CreateUserResponse,
+  GitAccountBody,
+  CreateUserBody,
+} from '../interfaces/auth.interfaces';
+import {
+  ForbiddenResponse,
+  InternalServerErrorResponse,
+  NotFoundResponse,
+  UnauthorisedResponse,
+  ValidationErrorResponse,
+} from '../decorators/response.types';
 
 const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
   process.env;
@@ -111,48 +116,6 @@ export function oidcCallbackMiddleware(
   )(req, res, next);
 }
 
-// ---------- Response types ----------
-
-interface AuthResources {
-  login: { action: 'post'; uri: string };
-  profile: { action: 'get'; uri: string };
-  logout: { action: 'post'; uri: string };
-}
-
-interface AuthConfigResponse {
-  usernamePasswordMethod: string | null;
-  otherMethods: string[];
-}
-
-interface LoginResponse {
-  message: 'success';
-  user: PublicUser;
-}
-
-interface LogoutResponse {
-  isAuth: boolean;
-  user: Express.User | undefined;
-}
-
-interface CreateUserResponse {
-  message: string;
-  username: string;
-}
-
-interface GitAccountBody {
-  username?: string;
-  id?: string;
-  gitAccount: string;
-}
-
-interface CreateUserBody {
-  username: string;
-  password: string;
-  email: string;
-  gitAccount: string;
-  admin?: boolean;
-}
-
 /**
  * Authentication endpoints.
  */
@@ -187,8 +150,6 @@ export class AuthController extends Controller {
     };
   }
 
-  // TODO: provide separate auth endpoints for each auth strategy or chain compatibile auth strategies
-  // TODO: if providing separate auth methods, inform the frontend so it has relevant UI elements and appropriate client-side behavior
   /**
    * Authenticates the user with a username/password strategy.
    * The appropriate passport strategy is selected dynamically based on configuration.
@@ -249,8 +210,8 @@ export class AuthController extends Controller {
   @Get('/profile')
   public async getProfile(
     @Request() req: ExpressRequest,
-    @Res() unauthorisedResponse: TsoaResponse<401, { message: string }>,
-    @Res() notFoundResponse: TsoaResponse<404, { message: string }>,
+    @Res() unauthorisedResponse: UnauthorisedResponse,
+    @Res() notFoundResponse: NotFoundResponse,
   ): Promise<PublicUser> {
     if (!req.user) {
       return unauthorisedResponse(401, { message: 'Not logged in' });
@@ -272,11 +233,11 @@ export class AuthController extends Controller {
   public async updateGitAccount(
     @Body() body: GitAccountBody,
     @Request() req: ExpressRequest,
-    @Res() unauthorisedResponse: TsoaResponse<401, { message: string }>,
-    @Res() notFoundResponse: TsoaResponse<404, { message: string }>,
-    @Res() validationErrorResponse: TsoaResponse<400, { message: string }>,
-    @Res() forbiddenResponse: TsoaResponse<403, { message: string }>,
-    @Res() internalServerErrorResponse: TsoaResponse<500, { message: string }>,
+    @Res() unauthorisedResponse: UnauthorisedResponse,
+    @Res() notFoundResponse: NotFoundResponse,
+    @Res() validationErrorResponse: ValidationErrorResponse,
+    @Res() forbiddenResponse: ForbiddenResponse,
+    @Res() internalServerErrorResponse: InternalServerErrorResponse,
   ): Promise<void> {
     if (!req.user) {
       return unauthorisedResponse(401, { message: 'Not logged in' });
@@ -321,8 +282,8 @@ export class AuthController extends Controller {
   public async createUser(
     @Body() body: CreateUserBody,
     @Request() req: ExpressRequest,
-    @Res() unauthorisedResponse: TsoaResponse<403, { message: string }>,
-    @Res() internalServerErrorResponse: TsoaResponse<500, { message: string }>,
+    @Res() unauthorisedResponse: ForbiddenResponse,
+    @Res() internalServerErrorResponse: InternalServerErrorResponse,
   ): Promise<CreateUserResponse> {
     if (!isAdminUser(req.user)) {
       return unauthorisedResponse(403, { message: 'Not authorized to create users' });

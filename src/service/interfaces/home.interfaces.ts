@@ -14,21 +14,8 @@
  * limitations under the License.
  */
 
-import { Controller, Get, Route, Tags } from 'tsoa';
-import { ApiResources } from '../interfaces/home.interfaces';
-
-/**
- * API home — lists available resource URIs.
- */
-@Route('api')
-@Tags('Home')
-export class HomeController extends Controller {
-  @Get('/')
-  public getResources(): ApiResources {
-    return {
-      healthcheck: '/api/v1/healthcheck',
-      push: '/api/v1/push',
-      auth: '/api/auth',
-    };
-  }
+export interface ApiResources {
+  healthcheck: string;
+  push: string;
+  auth: string;
 }

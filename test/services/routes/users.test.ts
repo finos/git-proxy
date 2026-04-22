@@ -26,10 +26,8 @@ describe('Users API', () => {
   beforeEach(() => {
     app = express();
     app.use(express.json());
-    // Pre-authenticate so JWT security allows through in tests.
     app.use((req, _res, next) => {
       req.user = { username: 'testuser' };
-      (req as any).isAuthenticated = () => true;
       next();
     });
     RegisterRoutes(app);

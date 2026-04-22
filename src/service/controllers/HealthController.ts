@@ -15,11 +15,7 @@
  */
 
 import { Controller, Get, Route, Tags } from 'tsoa';
-
-interface HealthResponse {
-  message: 'ok';
-}
-
+import { HealthResponse } from '../interfaces/health.interfaces';
 /**
  * Service health check.
  */
