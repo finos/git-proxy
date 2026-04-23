@@ -26,6 +26,9 @@ describe('Push Requests — Tab Filtering', () => {
     password: 'testuser123',
     email: 'pushreq_testuser@example.com',
     gitAccount: 'pushreq_testuser',
+    // Git credentials must match a user on the git server for cy.createPush() to work
+    gitUsername: 'testuser',
+    gitPassword: 'user123',
   };
 
   const approverUser = {
@@ -36,7 +39,7 @@ describe('Push Requests — Tab Filtering', () => {
   };
 
   // Shared push IDs for the test suite
-  const pushIds: { pending: string; approved: string; rejected: string; canceled: string } = {
+  const pushIds = {
     pending: '',
     approved: '',
     rejected: '',
@@ -57,12 +60,12 @@ describe('Push Requests — Tab Filtering', () => {
     cy.logout();
 
     // Create pending push
-    cy.createPush(testUser.username, testUser.password, testUser.email, `pushreq-pending-${Date.now()}`).then(
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, `pushreq-pending-${Date.now()}`).then(
       (id) => { pushIds.pending = id; }
     );
 
     // Create and approve a push
-    cy.createPush(testUser.username, testUser.password, testUser.email, `pushreq-approved-${Date.now()}`).then(
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, `pushreq-approved-${Date.now()}`).then(
       (id) => {
         pushIds.approved = id;
         // Login as approver and approve
@@ -81,7 +84,7 @@ describe('Push Requests — Tab Filtering', () => {
     );
 
     // Create and reject a push
-    cy.createPush(testUser.username, testUser.password, testUser.email, `pushreq-rejected-${Date.now()}`).then(
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, `pushreq-rejected-${Date.now()}`).then(
       (id) => {
         pushIds.rejected = id;
         // Login as approver and reject
@@ -95,7 +98,7 @@ describe('Push Requests — Tab Filtering', () => {
     );
 
     // Create and cancel a push
-    cy.createPush(testUser.username, testUser.password, testUser.email, `pushreq-canceled-${Date.now()}`).then(
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, `pushreq-canceled-${Date.now()}`).then(
       (id) => {
         pushIds.canceled = id;
         // Login as test user and cancel

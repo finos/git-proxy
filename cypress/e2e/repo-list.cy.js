@@ -20,7 +20,7 @@
  * Pagination tested here only. Search/filter use client-side logic.
  */
 describe('Repo List — Search, Filter, Pagination', () => {
-  const createdRepoIds: string[] = [];
+  const createdRepoIds = [];
 
   function getApiBaseUrl() {
     return Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');

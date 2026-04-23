@@ -40,7 +40,7 @@ describe('Repo Details — User Management', () => {
     gitAccount: 'repo_detail_regular',
   };
 
-  let testRepoId: string | null = null;
+  let testRepoId = null;
 
   function getApiBaseUrl() {
     return Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');

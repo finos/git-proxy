@@ -20,6 +20,9 @@ describe('Push Details — Tabs & Content Rendering', () => {
     password: 'testuser123',
     email: 'pushdetails_testuser@example.com',
     gitAccount: 'pushdetails_testuser',
+    // Git credentials must match a user on the git server for cy.createPush() to work
+    gitUsername: 'testuser',
+    gitPassword: 'user123',
   };
 
   const approverUser = {
@@ -61,7 +64,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
   // --- 1.1 Pending push shows Pending status ---
   it('1.1 — Pending push shows Pending status with action buttons', function () {
     const suffix = `pending-${Date.now()}`;
-    cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).as('pushId');
 
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/push/${this.pushId}`);
@@ -78,7 +81,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
   // --- 1.2 Card body renders info fields with correct links ---
   it('1.2 — Card body renders Timestamp, Remote Head, Commit SHA, Repository, Branch', function () {
     const suffix = `info-${Date.now()}`;
-    cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).as('pushId');
 
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/push/${this.pushId}`);
@@ -99,7 +102,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
   // --- 1.3 Commits tab renders commit data table ---
   it('1.3 — Commits tab renders commit data table with correct columns', function () {
     const suffix = `commits-${Date.now()}`;
-    cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).as('pushId');
 
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/push/${this.pushId}`);
@@ -117,7 +120,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
   // --- 1.4 Changes tab renders diff content ---
   it('1.4 — Changes tab renders diff content via diff2html', function () {
     const suffix = `changes-${Date.now()}`;
-    cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).as('pushId');
 
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/push/${this.pushId}`);
@@ -133,7 +136,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
   // --- 1.5 Steps tab renders steps timeline with summary ---
   it('1.5 — Steps tab renders steps timeline with summary chips', function () {
     const suffix = `steps-${Date.now()}`;
-    cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).as('pushId');
 
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/push/${this.pushId}`);
@@ -155,7 +158,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
   // --- 1.6 Steps accordions expand and show content/logs ---
   it('1.6 — Steps accordions expand and show content/logs', function () {
     const suffix = `accordion-${Date.now()}`;
-    cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).as('pushId');
 
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/push/${this.pushId}`);
@@ -179,7 +182,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
   // --- 1.7 Rejected push shows rejection info with reason ---
   it('1.7 — Rejected push shows rejection info with reason', function () {
     const suffix = `reject-${Date.now()}`;
-    cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).as('pushId');
 
     cy.login(approverUser.username, approverUser.password);
     cy.visit(`/dashboard/push/${this.pushId}`);
@@ -211,7 +214,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
   // --- 1.8 Approved push shows attestation info ---
   it('1.8 — Approved push shows attestation info', function () {
     const suffix = `approve-${Date.now()}`;
-    cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).as('pushId');
 
     cy.login(approverUser.username, approverUser.password);
     cy.visit(`/dashboard/push/${this.pushId}`);
@@ -263,7 +266,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
   // --- 1.10 Canceled push shows Canceled status ---
   it('1.10 — Canceled push shows Canceled status', function () {
     const suffix = `cancel-${Date.now()}`;
-    cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).as('pushId');
 
     cy.login(testUser.username, testUser.password);
     cy.visit(`/dashboard/push/${this.pushId}`);
@@ -286,7 +289,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
   // --- 1.11 Push details page navigates back to push list after action ---
   it('1.11 — Action buttons navigate back to push list after completing action', function () {
     const suffix = `nav-${Date.now()}`;
-    cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).as('pushId');
 
     cy.login(testUser.username, testUser.password);
     cy.visit(`/dashboard/push/${this.pushId}`);
