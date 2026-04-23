@@ -16,9 +16,7 @@ permissions:
 jobs:
   pr_title:
     permissions:
-      contents: write
-      pull-requests: write
-      statuses: write
+      pull-requests: read
     name: Validate & Label PR
     runs-on: ubuntu-latest
     steps:
@@ -45,6 +43,17 @@ jobs:
             revert
             test
             break
+  release-drafter:
+    permissions:
+      contents: write
+      pull-requests: read
+    name: Release Drafter
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
       - uses: release-drafter/release-drafter@139054aeaa9adc52ab36ddf67437541f039b88e2 # v7
         with:
           commitish: main

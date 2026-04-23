@@ -8,6 +8,8 @@ on:
 
 jobs:
   docker-build-publish:
+    permissions:
+      contents: read
     name: Build and Publish Docker Image
     runs-on: ubuntu-latest
 
