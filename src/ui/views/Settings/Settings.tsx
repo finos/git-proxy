@@ -98,10 +98,11 @@ const SettingsView: React.FC = () => {
                 placeholder='Enter your JWT token...'
                 value={jwtToken}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setJwtToken(e.target.value)}
+                data-testid='jwt-token-input'
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position='end'>
-                      <IconButton onClick={toggleShowToken} edge='end'>
+                      <IconButton onClick={toggleShowToken} edge='end' data-testid='jwt-token-toggle'>
                         {showToken ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>
@@ -114,11 +115,11 @@ const SettingsView: React.FC = () => {
                 }}
               />
               <div className={classes.buttonRow}>
-                <Button onClick={handleClear}>
+                <Button onClick={handleClear} data-testid='jwt-clear-btn'>
                   <Clear style={{ marginRight: '5px' }} />
                   Clear
                 </Button>
-                <Button color='success' onClick={handleSave}>
+                <Button color='success' onClick={handleSave} data-testid='jwt-save-btn'>
                   <Save style={{ marginRight: '5px' }} />
                   Save
                 </Button>
@@ -132,6 +133,7 @@ const SettingsView: React.FC = () => {
         autoHideDuration={3000}
         onClose={() => setSnackbarOpen(false)}
         message={snackbarMessage}
+        data-testid='settings-snackbar'
       />
     </form>
   );

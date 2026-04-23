@@ -113,6 +113,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
         open={open}
         fullWidth
         maxWidth='md'
+        data-testid='add-user-dialog'
       >
         <DialogTitle id='simple-dialog-title'>
           Add a user...
@@ -131,6 +132,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                     value={username}
                     onChange={handleChange}
                     disabled={isLoading}
+                    data-testid='add-user-select'
                   >
                     {users.map((user) => (
                       <MenuItem key={user.username} value={user.username}>
@@ -145,7 +147,7 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                 <Button variant='outlined' color='warning' onClick={handleClose}>
                   Cancel
                 </Button>
-                <Button disabled={isLoading} variant='outlined' color='success' onClick={add}>
+                <Button disabled={isLoading} variant='outlined' color='success' onClick={add} data-testid='add-user-confirm-btn'>
                   Add
                 </Button>
               </GridItem>
@@ -176,7 +178,7 @@ const AddUser: React.FC<AddUserProps> = ({ repoId, type, refreshFn }) => {
 
   return (
     <>
-      <Button variant='outlined' color='success' onClick={handleClickOpen}>
+      <Button variant='outlined' color='success' onClick={handleClickOpen} data-testid={`add-user-btn-${type}`}>
         <PersonAdd />
       </Button>
       <AddUserDialog

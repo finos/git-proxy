@@ -90,7 +90,7 @@ export default function UserProfile(): React.ReactElement {
   };
 
   const UpdateButton = (): React.ReactElement => (
-    <Button variant='outlined' color='success' onClick={updateProfile}>
+    <Button variant='outlined' color='success' onClick={updateProfile} data-testid='update-profile-btn'>
       <Save />
       Update
     </Button>
@@ -132,20 +132,20 @@ export default function UserProfile(): React.ReactElement {
                     />
                   </GridItem>
                 )}
-                <GridItem xs={2} sm={2} md={2}>
+                <GridItem xs={2} sm={2} md={2} data-testid='profile-name'>
                   <FormLabel component='legend'>Name</FormLabel>
                   {user.displayName}
                 </GridItem>
-                <GridItem xs={2} sm={2} md={2}>
+                <GridItem xs={2} sm={2} md={2} data-testid='profile-role'>
                   <FormLabel component='legend'>Role</FormLabel>
                   {user.title}
                 </GridItem>
-                <GridItem xs={2} sm={2} md={2}>
+                <GridItem xs={2} sm={2} md={2} data-testid='profile-email'>
                   <FormLabel component='legend'>E-mail</FormLabel>
                   <a href={`mailto:${user.email}`}>{user.email}</a>
                 </GridItem>
                 {user.gitAccount && (
-                  <GridItem xs={2} sm={2} md={2}>
+                  <GridItem xs={2} sm={2} md={2} data-testid='profile-gitAccount'>
                     <FormLabel component='legend'>GitHub Username</FormLabel>
                     <a
                       href={`https://github.com/${user.gitAccount}`}
@@ -156,7 +156,7 @@ export default function UserProfile(): React.ReactElement {
                     </a>
                   </GridItem>
                 )}
-                <GridItem xs={2} sm={2} md={2}>
+                <GridItem xs={2} sm={2} md={2} data-testid='profile-admin-status'>
                   <FormLabel component='legend'>Administrator</FormLabel>
                   {user?.admin ? (
                     <span style={{ color: 'green' }}>
@@ -184,6 +184,7 @@ export default function UserProfile(): React.ReactElement {
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setGitAccount(e.target.value)
                         }
+                        data-testid='gitAccount-input'
                       />
                       <UpdateButton />
                     </div>

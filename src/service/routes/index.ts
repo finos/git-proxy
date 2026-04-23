@@ -34,6 +34,14 @@ const routes = (proxy: Proxy) => {
   router.use('/api/v1/repo', jwtAuthHandler(), repo(proxy));
   router.use('/api/v1/user', jwtAuthHandler(), users);
   router.use('/api/v1/config', config);
+
+  // Test-only cleanup endpoints (gated by NODE_ENV)
+  if (process.env.NODE_ENV === 'test') {
+    import('./test').then((mod) => {
+      router.use('/api/v1/test', jwtAuthHandler(), mod.default);
+    });
+  }
+
   return router;
 };
 

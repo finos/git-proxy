@@ -49,8 +49,18 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
     cy.logout();
   });
 
-  afterEach(() => {
+  afterEach(function () {
+    // Clean up push created in this test (if any)
+    if (this.pushId) {
+      cy.deleteTestPush(this.pushId);
+    }
     cy.logout();
+  });
+
+  after(() => {
+    // Clean up test users
+    cy.deleteTestUser(testUser.username);
+    cy.deleteTestUser(approverUser.username);
   });
 
   describe('Approve flow', () => {
