@@ -88,7 +88,9 @@ const RepoDetails: React.FC = () => {
 
   useEffect(() => {
     if (repo) {
-      fetchRemoteRepositoryData(repo.project, repo.name, repo.url).then(setRemoteRepoData);
+      fetchRemoteRepositoryData(repo.project, repo.name, repo.url)
+        .then(setRemoteRepoData)
+        .catch(() => setRemoteRepoData(null));
     }
   }, [repo]);
 

@@ -50,7 +50,12 @@ describe('Push Requests — Tab Filtering', () => {
     // Create test users
     cy.login('admin', 'admin');
     cy.createUser(testUser.username, testUser.password, testUser.email, testUser.gitAccount);
-    cy.createUser(approverUser.username, approverUser.password, approverUser.email, approverUser.gitAccount);
+    cy.createUser(
+      approverUser.username,
+      approverUser.password,
+      approverUser.email,
+      approverUser.gitAccount,
+    );
 
     cy.getTestRepoId().then((repoId) => {
       cy.addUserPushPermission(repoId, testUser.username);
@@ -60,54 +65,68 @@ describe('Push Requests — Tab Filtering', () => {
     cy.logout();
 
     // Create pending push
-    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, `pushreq-pending-${Date.now()}`).then(
-      (id) => { pushIds.pending = id; }
-    );
+    cy.createPush(
+      testUser.gitUsername,
+      testUser.gitPassword,
+      testUser.email,
+      `pushreq-pending-${Date.now()}`,
+    ).then((id) => {
+      pushIds.pending = id;
+    });
 
     // Create and approve a push
-    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, `pushreq-approved-${Date.now()}`).then(
-      (id) => {
-        pushIds.approved = id;
-        // Login as approver and approve
-        cy.login(approverUser.username, approverUser.password);
-        cy.visit(`/dashboard/push/${id}`);
-        cy.get('[data-testid="attestation-open-btn"]').click();
-        cy.get('[data-testid="attestation-dialog"]').should('be.visible');
-        cy.get('[data-testid="attestation-dialog"]')
-          .find('input[type="checkbox"]')
-          .each(($checkbox) => {
-            cy.wrap($checkbox).check({ force: true });
-          });
-        cy.get('[data-testid="attestation-confirm-btn"]').click();
-        cy.logout();
-      }
-    );
+    cy.createPush(
+      testUser.gitUsername,
+      testUser.gitPassword,
+      testUser.email,
+      `pushreq-approved-${Date.now()}`,
+    ).then((id) => {
+      pushIds.approved = id;
+      // Login as approver and approve
+      cy.login(approverUser.username, approverUser.password);
+      cy.visit(`/dashboard/push/${id}`);
+      cy.get('[data-testid="attestation-open-btn"]').click();
+      cy.get('[data-testid="attestation-dialog"]').should('be.visible');
+      cy.get('[data-testid="attestation-dialog"]')
+        .find('input[type="checkbox"]')
+        .each(($checkbox) => {
+          cy.wrap($checkbox).check({ force: true });
+        });
+      cy.get('[data-testid="attestation-confirm-btn"]').click();
+      cy.logout();
+    });
 
     // Create and reject a push
-    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, `pushreq-rejected-${Date.now()}`).then(
-      (id) => {
-        pushIds.rejected = id;
-        // Login as approver and reject
-        cy.login(approverUser.username, approverUser.password);
-        cy.visit(`/dashboard/push/${id}`);
-        cy.get('[data-testid="push-reject-btn"]').click();
-        cy.get('#reason').type('Test rejection');
-        cy.get('[data-testid="push-reject-confirm-btn"]').click();
-        cy.logout();
-      }
-    );
+    cy.createPush(
+      testUser.gitUsername,
+      testUser.gitPassword,
+      testUser.email,
+      `pushreq-rejected-${Date.now()}`,
+    ).then((id) => {
+      pushIds.rejected = id;
+      // Login as approver and reject
+      cy.login(approverUser.username, approverUser.password);
+      cy.visit(`/dashboard/push/${id}`);
+      cy.get('[data-testid="push-reject-btn"]').click();
+      cy.get('#reason').type('Test rejection');
+      cy.get('[data-testid="push-reject-confirm-btn"]').click();
+      cy.logout();
+    });
 
     // Create and cancel a push
-    cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, `pushreq-canceled-${Date.now()}`).then(
-      (id) => {
-        pushIds.canceled = id;
-        // Login as test user and cancel
-        cy.login(testUser.username, testUser.password);
-        cy.visit(`/dashboard/push/${id}`);
-        cy.get('[data-testid="push-cancel-btn"]').click();
-        cy.logout();
-      }
-    );
+    cy.createPush(
+      testUser.gitUsername,
+      testUser.gitPassword,
+      testUser.email,
+      `pushreq-canceled-${Date.now()}`,
+    ).then((id) => {
+      pushIds.canceled = id;
+      // Login as test user and cancel
+      cy.login(testUser.username, testUser.password);
+      cy.visit(`/dashboard/push/${id}`);
+      cy.get('[data-testid="push-cancel-btn"]').click();
+      cy.logout();
+    });
   });
 
   after(() => {
@@ -146,6 +165,7 @@ describe('Push Requests — Tab Filtering', () => {
     cy.visit('/dashboard/push');
 
     cy.contains('Pending').click();
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500);
 
     // The pending push should be visible in the table
@@ -157,6 +177,7 @@ describe('Push Requests — Tab Filtering', () => {
     cy.visit('/dashboard/push');
 
     cy.contains('Approved').click();
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500);
 
     cy.get('[data-testid="pushes-table"]').should('be.visible');
@@ -167,6 +188,7 @@ describe('Push Requests — Tab Filtering', () => {
     cy.visit('/dashboard/push');
 
     cy.contains('Canceled').click();
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500);
 
     cy.get('[data-testid="pushes-table"]').should('be.visible');
@@ -177,6 +199,7 @@ describe('Push Requests — Tab Filtering', () => {
     cy.visit('/dashboard/push');
 
     cy.contains('Rejected').click();
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500);
 
     cy.get('[data-testid="pushes-table"]').should('be.visible');
@@ -187,6 +210,7 @@ describe('Push Requests — Tab Filtering', () => {
     cy.visit('/dashboard/push');
 
     cy.contains('Error').click();
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500);
 
     // The table should be visible (may be empty if no real error pushes exist)
@@ -197,11 +221,11 @@ describe('Push Requests — Tab Filtering', () => {
   it('3.7 — Push table rows are clickable and navigate to Push Details', () => {
     cy.visit('/dashboard/push');
 
-    // Click on a push row arrow button
-    cy.get('[data-testid="pushes-table"]')
-      .find('button')
-      .first()
-      .click();
+    // Wait for table to load
+    cy.get('[data-testid="pushes-table"]').should('be.visible');
+
+    // Click on the arrow button in the first push row to navigate to push details
+    cy.get('[data-testid^="push-row-"]').first().find('button').first().click({ force: true });
 
     // Should navigate to push details page
     cy.url().should('include', '/dashboard/push/');

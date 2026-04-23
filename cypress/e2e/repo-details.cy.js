@@ -49,9 +49,24 @@ describe('Repo Details — User Management', () => {
   before(() => {
     // Create test users
     cy.login('admin', 'admin');
-    cy.createUser(testReviewer.username, testReviewer.password, testReviewer.email, testReviewer.gitAccount);
-    cy.createUser(testContributor.username, testContributor.password, testContributor.email, testContributor.gitAccount);
-    cy.createUser(nonAdminUser.username, nonAdminUser.password, nonAdminUser.email, nonAdminUser.gitAccount);
+    cy.createUser(
+      testReviewer.username,
+      testReviewer.password,
+      testReviewer.email,
+      testReviewer.gitAccount,
+    );
+    cy.createUser(
+      testContributor.username,
+      testContributor.password,
+      testContributor.email,
+      testContributor.gitAccount,
+    );
+    cy.createUser(
+      nonAdminUser.username,
+      nonAdminUser.password,
+      nonAdminUser.email,
+      nonAdminUser.gitAccount,
+    );
 
     // Create test repo
     cy.request({
@@ -86,13 +101,33 @@ describe('Repo Details — User Management', () => {
     cy.deleteTestUser(nonAdminUser.username);
   });
 
+  beforeEach(() => {
+    // Intercept GitHub API calls to prevent unhandled axios errors for synthetic test repos
+    cy.intercept('GET', 'https://api.github.com/repos/**', {
+      body: {
+        description: 'Test repo',
+        language: 'JavaScript',
+        created_at: '2024-01-01T00:00:00Z',
+        updated_at: '2024-01-01T00:00:00Z',
+        pushed_at: '2024-01-01T00:00:00Z',
+        html_url: 'https://github.com/test-org/test-repo',
+        owner: {
+          avatar_url: '',
+          html_url: 'https://github.com/test-org',
+        },
+      },
+    }).as('getRemoteRepo');
+  });
+
   // --- 2.1 Repo info renders ---
   it('2.1 — Repo info renders: project, name, URL links', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
 
+    // Wait for repo info card to load
     cy.get('[data-testid="repo-info-card"]').should('be.visible');
-    cy.contains('h4').should('be.visible');
+    // The Organization field label should be visible
+    cy.contains('Organization').should('be.visible');
   });
 
   // --- 2.2 Reviewers table renders ---
@@ -109,7 +144,9 @@ describe('Repo Details — User Management', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
 
-    cy.get('[data-testid="contributors-table"]').should('be.visible');
+    // Wait for contributors table to load (may need to scroll into view)
+    cy.get('[data-testid="contributors-table"]').should('exist');
+    cy.get('[data-testid="contributors-table"]').scrollIntoView();
     cy.contains('Contributors').should('be.visible');
   });
 
@@ -150,9 +187,7 @@ describe('Repo Details — User Management', () => {
       .click();
 
     // User should no longer appear in reviewers table
-    cy.get('[data-testid="reviewers-table"]')
-      .contains(testReviewer.username)
-      .should('not.exist');
+    cy.get('[data-testid="reviewers-table"]').contains(testReviewer.username).should('not.exist');
   });
 
   // --- 2.6 Admin can add contributor ---
@@ -175,7 +210,9 @@ describe('Repo Details — User Management', () => {
 
     // Wait for dialog to close and user to appear in contributors table
     cy.get('[data-testid="add-user-dialog"]').should('not.exist');
-    cy.get('[data-testid="contributors-table"]').contains(testContributor.username).should('be.visible');
+    cy.get('[data-testid="contributors-table"]')
+      .contains(testContributor.username)
+      .should('be.visible');
   });
 
   // --- 2.7 Admin can remove contributor ---
@@ -253,6 +290,9 @@ describe('Repo Details — User Management', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
 
+    // Wait for page to fully load
+    cy.get('[data-testid="repo-info-card"]').should('be.visible', { timeout: 10000 });
+    cy.get('[data-testid="reviewers-table"]').should('be.visible');
     cy.get('[data-testid="code-clone-btn"]').should('be.visible');
   });
 });

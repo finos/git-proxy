@@ -75,12 +75,15 @@ describe('Settings Page', () => {
     // Enter and save a token
     cy.get('[data-testid="jwt-token-input"]').find('input').type('persistent-token-xyz');
     cy.get('[data-testid="jwt-save-btn"]').click();
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(500);
 
     // Reload page
     cy.reload();
 
     // Token should still be present
-    cy.get('[data-testid="jwt-token-input"]').find('input').should('have.value', 'persistent-token-xyz');
+    cy.get('[data-testid="jwt-token-input"]')
+      .find('input')
+      .should('have.value', 'persistent-token-xyz');
   });
 });

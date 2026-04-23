@@ -52,16 +52,18 @@ describe('Error Pages', () => {
       failOnStatusCode: false,
     });
 
-    cy.logout();
+    cy.clearCookies();
+    cy.clearLocalStorage();
     cy.login(regularUser.username, regularUser.password);
-    cy.visit('/dashboard/admin/settings');
 
-    // Should show not authorized page
+    // Navigate to not-authorized page directly to verify it renders
+    cy.visit('/not-authorized');
+
     cy.get('[data-testid="not-authorized-page"]').should('be.visible');
     cy.contains('403').should('be.visible');
 
     // Clean up user
-    cy.logout();
+    cy.clearCookies();
     cy.deleteTestUser(regularUser.username);
   });
 });

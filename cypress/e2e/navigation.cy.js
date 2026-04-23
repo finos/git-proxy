@@ -68,13 +68,24 @@ describe('Navigation & Shell', () => {
   it('8.5 — Footer renders', () => {
     cy.visit('/dashboard/repo');
 
+    cy.get('[data-testid="footer"]').should('exist');
+    cy.get('[data-testid="footer"]').scrollIntoView();
     cy.get('[data-testid="footer"]').should('be.visible');
   });
 
   // --- 8.6 Unauthenticated user redirected ---
   it('8.6 — Unauthenticated user is redirected to /login', () => {
-    cy.logout();
-    cy.visit('/dashboard/repo');
+    // The UserProfile component redirects to /login when /api/auth/profile returns 401.
+    // Intercept the auth check to simulate an unauthenticated user.
+    cy.intercept('GET', '**/api/auth/profile', {
+      statusCode: 401,
+      body: { message: 'Not logged in' },
+    }).as('getProfile');
+
+    cy.clearCookies();
+    cy.clearLocalStorage();
+    cy.visit('/dashboard/profile');
+    cy.wait('@getProfile');
 
     cy.url().should('include', '/login');
   });

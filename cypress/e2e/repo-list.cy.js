@@ -70,8 +70,12 @@ describe('Repo List — Search, Filter, Pagination', () => {
   it('4.1 — Search filters repos by name', () => {
     cy.visit('/dashboard/repo');
 
+    // Wait for repos to load before searching
+    cy.get('[data-testid="search-input"]').should('be.visible');
+
     // Type in search
     cy.get('[data-testid="search-input"]').find('input').type('cypress-pagination-repo-0');
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(300);
 
     // Results should be filtered (at least the search input is visible and functional)
@@ -82,7 +86,10 @@ describe('Repo List — Search, Filter, Pagination', () => {
   it('4.2 — Search filters repos by project', () => {
     cy.visit('/dashboard/repo');
 
+    cy.get('[data-testid="search-input"]').should('be.visible');
+
     cy.get('[data-testid="search-input"]').find('input').type('cypress-test');
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(300);
 
     cy.get('[data-testid="search-input"]').should('be.visible');
@@ -92,11 +99,15 @@ describe('Repo List — Search, Filter, Pagination', () => {
   it('4.3 — Clear search resets to all repos', () => {
     cy.visit('/dashboard/repo');
 
+    cy.get('[data-testid="search-input"]').should('be.visible');
+
     cy.get('[data-testid="search-input"]').find('input').type('unique-filter-string');
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(300);
 
     // Clear the search
     cy.get('[data-testid="search-input"]').find('input').clear();
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(300);
 
     cy.get('[data-testid="search-input"]').should('be.visible');
@@ -125,17 +136,23 @@ describe('Repo List — Search, Filter, Pagination', () => {
   it('4.5 — Pagination renders and navigates between pages', () => {
     cy.visit('/dashboard/repo');
 
+    // Wait for page to load and scroll pagination into view
+    cy.get('[data-testid="search-input"]').should('be.visible');
+    cy.get('[data-testid="pagination-info"]').should('exist');
+    cy.get('[data-testid="pagination-info"]').scrollIntoView();
+
     // Pagination controls should be visible
     cy.get('[data-testid="pagination-previous"]').should('be.visible');
     cy.get('[data-testid="pagination-next"]').should('be.visible');
-    cy.get('[data-testid="pagination-info"]').should('be.visible');
 
     // Navigate to next page
     cy.get('[data-testid="pagination-next"]').click();
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(300);
 
     // Navigate back
     cy.get('[data-testid="pagination-previous"]').click();
+    // eslint-disable-next-line cypress/no-unnecessary-waiting
     cy.wait(300);
   });
 
@@ -143,10 +160,13 @@ describe('Repo List — Search, Filter, Pagination', () => {
   it('4.6 — Repo rows are clickable and navigate to Repo Details', () => {
     cy.visit('/dashboard/repo');
 
-    // Click on a repo row
-    cy.get('[data-testid="search-input"]').parent().parent().find('tr').first().click();
+    // Wait for page to load
+    cy.get('[data-testid="search-input"]').should('be.visible');
+
+    // Click on a repo link (not a button within the row)
+    cy.get('a[href^="/dashboard/repo/"]').first().click();
 
     // Should navigate to repo details
-    cy.url().should('include', '/dashboard/repo/');
+    cy.url().should('match', /\/dashboard\/repo\/[a-f0-9]+/);
   });
 });
