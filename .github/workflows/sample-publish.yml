@@ -31,7 +31,7 @@ jobs:
         working-directory: plugins/git-proxy-plugin-samples
         run: npm run build
 
-      - name: Install peers and publish
+      - name: Publish git-proxy-plugin-samples
         working-directory: plugins/git-proxy-plugin-samples
         run: npm publish --provenance --access=public
         env:
