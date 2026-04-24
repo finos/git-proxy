@@ -31,7 +31,6 @@ Git Proxy supports SSH protocol with full feature parity with HTTPS, including:
 
 - Git Proxy running and accessible (default: `localhost:2222`)
 - SSH client installed (usually pre-installed on Linux/macOS)
-- Access to the Git Proxy admin UI or database to register your SSH key
 
 ---
 
