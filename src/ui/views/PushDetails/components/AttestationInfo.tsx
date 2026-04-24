@@ -40,9 +40,6 @@ const AttestationInfo: React.FC<AttestationInfoProps> = ({
     return null;
   }
 
-  const reviewerGitAccount =
-    push.attestation.reviewer.gitAccount || push.attestation.reviewer.username;
-
   return (
     <div
       style={{
@@ -79,27 +76,7 @@ const AttestationInfo: React.FC<AttestationInfoProps> = ({
           </p>
         </div>
       ) : (
-        <>
-          {isGitHub && (
-            <UserLink username={push.attestation.reviewer.username}>
-              <img
-                style={{ width: '45px', borderRadius: '20px' }}
-                src={`https://github.com/${reviewerGitAccount}.png`}
-              />
-            </UserLink>
-          )}
-          <div>
-            <p>
-              {isGitHub && (
-                <UserLink username={push.attestation.reviewer.username}>
-                  {reviewerGitAccount}
-                </UserLink>
-              )}
-              {!isGitHub && <UserLink username={push.attestation.reviewer.username} />} approved
-              this contribution
-            </p>
-          </div>
-        </>
+        <ReviewerInfo push={push} isGitHub={isGitHub} />
       )}
 
       <Tooltip
@@ -119,6 +96,42 @@ const AttestationInfo: React.FC<AttestationInfoProps> = ({
         />
       )}
     </div>
+  );
+};
+
+interface ReviewerInfoProps {
+  push: PushActionView;
+  isGitHub: boolean;
+}
+
+const ReviewerInfo: React.FC<ReviewerInfoProps> = ({ push, isGitHub }) => {
+  if (!push.attestation?.reviewer) {
+    return null;
+  }
+
+  const reviewerGitAccount =
+    push.attestation.reviewer.gitAccount || push.attestation.reviewer.username;
+
+  return (
+    <>
+      {isGitHub && (
+        <UserLink username={push.attestation.reviewer.username}>
+          <img
+            style={{ width: '45px', borderRadius: '20px' }}
+            src={`https://github.com/${reviewerGitAccount}.png`}
+          />
+        </UserLink>
+      )}
+      <div>
+        <p>
+          {isGitHub && (
+            <UserLink username={push.attestation.reviewer.username}>{reviewerGitAccount}</UserLink>
+          )}
+          {!isGitHub && <UserLink username={push.attestation.reviewer.username} />} approved this
+          contribution
+        </p>
+      </div>
+    </>
   );
 };
 
