@@ -22,6 +22,8 @@ import { executeChain } from '../chain';
 import { processUrlPath, validGitRequest } from './helper';
 import { getAllProxiedHosts } from '../../db';
 import { ProxyOptions } from 'express-http-proxy';
+import { getMaxPackSizeBytes } from '../../config';
+import { MEGABYTE } from '../../constants';
 import { handleErrorAndLog } from '../../utils/errors';
 
 enum ActionType {
@@ -168,17 +170,17 @@ const extractRawBody = async (req: Request, res: Response, next: NextFunction) =
   }
 
   const proxyStream = new PassThrough({
-    highWaterMark: 4 * 1024 * 1024,
+    highWaterMark: 4 * MEGABYTE,
   });
   const pluginStream = new PassThrough({
-    highWaterMark: 4 * 1024 * 1024,
+    highWaterMark: 4 * MEGABYTE,
   });
 
   req.pipe(proxyStream);
   req.pipe(pluginStream);
 
   try {
-    const buf = await getRawBody(pluginStream, { limit: '1gb' });
+    const buf = await getRawBody(pluginStream, { limit: getMaxPackSizeBytes() });
     req.bodyRaw = buf;
     req.pipe = (dest, opts) => proxyStream.pipe(dest, opts);
     next();

@@ -14,10 +14,32 @@
  * limitations under the License.
  */
 
-import { Readable } from 'stream';
+import type { ClientWithUser } from '../proxy/ssh/types';
 
 declare module 'express-serve-static-core' {
   interface Request {
     bodyRaw?: Buffer;
+    isSSH?: boolean;
+    sshUser?: {
+      username: string;
+      email?: string;
+      gitAccount?: string;
+      sshKeyInfo?: {
+        keyType: string;
+        keyData: Buffer;
+      };
+    };
+    sshClient?: ClientWithUser;
+    authContext?: {
+      cloneServiceToken?: {
+        username: string;
+        password: string;
+      };
+      sshKey?: {
+        keyType?: string;
+        keyData?: Buffer;
+        privateKey?: Buffer;
+      };
+    };
   }
 }

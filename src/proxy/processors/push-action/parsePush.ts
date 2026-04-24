@@ -28,6 +28,7 @@ import {
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
 } from '../constants';
+import { parsePacketLines } from '../pktLineParser';
 import { getErrorMessage } from '../../../utils/errors';
 
 const dir = './.tmp/';
@@ -55,6 +56,9 @@ async function exec(req: Request, action: Action): Promise<Action> {
   try {
     if (!req.body || req.body.length === 0) {
       throw new Error('No body found in request');
+    }
+    if (typeof req.body === 'string' || Array.isArray(req.body) || !Buffer.isBuffer(req.body)) {
+      throw new Error('Request body must be a Buffer');
     }
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
     const refUpdates = packetLines.filter((line) => line.includes(BRANCH_PREFIX));
@@ -109,12 +113,19 @@ async function exec(req: Request, action: Action): Promise<Action> {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }
 
-      const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
-      // Note: This is not always the pusher's email, it's the last committer's email.
-      // See https://github.com/finos/git-proxy/issues/1400
-      step.log(`Push request received from user ${committer} with email ${committerEmail}`);
-      action.user = committer;
-      action.userEmail = committerEmail;
+      if (req.user) {
+        const { username, email } = req.user as { username: string; email?: string };
+        step.log(`Push request received from authenticated user ${username} with email ${email}`);
+        action.user = username;
+        action.userEmail = email;
+      } else {
+        const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
+        // Note: This is not always the pusher's email, it's the last committer's email.
+        // See https://github.com/finos/git-proxy/issues/1400
+        step.log(`Push request received from user ${committer} with email ${committerEmail}`);
+        action.user = committer;
+        action.userEmail = committerEmail;
+      }
     }
 
     step.content = {
@@ -551,43 +562,6 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
   return results;
 };
 
-/**
- * Parses the packet lines from a buffer into an array of strings.
- * Also returns the offset immediately following the parsed lines (including the flush packet).
- * @param {Buffer} buffer - The buffer containing the packet data.
- * @return {[string[], number]} An array containing the parsed lines and the offset after the last parsed line/flush packet.
- */
-const parsePacketLines = (buffer: Buffer): [string[], number] => {
-  const lines: string[] = [];
-  let offset = 0;
-
-  while (offset + PACKET_SIZE <= buffer.length) {
-    const lengthHex = buffer.toString('utf8', offset, offset + PACKET_SIZE);
-    const length = Number(`0x${lengthHex}`);
-
-    // Prevent non-hex characters from causing issues
-    if (isNaN(length) || length < 0) {
-      throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
-    }
-
-    // length of 0 indicates flush packet (0000)
-    if (length === 0) {
-      offset += PACKET_SIZE; // Include length of the flush packet
-      break;
-    }
-
-    // Make sure we don't read past the end of the buffer
-    if (offset + length > buffer.length) {
-      throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
-    }
-
-    const line = buffer.toString('utf8', offset + PACKET_SIZE, offset + length);
-    lines.push(line);
-    offset += length; // Move offset to the start of the next line's length prefix
-  }
-  return [lines, offset];
-};
-
 exec.displayName = 'parsePush.exec';
 
-export { exec, getCommitData, getContents, getPackMeta, parsePacketLines };
+export { exec, getCommitData, getContents, getPackMeta };
