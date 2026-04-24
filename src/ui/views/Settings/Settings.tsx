@@ -102,7 +102,11 @@ const SettingsView: React.FC = () => {
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position='end'>
-                      <IconButton onClick={toggleShowToken} edge='end' data-testid='jwt-token-toggle'>
+                      <IconButton
+                        onClick={toggleShowToken}
+                        edge='end'
+                        data-testid='jwt-token-toggle'
+                      >
                         {showToken ? <Visibility /> : <VisibilityOff />}
                       </IconButton>
                     </InputAdornment>

@@ -15,6 +15,7 @@
  */
 
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import auth from './auth';
 import push from './push';
 import home from './home';
@@ -24,6 +25,9 @@ import healthcheck from './healthcheck';
 import config from './config';
 import { jwtAuthHandler } from '../passport/jwtAuthHandler';
 import { Proxy } from '../../proxy';
+import * as appConfig from '../../config';
+
+const testRouteLimiter = rateLimit(appConfig.getRateLimit());
 
 const routes = (proxy: Proxy) => {
   const router = express.Router();
@@ -38,7 +42,7 @@ const routes = (proxy: Proxy) => {
   // Test-only cleanup endpoints (gated by NODE_ENV)
   if (process.env.NODE_ENV === 'test') {
     import('./test').then((mod) => {
-      router.use('/api/v1/test', jwtAuthHandler(), mod.default);
+      router.use('/api/v1/test', testRouteLimiter, jwtAuthHandler(), mod.default);
     });
   }
 

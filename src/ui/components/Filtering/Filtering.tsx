@@ -54,20 +54,34 @@ const Filtering: React.FC<FilteringProps> = ({ onFilterChange }) => {
         <button onClick={toggleDropdown} className='dropdown-toggle' data-testid='filter-dropdown'>
           {selectedOption}
           {selectedOption !== 'Sort by' && (
-            <span onClick={toggleSortOrder} data-testid='filter-sort-toggle'>{sortOrder === 'asc' ? ' ↑' : ' ↓'}</span>
+            <span onClick={toggleSortOrder} data-testid='filter-sort-toggle'>
+              {sortOrder === 'asc' ? ' ↑' : ' ↓'}
+            </span>
           )}
           <span className='dropdown-arrow'>▼</span>
         </button>
 
         {isOpen && (
           <div className='dropdown-menu'>
-            <div onClick={() => handleOptionClick('Date Modified')} className='dropdown-item' data-testid='filter-option-date-modified'>
+            <div
+              onClick={() => handleOptionClick('Date Modified')}
+              className='dropdown-item'
+              data-testid='filter-option-date-modified'
+            >
               Date Modified
             </div>
-            <div onClick={() => handleOptionClick('Date Created')} className='dropdown-item' data-testid='filter-option-date-created'>
+            <div
+              onClick={() => handleOptionClick('Date Created')}
+              className='dropdown-item'
+              data-testid='filter-option-date-created'
+            >
               Date Created
             </div>
-            <div onClick={() => handleOptionClick('Alphabetical')} className='dropdown-item' data-testid='filter-option-alphabetical'>
+            <div
+              onClick={() => handleOptionClick('Alphabetical')}
+              className='dropdown-item'
+              data-testid='filter-option-alphabetical'
+            >
               Alphabetical
             </div>
           </div>

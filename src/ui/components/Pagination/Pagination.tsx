@@ -49,7 +49,9 @@ const Pagination: React.FC<PaginationProps> = ({
         Previous
       </button>
 
-      <span data-testid='pagination-info'>Page {totalPages === 0 ? '0 of 0' : `${currentPage} of ${totalPages}`}</span>
+      <span data-testid='pagination-info'>
+        Page {totalPages === 0 ? '0 of 0' : `${currentPage} of ${totalPages}`}
+      </span>
 
       <button
         className='pageButton'

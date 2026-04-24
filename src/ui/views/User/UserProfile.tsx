@@ -90,7 +90,12 @@ export default function UserProfile(): React.ReactElement {
   };
 
   const UpdateButton = (): React.ReactElement => (
-    <Button variant='outlined' color='success' onClick={updateProfile} data-testid='update-profile-btn'>
+    <Button
+      variant='outlined'
+      color='success'
+      onClick={updateProfile}
+      data-testid='update-profile-btn'
+    >
       <Save />
       Update
     </Button>

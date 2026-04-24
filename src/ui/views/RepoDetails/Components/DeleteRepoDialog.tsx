@@ -48,7 +48,13 @@ const DeleteRepoDialog: React.FC<ConfirmDeleteRepoProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth='sm' fullWidth data-testid='delete-repo-dialog'>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth='sm'
+      fullWidth
+      data-testid='delete-repo-dialog'
+    >
       <DialogTitle>Delete Repository</DialogTitle>
       <DialogContent>
         <DialogContentText>

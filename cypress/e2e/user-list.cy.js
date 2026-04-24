@@ -28,7 +28,12 @@ describe('User List (Admin)', () => {
 
   before(() => {
     cy.login('admin', 'admin');
-    cy.createUser(nonAdminUser.username, nonAdminUser.password, nonAdminUser.email, nonAdminUser.gitAccount);
+    cy.createUser(
+      nonAdminUser.username,
+      nonAdminUser.password,
+      nonAdminUser.email,
+      nonAdminUser.gitAccount,
+    );
     cy.logout();
   });
 

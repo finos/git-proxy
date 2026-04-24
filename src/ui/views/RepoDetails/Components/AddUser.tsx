@@ -147,7 +147,13 @@ const AddUserDialog: React.FC<AddUserDialogProps> = ({
                 <Button variant='outlined' color='warning' onClick={handleClose}>
                   Cancel
                 </Button>
-                <Button disabled={isLoading} variant='outlined' color='success' onClick={add} data-testid='add-user-confirm-btn'>
+                <Button
+                  disabled={isLoading}
+                  variant='outlined'
+                  color='success'
+                  onClick={add}
+                  data-testid='add-user-confirm-btn'
+                >
                   Add
                 </Button>
               </GridItem>
@@ -178,7 +184,12 @@ const AddUser: React.FC<AddUserProps> = ({ repoId, type, refreshFn }) => {
 
   return (
     <>
-      <Button variant='outlined' color='success' onClick={handleClickOpen} data-testid={`add-user-btn-${type}`}>
+      <Button
+        variant='outlined'
+        color='success'
+        onClick={handleClickOpen}
+        data-testid={`add-user-btn-${type}`}
+      >
         <PersonAdd />
       </Button>
       <AddUserDialog

@@ -27,7 +27,11 @@ const NotFound = () => {
   const navigate = useNavigate();
 
   return (
-    <GridContainer justifyContent='center' style={{ marginTop: '50px' }} data-testid='not-found-page'>
+    <GridContainer
+      justifyContent='center'
+      style={{ marginTop: '50px' }}
+      data-testid='not-found-page'
+    >
       <GridItem xs={12} sm={8} md={6}>
         <Card>
           <CardBody style={{ textAlign: 'center', padding: '40px' }}>

@@ -40,6 +40,9 @@ const AttestationInfo: React.FC<AttestationInfoProps> = ({
     return null;
   }
 
+  const reviewerGitAccount =
+    push.attestation.reviewer.gitAccount || push.attestation.reviewer.username;
+
   return (
     <div
       style={{
@@ -81,7 +84,7 @@ const AttestationInfo: React.FC<AttestationInfoProps> = ({
             <UserLink username={push.attestation.reviewer.username}>
               <img
                 style={{ width: '45px', borderRadius: '20px' }}
-                src={`https://github.com/${push.attestation.reviewer.gitAccount}.png`}
+                src={`https://github.com/${reviewerGitAccount}.png`}
               />
             </UserLink>
           )}
@@ -89,7 +92,7 @@ const AttestationInfo: React.FC<AttestationInfoProps> = ({
             <p>
               {isGitHub && (
                 <UserLink username={push.attestation.reviewer.username}>
-                  {push.attestation.reviewer.gitAccount}
+                  {reviewerGitAccount}
                 </UserLink>
               )}
               {!isGitHub && <UserLink username={push.attestation.reviewer.username} />} approved
