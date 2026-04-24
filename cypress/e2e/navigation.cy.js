@@ -74,21 +74,10 @@ describe('Navigation & Shell', () => {
   });
 
   // --- 8.6 Unauthenticated user redirected ---
-  it('8.6 — Unauthenticated user is redirected to /login', () => {
-    // The UserProfile component redirects to /login when /api/auth/profile returns 401.
-    // Intercept the auth check to simulate an unauthenticated user.
-    cy.intercept('GET', '**/api/auth/profile', {
-      statusCode: 401,
-      body: { message: 'Not logged in' },
-    }).as('getProfile');
-
-    cy.clearCookies();
-    cy.clearLocalStorage();
-    cy.visit('/dashboard/profile');
-    cy.wait('@getProfile');
-
-    cy.url().should('include', '/login');
-  });
+  // NOTE: This test must run WITHOUT a login session, otherwise cy.session()
+  // caches authenticated cookies and restores them on cy.visit() despite
+  // cy.clearCookies() / cy.clearLocalStorage().  We place it in its own
+  // describe block that has no beforeEach login hook.
 
   // --- 8.7 Root redirects to dashboard/repo ---
   it('8.7 — / redirects to /dashboard/repo', () => {
@@ -97,5 +86,18 @@ describe('Navigation & Shell', () => {
 
     // Root should redirect (either to login if not authenticated, or to dashboard/repo)
     cy.url().should('match', /\/(login|dashboard)/);
+  });
+});
+
+describe('Unauthenticated access', () => {
+  it('8.6 — Unauthenticated user is redirected to /login', () => {
+    // Clear any saved Cypress sessions so no auth cookies are restored
+    Cypress.session.clearAllSavedSessions();
+    cy.clearCookies();
+    cy.clearLocalStorage();
+
+    cy.visit('/dashboard/profile');
+
+    cy.url().should('include', '/login');
   });
 });

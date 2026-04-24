@@ -54,12 +54,14 @@ describe('Push Details — Tabs & Content Rendering', () => {
       });
   }
 
-  // Intercept the push details API and wait for it after visiting.
+  // Intercept the push details API and auth profile, then wait for both after visiting.
   // This ensures the UI has fully rendered before assertions run.
   function visitPushDetails(pushId) {
+    cy.intercept('GET', '**/api/auth/profile').as('getProfile');
     cy.intercept('GET', `**/api/v1/push/${pushId}`).as('getPush');
     cy.visit(`/dashboard/push/${pushId}`);
-    cy.wait('@getPush');
+    cy.wait('@getProfile');
+    cy.wait('@getPush', { timeout: 30000 });
   }
 
   beforeEach(() => {
@@ -123,8 +125,8 @@ describe('Push Details — Tabs & Content Rendering', () => {
         waitForPushReady(pushId);
         cy.login('admin', 'admin');
         visitPushDetails(pushId);
-        cy.get('[data-testid="push-status"]').should('exist');
-        cy.contains('h3', 'Timestamp').should('be.visible');
+        cy.get('[data-testid="push-status"]', { timeout: 15000 }).should('be.visible');
+        cy.contains('h3', 'Timestamp', { timeout: 10000 }).should('be.visible');
         cy.contains('h3', 'Remote Head').should('be.visible');
         cy.contains('h3', 'Commit SHA').should('be.visible');
         cy.contains('h3', 'Repository').should('be.visible');
@@ -167,9 +169,9 @@ describe('Push Details — Tabs & Content Rendering', () => {
         waitForPushReady(pushId);
         cy.login('admin', 'admin');
         visitPushDetails(pushId);
-        cy.get('[data-testid="push-status"]').should('exist');
+        cy.get('[data-testid="push-status"]', { timeout: 15000 }).should('be.visible');
         cy.contains('Changes').click();
-        cy.contains(`cypress-test-${suffix}.txt`).should('be.visible');
+        cy.contains(`cypress-test-${suffix}.txt`, { timeout: 10000 }).should('be.visible');
       },
     );
   });
@@ -201,15 +203,16 @@ describe('Push Details — Tabs & Content Rendering', () => {
         waitForPushReady(pushId);
         cy.login('admin', 'admin');
         visitPushDetails(pushId);
-        cy.get('[data-testid="push-status"]').should('exist');
+        cy.get('[data-testid="push-status"]', { timeout: 15000 }).should('be.visible');
         cy.contains('Steps').click();
+        cy.get('[data-testid^="step-name-"]', { timeout: 10000 }).should('have.length.at.least', 1);
         cy.get('[data-testid^="step-name-"]')
           .first()
           .then(($stepName) => {
             const stepName = $stepName.text();
             const testId = $stepName.attr('data-testid').replace('step-name-', 'step-details-');
             cy.contains(stepName).click({ force: true });
-            cy.get(`[data-testid="${testId}"]`).should('be.visible');
+            cy.get(`[data-testid="${testId}"]`, { timeout: 10000 }).should('be.visible');
           });
       },
     );

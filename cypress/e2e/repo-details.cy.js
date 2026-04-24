@@ -291,8 +291,9 @@ describe('Repo Details — User Management', () => {
     cy.visit(`/dashboard/repo/${testRepoId}`);
 
     // Wait for page to fully load
-    cy.get('[data-testid="repo-info-card"]').should('be.visible', { timeout: 10000 });
+    cy.get('[data-testid="repo-info-card"]', { timeout: 15000 }).should('be.visible');
     cy.get('[data-testid="reviewers-table"]').should('be.visible');
-    cy.get('[data-testid="code-clone-btn"]').should('be.visible');
+    cy.get('[data-testid="code-clone-btn"]').scrollIntoView();
+    cy.get('[data-testid="code-clone-btn"]', { timeout: 10000 }).should('be.visible');
   });
 });

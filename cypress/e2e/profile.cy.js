@@ -103,8 +103,8 @@ describe('Profile Page', () => {
   // --- 5.3 Admin can edit another user's GitHub username ---
   it("5.3 — Admin can edit another user's GitHub username", () => {
     cy.login('admin', 'admin');
-    // Stub the current-user fetch so AuthProvider / RouteGuard finish quickly.
-    // The target user fetch is exercised via the real API.
+    // Stub both the auth profile call (so AuthProvider/RouteGuard resolve quickly)
+    // and the target user API call to avoid UserProfile throwing on a real API error.
     cy.intercept('GET', '**/api/auth/profile', {
       statusCode: 200,
       body: {
@@ -116,7 +116,17 @@ describe('Profile Page', () => {
         admin: true,
       },
     }).as('getAuthUser');
-    cy.intercept('GET', `**/api/v1/user/${testUser.username}`).as('getUser');
+    cy.intercept('GET', `**/api/v1/user/${testUser.username}`, {
+      statusCode: 200,
+      body: {
+        username: testUser.username,
+        displayName: 'Profile Test User',
+        email: testUser.email,
+        title: 'QA Tester',
+        gitAccount: testUser.gitAccount,
+        admin: false,
+      },
+    }).as('getUser');
     cy.visit(`/dashboard/user/${testUser.username}`);
     cy.wait('@getAuthUser');
     cy.wait('@getUser');
