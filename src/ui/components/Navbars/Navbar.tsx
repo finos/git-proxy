@@ -57,6 +57,7 @@ const Header: React.FC<HeaderProps> = (props) => {
     <AppBar
       style={{ borderRadius: '0px', zIndex: 10, backgroundColor: 'black', boxShadow: 'none' }}
       className={classes.appBar + appBarClasses}
+      data-testid='navbar'
     >
       <Toolbar className={classes.container}>
         <div className={classes.flex}>

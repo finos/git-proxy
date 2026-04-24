@@ -48,7 +48,13 @@ const DeleteRepoDialog: React.FC<ConfirmDeleteRepoProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth='sm' fullWidth>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth='sm'
+      fullWidth
+      data-testid='delete-repo-dialog'
+    >
       <DialogTitle>Delete Repository</DialogTitle>
       <DialogContent>
         <DialogContentText>
@@ -64,6 +70,7 @@ const DeleteRepoDialog: React.FC<ConfirmDeleteRepoProps> = ({
           onChange={(e) => setConfirmInput(e.target.value)}
           placeholder={repoName}
           autoFocus
+          data-testid='delete-repo-confirm-input'
         />
       </DialogContent>
       <DialogActions>
@@ -75,6 +82,7 @@ const DeleteRepoDialog: React.FC<ConfirmDeleteRepoProps> = ({
           color='secondary'
           onClick={handleConfirm}
           disabled={confirmInput !== repoName}
+          data-testid='delete-repo-confirm-btn'
         >
           Delete Repository
         </Button>

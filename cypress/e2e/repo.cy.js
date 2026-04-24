@@ -81,16 +81,19 @@ describe('Repo', () => {
     it('Displays an error when adding an existing repo', () => {
       cy.get('[data-testid="repo-list-view"]').find('[data-testid="add-repo-button"]').click();
 
+      // Try to add the same repo that was created in the previous test
       cy.get('[data-testid="add-repo-dialog"]').within(() => {
-        cy.get('[data-testid="repo-project-input"]').type('finos');
-        cy.get('[data-testid="repo-name-input"]').type('git-proxy');
-        cy.get('[data-testid="repo-url-input"]').type('https://github.com/finos/git-proxy.git');
+        cy.get('[data-testid="repo-project-input"]').type('cypress-test');
+        cy.get('[data-testid="repo-name-input"]').type(repoName);
+        cy.get('[data-testid="repo-url-input"]').type(
+          `https://github.com/cypress-test/${repoName}.git`,
+        );
         cy.get('[data-testid="add-repo-button"]').click();
       });
 
       cy.get('[data-testid="repo-error"]')
         .should('be.visible')
-        .and('contain.text', 'Repository https://github.com/finos/git-proxy.git already exists!');
+        .and('contain.text', 'already exists');
     });
   });
 

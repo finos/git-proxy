@@ -120,6 +120,7 @@ router.post('/:id/reject', async (req: Request<{ id: string }>, res: Response) =
       reviewer: {
         username,
         email: reviewerEmail,
+        gitAccount: reviewerList[0].gitAccount,
       },
     };
 
@@ -209,6 +210,7 @@ router.post(
         reviewer: {
           username,
           email: reviewerEmail,
+          gitAccount: reviewerList[0].gitAccount,
         },
       };
       const result = await db.authorise(id, attestation);

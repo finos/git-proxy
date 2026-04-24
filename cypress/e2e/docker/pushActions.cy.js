@@ -49,8 +49,18 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
     cy.logout();
   });
 
-  afterEach(() => {
+  afterEach(function () {
+    // Clean up push created in this test (if any)
+    if (this.pushId) {
+      cy.deleteTestPush(this.pushId);
+    }
     cy.logout();
+  });
+
+  after(() => {
+    // Clean up test users
+    cy.deleteTestUser(testUser.username);
+    cy.deleteTestUser(approverUser.username);
   });
 
   describe('Approve flow', () => {
@@ -182,6 +192,9 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
   describe('Negative: unauthorized approve', () => {
     beforeEach(() => {
+      // Rate-limit guard: wait to avoid 429 from rapid push creations
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(2000);
       const suffix = `neg-approve-${Date.now()}`;
       cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
     });
@@ -217,6 +230,9 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
   describe('Negative: unauthorized reject', () => {
     beforeEach(() => {
+      // Rate-limit guard: wait to avoid 429 from rapid push creations
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(2000);
       const suffix = `neg-reject-${Date.now()}`;
       cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
     });
@@ -240,6 +256,9 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
   describe('Attestation dialog cancel does not cancel the push', () => {
     beforeEach(() => {
+      // Rate-limit guard: wait to avoid 429 from rapid push creations
+      // eslint-disable-next-line cypress/no-unnecessary-waiting
+      cy.wait(2000);
       const suffix = `dialog-cancel-${Date.now()}`;
       cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
     });

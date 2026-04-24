@@ -40,6 +40,7 @@ const Search: React.FC<SearchProps> = ({ onSearch, placeholder = 'Search...' }) 
         margin='normal'
         onChange={handleSearchChange}
         placeholder={placeholder}
+        data-testid='search-input'
         InputProps={{
           startAdornment: (
             <InputAdornment position='start'>
