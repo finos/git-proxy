@@ -394,6 +394,11 @@
         "agentForwardingErrorMessage": {
           "type": "string",
           "description": "Custom error message shown when SSH agent forwarding is not enabled or no keys are loaded in the client's SSH agent. If not specified, a default message with git config commands will be shown. This allows organizations to customize instructions based on their security policies."
+        },
+        "debug": {
+          "type": "boolean",
+          "description": "Enable verbose SSH protocol debug logging (both for the local SSH server and for outbound connections to remote Git servers). Emits one log line per SSH packet, so leave disabled in production.",
+          "default": false
         }
       },
       "required": ["enabled"]

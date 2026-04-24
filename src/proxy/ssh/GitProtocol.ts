@@ -28,6 +28,11 @@ import * as ssh2 from 'ssh2';
 import { ClientWithUser } from './types';
 import { validateSSHPrerequisites, createSSHConnectionOptions } from './sshHelpers';
 import { parsePacketLines } from '../processors/pktLineParser';
+import { getSSHConfig } from '../../config';
+
+function isDebugEnabled(): boolean {
+  return getSSHConfig()?.debug === true;
+}
 
 /**
  * Parser for Git pkt-line protocol
@@ -285,7 +290,7 @@ export async function forwardPackDataToRemote(
     command,
     client,
     remoteHost,
-    { clientStream: stream, debug: true, keepalive: true },
+    { clientStream: stream, debug: isDebugEnabled(), keepalive: true },
     (remoteStream) => {
       console.log(`[SSH] Forwarding pack data for user ${userName}`);
 
@@ -345,7 +350,7 @@ export async function connectToRemoteGitServer(
     remoteHost,
     {
       clientStream: stream,
-      debug: true,
+      debug: isDebugEnabled(),
       keepalive: true,
       requireAgentForwarding: true,
     },

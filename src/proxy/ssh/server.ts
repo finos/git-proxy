@@ -59,10 +59,13 @@ export class SSHServer {
       keepaliveInterval: 20000, // 20 seconds is recommended for SSH connections
       keepaliveCountMax: 5, // Recommended for SSH connections is 3-5 attempts
       readyTimeout: 30000, // Longer ready timeout
-      debug: (msg: string) => {
-        console.debug('[SSH Debug]', msg);
-      },
     };
+
+    if (sshConfig.debug) {
+      serverOptions.debug = (msg: string) => {
+        console.debug('[SSH Debug]', msg);
+      };
+    }
 
     this.server = new ssh2.Server(
       serverOptions as any, // ssh2 types don't fully match our extended interface

@@ -559,6 +559,12 @@ export interface SSH {
    */
   agentForwardingErrorMessage?: string;
   /**
+   * Enable verbose SSH protocol debug logging (both for the local SSH server and for outbound
+   * connections to remote Git servers). Emits one log line per SSH packet, so leave disabled
+   * in production.
+   */
+  debug?: boolean;
+  /**
    * Enable SSH proxy server. When enabled, clients can connect via SSH and the proxy will
    * forward their SSH agent to authenticate with remote Git servers.
    */
@@ -1008,6 +1014,7 @@ const typeMap: any = {
         js: 'agentForwardingErrorMessage',
         typ: u(undefined, ''),
       },
+      { json: 'debug', js: 'debug', typ: u(undefined, true) },
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'port', js: 'port', typ: u(undefined, 3.14) },
     ],
