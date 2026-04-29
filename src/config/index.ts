@@ -62,7 +62,7 @@ type MissingRequiredTopLevelConfigKeys = Exclude<
 type AssertNever<T extends never> = T;
 type _RequiredTopLevelConfigKeysAreExhaustive = AssertNever<MissingRequiredTopLevelConfigKeys>;
 
-function assertHasRequiredTopLevelConfig(
+export function assertHasRequiredTopLevelConfig(
   config: GitProxyConfig,
 ): asserts config is FullGitProxyConfig {
   const missingKeys = REQUIRED_TOP_LEVEL_CONFIG_KEYS.filter((key) => config[key] === undefined);
@@ -375,7 +375,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     const validatedConfig = Convert.toGitProxyConfig(JSON.stringify(newConfig));
 
     // 2. Get proxy module dynamically to avoid circular dependency
-    const proxy = require('../proxy');
+    const proxy = (await import('../proxy')) as any;
 
     // 3. Stop existing services
     await proxy.stop();
@@ -392,7 +392,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     handleErrorAndLog(error, 'Failed to apply new configuration');
     // Attempt to restart with previous config
     try {
-      const proxy = require('../proxy');
+      const proxy = (await import('../proxy')) as any;
       await proxy.start();
     } catch (startError: unknown) {
       handleErrorAndLog(startError, 'Failed to restart services');
