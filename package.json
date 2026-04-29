@@ -1,6 +1,6 @@
 {
   "name": "@finos/git-proxy",
-  "version": "2.0.0-rc.4",
+  "version": "2.0.0-rc.6",
   "description": "Deploy custom push protections and policies on top of Git.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -39,6 +39,11 @@
       "types": "./dist/src/ui/index.d.ts",
       "import": "./dist/src/ui/index.js",
       "require": "./dist/src/ui/index.js"
+    },
+    "./utils/errors": {
+      "types": "./dist/src/utils/errors.d.ts",
+      "import": "./dist/src/utils/errors.js",
+      "require": "./dist/src/utils/errors.js"
     }
   },
   "scripts": {
@@ -60,7 +65,7 @@
     "test-coverage": "cross-env NODE_ENV=test vitest --run --dir ./test --coverage",
     "test-coverage-ci": "cross-env NODE_ENV=test vitest --run --dir ./test --coverage.enabled=true --coverage.reporter=lcovonly --coverage.reporter=text",
     "test:integration": "NODE_ENV=test vitest --run --config vitest.config.integration.ts",
-    "test-watch": "cross-env NODE_ENV=test vitest --dir ./test --watch",
+    "test:watch": "cross-env NODE_ENV=test vitest --dir ./test --watch",
     "prepare": "node ./scripts/prepare.js",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
@@ -68,6 +73,7 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --config ./.prettierrc",
     "gen-schema-doc": "node ./scripts/doc-schema.js",
     "cypress:run": "cypress run",
+    "cypress:run:docker": "cypress run --config specPattern='cypress/e2e/docker/**/*.cy.{js,ts}'",
     "cypress:open": "cypress open",
     "generate-config-types": "quicktype --src-lang schema --lang typescript --out src/config/generated/config.ts --top-level GitProxyConfig config.schema.json && ts-node scripts/add-banner.ts src/config/generated/config.ts && prettier --write src/config/generated/config.ts"
   },
@@ -75,6 +81,11 @@
     "git-proxy": "./dist/index.js",
     "git-proxy-all": "concurrently 'npm run server' 'npm run client'"
   },
+  "files": [
+    "dist",
+    "config.schema.json",
+    "NOTICE"
+  ],
   "workspaces": [
     "./packages/git-proxy-cli"
   ],
@@ -156,6 +167,7 @@
     "@types/yargs": "^17.0.35",
     "@vitejs/plugin-react": "^5.1.2",
     "@vitest/coverage-v8": "^3.2.4",
+    "c8": "^11.0.0",
     "cross-env": "^10.1.0",
     "cypress": "^15.9.0",
     "eslint": "^9.39.2",
@@ -198,7 +210,7 @@
     ]
   },
   "engines": {
-    "node": ">=20.18.2 || >=22.13.1 || >=24.0.0"
+    "node": ">=22.13.1 || >=24.0.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}": [

@@ -13,19 +13,18 @@ permissions:
   pull-requests: write
 
 jobs:
-  # Ubuntu build with MongoDB matrix (9 combinations: 3 Node × 3 MongoDB)
   build-ubuntu:
     runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
       matrix:
-        node-version: [20.x, 22.x, 24.x]
+        node-version: [22.x, 24.x]
         mongodb-version: ['6.0', '7.0', '8.0']
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -44,7 +43,7 @@ jobs:
           mongodb-version: ${{ matrix.mongodb-version }}
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-fund
 
       # for now only check the types of the server
       # tsconfig isn't quite set up right to respect what vite accepts
@@ -54,6 +53,11 @@ jobs:
 
       - name: Build TypeScript
         run: npm run build-ts
+
+      - name: Build CLI
+        run: |
+          npm run build -w @finos/git-proxy-cli
+          npm rebuild @finos/git-proxy-cli
 
       - name: Test
         id: test
@@ -68,30 +72,19 @@ jobs:
         run: npm run test:integration
 
       - name: Upload test coverage report
-        uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
+        uses: codecov/codecov-action@1af58845a975a7985b0beb0cbe6fbbb71a41dbad # v5.5.3
         with:
-          files: ./coverage/lcov.info
+          files: ./coverage/lcov.info,./coverage-cli/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Build frontend
         run: npm run build-ui
 
-      - name: Save build folder
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
-        with:
-          name: build-ubuntu-node-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
-          if-no-files-found: error
-          path: build
-
-      - name: Download the build folders
-        uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8
-        with:
-          name: build-ubuntu-node-${{ matrix.node-version }}-mongo-${{ matrix.mongodb-version }}
-          path: build
-
       - name: Run cypress test
-        uses: cypress-io/github-action@bc22e01685c56e89e7813fd8e26f33dc47f87e15 # v7.1.5
+        uses: cypress-io/github-action@4c06c48f3ffea349b7189aa06dfcda47a9fa7b92 # v7.1.8
         with:
+          # skip the action's internal npm ci — dependencies are already installed above
+          install: false
           start: npm start &
           wait-on: 'http://localhost:3000'
           wait-on-timeout: 120
@@ -103,7 +96,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@a90bcbc6539c36a85cdfeb73f7e2f433735f215b # v2.15.0
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
         with:
           egress-policy: audit
 
@@ -122,13 +115,18 @@ jobs:
           reg add "HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock" /t REG_DWORD /f /v "AllowDevelopmentWithoutDevLicense" /d "1"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-fund
 
       - name: Check Types (Server)
         run: npm run check-types:server
 
       - name: Build TypeScript
         run: npm run build-ts
+
+      - name: Build CLI
+        run: |
+          npm run build -w @finos/git-proxy-cli
+          npm rebuild @finos/git-proxy-cli
 
       - name: Test
         id: test

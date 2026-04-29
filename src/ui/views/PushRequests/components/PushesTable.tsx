@@ -15,7 +15,6 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
 import { useNavigate } from 'react-router-dom';
 import Button from '@material-ui/core/Button';
 import Table from '@material-ui/core/Table';
@@ -25,7 +24,6 @@ import TableContainer from '@material-ui/core/TableContainer';
 import TableHead from '@material-ui/core/TableHead';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { getPushes } from '../../../services/git-push';
 import { KeyboardArrowRight } from '@material-ui/icons';
 import Search from '../../../components/Search/Search';
@@ -51,13 +49,15 @@ import { trimTrailingDotGit } from '../../../../db/helper';
 import { getGitProvider, generateAuthorLinks, generateEmailLink } from '../../../utils';
 
 interface PushesTableProps {
-  [key: string]: any;
+  blocked?: boolean;
+  canceled?: boolean;
+  authorised?: boolean;
+  rejected?: boolean;
+  errored?: boolean;
+  handleError: (error: string) => void;
 }
 
-const useStyles = makeStyles(styles as any);
-
 const PushesTable: React.FC<PushesTableProps> = (props) => {
-  const classes = useStyles();
   const [pushes, setPushes] = useState<PushActionView[]>([]);
   const [filteredData, setFilteredData] = useState<PushActionView[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -76,7 +76,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
     if (props.canceled !== undefined) query.canceled = props.canceled;
     if (props.authorised !== undefined) query.authorised = props.authorised;
     if (props.rejected !== undefined) query.rejected = props.rejected;
-    if (props.error !== undefined) query.error = props.error;
+    if (props.errored !== undefined) query.errored = props.errored;
 
     const load = async () => {
       setIsLoading(true);
@@ -139,7 +139,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
       <div>
         <Search onSearch={handleSearch} />
         <TableContainer component={Paper}>
-          <Table className={classes.table} aria-label='pushes table'>
+          <Table aria-label='pushes table'>
             <TableHead>
               <TableRow>
                 <TableCell align='left'>Timestamp</TableCell>

@@ -412,7 +412,7 @@ describe('proxy chain', function () {
 
     await chain.executeChain(req);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Error during auto-approval:', error.message);
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error during auto-approval: Database error');
   });
 
   it('executeChain should handle exceptions in attemptAutoRejection', async () => {
@@ -442,7 +442,7 @@ describe('proxy chain', function () {
 
     await chain.executeChain(req);
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith('Error during auto-rejection:', error.message);
+    expect(consoleErrorSpy).toHaveBeenCalledWith('Error during auto-rejection: Database error');
   });
 
   it('returns pullActionChain for pull actions', async () => {

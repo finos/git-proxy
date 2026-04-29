@@ -16,7 +16,7 @@
 
 import { processGitURLForNameAndOrg, processUrlPath } from '../routes/helper';
 import { Step } from './Step';
-import { Attestation, CommitData, Rejection } from '../processors/types';
+import { CompletedAttestation, CommitData, Rejection } from '../processors/types';
 import { TagData } from '../../types/models';
 
 export enum RequestType {
@@ -65,7 +65,7 @@ class Action {
   author?: string;
   user?: string;
   userEmail?: string;
-  attestation?: Attestation;
+  attestation?: CompletedAttestation;
   rejection?: Rejection;
   lastStep?: Step;
   proxyGitPath?: string;

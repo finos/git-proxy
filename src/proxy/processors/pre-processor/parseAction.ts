@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
+import { Request } from 'express';
+
 import { Action, RequestType } from '../../actions';
 import { processUrlPath } from '../../routes/helper';
 import * as db from '../../../db';
 
-const exec = async (req: {
-  originalUrl: string;
-  method: string;
-  headers: Record<string, string>;
-}) => {
+const exec = async (req: Request) => {
   const id = Date.now();
   const timestamp = id;
   let type: RequestType | string = 'default';

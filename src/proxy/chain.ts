@@ -14,12 +14,15 @@
  * limitations under the License.
  */
 
+import { Request, Response } from 'express';
+
 import { PluginLoader } from '../plugin';
 import { Action, RequestType, ActionType } from './actions';
 import * as proc from './processors';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
+import { handleErrorAndLog } from '../utils/errors';
 
-const branchPushChain: ((req: any, action: Action) => Promise<Action>)[] = [
+const branchPushChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
@@ -36,7 +39,7 @@ const branchPushChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.blockForAuth,
 ];
 
-const tagPushChain: ((req: any, action: Action) => Promise<Action>)[] = [
+const tagPushChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkUserPushPermission,
   proc.push.checkIfWaitingAuth,
@@ -47,17 +50,17 @@ const tagPushChain: ((req: any, action: Action) => Promise<Action>)[] = [
   proc.push.blockForAuth,
 ];
 
-const pullActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
+const pullActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.checkRepoInAuthorisedList,
 ];
 
-const defaultActionChain: ((req: any, action: Action) => Promise<Action>)[] = [
+const defaultActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.checkRepoInAuthorisedList,
 ];
 
 let pluginsInserted = false;
 
-export const executeChain = async (req: any, res: any): Promise<Action> => {
+export const executeChain = async (req: Request, _res: Response): Promise<Action> => {
   let action: Action = {} as Action;
   let checkoutCleanUpRequired = false;
 
@@ -82,10 +85,10 @@ export const executeChain = async (req: any, res: any): Promise<Action> => {
         checkoutCleanUpRequired = true;
       }
     }
-  } catch (e) {
+  } catch (error: unknown) {
+    const msg = handleErrorAndLog(error, 'An unexpected error occurred when executing the chain');
     action.error = true;
-    action.errorMessage = `An error occurred when executing the chain: ${e}`;
-    console.error(action.errorMessage);
+    action.errorMessage = msg;
   } finally {
     //clean up the clone created
     if (checkoutCleanUpRequired) {
@@ -115,7 +118,7 @@ let chainPluginLoader: PluginLoader;
  * @param {Action} action The action to select a chain for
  * @return {Array} The appropriate push chain
  */
-const getPushChain = (action: Action): ((req: any, action: Action) => Promise<Action>)[] => {
+const getPushChain = (action: Action): ((req: Request, action: Action) => Promise<Action>)[] => {
   switch (action.actionType) {
     case ActionType.TAG:
       return tagPushChain;
@@ -128,7 +131,7 @@ const getPushChain = (action: Action): ((req: any, action: Action) => Promise<Ac
 
 export const getChain = async (
   action: Action,
-): Promise<((req: any, action: Action) => Promise<Action>)[]> => {
+): Promise<((req: Request, action: Action) => Promise<Action>)[]> => {
   if (chainPluginLoader === undefined) {
     console.error(
       'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',

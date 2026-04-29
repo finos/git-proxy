@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-import axios from 'axios';
+import axios, { isAxiosError } from 'axios';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import fs from 'fs';
@@ -24,6 +24,7 @@ import util from 'util';
 
 import { PushQuery } from '@finos/git-proxy/db';
 import { Action } from '@finos/git-proxy/proxy/actions';
+import { handleErrorAndLog } from '@finos/git-proxy/utils/errors';
 
 const GIT_PROXY_COOKIE_FILE = 'git-proxy-cookie';
 // GitProxy UI HOST and PORT (configurable via environment variable)
@@ -64,12 +65,12 @@ async function login(username: string, password: string) {
     const user = `"${response.data.username}" <${response.data.email}>`;
     const isAdmin = response.data.admin ? ' (admin)' : '';
     console.log(`Login ${user}${isAdmin}: OK`);
-  } catch (error: any) {
-    if (error.response) {
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response) {
       console.error(`Error: Login '${username}': '${error.response.status}'`);
       process.exitCode = 1;
     } else {
-      console.error(`Error: Login '${username}': '${error.message}'`);
+      handleErrorAndLog(error, `Error: Login '${username}'`);
       process.exitCode = 2;
     }
   }
@@ -182,8 +183,8 @@ async function getGitPushes(filters: Partial<PushQuery>) {
     });
 
     console.log(util.inspect(records, false, null, false));
-  } catch (error: any) {
-    console.error(`Error: List: '${error.message}'`);
+  } catch (error: unknown) {
+    handleErrorAndLog(error, 'Error: List');
     process.exitCode = 2;
   }
 }
@@ -224,23 +225,28 @@ async function authoriseGitPush(id: string) {
     );
 
     console.log(`Authorise: ID: '${id}': OK`);
-  } catch (error: any) {
-    // default error
-    let errorMessage = `Error: Authorise: '${error.message}'`;
-    process.exitCode = 2;
-
-    if (error.response) {
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Authorise: Authentication required';
+        case 403:
+          console.error('Error: Authorise: Authentication required');
           process.exitCode = 3;
           break;
         case 404:
-          errorMessage = `Error: Authorise: ID: '${id}': Not Found`;
+          console.error(`Error: Authorise: ID: '${id}': Not Found`);
           process.exitCode = 4;
+          break;
+        default:
+          console.error(
+            `Error: Authorise: '${error.response.status}': ${error.response.data?.message || error.message}`,
+          );
+          process.exitCode = 5;
       }
+    } else {
+      handleErrorAndLog(error, `Error: Authorise: '${id}'`);
+      process.exitCode = 2;
     }
-    console.error(errorMessage);
   }
 }
 
@@ -248,7 +254,7 @@ async function authoriseGitPush(id: string) {
  * Reject git push by ID
  * @param {string} id The ID of the git push to reject
  */
-async function rejectGitPush(id: string) {
+async function rejectGitPush(id: string, reason: string) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     console.error('Error: Reject: Authentication required');
     process.exitCode = 1;
@@ -264,30 +270,35 @@ async function rejectGitPush(id: string) {
 
     await axios.post(
       `${baseUrl}/api/v1/push/${id}/reject`,
-      {},
+      { reason },
       {
         headers: { Cookie: cookies },
       },
     );
 
     console.log(`Reject: ID: '${id}': OK`);
-  } catch (error: any) {
-    // default error
-    let errorMessage = `Error: Reject: '${error.message}'`;
-    process.exitCode = 2;
-
-    if (error.response) {
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Reject: Authentication required';
+        case 403:
+          console.error('Error: Reject: Authentication required');
           process.exitCode = 3;
           break;
         case 404:
-          errorMessage = `Error: Reject: ID: '${id}': Not Found`;
+          console.error(`Error: Reject: ID: '${id}': Not Found`);
           process.exitCode = 4;
+          break;
+        default:
+          console.error(
+            `Error: Reject: '${error.response.status}': ${error.response.data?.message || error.message}`,
+          );
+          process.exitCode = 5;
       }
+    } else {
+      handleErrorAndLog(error, `Error: Reject: '${id}'`);
+      process.exitCode = 2;
     }
-    console.error(errorMessage);
   }
 }
 
@@ -318,23 +329,28 @@ async function cancelGitPush(id: string) {
     );
 
     console.log(`Cancel: ID: '${id}': OK`);
-  } catch (error: any) {
-    // default error
-    let errorMessage = `Error: Cancel: '${error.message}'`;
-    process.exitCode = 2;
-
-    if (error.response) {
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Cancel: Authentication required';
+        case 403:
+          console.error('Error: Cancel: Authentication required');
           process.exitCode = 3;
           break;
         case 404:
-          errorMessage = `Error: Cancel: ID: '${id}': Not Found`;
+          console.error(`Error: Cancel: ID: '${id}': Not Found`);
           process.exitCode = 4;
+          break;
+        default:
+          console.error(
+            `Error: Cancel: '${error.response.status}': ${error.response.data?.message || error.message}`,
+          );
+          process.exitCode = 5;
       }
+    } else {
+      handleErrorAndLog(error, `Error: Cancel: '${id}'`);
+      process.exitCode = 2;
     }
-    console.error(errorMessage);
   }
 }
 
@@ -355,8 +371,8 @@ async function logout() {
           headers: { Cookie: cookies },
         },
       );
-    } catch (error: any) {
-      console.log(`Warning: Logout: '${error.message}'`);
+    } catch (error: unknown) {
+      handleErrorAndLog(error, 'Warning: Logout');
     }
   }
 
@@ -379,10 +395,9 @@ async function reloadConfig() {
     await axios.post(`${baseUrl}/api/v1/admin/reload-config`, {}, { headers: { Cookie: cookies } });
 
     console.log('Configuration reloaded successfully');
-  } catch (error: any) {
-    const errorMessage = `Error: Reload config: '${error.message}'`;
+  } catch (error: unknown) {
+    handleErrorAndLog(error, 'Error: Reload config');
     process.exitCode = 2;
-    console.error(errorMessage);
   }
 }
 
@@ -425,23 +440,23 @@ async function createUser(
     );
 
     console.log(`User '${username}' created successfully`);
-  } catch (error: any) {
-    let errorMessage = `Error: Create User: '${error.message}'`;
-    process.exitCode = 2;
-
-    if (error.response) {
+  } catch (error: unknown) {
+    if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
-          errorMessage = 'Error: Create User: Authentication required';
+        case 403:
+          console.error('Error: Create User: Authentication required');
           process.exitCode = 3;
           break;
         case 400:
-          errorMessage = `Error: Create User: ${error.response.data.message}`;
+          console.error(`Error: Create User: ${error.response.data.message}`);
           process.exitCode = 4;
           break;
       }
+    } else {
+      handleErrorAndLog(error, `Error: Create User: '${username}'`);
+      process.exitCode = 2;
     }
-    console.error(errorMessage);
   }
 }
 
@@ -570,9 +585,14 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
         demandOption: true,
         type: 'string',
       },
+      reason: {
+        describe: 'Reason for rejection',
+        type: 'string',
+        default: 'Rejected via GitProxy CLI',
+      },
     },
     handler(argv) {
-      rejectGitPush(argv.id);
+      rejectGitPush(argv.id, argv.reason);
     },
   })
   .command({

@@ -19,10 +19,14 @@ import path from 'path';
 import { describe, it, beforeAll, afterAll } from 'vitest';
 
 import { setConfigFile } from '../../../src/config/file';
+import { invalidateCache } from '../../../src/config';
+import { SAMPLE_REPO } from '../../../src/proxy/processors/constants';
+import { handleErrorAndLog } from '../../../src/utils/errors';
 
-import { Repo } from '../../../src/db/types';
-
-setConfigFile(path.join(process.cwd(), 'test', 'testCli.proxy.config.json'));
+setConfigFile(
+  path.join(process.cwd(), 'packages', 'git-proxy-cli', 'test', 'testCli.proxy.config.json'),
+);
+invalidateCache();
 
 /* test constants */
 // push ID which does not exist
@@ -30,6 +34,7 @@ const GHOST_PUSH_ID =
   '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f';
 // repo for test cases
 const TEST_REPO_CONFIG = {
+  ...SAMPLE_REPO,
   project: 'finos',
   name: 'git-proxy-test',
   url: 'https://github.com/finos/git-proxy-test.git',
@@ -236,7 +241,7 @@ describe('test git-proxy-cli', function () {
     const pushId = `auth000000000000000000000000000000000000__${Date.now()}`;
 
     beforeAll(async function () {
-      await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
+      await helper.addRepoToDb(TEST_REPO_CONFIG);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
@@ -313,7 +318,7 @@ describe('test git-proxy-cli', function () {
     const pushId = `cancel0000000000000000000000000000000000__${Date.now()}`;
 
     beforeAll(async function () {
-      await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
+      await helper.addRepoToDb(TEST_REPO_CONFIG);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_USER, TEST_EMAIL, TEST_REPO);
     });
@@ -436,7 +441,7 @@ describe('test git-proxy-cli', function () {
     const pushId = `reject0000000000000000000000000000000000__${Date.now()}`;
 
     beforeAll(async function () {
-      await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
+      await helper.addRepoToDb(TEST_REPO_CONFIG);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
@@ -598,8 +603,8 @@ describe('test git-proxy-cli', function () {
         // Clean up the created user
         try {
           await helper.removeUserFromDb(uniqueUsername);
-        } catch (error: any) {
-          // Ignore cleanup errors
+        } catch (error: unknown) {
+          handleErrorAndLog(error, 'Error cleaning up user');
         }
       }
     });
@@ -628,8 +633,8 @@ describe('test git-proxy-cli', function () {
         // Clean up the created user
         try {
           await helper.removeUserFromDb(uniqueUsername);
-        } catch (error: any) {
-          console.error('Error cleaning up user', error);
+        } catch (error: unknown) {
+          handleErrorAndLog(error, 'Error cleaning up user');
         }
       }
     });
@@ -641,7 +646,7 @@ describe('test git-proxy-cli', function () {
     const pushId = `0000000000000000000000000000000000000000__${Date.now()}`;
 
     beforeAll(async function () {
-      await helper.addRepoToDb(TEST_REPO_CONFIG as Repo);
+      await helper.addRepoToDb(TEST_REPO_CONFIG);
       await helper.addUserToDb(TEST_USER, TEST_PASSWORD, TEST_EMAIL, TEST_GIT_ACCOUNT);
       await helper.addGitPushToDb(pushId, TEST_REPO_CONFIG.url, TEST_USER, TEST_EMAIL);
     });
@@ -773,7 +778,7 @@ describe('test git-proxy-cli', function () {
         let expectedErrorMessages = null;
         await helper.runCli(cli, expectedExitCode, expectedMessages, expectedErrorMessages);
 
-        cli = `${CLI_PATH} reject --id ${pushId}`;
+        cli = `${CLI_PATH} reject --id ${pushId} --reason "Rejected via CLI test"`;
         expectedExitCode = 0;
         expectedMessages = [`Reject: ID: '${pushId}': OK`];
         expectedErrorMessages = null;
