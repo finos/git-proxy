@@ -36,6 +36,7 @@ describe('default configuration', () => {
     expect(config.getAuthMethods()).toEqual(enabledMethods);
     expect(config.getDatabase()).toEqual(defaultSettings.sink[0]);
     expect(config.getTempPasswordConfig()).toEqual(defaultSettings.tempPassword);
+    expect(config.getProxyUrl()).toBeUndefined();
     expect(config.getAuthorisedList()).toEqual(defaultSettings.authorisedList);
     expect(config.getRateLimit()).toEqual(defaultSettings.rateLimit);
     expect(config.getTLSKeyPemPath()).toEqual(defaultSettings.tls.key);
@@ -46,8 +47,15 @@ describe('default configuration', () => {
     expect(config.getContactEmail()).toEqual(defaultSettings.contactEmail);
     expect(config.getPlugins()).toEqual(defaultSettings.plugins);
     expect(config.getCSRFProtection()).toEqual(defaultSettings.csrfProtection);
+    expect(config.getSessionMaxAgeHours()).toEqual(defaultSettings.sessionMaxAgeHours);
+    expect(config.getCommitConfig()).toEqual(defaultSettings.commitConfig);
     expect(config.getAttestationConfig()).toEqual(defaultSettings.attestationConfig);
     expect(config.getAPIs()).toEqual(defaultSettings.api);
+    expect(config.getAPIAuthMethods()).toEqual(
+      defaultSettings.apiAuthentication.filter((method) => method.enabled),
+    );
+    expect(config.getPrivateOrganizations()).toEqual(defaultSettings.privateOrganizations);
+    expect(config.getUIRouteAuth()).toEqual(defaultSettings.uiRouteAuth);
   });
 });
 
@@ -259,6 +267,22 @@ describe('user configuration', () => {
     config.invalidateCache();
 
     expect(config.getAPIs()).toEqual(user.api);
+  });
+
+  it('should keep default top-level config values when user config only overrides one entry', async () => {
+    const user = {
+      sessionMaxAgeHours: 6,
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = await import('../src/config');
+    config.invalidateCache();
+
+    expect(config.getSessionMaxAgeHours()).toBe(user.sessionMaxAgeHours);
+    expect(config.getCommitConfig()).toEqual(defaultSettings.commitConfig);
+    expect(config.getAttestationConfig()).toEqual(defaultSettings.attestationConfig);
+    expect(config.getPrivateOrganizations()).toEqual(defaultSettings.privateOrganizations);
+    expect(config.getUIRouteAuth()).toEqual(defaultSettings.uiRouteAuth);
   });
 
   it('should override default settings for cookieSecret if env var is used', async () => {
