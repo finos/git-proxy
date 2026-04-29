@@ -15,18 +15,17 @@
  */
 
 /**
- * Push Requests — Tab Filtering
+ * Push Requests - Tab Filtering
  * Strategy: Shared dataset created once in before(), cleaned up in after().
  * Uses real pushes for Pending/Approved/Rejected/Canceled, intercept for Error tab.
  * Note: Shared dataset is acceptable here because tests only assert on rendering, not mutations.
  */
-describe('Push Requests — Tab Filtering', () => {
+describe('Push Requests - Tab Filtering', () => {
   const testUser = {
     username: 'pushreq_testuser',
     password: 'testuser123',
     email: 'pushreq_testuser@example.com',
     gitAccount: 'pushreq_testuser',
-    // Git credentials must match a user on the git server for cy.createPush() to work
     gitUsername: 'testuser',
     gitPassword: 'user123',
   };
@@ -37,8 +36,6 @@ describe('Push Requests — Tab Filtering', () => {
     email: 'pushreq_approver@example.com',
     gitAccount: 'pushreq_approver',
   };
-
-  // Shared push IDs for the test suite
   const pushIds = {
     pending: '',
     approved: '',
@@ -47,7 +44,6 @@ describe('Push Requests — Tab Filtering', () => {
   };
 
   before(function () {
-    // Create test users
     cy.login('admin', 'admin');
     cy.createUser(testUser.username, testUser.password, testUser.email, testUser.gitAccount);
     cy.createUser(
@@ -63,8 +59,6 @@ describe('Push Requests — Tab Filtering', () => {
     });
 
     cy.logout();
-
-    // Create pending push
     cy.createPush(
       testUser.gitUsername,
       testUser.gitPassword,
@@ -73,8 +67,6 @@ describe('Push Requests — Tab Filtering', () => {
     ).then((id) => {
       pushIds.pending = id;
     });
-
-    // Create and approve a push
     cy.createPush(
       testUser.gitUsername,
       testUser.gitPassword,
@@ -82,7 +74,6 @@ describe('Push Requests — Tab Filtering', () => {
       `pushreq-approved-${Date.now()}`,
     ).then((id) => {
       pushIds.approved = id;
-      // Login as approver and approve
       cy.login(approverUser.username, approverUser.password);
       cy.visit(`/dashboard/push/${id}`);
       cy.get('[data-testid="attestation-open-btn"]').click();
@@ -95,8 +86,6 @@ describe('Push Requests — Tab Filtering', () => {
       cy.get('[data-testid="attestation-confirm-btn"]').click();
       cy.logout();
     });
-
-    // Create and reject a push
     cy.createPush(
       testUser.gitUsername,
       testUser.gitPassword,
@@ -104,7 +93,6 @@ describe('Push Requests — Tab Filtering', () => {
       `pushreq-rejected-${Date.now()}`,
     ).then((id) => {
       pushIds.rejected = id;
-      // Login as approver and reject
       cy.login(approverUser.username, approverUser.password);
       cy.visit(`/dashboard/push/${id}`);
       cy.get('[data-testid="push-reject-btn"]').click();
@@ -112,8 +100,6 @@ describe('Push Requests — Tab Filtering', () => {
       cy.get('[data-testid="push-reject-confirm-btn"]').click();
       cy.logout();
     });
-
-    // Create and cancel a push
     cy.createPush(
       testUser.gitUsername,
       testUser.gitPassword,
@@ -121,7 +107,6 @@ describe('Push Requests — Tab Filtering', () => {
       `pushreq-canceled-${Date.now()}`,
     ).then((id) => {
       pushIds.canceled = id;
-      // Login as test user and cancel
       cy.login(testUser.username, testUser.password);
       cy.visit(`/dashboard/push/${id}`);
       cy.get('[data-testid="push-cancel-btn"]').click();
@@ -130,12 +115,10 @@ describe('Push Requests — Tab Filtering', () => {
   });
 
   after(() => {
-    // Clean up all pushes
     cy.deleteTestPush(pushIds.pending);
     cy.deleteTestPush(pushIds.approved);
     cy.deleteTestPush(pushIds.rejected);
     cy.deleteTestPush(pushIds.canceled);
-    // Clean up test users
     cy.deleteTestUser(testUser.username);
     cy.deleteTestUser(approverUser.username);
   });
@@ -147,9 +130,7 @@ describe('Push Requests — Tab Filtering', () => {
   afterEach(() => {
     cy.logout();
   });
-
-  // --- 3.1 All 6 tabs render ---
-  it('3.1 — All 6 tabs render (All, Pending, Approved, Canceled, Rejected, Error)', () => {
+  it('All 6 tabs render (All, Pending, Approved, Canceled, Rejected, Error)', () => {
     cy.visit('/dashboard/push');
 
     cy.contains('All').should('be.visible');
@@ -159,75 +140,40 @@ describe('Push Requests — Tab Filtering', () => {
     cy.contains('Rejected').should('be.visible');
     cy.contains('Error').should('be.visible');
   });
-
-  // --- 3.2 Pending tab filters ---
-  it('3.2 — Pending tab filters to show only pending pushes', () => {
+  it('Pending tab filters to show only pending pushes', () => {
     cy.visit('/dashboard/push');
 
     cy.contains('Pending').click();
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(500);
-
-    // The pending push should be visible in the table
     cy.get('[data-testid="pushes-table"]').should('be.visible');
   });
-
-  // --- 3.3 Approved tab filters ---
-  it('3.3 — Approved tab filters to show only approved pushes', () => {
+  it('Approved tab filters to show only approved pushes', () => {
     cy.visit('/dashboard/push');
 
     cy.contains('Approved').click();
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(500);
-
     cy.get('[data-testid="pushes-table"]').should('be.visible');
   });
-
-  // --- 3.4 Canceled tab filters ---
-  it('3.4 — Canceled tab filters to show only canceled pushes', () => {
+  it('Canceled tab filters to show only canceled pushes', () => {
     cy.visit('/dashboard/push');
 
     cy.contains('Canceled').click();
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(500);
-
     cy.get('[data-testid="pushes-table"]').should('be.visible');
   });
-
-  // --- 3.5 Rejected tab filters ---
-  it('3.5 — Rejected tab filters to show only rejected pushes', () => {
+  it('Rejected tab filters to show only rejected pushes', () => {
     cy.visit('/dashboard/push');
 
     cy.contains('Rejected').click();
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(500);
-
     cy.get('[data-testid="pushes-table"]').should('be.visible');
   });
-
-  // --- 3.6 Error tab filters (intercept) ---
-  it('3.6 — Error tab filters to show only errored pushes', () => {
+  it('Error tab filters to show only errored pushes', () => {
     cy.visit('/dashboard/push');
 
     cy.contains('Error').click();
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(500);
-
-    // The table should be visible (may be empty if no real error pushes exist)
     cy.get('[data-testid="pushes-table"]').should('be.visible');
   });
-
-  // --- 3.7 Push rows are clickable ---
-  it('3.7 — Push table rows are clickable and navigate to Push Details', () => {
+  it('Push table rows are clickable and navigate to Push Details', () => {
     cy.visit('/dashboard/push');
-
-    // Wait for table to load
     cy.get('[data-testid="pushes-table"]').should('be.visible');
-
-    // Click on the arrow button in the first push row to navigate to push details
     cy.get('[data-testid^="push-row-"]').first().find('button').first().click({ force: true });
-
-    // Should navigate to push details page
     cy.url().should('include', '/dashboard/push/');
   });
 });

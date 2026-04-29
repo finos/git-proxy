@@ -35,7 +35,6 @@ describe('Profile Page', () => {
 
   before(() => {
     cy.login('admin', 'admin');
-    // Clean up stale users from previous interrupted runs before creating
     cy.deleteTestUser(testUser.username);
     cy.deleteTestUser(nonAdminUser.username);
     cy.createUser(testUser.username, testUser.password, testUser.email, testUser.gitAccount);
@@ -45,7 +44,6 @@ describe('Profile Page', () => {
       nonAdminUser.email,
       nonAdminUser.gitAccount,
     );
-    // Verify users were created successfully
     cy.request({
       method: 'GET',
       url: `${Cypress.config('baseUrl')}/api/v1/user/${testUser.username}`,
@@ -77,9 +75,7 @@ describe('Profile Page', () => {
   afterEach(() => {
     cy.logout();
   });
-
-  // --- 5.1 Displays user info ---
-  it('5.1 — Displays user info: name, role, email, GitHub username, admin status', () => {
+  it('Displays user info: name, role, email, GitHub username, admin status', () => {
     cy.login('admin', 'admin');
     cy.visit('/dashboard/profile');
 
@@ -89,38 +85,24 @@ describe('Profile Page', () => {
     cy.get('[data-testid="profile-gitAccount"]').should('be.visible');
     cy.get('[data-testid="profile-admin-status"]').should('be.visible');
   });
-
-  // --- 5.2 User can edit own GitHub username ---
-  it('5.2 — User can edit their own GitHub username', () => {
+  it('User can edit their own GitHub username', () => {
     cy.login(testUser.username, testUser.password);
     cy.visit('/dashboard/profile');
-
-    // Edit field and update button should be visible for own profile
     cy.get('[data-testid="gitAccount-input"]').should('be.visible');
     cy.get('[data-testid="update-profile-btn"]').should('be.visible');
   });
-
-  // --- 5.3 Admin can edit another user's GitHub username ---
-  it("5.3 — Admin can edit another user's GitHub username", () => {
+  it("Admin can edit another user's GitHub username", () => {
     cy.login('admin', 'admin');
     cy.intercept('GET', `**/api/v1/user/${testUser.username}`).as('getUser');
     cy.visit(`/dashboard/user/${testUser.username}`);
     cy.wait('@getUser');
-
-    // Wait for profile to render
     cy.get('[data-testid="profile-name"]', { timeout: 10000 }).should('be.visible');
-
-    // Edit field and update button should be visible for admin viewing other user
     cy.get('[data-testid="gitAccount-input"]').should('be.visible');
     cy.get('[data-testid="update-profile-btn"]').should('be.visible');
   });
-
-  // --- 5.4 Non-admin cannot edit other user ---
-  it("5.4 — Non-admin viewing another user's profile cannot edit", () => {
+  it("Non-admin viewing another user's profile cannot edit", () => {
     cy.login(nonAdminUser.username, nonAdminUser.password);
     cy.visit(`/dashboard/user/${testUser.username}`);
-
-    // Edit field and update button should NOT be visible
     cy.get('[data-testid="gitAccount-input"]').should('not.exist');
     cy.get('[data-testid="update-profile-btn"]').should('not.exist');
   });

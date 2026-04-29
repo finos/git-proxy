@@ -40,24 +40,16 @@ describe('User List (Admin)', () => {
   after(() => {
     cy.deleteTestUser(nonAdminUser.username);
   });
-
-  // --- 6.1 Renders list of all users ---
-  it('6.1 — Renders list of all users', () => {
+  it('Renders list of all users', () => {
     cy.login('admin', 'admin');
     cy.visit('/dashboard/admin/user');
 
     cy.get('[data-testid="user-list-table"]').should('be.visible');
-
-    // Admin user should be in the list
     cy.get('[data-testid="user-list-table"]').contains('admin').should('be.visible');
   });
-
-  // --- 6.4 Non-admin cannot access ---
-  it('6.4 — Non-admin cannot access user list', () => {
+  it('Non-admin cannot access user list', () => {
     cy.login(nonAdminUser.username, nonAdminUser.password);
     cy.visit('/dashboard/admin/user');
-
-    // Should redirect to not authorized or show error
     cy.url().should('match', /\/(dashboard\/admin\/user|not-authorized|login)/);
   });
 });

@@ -15,11 +15,11 @@
  */
 
 /**
- * Repo List — Search, Filter, Pagination
+ * Repo List - Search, Filter, Pagination
  * Strategy: Create 6+ test repos via API in before(), clean up in after().
  * Pagination tested here only. Search/filter use client-side logic.
  */
-describe('Repo List — Search, Filter, Pagination', () => {
+describe('Repo List - Search, Filter, Pagination', () => {
   const createdRepoIds = [];
 
   function getApiBaseUrl() {
@@ -28,8 +28,6 @@ describe('Repo List — Search, Filter, Pagination', () => {
 
   before(() => {
     cy.login('admin', 'admin');
-
-    // Create 6 test repos for pagination testing
     for (let i = 0; i < 6; i++) {
       const timestamp = Date.now() + i;
       cy.request({
@@ -52,7 +50,6 @@ describe('Repo List — Search, Filter, Pagination', () => {
   });
 
   after(() => {
-    // Clean up all created repos
     createdRepoIds.forEach((repoId) => {
       cy.deleteRepo(repoId);
     });
@@ -65,108 +62,71 @@ describe('Repo List — Search, Filter, Pagination', () => {
   afterEach(() => {
     cy.logout();
   });
-
-  // --- 4.1 Search filters by name ---
-  it('4.1 — Search filters repos by name', () => {
+  it('Search filters repos by name', () => {
     cy.visit('/dashboard/repo');
 
-    // Wait for repos to load before searching
     cy.get('[data-testid="search-input"]').should('be.visible');
-
-    // Type in search
     cy.get('[data-testid="search-input"]').find('input').type('cypress-pagination-repo-0');
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(300);
-
-    // Results should be filtered (at least the search input is visible and functional)
-    cy.get('[data-testid="search-input"]').should('be.visible');
+    cy.get('[data-testid="search-input"]')
+      .find('input')
+      .should('have.value', 'cypress-pagination-repo-0');
   });
-
-  // --- 4.2 Search filters by project ---
-  it('4.2 — Search filters repos by project', () => {
+  it('Search filters repos by project', () => {
     cy.visit('/dashboard/repo');
 
     cy.get('[data-testid="search-input"]').should('be.visible');
 
     cy.get('[data-testid="search-input"]').find('input').type('cypress-test');
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(300);
-
-    cy.get('[data-testid="search-input"]').should('be.visible');
+    cy.get('[data-testid="search-input"]').find('input').should('have.value', 'cypress-test');
   });
-
-  // --- 4.3 Clear search resets ---
-  it('4.3 — Clear search resets to all repos', () => {
+  it('Clear search resets to all repos', () => {
     cy.visit('/dashboard/repo');
 
     cy.get('[data-testid="search-input"]').should('be.visible');
 
     cy.get('[data-testid="search-input"]').find('input').type('unique-filter-string');
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(300);
-
-    // Clear the search
+    cy.get('[data-testid="search-input"]')
+      .find('input')
+      .should('have.value', 'unique-filter-string');
     cy.get('[data-testid="search-input"]').find('input').clear();
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(300);
-
-    cy.get('[data-testid="search-input"]').should('be.visible');
+    cy.get('[data-testid="search-input"]').find('input').should('have.value', '');
   });
-
-  // --- 4.4 Filter dropdown sorts ---
-  it('4.4 — Filter dropdown sorts by Date Modified, Date Created, Alphabetical', () => {
+  it('Filter dropdown sorts by Date Modified, Date Created, Alphabetical', () => {
     cy.visit('/dashboard/repo');
 
-    // Open filter dropdown
     cy.get('[data-testid="filter-dropdown"]').click();
 
-    // All options should be visible
     cy.get('[data-testid="filter-option-date-modified"]').should('be.visible');
     cy.get('[data-testid="filter-option-date-created"]').should('be.visible');
     cy.get('[data-testid="filter-option-alphabetical"]').should('be.visible');
 
-    // Click one option
     cy.get('[data-testid="filter-option-alphabetical"]').click();
 
-    // Dropdown should close
     cy.get('[data-testid="filter-dropdown"]').should('contain', 'Alphabetical');
   });
-
-  // --- 4.5 Pagination ---
-  it('4.5 — Pagination renders and navigates between pages', () => {
+  it('Pagination renders and navigates between pages', () => {
     cy.visit('/dashboard/repo');
 
-    // Wait for page to load and scroll pagination into view
     cy.get('[data-testid="search-input"]').should('be.visible');
     cy.get('[data-testid="pagination-info"]').should('exist');
     cy.get('[data-testid="pagination-info"]').scrollIntoView();
 
-    // Pagination controls should be visible
     cy.get('[data-testid="pagination-previous"]').should('be.visible');
     cy.get('[data-testid="pagination-next"]').should('be.visible');
 
-    // Navigate to next page
     cy.get('[data-testid="pagination-next"]').click();
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(300);
+    cy.get('[data-testid="pagination-info"]').should('contain', 'Page 2 of');
 
-    // Navigate back
     cy.get('[data-testid="pagination-previous"]').click();
-    // eslint-disable-next-line cypress/no-unnecessary-waiting
-    cy.wait(300);
+    cy.get('[data-testid="pagination-info"]').should('contain', 'Page 1 of');
   });
-
-  // --- 4.6 Repo rows navigate ---
-  it('4.6 — Repo rows are clickable and navigate to Repo Details', () => {
+  it('Repo rows are clickable and navigate to Repo Details', () => {
     cy.visit('/dashboard/repo');
 
-    // Wait for page to load
     cy.get('[data-testid="search-input"]').should('be.visible');
 
-    // Click on a repo link (not a button within the row)
     cy.get('a[href^="/dashboard/repo/"]').first().click();
 
-    // Should navigate to repo details
     cy.url().should('match', /\/dashboard\/repo\/[a-f0-9]+/);
   });
 });

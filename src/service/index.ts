@@ -132,9 +132,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
   const absBuildPath = path.join(__dirname, '../../build');
   app.use(cors(corsOptions));
   app.set('trust proxy', 1);
-  if (process.env.NODE_ENV !== 'test') {
-    app.use(limiter);
-  }
+  app.use(limiter);
 
   app.use(
     session({

@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-describe('Push Details — Tabs & Content Rendering', () => {
+describe('Push Details - Tabs & Content Rendering', () => {
   const testUser = {
     username: 'pushdetails_testuser',
     password: 'testuser123',
     email: 'pushdetails_testuser@example.com',
     gitAccount: 'pushdetails_testuser',
-    // Git credentials must match a user on the git server for cy.createPush() to work
     gitUsername: 'testuser',
     gitPassword: 'user123',
   };
@@ -32,30 +31,33 @@ describe('Push Details — Tabs & Content Rendering', () => {
     gitAccount: 'pushdetails_approver',
   };
 
-  // Wait for the push to be available via the API after git push completes.
-  // The backend may take a moment to process the push and make it queryable.
-  function waitForPushReady(pushId, retries = 30) {
-    if (retries <= 0) {
+  function waitForPushReady(pushId, attemptsRemaining = 10) {
+    if (attemptsRemaining <= 0) {
       throw new Error(`Push ${pushId} not ready after max retries`);
     }
+
     return cy
       .request({
         method: 'GET',
         url: `${Cypress.config('baseUrl')}/api/v1/push/${pushId}`,
         failOnStatusCode: false,
-        timeout: 30000,
+        timeout: 10000,
       })
       .then((res) => {
-        if (res.status !== 200) {
-          // eslint-disable-next-line cypress/no-unnecessary-waiting
-          cy.wait(3000);
-          return waitForPushReady(pushId, retries - 1);
+        if (res.status === 200) {
+          return;
         }
+
+        if (res.status === 404) {
+          // eslint-disable-next-line cypress/no-unnecessary-waiting
+          cy.wait(500);
+          return waitForPushReady(pushId, attemptsRemaining - 1);
+        }
+
+        throw new Error(`GET /api/v1/push/${pushId} returned unexpected status ${res.status}`);
       });
   }
 
-  // Intercept the push details API and auth profile, then wait for both after visiting.
-  // This ensures the UI has fully rendered before assertions run.
   function visitPushDetails(pushId) {
     cy.intercept('GET', '**/api/auth/profile').as('getProfile');
     cy.intercept('GET', `**/api/v1/push/${pushId}`).as('getPush');
@@ -67,7 +69,6 @@ describe('Push Details — Tabs & Content Rendering', () => {
   beforeEach(() => {
     cy.login('admin', 'admin');
 
-    // Ensure test users exist and have permissions on the test repo
     cy.createUser(testUser.username, testUser.password, testUser.email, testUser.gitAccount);
     cy.createUser(
       approverUser.username,
@@ -85,7 +86,6 @@ describe('Push Details — Tabs & Content Rendering', () => {
   });
 
   afterEach(function () {
-    // Clean up push created in this test (if any)
     if (this.pushId) {
       cy.deleteTestPush(this.pushId);
     }
@@ -93,13 +93,10 @@ describe('Push Details — Tabs & Content Rendering', () => {
   });
 
   after(() => {
-    // Clean up test users
     cy.deleteTestUser(testUser.username);
     cy.deleteTestUser(approverUser.username);
   });
-
-  // --- 1.1 Pending push shows Pending status ---
-  it('1.1 — Pending push shows Pending status with action buttons', function () {
+  it('Pending push shows Pending status with action buttons', function () {
     const suffix = `pending-${Date.now()}`;
     cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).then(
       (pushId) => {
@@ -115,9 +112,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
       },
     );
   });
-
-  // --- 1.2 Card body renders info fields with correct links ---
-  it('1.2 — Card body renders Timestamp, Remote Head, Commit SHA, Repository, Branch', function () {
+  it('Card body renders Timestamp, Remote Head, Commit SHA, Repository, Branch', function () {
     const suffix = `info-${Date.now()}`;
     cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).then(
       (pushId) => {
@@ -137,9 +132,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
       },
     );
   });
-
-  // --- 1.3 Commits tab renders commit data table ---
-  it('1.3 — Commits tab renders commit data table with correct columns', function () {
+  it('Commits tab renders commit data table with correct columns', function () {
     const suffix = `commits-${Date.now()}`;
     cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).then(
       (pushId) => {
@@ -148,9 +141,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
         cy.login('admin', 'admin');
         visitPushDetails(pushId);
         cy.get('[data-testid="push-status"]').should('exist');
-        // Click Commits tab explicitly to ensure it's active
         cy.contains('Commits').click();
-        // Use exist instead of be.visible because table cells may be in scrollable containers
         cy.contains('Timestamp').should('exist');
         cy.contains('Committer').should('exist');
         cy.contains('Author').should('exist');
@@ -159,9 +150,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
       },
     );
   });
-
-  // --- 1.4 Changes tab renders diff content ---
-  it('1.4 — Changes tab renders diff content via diff2html', function () {
+  it('Changes tab renders diff content via diff2html', function () {
     const suffix = `changes-${Date.now()}`;
     cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).then(
       (pushId) => {
@@ -175,9 +164,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
       },
     );
   });
-
-  // --- 1.5 Steps tab renders steps timeline with summary ---
-  it('1.5 — Steps tab renders steps timeline with summary chips', function () {
+  it('Steps tab renders steps timeline with summary chips', function () {
     const suffix = `steps-${Date.now()}`;
     cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).then(
       (pushId) => {
@@ -193,9 +180,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
       },
     );
   });
-
-  // --- 1.6 Steps accordions expand and show content/logs ---
-  it('1.6 — Steps accordions expand and show content/logs', function () {
+  it('Steps accordions expand and show content/logs', function () {
     const suffix = `accordion-${Date.now()}`;
     cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).then(
       (pushId) => {
@@ -217,9 +202,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
       },
     );
   });
-
-  // --- 1.7 Rejected push shows rejection info with reason ---
-  it('1.7 — Rejected push shows rejection info with reason', function () {
+  it('Rejected push shows rejection info with reason', function () {
     const suffix = `reject-${Date.now()}`;
     cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).then(
       (pushId) => {
@@ -242,9 +225,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
       },
     );
   });
-
-  // --- 1.8 Approved push shows attestation info ---
-  it('1.8 — Approved push shows attestation info', function () {
+  it('Approved push shows attestation info', function () {
     const suffix = `approve-${Date.now()}`;
     cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).then(
       (pushId) => {
@@ -270,9 +251,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
       },
     );
   });
-
-  // --- 1.9 Error state renders error message when API fails ---
-  it('1.9 — Error state renders error message when API fails', () => {
+  it('Error state renders error message when API fails', () => {
     cy.intercept('GET', '**/api/v1/push/nonexistent-push-id', {
       statusCode: 500,
       body: { message: 'Internal server error' },
@@ -284,9 +263,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
 
     cy.contains('Something went wrong').should('be.visible');
   });
-
-  // --- 1.10 Canceled push shows Canceled status ---
-  it('1.10 — Canceled push shows Canceled status', function () {
+  it('Canceled push shows Canceled status', function () {
     const suffix = `cancel-${Date.now()}`;
     cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).then(
       (pushId) => {
@@ -304,9 +281,7 @@ describe('Push Details — Tabs & Content Rendering', () => {
       },
     );
   });
-
-  // --- 1.11 Push details page navigates back to push list after action ---
-  it('1.11 — Action buttons navigate back to push list after completing action', function () {
+  it('Action buttons navigate back to push list after completing action', function () {
     const suffix = `nav-${Date.now()}`;
     cy.createPush(testUser.gitUsername, testUser.gitPassword, testUser.email, suffix).then(
       (pushId) => {

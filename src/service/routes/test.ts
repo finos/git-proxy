@@ -25,7 +25,6 @@ import { isAdminUser } from './utils';
 
 const router = express.Router();
 
-// Helper: check that the authenticated user is an admin
 function requireAdmin(req: Request, res: Response): boolean {
   if (!isAdminUser(req.user)) {
     res.status(403).send({ message: 'Admin access required' });

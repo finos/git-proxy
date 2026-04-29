@@ -26,72 +26,44 @@ describe('Navigation & Shell', () => {
   afterEach(() => {
     cy.logout();
   });
-
-  // --- 8.1 Sidebar renders all visible links ---
-  it('8.1 — Sidebar renders all visible links', () => {
+  it('Sidebar renders all visible links', () => {
     cy.visit('/dashboard/repo');
-
-    // Sidebar links should be present
     cy.contains('Repositories').should('be.visible');
     cy.contains('Dashboard').should('be.visible');
   });
-
-  // --- 8.2 Sidebar links navigate correctly ---
-  it('8.2 — Sidebar links navigate correctly', () => {
+  it('Sidebar links navigate correctly', () => {
     cy.visit('/dashboard/repo');
-
-    // Navigate to push dashboard
     cy.contains('Dashboard').click();
     cy.url().should('include', '/dashboard/push');
-
-    // Navigate back to repos
     cy.contains('Repositories').click();
     cy.url().should('include', '/dashboard/repo');
   });
-
-  // --- 8.3 Active sidebar item highlights ---
-  it('8.3 — Active sidebar item highlights', () => {
+  it('Active sidebar item highlights', () => {
     cy.visit('/dashboard/repo');
-
-    // The active nav link should have aria-current="page"
     cy.get('[aria-current="page"]').should('exist');
   });
-
-  // --- 8.4 Navbar renders ---
-  it('8.4 — Navbar renders correctly', () => {
+  it('Navbar renders correctly', () => {
     cy.visit('/dashboard/repo');
 
     cy.get('[data-testid="navbar"]').should('be.visible');
   });
-
-  // --- 8.5 Footer renders ---
-  it('8.5 — Footer renders', () => {
+  it('Footer renders', () => {
     cy.visit('/dashboard/repo');
 
     cy.get('[data-testid="footer"]').should('exist');
     cy.get('[data-testid="footer"]').scrollIntoView();
     cy.get('[data-testid="footer"]').should('be.visible');
   });
-
-  // --- 8.6 Unauthenticated user redirected ---
-  // NOTE: This test must run WITHOUT a login session, otherwise cy.session()
-  // caches authenticated cookies and restores them on cy.visit() despite
-  // cy.clearCookies() / cy.clearLocalStorage().  We place it in its own
-  // describe block that has no beforeEach login hook.
-
-  // --- 8.7 Root redirects to dashboard/repo ---
-  it('8.7 — / redirects to /dashboard/repo', () => {
+  // NOTE: Keep unauthenticated checks outside the logged-in hooks.
+  it('/ redirects to /dashboard/repo', () => {
     cy.logout();
     cy.visit('/');
-
-    // Root should redirect (either to login if not authenticated, or to dashboard/repo)
     cy.url().should('match', /\/(login|dashboard)/);
   });
 });
 
 describe('Unauthenticated access', () => {
-  it('8.6 — Unauthenticated user is redirected to /login', () => {
-    // Clear any saved Cypress sessions so no auth cookies are restored
+  it('Unauthenticated user is redirected to /login', () => {
     Cypress.session.clearAllSavedSessions();
     cy.clearCookies();
     cy.clearLocalStorage();

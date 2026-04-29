@@ -26,18 +26,13 @@ describe('Error Pages', () => {
   afterEach(() => {
     cy.logout();
   });
-
-  // --- 9.1 Unknown route shows 404 ---
-  it('9.1 — Unknown route shows 404 page', () => {
+  it('Unknown route shows 404 page', () => {
     cy.visit('/dashboard/nonexistent-page-xyz');
 
     cy.get('[data-testid="not-found-page"]').should('be.visible');
     cy.contains('404').should('be.visible');
   });
-
-  // --- 9.2 Unauthorized route shows NotAuthorized ---
-  it('9.2 — Unauthorized route shows NotAuthorized page', () => {
-    // Create a non-admin user and try to access admin route
+  it('Unauthorized route shows NotAuthorized page', () => {
     const regularUser = {
       username: `errorpage_user_${Date.now()}`,
       password: 'pass123',
@@ -55,14 +50,10 @@ describe('Error Pages', () => {
     cy.clearCookies();
     cy.clearLocalStorage();
     cy.login(regularUser.username, regularUser.password);
-
-    // Navigate to not-authorized page directly to verify it renders
     cy.visit('/not-authorized');
 
     cy.get('[data-testid="not-authorized-page"]').should('be.visible');
     cy.contains('403').should('be.visible');
-
-    // Clean up user
     cy.clearCookies();
     cy.deleteTestUser(regularUser.username);
   });

@@ -15,10 +15,10 @@
  */
 
 /**
- * Repo Details — User Management
+ * Repo Details - User Management
  * Strategy: Real API for all tests. Creates a test repo in before(), cleans up in after().
  */
-describe('Repo Details — User Management', () => {
+describe('Repo Details - User Management', () => {
   const testReviewer = {
     username: 'repo_detail_reviewer',
     password: 'reviewer123',
@@ -47,7 +47,6 @@ describe('Repo Details — User Management', () => {
   }
 
   before(() => {
-    // Create test users
     cy.login('admin', 'admin');
     cy.createUser(
       testReviewer.username,
@@ -67,8 +66,6 @@ describe('Repo Details — User Management', () => {
       nonAdminUser.email,
       nonAdminUser.gitAccount,
     );
-
-    // Create test repo
     cy.request({
       method: 'POST',
       url: `${getApiBaseUrl()}/api/v1/repo`,
@@ -89,20 +86,17 @@ describe('Repo Details — User Management', () => {
   });
 
   after(() => {
-    // Clean up test repo
     if (testRepoId) {
       cy.login('admin', 'admin');
       cy.deleteRepo(testRepoId);
       cy.logout();
     }
-    // Clean up test users
     cy.deleteTestUser(testReviewer.username);
     cy.deleteTestUser(testContributor.username);
     cy.deleteTestUser(nonAdminUser.username);
   });
 
   beforeEach(() => {
-    // Intercept GitHub API calls to prevent unhandled axios errors for synthetic test repos
     cy.intercept('GET', 'https://api.github.com/repos/**', {
       body: {
         description: 'Test repo',
@@ -118,127 +112,76 @@ describe('Repo Details — User Management', () => {
       },
     }).as('getRemoteRepo');
   });
-
-  // --- 2.1 Repo info renders ---
-  it('2.1 — Repo info renders: project, name, URL links', () => {
+  it('Repo info renders: project, name, URL links', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
-
-    // Wait for repo info card to load
     cy.get('[data-testid="repo-info-card"]').should('be.visible');
-    // The Organization field label should be visible
     cy.contains('Organization').should('be.visible');
   });
-
-  // --- 2.2 Reviewers table renders ---
-  it('2.2 — Reviewers table renders user list with links', () => {
+  it('Reviewers table renders user list with links', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
 
     cy.get('[data-testid="reviewers-table"]').should('be.visible');
     cy.contains('Reviewers').should('be.visible');
   });
-
-  // --- 2.3 Contributors table renders ---
-  it('2.3 — Contributors table renders user list with links', () => {
+  it('Contributors table renders user list with links', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
-
-    // Wait for contributors table to load (may need to scroll into view)
     cy.get('[data-testid="contributors-table"]').should('exist');
     cy.get('[data-testid="contributors-table"]').scrollIntoView();
     cy.contains('Contributors').should('be.visible');
   });
-
-  // --- 2.4 Admin can add reviewer ---
-  it('2.4 — Admin can add reviewer via "Add Reviewer" button', () => {
+  it('Admin can add reviewer via "Add Reviewer" button', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
-
-    // Click add reviewer button
     cy.get('[data-testid="add-user-btn-authorise"]').click();
-
-    // Dialog should open
     cy.get('[data-testid="add-user-dialog"]').should('be.visible');
-
-    // Select user from dropdown
     cy.get('[data-testid="add-user-select"]').click();
     cy.contains(`li.MuiMenuItem-root`, testReviewer.username).click();
-
-    // Confirm addition
     cy.get('[data-testid="add-user-confirm-btn"]').click();
-
-    // Wait for dialog to close and user to appear in reviewers table
     cy.get('[data-testid="add-user-dialog"]').should('not.exist');
     cy.get('[data-testid="reviewers-table"]').contains(testReviewer.username).should('be.visible');
   });
-
-  // --- 2.5 Admin can remove reviewer ---
-  it('2.5 — Admin can remove reviewer', () => {
+  it('Admin can remove reviewer', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
-
-    // Find the remove button in the reviewers table and click it
     cy.get('[data-testid="reviewers-table"]')
       .contains(testReviewer.username)
       .parents('tr')
       .find('button')
       .first()
       .click();
-
-    // User should no longer appear in reviewers table
     cy.get('[data-testid="reviewers-table"]').contains(testReviewer.username).should('not.exist');
   });
-
-  // --- 2.6 Admin can add contributor ---
-  it('2.6 — Admin can add contributor via "Add Contributor" button', () => {
+  it('Admin can add contributor via "Add Contributor" button', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
-
-    // Click add contributor button
     cy.get('[data-testid="add-user-btn-push"]').click();
-
-    // Dialog should open
     cy.get('[data-testid="add-user-dialog"]').should('be.visible');
-
-    // Select user from dropdown
     cy.get('[data-testid="add-user-select"]').click();
     cy.contains(`li.MuiMenuItem-root`, testContributor.username).click();
-
-    // Confirm addition
     cy.get('[data-testid="add-user-confirm-btn"]').click();
-
-    // Wait for dialog to close and user to appear in contributors table
     cy.get('[data-testid="add-user-dialog"]').should('not.exist');
     cy.get('[data-testid="contributors-table"]')
       .contains(testContributor.username)
       .should('be.visible');
   });
-
-  // --- 2.7 Admin can remove contributor ---
-  it('2.7 — Admin can remove contributor', () => {
+  it('Admin can remove contributor', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
-
-    // Find the remove button in the contributors table and click it
     cy.get('[data-testid="contributors-table"]')
       .contains(testContributor.username)
       .parents('tr')
       .find('button')
       .first()
       .click();
-
-    // User should no longer appear in contributors table
     cy.get('[data-testid="contributors-table"]')
       .contains(testContributor.username)
       .should('not.exist');
   });
-
-  // --- 2.8 Delete repo dialog ---
-  it('2.8 — Delete repo dialog opens, confirms, navigates to repo list', () => {
+  it('Delete repo dialog opens, confirms, navigates to repo list', () => {
     cy.login('admin', 'admin');
-
-    // Create a fresh repo to delete
     cy.request({
       method: 'POST',
       url: `${getApiBaseUrl()}/api/v1/repo`,
@@ -253,44 +196,24 @@ describe('Repo Details — User Management', () => {
       const deleteRepoName = res.body.name;
 
       cy.visit(`/dashboard/repo/${deleteRepoId}`);
-
-      // Click delete button
       cy.get('[data-testid="delete-repo-button"]').click();
-
-      // Dialog should open
       cy.get('[data-testid="delete-repo-dialog"]').should('be.visible');
-
-      // Type repo name to confirm
       cy.get('[data-testid="delete-repo-confirm-input"]').type(deleteRepoName);
-
-      // Confirm button should now be enabled
       cy.get('[data-testid="delete-repo-confirm-btn"]').should('not.be.disabled');
-
-      // Click confirm
       cy.get('[data-testid="delete-repo-confirm-btn"]').click();
-
-      // Should navigate to repo list
       cy.url().should('include', '/dashboard/repo');
     });
   });
-
-  // --- 2.9 Non-admin cannot see management buttons ---
-  it('2.9 — Non-admin cannot see add/remove/delete buttons', () => {
+  it('Non-admin cannot see add/remove/delete buttons', () => {
     cy.login(nonAdminUser.username, nonAdminUser.password);
     cy.visit(`/dashboard/repo/${testRepoId}`);
-
-    // Admin-only buttons should not be visible
     cy.get('[data-testid="delete-repo-button"]').should('not.exist');
     cy.get('[data-testid="add-user-btn-authorise"]').should('not.exist');
     cy.get('[data-testid="add-user-btn-push"]').should('not.exist');
   });
-
-  // --- 2.10 Code clone button ---
-  it('2.10 — Code clone button renders with correct URL', () => {
+  it('Code clone button renders with correct URL', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
-
-    // Wait for page to fully load
     cy.get('[data-testid="repo-info-card"]', { timeout: 15000 }).should('be.visible');
     cy.get('[data-testid="reviewers-table"]').should('be.visible');
     cy.get('[data-testid="code-clone-btn"]').scrollIntoView();
