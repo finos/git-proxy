@@ -17,13 +17,29 @@
 import { processGitURLForNameAndOrg, processUrlPath } from '../routes/helper';
 import { Step } from './Step';
 import { CompletedAttestation, CommitData, Rejection } from '../processors/types';
+import { TagData } from '../../types/models';
+
+export enum RequestType {
+  PUSH = 'push',
+
+  PULL = 'pull',
+}
+
+export enum ActionType {
+  COMMIT = 'commit',
+
+  TAG = 'tag',
+
+  BRANCH = 'branch',
+}
 
 /**
  * Class representing a Push.
  */
 class Action {
   id: string;
-  type: string;
+  type: RequestType;
+  actionType?: ActionType;
   method: string;
   timestamp: number;
   project: string;
@@ -53,6 +69,8 @@ class Action {
   rejection?: Rejection;
   lastStep?: Step;
   proxyGitPath?: string;
+  tag?: string;
+  tagData?: TagData[];
   newIdxFiles?: string[];
 
   /**
@@ -63,7 +81,7 @@ class Action {
    * @param {number} timestamp The timestamp of the action
    * @param {string} url The URL to the repo that should be proxied (with protocol, origin, repo path, but not the path for the git operation).
    */
-  constructor(id: string, type: string, method: string, timestamp: number, url: string) {
+  constructor(id: string, type: RequestType, method: string, timestamp: number, url: string) {
     this.id = id;
     this.type = type;
     this.method = method;

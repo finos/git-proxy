@@ -17,13 +17,12 @@
 import { Request, Response } from 'express';
 
 import { PluginLoader } from '../plugin';
-import { Action } from './actions';
+import { Action, RequestType, ActionType } from './actions';
 import * as proc from './processors';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
 
-const pushActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
-  proc.push.parsePush,
+const branchPushChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkCommitMessages,
@@ -37,6 +36,17 @@ const pushActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.getDiff,
   proc.push.gitleaks,
   proc.push.scanDiff,
+  proc.push.blockForAuth,
+];
+
+const tagPushChain: ((req: Request, action: Action) => Promise<Action>)[] = [
+  proc.push.checkRepoInAuthorisedList,
+  proc.push.checkUserPushPermission,
+  proc.push.checkIfWaitingAuth,
+  proc.push.pullRemote,
+  proc.push.writePack,
+  proc.push.preReceive,
+  // TODO: implement tag message validation?
   proc.push.blockForAuth,
 ];
 
@@ -55,9 +65,16 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
   let checkoutCleanUpRequired = false;
 
   try {
+    // 1) Initialize basic action fields
     action = await proc.pre.parseAction(req);
+    // 2) Parse the push payload first to detect tags/branches
+    if (action.type === RequestType.PUSH) {
+      action = await proc.push.parsePush(req, action);
+    }
+    // 3) Select the correct chain now that action.actionType is set
     const actionFns = await getChain(action);
 
+    // 4) Execute each step in the selected chain
     for (const fn of actionFns) {
       action = await fn(req, action);
       if (!action.continue() || action.allowPush) {
@@ -96,6 +113,22 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
  */
 let chainPluginLoader: PluginLoader;
 
+/**
+ * Selects the appropriate push chain based on action type
+ * @param {Action} action The action to select a chain for
+ * @return {Array} The appropriate push chain
+ */
+const getPushChain = (action: Action): ((req: Request, action: Action) => Promise<Action>)[] => {
+  switch (action.actionType) {
+    case ActionType.TAG:
+      return tagPushChain;
+    case ActionType.BRANCH:
+    case ActionType.COMMIT:
+    default:
+      return branchPushChain;
+  }
+};
+
 export const getChain = async (
   action: Action,
 ): Promise<((req: Request, action: Action) => Promise<Action>)[]> => {
@@ -105,6 +138,7 @@ export const getChain = async (
     );
     pluginsInserted = true;
   }
+
   if (!pluginsInserted) {
     console.log(
       `Inserting loaded plugins (${chainPluginLoader.pushPlugins.length} push, ${chainPluginLoader.pullPlugins.length} pull) into proxy chains`,
@@ -112,7 +146,8 @@ export const getChain = async (
     for (const pluginObj of chainPluginLoader.pushPlugins) {
       console.log(`Inserting push plugin ${pluginObj.constructor.name} into chain`);
       // insert custom functions after parsePush but before other actions
-      pushActionChain.splice(1, 0, pluginObj.exec);
+      branchPushChain.splice(1, 0, pluginObj.exec);
+      tagPushChain.splice(1, 0, pluginObj.exec);
     }
     for (const pluginObj of chainPluginLoader.pullPlugins) {
       console.log(`Inserting pull plugin ${pluginObj.constructor.name} into chain`);
@@ -122,12 +157,14 @@ export const getChain = async (
     // This is set to true so that we don't re-insert the plugins into the chain
     pluginsInserted = true;
   }
-  if (action.type === 'pull') {
-    return pullActionChain;
-  } else if (action.type === 'push') {
-    return pushActionChain;
-  } else {
-    return defaultActionChain;
+
+  switch (action.type) {
+    case RequestType.PULL:
+      return pullActionChain;
+    case RequestType.PUSH:
+      return getPushChain(action);
+    default:
+      return defaultActionChain;
   }
 };
 
@@ -141,8 +178,11 @@ export default {
   get pluginsInserted() {
     return pluginsInserted;
   },
-  get pushActionChain() {
-    return pushActionChain;
+  get branchPushChain() {
+    return branchPushChain;
+  },
+  get tagPushChain() {
+    return tagPushChain;
   },
   get pullActionChain() {
     return pullActionChain;

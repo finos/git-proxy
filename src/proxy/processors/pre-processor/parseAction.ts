@@ -16,21 +16,21 @@
 
 import { Request } from 'express';
 
-import { Action } from '../../actions';
+import { Action, RequestType } from '../../actions';
 import { processUrlPath } from '../../routes/helper';
 import * as db from '../../../db';
 
 const exec = async (req: Request) => {
   const id = Date.now();
   const timestamp = id;
-  let type = 'default';
+  let type: RequestType | string = 'default';
 
   //inspect content-type headers to classify requests as push or pull operations
   // see git http protocol docs for more details: https://github.com/git/git/blob/master/Documentation/gitprotocol-http.adoc
   if (req.headers['content-type'] === 'application/x-git-upload-pack-request') {
-    type = 'pull';
+    type = RequestType.PULL;
   } else if (req.headers['content-type'] === 'application/x-git-receive-pack-request') {
-    type = 'push';
+    type = RequestType.PUSH;
   }
 
   // Proxy URLs take the form https://<git proxy domain>:<port>/<proxied domain>/<repoPath>
@@ -52,7 +52,7 @@ const exec = async (req: Request) => {
     );
   }
 
-  return new Action(id.toString(), type, req.method, timestamp, url);
+  return new Action(id.toString(), type as RequestType, req.method, timestamp, url);
 };
 
 exec.displayName = 'parseAction.exec';

@@ -39,9 +39,21 @@ import { CheckCircle, Visibility, Cancel, Block, List as ListIcon } from '@mater
 import CodeIcon from '@material-ui/icons/Code';
 import TimelineIcon from '@material-ui/icons/Timeline';
 import Snackbar from '@material-ui/core/Snackbar';
+import Table from '@material-ui/core/Table';
+import TableHead from '@material-ui/core/TableHead';
+import TableBody from '@material-ui/core/TableBody';
+import TableRow from '@material-ui/core/TableRow';
+import TableCell from '@material-ui/core/TableCell';
 import { PushActionView } from '../../types';
-import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../../db/helper';
-import { getGitProvider } from '../../utils';
+import {
+  isTagPush,
+  getTagName,
+  getRepoFullName,
+  getRefToShow,
+  getGitUrl,
+} from '../../utils/pushUtils';
+import { trimTrailingDotGit } from '../../../db/helper';
+import { generateEmailLink, getGitProvider } from '../../utils';
 
 const Dashboard: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -104,7 +116,7 @@ const Dashboard: React.FC = () => {
     if (!id) return;
     const result = await cancelPush(id);
     if (result.success) {
-      navigate(`/dashboard/push/`);
+      navigate('/dashboard/push/');
       return;
     }
     handleActionFailure(result);
@@ -142,12 +154,14 @@ const Dashboard: React.FC = () => {
     };
   }
 
-  const repoFullName = trimTrailingDotGit(push.repo);
-  const repoBranch = trimPrefixRefsHeads(push.branch ?? '');
+  const isTag = isTagPush(push as any);
+  const repoFullName = getRepoFullName(push.repo);
+  const refToShow = getRefToShow(push as any);
   const repoUrl = push.url;
   const repoWebUrl = trimTrailingDotGit(repoUrl);
   const gitProvider = getGitProvider(repoUrl);
   const isGitHub = gitProvider == 'github';
+  const gitUrl = getGitUrl(repoWebUrl, gitProvider);
 
   const generateIcon = (title: string) => {
     switch (title) {
@@ -208,42 +222,39 @@ const Dashboard: React.FC = () => {
                   <p>{moment(push.timestamp).toString()}</p>
                 </GridItem>
                 <GridItem xs={3} sm={3} md={3}>
-                  <h3>Remote Head</h3>
-                  <p>
-                    <a
-                      href={`${repoWebUrl}/commit/${push.commitFrom}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
-                      {push.commitFrom}
-                    </a>
-                  </p>
-                </GridItem>
-                <GridItem xs={3} sm={3} md={3}>
-                  <h3>Commit SHA</h3>
-                  <p>
-                    <a
-                      href={`${repoWebUrl}/commit/${push.commitTo}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
-                      {push.commitTo}
-                    </a>
-                  </p>
-                </GridItem>
-                <GridItem xs={2} sm={2} md={2}>
                   <h3>Repository</h3>
                   <p>
-                    <a href={`${repoWebUrl}`} rel='noreferrer' target='_blank'>
+                    <a href={gitUrl.repo()} target='_blank' rel='noreferrer'>
                       {repoFullName}
                     </a>
                   </p>
                 </GridItem>
+                <GridItem xs={3} sm={3} md={3}>
+                  {isTag ? (
+                    <>
+                      <h3>Tag</h3>
+                      <p>{getTagName((push as any).tag)}</p>
+                    </>
+                  ) : (
+                    <>
+                      <h3>Branch</h3>
+                      <p>{refToShow}</p>
+                    </>
+                  )}
+                </GridItem>
                 <GridItem xs={2} sm={2} md={2}>
-                  <h3>Branch</h3>
+                  <h3>From</h3>
                   <p>
-                    <a href={`${repoWebUrl}/tree/${repoBranch}`} rel='noreferrer' target='_blank'>
-                      {repoBranch}
+                    <a href={gitUrl.commit(push.commitFrom ?? '')} target='_blank' rel='noreferrer'>
+                      {push.commitFrom}
+                    </a>
+                  </p>
+                </GridItem>
+                <GridItem xs={2} sm={2} md={2}>
+                  <h3>To</h3>
+                  <p>
+                    <a href={gitUrl.commit(push.commitTo ?? '')} target='_blank' rel='noreferrer'>
+                      {push.commitTo}
                     </a>
                   </p>
                 </GridItem>
@@ -254,24 +265,59 @@ const Dashboard: React.FC = () => {
         <GridItem xs={12} sm={12} md={12}>
           <CustomTabs
             headerColor='primary'
-            tabs={[
-              {
-                tabName: 'Commits',
-                tabIcon: ListIcon,
-                tabContent: <CommitDataTable commitData={push.commitData || []} />,
-              },
-              {
-                tabName: 'Changes',
-                tabIcon: CodeIcon,
-                tabContent: <Diff diff={push.diff?.content || ''} />,
-              },
-              {
-                tabName: 'Steps',
-                tabIcon: TimelineIcon,
-                tabContent: <StepsTimeline steps={push.steps ?? []} />,
-                badge: errorCount > 0 ? errorCount : undefined,
-              },
-            ]}
+            tabs={
+              isTag
+                ? [
+                    {
+                      tabName: 'Tag Details',
+                      tabIcon: ListIcon,
+                      tabContent: (
+                        <Table>
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Tag Name</TableCell>
+                              <TableCell>Tagger</TableCell>
+                              <TableCell>Message</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {(push as any).tagData?.map((t: any) => (
+                              <TableRow key={t.tagName}>
+                                <TableCell>{t.tagName}</TableCell>
+                                <TableCell>{generateEmailLink(t.tagger, t.taggerEmail)}</TableCell>
+                                <TableCell>{t.message}</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      ),
+                    },
+                    {
+                      tabName: 'Steps',
+                      tabIcon: TimelineIcon,
+                      tabContent: <StepsTimeline steps={push.steps ?? []} />,
+                      badge: errorCount > 0 ? errorCount : undefined,
+                    },
+                  ]
+                : [
+                    {
+                      tabName: 'Commits',
+                      tabIcon: ListIcon,
+                      tabContent: <CommitDataTable commitData={push.commitData || []} />,
+                    },
+                    {
+                      tabName: 'Changes',
+                      tabIcon: CodeIcon,
+                      tabContent: <Diff diff={push.diff?.content || ''} />,
+                    },
+                    {
+                      tabName: 'Steps',
+                      tabIcon: TimelineIcon,
+                      tabContent: <StepsTimeline steps={push.steps ?? []} />,
+                      badge: errorCount > 0 ? errorCount : undefined,
+                    },
+                  ]
+            }
           />
         </GridItem>
       </GridContainer>
