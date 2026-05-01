@@ -47,3 +47,19 @@ Release notes use PR titles directly. They should be written as user-facing chan
 **Not good: ** fix: bug from last community call
 
 Keep in mind that maintainers may adjust the labels manually if appropriate.
+
+## Release Process
+
+The actual release process is largely automated via two GitHub Actions workflows: [`release-drafter.yml`](https://github.com/finos/git-proxy/blob/main/.github/release-drafter.yml) and [`npm.yml`](https://github.com/finos/git-proxy/blob/main/.github/workflows/npm.yml).
+
+### Release Drafter
+
+This workflow runs against each `release/*` branch and generates a draft GitHub Release, which is kept up-to-date with a categorised changelog and the right version number. A preview draft is also maintained against `main` so contributors can see what's coming up in the next minor - a roadmap of work in flight.
+
+When a release is ready to ship, a maintainer:
+
+1. Reviews the draft for the relevant `release/*` branch
+2. Edits the release notes if necessary (for instance, adding a migration guide for breaking changes)
+3. Clicks Publish.
+
+Publishing creates a git tag, and triggers the `npm.yml` workflow described below.
