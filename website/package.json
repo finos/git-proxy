@@ -13,6 +13,7 @@
     "@docusaurus/core": "^3.10.0",
     "@docusaurus/plugin-google-gtag": "^3.10.0",
     "@docusaurus/preset-classic": "^3.10.0",
+    "ajv": "^8.17.1",
     "axios": "^1.13.4",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
