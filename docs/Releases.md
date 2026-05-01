@@ -21,3 +21,29 @@ GitProxy uses [GitHub milestones](https://github.com/finos/git-proxy/milestones)
 Historically, GitProxy has had [trouble with scope creep](https://github.com/finos/git-proxy/discussions/1442) delaying releases. To remediate this, new features are added to future milestones rather than existing ones, save for rare exceptions. When every issue in a milestone is closed, we create the corresponding `release/X.Y` branch from `main` and the scope is officially frozen.
 
 Patch releases, on the other hand, are excluded from milestone planning as they follow the cascade-merge process described earlier. This means we can ship fixes as soon as they're completed regardless of the planning cycle.
+
+## Versioning
+
+GitProxy follows [Semantic Versioning](https://semver.org/):
+
+- Breaking changes: bump the major version (`1.4.5` bumps to `2.0.0`)
+- Backward-compatible features: bump the minor version (`1.4.5` bumps to `1.5.0`)
+- Bugfixes, maintenance, documentation, etc.: bump the patch version (`1.4.5` bumps to `1.4.6`)
+
+Version bumps are computed automatically by our [release drafter](https://github.com/finos/git-proxy/blob/main/.github/release-drafter.yml). Thus, we encourage contributors to label their PRs and commits appropriately as described below.
+
+## Pull Request Conventions
+
+Both release notes and the release drafter workflow rely on [conventional commit](https://www.conventionalcommits.org/en/v1.0.0/)-style PR titles for automatic tagging.
+
+- `feat:` labels the PR as a feature (minor bump)
+- `fix:` labels the PR as a bugfix (patch bump)
+- `break:` or `feat!:` (exclamation mark suffix) labels the PR as a breaking change (major bump)
+- Other prefixes map to the maintenance categories defined in `release-drafter.yml`
+
+Release notes use PR titles directly. They should be written as user-facing changelog entries, in other words: in present tense, descriptive, and free of administrative references (meetings, etc.) or jargon.
+
+**Good: ** fix: handle crashing on empty proxy config
+**Not good: ** fix: bug from last community call
+
+Keep in mind that maintainers may adjust the labels manually if appropriate.
