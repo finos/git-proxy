@@ -43,8 +43,8 @@ Both release notes and the release drafter workflow rely on [conventional commit
 
 Release notes use PR titles directly. They should be written as user-facing changelog entries, in other words: in present tense, descriptive, and free of administrative references (meetings, etc.) or jargon.
 
-**Good: ** fix: handle crashing on empty proxy config
-**Not good: ** fix: bug from last community call
+- **Good:** fix: handle crashing on empty proxy config
+- **Not good:** fix: bug from last community call
 
 Keep in mind that maintainers may adjust the labels manually if appropriate.
 
@@ -70,10 +70,11 @@ This workflow, detailed in [`npm.yml`](https://github.com/finos/git-proxy/blob/m
 
 1. Builds the package
 2. Detects whether it's the latest version (e.g.: if the version you're publishing is `2.3`, and the latest on NPM `2.2`)
-   a) If it's the latest version, it gets tagged as `'latest'` which is the default version that gets installed when calling `npx @finos/git-proxy`
-   b) If it's a maintenance release on an older line, it gets tagged as `vX.Y` so users can pin it explicitly if needed
 
-3) Publishes the package with the tag defined above
+- If it's the latest version, it gets tagged as `'latest'` which is the default version that gets installed when calling `npx @finos/git-proxy`
+- If it's a maintenance release on an older line, it gets tagged as `vX.Y` so users can pin it explicitly if needed
+
+3. Publishes the package with the tag defined above
 
 ### Publishing a Patch Release
 
