@@ -149,6 +149,23 @@ export const getProxyUrl = (): string | undefined => {
   return config.proxyUrl;
 };
 
+/**
+ * Redacts the userinfo (credentials) from a proxy URL for safe logging.
+ * e.g. http://user:pass@proxy.corp.local:8080 → http://<redacted>@proxy.corp.local:8080
+ *
+ * WARNING: proxyUrl may contain plaintext credentials in the userinfo portion.
+ * Never log a raw proxy URL — always pass it through this helper first.
+ */
+export const redactProxyUrl = (url: string): string => {
+  return url.replace(/^(https?:\/\/)[^@]+@/, '$1<redacted>@');
+};
+
+// Get upstream proxy configuration
+export const getUpstreamProxyConfig = () => {
+  const config = loadFullConfiguration();
+  return config.upstreamProxy || {};
+};
+
 // Gets a list of authorised repositories
 export const getAuthorisedList = () => {
   const config = loadFullConfiguration();
