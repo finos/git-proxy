@@ -1,0 +1,43 @@
+name: Security Review
+
+on:
+  pull_request:
+    types: [opened, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  security-review:
+    runs-on: ubuntu-latest
+
+    # Always runs on PR creation
+    # Also runs if comment on PR contains "/security-review"
+    if: >
+      github.event_name == 'pull_request' ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request != null &&
+        contains(github.event.comment.body, '/security-review')
+      )
+
+    permissions:
+      issues: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - run: pip install anthropic "PyGithub>=2.0"
+
+      - name: Run security review agent
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_NAME: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          TRIGGER: ${{ github.event_name }}
+        run: python scripts/security_review_agent.py
