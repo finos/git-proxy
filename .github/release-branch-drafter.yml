@@ -1,0 +1,33 @@
+name: Release Drafter (Release Branches)
+
+on:
+  push:
+    branches:
+      - 'release/**'
+  pull_request:
+    # needed so autolabeler runs on PRs from forks before merge,
+    # for when PR is finally merged into a release branch.
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  update_release_draft:
+    permissions:
+      contents: write # needed to create/update the draft release
+      pull-requests: write # needed for the autolabeler
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - uses: release-drafter/release-drafter@v6
+        with:
+          # Target the branch that triggered this run
+          # Ex: "release/2.1" becomes the commitish for the draft
+          commitish: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

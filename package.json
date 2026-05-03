@@ -1,7 +1,7 @@
 {
-  "name": "@finos/git-proxy",
-  "version": "2.0.0-rc.6",
-  "description": "Deploy custom push protections and policies on top of Git.",
+  "name": "@jescalada/git-proxy-deployment-testing",
+  "version": "1.0.0",
+  "description": "Testing deployment workflows for @finos/git-proxy.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {

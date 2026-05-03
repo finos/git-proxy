@@ -1,5 +1,5 @@
 {
-  "name": "@finos/git-proxy-plugin-samples",
+  "name": "@jescalada/git-proxy-plugin-samples",
   "version": "0.1.2",
   "description": "A set of sample (dummy) plugins for GitProxy to demonstrate how plugins are authored.",
   "scripts": {
