@@ -25,8 +25,55 @@ import { getConfigFile } from './file';
 import { validateConfig } from './validators';
 import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
 
+// Deprecated compatibility fields are still optional because the defaults do not set them.
+type OptionalTopLevelConfigKey = 'proxyUrl' | 'sslCertPemPath' | 'sslKeyPemPath';
+type RequiredTopLevelConfigKey = Exclude<keyof GitProxyConfig, OptionalTopLevelConfigKey>;
+
+export type FullGitProxyConfig = Required<Omit<GitProxyConfig, OptionalTopLevelConfigKey>> &
+  Pick<GitProxyConfig, OptionalTopLevelConfigKey>;
+
+const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
+  'api',
+  'apiAuthentication',
+  'attestationConfig',
+  'authentication',
+  'authorisedList',
+  'commitConfig',
+  'configurationSources',
+  'contactEmail',
+  'cookieSecret',
+  'csrfProtection',
+  'domains',
+  'plugins',
+  'privateOrganizations',
+  'rateLimit',
+  'sessionMaxAgeHours',
+  'sink',
+  'tempPassword',
+  'tls',
+  'uiRouteAuth',
+  'urlShortener',
+] as const satisfies readonly RequiredTopLevelConfigKey[];
+
+type MissingRequiredTopLevelConfigKeys = Exclude<
+  RequiredTopLevelConfigKey,
+  (typeof REQUIRED_TOP_LEVEL_CONFIG_KEYS)[number]
+>;
+type AssertNever<T extends never> = T;
+type _RequiredTopLevelConfigKeysAreExhaustive = AssertNever<MissingRequiredTopLevelConfigKeys>;
+
+export function assertHasRequiredTopLevelConfig(
+  config: GitProxyConfig,
+): asserts config is FullGitProxyConfig {
+  const missingKeys = REQUIRED_TOP_LEVEL_CONFIG_KEYS.filter((key) => config[key] === undefined);
+
+  if (missingKeys.length > 0) {
+    throw new Error(`Missing required top-level configuration values: ${missingKeys.join(', ')}`);
+  }
+}
+
 // Cache for current configuration
-let _currentConfig: GitProxyConfig | null = null;
+let _currentConfig: FullGitProxyConfig | null = null;
 let _configLoader: ConfigLoader | null = null;
 
 // Function to invalidate cache - useful for testing
@@ -57,9 +104,9 @@ function cleanUndefinedValues(obj: any): any {
 
 /**
  * Load and merge default + user configuration with QuickType validation
- * @return {GitProxyConfig} The merged and validated configuration
+ * @return {FullGitProxyConfig} The merged and validated configuration
  */
-function loadFullConfiguration(): GitProxyConfig {
+function loadFullConfiguration(): FullGitProxyConfig {
   if (_currentConfig) {
     return _currentConfig;
   }
@@ -67,7 +114,7 @@ function loadFullConfiguration(): GitProxyConfig {
   const rawDefaultConfig = Convert.toGitProxyConfig(JSON.stringify(defaultSettings));
 
   // Clean undefined values from defaultConfig
-  const defaultConfig = cleanUndefinedValues(rawDefaultConfig);
+  const defaultConfig = cleanUndefinedValues(rawDefaultConfig) as GitProxyConfig;
 
   let userSettings: Partial<GitProxyConfig> = {};
   const userConfigFile = process.env.CONFIG_FILE || getConfigFile();
@@ -102,12 +149,12 @@ function loadFullConfiguration(): GitProxyConfig {
  * Merge configurations with environment variable overrides
  * @param {GitProxyConfig} defaultConfig - The default configuration
  * @param {Partial<GitProxyConfig>} userSettings - User-provided configuration overrides
- * @return {GitProxyConfig} The merged configuration
+ * @return {FullGitProxyConfig} The merged configuration
  */
 function mergeConfigurations(
   defaultConfig: GitProxyConfig,
   userSettings: Partial<GitProxyConfig>,
-): GitProxyConfig {
+): FullGitProxyConfig {
   // Special handling for TLS configuration when legacy fields are used
   let tlsConfig = userSettings.tls || defaultConfig.tls;
 
@@ -121,7 +168,7 @@ function mergeConfigurations(
     };
   }
 
-  return {
+  const config = {
     ...defaultConfig,
     ...userSettings,
     // Deep merge for specific objects
@@ -141,6 +188,9 @@ function mergeConfigurations(
       userSettings.cookieSecret ||
       defaultConfig.cookieSecret,
   };
+
+  assertHasRequiredTopLevelConfig(config);
+  return config;
 }
 
 // Get configured proxy URL
@@ -152,7 +202,7 @@ export const getProxyUrl = (): string | undefined => {
 // Gets a list of authorised repositories
 export const getAuthorisedList = () => {
   const config = loadFullConfiguration();
-  return config.authorisedList || [];
+  return config.authorisedList;
 };
 
 // Gets a list of authorised repositories
@@ -164,7 +214,7 @@ export const getTempPasswordConfig = () => {
 // Gets the configured data sink, defaults to filesystem
 export const getDatabase = () => {
   const config = loadFullConfiguration();
-  const databases = config.sink || [];
+  const databases = config.sink;
 
   for (const db of databases) {
     if (db.enabled) {
@@ -187,7 +237,7 @@ export const getDatabase = () => {
  */
 export const getAuthMethods = () => {
   const config = loadFullConfiguration();
-  const authSources = config.authentication || [];
+  const authSources = config.authentication;
 
   const enabledAuthMethods = authSources.filter((auth) => auth.enabled);
 
@@ -206,7 +256,7 @@ export const getAuthMethods = () => {
  */
 export const getAPIAuthMethods = () => {
   const config = loadFullConfiguration();
-  const apiAuthSources = config.apiAuthentication || [];
+  const apiAuthSources = config.apiAuthentication;
 
   return apiAuthSources.filter((auth: { enabled: any }) => auth.enabled);
 };
@@ -227,7 +277,7 @@ export const logConfiguration = () => {
 
 export const getAPIs = () => {
   const config = loadFullConfiguration();
-  return config.api || {};
+  return config.api;
 };
 
 export const getCookieSecret = (): string => {
@@ -242,25 +292,25 @@ export const getCookieSecret = (): string => {
 
 export const getSessionMaxAgeHours = (): number => {
   const config = loadFullConfiguration();
-  return config.sessionMaxAgeHours || 24;
+  return config.sessionMaxAgeHours;
 };
 
 // Get commit related configuration
 export const getCommitConfig = () => {
   const config = loadFullConfiguration();
-  return config.commitConfig || {};
+  return config.commitConfig;
 };
 
 // Get attestation related configuration
 export const getAttestationConfig = () => {
   const config = loadFullConfiguration();
-  return config.attestationConfig || {};
+  return config.attestationConfig;
 };
 
 // Get private organizations related configuration
 export const getPrivateOrganizations = () => {
   const config = loadFullConfiguration();
-  return config.privateOrganizations || [];
+  return config.privateOrganizations;
 };
 
 // Get URL shortener
@@ -284,7 +334,7 @@ export const getCSRFProtection = (): boolean | undefined => {
 // Get loadable push plugins
 export const getPlugins = () => {
   const config = loadFullConfiguration();
-  return config.plugins || [];
+  return config.plugins;
 };
 
 export const getTLSKeyPemPath = (): string | undefined => {
@@ -304,12 +354,12 @@ export const getTLSEnabled = (): boolean => {
 
 export const getDomains = () => {
   const config = loadFullConfiguration();
-  return config.domains || {};
+  return config.domains;
 };
 
 export const getUIRouteAuth = () => {
   const config = loadFullConfiguration();
-  return config.uiRouteAuth || {};
+  return config.uiRouteAuth;
 };
 
 export const getRateLimit = () => {
@@ -325,12 +375,13 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     const validatedConfig = Convert.toGitProxyConfig(JSON.stringify(newConfig));
 
     // 2. Get proxy module dynamically to avoid circular dependency
-    const proxy = require('../proxy');
+    const proxy = (await import('../proxy')) as any;
 
     // 3. Stop existing services
     await proxy.stop();
 
     // 4. Update config
+    assertHasRequiredTopLevelConfig(validatedConfig);
     _currentConfig = validatedConfig;
 
     // 5. Restart services with new config
@@ -341,7 +392,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     handleErrorAndLog(error, 'Failed to apply new configuration');
     // Attempt to restart with previous config
     try {
-      const proxy = require('../proxy');
+      const proxy = (await import('../proxy')) as any;
       await proxy.start();
     } catch (startError: unknown) {
       handleErrorAndLog(startError, 'Failed to restart services');
