@@ -63,9 +63,10 @@ describe('checkUserPushPermission', () => {
     });
 
     it('should allow push when user has permission', async () => {
-      getUsersMock.mockResolvedValue([
-        { username: 'db-user', email: 'db-user@test.com', gitAccount: 'git-user' },
-      ]);
+      getUsersMock.mockResolvedValue({
+        data: [{ username: 'db-user', email: 'db-user@test.com', gitAccount: 'git-user' }],
+        total: 1,
+      });
       isUserPushAllowedMock.mockResolvedValue(true);
 
       const result = await exec(req, action);
@@ -78,9 +79,10 @@ describe('checkUserPushPermission', () => {
     });
 
     it('should reject push when user has no permission', async () => {
-      getUsersMock.mockResolvedValue([
-        { username: 'db-user', email: 'db-user@test.com', gitAccount: 'git-user' },
-      ]);
+      getUsersMock.mockResolvedValue({
+        data: [{ username: 'db-user', email: 'db-user@test.com', gitAccount: 'git-user' }],
+        total: 1,
+      });
       isUserPushAllowedMock.mockResolvedValue(false);
 
       const result = await exec(req, action);
@@ -94,7 +96,7 @@ describe('checkUserPushPermission', () => {
     });
 
     it('should reject push when no user found for git account', async () => {
-      getUsersMock.mockResolvedValue([]);
+      getUsersMock.mockResolvedValue({ data: [], total: 0 });
 
       const result = await exec(req, action);
 
@@ -107,10 +109,13 @@ describe('checkUserPushPermission', () => {
     });
 
     it('should handle multiple users for git account by rejecting the push', async () => {
-      getUsersMock.mockResolvedValue([
-        { username: 'user1', email: 'db-user@test.com', gitAccount: 'git-user' },
-        { username: 'user2', email: 'db-user@test.com', gitAccount: 'git-user' },
-      ]);
+      getUsersMock.mockResolvedValue({
+        data: [
+          { username: 'user1', email: 'db-user@test.com', gitAccount: 'git-user' },
+          { username: 'user2', email: 'db-user@test.com', gitAccount: 'git-user' },
+        ],
+        total: 2,
+      });
 
       const result = await exec(req, action);
 
@@ -124,7 +129,7 @@ describe('checkUserPushPermission', () => {
     it('should return error when no user is set in the action', async () => {
       action.user = undefined;
       action.userEmail = undefined;
-      getUsersMock.mockResolvedValue([]);
+      getUsersMock.mockResolvedValue({ data: [], total: 0 });
 
       const result = await exec(req, action);
 
@@ -147,7 +152,7 @@ describe('checkUserPushPermission', () => {
           ),
           1,
         )[0];
-        getUsersMock.mockResolvedValue(userList);
+        getUsersMock.mockResolvedValue({ data: userList, total: userList.length });
 
         const result = await exec(req, action);
 

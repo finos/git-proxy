@@ -15,10 +15,11 @@
  */
 
 import { OptionalId, Document, ObjectId } from 'mongodb';
-import { toClass } from '../helper';
-import { User, UserQuery } from '../types';
-import { connect } from './helper';
+import { toClass, buildSearchFilter, buildSort } from '../helper';
+import { PaginatedResult, PaginationOptions, User, UserQuery } from '../types';
+import { connect, paginatedFind } from './helper';
 import _ from 'lodash';
+
 const collectionName = 'users';
 
 export const findUser = async function (username: string): Promise<User | null> {
@@ -39,19 +40,42 @@ export const findUserByOIDC = async function (oidcId: string): Promise<User | nu
   return doc ? toClass(doc, User.prototype) : null;
 };
 
-export const getUsers = async function (query: Partial<UserQuery> = {}): Promise<User[]> {
+export const getUsers = async function (
+  query: Partial<UserQuery> = {},
+  pagination?: PaginationOptions,
+): Promise<PaginatedResult<User>> {
   if (query.username) {
     query.username = query.username.toLowerCase();
   }
   if (query.email) {
     query.email = query.email.toLowerCase();
   }
-  console.log(`Getting users for query = ${JSON.stringify(query)}`);
+
+  const filter = buildSearchFilter(
+    { ...query },
+    ['username', 'displayName', 'email', 'gitAccount'],
+    pagination?.search,
+  );
+  const sort = buildSort(pagination, 'username', 1, [
+    'username',
+    'displayName',
+    'email',
+    'gitAccount',
+  ]);
+  const skip = pagination?.skip ?? 0;
+  const limit = pagination?.limit ?? 0;
+
+  console.log(`Getting users for query = ${JSON.stringify(filter)}`);
   const collection = await connect(collectionName);
-  const docs = await collection.find(query).project({ password: 0 }).toArray();
-  return _.chain(docs)
-    .map((x) => toClass(x, User.prototype))
-    .value();
+  const { data, total } = await paginatedFind<User>(collection, filter, sort, skip, limit, {
+    password: 0,
+  });
+  return {
+    data: _.chain(data)
+      .map((x) => toClass(x, User.prototype))
+      .value(),
+    total,
+  };
 };
 
 export const deleteUser = async function (username: string): Promise<void> {

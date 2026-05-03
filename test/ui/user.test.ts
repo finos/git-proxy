@@ -146,83 +146,60 @@ describe('user service', () => {
 
   describe('getUsers', () => {
     it('fetches all users successfully', async () => {
-      const usersData = [
-        { id: 'user-1', username: 'alice', email: 'alice@example.com' },
-        { id: 'user-2', username: 'bob', email: 'bob@example.com' },
-      ];
-      const setUsers = vi.fn();
-      const setIsLoading = vi.fn();
-      const setAuth = vi.fn();
-      const setErrorMessage = vi.fn();
+      const pagedData = {
+        users: [
+          { id: 'user-1', username: 'alice', email: 'alice@example.com' },
+          { id: 'user-2', username: 'bob', email: 'bob@example.com' },
+        ],
+        total: 2,
+      };
 
-      axiosMock.mockResolvedValue({ data: usersData });
+      axiosMock.mockResolvedValue({ data: pagedData });
 
-      await getUsers(setIsLoading, setUsers, setAuth, setErrorMessage);
+      const result = await getUsers();
 
       expect(axiosMock).toHaveBeenCalledWith(
         'http://localhost:8080/api/v1/user',
         expect.any(Object),
       );
-      expect(setIsLoading).toHaveBeenCalledWith(true);
-      expect(setUsers).toHaveBeenCalledWith(usersData);
-      expect(setIsLoading).toHaveBeenCalledWith(false);
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual(pagedData);
     });
 
     it('handles 401 errors', async () => {
-      const setUsers = vi.fn();
-      const setIsLoading = vi.fn();
-      const setAuth = vi.fn();
-      const setErrorMessage = vi.fn();
-
       axiosMock.mockRejectedValue({
         response: {
           status: 401,
-          data: {
-            message: 'Not authenticated',
-          },
+          data: { message: 'Not authenticated' },
         },
       });
 
-      await getUsers(setIsLoading, setUsers, setAuth, setErrorMessage);
+      const result = await getUsers();
 
-      expect(setAuth).toHaveBeenCalledWith(false);
-      expect(setErrorMessage).toHaveBeenCalledWith('Auth error: Not authenticated');
-      expect(setIsLoading).toHaveBeenCalledWith(false);
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(401);
     });
 
     it('handles non-401 errors', async () => {
-      const setUsers = vi.fn();
-      const setIsLoading = vi.fn();
-      const setAuth = vi.fn();
-      const setErrorMessage = vi.fn();
-
       axiosMock.mockRejectedValue({
         response: {
           status: 500,
-          data: {
-            message: 'Database error',
-          },
+          data: { message: 'Database error' },
         },
       });
 
-      await getUsers(setIsLoading, setUsers, setAuth, setErrorMessage);
+      const result = await getUsers();
 
-      expect(setErrorMessage).toHaveBeenCalledWith('Error fetching users: 500 Database error');
-      expect(setIsLoading).toHaveBeenCalledWith(false);
+      expect(result.success).toBe(false);
+      expect(result.status).toBe(500);
     });
 
     it('sets loading to false even when error occurs', async () => {
-      const setUsers = vi.fn();
-      const setIsLoading = vi.fn();
-      const setAuth = vi.fn();
-      const setErrorMessage = vi.fn();
-
       axiosMock.mockRejectedValue(new Error('Network error'));
 
-      await getUsers(setIsLoading, setUsers, setAuth, setErrorMessage);
+      const result = await getUsers();
 
-      expect(setIsLoading).toHaveBeenCalledWith(true);
-      expect(setIsLoading).toHaveBeenCalledWith(false);
+      expect(result.success).toBe(false);
     });
   });
 
