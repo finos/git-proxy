@@ -10,22 +10,22 @@
     "publish-gh-pages": "docusaurus deploy"
   },
   "devDependencies": {
-    "@docusaurus/core": "^3.10.0",
-    "@docusaurus/plugin-google-gtag": "^3.10.0",
-    "@docusaurus/preset-classic": "^3.10.0",
-    "ajv": "^8.17.1",
-    "axios": "^1.13.4",
+    "@docusaurus/core": "^3.10.1",
+    "@docusaurus/plugin-google-gtag": "^3.10.1",
+    "@docusaurus/preset-classic": "^3.10.1",
+    "ajv": "^8.20.0",
+    "axios": "^1.15.2",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
-    "eslint": "^9.39.2",
+    "eslint": "^9.39.4",
     "eslint-plugin-react": "^7.37.5",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "react-player": "^3.4.0",
     "react-slick": "^0.31.0",
     "react-social-media-embed": "^2.5.18",
     "slick-carousel": "^1.8.1",
-    "webpack": "~5.105.0"
+    "webpack": "~5.106.2"
   },
   "browserslist": {
     "production": [
@@ -42,6 +42,6 @@
   "overrides": {
     "serialize-javascript": "^7.0.5",
     "uuid": "^14.0.0",
-    "webpack": "~5.105.0"
+    "webpack": "~5.106.2"
   }
 }
