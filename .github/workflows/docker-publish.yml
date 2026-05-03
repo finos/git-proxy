@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
 
       - name: Log in to Docker Hub
-        if: github.repository == 'finos/git-proxy'
+        if: github.repository_owner == 'finos'
         uses: docker/login-action@b45d80f862d83dbcd57f89517bcf500b2ab88fb2 # v4
         with:
           username: finos
@@ -29,13 +29,13 @@ jobs:
         id: tags
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
-            echo "tags=finos/git-proxy:${{ github.ref_name }},finos/git-proxy:latest" >> $GITHUB_OUTPUT
+            echo "tags=${{ github.repository }}:${{ github.ref_name }},${{ github.repository }}:latest" >> $GITHUB_OUTPUT
           else
-            echo "tags=finos/git-proxy:main" >> $GITHUB_OUTPUT
+            echo "tags=${{ github.repository }}:main" >> $GITHUB_OUTPUT
           fi
 
       - name: Build and Publish Docker Image
-        if: github.repository == 'finos/git-proxy'
+        if: github.repository_owner == 'finos'
         uses: docker/build-push-action@d08e5c354a6adb9ed34480a06d141179aa583294 # v7
         with:
           context: .
