@@ -16,7 +16,7 @@ permissions:
 jobs:
   pr_title:
     permissions:
-      contents: write
+      contents: read
       pull-requests: write
       statuses: write
     name: Validate & Label PR
@@ -45,8 +45,11 @@ jobs:
             revert
             test
             break
+
+      # Run release-drafter in label-only mode, drafts are made in release-drafter.yml
       - uses: release-drafter/release-drafter@139054aeaa9adc52ab36ddf67437541f039b88e2 # v7
         with:
-          commitish: main
+          config-name: release-drafter.yml
+          disable-releaser: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
