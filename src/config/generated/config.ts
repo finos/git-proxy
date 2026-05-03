@@ -190,6 +190,10 @@ export interface AuthenticationElement {
    * Additional JWT configuration.
    */
   jwtConfig?: JwtConfig;
+  /**
+   * LDAP connection and search configuration.
+   */
+  ldapConfig?: LdapConfig;
   [property: string]: any;
 }
 
@@ -253,9 +257,32 @@ export interface OidcConfig {
   [property: string]: any;
 }
 
+/**
+ * LDAP connection and search configuration.
+ */
+export interface LdapConfig {
+  url: string;
+  bindDN: string;
+  bindPassword: string;
+  searchBase: string;
+  searchFilter: string;
+  userGroupDN: string;
+  adminGroupDN: string;
+  groupSearchBase?: string;
+  groupSearchFilter?: string;
+  usernameAttribute?: string;
+  emailAttribute?: string;
+  displayNameAttribute?: string;
+  titleAttribute?: string;
+  starttls?: boolean;
+  tlsOptions?: { [key: string]: any };
+  [property: string]: any;
+}
+
 export enum AuthenticationElementType {
   ActiveDirectory = 'ActiveDirectory',
   Jwt = 'jwt',
+  Ldap = 'ldap',
   Local = 'local',
   Openidconnect = 'openidconnect',
 }
@@ -811,6 +838,7 @@ const typeMap: any = {
       { json: 'userGroup', js: 'userGroup', typ: u(undefined, '') },
       { json: 'oidcConfig', js: 'oidcConfig', typ: u(undefined, r('OidcConfig')) },
       { json: 'jwtConfig', js: 'jwtConfig', typ: u(undefined, r('JwtConfig')) },
+      { json: 'ldapConfig', js: 'ldapConfig', typ: u(undefined, r('LdapConfig')) },
     ],
     'any',
   ),
@@ -841,6 +869,26 @@ const typeMap: any = {
       { json: 'clientSecret', js: 'clientSecret', typ: '' },
       { json: 'issuer', js: 'issuer', typ: '' },
       { json: 'scope', js: 'scope', typ: '' },
+    ],
+    'any',
+  ),
+  LdapConfig: o(
+    [
+      { json: 'url', js: 'url', typ: '' },
+      { json: 'bindDN', js: 'bindDN', typ: '' },
+      { json: 'bindPassword', js: 'bindPassword', typ: '' },
+      { json: 'searchBase', js: 'searchBase', typ: '' },
+      { json: 'searchFilter', js: 'searchFilter', typ: '' },
+      { json: 'userGroupDN', js: 'userGroupDN', typ: '' },
+      { json: 'adminGroupDN', js: 'adminGroupDN', typ: '' },
+      { json: 'groupSearchBase', js: 'groupSearchBase', typ: u(undefined, '') },
+      { json: 'groupSearchFilter', js: 'groupSearchFilter', typ: u(undefined, '') },
+      { json: 'usernameAttribute', js: 'usernameAttribute', typ: u(undefined, '') },
+      { json: 'emailAttribute', js: 'emailAttribute', typ: u(undefined, '') },
+      { json: 'displayNameAttribute', js: 'displayNameAttribute', typ: u(undefined, '') },
+      { json: 'titleAttribute', js: 'titleAttribute', typ: u(undefined, '') },
+      { json: 'starttls', js: 'starttls', typ: u(undefined, true) },
+      { json: 'tlsOptions', js: 'tlsOptions', typ: u(undefined, m('any')) },
     ],
     'any',
   ),
@@ -981,6 +1029,6 @@ const typeMap: any = {
     ],
     'any',
   ),
-  AuthenticationElementType: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
+  AuthenticationElementType: ['ActiveDirectory', 'jwt', 'ldap', 'local', 'openidconnect'],
   DatabaseType: ['fs', 'mongo'],
 };
