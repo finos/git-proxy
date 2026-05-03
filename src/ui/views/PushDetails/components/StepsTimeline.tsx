@@ -230,11 +230,16 @@ const StepsTimeline: React.FC<StepsTimelineProps> = ({ steps }) => {
             >
               <div className={classes.stepIcon}>{getStepIcon(step)}</div>
               <div className={classes.stepContent}>
-                <Typography className={classes.stepName}>{step.stepName}</Typography>
+                <Typography className={classes.stepName} data-testid={`step-name-${step.stepName}`}>
+                  {step.stepName}
+                </Typography>
                 {getStepStatus(step)}
               </div>
             </AccordionSummary>
-            <AccordionDetails className={classes.stepDetails}>
+            <AccordionDetails
+              className={classes.stepDetails}
+              data-testid={`step-details-${step.stepName}`}
+            >
               <div>
                 {step.error && step.errorMessage && (
                   <div className={`${classes.messageBox} ${classes.errorMessage}`}>

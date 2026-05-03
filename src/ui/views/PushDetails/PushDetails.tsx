@@ -201,7 +201,7 @@ const Dashboard: React.FC = () => {
               />
               <RejectionInfo push={push} />
             </CardHeader>
-            <CardBody>
+            <CardBody data-testid='push-details-card-body'>
               <GridContainer>
                 <GridItem xs={2} sm={2} md={2}>
                   <h3>Timestamp</h3>
