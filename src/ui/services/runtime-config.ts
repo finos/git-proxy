@@ -38,9 +38,13 @@ export const getRuntimeConfig = async (): Promise<RuntimeConfig> => {
 
   try {
     const response = await fetch('/runtime-config.json');
-    if (response.ok) {
+    const contentType = response.headers.get('content-type') || '';
+    if (response.ok && contentType.includes('application/json')) {
       runtimeConfig = await response.json();
       console.log('Loaded runtime config:', runtimeConfig);
+    } else if (response.ok) {
+      console.warn('Runtime config is not JSON, using defaults');
+      runtimeConfig = {};
     } else {
       console.warn('Runtime config not found, using defaults');
       runtimeConfig = {};
@@ -62,33 +66,34 @@ export const getApiBaseUrl = async (): Promise<string> => {
 
   // Priority order:
   // 1. Runtime config apiUrl (set at deployment)
-  // 2. Build-time environment variable
-  // 3. Auto-detect from current location with smart defaults
+  // 2. Build-time VITE_API_URI (.env.development usually points at Express, e.g. http://localhost:8080)
+  // 3. Vite dev on localhost:3000 → same origin; vite.config must proxy /api → git-proxy HTTP port
+  // 4. Browser: same origin; Node/tests: localhost:8080
   if (config.apiUrl) {
     return config.apiUrl;
   }
 
+  // Must run before the localhost:3000 branch: otherwise /api hits Vite and returns index.html (JSON parse errors).
   // @ts-expect-error - import.meta.env is available in Vite but not in CommonJS tsconfig
-  if (import.meta.env?.VITE_API_URI) {
-    // @ts-expect-error - Vite env variable
-    return import.meta.env.VITE_API_URI as string;
+  const viteApiUri = import.meta.env?.VITE_API_URI as string | undefined;
+  if (typeof viteApiUri === 'string' && viteApiUri.trim() !== '') {
+    return viteApiUri.replace(/\/+$/, '');
   }
 
-  // Check if running in browser environment (not Node.js tests)
   if (typeof location !== 'undefined') {
-    // Smart defaults based on current location
     const currentHost = location.hostname;
     if (currentHost === 'localhost' && location.port === '3000') {
-      // Development mode: Vite dev server, API on port 8080
-      console.log('Development mode detected: using localhost:8080 for API');
-      return 'http://localhost:8080';
+      console.log(
+        'Development mode: using Vite origin; ensure server.proxy forwards /api to git-proxy (see vite.config)',
+      );
+      return location.origin;
     }
+  }
 
-    // Production mode or other scenarios: API on same origin
+  if (typeof location !== 'undefined') {
     return location.origin;
   }
 
-  // Fallback for Node.js/test environment
   return 'http://localhost:8080';
 };
 

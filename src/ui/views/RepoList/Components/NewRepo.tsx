@@ -14,63 +14,89 @@
  * limitations under the License.
  */
 
-import React, { useState } from 'react';
-import InputLabel from '@material-ui/core/InputLabel';
-import Input from '@material-ui/core/Input';
-import FormControl from '@material-ui/core/FormControl';
-import FormHelperText from '@material-ui/core/FormHelperText';
-import GridItem from '../../../components/Grid/GridItem';
-import GridContainer from '../../../components/Grid/GridContainer';
-import Card from '../../../components/Card/Card';
-import CardBody from '../../../components/Card/CardBody';
-import Button from '../../../components/CustomButtons/Button';
-import DialogTitle from '@material-ui/core/DialogTitle';
-import Dialog from '@material-ui/core/Dialog';
-import Snackbar from '@material-ui/core/Snackbar';
+import React, { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router';
+import { Button, Dialog, FormControl, IconButton, Stack, TextInput } from '@primer/react';
+import type { DialogHeaderProps } from '@primer/react';
+import { RepoIcon, XIcon } from '@primer/octicons-react';
+import Warning from '../../../components/Warning/Warning';
 import { addRepo } from '../../../services/repo';
-import { makeStyles } from '@material-ui/core/styles';
-import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
-import { RepoIcon } from '@primer/octicons-react';
 import { RepoView } from '../../../types';
+import { isGitHubGitRemoteUrl, parseGitRemoteUrl } from '../../../utils/parseGitRemoteUrl';
 
 interface AddRepositoryDialogProps {
   open: boolean;
   onClose: () => void;
-  onSuccess: (repo: RepoView) => void;
+  onSuccess: (repo: RepoView) => void | Promise<void>;
 }
 
 interface NewRepoProps {
   onSuccess: (repo: RepoView) => Promise<void>;
 }
 
-const useStyles = makeStyles(styles as any);
+const FORM_ID = 'add-repo-form';
 
-const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose, onSuccess }) => {
+function canSubmitAddRepo(project: string, name: string, url: string): boolean {
+  const p = project.trim();
+  const n = name.trim();
+  const u = url.trim();
+  if (p.length === 0 || p.length > 100) return false;
+  if (n.length === 0 || n.length > 100) return false;
+  try {
+    const parsedUrl = new URL(u);
+    if (!parsedUrl.pathname.endsWith('.git')) return false;
+  } catch {
+    return false;
+  }
+  return true;
+}
+
+const AddRepositoryDialogHeader = ({
+  dialogLabelId,
+  title,
+  subtitle,
+  dialogDescriptionId,
+  onClose,
+}: DialogHeaderProps) => (
+  <Dialog.Header>
+    <div className='flex'>
+      <div className='flex min-w-0 flex-1 flex-col px-2 py-1.5'>
+        <Dialog.Title id={dialogLabelId}>{title ?? 'Dialog'}</Dialog.Title>
+        {subtitle ? <Dialog.Subtitle id={dialogDescriptionId}>{subtitle}</Dialog.Subtitle> : null}
+      </div>
+      <IconButton
+        icon={XIcon}
+        aria-label='Close'
+        variant='invisible'
+        onClick={() => onClose('close-button')}
+        unsafeDisableTooltip
+      />
+    </div>
+  </Dialog.Header>
+);
+
+const AddRepositoryDialog = ({ open, onClose, onSuccess }: AddRepositoryDialogProps) => {
   const [project, setProject] = useState('');
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
   const [error, setError] = useState('');
-  const [tip, setTip] = useState(false);
-  const classes = useStyles();
 
-  const handleClose = () => {
-    setError('');
-    resetRepo();
-    onClose();
-  };
-
-  const handleSuccess = (repo: RepoView) => {
-    onSuccess(repo);
-    setTip(true);
-  };
-
-  const resetRepo = () => {
+  const resetRepo = useCallback(() => {
     setProject('');
     setName('');
     setUrl('');
-  };
+  }, []);
 
-  const add = async () => {
+  const handleDialogClose = useCallback(
+    (_gesture: 'close-button' | 'escape') => {
+      setError('');
+      resetRepo();
+      onClose();
+    },
+    [onClose, resetRepo],
+  );
+
+  const add = async (): Promise<void> => {
     const repo: RepoView = {
       project: project.trim(),
       name: name.trim(),
@@ -102,120 +128,123 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
 
     const result = await addRepo(repo);
     if (result.success && result.data) {
-      handleSuccess(result.data);
-      handleClose();
+      await onSuccess(result.data);
+      setError('');
+      resetRepo();
+      onClose();
     } else {
       setError(result.message || 'Failed to add repository');
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    width: '100%',
-  };
+  const handleUrlChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const next = e.target.value;
+    setUrl(next);
+    const parsed = parseGitRemoteUrl(next);
+    if (parsed && isGitHubGitRemoteUrl(next)) {
+      setProject((p) => (p.trim() ? p : parsed.project));
+      setName((n) => (n.trim() ? n : parsed.name));
+    }
+  }, []);
 
-  return (
-    <>
-      <Snackbar
-        open={tip}
-        anchorOrigin={{
-          vertical: 'top',
-          horizontal: 'right',
-        }}
-        autoHideDuration={5000}
-        message={`New repository created \u{1F44D}`}
-        onClose={() => setTip(false)}
-      />
-      <Dialog
-        onClose={handleClose}
-        aria-labelledby='simple-dialog-title'
-        open={open}
-        fullWidth
-        maxWidth='md'
-      >
-        {error && (
-          <DialogTitle style={{ color: 'red' }} data-testid='repo-error'>
-            {error}
-          </DialogTitle>
-        )}
-        <DialogTitle style={{ textAlign: 'left' }} className={classes.cardTitle}>
-          Add a repository...
-        </DialogTitle>
-        <Card>
-          <CardBody>
-            <GridContainer data-testid='add-repo-dialog'>
-              <GridItem xs={12} sm={12} md={12}>
-                <FormControl style={inputStyle}>
-                  <InputLabel htmlFor='project'>Organization</InputLabel>
-                  <Input
-                    id='project'
-                    inputProps={{ maxLength: 200, minLength: 3 }}
-                    data-testid='repo-project-input'
-                    aria-describedby='project-helper-text'
-                    onChange={(e) => setProject(e.target.value)}
-                    value={project}
-                  />
-                  <FormHelperText id='project-helper-text'>
-                    Organization or path, e.g. finos
-                  </FormHelperText>
-                </FormControl>
-              </GridItem>
-              <GridItem xs={12} sm={12} md={12}>
-                <FormControl style={inputStyle}>
-                  <InputLabel htmlFor='name'>Name</InputLabel>
-                  <Input
-                    inputProps={{ maxLength: 200, minLength: 3 }}
-                    id='name'
-                    data-testid='repo-name-input'
-                    aria-describedby='name-helper-text'
-                    onChange={(e) => setName(e.target.value)}
-                    value={name}
-                  />
-                  <FormHelperText id='name-helper-text'>
-                    Git Repository Name, e.g. git-proxy
-                  </FormHelperText>
-                </FormControl>
-              </GridItem>
-              <GridItem xs={12} sm={12} md={12}>
-                <FormControl style={inputStyle}>
-                  <InputLabel htmlFor='url'>URL</InputLabel>
-                  <Input
-                    inputProps={{ maxLength: 200, type: 'url' }}
-                    type='url'
-                    id='url'
-                    aria-describedby='url-helper-text'
-                    data-testid='repo-url-input'
-                    onChange={(e) => setUrl(e.target.value)}
-                    value={url}
-                  />
-                  <FormHelperText id='url-helper-text'>
-                    Git Repository URL, e.g. https://github.com/finos/git-proxy.git
-                  </FormHelperText>
-                </FormControl>
-              </GridItem>
-              <GridItem xs={12} sm={12} md={12}>
-                <div style={{ textAlign: 'right' }}>
-                  <Button variant='outlined' color='warning' onClick={handleClose}>
-                    Cancel
-                  </Button>
-                  <Button
-                    variant='outlined'
-                    color='success'
-                    onClick={add}
-                    data-testid='add-repo-button'
-                  >
-                    Add
-                  </Button>
-                </div>
-              </GridItem>
-            </GridContainer>
-          </CardBody>
-        </Card>
-      </Dialog>
-    </>
-  );
+  return open ? (
+    <Dialog
+      title='Add a repository'
+      subtitle='Organization, repository name, and Git remote URL.'
+      onClose={handleDialogClose}
+      renderHeader={AddRepositoryDialogHeader}
+      width='large'
+      height='auto'
+      data-testid='add-repo-dialog'
+    >
+      <Dialog.Body>
+        <form
+          id={FORM_ID}
+          onSubmit={(e) => {
+            e.preventDefault();
+            void add();
+          }}
+          className='flex flex-col gap-4'
+        >
+          <Warning message={error} data-testid='repo-error' />
+          <Stack direction='vertical' gap='normal' padding='none'>
+            <FormControl>
+              <FormControl.Label htmlFor='project'>Organization</FormControl.Label>
+              <TextInput
+                id='project'
+                name='project'
+                value={project}
+                maxLength={200}
+                autoComplete='organization'
+                block
+                data-testid='repo-project-input'
+                onChange={(e) => setProject(e.target.value)}
+                aria-describedby='project-caption'
+              />
+              <FormControl.Caption id='project-caption'>
+                Organization or path, e.g. finos
+              </FormControl.Caption>
+            </FormControl>
+            <FormControl>
+              <FormControl.Label htmlFor='name'>Name</FormControl.Label>
+              <TextInput
+                id='name'
+                name='name'
+                value={name}
+                maxLength={200}
+                autoComplete='off'
+                block
+                data-testid='repo-name-input'
+                onChange={(e) => setName(e.target.value)}
+                aria-describedby='name-caption'
+              />
+              <FormControl.Caption id='name-caption'>
+                Repository Name, e.g. git-proxy
+              </FormControl.Caption>
+            </FormControl>
+            <FormControl>
+              <FormControl.Label htmlFor='url'>URL</FormControl.Label>
+              <TextInput
+                id='url'
+                name='url'
+                type='url'
+                value={url}
+                maxLength={200}
+                autoComplete='off'
+                block
+                data-testid='repo-url-input'
+                onChange={handleUrlChange}
+                aria-describedby='url-caption'
+              />
+              <FormControl.Caption id='url-caption'>
+                Git Repository URL, e.g. https://github.com/finos/git-proxy.git
+              </FormControl.Caption>
+            </FormControl>
+          </Stack>
+        </form>
+      </Dialog.Body>
+      <Dialog.Footer>
+        <div className='flex w-full justify-end gap-2'>
+          <Button type='button' onClick={() => handleDialogClose('close-button')}>
+            Cancel
+          </Button>
+          <Button
+            type='submit'
+            form={FORM_ID}
+            variant='primary'
+            data-testid='add-repo-submit'
+            disabled={!canSubmitAddRepo(project, name, url)}
+          >
+            Add
+          </Button>
+        </div>
+      </Dialog.Footer>
+    </Dialog>
+  ) : null;
 };
 
-const NewRepo: React.FC<NewRepoProps> = ({ onSuccess }) => {
+const NewRepo = ({ onSuccess }: NewRepoProps) => {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   const handleClickOpen = () => {
@@ -226,12 +255,27 @@ const NewRepo: React.FC<NewRepoProps> = ({ onSuccess }) => {
     setOpen(false);
   };
 
+  const handleSuccess = useCallback(
+    async (repo: RepoView) => {
+      await onSuccess(repo);
+      if (repo._id) {
+        navigate(`/dashboard/repo/${repo._id}`);
+      }
+    },
+    [navigate, onSuccess],
+  );
+
   return (
     <div>
-      <Button color='success' onClick={handleClickOpen} data-testid='add-repo-button'>
-        <RepoIcon /> Add repository
+      <Button
+        variant='primary'
+        leadingVisual={RepoIcon}
+        onClick={handleClickOpen}
+        data-testid='add-repo-button'
+      >
+        New
       </Button>
-      <AddRepositoryDialog open={open} onClose={handleClose} onSuccess={onSuccess} />
+      <AddRepositoryDialog open={open} onClose={handleClose} onSuccess={handleSuccess} />
     </div>
   );
 };
