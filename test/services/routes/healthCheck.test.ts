@@ -17,7 +17,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import express, { Express } from 'express';
 import request from 'supertest';
-import healthcheck from '../../../src/service/routes/healthcheck';
+import { RegisterRoutes } from '../../../src/service/generatedRoutes';
 
 describe('Health Check API', () => {
   let app: Express;
@@ -25,11 +25,11 @@ describe('Health Check API', () => {
   beforeEach(() => {
     app = express();
     app.use(express.json());
-    app.use('/healthCheck', healthcheck);
+    RegisterRoutes(app);
   });
 
-  it('GET /healthCheck should return 200 OK and the health check message', async () => {
-    const res = await request(app).get('/healthCheck');
+  it('GET /api/v1/healthcheck should return 200 OK and the health check message', async () => {
+    const res = await request(app).get('/api/v1/healthcheck');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ message: 'ok' });
   });

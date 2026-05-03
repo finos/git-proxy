@@ -123,7 +123,7 @@ describe('Push API', () => {
     await db.deletePush(TEST_PUSH.id);
 
     vi.resetModules();
-    await Service.httpServer.close();
+    await Service.httpServer?.close();
 
     const res = await request(app).post('/api/auth/logout').set('Cookie', `${cookie}`);
     expect(res.status).toBe(200);
@@ -292,7 +292,7 @@ describe('Push API', () => {
   it('should return 401 if not logged in when approving a push', async () => {
     const res = await request(app)
       .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
-      .send({ reason: 'Testing approval' });
+      .send({ params: { attestation: [] } });
     expect(res.status).toBe(401);
     expect(res.body.message).toBe('Not logged in');
   });
@@ -315,7 +315,11 @@ describe('Push API', () => {
       .set('Cookie', `${cookie}`)
       .send({});
     expect(res.status).toBe(400);
-    expect(res.body.message).toBe('Rejection reason is required');
+    expect(res.body.message).toBe('Validation failed');
+    expect(res.body.details).toBeDefined();
+    console.log(res.body.details);
+    expect(res.body.details['body.reason']).toBeDefined();
+    expect(res.body.details['body.reason'].message).toBe("'reason' is required");
   });
 
   it('should NOT allow an authorizer to reject a push with empty reason', async () => {
