@@ -2,7 +2,6 @@
 name-template: 'v$RESOLVED_VERSION'
 tag-template: 'v$RESOLVED_VERSION'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
-filter-by-commitish: true
 template: |
   ### What's Changed
 
