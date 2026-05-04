@@ -1,5 +1,5 @@
 ---
-name: Auto Label
+name: Add PR Labels
 
 on:
   pull_request_target:
@@ -15,3 +15,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: release-drafter/release-drafter/autolabeler@563bf132657a13ded0b01fcb723c5a58cdd824e2
+        with:
+          config-name: release-drafter-config.yml
