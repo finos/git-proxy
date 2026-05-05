@@ -21,6 +21,8 @@ import { Action } from './actions';
 import * as proc from './processors';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
+import { getEventDispatcher } from '../eventHandlers/dispatcher';
+import { ActionPhase } from '../eventHandlers/types';
 
 const pushActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.parsePush,
@@ -56,6 +58,7 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
 
   try {
     action = await proc.pre.parseAction(req);
+    getEventDispatcher()?.dispatch(action, 'started');
     const actionFns = await getChain(action);
 
     for (const fn of actionFns) {
@@ -85,9 +88,31 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
     } else if (action.autoRejected) {
       await attemptAutoRejection(action);
     }
+
+    dispatchTerminalEvent(action);
   }
 
   return action;
+};
+
+const dispatchTerminalEvent = (action: Action): void => {
+  const dispatcher = getEventDispatcher();
+  if (!dispatcher) return;
+  // Precedence matters: permissionDenied also flips action.error (the chain
+  // step sets step.error to break the chain), so check it first. Generic
+  // policy blocks (action.blocked without permissionDenied) surface as
+  // `completed` — handlers can read EventDetails to differentiate outcomes.
+  let phase: ActionPhase;
+  let error: Error | undefined;
+  if (action.permissionDenied) {
+    phase = 'permissionDenied';
+  } else if (action.error) {
+    phase = 'error';
+    error = action.errorMessage ? new Error(action.errorMessage) : new Error('Chain error');
+  } else {
+    phase = 'completed';
+  }
+  dispatcher.dispatch(action, phase, error);
 };
 
 /**

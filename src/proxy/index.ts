@@ -21,6 +21,7 @@ import fs from 'fs';
 import { getRouter } from './routes';
 import {
   getAuthorisedList,
+  getEventHandlers,
   getPlugins,
   getTLSKeyPemPath,
   getTLSCertPemPath,
@@ -31,6 +32,13 @@ import { PluginLoader } from '../plugin';
 import chain from './chain';
 import { Repo } from '../db/types';
 import { serverConfig } from '../config/env';
+import { ProxyEventRegistry } from '../eventHandlers/registry';
+import {
+  EventDispatcher,
+  getEventDispatcher,
+  setEventDispatcher,
+} from '../eventHandlers/dispatcher';
+import { EventHandlerLoader } from '../eventHandlers/loader';
 
 const { GIT_PROXY_SERVER_PORT: proxyHttpPort, GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } =
   serverConfig;
@@ -73,6 +81,13 @@ export class Proxy {
     const pluginLoader = new PluginLoader(plugins);
     await pluginLoader.load();
     chain.chainPluginLoader = pluginLoader;
+
+    const eventRegistry = new ProxyEventRegistry();
+    const eventHandlerLoader = new EventHandlerLoader(getEventHandlers());
+    await eventHandlerLoader.load();
+    eventHandlerLoader.registerAll(eventRegistry);
+    setEventDispatcher(new EventDispatcher(eventRegistry));
+
     // Check to see if the default repos are in the repo list
     const defaultAuthorisedRepoList = getAuthorisedList();
     const allowedList: Repo[] = await getRepos();
@@ -124,7 +139,14 @@ export class Proxy {
     return this.expressApp;
   }
 
-  public stop(): Promise<void> {
+  public async stop(): Promise<void> {
+    // Give in-flight event handlers a bounded chance to finish before tearing
+    // down the process. Handlers still running past the timeout are abandoned.
+    const dispatcher = getEventDispatcher();
+    if (dispatcher) {
+      await dispatcher.drain(5000);
+    }
+
     const closePromises: Promise<void>[] = [];
 
     // Close HTTP server if it exists
@@ -161,6 +183,6 @@ export class Proxy {
       );
     }
 
-    return Promise.all(closePromises).then(() => {});
+    await Promise.all(closePromises);
   }
 }

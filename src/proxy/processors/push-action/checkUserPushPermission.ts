@@ -76,6 +76,7 @@ const validateUser = async (userEmail: string, action: Action, step: Step): Prom
         `${action.url})`,
     );
     action.addStep(step);
+    action.permissionDenied = true;
     return action;
   }
 
