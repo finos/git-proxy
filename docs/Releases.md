@@ -50,11 +50,16 @@ Keep in mind that maintainers may adjust the labels manually if appropriate.
 
 ## Release Process
 
-The actual release process is largely automated via two GitHub Actions workflows: [`release-drafter.yml`](https://github.com/finos/git-proxy/blob/main/.github/release-drafter.yml) and [`npm.yml`](https://github.com/finos/git-proxy/blob/main/.github/workflows/npm.yml).
+The actual release process is largely automated via two GitHub Actions workflows: [`release-drafter.yml`](https://github.com/finos/git-proxy/blob/main/.github/workflows/release-drafter.yml) and [`npm.yml`](https://github.com/finos/git-proxy/blob/main/.github/workflows/npm.yml).
 
 ### Release Drafter
 
-This workflow runs against each `release/*` branch and generates a draft GitHub Release, which is kept up-to-date with a categorised changelog and the right version number. A preview draft is also maintained against `main` so contributors can see what's coming up in the next minor - a roadmap of work in flight.
+This workflow runs whenever:
+
+1. You create a `release/*` branch from `main`
+2. You push to an existing `release/*` branch
+
+It generates a draft GitHub Release, which is kept up-to-date with a categorised changelog and the right version number. The release drafter action can be customized in [release-drafter-config.yml](https://github.com/finos/git-proxy/blob/main/.github/release-drafter-config.yml).
 
 When a release is ready to ship, a maintainer:
 
@@ -66,15 +71,17 @@ Publishing creates a git tag, and triggers the `npm.yml` workflow described belo
 
 ### Publish to NPM
 
-This workflow, detailed in [`npm.yml`](https://github.com/finos/git-proxy/blob/main/.github/workflows/npm.yml), builds and publishes the package to NPM. It:
+This workflow runs whenever you publish a GitHub release.
+
+As detailed in [`npm.yml`](https://github.com/finos/git-proxy/blob/main/.github/workflows/npm.yml), it:
 
 1. Builds the package
 2. Detects whether it's the latest version (e.g.: if the version you're publishing is `2.3`, and the latest on NPM `2.2`)
 
 - If it's the latest version, it gets tagged as `'latest'` which is the default version that gets installed when calling `npx @finos/git-proxy`
-- If it's a maintenance release on an older line, it gets tagged as `vX.Y` so users can pin it explicitly if needed
+- If it's a maintenance release on an older line, it gets tagged as `release-X.Y` so users can pin it explicitly if needed (either via the tag, or the version itself)
 
-3. Publishes the package with the tag defined above
+3. Publishes the package to NPM with the tag defined above
 
 ### Publishing a Patch Release
 
