@@ -111,6 +111,18 @@ The flows are roughly as follows:
 6. Then, make a PR to merge the `release/1.20` branch into `release/2.2`. **Don't forget to bump the GitProxy version for the new line** (ex: `2.2.0` -> `2.2.1`)
 7. Repeat steps 4-6 until all the supported versions have been published to both GitHub and NPM
 
+#### Troubleshooting
+
+##### My draft release got overwritten!
+
+This usually happens when forgetting to publish the draft for an older release branch (during cascade merges).
+
+Just re-run the `release-drafter.yml` workflow from the related release branch. Example: If your `1.2.x` draft got overwritten, go to the [Release Drafter action page](https://github.com/finos/git-proxy/actions/workflows/release-drafter.yml), click on the run matching the latest `release/1.2` branch, and then click "Re-run all jobs".
+
+##### I published the draft release and forgot to bump the `package.json`s!
+
+Usually, this will fail to publish to NPM at all. Just delete the bad release from the [GitHub releases page](https://github.com/finos/git-proxy/releases), delete the old related tag, then make a PR to the relevant `release/X.Y` branch bumping the `package.json` versions. When the PR is merged, publish the draft release making sure that a new tag is being created. This should trigger the NPM publish workflow and publish the updated package or override the existing one.
+
 ## Questions
 
 If you have any questions or suggestions regarding releases, feel free to [open a discussion](https://github.com/finos/git-proxy/discussions).
