@@ -1,0 +1,33 @@
+name: Release Drafter
+
+on:
+  push:
+    branches:
+      - 'release/**'
+
+permissions:
+  contents: read
+
+jobs:
+  update_release_draft:
+    permissions:
+      # Required to create/update the draft release
+      # Autolabeling runs in a separate workflow so this job only
+      # needs to read merged PRs
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        with:
+          egress-policy: audit
+
+      - uses: release-drafter/release-drafter@563bf132657a13ded0b01fcb723c5a58cdd824e2
+        with:
+          # Target the branch that triggered this run
+          # Ex: "release/2.1" becomes the commitish for the draft
+          commitish: ${{ github.ref_name }}
+          repository: ${{ github.repository }}
+          config-name: release-drafter-config.yml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
