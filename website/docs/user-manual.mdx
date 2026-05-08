@@ -73,7 +73,7 @@ sequenceDiagram
 ```
 
 1. You'll usually need to [fork the project](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo) you wish to contribute to (unless you have write permissions to it on its host SCM).
-2. GitProxy is configured for the forked project (with nominated contributors and reviewers), allowing you to clone, fetch and pull the project through the proxy. The GitProxy URL is added to your local clone as a *remote*.
+2. GitProxy is configured for the forked project (with nominated contributors and reviewers), allowing you to clone, fetch and pull the project through the proxy. The GitProxy URL is added to your local clone as a _remote_.
 3. (Optional) You can create an empty repo in your internal SCM platform and push the project into it to create an internal fork for collaboration with colleagues.
 4. Create a feature branch within the project and start developing your contributions.
 
@@ -168,7 +168,7 @@ In most cases you will not have write access to the upstream repository you wish
 
 - If you are the sole contributor from your organisation, you can [create a personal fork](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo) on the target SCM platform and have it added to GitProxy.
 - If multiple engineers will contribute to the same project, you can create an [internal fork](#do-you-need-to-collaborate-internally-creating-an-internal-fork) of the project in your internal SCM platform and collaborate on contributions there. One or two contributors can then push changes to the upstream project through GitProxy via their personal forks. Commits are individually attributed, so the person pushing will not appear to have done all the work — they merely delivered it to the upstream project.
-    - Alternatively, your OSPO or Open Source leads can create a shared fork on the target SCM platform owned by your organisation. This avoids routing contributions through personal forks and may be preferable for projects with many contributors.
+  - Alternatively, your OSPO or Open Source leads can create a shared fork on the target SCM platform owned by your organisation. This avoids routing contributions through personal forks and may be preferable for projects with many contributors.
 
 Forks should generally have the same name as the upstream project to avoid confusion.
 
@@ -245,13 +245,13 @@ git config --global user.email "your.email@example.com"
 
 Your email must match the email registered in GitProxy.
 
-**SSL certificate configuration:**
+##### SSL certificate configuration
 
-:::danger Do not disable SSL verification
-Never set `http.sslVerify=false` — it is insecure and leaves you vulnerable to man-in-the-middle attacks.
+:::tip Internal Certificate Authorities
+If your organisation uses internal Certificate Authorities (CAs) for SSL certificates on internal infrastructure, tools like git may not recognise these CAs by default, causing certificate errors. If you encounter SSL errors, the advice in this section may help to resolve them.
 :::
 
-If your organisation uses internal Certificate Authorities (CAs) for SSL certificates on internal infrastructure, tools like git may not recognise these CAs by default, causing certificate errors. The correct fix is to configure git to use your operating system's certificate store, which includes the internal CAs.
+If your organisation uses an internal Certificate Authority (CA) to issue the SSL certificates for you Git proxy server, your git client may need to be configured to use your operating system's certificate store.
 
 On a Windows machine, set the SSL backend to use the Windows system certificate store:
 
@@ -298,11 +298,12 @@ SCMs will typically require:
 6. Click "Generate token" and copy it immediately (you won't see it again)
 
 :::warning PAT security
+
 - Your PAT must have the `repo` permission scope.
 - Keep your PAT secure and never commit it to a repository.
 - If your PAT expires, you'll need to generate a new one.
 - If you are prompted for credentials every time, check that your credential helper is configured.
-:::
+  :::
 
 This is separate from the credentials you use to log in to the GitProxy web interface for reviewing contributions and managing repositories.
 
@@ -393,11 +394,12 @@ Once your contribution has been approved by a reviewer:
 3. Your changes are now in the upstream repository and visible to the project maintainers
 
 :::warning
+
 - You must push the exact same commits that were approved.
 - If you make new commits after approval, they will require a new review.
 - The approval is specific to the commit SHA(s) that were reviewed.
 - After successful push to upstream, you can create a pull request on the target platform as normal.
-:::
+  :::
 
 ### Reviewing contributions
 
@@ -491,9 +493,9 @@ Your code changes contain secrets, credentials, or sensitive patterns. To fix:
 1. Review the error message to identify what was detected
 2. Remove the sensitive content from your code
 3. If you accidentally committed secrets:
-    - Remove them from the code
-    - Rotate/revoke the exposed credentials immediately
-    - Use git rebase to remove them from history if needed
+   - Remove them from the code
+   - Rotate/revoke the exposed credentials immediately
+   - Use git rebase to remove them from history if needed
 4. Commit the fixes and push again
 
 **My push was blocked because the repository is not authorized**
