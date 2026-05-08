@@ -65,5 +65,6 @@ module.exports = {
       collapsed: false,
       items: ['development/contributing', 'development/plugins'],
     },
+    'user-manual',
   ],
 };
