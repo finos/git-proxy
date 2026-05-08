@@ -50,6 +50,25 @@ module.exports = {
       collapsed: false,
       items: ['configuration/overview', 'configuration/reference', 'configuration/pre-receive'],
     },
+    {
+      type: 'category',
+      label: 'API Reference',
+      link: {
+        type: 'doc',
+        id: 'api/index',
+      },
+      collapsible: true,
+      collapsed: false,
+      items: [
+        'api/auth',
+        'api/config',
+        'api/health',
+        'api/home',
+        'api/push',
+        'api/repositories',
+        'api/users',
+      ],
+    },
     'deployment',
     {
       type: 'category',
