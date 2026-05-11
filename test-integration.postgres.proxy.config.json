@@ -1,0 +1,21 @@
+{
+  "cookieSecret": "integration-test-cookie-secret",
+  "sessionMaxAgeHours": 12,
+  "sink": [
+    {
+      "type": "fs",
+      "enabled": false
+    },
+    {
+      "type": "postgres",
+      "connectionString": "postgresql://postgres:postgres@localhost:5432/git_proxy_test",
+      "enabled": true
+    }
+  ],
+  "authentication": [
+    {
+      "type": "local",
+      "enabled": true
+    }
+  ]
+}
