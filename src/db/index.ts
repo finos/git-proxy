@@ -20,8 +20,10 @@ import * as bcrypt from 'bcryptjs';
 import * as config from '../config';
 import * as mongo from './mongo';
 import * as neDb from './file';
+import * as postgres from './postgres';
 import { Action } from '../proxy/actions/Action';
 import MongoDBStore from 'connect-mongo';
+import { Store } from 'express-session';
 import { CompletedAttestation, Rejection } from '../proxy/processors/types';
 import { processGitUrl } from '../proxy/routes/helper';
 import { initializeFolders } from './file/helper';
@@ -41,6 +43,9 @@ const start = () => {
       console.log('Loading neDB database adaptor');
       initializeFolders();
       _sink = neDb;
+    } else if (config.getDatabase().type === 'postgres') {
+      console.log('Loading PostgreSQL database adaptor');
+      _sink = postgres;
     } else {
       console.error(`Unsupported database type: ${config.getDatabase().type}`);
       process.exit(1);
@@ -176,7 +181,7 @@ export const canUserCancelPush = async (id: string, user: string) => {
   }
 };
 
-export const getSessionStore = (): MongoDBStore | undefined => start().getSessionStore();
+export const getSessionStore = (): MongoDBStore | Store | undefined => start().getSessionStore();
 export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => start().getPushes(query);
 export const writeAudit = (action: Action): Promise<void> => start().writeAudit(action);
 export const getPush = (id: string): Promise<Action | null> => start().getPush(id);

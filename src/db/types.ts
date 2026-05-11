@@ -16,6 +16,7 @@
 
 import { Action } from '../proxy/actions/Action';
 import MongoDBStore from 'connect-mongo';
+import { Store } from 'express-session';
 import { CompletedAttestation, Rejection } from '../proxy/processors/types';
 
 export type PushQuery = {
@@ -108,7 +109,7 @@ export interface PublicUser {
 }
 
 export interface Sink {
-  getSessionStore: () => MongoDBStore | undefined;
+  getSessionStore: () => MongoDBStore | Store | undefined;
   getPushes: (query: Partial<PushQuery>) => Promise<Action[]>;
   writeAudit: (action: Action) => Promise<void>;
   getPush: (id: string) => Promise<Action | null>;
