@@ -125,6 +125,13 @@ const corsOptions: cors.CorsOptions = {
  * @param {Proxy} proxy A reference to the proxy, used to restart it when necessary.
  * @return {Promise<Express>} the express application
  */
+// Backend sink types that promise a persistent session store. If one of these
+// is active and getSessionStore() returns undefined, express-session would
+// silently fall back to MemoryStore — which loses sessions on restart and is
+// unsafe in any multi-process deployment. Issue #1497 calls this out as a
+// must-fix requirement, so we throw loudly instead.
+const PERSISTENT_SESSION_BACKENDS = new Set(['mongo', 'postgres']);
+
 async function createApp(proxy: Proxy): Promise<Express> {
   // configuration of passport is async
   // Before we can bind the routes - we need the passport strategy
@@ -134,9 +141,17 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.set('trust proxy', 1);
   app.use(limiter);
 
+  const backendType = config.getDatabase().type;
+  const sessionStore = db.getSessionStore();
+  if (PERSISTENT_SESSION_BACKENDS.has(backendType) && !sessionStore) {
+    throw new Error(
+      `Session store for backend "${backendType}" failed to initialize — refusing to fall back to MemoryStore`,
+    );
+  }
+
   app.use(
     session({
-      store: db.getSessionStore(),
+      store: sessionStore,
       secret: config.getCookieSecret(),
       resave: false,
       saveUninitialized: false,
