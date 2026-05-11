@@ -120,7 +120,7 @@ function renderSchemaProperties(schema, spec) {
     const propResolved = resolveSchema(prop, spec);
     const type = formatType(prop, spec);
     const isRequired = required.has(name) ? '**Yes**' : 'No';
-    const desc = (propResolved?.description || '').replace(/\|/g, '\\|');
+    const desc = (propResolved?.description || '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
     lines.push(`| \`${name}\` | ${type} | ${isRequired} | ${desc} |`);
   }
 
@@ -141,7 +141,7 @@ function renderParameters(parameters, spec) {
   for (const param of params) {
     const type = formatType(param.schema, spec);
     const required = param.required ? '**Yes**' : 'No';
-    const desc = (param.description || '').replace(/\|/g, '\\|');
+    const desc = (param.description || '').replace(/\\/g, '\\\\').replace(/\|/g, '\\|');
     const inBadge = param.in === 'path' ? '`path`' : '`query`';
     lines.push(`| \`${param.name}\` | ${inBadge} | ${type} | ${required} | ${desc} |`);
   }
