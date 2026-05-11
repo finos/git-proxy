@@ -412,9 +412,40 @@ Sample values:
 
 #### `sink`
 
-List of database sources. The first source with `enabled` set to `true` will be used. Currently, MongoDB and filesystem databases ([NeDB](https://www.npmjs.com/package/@seald-io/nedb)) are supported. By default, the filesystem database is used.
+List of database sources. The first source with `enabled` set to `true` will be used. GitProxy supports three sink backends:
+
+- **`fs`** — filesystem-backed [NeDB](https://www.npmjs.com/package/@seald-io/nedb). Default. Suitable for single-process deployments.
+- **`mongo`** — MongoDB via `connect-mongo` for session storage.
+- **`postgres`** — PostgreSQL via [`pg`](https://node-postgres.com/) + [`connect-pg-simple`](https://github.com/voxpelli/node-connect-pg-simple) for session storage.
 
 Each entry has its own unique configuration parameters.
+
+##### PostgreSQL configuration
+
+The `postgres` backend stores `users`, `repos`, `pushes`, and the `connect-pg-simple` `session` table in a single PostgreSQL database. The required tables are created on startup with `CREATE TABLE IF NOT EXISTS`, so pointing the proxy at an empty database is enough to get running — no migration tooling is required for the initial setup.
+
+```json
+{
+  "sink": [
+    {
+      "type": "postgres",
+      "connectionString": "postgresql://user:pass@host:5432/gitproxy",
+      "enabled": true
+    }
+  ]
+}
+```
+
+If `connectionString` is omitted on the config entry, GitProxy falls back to the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable. This mirrors the behaviour of the mongo backend's `GIT_PROXY_MONGO_CONNECTION_STRING`.
+
+Notes and current limitations (issue #1497, v1):
+
+- Schema is bootstrapped via `CREATE TABLE IF NOT EXISTS` at startup. No formal migration mechanism ships with this release.
+- Repo permissions (`canPush` / `canAuthorise`) are stored as a JSONB column on the `repos` table. A future PR may normalise these into a `repo_users` join table.
+- No data migration utility from `fs` or `mongo` to `postgres` — copy data yourself if needed.
+- No AWS RDS IAM authentication helper (the mongo backend has one via `AWS_CREDENTIAL_PROVIDER`); use a standard connection string for v1.
+- Only the `connectionString` form is supported; split `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` env vars are not consulted.
+- If `postgres` is selected as the active sink and the connection string cannot be resolved, GitProxy refuses to start rather than silently falling back to an in-memory session store.
 
 Extending GitProxy to support other databases requires adding the relevant handlers and setup to the [`/src/db`](/src/db/) directory. Feel free to [open an issue](https://github.com/finos/git-proxy/issues) requesting support for any specific databases - or [open a PR](https://github.com/finos/git-proxy/pulls) with the desired changes!
 
