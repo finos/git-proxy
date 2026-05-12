@@ -142,6 +142,9 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.use(limiter);
 
   const backendType = config.getDatabase().type;
+  if (PERSISTENT_SESSION_BACKENDS.has(backendType)) {
+    await db.ensureSessionStoreReady();
+  }
   const sessionStore = db.getSessionStore();
   if (PERSISTENT_SESSION_BACKENDS.has(backendType) && !sessionStore) {
     throw new Error(

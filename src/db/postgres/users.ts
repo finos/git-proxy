@@ -151,6 +151,7 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
   }
 
   // Upsert by username when no _id is supplied, matching mongo's behaviour.
+  values.push(username);
   const result = await query(
     `UPDATE users SET ${sets.join(', ')} WHERE username = $${values.length}`,
     values,

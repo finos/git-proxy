@@ -182,6 +182,8 @@ export const canUserCancelPush = async (id: string, user: string) => {
 };
 
 export const getSessionStore = (): MongoDBStore | Store | undefined => start().getSessionStore();
+export const ensureSessionStoreReady = (): Promise<void> =>
+  start().ensureSessionStoreReady?.() ?? Promise.resolve();
 export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => start().getPushes(query);
 export const writeAudit = (action: Action): Promise<void> => start().writeAudit(action);
 export const getPush = (id: string): Promise<Action | null> => start().getPush(id);

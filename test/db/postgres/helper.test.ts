@@ -41,6 +41,13 @@ vi.mock('connect-pg-simple', () => ({
       constructor(opts: unknown) {
         mockStoreCtor(opts);
       }
+      get(_sid: string, cb: (err: Error | null) => void) {
+        mockPoolQuery('SELECT 1', []);
+        cb(null);
+      }
+      close() {
+        return Promise.resolve();
+      }
     },
 }));
 
@@ -50,7 +57,7 @@ vi.mock('../../../src/config', () => ({
 }));
 
 describe('PostgreSQL - helper', async () => {
-  const { connect, query, resetConnection, getSessionStore } =
+  const { connect, query, resetConnection, getSessionStore, ensureSessionStoreReady } =
     await import('../../../src/db/postgres/helper');
 
   beforeEach(async () => {
@@ -134,6 +141,19 @@ describe('PostgreSQL - helper', async () => {
       expect(opts.tableName).toBe('session');
       expect(opts.createTableIfMissing).toBe(true);
       expect(opts.pool).toBeDefined();
+    });
+
+    it('touches the session store during readiness checks', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+      });
+
+      await ensureSessionStoreReady();
+
+      expect(mockStoreCtor).toHaveBeenCalledTimes(1);
+      expect(mockPoolQuery).toHaveBeenCalled();
     });
   });
 });

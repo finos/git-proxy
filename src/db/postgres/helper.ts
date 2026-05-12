@@ -140,3 +140,22 @@ export const getSessionStore = (): Store => {
     createTableIfMissing: true,
   });
 };
+
+export const ensureSessionStoreReady = async (): Promise<void> => {
+  const store = getSessionStore();
+
+  await new Promise<void>((resolve, reject) => {
+    store.get('__git_proxy_session_startup_probe__', (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+
+  const maybeClosableStore = store as Store & { close?: () => Promise<void> };
+  if (maybeClosableStore.close) {
+    await maybeClosableStore.close();
+  }
+};

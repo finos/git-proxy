@@ -102,6 +102,16 @@ describe('PostgreSQL - Users', async () => {
       expect(insertParams[0]).toBe('new-user');
     });
 
+    it('uses a separate username parameter for the username-keyed UPDATE filter', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await updateUser({ username: 'ExistingUser', email: 'updated@example.com' } as never);
+
+      const [updateSql, updateParams] = mockQuery.mock.calls[0];
+      expect(updateSql).toContain('UPDATE users SET username = $1, email = $2 WHERE username = $3');
+      expect(updateParams).toEqual(['existinguser', 'updated@example.com', 'existinguser']);
+    });
+
     it('throws if neither _id nor username is supplied', async () => {
       await expect(updateUser({ admin: true } as never)).rejects.toThrow(
         'updateUser requires either _id or username',
