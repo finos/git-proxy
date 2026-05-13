@@ -38,7 +38,8 @@ Both release notes and the release drafter workflow rely on [conventional commit
 
 - `feat:` labels the PR as a feature (minor bump)
 - `fix:` labels the PR as a bugfix (patch bump)
-- `break:` or `feat!:` (exclamation mark suffix) labels the PR as a breaking change (major bump)
+- `break:` labels the PR as a breaking change (major bump)
+- Adding an exclamation mark (ex: `feat!:`) also labels the PR as a breaking change (major bump)
 - Other prefixes map to the maintenance categories defined in `release-drafter.yml`
 
 Release notes use PR titles directly. They should be written as user-facing changelog entries, in other words: in present tense, descriptive, and free of administrative references (meetings, etc.) or jargon.
