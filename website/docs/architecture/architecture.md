@@ -57,7 +57,7 @@ Three types of policies can be applied to incoming pushes:
 - Configurable policies: These are policies that can be easily configured through the GitProxy config (`proxy.config.json` or a custom file).
   - For example, [`checkCommitMessages`](/docs/architecture/processors.md#checkcommitmessages) which reads the configuration and matches the string patterns provided with the commit messages in the push in order to block it.
 - Custom policies:
-  - Plugins: Push/pull plugins provide more flexibility for implementing an organization's rules. For more information, see the [guide on writing your own plugins](https://git-proxy.finos.org/docs/development/plugins).
+  - Plugins: Push/pull plugins provide more flexibility for implementing an organization's rules. For more information, see the [guide on writing your own plugins](/docs/development/plugins).
   - Processors: Custom logic may require specific data within a push that isn't available at the end of the chain (where plugins are executed). In this case, the appropriate solution is to write a processor and add it to the correct place in the chain.
 
 ## The nitty gritty
