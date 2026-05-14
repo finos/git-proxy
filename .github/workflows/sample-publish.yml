@@ -31,8 +31,10 @@ jobs:
         working-directory: plugins/git-proxy-plugin-samples
         run: npm run build
 
-      - name: Publish git-proxy-plugin-samples
+      - name: Install peers and publish
         working-directory: plugins/git-proxy-plugin-samples
-        run: npm publish --provenance --access=public
+        run: |
+          npm install --include=peer
+          npm publish --provenance --access=public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
