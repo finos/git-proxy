@@ -172,7 +172,8 @@ The following environment variables can be set at container runtime:
 | Variable                 | Default      | Description                                              |
 | ------------------------ | ------------ | -------------------------------------------------------- |
 | `GIT_PROXY_SERVER_PORT`  | `8000`       | Proxy server port                                        |
-| `GIT_PROXY_UI_PORT`      | `8080`       | UI/API server port                                       |
+| `GIT_PROXY_UI_PORT`      | `8080`       | UI/API server port (HTTP)                                |
+| `GIT_PROXY_HTTPS_UI_PORT`| `8444`       | UI/API server port (HTTPS, active when `tls.enabled`)    |
 | `ALLOWED_ORIGINS`        | (empty)      | CORS allowed origins (comma-separated, or `*` for all)   |
 | `API_URL`                | (empty)      | API URL for the UI (leave empty for same-origin)         |
 | `NODE_ENV`               | `production` | Node environment                                         |
@@ -183,6 +184,7 @@ docker run -d \
   --name git-proxy \
   -p 8000:8000 \
   -p 8080:8080 \
+  -p 8444:8444 \
   -e GIT_PROXY_UI_PORT=8080 \
   -e ALLOWED_ORIGINS="https://gitproxy.example.com" \
   -e NODE_ENV=production \
