@@ -1,4 +1,4 @@
-# GitProxy Releases
+# Releases
 
 GitProxy has a standardized release process to ensure they are done in a timely manner, and to prevent extensive merge conflicts. We encourage contributors to read this before opening a PR.
 
