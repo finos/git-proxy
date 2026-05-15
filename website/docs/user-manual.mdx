@@ -433,6 +433,10 @@ If you have reviewer permissions for a project in GitProxy, you can approve or r
 
 If you're prompted for credentials on every git operation, the Git Credential Manager (GCM) may be disabled or misconfigured.
 
+:::info
+Credentials request popups will vary based on your git client. VS code (and derivates) may catch the credentials request and display their own UI, while Git Bash will display Git Credentials Manager popups.
+:::
+
 Verify if your GCM configuration has been altered:
 
 ```bash
