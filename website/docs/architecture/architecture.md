@@ -183,7 +183,7 @@ New methods can be added by:
 
 Many of the proxy, API and UI behaviours are configurable. The most important ones will be covered here. For a comprehensive list of parameters, see the [config file schema reference](https://git-proxy.finos.org/docs/configuration/reference/).
 
-GitProxy ships with a default configuration which can be customised in various ways. See the [configuration guide](https://git-proxy.finos.org/docs/configuration/overview) for more details on providing custom config files and validating them.
+GitProxy ships with a default configuration which can be customised in various ways. See the [configuration guide](docs/configuration/overview) for more details on providing custom config files and validating them.
 
 ### Config parameters
 
