@@ -392,7 +392,7 @@ Cypress.Commands.add('getCSRFToken', () => {
 
 Defines a list of plugins to integrate on GitProxy's push or pull actions. Accepted values are either a file path or a module name.
 
-See the [plugin guide](https://git-proxy.finos.org/docs/development/plugins) for more setup details.
+See the [plugin guide](docs/development/plugins) for more setup details.
 
 #### `authorisedList`
 
