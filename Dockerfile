@@ -39,7 +39,7 @@ USER 1000
 
 WORKDIR /app
 
-EXPOSE 8080 8000
+EXPOSE 8080 8000 8444
 
 ENTRYPOINT ["tini", "--", "/docker-entrypoint.sh"]
 CMD ["node", "--enable-source-maps", "dist/index.js"]
