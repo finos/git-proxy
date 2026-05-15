@@ -140,7 +140,7 @@ This processor will block the push depending on the exit status of the pre-recei
 - Exit status `1`: Sets the push to `autoRejected`, automatically rejecting the push after the chain completes, regardless of whether the other processors would have allowed it.
 - Exit status `2`: Requires subsequent manual approval as any regular push, even if all processors succeed.
 
-For detailed setup instructions and examples, see the [Pre-Receive Hook configuration guide](https://git-proxy.finos.org/docs/configuration/pre-receive/).
+For detailed setup instructions and examples, see the [Pre-Receive Hook configuration guide](docs/configuration/pre-receive/).
 
 Source: [/src/proxy/processors/push-action/preReceive.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/preReceive.ts)
 
