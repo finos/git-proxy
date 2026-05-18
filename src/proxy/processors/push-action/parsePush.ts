@@ -94,7 +94,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
       throw new Error('Your push has been blocked. PACK data is missing.');
     }
 
-    const buf = req.body.slice(packDataOffset);
+    const buf = req.body.subarray(packDataOffset);
 
     // Verify that data actually starts with PACK signature
     if (buf.length < PACKET_SIZE || buf.toString('utf8', 0, PACKET_SIZE) !== PACK_SIGNATURE) {
@@ -523,7 +523,7 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
     // Feed the buffer in a byte at a time and wait for output
     while (offset < buffer.length && !(done || error)) {
       try {
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>((resolve) => {
           if (!done) {
             // store the resolve function in case an error occurs as callback will never be called
             currentWriteResolve = resolve;
