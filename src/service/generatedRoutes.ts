@@ -37,7 +37,7 @@ const models: TsoaRoute.Models = {
             "gitAccount": {"dataType":"string","required":true},
             "admin": {"dataType":"boolean","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "RepoWithProxy": {
@@ -50,7 +50,7 @@ const models: TsoaRoute.Models = {
             "_id": {"dataType":"string"},
             "proxyURL": {"dataType":"string","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "MessageResponse": {
@@ -58,7 +58,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "message": {"dataType":"string","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CreateRepoBody": {
@@ -67,8 +67,10 @@ const models: TsoaRoute.Models = {
             "url": {"dataType":"string","required":true},
             "name": {"dataType":"string","required":true},
             "project": {"dataType":"string","required":true},
+            "users": {"dataType":"nestedObjectLiteral","nestedProperties":{"canAuthorise":{"dataType":"array","array":{"dataType":"string"},"required":true},"canPush":{"dataType":"array","array":{"dataType":"string"},"required":true}},"required":true},
+            "_id": {"dataType":"string"},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "UsernameBody": {
@@ -76,7 +78,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "username": {"dataType":"string","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Step": {
@@ -91,7 +93,7 @@ const models: TsoaRoute.Models = {
             "blockedMessage": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "logs": {"dataType":"array","array":{"dataType":"string"},"default":[]},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CommitData": {
@@ -110,7 +112,7 @@ const models: TsoaRoute.Models = {
             "label": {"dataType":"string","required":true},
             "checked": {"dataType":"boolean","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CompletedAttestation": {
@@ -159,7 +161,7 @@ const models: TsoaRoute.Models = {
             "proxyGitPath": {"dataType":"string"},
             "newIdxFiles": {"dataType":"array","array":{"dataType":"string"}},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "RejectBody": {
@@ -167,7 +169,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "reason": {"dataType":"string","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AuthoriseBody": {
@@ -175,7 +177,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "params": {"dataType":"nestedObjectLiteral","nestedProperties":{"attestation":{"dataType":"array","array":{"dataType":"refObject","ref":"AttestationAnswer"},"required":true}},"required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "ApiResources": {
@@ -185,7 +187,7 @@ const models: TsoaRoute.Models = {
             "push": {"dataType":"string","required":true},
             "auth": {"dataType":"string","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "HealthResponse": {
@@ -193,7 +195,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "message": {"dataType":"enum","enums":["ok"],"required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Link": {
@@ -202,7 +204,7 @@ const models: TsoaRoute.Models = {
             "text": {"dataType":"string","required":true},
             "url": {"dataType":"string","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "QuestionTooltip": {
@@ -211,7 +213,7 @@ const models: TsoaRoute.Models = {
             "links": {"dataType":"array","array":{"dataType":"refObject","ref":"Link"}},
             "text": {"dataType":"string","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Question": {
@@ -220,7 +222,7 @@ const models: TsoaRoute.Models = {
             "label": {"dataType":"string","required":true},
             "tooltip": {"ref":"QuestionTooltip","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AttestationConfig": {
@@ -228,7 +230,7 @@ const models: TsoaRoute.Models = {
         "properties": {
             "questions": {"dataType":"array","array":{"dataType":"refObject","ref":"Question"}},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "RouteAuthRule": {
@@ -257,7 +259,7 @@ const models: TsoaRoute.Models = {
             "profile": {"dataType":"nestedObjectLiteral","nestedProperties":{"uri":{"dataType":"string","required":true},"action":{"dataType":"enum","enums":["get"],"required":true}},"required":true},
             "logout": {"dataType":"nestedObjectLiteral","nestedProperties":{"uri":{"dataType":"string","required":true},"action":{"dataType":"enum","enums":["post"],"required":true}},"required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AuthConfigResponse": {
@@ -266,7 +268,7 @@ const models: TsoaRoute.Models = {
             "usernamePasswordMethod": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "otherMethods": {"dataType":"array","array":{"dataType":"string"},"required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "LoginResponse": {
@@ -275,14 +277,14 @@ const models: TsoaRoute.Models = {
             "message": {"dataType":"enum","enums":["success"],"required":true},
             "user": {"ref":"PublicUser","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "Express.User": {
         "dataType": "refObject",
         "properties": {
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "LogoutResponse": {
@@ -291,7 +293,7 @@ const models: TsoaRoute.Models = {
             "isAuth": {"dataType":"boolean","required":true},
             "user": {"dataType":"union","subSchemas":[{"ref":"Express.User"},{"dataType":"undefined"}],"required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "GitAccountBody": {
@@ -301,7 +303,7 @@ const models: TsoaRoute.Models = {
             "id": {"dataType":"string"},
             "gitAccount": {"dataType":"string","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CreateUserResponse": {
@@ -310,7 +312,7 @@ const models: TsoaRoute.Models = {
             "message": {"dataType":"string","required":true},
             "username": {"dataType":"string","required":true},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "CreateUserBody": {
@@ -322,11 +324,11 @@ const models: TsoaRoute.Models = {
             "gitAccount": {"dataType":"string","required":true},
             "admin": {"dataType":"boolean"},
         },
-        "additionalProperties": true,
+        "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 };
-const templateService = new ExpressTemplateService(models, {"noImplicitAdditionalProperties":"ignore","bodyCoercion":true});
+const templateService = new ExpressTemplateService(models, {"noImplicitAdditionalProperties":"throw-on-extras","bodyCoercion":true});
 
 // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
 

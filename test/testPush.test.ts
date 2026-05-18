@@ -162,10 +162,6 @@ describe('Push API', () => {
             attestation: [
               {
                 label: 'I am happy for this to be pushed to the upstream repository',
-                tooltip: {
-                  text: 'Are you happy for this contribution to be pushed upstream?',
-                  links: [],
-                },
                 checked: true,
               },
             ],
@@ -190,10 +186,6 @@ describe('Push API', () => {
             attestation: [
               {
                 label: 'I am happy for this to be pushed to the upstream repository',
-                tooltip: {
-                  text: 'Are you happy for this contribution to be pushed upstream?',
-                  links: [],
-                },
                 checked: false,
               },
             ],
@@ -219,10 +211,6 @@ describe('Push API', () => {
             attestation: [
               {
                 label: 'I am happy for this to be pushed to the upstream repository',
-                tooltip: {
-                  text: 'Are you happy for this contribution to be pushed upstream?',
-                  links: [],
-                },
                 checked: true,
               },
             ],
@@ -251,10 +239,6 @@ describe('Push API', () => {
           attestation: [
             {
               label: 'I am happy for this to be pushed to the upstream repository',
-              tooltip: {
-                text: 'Are you happy for this contribution to be pushed upstream?',
-                links: [],
-              },
               checked: true,
             },
           ],
@@ -276,10 +260,6 @@ describe('Push API', () => {
           attestation: [
             {
               label: 'I am happy for this to be pushed to the upstream repository',
-              tooltip: {
-                text: 'Are you happy for this contribution to be pushed upstream?',
-                links: [],
-              },
               checked: true,
             },
           ],
@@ -408,10 +388,6 @@ describe('Push API', () => {
           attestation: [
             {
               label: 'I am happy for this to be pushed to the upstream repository',
-              tooltip: {
-                text: 'Are you happy for this contribution to be pushed upstream?',
-                links: [],
-              },
               checked: true,
             },
           ],
@@ -433,10 +409,6 @@ describe('Push API', () => {
           attestation: [
             {
               label: 'I am happy for this to be pushed to the upstream repository',
-              tooltip: {
-                text: 'Are you happy for this contribution to be pushed upstream?',
-                links: [],
-              },
               checked: true,
             },
           ],
