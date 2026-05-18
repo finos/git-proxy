@@ -15,7 +15,6 @@
  */
 
 import express, { Request, Response } from 'express';
-import { utils } from 'ssh2';
 import crypto from 'crypto';
 
 import * as db from '../../db';
@@ -27,6 +26,8 @@ const router = express.Router();
 // Note: This function is duplicated in src/cli/ssh-key.ts to keep CLI and server independent
 function calculateFingerprint(publicKeyStr: string): string | null {
   try {
+     
+    const { utils } = require('ssh2');
     const parsed = utils.parseKey(publicKeyStr);
     if (!parsed || parsed instanceof Error) {
       return null;
