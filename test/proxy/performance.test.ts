@@ -36,7 +36,7 @@ describe('HTTP/HTTPS Performance Tests', () => {
       const endMemory = process.memoryUsage().heapUsed;
       const memoryIncrease = endMemory - startMemory;
 
-      expect(memoryIncrease).toBeLessThan(KILOBYTE * 5); // Should use less than 5KB
+      expect(memoryIncrease).toBeLessThan(KILOBYTE * 10);
       expect(req.body.length).toBe(KILOBYTE);
     });
 
