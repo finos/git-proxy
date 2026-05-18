@@ -2,7 +2,7 @@
 
 Internal architecture and technical implementation details of the SSH proxy for Git.
 
-**For user setup instructions**, see [SSH_SETUP.md](SSH_SETUP.md)
+**For user setup instructions**, see [SSH Setup](../ssh-setup)
 
 ---
 

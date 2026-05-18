@@ -23,7 +23,7 @@ Git Proxy supports SSH protocol with full feature parity with HTTPS, including:
                         └─────────────┘
 ```
 
-**For architecture details**, see [SSH_ARCHITECTURE.md](SSH_ARCHITECTURE.md)
+**For architecture details**, see [SSH Architecture](./architecture/ssh-architecture)
 
 ---
 
