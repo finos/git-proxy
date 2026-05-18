@@ -373,9 +373,7 @@ This file is the canonical project guide. Tool-specific entry points:
 - Claude Code: `CLAUDE.md` (bridge) + `.claude/skills/`
 - GitHub Copilot: `.github/copilot-instructions.md`
 - OpenCode: `.opencode/commands/`
-- Gemini CLI: `GEMINI.md` (bridge)
-- Cursor: `.cursor/rules/00-core.mdc` + `.cursor/commands/`
-- Codex: `AGENTS.md` primary — (Codex does not have a dedicated convention file)
+- Codex: `AGENTS.md`
 
 ---
 
