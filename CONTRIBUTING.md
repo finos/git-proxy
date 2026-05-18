@@ -151,7 +151,7 @@ test: add fuzz tests for repo name validation
 
 ### Release and Branching Process
 
-To understand when your contribution will get merged upstream and published to NPM, see our [Releases guide](./docs/Releases.md).
+To understand when your contribution will get merged upstream and published to NPM, see our [Releases guide](https://git-proxy.finos.org/docs/development/releases).
 
 ## Testing
 
