@@ -223,6 +223,9 @@
     ],
     "test/**/*.{js,jsx,ts,tsx,json}": [
       "eslint --fix"
+    ],
+    "{src/service/controllers/**/*Controller.ts,src/service/authentication.ts,src/service/generatedRoutes.ts,src/app.ts,tsoa.json}": [
+      "node scripts/check-tsoa-routes.js --"
     ]
   }
 }
