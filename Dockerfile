@@ -37,7 +37,7 @@ COPY docker-entrypoint.sh /docker-entrypoint.sh
 
 USER 1000
 
-EXPOSE 8080 8000
+EXPOSE 8080 8000 8444
 
 ENTRYPOINT ["tini", "--", "/docker-entrypoint.sh"]
 CMD ["node", "--enable-source-maps", "dist/index.js"]
