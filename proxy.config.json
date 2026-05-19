@@ -53,6 +53,31 @@
       }
     },
     {
+      "type": "ldap",
+      "enabled": false,
+      "ldapConfig": {
+        "url": "",
+        "bindDN": "",
+        "bindPassword": "",
+        "searchBase": "",
+        "searchFilter": "",
+        "userGroupDN": "",
+        "adminGroupDN": "",
+        "groupSearchBase": "",
+        "groupSearchFilter": "(member={{dn}})",
+        "usernameAttribute": "uid",
+        "emailAttribute": "mail",
+        "displayNameAttribute": "cn",
+        "titleAttribute": "title",
+        "starttls": false,
+        "tlsOptions": {},
+        "timeout": 5000,
+        "connectTimeout": 5000,
+        "searchTimeLimit": 5,
+        "searchSizeLimit": 10
+      }
+    },
+    {
       "type": "openidconnect",
       "enabled": false,
       "oidcConfig": {

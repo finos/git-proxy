@@ -1235,6 +1235,7 @@ Specific value: `"fs"`
 | [Active Directory Auth Config](#authentication_items_oneOf_i1) |
 | [Open ID Connect Auth Config](#authentication_items_oneOf_i2)  |
 | [JWT Auth Config](#authentication_items_oneOf_i3)              |
+| [LDAP Auth Config](#authentication_items_oneOf_i4)             |
 
 <blockquote>
 
@@ -1737,6 +1738,373 @@ Specific value: `"jwt"`
 </details>
 
 </blockquote>
+<blockquote>
+
+#### <a name="authentication_items_oneOf_i4"></a>16.1.5. Property `GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config`
+
+**Title:** LDAP Auth Config
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
+
+**Description:** Configuration for generic LDAP authentication using ldapts.
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_type"></a>16.1.5.1. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > type</strong>
+</summary>
+<blockquote>
+
+|              |         |
+| ------------ | ------- |
+| **Type**     | `const` |
+| **Required** | Yes     |
+
+Specific value: `"ldap"`
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_enabled"></a>16.1.5.2. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > enabled</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | Yes       |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig"></a>16.1.5.3. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig</strong>
+</summary>
+<blockquote>
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | Yes              |
+| **Additional properties** | Any type allowed |
+
+**Description:** LDAP connection and search configuration.
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_url"></a>16.1.5.3.1. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > url</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+**Description:** LDAP server URL, e.g. `ldap://ldap.example.com` or `ldaps://ldap.example.com`.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_bindDN"></a>16.1.5.3.2. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > bindDN</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+**Description:** DN of the service account used to search for users, e.g. `cn=admin,dc=example,dc=com`.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_bindPassword"></a>16.1.5.3.3. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > bindPassword</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+**Description:** Password for the service account.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_searchBase"></a>16.1.5.3.4. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > searchBase</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+**Description:** Base DN for user searches, e.g. `ou=people,dc=example,dc=com`.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_searchFilter"></a>16.1.5.3.5. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > searchFilter</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+**Description:** LDAP search filter template. Use `{{username}}` as a placeholder for the login username. e.g. `(uid={{username}})`.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_userGroupDN"></a>16.1.5.3.6. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > userGroupDN</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+**Description:** DN of the group a user must belong to in order to log in.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_adminGroupDN"></a>16.1.5.3.7. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > adminGroupDN</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | Yes      |
+
+**Description:** DN of the admin group. Members of this group are granted admin privileges.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_groupSearchBase"></a>16.1.5.3.8. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > groupSearchBase</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** Base DN for group membership searches. If omitted, each group's own DN (`userGroupDN` or `adminGroupDN`) is used as the search base.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_groupSearchFilter"></a>16.1.5.3.9. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > groupSearchFilter</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** LDAP filter for group membership checks. Use `{{dn}}` as a placeholder for the user's DN and `{{username}}` as a placeholder for the login username. Defaults to `(member={{dn}})`.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_usernameAttribute"></a>16.1.5.3.10. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > usernameAttribute</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** LDAP attribute to use as the username. Defaults to `uid`.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_emailAttribute"></a>16.1.5.3.11. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > emailAttribute</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** LDAP attribute for the user's email. Defaults to `mail`.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_displayNameAttribute"></a>16.1.5.3.12. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > displayNameAttribute</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** LDAP attribute for the user's display name. Defaults to `cn`.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_titleAttribute"></a>16.1.5.3.13. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > titleAttribute</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** LDAP attribute for the user's title. Defaults to `title`.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_starttls"></a>16.1.5.3.14. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > starttls</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | No        |
+
+**Description:** Use STARTTLS to upgrade an ldap:// connection to TLS. Defaults to false.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_tlsOptions"></a>16.1.5.3.15. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > tlsOptions</strong>
+</summary>
+<blockquote>
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
+
+**Description:** Node.js TLS options passed to the ldapts client (e.g. `rejectUnauthorized`, `ca`).
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_timeout"></a>16.1.5.3.16. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > timeout</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** LDAP client operation timeout in milliseconds.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_connectTimeout"></a>16.1.5.3.17. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > connectTimeout</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** LDAP client connection timeout in milliseconds.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_searchTimeLimit"></a>16.1.5.3.18. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > searchTimeLimit</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** LDAP search time limit in seconds.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="authentication_items_oneOf_i4_ldapConfig_searchSizeLimit"></a>16.1.5.3.19. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > LDAP Auth Config > ldapConfig > searchSizeLimit</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** Maximum number of LDAP search entries to return.
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+</blockquote>
 
 </blockquote>
 
@@ -2029,4 +2397,4 @@ Specific value: `"jwt"`
 </details>
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2026-01-21 at 14:25:25 +0100
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2026-05-07 at 21:50:35 +0900
