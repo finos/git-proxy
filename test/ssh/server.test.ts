@@ -15,8 +15,8 @@
  */
 
 import { describe, it, beforeEach, afterEach, beforeAll, afterAll, expect, vi } from 'vitest';
+import crypto from 'crypto';
 import fs from 'fs';
-import { execSync } from 'child_process';
 import * as config from '../../src/config';
 import * as db from '../../src/db';
 import * as chain from '../../src/proxy/chain';
@@ -47,21 +47,15 @@ describe('SSHServer', () => {
       fs.mkdirSync(testKeysDir, { recursive: true });
     }
 
-    // Generate test SSH key pair in PEM format (ssh2 library requires PEM, not OpenSSH format)
-    try {
-      execSync(
-        `ssh-keygen -t rsa -b 2048 -m PEM -f ${testKeysDir}/test_key -N "" -C "test@git-proxy"`,
-        { timeout: 5000 },
-      );
-      testKeyContent = fs.readFileSync(`${testKeysDir}/test_key`);
-    } catch (error) {
-      // If key generation fails, create a mock key file
-      testKeyContent = Buffer.from(
-        '-----BEGIN RSA PRIVATE KEY-----\nMOCK_KEY_CONTENT\n-----END RSA PRIVATE KEY-----',
-      );
-      fs.writeFileSync(`${testKeysDir}/test_key`, testKeyContent);
-      fs.writeFileSync(`${testKeysDir}/test_key.pub`, 'ssh-rsa MOCK_PUBLIC_KEY test@git-proxy');
-    }
+    // Generate test SSH key pair using Node.js crypto (cross-platform, no ssh-keygen dependency)
+    const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', {
+      modulusLength: 2048,
+      privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
+      publicKeyEncoding: { type: 'spki', format: 'pem' },
+    });
+    testKeyContent = Buffer.from(privateKey);
+    fs.writeFileSync(`${testKeysDir}/test_key`, testKeyContent);
+    fs.writeFileSync(`${testKeysDir}/test_key.pub`, publicKey);
   });
 
   afterAll(() => {
