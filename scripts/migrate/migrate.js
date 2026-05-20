@@ -1,0 +1,107 @@
+#!/usr/bin/env node
+
+/**
+ * Migration: Add .git suffix to repo URLs for v2.0.0 compatibility
+ *
+ * MIGRATE & APPLY ONLY (dry-run and apply modes)
+ * For backup, use: backup.js
+ *
+ * Usage:
+ *   node scripts/migrate/migrate.js              # Preview changes (dry-run)
+ *   node scripts/migrate/migrate.js --apply      # Apply migration
+ */
+
+const config = require('./lib/config');
+const { analyzeRepos } = require('./lib/analyze');
+const { generateReports } = require('./lib/reporting');
+const { updateRepoUrl, countReposWithoutGit } = require('./lib/common');
+
+const args = {
+  apply: process.argv.includes('--apply'),
+};
+
+config.ensureReportsDir();
+
+async function main() {
+  try {
+    const { allRepos, report } = await analyzeRepos(config.mongoUri, config.dbName);
+
+    // === DRY RUN (default) or APPLY ===
+    if (!args.apply) {
+      console.log('\n=== DRY RUN MODE (default) ===');
+      console.log('No changes applied.');
+      if (report.reposNeedingUpdate > 0) {
+        console.log(`\nNext steps:`);
+        console.log(`  1. Create backup (recommended):`);
+        console.log(`     npm run backup`);
+        console.log(`  2. Apply changes:`);
+        console.log(`     npm run migrate -- --apply`);
+      }
+    } else {
+      console.log('\n=== APPLY PHASE ===');
+      let reposUpdated = 0;
+      let errors = 0;
+
+      for (const change of report.changes) {
+        try {
+          const success = await updateRepoUrl(
+            config.mongoUri,
+            config.dbName,
+            change.repoId,
+            change.newUrl
+          );
+
+          if (success) {
+            change.status = 'updated';
+            reposUpdated++;
+            console.log(`  SUCCESS Updated ${change.repoName}`);
+          } else {
+            change.status = 'no-change';
+            console.log(`  WARNING No change for ${change.repoName}`);
+          }
+        } catch (error) {
+          change.status = 'error';
+          change.error = error.message;
+          errors++;
+          console.error(`  ERROR updating ${change.repoName}: ${error.message}`);
+        }
+      }
+
+      console.log(`\nRepos updated: ${reposUpdated}`);
+      console.log(`Errors: ${errors}`);
+
+      // === VERIFY ===
+      console.log('\n=== VERIFICATION PHASE ===');
+      const remaining = await countReposWithoutGit(config.mongoUri, config.dbName);
+      console.log(`Repos still without .git: ${remaining}`);
+
+      if (remaining === 0) {
+        console.log('SUCCESS Migration verified: all repos now have .git');
+      } else {
+        console.warn(`WARNING ${remaining} repos still need manual fixing`);
+      }
+
+      report.reposUpdated = reposUpdated;
+      report.errors = errors;
+    }
+
+    // === REPORTING ===
+    const timestamp = Date.now();
+    generateReports(config.reportsDir, report, timestamp);
+
+    // === SUMMARY ===
+    console.log('\n=== SUMMARY ===');
+    console.log(`Mode: ${args.apply ? 'APPLY' : 'DRY RUN'}`);
+    console.log(`Total repos: ${report.totalRepos}`);
+    console.log(`Needing update: ${report.reposNeedingUpdate}`);
+    console.log(`Updated: ${report.reposUpdated || 0}`);
+    console.log(`Errors: ${report.errors || 0}`);
+
+    process.exit((report.errors || 0) > 0 ? 1 : 0);
+  } catch (error) {
+    console.error('FATAL ERROR:', error.message);
+    process.exit(1);
+  }
+}
+
+main();
