@@ -22,8 +22,12 @@ import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
 import { getConfigFile } from './file';
+
 import { validateConfig } from './validators';
 import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
+
+export { setConfigFile, getConfigFile, validate } from './file';
+export { serverConfig } from './env';
 
 // Cache for current configuration
 let _currentConfig: GitProxyConfig | null = null;
