@@ -56,6 +56,11 @@ async function exec(req: Request, action: Action): Promise<Action> {
     if (!req.body || req.body.length === 0) {
       throw new Error('No body found in request');
     }
+
+    if (Array.isArray(req.body) || !Buffer.isBuffer(req.body)) {
+      throw new Error('Invalid body type');
+    }
+
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
     const refUpdates = packetLines.filter((line) => line.includes(BRANCH_PREFIX));
 

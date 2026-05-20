@@ -246,6 +246,7 @@ dist
 
 # testing
 /coverage
+/coverage-cli
 
 # production
 /build

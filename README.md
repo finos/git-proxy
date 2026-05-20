@@ -1,7 +1,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/finos/git-proxy">
-    <img src="./docs/img/logo.png" alt="Logo" height="95">
+    <img src="./website/static/img/logo.png" alt="Logo" height="95">
   </a>
   
   <br />
@@ -23,7 +23,7 @@
 
   <br />
 
-[![FINOS - Active](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-active.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/active)
+[![FINOS - Graduated](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-graduated.svg)](https://community.finos.org/docs/governance/lifecycle-stages/graduated)
 [![NPM](https://img.shields.io/npm/v/@finos/git-proxy?colorA=00C586&colorB=000000)](https://www.npmjs.com/package/@finos/git-proxy)
 [![Build](https://img.shields.io/github/actions/workflow/status/finos/git-proxy/ci.yml?branch=main&label=CI&logo=github&colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/finos/git-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/finos/git-proxy)
@@ -92,7 +92,9 @@ customize for your environment, see the [project's documentation](https://git-pr
 - [Installation](https://git-proxy.finos.org/docs/quickstart/installation)
 - [Configuration](https://git-proxy.finos.org/docs/category/configuration)
 - [Contributing](https://git-proxy.finos.org/docs/development/contributing)
-- [Testing](https://git-proxy.finos.org/docs/development/testing)
+- [Testing](https://github.com/finos/git-proxy/blob/main/CONTRIBUTING.md#testing)
+- [Architecture](https://git-proxy.finos.org/docs/category/architecture/)
+- [Upgrading to v2](https://git-proxy.finos.org/docs/upgrading-to-v2)
 
 ## Contributing
 
