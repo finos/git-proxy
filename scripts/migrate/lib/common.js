@@ -51,13 +51,12 @@ async function countReposWithoutGit(mongoUri, dbName) {
   }
 }
 
-function createBackup(reportsDir, allRepos) {
+function createBackup(reportsDir, backupFilePrefix, data) {
   const fs = require('fs');
   const path = require('path');
 
-  const backupPath = path.join(reportsDir, `backup-${Date.now()}.json`);
-  const backupData = allRepos.filter((repo) => !repo.url.endsWith('.git'));
-  fs.writeFileSync(backupPath, JSON.stringify(backupData, null, 2));
+  const backupPath = path.join(reportsDir, `${backupFilePrefix}-${Date.now()}.json`);
+  fs.writeFileSync(backupPath, JSON.stringify(data, null, 2));
 
   return backupPath;
 }

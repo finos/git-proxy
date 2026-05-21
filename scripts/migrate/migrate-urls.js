@@ -16,19 +16,8 @@
  * limitations under the License.
  */
 
-/**
- * Migration: Add .git suffix to repo URLs for v2.0.0 compatibility
- *
- * MIGRATE & APPLY ONLY (dry-run and apply modes)
- * For backup, use: backup.js
- *
- * Usage:
- *   node scripts/migrate/migrate.js              # Preview changes (dry-run)
- *   node scripts/migrate/migrate.js --apply      # Apply migration
- */
-
 const config = require('./lib/config');
-const { analyzeRepos } = require('./lib/analyze');
+const { analyzeRepos } = require('./lib/analyze-urls');
 const { generateReports } = require('./lib/reporting');
 const { updateRepoUrl, countReposWithoutGit } = require('./lib/common');
 
@@ -40,7 +29,7 @@ config.ensureReportsDir();
 
 async function main() {
   try {
-    const { allRepos, report } = await analyzeRepos(config.mongoUri, config.dbName);
+    const { report } = await analyzeRepos(config.mongoUri, config.dbName);
 
     // === DRY RUN (default) or APPLY ===
     if (!args.apply) {
@@ -49,9 +38,9 @@ async function main() {
       if (report.reposNeedingUpdate > 0) {
         console.log(`\nNext steps:`);
         console.log(`  1. Create backup (recommended):`);
-        console.log(`     npm run backup`);
+        console.log(`     node scripts/migrate/backup-urls.js`);
         console.log(`  2. Apply changes:`);
-        console.log(`     npm run migrate -- --apply`);
+        console.log(`     node scripts/migrate/migrate-urls.js --apply`);
       }
     } else {
       console.log('\n=== APPLY PHASE ===');

@@ -21,15 +21,15 @@ In v1.19.2, repos were looked up by `name`, so URLs without `.git` still worked.
 
 ## Migration scripts
 
-Migration is split into modular, reusable components:
+URL migration is split into modular, reusable components:
 
 ```
 scripts/migrate/
-├── migrate.js       # Dry-run and apply modes
-├── backup.js        # Backup only
+├── migrate-urls.js    # Dry-run and apply modes
+├── backup-urls.js     # Backup only
 └── lib/
     ├── config.js
-    ├── analyze.js
+    ├── analyze-urls.js
     ├── reporting.js
     └── common.js
 ```
@@ -43,55 +43,55 @@ scripts/migrate/
 
 ## Usage
 
-These scripts are **one-time migration tools** and are optional to add to `package.json`. Run them directly with Node.js:
+These scripts are **one-time migration tools**. Run them directly with Node.js:
 
 ```bash
 # 1. Preview what will change (dry-run)
-node scripts/migrate/migrate.js
+node scripts/migrate/migrate-urls.js
 
 # 2. Create backup (optional but recommended)
-node scripts/migrate/backup.js
+node scripts/migrate/backup-urls.js
 
 # 3. Apply migration
-node scripts/migrate/migrate.js --apply
+node scripts/migrate/migrate-urls.js --apply
 ```
 
-**Alternative: Using npm scripts** (if added to package.json):
+**Alternative: npm scripts** (when added to `package.json`):
 
 ```bash
-npm run migrate
-npm run backup
-npm run migrate -- --apply
+npm run migrate:urls
+npm run backup:urls
+npm run migrate:urls -- --apply
 ```
 
 ## Reports
 
-All reports are saved to `reports/{timestamp}-migration/` directory:
+All reports are saved to `reports/{date}-migration/` (for example `reports/2026-05-26-migration/`):
 
 - `report-{timestamp}.yaml` - Human-readable summary
 - `report-{timestamp}.csv` - Spreadsheet-compatible list
-- `backup-{timestamp}.json` - Original data backup
+- `backup-urls-{timestamp}.json` - Backup of repos without `.git`
 
 ## Pre-Upgrade Checklist
 
 ```bash
 # Set MongoDB connection (if not already set)
 export MONGO_URI="mongodb://your-host:27017"
-export MONGO_DB_NAME="git-proxy"
+export DB_NAME="git_proxy"
 
 # 1. Test migration locally (dry-run)
-node scripts/migrate/migrate.js
+node scripts/migrate/migrate-urls.js
 
 # 2. Create backup
-node scripts/migrate/backup.js
+node scripts/migrate/backup-urls.js
 
-# 3. Review reports in reports/{timestamp}-migration/ directory
+# 3. Review reports in reports/{date}-migration/ directory
 
 # 4. Apply migration
-node scripts/migrate/migrate.js --apply
+node scripts/migrate/migrate-urls.js --apply
 
 # 5. Verify migration completed
-node scripts/migrate/migrate.js
+node scripts/migrate/migrate-urls.js
 # Should show: Repos needing update: 0
 
 # 6. Upgrade git-proxy to v2.0.0
@@ -100,9 +100,9 @@ npm install
 
 ## Features
 
-- **Dry-run by default** - No changes until explicitly applied
-- **Backup mode** - Backup when requested
-- **YAML/JSON reports** - Human-readable summaries
+- **Dry-run by default** - No changes until `--apply` is passed
+- **Backup on demand** - `backup-urls.js`
+- **YAML reports** - Human-readable summaries
 - **CSV exports** - Spreadsheet compatible
 - **Idempotent** - Safe to run multiple times
-- **Date-based tracking**
+- **Date-based report directory**

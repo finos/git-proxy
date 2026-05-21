@@ -22,11 +22,11 @@
  * BACKUP ONLY
  *
  * Usage:
- *   node scripts/migrate/backup.js                # Create backup only
+ *   node scripts/migrate/backup-urls.js
  */
 
 const config = require('./lib/config');
-const { analyzeRepos } = require('./lib/analyze');
+const { analyzeRepos } = require('./lib/analyze-urls');
 const { generateReports } = require('./lib/reporting');
 const { createBackup } = require('./lib/common');
 
@@ -43,13 +43,13 @@ async function main() {
     }
 
     console.log('\n=== BACKUP PHASE ===');
-    const backupPath = createBackup(config.reportsDir, allRepos);
+    const backupData = allRepos.filter((repo) => !repo.url.endsWith('.git'));
+    const backupPath = createBackup(config.reportsDir, 'backup-urls', backupData);
     console.log(`SUCCESS Backup created: ${backupPath}`);
     console.log(`  (${report.reposNeedingUpdate} repos without .git)`);
     console.log('\nBackup completed. Ready to apply migration:');
-    console.log('  npm run migrate -- --apply');
+    console.log('  node scripts/migrate/migrate-urls.js --apply');
 
-    // === REPORTING ===
     const timestamp = Date.now();
     report.mode = 'backup-only';
     generateReports(config.reportsDir, report, timestamp);
