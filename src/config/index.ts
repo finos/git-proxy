@@ -52,6 +52,7 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'tempPassword',
   'tls',
   'uiRouteAuth',
+  'upstreamProxy',
   'urlShortener',
 ] as const satisfies readonly RequiredTopLevelConfigKey[];
 
