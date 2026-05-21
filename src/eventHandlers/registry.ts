@@ -46,6 +46,11 @@ class ActionEventHandlerBuilder implements IActionEventHandler {
     return this;
   }
 
+  onPendingReview(handler: ActionEventCallback): IActionEventHandler {
+    this.registry.add(this.operation, 'pendingReview', handler);
+    return this;
+  }
+
   onError(handler: ActionErrorEventCallback): IActionEventHandler {
     this.registry.add(this.operation, 'error', handler);
     return this;

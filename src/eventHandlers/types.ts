@@ -26,13 +26,16 @@ export type ProxyOperation = 'push' | 'pull';
  *
  * - `started`: parseAction has succeeded; the chain is about to run. User
  *   identity may not yet be resolved at this point.
- * - `completed`: the chain ran to its terminal step. The push may have been
- *   approved (allowPush=true), queued for approval, or blocked by a non-
- *   permission policy. Handlers can read EventDetails to differentiate.
+ * - `completed`: the chain ran to its terminal step and reached a resolved
+ *   outcome — the push was approved (allowPush=true) or auto-approved /
+ *   auto-rejected by the system.
+ * - `pendingReview`: the chain ran to its terminal step and the push was
+ *   blocked awaiting manual approval. This is not a denial or an error; the
+ *   push sits in the approval queue until a reviewer acts on it.
  * - `error`: an unhandled exception or step error aborted the chain.
  * - `permissionDenied`: the user lacks push permission for the repo.
  */
-export type ActionPhase = 'started' | 'completed' | 'error' | 'permissionDenied';
+export type ActionPhase = 'started' | 'completed' | 'pendingReview' | 'error' | 'permissionDenied';
 
 export interface RepositoryContext {
   url: string;
@@ -65,6 +68,7 @@ export type ActionErrorEventCallback = (details: EventDetails) => void | Promise
 export interface IActionEventHandler {
   onStarted(handler: ActionEventCallback): IActionEventHandler;
   onCompleted(handler: ActionEventCallback): IActionEventHandler;
+  onPendingReview(handler: ActionEventCallback): IActionEventHandler;
   onError(handler: ActionErrorEventCallback): IActionEventHandler;
   onPermissionDenied(handler: ActionEventCallback): IActionEventHandler;
 }

@@ -99,9 +99,10 @@ const dispatchTerminalEvent = (action: Action): void => {
   const dispatcher = getEventDispatcher();
   if (!dispatcher) return;
   // Precedence matters: permissionDenied also flips action.error (the chain
-  // step sets step.error to break the chain), so check it first. Generic
-  // policy blocks (action.blocked without permissionDenied) surface as
-  // `completed` — handlers can read EventDetails to differentiate outcomes.
+  // step sets step.error to break the chain), so check it first. A push that
+  // was blocked for manual approval (action.blocked) surfaces as
+  // `pendingReview`, unless the system already auto-resolved it — in which
+  // case it is a resolved outcome and surfaces as `completed`.
   let phase: ActionPhase;
   let error: Error | undefined;
   if (action.permissionDenied) {
@@ -109,6 +110,8 @@ const dispatchTerminalEvent = (action: Action): void => {
   } else if (action.error) {
     phase = 'error';
     error = action.errorMessage ? new Error(action.errorMessage) : new Error('Chain error');
+  } else if (action.blocked && !action.autoApproved && !action.autoRejected) {
+    phase = 'pendingReview';
   } else {
     phase = 'completed';
   }

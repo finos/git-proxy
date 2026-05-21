@@ -48,9 +48,11 @@ describe('ProxyEventRegistry', () => {
     const registry = new ProxyEventRegistry();
     const a = vi.fn();
     const b = vi.fn();
-    registry.onPush().onCompleted(a).onError(b);
+    const c = vi.fn();
+    registry.onPush().onCompleted(a).onError(b).onPendingReview(c);
     expect(registry.get('push', 'completed')).toEqual([a]);
     expect(registry.get('push', 'error')).toEqual([b]);
+    expect(registry.get('push', 'pendingReview')).toEqual([c]);
     expect(registry.get('pull', 'completed')).toEqual([]);
   });
 
@@ -236,19 +238,21 @@ describe('consoleLoggerEventHandler', () => {
 
     dispatcher.dispatch(buildPushAction(), 'started');
     dispatcher.dispatch(buildPushAction(), 'completed');
+    dispatcher.dispatch(buildPushAction(), 'pendingReview');
     dispatcher.dispatch(buildPushAction(), 'permissionDenied');
     dispatcher.dispatch(buildPushAction(), 'error', new Error('boom'));
     await dispatcher.drain(100);
 
-    expect(infoSpy).toHaveBeenCalledTimes(4);
+    expect(infoSpy).toHaveBeenCalledTimes(5);
     const logged = infoSpy.mock.calls.map((c) => JSON.parse(c[0] as string));
     expect(logged.map((l) => l.phase)).toEqual([
       'started',
       'completed',
+      'pendingReview',
       'permissionDenied',
       'error',
     ]);
-    expect(logged[3].error).toBe('boom');
+    expect(logged[4].error).toBe('boom');
     for (const line of logged) {
       expect(line.event).toBe('gitproxy.action');
       expect(line.operation).toBe('push');

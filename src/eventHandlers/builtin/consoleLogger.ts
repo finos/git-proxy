@@ -36,7 +36,13 @@ const log = (details: EventDetails): void => {
   console.info(formatLine(details));
 };
 
-const phases: ActionPhase[] = ['started', 'completed', 'error', 'permissionDenied'];
+const phases: ActionPhase[] = [
+  'started',
+  'completed',
+  'pendingReview',
+  'error',
+  'permissionDenied',
+];
 const operations: ProxyOperation[] = ['push', 'pull'];
 
 /**
@@ -53,6 +59,7 @@ export const consoleLoggerEventHandler = new EventHandlerPlugin(function registe
     for (const phase of phases) {
       if (phase === 'started') builder.onStarted(log);
       else if (phase === 'completed') builder.onCompleted(log);
+      else if (phase === 'pendingReview') builder.onPendingReview(log);
       else if (phase === 'error') builder.onError(log);
       else if (phase === 'permissionDenied') builder.onPermissionDenied(log);
     }
