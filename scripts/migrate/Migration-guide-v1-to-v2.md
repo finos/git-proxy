@@ -8,12 +8,12 @@ When upgrading from git-proxy v1.19.2 to v2.0.0, repositories stored without the
 
 **v1.19.2 vs v2.0.0 repository lookup logic:**
 
-| Aspect | v1.19.2 | v2.0.0 |
-|--------|---------|--------|
-| Lookup method | By repo `name` field | By repo `url` field |
-| URL matching | Not used for requests | Exact `$eq` match required |
-| URL normalization | None (backend) | None (backend) |
-| Git suffix requirement | Not enforced (proxy handles it) | Enforced (exact match) |
+| Aspect                 | v1.19.2                         | v2.0.0                     |
+| ---------------------- | ------------------------------- | -------------------------- |
+| Lookup method          | By repo `name` field            | By repo `url` field        |
+| URL matching           | Not used for requests           | Exact `$eq` match required |
+| URL normalization      | None (backend)                  | None (backend)             |
+| Git suffix requirement | Not enforced (proxy handles it) | Enforced (exact match)     |
 
 ### Why this breaks
 
@@ -67,6 +67,7 @@ npm run migrate -- --apply
 ## Reports
 
 All reports are saved to `reports/{timestamp}-migration/` directory:
+
 - `report-{timestamp}.yaml` - Human-readable summary
 - `report-{timestamp}.csv` - Spreadsheet-compatible list
 - `backup-{timestamp}.json` - Original data backup
