@@ -5,11 +5,6 @@
   "description": "Configuration for customizing git-proxy",
   "type": "object",
   "properties": {
-    "proxyUrl": {
-      "type": "string",
-      "description": "Deprecated: Used in early versions of git proxy to configure the remote host that traffic is proxied to. In later versions, the repository URL is used to determine the domain proxied, allowing multiple hosts to be proxied by one instance.",
-      "deprecated": true
-    },
     "cookieSecret": { "type": "string" },
     "sessionMaxAgeHours": { "type": "number" },
     "api": {
@@ -332,16 +327,6 @@
         "cert": { "type": "string" }
       },
       "required": ["enabled", "key", "cert"]
-    },
-    "sslKeyPemPath": {
-      "description": "Deprecated: Path to SSL private key file (use tls.key instead)",
-      "type": "string",
-      "deprecated": true
-    },
-    "sslCertPemPath": {
-      "description": "Deprecated: Path to SSL certificate file (use tls.cert instead)",
-      "type": "string",
-      "deprecated": true
     },
     "configurationSources": {
       "enabled": { "type": "boolean" },

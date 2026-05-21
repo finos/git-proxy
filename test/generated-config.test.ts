@@ -22,7 +22,7 @@ describe('Generated Config (QuickType)', () => {
   describe('Convert class', () => {
     it('should parse valid configuration JSON', () => {
       const validConfig = {
-        proxyUrl: 'https://proxy.example.com',
+        contactEmail: 'admin@example.com',
         cookieSecret: 'test-secret',
         authorisedList: [
           {
@@ -48,7 +48,7 @@ describe('Generated Config (QuickType)', () => {
       const result = Convert.toGitProxyConfig(JSON.stringify(validConfig));
 
       assert.isObject(result);
-      expect(result.proxyUrl).toBe('https://proxy.example.com');
+      expect(result.contactEmail).toBe('admin@example.com');
       expect(result.cookieSecret).toBe('test-secret');
       assert.isArray(result.authorisedList);
       assert.isArray(result.authentication);
@@ -57,7 +57,7 @@ describe('Generated Config (QuickType)', () => {
 
     it('should convert config object back to JSON', () => {
       const configObject = {
-        proxyUrl: 'https://proxy.example.com',
+        contactEmail: 'admin@example.com',
         cookieSecret: 'test-secret',
         authorisedList: [],
         authentication: [
@@ -72,7 +72,7 @@ describe('Generated Config (QuickType)', () => {
       const parsed = JSON.parse(jsonString);
 
       assert.isObject(parsed);
-      expect(parsed.proxyUrl).toBe('https://proxy.example.com');
+      expect(parsed.contactEmail).toBe('admin@example.com');
       expect(parsed.cookieSecret).toBe('test-secret');
     });
 
@@ -91,7 +91,7 @@ describe('Generated Config (QuickType)', () => {
 
     it('should handle configuration with valid rate limit structure', () => {
       const validConfig = {
-        proxyUrl: 'https://proxy.example.com',
+        contactEmail: 'admin@example.com',
         cookieSecret: 'secret',
         sessionMaxAgeHours: 24,
         rateLimit: {
@@ -121,7 +121,6 @@ describe('Generated Config (QuickType)', () => {
             enabled: true,
           },
         ],
-        contactEmail: 'admin@example.com',
         csrfProtection: true,
         plugins: [],
         privateOrganizations: ['private-org'],
@@ -138,7 +137,7 @@ describe('Generated Config (QuickType)', () => {
       assert.isBoolean(result.csrfProtection);
       assert.isArray(result.plugins);
       assert.isArray(result.privateOrganizations);
-      assert.isString(result.proxyUrl);
+      assert.isString(result.contactEmail);
       assert.isObject(result.rateLimit);
       assert.isNumber(result.sessionMaxAgeHours);
       assert.isArray(result.sink);
@@ -146,7 +145,7 @@ describe('Generated Config (QuickType)', () => {
 
     it('should handle malformed configuration gracefully', () => {
       const malformedConfig = {
-        proxyUrl: 123, // Wrong type
+        contactEmail: 123, // Wrong type
         authentication: 'not-an-array', // Wrong type
       };
 
@@ -155,7 +154,7 @@ describe('Generated Config (QuickType)', () => {
 
     it('should preserve array structures', () => {
       const configWithArrays = {
-        proxyUrl: 'https://proxy.example.com',
+        contactEmail: 'admin@example.com',
         cookieSecret: 'secret',
         authorisedList: [
           { project: 'proj1', name: 'repo1', url: 'https://github.com/proj1/repo1.git' },
@@ -177,7 +176,7 @@ describe('Generated Config (QuickType)', () => {
 
     it('should handle nested object structures', () => {
       const configWithNesting = {
-        proxyUrl: 'https://proxy.example.com',
+        contactEmail: 'admin@example.com',
         cookieSecret: 'secret',
         authentication: [{ type: 'local', enabled: true }],
         sink: [{ type: 'fs', enabled: true }],
@@ -207,7 +206,7 @@ describe('Generated Config (QuickType)', () => {
     it('should handle complex validation scenarios', () => {
       // Test configuration that will trigger more validation paths
       const complexConfig = {
-        proxyUrl: 'https://proxy.example.com',
+        contactEmail: 'admin@example.com',
         cookieSecret: 'secret',
         authentication: [{ type: 'local', enabled: true }],
         sink: [{ type: 'fs', enabled: true }],
@@ -246,7 +245,7 @@ describe('Generated Config (QuickType)', () => {
 
     it('should handle array validation edge cases', () => {
       const configWithArrays = {
-        proxyUrl: 'https://proxy.example.com',
+        contactEmail: 'admin@example.com',
         cookieSecret: 'secret',
         authentication: [{ type: 'local', enabled: true }],
         sink: [{ type: 'fs', enabled: true }],
@@ -277,7 +276,7 @@ describe('Generated Config (QuickType)', () => {
 
     it('should exercise transformation functions with edge cases', () => {
       const edgeCaseConfig = {
-        proxyUrl: 'https://proxy.example.com',
+        contactEmail: 'admin@example.com',
         cookieSecret: 'secret',
         authentication: [{ type: 'local', enabled: true }],
         sink: [{ type: 'fs', enabled: true }],
@@ -316,14 +315,13 @@ describe('Generated Config (QuickType)', () => {
 
     it('should test validation error paths', () => {
       assert.throws(() =>
-        Convert.toGitProxyConfig('{"proxyUrl": 123, "authentication": "not-array"}'),
+        Convert.toGitProxyConfig('{"contactEmail": 123, "authentication": "not-array"}'),
       );
     });
 
     it('should test date and null handling', () => {
       // Test that null values cause validation errors (covers error paths)
       const configWithNulls = {
-        proxyUrl: 'https://proxy.example.com',
         cookieSecret: null,
         authentication: [{ type: 'local', enabled: true }],
         sink: [{ type: 'fs', enabled: true }],
@@ -338,7 +336,7 @@ describe('Generated Config (QuickType)', () => {
 
     it('should test serialization back to JSON', () => {
       const testConfig = {
-        proxyUrl: 'https://test.com',
+        contactEmail: 'admin@test.com',
         cookieSecret: 'secret',
         authentication: [{ type: 'local', enabled: true }],
         sink: [{ type: 'fs', enabled: true }],
@@ -356,7 +354,7 @@ describe('Generated Config (QuickType)', () => {
       const serialized = Convert.gitProxyConfigToJson(parsed);
       const reparsed = JSON.parse(serialized);
 
-      expect(reparsed.proxyUrl).toBe('https://test.com');
+      expect(reparsed.contactEmail).toBe('admin@test.com');
       assert.isObject(reparsed.rateLimit);
     });
 

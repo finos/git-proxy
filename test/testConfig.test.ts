@@ -36,7 +36,6 @@ describe('default configuration', () => {
     expect(config.getAuthMethods()).toEqual(enabledMethods);
     expect(config.getDatabase()).toEqual(defaultSettings.sink[0]);
     expect(config.getTempPasswordConfig()).toEqual(defaultSettings.tempPassword);
-    expect(config.getProxyUrl()).toBeUndefined();
     expect(config.getAuthorisedList()).toEqual(defaultSettings.authorisedList);
     expect(config.getRateLimit()).toEqual(defaultSettings.rateLimit);
     expect(config.getTLSKeyPemPath()).toEqual(defaultSettings.tls.key);
@@ -219,46 +218,6 @@ describe('user configuration', () => {
     expect(config.getPlugins()).toEqual(user.plugins);
   });
 
-  it('should override default settings for sslCertPemPath', async () => {
-    const user = { tls: { enabled: true, key: 'my-key.pem', cert: 'my-cert.pem' } };
-    fs.writeFileSync(tempUserFile, JSON.stringify(user));
-
-    const config = await import('../src/config');
-    config.invalidateCache();
-
-    expect(config.getTLSCertPemPath()).toBe(user.tls.cert);
-    expect(config.getTLSKeyPemPath()).toBe(user.tls.key);
-    expect(config.getTLSEnabled()).toBe(user.tls.enabled);
-  });
-
-  it('should prioritize tls.key and tls.cert over sslKeyPemPath and sslCertPemPath', async () => {
-    const user = {
-      tls: { enabled: true, key: 'good-key.pem', cert: 'good-cert.pem' },
-      sslKeyPemPath: 'bad-key.pem',
-      sslCertPemPath: 'bad-cert.pem',
-    };
-    fs.writeFileSync(tempUserFile, JSON.stringify(user));
-
-    const config = await import('../src/config');
-    config.invalidateCache();
-
-    expect(config.getTLSCertPemPath()).toBe(user.tls.cert);
-    expect(config.getTLSKeyPemPath()).toBe(user.tls.key);
-    expect(config.getTLSEnabled()).toBe(user.tls.enabled);
-  });
-
-  it('should use sslKeyPemPath and sslCertPemPath if tls.key and tls.cert are not present', async () => {
-    const user = { sslKeyPemPath: 'good-key.pem', sslCertPemPath: 'good-cert.pem' };
-    fs.writeFileSync(tempUserFile, JSON.stringify(user));
-
-    const config = await import('../src/config');
-    config.invalidateCache();
-
-    expect(config.getTLSCertPemPath()).toBe(user.sslCertPemPath);
-    expect(config.getTLSKeyPemPath()).toBe(user.sslKeyPemPath);
-    expect(config.getTLSEnabled()).toBe(false);
-  });
-
   it('should override default settings for api', async () => {
     const user = { api: { gitlab: { baseUrl: 'https://gitlab.com' } } };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
@@ -338,7 +297,6 @@ describe('user configuration', () => {
 
     const config = await import('../src/config');
 
-    expect(() => config.getProxyUrl()).not.toThrow();
     expect(() => config.getCookieSecret()).not.toThrow();
     expect(() => config.getSessionMaxAgeHours()).not.toThrow();
     expect(() => config.getCommitConfig()).not.toThrow();

@@ -37,7 +37,7 @@ describe('validators', () => {
 
     it('should return true for config without commitConfig', () => {
       const config: GitProxyConfig = {
-        proxyUrl: 'https://test.com',
+        contactEmail: 'admin@test.com',
         cookieSecret: 'secret',
       };
       expect(validateConfig(config)).toBe(true);

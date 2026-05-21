@@ -25,12 +25,7 @@ import { getConfigFile } from './file';
 import { validateConfig } from './validators';
 import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
 
-// Deprecated compatibility fields are still optional because the defaults do not set them.
-type OptionalTopLevelConfigKey = 'proxyUrl' | 'sslCertPemPath' | 'sslKeyPemPath';
-type RequiredTopLevelConfigKey = Exclude<keyof GitProxyConfig, OptionalTopLevelConfigKey>;
-
-export type FullGitProxyConfig = Required<Omit<GitProxyConfig, OptionalTopLevelConfigKey>> &
-  Pick<GitProxyConfig, OptionalTopLevelConfigKey>;
+export type FullGitProxyConfig = Required<GitProxyConfig>;
 
 const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'api',
@@ -54,10 +49,10 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'uiRouteAuth',
   'upstreamProxy',
   'urlShortener',
-] as const satisfies readonly RequiredTopLevelConfigKey[];
+] as const satisfies readonly (keyof GitProxyConfig)[];
 
 type MissingRequiredTopLevelConfigKeys = Exclude<
-  RequiredTopLevelConfigKey,
+  keyof GitProxyConfig,
   (typeof REQUIRED_TOP_LEVEL_CONFIG_KEYS)[number]
 >;
 type AssertNever<T extends never> = T;
@@ -156,19 +151,6 @@ function mergeConfigurations(
   defaultConfig: GitProxyConfig,
   userSettings: Partial<GitProxyConfig>,
 ): FullGitProxyConfig {
-  // Special handling for TLS configuration when legacy fields are used
-  let tlsConfig = userSettings.tls || defaultConfig.tls;
-
-  // If user doesn't specify tls but has legacy SSL fields, use only legacy fallback
-  if (!userSettings.tls && (userSettings.sslKeyPemPath || userSettings.sslCertPemPath)) {
-    tlsConfig = {
-      enabled: defaultConfig.tls?.enabled || false,
-      // Use empty strings so legacy fallback works
-      key: '',
-      cert: '',
-    };
-  }
-
   const config = {
     ...defaultConfig,
     ...userSettings,
@@ -178,11 +160,8 @@ function mergeConfigurations(
     commitConfig: { ...defaultConfig.commitConfig, ...userSettings.commitConfig },
     attestationConfig: { ...defaultConfig.attestationConfig, ...userSettings.attestationConfig },
     rateLimit: userSettings.rateLimit || defaultConfig.rateLimit,
-    tls: tlsConfig,
+    tls: userSettings.tls || defaultConfig.tls,
     tempPassword: { ...defaultConfig.tempPassword, ...userSettings.tempPassword },
-    // Preserve legacy SSL fields
-    sslKeyPemPath: userSettings.sslKeyPemPath || defaultConfig.sslKeyPemPath,
-    sslCertPemPath: userSettings.sslCertPemPath || defaultConfig.sslCertPemPath,
     // Environment variable overrides
     cookieSecret:
       serverConfig.GIT_PROXY_COOKIE_SECRET ||
@@ -193,12 +172,6 @@ function mergeConfigurations(
   assertHasRequiredTopLevelConfig(config);
   return config;
 }
-
-// Get configured proxy URL
-export const getProxyUrl = (): string | undefined => {
-  const config = loadFullConfiguration();
-  return config.proxyUrl;
-};
 
 /**
  * Redacts the userinfo (credentials) from a proxy URL for safe logging.
@@ -357,12 +330,12 @@ export const getPlugins = () => {
 
 export const getTLSKeyPemPath = (): string | undefined => {
   const config = loadFullConfiguration();
-  return config.tls?.key && config.tls.key !== '' ? config.tls.key : config.sslKeyPemPath;
+  return config.tls?.key || undefined;
 };
 
 export const getTLSCertPemPath = (): string | undefined => {
   const config = loadFullConfiguration();
-  return config.tls?.cert && config.tls.cert !== '' ? config.tls.cert : config.sslCertPemPath;
+  return config.tls?.cert || undefined;
 };
 
 export const getTLSEnabled = (): boolean => {
