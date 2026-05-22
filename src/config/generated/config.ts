@@ -66,6 +66,12 @@ export interface GitProxyConfig {
    */
   privateOrganizations?: any[];
   /**
+   * Deprecated: Used in early versions of git proxy to configure the remote host that traffic
+   * is proxied to. In later versions, the repository URL is used to determine the domain
+   * proxied, allowing multiple hosts to be proxied by one instance.
+   */
+  proxyUrl?: string;
+  /**
    * API Rate limiting configuration.
    */
   rateLimit?: RateLimit;
@@ -75,6 +81,14 @@ export interface GitProxyConfig {
    * used.
    */
   sink?: Database[];
+  /**
+   * Deprecated: Path to SSL certificate file (use tls.cert instead)
+   */
+  sslCertPemPath?: string;
+  /**
+   * Deprecated: Path to SSL private key file (use tls.key instead)
+   */
+  sslKeyPemPath?: string;
   /**
    * Toggle the generation of temporary password for git-proxy admin user
    */
@@ -779,9 +793,12 @@ const typeMap: any = {
       { json: 'domains', js: 'domains', typ: u(undefined, r('Domains')) },
       { json: 'plugins', js: 'plugins', typ: u(undefined, a('')) },
       { json: 'privateOrganizations', js: 'privateOrganizations', typ: u(undefined, a('any')) },
+      { json: 'proxyUrl', js: 'proxyUrl', typ: u(undefined, '') },
       { json: 'rateLimit', js: 'rateLimit', typ: u(undefined, r('RateLimit')) },
       { json: 'sessionMaxAgeHours', js: 'sessionMaxAgeHours', typ: u(undefined, 3.14) },
       { json: 'sink', js: 'sink', typ: u(undefined, a(r('Database'))) },
+      { json: 'sslCertPemPath', js: 'sslCertPemPath', typ: u(undefined, '') },
+      { json: 'sslKeyPemPath', js: 'sslKeyPemPath', typ: u(undefined, '') },
       { json: 'tempPassword', js: 'tempPassword', typ: u(undefined, r('TempPassword')) },
       { json: 'tls', js: 'tls', typ: u(undefined, r('TLS')) },
       { json: 'uiRouteAuth', js: 'uiRouteAuth', typ: u(undefined, r('UIRouteAuth')) },

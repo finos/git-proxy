@@ -68,7 +68,7 @@ describe('ConfigLoader', () => {
   describe('loadFromFile', () => {
     it('should load configuration from file', async () => {
       const testConfig = {
-        contactEmail: 'admin@test.com',
+        proxyUrl: 'https://test.com',
         cookieSecret: 'test-secret',
       };
       fs.writeFileSync(tempConfigFile, JSON.stringify(testConfig));
@@ -81,7 +81,7 @@ describe('ConfigLoader', () => {
       });
 
       expect(result).toBeTypeOf('object');
-      expect(result.contactEmail).toBe('admin@test.com');
+      expect(result.proxyUrl).toBe('https://test.com');
       expect(result.cookieSecret).toBe('test-secret');
     });
   });
@@ -89,7 +89,7 @@ describe('ConfigLoader', () => {
   describe('loadFromHttp', () => {
     it('should load configuration from HTTP endpoint', async () => {
       const testConfig = {
-        contactEmail: 'admin@test.com',
+        proxyUrl: 'https://test.com',
         cookieSecret: 'test-secret',
       };
 
@@ -104,7 +104,7 @@ describe('ConfigLoader', () => {
       });
 
       expect(result).toBeTypeOf('object');
-      expect(result.contactEmail).toBe('admin@test.com');
+      expect(result.proxyUrl).toBe('https://test.com');
       expect(result.cookieSecret).toBe('test-secret');
     });
 
@@ -145,7 +145,7 @@ describe('ConfigLoader', () => {
       };
 
       const newConfig = {
-        contactEmail: 'admin@new-test.com',
+        proxyUrl: 'https://new-test.com',
       };
 
       fs.writeFileSync(tempConfigFile, JSON.stringify(newConfig));
@@ -162,7 +162,7 @@ describe('ConfigLoader', () => {
 
     it('should not emit event if config has not changed', async () => {
       const testConfig = {
-        contactEmail: 'admin@test.com',
+        proxyUrl: 'https://test.com',
       };
 
       const config: Configuration = {
@@ -211,7 +211,7 @@ describe('ConfigLoader', () => {
 
     it('should skip reload and log error when configuration is invalid', async () => {
       const invalidConfig = {
-        contactEmail: 'admin@test.com',
+        proxyUrl: 'https://test.com',
         commitConfig: {
           author: {
             email: {
@@ -261,7 +261,7 @@ describe('ConfigLoader', () => {
 
     it('should successfully reload when configuration is valid', async () => {
       const validConfig = {
-        contactEmail: 'admin@test.com',
+        proxyUrl: 'https://test.com',
         commitConfig: {
           author: {
             email: {
