@@ -6,10 +6,10 @@ This file lists the maintainers of this repository.
 
 | GitHub Username | Name          | Organization                    | Email                   |
 | --------------- | ------------- | ------------------------------- | ----------------------- |
-| @06kellyjac     | j-k           | @controlplaneio                 | _please add email_      |
+| @06kellyjac     | j-k           | @controlplaneio                 | jack+finos@control-plane.io      |
 | @JamieSlome     | Jamie Slome   | _please add organization_       | _please add email_      |
 | @andypols       | Andy Pols     | Qube Research & Technologies (QRT) | andrew.pols@qube-rt.com |
-| @coopernetes    | Thomas Cooper | @RBC                            | _please add email_      |
+| @coopernetes    | Thomas Cooper | @RBC                            | thomas.cooper@rbc.com      |
 | @grovesy        | Paul Groves   | Citi                            | paul.groves@citi.com    |
 | @jescalada      | Juan Escalada | G-Research Open Source Software | juan.escalada@gr-oss.io |
 | @kriswest       | Kris West     | NatWest Group                   | _please add email_      |
