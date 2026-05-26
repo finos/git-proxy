@@ -114,9 +114,9 @@ This project is distributed under the Apache-2.0 license. See [`LICENSE`](LICENS
 
 ## Contact
 
-Drop a note, ask a question or just say hello in our community Slack channel, which is accessible via the [FINOS Slack Workspace](https://finos-lf.slack.com) 👋
+Drop a note, ask a question or just say hello in our community Slack channel [#git-proxy](https://finos-lf.slack.com/archives/C06LXNW0W76), which is accessible via the [FINOS Slack Workspace](https://finos-lf.slack.com) 👋
 
-If you can't access Slack, you can also [subscribe to our mailing list](mailto:git-proxy+subscribe@lists.finos.org) 📨
+If you can't join, you can send us an e-mail to [help@finos.org](mailto:help@finos.org) to get access. You can also [subscribe to our mailing list](mailto:git-proxy+subscribe@lists.finos.org) and stay tuned for any updates 📨
 
 Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues) 🧵
 
