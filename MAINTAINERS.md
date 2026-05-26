@@ -11,7 +11,7 @@ This file lists the maintainers of this repository.
 | @andypols | Andy Pols | *please add organization* | *please add email* |
 | @coopernetes | Thomas Cooper | @RBC  | *please add email* |
 | @grovesy | Paul Groves | Citi | paul.groves@citi.com |
-| @jescalada | Juan Escalada | G-Research Open Source Software | *please add email* |
+| @jescalada | Juan Escalada | G-Research Open Source Software | juan.escalada@gr-oss.io |
 | @kriswest | Kris West | NatWest Group | *please add email* |
 
 For information about maintainer responsibilities and resources, see the [FINOS Maintainers Cheatsheet](https://community.finos.org/docs/finos-maintainers-cheatsheet).
