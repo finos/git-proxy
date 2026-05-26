@@ -8,7 +8,7 @@ This file lists the maintainers of this repository.
 | --------------- | ------------- | ------------------------------- | ----------------------- |
 | @06kellyjac     | j-k           | @controlplaneio                 | _please add email_      |
 | @JamieSlome     | Jamie Slome   | _please add organization_       | _please add email_      |
-| @andypols       | Andy Pols     | _please add organization_       | _please add email_      |
+| @andypols       | Andy Pols     | Qube Research & Technologies (QRT) | andrew.pols@qube-rt.com |
 | @coopernetes    | Thomas Cooper | @RBC                            | _please add email_      |
 | @grovesy        | Paul Groves   | Citi                            | paul.groves@citi.com    |
 | @jescalada      | Juan Escalada | G-Research Open Source Software | juan.escalada@gr-oss.io |
