@@ -4,15 +4,15 @@ This file lists the maintainers of this repository.
 
 ## Current maintainers
 
-| GitHub Username | Name | Organization | Email |
-|----------------|------|--------------|-------|
-| @06kellyjac | j-k | @controlplaneio | *please add email* |
-| @JamieSlome | Jamie Slome | *please add organization* | *please add email* |
-| @andypols | Andy Pols | *please add organization* | *please add email* |
-| @coopernetes | Thomas Cooper | @RBC  | *please add email* |
-| @grovesy | Paul Groves | Citi | paul.groves@citi.com |
-| @jescalada | Juan Escalada | G-Research Open Source Software | juan.escalada@gr-oss.io |
-| @kriswest | Kris West | NatWest Group | *please add email* |
+| GitHub Username | Name          | Organization                    | Email                   |
+| --------------- | ------------- | ------------------------------- | ----------------------- |
+| @06kellyjac     | j-k           | @controlplaneio                 | _please add email_      |
+| @JamieSlome     | Jamie Slome   | _please add organization_       | _please add email_      |
+| @andypols       | Andy Pols     | _please add organization_       | _please add email_      |
+| @coopernetes    | Thomas Cooper | @RBC                            | _please add email_      |
+| @grovesy        | Paul Groves   | Citi                            | paul.groves@citi.com    |
+| @jescalada      | Juan Escalada | G-Research Open Source Software | juan.escalada@gr-oss.io |
+| @kriswest       | Kris West     | NatWest Group                   | _please add email_      |
 
 For information about maintainer responsibilities and resources, see the [FINOS Maintainers Cheatsheet](https://community.finos.org/docs/finos-maintainers-cheatsheet).
 
