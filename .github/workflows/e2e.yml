@@ -36,7 +36,7 @@ jobs:
         uses: docker/setup-compose-action@e29e0ecd235838be5f2e823f8f512a72dc55f662
 
       - name: Set up Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: '24'
           cache: 'npm'
@@ -78,7 +78,7 @@ jobs:
         run: docker compose logs git-proxy --tail=100
 
       - name: Upload Cypress screenshots on failure
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: failure() && matrix.suite == 'cypress'
         with:
           name: cypress-screenshots
