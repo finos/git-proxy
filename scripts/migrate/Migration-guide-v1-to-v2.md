@@ -1,62 +1,41 @@
-# Git-Proxy v1.19.2 → v2.0.0 MongoDB URL Migration
+# Git-Proxy v1.19.2 → v2.0.0 MongoDB migration
 
-## Problem Overview
+Operator prep for upgrade, aligned with [finos/git-proxy#1535](https://github.com/finos/git-proxy/issues/1535#issuecomment-4478956510) (these scripts do **not** replace your own DB backup/snapshot).
+**Behavior:** dry-run by default for both phases; normalization is idempotent; email apply skips unchanged rows and checks uniqueness before writes; backups are explicit helper scripts plus your own infra.
 
-When upgrading from git-proxy v1.19.2 to v2.0.0, repositories stored without the `.git` suffix in MongoDB URLs will become inaccessible for push/pull operations.
+| Phase | Scripts                               | Goal                                                                                                                                                                               |
+| ----- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1** | `migrate-urls.js`, `backup-urls.js`   | **Repo URL normalization** — append `.git` to `repos.url` where missing (idempotent)                                                                                               |
+| **2** | `migrate-users.js`, `backup-users.js` | **Email audit** (blocking issues) + optional **CSV apply**; **ACL audit** — list `canPush` / `canAuthorise` entries that do not resolve to any `User.username` (no silent rewrite) |
 
-### Root Cause
+Env: `MONGO_URI`, `DB_NAME` (see `scripts/migrate/lib/config.js`). Reports: `reports/{date}-migration/`.
 
-**v1.19.2 vs v2.0.0 repository lookup logic:**
-
-| Aspect                 | v1.19.2                         | v2.0.0                     |
-| ---------------------- | ------------------------------- | -------------------------- |
-| Lookup method          | By repo `name` field            | By repo `url` field        |
-| URL matching           | Not used for requests           | Exact `$eq` match required |
-| URL normalization      | None (backend)                  | None (backend)             |
-| Git suffix requirement | Not enforced (proxy handles it) | Enforced (exact match)     |
-
-### Why this breaks
-
-In v1.19.2, repos were looked up by `name`, so URLs without `.git` still worked. In v2.0.0, repos are looked up by exact URL match, so any repo stored without `.git` will fail to match incoming requests that include `.git`.
-
-## Migration scripts
-
-URL migration is split into modular, reusable components:
-
-```
-scripts/migrate/
-├── migrate-urls.js    # Dry-run and apply modes
-├── backup-urls.js     # Backup only
-└── lib/
-    ├── config.js
-    ├── analyze-urls.js
-    ├── reporting.js
-    └── common.js
-```
-
-### Prerequisites
-
-- Node.js 22.13.1+ (as per git-proxy requirements)
-- MongoDB connection string and database name
-- Network access to MongoDB instance
-- Write access to `reports/` directory for backup files
-
-## Usage
-
-These scripts are **one-time migration tools**. Run them directly with Node.js:
+## npm scripts
 
 ```bash
-# 1. Preview what will change (dry-run)
-node scripts/migrate/migrate-urls.js
+npm run migrate:urls                        # repo URL normalization — dry-run
+npm run backup:urls
+npm run migrate:urls -- --apply              # apply normalization
 
-# 2. Create backup (optional but recommended)
-node scripts/migrate/backup-urls.js
-
-# 3. Apply migration
-node scripts/migrate/migrate-urls.js --apply
+npm run migrate:users                        # email + ACL audit (dry-run)
+npm run backup:users
+npm run migrate:users -- --apply --csv ./map.csv
 ```
 
-**Alternative: npm scripts** (when added to `package.json`):
+---
+
+## Phase 1 — Repo URL normalization (append `.git` where missing)
+
+**Goal:** every `repos.url` that v2 will match must include the `.git` suffix where it is missing.
+
+**Why:** v2 resolves repos by **exact** `url`; v1 often relied on `name`. Clients typically send URLs with `.git`; rows without `.git` stop matching.
+
+|              | v1.19.2      | v2.0.0                                     |
+| ------------ | ------------ | ------------------------------------------ |
+| Lookup       | `name`       | `url` (exact `$eq`)                        |
+| `.git` in DB | not required | required for parity with incoming requests |
+
+**Scripts:** `migrate-urls.js`, `backup-urls.js`; helpers under `lib/` (`analyze-urls.js`, `reporting.js`, `common.js`, `config.js`).
 
 ```bash
 npm run migrate:urls
@@ -64,45 +43,50 @@ npm run backup:urls
 npm run migrate:urls -- --apply
 ```
 
-## Reports
+Reports: `report-{ts}.yaml`, `report-{ts}.csv` (pending changes), `backup-urls-{ts}.json`.
 
-All reports are saved to `reports/{date}-migration/` (for example `reports/2026-05-26-migration/`):
+---
 
-- `report-{timestamp}.yaml` - Human-readable summary
-- `report-{timestamp}.csv` - Spreadsheet-compatible list
-- `backup-urls-{timestamp}.json` - Backup of repos without `.git`
+## Phase 2 — User emails & ACL audit
 
-## Pre-Upgrade Checklist
+**Goal:** unblock v2 pushes: valid **unique** `users.email` (audit + CSV apply fallback); surface **ACL orphan** `username` strings for manual UI fix.
+
+**migrate-urls vs migrate-users**
+
+|             | `migrate-urls.js`      | `migrate-users.js`              |
+| ----------- | ---------------------- | ------------------------------- |
+| Apply flags | `--apply`              | `--apply` **and** `--csv`       |
+| Writes      | `repos.url` only       | `users.email` from CSV only     |
+| Always      | normalization analysis | email audit + ACL orphan report |
+
+`backup-users.js` is separate (not invoked by `migrate-users`).
 
 ```bash
-# Set MongoDB connection (if not already set)
-export MONGO_URI="mongodb://your-host:27017"
-export DB_NAME="git_proxy"
-
-# 1. Test migration locally (dry-run)
-node scripts/migrate/migrate-urls.js
-
-# 2. Create backup
-node scripts/migrate/backup-urls.js
-
-# 3. Review reports in reports/{date}-migration/ directory
-
-# 4. Apply migration
-node scripts/migrate/migrate-urls.js --apply
-
-# 5. Verify migration completed
-node scripts/migrate/migrate-urls.js
-# Should show: Repos needing update: 0
-
-# 6. Upgrade git-proxy to v2.0.0
-npm install
+npm run migrate:users
+npm run backup:users
+npm run migrate:users -- --apply --csv ./mappings.csv
 ```
 
-## Features
+CSV header: `username,email` (`lib/csv.js`). Exit `1` on blocking email issues, ACL orphans, CSV/apply failures, or duplicate-email simulation.
 
-- **Dry-run by default** - No changes until `--apply` is passed
-- **Backup on demand** - `backup-urls.js`
-- **YAML reports** - Human-readable summaries
-- **CSV exports** - Spreadsheet compatible
-- **Idempotent** - Safe to run multiple times
-- **Date-based report directory**
+Extra CSVs when applicable: `users-audit-*.csv`, `acl-orphans-*.csv`, `email-changes-*.csv`.
+
+---
+
+## Pre-upgrade checklist
+
+```bash
+export MONGO_URI="mongodb://host:27017"
+export DB_NAME="git_proxy"
+
+# Phase 1 — repo URL normalization
+npm run migrate:urls
+npm run backup:urls
+npm run migrate:urls -- --apply
+npm run migrate:urls   # expect nothing left to normalize
+
+# Phase 2 — email + ACL (timing vs app upgrade — your runbook)
+npm run migrate:users
+npm run backup:users
+npm run migrate:users -- --apply --csv ./mappings.csv
+```
