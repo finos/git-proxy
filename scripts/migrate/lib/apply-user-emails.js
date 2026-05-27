@@ -24,7 +24,7 @@ function simulatePostApplyUniqueness(users, usernameToEmail) {
     const id = u._id?.toString?.() ?? String(u._id ?? '');
     const username = normalizeUsername(u.username);
     const currentEmail = normalizeEmail(u.email);
-    const nextEmail = usernameToEmail.get(username) ?? currentEmail;
+    const nextEmail = normalizeEmail(usernameToEmail.get(username) ?? currentEmail);
     projected.set(id, nextEmail);
   }
 

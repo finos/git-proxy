@@ -30,10 +30,10 @@ const path = require('path');
 
 const config = require('./lib/config');
 const { generateReports } = require('./lib/reporting');
-const { analyzeUsers } = require('./lib/analyzeUsers');
-const { analyzeAcl } = require('./lib/analyzeAcl');
+const { analyzeUsers } = require('./lib/analyze-users');
+const { analyzeAcl } = require('./lib/analyze-acl');
 const { readUsernameEmailCsv } = require('./lib/csv');
-const { applyUserEmails } = require('./lib/applyUserEmails');
+const { applyUserEmails } = require('./lib/apply-user-emails');
 
 function getArgValue(flag) {
   const idx = process.argv.indexOf(flag);

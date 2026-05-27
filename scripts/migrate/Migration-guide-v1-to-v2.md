@@ -59,7 +59,7 @@ Reports: `report-{ts}.yaml`, `report-{ts}.csv` (pending changes), `backup-urls-{
 | Writes      | `repos.url` only       | `users.email` from CSV only     |
 | Always      | normalization analysis | email audit + ACL orphan report |
 
-`backup-users.js` is separate (not invoked by `migrate-users`).
+`backup-users.js` is separate (not invoked by `migrate-users`) and writes a full JSON snapshot plus a `users-email-*.csv` template.
 
 ```bash
 npm run migrate:users
@@ -67,7 +67,9 @@ npm run backup:users
 npm run migrate:users -- --apply --csv ./mappings.csv
 ```
 
-CSV header: `username,email` (`lib/csv.js`). Exit `1` on blocking email issues, ACL orphans, CSV/apply failures, or duplicate-email simulation.
+For **apply** (`migrate-users --apply --csv ...`): CSV header must be `username,email` (`lib/csv.js`). The command exits `1` on blocking email issues, ACL orphans, CSV/apply failures, or duplicate-email simulation.
+
+CSV input: UTF‑8, one row per line, only those two columns; parser is minimal (quoted commas OK, **`""`** escapes inside fields not supported). Prefer export without BOM.
 
 Extra CSVs when applicable: `users-audit-*.csv`, `acl-orphans-*.csv`, `email-changes-*.csv`.
 

@@ -20,6 +20,41 @@ function normalizeUsername(v) {
   return (v || '').toString().trim().toLowerCase();
 }
 
+function collectAclOrphans(repos, usernameSet) {
+  const orphans = [];
+
+  for (const repo of repos) {
+    const repoId = repo._id?.toString?.() ?? String(repo._id ?? '');
+    const repoName = repo.name ?? '';
+    const repoUrl = repo.url ?? '';
+    const usersObj = repo.users ?? {};
+
+    for (const field of ['canPush', 'canAuthorise']) {
+      const list = Array.isArray(usersObj[field]) ? usersObj[field] : [];
+      for (let i = 0; i < list.length; i++) {
+        const raw = list[i];
+        if (typeof raw !== 'string') continue;
+        const entry = normalizeUsername(raw);
+        if (!entry) continue;
+
+        if (!usernameSet.has(entry)) {
+          orphans.push({
+            repoId,
+            repoName,
+            repoUrl,
+            field,
+            orphanUsername: raw,
+            normalizedOrphan: entry,
+            index: i,
+          });
+        }
+      }
+    }
+  }
+
+  return orphans;
+}
+
 async function analyzeAcl(mongoUri, dbName) {
   const client = new MongoClient(mongoUri);
 
@@ -35,36 +70,7 @@ async function analyzeAcl(mongoUri, dbName) {
     const usernameSet = new Set(users.map((u) => normalizeUsername(u.username)).filter(Boolean));
 
     const repos = await reposCollection.find({}).toArray();
-    const orphans = [];
-
-    for (const repo of repos) {
-      const repoId = repo._id?.toString?.() ?? String(repo._id ?? '');
-      const repoName = repo.name ?? '';
-      const repoUrl = repo.url ?? '';
-      const usersObj = repo.users ?? {};
-
-      for (const field of ['canPush', 'canAuthorise']) {
-        const list = Array.isArray(usersObj[field]) ? usersObj[field] : [];
-        for (let i = 0; i < list.length; i++) {
-          const raw = list[i];
-          if (typeof raw !== 'string') continue;
-          const entry = normalizeUsername(raw);
-          if (!entry) continue;
-
-          if (!usernameSet.has(entry)) {
-            orphans.push({
-              repoId,
-              repoName,
-              repoUrl,
-              field,
-              orphanUsername: raw,
-              normalizedOrphan: entry,
-              index: i,
-            });
-          }
-        }
-      }
-    }
+    const orphans = collectAclOrphans(repos, usernameSet);
 
     const report = {
       totalRepos: repos.length,
@@ -81,4 +87,4 @@ async function analyzeAcl(mongoUri, dbName) {
   }
 }
 
-module.exports = { analyzeAcl };
+module.exports = { analyzeAcl, collectAclOrphans, normalizeUsername };

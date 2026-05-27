@@ -26,12 +26,20 @@
  */
 
 const { MongoClient } = require('mongodb');
+const fs = require('fs');
+const path = require('path');
 
 const config = require('./lib/config');
 const { generateReports } = require('./lib/reporting');
 const { createBackup } = require('./lib/common');
 
 config.ensureReportsDir();
+
+function toCsvValue(v) {
+  if (v === null || v === undefined) return '""';
+  const s = String(v).replace(/"/g, '""');
+  return `"${s}"`;
+}
 
 async function main() {
   const client = new MongoClient(config.mongoUri);
@@ -49,6 +57,15 @@ async function main() {
     console.log(`SUCCESS Backup created: ${backupPath}`);
 
     const timestamp = Date.now();
+
+    const emailCsvPath = path.join(config.reportsDir, `users-email-${timestamp}.csv`);
+    const header = ['username', 'email'].join(',') + '\n';
+    const rows = users
+      .map((u) => [toCsvValue(u.username ?? ''), toCsvValue(u.email ?? '')].join(','))
+      .join('\n');
+    fs.writeFileSync(emailCsvPath, header + rows);
+    console.log(`SUCCESS CSV template: ${emailCsvPath}`);
+
     const report = { mode: 'backup-users', totalUsers: users.length };
     generateReports(config.reportsDir, report, timestamp);
 
