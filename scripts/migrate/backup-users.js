@@ -21,8 +21,13 @@
  *
  * BACKUP ONLY
  *
+ * Outputs:
+ * - backup-users-*.json (full users snapshot; passwords excluded)
+ * - users-email-*.csv (username,email template for admin edits + later --apply --csv)
+ *
  * Usage:
- *   node scripts/migrate/backup-users.js
+ *   npm run backup:users
+ *   # or: node scripts/migrate/backup-users.js
  */
 
 const { MongoClient } = require('mongodb');

@@ -22,7 +22,8 @@
  * BACKUP ONLY
  *
  * Usage:
- *   node scripts/migrate/backup-urls.js
+ *   npm run backup:urls
+ *   # or: node scripts/migrate/backup-urls.js
  */
 
 const config = require('./lib/config');

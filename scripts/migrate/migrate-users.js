@@ -20,10 +20,12 @@
  * Migration: Audit and (optionally) fix users.email for v2.0.0 compatibility
  *
  * DRY RUN (default):
- *   node scripts/migrate/migrate-users.js
+ *   npm run migrate:users
+ *   # or: node scripts/migrate/migrate-users.js
  *
  * APPLY (requires CSV mapping username,email):
- *   node scripts/migrate/migrate-users.js --apply --csv ./mappings.csv
+ *   npm run migrate:users -- --apply --csv ./mappings.csv
+ *   # or: node scripts/migrate/migrate-users.js --apply --csv ./mappings.csv
  */
 
 const path = require('path');

@@ -16,6 +16,18 @@
  * limitations under the License.
  */
 
+/**
+ * Migration: Repo URL normalization — append .git to repos.url where missing
+ *
+ * DRY RUN (default):
+ *   npm run migrate:urls
+ *   # or: node scripts/migrate/migrate-urls.js
+ *
+ * APPLY:
+ *   npm run migrate:urls -- --apply
+ *   # or: node scripts/migrate/migrate-urls.js --apply
+ */
+
 const config = require('./lib/config');
 const { analyzeRepos } = require('./lib/analyze-urls');
 const { generateReports } = require('./lib/reporting');
