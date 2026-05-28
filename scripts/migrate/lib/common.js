@@ -14,41 +14,20 @@
  * limitations under the License.
  */
 
-const { MongoClient, ObjectId } = require('mongodb');
+const { ObjectId } = require('mongodb');
 
-async function updateRepoUrl(mongoUri, dbName, repoId, newUrl) {
-  const client = new MongoClient(mongoUri);
-
-  try {
-    await client.connect();
-    const db = client.db(dbName);
-    const reposCollection = db.collection('repos');
-
-    const result = await reposCollection.updateOne(
-      { _id: new ObjectId(repoId) },
-      { $set: { url: newUrl } },
-    );
-
-    return result.modifiedCount === 1;
-  } finally {
-    await client.close();
-  }
+async function updateRepoUrlWithCollection(reposCollection, repoId, newUrl) {
+  const result = await reposCollection.updateOne(
+    { _id: new ObjectId(repoId) },
+    { $set: { url: newUrl } },
+  );
+  return result.modifiedCount === 1;
 }
 
-async function countReposWithoutGit(mongoUri, dbName) {
-  const client = new MongoClient(mongoUri);
-
-  try {
-    await client.connect();
-    const db = client.db(dbName);
-    const reposCollection = db.collection('repos');
-
-    return await reposCollection.countDocuments({
-      url: { $not: /\.git$/ },
-    });
-  } finally {
-    await client.close();
-  }
+async function countReposWithoutGitWithCollection(reposCollection) {
+  return await reposCollection.countDocuments({
+    url: { $not: /\.git$/ },
+  });
 }
 
 function createBackup(reportsDir, backupFilePrefix, data) {
@@ -62,7 +41,7 @@ function createBackup(reportsDir, backupFilePrefix, data) {
 }
 
 module.exports = {
-  updateRepoUrl,
-  countReposWithoutGit,
+  updateRepoUrlWithCollection,
+  countReposWithoutGitWithCollection,
   createBackup,
 };

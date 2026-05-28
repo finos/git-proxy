@@ -32,10 +32,11 @@ const path = require('path');
 
 const config = require('./lib/config');
 const { generateReports } = require('./lib/reporting');
-const { analyzeUsers } = require('./lib/analyze-users');
-const { analyzeAcl } = require('./lib/analyze-acl');
+const { MongoClient } = require('mongodb');
+const { analyzeUsersWithCollection } = require('./lib/analyze-users');
+const { analyzeAclWithCollections } = require('./lib/analyze-acl');
 const { readUsernameEmailCsv } = require('./lib/csv');
-const { applyUserEmails } = require('./lib/apply-user-emails');
+const { applyUserEmailsWithCollection } = require('./lib/apply-user-emails');
 
 function getArgValue(flag) {
   const idx = process.argv.indexOf(flag);
@@ -51,9 +52,16 @@ const args = {
 config.ensureReportsDir();
 
 async function main() {
+  const client = new MongoClient(config.mongoUri);
+
   try {
-    const { report: usersReport } = await analyzeUsers(config.mongoUri, config.dbName);
-    const { report: aclReport } = await analyzeAcl(config.mongoUri, config.dbName);
+    await client.connect();
+    const db = client.db(config.dbName);
+    const usersCollection = db.collection('users');
+    const reposCollection = db.collection('repos');
+
+    const { report: usersReport } = await analyzeUsersWithCollection(usersCollection);
+    const { report: aclReport } = await analyzeAclWithCollections(usersCollection, reposCollection);
 
     const report = {
       mode: args.apply ? 'apply' : 'dry-run',
@@ -88,7 +96,7 @@ async function main() {
         console.error(`CSV validation errors: ${errors.length}`);
         report.apply = { ok: false, reason: 'csv-errors', changes: [] };
       } else {
-        const res = await applyUserEmails(config.mongoUri, config.dbName, mapping, {
+        const res = await applyUserEmailsWithCollection(usersCollection, mapping, {
           dryRun: false,
         });
         report.apply = res;
@@ -122,6 +130,8 @@ async function main() {
   } catch (error) {
     console.error('FATAL ERROR:', error.message);
     process.exit(1);
+  } finally {
+    await client.close();
   }
 }
 

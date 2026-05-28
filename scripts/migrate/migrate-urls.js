@@ -31,7 +31,8 @@
 const config = require('./lib/config');
 const { analyzeRepos } = require('./lib/analyze-urls');
 const { generateReports } = require('./lib/reporting');
-const { updateRepoUrl, countReposWithoutGit } = require('./lib/common');
+const { MongoClient } = require('mongodb');
+const { updateRepoUrlWithCollection, countReposWithoutGitWithCollection } = require('./lib/common');
 
 const args = {
   apply: process.argv.includes('--apply'),
@@ -64,43 +65,51 @@ async function main() {
       let reposUpdated = 0;
       let errors = 0;
 
-      for (const change of report.changes) {
-        try {
-          const success = await updateRepoUrl(
-            config.mongoUri,
-            config.dbName,
-            change.repoId,
-            change.newUrl,
-          );
+      const client = new MongoClient(config.mongoUri);
 
-          if (success) {
-            change.status = 'updated';
-            reposUpdated++;
-            console.log(`  SUCCESS Updated ${change.repoName}`);
-          } else {
-            change.status = 'no-change';
-            console.log(`  WARNING No change for ${change.repoName}`);
+      try {
+        await client.connect();
+        const reposCollection = client.db(config.dbName).collection('repos');
+
+        for (const change of report.changes) {
+          try {
+            const success = await updateRepoUrlWithCollection(
+              reposCollection,
+              change.repoId,
+              change.newUrl,
+            );
+
+            if (success) {
+              change.status = 'updated';
+              reposUpdated++;
+              console.log(`  SUCCESS Updated ${change.repoName}`);
+            } else {
+              change.status = 'no-change';
+              console.log(`  WARNING No change for ${change.repoName}`);
+            }
+          } catch (error) {
+            change.status = 'error';
+            change.error = error.message;
+            errors++;
+            console.error(`  ERROR updating ${change.repoName}: ${error.message}`);
           }
-        } catch (error) {
-          change.status = 'error';
-          change.error = error.message;
-          errors++;
-          console.error(`  ERROR updating ${change.repoName}: ${error.message}`);
         }
-      }
 
-      console.log(`\nRepos updated: ${reposUpdated}`);
-      console.log(`Errors: ${errors}`);
+        console.log(`\nRepos updated: ${reposUpdated}`);
+        console.log(`Errors: ${errors}`);
 
-      // === VERIFY ===
-      console.log('\n=== VERIFICATION PHASE ===');
-      const remaining = await countReposWithoutGit(config.mongoUri, config.dbName);
-      console.log(`Repos still without .git: ${remaining}`);
+        // === VERIFY ===
+        console.log('\n=== VERIFICATION PHASE ===');
+        const remaining = await countReposWithoutGitWithCollection(reposCollection);
+        console.log(`Repos still without .git: ${remaining}`);
 
-      if (remaining === 0) {
-        console.log('SUCCESS Migration verified: all repos now have .git');
-      } else {
-        console.warn(`WARNING ${remaining} repos still need manual fixing`);
+        if (remaining === 0) {
+          console.log('SUCCESS Migration verified: all repos now have .git');
+        } else {
+          console.warn(`WARNING ${remaining} repos still need manual fixing`);
+        }
+      } finally {
+        await client.close();
       }
 
       report.reposUpdated = reposUpdated;

@@ -45,109 +45,113 @@ function simulatePostApplyUniqueness(users, usernameToEmail) {
 }
 
 async function applyUserEmails(mongoUri, dbName, usernameToEmail, options = {}) {
-  const { dryRun = false } = options;
-
   const client = new MongoClient(mongoUri);
   try {
     await client.connect();
     const db = client.db(dbName);
     const usersCollection = db.collection('users');
-
-    const users = await usersCollection.find({}).project({ password: 0 }).toArray();
-
-    const { conflicts } = simulatePostApplyUniqueness(users, usernameToEmail);
-    if (conflicts.length > 0) {
-      return {
-        ok: false,
-        reason: 'post-apply-duplicate',
-        conflicts,
-        changes: [],
-      };
-    }
-
-    const changes = [];
-    let updated = 0;
-    let skipped = 0;
-    let errors = 0;
-
-    const userByUsername = new Map();
-    for (const u of users) {
-      userByUsername.set(normalizeUsername(u.username), u);
-    }
-
-    for (const [username, newEmail] of usernameToEmail.entries()) {
-      const user = userByUsername.get(username);
-      if (!user) {
-        changes.push({ username, status: 'skipped', reason: 'user-not-found' });
-        skipped++;
-        continue;
-      }
-
-      const oldEmail = normalizeEmail(user.email);
-      const nextEmail = normalizeEmail(newEmail);
-      if (oldEmail === nextEmail) {
-        changes.push({
-          username,
-          oldEmail,
-          newEmail: nextEmail,
-          status: 'skipped',
-          reason: 'already-correct',
-        });
-        skipped++;
-        continue;
-      }
-
-      if (dryRun) {
-        changes.push({ username, oldEmail, newEmail: nextEmail, status: 'planned' });
-        continue;
-      }
-
-      try {
-        const id = user._id?.toString?.() ?? String(user._id ?? '');
-        const res = await usersCollection.updateOne(
-          { _id: new ObjectId(id) },
-          { $set: { email: nextEmail } },
-        );
-        if (res.modifiedCount === 1) {
-          changes.push({ username, oldEmail, newEmail: nextEmail, status: 'updated' });
-          updated++;
-        } else {
-          changes.push({
-            username,
-            oldEmail,
-            newEmail: nextEmail,
-            status: 'skipped',
-            reason: 'no-change',
-          });
-          skipped++;
-        }
-      } catch (e) {
-        changes.push({
-          username,
-          oldEmail,
-          newEmail: nextEmail,
-          status: 'error',
-          error: e?.message ?? String(e),
-        });
-        errors++;
-      }
-    }
-
-    return {
-      ok: errors === 0,
-      reason: errors === 0 ? 'applied' : 'errors',
-      updated,
-      skipped,
-      errors,
-      changes,
-      conflicts: [],
-    };
+    return await applyUserEmailsWithCollection(usersCollection, usernameToEmail, options);
   } finally {
     await client.close();
   }
 }
 
+async function applyUserEmailsWithCollection(usersCollection, usernameToEmail, options = {}) {
+  const { dryRun = false } = options;
+
+  const users = await usersCollection.find({}).project({ password: 0 }).toArray();
+
+  const { conflicts } = simulatePostApplyUniqueness(users, usernameToEmail);
+  if (conflicts.length > 0) {
+    return {
+      ok: false,
+      reason: 'post-apply-duplicate',
+      conflicts,
+      changes: [],
+    };
+  }
+
+  const changes = [];
+  let updated = 0;
+  let skipped = 0;
+  let errors = 0;
+
+  const userByUsername = new Map();
+  for (const u of users) {
+    userByUsername.set(normalizeUsername(u.username), u);
+  }
+
+  for (const [username, newEmail] of usernameToEmail.entries()) {
+    const user = userByUsername.get(username);
+    if (!user) {
+      changes.push({ username, status: 'skipped', reason: 'user-not-found' });
+      skipped++;
+      continue;
+    }
+
+    const oldEmail = normalizeEmail(user.email);
+    const nextEmail = normalizeEmail(newEmail);
+    if (oldEmail === nextEmail) {
+      changes.push({
+        username,
+        oldEmail,
+        newEmail: nextEmail,
+        status: 'skipped',
+        reason: 'already-correct',
+      });
+      skipped++;
+      continue;
+    }
+
+    if (dryRun) {
+      changes.push({ username, oldEmail, newEmail: nextEmail, status: 'planned' });
+      continue;
+    }
+
+    try {
+      const id = user._id?.toString?.() ?? String(user._id ?? '');
+      const res = await usersCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { email: nextEmail } },
+      );
+      if (res.modifiedCount === 1) {
+        changes.push({ username, oldEmail, newEmail: nextEmail, status: 'updated' });
+        updated++;
+      } else {
+        changes.push({
+          username,
+          oldEmail,
+          newEmail: nextEmail,
+          status: 'skipped',
+          reason: 'no-change',
+        });
+        skipped++;
+      }
+    } catch (e) {
+      changes.push({
+        username,
+        oldEmail,
+        newEmail: nextEmail,
+        status: 'error',
+        error: e?.message ?? String(e),
+      });
+      errors++;
+    }
+  }
+
+  return {
+    ok: errors === 0,
+    reason: errors === 0 ? 'applied' : 'errors',
+    updated,
+    skipped,
+    errors,
+    changes,
+    conflicts: [],
+  };
+}
+
 module.exports = {
   applyUserEmails,
+  applyUserEmailsWithCollection,
   simulatePostApplyUniqueness,
 };

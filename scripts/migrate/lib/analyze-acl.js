@@ -64,27 +64,36 @@ async function analyzeAcl(mongoUri, dbName) {
     const usersCollection = db.collection('users');
     const reposCollection = db.collection('repos');
 
-    console.log('\n=== ACL AUDIT PHASE ===');
-
-    const users = await usersCollection.find({}).project({ password: 0 }).toArray();
-    const usernameSet = new Set(users.map((u) => normalizeUsername(u.username)).filter(Boolean));
-
-    const repos = await reposCollection.find({}).toArray();
-    const orphans = collectAclOrphans(repos, usernameSet);
-
-    const report = {
-      totalRepos: repos.length,
-      totalUsers: users.length,
-      orphanCount: orphans.length,
-      orphans,
-    };
-
-    console.log(`ACL orphan entries: ${report.orphanCount}`);
-
-    return { report };
+    return await analyzeAclWithCollections(usersCollection, reposCollection);
   } finally {
     await client.close();
   }
 }
 
-module.exports = { analyzeAcl, collectAclOrphans, normalizeUsername };
+async function analyzeAclWithCollections(usersCollection, reposCollection) {
+  console.log('\n=== ACL AUDIT PHASE ===');
+
+  const users = await usersCollection.find({}).project({ password: 0 }).toArray();
+  const usernameSet = new Set(users.map((u) => normalizeUsername(u.username)).filter(Boolean));
+
+  const repos = await reposCollection.find({}).toArray();
+  const orphans = collectAclOrphans(repos, usernameSet);
+
+  const report = {
+    totalRepos: repos.length,
+    totalUsers: users.length,
+    orphanCount: orphans.length,
+    orphans,
+  };
+
+  console.log(`ACL orphan entries: ${report.orphanCount}`);
+
+  return { report };
+}
+
+module.exports = {
+  analyzeAcl,
+  analyzeAclWithCollections,
+  collectAclOrphans,
+  normalizeUsername,
+};

@@ -114,22 +114,27 @@ async function analyzeUsers(mongoUri, dbName) {
     const db = client.db(dbName);
     const usersCollection = db.collection('users');
 
-    console.log('\n=== USERS EMAIL AUDIT PHASE ===');
-    const users = await usersCollection.find({}).project({ password: 0 }).toArray();
-    console.log(`Total users in database: ${users.length}`);
-
-    const { report } = buildUsersEmailReport(users);
-
-    console.log(`Users with blocking issues: ${report.blockingIssueCount}`);
-
-    return { users, report };
+    return await analyzeUsersWithCollection(usersCollection);
   } finally {
     await client.close();
   }
 }
 
+async function analyzeUsersWithCollection(usersCollection) {
+  console.log('\n=== USERS EMAIL AUDIT PHASE ===');
+  const users = await usersCollection.find({}).project({ password: 0 }).toArray();
+  console.log(`Total users in database: ${users.length}`);
+
+  const { report } = buildUsersEmailReport(users);
+
+  console.log(`Users with blocking issues: ${report.blockingIssueCount}`);
+
+  return { users, report };
+}
+
 module.exports = {
   analyzeUsers,
+  analyzeUsersWithCollection,
   buildUsersEmailReport,
   normalizeEmail,
   isEmailFormatValid,
