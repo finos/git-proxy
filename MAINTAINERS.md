@@ -12,7 +12,7 @@ This file lists the maintainers of this repository.
 | @coopernetes    | Thomas Cooper | @RBC                            | thomas.cooper@rbc.com      |
 | @grovesy        | Paul Groves   | Citi                            | paul.groves@citi.com    |
 | @jescalada      | Juan Escalada | G-Research Open Source Software | juan.escalada@gr-oss.io |
-| @kriswest       | Kris West     | NatWest Group                   | _please add email_      |
+| @kriswest       | Kris West     | NatWest Group                   | kristopher.west@natwest.com      |
 
 For information about maintainer responsibilities and resources, see the [FINOS Maintainers Cheatsheet](https://community.finos.org/docs/finos-maintainers-cheatsheet).
 
