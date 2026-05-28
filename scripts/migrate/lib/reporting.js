@@ -48,6 +48,24 @@ function generateReports(reportsDir, report, timestamp) {
     console.log(`SUCCESS CSV report: ${csvPath}`);
   }
 
+  // URL issues CSV (manual fix required)
+  if (report.issues && Array.isArray(report.issues) && report.issues.length > 0) {
+    const csvPath = path.join(reportsDir, `url-issues-${timestamp}.csv`);
+    writeCsv(
+      csvPath,
+      ['RepoID', 'RepoName', 'RawURL', 'NormalizedURL', 'Reason', 'Scheme'],
+      report.issues.map((i) => [
+        i.repoId,
+        i.repoName,
+        i.rawUrl ?? '',
+        i.normalizedUrl ?? '',
+        i.reason ?? '',
+        i.scheme ?? '',
+      ]),
+    );
+    console.log(`SUCCESS CSV report: ${csvPath}`);
+  }
+
   // Users email audit CSV
   if (report.users && Array.isArray(report.users.issues) && report.users.issues.length > 0) {
     const csvPath = path.join(reportsDir, `users-audit-${timestamp}.csv`);

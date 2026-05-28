@@ -43,7 +43,9 @@ npm run backup:urls
 npm run migrate:urls -- --apply
 ```
 
-Reports: `report-{ts}.yaml`, `report-{ts}.csv` (pending changes), `backup-urls-{ts}.json`.
+Notes: trailing `/` is normalized (`.../repo/` → `.../repo.git`). Blank/non-http(s) URLs are reported as issues and require manual fixing.
+
+Reports: `report-{ts}.yaml`, `report-{ts}.csv` (pending changes), `url-issues-{ts}.csv` (manual fixes), `backup-urls-{ts}.json`.
 
 ---
 

@@ -42,6 +42,8 @@ config.ensureReportsDir();
 async function main() {
   try {
     const { report } = await analyzeRepos(config.mongoUri, config.dbName);
+    const urlIssues =
+      report.issueCount ?? (Array.isArray(report.issues) ? report.issues.length : 0);
 
     // === DRY RUN (default) or APPLY ===
     if (!args.apply) {
@@ -53,6 +55,9 @@ async function main() {
         console.log(`     node scripts/migrate/backup-urls.js`);
         console.log(`  2. Apply changes:`);
         console.log(`     node scripts/migrate/migrate-urls.js --apply`);
+      }
+      if (urlIssues > 0) {
+        console.log(`\nWARNING URL issues detected (manual fix required): ${urlIssues}`);
       }
     } else {
       console.log('\n=== APPLY PHASE ===');
@@ -111,10 +116,12 @@ async function main() {
     console.log(`Mode: ${args.apply ? 'APPLY' : 'DRY RUN'}`);
     console.log(`Total repos: ${report.totalRepos}`);
     console.log(`Needing update: ${report.reposNeedingUpdate}`);
+    console.log(`URL issues: ${urlIssues}`);
     console.log(`Updated: ${report.reposUpdated || 0}`);
     console.log(`Errors: ${report.errors || 0}`);
 
-    process.exit((report.errors || 0) > 0 ? 1 : 0);
+    const shouldFail = (report.errors || 0) > 0 || urlIssues > 0;
+    process.exit(shouldFail ? 1 : 0);
   } catch (error) {
     console.error('FATAL ERROR:', error.message);
     process.exit(1);

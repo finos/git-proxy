@@ -31,12 +31,49 @@ describe('scripts/migrate/lib/analyze-urls.js buildUrlNormalizationReport', () =
     expect(report.reposNeedingUpdate).toBe(1);
     expect(report.reposAlreadyFixed).toBe(1);
     expect(report.changes).toHaveLength(1);
+    expect(report.issues).toHaveLength(0);
     expect(report.changes[0]).toMatchObject({
       repoId: 'r1',
       repoName: 'a',
       oldUrl: 'https://x/a',
       newUrl: 'https://x/a.git',
       status: 'pending',
+    });
+  });
+
+  test('reports blank url as issue (no change)', () => {
+    const repos = [{ _id: 'r1', name: 'a', url: '   ' }];
+    const report = buildUrlNormalizationReport(repos);
+    expect(report.reposNeedingUpdate).toBe(0);
+    expect(report.changes).toHaveLength(0);
+    expect(report.issues).toHaveLength(1);
+    expect(report.issues[0]).toMatchObject({
+      repoId: 'r1',
+      repoName: 'a',
+      rawUrl: '',
+      normalizedUrl: '',
+      reason: 'blank',
+    });
+  });
+
+  test('strips trailing slashes before appending .git', () => {
+    const repos = [{ _id: 'r1', name: 'a', url: 'https://github.com/org/repo/' }];
+    const report = buildUrlNormalizationReport(repos);
+    expect(report.changes).toHaveLength(1);
+    expect(report.changes[0]).toMatchObject({
+      oldUrl: 'https://github.com/org/repo',
+      newUrl: 'https://github.com/org/repo.git',
+    });
+  });
+
+  test('reports unsupported scheme as issue', () => {
+    const repos = [{ _id: 'r1', name: 'a', url: 'ssh://git@github.com/org/repo' }];
+    const report = buildUrlNormalizationReport(repos);
+    expect(report.changes).toHaveLength(0);
+    expect(report.issues).toHaveLength(1);
+    expect(report.issues[0]).toMatchObject({
+      reason: 'unsupported-scheme',
+      scheme: 'ssh',
     });
   });
 });

@@ -36,18 +36,45 @@ config.ensureReportsDir();
 async function main() {
   try {
     const { allRepos, report } = await analyzeRepos(config.mongoUri, config.dbName);
+    const issues = Array.isArray(report.issues) ? report.issues : [];
 
-    if (report.reposNeedingUpdate === 0) {
+    if (report.reposNeedingUpdate === 0 && issues.length === 0) {
       console.log('\n=== BACKUP PHASE ===');
       console.log('No repos need migration - backup not necessary');
       process.exit(0);
     }
 
     console.log('\n=== BACKUP PHASE ===');
-    const backupData = allRepos.filter((repo) => !repo.url.endsWith('.git'));
+    const repoById = new Map(allRepos.map((r) => [r._id?.toString?.() ?? String(r._id ?? ''), r]));
+    const backupData = [];
+
+    for (const change of report.changes) {
+      const repo = repoById.get(change.repoId);
+      if (!repo) continue;
+      backupData.push({
+        ...repo,
+        backupReason: 'missing-dot-git',
+        normalizedUrl: change.oldUrl,
+        newUrl: change.newUrl,
+      });
+    }
+
+    for (const issue of issues) {
+      const repo = repoById.get(issue.repoId);
+      if (!repo) continue;
+      backupData.push({
+        ...repo,
+        backupReason: 'url-issue',
+        rawUrl: issue.rawUrl,
+        normalizedUrl: issue.normalizedUrl,
+        issueReason: issue.reason,
+        issueScheme: issue.scheme,
+      });
+    }
+
     const backupPath = createBackup(config.reportsDir, 'backup-urls', backupData);
     console.log(`SUCCESS Backup created: ${backupPath}`);
-    console.log(`  (${report.reposNeedingUpdate} repos without .git)`);
+    console.log(`  (${report.reposNeedingUpdate} repos missing .git, ${issues.length} URL issues)`);
     console.log('\nBackup completed. Ready to apply migration:');
     console.log('  node scripts/migrate/migrate-urls.js --apply');
 
