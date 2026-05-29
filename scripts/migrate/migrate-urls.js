@@ -106,7 +106,9 @@ async function main() {
         if (remaining === 0) {
           console.log('SUCCESS Migration verified: all repos now have .git');
         } else {
-          console.warn(`WARNING ${remaining} repos still need manual fixing`);
+          console.warn(
+            'WARNING ${remaining} repo(s) still have url not ending with .git (includes blank/invalid URLs in issues — see URL issues above)',
+          );
         }
       } finally {
         await client.close();
