@@ -16,7 +16,9 @@
 
 import { describe, it, expect, afterEach } from 'vitest';
 import * as net from 'net';
+import * as tls from 'tls';
 import * as http from 'http';
+import { URL } from 'url';
 import { NtlmProxyAgent } from '../src/proxy/upstream/ntlm-proxy-agent';
 
 type MockProxy = {
@@ -265,5 +267,92 @@ describe('NtlmProxyAgent', () => {
           password: 's3cret',
         }),
     ).toThrow(/Unsupported.*scheme.*socks5/i);
+  });
+
+  it('accepts a parsed URL object as the proxy parameter', async () => {
+    const proxy = await startMockProxy();
+    teardown.push(() => proxy.server.close());
+
+    const agent = new NtlmProxyAgent({
+      proxy: new URL(`http://127.0.0.1:${proxy.port}`),
+      username: 'alice',
+      password: 's3cret',
+    });
+
+    const sock = await agent.connect(fakeReq, {
+      host: 'example.com',
+      port: 80,
+      secureEndpoint: false,
+    } as any);
+    teardown.push(() => (sock as net.Socket).destroy());
+
+    expect(proxy.events).toHaveLength(2);
+  });
+
+  it('throws on connect() when host is missing', async () => {
+    const agent = new NtlmProxyAgent({
+      proxy: 'http://127.0.0.1:9999',
+      username: 'alice',
+      password: 's3cret',
+    });
+    await expect(
+      agent.connect(fakeReq, { port: 80, secureEndpoint: false } as any),
+    ).rejects.toThrow(/missing host\/port/i);
+  });
+
+  it('throws on connect() when port is missing', async () => {
+    const agent = new NtlmProxyAgent({
+      proxy: 'http://127.0.0.1:9999',
+      username: 'alice',
+      password: 's3cret',
+    });
+    await expect(
+      agent.connect(fakeReq, { host: 'example.com', secureEndpoint: false } as any),
+    ).rejects.toThrow(/missing host\/port/i);
+  });
+
+  it('rejects when the upstream proxy is unreachable', async () => {
+    // Allocate a port, then release it — by the time connect() runs, nothing
+    // is listening there, so the TCP connection should fail with ECONNREFUSED.
+    const probe = net.createServer();
+    await new Promise<void>((r) => probe.listen(0, '127.0.0.1', () => r()));
+    const deadPort = (probe.address() as net.AddressInfo).port;
+    await new Promise<void>((r) => probe.close(() => r()));
+
+    const agent = new NtlmProxyAgent({
+      proxy: `http://127.0.0.1:${deadPort}`,
+      username: 'alice',
+      password: 's3cret',
+    });
+
+    await expect(
+      agent.connect(fakeReq, { host: 'example.com', port: 80, secureEndpoint: false } as any),
+    ).rejects.toThrow(/ECONNREFUSED|connect/i);
+  });
+
+  it('returns a TLSSocket when the target is HTTPS (secureEndpoint=true)', async () => {
+    const proxy = await startMockProxy();
+    teardown.push(() => proxy.server.close());
+
+    const agent = new NtlmProxyAgent({
+      proxy: `http://127.0.0.1:${proxy.port}`,
+      username: 'alice',
+      password: 's3cret',
+    });
+
+    const sock = await agent.connect(fakeReq, {
+      host: 'example.com',
+      port: 443,
+      secureEndpoint: true,
+    } as any);
+
+    // Returned synchronously by tls.connect — the handshake itself runs async
+    // and will fail (our mock isn't TLS), but the wrapper object exists now.
+    // Swallow that eventual error and tear down immediately so it never
+    // surfaces as an unhandled rejection.
+    sock.on('error', () => undefined);
+    teardown.push(() => (sock as tls.TLSSocket).destroy());
+
+    expect(sock).toBeInstanceOf(tls.TLSSocket);
   });
 });

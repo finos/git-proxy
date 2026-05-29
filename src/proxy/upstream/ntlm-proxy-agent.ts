@@ -143,9 +143,6 @@ export class NtlmProxyAgent extends Agent {
         `Unsupported upstream proxy URL scheme "${this.proxy.protocol.replace(/:$/, '')}": only http and https are supported`,
       );
     }
-    if (!this.proxy.hostname) {
-      throw new Error('NtlmProxyAgent: proxy URL is missing a hostname');
-    }
     this.username = opts.username;
     this.password = opts.password;
     this.domain = opts.domain ?? '';
