@@ -32,7 +32,7 @@ describe('scripts/migrate/lib/analyze-users.js buildUsersEmailReport', () => {
     expect(byId.get('u1').status).toBe('missing');
     expect(byId.get('u2').status).toBe('blank');
     expect(byId.get('u3').status).toBe('invalid-format');
-    expect(report.blockingIssueCount).toBe(2); // missing + blank
+    expect(report.blockingIssueCount).toBe(3); // missing + blank + invalid-format
   });
 
   test('marks duplicate emails as duplicate and counts blocking issues', () => {

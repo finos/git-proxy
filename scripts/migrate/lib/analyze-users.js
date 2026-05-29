@@ -100,7 +100,7 @@ function buildUsersEmailReport(users) {
     counts,
     duplicateGroups,
     issues,
-    blockingIssueCount: counts.missing + counts.blank + counts.duplicate,
+    blockingIssueCount: counts.missing + counts.blank + counts.duplicate + counts.invalidFormat,
   };
 
   return { report };

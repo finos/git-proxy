@@ -28,7 +28,7 @@ npm run migrate:users -- --apply --csv ./map.csv
 
 **Goal:** every `repos.url` that v2 will match must include the `.git` suffix where it is missing.
 
-**Why:** v2 resolves repos by **exact** `url`; v1 often relied on `name`. Clients typically send URLs with `.git`; rows without `.git` stop matching.
+**Why:** v2 resolves repos by **exact** `url` via `getRepoByUrl`; v1 often relied on `name`. Incoming git HTTP traffic is normalized to a URL that includes `.git` (see `parseAction`), while legacy `repos` rows may have been stored without it. Those rows no longer match, so processors such as `checkRepoInAuthorisedList` treat the repo as unauthorized. (The admin UI already requires `.git` when creating new repositories.)
 
 |              | v1.19.2      | v2.0.0                                     |
 | ------------ | ------------ | ------------------------------------------ |
