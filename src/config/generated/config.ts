@@ -572,6 +572,11 @@ export interface RouteAuthRule {
  */
 export interface UpstreamProxy {
   /**
+   * Credentials presented to the upstream proxy. Preferred over embedding credentials in
+   * `url`.
+   */
+  auth?: Auth;
+  /**
    * Whether to use an outbound HTTP(S) proxy for upstream Git hosts.
    */
   enabled?: boolean;
@@ -583,6 +588,36 @@ export interface UpstreamProxy {
    * Proxy URL used for outbound connections to upstream Git hosts when set.
    */
   url?: string;
+}
+
+/**
+ * Credentials presented to the upstream proxy. Preferred over embedding credentials in
+ * `url`.
+ *
+ * HTTP Basic — sends base64(username:password) in the Proxy-Authorization header on every
+ * CONNECT.
+ *
+ * Windows NTLM — multi-round CONNECT handshake (Type1/Type2/Type3) on the same TCP
+ * connection. Use when the proxy advertises `Proxy-Authenticate: NTLM`.
+ */
+export interface Auth {
+  password: string;
+  type: AuthType;
+  username: string;
+  /**
+   * NTLM domain / target. Optional; defaults to empty (proxy decides).
+   */
+  domain?: string;
+  /**
+   * Workstation name reported in the Type1/Type3 messages. Optional; defaults to the host's
+   * name.
+   */
+  workstation?: string;
+}
+
+export enum AuthType {
+  Basic = 'basic',
+  NTLM = 'ntlm',
 }
 
 // Converts JSON strings to/from your types
@@ -1006,12 +1041,24 @@ const typeMap: any = {
   ),
   UpstreamProxy: o(
     [
+      { json: 'auth', js: 'auth', typ: u(undefined, r('Auth')) },
       { json: 'enabled', js: 'enabled', typ: u(undefined, true) },
       { json: 'noProxy', js: 'noProxy', typ: u(undefined, a('')) },
       { json: 'url', js: 'url', typ: u(undefined, '') },
     ],
     false,
   ),
+  Auth: o(
+    [
+      { json: 'password', js: 'password', typ: '' },
+      { json: 'type', js: 'type', typ: r('AuthType') },
+      { json: 'username', js: 'username', typ: '' },
+      { json: 'domain', js: 'domain', typ: u(undefined, '') },
+      { json: 'workstation', js: 'workstation', typ: u(undefined, '') },
+    ],
+    false,
+  ),
   AuthenticationElementType: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
   DatabaseType: ['fs', 'mongo'],
+  AuthType: ['basic', 'ntlm'],
 };

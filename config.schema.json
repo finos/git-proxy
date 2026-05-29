@@ -387,6 +387,43 @@
           "items": {
             "type": "string"
           }
+        },
+        "auth": {
+          "description": "Credentials presented to the upstream proxy. Preferred over embedding credentials in `url`.",
+          "oneOf": [
+            {
+              "type": "object",
+              "name": "Basic Auth",
+              "description": "HTTP Basic — sends base64(username:password) in the Proxy-Authorization header on every CONNECT.",
+              "properties": {
+                "type": { "type": "string", "const": "basic" },
+                "username": { "type": "string" },
+                "password": { "type": "string" }
+              },
+              "required": ["type", "username", "password"],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "name": "NTLM Auth",
+              "description": "Windows NTLM — multi-round CONNECT handshake (Type1/Type2/Type3) on the same TCP connection. Use when the proxy advertises `Proxy-Authenticate: NTLM`.",
+              "properties": {
+                "type": { "type": "string", "const": "ntlm" },
+                "username": { "type": "string" },
+                "password": { "type": "string" },
+                "domain": {
+                  "type": "string",
+                  "description": "NTLM domain / target. Optional; defaults to empty (proxy decides)."
+                },
+                "workstation": {
+                  "type": "string",
+                  "description": "Workstation name reported in the Type1/Type3 messages. Optional; defaults to the host's name."
+                }
+              },
+              "required": ["type", "username", "password"],
+              "additionalProperties": false
+            }
+          ]
         }
       },
       "additionalProperties": false
