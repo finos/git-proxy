@@ -261,13 +261,13 @@ export async function openTemporaryAgentChannel(
           const channelInfo = {
             type: 'auth-agent@openssh.com',
             incoming: {
-              id: info.sender,
+              id: localChan,
               window: info.window,
               packetSize: info.packetSize,
               state: 'open',
             },
             outgoing: {
-              id: localChan,
+              id: info.sender,
               window: 2 * 1024 * 1024, // 2MB default
               packetSize: 32 * 1024, // 32KB default
               state: 'open',
