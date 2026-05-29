@@ -15,7 +15,8 @@
  */
 
 const { MongoClient, ObjectId } = require('mongodb');
-const { normalizeEmail, normalizeUsername } = require('./csv');
+const { normalizeEmail } = require('./email');
+const { normalizeUsername } = require('./csv');
 
 function simulatePostApplyUniqueness(users, usernameToEmail) {
   const projected = new Map(); // userId -> normalizedEmail

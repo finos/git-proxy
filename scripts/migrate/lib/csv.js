@@ -15,6 +15,7 @@
  */
 
 const fs = require('fs');
+const { normalizeEmail, isEmailFormatValid } = require('./email');
 
 function parseCsvLine(line) {
   // Minimal CSV parsing: supports quoted fields with commas, no escaped quotes.
@@ -41,15 +42,6 @@ function parseCsvLine(line) {
 
 function normalizeUsername(username) {
   return (username || '').trim().toLowerCase();
-}
-
-function normalizeEmail(email) {
-  return (email || '').trim().toLowerCase();
-}
-
-function isEmailFormatValid(email) {
-  const v = normalizeEmail(email);
-  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
 }
 
 function readUsernameEmailCsv(csvPath) {

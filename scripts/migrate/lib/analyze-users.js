@@ -15,16 +15,7 @@
  */
 
 const { MongoClient } = require('mongodb');
-
-function normalizeEmail(email) {
-  return (email || '').trim().toLowerCase();
-}
-
-function isEmailFormatValid(email) {
-  const v = normalizeEmail(email);
-  // Basic sanity check only (not RFC exhaustive)
-  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
-}
+const { normalizeEmail, isEmailFormatValid } = require('./email');
 
 function buildUsersEmailReport(users) {
   const byEmail = new Map(); // normalizedEmail -> [{...userInfo}]
