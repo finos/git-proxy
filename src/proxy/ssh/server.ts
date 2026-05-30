@@ -31,6 +31,8 @@ import { createMockResponse } from './sshHelpers';
 import { processGitUrl } from '../routes/helper';
 import { ensureHostKey } from './hostKeyManager';
 import { getProtocol, getSessionOutgoingChannelId } from './sshInternals';
+import { parsePacketLines } from '../processors/pktLineParser';
+import { BRANCH_PREFIX } from '../processors/constants';
 
 export class SSHServer {
   private server: ssh2.Server;
@@ -526,20 +528,12 @@ export class SSHServer {
       console.log(`[SSH] Received ${totalBytes} bytes, validating with security chain`);
 
       try {
-        if (packDataChunks.length === 0 && totalBytes === 0) {
-          console.warn(`[SSH] No pack data received for push operation`);
-          // Allow empty pushes (e.g., tag creation without commits)
-          stream.exit(0);
-          stream.end();
-          return;
-        }
-
         let packData: Buffer | null = null;
         try {
-          packData = packDataChunks.length > 0 ? Buffer.concat(packDataChunks) : null;
+          packData = packDataChunks.length > 0 ? Buffer.concat(packDataChunks) : Buffer.alloc(0);
 
           // Verify concatenated data integrity
-          if (packData && packData.length !== totalBytes) {
+          if (packData.length !== totalBytes) {
             throw new Error(
               `Pack data corruption detected: expected ${totalBytes} bytes, got ${packData.length} bytes`,
             );
@@ -548,6 +542,30 @@ export class SSHServer {
           console.error(`[SSH] Error concatenating pack data:`, concatError);
           stream.stderr.write(`Error: Failed to process pack data: ${concatError}\n`);
           stream.exit(1);
+          stream.end();
+          return;
+        }
+
+        // Detect no-op pushes (no body or a body with no ref updates)
+        // Ex: a "git push" when already up-to-date
+        // For SSH we need to check because the stream always opens
+        // whereas in HTTP Git never POSTs after calling GET /info/refs
+        let hasRefUpdates = false;
+        if (packData.length > 0) {
+          try {
+            const [packetLines] = parsePacketLines(packData);
+            hasRefUpdates = packetLines.some((line) => line.includes(BRANCH_PREFIX));
+          } catch {
+            // If we can't parse pkt-lines, let the chain error out
+            hasRefUpdates = true;
+          }
+        }
+
+        if (!hasRefUpdates) {
+          console.log(
+            `[SSH] No ref updates in push body (${totalBytes} bytes). No-op push, closing cleanly`,
+          );
+          stream.exit(0);
           stream.end();
           return;
         }
