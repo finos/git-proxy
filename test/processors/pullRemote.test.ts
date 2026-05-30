@@ -35,6 +35,7 @@ const { fsStub, gitCloneStub, simpleGitCloneStub, simpleGitStub, childProcessStu
       simpleGitStub: vi.fn(),
       childProcessStub: {
         execSync: vi.fn(),
+        execFileSync: vi.fn(),
         spawn: vi.fn(),
       },
     };
@@ -67,6 +68,7 @@ vi.mock('child_process', async () => {
   return {
     ...actual,
     execSync: childProcessStub.execSync,
+    execFileSync: childProcessStub.execFileSync,
     spawn: childProcessStub.spawn,
   };
 });
@@ -97,8 +99,8 @@ describe('pullRemote processor', () => {
     fsStub.promises.mkdir.mockResolvedValue(undefined);
 
     // Configure child_process mock
-    // Mock execSync to return ssh-keyscan output with GitHub's fingerprint
-    childProcessStub.execSync.mockReturnValue(
+    // Mock execFileSync to return ssh-keyscan output with GitHub's fingerprint
+    childProcessStub.execFileSync.mockReturnValue(
       'github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl\n',
     );
 
