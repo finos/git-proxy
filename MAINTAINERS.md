@@ -4,15 +4,15 @@ This file lists the maintainers of this repository.
 
 ## Current maintainers
 
-| GitHub Username | Name          | Organization                    | Email                   |
-| --------------- | ------------- | ------------------------------- | ----------------------- |
-| @06kellyjac     | j-k           | @controlplaneio                 | jack+finos@control-plane.io      |
-| @JamieSlome     | Jamie Slome   | _please add organization_       | _please add email_      |
-| @andypols       | Andy Pols     | Qube Research & Technologies (QRT) | andrew.pols@qube-rt.com |
-| @coopernetes    | Thomas Cooper | @RBC                            | thomas.cooper@rbc.com      |
-| @grovesy        | Paul Groves   | Citi                            | paul.groves@citi.com    |
-| @jescalada      | Juan Escalada | G-Research Open Source Software | juan.escalada@gr-oss.io |
-| @kriswest       | Kris West     | NatWest Group                   | kristopher.west@natwest.com      |
+| GitHub Username | Name          | Organization                       | Email                       |
+| --------------- | ------------- | ---------------------------------- | --------------------------- |
+| @06kellyjac     | j-k           | @controlplaneio                    | jack+finos@control-plane.io |
+| @JamieSlome     | Jamie Slome   | _please add organization_          | _please add email_          |
+| @andypols       | Andy Pols     | Qube Research & Technologies (QRT) | andrew.pols@qube-rt.com     |
+| @coopernetes    | Thomas Cooper | @RBC                               | thomas.cooper@rbc.com       |
+| @grovesy        | Paul Groves   | Citi                               | paul.groves@citi.com        |
+| @jescalada      | Juan Escalada | G-Research Open Source Software    | juan.escalada@gr-oss.io     |
+| @kriswest       | Kris West     | NatWest Group                      | kristopher.west@natwest.com |
 
 For information about maintainer responsibilities and resources, see the [FINOS Maintainers Cheatsheet](https://community.finos.org/docs/finos-maintainers-cheatsheet).
 
