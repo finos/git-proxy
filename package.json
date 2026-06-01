@@ -1,6 +1,6 @@
 {
   "name": "@finos/git-proxy",
-  "version": "2.0.0-rc.6",
+  "version": "2.0.0",
   "description": "Deploy custom push protections and policies on top of Git.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -51,27 +51,27 @@
     "cli:js": "node ./packages/git-proxy-cli/dist/index.js",
     "client": "vite --config vite.config.ts",
     "clientinstall": "npm install --prefix client",
-    "server": "ALLOWED_ORIGINS=* tsx index.ts",
+    "server": "cross-env ALLOWED_ORIGINS=* tsx index.ts",
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "build": "npm run generate-config-types && npm run build-ui && npm run build-ts",
     "build-ts": "npm run build-tsoa && tsc --project tsconfig.publish.json && node scripts/fix-shebang.js",
     "build-ui": "vite build",
     "build-tsoa": "tsoa spec-and-routes",
     "check-types": "tsc",
-    "check-types:server": "tsc --project tsconfig.publish.json --noEmit",
+    "check-types:server": "npm run build-tsoa && tsc --project tsconfig.publish.json --noEmit",
     "test-shuffle": "NODE_ENV=test vitest --run --dir ./test --sequence.shuffle",
     "test": "cross-env NODE_ENV=test vitest --run --dir ./test",
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
     "test:e2e:watch": "vitest --config vitest.config.e2e.ts",
     "test-coverage": "cross-env NODE_ENV=test vitest --run --dir ./test --coverage",
     "test-coverage-ci": "cross-env NODE_ENV=test vitest --run --dir ./test --coverage.enabled=true --coverage.reporter=lcovonly --coverage.reporter=text",
-    "test:integration": "NODE_ENV=test vitest --run --config vitest.config.integration.ts",
+    "test:integration": "cross-env NODE_ENV=test vitest --run --config vitest.config.integration.ts",
     "test:watch": "cross-env NODE_ENV=test vitest --dir ./test --watch",
     "prepare": "node ./scripts/prepare.js",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --config ./.prettierrc",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --config ./.prettierrc",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --config ./.prettierrc",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --config ./.prettierrc",
     "gen-schema-doc": "node ./scripts/doc-schema.js",
     "gen-swagger-doc": "node ./scripts/doc-swagger.js",
     "cypress:run": "cypress run",
@@ -119,6 +119,7 @@
     "express-session": "^1.19.0",
     "font-awesome": "^4.7.0",
     "history": "5.3.0",
+    "https-proxy-agent": "^7.0.6",
     "isomorphic-git": "^1.36.3",
     "jsonwebtoken": "^9.0.3",
     "load-plugin": "^6.0.3",
@@ -224,6 +225,9 @@
     ],
     "test/**/*.{js,jsx,ts,tsx,json}": [
       "eslint --fix"
+    ],
+    "{src/service/controllers/**/*Controller.ts,src/service/authentication.ts,src/service/generatedRoutes.ts,src/app.ts,tsoa.json}": [
+      "node scripts/check-tsoa-routes.js --"
     ]
   }
 }

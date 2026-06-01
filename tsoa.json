@@ -1,6 +1,6 @@
 {
   "entryFile": "src/app.ts",
-  "noImplicitAdditionalProperties": "ignore",
+  "noImplicitAdditionalProperties": "throw-on-extras",
   "controllerPathGlobs": ["src/service/controllers/**/*Controller.ts"],
   "spec": {
     "outputDirectory": "dist",

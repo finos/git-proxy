@@ -44,6 +44,13 @@ const TEST_REPO_NAKED = {
   host: '123.456.789:80',
 };
 
+// `host` is only kept on the fixtures above as an expected value for
+// getAllProxiedHosts() assertions; the API rejects it as an unknown property.
+const toCreateBody = <T extends { host: string }>(repo: T): Omit<T, 'host'> => {
+  const { host: _host, ...rest } = repo;
+  return rest;
+};
+
 const cleanupRepo = async (url: string) => {
   const repo = await db.getRepoByUrl(url);
   if (repo) {
@@ -77,7 +84,10 @@ describe('add new repo', () => {
   const ensureTestRepoExists = async () => {
     let repo = await db.getRepoByUrl(TEST_REPO.url);
     if (!repo) {
-      await request(app).post('/api/v1/repo').set('Cookie', `${cookie}`).send(TEST_REPO);
+      await request(app)
+        .post('/api/v1/repo')
+        .set('Cookie', `${cookie}`)
+        .send(toCreateBody(TEST_REPO));
       repo = await db.getRepoByUrl(TEST_REPO.url);
     }
     if (repo) repoIds[0] = repo._id!;
@@ -124,7 +134,10 @@ describe('add new repo', () => {
     // Ensure repo doesn't exist
     await cleanupRepo(TEST_REPO.url);
 
-    const res = await request(app).post('/api/v1/repo').set('Cookie', `${cookie}`).send(TEST_REPO);
+    const res = await request(app)
+      .post('/api/v1/repo')
+      .set('Cookie', `${cookie}`)
+      .send(toCreateBody(TEST_REPO));
     expect(res.status).toBe(200);
 
     const repo = await fetchRepoOrThrow(TEST_REPO.url);
@@ -155,7 +168,10 @@ describe('add new repo', () => {
   it('return a 409 error if the repo already exists', async () => {
     await ensureTestRepoExists();
 
-    const res = await request(app).post('/api/v1/repo').set('Cookie', `${cookie}`).send(TEST_REPO);
+    const res = await request(app)
+      .post('/api/v1/repo')
+      .set('Cookie', `${cookie}`)
+      .send(toCreateBody(TEST_REPO));
     expect(res.status).toBe(409);
     expect(res.body.message).toBe('Repository ' + TEST_REPO.url + ' already exists!');
   });
@@ -349,7 +365,7 @@ describe('add new repo', () => {
     const res = await request(app)
       .post('/api/v1/repo')
       .set('Cookie', cookie)
-      .send(TEST_REPO_NON_GITHUB);
+      .send(toCreateBody(TEST_REPO_NON_GITHUB));
 
     expect(res.status).toBe(200);
     const repo = await fetchRepoOrThrow(TEST_REPO_NON_GITHUB.url);
@@ -367,7 +383,7 @@ describe('add new repo', () => {
     const res2 = await request(app)
       .post('/api/v1/repo')
       .set('Cookie', cookie)
-      .send(TEST_REPO_NAKED);
+      .send(toCreateBody(TEST_REPO_NAKED));
 
     expect(res2.status).toBe(200);
     const repo2 = await fetchRepoOrThrow(TEST_REPO_NAKED.url);
@@ -383,14 +399,20 @@ describe('add new repo', () => {
     // Ensure repos exist before deleting
     let repo1 = await db.getRepoByUrl(TEST_REPO_NON_GITHUB.url);
     if (!repo1) {
-      await request(app).post('/api/v1/repo').set('Cookie', cookie).send(TEST_REPO_NON_GITHUB);
+      await request(app)
+        .post('/api/v1/repo')
+        .set('Cookie', cookie)
+        .send(toCreateBody(TEST_REPO_NON_GITHUB));
       repo1 = await db.getRepoByUrl(TEST_REPO_NON_GITHUB.url);
     }
     repoIds[1] = repo1!._id!;
 
     let repo2 = await db.getRepoByUrl(TEST_REPO_NAKED.url);
     if (!repo2) {
-      await request(app).post('/api/v1/repo').set('Cookie', cookie).send(TEST_REPO_NAKED);
+      await request(app)
+        .post('/api/v1/repo')
+        .set('Cookie', cookie)
+        .send(toCreateBody(TEST_REPO_NAKED));
       repo2 = await db.getRepoByUrl(TEST_REPO_NAKED.url);
     }
     repoIds[2] = repo2!._id!;
@@ -466,7 +488,10 @@ describe('repo routes - edge cases', () => {
     setCookie(nonAdminRes, 'nonAdmin');
 
     // Create a test repo
-    await request(app).post('/api/v1/repo').set('Cookie', adminCookie).send(TEST_REPO);
+    await request(app)
+      .post('/api/v1/repo')
+      .set('Cookie', adminCookie)
+      .send(toCreateBody(TEST_REPO));
 
     const repo = await fetchRepoOrThrow(TEST_REPO.url);
     repoId = repo._id!;
@@ -477,7 +502,6 @@ describe('repo routes - edge cases', () => {
       url: 'https://github.com/test/unauthorized-repo.git',
       name: 'unauthorized-repo',
       project: 'test',
-      host: 'github.com',
     });
 
     expect(res.status).toBe(401);
@@ -489,7 +513,6 @@ describe('repo routes - edge cases', () => {
       url: 'https://github.com/test/unauthenticated-repo.git',
       name: 'unauthenticated-repo',
       project: 'test',
-      host: 'github.com',
     });
 
     expect(res.status).toBe(401);
@@ -500,7 +523,6 @@ describe('repo routes - edge cases', () => {
     const res = await request(app).post('/api/v1/repo').set('Cookie', adminCookie).send({
       name: 'no-url-repo',
       project: 'test',
-      host: 'github.com',
     });
 
     expect(res.status).toBe(400);
@@ -515,7 +537,6 @@ describe('repo routes - edge cases', () => {
       url: '',
       name: 'invalid-repo',
       project: 'test',
-      host: 'github.com',
     });
     expect(res.status).toBe(400);
     expect(res.body.message).toBe('Repository url is required');

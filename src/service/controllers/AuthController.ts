@@ -283,6 +283,7 @@ export class AuthController extends Controller {
     @Body() body: CreateUserBody,
     @Request() req: ExpressRequest,
     @Res() unauthorisedResponse: ForbiddenResponse,
+    @Res() validationErrorResponse: ValidationErrorResponse,
     @Res() internalServerErrorResponse: InternalServerErrorResponse,
   ): Promise<CreateUserResponse> {
     if (!isAdminUser(req.user)) {
@@ -290,6 +291,12 @@ export class AuthController extends Controller {
     }
 
     const { username, password, email, gitAccount, admin: isAdmin = false } = body;
+
+    if (!username || !password || !email || !gitAccount) {
+      return validationErrorResponse(400, {
+        message: 'Missing required fields: username, password, email, and gitAccount are required',
+      });
+    }
 
     try {
       await db.createUser(username, password, email, gitAccount, isAdmin);
