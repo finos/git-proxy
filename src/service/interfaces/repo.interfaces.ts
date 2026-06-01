@@ -24,7 +24,7 @@ export interface CreateRepoBody {
   url: string;
   name: string;
   project: string;
-  users: { canPush: string[]; canAuthorise: string[] };
+  users?: { canPush: string[]; canAuthorise: string[] };
   _id?: string;
 }
 
