@@ -1,0 +1,32 @@
+---
+title: API Reference
+description: REST API reference documentation for GitProxy
+---
+
+# API Reference
+
+Deploy custom push protections and policies on top of Git.
+
+:::info[API Version]
+**2.0.0-rc.6** — OpenAPI 3.0
+:::
+
+## Authentication
+
+Most endpoints require a **BEARER** token (JWT) passed via the `Authorization` header:
+
+```
+Authorization: Bearer <token>
+```
+
+## Endpoints
+
+30 endpoints across 7 groups:
+
+- [**Auth**](/docs/api/auth) — 5 GET, 4 POST
+- [**Config**](/docs/api/config) — 4 GET
+- [**Health**](/docs/api/health) — 1 GET
+- [**Home**](/docs/api/home) — 1 GET
+- [**Push**](/docs/api/push) — 2 GET, 3 POST
+- [**Repositories**](/docs/api/repositories) — 2 GET, 1 POST, 2 PATCH, 3 DELETE
+- [**Users**](/docs/api/users) — 2 GET

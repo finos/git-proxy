@@ -197,9 +197,10 @@ describe('login', () => {
       });
 
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe(
-        'Missing required fields: username, password, email, and gitAccount are required',
-      );
+      // tsoa validates required body fields before the controller runs.
+      // The 'password' field is missing; tsoa prefixes body field errors with 'body.'.
+      expect(res.body.message).toBe('Validation failed');
+      expect(res.body.details).toHaveProperty('body.password');
     });
 
     it('should successfully create a new user', async () => {

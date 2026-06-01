@@ -19,7 +19,9 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "noEmit": false,
-    "types": ["node"]
+    "types": ["node"],
+
+    "experimentalDecorators": true
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]
