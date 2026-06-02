@@ -23,19 +23,24 @@
  *
  * Usage:
  *   npm run backup:urls
- *   # or: node scripts/migrate/backup-urls.js
+ *   # optional: --dbType mongo|fs (default mongo)
  */
 
 const config = require('./lib/config');
-const { analyzeRepos } = require('./lib/analyze-urls');
+const { createDatastoreFromArgv } = require('./lib/datastore');
+const { analyzeReposWithDatastore } = require('./lib/analyze-urls');
 const { generateReports } = require('./lib/reporting');
 const { createBackup } = require('./lib/common');
 
 config.ensureReportsDir();
 
 async function main() {
+  const argv = process.argv.slice(2);
+  let ds;
+
   try {
-    const { allRepos, report } = await analyzeRepos(config.mongoUri, config.dbName);
+    ds = await createDatastoreFromArgv(argv);
+    const { allRepos, report } = await analyzeReposWithDatastore(ds);
     const issues = Array.isArray(report.issues) ? report.issues : [];
 
     if (report.reposNeedingUpdate === 0 && issues.length === 0) {
@@ -86,6 +91,10 @@ async function main() {
   } catch (error) {
     console.error('FATAL ERROR:', error.message);
     process.exit(1);
+  } finally {
+    if (ds) {
+      await ds.close().catch(() => {});
+    }
   }
 }
 

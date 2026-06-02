@@ -28,13 +28,14 @@
  * Usage:
  *   npm run backup:users
  *   # or: node scripts/migrate/backup-users.js
+ *   # optional: --dbType mongo|fs (default mongo)
  */
 
-const { MongoClient } = require('mongodb');
 const fs = require('fs');
 const path = require('path');
 
 const config = require('./lib/config');
+const { createDatastoreFromArgv } = require('./lib/datastore');
 const { generateReports } = require('./lib/reporting');
 const { createBackup } = require('./lib/common');
 
@@ -47,15 +48,13 @@ function toCsvValue(v) {
 }
 
 async function main() {
-  const client = new MongoClient(config.mongoUri);
+  const argv = process.argv.slice(2);
+  let ds;
 
   try {
-    await client.connect();
-    const db = client.db(config.dbName);
-    const usersCollection = db.collection('users');
-
+    ds = await createDatastoreFromArgv(argv);
     console.log('\n=== BACKUP USERS PHASE ===');
-    const users = await usersCollection.find({}).project({ password: 0 }).toArray();
+    const users = await ds.listUsers();
     console.log(`Total users in database: ${users.length}`);
 
     const backupPath = createBackup(config.reportsDir, 'backup-users', users);
@@ -79,7 +78,9 @@ async function main() {
     console.error('FATAL ERROR:', error.message);
     process.exit(1);
   } finally {
-    await client.close().catch(() => {});
+    if (ds) {
+      await ds.close().catch(() => {});
+    }
   }
 }
 

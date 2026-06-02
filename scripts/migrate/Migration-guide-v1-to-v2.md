@@ -1,4 +1,4 @@
-# Git-Proxy v1.19.2 → v2.0.0 MongoDB migration
+# Git-Proxy v1.19.2 → v2.0.0 migration (MongoDB or file DB)
 
 Operator prep for upgrade, aligned with [finos/git-proxy#1535](https://github.com/finos/git-proxy/issues/1535#issuecomment-4478956510) (these scripts do **not** replace your own DB backup/snapshot).
 **Behavior:** dry-run by default for both phases; normalization is idempotent; email apply skips unchanged rows and checks uniqueness before writes; backups are explicit helper scripts plus your own infra.
@@ -8,7 +8,7 @@ Operator prep for upgrade, aligned with [finos/git-proxy#1535](https://github.co
 | **1** | `migrate-urls.js`, `backup-urls.js`   | **Repo URL normalization** — append `.git` to `repos.url` where missing (idempotent)                                                                                               |
 | **2** | `migrate-users.js`, `backup-users.js` | **Email audit** (blocking issues) + optional **CSV apply**; **ACL audit** — list `canPush` / `canAuthorise` entries that do not resolve to any `User.username` (no silent rewrite) |
 
-Configuration: `scripts/migrate/lib/config.js`. Report file names and contents: [Report artifacts](#report-artifacts) below.
+Configuration: `scripts/migrate/lib/config.js` and `scripts/migrate/lib/datastore.js`. Report file names and contents: [Report artifacts](#report-artifacts) below.
 
 ## npm scripts
 
@@ -24,24 +24,55 @@ npm run migrate:users -- --apply --csv ./map.csv
 
 Equivalent: `node scripts/migrate/<script>.js` from the repository root (same env vars).
 
+Optional local env file (example): `scripts/migrate/envs/local.env`
+
+```bash
+set -a && source scripts/migrate/envs/local.env && set +a
+npm run migrate:users
+```
+
+---
+
+## Database backend (`--dbType`)
+
+All scripts connect through `scripts/migrate/lib/datastore.js`.
+
+| Backend | `--dbType` | When used |
+| ------- | ---------- | --------- |
+| MongoDB | `mongo`    | **Default** if `--dbType` and `DB_TYPE` are unset |
+| File (neDB) | `fs`   | Explicit: `--dbType fs` or `DB_TYPE=fs` |
+
+Priority: CLI `--dbType` → env `DB_TYPE` → `mongo` (no auto-detection).
+
+Collections / files: `users`, `repos`.
+
 ---
 
 ## Environment variables
 
-| Variable     | Required | Default                         | Purpose                                      |
-| ------------ | -------- | ------------------------------- | -------------------------------------------- |
-| `MONGO_URI`  | no       | `mongodb://localhost:27017`     | MongoDB connection string                    |
-| `DB_NAME`    | no       | `git-proxy`                     | Database name (not a collection name)        |
-| `REPORTS_DIR`| no       | `reports/<YYYY-MM-DD>-migration`| Directory where report files are written     |
+| Variable        | Required | Default                          | Purpose |
+| --------------- | -------- | ---------------------------------- | ------- |
+| `MONGO_URI`     | no       | `mongodb://localhost:27017`        | MongoDB connection string (`dbType=mongo`) |
+| `DB_NAME`       | no       | `git-proxy`                        | MongoDB database name |
+| `DB_TYPE`       | no       | `mongo`                            | Backend: `mongo` or `fs` |
+| `USERS_DB_PATH` | no       | `./.data/db/users.db`              | neDB users file (`dbType=fs`), relative to **cwd** |
+| `REPOS_DB_PATH` | no       | `./.data/db/repos.db`              | neDB repos file (`dbType=fs`), relative to **cwd** |
+| `REPORTS_DIR`   | no       | `reports/<YYYY-MM-DD>-migration`   | Directory where report files are written |
 
-Collections used: `repos`, `users` (fixed in code).
+CLI overrides (same priority as above for connection): `--mongoUri`, `--dbName`, `--usersDbPath`, `--reposDbPath`.
 
 When `REPORTS_DIR` is set, it is used **as the full output directory** (the dated `reports/<date>-migration` subpath is **not** appended). When unset, reports go under `reports/<today>-migration/` relative to the process working directory.
 
 ```bash
+# MongoDB (default)
 export MONGO_URI="mongodb://host:27017"
 export DB_NAME="git-proxy"
 export REPORTS_DIR="/var/git-proxy/migration-run-1"   # optional
+
+# File DB
+export DB_TYPE=fs
+export USERS_DB_PATH="./.data/db/users.db"
+export REPOS_DB_PATH="./.data/db/repos.db"
 ```
 
 ---

@@ -14,22 +14,6 @@
  * limitations under the License.
  */
 
-const { ObjectId } = require('mongodb');
-
-async function updateRepoUrlWithCollection(reposCollection, repoId, newUrl) {
-  const result = await reposCollection.updateOne(
-    { _id: new ObjectId(repoId) },
-    { $set: { url: newUrl } },
-  );
-  return result.modifiedCount === 1;
-}
-
-async function countReposWithoutGitWithCollection(reposCollection) {
-  return await reposCollection.countDocuments({
-    url: { $not: /\.git$/ },
-  });
-}
-
 function createBackup(reportsDir, backupFilePrefix, data) {
   const fs = require('fs');
   const path = require('path');
@@ -41,7 +25,5 @@ function createBackup(reportsDir, backupFilePrefix, data) {
 }
 
 module.exports = {
-  updateRepoUrlWithCollection,
-  countReposWithoutGitWithCollection,
   createBackup,
 };

@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-const { MongoClient } = require('mongodb');
 const { normalizeEmail, isEmailFormatValid } = require('./email');
 
 function buildUsersEmailReport(users) {
@@ -97,23 +96,9 @@ function buildUsersEmailReport(users) {
   return { report };
 }
 
-async function analyzeUsers(mongoUri, dbName) {
-  const client = new MongoClient(mongoUri);
-
-  try {
-    await client.connect();
-    const db = client.db(dbName);
-    const usersCollection = db.collection('users');
-
-    return await analyzeUsersWithCollection(usersCollection);
-  } finally {
-    await client.close();
-  }
-}
-
-async function analyzeUsersWithCollection(usersCollection) {
+async function analyzeUsersWithDatastore(datastore) {
   console.log('\n=== USERS EMAIL AUDIT PHASE ===');
-  const users = await usersCollection.find({}).project({ password: 0 }).toArray();
+  const users = await datastore.listUsers();
   console.log(`Total users in database: ${users.length}`);
 
   const { report } = buildUsersEmailReport(users);
@@ -124,8 +109,7 @@ async function analyzeUsersWithCollection(usersCollection) {
 }
 
 module.exports = {
-  analyzeUsers,
-  analyzeUsersWithCollection,
+  analyzeUsersWithDatastore,
   buildUsersEmailReport,
   normalizeEmail,
   isEmailFormatValid,

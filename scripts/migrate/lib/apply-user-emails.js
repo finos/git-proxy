@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-const { MongoClient, ObjectId } = require('mongodb');
 const { normalizeEmail } = require('./email');
 const { normalizeUsername } = require('./csv');
 
@@ -45,22 +44,10 @@ function simulatePostApplyUniqueness(users, usernameToEmail) {
   return { conflicts, projected };
 }
 
-async function applyUserEmails(mongoUri, dbName, usernameToEmail, options = {}) {
-  const client = new MongoClient(mongoUri);
-  try {
-    await client.connect();
-    const db = client.db(dbName);
-    const usersCollection = db.collection('users');
-    return await applyUserEmailsWithCollection(usersCollection, usernameToEmail, options);
-  } finally {
-    await client.close();
-  }
-}
-
-async function applyUserEmailsWithCollection(usersCollection, usernameToEmail, options = {}) {
+async function applyUserEmailsWithDatastore(datastore, usernameToEmail, options = {}) {
   const { dryRun = false } = options;
 
-  const users = await usersCollection.find({}).project({ password: 0 }).toArray();
+  const users = await datastore.listUsers();
 
   const { conflicts } = simulatePostApplyUniqueness(users, usernameToEmail);
   if (conflicts.length > 0) {
@@ -110,21 +97,26 @@ async function applyUserEmailsWithCollection(usersCollection, usernameToEmail, o
     }
 
     try {
-      const id = user._id?.toString?.() ?? String(user._id ?? '');
-      const res = await usersCollection.updateOne(
-        { _id: new ObjectId(id) },
-        { $set: { email: nextEmail } },
-      );
-      if (res.modifiedCount === 1) {
+      const res = await datastore.updateUserEmailByUsername(username, nextEmail);
+      if (res.ok && res.modified) {
         changes.push({ username, oldEmail, newEmail: nextEmail, status: 'updated' });
         updated++;
-      } else {
+      } else if (res.ok && !res.modified) {
         changes.push({
           username,
           oldEmail,
           newEmail: nextEmail,
           status: 'skipped',
           reason: 'no-change',
+        });
+        skipped++;
+      } else {
+        changes.push({
+          username,
+          oldEmail,
+          newEmail: nextEmail,
+          status: 'skipped',
+          reason: res.reason ?? 'user-not-found',
         });
         skipped++;
       }
@@ -152,7 +144,6 @@ async function applyUserEmailsWithCollection(usersCollection, usernameToEmail, o
 }
 
 module.exports = {
-  applyUserEmails,
-  applyUserEmailsWithCollection,
+  applyUserEmailsWithDatastore,
   simulatePostApplyUniqueness,
 };

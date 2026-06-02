@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-const { MongoClient } = require('mongodb');
-
 function detectScheme(url) {
   const m = /^([a-zA-Z][a-zA-Z0-9+.-]*):\/\//.exec(url);
   return m ? m[1].toLowerCase() : 'unknown';
@@ -86,47 +84,44 @@ function buildUrlNormalizationReport(repos) {
   return report;
 }
 
-async function analyzeRepos(mongoUri, dbName) {
-  const client = new MongoClient(mongoUri);
-
-  try {
-    await client.connect();
-    const db = client.db(dbName);
-    const reposCollection = db.collection('repos');
-
-    console.log('\n=== ANALYSIS PHASE ===');
-    const allRepos = await reposCollection.find({}).toArray();
-
-    console.log(`Total repos in database: ${allRepos.length}`);
-    const report = buildUrlNormalizationReport(allRepos);
-
-    for (const repo of allRepos) {
-      const repoName = repo.name ?? '';
-      const norm = normalizeRepoUrl(repo.url);
-      if (!norm.ok) {
-        console.log(
-          `  WARNING ${repoName}: invalid url "${norm.rawUrl}" (reason: ${norm.reason}, scheme: ${norm.scheme})`,
-        );
-        continue;
-      }
-
-      const currentUrl = norm.normalizedUrl;
-      if (!currentUrl.endsWith('.git')) {
-        const newUrl = `${currentUrl}.git`;
-        console.log(`  INFO ${repoName}: ${currentUrl} -> ${newUrl}`);
-      } else {
-        console.log(`  OK ${repoName}: already has .git`);
-      }
+function logUrlAnalysis(allRepos, report) {
+  for (const repo of allRepos) {
+    const repoName = repo.name ?? '';
+    const norm = normalizeRepoUrl(repo.url);
+    if (!norm.ok) {
+      console.log(
+        `  WARNING ${repoName}: invalid url "${norm.rawUrl}" (reason: ${norm.reason}, scheme: ${norm.scheme})`,
+      );
+      continue;
     }
 
-    console.log(`\nRepos needing update: ${report.reposNeedingUpdate}`);
-    console.log(`Repos already fixed: ${report.reposAlreadyFixed}`);
-    console.log(`URL issues (manual fix): ${report.issueCount}`);
-
-    return { allRepos, report };
-  } finally {
-    await client.close();
+    const currentUrl = norm.normalizedUrl;
+    if (!currentUrl.endsWith('.git')) {
+      const newUrl = `${currentUrl}.git`;
+      console.log(`  INFO ${repoName}: ${currentUrl} -> ${newUrl}`);
+    } else {
+      console.log(`  OK ${repoName}: already has .git`);
+    }
   }
+
+  console.log(`\nRepos needing update: ${report.reposNeedingUpdate}`);
+  console.log(`Repos already fixed: ${report.reposAlreadyFixed}`);
+  console.log(`URL issues (manual fix): ${report.issueCount}`);
 }
 
-module.exports = { analyzeRepos, buildUrlNormalizationReport, normalizeRepoUrl };
+async function analyzeReposWithDatastore(datastore) {
+  console.log('\n=== ANALYSIS PHASE ===');
+  const allRepos = await datastore.listRepos();
+
+  console.log(`Total repos in database: ${allRepos.length}`);
+  const report = buildUrlNormalizationReport(allRepos);
+  logUrlAnalysis(allRepos, report);
+
+  return { allRepos, report };
+}
+
+module.exports = {
+  analyzeReposWithDatastore,
+  buildUrlNormalizationReport,
+  normalizeRepoUrl,
+};

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-const { MongoClient } = require('mongodb');
-
 function normalizeUsername(v) {
   return (v || '').toString().trim().toLowerCase();
 }
@@ -55,28 +53,13 @@ function collectAclOrphans(repos, usernameSet) {
   return orphans;
 }
 
-async function analyzeAcl(mongoUri, dbName) {
-  const client = new MongoClient(mongoUri);
-
-  try {
-    await client.connect();
-    const db = client.db(dbName);
-    const usersCollection = db.collection('users');
-    const reposCollection = db.collection('repos');
-
-    return await analyzeAclWithCollections(usersCollection, reposCollection);
-  } finally {
-    await client.close();
-  }
-}
-
-async function analyzeAclWithCollections(usersCollection, reposCollection) {
+async function analyzeAclWithDatastore(datastore) {
   console.log('\n=== ACL AUDIT PHASE ===');
 
-  const users = await usersCollection.find({}).project({ password: 0 }).toArray();
+  const users = await datastore.listUsers();
   const usernameSet = new Set(users.map((u) => normalizeUsername(u.username)).filter(Boolean));
 
-  const repos = await reposCollection.find({}).toArray();
+  const repos = await datastore.listRepos();
   const orphans = collectAclOrphans(repos, usernameSet);
 
   const report = {
@@ -92,8 +75,7 @@ async function analyzeAclWithCollections(usersCollection, reposCollection) {
 }
 
 module.exports = {
-  analyzeAcl,
-  analyzeAclWithCollections,
+  analyzeAclWithDatastore,
   collectAclOrphans,
   normalizeUsername,
 };

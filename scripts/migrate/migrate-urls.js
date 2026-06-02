@@ -21,32 +21,35 @@
  *
  * DRY RUN (default):
  *   npm run migrate:urls
- *   # or: node scripts/migrate/migrate-urls.js
  *
  * APPLY:
  *   npm run migrate:urls -- --apply
- *   # or: node scripts/migrate/migrate-urls.js --apply
+ *
+ * Optional: --dbType mongo|fs (default mongo), DB_TYPE env
  */
 
 const config = require('./lib/config');
-const { analyzeRepos } = require('./lib/analyze-urls');
+const { createDatastoreFromArgv } = require('./lib/datastore');
+const { analyzeReposWithDatastore } = require('./lib/analyze-urls');
 const { generateReports } = require('./lib/reporting');
-const { MongoClient } = require('mongodb');
-const { updateRepoUrlWithCollection, countReposWithoutGitWithCollection } = require('./lib/common');
+
+const argv = process.argv.slice(2);
 
 const args = {
-  apply: process.argv.includes('--apply'),
+  apply: argv.includes('--apply'),
 };
 
 config.ensureReportsDir();
 
 async function main() {
+  let ds;
+
   try {
-    const { report } = await analyzeRepos(config.mongoUri, config.dbName);
+    ds = await createDatastoreFromArgv(argv);
+    const { report } = await analyzeReposWithDatastore(ds);
     const urlIssues =
       report.issueCount ?? (Array.isArray(report.issues) ? report.issues.length : 0);
 
-    // === DRY RUN (default) or APPLY ===
     if (!args.apply) {
       console.log('\n=== DRY RUN MODE (default) ===');
       console.log('No changes applied.');
@@ -65,64 +68,48 @@ async function main() {
       let reposUpdated = 0;
       let errors = 0;
 
-      const client = new MongoClient(config.mongoUri);
+      for (const change of report.changes) {
+        try {
+          const success = await ds.updateRepoUrlById(change.repoId, change.newUrl);
 
-      try {
-        await client.connect();
-        const reposCollection = client.db(config.dbName).collection('repos');
-
-        for (const change of report.changes) {
-          try {
-            const success = await updateRepoUrlWithCollection(
-              reposCollection,
-              change.repoId,
-              change.newUrl,
-            );
-
-            if (success) {
-              change.status = 'updated';
-              reposUpdated++;
-              console.log(`  SUCCESS Updated ${change.repoName}`);
-            } else {
-              change.status = 'no-change';
-              console.log(`  WARNING No change for ${change.repoName}`);
-            }
-          } catch (error) {
-            change.status = 'error';
-            change.error = error.message;
-            errors++;
-            console.error(`  ERROR updating ${change.repoName}: ${error.message}`);
+          if (success) {
+            change.status = 'updated';
+            reposUpdated++;
+            console.log(`  SUCCESS Updated ${change.repoName}`);
+          } else {
+            change.status = 'no-change';
+            console.log(`  WARNING No change for ${change.repoName}`);
           }
+        } catch (error) {
+          change.status = 'error';
+          change.error = error.message;
+          errors++;
+          console.error(`  ERROR updating ${change.repoName}: ${error.message}`);
         }
+      }
 
-        console.log(`\nRepos updated: ${reposUpdated}`);
-        console.log(`Errors: ${errors}`);
+      console.log(`\nRepos updated: ${reposUpdated}`);
+      console.log(`Errors: ${errors}`);
 
-        // === VERIFY ===
-        console.log('\n=== VERIFICATION PHASE ===');
-        const remaining = await countReposWithoutGitWithCollection(reposCollection);
-        console.log(`Repos still without .git: ${remaining}`);
+      console.log('\n=== VERIFICATION PHASE ===');
+      const remaining = await ds.countReposWithoutGitSuffix();
+      console.log(`Repos still without .git: ${remaining}`);
 
-        if (remaining === 0) {
-          console.log('SUCCESS Migration verified: all repos now have .git');
-        } else {
-          console.warn(
-            'WARNING ${remaining} repo(s) still have url not ending with .git (includes blank/invalid URLs in issues — see URL issues above)',
-          );
-        }
-      } finally {
-        await client.close();
+      if (remaining === 0) {
+        console.log('SUCCESS Migration verified: all repos now have .git');
+      } else {
+        console.warn(
+          `WARNING ${remaining} repo(s) still have url not ending with .git (includes blank/invalid URLs in issues — see URL issues above)`,
+        );
       }
 
       report.reposUpdated = reposUpdated;
       report.errors = errors;
     }
 
-    // === REPORTING ===
     const timestamp = Date.now();
     generateReports(config.reportsDir, report, timestamp);
 
-    // === SUMMARY ===
     console.log('\n=== SUMMARY ===');
     console.log(`Mode: ${args.apply ? 'APPLY' : 'DRY RUN'}`);
     console.log(`Total repos: ${report.totalRepos}`);
@@ -136,6 +123,10 @@ async function main() {
   } catch (error) {
     console.error('FATAL ERROR:', error.message);
     process.exit(1);
+  } finally {
+    if (ds) {
+      await ds.close().catch(() => {});
+    }
   }
 }
 
