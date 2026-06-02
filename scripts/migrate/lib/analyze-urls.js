@@ -113,7 +113,7 @@ async function analyzeRepos(mongoUri, dbName) {
       const currentUrl = norm.normalizedUrl;
       if (!currentUrl.endsWith('.git')) {
         const newUrl = `${currentUrl}.git`;
-        console.log(`  WARNING ${repoName}: ${currentUrl} -> ${newUrl}`);
+        console.log(`  INFO ${repoName}: ${currentUrl} -> ${newUrl}`);
       } else {
         console.log(`  OK ${repoName}: already has .git`);
       }

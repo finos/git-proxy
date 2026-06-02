@@ -8,19 +8,102 @@ Operator prep for upgrade, aligned with [finos/git-proxy#1535](https://github.co
 | **1** | `migrate-urls.js`, `backup-urls.js`   | **Repo URL normalization** — append `.git` to `repos.url` where missing (idempotent)                                                                                               |
 | **2** | `migrate-users.js`, `backup-users.js` | **Email audit** (blocking issues) + optional **CSV apply**; **ACL audit** — list `canPush` / `canAuthorise` entries that do not resolve to any `User.username` (no silent rewrite) |
 
-Env: `MONGO_URI`, `DB_NAME` (see `scripts/migrate/lib/config.js`). Reports: `reports/{date}-migration/`.
+Configuration: `scripts/migrate/lib/config.js`. Report file names and contents: [Report artifacts](#report-artifacts) below.
 
 ## npm scripts
 
 ```bash
+npm run backup:urls 
 npm run migrate:urls                        # repo URL normalization — dry-run
-npm run backup:urls
 npm run migrate:urls -- --apply              # apply normalization
 
-npm run migrate:users                        # email + ACL audit (dry-run)
 npm run backup:users
+npm run migrate:users                        # email + ACL audit (dry-run)
 npm run migrate:users -- --apply --csv ./map.csv
 ```
+
+Equivalent: `node scripts/migrate/<script>.js` from the repository root (same env vars).
+
+---
+
+## Environment variables
+
+| Variable     | Required | Default                         | Purpose                                      |
+| ------------ | -------- | ------------------------------- | -------------------------------------------- |
+| `MONGO_URI`  | no       | `mongodb://localhost:27017`     | MongoDB connection string                    |
+| `DB_NAME`    | no       | `git-proxy`                     | Database name (not a collection name)        |
+| `REPORTS_DIR`| no       | `reports/<YYYY-MM-DD>-migration`| Directory where report files are written     |
+
+Collections used: `repos`, `users` (fixed in code).
+
+When `REPORTS_DIR` is set, it is used **as the full output directory** (the dated `reports/<date>-migration` subpath is **not** appended). When unset, reports go under `reports/<today>-migration/` relative to the process working directory.
+
+```bash
+export MONGO_URI="mongodb://host:27017"
+export DB_NAME="git-proxy"
+export REPORTS_DIR="/var/git-proxy/migration-run-1"   # optional
+```
+
+---
+
+## Report artifacts
+
+Reports are **action-oriented**: YAML/CSV list repos or users that need migration, manual URL fixes, email fixes, or ACL fixes. Repos/users already OK appear only as **counts** in YAML (for example `reposAlreadyFixed`), not as full row lists. This is not a full-database export (use `mongodump` or `backup-users` for users).
+
+### Always written (when the script reaches report generation)
+
+| File                   | Written by                                      |
+| ---------------------- | ----------------------------------------------- |
+| `report-{timestamp}.yaml` | `migrate-urls`, `backup-urls`, `migrate-users` |
+
+### Conditional CSV / JSON (created only if the relevant list is non-empty)
+
+| File                         | Written by                    | Condition                          |
+| ---------------------------- | ----------------------------- | ---------------------------------- |
+| `report-{timestamp}.csv`     | `migrate-urls`, `backup-urls` | `changes.length > 0` (URL pending) |
+| `url-issues-{timestamp}.csv` | `migrate-urls`, `backup-urls` | `issues.length > 0` (manual URL)   |
+| `users-audit-{timestamp}.csv`| `migrate-users`               | blocking email `users.issues`      |
+| `acl-orphans-{timestamp}.csv`| `migrate-users`               | `acl.orphans.length > 0`           |
+| `email-changes-{timestamp}.csv` | `migrate-users` (--apply)  | `apply.changes.length > 0`         |
+| `backup-urls-{timestamp}.json`  | `backup-urls` only           | see backup-urls below              |
+
+### Backup-only extras
+
+| File                         | Written by       | Contents |
+| ---------------------------- | ---------------- | -------- |
+| `backup-users-{timestamp}.json` | `backup-users` | **All** users (password field excluded) |
+| `users-email-{timestamp}.csv`   | `backup-users` | **All** users as `username,email` template for CSV apply |
+
+`backup-urls` does **not** dump every repo: the JSON array contains only documents that appear in `changes` (missing `.git`) or `issues` (blank / unsupported URL), each with `backupReason` metadata. If nothing needs migration and there are no URL issues, **no** `backup-urls-*.json` is created and the script exits 0.
+
+CSV validation errors from `--apply --csv` are recorded in YAML (`report.csv.errors`); there is no separate `csv-errors-*.csv`.
+
+### YAML contents (summary)
+
+**Phase 1** (`migrate-urls`, `backup-urls`): `totalRepos`, `reposNeedingUpdate`, `reposAlreadyFixed`, `changes[]` (repos to append `.git`), `issues[]` (manual fix), `issueCount`. After `--apply`: may include `reposUpdated`, `errors`, and `changes[].status` (`updated` / `error` / …). `backup-urls` sets `mode: backup-only`.
+
+**Phase 2** (`migrate-users`): nested structure:
+
+- `mode`: `dry-run` or `apply`
+- `users`: audit (`totalUsers`, `counts`, `issues`, `duplicateGroups`, `blockingIssueCount`, …)
+- `acl`: `orphanCount`, `orphans[]` (entries in `repos.users.canPush` / `canAuthorise` with no matching `users.username`)
+- `apply`: present on `--apply` (`ok`, `reason`, `changes`, `conflicts`, …)
+- `csv`: present on `--apply` (`path`, `rowCount`, `errors`)
+
+### Exit codes
+
+| Script           | Exit 0 when | Exit 1 when |
+| ---------------- | ----------- | ----------- |
+| `migrate-urls`   | no apply errors and no URL issues | URL issues and/or apply errors |
+| `migrate-users`  | no blocking email issues, no ACL orphans, apply OK, no post-apply email conflicts, no CSV errors | any of the above fail |
+| `backup-urls`    | always (including “nothing to backup”) | fatal error only |
+| `backup-users`   | success     | fatal error only |
+
+After a successful URL apply, a follow-up dry-run should show `reposNeedingUpdate: 0`, but exit code is still **1** if URL **issues** remain (blank or non-http(s) URLs).
+
+### Manual test fixtures
+
+Local MongoDB seed data and per-repo ACL/URL test-case tables: [`fixtures/README.md`](fixtures/README.md).
 
 ---
 
@@ -45,7 +128,7 @@ npm run migrate:urls -- --apply
 
 Notes: trailing `/` is normalized (`.../repo/` → `.../repo.git`). Blank/non-http(s) URLs are reported as issues and require manual fixing.
 
-Reports: `report-{ts}.yaml`, `report-{ts}.csv` (pending changes), `url-issues-{ts}.csv` (manual fixes), `backup-urls-{ts}.json`.
+Phase 1 report files: see [Report artifacts](#report-artifacts) (`report-*.yaml`, `report-*.csv`, `url-issues-*.csv`, `backup-urls-*.json`).
 
 ---
 
@@ -61,7 +144,7 @@ Reports: `report-{ts}.yaml`, `report-{ts}.csv` (pending changes), `url-issues-{t
 | Writes      | `repos.url` only       | `users.email` from CSV only     |
 | Always      | normalization analysis | email audit + ACL orphan report |
 
-`backup-users.js` is separate (not invoked by `migrate-users`) and writes a full JSON snapshot plus a `users-email-*.csv` template.
+`backup-users.js` is separate (not invoked by `migrate-users`) and writes a **full** users JSON snapshot plus `users-email-*.csv` for all users (see [Report artifacts](#report-artifacts)).
 
 ```bash
 npm run migrate:users
@@ -69,11 +152,11 @@ npm run backup:users
 npm run migrate:users -- --apply --csv ./mappings.csv
 ```
 
-For **apply** (`migrate-users --apply --csv ...`): CSV header must be `username,email` (`lib/csv.js`). The command exits `1` on blocking email issues, ACL orphans, CSV/apply failures, or duplicate-email simulation.
+For **apply** (`migrate-users --apply --csv ...`): CSV header must be `username,email` (`lib/csv.js`). The command exits `1` on blocking email issues, ACL orphans, CSV/apply failures, or duplicate-email simulation (see [Exit codes](#exit-codes)).
 
 CSV input: UTF‑8, one row per line, only those two columns; parser is minimal (quoted commas OK, **`""`** escapes inside fields not supported). Prefer export without BOM.
 
-Extra CSVs when applicable: `users-audit-*.csv`, `acl-orphans-*.csv`, `email-changes-*.csv`.
+Phase 2 report files (when applicable): `users-audit-*.csv`, `acl-orphans-*.csv`, `email-changes-*.csv`, plus `report-*.yaml` (full nested report).
 
 ---
 
@@ -81,13 +164,13 @@ Extra CSVs when applicable: `users-audit-*.csv`, `acl-orphans-*.csv`, `email-cha
 
 ```bash
 export MONGO_URI="mongodb://host:27017"
-export DB_NAME="git_proxy"
+export DB_NAME="git-proxy"
 
 # Phase 1 — repo URL normalization
 npm run migrate:urls
 npm run backup:urls
 npm run migrate:urls -- --apply
-npm run migrate:urls   # expect nothing left to normalize
+npm run migrate:urls   # expect reposNeedingUpdate: 0; exit 1 if URL issues remain
 
 # Phase 2 — email + ACL (timing vs app upgrade — your runbook)
 npm run migrate:users
