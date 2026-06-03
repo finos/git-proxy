@@ -224,7 +224,11 @@ async function createDatastore(options) {
  * @param {NodeJS.ProcessEnv} [env]
  * @param {object} [defaults]
  */
-async function createDatastoreFromArgv(argv = process.argv.slice(2), env = process.env, defaults = {}) {
+async function createDatastoreFromArgv(
+  argv = process.argv.slice(2),
+  env = process.env,
+  defaults = {},
+) {
   const parsed = parseMigrationArgs(argv, env, {
     mongoUri: baseConfig.mongoUri,
     dbName: baseConfig.dbName,
