@@ -2,12 +2,18 @@ version: 2
 
 updates:
   - package-ecosystem: github-actions
-    directory: '/'
+    directories:
+      - '/'
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 3
     commit-message:
       prefix: 'chore'
       include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'automated'
     groups:
       github-actions:
         patterns:
