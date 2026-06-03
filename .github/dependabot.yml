@@ -19,15 +19,20 @@ updates:
         patterns:
           - '*'
 
-  - package-ecosystem: docker
+- package-ecosystem: docker
     directories:
       - '/'
       - '/localgit'
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 3
     commit-message:
       prefix: 'chore'
       include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'automated'
     groups:
       docker:
         patterns:
