@@ -519,7 +519,9 @@ describe('ConfigLoader', () => {
       await execFileAsync('git', ['remote', 'add', 'origin', remoteDir], { cwd: workDir });
       await execFileAsync('git', ['push', '-u', 'origin', 'main'], { cwd: workDir });
       await execFileAsync('git', ['clone', remoteDir, repoDir]);
-      await execFileAsync('git', ['checkout', '--detach', 'HEAD'], { cwd: repoDir });
+      // `git checkout --detach` (no ref) detaches at the current HEAD. Passing
+      // `HEAD` explicitly is rejected as a pathspec by some git versions on CI.
+      await execFileAsync('git', ['checkout', '--detach'], { cwd: repoDir });
 
       const config = await configLoader.loadFromSource(source);
 
