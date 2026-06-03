@@ -3,49 +3,49 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: docker
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: npm
     directory: /experimental/li-cli
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: npm
     directory: /experimental/license-inventory
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: docker
     directory: /localgit
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: npm
     directory: /packages/git-proxy-cli
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: npm
     directory: /plugins/git-proxy-plugin-samples
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: npm
     directory: /test/fixtures/test-package
     schedule:
-      interval: daily
+      interval: weekly
 
   - package-ecosystem: npm
     directory: /website
     schedule:
-      interval: daily
+      interval: weekly
