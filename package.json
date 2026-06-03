@@ -44,6 +44,11 @@
       "types": "./dist/src/utils/errors.d.ts",
       "import": "./dist/src/utils/errors.js",
       "require": "./dist/src/utils/errors.js"
+    },
+    "./service": {
+      "types": "./dist/src/service/index.d.ts",
+      "import": "./dist/src/service/index.js",
+      "require": "./dist/src/service/index.js"
     }
   },
   "scripts": {
