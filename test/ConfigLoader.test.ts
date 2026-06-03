@@ -503,7 +503,19 @@ describe('ConfigLoader', () => {
         JSON.stringify({ proxyUrl: 'https://test.com', cookieSecret: 'from-cache' }),
       );
       await execFileAsync('git', ['add', source.path], { cwd: workDir });
-      await execFileAsync('git', ['commit', '-m', 'add config'], { cwd: workDir });
+      await execFileAsync(
+        'git',
+        [
+          '-c',
+          'user.email=test@example.com',
+          '-c',
+          'user.name=git-proxy test',
+          'commit',
+          '-m',
+          'add config',
+        ],
+        { cwd: workDir },
+      );
       await execFileAsync('git', ['remote', 'add', 'origin', remoteDir], { cwd: workDir });
       await execFileAsync('git', ['push', '-u', 'origin', 'main'], { cwd: workDir });
       await execFileAsync('git', ['clone', remoteDir, repoDir]);
