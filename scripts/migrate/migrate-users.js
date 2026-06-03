@@ -49,49 +49,47 @@ const args = {
 
 config.ensureReportsDir();
 
-async function finishReport(datastore, usersReport, aclReport) {
-  const report = {
-    mode: args.apply ? 'apply' : 'dry-run',
+function printDryRunNextSteps() {
+  console.log('\n=== DRY RUN MODE (default) ===');
+  console.log('No changes applied.');
+  console.log('\nNext steps:');
+  console.log('  1. Create users backup (recommended):');
+  console.log('     node scripts/migrate/backup-users.js');
+  console.log('  2. Prepare CSV mapping: username,email');
+  console.log('  3. Apply changes:');
+  console.log('     node scripts/migrate/migrate-users.js --apply --csv mappings.csv');
+}
+
+function buildUsersMigrationReport({ mode, usersReport, aclReport, csv, apply }) {
+  return {
+    mode,
     users: usersReport,
     acl: aclReport,
-    apply: null,
-    csv: null,
+    apply: apply ?? null,
+    csv: csv ?? null,
   };
+}
 
-  if (!args.apply) {
-    console.log('\n=== DRY RUN MODE (default) ===');
-    console.log('No changes applied.');
-    console.log('\nNext steps:');
-    console.log('  1. Create users backup (recommended):');
-    console.log('     node scripts/migrate/backup-users.js');
-    console.log('  2. Prepare CSV mapping: username,email');
-    console.log('  3. Apply changes:');
-    console.log('     node scripts/migrate/migrate-users.js --apply --csv mappings.csv');
-  } else {
-    console.log('\n=== APPLY MODE ===');
-    if (!args.csvPath) {
-      throw new Error('--apply requires --csv <path>');
-    }
+async function runEmailApplyFromCsv(datastore, csvPath) {
+  const absCsvPath = path.isAbsolute(csvPath) ? csvPath : path.join(process.cwd(), csvPath);
+  const { mapping, errors, rows } = readUsernameEmailCsv(absCsvPath);
+  const csv = { path: absCsvPath, rowCount: rows.length, errors };
 
-    const absCsvPath = path.isAbsolute(args.csvPath)
-      ? args.csvPath
-      : path.join(process.cwd(), args.csvPath);
-    const { mapping, errors, rows } = readUsernameEmailCsv(absCsvPath);
-    report.csv = { path: absCsvPath, rowCount: rows.length, errors };
-
-    if (errors.length > 0) {
-      console.error(`CSV validation errors: ${errors.length}`);
-      report.apply = { ok: false, reason: 'csv-errors', changes: [] };
-    } else {
-      report.apply = await applyUserEmailsWithDatastore(datastore, mapping, {
-        dryRun: false,
-      });
-    }
+  if (errors.length > 0) {
+    console.error(`CSV validation errors: ${errors.length}`);
+    return {
+      csv,
+      apply: { ok: false, reason: 'csv-errors', changes: [] },
+    };
   }
 
-  const timestamp = Date.now();
-  generateReports(config.reportsDir, report, timestamp);
+  const apply = await applyUserEmailsWithDatastore(datastore, mapping, {
+    dryRun: false,
+  });
+  return { csv, apply };
+}
 
+function computeExitCode(report) {
   const blockingUsers = report.users?.blockingIssueCount ?? 0;
   const aclOrphans = report.acl?.orphanCount ?? 0;
   const applyOk = report.apply ? report.apply.ok : true;
@@ -102,17 +100,33 @@ async function finishReport(datastore, usersReport, aclReport) {
   const shouldFail =
     blockingUsers > 0 || aclOrphans > 0 || !applyOk || applyConflicts > 0 || csvErrors > 0;
 
+  return shouldFail ? 1 : 0;
+}
+
+function printMigrationSummary(report, applyMode) {
+  const blockingUsers = report.users?.blockingIssueCount ?? 0;
+  const aclOrphans = report.acl?.orphanCount ?? 0;
+  const applyOk = report.apply ? report.apply.ok : true;
+  const applyConflicts =
+    report.apply && Array.isArray(report.apply.conflicts) ? report.apply.conflicts.length : 0;
+  const csvErrors = report.csv && Array.isArray(report.csv.errors) ? report.csv.errors.length : 0;
+
   console.log('\n=== SUMMARY ===');
   console.log(`Mode: ${report.mode}`);
   console.log(`Users (blocking): ${blockingUsers}`);
   console.log(`ACL orphans: ${aclOrphans}`);
-  if (args.apply) {
+  if (applyMode) {
     console.log(`CSV errors: ${csvErrors}`);
     console.log(`Apply ok: ${applyOk}`);
     console.log(`Apply conflicts: ${applyConflicts}`);
   }
+}
 
-  return shouldFail ? 1 : 0;
+function persistReportAndPrintSummary(reportsDir, report, applyMode) {
+  const timestamp = Date.now();
+  generateReports(reportsDir, report, timestamp);
+  printMigrationSummary(report, applyMode);
+  return computeExitCode(report);
 }
 
 async function main() {
@@ -121,7 +135,29 @@ async function main() {
     ds = await createDatastoreFromArgv(argv);
     const { report: usersReport } = await analyzeUsersWithDatastore(ds);
     const { report: aclReport } = await analyzeAclWithDatastore(ds);
-    const exitCode = await finishReport(ds, usersReport, aclReport);
+
+    let csv = null;
+    let apply = null;
+
+    if (!args.apply) {
+      printDryRunNextSteps();
+    } else {
+      console.log('\n=== APPLY MODE ===');
+      if (!args.csvPath) {
+        throw new Error('--apply requires --csv <path>');
+      }
+      ({ csv, apply } = await runEmailApplyFromCsv(ds, args.csvPath));
+    }
+
+    const report = buildUsersMigrationReport({
+      mode: args.apply ? 'apply' : 'dry-run',
+      usersReport,
+      aclReport,
+      csv,
+      apply,
+    });
+
+    const exitCode = persistReportAndPrintSummary(config.reportsDir, report, args.apply);
     process.exit(exitCode);
   } catch (error) {
     console.error('FATAL ERROR:', error.message);
