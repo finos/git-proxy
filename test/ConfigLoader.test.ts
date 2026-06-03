@@ -519,9 +519,14 @@ describe('ConfigLoader', () => {
       await execFileAsync('git', ['remote', 'add', 'origin', remoteDir], { cwd: workDir });
       await execFileAsync('git', ['push', '-u', 'origin', 'main'], { cwd: workDir });
       await execFileAsync('git', ['clone', remoteDir, repoDir]);
-      // `git checkout --detach` (no ref) detaches at the current HEAD. Passing
-      // `HEAD` explicitly is rejected as a pathspec by some git versions on CI.
-      await execFileAsync('git', ['checkout', '--detach'], { cwd: repoDir });
+      // The clone's default branch follows the host's `init.defaultBranch`, which
+      // may differ from the pushed `main` (e.g. `master` on CI), leaving local
+      // HEAD unborn. Detach at the pushed commit by SHA so HEAD is reliably
+      // detached and the working tree is populated on every git version.
+      const { stdout: headSha } = await execFileAsync('git', ['rev-parse', 'origin/main'], {
+        cwd: repoDir,
+      });
+      await execFileAsync('git', ['checkout', headSha.trim()], { cwd: repoDir });
 
       const config = await configLoader.loadFromSource(source);
 
