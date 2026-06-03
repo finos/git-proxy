@@ -23,8 +23,15 @@ vi.mock('../../../src/db/postgres/helper', () => ({
 }));
 
 describe('PostgreSQL - Users', async () => {
-  const { findUser, findUserByEmail, createUser, deleteUser, getUsers, updateUser } =
-    await import('../../../src/db/postgres/users');
+  const {
+    findUser,
+    findUserByEmail,
+    findUserByOIDC,
+    createUser,
+    deleteUser,
+    getUsers,
+    updateUser,
+  } = await import('../../../src/db/postgres/users');
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -65,12 +72,66 @@ describe('PostgreSQL - Users', async () => {
     });
   });
 
+  describe('row mapping', () => {
+    it('maps a DB row to a User on findUser', async () => {
+      mockQuery.mockResolvedValue({
+        rowCount: 1,
+        rows: [
+          {
+            _id: 'u1',
+            username: 'alice',
+            email: 'alice@example.com',
+            password: 'hash',
+            git_account: 'alice-git',
+            admin: true,
+            oidc_id: null,
+            display_name: 'Alice A.',
+            title: 'Dev',
+          },
+        ],
+      });
+
+      const user = await findUser('alice');
+
+      expect(user).toMatchObject({
+        _id: 'u1',
+        username: 'alice',
+        email: 'alice@example.com',
+        password: 'hash',
+        gitAccount: 'alice-git',
+        admin: true,
+        displayName: 'Alice A.',
+        title: 'Dev',
+      });
+    });
+  });
+
+  describe('findUserByOIDC', () => {
+    it('queries by oidc_id and returns null when absent', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+      const user = await findUserByOIDC('oidc-123');
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('WHERE oidc_id = $1');
+      expect(params).toEqual(['oidc-123']);
+      expect(user).toBeNull();
+    });
+  });
+
   describe('getUsers', () => {
     it('omits password from the SELECT projection', async () => {
       mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
       await getUsers({});
       const [sql] = mockQuery.mock.calls[0];
       expect(sql).toContain('NULL::text AS password');
+    });
+
+    it('builds lower-cased username and email filters', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+      await getUsers({ username: 'Alice', email: 'Alice@Example.com' });
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('username = $1');
+      expect(sql).toContain('email = $2');
+      expect(params).toEqual(['alice', 'alice@example.com']);
     });
   });
 

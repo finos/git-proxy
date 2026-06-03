@@ -24,16 +24,92 @@ vi.mock('../../../src/db/postgres/helper', () => ({
 
 describe('PostgreSQL - Repo', async () => {
   const {
+    getRepos,
     getRepo,
     getRepoById,
+    getRepoByUrl,
     createRepo,
     addUserCanPush,
+    addUserCanAuthorise,
     removeUserCanPush,
     removeUserCanAuthorise,
+    deleteRepo,
   } = await import('../../../src/db/postgres/repo');
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('getRepos', () => {
+    it('builds WHERE clauses for name, project and url and maps rows', async () => {
+      mockQuery.mockResolvedValue({
+        rowCount: 1,
+        rows: [
+          {
+            _id: 'r1',
+            project: 'finos',
+            name: 'git-proxy',
+            url: 'https://example.com/finos/git-proxy',
+            users: { canPush: ['bob'], canAuthorise: [] },
+          },
+        ],
+      });
+
+      const repos = await getRepos({
+        name: 'Git-Proxy',
+        project: 'finos',
+        url: 'https://example.com/finos/git-proxy',
+      });
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('WHERE');
+      expect(sql).toContain('name = $1');
+      expect(sql).toContain('project = $2');
+      expect(sql).toContain('url = $3');
+      expect(params).toEqual(['git-proxy', 'finos', 'https://example.com/finos/git-proxy']);
+      expect(repos[0].users.canPush).toEqual(['bob']);
+    });
+
+    it('omits the WHERE clause when no query is supplied', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+      await getRepos();
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).not.toContain('WHERE');
+    });
+  });
+
+  describe('getRepoByUrl', () => {
+    it('returns null when no row matches', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+      expect(await getRepoByUrl('https://missing')).toBeNull();
+    });
+
+    it('maps the row when found', async () => {
+      mockQuery.mockResolvedValue({
+        rowCount: 1,
+        rows: [
+          {
+            _id: 'r1',
+            project: 'p',
+            name: 'n',
+            url: 'https://example.com/p/n',
+            users: { canPush: [], canAuthorise: ['amy'] },
+          },
+        ],
+      });
+      const repo = await getRepoByUrl('https://example.com/p/n');
+      expect(repo?.users.canAuthorise).toEqual(['amy']);
+    });
+  });
+
+  describe('deleteRepo', () => {
+    it('issues a DELETE by _id', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+      await deleteRepo('r1');
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('DELETE FROM repos WHERE _id = $1');
+      expect(params).toEqual(['r1']);
+    });
   });
 
   describe('read normalization', () => {
@@ -87,6 +163,14 @@ describe('PostgreSQL - Repo', async () => {
       await addUserCanPush('r-1', 'Bob');
       const params = mockQuery.mock.calls[0][1] as unknown[];
       expect(params).toContain('bob');
+    });
+
+    it('addUserCanAuthorise lower-cases user and targets the canAuthorise role', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+      await addUserCanAuthorise('r-1', 'Amy');
+      const params = mockQuery.mock.calls[0][1] as unknown[];
+      expect(params).toContain('amy');
+      expect(params).toContain('{canAuthorise}');
     });
 
     it('removeUserCanPush coalesces filtered array to [] when last user leaves', () => {
