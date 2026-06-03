@@ -2,48 +2,48 @@ version: 2
 
 updates:
   - package-ecosystem: github-actions
-    directory: "/"
+    directory: '/'
     schedule:
       interval: weekly
     commit-message:
-      prefix: "chore"
-      include: "scope"
+      prefix: 'chore'
+      include: 'scope'
     groups:
       github-actions:
         patterns:
-          - "*"
+          - '*'
 
   - package-ecosystem: docker
     directories:
-      - "/"
-      - "/localgit"
+      - '/'
+      - '/localgit'
     schedule:
       interval: weekly
     commit-message:
-      prefix: "chore"
-      include: "scope"
+      prefix: 'chore'
+      include: 'scope'
     groups:
       docker:
         patterns:
-          - "*"
+          - '*'
 
   - package-ecosystem: npm
     directories:
-      - "/"
-      - "/packages/git-proxy-cli"
-      - "/plugins/git-proxy-plugin-samples"
-      - "/test/fixtures/test-package"
-      - "/website"
+      - '/'
+      - '/packages/git-proxy-cli'
+      - '/plugins/git-proxy-plugin-samples'
+      - '/test/fixtures/test-package'
+      - '/website'
     schedule:
       interval: weekly
     versioning-strategy: increase
     commit-message:
-      prefix: "chore"
-      include: "scope"
+      prefix: 'chore'
+      include: 'scope'
     groups:
       npm-non-major:
         patterns:
-          - "*"
+          - '*'
         update-types:
           - minor
           - patch
