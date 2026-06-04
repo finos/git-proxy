@@ -26,6 +26,8 @@ import { GIGABYTE } from '../constants';
 import { validateConfig } from './validators';
 import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
 
+export { setConfigFile, getConfigFile, validate } from './file';
+
 // Deprecated compatibility fields are still optional because the defaults do not set them.
 type OptionalTopLevelConfigKey = 'proxyUrl' | 'sslCertPemPath' | 'sslKeyPemPath';
 type RequiredTopLevelConfigKey = Exclude<keyof GitProxyConfig, OptionalTopLevelConfigKey>;
@@ -235,6 +237,11 @@ export const getUpstreamProxyConfig = () => {
 export const getAuthorisedList = () => {
   const config = loadFullConfiguration();
   return config.authorisedList;
+};
+
+// Get GIT_PROXY_UI_PORT
+export const getUIPort = (): number => {
+  return Number(serverConfig.GIT_PROXY_UI_PORT);
 };
 
 // Gets a list of authorised repositories
