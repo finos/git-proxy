@@ -458,11 +458,24 @@ The `postgres` backend stores `users`, `repos`, `pushes`, and the `connect-pg-si
 
 If `connectionString` is omitted on the config entry, GitProxy falls back to the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable. This mirrors the behaviour of the mongo backend's `GIT_PROXY_MONGO_CONNECTION_STRING`.
 
+##### Migrating data into PostgreSQL
+
+To copy existing `users`, `repos` and `pushes` from a `mongo` or `fs` (NeDB) backend into PostgreSQL, first switch the active sink to `postgres` (the destination), then run:
+
+```bash
+# From MongoDB
+npm run migrate:postgres -- --from mongo --mongoUrl "mongodb://user:pass@host:27017/git-proxy"
+
+# From the filesystem (NeDB) backend
+npm run migrate:postgres -- --from fs --dataDir ./.data/db
+```
+
+The importer reads the source with its own driver while writing through the active (postgres) sink, so the two connections never clash. It is idempotent: users and repos that already exist (matched by username/email and URL) are skipped, and pushes are upserted by id, so it is safe to re-run. Record `_id`s are not carried over; PostgreSQL assigns fresh UUIDs (push ids, which are text, are preserved).
+
 Notes and current limitations (issue #1497, v1):
 
 - Schema is bootstrapped via `CREATE TABLE IF NOT EXISTS` at startup. No formal migration mechanism ships with this release.
 - Repo permissions (`canPush` / `canAuthorise`) are stored as a JSONB column on the `repos` table. A future PR may normalise these into a `repo_users` join table.
-- No data migration utility from `fs` or `mongo` to `postgres` — copy data yourself if needed.
 - No AWS RDS IAM authentication helper (the mongo backend has one via `AWS_CREDENTIAL_PROVIDER`); use a standard connection string for v1.
 - Only the `connectionString` form is supported; split `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` env vars are not consulted.
 - If `postgres` is selected as the active sink and the connection string cannot be resolved, GitProxy refuses to start rather than silently falling back to an in-memory session store.
