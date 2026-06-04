@@ -1,0 +1,33 @@
+name: Issue Triage
+on:
+  issues:
+    types: [opened, reopened]
+
+jobs:
+  triage:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install litellm PyGithub
+      - name: Run triage agent
+        env:
+          AVAILABLE_LABELS: automation,bug,dependencies,documentation,enhancement,good-first-issue,meeting,needs-info,plugins,protocol,question,security,tech-debt,testing
+          LATEST_ISSUES_LIMIT: 100
+          # e.g: "claude-sonnet-4-6", "gpt-4o", etc.
+          MODEL: ${{ secrets.MODEL }}
+          # Only API key for the chosen model is required
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          # Obtained automatically by GH Actions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          REPO_NAME: ${{ github.repository }}
+        run: python scripts/agents/triage_agent.py
