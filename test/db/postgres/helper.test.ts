@@ -19,6 +19,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const mockPoolQuery = vi.fn();
 const mockPoolEnd = vi.fn();
 const mockPoolCtor = vi.fn();
+const mockPoolConnect = vi.fn();
+const mockClientQuery = vi.fn();
+const mockClientRelease = vi.fn();
 
 vi.mock('pg', () => {
   class Pool {
@@ -27,6 +30,7 @@ vi.mock('pg', () => {
     }
     query = mockPoolQuery;
     end = mockPoolEnd;
+    connect = mockPoolConnect;
   }
   return { Pool };
 });
@@ -64,10 +68,12 @@ describe('PostgreSQL - helper', async () => {
     vi.clearAllMocks();
     await resetConnection();
     mockPoolQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+    mockClientQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+    mockPoolConnect.mockResolvedValue({ query: mockClientQuery, release: mockClientRelease });
   });
 
-  describe('connect / bootstrap', () => {
-    it('runs the bootstrap SQL exactly once across many concurrent connects', async () => {
+  describe('connect / migrations', () => {
+    it('runs migrations exactly once across many concurrent connects', async () => {
       getDatabaseMock.mockReturnValue({
         type: 'postgres',
         enabled: true,
@@ -76,31 +82,36 @@ describe('PostgreSQL - helper', async () => {
 
       await Promise.all([connect(), connect(), connect()]);
 
-      // Pool constructed once, bootstrap SQL run once.
+      // Pool constructed once; a single client acquired to run migrations once.
       expect(mockPoolCtor).toHaveBeenCalledTimes(1);
-      expect(mockPoolQuery).toHaveBeenCalledTimes(1);
-      const [sql] = mockPoolQuery.mock.calls[0];
-      expect(sql).toMatch(/CREATE TABLE IF NOT EXISTS users/);
-      expect(sql).toMatch(/CREATE TABLE IF NOT EXISTS repos/);
-      expect(sql).toMatch(/CREATE TABLE IF NOT EXISTS pushes/);
+      expect(mockPoolConnect).toHaveBeenCalledTimes(1);
+
+      const sqls = mockClientQuery.mock.calls.map((call) => String(call[0]));
+      expect(sqls[0]).toBe('BEGIN');
+      expect(sqls.some((sql) => /pg_advisory_xact_lock/.test(sql))).toBe(true);
+      expect(sqls.some((sql) => /CREATE TABLE IF NOT EXISTS schema_migrations/.test(sql))).toBe(
+        true,
+      );
+      expect(sqls.some((sql) => /CREATE TABLE IF NOT EXISTS users/.test(sql))).toBe(true);
+      expect(sqls[sqls.length - 1]).toBe('COMMIT');
     });
 
-    it('retries bootstrap on the next call if it failed', async () => {
+    it('retries migrations on the next call if they failed', async () => {
       getDatabaseMock.mockReturnValue({
         type: 'postgres',
         enabled: true,
         connectionString: 'postgresql://localhost/x',
       });
 
-      mockPoolQuery.mockRejectedValueOnce(new Error('schema kaboom'));
+      // First migration run rejects on its opening statement.
+      mockClientQuery.mockRejectedValueOnce(new Error('schema kaboom'));
 
       await expect(connect()).rejects.toThrow('schema kaboom');
 
-      // Second attempt re-runs bootstrap rather than being permanently
-      // latched to the rejected promise.
-      mockPoolQuery.mockResolvedValueOnce({ rowCount: 0, rows: [] });
+      // The latch is cleared on failure, so the next connect re-runs migrations
+      // rather than being permanently latched to the rejected promise.
       await connect();
-      expect(mockPoolQuery).toHaveBeenCalledTimes(2);
+      expect(mockPoolConnect).toHaveBeenCalledTimes(2);
     });
 
     it('throws when the connection string is missing', async () => {

@@ -19,6 +19,7 @@ import session, { Store } from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 
 import { getDatabase } from '../../config';
+import { runMigrations } from './migrations';
 
 let _pool: Pool | null = null;
 let _bootstrapPromise: Promise<void> | null = null;
@@ -35,57 +36,16 @@ const ensurePool = (): Pool => {
   return _pool;
 };
 
-const APP_SCHEMA_SQL = `
-  CREATE TABLE IF NOT EXISTS users (
-    _id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username      TEXT NOT NULL UNIQUE,
-    email         TEXT NOT NULL UNIQUE,
-    password      TEXT,
-    git_account   TEXT NOT NULL,
-    admin         BOOLEAN NOT NULL DEFAULT FALSE,
-    oidc_id       TEXT UNIQUE,
-    display_name  TEXT,
-    title         TEXT
-  );
-
-  CREATE TABLE IF NOT EXISTS repos (
-    _id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project  TEXT NOT NULL DEFAULT '',
-    name     TEXT NOT NULL,
-    url      TEXT NOT NULL UNIQUE,
-    users    JSONB NOT NULL DEFAULT '{"canPush":[],"canAuthorise":[]}'::jsonb
-  );
-  CREATE INDEX IF NOT EXISTS repos_name_idx ON repos (name);
-
-  CREATE TABLE IF NOT EXISTS pushes (
-    id          TEXT PRIMARY KEY,
-    timestamp   BIGINT NOT NULL,
-    type        TEXT,
-    error       BOOLEAN NOT NULL DEFAULT FALSE,
-    blocked     BOOLEAN NOT NULL DEFAULT FALSE,
-    allow_push  BOOLEAN NOT NULL DEFAULT FALSE,
-    authorised  BOOLEAN NOT NULL DEFAULT FALSE,
-    canceled    BOOLEAN NOT NULL DEFAULT FALSE,
-    rejected    BOOLEAN NOT NULL DEFAULT FALSE,
-    data        JSONB NOT NULL
-  );
-  CREATE INDEX IF NOT EXISTS pushes_timestamp_idx ON pushes (timestamp DESC);
-`;
-
-const bootstrapAppSchema = async (pool: Pool): Promise<void> => {
-  await pool.query(APP_SCHEMA_SQL);
-};
-
 /**
- * Lazily resolves the pg Pool and runs the app schema bootstrap exactly once
- * per process. All adapter modules acquire the pool through this function so
- * the bootstrap completes before any query against `users` / `repos` / `pushes`
+ * Lazily resolves the pg Pool and runs any pending schema migrations exactly
+ * once per process. All adapter modules acquire the pool through this function
+ * so migrations complete before any query against `users` / `repos` / `pushes`
  * is executed.
  */
 export const connect = async (): Promise<Pool> => {
   const pool = ensurePool();
   if (!_bootstrapPromise) {
-    _bootstrapPromise = bootstrapAppSchema(pool).catch((err) => {
+    _bootstrapPromise = runMigrations(pool).catch((err) => {
       // Reset so the next caller retries instead of being permanently latched
       // onto a rejected promise.
       _bootstrapPromise = null;
