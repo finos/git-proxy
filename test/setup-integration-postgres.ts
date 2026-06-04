@@ -23,6 +23,10 @@ import { invalidateCache } from '../src/config';
 const DEFAULT_CONNECTION_STRING = 'postgresql://postgres:postgres@localhost:5432/git_proxy_test';
 const APP_TABLES = ['pushes', 'repos', 'users'];
 const SESSION_TABLE = 'session';
+// Tracks applied schema versions. Persisted across tests (so the migration
+// runner correctly skips already-applied versions) but dropped in afterAll so
+// a re-run against the same database starts from a clean slate.
+const MIGRATIONS_TABLE = 'schema_migrations';
 
 let client: Client | null = null;
 
@@ -83,6 +87,7 @@ afterAll(async () => {
       for (const table of APP_TABLES) {
         await client.query(`DROP TABLE IF EXISTS ${table} CASCADE`);
       }
+      await client.query(`DROP TABLE IF EXISTS ${MIGRATIONS_TABLE} CASCADE`);
       await client.query(`DROP TABLE IF EXISTS "${SESSION_TABLE}"`);
     } catch (error) {
       console.warn('Failed to drop Postgres test tables during cleanup', error);
