@@ -60,6 +60,7 @@ export const createUser = async (
   gitAccount: string,
   admin: boolean = false,
   oidcId: string = '',
+  mustChangePassword: boolean = false,
 ) => {
   console.log(
     `creating user
@@ -76,6 +77,7 @@ export const createUser = async (
     gitAccount: gitAccount,
     email: email,
     admin: admin,
+    mustChangePassword,
   };
 
   if (isBlank(username)) {
