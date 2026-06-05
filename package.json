@@ -44,6 +44,11 @@
       "types": "./dist/src/utils/errors.d.ts",
       "import": "./dist/src/utils/errors.js",
       "require": "./dist/src/utils/errors.js"
+    },
+    "./service": {
+      "types": "./dist/src/service/index.d.ts",
+      "import": "./dist/src/service/index.js",
+      "require": "./dist/src/service/index.js"
     }
   },
   "scripts": {
@@ -67,11 +72,16 @@
     "test-coverage-ci": "cross-env NODE_ENV=test vitest --run --dir ./test --coverage.enabled=true --coverage.reporter=lcovonly --coverage.reporter=text",
     "test:integration": "cross-env NODE_ENV=test vitest --run --config vitest.config.integration.ts",
     "test:watch": "cross-env NODE_ENV=test vitest --dir ./test --watch",
+    "test:migrate": "cross-env NODE_ENV=test vitest --run --dir ./scripts/migrate/test",
     "prepare": "node ./scripts/prepare.js",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --config ./.prettierrc",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --config ./.prettierrc",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --config ./.prettierrc",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --config ./.prettierrc",
+    "migrate:urls": "node scripts/migrate/migrate-urls.js",
+    "migrate:users": "node scripts/migrate/migrate-users.js",
+    "backup:urls": "node scripts/migrate/backup-urls.js",
+    "backup:users": "node scripts/migrate/backup-users.js",
     "gen-schema-doc": "node ./scripts/doc-schema.js",
     "gen-swagger-doc": "node ./scripts/doc-swagger.js",
     "cypress:run": "cypress run",
