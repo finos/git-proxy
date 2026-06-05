@@ -674,7 +674,6 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
           const defaultQuestions = [
             {
               label: 'I am happy for this to be pushed to the upstream repository',
-              tooltip: { label: 'test' },
               checked: 'true',
             },
           ];
