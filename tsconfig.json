@@ -19,7 +19,11 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "noEmit": false,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@primer/react/experimental": ["./node_modules/@primer/react/dist/experimental/index"]
+    }
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]

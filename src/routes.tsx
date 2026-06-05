@@ -16,7 +16,6 @@
 
 import React from 'react';
 import RouteGuard from './ui/components/RouteGuard/RouteGuard';
-import Person from '@material-ui/icons/Person';
 import PushRequests from './ui/views/PushRequests/PushRequests';
 import PushDetails from './ui/views/PushDetails/PushDetails';
 import User from './ui/views/User/UserProfile';
@@ -25,16 +24,12 @@ import RepoDetails from './ui/views/RepoDetails/RepoDetails';
 import RepoList from './ui/views/RepoList/RepoList';
 import SettingsView from './ui/views/Settings/Settings';
 
-import { RepoIcon } from '@primer/octicons-react';
-import { AccountCircle, Dashboard, Group, Settings } from '@material-ui/icons';
-
 import { Route } from './ui/types';
 
 const dashboardRoutes: Route[] = [
   {
     path: '/repo',
     name: 'Repositories',
-    icon: RepoIcon,
     component: (props) => <RouteGuard component={RepoList} fullRoutePath={`/dashboard/repo`} />,
     layout: '/dashboard',
     visible: true,
@@ -42,7 +37,6 @@ const dashboardRoutes: Route[] = [
   {
     path: '/repo/:id',
     name: 'Repo Details',
-    icon: Person,
     component: (props) => (
       <RouteGuard component={RepoDetails} fullRoutePath={`/dashboard/repo/:id`} />
     ),
@@ -51,8 +45,7 @@ const dashboardRoutes: Route[] = [
   },
   {
     path: '/push',
-    name: 'Dashboard',
-    icon: Dashboard,
+    name: 'Activity',
     component: (props) => <RouteGuard component={PushRequests} fullRoutePath={`/dashboard/push`} />,
     layout: '/dashboard',
     visible: true,
@@ -60,7 +53,6 @@ const dashboardRoutes: Route[] = [
   {
     path: '/push/:id',
     name: 'Open Push Requests',
-    icon: Person,
     component: (props) => (
       <RouteGuard component={PushDetails} fullRoutePath={`/dashboard/push/:id`} />
     ),
@@ -70,15 +62,13 @@ const dashboardRoutes: Route[] = [
   {
     path: '/profile',
     name: 'My Account',
-    icon: AccountCircle,
     component: (props) => <RouteGuard component={User} fullRoutePath={`/dashboard/profile`} />,
     layout: '/dashboard',
-    visible: true,
+    visible: false,
   },
   {
     path: '/admin/user',
     name: 'Users',
-    icon: Group,
     component: (props) => (
       <RouteGuard component={UserList} fullRoutePath={`/dashboard/admin/user`} />
     ),
@@ -88,7 +78,6 @@ const dashboardRoutes: Route[] = [
   {
     path: '/user/:id',
     name: 'User',
-    icon: Person,
     component: (props) => <RouteGuard component={User} fullRoutePath={`/dashboard/user/:id`} />,
     layout: '/dashboard',
     visible: false,
@@ -96,12 +85,11 @@ const dashboardRoutes: Route[] = [
   {
     path: '/admin/settings',
     name: 'Settings',
-    icon: Settings,
     component: (props) => (
       <RouteGuard component={SettingsView} fullRoutePath={`/dashboard/admin/settings`} />
     ),
     layout: '/dashboard',
-    visible: true,
+    visible: false,
   },
 ];
 

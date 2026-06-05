@@ -15,107 +15,63 @@
  */
 
 import React from 'react';
-import moment from 'moment';
-import { Block } from '@material-ui/icons';
-import Tooltip from '@material-ui/core/Tooltip';
-import UserLink from '../../../components/UserLink/UserLink';
+import { DateTime } from 'luxon';
+import { Banner, Stack, Text } from '@primer/react';
+import UserDisplayLink from '../../../components/UserDisplayLink/UserDisplayLink';
 import { PushActionView } from '../../../types';
 
 interface RejectionInfoProps {
   push: PushActionView;
 }
 
-const RejectionInfo: React.FC<RejectionInfoProps> = ({ push }) => {
+const RejectionInfo = ({ push }: RejectionInfoProps) => {
   if (!push.rejection || !push.rejected) {
     return null;
   }
 
+  const rej = push.rejection;
+  const ts = DateTime.fromMillis(Number(rej.timestamp));
+  const tsTitle = ts.toFormat('cccc, MMMM d yyyy, h:mm:ss a');
+
   return (
-    <div
-      style={{
-        background: 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)',
-        padding: '10px 20px 10px 20px',
-        borderRadius: '12px',
-        color: '#333',
-        marginTop: '15px',
-        float: 'right',
-        position: 'relative',
-        textAlign: 'left',
-        boxShadow: '0 2px 8px rgba(211, 47, 47, 0.15)',
-        border: '1px solid rgba(211, 47, 47, 0.2)',
-      }}
-    >
-      <span style={{ position: 'absolute', top: 0, right: 0 }}>
-        <Block
-          style={{
-            cursor: 'default',
-            transform: 'scale(0.65)',
-          }}
-          htmlColor='#d32f2f'
-        />
-      </span>
-
-      {push.autoRejected ? (
-        <div style={{ paddingTop: '15px' }}>
-          <p>
-            <strong>Auto-rejected by system</strong>
-          </p>
-        </div>
-      ) : (
-        <>
-          <div style={{ paddingTop: '15px' }}>
-            <p>
-              <UserLink username={push.rejection.reviewer.username} /> rejected this contribution
-            </p>
-          </div>
-        </>
-      )}
-
-      {push.rejection.reason && (
-        <div
-          style={{
-            marginTop: '10px',
-            padding: '12px 14px',
-            background: 'rgba(255, 255, 255, 0.7)',
-            borderRadius: '6px',
-            borderLeft: '4px solid #d32f2f',
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              fontWeight: 600,
-              fontSize: '13px',
-              color: '#c62828',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px',
-            }}
-          >
-            Reason
-          </p>
-          <p
-            style={{
-              margin: '6px 0 0 0',
-              whiteSpace: 'pre-wrap',
-              fontSize: '14px',
-              lineHeight: '1.6',
-              color: '#333',
-            }}
-          >
-            {push.rejection.reason}
-          </p>
-        </div>
-      )}
-
-      <Tooltip
-        title={moment(push.rejection.timestamp).format('dddd, MMMM Do YYYY, h:mm:ss a')}
-        arrow
-      >
-        <kbd style={{ color: 'black', float: 'right', marginTop: '10px' }}>
-          {moment(push.rejection.timestamp).fromNow()}
-        </kbd>
-      </Tooltip>
+    <div className='w-full min-w-0'>
+      <Banner variant='critical' layout='compact' flush>
+        <Banner.Title as='h2' className='!text-base'>
+          {push.autoRejected ? (
+            'Auto-rejected by system'
+          ) : (
+            <span className='min-w-0'>
+              <UserDisplayLink
+                username={rej.reviewer.username}
+                displayName={rej.reviewer.displayName?.trim() || undefined}
+              />{' '}
+              rejected this contribution
+            </span>
+          )}
+        </Banner.Title>
+        <Banner.Description>
+          <Stack direction='vertical' gap='normal' padding='none' className='min-w-0'>
+            {rej.reason?.trim() ? (
+              <div className='min-w-0 rounded-md border border-(--borderColor-danger-emphasis) bg-(--bgColor-default) px-3 py-2'>
+                <Text as='p' className='m-0 text-xs font-semibold text-(--fgColor-danger)'>
+                  Reason
+                </Text>
+                <Text
+                  as='p'
+                  className='mt-1 mb-0 whitespace-pre-wrap text-sm text-(--fgColor-default)'
+                >
+                  {rej.reason}
+                </Text>
+              </div>
+            ) : null}
+            <Text as='span' className='text-sm text-(--fgColor-muted)' title={tsTitle}>
+              {ts.toLocaleString(DateTime.DATETIME_MED)}
+              <span className='text-(--fgColor-muted)'> · </span>
+              {ts.toRelative()}
+            </Text>
+          </Stack>
+        </Banner.Description>
+      </Banner>
     </div>
   );
 };
