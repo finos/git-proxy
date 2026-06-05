@@ -35,6 +35,7 @@ class Action {
   errorMessage?: string | null;
   blocked: boolean = false;
   blockedMessage?: string | null;
+  permissionDenied: boolean = false;
   allowPush: boolean = false;
   authorised: boolean = false;
   canceled: boolean = false;

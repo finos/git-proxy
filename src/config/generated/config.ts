@@ -56,6 +56,12 @@ export interface GitProxyConfig {
    */
   domains?: Domains;
   /**
+   * List of event handler modules that observe GitProxy lifecycle events (push/pull started,
+   * completed, error, permission denied). Handlers run asynchronously and are isolated from
+   * the request path. Each value is either a file path or a module name.
+   */
+  eventHandlers?: string[];
+  /**
    * List of plugins to integrate on GitProxy's push or pull actions. Each value is either a
    * file path or a module name.
    */
@@ -791,6 +797,7 @@ const typeMap: any = {
       { json: 'cookieSecret', js: 'cookieSecret', typ: u(undefined, '') },
       { json: 'csrfProtection', js: 'csrfProtection', typ: u(undefined, true) },
       { json: 'domains', js: 'domains', typ: u(undefined, r('Domains')) },
+      { json: 'eventHandlers', js: 'eventHandlers', typ: u(undefined, a('')) },
       { json: 'plugins', js: 'plugins', typ: u(undefined, a('')) },
       { json: 'privateOrganizations', js: 'privateOrganizations', typ: u(undefined, a('any')) },
       { json: 'proxyUrl', js: 'proxyUrl', typ: u(undefined, '') },

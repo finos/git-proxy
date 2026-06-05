@@ -140,6 +140,7 @@
   "contactEmail": "",
   "csrfProtection": true,
   "plugins": [],
+  "eventHandlers": [],
   "apiAuthentication": [
     {
       "type": "jwt",

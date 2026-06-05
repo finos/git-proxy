@@ -363,6 +363,12 @@ export const getPlugins = () => {
   return config.plugins;
 };
 
+// Get loadable event handler modules (observe push/pull lifecycle events)
+export const getEventHandlers = (): string[] => {
+  const config = loadFullConfiguration();
+  return config.eventHandlers || [];
+};
+
 export const getTLSKeyPemPath = (): string | undefined => {
   const config = loadFullConfiguration();
   return config.tls?.key && config.tls.key !== '' ? config.tls.key : config.sslKeyPemPath;
