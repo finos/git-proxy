@@ -122,4 +122,4 @@ Otherwise, if you have a deeper query or require more support, please [raise an 
 
 🤝 Join our [fortnightly Zoom meeting](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595) on Monday, 4PM BST (odd week numbers).  
 🌍 [Convert to your local time](https://www.timeanddate.com/worldclock)  
-📅 [Click here](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595), and then click "Need an invite?" to receive the recurring Google Calendar meeting invite. Alternatively, send an e-mail to [help@finos.org](mailto:help@finos.org) requesting a calendar invitation.
+📅 [Click here](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595&invite=true) and complete the form to receive the recurring calendar meeting invite. Alternatively, send an e-mail to [help@finos.org](mailto:help@finos.org) requesting a calendar invitation.
