@@ -47,10 +47,18 @@ updates:
       - '/website'
     schedule:
       interval: weekly
-    versioning-strategy: increase
+    versioning-strategy: increase-if-necessary
+    cooldown:
+      semver-patch-days: 3
+      semver-minor-days: 3
+      semver-major-days: 7
+    open-pull-requests-limit: 10
     commit-message:
       prefix: 'chore'
       include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'automated'
     groups:
       npm-non-major:
         patterns:
