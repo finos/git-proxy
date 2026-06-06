@@ -415,10 +415,9 @@ describe('add new repo', () => {
   });
 
   afterAll(async () => {
-    await proxy.stop();
-    await Service.stop();
     await cleanupRepo(TEST_REPO_NON_GITHUB.url);
     await cleanupRepo(TEST_REPO_NAKED.url);
+    await Service.httpServer?.close();
   });
 });
 
