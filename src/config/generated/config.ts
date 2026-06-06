@@ -56,6 +56,16 @@ export interface GitProxyConfig {
    */
   domains?: Domains;
   /**
+   * Port the proxy HTTPS server listens on. Can also be set with the
+   * GIT_PROXY_HTTPS_SERVER_PORT environment variable, which takes precedence over this value.
+   */
+  httpsServerPort?: number;
+  /**
+   * Port the GitProxy UI/service HTTPS server listens on. Can also be set with the
+   * GIT_PROXY_HTTPS_UI_PORT environment variable, which takes precedence over this value.
+   */
+  httpsUiPort?: number;
+  /**
    * List of plugins to integrate on GitProxy's push or pull actions. Each value is either a
    * file path or a module name.
    */
@@ -75,6 +85,11 @@ export interface GitProxyConfig {
    * API Rate limiting configuration.
    */
   rateLimit?: RateLimit;
+  /**
+   * Port the proxy HTTP server listens on. Can also be set with the GIT_PROXY_SERVER_PORT
+   * environment variable, which takes precedence over this value.
+   */
+  serverPort?: number;
   sessionMaxAgeHours?: number;
   /**
    * List of database sources. The first source in the configuration with enabled=true will be
@@ -97,6 +112,16 @@ export interface GitProxyConfig {
    * TLS configuration for secure connections
    */
   tls?: TLS;
+  /**
+   * Host of the GitProxy UI. Can also be set with the GIT_PROXY_UI_HOST environment variable,
+   * which takes precedence over this value.
+   */
+  uiHost?: string;
+  /**
+   * Port the GitProxy UI/service HTTP server listens on. Can also be set with the
+   * GIT_PROXY_UI_PORT environment variable, which takes precedence over this value.
+   */
+  uiPort?: number;
   /**
    * UI routes that require authentication (logged in or admin)
    */
@@ -791,16 +816,21 @@ const typeMap: any = {
       { json: 'cookieSecret', js: 'cookieSecret', typ: u(undefined, '') },
       { json: 'csrfProtection', js: 'csrfProtection', typ: u(undefined, true) },
       { json: 'domains', js: 'domains', typ: u(undefined, r('Domains')) },
+      { json: 'httpsServerPort', js: 'httpsServerPort', typ: u(undefined, 3.14) },
+      { json: 'httpsUiPort', js: 'httpsUiPort', typ: u(undefined, 3.14) },
       { json: 'plugins', js: 'plugins', typ: u(undefined, a('')) },
       { json: 'privateOrganizations', js: 'privateOrganizations', typ: u(undefined, a('any')) },
       { json: 'proxyUrl', js: 'proxyUrl', typ: u(undefined, '') },
       { json: 'rateLimit', js: 'rateLimit', typ: u(undefined, r('RateLimit')) },
+      { json: 'serverPort', js: 'serverPort', typ: u(undefined, 3.14) },
       { json: 'sessionMaxAgeHours', js: 'sessionMaxAgeHours', typ: u(undefined, 3.14) },
       { json: 'sink', js: 'sink', typ: u(undefined, a(r('Database'))) },
       { json: 'sslCertPemPath', js: 'sslCertPemPath', typ: u(undefined, '') },
       { json: 'sslKeyPemPath', js: 'sslKeyPemPath', typ: u(undefined, '') },
       { json: 'tempPassword', js: 'tempPassword', typ: u(undefined, r('TempPassword')) },
       { json: 'tls', js: 'tls', typ: u(undefined, r('TLS')) },
+      { json: 'uiHost', js: 'uiHost', typ: u(undefined, '') },
+      { json: 'uiPort', js: 'uiPort', typ: u(undefined, 3.14) },
       { json: 'uiRouteAuth', js: 'uiRouteAuth', typ: u(undefined, r('UIRouteAuth')) },
       { json: 'upstreamProxy', js: 'upstreamProxy', typ: u(undefined, r('UpstreamProxy')) },
       { json: 'urlShortener', js: 'urlShortener', typ: u(undefined, '') },
