@@ -25,15 +25,13 @@ import {
   getTLSKeyPemPath,
   getTLSCertPemPath,
   getTLSEnabled,
+  getServerPort,
+  getHttpsServerPort,
 } from '../config';
 import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos } from '../db';
 import { PluginLoader } from '../plugin';
 import chain from './chain';
 import { Repo } from '../db/types';
-import { serverConfig } from '../config/env';
-
-const { GIT_PROXY_SERVER_PORT: proxyHttpPort, GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } =
-  serverConfig;
 
 interface ServerOptions {
   inflate: boolean;
@@ -95,6 +93,8 @@ export class Proxy {
   }
 
   public async start() {
+    const proxyHttpPort = getServerPort();
+    const proxyHttpsPort = getHttpsServerPort();
     await this.proxyPreparations();
     this.expressApp = await this.createApp();
     await new Promise<void>((resolve, reject) => {
