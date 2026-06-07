@@ -24,11 +24,7 @@ export default defineConfig({
     hookTimeout: 10000,
     setupFiles: ['test/setup-integration.ts'],
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    fileParallelism: false,
     env: {
       NODE_ENV: 'test',
       RUN_MONGO_TESTS: 'true',

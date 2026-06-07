@@ -176,7 +176,9 @@ describe('Proxy', () => {
     });
     vi.mocked(db.addUserCanPush).mockResolvedValue(undefined);
     vi.mocked(db.addUserCanAuthorise).mockResolvedValue(undefined);
-    vi.mocked(plugin.PluginLoader).mockReturnValue(mockPluginLoader as any);
+    vi.mocked(plugin.PluginLoader).mockImplementation(function () {
+      return mockPluginLoader as any;
+    });
     vi.mocked(fs.readFileSync).mockReturnValue(Buffer.from('mock-cert'));
   });
 

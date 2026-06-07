@@ -555,6 +555,7 @@ describe('ConfigLoader', () => {
 
     it(
       'should throw error if repository is a valid URL but not a git repository',
+      { timeout: 30000 },
       async () => {
         const source: ConfigurationSource = {
           type: 'git',
@@ -579,11 +580,11 @@ describe('ConfigLoader', () => {
           /Failed to clone repository/,
         );
       },
-      { timeout: 30000 },
     );
 
     it(
       'should throw error if repository is a valid git repo but the branch does not exist',
+      { timeout: 30000 },
       async () => {
         const source: ConfigurationSource = {
           type: 'git',
@@ -597,44 +598,35 @@ describe('ConfigLoader', () => {
           /Failed to checkout branch/,
         );
       },
-      { timeout: 30000 },
     );
 
-    it(
-      'should throw error if config path was not found',
-      async () => {
-        const source: ConfigurationSource = {
-          type: 'git',
-          repository: 'https://github.com/finos/git-proxy.git',
-          path: 'path-not-found.json',
-          branch: 'main',
-          enabled: true,
-        };
+    it('should throw error if config path was not found', { timeout: 30000 }, async () => {
+      const source: ConfigurationSource = {
+        type: 'git',
+        repository: 'https://github.com/finos/git-proxy.git',
+        path: 'path-not-found.json',
+        branch: 'main',
+        enabled: true,
+      };
 
-        await expect(configLoader.loadFromSource(source)).rejects.toThrow(
-          /Configuration file not found at/,
-        );
-      },
-      { timeout: 30000 },
-    );
+      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+        /Configuration file not found at/,
+      );
+    });
 
-    it(
-      'should throw error if config file is not valid JSON',
-      async () => {
-        const source: ConfigurationSource = {
-          type: 'git',
-          repository: 'https://github.com/finos/git-proxy.git',
-          path: 'test/fixtures/baz.js',
-          branch: 'main',
-          enabled: true,
-        };
+    it('should throw error if config file is not valid JSON', { timeout: 30000 }, async () => {
+      const source: ConfigurationSource = {
+        type: 'git',
+        repository: 'https://github.com/finos/git-proxy.git',
+        path: 'test/fixtures/baz.js',
+        branch: 'main',
+        enabled: true,
+      };
 
-        await expect(configLoader.loadFromSource(source)).rejects.toThrow(
-          /Invalid configuration format in git/,
-        );
-      },
-      { timeout: 30000 },
-    );
+      await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+        /Invalid configuration format in git/,
+      );
+    });
   });
 
   describe('deepMerge', () => {

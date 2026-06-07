@@ -15,7 +15,8 @@
  */
 
 import request from 'supertest';
-import { beforeAll, afterAll, beforeEach, describe, it, expect } from 'vitest';
+import { beforeAll, afterAll, beforeEach, describe, it, expect, vi } from 'vitest';
+import * as config from '../src/config';
 import * as db from '../src/db';
 import { Service } from '../src/service';
 import { Proxy } from '../src/proxy';
@@ -42,6 +43,7 @@ describe('login', () => {
   };
 
   beforeAll(async () => {
+    vi.spyOn(config, 'getUIPort').mockReturnValue(0);
     app = await Service.start(new Proxy());
     await db.deleteUser('login-test-user');
   });
