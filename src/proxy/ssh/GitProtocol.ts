@@ -294,7 +294,7 @@ export async function forwardPackDataToRemote(
     (remoteStream) => {
       console.log(`[SSH] Forwarding pack data for user ${userName}`);
 
-      // Send pack data to GitHub
+      // Send pack data to upstream
       if (packData && packData.length > 0) {
         console.log(`[SSH] Writing ${packData.length} bytes of pack data to remote`);
         remoteStream.write(packData);
