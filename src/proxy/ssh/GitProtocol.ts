@@ -274,7 +274,7 @@ export async function fetchGitHubCapabilities(
 
 /**
  * Forward pack data to remote Git server (used for push operations)
- * This connects to GitHub, sends the validated pack data, and forwards responses
+ * This connects to the upstream server, sends the validated pack data, and forwards responses
  */
 export async function forwardPackDataToRemote(
   command: string,
