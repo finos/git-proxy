@@ -473,7 +473,6 @@ export interface Limits {
    * Maximum size of a pack file in bytes (default 1GB)
    */
   maxPackSizeBytes?: number;
-  [property: string]: any;
 }
 
 /**
@@ -574,11 +573,35 @@ export interface SSH {
    */
   enabled: boolean;
   /**
+   * Custom SSH host key paths. If not specified, a host key is auto-generated at
+   * .ssh/proxy_host_key.
+   */
+  hostKey?: HostKey;
+  /**
+   * SSH host key fingerprints for verifying remote Git servers, merged with built-in defaults
+   * for github.com and gitlab.com.
+   */
+  knownHosts?: { [key: string]: string };
+  /**
    * Port for SSH proxy server to listen on. Clients connect to this port instead of directly
    * to GitHub/GitLab.
    */
   port?: number;
-  [property: string]: any;
+}
+
+/**
+ * Custom SSH host key paths. If not specified, a host key is auto-generated at
+ * .ssh/proxy_host_key.
+ */
+export interface HostKey {
+  /**
+   * Path to the private key file (e.g. /etc/git-proxy/host_key)
+   */
+  privateKeyPath: string;
+  /**
+   * Path to the public key file (e.g. /etc/git-proxy/host_key.pub)
+   */
+  publicKeyPath: string;
 }
 
 /**
@@ -997,7 +1020,7 @@ const typeMap: any = {
     ],
     'any',
   ),
-  Limits: o([{ json: 'maxPackSizeBytes', js: 'maxPackSizeBytes', typ: u(undefined, 3.14) }], 'any'),
+  Limits: o([{ json: 'maxPackSizeBytes', js: 'maxPackSizeBytes', typ: u(undefined, 3.14) }], false),
   RateLimit: o(
     [
       { json: 'limit', js: 'limit', typ: 3.14 },
@@ -1039,9 +1062,18 @@ const typeMap: any = {
       },
       { json: 'debug', js: 'debug', typ: u(undefined, true) },
       { json: 'enabled', js: 'enabled', typ: true },
+      { json: 'hostKey', js: 'hostKey', typ: u(undefined, r('HostKey')) },
+      { json: 'knownHosts', js: 'knownHosts', typ: u(undefined, m('')) },
       { json: 'port', js: 'port', typ: u(undefined, 3.14) },
     ],
-    'any',
+    false,
+  ),
+  HostKey: o(
+    [
+      { json: 'privateKeyPath', js: 'privateKeyPath', typ: '' },
+      { json: 'publicKeyPath', js: 'publicKeyPath', typ: '' },
+    ],
+    false,
   ),
   TempPassword: o(
     [

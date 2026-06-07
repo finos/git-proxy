@@ -45,7 +45,7 @@ export class SSHServer {
     // This key identifies the PROXY SERVER to connecting clients, similar to an SSL certificate.
     // It is NOT used for authenticating to remote Git servers - agent forwarding handles that.
     try {
-      const hostKey = ensureHostKey(sshConfig.hostKey);
+      const hostKey = ensureHostKey(sshConfig.hostKey!);
       privateKeys.push(hostKey);
     } catch (error) {
       console.error('[SSH] Failed to initialize proxy host key');

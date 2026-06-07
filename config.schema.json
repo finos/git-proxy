@@ -299,7 +299,8 @@
           "type": "number",
           "description": "Maximum size of a pack file in bytes (default 1GB)"
         }
-      }
+      },
+      "additionalProperties": false
     },
     "sink": {
       "description": "List of database sources. The first source in the configuration with enabled=true will be used.",
@@ -399,9 +400,33 @@
           "type": "boolean",
           "description": "Enable verbose SSH protocol debug logging (both for the local SSH server and for outbound connections to remote Git servers). Emits one log line per SSH packet, so leave disabled in production.",
           "default": false
+        },
+        "hostKey": {
+          "type": "object",
+          "description": "Custom SSH host key paths. If not specified, a host key is auto-generated at .ssh/proxy_host_key.",
+          "properties": {
+            "privateKeyPath": {
+              "type": "string",
+              "description": "Path to the private key file (e.g. /etc/git-proxy/host_key)"
+            },
+            "publicKeyPath": {
+              "type": "string",
+              "description": "Path to the public key file (e.g. /etc/git-proxy/host_key.pub)"
+            }
+          },
+          "required": ["privateKeyPath", "publicKeyPath"],
+          "additionalProperties": false
+        },
+        "knownHosts": {
+          "type": "object",
+          "description": "SSH host key fingerprints for verifying remote Git servers, merged with built-in defaults for github.com and gitlab.com.",
+          "additionalProperties": {
+            "type": "string"
+          }
         }
       },
-      "required": ["enabled"]
+      "required": ["enabled"],
+      "additionalProperties": false
     },
     "upstreamProxy": {
       "description": "Configuration for routing outbound requests to upstream Git hosts via an HTTP(S) proxy.",

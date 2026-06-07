@@ -117,11 +117,10 @@ function loadFullConfiguration(): FullGitProxyConfig {
     return _currentConfig;
   }
 
-  // Skip QuickType validation for now due to SSH config issues
-  const rawDefaultConfig = defaultSettings as any;
+  const rawDefaultConfig = Convert.toGitProxyConfig(JSON.stringify(defaultSettings));
 
   // Clean undefined values from defaultConfig
-  const defaultConfig = cleanUndefinedValues(rawDefaultConfig) as GitProxyConfig;
+  const defaultConfig = cleanUndefinedValues(rawDefaultConfig);
 
   let userSettings: Partial<GitProxyConfig> = {};
   const userConfigFile = process.env.CONFIG_FILE || getConfigFile();
@@ -423,44 +422,19 @@ export const getMaxPackSizeBytes = (): number => {
 };
 
 export const getSSHConfig = () => {
-  // The proxy host key is auto-generated at startup if not present
-  // This key is only used to identify the proxy server to clients (like SSL cert)
-  // It is NOT configurable to ensure consistent behavior
   const defaultHostKey = {
     privateKeyPath: '.ssh/proxy_host_key',
     publicKeyPath: '.ssh/proxy_host_key.pub',
   };
 
-  try {
-    const config = loadFullConfiguration();
-    const sshConfig = config.ssh || { enabled: false };
+  const config = loadFullConfiguration();
+  const sshConfig = config.ssh || { enabled: false };
 
-    // The host key is a server identity, not user configuration
-    if (sshConfig.enabled) {
-      sshConfig.hostKey = defaultHostKey;
-    }
-
-    return sshConfig;
-  } catch (error) {
-    // If config loading fails due to SSH validation, try to get SSH config directly from user config
-    const userConfigFile = process.env.CONFIG_FILE || getConfigFile();
-    if (existsSync(userConfigFile)) {
-      try {
-        const userConfigContent = readFileSync(userConfigFile, 'utf-8');
-        const userConfig = JSON.parse(userConfigContent);
-        const sshConfig = userConfig.ssh || { enabled: false };
-
-        if (sshConfig.enabled) {
-          sshConfig.hostKey = defaultHostKey;
-        }
-
-        return sshConfig;
-      } catch (e) {
-        console.error('Error loading SSH config:', e);
-      }
-    }
-    return { enabled: false };
+  if (sshConfig.enabled && !sshConfig.hostKey) {
+    sshConfig.hostKey = defaultHostKey;
   }
+
+  return sshConfig;
 };
 
 // Function to handle configuration updates
