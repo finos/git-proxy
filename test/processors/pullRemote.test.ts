@@ -188,13 +188,6 @@ describe('pullRemote processor', () => {
       'https://github.com/example/repo.git',
     );
     action.protocol = 'ssh';
-    action.sshUser = {
-      username: 'ssh-user',
-      sshKeyInfo: {
-        keyType: 'ssh-rsa',
-        keyData: Buffer.from('public-key'),
-      },
-    };
 
     const req = {
       headers: {},
@@ -306,13 +299,6 @@ describe('pullRemote processor', () => {
     );
     action.protocol = 'ssh';
     action.repoName = 'repo';
-    action.sshUser = {
-      username: 'test-user',
-      sshKeyInfo: {
-        keyType: 'ssh-ed25519',
-        keyData: Buffer.from('test-key'),
-      },
-    };
 
     const req = {
       sshClient: {
@@ -352,13 +338,6 @@ describe('pullRemote processor', () => {
     );
     action.protocol = 'ssh';
     action.repoName = 'myrepo';
-    action.sshUser = {
-      username: 'test-user',
-      sshKeyInfo: {
-        keyType: 'ssh-ed25519',
-        keyData: Buffer.from('test-key'),
-      },
-    };
 
     const req = {
       sshClient: {
@@ -396,13 +375,6 @@ describe('pullRemote processor', () => {
     );
     action.protocol = 'ssh';
     action.repoName = 'repo';
-    action.sshUser = {
-      username: 'test-user',
-      sshKeyInfo: {
-        keyType: 'ssh-ed25519',
-        keyData: Buffer.from('test-key'),
-      },
-    };
 
     const mockProcess = {
       stdout: { on: vi.fn() },
@@ -446,13 +418,6 @@ describe('pullRemote processor', () => {
     );
     action.protocol = 'ssh';
     action.repoName = 'repo';
-    action.sshUser = {
-      username: 'test-user',
-      sshKeyInfo: {
-        keyType: 'ssh-ed25519',
-        keyData: Buffer.from('test-key'),
-      },
-    };
 
     const mockProcess = {
       stdout: { on: vi.fn() },
@@ -490,13 +455,6 @@ describe('pullRemote processor', () => {
     );
     action.protocol = 'ssh';
     action.repoName = 'repo';
-    action.sshUser = {
-      username: 'test-user',
-      sshKeyInfo: {
-        keyType: 'ssh-ed25519',
-        keyData: Buffer.from('test-key'),
-      },
-    };
 
     const mockProcess = {
       stdout: { on: vi.fn() },
@@ -542,13 +500,6 @@ describe('pullRemote processor', () => {
     );
     action.protocol = 'ssh';
     action.repoName = 'repo';
-    action.sshUser = {
-      username: 'test-user',
-      sshKeyInfo: {
-        keyType: 'ssh-ed25519',
-        keyData: Buffer.from('test-key'),
-      },
-    };
 
     const req = {
       sshClient: {
@@ -580,13 +531,6 @@ describe('pullRemote processor', () => {
     );
     action.protocol = 'ssh';
     action.repoName = 'repo';
-    action.sshUser = {
-      username: 'test-user',
-      sshKeyInfo: {
-        keyType: 'ssh-ed25519',
-        keyData: Buffer.from('test-key'),
-      },
-    };
 
     const req = {
       sshClient: {

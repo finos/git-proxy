@@ -20,15 +20,6 @@ declare module 'express-serve-static-core' {
   interface Request {
     bodyRaw?: Buffer;
     isSSH?: boolean;
-    sshUser?: {
-      username: string;
-      email?: string;
-      gitAccount?: string;
-      sshKeyInfo?: {
-        keyType: string;
-        keyData: Buffer;
-      };
-    };
     sshClient?: ClientWithUser;
     authContext?: {
       cloneServiceToken?: {

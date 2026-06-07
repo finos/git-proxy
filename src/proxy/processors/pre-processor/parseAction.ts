@@ -54,13 +54,7 @@ const exec = async (req: Request) => {
 
   const action = new Action(id.toString(), type, req.method, timestamp, url);
 
-  // Set SSH-specific properties if this is an SSH request
-  if (req.protocol === 'ssh' && req.sshUser) {
-    action.protocol = 'ssh';
-    action.sshUser = req.sshUser;
-  } else {
-    action.protocol = 'https';
-  }
+  action.protocol = req.protocol === 'ssh' ? 'ssh' : 'https';
 
   return action;
 };

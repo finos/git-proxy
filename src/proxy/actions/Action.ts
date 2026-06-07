@@ -55,23 +55,12 @@ class Action {
   proxyGitPath?: string;
   newIdxFiles?: string[];
   protocol?: 'https' | 'ssh';
-  sshUser?: {
-    username: string;
-    email?: string;
-    gitAccount?: string;
-    sshKeyInfo?: {
-      keyType: string;
-      keyData: Buffer;
-    };
-  };
   pullAuthStrategy?:
     | 'basic'
     | 'ssh-user-key'
     | 'ssh-service-token'
     | 'ssh-agent-forwarding'
     | 'anonymous';
-  encryptedSSHKey?: string;
-  sshKeyExpiry?: Date;
 
   /**
    * Create an action.

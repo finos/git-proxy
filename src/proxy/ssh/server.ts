@@ -138,11 +138,6 @@ export class SSHServer {
       isSSH: true,
       protocol: 'ssh' as const,
       sshClient: client,
-      sshUser: {
-        username: client.authenticatedUser?.username || 'unknown',
-        email: client.authenticatedUser?.email,
-        gitAccount: client.authenticatedUser?.gitAccount,
-      },
       authContext: this.buildAuthContext(client),
     };
   }

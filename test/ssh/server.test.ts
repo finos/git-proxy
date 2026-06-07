@@ -540,8 +540,6 @@ describe('SSHServer', () => {
       expect(chainSpy).toHaveBeenCalled();
       const request = chainSpy.mock.calls[0][0];
       expect(request.user).toEqual(mockClient.authenticatedUser);
-      expect(request.sshUser).toBeDefined();
-      expect(request.sshUser.username).toBe('test-user');
     });
   });
 
