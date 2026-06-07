@@ -21,19 +21,24 @@ jobs:
       BUILDX_CACHE_SCOPE: ${{ matrix.suite }}-build
 
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@d91f340399fb2345e3e45f5461e116862b08261d
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd
         with:
           install: true
 
       - name: Expose GitHub Runtime for Docker Cache
-        uses: crazy-max/ghaction-github-runtime@3cb05d89e1f492524af3d41a1c98c83bc3025124 # v3
+        uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
 
       - name: Set up Docker Compose
-        uses: docker/setup-compose-action@e29e0ecd235838be5f2e823f8f512a72dc55f662
+        uses: docker/setup-compose-action@dd8b913e8081779e7a75dd4ffd066e6ba62a289c
 
       - name: Set up Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
@@ -95,6 +100,11 @@ jobs:
     name: e2e
     needs: [e2e]
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
       - name: Check e2e results
         run: |
           result="${{ needs.e2e.result }}"
