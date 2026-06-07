@@ -274,7 +274,7 @@ export async function fetchGitHubCapabilities(
 
 /**
  * Forward pack data to remote Git server (used for push operations)
- * This connects to GitHub, sends the validated pack data, and forwards responses
+ * This connects to the upstream server, sends the validated pack data, and forwards responses
  */
 export async function forwardPackDataToRemote(
   command: string,
@@ -294,7 +294,7 @@ export async function forwardPackDataToRemote(
     (remoteStream) => {
       console.log(`[SSH] Forwarding pack data for user ${userName}`);
 
-      // Send pack data to GitHub
+      // Send pack data to upstream
       if (packData && packData.length > 0) {
         console.log(`[SSH] Writing ${packData.length} bytes of pack data to remote`);
         remoteStream.write(packData);
