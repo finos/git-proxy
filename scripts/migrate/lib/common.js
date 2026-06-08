@@ -14,26 +14,16 @@
  * limitations under the License.
  */
 
-import { Request } from 'express';
+function createBackup(reportsDir, backupFilePrefix, data) {
+  const fs = require('fs');
+  const path = require('path');
 
-import * as config from '../config';
+  const backupPath = path.join(reportsDir, `${backupFilePrefix}-${Date.now()}.json`);
+  fs.writeFileSync(backupPath, JSON.stringify(data, null, 2));
 
-export const getProxyURL = (req: Request): string => {
-  return (
-    config.getDomains().proxy ??
-    `${req.protocol}://${req.headers.host}`.replace(
-      `:${config.getUIPort()}`,
-      `:${config.getServerPort()}`,
-    )
-  );
-};
+  return backupPath;
+}
 
-export const getServiceUIURL = (req: Request): string => {
-  return (
-    config.getDomains().service ??
-    `${req.protocol}://${req.headers.host}`.replace(
-      `:${config.getServerPort()}`,
-      `:${config.getUIPort()}`,
-    )
-  );
+module.exports = {
+  createBackup,
 };
