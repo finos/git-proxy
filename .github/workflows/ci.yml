@@ -88,7 +88,7 @@ jobs:
           start: npm start &
           wait-on: 'http://localhost:3000'
           wait-on-timeout: 120
-          command: npm run cypress:run
+          command: npm run cypress:run:ci
 
   # Windows build - single combination for development support
   build-windows:

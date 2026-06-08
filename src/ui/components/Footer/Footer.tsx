@@ -27,7 +27,7 @@ const Footer: React.FC = () => {
   const classes = useStyles();
 
   return (
-    <footer className={classes.footer}>
+    <footer className={classes.footer} data-testid='footer'>
       <div className={classes.container}>
         <div className={classes.left}>
           <List className={classes.list}>

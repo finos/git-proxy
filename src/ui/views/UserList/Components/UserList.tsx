@@ -77,7 +77,7 @@ const UserList: React.FC = () => {
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
         <Search onSearch={handleSearch} placeholder='Search users...' />
-        <TableContainer component={Paper}>
+        <TableContainer component={Paper} data-testid='user-list-table'>
           <Table aria-label='simple table'>
             <TableHead>
               <TableRow>
@@ -91,7 +91,7 @@ const UserList: React.FC = () => {
             </TableHead>
             <TableBody>
               {currentItems.map((user) => (
-                <TableRow key={user.username}>
+                <TableRow key={user.username} data-testid={`user-row-${user.username}`}>
                   <TableCell align='left'>{user.displayName}</TableCell>
                   <TableCell align='left'>{user.title}</TableCell>
                   <TableCell align='left'>

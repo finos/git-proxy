@@ -186,6 +186,22 @@ Cypress.Commands.add('deleteRepo', (repoId) => {
   });
 });
 
+Cypress.Commands.add('deleteTestPush', (pushId) => {
+  cy.request({
+    method: 'DELETE',
+    url: `${getApiBaseUrl()}/api/v1/test/push/${pushId}`,
+    failOnStatusCode: false,
+  });
+});
+
+Cypress.Commands.add('deleteTestUser', (username) => {
+  cy.request({
+    method: 'DELETE',
+    url: `${getApiBaseUrl()}/api/v1/test/user/${username}`,
+    failOnStatusCode: false,
+  });
+});
+
 Cypress.Commands.add('createPush', (gitUser, gitPassword, gitEmail, uniqueSuffix) => {
   const proxyUrl = Cypress.env('GIT_PROXY_URL') || 'http://localhost:8000';
   const gitServerTarget = Cypress.env('GIT_SERVER_TARGET') || 'git-server:8443';

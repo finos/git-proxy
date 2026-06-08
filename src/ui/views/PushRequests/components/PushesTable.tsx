@@ -61,7 +61,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
     if (props.canceled !== undefined) query.canceled = props.canceled;
     if (props.authorised !== undefined) query.authorised = props.authorised;
     if (props.rejected !== undefined) query.rejected = props.rejected;
-    if (props.errored !== undefined) query.errored = props.errored;
+    if (props.errored !== undefined) query.error = props.errored;
 
     const load = async () => {
       setIsLoading(true);
@@ -114,7 +114,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
     <div>
       <Search onSearch={handleSearch} />
       <TableContainer component={Paper}>
-        <Table aria-label='simple table'>
+        <Table aria-label='simple table' data-testid='pushes-table'>
           <TableHead>
             <TableRow>
               <TableCell align='left'>Timestamp</TableCell>
@@ -140,7 +140,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
               const commitTimestamp = row.commitData?.[0]?.commitTimestamp;
 
               return (
-                <TableRow key={row.id}>
+                <TableRow key={row.id} data-testid={`push-row-${row.id}`}>
                   <TableCell align='left'>
                     {commitTimestamp ? moment.unix(Number(commitTimestamp)).toString() : 'N/A'}
                   </TableCell>

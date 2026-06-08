@@ -69,7 +69,12 @@ const Dashboard: React.FC = () => {
       {!errorMessage && (
         <GridContainer>
           <GridItem xs={12} sm={12} md={12}>
-            <CustomTabs headerColor='primary' tabs={tabs} defaultTab={1} />
+            <CustomTabs
+              headerColor='primary'
+              tabs={tabs}
+              defaultTab={1}
+              data-testid='push-requests-tabs'
+            />
           </GridItem>
         </GridContainer>
       )}

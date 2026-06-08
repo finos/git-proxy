@@ -88,7 +88,9 @@ const RepoDetails: React.FC = () => {
 
   useEffect(() => {
     if (repo) {
-      fetchRemoteRepositoryData(repo.project, repo.name, repo.url).then(setRemoteRepoData);
+      fetchRemoteRepositoryData(repo.project, repo.name, repo.url)
+        .then(setRemoteRepoData)
+        .catch(() => setRemoteRepoData(null));
     }
   }, [repo]);
 
@@ -147,7 +149,7 @@ const RepoDetails: React.FC = () => {
   return (
     <GridContainer>
       <GridItem xs={12} sm={12} md={12}>
-        <Card>
+        <Card data-testid='repo-info-card'>
           <CardBody>
             <Grid
               spacing={2}
@@ -169,7 +171,7 @@ const RepoDetails: React.FC = () => {
                 </Grid>
               )}
               <Grid item>
-                <CodeActionButton cloneURL={cloneURL} />
+                <CodeActionButton cloneURL={cloneURL} data-testid='code-clone-btn' />
               </Grid>
             </Grid>
             <form className={classes.root} noValidate autoComplete='off'>
@@ -230,7 +232,7 @@ const RepoDetails: React.FC = () => {
                     <AddUser repoId={repoId || ''} type='authorise' refreshFn={refresh} />
                   </div>
                 )}
-                <TableContainer component={Paper}>
+                <TableContainer component={Paper} data-testid='reviewers-table'>
                   <Table aria-label='List of repository reviewers'>
                     <TableHead>
                       <TableRow>
@@ -273,7 +275,7 @@ const RepoDetails: React.FC = () => {
                     <AddUser repoId={repoId || ''} type='push' refreshFn={refresh} />
                   </div>
                 )}
-                <TableContainer component={Paper}>
+                <TableContainer component={Paper} data-testid='contributors-table'>
                   <Table aria-label='List of repository contributors'>
                     <TableHead>
                       <TableRow>

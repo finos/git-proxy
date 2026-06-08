@@ -30,9 +30,13 @@ import Button from './Button';
 
 interface CodeActionButtonProps {
   cloneURL: string;
+  'data-testid'?: string;
 }
 
-const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
+const CodeActionButton: React.FC<CodeActionButtonProps> = ({
+  cloneURL,
+  'data-testid': dataTestId,
+}) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [open, setOpen] = useState<boolean>(false);
   const [placement, setPlacement] = useState<PopperPlacementType>();
@@ -62,6 +66,7 @@ const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
           whiteSpace: 'nowrap',
         }}
         onClick={handleClick('bottom-end')}
+        data-testid={dataTestId}
       >
         <CodeIcon size='small' verticalAlign='middle' />{' '}
         <span style={{ padding: '4px 10px' }}>Code</span>

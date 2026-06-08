@@ -30,6 +30,7 @@ import { getUser } from '../services/user';
 import { Route as RouteType } from '../types';
 import { PublicUser } from '../../db/types';
 import { ErrorBoundary } from '../components/ErrorBoundary/ErrorBoundary';
+import NotFound from '../views/Extras/NotFound';
 
 interface DashboardProps {
   [key: string]: any;
@@ -67,6 +68,7 @@ const Dashboard: React.FC<DashboardProps> = ({ ...rest }) => {
         return null;
       })}
       <Route path='/dashboard' element={<Navigate to='/dashboard/repo' />} />
+      <Route path='*' element={<NotFound />} />
     </Routes>
   );
 

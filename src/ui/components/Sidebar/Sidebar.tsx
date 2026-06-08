@@ -73,6 +73,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             className={activePro + classes.item}
             key={key}
             style={{ textDecoration: 'none' }}
+            aria-current={activeRoute(prop.layout + prop.path) ? 'page' : undefined}
           >
             <ListItem button className={classes.itemLink + listItemClasses}>
               {typeof prop.icon === 'string' ? (
