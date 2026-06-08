@@ -153,7 +153,7 @@ describe('proxy express application', () => {
     await cleanupRepo(TEST_GITLAB_REPO.url);
 
     // check that we don't have *any* repos at gitlab.com setup
-    const numExisting = (await db.getRepos({ url: /https:\/\/gitlab\.com/ as any })).length;
+    const numExisting = (await db.getRepos({ url: /https:\/\/gitlab\.com/ as any })).data.length;
     expect(numExisting).toBe(0);
 
     // create the repo through the API, which should force the proxy to restart to handle the new domain
@@ -168,7 +168,7 @@ describe('proxy express application', () => {
     expect(repo).not.toBeNull();
 
     // and that our initial query for repos would have picked it up
-    const numCurrent = (await db.getRepos({ url: /https:\/\/gitlab\.com/ as any })).length;
+    const numCurrent = (await db.getRepos({ url: /https:\/\/gitlab\.com/ as any })).data.length;
     expect(numCurrent).toBe(1);
 
     // proxy a request to the new repo
@@ -263,7 +263,7 @@ describe('proxy express application', () => {
     await new Promise((r) => setTimeout(r, 200));
     await proxy.start();
 
-    const allRepos = await db.getRepos();
+    const { data: allRepos } = await db.getRepos();
     const matchingRepos = allRepos.filter((r) => r.url === TEST_DEFAULT_REPO.url);
 
     expect(matchingRepos).toHaveLength(1);

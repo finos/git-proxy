@@ -19,7 +19,19 @@ import { getAxiosConfig, processAuthError } from './auth';
 import { PublicUser } from '../../db/types';
 import { BackendResponse } from '../types';
 import { getBaseUrl, getApiV1BaseUrl } from './apiConfig';
-import { getServiceError, formatErrorMessage } from './errors';
+import {
+  getServiceError,
+  formatErrorMessage,
+  ServiceResult,
+  errorResult,
+  successResult,
+} from './errors';
+import { PaginationParams } from './git-push';
+
+export type PagedUserResponse = {
+  users: PublicUser[];
+  total: number;
+};
 
 type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
 
@@ -57,30 +69,26 @@ const getUser = async (
 };
 
 const getUsers = async (
-  setIsLoading: SetStateCallback<boolean>,
-  setUsers: SetStateCallback<PublicUser[]>,
-  setAuth: SetStateCallback<boolean>,
-  setErrorMessage: SetStateCallback<string>,
-): Promise<void> => {
-  setIsLoading(true);
-
+  pagination: PaginationParams = {},
+): Promise<ServiceResult<PagedUserResponse>> => {
   try {
     const apiV1BaseUrl = await getApiV1BaseUrl();
-    const response: AxiosResponse<PublicUser[]> = await axios(
-      `${apiV1BaseUrl}/user`,
+    const url = new URL(`${apiV1BaseUrl}/user`);
+    const params: Record<string, string> = {};
+    if (pagination.page) params['page'] = String(pagination.page);
+    if (pagination.limit) params['limit'] = String(pagination.limit);
+    if (pagination.search) params['search'] = pagination.search;
+    if (pagination.sortBy) params['sortBy'] = pagination.sortBy;
+    if (pagination.sortOrder) params['sortOrder'] = pagination.sortOrder;
+    url.search = new URLSearchParams(params).toString();
+
+    const response: AxiosResponse<{ users: PublicUser[]; total: number }> = await axios(
+      url.toString(),
       getAxiosConfig(),
     );
-    setUsers(response.data);
-  } catch (error) {
-    const { status, message } = getServiceError(error, 'Unknown error');
-    if (status === 401) {
-      setAuth(false);
-      setErrorMessage(processAuthError(error as AxiosError<BackendResponse>));
-    } else {
-      setErrorMessage(formatErrorMessage('Error fetching users', status, message));
-    }
-  } finally {
-    setIsLoading(false);
+    return successResult({ users: response.data.users, total: response.data.total });
+  } catch (error: unknown) {
+    return errorResult(error, 'Failed to load users');
   }
 };
 

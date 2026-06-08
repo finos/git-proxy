@@ -38,25 +38,50 @@ const getPush = async (id: string): Promise<ServiceResult<PushActionView>> => {
   }
 };
 
+export type PaginationParams = {
+  page?: number;
+  limit?: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+};
+
+export type PagedPushResponse = {
+  pushes: PushActionView[];
+  total: number;
+};
+
 const getPushes = async (
-  query = {
+  query: Record<string, boolean | string> = {
     blocked: true,
     canceled: false,
     authorised: false,
     rejected: false,
   },
-): Promise<ServiceResult<PushActionView[]>> => {
+  pagination: PaginationParams = {},
+): Promise<ServiceResult<PagedPushResponse>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/push`);
 
-  const stringifiedQuery = Object.fromEntries(
-    Object.entries(query).map(([key, value]) => [key, value.toString()]),
+  const params: Record<string, string> = Object.fromEntries(
+    Object.entries(query).map(([k, v]) => [k, v.toString()]),
   );
-  url.search = new URLSearchParams(stringifiedQuery).toString();
+  if (pagination.page) params['page'] = String(pagination.page);
+  if (pagination.limit) params['limit'] = String(pagination.limit);
+  if (pagination.search) params['search'] = pagination.search;
+  if (pagination.sortBy) params['sortBy'] = pagination.sortBy;
+  if (pagination.sortOrder) params['sortOrder'] = pagination.sortOrder;
+  url.search = new URLSearchParams(params).toString();
 
   try {
-    const response = await axios<Action[]>(url.toString(), getAxiosConfig());
-    return successResult(response.data as unknown as PushActionView[]);
+    const response = await axios<{ pushes: Action[]; total: number }>(
+      url.toString(),
+      getAxiosConfig(),
+    );
+    return successResult({
+      pushes: response.data.pushes as unknown as PushActionView[],
+      total: response.data.total,
+    });
   } catch (error: unknown) {
     return errorResult(error, 'Failed to load pushes');
   }

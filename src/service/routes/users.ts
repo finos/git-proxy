@@ -18,12 +18,13 @@ import express, { Request, Response } from 'express';
 const router = express.Router();
 
 import * as db from '../../db';
-import { toPublicUser } from './utils';
+import { toPublicUser, parsePaginationParams } from './utils';
 
 router.get('/', async (req: Request, res: Response) => {
   console.log('fetching users');
-  const users = await db.getUsers();
-  res.send(users.map(toPublicUser));
+  const pagination = parsePaginationParams(req);
+  const { data, total } = await db.getUsers({}, pagination);
+  res.send({ users: data.map(toPublicUser), total });
 });
 
 router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { connect, findDocuments, findOneDocument } from './helper';
+import { connect, findOneDocument, paginatedFind } from './helper';
 import { Action } from '../../proxy/actions';
-import { toClass } from '../helper';
-import { PushQuery } from '../types';
+import { toClass, buildSearchFilter, buildSort } from '../helper';
+import { PaginatedResult, PaginationOptions, PushQuery } from '../types';
 import { CompletedAttestation, Rejection } from '../../proxy/processors/types';
 
 const collectionName = 'pushes';
@@ -30,34 +30,51 @@ const defaultPushQuery: Partial<PushQuery> = {
   type: 'push',
 };
 
+const pushProjection = {
+  _id: 0,
+  id: 1,
+  allowPush: 1,
+  authorised: 1,
+  blocked: 1,
+  blockedMessage: 1,
+  branch: 1,
+  canceled: 1,
+  commitData: 1,
+  commitFrom: 1,
+  commitTo: 1,
+  error: 1,
+  method: 1,
+  project: 1,
+  rejected: 1,
+  repo: 1,
+  repoName: 1,
+  timestamp: 1,
+  type: 1,
+  url: 1,
+  user: 1,
+};
+
 export const getPushes = async (
   query: Partial<PushQuery> = defaultPushQuery,
-): Promise<Action[]> => {
-  return findDocuments<Action>(collectionName, query, {
-    projection: {
-      _id: 0,
-      id: 1,
-      allowPush: 1,
-      authorised: 1,
-      blocked: 1,
-      blockedMessage: 1,
-      branch: 1,
-      canceled: 1,
-      commitData: 1,
-      commitFrom: 1,
-      commitTo: 1,
-      error: 1,
-      method: 1,
-      project: 1,
-      rejected: 1,
-      repo: 1,
-      repoName: 1,
-      timestamp: 1,
-      type: 1,
-      url: 1,
-    },
-    sort: { timestamp: -1 },
-  });
+  pagination?: PaginationOptions,
+): Promise<PaginatedResult<Action>> => {
+  const filter = buildSearchFilter(
+    { ...query },
+    ['repo', 'branch', 'commitTo', 'user'],
+    pagination?.search,
+  );
+  const sort = buildSort(pagination, 'timestamp', -1, [
+    'timestamp',
+    'repo',
+    'branch',
+    'commitTo',
+    'user',
+  ]);
+  const skip = pagination?.skip ?? 0;
+  const limit = pagination?.limit ?? 0;
+
+  const collection = await connect(collectionName);
+  return paginatedFind<Action>(collection, filter, sort, skip, limit, pushProjection);
 };
 
 export const getPush = async (id: string): Promise<Action | null> => {

@@ -33,14 +33,18 @@ const mockConnect = vi.fn(() => ({
   deleteMany: mockDeleteMany,
 }));
 
+const mockPaginatedFind = vi.fn();
 const mockToClass = vi.fn((doc, proto) => Object.assign(Object.create(proto), doc));
 
 vi.mock('../../../src/db/mongo/helper', () => ({
   connect: mockConnect,
+  paginatedFind: mockPaginatedFind,
 }));
 
 vi.mock('../../../src/db/helper', () => ({
   toClass: mockToClass,
+  buildSearchFilter: vi.fn((baseQuery) => baseQuery),
+  buildSort: vi.fn(() => ({})),
 }));
 
 describe('MongoDB Repo', async () => {
@@ -77,37 +81,34 @@ describe('MongoDB Repo', async () => {
   describe('getRepos', () => {
     it('should get all repos with empty query', async () => {
       const repoData = [TEST_REPO];
-      mockToArray.mockResolvedValue(repoData);
+      mockPaginatedFind.mockResolvedValue({ data: repoData, total: 1 });
       mockToClass.mockImplementation((doc) => doc);
 
       const result = await getRepos();
 
       expect(mockConnect).toHaveBeenCalledWith('repos');
-      expect(mockFind).toHaveBeenCalledWith({});
-      expect(mockToArray).toHaveBeenCalled();
-      expect(result).toEqual(repoData);
+      expect(mockPaginatedFind).toHaveBeenCalled();
+      expect(result).toEqual({ data: repoData, total: 1 });
     });
 
     it('should get repos with custom query', async () => {
-      const query = { name: 'sample' };
       const repoData = [TEST_REPO];
-      mockToArray.mockResolvedValue(repoData);
+      mockPaginatedFind.mockResolvedValue({ data: repoData, total: 1 });
       mockToClass.mockImplementation((doc) => doc);
 
-      const result = await getRepos(query);
+      const result = await getRepos({ name: 'sample' });
 
       expect(mockConnect).toHaveBeenCalledWith('repos');
-      expect(mockFind).toHaveBeenCalledWith(query);
-      expect(mockToArray).toHaveBeenCalled();
-      expect(result).toEqual(repoData);
+      expect(mockPaginatedFind).toHaveBeenCalled();
+      expect(result).toEqual({ data: repoData, total: 1 });
     });
 
     it('should return empty array when no repos found', async () => {
-      mockToArray.mockResolvedValue([]);
+      mockPaginatedFind.mockResolvedValue({ data: [], total: 0 });
 
       const result = await getRepos();
 
-      expect(result).toEqual([]);
+      expect(result).toEqual({ data: [], total: 0 });
     });
   });
 

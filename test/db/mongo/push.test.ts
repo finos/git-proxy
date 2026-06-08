@@ -29,12 +29,12 @@ const mockConnect = vi.fn(() => ({
   find: mockFind,
 }));
 
-const mockFindDocuments = vi.fn();
+const mockPaginatedFind = vi.fn();
 const mockFindOneDocument = vi.fn();
 
 vi.mock('../../../src/db/mongo/helper', () => ({
   connect: mockConnect,
-  findDocuments: mockFindDocuments,
+  paginatedFind: mockPaginatedFind,
   findOneDocument: mockFindOneDocument,
 }));
 
@@ -42,6 +42,8 @@ const mockToClass = vi.fn((doc, proto) => Object.assign(Object.create(proto), do
 
 vi.mock('../../../src/db/helper', () => ({
   toClass: mockToClass,
+  buildSearchFilter: vi.fn((baseQuery) => baseQuery),
+  buildSort: vi.fn(() => ({})),
 }));
 
 describe('MongoDB Push Handler', async () => {
@@ -81,65 +83,25 @@ describe('MongoDB Push Handler', async () => {
   describe('getPushes', () => {
     it('should get pushes with default query', async () => {
       const mockPushes = [TEST_PUSH];
-      mockFindDocuments.mockResolvedValue(mockPushes);
+      mockPaginatedFind.mockResolvedValue({ data: mockPushes, total: 1 });
 
       const result = await getPushes();
 
-      expect(mockFindDocuments).toHaveBeenCalledWith(
-        'pushes',
-        {
-          error: false,
-          blocked: true,
-          allowPush: false,
-          authorised: false,
-          type: 'push',
-        },
-        {
-          projection: {
-            _id: 0,
-            id: 1,
-            allowPush: 1,
-            authorised: 1,
-            blocked: 1,
-            blockedMessage: 1,
-            branch: 1,
-            canceled: 1,
-            commitData: 1,
-            commitFrom: 1,
-            commitTo: 1,
-            error: 1,
-            method: 1,
-            project: 1,
-            rejected: 1,
-            repo: 1,
-            repoName: 1,
-            timestamp: 1,
-            type: 1,
-            url: 1,
-          },
-          sort: {
-            timestamp: -1,
-          },
-        },
-      );
-      expect(result).toEqual(mockPushes);
+      expect(mockConnect).toHaveBeenCalledWith('pushes');
+      expect(mockPaginatedFind).toHaveBeenCalled();
+      expect(result).toEqual({ data: mockPushes, total: 1 });
     });
 
     it('should get pushes with custom query', async () => {
       const customQuery = { error: true };
       const mockPushes = [TEST_PUSH];
-      mockFindDocuments.mockResolvedValue(mockPushes);
+      mockPaginatedFind.mockResolvedValue({ data: mockPushes, total: 1 });
 
       const result = await getPushes(customQuery);
 
-      expect(mockFindDocuments).toHaveBeenCalledWith(
-        'pushes',
-        customQuery,
-        expect.objectContaining({
-          projection: expect.any(Object),
-        }),
-      );
-      expect(result).toEqual(mockPushes);
+      expect(mockConnect).toHaveBeenCalledWith('pushes');
+      expect(mockPaginatedFind).toHaveBeenCalled();
+      expect(result).toEqual({ data: mockPushes, total: 1 });
     });
   });
 

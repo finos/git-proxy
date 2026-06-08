@@ -17,8 +17,9 @@
 import Datastore from '@seald-io/nedb';
 import _ from 'lodash';
 
-import { Repo, RepoQuery } from '../types';
-import { toClass } from '../helper';
+import { PaginatedResult, PaginationOptions, Repo, RepoQuery } from '../types';
+import { toClass, buildSearchFilter, buildSort } from '../helper';
+import { paginatedFind } from './helper';
 import { handleErrorAndLog } from '../../utils/errors';
 
 const COMPACTION_INTERVAL = 1000 * 60 * 60 * 24; // once per day
@@ -42,25 +43,25 @@ try {
 db.ensureIndex({ fieldName: 'name', unique: false });
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
-export const getRepos = async (query: Partial<RepoQuery> = {}): Promise<Repo[]> => {
+export const getRepos = async (
+  query: Partial<RepoQuery> = {},
+  pagination?: PaginationOptions,
+): Promise<PaginatedResult<Repo>> => {
   if (query?.name) {
     query.name = query.name.toLowerCase();
   }
-  return new Promise<Repo[]>((resolve, reject) => {
-    db.find(query, (err: Error, docs: Repo[]) => {
-      // ignore for code coverage as neDB rarely returns errors even for an invalid query
-      /* istanbul ignore if */
-      if (err) {
-        reject(err);
-      } else {
-        resolve(
-          _.chain(docs)
-            .map((x) => toClass(x, Repo.prototype))
-            .value(),
-        );
-      }
-    });
-  });
+
+  const baseQuery = buildSearchFilter({ ...query }, ['name', 'project', 'url'], pagination?.search);
+  const sort = buildSort(pagination, 'name', 1, ['name', 'project', 'url']);
+  const skip = pagination?.skip ?? 0;
+  const limit = pagination?.limit ?? 0;
+
+  return paginatedFind<Repo>(db, baseQuery, sort, skip, limit).then(({ data, total }) => ({
+    data: _.chain(data)
+      .map((x) => toClass(x, Repo.prototype))
+      .value(),
+    total,
+  }));
 };
 
 export const getRepo = async (name: string): Promise<Repo | null> => {

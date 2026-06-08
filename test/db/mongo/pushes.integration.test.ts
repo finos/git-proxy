@@ -152,23 +152,23 @@ describe.runIf(shouldRunMongoTests)('MongoDB Pushes Integration Tests', () => {
     });
 
     it('should retrieve pushes matching default query', async () => {
-      const result = await getPushes();
+      const { data } = await getPushes();
 
-      const matchingPushes = result.filter((p) => ['push-list-1', 'push-list-2'].includes(p.id));
+      const matchingPushes = data.filter((p) => ['push-list-1', 'push-list-2'].includes(p.id));
       expect(matchingPushes.length).toBe(2);
     });
 
     it('should filter pushes by custom query', async () => {
-      const result = await getPushes({ authorised: true });
+      const { data } = await getPushes({ authorised: true });
 
-      const authorisedPush = result.find((p) => p.id === 'push-authorised');
+      const authorisedPush = data.find((p) => p.id === 'push-authorised');
       expect(authorisedPush).toBeDefined();
     });
 
     it('should return projected fields only', async () => {
-      const result = await getPushes();
+      const { data } = await getPushes();
 
-      result.forEach((push) => {
+      data.forEach((push) => {
         expect((push as any)._id).toBeUndefined();
         expect(push.id).toBeDefined();
       });

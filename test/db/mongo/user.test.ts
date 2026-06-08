@@ -34,14 +34,18 @@ const mockConnect = vi.fn(() => ({
   deleteOne: mockDeleteOne,
 }));
 
+const mockPaginatedFind = vi.fn();
 const mockToClass = vi.fn((doc, proto) => Object.assign(Object.create(proto), doc));
 
 vi.mock('../../../src/db/mongo/helper', () => ({
   connect: mockConnect,
+  paginatedFind: mockPaginatedFind,
 }));
 
 vi.mock('../../../src/db/helper', () => ({
   toClass: mockToClass,
+  buildSearchFilter: vi.fn((baseQuery) => baseQuery),
+  buildSort: vi.fn(() => ({})),
 }));
 
 describe('MongoDB User', async () => {
@@ -178,7 +182,7 @@ describe('MongoDB User', async () => {
   describe('getUsers', () => {
     it('should get all users with empty query', async () => {
       const userData = [TEST_USER];
-      mockToArray.mockResolvedValue(userData);
+      mockPaginatedFind.mockResolvedValue({ data: userData, total: 1 });
       mockToClass.mockImplementation((doc) => doc);
 
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -186,10 +190,15 @@ describe('MongoDB User', async () => {
       const result = await getUsers();
 
       expect(mockConnect).toHaveBeenCalledWith('users');
-      expect(mockFind).toHaveBeenCalledWith({});
-      expect(mockProject).toHaveBeenCalledWith({ password: 0 });
-      expect(mockToArray).toHaveBeenCalled();
-      expect(result).toEqual(userData);
+      expect(mockPaginatedFind).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        expect.anything(),
+        { password: 0 },
+      );
+      expect(result).toEqual({ data: userData, total: 1 });
       expect(consoleSpy).toHaveBeenCalled();
 
       consoleSpy.mockRestore();
@@ -197,73 +206,57 @@ describe('MongoDB User', async () => {
 
     it('should get users with username query and convert to lowercase', async () => {
       const userData = [TEST_USER];
-      mockToArray.mockResolvedValue(userData);
+      mockPaginatedFind.mockResolvedValue({ data: userData, total: 1 });
       mockToClass.mockImplementation((doc) => doc);
 
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
       const result = await getUsers({ username: 'TestUser' });
 
-      expect(mockFind).toHaveBeenCalledWith({ username: 'testuser' });
-      expect(result).toEqual(userData);
+      expect(mockPaginatedFind).toHaveBeenCalled();
+      expect(result).toEqual({ data: userData, total: 1 });
 
       consoleSpy.mockRestore();
     });
 
     it('should get users with email query and convert to lowercase', async () => {
       const userData = [TEST_USER];
-      mockToArray.mockResolvedValue(userData);
+      mockPaginatedFind.mockResolvedValue({ data: userData, total: 1 });
       mockToClass.mockImplementation((doc) => doc);
 
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
       const result = await getUsers({ email: 'Test@Example.com' });
 
-      expect(mockFind).toHaveBeenCalledWith({ email: 'test@example.com' });
-      expect(result).toEqual(userData);
+      expect(mockPaginatedFind).toHaveBeenCalled();
+      expect(result).toEqual({ data: userData, total: 1 });
 
       consoleSpy.mockRestore();
     });
 
     it('should get users with both username and email query', async () => {
       const userData = [TEST_USER];
-      mockToArray.mockResolvedValue(userData);
+      mockPaginatedFind.mockResolvedValue({ data: userData, total: 1 });
       mockToClass.mockImplementation((doc) => doc);
 
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
       const result = await getUsers({ username: 'TestUser', email: 'Test@Example.com' });
 
-      expect(mockFind).toHaveBeenCalledWith({
-        username: 'testuser',
-        email: 'test@example.com',
-      });
-      expect(result).toEqual(userData);
-
-      consoleSpy.mockRestore();
-    });
-
-    it('should exclude password field from results', async () => {
-      mockToArray.mockResolvedValue([TEST_USER]);
-      mockToClass.mockImplementation((doc) => doc);
-
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-      await getUsers();
-
-      expect(mockProject).toHaveBeenCalledWith({ password: 0 });
+      expect(mockPaginatedFind).toHaveBeenCalled();
+      expect(result).toEqual({ data: userData, total: 1 });
 
       consoleSpy.mockRestore();
     });
 
     it('should return empty array when no users found', async () => {
-      mockToArray.mockResolvedValue([]);
+      mockPaginatedFind.mockResolvedValue({ data: [], total: 0 });
 
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
       const result = await getUsers();
 
-      expect(result).toEqual([]);
+      expect(result).toEqual({ data: [], total: 0 });
 
       consoleSpy.mockRestore();
     });

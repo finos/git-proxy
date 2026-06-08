@@ -46,6 +46,19 @@ export type QueryValue = string | boolean | number | undefined;
 
 export type UserRole = 'canPush' | 'canAuthorise';
 
+export type PaginationOptions = {
+  limit: number;
+  skip: number;
+  search?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+};
+
+export type PaginatedResult<T> = {
+  data: T[];
+  total: number;
+};
+
 export class Repo {
   project: string;
   name: string;
@@ -109,14 +122,20 @@ export interface PublicUser {
 
 export interface Sink {
   getSessionStore: () => MongoDBStore | undefined;
-  getPushes: (query: Partial<PushQuery>) => Promise<Action[]>;
+  getPushes: (
+    query: Partial<PushQuery>,
+    pagination?: PaginationOptions,
+  ) => Promise<PaginatedResult<Action>>;
   writeAudit: (action: Action) => Promise<void>;
   getPush: (id: string) => Promise<Action | null>;
   deletePush: (id: string) => Promise<void>;
   authorise: (id: string, attestation?: CompletedAttestation) => Promise<{ message: string }>;
   cancel: (id: string) => Promise<{ message: string }>;
   reject: (id: string, rejection: Rejection) => Promise<{ message: string }>;
-  getRepos: (query?: Partial<RepoQuery>) => Promise<Repo[]>;
+  getRepos: (
+    query?: Partial<RepoQuery>,
+    pagination?: PaginationOptions,
+  ) => Promise<PaginatedResult<Repo>>;
   getRepo: (name: string) => Promise<Repo | null>;
   getRepoByUrl: (url: string) => Promise<Repo | null>;
   getRepoById: (_id: string) => Promise<Repo | null>;
@@ -129,7 +148,10 @@ export interface Sink {
   findUser: (username: string) => Promise<User | null>;
   findUserByEmail: (email: string) => Promise<User | null>;
   findUserByOIDC: (oidcId: string) => Promise<User | null>;
-  getUsers: (query?: Partial<UserQuery>) => Promise<User[]>;
+  getUsers: (
+    query?: Partial<UserQuery>,
+    pagination?: PaginationOptions,
+  ) => Promise<PaginatedResult<User>>;
   createUser: (user: User) => Promise<void>;
   deleteUser: (username: string) => Promise<void>;
   updateUser: (user: Partial<User>) => Promise<void>;

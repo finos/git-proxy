@@ -105,10 +105,10 @@ describe.runIf(shouldRunMongoTests)('MongoDB Repo Integration Tests', () => {
       await createRepo(createTestRepo({ name: 'list-repo-1' }));
       await createRepo(createTestRepo({ name: 'list-repo-2' }));
 
-      const result = await getRepos();
+      const { data } = await getRepos();
 
-      expect(result.length).toBeGreaterThanOrEqual(2);
-      const names = result.map((r) => r.name);
+      expect(data.length).toBeGreaterThanOrEqual(2);
+      const names = data.map((r) => r.name);
       expect(names).toContain('list-repo-1');
       expect(names).toContain('list-repo-2');
     });
@@ -117,10 +117,10 @@ describe.runIf(shouldRunMongoTests)('MongoDB Repo Integration Tests', () => {
       await createRepo(createTestRepo({ name: 'filter-repo', project: 'filter-project' }));
       await createRepo(createTestRepo({ name: 'other-repo', project: 'other-project' }));
 
-      const result = await getRepos({ project: 'filter-project' });
+      const { data } = await getRepos({ project: 'filter-project' });
 
-      expect(result.length).toBe(1);
-      expect(result[0].name).toBe('filter-repo');
+      expect(data.length).toBe(1);
+      expect(data[0].name).toBe('filter-repo');
     });
   });
 

@@ -28,16 +28,19 @@ describe('Users API', () => {
     app.use(express.json());
     app.use('/users', usersRouter);
 
-    vi.spyOn(db, 'getUsers').mockResolvedValue([
-      {
-        username: 'alice',
-        password: 'secret-hashed-password',
-        email: 'alice@example.com',
-        displayName: 'Alice Walker',
-        gitAccount: '',
-        admin: false,
-      },
-    ]);
+    vi.spyOn(db, 'getUsers').mockResolvedValue({
+      data: [
+        {
+          username: 'alice',
+          password: 'secret-hashed-password',
+          email: 'alice@example.com',
+          displayName: 'Alice Walker',
+          gitAccount: '',
+          admin: false,
+        },
+      ],
+      total: 1,
+    });
 
     vi.spyOn(db, 'findUser').mockResolvedValue({
       username: 'bob',
@@ -57,16 +60,19 @@ describe('Users API', () => {
     const res = await request(app).get('/users');
 
     expect(res.status).toBe(200);
-    expect(res.body).toEqual([
-      {
-        username: 'alice',
-        displayName: 'Alice Walker',
-        email: 'alice@example.com',
-        title: '',
-        gitAccount: '',
-        admin: false,
-      },
-    ]);
+    expect(res.body).toEqual({
+      users: [
+        {
+          username: 'alice',
+          displayName: 'Alice Walker',
+          email: 'alice@example.com',
+          title: '',
+          gitAccount: '',
+          admin: false,
+        },
+      ],
+      total: 1,
+    });
   });
 
   it('GET /users/:id does not serialize password', async () => {

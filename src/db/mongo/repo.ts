@@ -15,18 +15,30 @@
  */
 
 import _ from 'lodash';
-import { Repo, RepoQuery } from '../types';
-import { connect } from './helper';
-import { toClass } from '../helper';
+import { PaginatedResult, PaginationOptions, Repo, RepoQuery } from '../types';
+import { connect, paginatedFind } from './helper';
+import { toClass, buildSearchFilter, buildSort } from '../helper';
 import { ObjectId, OptionalId, Document } from 'mongodb';
+
 const collectionName = 'repos';
 
-export const getRepos = async (query: Partial<RepoQuery> = {}): Promise<Repo[]> => {
+export const getRepos = async (
+  query: Partial<RepoQuery> = {},
+  pagination?: PaginationOptions,
+): Promise<PaginatedResult<Repo>> => {
+  const filter = buildSearchFilter({ ...query }, ['name', 'project', 'url'], pagination?.search);
+  const sort = buildSort(pagination, 'name', 1, ['name', 'project', 'url']);
+  const skip = pagination?.skip ?? 0;
+  const limit = pagination?.limit ?? 0;
+
   const collection = await connect(collectionName);
-  const docs = await collection.find(query).toArray();
-  return _.chain(docs)
-    .map((x) => toClass(x, Repo.prototype))
-    .value();
+  const { data, total } = await paginatedFind<Repo>(collection, filter, sort, skip, limit);
+  return {
+    data: _.chain(data)
+      .map((x) => toClass(x, Repo.prototype))
+      .value(),
+    total,
+  };
 };
 
 export const getRepo = async (name: string): Promise<Repo | null> => {

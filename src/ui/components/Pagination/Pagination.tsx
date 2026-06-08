@@ -15,13 +15,18 @@
  */
 
 import React from 'react';
+import Select from '@material-ui/core/Select';
+import MenuItem from '@material-ui/core/MenuItem';
 import './Pagination.css';
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
 
 interface PaginationProps {
   currentPage: number;
   totalItems?: number;
   itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange?: (n: number) => void;
 }
 
 const Pagination: React.FC<PaginationProps> = ({
@@ -29,6 +34,7 @@ const Pagination: React.FC<PaginationProps> = ({
   totalItems = 0,
   itemsPerPage,
   onPageChange,
+  onItemsPerPageChange,
 }) => {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
@@ -40,6 +46,22 @@ const Pagination: React.FC<PaginationProps> = ({
 
   return (
     <div className='paginationContainer'>
+      {onItemsPerPageChange && (
+        <Select
+          value={itemsPerPage}
+          onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+          variant='outlined'
+          margin='dense'
+          style={{ fontSize: 14, height: 36 }}
+        >
+          {PAGE_SIZE_OPTIONS.map((n) => (
+            <MenuItem key={n} value={n}>
+              {n} per page
+            </MenuItem>
+          ))}
+        </Select>
+      )}
+
       <button
         className='pageButton'
         onClick={() => handlePageClick(currentPage - 1)}
