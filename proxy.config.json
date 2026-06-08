@@ -186,6 +186,10 @@
   },
   "ssh": {
     "enabled": false,
-    "port": 2222
+    "port": 2222,
+    "knownHosts": {
+      "github.com": "SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU",
+      "gitlab.com": "SHA256:eUXGGm1YGsMAS7vkcx6JOJdOGHPem5gQp4taiCfCLB8"
+    }
   }
 }

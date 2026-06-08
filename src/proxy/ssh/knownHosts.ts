@@ -14,38 +14,15 @@
  * limitations under the License.
  */
 
-/**
- * Default SSH host keys for common Git hosting providers
- *
- * These fingerprints are the SHA256 hashes of the ED25519 host keys.
- * They should be verified against official documentation periodically.
- *
- * Sources:
- * - GitHub: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/githubs-ssh-key-fingerprints
- * - GitLab: https://docs.gitlab.com/ee/user/gitlab_com/
- */
-
 export interface KnownHostsConfig {
   [hostname: string]: string;
 }
 
 /**
- * Default known host keys for GitHub and GitLab
- * Last updated: 2025-01-26
+ * Get known hosts configuration from config
  */
-export const DEFAULT_KNOWN_HOSTS: KnownHostsConfig = {
-  'github.com': 'SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU',
-  'gitlab.com': 'SHA256:eUXGGm1YGsMAS7vkcx6JOJdOGHPem5gQp4taiCfCLB8',
-};
-
-/**
- * Get known hosts configuration with defaults merged
- */
-export function getKnownHosts(customHosts?: KnownHostsConfig): KnownHostsConfig {
-  return {
-    ...DEFAULT_KNOWN_HOSTS,
-    ...(customHosts || {}),
-  };
+export function getKnownHosts(configuredHosts?: KnownHostsConfig): KnownHostsConfig {
+  return { ...(configuredHosts || {}) };
 }
 
 /**
