@@ -558,6 +558,12 @@ export interface Database {
    */
   port?: number;
   /**
+   * TLS configuration for the connection. `true` enables TLS with default certificate
+   * verification; an object is passed to the PostgreSQL client as TLS options (for example
+   * `rejectUnauthorized`, `ca`, `cert`, `key`).
+   */
+  ssl?: boolean | { [key: string]: any };
+  /**
    * Database user. Used when `connectionString` is not set. Falls back to the `PGUSER`
    * environment variable.
    */
@@ -1029,6 +1035,7 @@ const typeMap: any = {
       { json: 'host', js: 'host', typ: u(undefined, '') },
       { json: 'password', js: 'password', typ: u(undefined, '') },
       { json: 'port', js: 'port', typ: u(undefined, 3.14) },
+      { json: 'ssl', js: 'ssl', typ: u(undefined, u(true, m('any'))) },
       { json: 'user', js: 'user', typ: u(undefined, '') },
     ],
     'any',

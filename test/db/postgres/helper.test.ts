@@ -171,6 +171,29 @@ describe('PostgreSQL - helper', async () => {
     });
   });
 
+  describe('ssl / TLS options', () => {
+    it('applies ssl=true alongside a connection string', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+        ssl: true,
+      });
+      await connect();
+      expect(mockPoolCtor).toHaveBeenCalledWith({
+        connectionString: 'postgresql://localhost/x',
+        ssl: true,
+      });
+    });
+
+    it('passes an ssl options object through to the pool', async () => {
+      const ssl = { rejectUnauthorized: false, ca: 'CA_CERT' };
+      getDatabaseMock.mockReturnValue({ type: 'postgres', enabled: true, host: 'db', ssl });
+      await connect();
+      expect(mockPoolCtor).toHaveBeenCalledWith({ host: 'db', ssl });
+    });
+  });
+
   describe('getSessionStore', () => {
     it('throws when no connection is configured — no MemoryStore fallback', () => {
       const savedPgHost = process.env.PGHOST;

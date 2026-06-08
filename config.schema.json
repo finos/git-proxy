@@ -497,6 +497,10 @@
             "database": {
               "type": "string",
               "description": "Database name. Used when `connectionString` is not set. Falls back to the `PGDATABASE` environment variable."
+            },
+            "ssl": {
+              "description": "TLS configuration for the connection. `true` enables TLS with default certificate verification; an object is passed to the PostgreSQL client as TLS options (for example `rejectUnauthorized`, `ca`, `cert`, `key`).",
+              "oneOf": [{ "type": "boolean" }, { "type": "object", "additionalProperties": true }]
             }
           },
           "required": ["type", "enabled"]

@@ -41,15 +41,18 @@ const hasConnectionConfig = (db: DatabaseConfig): boolean =>
  * environment variables itself.
  */
 const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
-  if (db.connectionString) {
-    return { connectionString: db.connectionString };
-  }
   const config: PoolConfig = {};
-  if (db.host !== undefined) config.host = db.host;
-  if (db.port !== undefined) config.port = db.port;
-  if (db.user !== undefined) config.user = db.user;
-  if (db.password !== undefined) config.password = db.password;
-  if (db.database !== undefined) config.database = db.database;
+  if (db.connectionString) {
+    config.connectionString = db.connectionString;
+  } else {
+    if (db.host !== undefined) config.host = db.host;
+    if (db.port !== undefined) config.port = db.port;
+    if (db.user !== undefined) config.user = db.user;
+    if (db.password !== undefined) config.password = db.password;
+    if (db.database !== undefined) config.database = db.database;
+  }
+  // TLS applies regardless of how the connection itself was configured.
+  if (db.ssl !== undefined) config.ssl = db.ssl as PoolConfig['ssl'];
   return config;
 };
 
