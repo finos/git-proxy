@@ -12,6 +12,26 @@
     },
     "cookieSecret": { "type": "string" },
     "sessionMaxAgeHours": { "type": "number" },
+    "serverPort": {
+      "type": "number",
+      "description": "Port the proxy HTTP server listens on. Can also be set with the GIT_PROXY_SERVER_PORT environment variable, which takes precedence over this value."
+    },
+    "httpsServerPort": {
+      "type": "number",
+      "description": "Port the proxy HTTPS server listens on. Can also be set with the GIT_PROXY_HTTPS_SERVER_PORT environment variable, which takes precedence over this value."
+    },
+    "uiHost": {
+      "type": "string",
+      "description": "Host of the GitProxy UI. Can also be set with the GIT_PROXY_UI_HOST environment variable, which takes precedence over this value."
+    },
+    "uiPort": {
+      "type": "number",
+      "description": "Port the GitProxy UI/service HTTP server listens on. Can also be set with the GIT_PROXY_UI_PORT environment variable, which takes precedence over this value."
+    },
+    "httpsUiPort": {
+      "type": "number",
+      "description": "Port the GitProxy UI/service HTTPS server listens on. Can also be set with the GIT_PROXY_HTTPS_UI_PORT environment variable, which takes precedence over this value."
+    },
     "api": {
       "description": "Third party APIs",
       "type": "object",

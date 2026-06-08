@@ -191,7 +191,7 @@
     "fast-check": "^4.5.3",
     "globals": "^16.5.0",
     "husky": "^9.1.7",
-    "lint-staged": "^16.2.7",
+    "lint-staged": "^17.0.5",
     "nyc": "^17.1.0",
     "prettier": "^3.8.1",
     "quicktype": "^23.2.6",
