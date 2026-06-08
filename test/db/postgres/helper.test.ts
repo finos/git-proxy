@@ -103,19 +103,78 @@ describe('PostgreSQL - helper', async () => {
       expect(mockPoolQuery).toHaveBeenCalledTimes(2);
     });
 
-    it('throws when the connection string is missing', async () => {
+    it('throws when no connection is configured', async () => {
+      const savedPgHost = process.env.PGHOST;
+      delete process.env.PGHOST;
       getDatabaseMock.mockReturnValue({
         type: 'postgres',
         enabled: true,
         connectionString: undefined,
       });
 
-      await expect(query('SELECT 1')).rejects.toThrow('Postgres connection string is not provided');
+      await expect(query('SELECT 1')).rejects.toThrow('Postgres connection is not configured');
+
+      if (savedPgHost !== undefined) process.env.PGHOST = savedPgHost;
+    });
+  });
+
+  describe('connection config', () => {
+    it('uses the connection string when provided', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+      });
+      await connect();
+      expect(mockPoolCtor).toHaveBeenCalledWith({ connectionString: 'postgresql://localhost/x' });
+    });
+
+    it('builds the pool from discrete fields when no connection string is set', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'db.example.com',
+        port: 5433,
+        user: 'gp',
+        password: 'secret',
+        database: 'gitproxy',
+      });
+      await connect();
+      expect(mockPoolCtor).toHaveBeenCalledWith({
+        host: 'db.example.com',
+        port: 5433,
+        user: 'gp',
+        password: 'secret',
+        database: 'gitproxy',
+      });
+    });
+
+    it('prefers the connection string over discrete fields', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+        host: 'ignored',
+      });
+      await connect();
+      expect(mockPoolCtor).toHaveBeenCalledWith({ connectionString: 'postgresql://localhost/x' });
+    });
+
+    it('falls through to PG* env vars when the sink has no explicit connection', async () => {
+      const savedPgHost = process.env.PGHOST;
+      process.env.PGHOST = 'env-host';
+      getDatabaseMock.mockReturnValue({ type: 'postgres', enabled: true });
+      await connect();
+      expect(mockPoolCtor).toHaveBeenCalledWith({});
+      if (savedPgHost === undefined) delete process.env.PGHOST;
+      else process.env.PGHOST = savedPgHost;
     });
   });
 
   describe('getSessionStore', () => {
-    it('throws when connection string is missing — no MemoryStore fallback', () => {
+    it('throws when no connection is configured — no MemoryStore fallback', () => {
+      const savedPgHost = process.env.PGHOST;
+      delete process.env.PGHOST;
       getDatabaseMock.mockReturnValue({
         type: 'postgres',
         enabled: true,
@@ -123,8 +182,10 @@ describe('PostgreSQL - helper', async () => {
       });
 
       expect(() => getSessionStore()).toThrow(
-        /Postgres connection string is required for session storage/,
+        /Postgres connection is required for session storage/,
       );
+
+      if (savedPgHost !== undefined) process.env.PGHOST = savedPgHost;
     });
 
     it('passes the shared pool to connect-pg-simple with createTableIfMissing', () => {

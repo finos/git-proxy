@@ -14,24 +14,56 @@
  * limitations under the License.
  */
 
-import { Pool, QueryResult, QueryResultRow } from 'pg';
+import { Pool, PoolConfig, QueryResult, QueryResultRow } from 'pg';
 import session, { Store } from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 
 import { getDatabase } from '../../config';
 
+type DatabaseConfig = ReturnType<typeof getDatabase>;
+
 let _pool: Pool | null = null;
 let _bootstrapPromise: Promise<void> | null = null;
+
+/**
+ * True when some Postgres connection is configured: an explicit connection
+ * string, the discrete `host` field, or the standard `PGHOST` environment
+ * variable (which implies the `PG*` family is in use). Used to refuse startup
+ * loudly rather than silently defaulting to `localhost`.
+ */
+const hasConnectionConfig = (db: DatabaseConfig): boolean =>
+  Boolean(db.connectionString || db.host || process.env.PGHOST);
+
+/**
+ * Build a `pg` PoolConfig from the resolved database config. A connection
+ * string (already env-resolved by `getDatabase`) takes precedence; otherwise
+ * the discrete fields are used. When neither is set, `pg` reads the `PG*`
+ * environment variables itself.
+ */
+const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
+  if (db.connectionString) {
+    return { connectionString: db.connectionString };
+  }
+  const config: PoolConfig = {};
+  if (db.host !== undefined) config.host = db.host;
+  if (db.port !== undefined) config.port = db.port;
+  if (db.user !== undefined) config.user = db.user;
+  if (db.password !== undefined) config.password = db.password;
+  if (db.database !== undefined) config.database = db.database;
+  return config;
+};
 
 const ensurePool = (): Pool => {
   if (_pool) return _pool;
 
-  const connectionString = getDatabase().connectionString;
-  if (!connectionString) {
-    throw new Error('Postgres connection string is not provided');
+  const db = getDatabase();
+  if (!hasConnectionConfig(db)) {
+    throw new Error(
+      'Postgres connection is not configured (set connectionString, the host/port/user/password/database fields, or the PG* environment variables)',
+    );
   }
 
-  _pool = new Pool({ connectionString });
+  _pool = new Pool(buildPoolConfig(db));
   return _pool;
 };
 
@@ -125,10 +157,9 @@ export const resetConnection = async (): Promise<void> => {
  * requirement, so we throw loudly instead.
  */
 export const getSessionStore = (): Store => {
-  const connectionString = getDatabase().connectionString;
-  if (!connectionString) {
+  if (!hasConnectionConfig(getDatabase())) {
     throw new Error(
-      'Postgres connection string is required for session storage (set it in `sink[].connectionString` or via GIT_PROXY_POSTGRES_CONNECTION_STRING)',
+      'Postgres connection is required for session storage (set connectionString, the host/port/user/password/database fields, or the PG* environment variables)',
     );
   }
 

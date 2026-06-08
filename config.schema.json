@@ -470,13 +470,33 @@
         {
           "type": "object",
           "name": "PostgreSQL Config",
-          "description": "Connection properties for PostgreSQL. The `connectionString` may also be supplied via the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable.",
+          "description": "Connection properties for PostgreSQL. The `connectionString` may also be supplied via the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable. If neither a `connectionString` nor the discrete `host`/`port`/`user`/`password`/`database` fields are set, the standard `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` environment variables are used.",
           "properties": {
             "type": { "type": "string", "const": "postgres" },
             "enabled": { "type": "boolean" },
             "connectionString": {
               "type": "string",
-              "description": "PostgreSQL client connection string, see [https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING). If omitted, `GIT_PROXY_POSTGRES_CONNECTION_STRING` is used as a fallback."
+              "description": "PostgreSQL client connection string, see [https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING). If omitted, `GIT_PROXY_POSTGRES_CONNECTION_STRING` is used as a fallback, then the discrete fields below, then the `PG*` environment variables. Takes precedence over the discrete fields when set."
+            },
+            "host": {
+              "type": "string",
+              "description": "Database server host. Used when `connectionString` is not set. Falls back to the `PGHOST` environment variable."
+            },
+            "port": {
+              "type": "number",
+              "description": "Database server port. Used when `connectionString` is not set. Falls back to the `PGPORT` environment variable."
+            },
+            "user": {
+              "type": "string",
+              "description": "Database user. Used when `connectionString` is not set. Falls back to the `PGUSER` environment variable."
+            },
+            "password": {
+              "type": "string",
+              "description": "Database password. Used when `connectionString` is not set. Falls back to the `PGPASSWORD` environment variable."
+            },
+            "database": {
+              "type": "string",
+              "description": "Database name. Used when `connectionString` is not set. Falls back to the `PGDATABASE` environment variable."
             }
           },
           "required": ["type", "enabled"]

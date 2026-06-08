@@ -511,7 +511,10 @@ export interface RateLimit {
  * Connection properties for an neDB file-based database
  *
  * Connection properties for PostgreSQL. The `connectionString` may also be supplied via the
- * `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable.
+ * `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable. If neither a
+ * `connectionString` nor the discrete `host`/`port`/`user`/`password`/`database` fields are
+ * set, the standard `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` environment
+ * variables are used.
  */
 export interface Database {
   /**
@@ -520,7 +523,9 @@ export interface Database {
    *
    * PostgreSQL client connection string, see
    * [https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING).
-   * If omitted, `GIT_PROXY_POSTGRES_CONNECTION_STRING` is used as a fallback.
+   * If omitted, `GIT_PROXY_POSTGRES_CONNECTION_STRING` is used as a fallback, then the
+   * discrete fields below, then the `PG*` environment variables. Takes precedence over the
+   * discrete fields when set.
    */
   connectionString?: string;
   enabled: boolean;
@@ -532,6 +537,31 @@ export interface Database {
    */
   options?: Options;
   type: DatabaseType;
+  /**
+   * Database name. Used when `connectionString` is not set. Falls back to the `PGDATABASE`
+   * environment variable.
+   */
+  database?: string;
+  /**
+   * Database server host. Used when `connectionString` is not set. Falls back to the `PGHOST`
+   * environment variable.
+   */
+  host?: string;
+  /**
+   * Database password. Used when `connectionString` is not set. Falls back to the
+   * `PGPASSWORD` environment variable.
+   */
+  password?: string;
+  /**
+   * Database server port. Used when `connectionString` is not set. Falls back to the `PGPORT`
+   * environment variable.
+   */
+  port?: number;
+  /**
+   * Database user. Used when `connectionString` is not set. Falls back to the `PGUSER`
+   * environment variable.
+   */
+  user?: string;
   [property: string]: any;
 }
 
@@ -995,6 +1025,11 @@ const typeMap: any = {
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'options', js: 'options', typ: u(undefined, r('Options')) },
       { json: 'type', js: 'type', typ: r('DatabaseType') },
+      { json: 'database', js: 'database', typ: u(undefined, '') },
+      { json: 'host', js: 'host', typ: u(undefined, '') },
+      { json: 'password', js: 'password', typ: u(undefined, '') },
+      { json: 'port', js: 'port', typ: u(undefined, 3.14) },
+      { json: 'user', js: 'user', typ: u(undefined, '') },
     ],
     'any',
   ),
