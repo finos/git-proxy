@@ -553,6 +553,10 @@ export interface Database {
    */
   password?: string;
   /**
+   * Connection pool tuning passed to the PostgreSQL client.
+   */
+  pool?: Pool;
+  /**
    * Database server port. Used when `connectionString` is not set. Falls back to the `PGPORT`
    * environment variable.
    */
@@ -588,6 +592,25 @@ export interface AuthMechanismProperties {
    * is passed as the `AWS_CREDENTIAL_PROVIDER`
    */
   AWS_CREDENTIAL_PROVIDER?: boolean;
+  [property: string]: any;
+}
+
+/**
+ * Connection pool tuning passed to the PostgreSQL client.
+ */
+export interface Pool {
+  /**
+   * Milliseconds to wait for a connection before timing out.
+   */
+  connectionTimeoutMillis?: number;
+  /**
+   * Milliseconds a client may sit idle in the pool before being closed.
+   */
+  idleTimeoutMillis?: number;
+  /**
+   * Maximum number of clients the pool may hold.
+   */
+  max?: number;
   [property: string]: any;
 }
 
@@ -1034,6 +1057,7 @@ const typeMap: any = {
       { json: 'database', js: 'database', typ: u(undefined, '') },
       { json: 'host', js: 'host', typ: u(undefined, '') },
       { json: 'password', js: 'password', typ: u(undefined, '') },
+      { json: 'pool', js: 'pool', typ: u(undefined, r('Pool')) },
       { json: 'port', js: 'port', typ: u(undefined, 3.14) },
       { json: 'ssl', js: 'ssl', typ: u(undefined, u(true, m('any'))) },
       { json: 'user', js: 'user', typ: u(undefined, '') },
@@ -1052,6 +1076,14 @@ const typeMap: any = {
   ),
   AuthMechanismProperties: o(
     [{ json: 'AWS_CREDENTIAL_PROVIDER', js: 'AWS_CREDENTIAL_PROVIDER', typ: u(undefined, true) }],
+    'any',
+  ),
+  Pool: o(
+    [
+      { json: 'connectionTimeoutMillis', js: 'connectionTimeoutMillis', typ: u(undefined, 3.14) },
+      { json: 'idleTimeoutMillis', js: 'idleTimeoutMillis', typ: u(undefined, 3.14) },
+      { json: 'max', js: 'max', typ: u(undefined, 3.14) },
+    ],
     'any',
   ),
   TempPassword: o(

@@ -194,6 +194,35 @@ describe('PostgreSQL - helper', async () => {
     });
   });
 
+  describe('pool tuning', () => {
+    it('applies pool options on top of the connection', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+        pool: { max: 20, idleTimeoutMillis: 1000, connectionTimeoutMillis: 2000 },
+      });
+      await connect();
+      expect(mockPoolCtor).toHaveBeenCalledWith({
+        connectionString: 'postgresql://localhost/x',
+        max: 20,
+        idleTimeoutMillis: 1000,
+        connectionTimeoutMillis: 2000,
+      });
+    });
+
+    it('only sets the pool options that are provided', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'db',
+        pool: { max: 5 },
+      });
+      await connect();
+      expect(mockPoolCtor).toHaveBeenCalledWith({ host: 'db', max: 5 });
+    });
+  });
+
   describe('getSessionStore', () => {
     it('throws when no connection is configured — no MemoryStore fallback', () => {
       const savedPgHost = process.env.PGHOST;

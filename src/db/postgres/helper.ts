@@ -53,6 +53,17 @@ const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
   }
   // TLS applies regardless of how the connection itself was configured.
   if (db.ssl !== undefined) config.ssl = db.ssl as PoolConfig['ssl'];
+
+  // Optional pool tuning.
+  if (db.pool) {
+    if (db.pool.max !== undefined) config.max = db.pool.max;
+    if (db.pool.idleTimeoutMillis !== undefined) {
+      config.idleTimeoutMillis = db.pool.idleTimeoutMillis;
+    }
+    if (db.pool.connectionTimeoutMillis !== undefined) {
+      config.connectionTimeoutMillis = db.pool.connectionTimeoutMillis;
+    }
+  }
   return config;
 };
 

@@ -501,6 +501,24 @@
             "ssl": {
               "description": "TLS configuration for the connection. `true` enables TLS with default certificate verification; an object is passed to the PostgreSQL client as TLS options (for example `rejectUnauthorized`, `ca`, `cert`, `key`).",
               "oneOf": [{ "type": "boolean" }, { "type": "object", "additionalProperties": true }]
+            },
+            "pool": {
+              "type": "object",
+              "description": "Connection pool tuning passed to the PostgreSQL client.",
+              "properties": {
+                "max": {
+                  "type": "number",
+                  "description": "Maximum number of clients the pool may hold."
+                },
+                "idleTimeoutMillis": {
+                  "type": "number",
+                  "description": "Milliseconds a client may sit idle in the pool before being closed."
+                },
+                "connectionTimeoutMillis": {
+                  "type": "number",
+                  "description": "Milliseconds to wait for a connection before timing out."
+                }
+              }
             }
           },
           "required": ["type", "enabled"]
