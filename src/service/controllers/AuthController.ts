@@ -17,7 +17,7 @@
 import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction } from 'express';
 import { Body, Controller, Get, Middlewares, Post, Request, Res, Route, Tags } from 'tsoa';
 import { getPassport, authStrategies } from '../passport';
-import { getAuthMethods } from '../../config';
+import { getAuthMethods, getUIHost, getUIPort } from '../../config';
 import * as db from '../../db';
 import * as passportLocal from '../passport/local';
 import * as passportAD from '../passport/activeDirectory';
@@ -42,9 +42,6 @@ import {
   UnauthorisedResponse,
   ValidationErrorResponse,
 } from '../decorators/response.types';
-
-const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
-  process.env;
 
 // login strategies that will work with /login e.g. take username and password
 const appropriateLoginStrategies = [passportLocal.type, passportAD.type];
@@ -110,7 +107,7 @@ export function oidcCallbackMiddleware(
           return res.status(500).end();
         }
         console.log('Logged in successfully. User:', user);
-        return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
+        return res.redirect(`${getUIHost()}:${getUIPort()}/dashboard/profile`);
       });
     },
   )(req, res, next);
