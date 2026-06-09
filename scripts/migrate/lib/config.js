@@ -14,26 +14,18 @@
  * limitations under the License.
  */
 
-import { Request } from 'express';
+const path = require('path');
 
-import * as config from '../config';
+const today = new Date().toISOString().split('T')[0];
 
-export const getProxyURL = (req: Request): string => {
-  return (
-    config.getDomains().proxy ??
-    `${req.protocol}://${req.headers.host}`.replace(
-      `:${config.getUIPort()}`,
-      `:${config.getServerPort()}`,
-    )
-  );
-};
-
-export const getServiceUIURL = (req: Request): string => {
-  return (
-    config.getDomains().service ??
-    `${req.protocol}://${req.headers.host}`.replace(
-      `:${config.getServerPort()}`,
-      `:${config.getUIPort()}`,
-    )
-  );
+module.exports = {
+  mongoUri: process.env.MONGO_URI || 'mongodb://localhost:27017',
+  dbName: process.env.DB_NAME || 'git-proxy',
+  reportsDir: process.env.REPORTS_DIR || path.join(process.cwd(), 'reports', `${today}-migration`),
+  ensureReportsDir: function () {
+    const fs = require('fs');
+    if (!fs.existsSync(this.reportsDir)) {
+      fs.mkdirSync(this.reportsDir, { recursive: true });
+    }
+  },
 };

@@ -1,0 +1,68 @@
+version: 2
+
+updates:
+  - package-ecosystem: github-actions
+    directories:
+      - '/'
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'automated'
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+
+  - package-ecosystem: docker
+    directories:
+      - '/'
+      - '/localgit'
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 3
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'automated'
+    groups:
+      docker:
+        patterns:
+          - '*'
+
+  - package-ecosystem: npm
+    directories:
+      - '/'
+      - '/packages/git-proxy-cli'
+      - '/plugins/git-proxy-plugin-samples'
+      - '/test/fixtures/test-package'
+      - '/website'
+    schedule:
+      interval: weekly
+    versioning-strategy: increase-if-necessary
+    cooldown:
+      semver-patch-days: 3
+      semver-minor-days: 3
+      semver-major-days: 7
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'automated'
+    groups:
+      npm-non-major:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch

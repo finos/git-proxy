@@ -14,26 +14,17 @@
  * limitations under the License.
  */
 
-import { Request } from 'express';
+function normalizeEmail(email) {
+  return (email || '').trim().toLowerCase();
+}
 
-import * as config from '../config';
+function isEmailFormatValid(email) {
+  const v = normalizeEmail(email);
+  // Basic sanity check only (not RFC exhaustive)
+  return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v);
+}
 
-export const getProxyURL = (req: Request): string => {
-  return (
-    config.getDomains().proxy ??
-    `${req.protocol}://${req.headers.host}`.replace(
-      `:${config.getUIPort()}`,
-      `:${config.getServerPort()}`,
-    )
-  );
-};
-
-export const getServiceUIURL = (req: Request): string => {
-  return (
-    config.getDomains().service ??
-    `${req.protocol}://${req.headers.host}`.replace(
-      `:${config.getServerPort()}`,
-      `:${config.getUIPort()}`,
-    )
-  );
+module.exports = {
+  normalizeEmail,
+  isEmailFormatValid,
 };
