@@ -32,6 +32,12 @@ const ensurePool = (): Pool => {
   }
 
   _pool = new Pool({ connectionString });
+  // An idle client in the pool can emit 'error' (e.g. the backend dropped the
+  // connection). Without a listener node treats this as an uncaught exception
+  // and crashes the process; log it instead and let the pool recycle the client.
+  _pool.on('error', (err) => {
+    console.error('Postgres pool error on idle client:', err);
+  });
   return _pool;
 };
 
