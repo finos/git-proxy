@@ -117,17 +117,24 @@ describe('PostgreSQL - helper', async () => {
   });
 
   describe('pool error handling', () => {
-    it('registers an idle-client error listener on the pool', async () => {
+    it('registers an idle-client error listener that logs without crashing', async () => {
       getDatabaseMock.mockReturnValue({
         type: 'postgres',
         enabled: true,
         connectionString: 'postgresql://localhost/x',
       });
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       await connect();
 
       const errorRegistration = mockPoolOn.mock.calls.find((call) => call[0] === 'error');
       expect(errorRegistration).toBeDefined();
+
+      const handler = errorRegistration![1] as (err: Error) => void;
+      expect(() => handler(new Error('connection terminated unexpectedly'))).not.toThrow();
+      expect(errorSpy).toHaveBeenCalled();
+
+      errorSpy.mockRestore();
     });
   });
 
