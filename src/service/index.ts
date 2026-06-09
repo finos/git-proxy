@@ -26,7 +26,6 @@ import lusca from 'lusca';
 
 import * as config from '../config';
 import * as db from '../db';
-import { serverConfig } from '../config/env';
 import { Proxy } from '../proxy';
 import { RegisterRoutes } from './generatedRoutes';
 import { setProxy } from './proxyStore';
@@ -35,8 +34,6 @@ import { ValidateError } from 'tsoa';
 import type { Request, Response, NextFunction } from 'express';
 
 const limiter = rateLimit(config.getRateLimit());
-
-const { GIT_PROXY_UI_PORT: uiPort, GIT_PROXY_HTTPS_UI_PORT: uiHttpsPort } = serverConfig;
 
 const app: Express = express();
 let _httpServer: http.Server | null = null;
@@ -228,17 +225,17 @@ async function start(proxy: Proxy) {
   const app = await createApp(proxy);
 
   _httpServer = http.createServer(app);
-  _httpServer.listen(uiPort);
+  _httpServer.listen(config.getUIPort());
 
-  console.log(`Service Listening on ${uiPort}`);
+  console.log(`Service Listening on ${config.getUIPort()}`);
   app.emit('ready');
 
   if (config.getTLSEnabled()) {
     await new Promise<void>((resolve, reject) => {
       const server = https.createServer(getServiceTLSOptions(), app);
       server.on('error', reject);
-      server.listen(uiHttpsPort, () => {
-        console.log(`HTTPS Service Listening on ${uiHttpsPort}`);
+      server.listen(config.getHttpsUIPort(), () => {
+        console.log(`HTTPS Service Listening on ${config.getHttpsUIPort()}`);
         resolve();
       });
       _httpsServer = server;
@@ -257,7 +254,7 @@ async function stop(): Promise<void> {
   if (_httpServer) {
     closePromises.push(
       new Promise((resolve, reject) => {
-        console.log(`Stopping Service Listening on ${uiPort}`);
+        console.log(`Stopping Service Listening on ${config.getUIPort()}`);
         _httpServer!.close((err) => {
           if (err) {
             reject(err);
