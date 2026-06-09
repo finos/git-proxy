@@ -116,6 +116,21 @@ describe('PostgreSQL - helper', async () => {
     });
   });
 
+  describe('pool error handling', () => {
+    it('registers an idle-client error listener on the pool', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+      });
+
+      await connect();
+
+      const errorRegistration = mockPoolOn.mock.calls.find((call) => call[0] === 'error');
+      expect(errorRegistration).toBeDefined();
+    });
+  });
+
   describe('getSessionStore', () => {
     it('throws when connection string is missing — no MemoryStore fallback', () => {
       getDatabaseMock.mockReturnValue({
