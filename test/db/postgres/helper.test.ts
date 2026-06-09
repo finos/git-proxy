@@ -19,6 +19,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const mockPoolQuery = vi.fn();
 const mockPoolEnd = vi.fn();
 const mockPoolCtor = vi.fn();
+const mockPoolOn = vi.fn();
 
 vi.mock('pg', () => {
   class Pool {
@@ -27,6 +28,7 @@ vi.mock('pg', () => {
     }
     query = mockPoolQuery;
     end = mockPoolEnd;
+    on = mockPoolOn;
   }
   return { Pool };
 });
