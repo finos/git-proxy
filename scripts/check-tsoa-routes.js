@@ -18,22 +18,21 @@
 
 /*
  * Invoked by lint-staged when any TSOA input is staged. Regenerates
- * src/service/generatedRoutes.ts via `npm run build-tsoa` and stages it
- * so the commit always includes routes in sync with their inputs —
- * the same fix-then-continue behaviour as `prettier --write`.
+ * src/service/generatedRoutes.ts via `npm run build-tsoa` and the API
+ * docs under website/docs/api/ via `npm run gen-swagger-doc`, then stages
+ * both so the commit always includes routes and docs in sync with their
+ * inputs — the same fix-then-continue behaviour as `prettier --write`.
  */
 const { spawnSync } = require('node:child_process');
 
-const build = spawnSync('npm run --silent build-tsoa', {
-  stdio: 'inherit',
-  shell: true,
-});
-if (build.status !== 0) {
-  process.exit(build.status ?? 1);
-}
+const run = (command) => {
+  const result = spawnSync(command, { stdio: 'inherit', shell: true });
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
+  }
+};
 
-const add = spawnSync('git add src/service/generatedRoutes.ts', {
-  stdio: 'inherit',
-  shell: true,
-});
-process.exit(add.status ?? 0);
+run('npm run --silent build-tsoa');
+run('git add src/service/generatedRoutes.ts');
+run('npm run --silent gen-swagger-doc');
+run('git add website/docs/api');
