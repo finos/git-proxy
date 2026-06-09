@@ -87,6 +87,14 @@ describe('Service Module TLS', () => {
         initialize: vi.fn().mockReturnValue((_req: any, _res: any, next: any) => next()),
         session: vi.fn().mockReturnValue((_req: any, _res: any, next: any) => next()),
       }),
+      getPassport: vi.fn().mockReturnValue({
+        authenticate: vi.fn().mockReturnValue((_req: any, _res: any, next: any) => next()),
+      }),
+      authStrategies: {
+        local: { type: 'local' },
+        activedirectory: { type: 'activedirectory' },
+        openidconnect: { type: 'openidconnect' },
+      },
     }));
 
     vi.doMock('../src/service/routes', () => ({

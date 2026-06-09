@@ -54,6 +54,25 @@ module.exports = {
     },
     {
       type: 'category',
+      label: 'API Reference',
+      link: {
+        type: 'doc',
+        id: 'api/index',
+      },
+      collapsible: true,
+      collapsed: false,
+      items: [
+        'api/auth',
+        'api/config',
+        'api/health',
+        'api/home',
+        'api/push',
+        'api/repositories',
+        'api/users',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Architecture',
       link: {
         type: 'generated-index',
@@ -66,6 +85,7 @@ module.exports = {
       collapsed: false,
       items: ['architecture/architecture', 'architecture/processors'],
     },
+    'deployment',
     {
       type: 'category',
       label: 'Development',

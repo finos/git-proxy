@@ -17,7 +17,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import express, { Express } from 'express';
 import request from 'supertest';
-import configRouter from '../../../src/service/routes/config';
+import { RegisterRoutes } from '../../../src/service/generatedRoutes';
 import * as config from '../../../src/config';
 
 describe('Config API', () => {
@@ -26,7 +26,7 @@ describe('Config API', () => {
   beforeEach(() => {
     app = express();
     app.use(express.json());
-    app.use('/config', configRouter);
+    RegisterRoutes(app);
 
     vi.spyOn(config, 'getAttestationConfig').mockReturnValue({ questions: [] });
     vi.spyOn(config, 'getURLShortener').mockReturnValue('https://url-shortener.com');
@@ -38,26 +38,27 @@ describe('Config API', () => {
     vi.restoreAllMocks();
   });
 
-  it('GET /config/attestation should return 200 OK and the default attestation config', async () => {
-    const res = await request(app).get('/config/attestation');
+  it('GET /api/v1/config/attestation should return 200 OK and the default attestation config', async () => {
+    const res = await request(app).get('/api/v1/config/attestation');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ questions: [] });
   });
 
-  it('GET /config/urlShortener should return 200 OK and the default url shortener config', async () => {
-    const res = await request(app).get('/config/urlShortener');
+  it('GET /api/v1/config/urlShortener should return 200 OK and the url shortener config', async () => {
+    const res = await request(app).get('/api/v1/config/urlShortener');
     expect(res.status).toBe(200);
-    expect(res.text).toBe('https://url-shortener.com'); // Check res.text as it gets serialized as a string
+    // tsoa sends plain strings via res.send() so the value is in res.text, not res.body.
+    expect(res.text).toBe('https://url-shortener.com');
   });
 
-  it('GET /config/contactEmail should return 200 OK and the default contact email', async () => {
-    const res = await request(app).get('/config/contactEmail');
+  it('GET /api/v1/config/contactEmail should return 200 OK and the contact email', async () => {
+    const res = await request(app).get('/api/v1/config/contactEmail');
     expect(res.status).toBe(200);
     expect(res.text).toBe('test@example.com');
   });
 
-  it('GET /config/uiRouteAuth should return 200 OK and the default ui route auth config', async () => {
-    const res = await request(app).get('/config/uiRouteAuth');
+  it('GET /api/v1/config/uiRouteAuth should return 200 OK and the ui route auth config', async () => {
+    const res = await request(app).get('/api/v1/config/uiRouteAuth');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ enabled: false, rules: [] });
   });

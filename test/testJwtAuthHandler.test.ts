@@ -16,12 +16,12 @@
 
 import axios from 'axios';
 import crypto from 'crypto';
-import { NextFunction } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 import { describe, it, expect, vi, beforeEach, afterEach, MockInstance } from 'vitest';
 
 import { assignRoles, getJwks, validateJwt } from '../src/service/passport/jwtUtils';
-import { jwtAuthHandler } from '../src/service/passport/jwtAuthHandler';
+import { expressAuthentication } from '../src/service/authentication';
+import * as configModule from '../src/config';
 import { JwtConfig, RoleMapping } from '../src/config/generated/config';
 
 function generateRsaKeyPair() {
@@ -189,17 +189,13 @@ describe('JWT', () => {
     });
   });
 
-  describe('jwtAuthHandler', () => {
+  describe('expressAuthentication', () => {
     let req: any;
-    let res: any;
-    let next: NextFunction;
     let jwtConfig: JwtConfig;
-    let validVerifyResponse: JwtPayload;
+    let mockGetAPIAuthMethods: MockInstance;
 
     beforeEach(() => {
       req = { header: vi.fn(), isAuthenticated: vi.fn(), user: {} };
-      res = { status: vi.fn().mockReturnThis(), send: vi.fn() };
-      next = vi.fn();
 
       jwtConfig = {
         clientID: 'client-id',
@@ -208,62 +204,57 @@ describe('JWT', () => {
         roleMapping: { admin: { admin: 'admin' } },
       };
 
-      validVerifyResponse = {
-        header: { kid: '123' },
-        azp: 'client-id',
-        sub: 'user123',
-        admin: 'admin',
-      };
+      mockGetAPIAuthMethods = vi
+        .spyOn(configModule, 'getAPIAuthMethods')
+        .mockReturnValue([{ type: 'jwt', enabled: true, jwtConfig }] as any);
     });
 
     afterEach(() => vi.restoreAllMocks());
 
-    it('should call next if user is authenticated', async () => {
+    it('should return user if already authenticated via session', async () => {
       req.isAuthenticated.mockReturnValue(true);
-      await jwtAuthHandler()(req, res, next);
-      expect(next).toHaveBeenCalledOnce();
+      const result = await expressAuthentication(req, 'jwt');
+      expect(result).toBe(req.user);
     });
 
-    it('should return 401 if no token provided', async () => {
+    it('should return undefined if JWT auth method is not configured', async () => {
+      mockGetAPIAuthMethods.mockReturnValue([]);
+      req.isAuthenticated.mockReturnValue(false);
+      const result = await expressAuthentication(req, 'jwt');
+      expect(result).toBeUndefined();
+    });
+
+    it('should throw 401 if no token provided', async () => {
+      req.isAuthenticated.mockReturnValue(false);
       req.header.mockReturnValue(null);
-      await jwtAuthHandler(jwtConfig)(req, res, next);
-
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.send).toHaveBeenCalledWith('No token provided\n');
+      await expect(expressAuthentication(req, 'jwt')).rejects.toMatchObject({ status: 401 });
     });
 
-    it('should return 500 if authorityURL not configured', async () => {
+    it('should throw 500 if authorityURL not configured', async () => {
+      req.isAuthenticated.mockReturnValue(false);
       req.header.mockReturnValue('Bearer fake-token');
       jwtConfig.authorityURL = null;
-      vi.spyOn(jwt, 'verify').mockReturnValue(validVerifyResponse);
-
-      await jwtAuthHandler(jwtConfig)(req, res, next);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith({ message: 'OIDC authority URL is not configured\n' });
+      await expect(expressAuthentication(req, 'jwt')).rejects.toMatchObject({ status: 500 });
     });
 
-    it('should return 500 if clientID not configured', async () => {
+    it('should throw 500 if clientID not configured', async () => {
+      req.isAuthenticated.mockReturnValue(false);
       req.header.mockReturnValue('Bearer fake-token');
       jwtConfig.clientID = null;
-      vi.spyOn(jwt, 'verify').mockReturnValue(validVerifyResponse);
-
-      await jwtAuthHandler(jwtConfig)(req, res, next);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith({ message: 'OIDC client ID is not configured\n' });
+      await expect(expressAuthentication(req, 'jwt')).rejects.toMatchObject({ status: 500 });
     });
 
-    it('should return 401 if JWT validation fails', async () => {
+    it('should throw 401 if JWT validation fails', async () => {
+      req.isAuthenticated.mockReturnValue(false);
       req.header.mockReturnValue('Bearer fake-token');
       vi.spyOn(jwt, 'verify').mockImplementation(() => {
         throw new Error('Invalid token');
       });
+      await expect(expressAuthentication(req, 'jwt')).rejects.toMatchObject({ status: 401 });
+    });
 
-      await jwtAuthHandler(jwtConfig)(req, res, next);
-
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.send).toHaveBeenCalledWith(expect.stringMatching(/Invalid JWT:/));
+    it('should throw 401 for unknown security scheme', async () => {
+      await expect(expressAuthentication(req, 'unknown')).rejects.toMatchObject({ status: 401 });
     });
   });
 });

@@ -58,6 +58,14 @@ const TEST_UNKNOWN_REPO = {
   fallbackUrlPrefix: '/finos/fdc3.git',
 };
 
+// `host` / `proxyUrlPrefix` / `fallbackUrlPrefix` are test-only helpers; the
+// API rejects them as unknown properties on CreateRepoBody.
+const toCreateBody = ({ url, name, project }: { url: string; name: string; project: string }) => ({
+  url,
+  name,
+  project,
+});
+
 afterAll(() => {
   vi.resetModules();
 });
@@ -105,7 +113,7 @@ describe('proxy express application', () => {
       const res2 = await request(apiApp)
         .post('/api/v1/repo')
         .set('Cookie', cookie)
-        .send(TEST_DEFAULT_REPO);
+        .send(toCreateBody(TEST_DEFAULT_REPO));
       expect(res2.status).toBe(200);
     }
   });
@@ -122,7 +130,10 @@ describe('proxy express application', () => {
     // Ensure default repo exists
     const repo = await db.getRepoByUrl(TEST_DEFAULT_REPO.url);
     if (!repo) {
-      await request(apiApp).post('/api/v1/repo').set('Cookie', cookie).send(TEST_DEFAULT_REPO);
+      await request(apiApp)
+        .post('/api/v1/repo')
+        .set('Cookie', cookie)
+        .send(toCreateBody(TEST_DEFAULT_REPO));
     }
 
     // proxy a fetch request
@@ -160,7 +171,7 @@ describe('proxy express application', () => {
     const res = await request(apiApp)
       .post('/api/v1/repo')
       .set('Cookie', cookie)
-      .send(TEST_GITLAB_REPO);
+      .send(toCreateBody(TEST_GITLAB_REPO));
     expect(res.status).toBe(200);
 
     // confirm that the repo was created in the DB
@@ -188,7 +199,10 @@ describe('proxy express application', () => {
     // Ensure the gitlab test repo exists (create it if a previous test didn't)
     let repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
     if (!repo) {
-      await request(apiApp).post('/api/v1/repo').set('Cookie', cookie).send(TEST_GITLAB_REPO);
+      await request(apiApp)
+        .post('/api/v1/repo')
+        .set('Cookie', cookie)
+        .send(toCreateBody(TEST_GITLAB_REPO));
       repo = await db.getRepoByUrl(TEST_GITLAB_REPO.url);
     }
     expect(repo).not.toBeNull();

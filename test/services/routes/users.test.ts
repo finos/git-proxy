@@ -17,7 +17,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import express, { Express } from 'express';
 import request from 'supertest';
-import usersRouter from '../../../src/service/routes/users';
+import { RegisterRoutes } from '../../../src/service/generatedRoutes';
 import * as db from '../../../src/db';
 
 describe('Users API', () => {
@@ -26,7 +26,15 @@ describe('Users API', () => {
   beforeEach(() => {
     app = express();
     app.use(express.json());
-    app.use('/users', usersRouter);
+    app.use((req, _res, next) => {
+      req.user = { username: 'testuser' };
+      next();
+    });
+    RegisterRoutes(app);
+    app.use((err: any, _req: any, res: any, next: any) => {
+      if (res.headersSent) return next(err);
+      res.status(err.status ?? 500).json({ message: err.message });
+    });
 
     vi.spyOn(db, 'getUsers').mockResolvedValue([
       {
@@ -53,8 +61,8 @@ describe('Users API', () => {
     vi.restoreAllMocks();
   });
 
-  it('GET /users only serializes public data needed for ui, not user secrets like password', async () => {
-    const res = await request(app).get('/users');
+  it('GET /api/v1/user only serializes public data needed for ui, not user secrets like password', async () => {
+    const res = await request(app).get('/api/v1/user');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([
@@ -69,8 +77,8 @@ describe('Users API', () => {
     ]);
   });
 
-  it('GET /users/:id does not serialize password', async () => {
-    const res = await request(app).get('/users/bob');
+  it('GET /api/v1/user/:id does not serialize password', async () => {
+    const res = await request(app).get('/api/v1/user/bob');
 
     expect(res.status).toBe(200);
     console.log(`Response body: ${JSON.stringify(res.body)}`);
@@ -84,10 +92,10 @@ describe('Users API', () => {
     });
   });
 
-  it('GET /users/:id should return 404 Not Found if user is not found', async () => {
+  it('GET /api/v1/user/:id should return 404 Not Found if user is not found', async () => {
     vi.restoreAllMocks();
 
-    const res = await request(app).get('/users/non-existent');
+    const res = await request(app).get('/api/v1/user/non-existent');
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ message: 'User non-existent not found' });
   });

@@ -1,0 +1,126 @@
+---
+title: Push
+description: Push API endpoints for GitProxy
+---
+
+# Push
+
+*5 endpoints — 2 GET, 3 POST*
+
+## <span style={{background: '#61affe', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>GET</span> `/api/v1/push`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Returns push requests, optionally filtered by query parameters.
+Supported filters: any field from PushQuery (error, blocked, allowPush, authorised, canceled, rejected, type).
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+
+---
+
+## <span style={{background: '#61affe', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>GET</span> `/api/v1/push/{id}`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Returns a single push request by ID.
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|:---:|------|:--------:|-------------|
+| `id` | `path` | `string` | **Yes** |  |
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>404</code> Not Found
+
+---
+
+## <span style={{background: '#49cc90', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>POST</span> `/api/v1/push/{id}/authorise`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Authorises (approves) a pending push request.
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|:---:|------|:--------:|-------------|
+| `id` | `path` | `string` | **Yes** |  |
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|:--------:|-------------|
+| `params` | `object` | **Yes** |  |
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>400</code> Bad Request
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>401</code> Unauthorized
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>403</code> Forbidden
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>404</code> Not Found
+
+---
+
+## <span style={{background: '#49cc90', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>POST</span> `/api/v1/push/{id}/cancel`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Cancels a pending push request.
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|:---:|------|:--------:|-------------|
+| `id` | `path` | `string` | **Yes** |  |
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>401</code> Unauthorized
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>403</code> Forbidden
+
+---
+
+## <span style={{background: '#49cc90', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>POST</span> `/api/v1/push/{id}/reject`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Rejects a pending push request.
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|:---:|------|:--------:|-------------|
+| `id` | `path` | `string` | **Yes** |  |
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|:--------:|-------------|
+| `reason` | `string` | **Yes** | The reason for rejecting the push request. |
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>400</code> Bad Request
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>401</code> Unauthorized
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>403</code> Forbidden
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>404</code> Not Found
+
+---
