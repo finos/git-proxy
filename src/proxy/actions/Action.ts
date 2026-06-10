@@ -23,6 +23,8 @@ export enum RequestType {
   PUSH = 'push',
 
   PULL = 'pull',
+
+  DEFAULT = 'default',
 }
 
 export enum ActionType {

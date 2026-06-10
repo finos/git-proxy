@@ -23,7 +23,7 @@ import * as db from '../../../db';
 const exec = async (req: Request) => {
   const id = Date.now();
   const timestamp = id;
-  let type: RequestType | string = 'default';
+  let type: RequestType = RequestType.DEFAULT;
 
   //inspect content-type headers to classify requests as push or pull operations
   // see git http protocol docs for more details: https://github.com/git/git/blob/master/Documentation/gitprotocol-http.adoc
@@ -52,7 +52,7 @@ const exec = async (req: Request) => {
     );
   }
 
-  return new Action(id.toString(), type as RequestType, req.method, timestamp, url);
+  return new Action(id.toString(), type, req.method, timestamp, url);
 };
 
 exec.displayName = 'parseAction.exec';
