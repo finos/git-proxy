@@ -34,6 +34,7 @@ import {
   isTagPush,
   getDisplayTimestamp,
   getTagName,
+  getFirstTagName,
   getRefToShow,
   getShaOrTag,
   getCommitterOrTagger,
@@ -108,7 +109,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
           const repoName = getRepoFullName(row.repo).toLowerCase();
           const message = getMessage(row).toLowerCase();
           const commitToSha = (row.commitTo ?? '').toLowerCase();
-          const tagName = getTagName(row.tag).toLowerCase();
+          const tagName = getTagName(row.tags).toLowerCase();
 
           return (
             repoName.includes(lowerCaseTerm) ||
@@ -179,7 +180,12 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                     </TableCell>
                     <TableCell align='left'>
                       <a
-                        href={getRefUrl(repoWebUrl, gitProvider, isTag, refToShow)}
+                        href={getRefUrl(
+                          repoWebUrl,
+                          gitProvider,
+                          isTag,
+                          isTag ? getFirstTagName(r.tags) : refToShow,
+                        )}
                         rel='noreferrer'
                         target='_blank'
                       >

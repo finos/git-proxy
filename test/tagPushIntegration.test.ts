@@ -32,7 +32,7 @@ describe('Tag Push Integration', () => {
       id: 'tag-push-123',
       repo: 'finos/git-proxy.git',
       branch: 'refs/heads/main',
-      tag: 'refs/tags/v2.1.0',
+      tags: ['refs/tags/v2.1.0'],
       user: 'release-manager',
       commitFrom: '0000000000000000000000000000000000000000',
       commitTo: 'abcdef1234567890abcdef1234567890abcdef12',
@@ -103,7 +103,7 @@ describe('Tag Push Integration', () => {
       const searchableFields = {
         repoName: getRepoFullName(fullTagPush.repo).toLowerCase(),
         message: getMessage(fullTagPush).toLowerCase(),
-        tagName: fullTagPush.tag.replace('refs/tags/', '').toLowerCase(),
+        tagName: fullTagPush.tags[0].replace('refs/tags/', '').toLowerCase(),
       };
       expect(searchableFields.repoName).toContain('finos');
       expect(searchableFields.message).toContain('release');
@@ -115,7 +115,7 @@ describe('Tag Push Integration', () => {
     const lightweightTagPush = {
       id: 'lightweight-tag-123',
       repo: 'example/repo.git',
-      tag: 'refs/tags/quick-fix',
+      tags: ['refs/tags/quick-fix'],
       user: 'hotfix-user',
       commitTo: 'fedcba0987654321fedcba0987654321fedcba09',
       tagData: [{ tagName: 'quick-fix', type: 'lightweight', tagger: 'hotfix-user', message: '' }],
@@ -146,7 +146,7 @@ describe('Tag Push Integration', () => {
       const incompleteTagPush = {
         id: 'incomplete-tag',
         repo: 'test/repo.git',
-        tag: 'refs/tags/broken-tag',
+        tags: ['refs/tags/broken-tag'],
         user: 'test-user',
         commitData: [],
         tagData: [],
@@ -159,7 +159,7 @@ describe('Tag Push Integration', () => {
       const malformedTagPush = {
         id: 'malformed-tag',
         repo: 'test/repo.git',
-        tag: 'malformed-tag-ref',
+        tags: ['malformed-tag-ref'],
         tagData: [
           { tagName: 'v1.0.0', type: 'annotated', tagger: 'test-user', message: 'Test release' },
         ],
@@ -176,7 +176,7 @@ describe('Tag Push Integration', () => {
       const complexTagPush = {
         id: 'complex-tag',
         repo: 'test/repo.git',
-        tag: 'refs/tags/v1.0.0-beta.1+build.123',
+        tags: ['refs/tags/v1.0.0-beta.1+build.123'],
         tagData: [
           {
             tagName: 'v1.0.0-beta.1+build.123',
@@ -219,7 +219,7 @@ describe('Tag Push Integration', () => {
 
     it('differentiates between tag and commit pushes', () => {
       const tagPush = {
-        tag: 'refs/tags/v1.0.0',
+        tags: ['refs/tags/v1.0.0'],
         tagData: [{ tagName: 'v1.0.0' }],
         commitData: [],
       } as any;
@@ -238,7 +238,7 @@ describe('Tag Push Integration', () => {
 
     it('shows different committer/author behavior', () => {
       const tagPushWithUser = {
-        tag: 'refs/tags/v1.0.0',
+        tags: ['refs/tags/v1.0.0'],
         tagData: [{ tagName: 'v1.0.0' }],
         user: 'tag-creator',
         commitData: [{ committer: 'original-committer' }],

@@ -232,8 +232,8 @@ const Dashboard: React.FC = () => {
                 <GridItem xs={3} sm={3} md={3}>
                   {isTag ? (
                     <>
-                      <h3>Tag</h3>
-                      <p>{getTagName((push as any).tag)}</p>
+                      <h3>{(push as any).tags?.length > 1 ? 'Tags' : 'Tag'}</h3>
+                      <p>{getTagName((push as any).tags)}</p>
                     </>
                   ) : (
                     <>
@@ -281,13 +281,27 @@ const Dashboard: React.FC = () => {
                             </TableRow>
                           </TableHead>
                           <TableBody>
-                            {(push as any).tagData?.map((t: any) => (
-                              <TableRow key={t.tagName}>
-                                <TableCell>{t.tagName}</TableCell>
-                                <TableCell>{generateEmailLink(t.tagger, t.taggerEmail)}</TableCell>
-                                <TableCell>{t.message}</TableCell>
-                              </TableRow>
-                            ))}
+                            {((push as any).tags ?? []).map((ref: string) => {
+                              const name = ref.replace('refs/tags/', '');
+                              const data = (push as any).tagData?.find(
+                                (t: any) => t.tagName === name,
+                              );
+                              const fallbackUser = (push as any).user;
+                              const fallbackEmail = (push as any).userEmail;
+                              return (
+                                <TableRow key={name}>
+                                  <TableCell>{name}</TableCell>
+                                  <TableCell>
+                                    {data
+                                      ? generateEmailLink(data.tagger, data.taggerEmail)
+                                      : fallbackUser
+                                        ? generateEmailLink(fallbackUser, fallbackEmail)
+                                        : 'N/A'}
+                                  </TableCell>
+                                  <TableCell>{data?.message || '-'}</TableCell>
+                                </TableRow>
+                              );
+                            })}
                           </TableBody>
                         </Table>
                       ),

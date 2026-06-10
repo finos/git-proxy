@@ -24,7 +24,6 @@ import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '.
 import { TagData } from '../../../types/models';
 import {
   REFS_PREFIX,
-  BRANCH_PREFIX,
   TAG_PREFIX,
   EMPTY_COMMIT_HASH,
   PACK_SIGNATURE,
@@ -68,37 +67,44 @@ async function exec(req: Request, action: Action): Promise<Action> {
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
     const refUpdates = packetLines.filter((line) => line.includes(REFS_PREFIX));
 
-    if (refUpdates.length !== 1) {
-      step.log('Invalid number of ref updates.');
-      step.log(`Expected 1, but got ${refUpdates.length}`);
+    if (refUpdates.length === 0) {
+      throw new Error('Your push has been blocked. No ref updates found.');
+    }
+
+    const parsedRefs = refUpdates.map((line) => {
+      const [commitParts] = line.split('\0');
+      const parts = commitParts.split(' ');
+      if (parts.length !== 3) {
+        throw new Error('Your push has been blocked. Invalid ref update format.');
+      }
+      const refName = parts[2].replace(/\0.*/, '').trim();
+      return {
+        oldCommit: parts[0],
+        newCommit: parts[1],
+        refName,
+        isTag: refName.startsWith(TAG_PREFIX),
+      };
+    });
+
+    const allTags = parsedRefs.every((r) => r.isTag);
+
+    if (parsedRefs.length > 1 && !allTags) {
+      step.log(`Received ${parsedRefs.length} ref updates with mixed or multiple branch refs.`);
       throw new Error(
-        'Your push has been blocked. Multi-ref pushes (multiple tags and/or branches) are not supported yet. Please push one ref at a time.',
+        'Your push has been blocked. Multi-ref pushes are only supported for tags. Please push one branch at a time.',
       );
     }
 
-    const [commitParts] = refUpdates[0].split('\0');
-    const parts = commitParts.split(' ');
-    if (parts.length !== 3) {
-      step.log('Invalid number of parts in ref update.');
-      step.log(`Expected 3, but got ${parts.length}`);
-      throw new Error('Your push has been blocked. Invalid ref update format.');
+    if (allTags) {
+      action.actionType = ActionType.TAG;
+      action.tags = parsedRefs.map((r) => r.refName);
+    } else {
+      action.actionType = ActionType.BRANCH;
+      action.branch = parsedRefs[0].refName;
     }
 
-    const [oldCommit, newCommit, ref] = parts;
-
-    // Strip everything after NUL, which is cap-list from
-    // https://git-scm.com/docs/http-protocol#_smart_server_response
-    const refName = ref.replace(/\0.*/, '').trim();
-    const isTag = refName.startsWith(TAG_PREFIX);
-    const isBranch = refName.startsWith(BRANCH_PREFIX);
-
-    action.branch = isBranch ? refName : undefined;
-    action.tag = isTag ? refName : undefined;
-
-    action.actionType = isTag ? ActionType.TAG : ActionType.BRANCH;
-
-    // Note this will change the action.id to be based on the commits
-    action.setCommit(oldCommit, newCommit);
+    // Use the first ref's commit range for the action id
+    action.setCommit(parsedRefs[0].oldCommit, parsedRefs[0].newCommit);
 
     // Check if the offset is valid and if there's data after it
     if (packDataOffset >= req.body.length) {

@@ -350,6 +350,24 @@ function createSampleTagPackBuffer(
   return Buffer.concat([fullPackWithoutChecksum, checksum]);
 }
 
+function createMultiTagPackBuffer(tagContents: string[]): Buffer {
+  const header = Buffer.alloc(12);
+  header.write(PACK_SIGNATURE, 0, 4, 'utf-8');
+  header.writeUInt32BE(2, 4);
+  header.writeUInt32BE(tagContents.length, 8);
+
+  const objects = tagContents.map((content) => {
+    const original = Buffer.from(content, 'utf8');
+    const compressed = deflateSync(original);
+    const objHeader = encodeGitObjectHeader(4, original.length);
+    return Buffer.concat([objHeader, compressed]);
+  });
+
+  const fullPackWithoutChecksum = Buffer.concat([header, ...objects]);
+  const checksum = createHash('sha1').update(fullPackWithoutChecksum).digest();
+  return Buffer.concat([fullPackWithoutChecksum, checksum]);
+}
+
 describe('parsePackFile', () => {
   let action: any;
   let req: Request;
@@ -454,11 +472,10 @@ describe('parsePackFile', () => {
       const step = action.steps[0];
       expect(step.stepName).toBe('parsePackFile');
       expect(step.error).toBe(true);
-      expect(step.errorMessage).toContain('push one ref at a time');
-      expect(step.logs[0]).toContain('Invalid number of ref updates');
+      expect(step.errorMessage).toContain('No ref updates found');
     });
 
-    it('should add error step if multiple ref updates found', async () => {
+    it('should add error step if multiple branch ref updates found', async () => {
       const packetLines = [
         'oldhash1 newhash1 refs/heads/main\0caps\n',
         'oldhash2 newhash2 refs/heads/develop\0caps\n',
@@ -470,9 +487,7 @@ describe('parsePackFile', () => {
       const step = action.steps[0];
       expect(step.stepName).toBe('parsePackFile');
       expect(step.error).toBe(true);
-      expect(step.errorMessage).toContain('push one ref at a time');
-      expect(step.logs[0]).toContain('Invalid number of ref updates');
-      expect(step.logs[1]).toContain('Expected 1, but got 2');
+      expect(step.errorMessage).toContain('push one branch at a time');
     });
 
     it('should add error step if extra part in ref update', async () => {
@@ -485,8 +500,6 @@ describe('parsePackFile', () => {
       expect(step.stepName).toBe('parsePackFile');
       expect(step.error).toBe(true);
       expect(step.errorMessage).toContain('Invalid ref update format');
-      expect(step.logs[0]).toContain('Invalid number of parts in ref update');
-      expect(step.logs[1]).toContain('Expected 3, but got 4');
     });
 
     it('should add error step if PACK data is missing', async () => {
@@ -1003,8 +1016,8 @@ describe('parsePackFile', () => {
       expect(step.error).toBe(false);
       expect(step.errorMessage).toBeNull();
 
-      expect(action.tag).toBe(ref);
-      expect(action.branch).toBeUndefined();
+      expect(action.tags).toEqual([ref]);
+      expect(action.branch).toBeNull();
       expect(action.setCommit).toHaveBeenCalledWith(oldCommit, newCommit);
       expect(action.commitFrom).toBe(oldCommit);
       expect(action.commitTo).toBe(newCommit);
@@ -1041,7 +1054,61 @@ describe('parsePackFile', () => {
       expect(result).toBe(action);
 
       expect(action.actionType).toBe('tag');
-      expect(action.tag).toBe(ref);
+      expect(action.tags).toEqual([ref]);
+    });
+
+    it('should successfully parse a multi-tag push request', async () => {
+      const old1 = '0'.repeat(40);
+      const new1 = 'a'.repeat(40);
+      const old2 = '0'.repeat(40);
+      const new2 = 'b'.repeat(40);
+      const ref1 = 'refs/tags/v1.0.0';
+      const ref2 = 'refs/tags/v2.0.0';
+      const packetLines = [`${old1} ${new1} ${ref1}\0capabilities\n`, `${old2} ${new2} ${ref2}\n`];
+
+      const tag1Content =
+        'object 1234567890abcdef1234567890abcdef12345678\n' +
+        'type commit\n' +
+        'tag v1.0.0\n' +
+        'tagger Tagger One <one@example.com> 1234567890 +0000\n\n' +
+        'Release v1.0.0';
+      const tag2Content =
+        'object abcdef1234567890abcdef1234567890abcdef12\n' +
+        'type commit\n' +
+        'tag v2.0.0\n' +
+        'tagger Tagger Two <two@example.com> 1234567891 +0000\n\n' +
+        'Release v2.0.0';
+
+      const packBuffer = createMultiTagPackBuffer([tag1Content, tag2Content]);
+      req.body = Buffer.concat([createPacketLineBuffer(packetLines), packBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).toBe(action);
+
+      const step = action.steps.find((s: any) => s.stepName === 'parsePackFile');
+      expect(step).toBeDefined();
+      expect(step.error).toBe(false);
+
+      expect(action.actionType).toBe('tag');
+      expect(action.tags).toEqual([ref1, ref2]);
+      expect(action.setCommit).toHaveBeenCalledWith(old1, new1);
+      expect(action.tagData).toHaveLength(2);
+      expect(action.tagData[0].tagName).toBe('v1.0.0');
+      expect(action.tagData[1].tagName).toBe('v2.0.0');
+    });
+
+    it('should block mixed tag and branch ref updates', async () => {
+      const packetLines = [
+        `${'a'.repeat(40)} ${'b'.repeat(40)} refs/tags/v1.0.0\0caps\n`,
+        `${'c'.repeat(40)} ${'d'.repeat(40)} refs/heads/main\n`,
+      ];
+      req.body = createPacketLineBuffer(packetLines);
+      const result = await exec(req, action);
+
+      expect(result).toBe(action);
+      const step = action.steps[0];
+      expect(step.error).toBe(true);
+      expect(step.errorMessage).toContain('push one branch at a time');
     });
   });
 

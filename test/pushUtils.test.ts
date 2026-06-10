@@ -65,7 +65,7 @@ describe('pushUtils', () => {
     id: 'push-2',
     repo: 'test-repo.git',
     branch: 'refs/heads/main',
-    tag: 'refs/tags/v1.0.0',
+    tags: ['refs/tags/v1.0.0'],
     tagData: mockTagData,
     user: 'release-bot',
     commitTo: '1234567890abcdef',
@@ -124,11 +124,11 @@ describe('pushUtils', () => {
 
   describe('getTagName', () => {
     it('extracts tag name from refs/tags/ reference', () => {
-      expect(getTagName('refs/tags/v1.0.0')).toBe('v1.0.0');
+      expect(getTagName(['refs/tags/v1.0.0'])).toBe('v1.0.0');
     });
 
     it('handles tag name without refs/tags/ prefix', () => {
-      expect(getTagName('v1.0.0')).toBe('v1.0.0');
+      expect(getTagName(['v1.0.0'])).toBe('v1.0.0');
     });
 
     it('returns empty string for undefined input', () => {
@@ -139,12 +139,16 @@ describe('pushUtils', () => {
       expect(getTagName(null as any)).toBe('');
     });
 
-    it('returns empty string for non-string input', () => {
-      expect(getTagName(123 as any)).toBe('');
+    it('returns empty string for empty array', () => {
+      expect(getTagName([])).toBe('');
     });
 
     it('handles complex tag names', () => {
-      expect(getTagName('refs/tags/v1.0.0-beta.1+build.123')).toBe('v1.0.0-beta.1+build.123');
+      expect(getTagName(['refs/tags/v1.0.0-beta.1+build.123'])).toBe('v1.0.0-beta.1+build.123');
+    });
+
+    it('handles multiple tags', () => {
+      expect(getTagName(['refs/tags/v1.0.0', 'refs/tags/v2.0.0'])).toBe('v1.0.0, v2.0.0');
     });
   });
 
@@ -339,8 +343,8 @@ describe('pushUtils', () => {
 
   describe('edge cases and error handling', () => {
     it('handles malformed tag reference in getTagName', () => {
-      expect(() => getTagName('malformed-ref')).not.toThrow();
-      expect(getTagName('malformed-ref')).toBe('malformed-ref');
+      expect(() => getTagName(['malformed-ref'])).not.toThrow();
+      expect(getTagName(['malformed-ref'])).toBe('malformed-ref');
     });
 
     it('handles missing properties gracefully', () => {

@@ -81,7 +81,7 @@ export interface PushData {
   autoApproved?: boolean;
   timestamp: string | Date;
   // Tag-specific fields
-  tag?: string;
+  tags?: string[];
   tagData?: TagData[];
   user?: string; // Used for tag pushes as the tagger
 }

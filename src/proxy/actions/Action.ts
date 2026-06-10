@@ -71,7 +71,7 @@ class Action {
   rejection?: Rejection;
   lastStep?: Step;
   proxyGitPath?: string;
-  tag?: string;
+  tags?: string[];
   tagData?: TagData[];
   newIdxFiles?: string[];
 

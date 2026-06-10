@@ -24,7 +24,9 @@ import { trimPrefixRefsHeads, trimTrailingDotGit } from '../../db/helper';
  * @return {boolean} True if this is a tag push, false otherwise
  */
 export const isTagPush = (pushData: PushData): boolean => {
-  return Boolean(pushData?.tag && pushData?.tagData && pushData.tagData.length > 0);
+  return Boolean(
+    pushData?.tags && pushData.tags.length > 0 && pushData?.tagData && pushData.tagData.length > 0,
+  );
 };
 
 /**
@@ -54,18 +56,23 @@ export const getDisplayTimestamp = (
 };
 
 /**
- * Safely extracts tag name from git reference
- * @param {string} [tagRef] - The git tag reference (e.g., 'refs/tags/v1.0.0')
- * @return {string} The tag name without the 'refs/tags/' prefix
+ * Safely extracts tag names from git references
+ * @param {string[]} [tagRefs] - The git tag references (e.g., ['refs/tags/v1.0.0'])
+ * @return {string} Comma-separated tag names without the 'refs/tags/' prefix
  */
-export const getTagName = (tagRef?: string): string => {
-  if (!tagRef || typeof tagRef !== 'string') return '';
-  try {
-    return tagRef.replace('refs/tags/', '');
-  } catch (error) {
-    console.warn('Error parsing tag reference:', tagRef, error);
-    return '';
-  }
+export const getTagName = (tagRefs?: string[]): string => {
+  if (!tagRefs || !Array.isArray(tagRefs) || tagRefs.length === 0) return '';
+  return tagRefs.map((ref) => ref.replace('refs/tags/', '')).join(', ');
+};
+
+/**
+ * Gets the first tag name (for use in URLs where only one ref can be linked)
+ * @param {string[]} [tagRefs] - The git tag references
+ * @return {string} The first tag name without the 'refs/tags/' prefix
+ */
+export const getFirstTagName = (tagRefs?: string[]): string => {
+  if (!tagRefs || !Array.isArray(tagRefs) || tagRefs.length === 0) return '';
+  return tagRefs[0].replace('refs/tags/', '');
 };
 
 /**
@@ -75,7 +82,7 @@ export const getTagName = (tagRef?: string): string => {
  */
 export const getRefToShow = (pushData: PushData): string => {
   if (isTagPush(pushData)) {
-    return getTagName(pushData.tag);
+    return getTagName(pushData.tags);
   }
   return trimPrefixRefsHeads(pushData.branch);
 };
@@ -87,7 +94,7 @@ export const getRefToShow = (pushData: PushData): string => {
  */
 export const getShaOrTag = (pushData: PushData): string => {
   if (isTagPush(pushData)) {
-    return getTagName(pushData.tag);
+    return getFirstTagName(pushData.tags);
   }
 
   if (!pushData.commitTo || typeof pushData.commitTo !== 'string') {
