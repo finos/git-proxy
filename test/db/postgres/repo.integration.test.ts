@@ -27,6 +27,7 @@ import {
   removeUserCanAuthorise,
   deleteRepo,
 } from '../../../src/db/postgres/repo';
+import { query } from '../../../src/db/postgres/helper';
 import { Repo } from '../../../src/db/types';
 
 const shouldRunPostgresTests = process.env.RUN_POSTGRES_TESTS === 'true';
@@ -94,7 +95,7 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Repo Integration Tests', () =
     });
   });
 
-  describe('permission JSONB — issue #1497 must-fix', () => {
+  describe('permission membership — issue #1497 must-fix', () => {
     it('starts with empty arrays', async () => {
       const created = await createRepo(
         createTestRepo({ name: 'perm-start', url: 'https://example.com/ps.git' }),
@@ -168,6 +169,45 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Repo Integration Tests', () =
       );
       await deleteRepo(created._id as string);
       expect(await getRepoById(created._id as string)).toBeNull();
+    });
+  });
+
+  describe('repo_users normalization (issue #1559)', () => {
+    it('stores permissions as rows in repo_users, with no JSONB column on repos', async () => {
+      const created = await createRepo(
+        createTestRepo({ name: 'norm', url: 'https://example.com/norm.git' }),
+      );
+      const id = created._id as string;
+      await addUserCanPush(id, 'alice');
+      await addUserCanAuthorise(id, 'reviewer');
+
+      const rows = await query<{ username: string; role: string }>(
+        `SELECT username, role FROM repo_users WHERE repo_id = $1 ORDER BY role, username`,
+        [id],
+      );
+      expect(rows.rows).toEqual([
+        { username: 'reviewer', role: 'canAuthorise' },
+        { username: 'alice', role: 'canPush' },
+      ]);
+
+      // Migration 3 dropped the legacy JSONB column.
+      const cols = await query<{ column_name: string }>(
+        `SELECT column_name FROM information_schema.columns WHERE table_name = 'repos'`,
+      );
+      expect(cols.rows.map((r) => r.column_name)).not.toContain('users');
+    });
+
+    it('cascades repo_users rows when the repo is deleted', async () => {
+      const created = await createRepo(
+        createTestRepo({ name: 'cascade', url: 'https://example.com/cascade.git' }),
+      );
+      const id = created._id as string;
+      await addUserCanPush(id, 'alice');
+
+      await deleteRepo(id);
+
+      const rows = await query(`SELECT 1 FROM repo_users WHERE repo_id = $1`, [id]);
+      expect(rows.rowCount).toBe(0);
     });
   });
 });
