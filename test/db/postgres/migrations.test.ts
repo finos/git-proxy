@@ -56,6 +56,12 @@ describe('PostgreSQL - migrations', () => {
     expect(v2!.sql).toMatch(/'canAuthorise'/);
   });
 
+  it('drops the legacy repos.users JSONB column at version 3', () => {
+    const v3 = MIGRATIONS.find((m) => m.version === 3);
+    expect(v3).toBeDefined();
+    expect(v3!.sql).toMatch(/ALTER TABLE repos DROP COLUMN IF EXISTS users/);
+  });
+
   it('locks, then creates schema_migrations, then commits — in that order', async () => {
     const { pool, query, release } = makePool([]);
 

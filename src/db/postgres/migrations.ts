@@ -104,6 +104,13 @@ export const MIGRATIONS: Migration[] = [
   ON CONFLICT DO NOTHING;
 `,
   },
+  {
+    version: 3,
+    name: 'drop_repos_users_jsonb',
+    // The repo adapter now reads and writes permissions via repo_users, so the
+    // legacy JSONB column (backfilled in migration 2) is no longer used.
+    sql: `ALTER TABLE repos DROP COLUMN IF EXISTS users;`,
+  },
 ];
 
 const SCHEMA_MIGRATIONS_TABLE_SQL = `
