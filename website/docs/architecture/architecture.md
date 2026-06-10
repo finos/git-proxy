@@ -471,7 +471,7 @@ Migrations are an ordered, append-only list of SQL statements defined in code. V
 Notes and current limitations (issue #1497, v1):
 
 - All pending migrations run inside a single transaction, so a statement that cannot run transactionally (for example `CREATE INDEX CONCURRENTLY`) is not yet supported by the runner.
-- Repo permissions (`canPush` / `canAuthorise`) are stored as a JSONB column on the `repos` table. A future PR may normalise these into a `repo_users` join table.
+- Repo permissions (`canPush` / `canAuthorise`) are normalised into a `repo_users(repo_id, username, role)` join table (`ON DELETE CASCADE` from `repos`); the adapter reconstructs the permission arrays on read.
 - No data migration utility from `fs` or `mongo` to `postgres` — copy data yourself if needed.
 - No AWS RDS IAM authentication helper (the mongo backend has one via `AWS_CREDENTIAL_PROVIDER`); use a standard connection string for v1.
 - Only the `connectionString` form is supported; split `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` env vars are not consulted.
