@@ -46,6 +46,16 @@ describe('PostgreSQL - migrations', () => {
     expect(new Set(versions).size).toBe(versions.length);
   });
 
+  it('normalises repo permissions into repo_users at version 2', () => {
+    const v2 = MIGRATIONS.find((m) => m.version === 2);
+    expect(v2).toBeDefined();
+    expect(v2!.sql).toMatch(/CREATE TABLE IF NOT EXISTS repo_users/);
+    // backfills the existing JSONB permissions into the new table
+    expect(v2!.sql).toMatch(/jsonb_array_elements_text/);
+    expect(v2!.sql).toMatch(/'canPush'/);
+    expect(v2!.sql).toMatch(/'canAuthorise'/);
+  });
+
   it('locks, then creates schema_migrations, then commits — in that order', async () => {
     const { pool, query, release } = makePool([]);
 

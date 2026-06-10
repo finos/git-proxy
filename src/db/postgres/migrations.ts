@@ -76,6 +76,34 @@ export const MIGRATIONS: Migration[] = [
   CREATE INDEX IF NOT EXISTS pushes_timestamp_idx ON pushes (timestamp DESC);
 `,
   },
+  {
+    version: 2,
+    name: 'repo_users_table',
+    sql: `
+  CREATE TABLE IF NOT EXISTS repo_users (
+    repo_id  UUID NOT NULL REFERENCES repos(_id) ON DELETE CASCADE,
+    username TEXT NOT NULL,
+    role     TEXT NOT NULL CHECK (role IN ('canPush', 'canAuthorise')),
+    PRIMARY KEY (repo_id, username, role)
+  );
+  CREATE INDEX IF NOT EXISTS repo_users_repo_id_idx ON repo_users (repo_id);
+
+  -- Backfill the normalised table from the existing JSONB permissions. The
+  -- legacy repos.users column is dropped in a later migration once the adapter
+  -- reads and writes repo_users instead.
+  INSERT INTO repo_users (repo_id, username, role)
+  SELECT r._id, elem.username, 'canPush'
+    FROM repos r,
+         jsonb_array_elements_text(coalesce(r.users->'canPush', '[]'::jsonb)) AS elem(username)
+  ON CONFLICT DO NOTHING;
+
+  INSERT INTO repo_users (repo_id, username, role)
+  SELECT r._id, elem.username, 'canAuthorise'
+    FROM repos r,
+         jsonb_array_elements_text(coalesce(r.users->'canAuthorise', '[]'::jsonb)) AS elem(username)
+  ON CONFLICT DO NOTHING;
+`,
+  },
 ];
 
 const SCHEMA_MIGRATIONS_TABLE_SQL = `
