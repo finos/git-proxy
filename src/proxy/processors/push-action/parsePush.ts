@@ -94,14 +94,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
     action.branch = isBranch ? refName : undefined;
     action.tag = isTag ? refName : undefined;
 
-    // Set actionType based on what type of push this is
-    if (isTag) {
-      action.actionType = ActionType.TAG;
-    } else if (isBranch) {
-      action.actionType = ActionType.BRANCH;
-    } else {
-      action.actionType = ActionType.COMMIT;
-    }
+    action.actionType = isTag ? ActionType.TAG : ActionType.BRANCH;
 
     // Note this will change the action.id to be based on the commits
     action.setCommit(oldCommit, newCommit);

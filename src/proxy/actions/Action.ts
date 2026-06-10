@@ -28,10 +28,10 @@ export enum RequestType {
 }
 
 export enum ActionType {
-  COMMIT = 'commit',
-
+  /** Push to a tag ref (refs/tags/*) */
   TAG = 'tag',
 
+  /** Push to a branch ref (refs/heads/*) or any other non-tag ref */
   BRANCH = 'branch',
 }
 

@@ -123,7 +123,6 @@ const getPushChain = (action: Action): ((req: Request, action: Action) => Promis
     case ActionType.TAG:
       return tagPushChain;
     case ActionType.BRANCH:
-    case ActionType.COMMIT:
     default:
       return branchPushChain;
   }
