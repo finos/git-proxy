@@ -122,18 +122,13 @@ async function exec(req: Request, action: Action): Promise<Action> {
     const [meta, contentBuff] = getPackMeta(buf);
     const contents = await getContents(contentBuff, meta.entries);
 
-    const ParsedObjects = {
-      commits: [] as CommitData[],
-      tags: [] as TagData[],
-    };
+    action.commitData = [];
+    action.tagData = [];
 
     for (const obj of contents) {
-      if (obj.type === GIT_OBJECT_TYPE_COMMIT) ParsedObjects.commits.push(...getCommitData([obj]));
-      else if (obj.type === GIT_OBJECT_TYPE_TAG) ParsedObjects.tags.push(parseTag(obj));
+      if (obj.type === GIT_OBJECT_TYPE_COMMIT) action.commitData.push(...getCommitData([obj]));
+      else if (obj.type === GIT_OBJECT_TYPE_TAG) action.tagData.push(parseTag(obj));
     }
-
-    action.commitData = ParsedObjects.commits;
-    action.tagData = ParsedObjects.tags;
 
     if (action.commitData.length) {
       if (action.commitFrom === EMPTY_COMMIT_HASH) {
