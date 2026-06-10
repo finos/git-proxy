@@ -16,6 +16,7 @@
 
 import { CommitData } from './types';
 
+export const REFS_PREFIX = 'refs/';
 export const BRANCH_PREFIX = 'refs/heads/';
 export const TAG_PREFIX = 'refs/tags/';
 export const EMPTY_COMMIT_HASH = '0000000000000000000000000000000000000000';

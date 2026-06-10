@@ -23,6 +23,7 @@ import { Action, Step, ActionType } from '../../actions';
 import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
 import { TagData } from '../../../types/models';
 import {
+  REFS_PREFIX,
   BRANCH_PREFIX,
   TAG_PREFIX,
   EMPTY_COMMIT_HASH,
@@ -65,7 +66,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
     }
 
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
-    const refUpdates = packetLines.filter((line) => line.includes('refs/'));
+    const refUpdates = packetLines.filter((line) => line.includes(REFS_PREFIX));
 
     if (refUpdates.length !== 1) {
       step.log('Invalid number of ref updates.');
