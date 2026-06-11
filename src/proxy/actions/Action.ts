@@ -74,6 +74,13 @@ class Action {
   tags?: string[];
   tagData?: TagData[];
   newIdxFiles?: string[];
+  protocol?: 'https' | 'ssh';
+  pullAuthStrategy?:
+    | 'basic'
+    | 'ssh-user-key'
+    | 'ssh-service-token'
+    | 'ssh-agent-forwarding'
+    | 'anonymous';
 
   /**
    * Create an action.

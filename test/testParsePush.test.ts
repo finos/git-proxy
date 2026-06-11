@@ -25,9 +25,10 @@ import {
   getCommitData,
   getContents,
   getPackMeta,
-  parsePacketLines,
   getTagData,
 } from '../src/proxy/processors/push-action/parsePush';
+import { parsePacketLines } from '../src/proxy/processors/pktLineParser';
+
 import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
 import { CommitContent } from '../src/proxy/processors/types';
 import { Action } from '../src/proxy/actions/Action';

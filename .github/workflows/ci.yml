@@ -28,7 +28,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
 
@@ -72,7 +72,7 @@ jobs:
         run: npm run test:integration
 
       - name: Upload test coverage report
-        uses: codecov/codecov-action@75cd11691c0faa626561e295848008c8a7dddffe # v5.5.4
+        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
         with:
           files: ./coverage/lcov.info,./coverage-cli/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -81,7 +81,7 @@ jobs:
         run: npm run build-ui
 
       - name: Run cypress test
-        uses: cypress-io/github-action@dace029018fcdf86e0df89a31bc3cfa5b32570d8 # v7.3.0
+        uses: cypress-io/github-action@948d67d3074f1bbb6379c8bdbb04e95d2f8e593f # v7.4.0
         with:
           # skip the action's internal npm ci — dependencies are already installed above
           install: false
@@ -100,7 +100,7 @@ jobs:
         with:
           egress-policy: audit
 
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           fetch-depth: 0
 
@@ -145,6 +145,11 @@ jobs:
     name: build result
     needs: [build-ubuntu, build-windows]
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
       - name: Check build results
         run: |
           ubuntu_result="${{ needs.build-ubuntu.result }}"
