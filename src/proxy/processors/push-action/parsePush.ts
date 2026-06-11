@@ -144,7 +144,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
       action.user = committer;
       action.userEmail = committerEmail;
     } else {
-      step.log('No commit data found when parsing push.');
+      step.log('No commit or tag data found when parsing push.');
     }
 
     step.content = {
