@@ -20,11 +20,16 @@ import {
   findUser,
   findUserByEmail,
   findUserByOIDC,
+  findUserBySSHKey,
   getUsers,
   updateUser,
   deleteUser,
+  addPublicKey,
+  removePublicKey,
+  getPublicKeys,
 } from '../../../src/db/postgres/users';
-import { User } from '../../../src/db/types';
+import { DuplicateSSHKeyError } from '../../../src/errors/DatabaseErrors';
+import { PublicKeyRecord, User } from '../../../src/db/types';
 
 const shouldRunPostgresTests = process.env.RUN_POSTGRES_TESTS === 'true';
 
@@ -168,6 +173,92 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Users Integration Tests', () 
       await createUser(createTestUser({ username: 'deleteme' }));
       await deleteUser('DeleteMe');
       expect(await findUser('deleteme')).toBeNull();
+    });
+  });
+
+  describe('SSH public keys', () => {
+    const makeKey = (suffix: string): PublicKeyRecord => ({
+      key: `ssh-ed25519 AAAAC3NzaC1lZDI1NTE5-${suffix}`,
+      name: `key-${suffix}`,
+      addedAt: new Date().toISOString(),
+      fingerprint: `SHA256:${suffix}`,
+    });
+
+    it('starts with an empty publicKeys array', async () => {
+      await createUser(createTestUser({ username: 'sshempty' }));
+      await expect(getPublicKeys('sshempty')).resolves.toEqual([]);
+    });
+
+    it('adds a key and finds the user by it', async () => {
+      const key = makeKey('add-and-find');
+      await createUser(createTestUser({ username: 'sshadd' }));
+      await addPublicKey('sshadd', key);
+
+      await expect(getPublicKeys('sshadd')).resolves.toEqual([key]);
+      const found = await findUserBySSHKey(key.key);
+      expect(found?.username).toBe('sshadd');
+    });
+
+    it('rejects a key already registered to another user', async () => {
+      const key = makeKey('cross-user');
+      await createUser(createTestUser({ username: 'sshowner' }));
+      await createUser(createTestUser({ username: 'sshthief' }));
+      await addPublicKey('sshowner', key);
+
+      await expect(addPublicKey('sshthief', key)).rejects.toThrow(DuplicateSSHKeyError);
+    });
+
+    it('rejects a duplicate key for the same user', async () => {
+      const key = makeKey('same-user-dup');
+      await createUser(createTestUser({ username: 'sshdup' }));
+      await addPublicKey('sshdup', key);
+
+      await expect(addPublicKey('sshdup', key)).rejects.toThrow('SSH key already exists');
+    });
+
+    it('rejects adding a key for a missing user', async () => {
+      await expect(addPublicKey('ssh-ghost', makeKey('ghost'))).rejects.toThrow('User not found');
+    });
+
+    it('removes a key by fingerprint and leaves the rest', async () => {
+      const keep = makeKey('keep');
+      const drop = makeKey('drop');
+      await createUser(createTestUser({ username: 'sshremove' }));
+      await addPublicKey('sshremove', keep);
+      await addPublicKey('sshremove', drop);
+
+      await removePublicKey('sshremove', drop.fingerprint);
+
+      await expect(getPublicKeys('sshremove')).resolves.toEqual([keep]);
+      expect(await findUserBySSHKey(drop.key)).toBeNull();
+    });
+
+    it('keeps an empty array (not null) after the last key is removed', async () => {
+      const key = makeKey('last-key');
+      await createUser(createTestUser({ username: 'sshlast' }));
+      await addPublicKey('sshlast', key);
+      await removePublicKey('sshlast', key.fingerprint);
+
+      await expect(getPublicKeys('sshlast')).resolves.toEqual([]);
+    });
+
+    it('is a no-op when removing an unknown fingerprint', async () => {
+      const key = makeKey('stable');
+      await createUser(createTestUser({ username: 'sshnoop' }));
+      await addPublicKey('sshnoop', key);
+
+      await removePublicKey('sshnoop', 'SHA256:does-not-exist');
+
+      await expect(getPublicKeys('sshnoop')).resolves.toEqual([key]);
+    });
+
+    it('round-trips publicKeys through createUser', async () => {
+      const key = makeKey('roundtrip');
+      const user = createTestUser({ username: 'sshseeded' });
+      user.publicKeys = [key];
+      await createUser(user);
+
+      await expect(getPublicKeys('sshseeded')).resolves.toEqual([key]);
     });
   });
 });
