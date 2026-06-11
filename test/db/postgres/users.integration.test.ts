@@ -166,6 +166,23 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Users Integration Tests', () 
       expect(inserted?.email).toBe('brand-new@example.com');
       expect(inserted?.gitAccount).toBe('brand-new-git');
     });
+
+    it('allows multiple users without an email', async () => {
+      // e.g. users synced from AD, where the mail attribute is optional
+      await updateUser({ username: 'no-email-1', gitAccount: 'git-1' });
+      await updateUser({ username: 'no-email-2', gitAccount: 'git-2' });
+
+      expect((await findUser('no-email-1'))?.username).toBe('no-email-1');
+      expect((await findUser('no-email-2'))?.username).toBe('no-email-2');
+    });
+
+    it('still rejects a duplicate non-empty email', async () => {
+      await createUser(createTestUser({ username: 'emailowner', email: 'taken@example.com' }));
+
+      await expect(
+        createUser(createTestUser({ username: 'emailthief', email: 'taken@example.com' })),
+      ).rejects.toThrow(/duplicate key/);
+    });
   });
 
   describe('deleteUser', () => {

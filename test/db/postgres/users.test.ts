@@ -151,30 +151,31 @@ describe('PostgreSQL - Users', async () => {
       expect(params).toEqual(['Alice A.', 'abc-123']);
     });
 
-    it('falls back to username and inserts when no row matches', async () => {
-      mockQuery
-        .mockResolvedValueOnce({ rowCount: 0, rows: [] }) // UPDATE matches nothing
-        .mockResolvedValueOnce({ rowCount: 1, rows: [] }); // INSERT
+    it('upserts by username in a single atomic statement', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
 
       await updateUser({ username: 'new-user', email: 'new@example.com', admin: true } as never);
 
-      expect(mockQuery).toHaveBeenCalledTimes(2);
-      const [updateSql] = mockQuery.mock.calls[0];
-      const [insertSql, insertParams] = mockQuery.mock.calls[1];
-      expect(updateSql).toContain('WHERE username = $');
-      expect(insertSql).toContain('INSERT INTO users');
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('INSERT INTO users');
+      expect(sql).toContain('ON CONFLICT (username) DO UPDATE SET');
+      // Only the supplied fields are merged onto an existing row.
+      expect(sql).toContain(
+        'username = EXCLUDED.username, email = EXCLUDED.email, admin = EXCLUDED.admin',
+      );
+      expect(sql).not.toContain('password = EXCLUDED.password');
       // username is the first INSERT param.
-      expect(insertParams[0]).toBe('new-user');
+      expect((params as unknown[])[0]).toBe('new-user');
     });
 
-    it('uses a separate username parameter for the username-keyed UPDATE filter', async () => {
+    it('lower-cases username and email in the upsert', async () => {
       mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
 
-      await updateUser({ username: 'ExistingUser', email: 'updated@example.com' } as never);
+      await updateUser({ username: 'ExistingUser', email: 'Updated@Example.com' } as never);
 
-      const [updateSql, updateParams] = mockQuery.mock.calls[0];
-      expect(updateSql).toContain('UPDATE users SET username = $1, email = $2 WHERE username = $3');
-      expect(updateParams).toEqual(['existinguser', 'updated@example.com', 'existinguser']);
+      const [, params] = mockQuery.mock.calls[0];
+      expect((params as unknown[]).slice(0, 2)).toEqual(['existinguser', 'updated@example.com']);
     });
 
     it('throws if neither _id nor username is supplied', async () => {

@@ -39,7 +39,7 @@ const APP_SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS users (
     _id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username      TEXT NOT NULL UNIQUE,
-    email         TEXT NOT NULL UNIQUE,
+    email         TEXT,
     password      TEXT,
     git_account   TEXT NOT NULL,
     admin         BOOLEAN NOT NULL DEFAULT FALSE,
@@ -49,6 +49,13 @@ const APP_SCHEMA_SQL = `
     title         TEXT
   );
   ALTER TABLE users ADD COLUMN IF NOT EXISTS public_keys JSONB NOT NULL DEFAULT '[]'::jsonb;
+  ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+  ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;
+  -- Email uniqueness is best-effort, like the mongo/fs backends: a real
+  -- address can only be claimed once, but any number of users may have no
+  -- email (the AD "mail" attribute is optional, for instance).
+  CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique
+    ON users (email) WHERE email IS NOT NULL AND email <> '';
 
   CREATE TABLE IF NOT EXISTS repos (
     _id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),

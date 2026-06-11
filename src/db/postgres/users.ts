@@ -21,7 +21,7 @@ import { query } from './helper';
 interface UserRow {
   _id: string;
   username: string;
-  email: string;
+  email: string | null;
   password: string | null;
   git_account: string;
   admin: boolean;
@@ -36,7 +36,7 @@ const rowToUser = (row: UserRow): User => {
     row.username,
     row.password ?? '',
     row.git_account,
-    row.email,
+    row.email ?? '',
     row.admin,
     row.oidc_id,
     row.public_keys ?? [],
@@ -127,12 +127,13 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
   const username = user.username?.toLowerCase();
   const email = user.email?.toLowerCase();
 
-  // Build the SET fragment dynamically so callers can patch arbitrary fields.
-  const sets: string[] = [];
+  // Track the supplied columns so both branches only ever write the fields
+  // the caller patched.
+  const columns: string[] = [];
   const values: unknown[] = [];
   const set = (column: string, value: unknown) => {
+    columns.push(column);
     values.push(value);
-    sets.push(`${column} = $${values.length}`);
   };
 
   if (username !== undefined) set('username', username);
@@ -147,11 +148,12 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
 
   // An empty SET list would be a SQL syntax error, so fail loudly rather than
   // let callers (or future handlers copying this builder) hit that.
-  if (sets.length === 0) {
+  if (columns.length === 0) {
     throw new Error('updateUser requires at least one field to update');
   }
 
   if (user._id) {
+    const sets = columns.map((column, i) => `${column} = $${i + 1}`);
     values.push(user._id);
     await query(`UPDATE users SET ${sets.join(', ')} WHERE _id = $${values.length}`, values);
     return;
@@ -162,20 +164,17 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
   }
 
   // Upsert by username when no _id is supplied, matching mongo's behaviour.
-  values.push(username);
-  const result = await query(
-    `UPDATE users SET ${sets.join(', ')} WHERE username = $${values.length}`,
-    values,
-  );
-  if (result.rowCount && result.rowCount > 0) return;
-
+  // A single atomic statement (rather than UPDATE-then-INSERT) so a
+  // concurrent insert of the same username can't drop the update; on
+  // conflict only the supplied fields are merged onto the existing row.
+  const assignments = columns.map((column) => `${column} = EXCLUDED.${column}`);
   await query(
     `INSERT INTO users (username, email, password, git_account, admin, oidc_id, public_keys, display_name, title)
      VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)
-     ON CONFLICT (username) DO NOTHING`,
+     ON CONFLICT (username) DO UPDATE SET ${assignments.join(', ')}`,
     [
       username,
-      email ?? '',
+      email ?? null,
       user.password ?? null,
       user.gitAccount ?? '',
       user.admin ?? false,
