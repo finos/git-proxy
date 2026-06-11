@@ -41,7 +41,7 @@ const rowToRepo = (row: RepoRow): Repo =>
 // Reconstruct the `canPush` / `canAuthorise` arrays from the normalised
 // repo_users join table. `ORDER BY` keeps the arrays deterministic, and the
 // `coalesce(..., '{}')` makes a repo with no members come back as empty arrays
-// rather than null — preserving the empty-array invariant from issue #1497.
+// rather than null, matching the mongo/NeDB backends.
 const SELECT_REPOS = `
   SELECT r._id, r.project, r.name, r.url,
     coalesce(

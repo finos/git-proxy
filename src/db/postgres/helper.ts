@@ -81,8 +81,7 @@ export const resetConnection = async (): Promise<void> => {
  * IMPORTANT: this function MUST NOT silently return undefined when Postgres is
  * the active sink — that would cause express-session to fall back to its
  * default in-memory store, which loses sessions on every restart and is unsafe
- * in any multi-process deployment. Issue #1497 calls this out as a must-fix
- * requirement, so we throw loudly instead.
+ * in any multi-process deployment. Throw loudly instead.
  */
 export const getSessionStore = (): Store => {
   const connectionString = getDatabase().connectionString;

@@ -46,20 +46,20 @@ describe('PostgreSQL - migrations', () => {
     expect(new Set(versions).size).toBe(versions.length);
   });
 
-  it('normalises repo permissions into repo_users at version 2', () => {
-    const v2 = MIGRATIONS.find((m) => m.version === 2);
-    expect(v2).toBeDefined();
-    expect(v2!.sql).toMatch(/CREATE TABLE IF NOT EXISTS repo_users/);
-    // backfills the existing JSONB permissions into the new table
-    expect(v2!.sql).toMatch(/jsonb_array_elements_text/);
-    expect(v2!.sql).toMatch(/'canPush'/);
-    expect(v2!.sql).toMatch(/'canAuthorise'/);
-  });
-
-  it('drops the legacy repos.users JSONB column at version 3', () => {
+  it('normalises repo permissions into repo_users at version 3', () => {
     const v3 = MIGRATIONS.find((m) => m.version === 3);
     expect(v3).toBeDefined();
-    expect(v3!.sql).toMatch(/ALTER TABLE repos DROP COLUMN IF EXISTS users/);
+    expect(v3!.sql).toMatch(/CREATE TABLE IF NOT EXISTS repo_users/);
+    // backfills the existing JSONB permissions into the new table
+    expect(v3!.sql).toMatch(/jsonb_array_elements_text/);
+    expect(v3!.sql).toMatch(/'canPush'/);
+    expect(v3!.sql).toMatch(/'canAuthorise'/);
+  });
+
+  it('drops the legacy repos.users JSONB column at version 4', () => {
+    const v4 = MIGRATIONS.find((m) => m.version === 4);
+    expect(v4).toBeDefined();
+    expect(v4!.sql).toMatch(/ALTER TABLE repos DROP COLUMN IF EXISTS users/);
   });
 
   it('locks, then creates schema_migrations, then commits — in that order', async () => {

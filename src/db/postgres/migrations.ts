@@ -78,6 +78,20 @@ export const MIGRATIONS: Migration[] = [
   },
   {
     version: 2,
+    name: 'user_public_keys_and_optional_email',
+    sql: `
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS public_keys JSONB NOT NULL DEFAULT '[]'::jsonb;
+  ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+  ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;
+  -- Email uniqueness is best-effort, like the mongo/fs backends: a real
+  -- address can only be claimed once, but any number of users may have no
+  -- email (the AD "mail" attribute is optional, for instance).
+  CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique
+    ON users (email) WHERE email IS NOT NULL AND email <> '';
+`,
+  },
+  {
+    version: 3,
     name: 'repo_users_table',
     sql: `
   CREATE TABLE IF NOT EXISTS repo_users (
@@ -105,10 +119,10 @@ export const MIGRATIONS: Migration[] = [
 `,
   },
   {
-    version: 3,
+    version: 4,
     name: 'drop_repos_users_jsonb',
     // The repo adapter now reads and writes permissions via repo_users, so the
-    // legacy JSONB column (backfilled in migration 2) is no longer used.
+    // legacy JSONB column (backfilled in migration 3) is no longer used.
     sql: `ALTER TABLE repos DROP COLUMN IF EXISTS users;`,
   },
 ];
