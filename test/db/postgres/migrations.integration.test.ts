@@ -48,6 +48,23 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Schema Migration Integration 
     expect(tables.rows.map((row) => row.tablename).sort()).toEqual(['pushes', 'repos', 'users']);
   });
 
+  it('upgrades the users table to the version 2 shape on a fresh database', async () => {
+    await resetToEmptyDatabase();
+    await connect();
+
+    const emailColumn = await query<{ is_nullable: string }>(
+      `SELECT is_nullable FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'email'`,
+    );
+    expect(emailColumn.rows[0].is_nullable).toBe('YES');
+
+    const publicKeysColumn = await query<{ data_type: string }>(
+      `SELECT data_type FROM information_schema.columns
+        WHERE table_name = 'users' AND column_name = 'public_keys'`,
+    );
+    expect(publicKeysColumn.rows[0].data_type).toBe('jsonb');
+  });
+
   it('is idempotent — re-running migrations does not duplicate the version row', async () => {
     await connect();
     await resetConnection();
