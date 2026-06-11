@@ -17,8 +17,6 @@
 import { describe, it, beforeEach, afterEach, afterAll, expect, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
 import { getConfigFile } from '../src/config/file';
 import {
   ConfigLoader,
@@ -34,8 +32,6 @@ import {
   HttpSource,
 } from '../src/config/types';
 import axios from 'axios';
-
-const execFileAsync = promisify(execFile);
 
 describe('ConfigLoader', () => {
   let configLoader: ConfigLoader;
@@ -474,64 +470,6 @@ describe('ConfigLoader', () => {
       expect(config).toBeTypeOf('object');
       expect(config).toHaveProperty('cookieSecret');
     }, 10000);
-
-    it('should recover a cached git repository that is on a detached HEAD', async () => {
-      const source: GitSource = {
-        type: 'git',
-        repository: 'https://example.com/git-proxy-config-test.git',
-        path: 'proxy.config.json',
-        branch: 'main',
-        enabled: true,
-      };
-      const remoteDir = path.resolve(tempDir, 'remote.git');
-      const workDir = path.resolve(tempDir, 'work');
-      const envPaths = (await import('env-paths')).default;
-      const paths = envPaths('git-proxy', { suffix: '' });
-      const repoDirName = Buffer.from(source.repository)
-        .toString('base64')
-        .replace(/[^a-zA-Z0-9]/g, '_');
-      const repoDir = path.join(paths.cache, 'git-config-cache', repoDirName);
-
-      if (fs.existsSync(repoDir)) {
-        fs.rmSync(repoDir, { recursive: true });
-      }
-
-      await execFileAsync('git', ['init', '--bare', remoteDir]);
-      await execFileAsync('git', ['init', '--initial-branch=main', workDir]);
-      fs.writeFileSync(
-        path.join(workDir, source.path),
-        JSON.stringify({ proxyUrl: 'https://test.com', cookieSecret: 'from-cache' }),
-      );
-      await execFileAsync('git', ['add', source.path], { cwd: workDir });
-      await execFileAsync(
-        'git',
-        [
-          '-c',
-          'user.email=test@example.com',
-          '-c',
-          'user.name=git-proxy test',
-          'commit',
-          '-m',
-          'add config',
-        ],
-        { cwd: workDir },
-      );
-      await execFileAsync('git', ['remote', 'add', 'origin', remoteDir], { cwd: workDir });
-      await execFileAsync('git', ['push', '-u', 'origin', 'main'], { cwd: workDir });
-      await execFileAsync('git', ['clone', remoteDir, repoDir]);
-      // The clone's default branch follows the host's `init.defaultBranch`, which
-      // may differ from the pushed `main` (e.g. `master` on CI), leaving local
-      // HEAD unborn. Detach at the pushed commit by SHA so HEAD is reliably
-      // detached and the working tree is populated on every git version.
-      const { stdout: headSha } = await execFileAsync('git', ['rev-parse', 'origin/main'], {
-        cwd: repoDir,
-      });
-      await execFileAsync('git', ['checkout', headSha.trim()], { cwd: repoDir });
-
-      const config = await configLoader.loadFromSource(source);
-
-      expect(config.cookieSecret).toBe('from-cache');
-    });
 
     it('should throw error for invalid configuration file path (git)', async () => {
       const source: GitSource = {

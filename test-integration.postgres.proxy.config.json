@@ -8,7 +8,6 @@
     },
     {
       "type": "postgres",
-      "connectionString": "postgresql://postgres:postgres@localhost:5432/git_proxy_test",
       "enabled": true
     }
   ],
