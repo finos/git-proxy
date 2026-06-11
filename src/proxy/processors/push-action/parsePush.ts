@@ -127,7 +127,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
 
     for (const obj of contents) {
       if (obj.type === GIT_OBJECT_TYPE_COMMIT) action.commitData.push(...getCommitData([obj]));
-      else if (obj.type === GIT_OBJECT_TYPE_TAG) action.tagData.push(parseTag(obj));
+      else if (obj.type === GIT_OBJECT_TYPE_TAG) action.tagData.push(getTagData(obj));
     }
 
     if (action.actionType === ActionType.TAG) {
@@ -165,7 +165,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
   return action;
 }
 
-function parseTag(x: CommitContent): TagData {
+function getTagData(x: CommitContent): TagData {
   const lines = x.content.split('\n');
   const object = lines
     .find((l) => l.startsWith('object '))
@@ -664,4 +664,4 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
 
 exec.displayName = 'parsePush.exec';
 
-export { exec, getCommitData, getContents, getPackMeta, parsePacketLines, parseTag };
+export { exec, getCommitData, getContents, getPackMeta, parsePacketLines, getTagData };

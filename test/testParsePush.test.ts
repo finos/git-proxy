@@ -26,7 +26,7 @@ import {
   getContents,
   getPackMeta,
   parsePacketLines,
-  parseTag,
+  getTagData,
 } from '../src/proxy/processors/push-action/parsePush';
 import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
 import { CommitContent } from '../src/proxy/processors/types';
@@ -1412,7 +1412,7 @@ describe('parsePackFile', () => {
     });
   });
 
-  describe('parseTag', () => {
+  describe('getTagData', () => {
     it('should parse a valid tag object', () => {
       const content =
         'object 1234567890abcdef1234567890abcdef12345678\n' +
@@ -1421,7 +1421,7 @@ describe('parsePackFile', () => {
         'tagger Test Tagger <tagger@example.com> 1234567890 +0000\n\n' +
         'Release v1.0.0';
 
-      const result = parseTag({ type: 4, content } as any);
+      const result = getTagData({ type: 4, content } as any);
 
       expect(result.object).toBe('1234567890abcdef1234567890abcdef12345678');
       expect(result.type).toBe('commit');
@@ -1440,7 +1440,7 @@ describe('parsePackFile', () => {
         'tagger Releaser <releaser@example.com> 9876543210 +0100\n\n' +
         'Release v2.0.0\n\nThis release includes:\n- Feature A\n- Bug fix B';
 
-      const result = parseTag({ type: 4, content } as any);
+      const result = getTagData({ type: 4, content } as any);
 
       expect(result.tagName).toBe('v2.0.0');
       expect(result.tagger).toBe('Releaser');
@@ -1457,7 +1457,7 @@ describe('parsePackFile', () => {
         'tag v1.0.0\n\n' +
         'Release without tagger';
 
-      expect(() => parseTag({ type: 4, content } as any)).toThrow(
+      expect(() => getTagData({ type: 4, content } as any)).toThrow(
         'Invalid tag object: no tagger line',
       );
     });
@@ -1469,7 +1469,7 @@ describe('parsePackFile', () => {
         'tagger Test Tagger <tagger@example.com> 1234567890 +0000\n\n' +
         'Message';
 
-      expect(() => parseTag({ type: 4, content } as any)).toThrow('Invalid tag object');
+      expect(() => getTagData({ type: 4, content } as any)).toThrow('Invalid tag object');
     });
 
     it('should throw if tag name is missing', () => {
@@ -1479,7 +1479,7 @@ describe('parsePackFile', () => {
         'tagger Test Tagger <tagger@example.com> 1234567890 +0000\n\n' +
         'Message';
 
-      expect(() => parseTag({ type: 4, content } as any)).toThrow('Invalid tag object');
+      expect(() => getTagData({ type: 4, content } as any)).toThrow('Invalid tag object');
     });
   });
 });
