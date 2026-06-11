@@ -182,6 +182,13 @@ describe('PostgreSQL - Users', async () => {
         'updateUser requires either _id or username',
       );
     });
+
+    it('throws when no updatable field is supplied', async () => {
+      await expect(updateUser({ _id: 'abc-123' } as never)).rejects.toThrow(
+        'updateUser requires at least one field to update',
+      );
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
   });
 
   describe('SSH public keys', () => {

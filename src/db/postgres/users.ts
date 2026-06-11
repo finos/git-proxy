@@ -145,6 +145,12 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
   if (user.displayName !== undefined) set('display_name', user.displayName);
   if (user.title !== undefined) set('title', user.title);
 
+  // An empty SET list would be a SQL syntax error, so fail loudly rather than
+  // let callers (or future handlers copying this builder) hit that.
+  if (sets.length === 0) {
+    throw new Error('updateUser requires at least one field to update');
+  }
+
   if (user._id) {
     values.push(user._id);
     await query(`UPDATE users SET ${sets.join(', ')} WHERE _id = $${values.length}`, values);
