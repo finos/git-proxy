@@ -32,7 +32,7 @@ const initMockPushProcessors = () => {
     parsePush: vi.fn(),
     checkEmptyBranch: vi.fn(),
     checkRepoInAuthorisedList: vi.fn(),
-    checkCommitMessages: vi.fn(),
+    checkMessages: vi.fn(),
     checkAuthorEmails: vi.fn(),
     checkUserPushPermission: vi.fn(),
     checkIfWaitingAuth: vi.fn(),
@@ -156,7 +156,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.parsePush).toHaveBeenCalled();
     expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
-    expect(mockPushProcessors.checkCommitMessages).toHaveBeenCalled();
+    expect(mockPushProcessors.checkMessages).toHaveBeenCalled();
     expect(mockPushProcessors.checkAuthorEmails).toHaveBeenCalled();
     expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
     expect(mockPushProcessors.pullRemote).toHaveBeenCalled();
@@ -201,7 +201,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.parsePush).toHaveBeenCalled();
     expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
-    expect(mockPushProcessors.checkCommitMessages).toHaveBeenCalled();
+    expect(mockPushProcessors.checkMessages).toHaveBeenCalled();
     expect(mockPushProcessors.checkAuthorEmails).toHaveBeenCalled();
     expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
     expect(mockPushProcessors.pullRemote).toHaveBeenCalled();
@@ -239,7 +239,7 @@ describe('proxy chain', function () {
     expect(mockPushProcessors.parsePush).toHaveBeenCalled();
     expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
-    expect(mockPushProcessors.checkCommitMessages).toHaveBeenCalled();
+    expect(mockPushProcessors.checkMessages).toHaveBeenCalled();
     expect(mockPushProcessors.checkAuthorEmails).toHaveBeenCalled();
     expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
     expect(mockPushProcessors.pullRemote).toHaveBeenCalled();

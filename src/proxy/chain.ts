@@ -25,7 +25,7 @@ import { handleErrorAndLog } from '../utils/errors';
 const branchPushChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
-  proc.push.checkCommitMessages,
+  proc.push.checkMessages,
   proc.push.checkAuthorEmails,
   proc.push.checkUserPushPermission,
   proc.push.pullRemote, // cleanup is handled after chain execution if successful
@@ -43,10 +43,10 @@ const tagPushChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkUserPushPermission,
   proc.push.checkIfWaitingAuth,
+  proc.push.checkMessages,
   proc.push.pullRemote,
   proc.push.writePack,
   proc.push.preReceive,
-  // TODO: implement tag message validation?
   proc.push.blockForAuth,
 ];
 
