@@ -375,11 +375,15 @@ describe('parsePackFile', () => {
   beforeEach(() => {
     // Mock Action and Step and spy on methods
     action = {
+      actionType: null,
       branch: null,
+      tags: null,
+      tagData: [],
       commitFrom: null,
       commitTo: null,
       commitData: [],
       user: null,
+      userEmail: null,
       steps: [],
       addStep: vi.fn(function (this: Action, step: Step) {
         this.steps.push(step);
@@ -549,11 +553,13 @@ describe('parsePackFile', () => {
       expect(step.error).toBe(false);
       expect(step.errorMessage).toBeNull();
 
+      expect(action.actionType).toBe('branch');
       expect(action.branch).toBe(ref);
       expect(action.setCommit).toHaveBeenCalledWith(oldCommit, newCommit);
       expect(action.commitFrom).toBe(oldCommit);
       expect(action.commitTo).toBe(newCommit);
       expect(action.user).toBe('Test Committer');
+      expect(action.userEmail).toBe('committer@example.com');
 
       // Check parsed commit data
       expect(action.commitData).toHaveLength(1);
@@ -602,6 +608,7 @@ describe('parsePackFile', () => {
       expect(step.error).toBe(false);
       expect(step.errorMessage).toBeNull();
 
+      expect(action.actionType).toBe('branch');
       expect(action.branch).toBe(ref);
       expect(action.setCommit).toHaveBeenCalledWith(oldCommit, newCommit);
       expect(action.commitFrom).toBe(oldCommit);
@@ -645,11 +652,13 @@ describe('parsePackFile', () => {
       expect(step.error).toBe(false);
       expect(step.errorMessage).toBeNull();
 
+      expect(action.actionType).toBe('branch');
       expect(action.branch).toBe(ref);
       expect(action.setCommit).toHaveBeenCalledWith(oldCommit, newCommit);
       expect(action.commitFrom).toBe(oldCommit);
       expect(action.commitTo).toBe(newCommit);
       expect(action.user).toBe('CCCCCCCCCCC');
+      expect(action.userEmail).toBe('ccccccccc@cccccccc.com');
 
       // Check parsed commit messages only
       const expectedCommits = TEST_MULTI_OBJ_COMMIT_CONTENT.filter((v) => v.type === 1);
@@ -987,9 +996,12 @@ describe('parsePackFile', () => {
       expect(step).toBeTruthy();
       expect(step.error).toBe(false);
 
+      expect(action.actionType).toBe('branch');
       expect(action.branch).toBe(ref);
       expect(action.setCommit).toHaveBeenCalledWith(EMPTY_COMMIT_HASH, newCommit);
       expect(action.commitData).toHaveLength(0);
+      expect(action.user).toBeNull();
+      expect(action.userEmail).toBeNull();
     });
 
     it('should successfully parse a valid tag push request', async () => {
@@ -1109,6 +1121,30 @@ describe('parsePackFile', () => {
       const step = action.steps[0];
       expect(step.error).toBe(true);
       expect(step.errorMessage).toContain('push one branch at a time');
+    });
+
+    it('should handle tag push with empty tagData (lightweight tag)', async () => {
+      const oldCommit = '0'.repeat(40);
+      const newCommit = 'e'.repeat(40);
+      const ref = 'refs/tags/v-lightweight';
+      const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
+
+      const emptyPackBuffer = createEmptyPackBuffer();
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), emptyPackBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).toBe(action);
+
+      const step = action.steps.find((s: any) => s.stepName === 'parsePackFile');
+      expect(step).toBeDefined();
+      expect(step.error).toBe(false);
+
+      expect(action.actionType).toBe('tag');
+      expect(action.tags).toEqual([ref]);
+      expect(action.branch).toBeNull();
+      expect(action.tagData).toHaveLength(0);
+      expect(action.user).toBeNull();
+      expect(action.userEmail).toBeNull();
     });
   });
 
