@@ -113,21 +113,6 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
  */
 let chainPluginLoader: PluginLoader;
 
-/**
- * Selects the appropriate push chain based on action type
- * @param {Action} action The action to select a chain for
- * @return {Array} The appropriate push chain
- */
-const getPushChain = (action: Action): ((req: Request, action: Action) => Promise<Action>)[] => {
-  switch (action.actionType) {
-    case ActionType.TAG:
-      return tagPushChain;
-    case ActionType.BRANCH:
-    default:
-      return branchPushChain;
-  }
-};
-
 export const getChain = async (
   action: Action,
 ): Promise<((req: Request, action: Action) => Promise<Action>)[]> => {
@@ -161,7 +146,7 @@ export const getChain = async (
     case RequestType.PULL:
       return pullActionChain;
     case RequestType.PUSH:
-      return getPushChain(action);
+      return action.actionType === ActionType.TAG ? tagPushChain : branchPushChain;
     default:
       return defaultActionChain;
   }
