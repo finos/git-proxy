@@ -130,7 +130,10 @@ async function exec(req: Request, action: Action): Promise<Action> {
       else if (obj.type === GIT_OBJECT_TYPE_TAG) action.tagData.push(parseTag(obj));
     }
 
-    if (action.commitData.length) {
+    if (action.actionType === ActionType.TAG && action.tagData.length) {
+      action.user = action.tagData.at(-1)!.tagger;
+      action.userEmail = action.tagData.at(-1)!.taggerEmail;
+    } else if (action.commitData.length) {
       if (action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }
@@ -140,9 +143,6 @@ async function exec(req: Request, action: Action): Promise<Action> {
       step.log(`Push request received from user ${committer} with email ${committerEmail}`);
       action.user = committer;
       action.userEmail = committerEmail;
-    } else if (action.tagData?.length) {
-      action.user = action.tagData.at(-1)!.tagger;
-      action.userEmail = action.tagData.at(-1)!.taggerEmail;
     } else {
       step.log('No commit data found when parsing push.');
     }
