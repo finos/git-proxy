@@ -145,7 +145,7 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Pushes Integration Tests', ()
       );
     });
 
-    it('orders pushes by timestamp DESC (issue #1497 must-fix)', async () => {
+    it('orders pushes by timestamp DESC', async () => {
       const result = await getPushes({});
       const ids = result.map((p) => p.id);
       expect(ids).toEqual(['push-authorised', 'push-b', 'push-a']);

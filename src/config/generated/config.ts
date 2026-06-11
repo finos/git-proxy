@@ -52,7 +52,7 @@ export interface GitProxyConfig {
    */
   csrfProtection?: boolean;
   /**
-   * Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL
+   * Provide custom URLs for the GitProxy interfaces in case it cannot determine its own URL
    */
   domains?: Domains;
   /**
@@ -66,6 +66,10 @@ export interface GitProxyConfig {
    */
   httpsUiPort?: number;
   /**
+   * Configuration for various limits
+   */
+  limits?: Limits;
+  /**
    * List of plugins to integrate on GitProxy's push or pull actions. Each value is either a
    * file path or a module name.
    */
@@ -76,7 +80,7 @@ export interface GitProxyConfig {
    */
   privateOrganizations?: any[];
   /**
-   * Deprecated: Used in early versions of git proxy to configure the remote host that traffic
+   * Deprecated: Used in early versions of GitProxy to configure the remote host that traffic
    * is proxied to. In later versions, the repository URL is used to determine the domain
    * proxied, allowing multiple hosts to be proxied by one instance.
    */
@@ -96,6 +100,12 @@ export interface GitProxyConfig {
    * used.
    */
   sink?: Database[];
+  /**
+   * SSH proxy server configuration. The proxy uses SSH agent forwarding to authenticate with
+   * remote Git servers (GitHub, GitLab, etc.) using the client's SSH keys. The proxy's own
+   * host key is auto-generated and only used to identify the proxy to connecting clients.
+   */
+  ssh?: SSH;
   /**
    * Deprecated: Path to SSL certificate file (use tls.cert instead)
    */
@@ -207,7 +217,7 @@ export interface AuthenticationElement {
    */
   domain?: string;
   /**
-   * Group that indicates that a user should be able to login to the Git Proxy UI and can work
+   * Group that indicates that a user should be able to login to the GitProxy UI and can work
    * as a reviewer
    */
   userGroup?: string;
@@ -466,7 +476,7 @@ export interface MessageBlock {
 }
 
 /**
- * Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL
+ * Provide custom URLs for the GitProxy interfaces in case it cannot determine its own URL
  */
 export interface Domains {
   /**
@@ -478,6 +488,16 @@ export interface Domains {
    */
   service?: string;
   [property: string]: any;
+}
+
+/**
+ * Configuration for various limits
+ */
+export interface Limits {
+  /**
+   * Maximum size of a pack file in bytes (default 1GB)
+   */
+  maxPackSizeBytes?: number;
 }
 
 /**
@@ -618,6 +638,62 @@ export enum DatabaseType {
   FS = 'fs',
   Mongo = 'mongo',
   Postgres = 'postgres',
+}
+
+/**
+ * SSH proxy server configuration. The proxy uses SSH agent forwarding to authenticate with
+ * remote Git servers (GitHub, GitLab, etc.) using the client's SSH keys. The proxy's own
+ * host key is auto-generated and only used to identify the proxy to connecting clients.
+ */
+export interface SSH {
+  /**
+   * Custom error message shown when SSH agent forwarding is not enabled or no keys are loaded
+   * in the client's SSH agent. If not specified, a default message with git config commands
+   * will be shown. This allows organizations to customize instructions based on their
+   * security policies.
+   */
+  agentForwardingErrorMessage?: string;
+  /**
+   * Enable verbose SSH protocol debug logging (both for the local SSH server and for outbound
+   * connections to remote Git servers). Emits one log line per SSH packet, so leave disabled
+   * in production.
+   */
+  debug?: boolean;
+  /**
+   * Enable SSH proxy server. When enabled, clients can connect via SSH and the proxy will
+   * forward their SSH agent to authenticate with remote Git servers.
+   */
+  enabled: boolean;
+  /**
+   * Custom SSH host key paths. If not specified, a host key is auto-generated at
+   * .ssh/proxy_host_key.
+   */
+  hostKey?: HostKey;
+  /**
+   * SSH host key fingerprints for verifying remote Git servers, merged with built-in defaults
+   * for github.com and gitlab.com.
+   */
+  knownHosts?: { [key: string]: string };
+  /**
+   * Port for SSH proxy server to listen on. Clients connect to this port instead of directly
+   * to GitHub/GitLab.
+   */
+  port?: number;
+}
+
+/**
+ * Custom SSH host key paths. If not specified, a host key is auto-generated at
+ * .ssh/proxy_host_key.
+ */
+export interface HostKey {
+  /**
+   * Path to the private key file (e.g. /etc/git-proxy/host_key)
+   */
+  privateKeyPath: string;
+  /**
+   * Path to the public key file (e.g. /etc/git-proxy/host_key.pub)
+   */
+  publicKeyPath: string;
 }
 
 /**
@@ -885,6 +961,7 @@ const typeMap: any = {
       { json: 'domains', js: 'domains', typ: u(undefined, r('Domains')) },
       { json: 'httpsServerPort', js: 'httpsServerPort', typ: u(undefined, 3.14) },
       { json: 'httpsUiPort', js: 'httpsUiPort', typ: u(undefined, 3.14) },
+      { json: 'limits', js: 'limits', typ: u(undefined, r('Limits')) },
       { json: 'plugins', js: 'plugins', typ: u(undefined, a('')) },
       { json: 'privateOrganizations', js: 'privateOrganizations', typ: u(undefined, a('any')) },
       { json: 'proxyUrl', js: 'proxyUrl', typ: u(undefined, '') },
@@ -892,6 +969,7 @@ const typeMap: any = {
       { json: 'serverPort', js: 'serverPort', typ: u(undefined, 3.14) },
       { json: 'sessionMaxAgeHours', js: 'sessionMaxAgeHours', typ: u(undefined, 3.14) },
       { json: 'sink', js: 'sink', typ: u(undefined, a(r('Database'))) },
+      { json: 'ssh', js: 'ssh', typ: u(undefined, r('SSH')) },
       { json: 'sslCertPemPath', js: 'sslCertPemPath', typ: u(undefined, '') },
       { json: 'sslKeyPemPath', js: 'sslKeyPemPath', typ: u(undefined, '') },
       { json: 'tempPassword', js: 'tempPassword', typ: u(undefined, r('TempPassword')) },
@@ -1039,6 +1117,7 @@ const typeMap: any = {
     ],
     'any',
   ),
+  Limits: o([{ json: 'maxPackSizeBytes', js: 'maxPackSizeBytes', typ: u(undefined, 3.14) }], false),
   RateLimit: o(
     [
       { json: 'limit', js: 'limit', typ: 3.14 },
@@ -1085,6 +1164,28 @@ const typeMap: any = {
       { json: 'max', js: 'max', typ: u(undefined, 3.14) },
     ],
     'any',
+  ),
+  SSH: o(
+    [
+      {
+        json: 'agentForwardingErrorMessage',
+        js: 'agentForwardingErrorMessage',
+        typ: u(undefined, ''),
+      },
+      { json: 'debug', js: 'debug', typ: u(undefined, true) },
+      { json: 'enabled', js: 'enabled', typ: true },
+      { json: 'hostKey', js: 'hostKey', typ: u(undefined, r('HostKey')) },
+      { json: 'knownHosts', js: 'knownHosts', typ: u(undefined, m('')) },
+      { json: 'port', js: 'port', typ: u(undefined, 3.14) },
+    ],
+    false,
+  ),
+  HostKey: o(
+    [
+      { json: 'privateKeyPath', js: 'privateKeyPath', typ: '' },
+      { json: 'publicKeyPath', js: 'publicKeyPath', typ: '' },
+    ],
+    false,
   ),
   TempPassword: o(
     [

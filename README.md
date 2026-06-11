@@ -40,7 +40,7 @@
 
 ## What is GitProxy
 
-GitProxy is an application that stands between developers and a Git remote endpoint (e.g., `github.com`). It applies rules and workflows (configurable as `plugins`) to all outgoing `git push` operations to ensure they are compliant.
+GitProxy is an application that stands between developers and a Git remote endpoint (e.g., `github.com`). It applies rules and workflows (configurable as `plugins`) to all outgoing `git push` operations to ensure they are compliant. GitProxy supports both **HTTP/HTTPS** and **SSH** protocols with identical security scanning and validation.
 
 The main goal of GitProxy is to marry the defacto standard Open Source developer experience (git-based workflow of branching out, submitting changes and merging back) with security and legal requirements that firms have to comply with, when operating in highly regulated industries like financial services.
 
@@ -68,8 +68,9 @@ $ npx -- @finos/git-proxy
 
 Clone a repository, set the remote to the GitProxy URL and push your changes:
 
+### Using HTTPS
+
 ```bash
-# Only HTTPS cloning is supported at the moment, see https://github.com/finos/git-proxy/issues/27.
 $ git clone https://github.com/octocat/Hello-World.git && cd Hello-World
 # The below command is using the GitHub official CLI to fork the repo that is cloned.
 # You can also fork on the GitHub UI. For usage details on the CLI, see https://github.com/cli/cli
@@ -81,7 +82,53 @@ $ git remote add proxy http://localhost:8000/yourGithubUser/Hello-World.git
 $ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
 ```
 
+### Using SSH
+
+```bash
+$ git clone https://github.com/octocat/Hello-World.git && cd Hello-World
+$ gh repo fork
+✓ Created fork yourGithubUser/Hello-World
+...
+# Configure Git remote for SSH proxy
+$ git remote add proxy ssh://git@localhost:2222/github.com/yourGithubUser/Hello-World.git
+# Enable SSH agent forwarding (required)
+$ git config core.sshCommand "ssh -A"
+# Push through the proxy
+$ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+```
+
+📖 **Full SSH setup guide**: [docs/SSH_SETUP.md](docs/SSH_SETUP.md)
+
+---
+
 Using the default configuration, GitProxy intercepts the push and _blocks_ it. To enable code pushing to your fork via GitProxy, add your repository URL into the GitProxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
+
+## Protocol Support
+
+GitProxy supports both **HTTP/HTTPS** and **SSH** protocols with identical security features:
+
+### HTTP/HTTPS Support
+
+- ✅ Basic authentication and JWT tokens
+- ✅ Pack data extraction via middleware
+- ✅ Full security scanning and validation
+- ✅ Manual and auto-approval workflows
+
+### SSH Support
+
+- ✅ SSH key-based authentication
+- ✅ SSH agent forwarding (uses client's SSH keys securely)
+- ✅ Pack data capture from SSH streams
+- ✅ Same 16-processor security chain as HTTPS
+- ✅ Complete feature parity with HTTPS
+
+Both protocols provide the same level of security scanning, including:
+
+- Secret detection (gitleaks)
+- Commit message and author validation
+- Hidden commit detection
+- Pre-receive hooks
+- Comprehensive audit logging
 
 ## Documentation
 

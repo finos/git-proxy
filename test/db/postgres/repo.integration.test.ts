@@ -94,7 +94,7 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Repo Integration Tests', () =
     });
   });
 
-  describe('permission JSONB — issue #1497 must-fix', () => {
+  describe('permission JSONB', () => {
     it('starts with empty arrays', async () => {
       const created = await createRepo(
         createTestRepo({ name: 'perm-start', url: 'https://example.com/ps.git' }),
@@ -127,7 +127,7 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Repo Integration Tests', () =
       await removeUserCanPush(id, 'bob');
 
       const fromDb = await getRepoById(id);
-      // This is the core invariant from issue #1497.
+      // Same behavior as Mongo and NeDB
       expect(fromDb?.users.canPush).toEqual([]);
       expect(fromDb?.users.canPush).not.toBeNull();
     });
