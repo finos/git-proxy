@@ -44,9 +44,11 @@ const APP_SCHEMA_SQL = `
     git_account   TEXT NOT NULL,
     admin         BOOLEAN NOT NULL DEFAULT FALSE,
     oidc_id       TEXT UNIQUE,
+    public_keys   JSONB NOT NULL DEFAULT '[]'::jsonb,
     display_name  TEXT,
     title         TEXT
   );
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS public_keys JSONB NOT NULL DEFAULT '[]'::jsonb;
 
   CREATE TABLE IF NOT EXISTS repos (
     _id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
