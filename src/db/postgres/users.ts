@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { User, UserQuery } from '../types';
+import { PublicKeyRecord, User, UserQuery } from '../types';
 import { query } from './helper';
 
 interface UserRow {
@@ -25,6 +25,7 @@ interface UserRow {
   git_account: string;
   admin: boolean;
   oidc_id: string | null;
+  public_keys: PublicKeyRecord[] | null;
   display_name: string | null;
   title: string | null;
 }
@@ -37,6 +38,7 @@ const rowToUser = (row: UserRow): User => {
     row.email,
     row.admin,
     row.oidc_id,
+    row.public_keys ?? [],
     row._id,
   );
   user.password = row.password;
@@ -46,7 +48,7 @@ const rowToUser = (row: UserRow): User => {
 };
 
 const SELECT_COLUMNS =
-  '_id, username, email, password, git_account, admin, oidc_id, display_name, title';
+  '_id, username, email, password, git_account, admin, oidc_id, public_keys, display_name, title';
 
 export const findUser = async (username: string): Promise<User | null> => {
   const result = await query<UserRow>(`SELECT ${SELECT_COLUMNS} FROM users WHERE username = $1`, [
@@ -84,7 +86,7 @@ export const getUsers = async (q: Partial<UserQuery> = {}): Promise<User[]> => {
   const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
   // Match mongo's `.project({ password: 0 })` — omit password from list results.
   const result = await query<UserRow>(
-    `SELECT _id, username, email, NULL::text AS password, git_account, admin, oidc_id, display_name, title
+    `SELECT _id, username, email, NULL::text AS password, git_account, admin, oidc_id, public_keys, display_name, title
        FROM users ${where}`,
     values,
   );
@@ -93,8 +95,8 @@ export const getUsers = async (q: Partial<UserQuery> = {}): Promise<User[]> => {
 
 export const createUser = async (user: User): Promise<void> => {
   await query(
-    `INSERT INTO users (username, email, password, git_account, admin, oidc_id, display_name, title)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+    `INSERT INTO users (username, email, password, git_account, admin, oidc_id, public_keys, display_name, title)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)`,
     [
       user.username.toLowerCase(),
       user.email.toLowerCase(),
@@ -102,6 +104,7 @@ export const createUser = async (user: User): Promise<void> => {
       user.gitAccount,
       user.admin,
       user.oidcId ?? null,
+      JSON.stringify(user.publicKeys ?? []),
       user.displayName ?? null,
       user.title ?? null,
     ],
@@ -137,6 +140,7 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
   if (user.gitAccount !== undefined) set('git_account', user.gitAccount);
   if (user.admin !== undefined) set('admin', user.admin);
   if (user.oidcId !== undefined) set('oidc_id', user.oidcId);
+  if (user.publicKeys !== undefined) set('public_keys', JSON.stringify(user.publicKeys));
   if (user.displayName !== undefined) set('display_name', user.displayName);
   if (user.title !== undefined) set('title', user.title);
 
@@ -159,8 +163,8 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
   if (result.rowCount && result.rowCount > 0) return;
 
   await query(
-    `INSERT INTO users (username, email, password, git_account, admin, oidc_id, display_name, title)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    `INSERT INTO users (username, email, password, git_account, admin, oidc_id, public_keys, display_name, title)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)
      ON CONFLICT (username) DO NOTHING`,
     [
       username,
@@ -169,6 +173,7 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
       user.gitAccount ?? '',
       user.admin ?? false,
       user.oidcId ?? null,
+      JSON.stringify(user.publicKeys ?? []),
       user.displayName ?? null,
       user.title ?? null,
     ],
