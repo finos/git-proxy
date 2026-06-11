@@ -15,6 +15,7 @@
  */
 
 import { PublicKeyRecord, User, UserQuery } from '../types';
+import { DuplicateSSHKeyError } from '../../errors/DatabaseErrors';
 import { query } from './helper';
 
 interface UserRow {
@@ -178,4 +179,64 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
       user.title ?? null,
     ],
   );
+};
+
+export const findUserBySSHKey = async (sshKey: string): Promise<User | null> => {
+  // JSONB containment: matches any element of public_keys with this exact key,
+  // equivalent to mongo's `{ 'publicKeys.key': sshKey }`.
+  const result = await query<UserRow>(
+    `SELECT ${SELECT_COLUMNS} FROM users WHERE public_keys @> $1::jsonb`,
+    [JSON.stringify([{ key: sshKey }])],
+  );
+  return result.rowCount === 0 ? null : rowToUser(result.rows[0]);
+};
+
+export const addPublicKey = async (username: string, publicKey: PublicKeyRecord): Promise<void> => {
+  const existingUser = await findUserBySSHKey(publicKey.key);
+  if (existingUser && existingUser.username.toLowerCase() !== username.toLowerCase()) {
+    throw new DuplicateSSHKeyError(existingUser.username);
+  }
+
+  const user = await findUser(username);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const keyExists = user.publicKeys?.some(
+    (k) => k.key === publicKey.key || (k.fingerprint && k.fingerprint === publicKey.fingerprint),
+  );
+  if (keyExists) {
+    throw new Error('SSH key already exists');
+  }
+
+  await query(`UPDATE users SET public_keys = public_keys || $2::jsonb WHERE username = $1`, [
+    username.toLowerCase(),
+    JSON.stringify([publicKey]),
+  ]);
+};
+
+export const removePublicKey = async (username: string, fingerprint: string): Promise<void> => {
+  // Filter the matching key out of the JSONB array; like mongo's `$pull`, this
+  // is a no-op when the user or fingerprint does not exist.
+  await query(
+    `UPDATE users
+        SET public_keys = coalesce(
+          (
+            SELECT jsonb_agg(k)
+              FROM jsonb_array_elements(public_keys) AS k
+             WHERE (k->>'fingerprint') IS DISTINCT FROM $2
+          ),
+          '[]'::jsonb
+        )
+      WHERE username = $1`,
+    [username.toLowerCase(), fingerprint],
+  );
+};
+
+export const getPublicKeys = async (username: string): Promise<PublicKeyRecord[]> => {
+  const user = await findUser(username);
+  if (!user) {
+    throw new Error('User not found');
+  }
+  return user.publicKeys || [];
 };
