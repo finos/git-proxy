@@ -33,7 +33,10 @@ export default defineConfig({
       NODE_ENV: 'test',
       RUN_POSTGRES_TESTS: 'true',
       CONFIG_FILE: path.resolve(__dirname, 'test-integration.postgres.proxy.config.json'),
+      // Default for local runs; an exported GIT_PROXY_POSTGRES_CONNECTION_STRING
+      // (e.g. in CI or a non-default local setup) takes precedence.
       GIT_PROXY_POSTGRES_CONNECTION_STRING:
+        process.env.GIT_PROXY_POSTGRES_CONNECTION_STRING ||
         'postgresql://postgres:postgres@localhost:5432/git_proxy_test',
     },
   },

@@ -45,14 +45,23 @@ const APP_SCHEMA_SQL = `
   CREATE TABLE IF NOT EXISTS users (
     _id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username      TEXT NOT NULL UNIQUE,
-    email         TEXT NOT NULL UNIQUE,
+    email         TEXT,
     password      TEXT,
     git_account   TEXT NOT NULL,
     admin         BOOLEAN NOT NULL DEFAULT FALSE,
     oidc_id       TEXT UNIQUE,
+    public_keys   JSONB NOT NULL DEFAULT '[]'::jsonb,
     display_name  TEXT,
     title         TEXT
   );
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS public_keys JSONB NOT NULL DEFAULT '[]'::jsonb;
+  ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+  ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;
+  -- Email uniqueness is best-effort, like the mongo/fs backends: a real
+  -- address can only be claimed once, but any number of users may have no
+  -- email (the AD "mail" attribute is optional, for instance).
+  CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique
+    ON users (email) WHERE email IS NOT NULL AND email <> '';
 
   CREATE TABLE IF NOT EXISTS repos (
     _id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -127,8 +136,7 @@ export const resetConnection = async (): Promise<void> => {
  * IMPORTANT: this function MUST NOT silently return undefined when Postgres is
  * the active sink — that would cause express-session to fall back to its
  * default in-memory store, which loses sessions on every restart and is unsafe
- * in any multi-process deployment. Issue #1497 calls this out as a must-fix
- * requirement, so we throw loudly instead.
+ * in any multi-process deployment. Throw loudly instead.
  */
 export const getSessionStore = (): Store => {
   const connectionString = getDatabase().connectionString;
