@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-// TODO(#1497-followup): consider normalizing repo permissions into a
-// repo_users(repo_id, user, role) join table. JSONB is used for v1 to
-// match the mongo/fs shape and minimize migration churn — the issue
-// flags this as an open question for a follow-up PR.
-
 import { Repo, RepoQuery } from '../types';
 import { query } from './helper';
 
@@ -100,9 +95,6 @@ export const createRepo = async (repo: Repo): Promise<Repo> => {
  * Append a user to one of the JSONB permission arrays. The query is a
  * read-modify-write that deduplicates the value, then re-serialises the array
  * so the stored shape matches the existing mongo/fs backends exactly.
- *
- * Crucially: when the last user is later removed, the array stays `[]` rather
- * than collapsing to `null` — issue #1497 explicitly requires this.
  */
 const addUserToRole = async (
   _id: string,
@@ -137,8 +129,7 @@ const removeUserFromRole = async (
   role: 'canPush' | 'canAuthorise',
 ): Promise<void> => {
   const lowered = user.toLowerCase();
-  // The filter expression evaluates to `[]` if the last matching user is
-  // removed — preserving the empty-array invariant from issue #1497.
+  // The filter evaluates to `[]` if the last matching user is removed
   await query(
     `UPDATE repos
         SET users = jsonb_set(
