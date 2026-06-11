@@ -82,7 +82,14 @@ export const migrate = async (
       summary.users.skipped++;
       continue;
     }
-    await destination.createUser(user);
+    // Legacy documents can lack optional fields the writers dereference:
+    // users synced from AD may have no email (the mail attribute is
+    // optional) or gitAccount. Default them like the mongo upsert path does.
+    await destination.createUser({
+      ...user,
+      email: user.email ?? '',
+      gitAccount: user.gitAccount ?? '',
+    });
     summary.users.imported++;
   }
 

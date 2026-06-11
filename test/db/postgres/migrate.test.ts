@@ -63,6 +63,23 @@ describe('PostgreSQL - migrate', () => {
     expect(destination.writeAudit).toHaveBeenCalledTimes(3);
   });
 
+  it('defaults missing email and gitAccount on legacy users', async () => {
+    const legacy = user('ad-user', 'ignored');
+    delete (legacy as Partial<User>).email;
+    delete (legacy as Partial<User>).gitAccount;
+    const source = makeSource({ getUsers: vi.fn().mockResolvedValue([legacy]) });
+    const destination = makeDestination();
+
+    const summary = await migrate(source, destination as never);
+
+    expect(summary.users).toEqual({ imported: 1, skipped: 0 });
+    expect(destination.createUser).toHaveBeenCalledWith(
+      expect.objectContaining({ username: 'ad-user', email: '', gitAccount: '' }),
+    );
+    // No email to dedupe on, so the email lookup is skipped entirely.
+    expect(destination.findUserByEmail).not.toHaveBeenCalled();
+  });
+
   it('skips a user that already exists by username', async () => {
     const source = makeSource({ getUsers: vi.fn().mockResolvedValue([user('alice', 'a@x.com')]) });
     const destination = makeDestination({
