@@ -130,15 +130,14 @@ const corsOptions: cors.CorsOptions = {
 };
 
 /**
- * Internal function used to bootstrap the Git Proxy API's express application.
+ * Internal function used to bootstrap GitProxy's API express application.
  * @param {Proxy} proxy A reference to the proxy, used to restart it when necessary.
  * @return {Promise<Express>} the express application
  */
 // Backend sink types that promise a persistent session store. If one of these
 // is active and getSessionStore() returns undefined, express-session would
 // silently fall back to MemoryStore — which loses sessions on restart and is
-// unsafe in any multi-process deployment. Issue #1497 calls this out as a
-// must-fix requirement, so we throw loudly instead.
+// unsafe in any multi-process deployment. Throw loudly instead.
 const PERSISTENT_SESSION_BACKENDS = new Set(['mongo', 'postgres']);
 
 async function createApp(proxy: Proxy): Promise<Express> {

@@ -157,7 +157,7 @@ describe('PostgreSQL - Repo', async () => {
     });
   });
 
-  describe('add/remove user — empty array invariant (issue #1497)', () => {
+  describe('add/remove user — empty array invariant', () => {
     it('lower-cases user on add', async () => {
       mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
       await addUserCanPush('r-1', 'Bob');
