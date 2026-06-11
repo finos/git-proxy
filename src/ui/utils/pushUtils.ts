@@ -30,29 +30,24 @@ export const isTagPush = (pushData: PushData): boolean => {
 };
 
 /**
+ * Type guard to distinguish TagData from CommitData
+ */
+const isTagData = (data: CommitData | TagData): data is TagData => 'tagName' in data;
+
+/**
  * Gets the display timestamp for a push (handles both commits and tags)
- * @param {boolean} isTag - Whether this is a tag push
- * @param {CommitData | null} commitData - The commit data
- * @param {TagData} [tagData] - The tag data (optional)
+ * @param {CommitData | TagData | null | undefined} data - The commit or tag data
  * @return {string} Formatted timestamp string or 'N/A'
  */
-export const getDisplayTimestamp = (
-  isTag: boolean,
-  commitData: CommitData | null,
-  tagData?: TagData,
-): string => {
-  // For tag pushes, try to use tag timestamp if available
-  if (isTag && tagData?.timestamp) {
-    return moment.unix(parseInt(tagData.timestamp)).toString();
+export const getDisplayTimestamp = (data?: CommitData | TagData | null): string => {
+  if (!data) return 'N/A';
+
+  if (isTagData(data)) {
+    return data.timestamp ? moment.unix(parseInt(data.timestamp)).toString() : 'N/A';
   }
 
-  // Fallback to commit timestamp for both commits and tags without timestamp
-  if (commitData) {
-    const timestamp = commitData.commitTimestamp || commitData.commitTs;
-    return timestamp ? moment.unix(timestamp).toString() : 'N/A';
-  }
-
-  return 'N/A';
+  const timestamp = data.commitTimestamp || data.commitTs;
+  return timestamp ? moment.unix(timestamp).toString() : 'N/A';
 };
 
 /**

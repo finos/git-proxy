@@ -159,7 +159,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
                 const r = row as any;
                 const isTag = isTagPush(r);
                 const repoFullName = getRepoFullName(r.repo);
-                const displayTime = getDisplayTimestamp(isTag, r.commitData?.[0], r.tagData?.[0]);
+                const displayTime = getDisplayTimestamp(isTag ? r.tagData?.[0] : r.commitData?.[0]);
                 const refToShow = getRefToShow(r);
                 const shaOrTag = getShaOrTag(r);
                 const repoUrl = r.url;

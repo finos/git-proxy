@@ -92,23 +92,23 @@ describe('pushUtils', () => {
   });
 
   describe('getDisplayTimestamp', () => {
-    it('returns tag timestamp when isTag is true and tagData exists', () => {
-      const result = getDisplayTimestamp(true, mockCommitData[0] as any, mockTagData[0] as any);
+    it('returns tag timestamp when tagData is passed', () => {
+      const result = getDisplayTimestamp(mockTagData[0] as any);
       expect(result).toContain('2022');
     });
 
-    it('returns commit timestamp when isTag is false', () => {
-      const result = getDisplayTimestamp(false, mockCommitData[0] as any);
+    it('returns commit timestamp when commitData is passed', () => {
+      const result = getDisplayTimestamp(mockCommitData[0] as any);
       expect(result).toContain('2022');
     });
 
-    it('returns commit timestamp when isTag is true but no tagData', () => {
-      const result = getDisplayTimestamp(true, mockCommitData[0] as any, undefined);
-      expect(result).toContain('2022');
+    it('returns N/A when null', () => {
+      const result = getDisplayTimestamp(null);
+      expect(result).toBe('N/A');
     });
 
-    it('returns N/A when no valid timestamps', () => {
-      const result = getDisplayTimestamp(false, null as any);
+    it('returns N/A when undefined', () => {
+      const result = getDisplayTimestamp(undefined);
       expect(result).toBe('N/A');
     });
 
@@ -117,7 +117,7 @@ describe('pushUtils', () => {
         commitTs: 1640995100,
         commitTimestamp: 1640995200,
       };
-      const result = getDisplayTimestamp(false, commitWithBothTimestamps as any);
+      const result = getDisplayTimestamp(commitWithBothTimestamps as any);
       expect(result).toContain('2022');
     });
   });

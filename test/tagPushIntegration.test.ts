@@ -90,11 +90,7 @@ describe('Tag Push Integration', () => {
     });
 
     it('uses tag timestamp over commit timestamp', () => {
-      const displayTime = getDisplayTimestamp(
-        true,
-        fullTagPush.commitData[0],
-        fullTagPush.tagData[0],
-      );
+      const displayTime = getDisplayTimestamp(fullTagPush.tagData[0]);
       expect(displayTime).toContain('2024');
       expect(displayTime).toContain('Jan 15');
     });
