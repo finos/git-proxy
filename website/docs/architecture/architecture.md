@@ -482,12 +482,33 @@ Connection precedence: `connectionString` (the config field, then `GIT_PROXY_POS
 }
 ```
 
+##### AWS RDS / Aurora IAM authentication
+
+For Amazon RDS or Aurora, GitProxy can authenticate with a short-lived IAM auth token instead of a static password. Enable `awsIamAuth` and supply the discrete `host` / `port` / `user` fields (a `connectionString` is not used in this mode):
+
+```json
+{
+  "type": "postgres",
+  "host": "mydb.abc123.eu-west-2.rds.amazonaws.com",
+  "port": 5432,
+  "user": "gitproxy_iam",
+  "database": "gitproxy",
+  "awsIamAuth": { "enabled": true, "region": "eu-west-2" },
+  "enabled": true
+}
+```
+
+- A fresh token is generated for every new pool connection from the AWS SDK default credential chain (via `@aws-sdk/rds-signer`), so no password is stored and token refresh is automatic.
+- `region` falls back to the `AWS_REGION` / `AWS_DEFAULT_REGION` environment variables, then the SDK's default region resolution.
+- TLS is required by RDS for IAM auth, so `ssl` defaults to `true` when omitted. Supply an `ssl` object (for example `{ "rejectUnauthorized": true, "ca": "<RDS CA bundle>" }`) to verify against the RDS certificate authority.
+- The database user must be granted the `rds_iam` role (`GRANT rds_iam TO gitproxy_iam;`).
+- IAM auth needs the optional `@aws-sdk/rds-signer` dependency, which installs by default. On a slim install (`npm install --omit=optional`) add it explicitly with `npm install @aws-sdk/rds-signer`.
+
 Notes and current limitations (issue #1497, v1):
 
 - Schema is bootstrapped via `CREATE TABLE IF NOT EXISTS` at startup. No formal migration mechanism ships with this release.
 - Repo permissions (`canPush` / `canAuthorise`) are stored as a JSONB column on the `repos` table. A future PR may normalise these into a `repo_users` join table.
 - No data migration utility from `fs` or `mongo` to `postgres` — copy data yourself if needed.
-- No AWS RDS IAM authentication helper (the mongo backend has one via `AWS_CREDENTIAL_PROVIDER`); use a standard connection string for v1.
 - If `postgres` is selected as the active sink and no connection can be resolved, GitProxy refuses to start rather than silently falling back to an in-memory session store.
 
 Extending GitProxy to support other databases requires adding the relevant handlers and setup to the [`/src/db`](https://github.com/finos/git-proxy/blob/main/src/db/) directory. Feel free to [open an issue](https://github.com/finos/git-proxy/issues) requesting support for any specific databases - or [open a PR](https://github.com/finos/git-proxy/pulls) with the desired changes!
