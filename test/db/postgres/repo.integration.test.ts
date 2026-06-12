@@ -190,7 +190,7 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Repo Integration Tests', () =
         { username: 'alice', role: 'canPush' },
       ]);
 
-      // Migration 3 dropped the legacy JSONB column.
+      // The legacy JSONB column was dropped by migration 4 (drop_repos_users_jsonb).
       const cols = await query<{ column_name: string }>(
         `SELECT column_name FROM information_schema.columns WHERE table_name = 'repos'`,
       );
