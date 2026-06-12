@@ -35,14 +35,74 @@ const hasConnectionConfig = (db: DatabaseConfig): boolean =>
   Boolean(db.connectionString || db.host || process.env.PGHOST);
 
 /**
+ * Minimal shape of the optional `@aws-sdk/rds-signer` module, declared locally
+ * so the project type-checks whether or not the optional dependency is present.
+ */
+interface RdsSignerModule {
+  Signer: new (config: { hostname: string; port: number; username: string; region?: string }) => {
+    getAuthToken: () => Promise<string>;
+  };
+}
+
+/**
+ * Load the optional RDS signer, raising a clear error if it is not installed.
+ * Kept optional so installs that do not use IAM auth stay lean.
+ */
+const loadRdsSigner = async (): Promise<RdsSignerModule> => {
+  try {
+    return (await import('@aws-sdk/rds-signer')) as unknown as RdsSignerModule;
+  } catch {
+    throw new Error(
+      'AWS RDS IAM authentication requires the optional `@aws-sdk/rds-signer` dependency. Install it with `npm install @aws-sdk/rds-signer`.',
+    );
+  }
+};
+
+/**
+ * Build the per-connection password provider for RDS/Aurora IAM auth. `pg`
+ * invokes it for every new connection, so each one receives a fresh (~15 min)
+ * token and refresh is automatic — no static password is ever stored.
+ */
+const buildIamTokenProvider = (db: DatabaseConfig): (() => Promise<string>) => {
+  const host = db.host ?? process.env.PGHOST;
+  const port = db.port ?? (process.env.PGPORT ? Number(process.env.PGPORT) : 5432);
+  const user = db.user ?? process.env.PGUSER;
+  const region = db.awsIamAuth?.region ?? process.env.AWS_REGION ?? process.env.AWS_DEFAULT_REGION;
+
+  if (!host || !user) {
+    throw new Error(
+      'AWS RDS IAM authentication requires `host` and `user` (or the PGHOST/PGUSER environment variables) to generate an auth token.',
+    );
+  }
+
+  return async () => {
+    const { Signer } = await loadRdsSigner();
+    const signer = new Signer({ hostname: host, port, username: user, region });
+    return signer.getAuthToken();
+  };
+};
+
+/**
  * Build a `pg` PoolConfig from the resolved database config. A connection
  * string (already env-resolved by `getDatabase`) takes precedence; otherwise
  * the discrete fields are used. When neither is set, `pg` reads the `PG*`
- * environment variables itself.
+ * environment variables itself. When `awsIamAuth` is enabled, the static
+ * password is replaced by a generated IAM token and the discrete fields drive
+ * the connection.
  */
 const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
   const config: PoolConfig = {};
-  if (db.connectionString) {
+  const iamAuthEnabled = Boolean(db.awsIamAuth?.enabled);
+
+  if (iamAuthEnabled) {
+    // IAM auth supplies the password as a generated token, so the connection is
+    // driven by the discrete fields (or PG* env), never a connection string.
+    if (db.host !== undefined) config.host = db.host;
+    if (db.port !== undefined) config.port = db.port;
+    if (db.user !== undefined) config.user = db.user;
+    if (db.database !== undefined) config.database = db.database;
+    config.password = buildIamTokenProvider(db);
+  } else if (db.connectionString) {
     config.connectionString = db.connectionString;
   } else {
     if (db.host !== undefined) config.host = db.host;
@@ -51,8 +111,14 @@ const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
     if (db.password !== undefined) config.password = db.password;
     if (db.database !== undefined) config.database = db.database;
   }
-  // TLS applies regardless of how the connection itself was configured.
-  if (db.ssl !== undefined) config.ssl = db.ssl as PoolConfig['ssl'];
+
+  // TLS applies regardless of how the connection itself was configured. RDS IAM
+  // auth mandates TLS, so default it on when IAM is enabled and `ssl` is unset.
+  if (db.ssl !== undefined) {
+    config.ssl = db.ssl as PoolConfig['ssl'];
+  } else if (iamAuthEnabled) {
+    config.ssl = true;
+  }
 
   // Optional pool tuning.
   if (db.pool) {
