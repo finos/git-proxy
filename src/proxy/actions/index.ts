@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Action } from './Action';
+import { Action, RequestType, ActionType } from './Action';
 import { Step } from './Step';
 
-export { Action, Step };
+export { Action, Step, RequestType, ActionType };

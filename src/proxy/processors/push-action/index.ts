@@ -26,7 +26,7 @@ import { exec as gitleaks } from './gitleaks';
 import { exec as scanDiff } from './scanDiff';
 import { exec as blockForAuth } from './blockForAuth';
 import { exec as checkIfWaitingAuth } from './checkIfWaitingAuth';
-import { exec as checkCommitMessages } from './checkCommitMessages';
+import { exec as checkMessages } from './checkMessages';
 import { exec as checkAuthorEmails } from './checkAuthorEmails';
 import { exec as checkUserPushPermission } from './checkUserPushPermission';
 
@@ -44,7 +44,7 @@ export {
   scanDiff,
   blockForAuth,
   checkIfWaitingAuth,
-  checkCommitMessages,
+  checkMessages,
   checkAuthorEmails,
   checkUserPushPermission,
   checkEmptyBranch,
