@@ -529,11 +529,18 @@ export interface RateLimit {
  * or broken out in the options object
  *
  * Connection properties for an neDB file-based database
+ *
+ * Connection properties for PostgreSQL. The `connectionString` may also be supplied via the
+ * `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable.
  */
 export interface Database {
   /**
    * mongoDB Client connection string, see
    * [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)
+   *
+   * PostgreSQL client connection string, see
+   * [https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING).
+   * If omitted, `GIT_PROXY_POSTGRES_CONNECTION_STRING` is used as a fallback.
    */
   connectionString?: string;
   enabled: boolean;
@@ -571,6 +578,7 @@ export interface AuthMechanismProperties {
 export enum DatabaseType {
   FS = 'fs',
   Mongo = 'mongo',
+  Postgres = 'postgres',
 }
 
 /**
@@ -1144,5 +1152,5 @@ const typeMap: any = {
     false,
   ),
   AuthenticationElementType: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
-  DatabaseType: ['fs', 'mongo'],
+  DatabaseType: ['fs', 'mongo', 'postgres'],
 };

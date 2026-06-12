@@ -22,6 +22,24 @@ jobs:
         node-version: [22.x, 24.x]
         mongodb-version: ['6.0', '7.0', '8.0']
 
+    # PostgreSQL service container for the postgres integration tests. A
+    # single version (postgres:16) keeps the lane fast; a broader version
+    # matrix can follow later if needed.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: git_proxy_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
@@ -70,6 +88,12 @@ jobs:
           RUN_MONGO_TESTS: 'true'
           GIT_PROXY_MONGO_CONNECTION_STRING: mongodb://localhost:27017/git-proxy-test
         run: npm run test:integration
+
+      - name: PostgreSQL Integration Tests
+        env:
+          RUN_POSTGRES_TESTS: 'true'
+          GIT_PROXY_POSTGRES_CONNECTION_STRING: postgresql://postgres:postgres@localhost:5432/git_proxy_test
+        run: npm run test:integration:postgres
 
       - name: Upload test coverage report
         uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
