@@ -579,6 +579,21 @@
                   "description": "Milliseconds to wait for a connection before timing out."
                 }
               }
+            },
+            "awsIamAuth": {
+              "type": "object",
+              "description": "Authenticate to Amazon RDS/Aurora with an IAM auth token instead of a static password. When enabled, a short-lived token is generated for each new connection from the AWS SDK default credential chain, so no password is stored. Requires the discrete `host`/`port`/`user` fields (or the `PGHOST`/`PGPORT`/`PGUSER` environment variables) rather than a `connectionString`, requires TLS (`ssl` defaults to `true` when omitted), and needs the optional `@aws-sdk/rds-signer` dependency to be installed.",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "description": "Enable IAM token authentication for the PostgreSQL connection."
+                },
+                "region": {
+                  "type": "string",
+                  "description": "AWS region of the RDS/Aurora instance. Falls back to the `AWS_REGION` / `AWS_DEFAULT_REGION` environment variables, then the AWS SDK's default region resolution."
+                }
+              },
+              "required": ["enabled"]
             }
           },
           "required": ["type", "enabled"]

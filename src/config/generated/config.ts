@@ -558,6 +558,15 @@ export interface Database {
   options?: Options;
   type: DatabaseType;
   /**
+   * Authenticate to Amazon RDS/Aurora with an IAM auth token instead of a static password.
+   * When enabled, a short-lived token is generated for each new connection from the AWS SDK
+   * default credential chain, so no password is stored. Requires the discrete
+   * `host`/`port`/`user` fields (or the `PGHOST`/`PGPORT`/`PGUSER` environment variables)
+   * rather than a `connectionString`, requires TLS (`ssl` defaults to `true` when omitted),
+   * and needs the optional `@aws-sdk/rds-signer` dependency to be installed.
+   */
+  awsIamAuth?: AwsIamAuth;
+  /**
    * Database name. Used when `connectionString` is not set. Falls back to the `PGDATABASE`
    * environment variable.
    */
@@ -592,6 +601,27 @@ export interface Database {
    * environment variable.
    */
   user?: string;
+  [property: string]: any;
+}
+
+/**
+ * Authenticate to Amazon RDS/Aurora with an IAM auth token instead of a static password.
+ * When enabled, a short-lived token is generated for each new connection from the AWS SDK
+ * default credential chain, so no password is stored. Requires the discrete
+ * `host`/`port`/`user` fields (or the `PGHOST`/`PGPORT`/`PGUSER` environment variables)
+ * rather than a `connectionString`, requires TLS (`ssl` defaults to `true` when omitted),
+ * and needs the optional `@aws-sdk/rds-signer` dependency to be installed.
+ */
+export interface AwsIamAuth {
+  /**
+   * Enable IAM token authentication for the PostgreSQL connection.
+   */
+  enabled: boolean;
+  /**
+   * AWS region of the RDS/Aurora instance. Falls back to the `AWS_REGION` /
+   * `AWS_DEFAULT_REGION` environment variables, then the AWS SDK's default region resolution.
+   */
+  region?: string;
   [property: string]: any;
 }
 
@@ -1133,6 +1163,7 @@ const typeMap: any = {
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'options', js: 'options', typ: u(undefined, r('Options')) },
       { json: 'type', js: 'type', typ: r('DatabaseType') },
+      { json: 'awsIamAuth', js: 'awsIamAuth', typ: u(undefined, r('AwsIamAuth')) },
       { json: 'database', js: 'database', typ: u(undefined, '') },
       { json: 'host', js: 'host', typ: u(undefined, '') },
       { json: 'password', js: 'password', typ: u(undefined, '') },
@@ -1140,6 +1171,13 @@ const typeMap: any = {
       { json: 'port', js: 'port', typ: u(undefined, 3.14) },
       { json: 'ssl', js: 'ssl', typ: u(undefined, u(true, m('any'))) },
       { json: 'user', js: 'user', typ: u(undefined, '') },
+    ],
+    'any',
+  ),
+  AwsIamAuth: o(
+    [
+      { json: 'enabled', js: 'enabled', typ: true },
+      { json: 'region', js: 'region', typ: u(undefined, '') },
     ],
     'any',
   ),
