@@ -119,7 +119,7 @@
     "connect-mongo": "^5.1.0",
     "cors": "^2.8.6",
     "diff2html": "^3.4.56",
-    "env-paths": "^3.0.0",
+    "env-paths": "^4.0.0",
     "escape-string-regexp": "^5.0.0",
     "express": "^5.2.1",
     "express-http-proxy": "^2.1.2",
