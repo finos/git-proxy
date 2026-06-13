@@ -526,6 +526,20 @@
             "enabled": { "type": "boolean" }
           },
           "required": ["type", "enabled"]
+        },
+        {
+          "type": "object",
+          "name": "PostgreSQL Config",
+          "description": "Connection properties for PostgreSQL. The `connectionString` may also be supplied via the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable.",
+          "properties": {
+            "type": { "type": "string", "const": "postgres" },
+            "enabled": { "type": "boolean" },
+            "connectionString": {
+              "type": "string",
+              "description": "PostgreSQL client connection string, see [https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING). If omitted, `GIT_PROXY_POSTGRES_CONNECTION_STRING` is used as a fallback."
+            }
+          },
+          "required": ["type", "enabled"]
         }
       ]
     },
