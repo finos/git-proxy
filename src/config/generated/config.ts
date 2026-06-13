@@ -529,11 +529,23 @@ export interface RateLimit {
  * or broken out in the options object
  *
  * Connection properties for an neDB file-based database
+ *
+ * Connection properties for PostgreSQL. The `connectionString` may also be supplied via the
+ * `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable. If neither a
+ * `connectionString` nor the discrete `host`/`port`/`user`/`password`/`database` fields are
+ * set, the standard `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` environment
+ * variables are used.
  */
 export interface Database {
   /**
    * mongoDB Client connection string, see
    * [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)
+   *
+   * PostgreSQL client connection string, see
+   * [https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING).
+   * If omitted, `GIT_PROXY_POSTGRES_CONNECTION_STRING` is used as a fallback, then the
+   * discrete fields below, then the `PG*` environment variables. Takes precedence over the
+   * discrete fields when set.
    */
   connectionString?: string;
   enabled: boolean;
@@ -545,6 +557,71 @@ export interface Database {
    */
   options?: Options;
   type: DatabaseType;
+  /**
+   * Authenticate to Amazon RDS/Aurora with an IAM auth token instead of a static password.
+   * When enabled, a short-lived token is generated for each new connection from the AWS SDK
+   * default credential chain, so no password is stored. Requires the discrete
+   * `host`/`port`/`user` fields (or the `PGHOST`/`PGPORT`/`PGUSER` environment variables)
+   * rather than a `connectionString`, requires TLS (`ssl` defaults to `true` when omitted),
+   * and needs the optional `@aws-sdk/rds-signer` dependency to be installed.
+   */
+  awsIamAuth?: AwsIamAuth;
+  /**
+   * Database name. Used when `connectionString` is not set. Falls back to the `PGDATABASE`
+   * environment variable.
+   */
+  database?: string;
+  /**
+   * Database server host. Used when `connectionString` is not set. Falls back to the `PGHOST`
+   * environment variable.
+   */
+  host?: string;
+  /**
+   * Database password. Used when `connectionString` is not set. Falls back to the
+   * `PGPASSWORD` environment variable.
+   */
+  password?: string;
+  /**
+   * Connection pool tuning passed to the PostgreSQL client.
+   */
+  pool?: Pool;
+  /**
+   * Database server port. Used when `connectionString` is not set. Falls back to the `PGPORT`
+   * environment variable.
+   */
+  port?: number;
+  /**
+   * TLS configuration for the connection. `true` enables TLS with default certificate
+   * verification; an object is passed to the PostgreSQL client as TLS options (for example
+   * `rejectUnauthorized`, `ca`, `cert`, `key`).
+   */
+  ssl?: boolean | { [key: string]: any };
+  /**
+   * Database user. Used when `connectionString` is not set. Falls back to the `PGUSER`
+   * environment variable.
+   */
+  user?: string;
+  [property: string]: any;
+}
+
+/**
+ * Authenticate to Amazon RDS/Aurora with an IAM auth token instead of a static password.
+ * When enabled, a short-lived token is generated for each new connection from the AWS SDK
+ * default credential chain, so no password is stored. Requires the discrete
+ * `host`/`port`/`user` fields (or the `PGHOST`/`PGPORT`/`PGUSER` environment variables)
+ * rather than a `connectionString`, requires TLS (`ssl` defaults to `true` when omitted),
+ * and needs the optional `@aws-sdk/rds-signer` dependency to be installed.
+ */
+export interface AwsIamAuth {
+  /**
+   * Enable IAM token authentication for the PostgreSQL connection.
+   */
+  enabled: boolean;
+  /**
+   * AWS region of the RDS/Aurora instance. Falls back to the `AWS_REGION` /
+   * `AWS_DEFAULT_REGION` environment variables, then the AWS SDK's default region resolution.
+   */
+  region?: string;
   [property: string]: any;
 }
 
@@ -568,9 +645,29 @@ export interface AuthMechanismProperties {
   [property: string]: any;
 }
 
+/**
+ * Connection pool tuning passed to the PostgreSQL client.
+ */
+export interface Pool {
+  /**
+   * Milliseconds to wait for a connection before timing out.
+   */
+  connectionTimeoutMillis?: number;
+  /**
+   * Milliseconds a client may sit idle in the pool before being closed.
+   */
+  idleTimeoutMillis?: number;
+  /**
+   * Maximum number of clients the pool may hold.
+   */
+  max?: number;
+  [property: string]: any;
+}
+
 export enum DatabaseType {
   FS = 'fs',
   Mongo = 'mongo',
+  Postgres = 'postgres',
 }
 
 /**
@@ -1066,6 +1163,21 @@ const typeMap: any = {
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'options', js: 'options', typ: u(undefined, r('Options')) },
       { json: 'type', js: 'type', typ: r('DatabaseType') },
+      { json: 'awsIamAuth', js: 'awsIamAuth', typ: u(undefined, r('AwsIamAuth')) },
+      { json: 'database', js: 'database', typ: u(undefined, '') },
+      { json: 'host', js: 'host', typ: u(undefined, '') },
+      { json: 'password', js: 'password', typ: u(undefined, '') },
+      { json: 'pool', js: 'pool', typ: u(undefined, r('Pool')) },
+      { json: 'port', js: 'port', typ: u(undefined, 3.14) },
+      { json: 'ssl', js: 'ssl', typ: u(undefined, u(true, m('any'))) },
+      { json: 'user', js: 'user', typ: u(undefined, '') },
+    ],
+    'any',
+  ),
+  AwsIamAuth: o(
+    [
+      { json: 'enabled', js: 'enabled', typ: true },
+      { json: 'region', js: 'region', typ: u(undefined, '') },
     ],
     'any',
   ),
@@ -1081,6 +1193,14 @@ const typeMap: any = {
   ),
   AuthMechanismProperties: o(
     [{ json: 'AWS_CREDENTIAL_PROVIDER', js: 'AWS_CREDENTIAL_PROVIDER', typ: u(undefined, true) }],
+    'any',
+  ),
+  Pool: o(
+    [
+      { json: 'connectionTimeoutMillis', js: 'connectionTimeoutMillis', typ: u(undefined, 3.14) },
+      { json: 'idleTimeoutMillis', js: 'idleTimeoutMillis', typ: u(undefined, 3.14) },
+      { json: 'max', js: 'max', typ: u(undefined, 3.14) },
+    ],
     'any',
   ),
   SSH: o(
@@ -1144,5 +1264,5 @@ const typeMap: any = {
     false,
   ),
   AuthenticationElementType: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
-  DatabaseType: ['fs', 'mongo'],
+  DatabaseType: ['fs', 'mongo', 'postgres'],
 };
