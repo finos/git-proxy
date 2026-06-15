@@ -1124,7 +1124,7 @@ describe('parsePackFile', () => {
       expect(step.errorMessage).toContain('push one branch at a time');
     });
 
-    it('should handle tag push with empty tagData (lightweight tag)', async () => {
+    it('should block lightweight (non-annotated) tag push', async () => {
       const oldCommit = '0'.repeat(40);
       const newCommit = 'e'.repeat(40);
       const ref = 'refs/tags/v-lightweight';
@@ -1138,14 +1138,8 @@ describe('parsePackFile', () => {
 
       const step = action.steps.find((s: any) => s.stepName === 'parsePackFile');
       expect(step).toBeDefined();
-      expect(step.error).toBe(false);
-
-      expect(action.actionType).toBe('tag');
-      expect(action.tags).toEqual([ref]);
-      expect(action.branch).toBeNull();
-      expect(action.tagData).toHaveLength(0);
-      expect(action.user).toBeNull();
-      expect(action.userEmail).toBeNull();
+      expect(step.error).toBe(true);
+      expect(step.errorMessage).toContain('Lightweight (non-annotated) tags are not supported');
     });
   });
 

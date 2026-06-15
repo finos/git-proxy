@@ -134,7 +134,10 @@ async function exec(req: Request, action: Action): Promise<Action> {
         action.user = action.tagData.at(-1)!.tagger;
         action.userEmail = action.tagData.at(-1)!.taggerEmail;
       } else {
-        step.log('No tag data found when parsing push.');
+        // TODO: support lightweight tags once we have a reliable way to identify the pusher
+        throw new Error(
+          'Lightweight (non-annotated) tags are not supported. Please use "git tag -a" to create an annotated tag.',
+        );
       }
     } else if (action.actionType === ActionType.BRANCH) {
       if (action.commitData.length && action.commitFrom === EMPTY_COMMIT_HASH) {
