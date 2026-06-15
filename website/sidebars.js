@@ -83,7 +83,11 @@ module.exports = {
       },
       collapsible: true,
       collapsed: false,
-      items: ['architecture/architecture', 'architecture/processors'],
+      items: [
+        'architecture/architecture',
+        'architecture/processors',
+        'architecture/ssh-architecture',
+      ],
     },
     'deployment',
     {
@@ -101,5 +105,6 @@ module.exports = {
       items: ['development/contributing', 'development/plugins', 'development/releases'],
     },
     'user-manual',
+    'ssh-setup',
   ],
 };
