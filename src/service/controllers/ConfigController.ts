@@ -16,7 +16,7 @@
 
 import { Controller, Get, Route, Tags } from 'tsoa';
 import * as config from '../../config';
-import type { AttestationConfig, UIRouteAuth } from '../../config/generated/config';
+import type { AttestationConfig, SSH, UIRouteAuth } from '../../config/generated/config';
 
 /**
  * Public configuration endpoints consumed by the UI.
@@ -42,5 +42,10 @@ export class ConfigController extends Controller {
   @Get('/uiRouteAuth')
   public getUiRouteAuth(): UIRouteAuth {
     return config.getUIRouteAuth();
+  }
+
+  @Get('/ssh')
+  public getSSH(): SSH {
+    return config.getSSHConfig();
   }
 }

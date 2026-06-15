@@ -42,6 +42,10 @@ export interface CreateUserResponse {
   username: string;
 }
 
+export interface CsrfTokenResponse {
+  csrfToken: string;
+}
+
 export interface GitAccountBody {
   username?: string;
   id?: string;

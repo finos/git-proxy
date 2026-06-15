@@ -5,7 +5,7 @@ description: Auth API endpoints for GitProxy
 
 # Auth
 
-*9 endpoints — 5 GET, 4 POST*
+*10 endpoints — 6 GET, 4 POST*
 
 ## <span style={{background: '#61affe', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>GET</span> `/api/auth`
 
@@ -20,6 +20,17 @@ Returns links to the available authentication resource endpoints.
 ## <span style={{background: '#61affe', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>GET</span> `/api/auth/config`
 
 Returns the enabled authentication methods available to the UI.
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+
+---
+
+## <span style={{background: '#61affe', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>GET</span> `/api/auth/csrf-token`
+
+Returns a CSRF token for the current session, to be sent with subsequent
+state-changing requests.
 
 #### Responses
 
@@ -76,6 +87,7 @@ Creates a new user. Requires admin privileges.
 #### Responses
 
 - <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>400</code> Bad Request
 - <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>403</code> Forbidden
 - <code style={{background: '#f93e3e22', color: '#f93e3e', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>500</code> Internal Server Error
 

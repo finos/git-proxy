@@ -23,3 +23,11 @@ export type ValidationErrorResponse = TsoaResponse<400, { message: string }>;
 export type ConflictResponse = TsoaResponse<409, { message: string }>;
 export type InternalServerErrorResponse = TsoaResponse<500, { message: string }>;
 export type UserNotFoundResponse = TsoaResponse<400, { error: string }>;
+
+// Error responses using an `{ error: string }` body shape (consumed by the SSH key UI/CLI).
+export type AuthenticationRequiredResponse = TsoaResponse<401, { error: string }>;
+export type ForbiddenErrorResponse = TsoaResponse<403, { error: string }>;
+export type BadRequestErrorResponse = TsoaResponse<400, { error: string }>;
+export type NotFoundErrorResponse = TsoaResponse<404, { error: string }>;
+export type ConflictErrorResponse = TsoaResponse<409, { error: string }>;
+export type ServerErrorResponse = TsoaResponse<500, { error: string }>;

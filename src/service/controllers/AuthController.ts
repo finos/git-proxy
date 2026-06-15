@@ -32,6 +32,7 @@ import {
   LoginResponse,
   LogoutResponse,
   CreateUserResponse,
+  CsrfTokenResponse,
   GitAccountBody,
   CreateUserBody,
 } from '../interfaces/auth.interfaces';
@@ -145,6 +146,16 @@ export class AuthController extends Controller {
         .map((am) => am.type.toLowerCase())
         .filter((authType) => authType !== usernamePasswordMethod),
     };
+  }
+
+  /**
+   * Returns a CSRF token for the current session, to be sent with subsequent
+   * state-changing requests.
+   */
+  @Get('/csrf-token')
+  public getCsrfToken(@Request() req: ExpressRequest): CsrfTokenResponse {
+    console.log('req.user', req.user);
+    return { csrfToken: (req as ExpressRequest & { csrfToken: () => string }).csrfToken() };
   }
 
   /**

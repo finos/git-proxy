@@ -40,6 +40,42 @@ const models: TsoaRoute.Models = {
         "additionalProperties": false,
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SSHKeyFingerprint": {
+        "dataType": "refObject",
+        "properties": {
+            "fingerprint": {"dataType":"string","required":true},
+            "name": {"dataType":"string","required":true},
+            "addedAt": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AddSSHKeyResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "message": {"dataType":"string","required":true},
+            "fingerprint": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "AddSSHKeyBody": {
+        "dataType": "refObject",
+        "properties": {
+            "publicKey": {"dataType":"string"},
+            "name": {"dataType":"string"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "RemoveSSHKeyResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "message": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "RepoWithProxy": {
         "dataType": "refObject",
         "properties": {
@@ -160,6 +196,8 @@ const models: TsoaRoute.Models = {
             "lastStep": {"ref":"Step"},
             "proxyGitPath": {"dataType":"string"},
             "newIdxFiles": {"dataType":"array","array":{"dataType":"string"}},
+            "protocol": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["https"]},{"dataType":"enum","enums":["ssh"]}]},
+            "pullAuthStrategy": {"dataType":"union","subSchemas":[{"dataType":"enum","enums":["basic"]},{"dataType":"enum","enums":["ssh-user-key"]},{"dataType":"enum","enums":["ssh-service-token"]},{"dataType":"enum","enums":["ssh-agent-forwarding"]},{"dataType":"enum","enums":["anonymous"]}]},
         },
         "additionalProperties": false,
     },
@@ -252,6 +290,28 @@ const models: TsoaRoute.Models = {
         "additionalProperties": {"dataType":"any"},
     },
     // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "HostKey": {
+        "dataType": "refObject",
+        "properties": {
+            "privateKeyPath": {"dataType":"string","required":true},
+            "publicKeyPath": {"dataType":"string","required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "SSH": {
+        "dataType": "refObject",
+        "properties": {
+            "agentForwardingErrorMessage": {"dataType":"string"},
+            "debug": {"dataType":"boolean"},
+            "enabled": {"dataType":"boolean","required":true},
+            "hostKey": {"ref":"HostKey"},
+            "knownHosts": {"dataType":"nestedObjectLiteral","nestedProperties":{},"additionalProperties":{"dataType":"string"}},
+            "port": {"dataType":"double"},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
     "AuthResources": {
         "dataType": "refObject",
         "properties": {
@@ -267,6 +327,14 @@ const models: TsoaRoute.Models = {
         "properties": {
             "usernamePasswordMethod": {"dataType":"union","subSchemas":[{"dataType":"string"},{"dataType":"enum","enums":[null]}],"required":true},
             "otherMethods": {"dataType":"array","array":{"dataType":"string"},"required":true},
+        },
+        "additionalProperties": false,
+    },
+    // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+    "CsrfTokenResponse": {
+        "dataType": "refObject",
+        "properties": {
+            "csrfToken": {"dataType":"string","required":true},
         },
         "additionalProperties": false,
     },
@@ -395,6 +463,117 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getUser',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsUserController_getSshKeyFingerprints: Record<string, TsoaRoute.ParameterSchema> = {
+                username: {"in":"path","name":"username","required":true,"dataType":"string"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+                authRequiredResponse: {"in":"res","name":"401","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+                forbiddenResponse: {"in":"res","name":"403","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+                serverErrorResponse: {"in":"res","name":"500","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+        };
+        app.get('/api/v1/user/:username/ssh-key-fingerprints',
+            authenticateMiddleware([{"jwt":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(UserController)),
+            ...(fetchMiddlewares<RequestHandler>(UserController.prototype.getSshKeyFingerprints)),
+
+            async function UserController_getSshKeyFingerprints(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsUserController_getSshKeyFingerprints, request, response });
+
+                const controller = new UserController();
+
+              await templateService.apiHandler({
+                methodName: 'getSshKeyFingerprints',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsUserController_addSshKey: Record<string, TsoaRoute.ParameterSchema> = {
+                username: {"in":"path","name":"username","required":true,"dataType":"string"},
+                body: {"in":"body","name":"body","required":true,"ref":"AddSSHKeyBody"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+                authRequiredResponse: {"in":"res","name":"401","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+                forbiddenResponse: {"in":"res","name":"403","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+                badRequestResponse: {"in":"res","name":"400","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+                notFoundResponse: {"in":"res","name":"404","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+                conflictResponse: {"in":"res","name":"409","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+                serverErrorResponse: {"in":"res","name":"500","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+        };
+        app.post('/api/v1/user/:username/ssh-keys',
+            authenticateMiddleware([{"jwt":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(UserController)),
+            ...(fetchMiddlewares<RequestHandler>(UserController.prototype.addSshKey)),
+
+            async function UserController_addSshKey(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsUserController_addSshKey, request, response });
+
+                const controller = new UserController();
+
+              await templateService.apiHandler({
+                methodName: 'addSshKey',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsUserController_removeSshKey: Record<string, TsoaRoute.ParameterSchema> = {
+                username: {"in":"path","name":"username","required":true,"dataType":"string"},
+                fingerprint: {"in":"path","name":"fingerprint","required":true,"dataType":"string"},
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+                authRequiredResponse: {"in":"res","name":"401","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+                forbiddenResponse: {"in":"res","name":"403","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+                notFoundResponse: {"in":"res","name":"404","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+                serverErrorResponse: {"in":"res","name":"500","required":true,"dataType":"nestedObjectLiteral","nestedProperties":{"error":{"dataType":"string","required":true}}},
+        };
+        app.delete('/api/v1/user/:username/ssh-keys/:fingerprint',
+            authenticateMiddleware([{"jwt":[]}]),
+            ...(fetchMiddlewares<RequestHandler>(UserController)),
+            ...(fetchMiddlewares<RequestHandler>(UserController.prototype.removeSshKey)),
+
+            async function UserController_removeSshKey(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsUserController_removeSshKey, request, response });
+
+                const controller = new UserController();
+
+              await templateService.apiHandler({
+                methodName: 'removeSshKey',
                 controller,
                 response,
                 next,
@@ -1024,6 +1203,35 @@ export function RegisterRoutes(app: Router) {
             }
         });
         // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsConfigController_getSSH: Record<string, TsoaRoute.ParameterSchema> = {
+        };
+        app.get('/api/v1/config/ssh',
+            ...(fetchMiddlewares<RequestHandler>(ConfigController)),
+            ...(fetchMiddlewares<RequestHandler>(ConfigController.prototype.getSSH)),
+
+            async function ConfigController_getSSH(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsConfigController_getSSH, request, response });
+
+                const controller = new ConfigController();
+
+              await templateService.apiHandler({
+                methodName: 'getSSH',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
         const argsAuthController_getResources: Record<string, TsoaRoute.ParameterSchema> = {
         };
         app.get('/api/auth',
@@ -1071,6 +1279,36 @@ export function RegisterRoutes(app: Router) {
 
               await templateService.apiHandler({
                 methodName: 'getAuthConfig',
+                controller,
+                response,
+                next,
+                validatedArgs,
+                successStatus: undefined,
+              });
+            } catch (err) {
+                return next(err);
+            }
+        });
+        // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+        const argsAuthController_getCsrfToken: Record<string, TsoaRoute.ParameterSchema> = {
+                req: {"in":"request","name":"req","required":true,"dataType":"object"},
+        };
+        app.get('/api/auth/csrf-token',
+            ...(fetchMiddlewares<RequestHandler>(AuthController)),
+            ...(fetchMiddlewares<RequestHandler>(AuthController.prototype.getCsrfToken)),
+
+            async function AuthController_getCsrfToken(request: ExRequest, response: ExResponse, next: any) {
+
+            // WARNING: This file was auto-generated with tsoa. Please do not modify it. Re-run tsoa to re-generate this file: https://github.com/lukeautry/tsoa
+
+            let validatedArgs: any[] = [];
+            try {
+                validatedArgs = templateService.getValidatedArgs({ args: argsAuthController_getCsrfToken, request, response });
+
+                const controller = new AuthController();
+
+              await templateService.apiHandler({
+                methodName: 'getCsrfToken',
                 controller,
                 response,
                 next,
