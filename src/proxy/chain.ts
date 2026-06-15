@@ -17,7 +17,7 @@
 import { Request, Response } from 'express';
 
 import { PluginLoader } from '../plugin';
-import { Action, RequestType, ActionType } from './actions';
+import { Action, RequestType, PushType } from './actions';
 import * as proc from './processors';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
@@ -146,7 +146,7 @@ export const getChain = async (
     case RequestType.PULL:
       return pullActionChain;
     case RequestType.PUSH:
-      return action.actionType === ActionType.TAG ? tagPushChain : branchPushChain;
+      return action.actionType === PushType.TAG ? tagPushChain : branchPushChain;
     default:
       return defaultActionChain;
   }

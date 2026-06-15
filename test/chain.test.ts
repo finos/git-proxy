@@ -16,7 +16,7 @@
 
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { PluginLoader } from '../src/plugin';
-import { Action, ActionType, RequestType } from '../src/proxy/actions';
+import { Action, PushType, RequestType } from '../src/proxy/actions';
 
 const mockLoader = {
   pushPlugins: [
@@ -465,7 +465,7 @@ describe('proxy chain', function () {
       Date.now(),
       'http://github.com/owner/repo.git',
     );
-    action.actionType = ActionType.TAG;
+    action.actionType = PushType.TAG;
     const tagChain = await chain.getChain(action);
     expect(tagChain).toEqual(chain.tagPushChain);
   });
@@ -478,14 +478,14 @@ describe('proxy chain', function () {
       Date.now(),
       'http://github.com/owner/repo.git',
     );
-    action.actionType = ActionType.BRANCH;
+    action.actionType = PushType.BRANCH;
     const branchChain = await chain.getChain(action);
     expect(branchChain).toEqual(chain.branchPushChain);
   });
 
   it('getChain should return tagPushChain if loader is undefined for tag pushes', async () => {
     chain.chainPluginLoader = undefined;
-    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: ActionType.TAG });
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
     expect(actual).toEqual(chain.tagPushChain);
     expect(chain.chainPluginLoader).toBeUndefined();
     expect(chain.pluginsInserted).toBe(true);
@@ -494,7 +494,7 @@ describe('proxy chain', function () {
   it('getChain should load tag plugins from an initialized PluginLoader', async () => {
     chain.chainPluginLoader = mockLoader;
     const initialChain = [...chain.tagPushChain];
-    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: ActionType.TAG });
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
     expect(actual.length).toBeGreaterThan(initialChain.length);
     expect(chain.pluginsInserted).toBe(true);
   });

@@ -19,7 +19,7 @@ import fs from 'fs';
 import lod from 'lodash';
 import { createInflate } from 'zlib';
 
-import { Action, Step, ActionType } from '../../actions';
+import { Action, Step, PushType } from '../../actions';
 import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
 import { TagData } from '../../../types/models';
 import {
@@ -95,10 +95,10 @@ async function exec(req: Request, action: Action): Promise<Action> {
     }
 
     if (allTags) {
-      action.actionType = ActionType.TAG;
+      action.actionType = PushType.TAG;
       action.tags = parsedRefs.map((r) => r.refName);
     } else {
-      action.actionType = ActionType.BRANCH;
+      action.actionType = PushType.BRANCH;
       action.branch = parsedRefs[0].refName;
     }
 
@@ -129,7 +129,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
       else if (obj.type === GIT_OBJECT_TYPE_TAG) action.tagData.push(getTagData(obj));
     }
 
-    if (action.actionType === ActionType.TAG) {
+    if (action.actionType === PushType.TAG) {
       if (action.tagData.length) {
         action.user = action.tagData.at(-1)!.tagger;
         action.userEmail = action.tagData.at(-1)!.taggerEmail;
@@ -139,7 +139,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
           'Lightweight (non-annotated) tags are not supported. Please use "git tag -a" to create an annotated tag.',
         );
       }
-    } else if (action.actionType === ActionType.BRANCH) {
+    } else if (action.actionType === PushType.BRANCH) {
       if (action.commitData.length && action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }

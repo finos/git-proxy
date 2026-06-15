@@ -27,7 +27,7 @@ export enum RequestType {
   DEFAULT = 'default',
 }
 
-export enum ActionType {
+export enum PushType {
   /** Push to a tag ref (refs/tags/*) */
   TAG = 'tag',
 
@@ -41,7 +41,7 @@ export enum ActionType {
 class Action {
   id: string;
   type: RequestType;
-  actionType?: ActionType;
+  actionType?: PushType;
   method: string;
   timestamp: number;
   project: string;
