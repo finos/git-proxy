@@ -19,10 +19,11 @@ import { Request, Response } from 'express';
 import { PluginLoader } from '../plugin';
 import { Action, RequestType, PushType } from './actions';
 import * as proc from './processors';
+import { Processor } from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
 
-const branchPushChain: ((req: Request, action: Action) => Promise<Action>)[] = [
+const branchPushChain: Processor['exec'][] = [
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkMessages,
@@ -39,7 +40,7 @@ const branchPushChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.blockForAuth,
 ];
 
-const tagPushChain: ((req: Request, action: Action) => Promise<Action>)[] = [
+const tagPushChain: Processor['exec'][] = [
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkUserPushPermission,
   proc.push.checkIfWaitingAuth,
@@ -50,13 +51,9 @@ const tagPushChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.blockForAuth,
 ];
 
-const pullActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
-  proc.push.checkRepoInAuthorisedList,
-];
+const pullActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorisedList];
 
-const defaultActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
-  proc.push.checkRepoInAuthorisedList,
-];
+const defaultActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorisedList];
 
 let pluginsInserted = false;
 
@@ -113,9 +110,7 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
  */
 let chainPluginLoader: PluginLoader;
 
-export const getChain = async (
-  action: Action,
-): Promise<((req: Request, action: Action) => Promise<Action>)[]> => {
+export const getChain = async (action: Action): Promise<Processor['exec'][]> => {
   if (chainPluginLoader === undefined) {
     console.error(
       'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',
