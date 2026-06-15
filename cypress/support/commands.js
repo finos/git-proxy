@@ -116,7 +116,7 @@ Cypress.Commands.add('createTestTagPush', (pushData = {}) => {
     user: 'test-tagger',
     userEmail: 'test-tagger@test.com',
     branch: 'refs/heads/main',
-    tag: 'refs/tags/v1.0.0',
+    tags: ['refs/tags/v1.0.0'],
     commitFrom: '0000000000000000000000000000000000000000',
     commitTo: 'abcdef1234567890abcdef1234567890abcdef12',
     lastStep: null,
