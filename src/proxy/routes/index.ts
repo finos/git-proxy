@@ -205,7 +205,7 @@ const hostMatchesNoProxy = (host: string | null | undefined, noProxyList: string
 // Returns undefined when no header should be injected.
 const buildProxyAuthHeader = (auth: Auth | undefined): string | undefined => {
   if (!auth) return undefined;
-  if (auth.type === 'basic') {
+  if (auth.type === AuthType.Basic) {
     const encoded = Buffer.from(`${auth.username}:${auth.password}`).toString('base64');
     return `Basic ${encoded}`;
   }
