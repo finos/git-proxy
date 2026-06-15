@@ -212,6 +212,9 @@
     "@esbuild/linux-x64": "0.27.2",
     "@esbuild/win32-x64": "0.27.2"
   },
+  "overrides": {
+    "underscore": "^1.13.8"
+  },
   "browserslist": {
     "production": [
       ">0.2%",
