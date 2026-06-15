@@ -420,6 +420,8 @@ Defines a list of event handler modules that observe GitProxy lifecycle events. 
 
 Unlike chain plugins, event handlers are **observers only** — they cannot block, modify or reject a Git operation. They run asynchronously, fire-and-forget, off the request path: a handler that is slow or throws will never delay or fail a push/pull. Use them to react to GitProxy activity, e.g. emitting metrics, sending notifications or writing to an external audit log.
 
+See the [event handler guide](../development/event-handlers) for the execution model, the full handler API and guidance on choosing an event handler over a plugin.
+
 Sample values:
 
 ```json

@@ -62,6 +62,10 @@ export const consoleLoggerEventHandler = new EventHandlerPlugin(function registe
       else if (phase === 'pendingReview') builder.onPendingReview(log);
       else if (phase === 'error') builder.onError(log);
       else if (phase === 'permissionDenied') builder.onPermissionDenied(log);
+      else {
+        const exhaustiveCheck: never = phase;
+        throw new Error(`Unhandled ActionPhase in consoleLogger: ${exhaustiveCheck}`);
+      }
     }
   }
 });

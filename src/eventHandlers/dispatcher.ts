@@ -39,6 +39,21 @@ const buildUserContext = (action: Action): UserContext | undefined => {
 };
 
 /**
+ * Produces a per-handler copy of the event details, including fresh nested
+ * objects. Handlers run fire-and-forget and would otherwise share a single
+ * `details` reference, so a handler mutating `details.user` or
+ * `details.repository` would corrupt what later handlers observe. Cloning
+ * isolates each handler without forcing plugin authors to deal with frozen
+ * objects. `error` is shared by reference — Error instances do not clone
+ * cleanly, and it is the same underlying failure for every handler.
+ */
+const cloneDetails = (details: EventDetails): EventDetails => ({
+  ...details,
+  repository: { ...details.repository },
+  user: details.user ? { ...details.user } : undefined,
+});
+
+/**
  * Translates an Action's type string to the ProxyOperation surfaced to
  * handlers, or null when the action should not produce an event (e.g.
  * "default" actions used for protocol pings).
@@ -80,7 +95,7 @@ export class EventDispatcher {
     };
 
     for (const handler of handlers) {
-      this.invoke(handler, details);
+      this.invoke(handler, cloneDetails(details));
     }
   }
 

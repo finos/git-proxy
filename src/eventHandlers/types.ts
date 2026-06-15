@@ -77,10 +77,11 @@ export interface IActionEventHandler {
  * Registry through which integrations subscribe to git-proxy lifecycle events.
  *
  * Handlers are observers only - they cannot block, modify, or reject git
- * operations. For blocking/policy logic, write a chain plugin instead.
+ * operations; for blocking/policy logic, write a chain plugin instead.
  *
- * Handlers run asynchronously, fire-and-forget. Errors thrown by a handler
- * are caught and logged but never propagate to the git response.
+ * See the Event Handlers guide (website/docs/development/event-handlers.mdx)
+ * for the execution model and guidance on choosing an event handler over a
+ * plugin.
  */
 export interface IProxyEventRegistry {
   onPush(): IActionEventHandler;

@@ -82,7 +82,12 @@ module.exports = {
       },
       collapsible: true,
       collapsed: false,
-      items: ['development/contributing', 'development/plugins', 'development/releases'],
+      items: [
+        'development/contributing',
+        'development/plugins',
+        'development/event-handlers',
+        'development/releases',
+      ],
     },
     'user-manual',
     'ssh-setup',
