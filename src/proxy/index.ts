@@ -20,15 +20,7 @@ import https from 'https';
 import fs from 'fs';
 
 import { getRouter } from './routes';
-export {
-  getRouter,
-  proxyFilter,
-  extractRawBody,
-  validGitRequest,
-  buildUpstreamProxyAgent,
-  hostMatchesNoProxy,
-  getOrCreateProxyAgent,
-} from './routes';
+export * from './routes';
 
 import {
   getAuthorisedList,
