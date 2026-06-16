@@ -47,6 +47,7 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'cookieSecret',
   'csrfProtection',
   'domains',
+  'eventHandlers',
   'httpsServerPort',
   'httpsUiPort',
   'limits',
