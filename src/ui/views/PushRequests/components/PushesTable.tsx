@@ -77,7 +77,7 @@ const PushesTable: React.FC<PushesTableProps> = (props) => {
     if (props.canceled !== undefined) query.canceled = props.canceled;
     if (props.authorised !== undefined) query.authorised = props.authorised;
     if (props.rejected !== undefined) query.rejected = props.rejected;
-    if (props.errored !== undefined) query.errored = props.errored;
+    if (props.errored !== undefined) query.error = props.errored;
 
     const load = async () => {
       setIsLoading(true);

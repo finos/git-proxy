@@ -79,7 +79,10 @@ export const getRefToShow = (pushData: PushData): string => {
   if (isTagPush(pushData)) {
     return getTagName(pushData.tags);
   }
-  return trimPrefixRefsHeads(pushData.branch);
+  if (pushData?.tags && pushData.tags.length > 0) {
+    return getTagName(pushData.tags);
+  }
+  return trimPrefixRefsHeads(pushData.branch || '');
 };
 
 /**
@@ -131,7 +134,7 @@ export const getAuthor = (pushData: PushData): string => {
   if (isTagPush(pushData)) {
     return pushData.tagData?.[0]?.tagger || 'N/A';
   }
-  return pushData.commitData[0]?.author || 'N/A';
+  return pushData.commitData?.[0]?.author || 'N/A';
 };
 
 /**
@@ -143,7 +146,7 @@ export const getAuthorEmail = (pushData: PushData): string => {
   if (isTagPush(pushData)) {
     return pushData.tagData?.[0]?.taggerEmail || 'N/A';
   }
-  return pushData.commitData[0]?.authorEmail || 'N/A';
+  return pushData.commitData?.[0]?.authorEmail || 'N/A';
 };
 
 /**
@@ -154,9 +157,9 @@ export const getAuthorEmail = (pushData: PushData): string => {
 export const getMessage = (pushData: PushData): string => {
   if (isTagPush(pushData)) {
     // For tags, try tag message first, then fallback to commit message
-    return pushData.tagData?.[0]?.message || pushData.commitData[0]?.message || '';
+    return pushData.tagData?.[0]?.message || pushData.commitData?.[0]?.message || '';
   }
-  return pushData.commitData[0]?.message || 'N/A';
+  return pushData.commitData?.[0]?.message || 'N/A';
 };
 
 /**
