@@ -150,7 +150,7 @@
     "ssh2": "~1.17.0",
     "uuid": "^14.0.0",
     "validator": "^13.15.26",
-    "yargs": "^17.7.2"
+    "yargs": "^18.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.28.6",
