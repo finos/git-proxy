@@ -29,7 +29,6 @@ const mockLoader = {
 
 const initMockPushProcessors = () => {
   return {
-    parsePush: vi.fn(),
     checkEmptyBranch: vi.fn(),
     checkRepoInAuthorisedList: vi.fn(),
     checkMessages: vi.fn(),
@@ -57,6 +56,7 @@ const initMockPostProcessors = () => {
 
 const mockPreProcessors = {
   parseAction: vi.fn(),
+  parsePush: vi.fn(),
 };
 
 describe('proxy chain', function () {
@@ -140,7 +140,7 @@ describe('proxy chain', function () {
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
-    mockPushProcessors.parsePush.mockResolvedValue(continuingAction);
+    mockPreProcessors.parsePush.mockResolvedValue(continuingAction);
 
     // this stops the chain from further execution
     mockPushProcessors.checkIfWaitingAuth.mockResolvedValue({
@@ -153,7 +153,8 @@ describe('proxy chain', function () {
 
     //all processors upto checkIfWaitingAuth should have run + clearBareClone & audit
     expect(mockPreProcessors.parseAction).toHaveBeenCalled();
-    expect(mockPushProcessors.parsePush).toHaveBeenCalled();
+    expect(mockPreProcessors.parsePush).toHaveBeenCalled();
+
     expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
     expect(mockPushProcessors.checkMessages).toHaveBeenCalled();
@@ -185,7 +186,7 @@ describe('proxy chain', function () {
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
-    mockPushProcessors.parsePush.mockResolvedValue(continuingAction);
+    mockPreProcessors.parsePush.mockResolvedValue(continuingAction);
 
     // this stops the chain from further execution
     mockPushProcessors.checkIfWaitingAuth.mockResolvedValue({
@@ -198,7 +199,8 @@ describe('proxy chain', function () {
 
     //all processors upto checkIfWaitingAuth should have run + clearBareClone & audit
     expect(mockPreProcessors.parseAction).toHaveBeenCalled();
-    expect(mockPushProcessors.parsePush).toHaveBeenCalled();
+    expect(mockPreProcessors.parsePush).toHaveBeenCalled();
+
     expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
     expect(mockPushProcessors.checkMessages).toHaveBeenCalled();
@@ -230,13 +232,14 @@ describe('proxy chain', function () {
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
-    mockPushProcessors.parsePush.mockResolvedValue(continuingAction);
+    mockPreProcessors.parsePush.mockResolvedValue(continuingAction);
 
     const result = await chain.executeChain(req);
 
-    //all processors upto checkIfWaitingAuth should have run + clearBareClone & audit
+    //all processors should have run + clearBareClone & audit
     expect(mockPreProcessors.parseAction).toHaveBeenCalled();
-    expect(mockPushProcessors.parsePush).toHaveBeenCalled();
+    expect(mockPreProcessors.parsePush).toHaveBeenCalled();
+
     expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
     expect(mockPushProcessors.checkMessages).toHaveBeenCalled();
@@ -270,7 +273,8 @@ describe('proxy chain', function () {
     const result = await chain.executeChain(req);
 
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
-    expect(mockPushProcessors.parsePush).not.toHaveBeenCalled();
+    expect(mockPreProcessors.parsePush).not.toHaveBeenCalled();
+
     expect(mockPostProcessors.audit).toHaveBeenCalled();
     expect(mockPostProcessors.clearBareClone).not.toHaveBeenCalled();
     expect(result.type).toBe('pull');
@@ -281,7 +285,7 @@ describe('proxy chain', function () {
     const action = { type: 'push', continue: () => true, allowPush: false };
 
     processors.pre.parseAction.mockResolvedValue(action);
-    mockPushProcessors.parsePush.mockRejectedValue(new Error('Audit error'));
+    processors.pre.parsePush.mockRejectedValue(new Error('Audit error'));
 
     try {
       await chain.executeChain(req);
@@ -297,6 +301,7 @@ describe('proxy chain', function () {
     const action = { type: 'push', continue: () => true, allowPush: false };
 
     processors.pre.parseAction.mockResolvedValue(action);
+    processors.pre.parsePush.mockResolvedValue(action);
     mockPushProcessors.writePack.mockRejectedValue(new Error('writePack error'));
 
     try {
@@ -333,6 +338,7 @@ describe('proxy chain', function () {
     };
 
     mockPreProcessors.parseAction.mockResolvedValue(action);
+    mockPreProcessors.parsePush.mockResolvedValue(action);
 
     mockPushProcessors.preReceive.mockResolvedValue({
       ...action,
@@ -366,6 +372,7 @@ describe('proxy chain', function () {
     };
 
     mockPreProcessors.parseAction.mockResolvedValue(action);
+    mockPreProcessors.parsePush.mockResolvedValue(action);
 
     mockPushProcessors.preReceive.mockResolvedValue({
       ...action,
@@ -398,6 +405,7 @@ describe('proxy chain', function () {
     };
 
     mockPreProcessors.parseAction.mockResolvedValue(action);
+    mockPreProcessors.parsePush.mockResolvedValue(action);
 
     mockPushProcessors.preReceive.mockResolvedValue({
       ...action,
@@ -428,6 +436,7 @@ describe('proxy chain', function () {
     };
 
     mockPreProcessors.parseAction.mockResolvedValue(action);
+    mockPreProcessors.parsePush.mockResolvedValue(action);
 
     mockPushProcessors.preReceive.mockResolvedValue({
       ...action,

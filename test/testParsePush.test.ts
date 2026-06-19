@@ -26,7 +26,7 @@ import {
   getContents,
   getPackMeta,
   getTagData,
-} from '../src/proxy/processors/push-action/parsePush';
+} from '../src/proxy/processors/pre-processor/parsePush';
 import { parsePacketLines } from '../src/proxy/processors/pktLineParser';
 
 import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';

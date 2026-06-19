@@ -64,9 +64,9 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
   try {
     // 1) Initialize basic action fields
     action = await proc.pre.parseAction(req);
-    // 2) Parse the push payload first to detect tags/branches
+    // 2) Parse refs and PACK data before chain selection
     if (action.type === RequestType.PUSH) {
-      action = await proc.push.parsePush(req, action);
+      action = await proc.pre.parsePush(req, action);
     }
     // 3) Select the correct chain now that action.actionType is set
     const actionFns = await getChain(action);
@@ -124,9 +124,8 @@ export const getChain = async (action: Action): Promise<Processor['exec'][]> => 
     );
     for (const pluginObj of chainPluginLoader.pushPlugins) {
       console.log(`Inserting push plugin ${pluginObj.constructor.name} into chain`);
-      // insert custom functions after parsePush but before other actions
-      branchPushChain.splice(1, 0, pluginObj.exec);
-      tagPushChain.splice(1, 0, pluginObj.exec);
+      branchPushChain.splice(0, 0, pluginObj.exec);
+      tagPushChain.splice(0, 0, pluginObj.exec);
     }
     for (const pluginObj of chainPluginLoader.pullPlugins) {
       console.log(`Inserting pull plugin ${pluginObj.constructor.name} into chain`);

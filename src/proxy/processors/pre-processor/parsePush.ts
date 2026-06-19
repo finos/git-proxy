@@ -23,9 +23,9 @@ import { Action, Step, PushType } from '../../actions';
 import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
 import { TagData } from '../../../types/models';
 import {
+  EMPTY_COMMIT_HASH,
   REFS_PREFIX,
   TAG_PREFIX,
-  EMPTY_COMMIT_HASH,
   PACK_SIGNATURE,
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
@@ -63,7 +63,9 @@ async function exec(req: Request, action: Action): Promise<Action> {
     if (typeof req.body === 'string' || Array.isArray(req.body) || !Buffer.isBuffer(req.body)) {
       throw new Error('Request body must be a Buffer');
     }
+
     const [packetLines, packDataOffset] = parsePacketLines(req.body);
+
     const refUpdates = packetLines.filter((line) => line.includes(REFS_PREFIX));
 
     if (refUpdates.length === 0) {
@@ -102,10 +104,8 @@ async function exec(req: Request, action: Action): Promise<Action> {
       action.branch = parsedRefs[0].refName;
     }
 
-    // Use the first ref's commit range for the action id
     action.setCommit(parsedRefs[0].oldCommit, parsedRefs[0].newCommit);
 
-    // Check if the offset is valid and if there's data after it
     if (packDataOffset >= req.body.length) {
       step.log('No PACK data found after packet lines.');
       throw new Error('Your push has been blocked. PACK data is missing.');
@@ -113,7 +113,6 @@ async function exec(req: Request, action: Action): Promise<Action> {
 
     const buf = req.body.subarray(packDataOffset);
 
-    // Verify that data actually starts with PACK signature
     if (buf.length < PACKET_SIZE || buf.toString('utf8', 0, PACKET_SIZE) !== PACK_SIGNATURE) {
       step.log(`Expected PACK signature at offset ${packDataOffset}, but found something else.`);
       throw new Error('Your push has been blocked. Invalid PACK data structure.');

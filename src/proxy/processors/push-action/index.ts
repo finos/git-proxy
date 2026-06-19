@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { exec as parsePush } from './parsePush';
 import { exec as preReceive } from './preReceive';
 import { exec as checkRepoInAuthorisedList } from './checkRepoInAuthorisedList';
 
@@ -33,7 +32,6 @@ import { exec as checkUserPushPermission } from './checkUserPushPermission';
 import { exec as checkEmptyBranch } from './checkEmptyBranch';
 
 export {
-  parsePush,
   preReceive,
   checkRepoInAuthorisedList,
   pullRemote,
