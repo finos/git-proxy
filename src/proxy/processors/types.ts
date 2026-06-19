@@ -37,6 +37,7 @@ type AttestationBase = {
   reviewer: {
     username: string;
     email: string;
+    gitAccount?: string; // For legacy GitHub usernames
   };
   timestamp: string | Date;
   automated?: boolean;
