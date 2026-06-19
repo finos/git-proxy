@@ -19,6 +19,7 @@ import crypto from 'crypto';
 
 import * as db from '../../db';
 import { toPublicUser } from './utils';
+import { scmTokenCache } from '../../proxy/processors/push-action/tokenIdentity';
 
 const router = express.Router();
 
@@ -60,6 +61,57 @@ router.get('/:id', async (req: Request<{ id: string }>, res: Response) => {
     return;
   }
   res.send(toPublicUser(user));
+});
+
+// Get git account (SCM identity) for a user
+router.get('/:username/git-account', async (req: Request<{ username: string }>, res: Response) => {
+  const targetUsername = req.params.username.toLowerCase();
+  const user = await db.findUser(targetUsername);
+  if (!user) {
+    res.status(404).json({ error: `User ${targetUsername} not found` });
+    return;
+  }
+  res.json({ username: user.username, gitAccount: user.gitAccount });
+});
+
+// Set git account (SCM identity) for a user
+router.put('/:username/git-account', async (req: Request<{ username: string }>, res: Response) => {
+  if (!req.user) {
+    res.status(401).json({ error: 'Authentication required' });
+    return;
+  }
+
+  const { username, admin } = req.user as { username: string; admin: boolean };
+  const targetUsername = req.params.username.toLowerCase();
+
+  if (username !== targetUsername && !admin) {
+    res.status(403).json({ error: 'Not authorized to update git account for this user' });
+    return;
+  }
+
+  const { gitAccount } = req.body;
+  if (!gitAccount || typeof gitAccount !== 'string' || !gitAccount.trim()) {
+    res.status(400).json({ error: 'gitAccount is required' });
+    return;
+  }
+
+  const existing = await db.findUser(targetUsername);
+  if (!existing) {
+    res.status(404).json({ error: `User ${targetUsername} not found` });
+    return;
+  }
+
+  const conflict = await db.findUserByGitAccount(gitAccount.trim());
+  if (conflict && conflict.username !== targetUsername) {
+    res
+      .status(409)
+      .json({ error: `Git account '${gitAccount}' is already associated with another user` });
+    return;
+  }
+
+  await db.updateUser({ username: targetUsername, gitAccount: gitAccount.trim() });
+  scmTokenCache.evictByUsername('github', targetUsername);
+  res.json({ username: targetUsername, gitAccount: gitAccount.trim() });
 });
 
 // Get SSH key fingerprints for a user

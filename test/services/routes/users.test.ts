@@ -86,6 +86,146 @@ describe('Users API', () => {
     });
   });
 
+  describe('Git Account Management', () => {
+    beforeEach(() => {
+      vi.spyOn(db, 'findUserByGitAccount').mockResolvedValue(null);
+      vi.spyOn(db, 'updateUser').mockResolvedValue(undefined);
+    });
+
+    describe('GET /users/:username/git-account', () => {
+      it('should return git account for existing user', async () => {
+        const res = await request(app).get('/users/bob/git-account');
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ username: 'bob', gitAccount: '' });
+      });
+
+      it('should return 404 for non-existent user', async () => {
+        vi.spyOn(db, 'findUser').mockResolvedValueOnce(null);
+
+        const res = await request(app).get('/users/nonexistent/git-account');
+
+        expect(res.status).toBe(404);
+      });
+    });
+
+    describe('PUT /users/:username/git-account', () => {
+      it('should return 401 when not authenticated', async () => {
+        const res = await request(app)
+          .put('/users/bob/git-account')
+          .send({ gitAccount: 'octocat' });
+
+        expect(res.status).toBe(401);
+      });
+
+      it('should return 403 when non-admin tries to update other user', async () => {
+        const testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, _res, next) => {
+          req.user = { username: 'alice', admin: false };
+          next();
+        });
+        testApp.use('/users', usersRouter);
+
+        const res = await request(testApp)
+          .put('/users/bob/git-account')
+          .send({ gitAccount: 'octocat' });
+
+        expect(res.status).toBe(403);
+      });
+
+      it('should allow user to set their own git account', async () => {
+        const testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, _res, next) => {
+          req.user = { username: 'bob', admin: false };
+          next();
+        });
+        testApp.use('/users', usersRouter);
+
+        const res = await request(testApp)
+          .put('/users/bob/git-account')
+          .send({ gitAccount: 'octocat' });
+
+        expect(res.status).toBe(200);
+        expect(res.body).toEqual({ username: 'bob', gitAccount: 'octocat' });
+        expect(db.updateUser).toHaveBeenCalledWith({ username: 'bob', gitAccount: 'octocat' });
+      });
+
+      it('should allow admin to set any user git account', async () => {
+        const testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, _res, next) => {
+          req.user = { username: 'admin', admin: true };
+          next();
+        });
+        testApp.use('/users', usersRouter);
+
+        const res = await request(testApp)
+          .put('/users/bob/git-account')
+          .send({ gitAccount: 'octocat' });
+
+        expect(res.status).toBe(200);
+      });
+
+      it('should return 400 when gitAccount is missing', async () => {
+        const testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, _res, next) => {
+          req.user = { username: 'bob', admin: false };
+          next();
+        });
+        testApp.use('/users', usersRouter);
+
+        const res = await request(testApp).put('/users/bob/git-account').send({});
+
+        expect(res.status).toBe(400);
+      });
+
+      it('should return 409 when gitAccount is taken by another user', async () => {
+        vi.spyOn(db, 'findUserByGitAccount').mockResolvedValueOnce({
+          username: 'alice',
+          password: null,
+          email: 'alice@example.com',
+          gitAccount: 'octocat',
+          admin: false,
+        });
+
+        const testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, _res, next) => {
+          req.user = { username: 'bob', admin: false };
+          next();
+        });
+        testApp.use('/users', usersRouter);
+
+        const res = await request(testApp)
+          .put('/users/bob/git-account')
+          .send({ gitAccount: 'octocat' });
+
+        expect(res.status).toBe(409);
+      });
+
+      it('should return 404 when target user does not exist', async () => {
+        vi.spyOn(db, 'findUser').mockResolvedValueOnce(null);
+
+        const testApp = express();
+        testApp.use(express.json());
+        testApp.use((req, _res, next) => {
+          req.user = { username: 'nonexistent', admin: false };
+          next();
+        });
+        testApp.use('/users', usersRouter);
+
+        const res = await request(testApp)
+          .put('/users/nonexistent/git-account')
+          .send({ gitAccount: 'octocat' });
+
+        expect(res.status).toBe(404);
+      });
+    });
+  });
+
   describe('SSH Key Management', () => {
     beforeEach(() => {
       // Mock SSH key operations
