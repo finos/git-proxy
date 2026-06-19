@@ -23,7 +23,7 @@ export const type = 'local';
 
 // Dynamic import to always get the current db module instance
 // This is necessary for test environments where modules may be reset
-const getDb = () => import('../../db');
+const getDb = () => import('../../db/index.js');
 
 export const configure = async (passport: PassportStatic): Promise<PassportStatic> => {
   passport.use(
