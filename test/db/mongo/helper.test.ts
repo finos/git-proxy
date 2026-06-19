@@ -37,7 +37,9 @@ vi.mock('mongodb', async () => {
   const actual = await vi.importActual('mongodb');
   return {
     ...actual,
-    MongoClient: vi.fn(() => mockClient),
+    MongoClient: vi.fn(function () {
+      return mockClient;
+    }),
   };
 });
 
