@@ -20,6 +20,12 @@ import express, { Express, Request, Response } from 'express';
 import authRoutes from '../../../src/service/routes/auth';
 import * as db from '../../../src/db';
 
+vi.mock('../../../src/db', () => ({
+  findUser: vi.fn(),
+  updateUser: vi.fn(),
+  createUser: vi.fn(),
+}));
+
 const newApp = (username?: string): Express => {
   const app = express();
   app.use(express.json());
@@ -42,7 +48,7 @@ describe('Auth API', () => {
 
   describe('POST /gitAccount', () => {
     beforeEach(() => {
-      vi.spyOn(db, 'findUser').mockImplementation((username: string) => {
+      vi.mocked(db.findUser).mockImplementation((username: string) => {
         if (username === 'alice') {
           return Promise.resolve({
             username: 'alice',
@@ -66,10 +72,6 @@ describe('Auth API', () => {
         }
         return Promise.resolve(null);
       });
-    });
-
-    afterEach(() => {
-      vi.restoreAllMocks();
     });
 
     it('should return 401 Unauthorized if authenticated user not in request', async () => {
@@ -135,7 +137,7 @@ describe('Auth API', () => {
     });
 
     it('should return 200 OK if user is an admin and updates git account for authenticated user', async () => {
-      const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
+      const updateUserSpy = vi.mocked(db.updateUser).mockResolvedValue();
 
       const res = await request(newApp('alice')).post('/auth/gitAccount').send({
         username: 'alice',
@@ -156,7 +158,7 @@ describe('Auth API', () => {
     });
 
     it("should prevent non-admin users from changing a different user's gitAccount", async () => {
-      const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
+      const updateUserSpy = vi.mocked(db.updateUser).mockResolvedValue();
 
       const res = await request(newApp('bob')).post('/auth/gitAccount').send({
         username: 'phil',
@@ -168,7 +170,7 @@ describe('Auth API', () => {
     });
 
     it("should allow admin users to change a different user's gitAccount", async () => {
-      const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
+      const updateUserSpy = vi.mocked(db.updateUser).mockResolvedValue();
 
       const res = await request(newApp('alice')).post('/auth/gitAccount').send({
         username: 'bob',
@@ -189,7 +191,7 @@ describe('Auth API', () => {
     });
 
     it('should allow non-admin users to update their own gitAccount', async () => {
-      const updateUserSpy = vi.spyOn(db, 'updateUser').mockResolvedValue();
+      const updateUserSpy = vi.mocked(db.updateUser).mockResolvedValue();
 
       const res = await request(newApp('bob')).post('/auth/gitAccount').send({
         username: 'bob',
@@ -255,7 +257,7 @@ describe('Auth API', () => {
     });
 
     it('should return 200 OK and serialize public data representation of current authenticated user', async () => {
-      vi.spyOn(db, 'findUser').mockResolvedValue({
+      vi.mocked(db.findUser).mockResolvedValue({
         username: 'alice',
         password: 'secret-hashed-password',
         email: 'alice@example.com',
@@ -278,6 +280,8 @@ describe('Auth API', () => {
     });
 
     it('should return 404 Not Found if user is not found', async () => {
+      vi.mocked(db.findUser).mockResolvedValue(null);
+
       const res = await request(newApp('non-existent-user')).get('/auth/profile');
       expect(res.status).toBe(404);
       expect(res.body).toEqual({ message: 'User not found' });
