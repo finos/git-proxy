@@ -35,6 +35,7 @@ const initMockPushProcessors = () => {
     checkCommitMessages: vi.fn(),
     checkAuthorEmails: vi.fn(),
     checkUserPushPermission: vi.fn(),
+    resolveUserFromToken: vi.fn(),
     checkIfWaitingAuth: vi.fn(),
     checkHiddenCommits: vi.fn(),
     pullRemote: vi.fn(),
