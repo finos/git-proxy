@@ -21,7 +21,9 @@ export type ScmUserInfo = {
 };
 
 type CacheEntry = { username: string; provider: string; cachedAt: number };
-const DEFAULT_TTL_MS = 5 * 60 * 1000;
+// 7 days — PATs are rarely rotated more frequently than this in practice; the cache is a
+// rate-limit optimization only (keys are one-way SHA-512 hashes, not recoverable tokens).
+const DEFAULT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export class ScmTokenCache {
   private readonly cache = new Map<string, CacheEntry>();
@@ -43,6 +45,7 @@ export class ScmTokenCache {
       this.cache.delete(k);
       return null;
     }
+    entry.cachedAt = Date.now();
     return entry.username;
   }
 

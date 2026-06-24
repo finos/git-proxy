@@ -143,6 +143,22 @@ describe('ScmTokenCache', () => {
     expect(cache.lookup('github', 'sometoken')).toBeNull();
   });
 
+  it('should reset TTL on hit (sliding expiry)', () => {
+    const cache = new ScmTokenCache(100); // 100ms TTL
+    cache.store('github', 'sometoken', 'octocat');
+    const key = (cache as any).key('github', 'sometoken');
+    // backdate to 90ms ago — still valid, but would expire in 10ms without a hit
+    (cache as any).cache.set(key, {
+      username: 'octocat',
+      provider: 'github',
+      cachedAt: Date.now() - 90,
+    });
+    expect(cache.lookup('github', 'sometoken')).toBe('octocat'); // hit resets cachedAt
+    // backdate again to 90ms — if TTL had not been reset, this would be 180ms total (expired)
+    (cache as any).cache.get(key).cachedAt = Date.now() - 90;
+    expect(cache.lookup('github', 'sometoken')).toBe('octocat'); // still valid because TTL was reset
+  });
+
   it('should not share entries across providers', () => {
     const cache = new ScmTokenCache();
     cache.store('github', 'sometoken', 'octocat');
