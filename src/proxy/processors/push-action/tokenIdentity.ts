@@ -18,7 +18,6 @@ import crypto from 'crypto';
 
 export type ScmUserInfo = {
   login: string;
-  email?: string;
 };
 
 type CacheEntry = { username: string; provider: string; cachedAt: number };
@@ -68,8 +67,6 @@ export interface TokenIdentityProvider {
 
 type GitHubUserResponse = {
   login: string;
-  id: number;
-  email: string | null;
 };
 
 export class GitHubTokenIdentityProvider implements TokenIdentityProvider {
@@ -86,6 +83,7 @@ export class GitHubTokenIdentityProvider implements TokenIdentityProvider {
           Authorization: `token ${token}`,
           Accept: 'application/vnd.github+json',
         },
+        signal: AbortSignal.timeout(5000),
       });
 
       if (!response.ok) {
@@ -98,7 +96,6 @@ export class GitHubTokenIdentityProvider implements TokenIdentityProvider {
       const user: GitHubUserResponse = await response.json();
       return {
         login: user.login,
-        email: user.email ?? undefined,
       };
     } catch (e) {
       console.warn(`Failed to fetch GitHub identity: ${e}`);

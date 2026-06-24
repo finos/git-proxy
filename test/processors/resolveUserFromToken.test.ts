@@ -69,32 +69,22 @@ describe('GitHubTokenIdentityProvider', () => {
   });
 
   describe('fetchScmIdentity', () => {
-    it('should return login and email on success', async () => {
+    it('should return login on success', async () => {
       fetchSpy.mockResolvedValueOnce({
         ok: true,
-        json: async () => ({ login: 'octocat', id: 1, email: 'octocat@github.com' }),
+        json: async () => ({ login: 'octocat' }),
       } as Response);
 
       const result = await provider.fetchScmIdentity('ghp_token123');
 
-      expect(result).toEqual({ login: 'octocat', email: 'octocat@github.com' });
+      expect(result).toEqual({ login: 'octocat' });
       expect(fetchSpy).toHaveBeenCalledWith('https://api.github.com/user', {
         headers: {
           Authorization: 'token ghp_token123',
           Accept: 'application/vnd.github+json',
         },
+        signal: expect.any(AbortSignal),
       });
-    });
-
-    it('should return login with undefined email when GitHub returns null email', async () => {
-      fetchSpy.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ login: 'private-user', id: 2, email: null }),
-      } as Response);
-
-      const result = await provider.fetchScmIdentity('ghp_token456');
-
-      expect(result).toEqual({ login: 'private-user', email: undefined });
     });
 
     it('should return null on non-OK response', async () => {
@@ -214,7 +204,7 @@ describe('resolveUserFromToken', () => {
   it('should resolve GitHub identity from token and fall back to SCM identity when no DB user', async () => {
     fetchSpy.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ login: 'octocat', id: 1, email: 'octocat@github.com' }),
+      json: async () => ({ login: 'octocat' }),
     } as Response);
 
     const req = makeRequest();
@@ -223,12 +213,13 @@ describe('resolveUserFromToken', () => {
     const result = await exec(req, action);
 
     expect(result.user).toBe('octocat');
-    expect(result.userEmail).toBe('octocat@github.com');
+    expect(result.userEmail).toBeUndefined();
     expect(fetchSpy).toHaveBeenCalledWith('https://api.github.com/user', {
       headers: {
         Authorization: 'token ghp_testtoken123',
         Accept: 'application/vnd.github+json',
       },
+      signal: expect.any(AbortSignal),
     });
   });
 
@@ -247,7 +238,7 @@ describe('resolveUserFromToken', () => {
 
     fetchSpy.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ login: 'octocat', id: 1, email: 'octocat@github.com' }),
+      json: async () => ({ login: 'octocat' }),
     } as Response);
 
     const req = makeRequest();
@@ -259,10 +250,10 @@ describe('resolveUserFromToken', () => {
     expect(result.userEmail).toBe('thomas.cooper@example.com');
   });
 
-  it('should handle GitHub identity with null email gracefully', async () => {
+  it('should leave userEmail from parsePush untouched when no gitAccount match', async () => {
     fetchSpy.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ login: 'octocat', id: 1, email: null }),
+      json: async () => ({ login: 'octocat' }),
     } as Response);
 
     const req = makeRequest();

@@ -88,9 +88,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
       return action;
     }
 
-    step.log(
-      `${provider.name}: resolved SCM identity from token: ${identity.login} (${identity.email ?? 'no public email'})`,
-    );
+    step.log(`${provider.name}: resolved SCM identity from token: ${identity.login}`);
 
     const user = await findUserByGitAccount(identity.login);
     if (user) {
@@ -107,9 +105,6 @@ async function exec(req: Request, action: Action): Promise<Action> {
           `Users can associate their account via PUT /api/v1/user/:username/git-account`,
       );
       action.user = identity.login;
-      if (identity.email) {
-        action.userEmail = identity.email;
-      }
     }
   } catch (error: unknown) {
     const msg = getErrorMessage(error);
