@@ -18,7 +18,10 @@ import express, { Express } from 'express';
 import http from 'http';
 import https from 'https';
 import fs from 'fs';
+
 import { getRouter } from './routes';
+export * from './routes';
+
 import {
   getAuthorisedList,
   getPlugins,
