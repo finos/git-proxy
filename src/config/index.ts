@@ -47,6 +47,7 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'cookieSecret',
   'csrfProtection',
   'domains',
+  'eventHandlers',
   'httpsServerPort',
   'httpsUiPort',
   'limits',
@@ -436,6 +437,12 @@ export const getCSRFProtection = (): boolean | undefined => {
 export const getPlugins = () => {
   const config = loadFullConfiguration();
   return config.plugins;
+};
+
+// Get loadable event handler modules (observe push/pull lifecycle events)
+export const getEventHandlers = (): string[] => {
+  const config = loadFullConfiguration();
+  return config.eventHandlers || [];
 };
 
 export const getTLSKeyPemPath = (): string | undefined => {
