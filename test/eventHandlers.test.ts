@@ -153,6 +153,31 @@ describe('EventDispatcher.dispatch', () => {
     expect(consoleErrorSpy).toHaveBeenCalled();
   });
 
+  it('clones EventDetails per handler so nested mutations do not leak (see cloneDetails)', async () => {
+    const registry = new ProxyEventRegistry();
+    let secondHandlerUser: EventDetails['user'];
+    let secondHandlerRepoName: string | undefined;
+    registry
+      .onPush()
+      .onCompleted((d) => {
+        // Handler 1 mutates nested fields on its own copy.
+        if (d.user) d.user.username = 'mutated-by-handler-1';
+        d.repository.name = 'mutated-by-handler-1';
+      })
+      .onCompleted((d) => {
+        // Handler 2 must observe clean data, not handler 1's mutations.
+        secondHandlerUser = d.user;
+        secondHandlerRepoName = d.repository.name;
+      });
+    const dispatcher = new EventDispatcher(registry);
+
+    dispatcher.dispatch(buildPushAction(), 'completed');
+    await dispatcher.drain(100);
+
+    expect(secondHandlerUser).toEqual({ username: 'alice', email: 'alice@example.com' });
+    expect(secondHandlerRepoName).toBe('git-proxy.git');
+  });
+
   it('drain awaits in-flight handler promises', async () => {
     const registry = new ProxyEventRegistry();
     let finished = false;
