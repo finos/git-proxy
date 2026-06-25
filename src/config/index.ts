@@ -508,7 +508,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     const validatedConfig = Convert.toGitProxyConfig(JSON.stringify(newConfig));
 
     // 2. Get proxy module dynamically to avoid circular dependency
-    const proxy = (await import('../proxy')) as any;
+    const proxy = (await import('../proxy/index.js')) as any;
 
     // 3. Stop existing services
     await proxy.stop();
@@ -525,7 +525,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     handleErrorAndLog(error, 'Failed to apply new configuration');
     // Attempt to restart with previous config
     try {
-      const proxy = (await import('../proxy')) as any;
+      const proxy = (await import('../proxy/index.js')) as any;
       await proxy.start();
     } catch (startError: unknown) {
       handleErrorAndLog(startError, 'Failed to restart services');
