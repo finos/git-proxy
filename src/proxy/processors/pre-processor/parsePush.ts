@@ -104,8 +104,10 @@ async function exec(req: Request, action: Action): Promise<Action> {
       action.branch = parsedRefs[0].refName;
     }
 
+    // Use the first ref's commit range for the action id
     action.setCommit(parsedRefs[0].oldCommit, parsedRefs[0].newCommit);
 
+    // Check if the offset is valid and if there's data after it
     if (packDataOffset >= req.body.length) {
       step.log('No PACK data found after packet lines.');
       throw new Error('Your push has been blocked. PACK data is missing.');
@@ -113,6 +115,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
 
     const buf = req.body.subarray(packDataOffset);
 
+    // Verify that data actually starts with PACK signature
     if (buf.length < PACKET_SIZE || buf.toString('utf8', 0, PACKET_SIZE) !== PACK_SIGNATURE) {
       step.log(`Expected PACK signature at offset ${packDataOffset}, but found something else.`);
       throw new Error('Your push has been blocked. Invalid PACK data structure.');
