@@ -16,7 +16,7 @@
 
 import { Request } from 'express';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { exec } from '../../src/proxy/processors/push-action/checkCommitMessages';
+import { exec } from '../../src/proxy/processors/push-action/checkMessages';
 import { Action } from '../../src/proxy/actions';
 import * as configModule from '../../src/config';
 import { SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
@@ -29,7 +29,7 @@ vi.mock('../../src/config', async (importOriginal) => {
   };
 });
 
-describe('checkCommitMessages', () => {
+describe('checkMessages', () => {
   let action: Action;
   let req: Request;
   let mockCommitConfig: any;
@@ -63,7 +63,7 @@ describe('checkCommitMessages', () => {
         const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(true);
-        expect(result.steps[0].logs).toContain('checkCommitMessages - No commit message included.');
+        expect(result.steps[0].logs).toContain('checkMessages - No commit message included.');
       });
 
       it('should block null commit messages', async () => {
@@ -89,7 +89,7 @@ describe('checkCommitMessages', () => {
 
         expect(result.steps[0].error).toBe(true);
         expect(result.steps[0].logs).toContain(
-          'checkCommitMessages - A non-string value has been captured for the commit message.',
+          'checkMessages - A non-string value has been captured for the commit message.',
         );
       });
 
@@ -120,7 +120,7 @@ describe('checkCommitMessages', () => {
 
         expect(result.steps[0].error).toBe(true);
         expect(result.steps[0].logs).toContain(
-          'checkCommitMessages - Commit message is blocked via configured literals/patterns.',
+          'checkMessages - Commit message is blocked via configured literals/patterns.',
         );
       });
 
@@ -247,7 +247,7 @@ describe('checkCommitMessages', () => {
 
         expect(result.steps[0].error).toBe(false);
         expect(result.steps[0].logs).toContain(
-          'checkCommitMessages - The following commit messages are legal: fix: resolve bug in user authentication',
+          'checkMessages - The following messages are legal: fix: resolve bug in user authentication',
         );
       });
 
@@ -354,7 +354,7 @@ describe('checkCommitMessages', () => {
 
         // first log is the "push blocked" message
         expect(step.logs[1]).toContain(
-          'checkCommitMessages - The following commit messages are illegal: Add password',
+          'checkMessages - The following messages are illegal: Add password',
         );
       });
 
@@ -449,17 +449,17 @@ describe('checkCommitMessages', () => {
 
     describe('Function properties', () => {
       it('should have displayName property', () => {
-        expect(exec.displayName).toBe('checkCommitMessages.exec');
+        expect(exec.displayName).toBe('checkMessages.exec');
       });
     });
 
     describe('Step management', () => {
-      it('should create a step named "checkCommitMessages"', async () => {
+      it('should create a step named "checkMessages"', async () => {
         action.commitData = [{ ...SAMPLE_COMMIT, message: 'fix: bug' }];
 
         const result = await exec(req, action);
 
-        expect(result.steps[0].stepName).toBe('checkCommitMessages');
+        expect(result.steps[0].stepName).toBe('checkMessages');
       });
 
       it('should add step to action', async () => {
@@ -486,6 +486,51 @@ describe('checkCommitMessages', () => {
         const mockRequest = { headers: {}, body: {} };
 
         const result = await exec(mockRequest as Request, action);
+
+        expect(result.steps[0].error).toBe(false);
+      });
+    });
+
+    describe('Tag messages', () => {
+      it('should block illegal tag messages', async () => {
+        action.commitData = [];
+        action.tagData = [
+          { type: 'commit', tagName: 'v1.0.0', tagger: 'Test', message: 'Release with password' },
+        ];
+
+        const result = await exec(req, action);
+
+        expect(result.steps[0].error).toBe(true);
+        expect(result.steps[0].errorMessage).toContain('Release with password');
+      });
+
+      it('should allow valid tag messages', async () => {
+        action.commitData = [];
+        action.tagData = [
+          { type: 'commit', tagName: 'v1.0.0', tagger: 'Test', message: 'Release v1.0.0' },
+        ];
+
+        const result = await exec(req, action);
+
+        expect(result.steps[0].error).toBe(false);
+      });
+
+      it('should validate both commit and tag messages together', async () => {
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'feat: valid commit' }];
+        action.tagData = [
+          { type: 'commit', tagName: 'v1.0.0', tagger: 'Test', message: 'tag with secret' },
+        ];
+
+        const result = await exec(req, action);
+
+        expect(result.steps[0].error).toBe(true);
+      });
+
+      it('should handle undefined tagData', async () => {
+        action.commitData = [{ ...SAMPLE_COMMIT, message: 'fix: bug' }];
+        action.tagData = undefined;
+
+        const result = await exec(req, action);
 
         expect(result.steps[0].error).toBe(false);
       });
