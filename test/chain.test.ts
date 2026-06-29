@@ -16,7 +16,7 @@
 
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { PluginLoader } from '../src/plugin';
-import { Action } from '../src/proxy/actions';
+import { Action, PushType, RequestType } from '../src/proxy/actions';
 
 const mockLoader = {
   pushPlugins: [
@@ -29,10 +29,9 @@ const mockLoader = {
 
 const initMockPushProcessors = () => {
   return {
-    parsePush: vi.fn(),
     checkEmptyBranch: vi.fn(),
     checkRepoInAuthorisedList: vi.fn(),
-    checkCommitMessages: vi.fn(),
+    checkMessages: vi.fn(),
     checkAuthorEmails: vi.fn(),
     checkUserPushPermission: vi.fn(),
     checkIfWaitingAuth: vi.fn(),
@@ -57,6 +56,7 @@ const initMockPostProcessors = () => {
 
 const mockPreProcessors = {
   parseAction: vi.fn(),
+  parsePush: vi.fn(),
 };
 
 describe('proxy chain', function () {
@@ -113,14 +113,14 @@ describe('proxy chain', function () {
   it('getChain should set pluginLoaded if loader is undefined', async () => {
     chain.chainPluginLoader = undefined;
     const actual = await chain.getChain({ type: 'push' });
-    expect(actual).toEqual(chain.pushActionChain);
+    expect(actual).toEqual(chain.branchPushChain);
     expect(chain.chainPluginLoader).toBeUndefined();
     expect(chain.pluginsInserted).toBe(true);
   });
 
   it('getChain should load plugins from an initialized PluginLoader', async () => {
     chain.chainPluginLoader = mockLoader;
-    const initialChain = [...chain.pushActionChain];
+    const initialChain = [...chain.branchPushChain];
     const actual = await chain.getChain({ type: 'push' });
     expect(actual.length).toBeGreaterThan(initialChain.length);
     expect(chain.pluginsInserted).toBe(true);
@@ -140,7 +140,7 @@ describe('proxy chain', function () {
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
-    mockPushProcessors.parsePush.mockResolvedValue(continuingAction);
+    mockPreProcessors.parsePush.mockResolvedValue(continuingAction);
 
     // this stops the chain from further execution
     mockPushProcessors.checkIfWaitingAuth.mockResolvedValue({
@@ -153,10 +153,11 @@ describe('proxy chain', function () {
 
     //all processors upto checkIfWaitingAuth should have run + clearBareClone & audit
     expect(mockPreProcessors.parseAction).toHaveBeenCalled();
-    expect(mockPushProcessors.parsePush).toHaveBeenCalled();
+    expect(mockPreProcessors.parsePush).toHaveBeenCalled();
+
     expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
-    expect(mockPushProcessors.checkCommitMessages).toHaveBeenCalled();
+    expect(mockPushProcessors.checkMessages).toHaveBeenCalled();
     expect(mockPushProcessors.checkAuthorEmails).toHaveBeenCalled();
     expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
     expect(mockPushProcessors.pullRemote).toHaveBeenCalled();
@@ -185,7 +186,7 @@ describe('proxy chain', function () {
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
-    mockPushProcessors.parsePush.mockResolvedValue(continuingAction);
+    mockPreProcessors.parsePush.mockResolvedValue(continuingAction);
 
     // this stops the chain from further execution
     mockPushProcessors.checkIfWaitingAuth.mockResolvedValue({
@@ -198,10 +199,11 @@ describe('proxy chain', function () {
 
     //all processors upto checkIfWaitingAuth should have run + clearBareClone & audit
     expect(mockPreProcessors.parseAction).toHaveBeenCalled();
-    expect(mockPushProcessors.parsePush).toHaveBeenCalled();
+    expect(mockPreProcessors.parsePush).toHaveBeenCalled();
+
     expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
-    expect(mockPushProcessors.checkCommitMessages).toHaveBeenCalled();
+    expect(mockPushProcessors.checkMessages).toHaveBeenCalled();
     expect(mockPushProcessors.checkAuthorEmails).toHaveBeenCalled();
     expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
     expect(mockPushProcessors.pullRemote).toHaveBeenCalled();
@@ -230,16 +232,17 @@ describe('proxy chain', function () {
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
-    mockPushProcessors.parsePush.mockResolvedValue(continuingAction);
+    mockPreProcessors.parsePush.mockResolvedValue(continuingAction);
 
     const result = await chain.executeChain(req);
 
-    //all processors upto checkIfWaitingAuth should have run + clearBareClone & audit
+    //all processors should have run + clearBareClone & audit
     expect(mockPreProcessors.parseAction).toHaveBeenCalled();
-    expect(mockPushProcessors.parsePush).toHaveBeenCalled();
+    expect(mockPreProcessors.parsePush).toHaveBeenCalled();
+
     expect(mockPushProcessors.checkEmptyBranch).toHaveBeenCalled();
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
-    expect(mockPushProcessors.checkCommitMessages).toHaveBeenCalled();
+    expect(mockPushProcessors.checkMessages).toHaveBeenCalled();
     expect(mockPushProcessors.checkAuthorEmails).toHaveBeenCalled();
     expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
     expect(mockPushProcessors.pullRemote).toHaveBeenCalled();
@@ -270,7 +273,8 @@ describe('proxy chain', function () {
     const result = await chain.executeChain(req);
 
     expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
-    expect(mockPushProcessors.parsePush).not.toHaveBeenCalled();
+    expect(mockPreProcessors.parsePush).not.toHaveBeenCalled();
+
     expect(mockPostProcessors.audit).toHaveBeenCalled();
     expect(mockPostProcessors.clearBareClone).not.toHaveBeenCalled();
     expect(result.type).toBe('pull');
@@ -281,7 +285,7 @@ describe('proxy chain', function () {
     const action = { type: 'push', continue: () => true, allowPush: false };
 
     processors.pre.parseAction.mockResolvedValue(action);
-    mockPushProcessors.parsePush.mockRejectedValue(new Error('Audit error'));
+    processors.pre.parsePush.mockRejectedValue(new Error('Audit error'));
 
     try {
       await chain.executeChain(req);
@@ -297,6 +301,7 @@ describe('proxy chain', function () {
     const action = { type: 'push', continue: () => true, allowPush: false };
 
     processors.pre.parseAction.mockResolvedValue(action);
+    processors.pre.parsePush.mockResolvedValue(action);
     mockPushProcessors.writePack.mockRejectedValue(new Error('writePack error'));
 
     try {
@@ -333,6 +338,7 @@ describe('proxy chain', function () {
     };
 
     mockPreProcessors.parseAction.mockResolvedValue(action);
+    mockPreProcessors.parsePush.mockResolvedValue(action);
 
     mockPushProcessors.preReceive.mockResolvedValue({
       ...action,
@@ -366,6 +372,7 @@ describe('proxy chain', function () {
     };
 
     mockPreProcessors.parseAction.mockResolvedValue(action);
+    mockPreProcessors.parsePush.mockResolvedValue(action);
 
     mockPushProcessors.preReceive.mockResolvedValue({
       ...action,
@@ -398,6 +405,7 @@ describe('proxy chain', function () {
     };
 
     mockPreProcessors.parseAction.mockResolvedValue(action);
+    mockPreProcessors.parsePush.mockResolvedValue(action);
 
     mockPushProcessors.preReceive.mockResolvedValue({
       ...action,
@@ -428,6 +436,7 @@ describe('proxy chain', function () {
     };
 
     mockPreProcessors.parseAction.mockResolvedValue(action);
+    mockPreProcessors.parsePush.mockResolvedValue(action);
 
     mockPushProcessors.preReceive.mockResolvedValue({
       ...action,
@@ -443,5 +452,59 @@ describe('proxy chain', function () {
     await chain.executeChain(req);
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error during auto-rejection: Database error');
+  });
+
+  it('returns pullActionChain for pull actions', async () => {
+    const action = new Action(
+      '1',
+      RequestType.PULL,
+      'GET',
+      Date.now(),
+      'http://github.com/owner/repo.git',
+    );
+    const pullChain = await chain.getChain(action);
+    expect(pullChain).toEqual(chain.pullActionChain);
+  });
+
+  it('returns tagPushChain when action.type is push and action.actionType is TAG', async () => {
+    const action = new Action(
+      '2',
+      RequestType.PUSH,
+      'POST',
+      Date.now(),
+      'http://github.com/owner/repo.git',
+    );
+    action.actionType = PushType.TAG;
+    const tagChain = await chain.getChain(action);
+    expect(tagChain).toEqual(chain.tagPushChain);
+  });
+
+  it('returns branchPushChain when action.type is push and actionType is BRANCH', async () => {
+    const action = new Action(
+      '3',
+      RequestType.PUSH,
+      'POST',
+      Date.now(),
+      'http://github.com/owner/repo.git',
+    );
+    action.actionType = PushType.BRANCH;
+    const branchChain = await chain.getChain(action);
+    expect(branchChain).toEqual(chain.branchPushChain);
+  });
+
+  it('getChain should return tagPushChain if loader is undefined for tag pushes', async () => {
+    chain.chainPluginLoader = undefined;
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
+    expect(actual).toEqual(chain.tagPushChain);
+    expect(chain.chainPluginLoader).toBeUndefined();
+    expect(chain.pluginsInserted).toBe(true);
+  });
+
+  it('getChain should load tag plugins from an initialized PluginLoader', async () => {
+    chain.chainPluginLoader = mockLoader;
+    const initialChain = [...chain.tagPushChain];
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
+    expect(actual.length).toBeGreaterThan(initialChain.length);
+    expect(chain.pluginsInserted).toBe(true);
   });
 });
