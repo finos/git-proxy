@@ -1,7 +1,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/finos/git-proxy">
-    <img src="./docs/img/logo.png" alt="Logo" height="95">
+    <img src="./website/static/img/logo.png" alt="Logo" height="95">
   </a>
   
   <br />
@@ -23,7 +23,7 @@
 
   <br />
 
-[![FINOS - Active](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-active.svg)](https://community.finos.org/docs/governance/Software-Projects/stages/active)
+[![FINOS - Graduated](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-graduated.svg)](https://community.finos.org/docs/governance/lifecycle-stages/graduated)
 [![NPM](https://img.shields.io/npm/v/@finos/git-proxy?colorA=00C586&colorB=000000)](https://www.npmjs.com/package/@finos/git-proxy)
 [![Build](https://img.shields.io/github/actions/workflow/status/finos/git-proxy/ci.yml?branch=main&label=CI&logo=github&colorA=00C586&colorB=000000)](https://github.com/finos/git-proxy/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/finos/git-proxy/branch/main/graph/badge.svg)](https://codecov.io/gh/finos/git-proxy)
@@ -40,7 +40,7 @@
 
 ## What is GitProxy
 
-GitProxy is an application that stands between developers and a Git remote endpoint (e.g., `github.com`). It applies rules and workflows (configurable as `plugins`) to all outgoing `git push` operations to ensure they are compliant.
+GitProxy is an application that stands between developers and a Git remote endpoint (e.g., `github.com`). It applies rules and workflows (configurable as `plugins`) to all outgoing `git push` operations to ensure they are compliant. GitProxy supports both **HTTP/HTTPS** and **SSH** protocols with identical security scanning and validation.
 
 The main goal of GitProxy is to marry the defacto standard Open Source developer experience (git-based workflow of branching out, submitting changes and merging back) with security and legal requirements that firms have to comply with, when operating in highly regulated industries like financial services.
 
@@ -68,8 +68,9 @@ $ npx -- @finos/git-proxy
 
 Clone a repository, set the remote to the GitProxy URL and push your changes:
 
+### Using HTTPS
+
 ```bash
-# Only HTTPS cloning is supported at the moment, see https://github.com/finos/git-proxy/issues/27.
 $ git clone https://github.com/octocat/Hello-World.git && cd Hello-World
 # The below command is using the GitHub official CLI to fork the repo that is cloned.
 # You can also fork on the GitHub UI. For usage details on the CLI, see https://github.com/cli/cli
@@ -81,7 +82,53 @@ $ git remote add proxy http://localhost:8000/yourGithubUser/Hello-World.git
 $ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
 ```
 
+### Using SSH
+
+```bash
+$ git clone https://github.com/octocat/Hello-World.git && cd Hello-World
+$ gh repo fork
+✓ Created fork yourGithubUser/Hello-World
+...
+# Configure Git remote for SSH proxy
+$ git remote add proxy ssh://git@localhost:2222/github.com/yourGithubUser/Hello-World.git
+# Enable SSH agent forwarding (required)
+$ git config core.sshCommand "ssh -A"
+# Push through the proxy
+$ git push proxy $(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
+```
+
+📖 **Full SSH setup guide**: [docs/SSH_SETUP.md](docs/SSH_SETUP.md)
+
+---
+
 Using the default configuration, GitProxy intercepts the push and _blocks_ it. To enable code pushing to your fork via GitProxy, add your repository URL into the GitProxy config file (`proxy.config.json`). For more information, refer to [our documentation](https://git-proxy.finos.org).
+
+## Protocol Support
+
+GitProxy supports both **HTTP/HTTPS** and **SSH** protocols with identical security features:
+
+### HTTP/HTTPS Support
+
+- ✅ Basic authentication and JWT tokens
+- ✅ Pack data extraction via middleware
+- ✅ Full security scanning and validation
+- ✅ Manual and auto-approval workflows
+
+### SSH Support
+
+- ✅ SSH key-based authentication
+- ✅ SSH agent forwarding (uses client's SSH keys securely)
+- ✅ Pack data capture from SSH streams
+- ✅ Same 16-processor security chain as HTTPS
+- ✅ Complete feature parity with HTTPS
+
+Both protocols provide the same level of security scanning, including:
+
+- Secret detection (gitleaks)
+- Commit message and author validation
+- Hidden commit detection
+- Pre-receive hooks
+- Comprehensive audit logging
 
 ## Documentation
 
@@ -92,7 +139,9 @@ customize for your environment, see the [project's documentation](https://git-pr
 - [Installation](https://git-proxy.finos.org/docs/quickstart/installation)
 - [Configuration](https://git-proxy.finos.org/docs/category/configuration)
 - [Contributing](https://git-proxy.finos.org/docs/development/contributing)
-- [Testing](https://git-proxy.finos.org/docs/development/testing)
+- [Testing](https://github.com/finos/git-proxy/blob/main/CONTRIBUTING.md#testing)
+- [Architecture](https://git-proxy.finos.org/docs/category/architecture/)
+- [Upgrading to v2](https://git-proxy.finos.org/docs/upgrading-to-v2)
 
 ## Contributing
 
@@ -112,12 +161,12 @@ This project is distributed under the Apache-2.0 license. See [`LICENSE`](LICENS
 
 ## Contact
 
-Drop a note, ask a question or just say hello in our community Slack channel, which is accessible via the [FINOS Slack Workspace](https://finos-lf.slack.com) 👋
+Drop a note, ask a question or just say hello in our community Slack channel [#git-proxy](https://finos-lf.slack.com/archives/C06LXNW0W76), which is accessible via the [FINOS Slack Workspace](https://finos-lf.slack.com) 👋
 
-If you can't access Slack, you can also [subscribe to our mailing list](mailto:git-proxy+subscribe@lists.finos.org) 📨
+If you can't join, you can send us an e-mail to [help@finos.org](mailto:help@finos.org) to get access. You can also [subscribe to our mailing list](mailto:git-proxy+subscribe@lists.finos.org) and stay tuned for any updates 📨
 
 Otherwise, if you have a deeper query or require more support, please [raise an issue](https://github.com/finos/git-proxy/issues) 🧵
 
 🤝 Join our [fortnightly Zoom meeting](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595) on Monday, 4PM BST (odd week numbers).  
 🌍 [Convert to your local time](https://www.timeanddate.com/worldclock)  
-📅 [Click here](https://calendar.google.com/calendar/event?action=TEMPLATE&tmeid=MTRvbzM0NG01dWNvNGc4OGJjNWphM2ZtaTZfMjAyNTA2MDJUMTUwMDAwWiBzYW0uaG9sbWVzQGNvbnRyb2wtcGxhbmUuaW8&tmsrc=sam.holmes%40control-plane.io&scp=ALL) for the recurring Google Calendar meeting invite. Alternatively, send an e-mail to [help@finos.org](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595#:~:text=Need-,an,-invite%3F) to get a calendar invitation.
+📅 [Click here](https://zoom-lfx.platform.linuxfoundation.org/meeting/95849833904?password=99413314-d03a-4b1c-b682-1ede2c399595&invite=true) and complete the form to receive the recurring calendar meeting invite. Alternatively, send an e-mail to [help@finos.org](mailto:help@finos.org) requesting a calendar invitation.

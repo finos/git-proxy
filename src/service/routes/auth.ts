@@ -17,7 +17,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { getPassport, authStrategies } from '../passport';
-import { getAuthMethods } from '../../config';
+import { getAuthMethods, getUIHost, getUIPort } from '../../config';
 
 import * as db from '../../db';
 import * as passportLocal from '../passport/local';
@@ -30,9 +30,6 @@ import { handleErrorAndLog } from '../../utils/errors';
 
 const router = express.Router();
 const passport = getPassport();
-
-const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
-  process.env;
 
 const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_CHANGE_ALLOWED_PATHS = new Set([
@@ -163,7 +160,7 @@ router.get('/openidconnect/callback', (req: Request, res: Response, next: NextFu
           return res.status(500).end();
         }
         console.log('Logged in successfully. User:', user);
-        return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
+        return res.redirect(`${getUIHost()}:${getUIPort()}/dashboard/profile`);
       });
     },
   )(req, res, next);
@@ -377,6 +374,11 @@ router.post('/create-user', async (req: Request, res: Response) => {
       })
       .end();
   }
+});
+
+router.get('/csrf-token', (req: Request, res: Response) => {
+  console.log('req.user', req.user);
+  res.send({ csrfToken: (req as any).csrfToken() });
 });
 
 export default { router, loginSuccessHandler };

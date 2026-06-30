@@ -229,12 +229,19 @@ async function authoriseGitPush(id: string) {
     if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
+        case 403:
           console.error('Error: Authorise: Authentication required');
           process.exitCode = 3;
           break;
         case 404:
           console.error(`Error: Authorise: ID: '${id}': Not Found`);
           process.exitCode = 4;
+          break;
+        default:
+          console.error(
+            `Error: Authorise: '${error.response.status}': ${error.response.data?.message || error.message}`,
+          );
+          process.exitCode = 5;
       }
     } else {
       handleErrorAndLog(error, `Error: Authorise: '${id}'`);
@@ -247,7 +254,7 @@ async function authoriseGitPush(id: string) {
  * Reject git push by ID
  * @param {string} id The ID of the git push to reject
  */
-async function rejectGitPush(id: string) {
+async function rejectGitPush(id: string, reason: string) {
   if (!fs.existsSync(GIT_PROXY_COOKIE_FILE)) {
     console.error('Error: Reject: Authentication required');
     process.exitCode = 1;
@@ -263,7 +270,7 @@ async function rejectGitPush(id: string) {
 
     await axios.post(
       `${baseUrl}/api/v1/push/${id}/reject`,
-      {},
+      { reason },
       {
         headers: { Cookie: cookies },
       },
@@ -274,12 +281,19 @@ async function rejectGitPush(id: string) {
     if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
+        case 403:
           console.error('Error: Reject: Authentication required');
           process.exitCode = 3;
           break;
         case 404:
           console.error(`Error: Reject: ID: '${id}': Not Found`);
           process.exitCode = 4;
+          break;
+        default:
+          console.error(
+            `Error: Reject: '${error.response.status}': ${error.response.data?.message || error.message}`,
+          );
+          process.exitCode = 5;
       }
     } else {
       handleErrorAndLog(error, `Error: Reject: '${id}'`);
@@ -319,12 +333,19 @@ async function cancelGitPush(id: string) {
     if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
+        case 403:
           console.error('Error: Cancel: Authentication required');
           process.exitCode = 3;
           break;
         case 404:
           console.error(`Error: Cancel: ID: '${id}': Not Found`);
           process.exitCode = 4;
+          break;
+        default:
+          console.error(
+            `Error: Cancel: '${error.response.status}': ${error.response.data?.message || error.message}`,
+          );
+          process.exitCode = 5;
       }
     } else {
       handleErrorAndLog(error, `Error: Cancel: '${id}'`);
@@ -423,6 +444,7 @@ async function createUser(
     if (isAxiosError(error) && error.response) {
       switch (error.response.status) {
         case 401:
+        case 403:
           console.error('Error: Create User: Authentication required');
           process.exitCode = 3;
           break;
@@ -563,9 +585,14 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
         demandOption: true,
         type: 'string',
       },
+      reason: {
+        describe: 'Reason for rejection',
+        type: 'string',
+        default: 'Rejected via GitProxy CLI',
+      },
     },
     handler(argv) {
-      rejectGitPush(argv.id);
+      rejectGitPush(argv.id, argv.reason);
     },
   })
   .command({

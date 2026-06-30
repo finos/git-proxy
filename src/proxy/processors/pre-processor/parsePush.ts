@@ -19,15 +19,19 @@ import fs from 'fs';
 import lod from 'lodash';
 import { createInflate } from 'zlib';
 
-import { Action, Step } from '../../actions';
+import { Action, Step, PushType } from '../../actions';
 import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '../types';
+import { TagData } from '../../../types/models';
 import {
-  BRANCH_PREFIX,
   EMPTY_COMMIT_HASH,
+  REFS_PREFIX,
+  TAG_PREFIX,
   PACK_SIGNATURE,
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
+  GIT_OBJECT_TYPE_TAG,
 } from '../constants';
+import { parsePacketLines } from '../pktLineParser';
 import { getErrorMessage } from '../../../utils/errors';
 
 const dir = './.tmp/';
@@ -56,33 +60,52 @@ async function exec(req: Request, action: Action): Promise<Action> {
     if (!req.body || req.body.length === 0) {
       throw new Error('No body found in request');
     }
-    const [packetLines, packDataOffset] = parsePacketLines(req.body);
-    const refUpdates = packetLines.filter((line) => line.includes(BRANCH_PREFIX));
+    if (typeof req.body === 'string' || Array.isArray(req.body) || !Buffer.isBuffer(req.body)) {
+      throw new Error('Request body must be a Buffer');
+    }
 
-    if (refUpdates.length !== 1) {
-      step.log('Invalid number of branch updates.');
-      step.log(`Expected 1, but got ${refUpdates.length}`);
+    const [packetLines, packDataOffset] = parsePacketLines(req.body);
+
+    const refUpdates = packetLines.filter((line) => line.includes(REFS_PREFIX));
+
+    if (refUpdates.length === 0) {
+      throw new Error('Your push has been blocked. No ref updates found.');
+    }
+
+    const parsedRefs = refUpdates.map((line) => {
+      const [commitParts] = line.split('\0');
+      const parts = commitParts.split(' ');
+      if (parts.length !== 3) {
+        throw new Error('Your push has been blocked. Invalid ref update format.');
+      }
+      const refName = parts[2].replace(/\0.*/, '').trim();
+      return {
+        oldCommit: parts[0],
+        newCommit: parts[1],
+        refName,
+        isTag: refName.startsWith(TAG_PREFIX),
+      };
+    });
+
+    const allTags = parsedRefs.every((r) => r.isTag);
+
+    if (parsedRefs.length > 1 && !allTags) {
+      step.log(`Received ${parsedRefs.length} ref updates with mixed or multiple branch refs.`);
       throw new Error(
-        'Your push has been blocked. Please make sure you are pushing to a single branch.',
+        'Your push has been blocked. Multi-ref pushes are only supported for tags. Please push one branch at a time.',
       );
     }
 
-    const [commitParts] = refUpdates[0].split('\0');
-    const parts = commitParts.split(' ');
-    if (parts.length !== 3) {
-      step.log('Invalid number of parts in ref update.');
-      step.log(`Expected 3, but got ${parts.length}`);
-      throw new Error('Your push has been blocked. Invalid ref update format.');
+    if (allTags) {
+      action.actionType = PushType.TAG;
+      action.tags = parsedRefs.map((r) => r.refName);
+    } else {
+      action.actionType = PushType.BRANCH;
+      action.branch = parsedRefs[0].refName;
     }
 
-    const [oldCommit, newCommit, ref] = parts;
-
-    // Strip everything after NUL, which is cap-list from
-    // https://git-scm.com/docs/http-protocol#_smart_server_response
-    action.branch = ref.replace(/\0.*/, '').trim();
-
-    // Note this will change the action.id to be based on the commits
-    action.setCommit(oldCommit, newCommit);
+    // Use the first ref's commit range for the action id
+    action.setCommit(parsedRefs[0].oldCommit, parsedRefs[0].newCommit);
 
     // Check if the offset is valid and if there's data after it
     if (packDataOffset >= req.body.length) {
@@ -90,7 +113,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
       throw new Error('Your push has been blocked. PACK data is missing.');
     }
 
-    const buf = req.body.slice(packDataOffset);
+    const buf = req.body.subarray(packDataOffset);
 
     // Verify that data actually starts with PACK signature
     if (buf.length < PACKET_SIZE || buf.toString('utf8', 0, PACKET_SIZE) !== PACK_SIGNATURE) {
@@ -100,21 +123,44 @@ async function exec(req: Request, action: Action): Promise<Action> {
     const [meta, contentBuff] = getPackMeta(buf);
     const contents = await getContents(contentBuff, meta.entries);
 
-    action.commitData = getCommitData(contents);
+    action.commitData = [];
+    action.tagData = [];
 
-    if (action.commitData.length === 0) {
-      step.log('No commit data found when parsing push.');
-    } else {
-      if (action.commitFrom === EMPTY_COMMIT_HASH) {
+    for (const obj of contents) {
+      if (obj.type === GIT_OBJECT_TYPE_COMMIT) action.commitData.push(...getCommitData([obj]));
+      else if (obj.type === GIT_OBJECT_TYPE_TAG) action.tagData.push(getTagData(obj));
+    }
+
+    if (action.actionType === PushType.TAG) {
+      if (action.tagData.length) {
+        action.user = action.tagData.at(-1)!.tagger;
+        action.userEmail = action.tagData.at(-1)!.taggerEmail;
+      } else {
+        // TODO: support lightweight tags once we have a reliable way to identify the pusher
+        throw new Error(
+          'Lightweight (non-annotated) tags are not supported. Please use "git tag -a" to create an annotated tag.',
+        );
+      }
+    } else if (action.actionType === PushType.BRANCH) {
+      if (action.commitData.length && action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }
 
-      const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
-      // Note: This is not always the pusher's email, it's the last committer's email.
-      // See https://github.com/finos/git-proxy/issues/1400
-      step.log(`Push request received from user ${committer} with email ${committerEmail}`);
-      action.user = committer;
-      action.userEmail = committerEmail;
+      if (req.user) {
+        const { username, email } = req.user as { username: string; email?: string };
+        step.log(`Push request received from authenticated user ${username} with email ${email}`);
+        action.user = username;
+        action.userEmail = email;
+      } else if (action.commitData.length) {
+        const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
+        // Note: This is not always the pusher's email, it's the last committer's email.
+        // See https://github.com/finos/git-proxy/issues/1400
+        step.log(`Push request received from user ${committer} with email ${committerEmail}`);
+        action.user = committer;
+        action.userEmail = committerEmail;
+      } else {
+        step.log('No commit data found when parsing push.');
+      }
     }
 
     step.content = {
@@ -127,6 +173,44 @@ async function exec(req: Request, action: Action): Promise<Action> {
     action.addStep(step);
   }
   return action;
+}
+
+function getTagData(x: CommitContent): TagData {
+  const lines = x.content.split('\n');
+  const object = lines
+    .find((l) => l.startsWith('object '))
+    ?.slice(7)
+    .trim();
+  const typeLine = lines
+    .find((l) => l.startsWith('type '))
+    ?.slice(5)
+    .trim(); // commit | tree | blob
+  const tagName = lines
+    .find((l) => l.startsWith('tag '))
+    ?.slice(4)
+    .trim();
+  const rawTagger = lines
+    .find((l) => l.startsWith('tagger '))
+    ?.slice(7)
+    .trim();
+  if (!rawTagger) throw new Error('Invalid tag object: no tagger line');
+
+  const taggerInfo = parsePersonLine(rawTagger);
+
+  const messageIndex = lines.indexOf('');
+  const message = lines.slice(messageIndex + 1).join('\n');
+
+  if (!object || !typeLine || !tagName || !taggerInfo.name) throw new Error('Invalid tag object');
+
+  return {
+    object,
+    type: typeLine,
+    tagName,
+    tagger: taggerInfo.name,
+    taggerEmail: taggerInfo.email,
+    timestamp: taggerInfo.timestamp,
+    message,
+  };
 }
 
 /**
@@ -512,7 +596,7 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
     // Feed the buffer in a byte at a time and wait for output
     while (offset < buffer.length && !(done || error)) {
       try {
-        await new Promise<void>((resolve, reject) => {
+        await new Promise<void>((resolve) => {
           if (!done) {
             // store the resolve function in case an error occurs as callback will never be called
             currentWriteResolve = resolve;
@@ -551,43 +635,6 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
   return results;
 };
 
-/**
- * Parses the packet lines from a buffer into an array of strings.
- * Also returns the offset immediately following the parsed lines (including the flush packet).
- * @param {Buffer} buffer - The buffer containing the packet data.
- * @return {[string[], number]} An array containing the parsed lines and the offset after the last parsed line/flush packet.
- */
-const parsePacketLines = (buffer: Buffer): [string[], number] => {
-  const lines: string[] = [];
-  let offset = 0;
-
-  while (offset + PACKET_SIZE <= buffer.length) {
-    const lengthHex = buffer.toString('utf8', offset, offset + PACKET_SIZE);
-    const length = Number(`0x${lengthHex}`);
-
-    // Prevent non-hex characters from causing issues
-    if (isNaN(length) || length < 0) {
-      throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
-    }
-
-    // length of 0 indicates flush packet (0000)
-    if (length === 0) {
-      offset += PACKET_SIZE; // Include length of the flush packet
-      break;
-    }
-
-    // Make sure we don't read past the end of the buffer
-    if (offset + length > buffer.length) {
-      throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
-    }
-
-    const line = buffer.toString('utf8', offset + PACKET_SIZE, offset + length);
-    lines.push(line);
-    offset += length; // Move offset to the start of the next line's length prefix
-  }
-  return [lines, offset];
-};
-
 exec.displayName = 'parsePush.exec';
 
-export { exec, getCommitData, getContents, getPackMeta, parsePacketLines };
+export { exec, getCommitData, getContents, getPackMeta, getTagData };
