@@ -427,7 +427,7 @@ describe('Auth API', () => {
     });
 
     it('should return 200 OK and serialize public data representation of current authenticated user', async () => {
-      vi.mocked(db.findUser).mockResolvedValue({
+      vi.spyOn(db, 'findUser').mockResolvedValue({
         username: 'alice',
         password: 'secret-hashed-password',
         email: 'alice@example.com',
@@ -450,7 +450,7 @@ describe('Auth API', () => {
     });
 
     it('should return 404 Not Found if user is not found', async () => {
-      vi.mocked(db.findUser).mockResolvedValue(null);
+      vi.spyOn(db, 'findUser').mockResolvedValue(null);
 
       const res = await request(newApp('non-existent-user')).get('/auth/profile');
       expect(res.status).toBe(404);
