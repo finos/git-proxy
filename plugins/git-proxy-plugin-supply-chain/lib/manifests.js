@@ -15,16 +15,26 @@
  */
 
 /**
- * Known dependency manifest / lockfile basenames mapped to an ecosystem and kind.
- * Additional ecosystems (python, go, cargo, ...) are added here as they are implemented.
- * @type {{name: string, ecosystem: string, kind: 'manifest' | 'lockfile'}[]}
+ * Known dependency manifest / lockfile files mapped to an ecosystem and kind. A rule matches a
+ * file basename either exactly (`name`) or by regex (`pattern`). Additional ecosystems (go,
+ * cargo, ...) are added here as they are implemented.
+ * @type {{name?: string, pattern?: RegExp, ecosystem: string, kind: 'manifest' | 'lockfile'}[]}
  */
 const BASENAME_RULES = [
+  // npm
   { name: 'package.json', ecosystem: 'npm', kind: 'manifest' },
   { name: 'package-lock.json', ecosystem: 'npm', kind: 'lockfile' },
   { name: 'npm-shrinkwrap.json', ecosystem: 'npm', kind: 'lockfile' },
   { name: 'yarn.lock', ecosystem: 'npm', kind: 'lockfile' },
   { name: 'pnpm-lock.yaml', ecosystem: 'npm', kind: 'lockfile' },
+  // python
+  { pattern: /^requirements[\w.-]*\.txt$/i, ecosystem: 'python', kind: 'manifest' },
+  { name: 'pyproject.toml', ecosystem: 'python', kind: 'manifest' },
+  { name: 'setup.py', ecosystem: 'python', kind: 'manifest' },
+  { name: 'setup.cfg', ecosystem: 'python', kind: 'manifest' },
+  { name: 'Pipfile', ecosystem: 'python', kind: 'manifest' },
+  { name: 'Pipfile.lock', ecosystem: 'python', kind: 'lockfile' },
+  { name: 'poetry.lock', ecosystem: 'python', kind: 'lockfile' },
 ];
 
 /**
@@ -35,6 +45,6 @@ const BASENAME_RULES = [
 export function classifyManifest(path) {
   if (!path || typeof path !== 'string') return null;
   const base = path.replace(/\\/g, '/').split('/').pop();
-  const rule = BASENAME_RULES.find((r) => r.name === base);
+  const rule = BASENAME_RULES.find((r) => (r.pattern ? r.pattern.test(base) : r.name === base));
   return rule ? { ecosystem: rule.ecosystem, kind: rule.kind } : null;
 }

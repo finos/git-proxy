@@ -27,8 +27,8 @@ describe('resolveConfig', () => {
   });
 
   it('merges nested ecosystems rather than replacing them', () => {
-    const cfg = resolveConfig({ ecosystems: { python: true } });
-    expect(cfg.ecosystems).toEqual({ npm: true, python: true });
+    const cfg = resolveConfig({ ecosystems: { go: true } });
+    expect(cfg.ecosystems).toEqual({ npm: true, python: true, go: true });
   });
 
   it('honours failOn and allowPackages overrides', () => {

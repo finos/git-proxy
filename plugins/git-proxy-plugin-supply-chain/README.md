@@ -28,7 +28,23 @@ On any push that changes `package.json`, `package-lock.json`, `npm-shrinkwrap.js
 Findings are compared against the pre-push version of each file, so unchanged content is not
 re-flagged.
 
-> Ecosystem coverage starts with npm. Python, Go, Cargo and others are planned - each is a new
+## What it checks (Python)
+
+On any push that changes `requirements*.txt`, `pyproject.toml`, `setup.py`, `setup.cfg`,
+`Pipfile`, `poetry.lock` or `Pipfile.lock`:
+
+- **setup.py execution** - `setup.py` runs arbitrary code at install/build time; any change is
+  flagged, escalated when the added lines call `os.system`/`subprocess`, `eval`/`exec`,
+  `__import__`, network APIs, base64 decoding, or reference a raw IP.
+- **Custom indexes** - `--index-url`/`--extra-index-url` in requirements and
+  `[[tool.poetry.source]]`/`[[source]]` blocks (dependency-confusion risk).
+- **Non-registry sources** - vcs/url/editable requirements, poetry/pipenv inline `git`/`url`/`path`
+  sources, and PEP 508 direct-URL references (`pkg @ https://...`).
+- **Unpinned requirements** and **typosquats** (offline PyPI reference list).
+- **Lockfile sources** - git or plain-http package sources newly introduced in `poetry.lock` /
+  `Pipfile.lock`.
+
+> Coverage is npm + Python today. Go, Cargo, RubyGems and others are planned - each is a new
 > module under `lib/ecosystems/` plus an entry in `lib/manifests.js`; the plugin wiring is shared.
 
 ## How it runs

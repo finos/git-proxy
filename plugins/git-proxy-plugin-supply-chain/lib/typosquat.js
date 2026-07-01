@@ -15,9 +15,10 @@
  */
 
 import { NPM_POPULAR } from './data/npm-popular.js';
+import { PYPI_POPULAR } from './data/pypi-popular.js';
 
-const POPULAR = NPM_POPULAR.map((n) => n.toLowerCase());
-const POPULAR_SET = new Set(POPULAR);
+const NPM_SET = new Set(NPM_POPULAR.map((n) => n.toLowerCase()));
+const PYPI_SET = new Set(PYPI_POPULAR.map((n) => n.toLowerCase()));
 
 /**
  * Levenshtein edit distance between two strings.
@@ -48,16 +49,17 @@ export function levenshtein(a, b) {
 }
 
 /**
- * If `name` looks like a typosquat of a popular package, return that popular package name;
- * otherwise null. A name that IS itself popular (or explicitly allow-listed) is never flagged.
+ * If `name` looks like a typosquat of a package in `popularSet`, return that popular package
+ * name; otherwise null. A name that IS itself popular (or allow-listed) is never flagged.
  * @param {string} name candidate package name
+ * @param {Set<string>} popularSet lowercased popular package names
  * @param {string[]} [allow] package names to never flag
  * @return {string | null} the popular package being impersonated, or null
  */
-export function nearestPopular(name, allow = []) {
+function nearestInSet(name, popularSet, allow = []) {
   if (!name || typeof name !== 'string') return null;
   const lower = name.toLowerCase();
-  if (POPULAR_SET.has(lower)) return null;
+  if (popularSet.has(lower)) return null;
   if (allow.includes(name) || allow.includes(lower)) return null;
 
   // Compare the unscoped part (e.g. '@acme/lodahs' -> 'lodahs').
@@ -66,7 +68,7 @@ export function nearestPopular(name, allow = []) {
 
   let best = null;
   let bestDist = Infinity;
-  for (const pop of POPULAR_SET) {
+  for (const pop of popularSet) {
     const d = levenshtein(bare, pop);
     if (d < bestDist) {
       bestDist = d;
@@ -80,4 +82,24 @@ export function nearestPopular(name, allow = []) {
   const threshold = bare.length >= 6 ? 2 : 1;
   if (best && bestDist > 0 && bestDist <= threshold) return best;
   return null;
+}
+
+/**
+ * Typosquat check against the popular npm package list.
+ * @param {string} name candidate package name
+ * @param {string[]} [allow] package names to never flag
+ * @return {string | null} the popular package being impersonated, or null
+ */
+export function nearestPopular(name, allow = []) {
+  return nearestInSet(name, NPM_SET, allow);
+}
+
+/**
+ * Typosquat check against the popular PyPI package list.
+ * @param {string} name candidate package name
+ * @param {string[]} [allow] package names to never flag
+ * @return {string | null} the popular package being impersonated, or null
+ */
+export function nearestPopularPython(name, allow = []) {
+  return nearestInSet(name, PYPI_SET, allow);
 }

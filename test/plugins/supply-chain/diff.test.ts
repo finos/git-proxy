@@ -57,6 +57,21 @@ describe('classifyManifest', () => {
     expect(classifyManifest('sub\\dir\\yarn.lock')).toEqual({ ecosystem: 'npm', kind: 'lockfile' });
   });
 
+  it('classifies python manifests and lockfiles (incl. requirements variants)', () => {
+    expect(classifyManifest('requirements.txt')).toEqual({ ecosystem: 'python', kind: 'manifest' });
+    expect(classifyManifest('requirements-dev.txt')).toEqual({
+      ecosystem: 'python',
+      kind: 'manifest',
+    });
+    expect(classifyManifest('svc/pyproject.toml')).toEqual({
+      ecosystem: 'python',
+      kind: 'manifest',
+    });
+    expect(classifyManifest('setup.py')).toEqual({ ecosystem: 'python', kind: 'manifest' });
+    expect(classifyManifest('poetry.lock')).toEqual({ ecosystem: 'python', kind: 'lockfile' });
+    expect(classifyManifest('Pipfile.lock')).toEqual({ ecosystem: 'python', kind: 'lockfile' });
+  });
+
   it('returns null for non-manifest files', () => {
     expect(classifyManifest('src/index.js')).toBeNull();
     expect(classifyManifest('README.md')).toBeNull();

@@ -18,6 +18,7 @@ import { describe, it, expect } from 'vitest';
 import {
   levenshtein,
   nearestPopular,
+  nearestPopularPython,
 } from '../../../plugins/git-proxy-plugin-supply-chain/lib/typosquat.js';
 
 describe('levenshtein', () => {
@@ -58,5 +59,13 @@ describe('nearestPopular', () => {
 
   it('does not flag clearly-distinct names', () => {
     expect(nearestPopular('acme-internal-widget')).toBeNull();
+  });
+});
+
+describe('nearestPopularPython', () => {
+  it('flags a PyPI typosquat and ignores exact/unique names', () => {
+    expect(nearestPopularPython('requsts')).toBe('requests');
+    expect(nearestPopularPython('requests')).toBeNull();
+    expect(nearestPopularPython('acme-internal-service')).toBeNull();
   });
 });
