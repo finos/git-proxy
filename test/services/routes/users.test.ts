@@ -17,18 +17,36 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import express, { Express } from 'express';
 import request from 'supertest';
-import usersRouter from '../../../src/service/routes/users';
+import { RegisterRoutes } from '../../../src/service/generatedRoutes';
 import * as db from '../../../src/db';
 import { utils } from 'ssh2';
 import crypto from 'crypto';
 
 describe('Users API', () => {
   let app: Express;
+  // The authenticated user for the current request. Tests reassign this to
+  // exercise different users; set it to undefined for the unauthenticated case.
+  let currentUser: { username: string; admin?: boolean } | undefined;
 
   beforeEach(() => {
+    currentUser = { username: 'testuser' };
     app = express();
     app.use(express.json());
-    app.use('/users', usersRouter);
+    app.use((req, _res, next) => {
+      // tsoa's @Security('jwt') middleware overwrites req.user with whatever
+      // expressAuthentication returns. With a session (isAuthenticated() === true)
+      // it returns the existing req.user, so mark the request as session-authenticated.
+      if (currentUser) {
+        req.user = currentUser;
+        (req as any).isAuthenticated = () => true;
+      }
+      next();
+    });
+    RegisterRoutes(app);
+    app.use((err: any, _req: any, res: any, next: any) => {
+      if (res.headersSent) return next(err);
+      res.status(err.status ?? 500).json({ message: err.message });
+    });
 
     vi.spyOn(db, 'getUsers').mockResolvedValue([
       {
@@ -55,8 +73,8 @@ describe('Users API', () => {
     vi.restoreAllMocks();
   });
 
-  it('GET /users only serializes public data needed for ui, not user secrets like password', async () => {
-    const res = await request(app).get('/users');
+  it('GET /api/v1/user only serializes public data needed for ui, not user secrets like password', async () => {
+    const res = await request(app).get('/api/v1/user');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([
@@ -71,8 +89,8 @@ describe('Users API', () => {
     ]);
   });
 
-  it('GET /users/:id does not serialize password', async () => {
-    const res = await request(app).get('/users/bob');
+  it('GET /api/v1/user/:id does not serialize password', async () => {
+    const res = await request(app).get('/api/v1/user/bob');
 
     expect(res.status).toBe(200);
     console.log(`Response body: ${JSON.stringify(res.body)}`);
@@ -102,39 +120,26 @@ describe('Users API', () => {
       vi.spyOn(db, 'removePublicKey').mockResolvedValue(undefined);
     });
 
-    describe('GET /users/:username/ssh-key-fingerprints', () => {
+    describe('GET /api/v1/user/:username/ssh-key-fingerprints', () => {
       it('should return 401 when not authenticated', async () => {
-        const res = await request(app).get('/users/alice/ssh-key-fingerprints');
+        currentUser = undefined;
+        const res = await request(app).get('/api/v1/user/alice/ssh-key-fingerprints');
 
         expect(res.status).toBe(401);
         expect(res.body).toEqual({ error: 'Authentication required' });
       });
 
       it('should return 403 when non-admin tries to view other user keys', async () => {
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'bob', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp).get('/users/alice/ssh-key-fingerprints');
+        currentUser = { username: 'bob', admin: false };
+        const res = await request(app).get('/api/v1/user/alice/ssh-key-fingerprints');
 
         expect(res.status).toBe(403);
         expect(res.body).toEqual({ error: 'Not authorized to view keys for this user' });
       });
 
       it('should allow user to view their own keys', async () => {
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'alice', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp).get('/users/alice/ssh-key-fingerprints');
+        currentUser = { username: 'alice', admin: false };
+        const res = await request(app).get('/api/v1/user/alice/ssh-key-fingerprints');
 
         expect(res.status).toBe(200);
         expect(res.body).toEqual([
@@ -147,15 +152,8 @@ describe('Users API', () => {
       });
 
       it('should allow admin to view any user keys', async () => {
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'admin', admin: true };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp).get('/users/alice/ssh-key-fingerprints');
+        currentUser = { username: 'admin', admin: true };
+        const res = await request(app).get('/api/v1/user/alice/ssh-key-fingerprints');
 
         expect(res.status).toBe(200);
         expect(db.getPublicKeys).toHaveBeenCalledWith('alice');
@@ -164,22 +162,15 @@ describe('Users API', () => {
       it('should handle errors when retrieving keys', async () => {
         vi.spyOn(db, 'getPublicKeys').mockRejectedValue(new Error('Database error'));
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'alice', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp).get('/users/alice/ssh-key-fingerprints');
+        currentUser = { username: 'alice', admin: false };
+        const res = await request(app).get('/api/v1/user/alice/ssh-key-fingerprints');
 
         expect(res.status).toBe(500);
         expect(res.body).toEqual({ error: 'Failed to retrieve SSH keys' });
       });
     });
 
-    describe('POST /users/:username/ssh-keys', () => {
+    describe('POST /api/v1/user/:username/ssh-keys', () => {
       const validPublicKey = 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAITest test@example.com';
 
       beforeEach(() => {
@@ -195,8 +186,9 @@ describe('Users API', () => {
       });
 
       it('should return 401 when not authenticated', async () => {
+        currentUser = undefined;
         const res = await request(app)
-          .post('/users/alice/ssh-keys')
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(401);
@@ -204,16 +196,9 @@ describe('Users API', () => {
       });
 
       it('should return 403 when non-admin tries to add key for other user', async () => {
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'bob', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+        currentUser = { username: 'bob', admin: false };
+        const res = await request(app)
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(403);
@@ -221,15 +206,8 @@ describe('Users API', () => {
       });
 
       it('should return 400 when public key is missing', async () => {
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'alice', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp).post('/users/alice/ssh-keys').send({});
+        currentUser = { username: 'alice', admin: false };
+        const res = await request(app).post('/api/v1/user/alice/ssh-keys').send({});
 
         expect(res.status).toBe(400);
         expect(res.body).toEqual({ error: 'Public key is required' });
@@ -238,16 +216,9 @@ describe('Users API', () => {
       it('should return 400 when public key format is invalid', async () => {
         vi.spyOn(utils, 'parseKey').mockReturnValue(null as any);
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'alice', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+        currentUser = { username: 'alice', admin: false };
+        const res = await request(app)
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: 'invalid-key' });
 
         expect(res.status).toBe(400);
@@ -255,16 +226,9 @@ describe('Users API', () => {
       });
 
       it('should successfully add SSH key', async () => {
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'alice', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+        currentUser = { username: 'alice', admin: false };
+        const res = await request(app)
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey, name: 'My Key' });
 
         expect(res.status).toBe(201);
@@ -282,16 +246,9 @@ describe('Users API', () => {
       });
 
       it('should use default name when name not provided', async () => {
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'alice', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+        currentUser = { username: 'alice', admin: false };
+        const res = await request(app)
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(201);
@@ -306,16 +263,9 @@ describe('Users API', () => {
       it('should return 409 when key already exists', async () => {
         vi.spyOn(db, 'addPublicKey').mockRejectedValue(new Error('SSH key already exists'));
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'alice', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+        currentUser = { username: 'alice', admin: false };
+        const res = await request(app)
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(409);
@@ -325,16 +275,9 @@ describe('Users API', () => {
       it('should return 404 when user not found', async () => {
         vi.spyOn(db, 'addPublicKey').mockRejectedValue(new Error('User not found'));
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'alice', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+        currentUser = { username: 'alice', admin: false };
+        const res = await request(app)
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(404);
@@ -344,16 +287,9 @@ describe('Users API', () => {
       it('should return 500 for other errors', async () => {
         vi.spyOn(db, 'addPublicKey').mockRejectedValue(new Error('Database error'));
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'alice', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+        currentUser = { username: 'alice', admin: false };
+        const res = await request(app)
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(500);
@@ -361,16 +297,9 @@ describe('Users API', () => {
       });
 
       it('should allow admin to add key for any user', async () => {
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'admin', admin: true };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+        currentUser = { username: 'admin', admin: true };
+        const res = await request(app)
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(201);
@@ -378,39 +307,26 @@ describe('Users API', () => {
       });
     });
 
-    describe('DELETE /users/:username/ssh-keys/:fingerprint', () => {
+    describe('DELETE /api/v1/user/:username/ssh-keys/:fingerprint', () => {
       it('should return 401 when not authenticated', async () => {
-        const res = await request(app).delete('/users/alice/ssh-keys/SHA256:test123');
+        currentUser = undefined;
+        const res = await request(app).delete('/api/v1/user/alice/ssh-keys/SHA256:test123');
 
         expect(res.status).toBe(401);
         expect(res.body).toEqual({ error: 'Authentication required' });
       });
 
       it('should return 403 when non-admin tries to remove key for other user', async () => {
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'bob', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp).delete('/users/alice/ssh-keys/SHA256:test123');
+        currentUser = { username: 'bob', admin: false };
+        const res = await request(app).delete('/api/v1/user/alice/ssh-keys/SHA256:test123');
 
         expect(res.status).toBe(403);
         expect(res.body).toEqual({ error: 'Not authorized to remove keys for this user' });
       });
 
       it('should successfully remove SSH key', async () => {
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'alice', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp).delete('/users/alice/ssh-keys/SHA256:test123');
+        currentUser = { username: 'alice', admin: false };
+        const res = await request(app).delete('/api/v1/user/alice/ssh-keys/SHA256:test123');
 
         expect(res.status).toBe(200);
         expect(res.body).toEqual({ message: 'SSH key removed successfully' });
@@ -420,15 +336,8 @@ describe('Users API', () => {
       it('should return 404 when user not found', async () => {
         vi.spyOn(db, 'removePublicKey').mockRejectedValue(new Error('User not found'));
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'alice', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp).delete('/users/alice/ssh-keys/SHA256:test123');
+        currentUser = { username: 'alice', admin: false };
+        const res = await request(app).delete('/api/v1/user/alice/ssh-keys/SHA256:test123');
 
         expect(res.status).toBe(404);
         expect(res.body).toEqual({ error: 'User not found' });
@@ -437,30 +346,16 @@ describe('Users API', () => {
       it('should return 500 for other errors', async () => {
         vi.spyOn(db, 'removePublicKey').mockRejectedValue(new Error('Database error'));
 
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'alice', admin: false };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp).delete('/users/alice/ssh-keys/SHA256:test123');
+        currentUser = { username: 'alice', admin: false };
+        const res = await request(app).delete('/api/v1/user/alice/ssh-keys/SHA256:test123');
 
         expect(res.status).toBe(500);
         expect(res.body).toEqual({ error: 'Database error' });
       });
 
       it('should allow admin to remove key for any user', async () => {
-        const testApp = express();
-        testApp.use(express.json());
-        testApp.use((req, res, next) => {
-          req.user = { username: 'admin', admin: true };
-          next();
-        });
-        testApp.use('/users', usersRouter);
-
-        const res = await request(testApp).delete('/users/alice/ssh-keys/SHA256:test123');
+        currentUser = { username: 'admin', admin: true };
+        const res = await request(app).delete('/api/v1/user/alice/ssh-keys/SHA256:test123');
 
         expect(res.status).toBe(200);
         expect(db.removePublicKey).toHaveBeenCalledWith('alice', 'SHA256:test123');
@@ -468,10 +363,10 @@ describe('Users API', () => {
     });
   });
 
-  it('GET /users/:id should return 404 Not Found if user is not found', async () => {
+  it('GET /api/v1/user/:id should return 404 Not Found if user is not found', async () => {
     vi.restoreAllMocks();
 
-    const res = await request(app).get('/users/non-existent');
+    const res = await request(app).get('/api/v1/user/non-existent');
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ message: 'User non-existent not found' });
   });

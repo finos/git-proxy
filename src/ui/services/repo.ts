@@ -76,7 +76,7 @@ const getRepo = async (id: string): Promise<ServiceResult<RepoView>> => {
   }
 };
 
-const addRepo = async (repo: RepoView): Promise<ServiceResult<RepoView>> => {
+const addRepo = async (repo: Repo): Promise<ServiceResult<RepoView>> => {
   const apiV1Base = await getApiV1BaseUrl();
   const url = new URL(`${apiV1Base}/repo`);
 

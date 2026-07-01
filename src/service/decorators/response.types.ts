@@ -1,0 +1,33 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { TsoaResponse } from 'tsoa';
+
+export type UnauthorisedResponse = TsoaResponse<401, { message: string }>;
+export type ForbiddenResponse = TsoaResponse<403, { message: string }>;
+export type NotFoundResponse = TsoaResponse<404, { message: string }>;
+export type ValidationErrorResponse = TsoaResponse<400, { message: string }>;
+export type ConflictResponse = TsoaResponse<409, { message: string }>;
+export type InternalServerErrorResponse = TsoaResponse<500, { message: string }>;
+export type UserNotFoundResponse = TsoaResponse<400, { error: string }>;
+
+// Error responses using an `{ error: string }` body shape (consumed by the SSH key UI/CLI).
+export type AuthenticationRequiredResponse = TsoaResponse<401, { error: string }>;
+export type ForbiddenErrorResponse = TsoaResponse<403, { error: string }>;
+export type BadRequestErrorResponse = TsoaResponse<400, { error: string }>;
+export type NotFoundErrorResponse = TsoaResponse<404, { error: string }>;
+export type ConflictErrorResponse = TsoaResponse<409, { error: string }>;
+export type ServerErrorResponse = TsoaResponse<500, { error: string }>;

@@ -14,18 +14,21 @@
  * limitations under the License.
  */
 
-import express, { Request, Response } from 'express';
+import { Controller, Get, Route, Tags } from 'tsoa';
+import { ApiResources } from '../interfaces/home.interfaces';
 
-const router = express.Router();
-
-const resource = {
-  healthcheck: '/api/v1/healthcheck',
-  push: '/api/v1/push',
-  auth: '/api/auth',
-};
-
-router.get('/', (_req: Request, res: Response) => {
-  res.send(resource);
-});
-
-export default router;
+/**
+ * API home — lists available resource URIs.
+ */
+@Route('api')
+@Tags('Home')
+export class HomeController extends Controller {
+  @Get('/')
+  public getResources(): ApiResources {
+    return {
+      healthcheck: '/api/v1/healthcheck',
+      push: '/api/v1/push',
+      auth: '/api/auth',
+    };
+  }
+}

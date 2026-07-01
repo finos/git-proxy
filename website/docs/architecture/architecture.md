@@ -452,7 +452,7 @@ Allows defining ways to authenticate to the API. This is useful for securing cus
 
 If `apiAuthentication` is left empty, API endpoints will be publicly accesible.
 
-Currently, only JWT auth is supported. This is implemented via the [`jwtAuthHandler` middleware](https://github.com/finos/git-proxy/blob/main/src/service/passport/jwtAuthHandler.ts). Aside of validating incoming access tokens, it can also assign roles based on the token payload.
+Currently, only JWT auth is supported. This is implemented via the [`@Security('jwt')` decorator](https://github.com/finos/git-proxy/blob/main/src/service/authentication.ts). Aside of validating incoming access tokens, it can also assign roles based on the token payload.
 
 ##### Setting up JWT Authentication
 

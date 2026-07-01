@@ -59,10 +59,11 @@
     "server": "cross-env ALLOWED_ORIGINS=* tsx index.ts",
     "start": "concurrently \"npm run server\" \"npm run client\"",
     "build": "npm run generate-config-types && npm run build-ui && npm run build-ts",
-    "build-ts": "tsc --project tsconfig.publish.json && node scripts/fix-shebang.js",
+    "build-ts": "npm run build-tsoa && tsc --project tsconfig.publish.json && node scripts/fix-shebang.js",
     "build-ui": "vite build",
+    "build-tsoa": "tsoa spec-and-routes",
     "check-types": "tsc",
-    "check-types:server": "tsc --project tsconfig.publish.json --noEmit",
+    "check-types:server": "npm run build-tsoa && tsc --project tsconfig.publish.json --noEmit",
     "test-shuffle": "NODE_ENV=test vitest --run --dir ./test --sequence.shuffle",
     "test": "cross-env NODE_ENV=test vitest --run --dir ./test",
     "test:e2e": "vitest run --config vitest.config.e2e.ts",
@@ -75,13 +76,14 @@
     "prepare": "node ./scripts/prepare.js",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --ignore-path .prettierignore --config ./.prettierrc",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --ignore-path .prettierignore --config ./.prettierrc",
     "migrate:urls": "node scripts/migrate/migrate-urls.js",
     "migrate:users": "node scripts/migrate/migrate-users.js",
     "backup:urls": "node scripts/migrate/backup-urls.js",
     "backup:users": "node scripts/migrate/backup-users.js",
-    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --config ./.prettierrc",
-    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}\" --ignore-path .gitignore --config ./.prettierrc",
     "gen-schema-doc": "node ./scripts/doc-schema.js",
+    "gen-swagger-doc": "node ./scripts/doc-swagger.js",
     "cypress:run": "cypress run",
     "cypress:run:docker": "cypress run --config specPattern='cypress/e2e/docker/**/*.cy.{js,ts}'",
     "cypress:open": "cypress open",
@@ -148,6 +150,7 @@
     "react-router-dom": "6.30.3",
     "simple-git": "^3.30.0",
     "ssh2": "~1.17.0",
+    "tsoa": "^7.0.0-alpha.0",
     "uuid": "^14.0.0",
     "validator": "^13.15.26",
     "yargs": "^18.0.0"
@@ -234,6 +237,9 @@
     ],
     "test/**/*.{js,jsx,ts,tsx,json}": [
       "eslint --fix"
+    ],
+    "{src/service/controllers/**/*Controller.ts,src/service/authentication.ts,src/service/generatedRoutes.ts,src/app.ts,tsoa.json}": [
+      "node scripts/check-tsoa-routes.js --"
     ]
   }
 }

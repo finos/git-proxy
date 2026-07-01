@@ -1,0 +1,194 @@
+---
+title: Repositories
+description: Repositories API endpoints for GitProxy
+---
+
+# Repositories
+
+*8 endpoints — 2 GET, 1 POST, 2 PATCH, 3 DELETE*
+
+## <span style={{background: '#61affe', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>GET</span> `/api/v1/repo`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Returns repositories, optionally filtered by query parameters.
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+
+---
+
+## <span style={{background: '#61affe', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>GET</span> `/api/v1/repo/{id}`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Returns a single repository by ID.
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|:---:|------|:--------:|-------------|
+| `id` | `path` | `string` | **Yes** |  |
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>404</code> Not Found
+
+---
+
+## <span style={{background: '#49cc90', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>POST</span> `/api/v1/repo`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Creates a new repository. May restart the proxy if a new origin is added.
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|:--------:|-------------|
+| `url` | `string` | **Yes** |  |
+| `name` | `string` | **Yes** |  |
+| `project` | `string` | **Yes** |  |
+| `users` | `object` | No |  |
+| `_id` | `string` | No |  |
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>400</code> Bad Request
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>401</code> Unauthorized
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>409</code> Conflict
+- <code style={{background: '#f93e3e22', color: '#f93e3e', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>500</code> Internal Server Error
+
+---
+
+## <span style={{background: '#50e3c2', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>PATCH</span> `/api/v1/repo/{id}/user/authorise`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Grants a user authorise permission on a repository.
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|:---:|------|:--------:|-------------|
+| `id` | `path` | `string` | **Yes** |  |
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|:--------:|-------------|
+| `username` | `string` | **Yes** |  |
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>400</code> Bad Request
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>401</code> Unauthorized
+
+---
+
+## <span style={{background: '#50e3c2', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>PATCH</span> `/api/v1/repo/{id}/user/push`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Grants a user push permission on a repository.
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|:---:|------|:--------:|-------------|
+| `id` | `path` | `string` | **Yes** |  |
+
+#### Request Body
+
+| Field | Type | Required | Description |
+|-------|------|:--------:|-------------|
+| `username` | `string` | **Yes** |  |
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>400</code> Bad Request
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>401</code> Unauthorized
+
+---
+
+## <span style={{background: '#f93e3e', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>DELETE</span> `/api/v1/repo/{id}/delete`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Deletes a repository. May restart the proxy if a proxied host is removed.
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|:---:|------|:--------:|-------------|
+| `id` | `path` | `string` | **Yes** |  |
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>401</code> Unauthorized
+
+---
+
+## <span style={{background: '#f93e3e', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>DELETE</span> `/api/v1/repo/{id}/user/authorise/{username}`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Revokes a user's authorise permission on a repository.
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|:---:|------|:--------:|-------------|
+| `id` | `path` | `string` | **Yes** |  |
+| `username` | `path` | `string` | **Yes** |  |
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>400</code> Bad Request
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>401</code> Unauthorized
+
+---
+
+## <span style={{background: '#f93e3e', color: '#fff', padding: '0.2rem 0.5rem', borderRadius: '0.25rem', fontWeight: 'bold', fontSize: '0.85rem', fontFamily: 'monospace'}}>DELETE</span> `/api/v1/repo/{id}/user/push/{username}`<span style={{background: '#f0ad4e', color: '#fff', padding: '0.15rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 'bold', marginLeft: '0.5rem'}}>AUTH</span>
+
+Revokes a user's push permission on a repository.
+
+:::info[Authorization Required]
+This endpoint requires a valid **JWT Bearer token** in the `Authorization` header.
+:::
+
+#### Parameters
+
+| Name | In | Type | Required | Description |
+|------|:---:|------|:--------:|-------------|
+| `id` | `path` | `string` | **Yes** |  |
+| `username` | `path` | `string` | **Yes** |  |
+
+#### Responses
+
+- <code style={{background: '#49cc9022', color: '#49cc90', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>200</code> Ok
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>400</code> Bad Request
+- <code style={{background: '#fca13022', color: '#fca130', padding: '0.1rem 0.35rem', borderRadius: '0.2rem', fontWeight: 'bold'}}>401</code> Unauthorized
+
+---

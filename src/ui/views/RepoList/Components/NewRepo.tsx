@@ -31,16 +31,16 @@ import { addRepo } from '../../../services/repo';
 import { makeStyles } from '@material-ui/core/styles';
 import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
 import { RepoIcon } from '@primer/octicons-react';
-import { RepoView } from '../../../types';
+import { Repo } from '../../../../db/types';
 
 interface AddRepositoryDialogProps {
   open: boolean;
   onClose: () => void;
-  onSuccess: (repo: RepoView) => void;
+  onSuccess: (repo: Repo) => void;
 }
 
 interface NewRepoProps {
-  onSuccess: (repo: RepoView) => Promise<void>;
+  onSuccess: (repo: Repo) => Promise<void>;
 }
 
 const useStyles = makeStyles(styles as any);
@@ -59,7 +59,7 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
     onClose();
   };
 
-  const handleSuccess = (repo: RepoView) => {
+  const handleSuccess = (repo: Repo) => {
     onSuccess(repo);
     setTip(true);
   };
@@ -71,11 +71,10 @@ const AddRepositoryDialog: React.FC<AddRepositoryDialogProps> = ({ open, onClose
   };
 
   const add = async () => {
-    const repo: RepoView = {
+    const repo: Repo = {
       project: project.trim(),
       name: name.trim(),
       url: url.trim(),
-      proxyURL: '',
       users: { canPush: [], canAuthorise: [] },
     };
 

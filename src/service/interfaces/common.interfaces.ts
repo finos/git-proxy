@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-import express, { Request, Response } from 'express';
-
-const router = express.Router();
-
-router.get('/', (_req: Request, res: Response) => {
-  res.send({
-    message: 'ok',
-  });
-});
-
-export default router;
+/** Generic response carrying a human-readable message. */
+export interface MessageResponse {
+  message: string;
+}
