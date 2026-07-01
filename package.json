@@ -112,6 +112,7 @@
     "@material-ui/icons": "4.11.3",
     "@primer/octicons-react": "^19.21.2",
     "@seald-io/nedb": "^4.1.2",
+    "agent-base": "^7.1.4",
     "axios": "^1.13.4",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
@@ -127,6 +128,7 @@
     "express-session": "^1.19.0",
     "font-awesome": "^4.7.0",
     "history": "5.3.0",
+    "httpntlm": "^1.8.13",
     "https-proxy-agent": "^7.0.6",
     "isomorphic-git": "^1.36.3",
     "jsonwebtoken": "^9.0.3",
@@ -209,6 +211,9 @@
     "@esbuild/darwin-x64": "^0.27.2",
     "@esbuild/linux-x64": "0.27.2",
     "@esbuild/win32-x64": "0.27.2"
+  },
+  "overrides": {
+    "underscore": "^1.13.8"
   },
   "browserslist": {
     "production": [
