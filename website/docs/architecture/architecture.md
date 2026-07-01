@@ -432,9 +432,84 @@ Sample values:
 
 #### `sink`
 
-List of database sources. The first source with `enabled` set to `true` will be used. Currently, MongoDB and filesystem databases ([NeDB](https://www.npmjs.com/package/@seald-io/nedb)) are supported. By default, the filesystem database is used.
+List of database sources. The first source with `enabled` set to `true` will be used. GitProxy supports three sink backends:
+
+- **`fs`** — filesystem-backed [NeDB](https://www.npmjs.com/package/@seald-io/nedb). Default. Suitable for single-process deployments.
+- **`mongo`** — MongoDB via `connect-mongo` for session storage.
+- **`postgres`** — PostgreSQL via [`pg`](https://node-postgres.com/) + [`connect-pg-simple`](https://github.com/voxpelli/node-connect-pg-simple) for session storage.
 
 Each entry has its own unique configuration parameters.
+
+##### PostgreSQL configuration
+
+The `postgres` backend stores `users`, `repos`, `pushes`, and the `connect-pg-simple` `session` table in a single PostgreSQL database. The required tables are created on startup with `CREATE TABLE IF NOT EXISTS`, so pointing the proxy at an empty database is enough to get running — no migration tooling is required for the initial setup.
+
+```json
+{
+  "sink": [
+    {
+      "type": "postgres",
+      "connectionString": "postgresql://user:pass@host:5432/gitproxy",
+      "enabled": true
+    }
+  ]
+}
+```
+
+If `connectionString` is omitted on the config entry, GitProxy falls back to the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable. This mirrors the behaviour of the mongo backend's `GIT_PROXY_MONGO_CONNECTION_STRING`.
+
+##### Connection options
+
+Beyond `connectionString`, the `postgres` sink accepts discrete connection fields and tuning options:
+
+- `host`, `port`, `user`, `password`, `database` - used when `connectionString` is not set.
+- `ssl` - `true` for TLS with default certificate verification, or an object of TLS options (`rejectUnauthorized`, `ca`, `cert`, `key`, ...).
+- `pool` - pool tuning: `max`, `idleTimeoutMillis`, `connectionTimeoutMillis`.
+
+Connection precedence: `connectionString` (the config field, then `GIT_PROXY_POSTGRES_CONNECTION_STRING`) wins; otherwise the discrete fields are used; if neither is set, the standard `PGHOST` / `PGPORT` / `PGUSER` / `PGPASSWORD` / `PGDATABASE` environment variables are read by the client. `ssl` and `pool` are applied in all cases. If none of these resolve to a connection, GitProxy refuses to start rather than silently defaulting to `localhost`.
+
+```json
+{
+  "type": "postgres",
+  "host": "db.example.com",
+  "port": 5432,
+  "user": "gitproxy",
+  "password": "...",
+  "database": "gitproxy",
+  "ssl": { "rejectUnauthorized": true },
+  "pool": { "max": 20, "idleTimeoutMillis": 30000 },
+  "enabled": true
+}
+```
+
+##### AWS RDS / Aurora IAM authentication
+
+For Amazon RDS or Aurora, GitProxy can authenticate with a short-lived IAM auth token instead of a static password. Enable `awsIamAuth` and supply the discrete `host` / `port` / `user` fields (a `connectionString` is not used in this mode):
+
+```json
+{
+  "type": "postgres",
+  "host": "mydb.abc123.eu-west-2.rds.amazonaws.com",
+  "port": 5432,
+  "user": "gitproxy_iam",
+  "database": "gitproxy",
+  "awsIamAuth": { "enabled": true, "region": "eu-west-2" },
+  "enabled": true
+}
+```
+
+- A fresh token is generated for every new pool connection from the AWS SDK default credential chain (via `@aws-sdk/rds-signer`), so no password is stored and token refresh is automatic.
+- `region` falls back to the `AWS_REGION` / `AWS_DEFAULT_REGION` environment variables, then the SDK's default region resolution.
+- TLS is required by RDS for IAM auth, so `ssl` defaults to `true` when omitted. Supply an `ssl` object (for example `{ "rejectUnauthorized": true, "ca": "<RDS CA bundle>" }`) to verify against the RDS certificate authority.
+- The database user must be granted the `rds_iam` role (`GRANT rds_iam TO gitproxy_iam;`).
+- IAM auth needs the optional `@aws-sdk/rds-signer` dependency, which installs by default. On a slim install (`npm install --omit=optional`) add it explicitly with `npm install @aws-sdk/rds-signer`.
+
+Notes and current limitations (issue #1497, v1):
+
+- Schema is bootstrapped via `CREATE TABLE IF NOT EXISTS` at startup. No formal migration mechanism ships with this release.
+- Repo permissions (`canPush` / `canAuthorise`) are stored as a JSONB column on the `repos` table. A future PR may normalise these into a `repo_users` join table.
+- No data migration utility from `fs` or `mongo` to `postgres` — copy data yourself if needed.
+- If `postgres` is selected as the active sink and no connection can be resolved, GitProxy refuses to start rather than silently falling back to an in-memory session store.
 
 Extending GitProxy to support other databases requires adding the relevant handlers and setup to the [`/src/db`](https://github.com/finos/git-proxy/blob/main/src/db/) directory. Feel free to [open an issue](https://github.com/finos/git-proxy/issues) requesting support for any specific databases - or [open a PR](https://github.com/finos/git-proxy/pulls) with the desired changes!
 
