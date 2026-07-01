@@ -101,7 +101,7 @@ jobs:
             SOURCE_LINE="Triggered manually for version $VERSION."
           fi
 
-          BODY=$(printf '%s\n\nBumps:\n- `package.json` / `package-lock.json`\n- `packages / `packages/git-proxy-cli/package.json`\n\nOnce merged, cut `%s` from `main` per the release process.\n' "$SOURCE_LINE" "$RELEASE_BRANCH")
+          BODY=$(printf '%s\n\nBumps:\n- `package.json`, `package-lock.json`\n- `packages/git-proxy-cli/package.json`\n\nOnce merged, cut `%s` from `main` per our [release process](https://git-proxy.finos.org/docs/development/releases) in order to generate a GitHub draft release.\n' "$SOURCE_LINE" "$RELEASE_BRANCH")
 
           if gh pr view "$BRANCH" >/dev/null 2>&1; then
             echo "PR for $BRANCH already exists. Branch updated, no new PR opened."
