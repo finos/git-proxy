@@ -2,6 +2,14 @@
 
 GitProxy has a standardized release process to ensure they are done in a timely manner, and to prevent extensive merge conflicts. We encourage contributors to read this before opening a PR.
 
+## TL;DR on how to release
+
+1. When all issues in a milestone are completed, close it. This will generate a PR that bumps the project version
+2. Review and merge the `package.json` bump
+3. Make a branch from `main` called `release/X.Y`. This will generate a draft release, visible on [our Releases page](https://github.com/finos/git-proxy/releases).
+4. Check the release notes, then click Publish. This will automatically [publish to NPM](https://www.npmjs.com/package/@finos/git-proxy).
+5. Verify that NPM release was published correctly.
+
 ## Branching Strategy
 
 GitProxy follows a [GitLabFlow branching strategy](https://about.gitlab.com/topics/version-control/what-is-gitlab-flow/) with **cascade-based merging** for bugfixes as opposed to cherry-picking. [This blogpost](https://blog.joshuins.com/implementing-cascading-merges-in-github-actions-part-1-99a907e566f3) explains in more detail how cascade-based merging works. See this [StackExchange discussion](https://softwareengineering.stackexchange.com/questions/460758/is-cascade-merging-forward-porting-riskier-than-backporting) for pros and cons of cascade-based merging.
@@ -51,6 +59,14 @@ Keep in mind that maintainers may adjust the labels manually if appropriate.
 
 ## Release Process
 
+The release process varies depending on whether you're cutting a new release or patching an existing one. See the section below on [How to Patch an Existing Release](#publishing-a-patch-release).
+
+### New release
+
+For new releases, you must first close the [related milestone](https://github.com/finos/git-proxy/milestones). This will generate a PR bumping `package.json`, `package-lock.json` and `packages/git-proxy-cli/package.json`. Once that PR is merged into `main`, make a new branch from `main` called `release/X.Y`, where `X` is the major version and `Y` is the minor version to which you want to bump.
+
+This will generate a draft release in our [Releases](https://github.com/finos/git-proxy/releases) page. Edit the release notes if necessary, and then click Publish. This will also automatically publish to NPM.
+
 The actual release process is largely automated via two GitHub Actions workflows: [`release-drafter.yml`](https://github.com/finos/git-proxy/blob/main/.github/workflows/release-drafter.yml) and [`npm.yml`](https://github.com/finos/git-proxy/blob/main/.github/workflows/npm.yml).
 
 ### Release Drafter
@@ -88,7 +104,10 @@ As detailed in [`npm.yml`](https://github.com/finos/git-proxy/blob/main/.github/
 
 For patch releases, the same process applies. The only difference is that first we must perform the cascade-based merge flow from above:
 
-First, we make a PR against the earliest supported version where the bug can be reproduced. Deprecated versions need not inherit the fix. Then, we open a PR against that version's release branch, ex. `release/2.2`. Once the bugfix has been merged, this automatically generates a draft release with a patch bump (ex. `2.2.0` -> `2.2.1`). We **must publish the release** (to prevent the draft from getting overwritten). Finally, we merge (_cascade_) the `release/2.2` branch into the next supported version, ex. `release/3.0`, and repeat the publishing process.
+1. Make a PR against the release branch for the **earliest supported version** where the bug can be reproduced. The PR must include the bugfix, and also bump `package.json`, `package-lock.json` and `packages/git-proxy-cli/package.json` to the next patch version. Note that deprecated versions need not inherit the fix.
+2. Merge the PR. If you forgot to bump `package.json`, you can generate a patch bump PR by using [this release branch bumper workflow](https://github.com/finos/git-proxy/actions/workflows/release-branch-bump.yml). Just set the branch version you want to target, such as `2.2`.
+3. Once the bugfix and the version bump is merged, a draft release will be generated in our [Releases page](https://github.com/finos/git-proxy/releases). **Publish this release** before merging additional PRs to the release branch, or performing the cascade merges. **Don't forget to uncheck the "Set as latest release" default option** when publishing the release.
+4. Once a patch has been published, you can cascade-merge the release branch into the next supported version. For example, if the currently supported versions are `2.2` and `3.0`, we will first publish a patch on `2.2` and then merge (AKA cascade) `release/2.2` into `release/3.0`. Then, we repeat the version bumping and publishing process.
 
 ### Cheatsheet and Troubleshooting
 
@@ -97,7 +116,7 @@ The flows are roughly as follows:
 #### Releases
 
 1. You merge new PRs to `main`
-2. When a milestone is completed, make a PR to bump the GitProxy version on all of the relevant `package.json` files. This is necessary for publishing to NPM.
+2. When a milestone is closed, a PR is autogenerated to bump the GitProxy version on all of the relevant `package.json` files. This is necessary for correctly publishing to NPM.
 3. Make a `release/X.Y` branch to freeze feature development. New features and improvements go into `main`, not into the `release/X.Y` branch
 4. Upon creating the branch, a draft release is automatically generated.
 5. Review the draft release notes, and click Publish if appropriate. This will automatically build and publish to NPM
@@ -106,10 +125,10 @@ The flows are roughly as follows:
 
 1. Figure out which is the earliest _supported_ version where the bug can be reproduced. Suppose the latest two major versions are supported (`1.20.x` and `2.2.x`), then we only care about reproducing the bug on `release/1.20` and `release/2.2`.
 2. Fix the bug and make a PR against the relevant version
-3. In this PR, you **must** also bump the GitProxy version on all relevant `package.json` files for publishing to NPM (ex: `1.20.0` -> `1.20.1`)
+3. In this PR, you **must** also bump the GitProxy version on all relevant `package.json` files for publishing to NPM (ex: `1.20.0` -> `1.20.1`). If you forgot to bump, you can easily generate a PR for it by using [release-branch-bump.yml](https://github.com/finos/git-proxy/actions/workflows/release-branch-bump.yml)
 4. Once the PR is merged, a draft release will be generated to bump the patch version
 5. Review the draft release notes and publish if appropriate. This will automatically **update** the NPM `release-1.20` line with the patched package. **Tip: Don't forget to uncheck the "Set as latest release" default option**
-6. Then, make a PR to merge the `release/1.20` branch into `release/2.2`. **Don't forget to bump the GitProxy version for the new line** (ex: `2.2.0` -> `2.2.1`)
+6. Then, make a PR to merge the `release/1.20` branch into `release/2.2`. **Don't forget to bump the GitProxy version for the new line too** (ex: `2.2.0` -> `2.2.1`)
 7. Repeat steps 4-6 until all the supported versions have been published to both GitHub and NPM
 
 #### Troubleshooting
@@ -122,7 +141,7 @@ Just re-run the `release-drafter.yml` workflow from the related release branch. 
 
 ##### I published the draft release and forgot to bump the `package.json`s!
 
-Usually, this will fail to publish to NPM at all. Just delete the bad release from the [GitHub releases page](https://github.com/finos/git-proxy/releases), delete the old related tag, then make a PR to the relevant `release/X.Y` branch bumping the `package.json` versions. When the PR is merged, publish the draft release making sure that a new tag is being created. This should trigger the NPM publish workflow and publish the updated package or override the existing one.
+Usually, this will fail to publish to NPM at all, though it still generates a bad GitHub release. Just delete the bad release from the [GitHub releases page](https://github.com/finos/git-proxy/releases), delete the old related tag, then use the [release branch bumper workflow](https://github.com/finos/git-proxy/actions/workflows/release-branch-bump.yml) to make a PR against the relevant `release/X.Y` branch bumping the `package.json` versions. Once that PR is merged, publish the draft release making sure that a new tag is being created. This should trigger the NPM publish workflow and publish the updated package or override the existing one.
 
 ## Questions
 

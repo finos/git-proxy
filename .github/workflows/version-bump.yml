@@ -1,4 +1,4 @@
-name: Bump package versions
+name: Bump Package Version
 
 # Can be triggered by closing a milestone or manually
 on:
@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  bump-version:
+  bump-version-${{ inputs.branch }}:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
@@ -92,7 +92,7 @@ jobs:
 
           git checkout -b "$BRANCH"
           git add package.json package-lock.json packages/git-proxy-cli/package.json
-          git commit -m "chore: bump version to $VERSION"
+          git commit -m "chore: bump git-proxy and git-proxy-cli to $VERSION"
           git push -u origin "$BRANCH" --force
 
           if [ -n "$MILESTONE_URL" ]; then
