@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
-import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
-import { LazySSHAgent, createLazyAgent } from '../../src/proxy/ssh/AgentForwarding';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
+import {
+  LazySSHAgent,
+  createLazyAgent,
+  openTemporaryAgentChannel,
+} from '../../src/proxy/ssh/AgentForwarding';
 import { SSHAgentProxy } from '../../src/proxy/ssh/AgentProxy';
 import { ClientWithUser } from '../../src/proxy/ssh/types';
+import * as sshInternals from '../../src/proxy/ssh/sshInternals';
 
 describe('AgentForwarding', () => {
   let mockClient: Partial<ClientWithUser>;
@@ -322,8 +327,6 @@ describe('AgentForwarding', () => {
 
   describe('openTemporaryAgentChannel', () => {
     it('should return null when client has no protocol', async () => {
-      const { openTemporaryAgentChannel } = await import('../../src/proxy/ssh/AgentForwarding');
-
       const clientWithoutProtocol: any = {
         agentForwardingEnabled: true,
       };
@@ -334,8 +337,6 @@ describe('AgentForwarding', () => {
     });
 
     it('should handle timeout when channel confirmation not received', async () => {
-      const { openTemporaryAgentChannel } = await import('../../src/proxy/ssh/AgentForwarding');
-
       const mockClient: any = {
         agentForwardingEnabled: true,
         _protocol: {
@@ -356,8 +357,6 @@ describe('AgentForwarding', () => {
     }, 6000);
 
     it('should find next available channel ID when channels exist', async () => {
-      const { openTemporaryAgentChannel } = await import('../../src/proxy/ssh/AgentForwarding');
-
       const mockClient: any = {
         agentForwardingEnabled: true,
         _protocol: {
@@ -390,8 +389,6 @@ describe('AgentForwarding', () => {
     }, 6000);
 
     it('should use channel ID 1 when no channels exist', async () => {
-      const { openTemporaryAgentChannel } = await import('../../src/proxy/ssh/AgentForwarding');
-
       const mockClient: any = {
         agentForwardingEnabled: true,
         _protocol: {
@@ -417,8 +414,6 @@ describe('AgentForwarding', () => {
     }, 6000);
 
     it('should return null when client has no chanMgr', async () => {
-      const { openTemporaryAgentChannel } = await import('../../src/proxy/ssh/AgentForwarding');
-
       const mockClient: any = {
         agentForwardingEnabled: true,
         _protocol: {
@@ -426,13 +421,164 @@ describe('AgentForwarding', () => {
           openssh_authAgent: vi.fn(),
           channelSuccess: vi.fn(),
         },
-        // No _chanMgr — the internals guard should reject and return null
       };
 
       const result = await openTemporaryAgentChannel(mockClient);
 
       expect(result).toBeNull();
       expect(mockClient._protocol.openssh_authAgent).not.toHaveBeenCalled();
+    });
+
+    describe('CHANNEL_OPEN_CONFIRMATION handler', () => {
+      let getChannelModuleSpy: ReturnType<typeof vi.spyOn>;
+
+      afterEach(() => {
+        getChannelModuleSpy?.mockRestore();
+      });
+
+      function makeMockClient(existingHandler?: (...args: unknown[]) => void) {
+        const handlers: Record<string, (...args: unknown[]) => void> = {};
+        if (existingHandler) {
+          handlers.CHANNEL_OPEN_CONFIRMATION = existingHandler;
+        }
+        return {
+          _protocol: {
+            _handlers: handlers,
+            openssh_authAgent: vi.fn(),
+            channelSuccess: vi.fn(),
+          },
+          _chanMgr: { _channels: {} as Record<number, any>, _count: 0 },
+        } as any;
+      }
+
+      function mockChannelModule(channelImpl?: (...args: unknown[]) => unknown) {
+        const mockChannel = { on: vi.fn(), write: vi.fn(), end: vi.fn() };
+        getChannelModuleSpy = vi.spyOn(sshInternals, 'getChannelModule').mockReturnValue({
+          Channel: channelImpl ?? vi.fn().mockReturnValue(mockChannel),
+          MAX_WINDOW: 2 * 1024 * 1024,
+          PACKET_SIZE: 32 * 1024,
+        });
+        return mockChannel;
+      }
+
+      it('should create AgentProxy on successful confirmation', async () => {
+        mockChannelModule();
+        const client = makeMockClient();
+
+        const promise = openTemporaryAgentChannel(client);
+
+        const handler = client._protocol._handlers.CHANNEL_OPEN_CONFIRMATION;
+        handler(null, { recipient: 1, sender: 42, window: 65536, packetSize: 32768 });
+
+        const result = await promise;
+
+        expect(result).toBeInstanceOf(SSHAgentProxy);
+        expect(client._chanMgr._channels[1]).toBeDefined();
+        expect(client._chanMgr._count).toBe(1);
+      });
+
+      it('should call and restore original handler on confirmation', async () => {
+        mockChannelModule();
+        const originalHandler = vi.fn();
+        const client = makeMockClient(originalHandler);
+
+        const promise = openTemporaryAgentChannel(client);
+
+        const handler = client._protocol._handlers.CHANNEL_OPEN_CONFIRMATION;
+        const confirmInfo = { recipient: 1, sender: 42, window: 65536, packetSize: 32768 };
+        handler(null, confirmInfo);
+
+        await promise;
+
+        expect(originalHandler).toHaveBeenCalledWith(null, confirmInfo);
+        expect(client._protocol._handlers.CHANNEL_OPEN_CONFIRMATION).toBe(originalHandler);
+      });
+
+      it('should delete handler when no original existed', async () => {
+        mockChannelModule();
+        const client = makeMockClient();
+
+        const promise = openTemporaryAgentChannel(client);
+
+        const handler = client._protocol._handlers.CHANNEL_OPEN_CONFIRMATION;
+        handler(null, { recipient: 1, sender: 42, window: 65536, packetSize: 32768 });
+
+        await promise;
+
+        expect(client._protocol._handlers.CHANNEL_OPEN_CONFIRMATION).toBeUndefined();
+      });
+
+      it('should ignore confirmation for non-matching channel recipient', async () => {
+        vi.useFakeTimers();
+        try {
+          mockChannelModule();
+          const client = makeMockClient();
+
+          const promise = openTemporaryAgentChannel(client);
+
+          const handler = client._protocol._handlers.CHANNEL_OPEN_CONFIRMATION;
+          handler(null, { recipient: 999, sender: 42, window: 65536, packetSize: 32768 });
+
+          vi.advanceTimersByTime(5001);
+
+          const result = await promise;
+          expect(result).toBeNull();
+        } finally {
+          vi.useRealTimers();
+        }
+      });
+
+      it('should resolve null when Channel constructor throws', async () => {
+        mockChannelModule(function () {
+          throw new Error('Channel creation failed');
+        });
+        const client = makeMockClient();
+
+        const promise = openTemporaryAgentChannel(client);
+
+        const handler = client._protocol._handlers.CHANNEL_OPEN_CONFIRMATION;
+        handler(null, { recipient: 1, sender: 42, window: 65536, packetSize: 32768 });
+
+        const result = await promise;
+        expect(result).toBeNull();
+      });
+    });
+  });
+
+  describe('LazySSHAgent - lock recovery', () => {
+    it('should continue operating after a previous operation fails', () => {
+      return new Promise<void>((resolve) => {
+        const openChannelFn = vi.fn();
+        const client = {
+          agentForwardingEnabled: true,
+          clientIp: '127.0.0.1',
+          authenticatedUser: { username: 'testuser' },
+        } as unknown as ClientWithUser;
+
+        openChannelFn.mockRejectedValueOnce(new Error('Channel open failed'));
+
+        const identities = [
+          { publicKeyBlob: Buffer.from('key1'), comment: 'k', algorithm: 'ssh-ed25519' },
+        ];
+        const mockProxy = {
+          getIdentities: vi.fn().mockResolvedValue(identities),
+          sign: vi.fn(),
+          close: vi.fn(),
+        };
+        openChannelFn.mockResolvedValueOnce(mockProxy);
+
+        const agent = new LazySSHAgent(openChannelFn, client);
+
+        agent.getIdentities((err) => {
+          expect(err).toBeDefined();
+
+          agent.getIdentities((err2, keys) => {
+            expect(err2).toBeNull();
+            expect(keys).toHaveLength(1);
+            resolve();
+          });
+        });
+      });
     });
   });
 });
