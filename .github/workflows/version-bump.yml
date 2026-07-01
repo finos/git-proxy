@@ -1,0 +1,110 @@
+name: Bump package versions
+
+# Can be triggered by closing a milestone or manually
+on:
+  milestone:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to bump to, e.g. 2.2.0"
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: version-bump-${{ github.event.milestone.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout main
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: main
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: "24"
+
+      - name: Resolve version
+        id: version
+        env:
+          MILESTONE_TITLE: ${{ github.event.milestone.title }}
+          MANUAL_VERSION: ${{ inputs.version }}
+        run: |
+          RAW="${MANUAL_VERSION:-$MILESTONE_TITLE}"
+          RAW="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+
+          if [[ ! "$RAW" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::'$RAW' isn't a plain semver version (for example '2.2.0'). Not bumping."
+            exit 1
+          fi
+
+          VERSION="${RAW#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: $VERSION"
+
+      - name: Sanity check against current version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          CURRENT=$(node -p "require('./package.json').version")
+          NEWEST=$(printf '%s\n%s\n' "$CURRENT" "$VERSION" | sort -V | tail -n1)
+          if [ "$VERSION" = "$CURRENT" ] || [ "$NEWEST" != "$VERSION" ]; then
+            echo "::error::$VERSION is not newer than the current package.json version ($CURRENT)."
+            exit 1
+          fi
+
+      - name: Bump root package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Bump git-proxy-cli package
+        working-directory: packages/git-proxy-cli
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Open version bump PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          MILESTONE_TITLE: ${{ github.event.milestone.title }}
+          MILESTONE_URL: ${{ github.event.milestone.html_url }}
+        run: |
+          BRANCH="chore/bump-version-$VERSION"
+          RELEASE_BRANCH="release/${VERSION%.*}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add package.json package-lock.json packages/git-proxy-cli/package.json packages/git-proxy-cli/package-lock.json
+          git commit -m "chore: bump version to $VERSION"
+          git push -u origin "$BRANCH" --force
+
+          if [ -n "$MILESTONE_URL" ]; then
+            SOURCE_LINE="Triggered by closing milestone **$MILESTONE_TITLE** ($MILESTONE_URL)."
+          else
+            SOURCE_LINE="Triggered manually for version $VERSION."
+          fi
+
+          BODY=$(printf '%s\n\nBumps:\n- `package.json` / `package-lock.json`\n- `packages/git-proxy-cli/package.json` / `packages/git-proxy-cli/package-lock.json`\n\nOnce merged, cut `%s` from `main` per the release process.\n' "$SOURCE_LINE" "$RELEASE_BRANCH")
+
+          if gh pr view "$BRANCH" >/dev/null 2>&1; then
+            echo "PR for $BRANCH already exists. Branch updated, no new PR opened."
+          else
+            gh pr create --base main --head "$BRANCH" --title "chore: bump version to $VERSION" --body "$BODY"
+          fi
