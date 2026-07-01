@@ -29,6 +29,12 @@ export const DEFAULT_CONFIG = {
   typosquat: true,
   allowPackages: [],
   npmRegistryHosts: ['registry.npmjs.org'],
+  // Pull/clone scanning. `enabled` gates the whole pull scanner; `failOn` is the block threshold
+  // for clones (default 'off' = warn-only: findings are logged and the clone proceeds).
+  pull: {
+    enabled: true,
+    failOn: 'off',
+  },
 };
 
 /**
@@ -46,6 +52,7 @@ export function resolveConfig(overrides = {}) {
     npmRegistryHosts: Array.isArray(o.npmRegistryHosts)
       ? o.npmRegistryHosts
       : DEFAULT_CONFIG.npmRegistryHosts,
+    pull: { ...DEFAULT_CONFIG.pull, ...(o.pull && typeof o.pull === 'object' ? o.pull : {}) },
   };
 }
 

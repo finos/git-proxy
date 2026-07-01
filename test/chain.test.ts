@@ -174,6 +174,29 @@ describe('proxy chain', function () {
     expect(actual[diffIndex + 2]).toBe(second);
   });
 
+  it('getChain should insert afterAuth pull plugins after checkRepoInAuthorisedList', async () => {
+    const afterAuthExec = Object.assign(async () => {}, { displayName: 'pullScan.exec' });
+    chain.chainPluginLoader = {
+      pushPlugins: [],
+      pullPlugins: [{ exec: afterAuthExec, chainPhase: 'afterAuth' }],
+    };
+    const actual = await chain.getChain({ type: RequestType.PULL });
+    const authIndex = actual.indexOf(processors.push.checkRepoInAuthorisedList);
+    expect(authIndex).toBeGreaterThan(-1);
+    expect(actual[authIndex + 1]).toBe(afterAuthExec);
+    expect(actual[0]).not.toBe(afterAuthExec);
+  });
+
+  it('getChain should insert start-phase pull plugins before the auth check', async () => {
+    const startExec = Object.assign(async () => {}, { displayName: 'pullStart.exec' });
+    chain.chainPluginLoader = {
+      pushPlugins: [],
+      pullPlugins: [{ exec: startExec }],
+    };
+    const actual = await chain.getChain({ type: RequestType.PULL });
+    expect(actual[0]).toBe(startExec);
+  });
+
   it('getChain should run afterDiff push plugins on the tag chain before blockForAuth', async () => {
     const afterDiffExec = Object.assign(async () => {}, { displayName: 'afterDiff.exec' });
     chain.chainPluginLoader = {

@@ -242,11 +242,22 @@ class PushActionPlugin extends ProxyPlugin {
 }
 
 /**
+ * Where in the pull chain a {@link PullActionPlugin} should run.
+ * - `'start'` (default): the plugin runs before all built-in pull processors (historical behaviour).
+ *   Only repo/user metadata is available.
+ * - `'afterAuth'`: the plugin runs after the built-in `checkRepoInAuthorisedList` step, i.e. once the
+ *   repository has been confirmed as authorised. Use this for plugins that fetch and inspect the
+ *   repository content on pull (e.g. supply-chain scanners) so they don't do so for unauthorised repos.
+ */
+type PullChainPhase = 'start' | 'afterAuth';
+
+/**
  * A plugin which executes a function when receiving a git fetch request.
  */
 class PullActionPlugin extends ProxyPlugin {
   isGitProxyPullActionPlugin: boolean;
   exec: (req: Request, action: Action) => Promise<Action>;
+  chainPhase: PullChainPhase;
 
   /**
    * Wrapper class which contains at least one function executed as part of the action chain for git pull operations.
@@ -261,13 +272,20 @@ class PullActionPlugin extends ProxyPlugin {
    *   - Takes in an Express Request object as the first parameter (`req`).
    *   - Takes in an Action object as the second parameter (`action`).
    *   - Returns a Promise that resolves to an Action.
+   * @param {object} [options] - Optional plugin options.
+   * @param {PullChainPhase} [options.chainPhase='start'] - When the plugin runs in the pull chain.
+   *   Use `'afterAuth'` to run after the repository has been confirmed as authorised.
    */
-  constructor(exec: (req: Request, action: Action) => Promise<Action>) {
+  constructor(
+    exec: (req: Request, action: Action) => Promise<Action>,
+    options: { chainPhase?: PullChainPhase } = {},
+  ) {
     super();
     this.isGitProxyPullActionPlugin = true;
     this.exec = exec;
+    this.chainPhase = options.chainPhase ?? 'start';
   }
 }
 
 export { PluginLoader, PushActionPlugin, PullActionPlugin, isCompatiblePlugin };
-export type { PushChainPhase };
+export type { PushChainPhase, PullChainPhase };

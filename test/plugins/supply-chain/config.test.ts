@@ -37,6 +37,11 @@ describe('resolveConfig', () => {
     expect(cfg.allowPackages).toEqual(['x']);
   });
 
+  it('merges the pull section rather than replacing it', () => {
+    const cfg = resolveConfig({ pull: { failOn: 'high' } });
+    expect(cfg.pull).toEqual({ enabled: true, failOn: 'high' });
+  });
+
   it('ignores a non-array allowPackages override', () => {
     // @ts-expect-error deliberately wrong type
     const cfg = resolveConfig({ allowPackages: 'nope' });

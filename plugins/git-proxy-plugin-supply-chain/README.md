@@ -54,6 +54,22 @@ plugin **after** the built-in `getDiff` step. At that point GitProxy has cloned 
 written the incoming pack, so the plugin reads the exact post-push content of each changed
 manifest with `git show <newCommit>:<path>` and diffs it against `git show <oldCommit>:<path>`.
 
+## Pull / clone protection
+
+The plugin also scans repositories **as they are cloned/fetched through the proxy**, so a developer
+is warned - or the clone is blocked - before pulling a poisoned repository. On a
+`git clone`/`fetch`, the plugin (running once the repo is confirmed authorised) shallow-clones the
+default branch, enumerates its manifests (`git ls-tree`) and scans them with the same npm/Python
+analyzers, treating the whole tree as newly introduced.
+
+- **Warn (default):** findings are logged server-side and the clone proceeds.
+- **Block (`pull.failOn` set):** a clone whose highest finding meets/exceeds the threshold **fails**,
+  with the findings shown in the developer's terminal (`remote:` lines).
+
+Scope / limitations of the current slice: **HTTPS only** (SSH pulls are skipped); the **default
+branch** is scanned (not an arbitrarily requested ref); terminal-visible _warnings_ (non-blocking)
+are a follow-up - today, warnings are logged and only _blocks_ reach the terminal.
+
 ## Enable it
 
 Add the plugin to the `plugins` array in your `proxy.config.json`:
@@ -83,10 +99,11 @@ Set the `GIT_PROXY_SUPPLY_CHAIN_CONFIG` environment variable to a JSON file to o
 {
   "enabled": true,
   "failOn": "off",
-  "ecosystems": { "npm": true },
+  "ecosystems": { "npm": true, "python": true },
   "typosquat": true,
   "allowPackages": [],
-  "npmRegistryHosts": ["registry.npmjs.org"]
+  "npmRegistryHosts": ["registry.npmjs.org"],
+  "pull": { "enabled": true, "failOn": "off" }
 }
 ```
 
@@ -95,6 +112,8 @@ Set the `GIT_PROXY_SUPPLY_CHAIN_CONFIG` environment variable to a JSON file to o
   (returned as an error to the pusher's terminal).
 - `allowPackages` - package names to exempt from typosquat/new-dependency flags.
 - `npmRegistryHosts` - registry hosts treated as "expected" for lockfile source checks.
+- `pull.enabled` - turn pull/clone scanning on or off.
+- `pull.failOn` - block threshold for clones (same scale as `failOn`; default `"off"` = warn-only).
 
 ## License
 

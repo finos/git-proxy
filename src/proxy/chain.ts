@@ -153,7 +153,24 @@ export const getChain = async (action: Action): Promise<Processor['exec'][]> => 
       tagPushChain.splice(0, 0, pluginObj.exec);
     }
 
-    for (const pluginObj of chainPluginLoader.pullPlugins) {
+    // Late-phase pull plugins run after the built-in checkRepoInAuthorisedList step so they only
+    // act on authorised repos (e.g. content scanners that fetch the repo). Insert them first,
+    // while that step's index is still accurate.
+    const latePullPlugins = chainPluginLoader.pullPlugins.filter(
+      (pluginObj) => pluginObj.chainPhase === 'afterAuth',
+    );
+    if (latePullPlugins.length > 0) {
+      const authIndex = pullActionChain.indexOf(proc.push.checkRepoInAuthorisedList);
+      const insertAt = authIndex === -1 ? pullActionChain.length : authIndex + 1;
+      latePullPlugins.forEach((pluginObj, i) => {
+        console.log(`Inserting late pull plugin ${pluginObj.constructor.name} after auth check`);
+        pullActionChain.splice(insertAt + i, 0, pluginObj.exec);
+      });
+    }
+
+    for (const pluginObj of chainPluginLoader.pullPlugins.filter(
+      (pluginObj) => pluginObj.chainPhase !== 'afterAuth',
+    )) {
       console.log(`Inserting pull plugin ${pluginObj.constructor.name} into chain`);
       // insert custom functions before other pull actions
       pullActionChain.splice(0, 0, pluginObj.exec);
