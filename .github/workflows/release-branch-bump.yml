@@ -1,0 +1,131 @@
+name: Bump Patch Version on Release Branch
+
+# Manually bumps package.json + package-lock.json (root and
+# packages/git-proxy-cli) to the next patch version on existing release
+# branch, and opens a PR against that branch
+
+# This is needed since patch releases don't have an easy way to trigger the bump
+# and people may forget to bump the versions manually in the patch PR
+on:
+  workflow_dispatch:
+    inputs:
+      line:
+        description: 'Release branch to patch in X.Y format, e.g. 2.0 (targets release/2.0)'
+        required: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: patch-bump-${{ inputs.line }}
+  cancel-in-progress: false
+
+jobs:
+  bump-patch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Validate release line
+        id: line
+        env:
+          LINE: ${{ inputs.line }}
+        run: |
+          if [[ ! "$LINE" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$LINE' isn't a release line in X.Y form (expected e.g. '2.0')."
+            exit 1
+          fi
+          echo "line=$LINE" >> "$GITHUB_OUTPUT"
+          echo "branch=release/$LINE" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout release branch
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ steps.line.outputs.branch }}
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: '24'
+
+      - name: Confirm both packages exist on this branch
+        run: |
+          if [ ! -f packages/git-proxy-cli/package.json ]; then
+            echo "::error::packages/git-proxy-cli/package.json doesn't exist on this branch. It probably predates the CLI package split, bump this one by hand."
+            exit 1
+          fi
+
+      - name: Compute next patch version
+        id: version
+        env:
+          LINE: ${{ steps.line.outputs.line }}
+        run: |
+          CURRENT=$(node -p "require('./package.json').version")
+
+          if [[ ! "$CURRENT" =~ ^([0-9]+\.[0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error::root package.json version '$CURRENT' isn't a plain X.Y.Z, can't compute a patch bump automatically."
+            exit 1
+          fi
+
+          CURRENT_LINE="${BASH_REMATCH[1]}"
+          PATCH="${BASH_REMATCH[2]}"
+
+          if [ "$CURRENT_LINE" != "$LINE" ]; then
+            echo "::error::release/$LINE's package.json is on $CURRENT, which isn't on the $LINE line. Refusing to guess, sort this out by hand first."
+            exit 1
+          fi
+
+          VERSION="$CURRENT_LINE.$((PATCH + 1))"
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Current: $CURRENT -> Next patch: $VERSION"
+
+      - name: Check packages are in sync
+        env:
+          ROOT_VERSION: ${{ steps.version.outputs.current }}
+        run: |
+          CLI_VERSION=$(node -p "require('./packages/git-proxy-cli/package.json').version")
+          if [ "$CLI_VERSION" != "$ROOT_VERSION" ]; then
+            echo "::error::packages/git-proxy-cli is on $CLI_VERSION but root is on $ROOT_VERSION. Versions have already drifted, resolve by hand before bumping."
+            exit 1
+          fi
+
+      - name: Bump root package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Bump git-proxy-cli package
+        working-directory: packages/git-proxy-cli
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Open patch bump PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+          CURRENT: ${{ steps.version.outputs.current }}
+          BASE_BRANCH: ${{ steps.line.outputs.branch }}
+        run: |
+          BRANCH="chore/patch-bump-$VERSION"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout -b "$BRANCH"
+          git add package.json package-lock.json packages/git-proxy-cli/package.json packages/git-proxy-cli/package-lock.json
+          git commit -m "chore: bump version to $VERSION"
+          git push -u origin "$BRANCH" --force
+
+          BODY=$(printf 'Automated patch bump on `%s`: `%s` -> `%s`.\n\nBumps:\n- `package.json` / `package-lock.json`\n- `packages/git-proxy-cli/package.json`\n\nOnce merged, this drafts a release on `%s`. Please publish it immedietaly, otherwise the draft release will get overwritten. Then, cascade-merge it forward into the next supported release branch (bumping that line too) if one exists.\nFor more details see our guide on [How to Publish a Patch Release](https://git-proxy.finos.org/docs/development/releases/#publishing-a-patch-release).\n' "$BASE_BRANCH" "$CURRENT" "$VERSION" "$BASE_BRANCH")
+
+          if gh pr view "$BRANCH" >/dev/null 2>&1; then
+            echo "PR for $BRANCH already exists. Branch updated, no new PR opened."
+          else
+            gh pr create --base "$BASE_BRANCH" --head "$BRANCH" --title "chore: bump version to $VERSION" --body "$BODY"
+          fi
