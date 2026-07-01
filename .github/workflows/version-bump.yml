@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to bump to, e.g. 2.2.0"
+        description: 'Version to bump to, e.g. 2.2.0'
         required: true
 
 permissions:
@@ -35,7 +35,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: "24"
+          node-version: '24'
 
       - name: Resolve version
         id: version
@@ -91,7 +91,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git checkout -b "$BRANCH"
-          git add package.json package-lock.json packages/git-proxy-cli/package.json packages/git-proxy-cli/package-lock.json
+          git add package.json package-lock.json packages/git-proxy-cli/package.json
           git commit -m "chore: bump version to $VERSION"
           git push -u origin "$BRANCH" --force
 
@@ -101,7 +101,7 @@ jobs:
             SOURCE_LINE="Triggered manually for version $VERSION."
           fi
 
-          BODY=$(printf '%s\n\nBumps:\n- `package.json` / `package-lock.json`\n- `packages/git-proxy-cli/package.json` / `packages/git-proxy-cli/package-lock.json`\n\nOnce merged, cut `%s` from `main` per the release process.\n' "$SOURCE_LINE" "$RELEASE_BRANCH")
+          BODY=$(printf '%s\n\nBumps:\n- `package.json` / `package-lock.json`\n- `packages / `packages/git-proxy-cli/package.json`\n\nOnce merged, cut `%s` from `main` per the release process.\n' "$SOURCE_LINE" "$RELEASE_BRANCH")
 
           if gh pr view "$BRANCH" >/dev/null 2>&1; then
             echo "PR for $BRANCH already exists. Branch updated, no new PR opened."
