@@ -192,11 +192,25 @@ class ProxyPlugin {
 }
 
 /**
+ * Where in the push chain a {@link PushActionPlugin} should run.
+ * - `'start'` (default): the plugin runs before all built-in processors. This preserves the
+ *   historical behaviour. At this point only commit metadata is available; the remote has not
+ *   been cloned and no diff has been computed.
+ * - `'afterDiff'`: the plugin runs immediately after the built-in `getDiff` processor, once the
+ *   remote has been cloned, the incoming pack has been written and the unified diff is available.
+ *   Use this for plugins that need to inspect changed file contents (e.g. dependency /
+ *   supply-chain scanners). Tag pushes have no diff, so such plugins run just before the final
+ *   authorisation gate on the tag chain.
+ */
+type PushChainPhase = 'start' | 'afterDiff';
+
+/**
  * A plugin which executes a function when receiving a git push request.
  */
 class PushActionPlugin extends ProxyPlugin {
   isGitProxyPushActionPlugin: boolean;
   exec: (req: Request, action: Action) => Promise<Action>;
+  chainPhase: PushChainPhase;
 
   /**
    * Wrapper class which contains at least one function executed as part of the action chain for git push operations.
@@ -211,11 +225,19 @@ class PushActionPlugin extends ProxyPlugin {
    *   - Takes in an Express Request object as the first parameter (`req`).
    *   - Takes in an Action object as the second parameter (`action`).
    *   - Returns a Promise that resolves to an Action.
+   * @param {object} [options] - Optional plugin options.
+   * @param {PushChainPhase} [options.chainPhase='start'] - When the plugin runs in the push chain.
+   *   Use `'afterDiff'` to run after the built-in diff has been computed so the plugin can inspect
+   *   changed file contents.
    */
-  constructor(exec: (req: Request, action: Action) => Promise<Action>) {
+  constructor(
+    exec: (req: Request, action: Action) => Promise<Action>,
+    options: { chainPhase?: PushChainPhase } = {},
+  ) {
     super();
     this.isGitProxyPushActionPlugin = true;
     this.exec = exec;
+    this.chainPhase = options.chainPhase ?? 'start';
   }
 }
 
@@ -248,3 +270,4 @@ class PullActionPlugin extends ProxyPlugin {
 }
 
 export { PluginLoader, PushActionPlugin, PullActionPlugin, isCompatiblePlugin };
+export type { PushChainPhase };

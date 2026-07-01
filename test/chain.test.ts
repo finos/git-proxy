@@ -134,6 +134,58 @@ describe('proxy chain', function () {
     expect(chain.pluginsInserted).toBe(true);
   });
 
+  it('getChain should insert start-phase push plugins at the beginning of the chain', async () => {
+    const startExec = Object.assign(async () => {}, { displayName: 'start.exec' });
+    chain.chainPluginLoader = {
+      pushPlugins: [{ exec: startExec }],
+      pullPlugins: [],
+    };
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.BRANCH });
+    expect(actual[0]).toBe(startExec);
+  });
+
+  it('getChain should insert afterDiff push plugins immediately after getDiff', async () => {
+    const afterDiffExec = Object.assign(async () => {}, { displayName: 'afterDiff.exec' });
+    chain.chainPluginLoader = {
+      pushPlugins: [{ exec: afterDiffExec, chainPhase: 'afterDiff' }],
+      pullPlugins: [],
+    };
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.BRANCH });
+    const diffIndex = actual.indexOf(processors.push.getDiff);
+    expect(diffIndex).toBeGreaterThan(-1);
+    expect(actual[diffIndex + 1]).toBe(afterDiffExec);
+    // afterDiff plugins must not be inserted at the very start of the chain
+    expect(actual[0]).not.toBe(afterDiffExec);
+  });
+
+  it('getChain should preserve registration order for multiple afterDiff push plugins', async () => {
+    const first = Object.assign(async () => {}, { displayName: 'first.exec' });
+    const second = Object.assign(async () => {}, { displayName: 'second.exec' });
+    chain.chainPluginLoader = {
+      pushPlugins: [
+        { exec: first, chainPhase: 'afterDiff' },
+        { exec: second, chainPhase: 'afterDiff' },
+      ],
+      pullPlugins: [],
+    };
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.BRANCH });
+    const diffIndex = actual.indexOf(processors.push.getDiff);
+    expect(actual[diffIndex + 1]).toBe(first);
+    expect(actual[diffIndex + 2]).toBe(second);
+  });
+
+  it('getChain should run afterDiff push plugins on the tag chain before blockForAuth', async () => {
+    const afterDiffExec = Object.assign(async () => {}, { displayName: 'afterDiff.exec' });
+    chain.chainPluginLoader = {
+      pushPlugins: [{ exec: afterDiffExec, chainPhase: 'afterDiff' }],
+      pullPlugins: [],
+    };
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
+    const blockIndex = actual.indexOf(processors.push.blockForAuth);
+    expect(blockIndex).toBeGreaterThan(-1);
+    expect(actual[blockIndex - 1]).toBe(afterDiffExec);
+  });
+
   it('executeChain should stop executing if action has continue returns false', async () => {
     const req = {};
     const continuingAction = { type: 'push', continue: () => true, allowPush: false };

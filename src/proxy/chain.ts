@@ -122,11 +122,37 @@ export const getChain = async (action: Action): Promise<Processor['exec'][]> => 
     console.log(
       `Inserting loaded plugins (${chainPluginLoader.pushPlugins.length} push, ${chainPluginLoader.pullPlugins.length} pull) into proxy chains`,
     );
-    for (const pluginObj of chainPluginLoader.pushPlugins) {
+
+    // Late-phase push plugins run after the built-in getDiff so they can inspect the computed
+    // diff and the cloned working copy. Insert them first, while the getDiff index is still
+    // accurate: the 'start' plugins below splice at index 0 and would otherwise shift it.
+    const latePushPlugins = chainPluginLoader.pushPlugins.filter(
+      (pluginObj) => pluginObj.chainPhase === 'afterDiff',
+    );
+    if (latePushPlugins.length > 0) {
+      const diffIndex = branchPushChain.indexOf(proc.push.getDiff);
+      // Fall back to just before the final blockForAuth step if getDiff is somehow absent.
+      const branchInsertAt = diffIndex === -1 ? branchPushChain.length - 1 : diffIndex + 1;
+      // Tag pushes have no diff step, so run late plugins just before the final blockForAuth gate.
+      const tagInsertAt = Math.max(tagPushChain.length - 1, 0);
+      // Advance the insert index per plugin so configuration order is preserved.
+      latePushPlugins.forEach((pluginObj, i) => {
+        console.log(`Inserting late push plugin ${pluginObj.constructor.name} after getDiff`);
+        branchPushChain.splice(branchInsertAt + i, 0, pluginObj.exec);
+        tagPushChain.splice(tagInsertAt + i, 0, pluginObj.exec);
+      });
+    }
+
+    // 'start' plugins (the default) run before all built-in processors.
+    const startPushPlugins = chainPluginLoader.pushPlugins.filter(
+      (pluginObj) => pluginObj.chainPhase !== 'afterDiff',
+    );
+    for (const pluginObj of startPushPlugins) {
       console.log(`Inserting push plugin ${pluginObj.constructor.name} into chain`);
       branchPushChain.splice(0, 0, pluginObj.exec);
       tagPushChain.splice(0, 0, pluginObj.exec);
     }
+
     for (const pluginObj of chainPluginLoader.pullPlugins) {
       console.log(`Inserting pull plugin ${pluginObj.constructor.name} into chain`);
       // insert custom functions before other pull actions

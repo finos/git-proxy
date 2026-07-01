@@ -172,4 +172,14 @@ describe('plugin functions', () => {
     expect(isCompatiblePlugin(plugin)).toBe(true);
     expect(isCompatiblePlugin(plugin, 'isGitProxyPushActionPlugin')).toBe(true);
   });
+
+  it('should default a PushActionPlugin chainPhase to "start"', () => {
+    const plugin = new PushActionPlugin(async () => {});
+    expect(plugin.chainPhase).toBe('start');
+  });
+
+  it('should honour an explicit "afterDiff" chainPhase option', () => {
+    const plugin = new PushActionPlugin(async () => {}, { chainPhase: 'afterDiff' });
+    expect(plugin.chainPhase).toBe('afterDiff');
+  });
 });
