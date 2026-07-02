@@ -27,6 +27,7 @@ import {
   validGitRequest,
   getRouter,
   handleRefsErrorMessage,
+  handleErrPacket,
   proxyFilter,
 } from '../src/proxy/routes';
 
@@ -289,6 +290,21 @@ describe('handleRefsErrorMessage', () => {
 
     const errorBody = `ERR ${message}`;
     expect(length).toBe(4 + Buffer.byteLength(errorBody));
+  });
+});
+
+describe('handleErrPacket', () => {
+  it('should format an ERR packet whose length includes the trailing LF', () => {
+    const message = 'Clone blocked by supply-chain checks';
+    const result = handleErrPacket(message);
+
+    expect(result).toMatch(/^[0-9a-f]{4}ERR /);
+    expect(result.endsWith('0000')).toBe(true);
+
+    const length = parseInt(result.substring(0, 4), 16);
+    expect(length).toBe(4 + Buffer.byteLength(`ERR ${message}\n`));
+    // the packet is self-delimiting: header length spans exactly up to the flush pkt
+    expect(result.length).toBe(length + 4);
   });
 });
 
@@ -572,6 +588,31 @@ describe('proxyFilter', () => {
       // should use handleMessage format
       // eslint-disable-next-line no-control-regex
       expect(sentMessage).toMatch(/^[0-9a-f]{4}\x02/);
+    });
+
+    it('should send an upload-pack ERR packet for blocked pull/fetch POSTs', async () => {
+      mockReq.method = 'POST';
+      mockReq.url = '/github.com/finos/git-proxy.git/git-upload-pack';
+
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/git-upload-pack',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: true,
+        blocked: false,
+        errorMessage: 'Clone blocked by supply-chain checks',
+      } as Action);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(setMock).toHaveBeenCalledWith('content-type', 'application/x-git-upload-pack-result');
+      const sentMessage = sendMock.mock.calls[0][0];
+      expect(sentMessage).toMatch(/^[0-9a-f]{4}ERR /);
+      expect(sentMessage).toContain('Clone blocked by supply-chain checks');
     });
   });
 
