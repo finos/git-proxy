@@ -81,6 +81,7 @@ export class User {
   gitAccount: string;
   email: string;
   admin: boolean;
+  mustChangePassword?: boolean;
   oidcId?: string | null;
   publicKeys?: PublicKeyRecord[];
   displayName?: string | null;
@@ -140,6 +141,7 @@ export interface PublicUser {
   title: string;
   gitAccount: string;
   admin: boolean;
+  mustChangePassword?: boolean;
 }
 
 export interface Sink {
