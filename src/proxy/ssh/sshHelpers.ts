@@ -18,7 +18,7 @@ import { getSSHConfig } from '../../config';
 import { KILOBYTE, MEGABYTE } from '../../constants';
 import { ClientWithUser } from './types';
 import { createLazyAgent } from './AgentForwarding';
-import { getKnownHosts, verifyHostKey, DEFAULT_KNOWN_HOSTS } from './knownHosts';
+import { getKnownHosts, verifyHostKey } from './knownHosts';
 import * as crypto from 'crypto';
 import { execFileSync } from 'child_process';
 import * as fs from 'fs';
@@ -129,9 +129,7 @@ export function createSSHConnectionOptions(
 
 /**
  * Create a known_hosts file with verified SSH host keys
- * Fetches the actual host key and verifies it against hardcoded fingerprints
- *
- * This prevents MITM attacks by using pre-verified fingerprints
+ * Fetches the actual host key and verifies it against configured fingerprints
  *
  * @param tempDir Temporary directory to create the known_hosts file in
  * @param sshUrl SSH URL (e.g., git@github.com:org/repo.git)
@@ -157,13 +155,15 @@ export async function createKnownHostsFile(tempDir: string, sshUrl: string): Pro
     throw new Error(`Invalid hostname extracted from SSH URL: ${hostname}`);
   }
 
-  // Get the known host key for this hostname from hardcoded fingerprints
-  const knownFingerprint = DEFAULT_KNOWN_HOSTS[hostname];
+  // Get the known host key for this hostname from configuration
+  const sshConfig = getSSHConfig();
+  const knownHosts = getKnownHosts(sshConfig?.knownHosts);
+  const knownFingerprint = knownHosts[hostname];
   if (!knownFingerprint) {
     throw new Error(
       `No known host key for ${hostname}. ` +
-        `Supported hosts: ${Object.keys(DEFAULT_KNOWN_HOSTS).join(', ')}. ` +
-        `To add support for ${hostname}, add its ed25519 key fingerprint to DEFAULT_KNOWN_HOSTS.`,
+        `Supported hosts: ${Object.keys(knownHosts).join(', ')}. ` +
+        `To add support for ${hostname}, add its ed25519 key fingerprint to ssh.knownHosts in your configuration.`,
     );
   }
 
@@ -185,7 +185,7 @@ export async function createKnownHostsFile(tempDir: string, sshUrl: string): Pro
 
     actualHostKey = keyLine.trim();
 
-    // Verify the fingerprint matches our hardcoded trusted fingerprint
+    // Verify the fingerprint matches our configured trusted fingerprint
     // Extract the public key portion
     const keyParts = actualHostKey.split(' ');
     if (keyParts.length < 3) {
@@ -205,7 +205,7 @@ export async function createKnownHostsFile(tempDir: string, sshUrl: string): Pro
           `Expected fingerprint: ${knownFingerprint}\n` +
           `Received fingerprint: ${calculatedFingerprint}\n` +
           `WARNING: This could indicate a man-in-the-middle attack!\n` +
-          `If the host key has legitimately changed, update DEFAULT_KNOWN_HOSTS.`,
+          `If the host key has legitimately changed, update ssh.knownHosts in your configuration.`,
       );
     }
 

@@ -42,13 +42,11 @@ GitProxy is designed to work with any git server as a destination, including:
 - GitHub (github.com and GitHub Enterprise)
 - GitLab (gitlab.com and self-hosted/dedicated instances)
 - Bitbucket (Cloud and Server)
-- Any other git server accessible via HTTPS
+- Any other git server accessible via HTTPS or SSH
 
-This broad compatibility is possible because GitProxy operates at the Git protocol level rather than relying on proprietary SCM platform APIs. As long as the destination supports standard git operations over HTTPS, GitProxy can proxy traffic to it.
+This broad compatibility is possible because GitProxy operates at the Git protocol level rather than relying on proprietary SCM platform APIs. As long as the destination supports standard git operations over HTTPS or SSH, GitProxy can proxy traffic to it.
 
-:::note
-Currently, only HTTPS-based git operations are supported. SSH-based git operations are under active development.
-:::
+GitProxy supports both **HTTPS** and **SSH** protocols. HTTPS uses Personal Access Tokens for authentication, while SSH uses key-based authentication with agent forwarding. See the [SSH Setup Guide](./ssh-setup) for instructions on configuring SSH access.
 
 ### How does it work
 
@@ -113,7 +111,7 @@ Throughout this guide, we refer to `main` as the default branch. Some projects u
 
 GitProxy uses two separate authentication mechanisms:
 
-- **Proxy authentication (for git operations):** You authenticate using a **Personal Access Token (PAT)** from the target SCM platform (e.g., GitHub PAT). GitProxy forwards these credentials when cloning repositories to calculate diffs and when pushing approved changes upstream. For GitHub you'll need a personal access token (classic) with `repo` permissions. See [GitHub's documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) for details.
+- **Proxy authentication (for git operations):** Over **HTTPS**, you authenticate using a **Personal Access Token (PAT)** from the target SCM platform (e.g., GitHub PAT). GitProxy forwards these credentials when cloning repositories to calculate diffs and when pushing approved changes upstream. For GitHub you'll need a personal access token (classic) with `repo` permissions. See [GitHub's documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-personal-access-token-classic) for details. Over **SSH**, authentication uses SSH key-based agent forwarding — see the [SSH Setup Guide](./ssh-setup).
 - **UI authentication (for the web interface):** GitProxy supports multiple authentication methods for the web interface, including local accounts, Active Directory/LDAP, and OpenID Connect (OIDC). See the [Authentication configuration](/docs/configuration/authentication) page for details on available options.
 
 :::info Your organisation's configuration

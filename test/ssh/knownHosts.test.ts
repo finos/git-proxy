@@ -15,12 +15,10 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  DEFAULT_KNOWN_HOSTS,
-  getKnownHosts,
-  verifyHostKey,
-  KnownHostsConfig,
-} from '../../src/proxy/ssh/knownHosts';
+import { getKnownHosts, verifyHostKey, KnownHostsConfig } from '../../src/proxy/ssh/knownHosts';
+
+const GITHUB_FINGERPRINT = 'SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU';
+const GITLAB_FINGERPRINT = 'SHA256:eUXGGm1YGsMAS7vkcx6JOJdOGHPem5gQp4taiCfCLB8';
 
 describe('knownHosts', () => {
   let consoleErrorSpy: any;
@@ -33,79 +31,65 @@ describe('knownHosts', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  describe('DEFAULT_KNOWN_HOSTS', () => {
-    it('should contain GitHub host key', () => {
-      expect(DEFAULT_KNOWN_HOSTS['github.com']).toBeDefined();
-      expect(DEFAULT_KNOWN_HOSTS['github.com']).toContain('SHA256:');
-    });
-
-    it('should contain GitLab host key', () => {
-      expect(DEFAULT_KNOWN_HOSTS['gitlab.com']).toBeDefined();
-      expect(DEFAULT_KNOWN_HOSTS['gitlab.com']).toContain('SHA256:');
-    });
-  });
-
   describe('getKnownHosts', () => {
-    it('should return default hosts when no custom hosts provided', () => {
+    it('should return empty object when no hosts provided', () => {
       const result = getKnownHosts();
 
-      expect(result['github.com']).toBe(DEFAULT_KNOWN_HOSTS['github.com']);
-      expect(result['gitlab.com']).toBe(DEFAULT_KNOWN_HOSTS['gitlab.com']);
+      expect(Object.keys(result)).toHaveLength(0);
     });
 
-    it('should merge custom hosts with defaults', () => {
-      const customHosts: KnownHostsConfig = {
+    it('should return configured hosts', () => {
+      const hosts: KnownHostsConfig = {
+        'github.com': GITHUB_FINGERPRINT,
+        'gitlab.com': GITLAB_FINGERPRINT,
+      };
+
+      const result = getKnownHosts(hosts);
+
+      expect(result['github.com']).toBe(GITHUB_FINGERPRINT);
+      expect(result['gitlab.com']).toBe(GITLAB_FINGERPRINT);
+    });
+
+    it('should include custom hosts', () => {
+      const hosts: KnownHostsConfig = {
+        'github.com': GITHUB_FINGERPRINT,
         'custom.example.com': 'SHA256:customfingerprint',
       };
 
-      const result = getKnownHosts(customHosts);
+      const result = getKnownHosts(hosts);
 
-      expect(result['github.com']).toBe(DEFAULT_KNOWN_HOSTS['github.com']);
-      expect(result['gitlab.com']).toBe(DEFAULT_KNOWN_HOSTS['gitlab.com']);
+      expect(result['github.com']).toBe(GITHUB_FINGERPRINT);
       expect(result['custom.example.com']).toBe('SHA256:customfingerprint');
     });
 
-    it('should allow custom hosts to override defaults', () => {
-      const customHosts: KnownHostsConfig = {
-        'github.com': 'SHA256:overriddenfingerprint',
-      };
-
-      const result = getKnownHosts(customHosts);
-
-      expect(result['github.com']).toBe('SHA256:overriddenfingerprint');
-      expect(result['gitlab.com']).toBe(DEFAULT_KNOWN_HOSTS['gitlab.com']);
-    });
-
-    it('should handle undefined custom hosts', () => {
+    it('should handle undefined hosts', () => {
       const result = getKnownHosts(undefined);
 
-      expect(result['github.com']).toBe(DEFAULT_KNOWN_HOSTS['github.com']);
+      expect(Object.keys(result)).toHaveLength(0);
     });
   });
 
   describe('verifyHostKey', () => {
     it('should return true for valid GitHub host key', () => {
-      const knownHosts = getKnownHosts();
-      const githubKey = DEFAULT_KNOWN_HOSTS['github.com'];
+      const knownHosts: KnownHostsConfig = { 'github.com': GITHUB_FINGERPRINT };
 
-      const result = verifyHostKey('github.com', githubKey, knownHosts);
+      const result = verifyHostKey('github.com', GITHUB_FINGERPRINT, knownHosts);
 
       expect(result).toBe(true);
       expect(consoleErrorSpy).not.toHaveBeenCalled();
     });
 
     it('should return true for valid GitLab host key', () => {
-      const knownHosts = getKnownHosts();
-      const gitlabKey = DEFAULT_KNOWN_HOSTS['gitlab.com'];
+      const knownHosts: KnownHostsConfig = { 'gitlab.com': GITLAB_FINGERPRINT };
 
-      const result = verifyHostKey('gitlab.com', gitlabKey, knownHosts);
+      const result = verifyHostKey('gitlab.com', GITLAB_FINGERPRINT, knownHosts);
 
       expect(result).toBe(true);
       expect(consoleErrorSpy).not.toHaveBeenCalled();
     });
 
     it('should return false for unknown hostname', () => {
-      const knownHosts = getKnownHosts();
+      const knownHosts: KnownHostsConfig = { 'github.com': GITHUB_FINGERPRINT };
 
       const result = verifyHostKey('unknown.host.com', 'SHA256:anything', knownHosts);
 
@@ -122,7 +106,7 @@ describe('knownHosts', () => {
     });
 
     it('should return false for mismatched fingerprint', () => {
-      const knownHosts = getKnownHosts();
+      const knownHosts: KnownHostsConfig = { 'github.com': GITHUB_FINGERPRINT };
       const wrongFingerprint = 'SHA256:wrongfingerprint';
 
       const result = verifyHostKey('github.com', wrongFingerprint, knownHosts);
@@ -132,7 +116,7 @@ describe('knownHosts', () => {
         expect.stringContaining('Host key verification failed for'),
       );
       expect(consoleErrorSpy).toHaveBeenCalledWith(
-        expect.stringContaining(`Expected: ${DEFAULT_KNOWN_HOSTS['github.com']}`),
+        expect.stringContaining(`Expected: ${GITHUB_FINGERPRINT}`),
       );
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining(`Received: ${wrongFingerprint}`),
@@ -143,10 +127,9 @@ describe('knownHosts', () => {
     });
 
     it('should verify custom host keys', () => {
-      const customHosts: KnownHostsConfig = {
+      const knownHosts: KnownHostsConfig = {
         'custom.example.com': 'SHA256:customfingerprint123',
       };
-      const knownHosts = getKnownHosts(customHosts);
 
       const result = verifyHostKey('custom.example.com', 'SHA256:customfingerprint123', knownHosts);
 
@@ -155,10 +138,9 @@ describe('knownHosts', () => {
     });
 
     it('should reject custom host with wrong fingerprint', () => {
-      const customHosts: KnownHostsConfig = {
+      const knownHosts: KnownHostsConfig = {
         'custom.example.com': 'SHA256:customfingerprint123',
       };
-      const knownHosts = getKnownHosts(customHosts);
 
       const result = verifyHostKey('custom.example.com', 'SHA256:wrongfingerprint', knownHosts);
 
