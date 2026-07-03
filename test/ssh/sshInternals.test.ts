@@ -81,12 +81,8 @@ describe('sshInternals', () => {
     });
 
     it('should include ssh2 version in error messages', () => {
-      try {
-        getProtocol({} as any);
-      } catch (e) {
-        expect((e as Error).message).toContain('installed ssh2 version');
-        expect((e as Error).message).toContain('verified working on');
-      }
+      expect(() => getProtocol({} as any)).toThrow(/installed ssh2 version/);
+      expect(() => getProtocol({} as any)).toThrow(/verified working on/);
     });
   });
 

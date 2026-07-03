@@ -179,15 +179,13 @@ describe('GitProtocol', () => {
         return mockClient;
       });
 
-      try {
-        await fetchGitHubCapabilities(
+      await expect(
+        fetchGitHubCapabilities(
           'git-upload-pack /test/repo.git',
           mockClient as ClientWithUser,
           'github.com',
-        );
-      } catch (e) {
-        // Expected to fail
-      }
+        ),
+      ).rejects.toThrow('Test error');
 
       expect(validateSSHPrerequisites).toHaveBeenCalledWith(mockClient);
     });
@@ -227,18 +225,16 @@ describe('GitProtocol', () => {
       // Import the function that uses clientStream
       const { forwardPackDataToRemote } = await import('../../src/proxy/ssh/GitProtocol');
 
-      try {
-        await forwardPackDataToRemote(
+      await expect(
+        forwardPackDataToRemote(
           'git-receive-pack /test/repo.git',
           mockStream as any,
           mockClient as ClientWithUser,
           Buffer.from('test'),
           0,
           'github.com',
-        );
-      } catch (e) {
-        // Expected to fail
-      }
+        ),
+      ).rejects.toThrow('All configured authentication methods failed');
 
       // Check that helpful error message was written to stderr
       expect(mockStream.stderr.write).toHaveBeenCalled();
@@ -278,18 +274,16 @@ describe('GitProtocol', () => {
 
       const { forwardPackDataToRemote } = await import('../../src/proxy/ssh/GitProtocol');
 
-      try {
-        await forwardPackDataToRemote(
+      await expect(
+        forwardPackDataToRemote(
           'git-receive-pack /test/repo.git',
           mockStream as any,
           mockClient as ClientWithUser,
           Buffer.from('test'),
           0,
           'bitbucket.org',
-        );
-      } catch (e) {
-        // Expected to fail
-      }
+        ),
+      ).rejects.toThrow('All configured authentication methods failed');
 
       expect(mockStream.stderr.write).toHaveBeenCalled();
       const errorMessage = mockStream.stderr.write.mock.calls[0][0];
@@ -329,18 +323,16 @@ describe('GitProtocol', () => {
 
       const { forwardPackDataToRemote } = await import('../../src/proxy/ssh/GitProtocol');
 
-      try {
-        await forwardPackDataToRemote(
+      await expect(
+        forwardPackDataToRemote(
           'git-receive-pack /test/repo.git',
           mockStream as any,
           mockClient as ClientWithUser,
           Buffer.from('test'),
           0,
           'gitlab.com',
-        );
-      } catch (e) {
-        // Expected to fail
-      }
+        ),
+      ).rejects.toThrow('All configured authentication methods failed');
 
       expect(mockStream.stderr.write).toHaveBeenCalled();
       const errorMessage = mockStream.stderr.write.mock.calls[0][0];

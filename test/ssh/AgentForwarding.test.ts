@@ -337,81 +337,100 @@ describe('AgentForwarding', () => {
     });
 
     it('should handle timeout when channel confirmation not received', async () => {
-      const mockClient: any = {
-        agentForwardingEnabled: true,
-        _protocol: {
-          _handlers: {},
-          openssh_authAgent: vi.fn(),
-          channelSuccess: vi.fn(),
-        },
-        _chanMgr: {
-          _channels: {},
-          _count: 0,
-        },
-      };
+      vi.useFakeTimers();
+      try {
+        const mockClient: any = {
+          agentForwardingEnabled: true,
+          _protocol: {
+            _handlers: {},
+            openssh_authAgent: vi.fn(),
+            channelSuccess: vi.fn(),
+          },
+          _chanMgr: {
+            _channels: {},
+            _count: 0,
+          },
+        };
 
-      const result = await openTemporaryAgentChannel(mockClient);
+        const promise = openTemporaryAgentChannel(mockClient);
 
-      // Should timeout and return null after 5 seconds
-      expect(result).toBeNull();
-    }, 6000);
+        // Advance past the 5s confirmation window instead of waiting in real time
+        vi.advanceTimersByTime(5001);
+        const result = await promise;
+
+        expect(result).toBeNull();
+      } finally {
+        vi.useRealTimers();
+      }
+    });
 
     it('should find next available channel ID when channels exist', async () => {
-      const mockClient: any = {
-        agentForwardingEnabled: true,
-        _protocol: {
-          _handlers: {},
-          openssh_authAgent: vi.fn(),
-          channelSuccess: vi.fn(),
-        },
-        _chanMgr: {
-          _channels: {
-            1: 'occupied',
-            2: 'occupied',
-            // Channel 3 should be used
+      vi.useFakeTimers();
+      try {
+        const mockClient: any = {
+          agentForwardingEnabled: true,
+          _protocol: {
+            _handlers: {},
+            openssh_authAgent: vi.fn(),
+            channelSuccess: vi.fn(),
           },
-          _count: 2,
-        },
-      };
+          _chanMgr: {
+            _channels: {
+              1: 'occupied',
+              2: 'occupied',
+              // Channel 3 should be used
+            },
+            _count: 2,
+          },
+        };
 
-      // Start the operation but don't wait for completion (will timeout)
-      const promise = openTemporaryAgentChannel(mockClient);
+        const promise = openTemporaryAgentChannel(mockClient);
 
-      // Verify openssh_authAgent was called with the next available channel (3)
-      expect(mockClient._protocol.openssh_authAgent).toHaveBeenCalledWith(
-        3,
-        expect.any(Number),
-        expect.any(Number),
-      );
+        // openssh_authAgent is called synchronously, before the promise settles
+        expect(mockClient._protocol.openssh_authAgent).toHaveBeenCalledWith(
+          3,
+          expect.any(Number),
+          expect.any(Number),
+        );
 
-      // Clean up - wait for timeout
-      await promise;
-    }, 6000);
+        // Advance past the confirmation timeout so the promise settles cleanly
+        vi.advanceTimersByTime(5001);
+        await promise;
+      } finally {
+        vi.useRealTimers();
+      }
+    });
 
     it('should use channel ID 1 when no channels exist', async () => {
-      const mockClient: any = {
-        agentForwardingEnabled: true,
-        _protocol: {
-          _handlers: {},
-          openssh_authAgent: vi.fn(),
-          channelSuccess: vi.fn(),
-        },
-        _chanMgr: {
-          _channels: {},
-          _count: 0,
-        },
-      };
+      vi.useFakeTimers();
+      try {
+        const mockClient: any = {
+          agentForwardingEnabled: true,
+          _protocol: {
+            _handlers: {},
+            openssh_authAgent: vi.fn(),
+            channelSuccess: vi.fn(),
+          },
+          _chanMgr: {
+            _channels: {},
+            _count: 0,
+          },
+        };
 
-      const promise = openTemporaryAgentChannel(mockClient);
+        const promise = openTemporaryAgentChannel(mockClient);
 
-      expect(mockClient._protocol.openssh_authAgent).toHaveBeenCalledWith(
-        1,
-        expect.any(Number),
-        expect.any(Number),
-      );
+        expect(mockClient._protocol.openssh_authAgent).toHaveBeenCalledWith(
+          1,
+          expect.any(Number),
+          expect.any(Number),
+        );
 
-      await promise;
-    }, 6000);
+        vi.advanceTimersByTime(5001);
+        await promise;
+      } finally {
+        vi.useRealTimers();
+      }
+    });
 
     it('should return null when client has no chanMgr', async () => {
       const mockClient: any = {
