@@ -73,6 +73,10 @@ export GIT_PROXY_UI_HOST="http://www.git-proxy.com"
 export GIT_PROXY_UI_PORT="5000"
 ```
 
+These server settings can also be set in the [configuration file](./reference) using the
+`serverPort`, `httpsServerPort`, `uiHost`, `uiPort` and `httpsUiPort` properties. When a value is
+provided in both places, the environment variable takes precedence over the config file.
+
 ### Validate configuration
 
 To validate your GitProxy configuration, run:

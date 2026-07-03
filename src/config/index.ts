@@ -47,13 +47,18 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'cookieSecret',
   'csrfProtection',
   'domains',
+  'httpsServerPort',
+  'httpsUiPort',
   'plugins',
   'privateOrganizations',
   'rateLimit',
+  'serverPort',
   'sessionMaxAgeHours',
   'sink',
   'tempPassword',
   'tls',
+  'uiHost',
+  'uiPort',
   'uiRouteAuth',
   'upstreamProxy',
   'urlShortener',
@@ -104,6 +109,22 @@ function cleanUndefinedValues(obj: any): any {
     }
   }
   return cleaned;
+}
+
+/**
+ * Resolve a numeric server setting, giving precedence to the environment
+ * variable (when set) over the user config file and then the default config,
+ * mirroring the handling of GIT_PROXY_COOKIE_SECRET.
+ */
+function resolveServerPort(
+  envValue: string | undefined,
+  userValue: number | undefined,
+  defaultValue: number | undefined,
+): number | undefined {
+  if (envValue !== undefined) {
+    return Number(envValue);
+  }
+  return userValue ?? defaultValue;
 }
 
 /**
@@ -191,6 +212,28 @@ function mergeConfigurations(
       serverConfig.GIT_PROXY_COOKIE_SECRET ||
       userSettings.cookieSecret ||
       defaultConfig.cookieSecret,
+    // Server settings: environment variable takes precedence over the config file.
+    serverPort: resolveServerPort(
+      serverConfig.GIT_PROXY_SERVER_PORT,
+      userSettings.serverPort,
+      defaultConfig.serverPort,
+    ),
+    httpsServerPort: resolveServerPort(
+      serverConfig.GIT_PROXY_HTTPS_SERVER_PORT,
+      userSettings.httpsServerPort,
+      defaultConfig.httpsServerPort,
+    ),
+    uiHost: serverConfig.GIT_PROXY_UI_HOST || userSettings.uiHost || defaultConfig.uiHost,
+    uiPort: resolveServerPort(
+      serverConfig.GIT_PROXY_UI_PORT,
+      userSettings.uiPort,
+      defaultConfig.uiPort,
+    ),
+    httpsUiPort: resolveServerPort(
+      serverConfig.GIT_PROXY_HTTPS_UI_PORT,
+      userSettings.httpsUiPort,
+      defaultConfig.httpsUiPort,
+    ),
   };
 
   assertHasRequiredTopLevelConfig(config);
@@ -226,9 +269,29 @@ export const getAuthorisedList = () => {
   return config.authorisedList;
 };
 
-// Get GIT_PROXY_UI_PORT
+// Get the UI/service HTTP port
 export const getUIPort = (): number => {
-  return Number(serverConfig.GIT_PROXY_UI_PORT);
+  return loadFullConfiguration().uiPort;
+};
+
+// Get the proxy HTTP server port
+export const getServerPort = (): number => {
+  return loadFullConfiguration().serverPort;
+};
+
+// Get the proxy HTTPS server port
+export const getHttpsServerPort = (): number => {
+  return loadFullConfiguration().httpsServerPort;
+};
+
+// Get the UI host
+export const getUIHost = (): string => {
+  return loadFullConfiguration().uiHost;
+};
+
+// Get the UI/service HTTPS port
+export const getHttpsUIPort = (): number => {
+  return loadFullConfiguration().httpsUiPort;
 };
 
 // Gets a list of authorised repositories

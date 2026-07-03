@@ -306,6 +306,74 @@ describe('user configuration', () => {
     expect(config.getDatabase().connectionString).toBe('mongodb://example.com:27017/test');
   });
 
+  it('should use config file defaults for server settings when no env var is set', async () => {
+    fs.writeFileSync(tempUserFile, '{}');
+    delete process.env.GIT_PROXY_SERVER_PORT;
+    delete process.env.GIT_PROXY_HTTPS_SERVER_PORT;
+    delete process.env.GIT_PROXY_UI_HOST;
+    delete process.env.GIT_PROXY_UI_PORT;
+    delete process.env.GIT_PROXY_HTTPS_UI_PORT;
+
+    const config = await import('../src/config');
+    config.invalidateCache();
+
+    expect(config.getServerPort()).toBe(8000);
+    expect(config.getHttpsServerPort()).toBe(8443);
+    expect(config.getUIHost()).toBe('http://localhost');
+    expect(config.getUIPort()).toBe(8080);
+    expect(config.getHttpsUIPort()).toBe(8444);
+  });
+
+  it('should read server settings from the config file', async () => {
+    const user = {
+      serverPort: 9090,
+      httpsServerPort: 9443,
+      uiHost: 'http://example.com',
+      uiPort: 5000,
+      httpsUiPort: 5443,
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+    delete process.env.GIT_PROXY_SERVER_PORT;
+    delete process.env.GIT_PROXY_HTTPS_SERVER_PORT;
+    delete process.env.GIT_PROXY_UI_HOST;
+    delete process.env.GIT_PROXY_UI_PORT;
+    delete process.env.GIT_PROXY_HTTPS_UI_PORT;
+
+    const config = await import('../src/config');
+    config.invalidateCache();
+
+    expect(config.getServerPort()).toBe(9090);
+    expect(config.getHttpsServerPort()).toBe(9443);
+    expect(config.getUIHost()).toBe('http://example.com');
+    expect(config.getUIPort()).toBe(5000);
+    expect(config.getHttpsUIPort()).toBe(5443);
+  });
+
+  it('should let env vars take precedence over config file for server settings', async () => {
+    const user = {
+      serverPort: 9090,
+      httpsServerPort: 9443,
+      uiHost: 'http://example.com',
+      uiPort: 5000,
+      httpsUiPort: 5443,
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+    process.env.GIT_PROXY_SERVER_PORT = '1111';
+    process.env.GIT_PROXY_HTTPS_SERVER_PORT = '2222';
+    process.env.GIT_PROXY_UI_HOST = 'http://env.example.com';
+    process.env.GIT_PROXY_UI_PORT = '3333';
+    process.env.GIT_PROXY_HTTPS_UI_PORT = '4444';
+
+    const config = await import('../src/config');
+    config.invalidateCache();
+
+    expect(config.getServerPort()).toBe(1111);
+    expect(config.getHttpsServerPort()).toBe(2222);
+    expect(config.getUIHost()).toBe('http://env.example.com');
+    expect(config.getUIPort()).toBe(3333);
+    expect(config.getHttpsUIPort()).toBe(4444);
+  });
+
   it('should test cache invalidation function', async () => {
     fs.writeFileSync(tempUserFile, '{}');
 
