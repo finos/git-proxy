@@ -81,6 +81,7 @@ export class User {
   gitAccount: string;
   email: string;
   admin: boolean;
+  mustChangePassword?: boolean;
   oidcId?: string | null;
   publicKeys?: PublicKeyRecord[];
   displayName?: string | null;
@@ -108,6 +109,31 @@ export class User {
   }
 }
 
+export type Push = {
+  id: string;
+  allowPush: boolean;
+  authorised: boolean;
+  blocked: boolean;
+  blockedMessage: string;
+  branch: string;
+  canceled: boolean;
+  commitData: object;
+  commitFrom: string;
+  commitTo: string;
+  error: boolean;
+  method: string;
+  project: string;
+  rejected: boolean;
+  repo: string;
+  repoName: string;
+  tag?: string;
+  tagData?: object;
+  timepstamp: string;
+  type: string;
+  url: string;
+  user?: string;
+};
+
 export interface PublicUser {
   username: string;
   displayName: string;
@@ -115,6 +141,7 @@ export interface PublicUser {
   title: string;
   gitAccount: string;
   admin: boolean;
+  mustChangePassword?: boolean;
 }
 
 export interface Sink {
