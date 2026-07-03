@@ -18,10 +18,15 @@ import { Request } from 'express';
 
 import * as config from '../config';
 
+const normaliseProtocol = (protocol: string): string => {
+  if (protocol === 'ssh') return 'https';
+  return protocol || 'https';
+};
+
 export const getProxyURL = (req: Request): string => {
   return (
     config.getDomains().proxy ??
-    `${req.protocol}://${req.headers.host}`.replace(
+    `${normaliseProtocol(req?.protocol)}://${req.headers.host}`.replace(
       `:${config.getUIPort()}`,
       `:${config.getServerPort()}`,
     )
@@ -31,7 +36,7 @@ export const getProxyURL = (req: Request): string => {
 export const getServiceUIURL = (req: Request): string => {
   return (
     config.getDomains().service ??
-    `${req.protocol}://${req.headers.host}`.replace(
+    `${normaliseProtocol(req?.protocol)}://${req.headers.host}`.replace(
       `:${config.getServerPort()}`,
       `:${config.getUIPort()}`,
     )

@@ -52,7 +52,11 @@ const exec = async (req: Request) => {
     );
   }
 
-  return new Action(id.toString(), type, req.method, timestamp, url);
+  const action = new Action(id.toString(), type, req.method, timestamp, url);
+
+  action.protocol = req.protocol === 'ssh' ? 'ssh' : 'https';
+
+  return action;
 };
 
 exec.displayName = 'parseAction.exec';

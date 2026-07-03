@@ -77,7 +77,7 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
       step.setError(
         `Unreferenced commits in pack (${unreferenced.length}): ${unreferenced.join(', ')}.\n` +
           `This usually happens when a branch was made from a commit that hasn't been approved and pushed to the remote.\n` +
-          `Please get approval on the commits, push them and try again.`,
+          `Please rebase the branch and push again.`,
       );
       action.error = true;
       step.setContent(`Referenced: ${referenced.length}, Unreferenced: ${unreferenced.length}`);
