@@ -21,6 +21,9 @@
       "url": "https://github.com/finos/git-proxy.git"
     }
   ],
+  "limits": {
+    "maxPackSizeBytes": 1073741824
+  },
   "sink": [
     {
       "type": "fs",
@@ -185,5 +188,9 @@
         "loginRequired": true
       }
     ]
+  },
+  "ssh": {
+    "enabled": false,
+    "port": 2222
   }
 }

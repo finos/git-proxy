@@ -56,6 +56,8 @@ vi.mock('../src/config', () => ({
   getAuthorisedList: vi.fn(),
   getServerPort: vi.fn(() => 8000),
   getHttpsServerPort: vi.fn(() => 8443),
+  getSSHConfig: vi.fn(() => ({ enabled: false })),
+  getMaxPackSizeBytes: vi.fn(() => 500 * 1024 * 1024),
 }));
 
 vi.mock('../src/db', () => ({
