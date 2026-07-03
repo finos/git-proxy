@@ -24,7 +24,8 @@ import {
   validateSSHPrerequisites,
   createSSHConnectionOptions,
 } from '../../src/proxy/ssh/sshHelpers';
-import { DEFAULT_KNOWN_HOSTS } from '../../src/proxy/ssh/knownHosts';
+import { getKnownHosts } from '../../src/proxy/ssh/knownHosts';
+import { getSSHConfig } from '../../src/config';
 import { ClientWithUser } from '../../src/proxy/ssh/types';
 
 // Mock child_process and fs
@@ -259,8 +260,9 @@ describe('sshHelpers', () => {
       const tempDir = '/tmp/test-dir';
       const sshUrl = 'git@bitbucket.org:org/repo.git';
 
+      const configuredHosts = getKnownHosts(getSSHConfig()?.knownHosts);
       await expect(createKnownHostsFile(tempDir, sshUrl)).rejects.toThrow(
-        `Supported hosts: ${Object.keys(DEFAULT_KNOWN_HOSTS).join(', ')}`,
+        `Supported hosts: ${Object.keys(configuredHosts).join(', ')}`,
       );
     });
 
