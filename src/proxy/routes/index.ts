@@ -341,13 +341,27 @@ const endStreamedResponseWithMessage = (res: Response, message: string): void =>
  * @return {URL} The full upstream URL to forward the request to.
  */
 const resolveUpstreamUrl = (req: Request, originsToProxy: string[]): URL => {
+  const originalUrl = req.originalUrl || '/';
+
   for (const origin of originsToProxy) {
-    if (req.originalUrl.startsWith(`/${origin}/`)) {
-      return new URL(`https:/${req.originalUrl}`);
+    const prefix = `/${origin}`;
+    if (originalUrl === prefix || originalUrl.startsWith(`${prefix}/`)) {
+      const upstreamBase = new URL(`https://${origin}`);
+      const strippedPathAndQuery = originalUrl.slice(prefix.length) || '/';
+      const safeRelative =
+        strippedPathAndQuery.startsWith('/') && !strippedPathAndQuery.startsWith('//')
+          ? strippedPathAndQuery
+          : `/${strippedPathAndQuery.replace(/^\/+/, '')}`;
+      return new URL(safeRelative, upstreamBase);
     }
   }
+
   // fallback (legacy URLs without an origin prefix)
-  return new URL(`https://github.com${req.originalUrl}`);
+  const safeFallbackRelative =
+    originalUrl.startsWith('/') && !originalUrl.startsWith('//')
+      ? originalUrl
+      : `/${originalUrl.replace(/^\/+/, '')}`;
+  return new URL(safeFallbackRelative, 'https://github.com');
 };
 
 /** Headers that must not be forwarded verbatim to the upstream host.
