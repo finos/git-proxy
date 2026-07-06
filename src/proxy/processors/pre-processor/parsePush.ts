@@ -72,6 +72,13 @@ async function exec(req: Request, action: Action): Promise<Action> {
       throw new Error('Your push has been blocked. No ref updates found.');
     }
 
+    // The client's capability list (side-band-64k, report-status, agent=..., etc.)
+    // is appended after a NUL byte on the first ref update line.
+    const capabilityString = refUpdates[0].split('\0')[1];
+    action.capabilities = capabilityString
+      ? capabilityString.trim().split(/\s+/).filter(Boolean)
+      : [];
+
     const parsedRefs = refUpdates.map((line) => {
       const [commitParts] = line.split('\0');
       const parts = commitParts.split(' ');
