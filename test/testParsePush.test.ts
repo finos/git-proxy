@@ -584,6 +584,40 @@ describe('parsePackFile', () => {
       });
     });
 
+    it('should capture the client capability list from the first ref update line', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/main';
+      const packetLine = `${oldCommit} ${newCommit} ${ref}\0report-status side-band-64k agent=git/2.42.0\n`;
+
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'parent abcdef1234567890abcdef1234567890abcdef12\n' +
+        'author Test Author <author@example.com> 1234567890 +0000\n' +
+        'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
+        'feat: Add new feature\n';
+
+      const packBuffer = createSamplePackBuffer(1, commitContent, 1);
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
+
+      const result = await exec(req, action);
+
+      expect(result.capabilities).toEqual(['report-status', 'side-band-64k', 'agent=git/2.42.0']);
+    });
+
+    it('should set an empty capability list when the ref update line has no capabilities', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/main';
+      // no NUL byte, so no capability list
+      const packetLines = [`${oldCommit} ${newCommit} ${ref}\n`];
+      req.body = createPacketLineBuffer(packetLines);
+
+      const result = await exec(req, action);
+
+      expect(result.capabilities).toEqual([]);
+    });
+
     it('should successfully parse a valid push request (captured)', async () => {
       const oldCommit = '640bd00d63208466021143366adbc926824ba66f';
       const newCommit = '93ca160407a9660c5ef81b951892b7a9ab1c41ca';
