@@ -46,3 +46,12 @@ export const SAMPLE_REPO = {
     canAuthorise: ['bob'],
   },
 };
+
+/**
+ * Maximum payload bytes for a single side-band-64k packet
+ * 65520 bytes total minus 4 bytes of pkt-line length and 1 band byte.
+ */
+export const MAX_SIDEBAND_PAYLOAD_BYTES = 65515;
+
+/** Capability that must be negotiated by the client for streamed progress */
+export const SIDE_BAND_64K_CAPABILITY = 'side-band-64k';
