@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { CommitData } from './types';
+import { CommitData } from './processors/types';
 
 export const REFS_PREFIX = 'refs/';
 export const BRANCH_PREFIX = 'refs/heads/';
