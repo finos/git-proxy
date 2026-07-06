@@ -22,12 +22,15 @@ import { executeChain } from '../chain';
 import { processUrlPath, validGitRequest } from './helper';
 import { getAllProxiedHosts } from '../../db';
 import { ProxyOptions } from 'express-http-proxy';
-import { getMaxPackSizeBytes } from '../../config';
+import { getMaxPackSizeBytes, getSidebandProgressEnabled } from '../../config';
 import { MEGABYTE } from '../../constants';
 import { handleErrorAndLog } from '../../utils/errors';
 import { getUpstreamProxyConfig } from '../../config';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import { OutgoingHttpHeaders, RequestOptions } from 'http';
+import http, { OutgoingHttpHeaders, RequestOptions } from 'http';
+import https from 'https';
+import { encodeSidebandChunk, SidebandBand } from '../sideband';
+import { FLUSH_PACKET } from '../constants';
 
 enum ActionType {
   ALLOWED = 'Allowed',
@@ -120,9 +123,8 @@ const sendErrorResponse = (req: Request, res: Response, message: string): void =
 };
 
 const handleMessage = (message: string): string => {
-  const body = `\t${message}`;
-  const len = (6 + Buffer.byteLength(body)).toString(16).padStart(4, '0');
-  return `${len}\x02${body}\n0000`;
+  const packet = encodeSidebandChunk(SidebandBand.Progress, `\t${message}\n`);
+  return packet.toString('utf8') + FLUSH_PACKET;
 };
 
 const handleRefsErrorMessage = (message: string): string => {
@@ -315,6 +317,193 @@ const extractRawBody = async (req: Request, res: Response, next: NextFunction) =
   }
 };
 
+const isReceivePackPost = (req: Request): boolean =>
+  isPackPost(req) && req.url.endsWith('/git-receive-pack');
+
+/**
+ * Finish a response that has already started streaming sideband progress
+ * @param {Response} res The in-progress streaming response
+ * @param {string} message The final message to display in the client terminal
+ */
+const endStreamedResponseWithMessage = (res: Response, message: string): void => {
+  if (res.writableEnded) {
+    return;
+  }
+  res.write(encodeSidebandChunk(SidebandBand.Progress, `\t${message}\n`));
+  res.write(FLUSH_PACKET);
+  res.end();
+};
+
+/**
+ * Resolve the upstream URL for a request
+ * @param {Request} req The client request.
+ * @param {string[]} originsToProxy Origins configured for proxying.
+ * @return {URL} The full upstream URL to forward the request to.
+ */
+const resolveUpstreamUrl = (req: Request, originsToProxy: string[]): URL => {
+  for (const origin of originsToProxy) {
+    if (req.originalUrl.startsWith(`/${origin}/`)) {
+      return new URL(`https:/${req.originalUrl}`);
+    }
+  }
+  // fallback (legacy URLs without an origin prefix)
+  return new URL(`https://github.com${req.originalUrl}`);
+};
+
+/** Headers that must not be forwarded verbatim to the upstream host.
+ * accept-encoding is stripped so the upstream response is not compressed,
+ * allowing it to be piped into an already-started sideband stream. */
+const UPSTREAM_HEADER_BLOCKLIST = [
+  'host',
+  'connection',
+  'content-length',
+  'transfer-encoding',
+  'accept-encoding',
+  'upgrade',
+  'keep-alive',
+  'proxy-authorization',
+  'te',
+  'trailer',
+];
+
+/**
+ * Forward a buffered git-receive-pack request to the upstream host and relay
+ * the response to the client.
+ *
+ * When the response has already started streaming sideband progress, the
+ * upstream response body (itself a sideband pkt-line stream) is piped through
+ * verbatim, continuing the stream the proxy started. Otherwise the upstream
+ * status and headers are copied and the body piped, matching the behavior of
+ * the transparent proxy.
+ * @param {Request} req The client request (body must be a Buffer).
+ * @param {Response} res The client response.
+ * @param {URL} target The upstream URL to forward to.
+ * @return {Promise<void>} Resolves when the upstream response has been relayed.
+ */
+const forwardReceivePackUpstream = async (
+  req: Request,
+  res: Response,
+  target: URL,
+): Promise<void> => {
+  const body: Buffer = req.body;
+  const client = target.protocol === 'http:' ? http : https;
+
+  const headers: OutgoingHttpHeaders = {};
+  for (const [key, value] of Object.entries(req.headers)) {
+    if (value === undefined || UPSTREAM_HEADER_BLOCKLIST.includes(key.toLowerCase())) {
+      continue;
+    }
+    headers[key] = value;
+  }
+  headers['content-length'] = body.length;
+
+  const agent =
+    target.protocol === 'https:'
+      ? buildUpstreamProxyAgent({ host: target.hostname, headers })
+      : undefined;
+
+  await new Promise<void>((resolve, reject) => {
+    const upstreamReq = client.request(
+      target,
+      { method: 'POST', headers, ...(agent ? { agent } : {}) },
+      (upstreamRes) => {
+        upstreamRes.on('error', reject);
+        upstreamRes.on('end', resolve);
+
+        if (res.headersSent) {
+          if (upstreamRes.statusCode !== 200) {
+            upstreamRes.resume();
+            endStreamedResponseWithMessage(
+              res,
+              `Push failed: upstream responded with status ${upstreamRes.statusCode}`,
+            );
+            return;
+          }
+          upstreamRes.pipe(res);
+        } else {
+          // No streaming took place so we just relay everything as is
+          res.status(upstreamRes.statusCode ?? 502);
+          for (const [key, value] of Object.entries(upstreamRes.headers)) {
+            if (key === 'transfer-encoding' || key === 'connection' || value === undefined) {
+              continue;
+            }
+            res.set(key, value);
+          }
+          upstreamRes.pipe(res);
+        }
+      },
+    );
+    upstreamReq.on('error', reject);
+    upstreamReq.end(body);
+  });
+};
+
+/**
+ * Create the request handler for git-receive-pack POSTs (pushes).
+ *
+ * Unlike other git requests, pushes are handled directly rather than through
+ * express-http-proxy so that validation progress can be streamed to the
+ * client via git sideband channel 2 while the chain runs. When the
+ * sidebandProgress config flag is disabled, the handler defers to the
+ * transparent proxy (identical behavior to previous releases).
+ * @param {string[]} originsToProxy Origins configured for proxying.
+ * @return {RequestHandler} The express request handler.
+ */
+const createReceivePackHandler = (originsToProxy: string[]): RequestHandler => {
+  return async (req, res, next) => {
+    if (!isReceivePackPost(req) || !getSidebandProgressEnabled()) {
+      return next();
+    }
+
+    try {
+      const urlComponents = processUrlPath(req.url);
+      if (
+        !urlComponents ||
+        urlComponents.gitPath === undefined ||
+        !validGitRequest(urlComponents.gitPath, req.headers)
+      ) {
+        const message = 'Invalid request received';
+        logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ERROR, message);
+        res.status(200).send(handleMessage(message));
+        return;
+      }
+
+      // Use the raw body extracted by the extractRawBody middleware
+      if (req.bodyRaw) {
+        req.body = req.bodyRaw;
+        delete req.bodyRaw;
+      }
+
+      const action = await executeChain(req, res);
+
+      if (action.error || action.blocked) {
+        const message = action.errorMessage ?? action.blockedMessage ?? 'Unknown error';
+        const type = action.error ? ActionType.ERROR : ActionType.BLOCKED;
+
+        logAction(req.url, req.headers.host, req.headers['user-agent'], type, message);
+        if (res.headersSent) {
+          endStreamedResponseWithMessage(res, message);
+        } else {
+          sendErrorResponse(req, res, message);
+        }
+        return;
+      }
+
+      logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ALLOWED);
+      await forwardReceivePackUpstream(req, res, resolveUpstreamUrl(req, originsToProxy));
+    } catch (error: unknown) {
+      const message = handleErrorAndLog(error, 'Error processing git-receive-pack request');
+
+      logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ERROR, message);
+      if (res.headersSent) {
+        endStreamedResponseWithMessage(res, message);
+      } else {
+        sendErrorResponse(req, res, message);
+      }
+    }
+  };
+};
+
 const getRouter = async () => {
   const router = Router();
   router.use(extractRawBody);
@@ -324,6 +513,10 @@ const getRouter = async () => {
   const proxies: RequestHandler[] = [];
 
   console.log(`Initializing proxy router for origins: '${JSON.stringify(originsToProxy)}'`);
+
+  // Pushes are handled by a dedicated route instead of express-http-proxy
+  // to stream sidebandProgress if enabled
+  router.use(createReceivePackHandler(originsToProxy));
 
   // we need to wrap multiple proxy middlewares in a custom middleware as middlewares
   // with path are processed in descending path order (/ then /github.com etc.) and
@@ -392,9 +585,14 @@ export {
   handleMessage,
   handleRefsErrorMessage,
   isPackPost,
+  isReceivePackPost,
   extractRawBody,
   validGitRequest,
   buildUpstreamProxyAgent,
   hostMatchesNoProxy,
   getOrCreateProxyAgent,
+  createReceivePackHandler,
+  resolveUpstreamUrl,
+  forwardReceivePackUpstream,
+  endStreamedResponseWithMessage,
 };
