@@ -92,11 +92,16 @@ are a follow-up - today, warnings are logged and only _blocks_ reach the termina
 
 ## Enable it
 
-Add the plugin to the `plugins` array in your `proxy.config.json`:
+Add the plugin to the `plugins` array in your `proxy.config.json`. GitProxy's plugin loader
+takes only the **default export** of each configured module, so the push scanner (`index.js`)
+and the pull/clone scanner (`pull.js`) are registered as two entries:
 
 ```json
 {
-  "plugins": ["@finos/git-proxy-plugin-supply-chain"]
+  "plugins": [
+    "@finos/git-proxy-plugin-supply-chain",
+    "@finos/git-proxy-plugin-supply-chain/pull.js"
+  ]
 }
 ```
 
@@ -104,7 +109,10 @@ or, from a checkout of this repo:
 
 ```json
 {
-  "plugins": ["./plugins/git-proxy-plugin-supply-chain/index.js"]
+  "plugins": [
+    "./plugins/git-proxy-plugin-supply-chain/index.js",
+    "./plugins/git-proxy-plugin-supply-chain/pull.js"
+  ]
 }
 ```
 

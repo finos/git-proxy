@@ -155,7 +155,10 @@ In `proxy.config.json`:
 1. Add the plugin to the `plugins` array:
 
    ```json
-   "plugins": ["./plugins/git-proxy-plugin-supply-chain/index.js"]
+   "plugins": [
+     "./plugins/git-proxy-plugin-supply-chain/index.js",
+     "./plugins/git-proxy-plugin-supply-chain/pull.js"
+   ]
    ```
 
 2. Authorise your test repo (so GitProxy will proxy it) by adding it to `authorisedList`:
