@@ -44,7 +44,27 @@ On any push that changes `requirements*.txt`, `pyproject.toml`, `setup.py`, `set
 - **Lockfile sources** - git or plain-http package sources newly introduced in `poetry.lock` /
   `Pipfile.lock`.
 
-> Coverage is npm + Python today. Go, Cargo, RubyGems and others are planned - each is a new
+## What it checks (Go)
+
+On any push that changes `go.mod` or `go.sum`:
+
+- **Replace directives** - local filesystem paths (HIGH) and remote redirects to a different
+  module path (HIGH).
+- **Suspicious hosts** - raw IPv4 module hosts (CRITICAL), plus `localhost` or `http://` module
+  paths (HIGH).
+- **Version signals** - pseudo-versions (LOW) and `+incompatible` versions (INFO) on newly-added
+  require entries.
+- **Toolchain directives** - added or changed `toolchain` values (MEDIUM on changed files, INFO
+  on fresh-file scans).
+- **Exclude entries** - newly-added `exclude` directives (INFO).
+- **Typosquats** - newly-added module paths compared with the offline list in
+  `lib/data/go-popular.js` (HIGH).
+- **go.sum suspicious hosts** - newly-added lockfile lines whose module host is raw IPv4,
+  `localhost`, or contains `http://`.
+
+`vendor/modules.txt` is not scanned.
+
+> Coverage is npm + Python + Go today; Cargo, RubyGems and others are planned - each is a new
 > module under `lib/ecosystems/` plus an entry in `lib/manifests.js`; the plugin wiring is shared.
 
 ## How it runs
@@ -59,8 +79,8 @@ manifest with `git show <newCommit>:<path>` and diffs it against `git show <oldC
 The plugin also scans repositories **as they are cloned/fetched through the proxy**, so a developer
 is warned - or the clone is blocked - before pulling a poisoned repository. On a
 `git clone`/`fetch`, the plugin (running once the repo is confirmed authorised) shallow-clones the
-default branch, enumerates its manifests (`git ls-tree`) and scans them with the same npm/Python
-analyzers, treating the whole tree as newly introduced.
+default branch, enumerates its manifests (`git ls-tree`) and scans them with the same
+npm/Python/Go analyzers, treating the whole tree as newly introduced.
 
 - **Warn (default):** findings are logged server-side and the clone proceeds.
 - **Block (`pull.failOn` set):** a clone whose highest finding meets/exceeds the threshold **fails**,
@@ -99,7 +119,7 @@ Set the `GIT_PROXY_SUPPLY_CHAIN_CONFIG` environment variable to a JSON file to o
 {
   "enabled": true,
   "failOn": "off",
-  "ecosystems": { "npm": true, "python": true },
+  "ecosystems": { "npm": true, "python": true, "go": true },
   "typosquat": true,
   "allowPackages": [],
   "npmRegistryHosts": ["registry.npmjs.org"],
@@ -110,7 +130,8 @@ Set the `GIT_PROXY_SUPPLY_CHAIN_CONFIG` environment variable to a JSON file to o
 - `failOn` - `"off"` (default, annotate only) | `"low"` | `"medium"` | `"high"` | `"critical"`.
   When set, a push whose highest finding severity meets/exceeds the threshold is **blocked**
   (returned as an error to the pusher's terminal).
-- `allowPackages` - package names to exempt from typosquat/new-dependency flags.
+- `allowPackages` - package names and Go module paths to exempt from typosquat/new-dependency
+  flags. For Go, use full module paths such as `github.com/stretchr/testify`.
 - `npmRegistryHosts` - registry hosts treated as "expected" for lockfile source checks.
 - `pull.enabled` - turn pull/clone scanning on or off.
 - `pull.failOn` - block threshold for clones (same scale as `failOn`; default `"off"` = warn-only).

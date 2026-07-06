@@ -27,6 +27,20 @@ and on **clone/pull** (you download a poisoned repo).
 - Non-registry sources (vcs/url/editable, inline `git`/`url`/`path`, PEP 508 direct URLs).
 - Unpinned requirements and typosquats.
 
+**Go** (`go.mod`, `go.sum`):
+
+- `replace` directives pointing at local filesystem paths or redirecting to a different remote
+  module.
+- Suspicious module hosts: raw IPv4, `localhost`, or module paths containing `http://`.
+- Pseudo-versions, `+incompatible` versions, changed `toolchain` directives, and added `exclude`
+  directives.
+- Typosquatted module paths checked against the offline `lib/data/go-popular.js` list.
+- `go.sum` lockfile lines with suspicious module hosts.
+- `vendor/modules.txt` is not scanned.
+
+These heuristics are a warning layer, not a guarantee. Absence of findings does not mean a repo is
+safe.
+
 **Behaviour:** non-blocking by default (findings are surfaced for review), or configured to
 **hard-block** at/above a severity you choose.
 
@@ -240,7 +254,7 @@ Set `GIT_PROXY_SUPPLY_CHAIN_CONFIG` to a JSON file:
 {
   "enabled": true,
   "failOn": "off",
-  "ecosystems": { "npm": true, "python": true },
+  "ecosystems": { "npm": true, "python": true, "go": true },
   "typosquat": true,
   "allowPackages": [],
   "npmRegistryHosts": ["registry.npmjs.org"],
@@ -250,7 +264,8 @@ Set `GIT_PROXY_SUPPLY_CHAIN_CONFIG` to a JSON file:
 
 - `failOn` / `pull.failOn` - `"off"` (warn only) | `"low"` | `"medium"` | `"high"` | `"critical"`.
   A push/clone whose highest finding meets or exceeds the threshold is blocked.
-- `allowPackages` - names to exempt from typosquat / new-dependency flags.
+- `allowPackages` - package names and full Go module paths to exempt from typosquat /
+  new-dependency flags.
 - `npmRegistryHosts` - registry hosts treated as "expected" for lockfile source checks.
 
 ---
@@ -286,7 +301,7 @@ Set `GIT_PROXY_SUPPLY_CHAIN_CONFIG` to a JSON file:
   the scanned content can differ from what is delivered.
 - On an allowed clone the proxy fetches the repo once to scan it and the client fetches again
   (a double fetch); a future optimisation serves the pack from the scanned copy.
-- Coverage is **npm + Python**; Go/Cargo/RubyGems are planned.
+- Coverage is **npm + Python + Go**; Cargo/RubyGems are planned.
 
 ---
 

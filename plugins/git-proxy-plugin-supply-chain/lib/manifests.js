@@ -35,6 +35,9 @@ const BASENAME_RULES = [
   { name: 'Pipfile', ecosystem: 'python', kind: 'manifest' },
   { name: 'Pipfile.lock', ecosystem: 'python', kind: 'lockfile' },
   { name: 'poetry.lock', ecosystem: 'python', kind: 'lockfile' },
+  // go
+  { name: 'go.mod', ecosystem: 'go', kind: 'manifest' },
+  { name: 'go.sum', ecosystem: 'go', kind: 'lockfile' },
 ];
 
 /**

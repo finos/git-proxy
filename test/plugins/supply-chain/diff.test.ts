@@ -72,6 +72,11 @@ describe('classifyManifest', () => {
     expect(classifyManifest('Pipfile.lock')).toEqual({ ecosystem: 'python', kind: 'lockfile' });
   });
 
+  it('classifies Go manifests and lockfiles', () => {
+    expect(classifyManifest('go.mod')).toEqual({ ecosystem: 'go', kind: 'manifest' });
+    expect(classifyManifest('backend/go.sum')).toEqual({ ecosystem: 'go', kind: 'lockfile' });
+  });
+
   it('returns null for non-manifest files', () => {
     expect(classifyManifest('src/index.js')).toBeNull();
     expect(classifyManifest('README.md')).toBeNull();

@@ -85,7 +85,7 @@ describe('analyzeChangedFiles', () => {
     };
     const { findings } = await analyzeChangedFiles({
       files: [
-        { path: 'go.mod', ecosystem: 'go', kind: 'manifest', deleted: false },
+        { path: 'Cargo.toml', ecosystem: 'cargo', kind: 'manifest', deleted: false },
         { path: 'package.json', ecosystem: 'npm', kind: 'manifest', deleted: false },
       ],
       readFile: throwingReader,

@@ -25,7 +25,7 @@ export const DEFAULT_CONFIG = {
   // 'off' | 'low' | 'medium' | 'high' | 'critical' - block the push when the highest finding
   // severity meets/exceeds this threshold. 'off' never blocks (annotate-only).
   failOn: 'off',
-  ecosystems: { npm: true, python: true },
+  ecosystems: { npm: true, python: true, go: true },
   typosquat: true,
   allowPackages: [],
   npmRegistryHosts: ['registry.npmjs.org'],

@@ -16,12 +16,14 @@
 
 import { analyzeNpm } from './ecosystems/npm.js';
 import { analyzePython } from './ecosystems/python.js';
+import { analyzeGo } from './ecosystems/go.js';
 import { maxSeverity } from './severity.js';
 
 // Registry of per-ecosystem analyzers. Add go/cargo/... here as they are implemented.
 const ANALYZERS = {
   npm: analyzeNpm,
   python: analyzePython,
+  go: analyzeGo,
 };
 
 /**

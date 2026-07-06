@@ -20,6 +20,7 @@ import {
   nearestPopular,
   nearestPopularPython,
 } from '../../../plugins/git-proxy-plugin-supply-chain/lib/typosquat.js';
+import { nearestPopularGo } from '../../../plugins/git-proxy-plugin-supply-chain/lib/ecosystems/go.js';
 
 describe('levenshtein', () => {
   it('computes edit distance', () => {
@@ -67,5 +68,37 @@ describe('nearestPopularPython', () => {
     expect(nearestPopularPython('requsts')).toBe('requests');
     expect(nearestPopularPython('requests')).toBeNull();
     expect(nearestPopularPython('acme-internal-service')).toBeNull();
+  });
+});
+
+describe('nearestPopularGo', () => {
+  it('does not flag exact popular Go module paths', () => {
+    expect(nearestPopularGo('github.com/stretchr/testify')).toBeNull();
+  });
+
+  it('strips semantic import version suffixes before comparing', () => {
+    expect(nearestPopularGo('github.com/golang-jwt/jwt/v5')).toBeNull();
+  });
+
+  it('strips gopkg.in dotted version suffixes before comparing', () => {
+    expect(nearestPopularGo('gopkg.in/yaml.v3')).toBeNull();
+  });
+
+  it('flags host typos against popular Go modules', () => {
+    expect(nearestPopularGo('githib.com/stretchr/testify')).toBe('github.com/stretchr/testify');
+  });
+
+  it('flags tail typos against popular Go modules', () => {
+    expect(nearestPopularGo('github.com/strechr/testify')).toBe('github.com/stretchr/testify');
+  });
+
+  it('honours the allow list for full module paths', () => {
+    expect(
+      nearestPopularGo('github.com/strechr/testify', ['github.com/strechr/testify']),
+    ).toBeNull();
+  });
+
+  it('does not flag distinct internal module paths', () => {
+    expect(nearestPopularGo('git.corp.example/team/lib')).toBeNull();
   });
 });
