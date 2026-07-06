@@ -30,7 +30,7 @@ import {
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
   GIT_OBJECT_TYPE_TAG,
-} from '../constants';
+} from '../../constants';
 import { parsePacketLines } from '../pktLineParser';
 import { getErrorMessage } from '../../../utils/errors';
 

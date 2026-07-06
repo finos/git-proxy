@@ -29,7 +29,7 @@ import {
 } from '../src/proxy/processors/pre-processor/parsePush';
 import { parsePacketLines } from '../src/proxy/processors/pktLineParser';
 
-import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
+import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/constants';
 import { CommitContent } from '../src/proxy/processors/types';
 import { Action } from '../src/proxy/actions/Action';
 import { Request } from 'express';
