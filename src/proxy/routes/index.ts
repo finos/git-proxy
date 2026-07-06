@@ -399,6 +399,10 @@ const forwardReceivePackUpstream = async (
   res: Response,
   target: URL,
 ): Promise<void> => {
+  if (!Buffer.isBuffer(req.body)) {
+    res.status(400).send('Bad request');
+    return;
+  }
   const body: Buffer = req.body;
   const client = target.protocol === 'http:' ? http : https;
 
