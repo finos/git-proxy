@@ -29,7 +29,8 @@ import { getUpstreamProxyConfig } from '../../config';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import http, { OutgoingHttpHeaders, RequestOptions } from 'http';
 import https from 'https';
-import { encodeSidebandChunk, SidebandBand } from '../sideband';
+import { buildRejectionReportStatus, encodeSidebandChunk, SidebandBand } from '../sideband';
+import { Action } from '../actions';
 import { FLUSH_PACKET } from '../constants';
 
 enum ActionType {
@@ -83,9 +84,10 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
     if (action.error || action.blocked) {
       const message = action.errorMessage ?? action.blockedMessage ?? 'Unknown error';
       const type = action.error ? ActionType.ERROR : ActionType.BLOCKED;
+      const statusReport = buildRejectionReportStatus(action, rejectionReasonFor(action));
 
       logAction(req.url, req.headers.host, req.headers['user-agent'], type, message);
-      sendErrorResponse(req, res, message);
+      sendErrorResponse(req, res, message, statusReport);
       return false;
     }
 
@@ -102,7 +104,12 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
   }
 };
 
-const sendErrorResponse = (req: Request, res: Response, message: string): void => {
+const sendErrorResponse = (
+  req: Request,
+  res: Response,
+  message: string,
+  statusReport?: Buffer,
+): void => {
   // GET requests to /info/refs (used to check refs for many git operations) must use Git protocol error packet format
   if (req.method === 'GET' && req.url.includes('/info/refs')) {
     res.set('content-type', 'application/x-git-upload-pack-advertisement');
@@ -119,8 +126,32 @@ const sendErrorResponse = (req: Request, res: Response, message: string): void =
   res.set('x-frame-options', 'DENY');
   res.set('connection', 'close');
 
+  if (statusReport) {
+    // Allow git client to end the session cleanly instead of
+    // giving "fatal: the remote end hung up unexpectedly"
+    res
+      .status(200)
+      .send(
+        Buffer.concat([
+          encodeSidebandChunk(SidebandBand.Progress, `\t${message}\n`),
+          statusReport,
+          Buffer.from(FLUSH_PACKET, 'ascii'),
+        ]),
+      );
+    return;
+  }
+
   res.status(200).send(handleMessage(message));
 };
+
+/**
+ * The reason git shows in its "! [remote rejected] <ref> (<reason>)" line
+ * for a push that GitProxy did not forward upstream.
+ * @param {Action} action The completed push action.
+ * @return {string} A short, single-line rejection reason.
+ */
+const rejectionReasonFor = (action: Action): string =>
+  action.error ? 'rejected by GitProxy' : 'approval required';
 
 const handleMessage = (message: string): string => {
   const packet = encodeSidebandChunk(SidebandBand.Progress, `\t${message}\n`);
@@ -324,12 +355,21 @@ const isReceivePackPost = (req: Request): boolean =>
  * Finish a response that has already started streaming sideband progress
  * @param {Response} res The in-progress streaming response
  * @param {string} message The final message to display in the client terminal
+ * @param {Buffer} [statusReport] Optional synthesized band-1 report-status,
+ * written before the final flush so the client ends the session cleanly.
  */
-const endStreamedResponseWithMessage = (res: Response, message: string): void => {
+const endStreamedResponseWithMessage = (
+  res: Response,
+  message: string,
+  statusReport?: Buffer,
+): void => {
   if (res.writableEnded) {
     return;
   }
   res.write(encodeSidebandChunk(SidebandBand.Progress, `\t${message}\n`));
+  if (statusReport) {
+    res.write(statusReport);
+  }
   res.write(FLUSH_PACKET);
   res.end();
 };
@@ -392,12 +432,15 @@ const UPSTREAM_HEADER_BLOCKLIST = [
  * @param {Request} req The client request (body must be a Buffer).
  * @param {Response} res The client response.
  * @param {URL} target The upstream URL to forward to.
+ * @param {Buffer} [failureStatusReport] Optional synthesized band-1 report-status
+ * appended when upstream fails after streaming started.
  * @return {Promise<void>} Resolves when the upstream response has been relayed.
  */
 const forwardReceivePackUpstream = async (
   req: Request,
   res: Response,
   target: URL,
+  failureStatusReport?: Buffer,
 ): Promise<void> => {
   if (!Buffer.isBuffer(req.body)) {
     res.status(400).send('Bad request');
@@ -434,6 +477,7 @@ const forwardReceivePackUpstream = async (
             endStreamedResponseWithMessage(
               res,
               `Push failed: upstream responded with status ${upstreamRes.statusCode}`,
+              failureStatusReport,
             );
             return;
           }
@@ -473,6 +517,7 @@ const createReceivePackHandler = (originsToProxy: string[]): RequestHandler => {
       return next();
     }
 
+    let action: Action | undefined;
     try {
       const urlComponents = processUrlPath(req.url);
       if (
@@ -492,31 +537,38 @@ const createReceivePackHandler = (originsToProxy: string[]): RequestHandler => {
         delete req.bodyRaw;
       }
 
-      const action = await executeChain(req, res);
+      action = await executeChain(req, res);
 
       if (action.error || action.blocked) {
         const message = action.errorMessage ?? action.blockedMessage ?? 'Unknown error';
         const type = action.error ? ActionType.ERROR : ActionType.BLOCKED;
+        const statusReport = buildRejectionReportStatus(action, rejectionReasonFor(action));
 
         logAction(req.url, req.headers.host, req.headers['user-agent'], type, message);
         if (res.headersSent) {
-          endStreamedResponseWithMessage(res, message);
+          endStreamedResponseWithMessage(res, message, statusReport);
         } else {
-          sendErrorResponse(req, res, message);
+          sendErrorResponse(req, res, message, statusReport);
         }
         return;
       }
 
       logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ALLOWED);
-      await forwardReceivePackUpstream(req, res, resolveUpstreamUrl(req, originsToProxy));
+      await forwardReceivePackUpstream(
+        req,
+        res,
+        resolveUpstreamUrl(req, originsToProxy),
+        buildRejectionReportStatus(action, 'upstream error'),
+      );
     } catch (error: unknown) {
       const message = handleErrorAndLog(error, 'Error processing git-receive-pack request');
+      const statusReport = buildRejectionReportStatus(action, 'internal error');
 
       logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ERROR, message);
       if (res.headersSent) {
-        endStreamedResponseWithMessage(res, message);
+        endStreamedResponseWithMessage(res, message, statusReport);
       } else {
-        sendErrorResponse(req, res, message);
+        sendErrorResponse(req, res, message, statusReport);
       }
     }
   };
