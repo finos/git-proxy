@@ -37,7 +37,11 @@ import {
   forwardReceivePackUpstream,
   endStreamedResponseWithMessage,
 } from '../src/proxy/routes';
-import { encodeSidebandChunk, SidebandBand } from '../src/proxy/sideband';
+import {
+  encodeSidebandChunk,
+  encodeRejectionReportStatus,
+  SidebandBand,
+} from '../src/proxy/sideband';
 
 import * as db from '../src/db';
 import { Service } from '../src/service';
@@ -723,6 +727,29 @@ describe('endStreamedResponseWithMessage', () => {
     expect(res.write).not.toHaveBeenCalled();
     expect(res.end).not.toHaveBeenCalled();
   });
+
+  it('should write the status report between the message and the final flush', () => {
+    const writes: Buffer[] = [];
+    const res = {
+      writableEnded: false,
+      write: vi.fn((chunk: Buffer | string) => {
+        writes.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        return true;
+      }),
+      end: vi.fn(),
+    } as unknown as Response;
+    const report = encodeRejectionReportStatus(['refs/heads/main'], 'approval required');
+
+    endStreamedResponseWithMessage(res, 'Push blocked', report);
+
+    const body = Buffer.concat(writes).toString('utf8');
+    expect(body).toContain('Push blocked\n');
+    expect(body).toContain('unpack ok\n');
+    expect(body).toContain('ng refs/heads/main approval required\n');
+    // synthesized report (with its inner flush) comes before the outer flush
+    expect(body.endsWith('0000' + '0000')).toBe(true);
+    expect(res.end).toHaveBeenCalledOnce();
+  });
 });
 
 describe('createReceivePackHandler', () => {
@@ -842,6 +869,78 @@ describe('createReceivePackHandler', () => {
     // eslint-disable-next-line no-control-regex
     expect(body).toMatch(/^[0-9a-f]{4}\x02\tPush blocked by policy\n0000$/);
     expect(mockRes.end).toHaveBeenCalledOnce();
+  });
+
+  it('should append a synthesized report-status when the client requested one (buffered)', async () => {
+    vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+      gitPath: '/finos/git-proxy.git/git-receive-pack',
+      repoPath: 'github.com',
+    });
+    vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+    vi.spyOn(chain, 'executeChain').mockResolvedValue({
+      error: false,
+      blocked: true,
+      blockedMessage: 'Push queued for approval',
+      capabilities: ['report-status', 'side-band-64k', 'agent=git/2.42.0'],
+      branch: 'refs/heads/main',
+    } as Action);
+
+    await handler(mockReq as Request, mockRes as Response, nextMock);
+
+    const sent = vi.mocked(mockRes.send!).mock.calls[0][0];
+    expect(Buffer.isBuffer(sent)).toBe(true);
+    const body = (sent as Buffer).toString('utf8');
+    expect(body).toContain('Push queued for approval');
+    expect(body).toContain('unpack ok\n');
+    expect(body).toContain('ng refs/heads/main approval required\n');
+    expect(body.endsWith('0000' + '0000')).toBe(true);
+  });
+
+  it('should append a synthesized report-status when the chain errored after streaming started', async () => {
+    vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+      gitPath: '/finos/git-proxy.git/git-receive-pack',
+      repoPath: 'github.com',
+    });
+    vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+    vi.spyOn(chain, 'executeChain').mockImplementation(async () => {
+      mockRes.headersSent = true;
+      return {
+        error: true,
+        blocked: false,
+        errorMessage: 'Secret detected',
+        capabilities: ['report-status-v2', 'side-band-64k'],
+        branch: 'refs/heads/feature',
+      } as Action;
+    });
+
+    await handler(mockReq as Request, mockRes as Response, nextMock);
+
+    expect(mockRes.send).not.toHaveBeenCalled();
+    const body = Buffer.concat(writes).toString('utf8');
+    expect(body).toContain('Secret detected');
+    expect(body).toContain('unpack ok\n');
+    expect(body).toContain('ng refs/heads/feature rejected by GitProxy\n');
+    expect(mockRes.end).toHaveBeenCalledOnce();
+  });
+
+  it('should not append a report-status when the client did not request one', async () => {
+    vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+      gitPath: '/finos/git-proxy.git/git-receive-pack',
+      repoPath: 'github.com',
+    });
+    vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+    vi.spyOn(chain, 'executeChain').mockResolvedValue({
+      error: false,
+      blocked: true,
+      blockedMessage: 'Push blocked by policy',
+      capabilities: ['side-band-64k'],
+      branch: 'refs/heads/main',
+    } as Action);
+
+    await handler(mockReq as Request, mockRes as Response, nextMock);
+
+    const sent = vi.mocked(mockRes.send!).mock.calls[0][0];
+    expect(sent.toString()).not.toContain('unpack ok');
   });
 
   it('should move the raw body onto req.body before invoking the chain', async () => {

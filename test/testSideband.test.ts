@@ -19,14 +19,21 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import {
   encodeSidebandChunk,
+  encodePacketLine,
+  encodeRejectionReportStatus,
+  buildRejectionReportStatus,
   SidebandBand,
   SidebandProgressWriter,
   NOOP_PROGRESS_WRITER,
   createProgressWriter,
 } from '../src/proxy/sideband';
-import { MAX_SIDEBAND_PAYLOAD_BYTES, SIDE_BAND_64K_CAPABILITY } from '../src/proxy/constants';
+import {
+  FLUSH_PACKET,
+  MAX_SIDEBAND_PAYLOAD_BYTES,
+  SIDE_BAND_64K_CAPABILITY,
+} from '../src/proxy/constants';
 import * as config from '../src/config';
-import { Action, RequestType } from '../src/proxy/actions';
+import { Action, RequestType, PushType } from '../src/proxy/actions';
 
 const createMockRes = () => {
   const writes: Buffer[] = [];
@@ -97,6 +104,118 @@ describe('encodeSidebandChunk', () => {
     expect(secondPacket.subarray(0, 4).toString('ascii')).toBe('000f');
     expect(secondPacket[4]).toBe(2);
     expect(secondPacket.subarray(5).toString('utf8')).toBe('b'.repeat(10));
+  });
+});
+
+describe('encodePacketLine', () => {
+  it('should prefix the payload with its 4-byte hex length', () => {
+    const packet = encodePacketLine('unpack ok\n');
+
+    // 4 length bytes + 10 payload bytes = 14 = 0x000e
+    expect(packet.toString('utf8')).toBe('000eunpack ok\n');
+  });
+});
+
+describe('encodeRejectionReportStatus', () => {
+  it('should wrap unpack ok, ng lines and an inner flush in a band-1 packet', () => {
+    const packet = encodeRejectionReportStatus(['refs/heads/main'], 'approval required');
+
+    expect(packet[4]).toBe(SidebandBand.Data);
+    const payload = packet.subarray(5).toString('utf8');
+    expect(payload).toBe(
+      '000eunpack ok\n' + '0029ng refs/heads/main approval required\n' + FLUSH_PACKET,
+    );
+  });
+
+  it('should emit one ng line per ref', () => {
+    const packet = encodeRejectionReportStatus(
+      ['refs/heads/main', 'refs/tags/v1.0.0'],
+      'rejected by GitProxy',
+    );
+    const payload = packet.subarray(5).toString('utf8');
+
+    expect(payload).toContain('ng refs/heads/main rejected by GitProxy\n');
+    expect(payload).toContain('ng refs/tags/v1.0.0 rejected by GitProxy\n');
+    expect(payload.endsWith(FLUSH_PACKET)).toBe(true);
+  });
+
+  it('should sanitize multi-line reasons into a single line', () => {
+    const packet = encodeRejectionReportStatus(['refs/heads/main'], 'first\nsecond\r\nthird');
+    const payload = packet.subarray(5).toString('utf8');
+
+    expect(payload).toContain('ng refs/heads/main first second third\n');
+  });
+
+  it('should fall back to a generic reason when the reason is empty', () => {
+    const packet = encodeRejectionReportStatus(['refs/heads/main'], '\n');
+    const payload = packet.subarray(5).toString('utf8');
+
+    expect(payload).toContain('ng refs/heads/main rejected\n');
+  });
+});
+
+describe('buildRejectionReportStatus', () => {
+  const reportAction = (overrides: Partial<Action> = {}): Action =>
+    pushAction({ branch: 'refs/heads/main', ...overrides });
+
+  it('should build a report for a branch push with report-status and side-band-64k', () => {
+    const report = buildRejectionReportStatus(reportAction(), 'approval required');
+
+    expect(report).toBeInstanceOf(Buffer);
+    expect(report!.subarray(5).toString('utf8')).toContain(
+      'ng refs/heads/main approval required\n',
+    );
+  });
+
+  it('should accept report-status-v2', () => {
+    const report = buildRejectionReportStatus(
+      reportAction({ capabilities: ['report-status-v2', SIDE_BAND_64K_CAPABILITY] }),
+      'approval required',
+    );
+
+    expect(report).toBeInstanceOf(Buffer);
+  });
+
+  it('should reject all tag refs for a tag push', () => {
+    const report = buildRejectionReportStatus(
+      reportAction({ actionType: PushType.TAG, tags: ['refs/tags/v1.0.0', 'refs/tags/v1.0.1'] }),
+      'rejected by GitProxy',
+    );
+
+    const payload = report!.subarray(5).toString('utf8');
+    expect(payload).toContain('ng refs/tags/v1.0.0 rejected by GitProxy\n');
+    expect(payload).toContain('ng refs/tags/v1.0.1 rejected by GitProxy\n');
+  });
+
+  it('should return undefined when the action is missing', () => {
+    expect(buildRejectionReportStatus(undefined, 'reason')).toBeUndefined();
+  });
+
+  it('should return undefined when side-band-64k was not negotiated', () => {
+    expect(
+      buildRejectionReportStatus(reportAction({ capabilities: ['report-status'] }), 'reason'),
+    ).toBeUndefined();
+  });
+
+  it('should return undefined when the client did not request a status report', () => {
+    expect(
+      buildRejectionReportStatus(
+        reportAction({ capabilities: [SIDE_BAND_64K_CAPABILITY] }),
+        'reason',
+      ),
+    ).toBeUndefined();
+  });
+
+  it('should return undefined when no refs are known', () => {
+    expect(
+      buildRejectionReportStatus(reportAction({ branch: undefined }), 'reason'),
+    ).toBeUndefined();
+    expect(
+      buildRejectionReportStatus(
+        reportAction({ actionType: PushType.TAG, branch: undefined, tags: [] }),
+        'reason',
+      ),
+    ).toBeUndefined();
   });
 });
 
