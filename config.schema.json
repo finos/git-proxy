@@ -297,6 +297,11 @@
       "description": "Flag to enable CSRF protections for UI",
       "type": "boolean"
     },
+    "collectAllChainErrors": {
+      "description": "When enabled, the push validation chain continues past recoverable check failures (commit messages, author e-mails, secret scanning, etc.) and reports every rejection reason in a single push, instead of stopping at the first failed check. Security and infrastructure failures still stop the chain immediately.",
+      "type": "boolean",
+      "default": true
+    },
     "plugins": {
       "type": "array",
       "description": "List of plugins to integrate on GitProxy's push or pull actions. Each value is either a file path or a module name.",

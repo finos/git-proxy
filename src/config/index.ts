@@ -41,6 +41,7 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'attestationConfig',
   'authentication',
   'authorisedList',
+  'collectAllChainErrors',
   'commitConfig',
   'configurationSources',
   'contactEmail',
@@ -430,6 +431,12 @@ export const getContactEmail = (): string | undefined => {
 export const getCSRFProtection = (): boolean | undefined => {
   const config = loadFullConfiguration();
   return config.csrfProtection;
+};
+
+// Whether the push chain continues past recoverable failures and reports all of them at once
+export const getCollectAllChainErrors = (): boolean => {
+  const config = loadFullConfiguration();
+  return config.collectAllChainErrors !== false;
 };
 
 // Get loadable push plugins

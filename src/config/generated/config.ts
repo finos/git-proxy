@@ -37,6 +37,13 @@ export interface GitProxyConfig {
    */
   authorisedList?: AuthorisedRepo[];
   /**
+   * When enabled, the push validation chain continues past recoverable check failures (commit
+   * messages, author e-mails, secret scanning, etc.) and reports every rejection reason in a
+   * single push, instead of stopping at the first failed check. Security and infrastructure
+   * failures still stop the chain immediately.
+   */
+  collectAllChainErrors?: boolean;
+  /**
    * Block commits based on rules defined over author/committer e-mail addresses, commit
    * message content and diff content
    */
@@ -886,6 +893,7 @@ const typeMap: any = {
         typ: u(undefined, a(r('AuthenticationElement'))),
       },
       { json: 'authorisedList', js: 'authorisedList', typ: u(undefined, a(r('AuthorisedRepo'))) },
+      { json: 'collectAllChainErrors', js: 'collectAllChainErrors', typ: u(undefined, true) },
       { json: 'commitConfig', js: 'commitConfig', typ: u(undefined, r('CommitConfig')) },
       { json: 'configurationSources', js: 'configurationSources', typ: u(undefined, 'any') },
       { json: 'contactEmail', js: 'contactEmail', typ: u(undefined, '') },
