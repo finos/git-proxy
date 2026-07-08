@@ -22,6 +22,7 @@ import * as proc from './processors';
 import { Processor } from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
+import { getCollectAllChainErrors } from '../config';
 
 const branchPushChain: Processor['exec'][] = [
   proc.push.checkEmptyBranch,
@@ -54,8 +55,30 @@ const tagPushChain: Processor['exec'][] = [
 const pullActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorisedList];
 
 const defaultActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorisedList];
+const collectibleSteps = new Set<Processor['exec']>([
+  proc.push.checkMessages,
+  proc.push.checkAuthorEmails,
+  proc.push.checkHiddenCommits,
+  proc.push.preReceive,
+  proc.push.gitleaks,
+  proc.push.scanDiff,
+]);
 
 let pluginsInserted = false;
+const composeErrorMessage = (action: Action): string | undefined => {
+  const messages = (action.steps ?? [])
+    .filter((step) => step.error && step.errorMessage)
+    .map((step) => (step.errorMessage as string).trim());
+
+  if (messages.length < 2) {
+    return undefined;
+  }
+
+  return (
+    `The following ${messages.length} checks failed:\n\n` +
+    messages.map((message, i) => `${i + 1}. ${message}`).join('\n\n')
+  );
+};
 
 export const executeChain = async (req: Request, _res: Response): Promise<Action> => {
   let action: Action = {} as Action;
@@ -71,15 +94,53 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
     // 3) Select the correct chain now that action.actionType is set
     const actionFns = await getChain(action);
 
+    const collectAll = getCollectAllChainErrors();
+    let collectedErrors = false;
+
     // 4) Execute each step in the selected chain
     for (const fn of actionFns) {
-      action = await fn(req, action);
-      if (!action.continue() || action.allowPush) {
+      // a push that already failed checks must not be queued for approval
+      if (fn === proc.push.blockForAuth && !action.continue()) {
         break;
-      } else if (fn === proc.push.pullRemote) {
+      }
+
+      const stepsBefore = action.steps?.length ?? 0;
+      action = await fn(req, action);
+
+      if (action.allowPush) {
+        break;
+      }
+
+      if (!action.continue()) {
+        if (action.blocked) {
+          break;
+        }
+
+        const failedNow = (action.steps ?? []).slice(stepsBefore).some((step) => step.error);
+        if (failedNow) {
+          // recoverable failures are recorded and the chain keeps running,
+          // so a single push reports every rejection reason at once
+          if (!(collectAll && collectibleSteps.has(fn))) {
+            break;
+          }
+          collectedErrors = true;
+        } else if (!collectedErrors) {
+          // error that predates the chain (e.g. produced while parsing the push)
+          break;
+        }
+      }
+
+      if (fn === proc.push.pullRemote) {
         //if the pull was successful then record the fact we need to clean it up again
         // pullRemote should cleanup unsuccessful clones itself
         checkoutCleanUpRequired = true;
+      }
+    }
+
+    if (collectedErrors) {
+      const combinedMessage = composeErrorMessage(action);
+      if (combinedMessage) {
+        action.errorMessage = combinedMessage;
       }
     }
   } catch (error: unknown) {
@@ -94,7 +155,8 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
 
     action = await proc.post.audit(req, action);
 
-    if (action.autoApproved) {
+    // a push that failed a later check must not be auto-approved
+    if (action.autoApproved && !action.error) {
       await attemptAutoApproval(action);
     } else if (action.autoRejected) {
       await attemptAutoRejection(action);
