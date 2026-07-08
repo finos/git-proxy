@@ -502,7 +502,7 @@ describe('proxy chain', function () {
 
       const result = await chain.executeChain({});
 
-      expect(result.errorMessage).toContain('rejected by 2 checks');
+      expect(result.errorMessage).toContain('The following 2 checks failed:');
       expect(result.errorMessage).toContain('bad commit message');
       expect(result.errorMessage).toContain('secret detected in diff');
     });
