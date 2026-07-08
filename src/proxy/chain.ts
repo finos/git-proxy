@@ -55,6 +55,17 @@ const tagPushChain: Processor['exec'][] = [
 const pullActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorisedList];
 
 const defaultActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorisedList];
+
+/**
+ * Steps whose failures are recoverable by the user (bad commit message, bad
+ * author e-mail, detected secret, etc). When collectAllChainErrors is enabled,
+ * a failure in one of these steps is recorded but the chain keeps running so
+ * that a single push reports every rejection reason at once.
+ *
+ * Steps not listed here stop the chain immediately when they fail
+ * such as repository authorisation, user push permission, or later steps
+ * depending on their output (pullRemote, writePack, getDiff)
+ */
 const collectibleSteps = new Set<Processor['exec']>([
   proc.push.checkMessages,
   proc.push.checkAuthorEmails,
@@ -65,6 +76,14 @@ const collectibleSteps = new Set<Processor['exec']>([
 ]);
 
 let pluginsInserted = false;
+
+/**
+ * Compose a single error message from all failed steps, so that the git
+ * client displays every rejection reason for the push.
+ * @param {Action} action The action whose failed steps are reported.
+ * @return {string | undefined} The combined message, or undefined when there
+ * are fewer than two failed steps (the single step message is kept as-is).
+ */
 const composeErrorMessage = (action: Action): string | undefined => {
   const messages = (action.steps ?? [])
     .filter((step) => step.error && step.errorMessage)

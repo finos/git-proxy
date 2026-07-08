@@ -454,6 +454,109 @@ describe('proxy chain', function () {
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error during auto-rejection: Database error');
   });
 
+  describe('error collection', () => {
+    // simulates a real processor failing
+    const failStep = (message: string) => async (req: any, action: any) => {
+      action.steps = [...(action.steps ?? []), { error: true, errorMessage: message }];
+      action.error = true;
+      action.continue = () => false;
+      return action;
+    };
+
+    const setupPushAction = () => {
+      const action = {
+        type: 'push',
+        steps: [],
+        continue: () => true,
+        allowPush: false,
+      };
+      mockPreProcessors.parseAction.mockResolvedValue(action);
+      mockPreProcessors.parsePush.mockResolvedValue(action);
+      return action;
+    };
+
+    it('should continue past recoverable failures and run the remaining checks', async () => {
+      setupPushAction();
+      mockPushProcessors.checkMessages.mockImplementation(failStep('bad commit message'));
+
+      const result = await chain.executeChain({});
+
+      // all later steps still ran
+      expect(mockPushProcessors.checkAuthorEmails).toHaveBeenCalled();
+      expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
+      expect(mockPushProcessors.pullRemote).toHaveBeenCalled();
+      expect(mockPushProcessors.writePack).toHaveBeenCalled();
+      expect(mockPushProcessors.getDiff).toHaveBeenCalled();
+      expect(mockPushProcessors.gitleaks).toHaveBeenCalled();
+      expect(mockPushProcessors.scanDiff).toHaveBeenCalled();
+
+      // but a failing push is never queued for approval
+      expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+      expect(result.error).toBe(true);
+    });
+
+    it('should report every collected failure in a single combined message', async () => {
+      setupPushAction();
+      mockPushProcessors.checkMessages.mockImplementation(failStep('bad commit message'));
+      mockPushProcessors.scanDiff.mockImplementation(failStep('secret detected in diff'));
+
+      const result = await chain.executeChain({});
+
+      expect(result.errorMessage).toContain('rejected by 2 checks');
+      expect(result.errorMessage).toContain('bad commit message');
+      expect(result.errorMessage).toContain('secret detected in diff');
+    });
+
+    it('should keep the original message when only one collectible step fails', async () => {
+      setupPushAction();
+      mockPushProcessors.checkAuthorEmails.mockImplementation(failStep('illegal author email'));
+
+      const result = await chain.executeChain({});
+
+      expect(result.errorMessage).toBeUndefined(); // addStep is mocked so chain must not overwrite
+      expect(result.steps).toHaveLength(1);
+      expect(result.steps[0].errorMessage).toBe('illegal author email');
+    });
+
+    it('should still stop immediately when a fatal step fails', async () => {
+      setupPushAction();
+      mockPushProcessors.checkUserPushPermission.mockImplementation(failStep('no push permission'));
+
+      await chain.executeChain({});
+
+      expect(mockPushProcessors.pullRemote).not.toHaveBeenCalled();
+      expect(mockPushProcessors.scanDiff).not.toHaveBeenCalled();
+      expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+    });
+
+    it('should stop at the first failure when collectAllChainErrors is disabled', async () => {
+      const config = await import('../src/config');
+      vi.spyOn(config, 'getCollectAllChainErrors').mockReturnValue(false);
+
+      setupPushAction();
+      mockPushProcessors.checkMessages.mockImplementation(failStep('bad commit message'));
+
+      await chain.executeChain({});
+
+      expect(mockPushProcessors.checkAuthorEmails).not.toHaveBeenCalled();
+      expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+    });
+
+    it('should not auto-approve a push that collected failures', async () => {
+      setupPushAction();
+      mockPushProcessors.checkMessages.mockImplementation(failStep('bad commit message'));
+      mockPushProcessors.preReceive.mockImplementation(async (req: any, action: any) => {
+        action.autoApproved = true;
+        return action;
+      });
+      const dbSpy = vi.spyOn(db, 'authorise');
+
+      await chain.executeChain({});
+
+      expect(dbSpy).not.toHaveBeenCalled();
+    });
+  });
+
   it('returns pullActionChain for pull actions', async () => {
     const action = new Action(
       '1',
