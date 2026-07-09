@@ -13,12 +13,14 @@
     "@docusaurus/core": "^3.10.0",
     "@docusaurus/plugin-google-gtag": "^3.10.0",
     "@docusaurus/preset-classic": "^3.10.0",
+    "@docusaurus/theme-mermaid": "^3.10.1",
+    "@mermaid-js/layout-elk": "^0.1.9",
     "ajv": "^8.17.1",
     "axios": "^1.13.4",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
-    "eslint": "^9.39.2",
-    "eslint-plugin-react": "^7.37.5",
+    "eslint": "^10.1.0",
+    "eslint-plugin-react": "^7.22.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-player": "^3.4.0",
@@ -42,6 +44,7 @@
   "overrides": {
     "serialize-javascript": "^7.0.5",
     "uuid": "^14.0.0",
-    "webpack": "~5.105.0"
+    "webpack": "~5.105.0",
+    "lodash": "^4.18.0"
   }
 }

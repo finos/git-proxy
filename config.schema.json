@@ -7,11 +7,31 @@
   "properties": {
     "proxyUrl": {
       "type": "string",
-      "description": "Deprecated: Used in early versions of git proxy to configure the remote host that traffic is proxied to. In later versions, the repository URL is used to determine the domain proxied, allowing multiple hosts to be proxied by one instance.",
+      "description": "Deprecated: Used in early versions of GitProxy to configure the remote host that traffic is proxied to. In later versions, the repository URL is used to determine the domain proxied, allowing multiple hosts to be proxied by one instance.",
       "deprecated": true
     },
     "cookieSecret": { "type": "string" },
     "sessionMaxAgeHours": { "type": "number" },
+    "serverPort": {
+      "type": "number",
+      "description": "Port the proxy HTTP server listens on. Can also be set with the GIT_PROXY_SERVER_PORT environment variable, which takes precedence over this value."
+    },
+    "httpsServerPort": {
+      "type": "number",
+      "description": "Port the proxy HTTPS server listens on. Can also be set with the GIT_PROXY_HTTPS_SERVER_PORT environment variable, which takes precedence over this value."
+    },
+    "uiHost": {
+      "type": "string",
+      "description": "Host of the GitProxy UI. Can also be set with the GIT_PROXY_UI_HOST environment variable, which takes precedence over this value."
+    },
+    "uiPort": {
+      "type": "number",
+      "description": "Port the GitProxy UI/service HTTP server listens on. Can also be set with the GIT_PROXY_UI_PORT environment variable, which takes precedence over this value."
+    },
+    "httpsUiPort": {
+      "type": "number",
+      "description": "Port the GitProxy UI/service HTTPS server listens on. Can also be set with the GIT_PROXY_HTTPS_UI_PORT environment variable, which takes precedence over this value."
+    },
     "api": {
       "description": "Third party APIs",
       "type": "object",
@@ -220,7 +240,7 @@
       "required": []
     },
     "domains": {
-      "description": "Provide custom URLs for the git proxy interfaces in case it cannot determine its own URL",
+      "description": "Provide custom URLs for the GitProxy interfaces in case it cannot determine its own URL",
       "type": "object",
       "properties": {
         "proxy": {
@@ -290,6 +310,17 @@
       "items": {
         "$ref": "#/definitions/authorisedRepo"
       }
+    },
+    "limits": {
+      "description": "Configuration for various limits",
+      "type": "object",
+      "properties": {
+        "maxPackSizeBytes": {
+          "type": "number",
+          "description": "Maximum size of a pack file in bytes (default 1GB)"
+        }
+      },
+      "additionalProperties": false
     },
     "sink": {
       "description": "List of database sources. The first source in the configuration with enabled=true will be used.",
@@ -367,6 +398,78 @@
           }
         }
       }
+    },
+    "ssh": {
+      "description": "SSH proxy server configuration. The proxy uses SSH agent forwarding to authenticate with remote Git servers (GitHub, GitLab, etc.) using the client's SSH keys. The proxy's own host key is auto-generated and only used to identify the proxy to connecting clients.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable SSH proxy server. When enabled, clients can connect via SSH and the proxy will forward their SSH agent to authenticate with remote Git servers."
+        },
+        "port": {
+          "type": "number",
+          "description": "Port for SSH proxy server to listen on. Clients connect to this port instead of directly to GitHub/GitLab.",
+          "default": 2222
+        },
+        "agentForwardingErrorMessage": {
+          "type": "string",
+          "description": "Custom error message shown when SSH agent forwarding is not enabled or no keys are loaded in the client's SSH agent. If not specified, a default message with git config commands will be shown. This allows organizations to customize instructions based on their security policies."
+        },
+        "debug": {
+          "type": "boolean",
+          "description": "Enable verbose SSH protocol debug logging (both for the local SSH server and for outbound connections to remote Git servers). Emits one log line per SSH packet, so leave disabled in production.",
+          "default": false
+        },
+        "hostKey": {
+          "type": "object",
+          "description": "Custom SSH host key paths. If not specified, a host key is auto-generated at .ssh/proxy_host_key.",
+          "properties": {
+            "privateKeyPath": {
+              "type": "string",
+              "description": "Path to the private key file (e.g. /etc/git-proxy/host_key)"
+            },
+            "publicKeyPath": {
+              "type": "string",
+              "description": "Path to the public key file (e.g. /etc/git-proxy/host_key.pub)"
+            }
+          },
+          "required": ["privateKeyPath", "publicKeyPath"],
+          "additionalProperties": false
+        },
+        "knownHosts": {
+          "type": "object",
+          "description": "SSH host key fingerprints for verifying remote Git servers, merged with built-in defaults for github.com and gitlab.com.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["enabled"],
+      "additionalProperties": false
+    },
+    "upstreamProxy": {
+      "description": "Configuration for routing outbound requests to upstream Git hosts via an HTTP(S) proxy.",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Whether to use an outbound HTTP(S) proxy for upstream Git hosts."
+        },
+        "url": {
+          "type": "string",
+          "description": "Proxy URL used for outbound connections to upstream Git hosts when set.",
+          "format": "uri"
+        },
+        "noProxy": {
+          "type": "array",
+          "description": "Additional hostnames or domain suffixes that should bypass the upstream proxy.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
     }
   },
   "definitions": {
@@ -451,7 +554,7 @@
             },
             "userGroup": {
               "type": "string",
-              "description": "Group that indicates that a user should be able to login to the Git Proxy UI and can work as a reviewer"
+              "description": "Group that indicates that a user should be able to login to the GitProxy UI and can work as a reviewer"
             },
             "domain": { "type": "string", "description": "Active Directory domain" },
             "adConfig": {

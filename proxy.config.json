@@ -1,6 +1,11 @@
 {
   "cookieSecret": "cookie secret",
   "sessionMaxAgeHours": 12,
+  "serverPort": 8000,
+  "httpsServerPort": 8443,
+  "uiHost": "http://localhost",
+  "uiPort": 8080,
+  "httpsUiPort": 8444,
   "rateLimit": {
     "windowMs": 60000,
     "limit": 1000
@@ -16,6 +21,9 @@
       "url": "https://github.com/finos/git-proxy.git"
     }
   ],
+  "limits": {
+    "maxPackSizeBytes": 1073741824
+  },
   "sink": [
     {
       "type": "fs",
@@ -156,6 +164,11 @@
       }
     }
   ],
+  "upstreamProxy": {
+    "enabled": false,
+    "url": "http://localhost:8081",
+    "noProxy": []
+  },
   "tls": {
     "enabled": false,
     "key": "certs/key.pem",
@@ -175,5 +188,13 @@
         "loginRequired": true
       }
     ]
+  },
+  "ssh": {
+    "enabled": false,
+    "port": 2222,
+    "knownHosts": {
+      "github.com": "SHA256:+DiY3wvvV6TuJJhbpZisF/zLDA0zPMSvHdkr4UvCOqU",
+      "gitlab.com": "SHA256:eUXGGm1YGsMAS7vkcx6JOJdOGHPem5gQp4taiCfCLB8"
+    }
   }
 }
