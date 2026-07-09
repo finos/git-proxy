@@ -66,32 +66,31 @@ const isMessageAllowed = (commitMessage: string, step: Step): boolean => {
   return true;
 };
 
-// Execute if the repo is approved
 const exec = async (_req: Request, action: Action): Promise<Action> => {
-  const step = new Step('checkCommitMessages');
+  const step = new Step('checkMessages');
 
-  const uniqueCommitMessages = [...new Set(action.commitData?.map((commit) => commit.message))];
+  const commitMessages = action.commitData?.map((commit) => commit.message) ?? [];
+  const tagMessages = action.tagData?.map((tag) => tag.message) ?? [];
+  const uniqueMessages = [...new Set([...commitMessages, ...tagMessages])];
 
-  const illegalMessages = uniqueCommitMessages.filter(
-    (message) => !isMessageAllowed(message, step),
-  );
+  const illegalMessages = uniqueMessages.filter((message) => !isMessageAllowed(message, step));
 
   if (illegalMessages.length > 0) {
     step.error = true;
-    step.log(`The following commit messages are illegal: ${illegalMessages}`);
+    step.log(`The following messages are illegal: ${illegalMessages}`);
     step.setError(
-      `\n\n\nYour push has been blocked.\nPlease ensure your commit message(s) does not contain sensitive information or URLs.\n\nThe following commit messages are illegal: ${JSON.stringify(illegalMessages)}\n\n`,
+      `\n\n\nYour push has been blocked.\nPlease ensure your commit/tag message(s) does not contain sensitive information or URLs.\n\nThe following messages are illegal: ${JSON.stringify(illegalMessages)}\n\n`,
     );
 
     action.addStep(step);
     return action;
   }
 
-  step.log(`The following commit messages are legal: ${uniqueCommitMessages}`);
+  step.log(`The following messages are legal: ${uniqueMessages}`);
   action.addStep(step);
   return action;
 };
 
-exec.displayName = 'checkCommitMessages.exec';
+exec.displayName = 'checkMessages.exec';
 
 export { exec };

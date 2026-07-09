@@ -22,7 +22,7 @@ import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
 import { getConfigFile } from './file';
-
+import { GIGABYTE } from '../constants';
 import { validateConfig } from './validators';
 import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
 
@@ -47,13 +47,20 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'cookieSecret',
   'csrfProtection',
   'domains',
+  'httpsServerPort',
+  'httpsUiPort',
+  'limits',
   'plugins',
   'privateOrganizations',
   'rateLimit',
+  'serverPort',
   'sessionMaxAgeHours',
   'sink',
   'tempPassword',
   'tls',
+  'ssh',
+  'uiHost',
+  'uiPort',
   'uiRouteAuth',
   'upstreamProxy',
   'urlShortener',
@@ -107,6 +114,22 @@ function cleanUndefinedValues(obj: any): any {
 }
 
 /**
+ * Resolve a numeric server setting, giving precedence to the environment
+ * variable (when set) over the user config file and then the default config,
+ * mirroring the handling of GIT_PROXY_COOKIE_SECRET.
+ */
+function resolveServerPort(
+  envValue: string | undefined,
+  userValue: number | undefined,
+  defaultValue: number | undefined,
+): number | undefined {
+  if (envValue !== undefined) {
+    return Number(envValue);
+  }
+  return userValue ?? defaultValue;
+}
+
+/**
  * Load and merge default + user configuration with QuickType validation
  * @return {FullGitProxyConfig} The merged and validated configuration
  */
@@ -118,7 +141,7 @@ function loadFullConfiguration(): FullGitProxyConfig {
   const rawDefaultConfig = Convert.toGitProxyConfig(JSON.stringify(defaultSettings));
 
   // Clean undefined values from defaultConfig
-  const defaultConfig = cleanUndefinedValues(rawDefaultConfig) as GitProxyConfig;
+  const defaultConfig = cleanUndefinedValues(rawDefaultConfig);
 
   let userSettings: Partial<GitProxyConfig> = {};
   const userConfigFile = process.env.CONFIG_FILE || getConfigFile();
@@ -178,11 +201,21 @@ function mergeConfigurations(
     // Deep merge for specific objects
     api: userSettings.api ? cleanUndefinedValues(userSettings.api) : defaultConfig.api,
     domains: { ...defaultConfig.domains, ...userSettings.domains },
+    limits:
+      defaultConfig.limits || userSettings.limits
+        ? { ...(defaultConfig.limits ?? {}), ...(userSettings.limits ?? {}) }
+        : undefined,
     commitConfig: { ...defaultConfig.commitConfig, ...userSettings.commitConfig },
     attestationConfig: { ...defaultConfig.attestationConfig, ...userSettings.attestationConfig },
     rateLimit: userSettings.rateLimit || defaultConfig.rateLimit,
     tls: tlsConfig,
     tempPassword: { ...defaultConfig.tempPassword, ...userSettings.tempPassword },
+    ssh: {
+      ...defaultConfig.ssh,
+      ...userSettings.ssh,
+      // Ensure enabled is always a boolean
+      enabled: userSettings.ssh?.enabled ?? defaultConfig.ssh?.enabled ?? false,
+    },
     // Preserve legacy SSL fields
     sslKeyPemPath: userSettings.sslKeyPemPath || defaultConfig.sslKeyPemPath,
     sslCertPemPath: userSettings.sslCertPemPath || defaultConfig.sslCertPemPath,
@@ -191,6 +224,28 @@ function mergeConfigurations(
       serverConfig.GIT_PROXY_COOKIE_SECRET ||
       userSettings.cookieSecret ||
       defaultConfig.cookieSecret,
+    // Server settings: environment variable takes precedence over the config file.
+    serverPort: resolveServerPort(
+      serverConfig.GIT_PROXY_SERVER_PORT,
+      userSettings.serverPort,
+      defaultConfig.serverPort,
+    ),
+    httpsServerPort: resolveServerPort(
+      serverConfig.GIT_PROXY_HTTPS_SERVER_PORT,
+      userSettings.httpsServerPort,
+      defaultConfig.httpsServerPort,
+    ),
+    uiHost: serverConfig.GIT_PROXY_UI_HOST || userSettings.uiHost || defaultConfig.uiHost,
+    uiPort: resolveServerPort(
+      serverConfig.GIT_PROXY_UI_PORT,
+      userSettings.uiPort,
+      defaultConfig.uiPort,
+    ),
+    httpsUiPort: resolveServerPort(
+      serverConfig.GIT_PROXY_HTTPS_UI_PORT,
+      userSettings.httpsUiPort,
+      defaultConfig.httpsUiPort,
+    ),
   };
 
   assertHasRequiredTopLevelConfig(config);
@@ -226,9 +281,29 @@ export const getAuthorisedList = () => {
   return config.authorisedList;
 };
 
-// Get GIT_PROXY_UI_PORT
+// Get the UI/service HTTP port
 export const getUIPort = (): number => {
-  return Number(serverConfig.GIT_PROXY_UI_PORT);
+  return loadFullConfiguration().uiPort;
+};
+
+// Get the proxy HTTP server port
+export const getServerPort = (): number => {
+  return loadFullConfiguration().serverPort;
+};
+
+// Get the proxy HTTPS server port
+export const getHttpsServerPort = (): number => {
+  return loadFullConfiguration().httpsServerPort;
+};
+
+// Get the UI host
+export const getUIHost = (): string => {
+  return loadFullConfiguration().uiHost;
+};
+
+// Get the UI/service HTTPS port
+export const getHttpsUIPort = (): number => {
+  return loadFullConfiguration().httpsUiPort;
 };
 
 // Gets a list of authorised repositories
@@ -391,6 +466,38 @@ export const getUIRouteAuth = () => {
 export const getRateLimit = () => {
   const config = loadFullConfiguration();
   return config.rateLimit;
+};
+
+export const getMaxPackSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  const configuredValue = config.limits?.maxPackSizeBytes;
+  const fallback = 1 * GIGABYTE; // 1 GiB default
+
+  if (
+    typeof configuredValue === 'number' &&
+    Number.isFinite(configuredValue) &&
+    configuredValue > 0
+  ) {
+    return configuredValue;
+  }
+
+  return fallback;
+};
+
+export const getSSHConfig = () => {
+  const defaultHostKey = {
+    privateKeyPath: '.ssh/proxy_host_key',
+    publicKeyPath: '.ssh/proxy_host_key.pub',
+  };
+
+  const config = loadFullConfiguration();
+  const sshConfig = config.ssh || { enabled: false };
+
+  if (sshConfig.enabled && !sshConfig.hostKey) {
+    sshConfig.hostKey = defaultHostKey;
+  }
+
+  return sshConfig;
 };
 
 // Function to handle configuration updates
