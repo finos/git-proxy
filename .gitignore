@@ -262,6 +262,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+.ssh/
+
 # Docusaurus website
 website/build
 website/.docusaurus
@@ -271,6 +273,10 @@ website/.docusaurus
 
 # Jetbrains IDE
 .idea
+
+# Test SSH keys (generated during tests)
+test/keys/
+test/.ssh/
 
 # VS COde IDE
 .vscode/settings.json

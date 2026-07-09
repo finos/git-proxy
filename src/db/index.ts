@@ -15,7 +15,7 @@
  */
 
 import { AuthorisedRepo } from '../config/generated/config';
-import { PushQuery, Repo, RepoQuery, Sink, User, UserQuery } from './types';
+import { PushQuery, Repo, RepoQuery, Sink, User, UserQuery, PublicKeyRecord } from './types';
 import * as bcrypt from 'bcryptjs';
 import * as config from '../config';
 import * as mongo from './mongo';
@@ -60,6 +60,7 @@ export const createUser = async (
   gitAccount: string,
   admin: boolean = false,
   oidcId: string = '',
+  mustChangePassword: boolean = false,
 ) => {
   console.log(
     `creating user
@@ -76,6 +77,7 @@ export const createUser = async (
     gitAccount: gitAccount,
     email: email,
     admin: admin,
+    mustChangePassword,
   };
 
   if (isBlank(username)) {
@@ -206,17 +208,25 @@ export const findUserByEmail = (email: string): Promise<User | null> =>
   start().findUserByEmail(email);
 export const findUserByOIDC = (oidcId: string): Promise<User | null> =>
   start().findUserByOIDC(oidcId);
+export const findUserBySSHKey = (sshKey: string): Promise<User | null> =>
+  start().findUserBySSHKey(sshKey);
 export const getUsers = (query?: Partial<UserQuery>): Promise<User[]> => start().getUsers(query);
 export const deleteUser = (username: string): Promise<void> => start().deleteUser(username);
 
 export const updateUser = (user: Partial<User>): Promise<void> => start().updateUser(user);
+export const addPublicKey = (username: string, publicKey: PublicKeyRecord): Promise<void> =>
+  start().addPublicKey(username, publicKey);
+export const removePublicKey = (username: string, fingerprint: string): Promise<void> =>
+  start().removePublicKey(username, fingerprint);
+export const getPublicKeys = (username: string): Promise<PublicKeyRecord[]> =>
+  start().getPublicKeys(username);
+
 /**
  * Collect the Set of all host (host and port if specified) that we
  * will be proxying requests for, to be used to initialize the proxy.
  *
  * @return {string[]} an array of origins
  */
-
 export const getAllProxiedHosts = async (): Promise<string[]> => {
   const repos = await getRepos();
   const origins = new Set<string>();
@@ -229,4 +239,4 @@ export const getAllProxiedHosts = async (): Promise<string[]> => {
   return Array.from(origins);
 };
 
-export type { PushQuery, Repo, Sink, User } from './types';
+export type { PushQuery, Repo, Sink, User, PublicKeyRecord } from './types';
