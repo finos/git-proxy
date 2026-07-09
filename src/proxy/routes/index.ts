@@ -86,6 +86,14 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
       return false;
     }
 
+    // the checks passed, but if the client vanished in the meantime (SIGINT, etc.)
+    // the push must not be forwarded on their behalf
+    if (req.socket?.destroyed) {
+      const message = 'Client disconnected before the push could be forwarded';
+      logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ERROR, message);
+      return false;
+    }
+
     logAction(req.url, req.headers.host, req.headers['user-agent'], ActionType.ALLOWED);
 
     // this is the only case where we do not respond directly, instead we return true to proxy the request
@@ -100,6 +108,12 @@ const proxyFilter: ProxyOptions['filter'] = async (req, res) => {
 };
 
 const sendErrorResponse = (req: Request, res: Response, message: string): void => {
+  // nobody is listening on a destroyed socket (e.g. git push killed mid-flight)
+  if (req.socket?.destroyed) {
+    console.log('Client disconnected before the response could be sent, skipping response');
+    return;
+  }
+
   // GET requests to /info/refs (used to check refs for many git operations) must use Git protocol error packet format
   if (req.method === 'GET' && req.url.includes('/info/refs')) {
     res.set('content-type', 'application/x-git-upload-pack-advertisement');
