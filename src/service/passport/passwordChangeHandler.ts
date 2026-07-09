@@ -14,19 +14,14 @@
  * limitations under the License.
  */
 
-import { Request } from 'express';
+import { RequestHandler } from 'express';
+import { mustChangePassword } from '../routes/utils';
 
-import { writeAudit } from '../../../db';
-import { Action, RequestType } from '../../actions';
-
-const exec = async (_req: Request, action: Action) => {
-  if (action.type !== RequestType.PULL) {
-    await writeAudit(action);
+export const passwordChangeHandler: RequestHandler = (req, res, next) => {
+  if (mustChangePassword(req.user)) {
+    return res.status(428).send({
+      message: 'Password change required before accessing this endpoint',
+    });
   }
-
-  return action;
+  return next();
 };
-
-exec.displayName = 'audit.exec';
-
-export { exec };
