@@ -392,6 +392,21 @@ describe('proxyFilter', () => {
       expect(mockReq.body).toEqual(Buffer.from('test data'));
       expect((mockReq as any).bodyRaw).toBeUndefined();
     });
+
+    it('should allow GET info/refs for a .git-less smart-HTTP path without mocking processUrlPath', async () => {
+      mockReq.url = '/github.com/finos/git-proxy/info/refs?service=git-upload-pack';
+      mockReq.method = 'GET';
+
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: false,
+      } as Action);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(true);
+      expect(sendMock).not.toHaveBeenCalled();
+    });
   });
 
   describe('Invalid requests', () => {

@@ -281,7 +281,7 @@ const proxyErrorHandler: ProxyOptions['proxyErrorHandler'] = (err, _res, next) =
 
 const isPackPost = (req: Request) =>
   req.method === 'POST' &&
-  /^(?:\/[^/]+)*\/[^/]+\.git\/(?:git-upload-pack|git-receive-pack)$/.test(req.url);
+  /^(?:\/[^/]+)*\/[^/]+(?:\.git)?\/(?:git-upload-pack|git-receive-pack)$/.test(req.url);
 
 const extractRawBody = async (req: Request, res: Response, next: NextFunction) => {
   if (!isPackPost(req)) {
