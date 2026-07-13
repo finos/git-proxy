@@ -17,10 +17,10 @@
 import { Request } from 'express';
 
 import { writeAudit } from '../../../db';
-import { Action } from '../../actions';
+import { Action, RequestType } from '../../actions';
 
 const exec = async (_req: Request, action: Action) => {
-  if (action.type !== 'pull') {
+  if (action.type !== RequestType.PULL) {
     await writeAudit(action);
   }
 
