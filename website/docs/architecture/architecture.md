@@ -472,7 +472,7 @@ npm run migrate:postgres -- --from fs --dataDir ./.data/db
 
 The importer reads the source with its own driver while writing through the active (postgres) sink, so the two connections never clash. It is idempotent: users and repos that already exist (matched by username/email and URL) are skipped, and pushes are upserted by id, so it is safe to re-run. Record `_id`s are not carried over; PostgreSQL assigns fresh UUIDs (push ids, which are text, are preserved).
 
-Notes and current limitations (issue #1497, v1):
+Notes and current limitations:
 
 - Schema is bootstrapped via `CREATE TABLE IF NOT EXISTS` at startup. No formal migration mechanism ships with this release.
 - Repo permissions (`canPush` / `canAuthorise`) are stored as a JSONB column on the `repos` table. A future PR may normalise these into a `repo_users` join table.
