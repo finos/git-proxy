@@ -504,7 +504,7 @@ For Amazon RDS or Aurora, GitProxy can authenticate with a short-lived IAM auth 
 - The database user must be granted the `rds_iam` role (`GRANT rds_iam TO gitproxy_iam;`).
 - IAM auth needs the optional `@aws-sdk/rds-signer` dependency, which installs by default. On a slim install (`npm install --omit=optional`) add it explicitly with `npm install @aws-sdk/rds-signer`.
 
-Notes and current limitations (issue #1497, v1):
+Notes and current limitations:
 
 - Schema is bootstrapped via `CREATE TABLE IF NOT EXISTS` at startup. No formal migration mechanism ships with this release.
 - Repo permissions (`canPush` / `canAuthorise`) are stored as a JSONB column on the `repos` table. A future PR may normalise these into a `repo_users` join table.
