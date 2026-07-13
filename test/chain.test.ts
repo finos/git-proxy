@@ -454,6 +454,90 @@ describe('proxy chain', function () {
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error during auto-rejection: Database error');
   });
 
+  describe('client disconnect detection', () => {
+    const newPushAction = () => {
+      const action = new Action(
+        'disconnect-test',
+        RequestType.PUSH,
+        'POST',
+        Date.now(),
+        'https://github.com/owner/repo.git',
+      );
+      mockPreProcessors.parseAction.mockResolvedValue(action);
+      mockPreProcessors.parsePush.mockResolvedValue(action);
+      return action;
+    };
+
+    it('should cancel the push when the HTTP client has already disconnected', async () => {
+      newPushAction();
+      const req = { socket: { destroyed: true } };
+
+      const result = await chain.executeChain(req);
+
+      expect(result.canceled).toBe(true);
+      expect(result.error).toBe(true);
+      expect(result.errorMessage).toContain('Client disconnected');
+
+      // no checks ran and the push was not queued for approval
+      expect(mockPushProcessors.checkRepoInAuthorisedList).not.toHaveBeenCalled();
+      expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+
+      // the canceled push is still audited
+      expect(mockPostProcessors.audit).toHaveBeenCalled();
+    });
+
+    it('should cancel the push when the HTTP client disconnects mid-chain', async () => {
+      newPushAction();
+      const req: any = { socket: { destroyed: false } };
+
+      // simulate the client vanishing while a check is running
+      mockPushProcessors.checkUserPushPermission.mockImplementation(async (r: any, action: any) => {
+        r.socket.destroyed = true;
+        return action;
+      });
+
+      const result = await chain.executeChain(req);
+
+      expect(result.canceled).toBe(true);
+      expect(result.error).toBe(true);
+
+      // steps before the disconnect ran, later steps did not
+      expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
+      expect(mockPushProcessors.pullRemote).not.toHaveBeenCalled();
+      expect(mockPushProcessors.scanDiff).not.toHaveBeenCalled();
+      expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+      expect(mockPostProcessors.audit).toHaveBeenCalled();
+    });
+
+    it('should cancel the push when the SSH client disconnects mid-chain', async () => {
+      newPushAction();
+      const sshClient = { disconnected: false };
+      const req: any = { isSSH: true, sshClient };
+
+      mockPushProcessors.checkMessages.mockImplementation(async (r: any, action: any) => {
+        sshClient.disconnected = true;
+        return action;
+      });
+
+      const result = await chain.executeChain(req);
+
+      expect(result.canceled).toBe(true);
+      expect(result.error).toBe(true);
+      expect(mockPushProcessors.checkAuthorEmails).not.toHaveBeenCalled();
+      expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+    });
+
+    it('should not cancel pushes for connected clients', async () => {
+      newPushAction();
+      const req = { socket: { destroyed: false } };
+
+      const result = await chain.executeChain(req);
+
+      expect(result.canceled).toBe(false);
+      expect(mockPushProcessors.blockForAuth).toHaveBeenCalled();
+    });
+  });
+
   it('returns pullActionChain for pull actions', async () => {
     const action = new Action(
       '1',

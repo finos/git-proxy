@@ -17,7 +17,7 @@
 import { Request, Response } from 'express';
 
 import { PluginLoader } from '../plugin';
-import { Action, RequestType, PushType } from './actions';
+import { Action, Step, RequestType, PushType } from './actions';
 import * as proc from './processors';
 import { Processor } from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
@@ -57,6 +57,28 @@ const defaultActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorised
 
 let pluginsInserted = false;
 
+const CLIENT_DISCONNECT_MESSAGE =
+  'Client disconnected while the push was being processed. Push canceled.';
+
+/**
+ * Detect whether the git client that initiated this request has disconnected
+ *
+ * For HTTPS, pack data is fully buffered before the chain runs,
+ * so we check for a destroyed socket (couldn't have been delivered anyway)
+ *
+ * For SSH we flag the ssh2 connection as disconnected by the SSH server
+ * on connection end/close events.
+ * @param {Request} req The request being processed by the chain.
+ * @return {boolean} true when the client is known to be gone.
+ */
+const isClientDisconnected = (req: Request): boolean => {
+  const sshReq = req as Request & { isSSH?: boolean; sshClient?: { disconnected?: boolean } };
+  if (sshReq.isSSH) {
+    return sshReq.sshClient?.disconnected === true;
+  }
+  return req.socket?.destroyed === true;
+};
+
 export const executeChain = async (req: Request, _res: Response): Promise<Action> => {
   let action: Action = {} as Action;
   let checkoutCleanUpRequired = false;
@@ -73,6 +95,18 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
 
     // 4) Execute each step in the selected chain
     for (const fn of actionFns) {
+      // cancel pushes on disconnect
+      if (action.type === RequestType.PUSH && isClientDisconnected(req)) {
+        console.log(`Client disconnected mid-push, canceling action ${action.id}`);
+        const step = new Step('clientDisconnected');
+        step.log(CLIENT_DISCONNECT_MESSAGE);
+        action.addStep(step);
+        action.canceled = true;
+        action.error = true;
+        action.errorMessage = CLIENT_DISCONNECT_MESSAGE;
+        break;
+      }
+
       action = await fn(req, action);
       if (!action.continue() || action.allowPush) {
         break;
