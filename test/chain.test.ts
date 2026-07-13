@@ -73,6 +73,10 @@ describe('proxy chain', function () {
     mockPushProcessors = initMockPushProcessors();
     mockPostProcessors = initMockPostProcessors();
 
+    // mockPreProcessors lives at module scope so needs manual reset
+    mockPreProcessors.parseAction.mockReset();
+    mockPreProcessors.parsePush.mockReset();
+
     // Mock the processors module
     vi.doMock('../src/proxy/processors', async () => ({
       pre: mockPreProcessors,
