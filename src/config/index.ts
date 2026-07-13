@@ -24,6 +24,7 @@ import { serverConfig } from './env';
 import { getConfigFile } from './file';
 import { GIGABYTE } from '../constants';
 import { validateConfig } from './validators';
+import { getDeprecatedConfigWarnings } from './deprecatedFields';
 import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
 
 export { setConfigFile, getConfigFile, validate } from './file';
@@ -156,6 +157,10 @@ function loadFullConfiguration(): FullGitProxyConfig {
     } catch (error: unknown) {
       handleErrorAndThrow(error, `Error loading user config from ${userConfigFile}`);
     }
+  }
+
+  for (const message of getDeprecatedConfigWarnings(userSettings)) {
+    console.warn(message);
   }
 
   _currentConfig = mergeConfigurations(defaultConfig, userSettings);
