@@ -468,7 +468,7 @@ Schema changes are applied by a small built-in migration runner (`src/db/postgre
 
 Migrations are an ordered, append-only list of SQL statements defined in code. Version 1 is the initial schema; because it uses `CREATE TABLE IF NOT EXISTS`, databases that were bootstrapped by earlier releases adopt the runner transparently (version 1 is simply recorded). To evolve the schema, append a new entry with the next version number; never edit or reorder migrations that have already shipped.
 
-Notes and current limitations (issue #1497, v1):
+Notes and current limitations:
 
 - All pending migrations run inside a single transaction, so a statement that cannot run transactionally (for example `CREATE INDEX CONCURRENTLY`) is not yet supported by the runner.
 - Repo permissions (`canPush` / `canAuthorise`) are normalised into a `repo_users(repo_id, username, role)` join table (`ON DELETE CASCADE` from `repos`); the adapter reconstructs the permission arrays on read.
