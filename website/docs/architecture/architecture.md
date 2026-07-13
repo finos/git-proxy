@@ -458,7 +458,7 @@ The `postgres` backend stores `users`, `repos`, `pushes`, and the `connect-pg-si
 
 If `connectionString` is omitted on the config entry, GitProxy falls back to the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable. This mirrors the behaviour of the mongo backend's `GIT_PROXY_MONGO_CONNECTION_STRING`.
 
-Notes and current limitations (issue #1497, v1):
+Notes and current limitations of this initial PostgreSQL sink:
 
 - Schema is bootstrapped via `CREATE TABLE IF NOT EXISTS` at startup. No formal migration mechanism ships with this release.
 - Repo permissions (`canPush` / `canAuthorise`) are stored as a JSONB column on the `repos` table. A future PR may normalise these into a `repo_users` join table.
