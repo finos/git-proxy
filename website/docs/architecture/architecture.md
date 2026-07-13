@@ -482,7 +482,7 @@ Connection precedence: `connectionString` (the config field, then `GIT_PROXY_POS
 }
 ```
 
-Notes and current limitations (issue #1497, v1):
+Notes and current limitations:
 
 - Schema is bootstrapped via `CREATE TABLE IF NOT EXISTS` at startup. No formal migration mechanism ships with this release.
 - Repo permissions (`canPush` / `canAuthorise`) are stored as a JSONB column on the `repos` table. A future PR may normalise these into a `repo_users` join table.
