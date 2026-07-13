@@ -229,6 +229,7 @@ Configures routing of outbound requests from the GitProxy server to upstream Git
 - **`enabled`** (boolean): When `true`, outbound connections to upstream Git hosts use the configured proxy. When `false`, the proxy is not used even if `url` or environment variables are set.
 - **`url`** (string): The HTTP(S) proxy URL (e.g. `http://proxy.corp.local:8080` or `http://user:pass@proxy.corp.local:8080`). If omitted, GitProxy falls back to the `HTTPS_PROXY`, `https_proxy`, `HTTP_PROXY` or `http_proxy` environment variables (first defined wins).
 - **`noProxy`** (array of strings, optional): Hostnames or domain suffixes for which the proxy should be bypassed (e.g. internal Git hosts). Combined with the `NO_PROXY` / `no_proxy` environment variable.
+- **`auth`** (object, optional): Credentials presented to the upstream proxy. Preferred over embedding credentials in `url` — keeps secrets out of log lines and process listings, and is required for schemes that can't be expressed as URL userinfo (NTLM). When `auth` is set, any userinfo in `url` is ignored. See [Upstream proxy authentication](#upstream-proxy-authentication) below.
 
 Example:
 
@@ -241,6 +242,57 @@ Example:
 ```
 
 If `upstreamProxy` is not configured, setting only `HTTPS_PROXY` (or `HTTP_PROXY`) in the environment will also enable use of that proxy for outbound connections, unless `enabled` is explicitly set to `false` in config.
+
+##### Upstream proxy authentication
+
+The `auth` object is a discriminated union on `type`. Two schemes are supported today:
+
+###### HTTP Basic — `type: "basic"`
+
+Stateless scheme. GitProxy sends `Proxy-Authorization: Basic base64(username:password)` on every CONNECT request to the upstream proxy. Use when the proxy advertises `Proxy-Authenticate: Basic`.
+
+- **`type`** (string): Must be `"basic"`.
+- **`username`** (string): Proxy username.
+- **`password`** (string): Proxy password.
+
+```json
+"upstreamProxy": {
+  "enabled": true,
+  "url": "http://proxy.corp.local:8080",
+  "auth": {
+    "type": "basic",
+    "username": "svc-gitproxy",
+    "password": "REPLACE_ME"
+  }
+}
+```
+
+> **Note** — Basic credentials are only base64-encoded, not encrypted. The connection to the upstream proxy must be trusted (TLS-protected, or a trusted internal network).
+
+###### NTLM — `type: "ntlm"`
+
+Microsoft NTLM challenge/response. GitProxy performs the full Type1 → Type2 → Type3 handshake on a single TCP socket to the proxy before tunneling each request. Use when the proxy advertises `Proxy-Authenticate: NTLM` — most commonly a Windows-based corporate proxy (Squid + winbind, Forefront TMG, Blue Coat, etc.).
+
+- **`type`** (string): Must be `"ntlm"`.
+- **`username`** (string): NTLM account username (without domain prefix).
+- **`password`** (string): NTLM account password.
+- **`domain`** (string, optional): Windows domain / NTLM target. Defaults to empty (the proxy decides).
+- **`workstation`** (string, optional): Workstation name reported in the Type1/Type3 messages. Defaults to the host's name.
+
+```json
+"upstreamProxy": {
+  "enabled": true,
+  "url": "http://proxy.corp.local:8080",
+  "auth": {
+    "type": "ntlm",
+    "username": "svc-gitproxy",
+    "password": "REPLACE_ME",
+    "domain": "CORP"
+  }
+}
+```
+
+> **Note** — NTLM is tied to the TCP connection. The handshake runs on every new socket; if the upstream proxy is load-balanced per-request rather than per-connection, NTLM will not work and you'll see repeated `407` responses.
 
 #### `commitConfig`
 

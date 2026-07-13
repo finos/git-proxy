@@ -26,8 +26,10 @@ import { getMaxPackSizeBytes } from '../../config';
 import { MEGABYTE } from '../../constants';
 import { handleErrorAndLog } from '../../utils/errors';
 import { getUpstreamProxyConfig } from '../../config';
+import { Auth, AuthType } from '../../config/generated/config';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import { OutgoingHttpHeaders, RequestOptions } from 'http';
+import { NtlmProxyAgent } from '../upstream/ntlm-proxy-agent';
+import http, { OutgoingHttpHeaders, RequestOptions } from 'http';
 
 enum ActionType {
   ALLOWED = 'Allowed',
@@ -199,13 +201,34 @@ const hostMatchesNoProxy = (host: string | null | undefined, noProxyList: string
   });
 };
 
+// Build a Proxy-Authorization header value from structured auth config.
+// Returns undefined when no header should be injected.
+const buildProxyAuthHeader = (auth: Auth | undefined): string | undefined => {
+  if (!auth) return undefined;
+  if (auth.type === AuthType.Basic) {
+    const encoded = Buffer.from(`${auth.username}:${auth.password}`).toString('base64');
+    return `Basic ${encoded}`;
+  }
+  return undefined;
+};
+
+// Stable fingerprint for the auth config used as part of the agent cache key.
+const fingerprintAuth = (auth: Auth | undefined): string => {
+  if (!auth) return '';
+  return JSON.stringify(auth);
+};
+
 // WARNING: proxyUrl may contain plaintext credentials in the userinfo portion
 // (e.g. http://user:pass@proxy.corp.local:8080). Never log it directly — use
 // redactProxyUrl() from config for any log statements involving this value.
-let _cachedProxyAgent: { proxyUrl: string; agent: HttpsProxyAgent<string> } | null = null;
+let _cachedProxyAgent: {
+  cacheKey: string;
+  agent: http.Agent;
+} | null = null;
 
-const getOrCreateProxyAgent = (proxyUrl: string): HttpsProxyAgent<string> => {
-  if (!_cachedProxyAgent || _cachedProxyAgent.proxyUrl !== proxyUrl) {
+const getOrCreateProxyAgent = (proxyUrl: string, auth?: Auth): http.Agent => {
+  const cacheKey = `${proxyUrl}:${fingerprintAuth(auth)}`;
+  if (!_cachedProxyAgent || _cachedProxyAgent.cacheKey !== cacheKey) {
     let parsed: URL;
     try {
       parsed = new URL(proxyUrl);
@@ -224,7 +247,38 @@ const getOrCreateProxyAgent = (proxyUrl: string): HttpsProxyAgent<string> => {
         `Invalid upstream proxy URL: hostname is missing — check your upstreamProxy.url config or HTTPS_PROXY env var`,
       );
     }
-    _cachedProxyAgent = { proxyUrl, agent: new HttpsProxyAgent(proxyUrl) };
+
+    if (auth?.type === AuthType.NTLM) {
+      _cachedProxyAgent = {
+        cacheKey,
+        agent: new NtlmProxyAgent({
+          proxy: proxyUrl,
+          username: auth.username,
+          password: auth.password,
+          domain: auth.domain,
+          workstation: auth.workstation,
+        }),
+      };
+      return _cachedProxyAgent.agent;
+    }
+
+    const authHeader = buildProxyAuthHeader(auth);
+
+    // When structured auth is provided, strip URL userinfo so the structured
+    // config wins. Otherwise https-proxy-agent would overwrite our header with
+    // base64(URL userinfo) on every CONNECT.
+    let agentUrl = proxyUrl;
+    if (authHeader && (parsed.username || parsed.password)) {
+      parsed.username = '';
+      parsed.password = '';
+      agentUrl = parsed.toString();
+    }
+
+    const agent = authHeader
+      ? new HttpsProxyAgent(agentUrl, { headers: { 'Proxy-Authorization': authHeader } })
+      : new HttpsProxyAgent(agentUrl);
+
+    _cachedProxyAgent = { cacheKey, agent };
   }
   return _cachedProxyAgent.agent;
 };
@@ -234,7 +288,7 @@ const buildUpstreamProxyAgent = (
     headers: OutgoingHttpHeaders;
   },
 ) => {
-  const { enabled, url, noProxy } = getUpstreamProxyConfig();
+  const { enabled, url, noProxy, auth } = getUpstreamProxyConfig();
 
   const proxyUrl = url || getEnvProxyUrl();
 
@@ -251,7 +305,7 @@ const buildUpstreamProxyAgent = (
     return undefined;
   }
 
-  return getOrCreateProxyAgent(proxyUrl);
+  return getOrCreateProxyAgent(proxyUrl, auth);
 };
 
 const proxyReqOptDecorator: ProxyOptions['proxyReqOptDecorator'] = (proxyReqOpts, _srcReq) => {
