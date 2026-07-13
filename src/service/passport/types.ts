@@ -53,3 +53,11 @@ export type ADProfileJson = {
 };
 
 export type ADVerifyCallback = (err: Error | null, user: ADProfile | null) => void;
+
+export type DefaultLocalUser = {
+  username: string;
+  password: string;
+  email: string;
+  gitAccount: string;
+  admin: boolean;
+};
