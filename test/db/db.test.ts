@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
-import { SAMPLE_REPO } from '../../src/proxy/processors/constants';
+import { SAMPLE_REPO } from '../../src/proxy/constants';
 
 vi.mock('../../src/db/mongo', () => ({
   getRepoByUrl: vi.fn(),

@@ -22,7 +22,7 @@ import { Service } from '../src/service';
 import { Proxy } from '../src/proxy';
 import { Express } from 'express';
 import { Action } from '../src/proxy/actions/Action';
-import { EMPTY_COMMIT_HASH } from '../src/proxy/processors/constants';
+import { EMPTY_COMMIT_HASH } from '../src/proxy/constants';
 
 // dummy repo
 const TEST_ORG = 'finos';
