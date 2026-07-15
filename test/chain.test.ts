@@ -529,19 +529,6 @@ describe('proxy chain', function () {
       expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
     });
 
-    it('should stop at the first failure when collectAllChainErrors is disabled', async () => {
-      const config = await import('../src/config');
-      vi.spyOn(config, 'getCollectAllChainErrors').mockReturnValue(false);
-
-      setupPushAction();
-      mockPushProcessors.checkMessages.mockImplementation(failStep('bad commit message'));
-
-      await chain.executeChain({});
-
-      expect(mockPushProcessors.checkAuthorEmails).not.toHaveBeenCalled();
-      expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
-    });
-
     it('should not auto-approve a push that collected failures', async () => {
       setupPushAction();
       mockPushProcessors.checkMessages.mockImplementation(failStep('bad commit message'));

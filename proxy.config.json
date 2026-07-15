@@ -147,7 +147,6 @@
   "urlShortener": "",
   "contactEmail": "",
   "csrfProtection": true,
-  "collectAllChainErrors": true,
   "plugins": [],
   "apiAuthentication": [
     {

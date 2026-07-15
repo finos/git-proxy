@@ -22,7 +22,6 @@ import * as proc from './processors';
 import { Processor } from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
-import { getCollectAllChainErrors } from '../config';
 
 const branchPushChain: Processor['exec'][] = [
   proc.push.checkEmptyBranch,
@@ -58,9 +57,8 @@ const defaultActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorised
 
 /**
  * Steps whose failures are recoverable by the user (bad commit message, bad
- * author e-mail, detected secret, etc). When collectAllChainErrors is enabled,
- * a failure in one of these steps is recorded but the chain keeps running so
- * that a single push reports every rejection reason at once.
+ * author e-mail, detected secret, etc). Failures in these steps are recorded
+ * but the chain keeps running so rejection reasons are reported at once.
  *
  * Steps not listed here stop the chain immediately when they fail
  * such as repository authorisation, user push permission, or later steps
@@ -69,7 +67,6 @@ const defaultActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorised
 const collectibleSteps = new Set<Processor['exec']>([
   proc.push.checkMessages,
   proc.push.checkAuthorEmails,
-  proc.push.checkHiddenCommits,
   proc.push.preReceive,
   proc.push.gitleaks,
   proc.push.scanDiff,
@@ -113,7 +110,6 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
     // 3) Select the correct chain now that action.actionType is set
     const actionFns = await getChain(action);
 
-    const collectAll = getCollectAllChainErrors();
     let collectedErrors = false;
 
     // 4) Execute each step in the selected chain
@@ -139,7 +135,7 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
         if (failedNow) {
           // recoverable failures are recorded and the chain keeps running,
           // so a single push reports every rejection reason at once
-          if (!(collectAll && collectibleSteps.has(fn))) {
+          if (!collectibleSteps.has(fn)) {
             break;
           }
           collectedErrors = true;
