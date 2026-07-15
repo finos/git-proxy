@@ -19,12 +19,12 @@ import { Request, Response } from 'express';
 import { PluginLoader } from '../plugin';
 import { Action, RequestType, PushType } from './actions';
 import * as proc from './processors';
-import { Processor } from './processors/types';
+import { ProcessorExec } from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
 import { createProgressWriter } from './sideband';
 
-const branchPushChain: Processor['exec'][] = [
+const branchPushChain: ProcessorExec[] = [
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkMessages,
@@ -41,7 +41,7 @@ const branchPushChain: Processor['exec'][] = [
   proc.push.blockForAuth,
 ];
 
-const tagPushChain: Processor['exec'][] = [
+const tagPushChain: ProcessorExec[] = [
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkUserPushPermission,
   proc.push.checkIfWaitingAuth,
@@ -52,26 +52,9 @@ const tagPushChain: Processor['exec'][] = [
   proc.push.blockForAuth,
 ];
 
-const pullActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorisedList];
+const pullActionChain: ProcessorExec[] = [proc.push.checkRepoInAuthorisedList];
 
-const defaultActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorisedList];
-
-/**
- * Steps whose failures are recoverable by the user (bad commit message, bad
- * author e-mail, detected secret, etc). Failures in these steps are recorded
- * but the chain keeps running so rejection reasons are reported at once.
- *
- * Steps not listed here stop the chain immediately when they fail
- * such as repository authorisation, user push permission, or later steps
- * depending on their output (pullRemote, writePack, getDiff)
- */
-const collectibleSteps = new Set<Processor['exec']>([
-  proc.push.checkMessages,
-  proc.push.checkAuthorEmails,
-  proc.push.preReceive,
-  proc.push.gitleaks,
-  proc.push.scanDiff,
-]);
+const defaultActionChain: ProcessorExec[] = [proc.push.checkRepoInAuthorisedList];
 
 let pluginsInserted = false;
 
@@ -116,11 +99,11 @@ const stepProgressLabels: Record<string, string> = {
 
 /**
  * Obtain the message to display before a chain step.
- * @param {Processor['exec']} fn The chain step about to be executed.
+ * @param {ProcessorExec} fn The chain step about to be executed.
  * @return {string} The message to display.
  */
-const getProgressMessage = (fn: Processor['exec']): string => {
-  const displayName = (fn as { displayName?: string }).displayName;
+const getProgressMessage = (fn: ProcessorExec): string => {
+  const { displayName } = fn;
   if (displayName && stepProgressLabels[displayName]) {
     return stepProgressLabels[displayName];
   }
@@ -170,9 +153,9 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
 
         const failedNow = (action.steps ?? []).slice(stepsBefore).some((step) => step.error);
         if (failedNow) {
-          // recoverable failures are recorded and the chain keeps running,
-          // so a single push reports every rejection reason at once
-          if (!collectibleSteps.has(fn)) {
+          // collectible steps have their failures can report all their
+          // rejection reasons at once, non-collectible steps fail immediately
+          if (!fn.isCollectible) {
             break;
           }
           collectedErrors = true;
@@ -224,7 +207,7 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
  */
 let chainPluginLoader: PluginLoader;
 
-export const getChain = async (action: Action): Promise<Processor['exec'][]> => {
+export const getChain = async (action: Action): Promise<ProcessorExec[]> => {
   if (chainPluginLoader === undefined) {
     console.error(
       'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',
