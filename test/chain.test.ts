@@ -27,23 +27,26 @@ const mockLoader = {
   ],
 };
 
+const collectibleFn = () => Object.assign(vi.fn(), { isCollectible: true });
+const nonCollectibleFn = () => Object.assign(vi.fn(), { isCollectible: false });
+
 const initMockPushProcessors = () => {
   return {
-    checkEmptyBranch: vi.fn(),
-    checkRepoInAuthorisedList: vi.fn(),
-    checkMessages: vi.fn(),
-    checkAuthorEmails: vi.fn(),
-    checkUserPushPermission: vi.fn(),
-    checkIfWaitingAuth: vi.fn(),
-    checkHiddenCommits: vi.fn(),
-    pullRemote: vi.fn(),
-    writePack: vi.fn(),
-    preReceive: vi.fn(),
-    getDiff: vi.fn(),
-    gitleaks: vi.fn(),
-    clearBareClone: vi.fn(),
-    scanDiff: vi.fn(),
-    blockForAuth: vi.fn(),
+    checkEmptyBranch: nonCollectibleFn(),
+    checkRepoInAuthorisedList: nonCollectibleFn(),
+    checkMessages: collectibleFn(),
+    checkAuthorEmails: collectibleFn(),
+    checkUserPushPermission: nonCollectibleFn(),
+    checkIfWaitingAuth: nonCollectibleFn(),
+    checkHiddenCommits: nonCollectibleFn(),
+    pullRemote: nonCollectibleFn(),
+    writePack: nonCollectibleFn(),
+    preReceive: collectibleFn(),
+    getDiff: nonCollectibleFn(),
+    gitleaks: collectibleFn(),
+    clearBareClone: nonCollectibleFn(),
+    scanDiff: collectibleFn(),
+    blockForAuth: nonCollectibleFn(),
   };
 };
 
