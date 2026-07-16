@@ -20,7 +20,7 @@ import { describe, it, beforeAll, afterAll } from 'vitest';
 
 import { setConfigFile } from '../../../src/config/file';
 import { invalidateCache } from '../../../src/config';
-import { SAMPLE_REPO } from '../../../src/proxy/processors/constants';
+import { SAMPLE_REPO } from '../../../src/proxy/constants';
 import { handleErrorAndLog } from '../../../src/utils/errors';
 
 setConfigFile(
