@@ -102,7 +102,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
       step.log(
         `No git-proxy user has gitAccount '${identity.login}' — ` +
           `falling back to SCM identity. ` +
-          `Users can associate their account via PUT /api/v1/user/:username/git-account`,
+          `Users can associate their account via POST /api/auth/gitAccount`,
       );
       action.user = identity.login;
     }
