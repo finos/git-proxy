@@ -4,16 +4,16 @@ This file lists the maintainers of this repository.
 
 ## Current maintainers
 
-| GitHub Username | Name           | Organization                       | Email                       |
-| --------------- | -------------- | ---------------------------------- | --------------------------- |
-| @06kellyjac     | j-k            | @controlplaneio                    | jack+finos@control-plane.io |
-| @andypols       | Andy Pols      | Qube Research & Technologies (QRT) | andrew.pols@qube-rt.com     |
-| @coopernetes    | Thomas Cooper  | @RBC                               | thomas.cooper@rbc.com       |
-| @dcoric         | Denis Coric    | G-Research Open Source Software    | denis@gr-oss.io             |
-| @fabiovincenzi  | Fabio Vincenzi | G-Research Open Source Software    | fabio.vincenzi@gr-oss.io    |
-| @grovesy        | Paul Groves    | Citi                               | paul.groves@citi.com        |
-| @jescalada      | Juan Escalada  | G-Research Open Source Software    | juan.escalada@gr-oss.io     |
-| @kriswest       | Kris West      | NatWest Group                      | kristopher.west@natwest.com |
+| GitHub Username | Name           | Organization                       | Email                        |
+| --------------- | -------------- | ---------------------------------- | ---------------------------- |
+| @06kellyjac     | j-k            | @controlplaneio                    | jack+finos@control-plane.io  |
+| @andypols       | Andy Pols      | Qube Research & Technologies (QRT) | andrew.pols@qube-rt.com      |
+| @coopernetes    | Thomas Cooper  | @RBC                               | thomas.cooper@rbc.com        |
+| @dcoric         | Denis Coric    | G-Research Open Source Software    | denis85@gmail.com            |
+| @fabiovincenzi  | Fabio Vincenzi | G-Research Open Source Software    | fabio.vincenzi2001@gmail.com |
+| @grovesy        | Paul Groves    | Citi                               | paul.groves@citi.com         |
+| @jescalada      | Juan Escalada  | G-Research Open Source Software    | juanescalada175@gmail.com    |
+| @kriswest       | Kris West      | NatWest Group                      | kristopher.west@natwest.com  |
 
 For information about maintainer responsibilities and resources, see the [FINOS Maintainers Cheatsheet](https://community.finos.org/docs/finos-maintainers-cheatsheet).
 
