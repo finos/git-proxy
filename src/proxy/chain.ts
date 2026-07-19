@@ -25,6 +25,7 @@ import { handleErrorAndLog } from '../utils/errors';
 import { createProgressWriter } from './sideband';
 
 const branchPushChain: ProcessorExec[] = [
+  proc.push.resolveUserFromToken,
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkMessages,

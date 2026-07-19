@@ -37,6 +37,7 @@ const initMockPushProcessors = () => {
     checkMessages: collectibleFn(),
     checkAuthorEmails: collectibleFn(),
     checkUserPushPermission: nonCollectibleFn(),
+    resolveUserFromToken: nonCollectibleFn(),
     checkIfWaitingAuth: nonCollectibleFn(),
     checkHiddenCommits: nonCollectibleFn(),
     pullRemote: nonCollectibleFn(),
