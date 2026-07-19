@@ -198,8 +198,8 @@
     "supertest": "^7.2.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "typescript-eslint": "^8.54.0",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.1",
     "vite": "^8.0.14",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
