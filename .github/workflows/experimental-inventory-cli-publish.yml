@@ -30,8 +30,10 @@ jobs:
 
       - name: check version matches input
         run: |
-          grep "\"version\": \"${{ github.event.inputs.version }}\"," package.json
+          grep "\"version\": \"${GITHUB_EVENT_INPUTS_VERSION}\"," package.json
         working-directory: ./experimental/li-cli
+        env:
+          GITHUB_EVENT_INPUTS_VERSION: ${{ github.event.inputs.version }}
 
       - run: npm ci
         working-directory: ./experimental/li-cli

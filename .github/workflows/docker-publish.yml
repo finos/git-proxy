@@ -41,7 +41,7 @@ jobs:
         id: tags
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
-            echo "tags=${{ github.repository }}:${{ github.ref_name }},${{ github.repository }}:latest" >> $GITHUB_OUTPUT
+            echo "tags=${{ github.repository }}:${GITHUB_REF_NAME},${{ github.repository }}:latest" >> $GITHUB_OUTPUT
           else
             echo "tags=${{ github.repository }}:main" >> $GITHUB_OUTPUT
           fi
