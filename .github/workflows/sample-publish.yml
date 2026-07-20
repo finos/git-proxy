@@ -3,6 +3,8 @@ name: Publish samples to NPM
 on:
   push:
     tags:
+      # False positive: setup-node step doesn't use cache input
+      # zizmor: ignore[cache-poisoning]
       - 'sample-*'
 
 permissions:

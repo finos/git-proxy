@@ -1,6 +1,8 @@
 name: Publish to NPM
 on:
   release:
+    # False positive: setup-node step doesn't use cache input
+    # zizmor: ignore[cache-poisoning]
     types: [published]
 permissions:
   contents: read
