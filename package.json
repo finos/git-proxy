@@ -115,7 +115,7 @@
     "axios": "^1.13.4",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
-    "concurrently": "^10.0.3",
+    "concurrently": "^9.2.4",
     "connect-mongo": "^6.0.0",
     "cors": "^2.8.6",
     "diff2html": "^3.4.56",
