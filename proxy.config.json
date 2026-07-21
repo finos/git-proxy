@@ -147,6 +147,7 @@
   "urlShortener": "",
   "contactEmail": "",
   "csrfProtection": true,
+  "sidebandProgress": true,
   "plugins": [],
   "eventHandlers": [],
   "apiAuthentication": [

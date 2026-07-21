@@ -48,6 +48,7 @@ describe('MongoDB User', async () => {
   const {
     findUser,
     findUserByEmail,
+    findUserByGitAccount,
     findUserByOIDC,
     getUsers,
     deleteUser,
@@ -136,6 +137,39 @@ describe('MongoDB User', async () => {
       mockFindOne.mockResolvedValue(null);
 
       const result = await findUserByEmail('nonexistent@example.com');
+
+      expect(result).toBeNull();
+      expect(mockToClass).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findUserByGitAccount', () => {
+    it('should find user by git account', async () => {
+      const userData = { ...TEST_USER, gitAccount: 'octocat' };
+      mockFindOne.mockResolvedValue(userData);
+      mockToClass.mockReturnValue(userData);
+
+      const result = await findUserByGitAccount('Octocat');
+
+      expect(mockConnect).toHaveBeenCalledWith('users');
+      expect(mockFindOne).toHaveBeenCalledWith({ gitAccount: { $eq: 'octocat' } });
+      expect(mockToClass).toHaveBeenCalledWith(userData, User.prototype);
+      expect(result).toEqual(userData);
+    });
+
+    it('should convert git account to lowercase', async () => {
+      mockFindOne.mockResolvedValue(TEST_USER);
+      mockToClass.mockReturnValue(TEST_USER);
+
+      await findUserByGitAccount('UPPERCASE');
+
+      expect(mockFindOne).toHaveBeenCalledWith({ gitAccount: { $eq: 'uppercase' } });
+    });
+
+    it('should return null when user not found', async () => {
+      mockFindOne.mockResolvedValue(null);
+
+      const result = await findUserByGitAccount('nonexistent');
 
       expect(result).toBeNull();
       expect(mockToClass).not.toHaveBeenCalled();

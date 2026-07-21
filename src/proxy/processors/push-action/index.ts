@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import { exec as parsePush } from './parsePush';
 import { exec as preReceive } from './preReceive';
 import { exec as checkRepoInAuthorisedList } from './checkRepoInAuthorisedList';
 
@@ -26,14 +25,14 @@ import { exec as gitleaks } from './gitleaks';
 import { exec as scanDiff } from './scanDiff';
 import { exec as blockForAuth } from './blockForAuth';
 import { exec as checkIfWaitingAuth } from './checkIfWaitingAuth';
-import { exec as checkCommitMessages } from './checkCommitMessages';
+import { exec as checkMessages } from './checkMessages';
 import { exec as checkAuthorEmails } from './checkAuthorEmails';
 import { exec as checkUserPushPermission } from './checkUserPushPermission';
+import { exec as resolveUserFromToken } from './resolveUserFromToken';
 
 import { exec as checkEmptyBranch } from './checkEmptyBranch';
 
 export {
-  parsePush,
   preReceive,
   checkRepoInAuthorisedList,
   pullRemote,
@@ -44,8 +43,9 @@ export {
   scanDiff,
   blockForAuth,
   checkIfWaitingAuth,
-  checkCommitMessages,
+  checkMessages,
   checkAuthorEmails,
   checkUserPushPermission,
+  resolveUserFromToken,
   checkEmptyBranch,
 };

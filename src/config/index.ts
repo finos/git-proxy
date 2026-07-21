@@ -56,6 +56,7 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'rateLimit',
   'serverPort',
   'sessionMaxAgeHours',
+  'sidebandProgress',
   'sink',
   'tempPassword',
   'tls',
@@ -489,6 +490,16 @@ export const getMaxPackSizeBytes = (): number => {
   }
 
   return fallback;
+};
+
+/**
+ * Whether per-step validation progress should be streamed to the git client's
+ * terminal during a push using git sideband channel 2.
+ * @return {boolean} true when sideband progress streaming is enabled
+ */
+export const getSidebandProgressEnabled = (): boolean => {
+  const config = loadFullConfiguration();
+  return config.sidebandProgress ?? true;
 };
 
 export const getSSHConfig = () => {

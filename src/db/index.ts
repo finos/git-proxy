@@ -60,6 +60,7 @@ export const createUser = async (
   gitAccount: string,
   admin: boolean = false,
   oidcId: string = '',
+  mustChangePassword: boolean = false,
 ) => {
   console.log(
     `creating user
@@ -76,6 +77,7 @@ export const createUser = async (
     gitAccount: gitAccount,
     email: email,
     admin: admin,
+    mustChangePassword,
   };
 
   if (isBlank(username)) {
@@ -204,6 +206,8 @@ export const deleteRepo = (_id: string): Promise<void> => start().deleteRepo(_id
 export const findUser = (username: string): Promise<User | null> => start().findUser(username);
 export const findUserByEmail = (email: string): Promise<User | null> =>
   start().findUserByEmail(email);
+export const findUserByGitAccount = (gitAccount: string): Promise<User | null> =>
+  start().findUserByGitAccount(gitAccount);
 export const findUserByOIDC = (oidcId: string): Promise<User | null> =>
   start().findUserByOIDC(oidcId);
 export const findUserBySSHKey = (sshKey: string): Promise<User | null> =>

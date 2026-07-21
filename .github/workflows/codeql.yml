@@ -26,22 +26,22 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: audit
 
       - name: Checkout repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@72c0b0efb7def5141326c5e13760acdda431379d # ratchet:github/codeql-action/init@v4
+        uses: github/codeql-action/init@cf463419fdde78c727231e445622a9ac37966f84 # ratchet:github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@72c0b0efb7def5141326c5e13760acdda431379d # ratchet:github/codeql-action/autobuild@v4
+        uses: github/codeql-action/autobuild@cf463419fdde78c727231e445622a9ac37966f84 # ratchet:github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@72c0b0efb7def5141326c5e13760acdda431379d # ratchet:github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@cf463419fdde78c727231e445622a9ac37966f84 # ratchet:github/codeql-action/analyze@v4
         with:
           category: '/language:${{matrix.language}}'
