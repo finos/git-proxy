@@ -52,6 +52,7 @@ updates:
       semver-patch-days: 3
       semver-minor-days: 3
       semver-major-days: 7
+      default-days: 7
     open-pull-requests-limit: 10
     commit-message:
       prefix: 'chore'
