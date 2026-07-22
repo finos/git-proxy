@@ -96,32 +96,6 @@ export const removeUserCanAuthorise = async (_id: string, user: string): Promise
   );
 };
 
-/**
- * Backfill missing dateCreated/lastModified on existing Mongo repos.
- * Idempotent; safe to run on every startup.
- */
-export const backfillRepoDates = async (
-  fallbackIso = new Date(0).toISOString(),
-): Promise<number> => {
-  const collection = await connect(collectionName);
-  const result = await collection.updateMany(
-    {
-      $or: [{ dateCreated: { $exists: false } }, { lastModified: { $exists: false } }],
-    },
-    [
-      {
-        $set: {
-          dateCreated: { $ifNull: ['$dateCreated', fallbackIso] },
-          lastModified: {
-            $ifNull: ['$lastModified', { $ifNull: ['$dateCreated', fallbackIso] }],
-          },
-        },
-      },
-    ],
-  );
-  return result.modifiedCount;
-};
-
 export const deleteRepo = async (_id: string): Promise<void> => {
   const collection = await connect(collectionName);
   await collection.deleteMany({ _id: new ObjectId(_id) });

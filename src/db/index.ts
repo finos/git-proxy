@@ -37,17 +37,10 @@ const start = () => {
     if (config.getDatabase().type === 'mongo') {
       console.log('Loading MongoDB database adaptor');
       _sink = mongo;
-      // #1486: idempotent backfill for existing repos missing date fields
-      void mongo.backfillRepoDates().then((n) => {
-        if (n > 0) console.log(`Backfilled dateCreated/lastModified on ${n} repo(s)`);
-      });
     } else if (config.getDatabase().type === 'fs') {
       console.log('Loading neDB database adaptor');
       initializeFolders();
       _sink = neDb;
-      void neDb.backfillRepoDates().then((n) => {
-        if (n > 0) console.log(`Backfilled dateCreated/lastModified on ${n} repo(s)`);
-      });
     } else {
       console.error(`Unsupported database type: ${config.getDatabase().type}`);
       process.exit(1);
