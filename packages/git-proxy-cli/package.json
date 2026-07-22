@@ -9,8 +9,6 @@
     "dist"
   ],
   "dependencies": {
-    "axios": "^1.13.6",
-    "yargs": "^18.0.0",
     "@finos/git-proxy": "2.0.0"
   },
   "scripts": {
