@@ -5,6 +5,9 @@
   "bin": {
     "git-proxy-cli": "./dist/index.js"
   },
+  "files": [
+    "dist"
+  ],
   "dependencies": {
     "axios": "^1.13.6",
     "yargs": "^18.0.0",

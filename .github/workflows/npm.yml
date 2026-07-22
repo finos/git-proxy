@@ -24,7 +24,24 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: Check if pre-release and publish to NPM
+      - name: Build git-proxy-cli workspace
+        run: npm run build -w packages/git-proxy-cli
+
+      - name: Verify git-proxy-cli is in lockstep with the root package
+        run: |
+          ROOT_VERSION=$(node -p "require('./package.json').version")
+          CLI_VERSION=$(node -p "require('./packages/git-proxy-cli/package.json').version")
+          CLI_PIN=$(node -p "require('./packages/git-proxy-cli/package.json').dependencies['@finos/git-proxy']")
+          if [[ "$CLI_VERSION" != "$ROOT_VERSION" ]]; then
+            echo "Version mismatch: root=$ROOT_VERSION cli=$CLI_VERSION"
+            exit 1
+          fi
+          if [[ "$CLI_PIN" != "$ROOT_VERSION" ]]; then
+            echo "CLI pins @finos/git-proxy@$CLI_PIN but root is $ROOT_VERSION"
+            exit 1
+          fi
+
+      - name: Check if pre-release and publish @finos/git-proxy to NPM
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if [[ "$VERSION" == *"-"* ]]; then
@@ -33,4 +50,15 @@ jobs:
           else
             echo "Publishing stable release: $VERSION"
             npm publish --access=public
+          fi
+
+      - name: Check if pre-release and publish @finos/git-proxy-cli to NPM
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [[ "$VERSION" == *"-"* ]]; then
+            echo "Publishing pre-release: $VERSION"
+            npm publish -w packages/git-proxy-cli --access=public --tag rc
+          else
+            echo "Publishing stable release: $VERSION"
+            npm publish -w packages/git-proxy-cli --access=public
           fi
