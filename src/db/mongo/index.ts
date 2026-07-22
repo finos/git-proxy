@@ -33,7 +33,6 @@ export const {
   addUserCanAuthorise,
   removeUserCanPush,
   removeUserCanAuthorise,
-  backfillRepoDates,
   deleteRepo,
 } = repo;
 

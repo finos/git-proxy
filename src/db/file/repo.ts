@@ -230,48 +230,6 @@ export const removeUserCanPush = async (_id: string, user: string): Promise<void
   });
 };
 
-/**
- * Backfill missing dateCreated/lastModified on existing NeDB repos.
- * Idempotent: only updates docs missing either field. Called from adaptor init.
- */
-export const backfillRepoDates = async (
-  fallbackIso = new Date(0).toISOString(),
-): Promise<number> => {
-  return new Promise<number>((resolve, reject) => {
-    db.find(
-      { $or: [{ dateCreated: { $exists: false } }, { lastModified: { $exists: false } }] },
-      (err: Error | null, docs: Repo[]) => {
-        /* istanbul ignore if */
-        if (err) {
-          reject(err);
-          return;
-        }
-        let updated = 0;
-        const pending = docs.length;
-        if (pending === 0) {
-          resolve(0);
-          return;
-        }
-        docs.forEach((doc) => {
-          const patch = {
-            dateCreated: doc.dateCreated ?? fallbackIso,
-            lastModified: doc.lastModified ?? doc.dateCreated ?? fallbackIso,
-          };
-          db.update({ _id: doc._id }, { $set: patch }, {}, (updateErr) => {
-            /* istanbul ignore if */
-            if (updateErr) {
-              reject(updateErr);
-              return;
-            }
-            updated += 1;
-            if (updated === pending) resolve(updated);
-          });
-        });
-      },
-    );
-  });
-};
-
 export const deleteRepo = async (_id: string): Promise<void> => {
   return new Promise<void>((resolve, reject) => {
     db.remove({ _id: _id }, (err) => {

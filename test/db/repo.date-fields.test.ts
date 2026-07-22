@@ -18,13 +18,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as repoModule from '../../src/db/file/repo';
 import { Repo } from '../../src/db/types';
 
-vi.mock('../../src/db/mongo/helper', () => ({
-  connect: vi.fn(),
-}));
-
-import { connect } from '../../src/db/mongo/helper';
-import * as mongoRepo from '../../src/db/mongo/repo';
-
 describe('Repo dateCreated / lastModified (#1486)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -114,90 +107,5 @@ describe('Repo dateCreated / lastModified (#1486)', () => {
     );
 
     expect(sorted.map((r) => r.name)).toEqual(['stale', 'mid', 'fresh']);
-  });
-
-  it('NeDB backfillRepoDates fills missing fields without dropping other props', async () => {
-    const docs: Repo[] = [
-      {
-        project: 'finos',
-        name: 'legacy',
-        url: 'https://github.com/finos/legacy.git',
-        users: { canPush: ['bob'], canAuthorise: [] },
-        _id: 'legacy-id',
-      },
-      {
-        project: 'finos',
-        name: 'partial',
-        url: 'https://github.com/finos/partial.git',
-        users: { canPush: [], canAuthorise: [] },
-        dateCreated: '2021-06-01T00:00:00.000Z',
-        _id: 'partial-id',
-      },
-    ];
-
-    vi.spyOn(repoModule.db, 'find').mockImplementation((_q: unknown, cb: any) => cb(null, docs));
-
-    const patches: Array<{ id: string; set: Record<string, string> }> = [];
-    vi.spyOn(repoModule.db, 'update').mockImplementation(
-      (q: any, update: any, _o: unknown, cb: any) => {
-        patches.push({ id: q._id, set: update.$set });
-        cb(null, 1);
-      },
-    );
-
-    const fallback = '1970-01-01T00:00:00.000Z';
-    const updated = await repoModule.backfillRepoDates(fallback);
-
-    expect(updated).toBe(2);
-    expect(patches).toEqual(
-      expect.arrayContaining([
-        {
-          id: 'legacy-id',
-          set: { dateCreated: fallback, lastModified: fallback },
-        },
-        {
-          id: 'partial-id',
-          set: {
-            dateCreated: '2021-06-01T00:00:00.000Z',
-            lastModified: '2021-06-01T00:00:00.000Z',
-          },
-        },
-      ]),
-    );
-  });
-
-  it('NeDB backfillRepoDates is a no-op when all repos already have dates', async () => {
-    vi.spyOn(repoModule.db, 'find').mockImplementation((_q: unknown, cb: any) => cb(null, []));
-    const updateSpy = vi.spyOn(repoModule.db, 'update');
-
-    const updated = await repoModule.backfillRepoDates();
-
-    expect(updated).toBe(0);
-    expect(updateSpy).not.toHaveBeenCalled();
-  });
-
-  it('Mongo backfillRepoDates uses updateMany with $ifNull pipeline', async () => {
-    const updateMany = vi.fn().mockResolvedValue({ modifiedCount: 3 });
-    vi.mocked(connect).mockResolvedValue({ updateMany } as any);
-
-    const fallback = '1970-01-01T00:00:00.000Z';
-    const updated = await mongoRepo.backfillRepoDates(fallback);
-
-    expect(updated).toBe(3);
-    expect(updateMany).toHaveBeenCalledWith(
-      {
-        $or: [{ dateCreated: { $exists: false } }, { lastModified: { $exists: false } }],
-      },
-      [
-        {
-          $set: {
-            dateCreated: { $ifNull: ['$dateCreated', fallback] },
-            lastModified: {
-              $ifNull: ['$lastModified', { $ifNull: ['$dateCreated', fallback] }],
-            },
-          },
-        },
-      ],
-    );
   });
 });
