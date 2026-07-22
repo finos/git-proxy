@@ -19,10 +19,12 @@ import { SAMPLE_REPO } from '../../src/proxy/constants';
 
 vi.mock('../../src/db/mongo', () => ({
   getRepoByUrl: vi.fn(),
+  backfillRepoDates: vi.fn().mockResolvedValue(0),
 }));
 
 vi.mock('../../src/db/file', () => ({
   getRepoByUrl: vi.fn(),
+  backfillRepoDates: vi.fn().mockResolvedValue(0),
 }));
 
 vi.mock('../../src/config', () => ({
