@@ -106,6 +106,10 @@ export const getRepoById = async (_id: string): Promise<Repo | null> => {
 };
 
 export const createRepo = async (repo: Repo): Promise<Repo> => {
+  const now = new Date().toISOString();
+  if (!repo.dateCreated) repo.dateCreated = now;
+  if (!repo.lastModified) repo.lastModified = now;
+
   return new Promise<Repo>((resolve, reject) => {
     db.insert(repo, (err, doc) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -130,6 +134,7 @@ export const addUserCanPush = async (_id: string, user: string): Promise<void> =
     return;
   }
   repo.users?.canPush.push(user);
+  repo.lastModified = new Date().toISOString();
 
   const options = { multi: false, upsert: false };
 
@@ -158,6 +163,7 @@ export const addUserCanAuthorise = async (_id: string, user: string): Promise<vo
   }
 
   repo.users.canAuthorise.push(user);
+  repo.lastModified = new Date().toISOString();
 
   const options = { multi: false, upsert: false };
 
@@ -182,6 +188,7 @@ export const removeUserCanAuthorise = async (_id: string, user: string): Promise
   }
 
   repo.users.canAuthorise = repo.users.canAuthorise.filter((x: string) => x != user);
+  repo.lastModified = new Date().toISOString();
 
   const options = { multi: false, upsert: false };
 
@@ -206,6 +213,7 @@ export const removeUserCanPush = async (_id: string, user: string): Promise<void
   }
 
   repo.users.canPush = repo.users.canPush.filter((x) => x != user);
+  repo.lastModified = new Date().toISOString();
 
   const options = { multi: false, upsert: false };
 

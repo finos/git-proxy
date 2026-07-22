@@ -111,12 +111,15 @@ export const createUser = async (
 };
 
 export const createRepo = async (repo: AuthorisedRepo) => {
+  const now = new Date().toISOString();
   const toCreate = {
     ...repo,
     users: {
       canPush: [],
       canAuthorise: [],
     },
+    dateCreated: now,
+    lastModified: now,
   };
   toCreate.name = repo.name.toLowerCase();
 
