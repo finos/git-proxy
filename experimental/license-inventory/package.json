@@ -63,6 +63,6 @@
     "typescript-eslint": "^8.24.1"
   },
   "optionalDependencies": {
-    "@opentelemetry/auto-instrumentations-node": "^0.56.1"
+    "@opentelemetry/auto-instrumentations-node": "^0.78.0"
   }
 }
