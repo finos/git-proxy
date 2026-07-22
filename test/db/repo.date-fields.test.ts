@@ -81,6 +81,35 @@ describe('Repo dateCreated / lastModified (#1486)', () => {
     expect(updatedDoc!.users.canPush).toContain('alice');
   });
 
+  it('removeUserCanAuthorise bumps lastModified but leaves dateCreated unchanged', async () => {
+    const existing: Repo = {
+      project: 'finos',
+      name: 'sample',
+      url: 'https://github.com/finos/sample.git',
+      users: { canPush: [], canAuthorise: ['bob'] },
+      dateCreated: '2020-01-01T00:00:00.000Z',
+      lastModified: '2020-01-01T00:00:00.000Z',
+      _id: 'abc',
+    };
+
+    vi.spyOn(repoModule.db, 'findOne').mockImplementation((_: unknown, cb: any) =>
+      cb(null, { ...existing }),
+    );
+    let updatedDoc: Repo | null = null;
+    vi.spyOn(repoModule.db, 'update').mockImplementation(
+      (_q: unknown, doc: any, _o: unknown, cb: any) => {
+        updatedDoc = doc;
+        cb(null, 1);
+      },
+    );
+
+    await repoModule.removeUserCanAuthorise('abc', 'bob');
+
+    expect(updatedDoc!.dateCreated).toBe('2020-01-01T00:00:00.000Z');
+    expect(updatedDoc!.lastModified).not.toBe('2020-01-01T00:00:00.000Z');
+    expect(updatedDoc!.users.canAuthorise).not.toContain('bob');
+  });
+
   it('sort by dateCreated orders oldest → newest (asc)', () => {
     const repos: Pick<Repo, 'name' | 'dateCreated'>[] = [
       { name: 'zeta', dateCreated: '2024-06-01T00:00:00.000Z' },
