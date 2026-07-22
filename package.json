@@ -135,7 +135,7 @@
     "lusca": "^1.7.0",
     "material-design-icons": "^3.0.1",
     "moment": "^2.30.1",
-    "mongodb": "^5.9.2",
+    "mongodb": "^7.5.0",
     "openid-client": "^6.8.1",
     "parse-diff": "^0.11.1",
     "passport": "^0.7.0",
