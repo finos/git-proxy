@@ -25,6 +25,11 @@
       "import": "./dist/src/plugin.js",
       "require": "./dist/src/plugin.js"
     },
+    "./eventHandlers": {
+      "types": "./dist/src/eventHandlers/index.d.ts",
+      "import": "./dist/src/eventHandlers/index.js",
+      "require": "./dist/src/eventHandlers/index.js"
+    },
     "./proxy": {
       "types": "./dist/src/proxy/index.d.ts",
       "import": "./dist/src/proxy/index.js",

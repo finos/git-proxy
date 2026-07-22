@@ -22,6 +22,8 @@ import * as proc from './processors';
 import { Processor } from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
+import { getEventDispatcher } from '../eventHandlers/dispatcher';
+import { ActionPhase } from '../eventHandlers/types';
 import { createProgressWriter } from './sideband';
 
 const branchPushChain: Processor['exec'][] = [
@@ -99,13 +101,15 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
   try {
     // 1) Initialize basic action fields
     action = await proc.pre.parseAction(req);
+    getEventDispatcher()?.dispatch(action, 'started');
+
     // 2) Parse refs and PACK data before chain selection
     if (action.type === RequestType.PUSH) {
       action = await proc.pre.parsePush(req, action);
     }
+
     // 3) Select the correct chain now that action.actionType is set
     const actionFns = await getChain(action);
-
     const progress = createProgressWriter(res, action);
 
     // 4) Execute each step in the selected chain
@@ -139,9 +143,34 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
     } else if (action.autoRejected) {
       await attemptAutoRejection(action);
     }
+
+    dispatchTerminalEvent(action);
   }
 
   return action;
+};
+
+const dispatchTerminalEvent = (action: Action): void => {
+  const dispatcher = getEventDispatcher();
+  if (!dispatcher) return;
+  // Precedence matters: permissionDenied also flips action.error (the chain
+  // step sets step.error to break the chain), so check it first. A push that
+  // was blocked for manual approval (action.blocked) surfaces as
+  // `pendingReview`, unless the system already auto-resolved it — in which
+  // case it is a resolved outcome and surfaces as `completed`.
+  let phase: ActionPhase;
+  let error: Error | undefined;
+  if (action.permissionDenied) {
+    phase = 'permissionDenied';
+  } else if (action.error) {
+    phase = 'error';
+    error = action.errorMessage ? new Error(action.errorMessage) : new Error('Chain error');
+  } else if (action.blocked && !action.autoApproved && !action.autoRejected) {
+    phase = 'pendingReview';
+  } else {
+    phase = 'completed';
+  }
+  dispatcher.dispatch(action, phase, error);
 };
 
 /**

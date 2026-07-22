@@ -414,6 +414,48 @@ Defines a list of plugins to integrate on GitProxy's push or pull actions. Accep
 
 See the [plugin guide](../development/plugins) for more setup details.
 
+#### `eventHandlers`
+
+Defines a list of event handler modules that observe GitProxy lifecycle events. Like [`plugins`](#plugins), each value is either a file path or a module name, and modules are resolved the same way.
+
+Unlike chain plugins, event handlers are **observers only** — they cannot block, modify or reject a Git operation. They run asynchronously, fire-and-forget, off the request path: a handler that is slow or throws will never delay or fail a push/pull. Use them to react to GitProxy activity, e.g. emitting metrics, sending notifications or writing to an external audit log.
+
+See the [event handler guide](../development/event-handlers) for the execution model, the full handler API and guidance on choosing an event handler over a plugin.
+
+Sample values:
+
+```json
+"eventHandlers": [
+  "./my-event-handler.js",
+  "@my-org/gitproxy-notifier"
+]
+```
+
+A handler module exports one or more `EventHandlerPlugin` instances. Each one receives a registry through which it subscribes to events for `push` and/or `pull` operations. The following lifecycle phases are emitted:
+
+- **`started`**: the chain is about to run. User identity may not be resolved yet.
+- **`completed`**: the chain finished at a resolved outcome — the operation was approved (`allowPush`) or auto-approved/auto-rejected by the system.
+- **`pendingReview`**: the chain finished and the push was blocked awaiting manual approval. It now sits in the approval queue until a reviewer acts on it. This is not a denial or an error.
+- **`error`**: an unhandled exception or step error aborted the chain.
+- **`permissionDenied`**: the user lacks push permission for the repository.
+
+Example handler subscribing to push events:
+
+```js
+const { EventHandlerPlugin } = require('@finos/git-proxy/eventHandlers');
+
+module.exports.notifier = new EventHandlerPlugin((registry) => {
+  registry
+    .onPush()
+    .onPendingReview((details) => {
+      console.log(`Push ${details.actionId} on ${details.repository.url} awaits review`);
+    })
+    .onError((details) => {
+      console.error(`Push ${details.actionId} failed: ${details.error?.message}`);
+    });
+});
+```
+
 #### `authorisedList`
 
 Defines a initial list of repositories that are allowed to be pushed to through the proxy. Note that **repositories can also be added through the UI, API or by manually editing the database**.
