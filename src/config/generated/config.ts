@@ -96,6 +96,15 @@ export interface GitProxyConfig {
   serverPort?: number;
   sessionMaxAgeHours?: number;
   /**
+   * Stream per-step validation progress messages to the git client's terminal during a push,
+   * using git sideband channel 2 (displayed as "remote: ..." lines). Requires the client to
+   * negotiate the side-band-64k capability, which all modern git clients do. When disabled,
+   * or when the client did not negotiate sideband, pushes receive a single buffered response
+   * as before. Operators behind intermediaries that buffer HTTP responses may wish to disable
+   * this.
+   */
+  sidebandProgress?: boolean;
+  /**
    * List of database sources. The first source in the configuration with enabled=true will be
    * used.
    */
@@ -909,6 +918,7 @@ const typeMap: any = {
       { json: 'rateLimit', js: 'rateLimit', typ: u(undefined, r('RateLimit')) },
       { json: 'serverPort', js: 'serverPort', typ: u(undefined, 3.14) },
       { json: 'sessionMaxAgeHours', js: 'sessionMaxAgeHours', typ: u(undefined, 3.14) },
+      { json: 'sidebandProgress', js: 'sidebandProgress', typ: u(undefined, true) },
       { json: 'sink', js: 'sink', typ: u(undefined, a(r('Database'))) },
       { json: 'ssh', js: 'ssh', typ: u(undefined, r('SSH')) },
       { json: 'sslCertPemPath', js: 'sslCertPemPath', typ: u(undefined, '') },
