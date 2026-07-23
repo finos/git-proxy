@@ -167,6 +167,7 @@ export interface Sink {
   deleteRepo: (_id: string) => Promise<void>;
   findUser: (username: string) => Promise<User | null>;
   findUserByEmail: (email: string) => Promise<User | null>;
+  findUserByGitAccount: (gitAccount: string) => Promise<User | null>;
   findUserByOIDC: (oidcId: string) => Promise<User | null>;
   findUserBySSHKey: (sshKey: string) => Promise<User | null>;
   getUsers: (query?: Partial<UserQuery>) => Promise<User[]>;

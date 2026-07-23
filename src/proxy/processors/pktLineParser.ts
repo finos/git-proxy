@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { PACKET_SIZE } from './constants';
+import { PACKET_SIZE } from '../constants';
 
 /**
  * Parses the packet lines from a buffer into an array of strings.
