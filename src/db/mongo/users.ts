@@ -34,6 +34,12 @@ export const findUserByEmail = async function (email: string): Promise<User | nu
   return doc ? toClass(doc, User.prototype) : null;
 };
 
+export const findUserByGitAccount = async function (gitAccount: string): Promise<User | null> {
+  const collection = await connect(collectionName);
+  const doc = await collection.findOne({ gitAccount: { $eq: gitAccount.toLowerCase() } });
+  return doc ? toClass(doc, User.prototype) : null;
+};
+
 export const findUserByOIDC = async function (oidcId: string): Promise<User | null> {
   const collection = await connect(collectionName);
   const doc = await collection.findOne({ oidcId: { $eq: oidcId } });
