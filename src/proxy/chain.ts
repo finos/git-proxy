@@ -22,8 +22,10 @@ import * as proc from './processors';
 import { Processor } from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
+import { createProgressWriter } from './sideband';
 
 const branchPushChain: Processor['exec'][] = [
+  proc.push.resolveUserFromToken,
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkMessages,
@@ -57,7 +59,40 @@ const defaultActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorised
 
 let pluginsInserted = false;
 
-export const executeChain = async (req: Request, _res: Response): Promise<Action> => {
+const stepProgressLabels: Record<string, string> = {
+  'checkEmptyBranch.exec': 'Checking for empty branch',
+  'checkRepoInAuthorisedList.exec': 'Checking repository is authorised',
+  'checkMessages.exec': 'Checking commit messages',
+  'checkAuthorEmails.exec': 'Checking author emails',
+  'checkUserPushPermission.exec': 'Checking push permissions',
+  'pullRemote.exec': 'Fetching remote repository',
+  'writePack.exec': 'writing pack data',
+  'checkHiddenCommits.exec': 'Checking for hidden commits',
+  'checkIfWaitingAuth.exec': 'Checking approval status',
+  'executeExternalPreReceiveHook.exec': 'Running pre-receive hook',
+  'getDiff.exec': 'Computing diff',
+  'gitleaks.exec': 'Scanning for secrets',
+  'scanDiff.exec': 'Scanning diff contents',
+  'blockForAuth.exec': 'Requesting approval',
+};
+
+/**
+ * Obtain the message to display before a chain step.
+ * @param {Processor['exec']} fn The chain step about to be executed.
+ * @return {string} The message to display.
+ */
+const getProgressMessage = (fn: Processor['exec']): string => {
+  const displayName = (fn as { displayName?: string }).displayName;
+  if (displayName && stepProgressLabels[displayName]) {
+    return stepProgressLabels[displayName];
+  }
+  if (displayName) {
+    return `running ${displayName.replace(/\.exec$/, '')}`;
+  }
+  return 'running plugin';
+};
+
+export const executeChain = async (req: Request, res: Response): Promise<Action> => {
   let action: Action = {} as Action;
   let checkoutCleanUpRequired = false;
 
@@ -71,8 +106,13 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
     // 3) Select the correct chain now that action.actionType is set
     const actionFns = await getChain(action);
 
+    const progress = createProgressWriter(res, action);
+
     // 4) Execute each step in the selected chain
     for (const fn of actionFns) {
+      if (progress.active && action.continue()) {
+        progress.message(`${getProgressMessage(fn)}...`);
+      }
       action = await fn(req, action);
       if (!action.continue() || action.allowPush) {
         break;

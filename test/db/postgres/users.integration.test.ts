@@ -19,6 +19,7 @@ import {
   createUser,
   findUser,
   findUserByEmail,
+  findUserByGitAccount,
   findUserByOIDC,
   findUserBySSHKey,
   getUsers,
@@ -78,6 +79,18 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Users Integration Tests', () 
 
     it('returns null for a non-existent email', async () => {
       expect(await findUserByEmail('nonexistent@test.com')).toBeNull();
+    });
+  });
+
+  describe('findUserByGitAccount', () => {
+    it('finds a user by git account (case-insensitive), mirroring mongo', async () => {
+      await createUser(createTestUser({ username: 'gitacctuser', gitAccount: 'findbygit-acct' }));
+      const result = await findUserByGitAccount('FindByGit-Acct');
+      expect(result?.gitAccount).toBe('findbygit-acct');
+    });
+
+    it('returns null for a non-existent git account', async () => {
+      expect(await findUserByGitAccount('non-existent-git-account')).toBeNull();
     });
   });
 

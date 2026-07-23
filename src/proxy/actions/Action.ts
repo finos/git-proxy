@@ -75,6 +75,7 @@ class Action {
   tagData?: TagData[];
   newIdxFiles?: string[];
   protocol?: 'https' | 'ssh';
+  capabilities?: string[];
   pullAuthStrategy?:
     | 'basic'
     | 'ssh-user-key'
