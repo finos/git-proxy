@@ -49,6 +49,7 @@ import {
   connectToRemoteGitServer,
 } from '../../src/proxy/ssh/GitProtocol';
 import { ClientWithUser } from '../../src/proxy/ssh/types';
+import { parsePacketLines } from '../../src/proxy/processors/pktLineParser';
 
 describe('GitProtocol', () => {
   let mockClient: Partial<ClientWithUser>;
@@ -361,8 +362,9 @@ describe('GitProtocol', () => {
       const ssh2 = await import('ssh2');
       const Client = ssh2.Client as any;
 
-      // Build a valid pkt-line payload with flush packet
-      // "0012hello world\n0000"
+      // Build a valid pkt-line payload with flush packet.
+      // "hello world\n" is 12 bytes, so the total packet length is 4 + 12 = 16 = 0x0010.
+      // Resulting stream: "0010hello world\n0000"
       const line = 'hello world\n';
       const pktLen = (4 + line.length).toString(16).padStart(4, '0');
       const pktData = Buffer.from(`${pktLen}${line}0000`);
@@ -400,7 +402,12 @@ describe('GitProtocol', () => {
       );
 
       expect(result).toBeInstanceOf(Buffer);
-      expect(result.toString()).toContain('hello world');
+      // Decode the collected buffer with the real pkt-line parser to prove it is a
+      // well-formed stream, not just that the raw bytes happen to contain the payload.
+      const [lines, offset] = parsePacketLines(result);
+      expect(lines).toEqual(['hello world\n']);
+      // The parser must consume the trailing flush packet exactly at the buffer end.
+      expect(offset).toBe(result.length);
       expect(mockRemoteStream.end).toHaveBeenCalled();
     });
 
@@ -408,8 +415,10 @@ describe('GitProtocol', () => {
       const ssh2 = await import('ssh2');
       const Client = ssh2.Client as any;
 
-      const chunk1 = Buffer.from('0010chunk one\n');
-      const chunk2 = Buffer.from('0010chunk two\n0000');
+      // Each payload "chunk one\n" / "chunk two\n" is 10 bytes, so the pkt-line length
+      // prefix is 4 + 10 = 14 = 0x000e. The second chunk is followed by the flush packet.
+      const chunk1 = Buffer.from('000echunk one\n');
+      const chunk2 = Buffer.from('000echunk two\n0000');
 
       const mockRemoteStream = createMockRemoteStream();
 
@@ -443,8 +452,11 @@ describe('GitProtocol', () => {
         'github.com',
       );
 
-      expect(result.toString()).toContain('chunk one');
-      expect(result.toString()).toContain('chunk two');
+      // The two data events must be accumulated and decode as two distinct pkt-lines,
+      // with the trailing flush packet consumed exactly at the end of the buffer.
+      const [lines, offset] = parsePacketLines(result);
+      expect(lines).toEqual(['chunk one\n', 'chunk two\n']);
+      expect(offset).toBe(result.length);
     });
   });
 
