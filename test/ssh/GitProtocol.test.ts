@@ -1090,7 +1090,7 @@ describe('GitProtocol', () => {
       ).rejects.toThrow('Connection refused');
     });
 
-    it('should skip requireAgentForwarding when set to false', async () => {
+    it('should validate SSH prerequisites by default (requireAgentForwarding defaults to true)', async () => {
       const { validateSSHPrerequisites } = await import('../../src/proxy/ssh/sshHelpers');
       const ssh2 = await import('ssh2');
       const Client = ssh2.Client as any;
