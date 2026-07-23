@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import http from 'http';
+import { AddressInfo } from 'net';
 import request from 'supertest';
 import express, { Express, Request, Response } from 'express';
 import { describe, it, beforeEach, afterEach, expect, vi, beforeAll, afterAll } from 'vitest';
@@ -21,6 +23,7 @@ import { describe, it, beforeEach, afterEach, expect, vi, beforeAll, afterAll } 
 import { Action, Step } from '../src/proxy/actions';
 import * as chain from '../src/proxy/chain';
 import * as helper from '../src/proxy/routes/helper';
+import * as config from '../src/config';
 import { Proxy } from '../src/proxy';
 import {
   handleMessage,
@@ -28,10 +31,27 @@ import {
   getRouter,
   handleRefsErrorMessage,
   proxyFilter,
+  isReceivePackPost,
+  createReceivePackHandler,
+  resolveUpstreamUrl,
+  forwardReceivePackUpstream,
+  endStreamedResponseWithMessage,
 } from '../src/proxy/routes';
+import {
+  encodeSidebandChunk,
+  encodeRejectionReportStatus,
+  SidebandBand,
+} from '../src/proxy/sideband';
 
 import * as db from '../src/db';
 import { Service } from '../src/service';
+
+/** Collects a binary supertest response body into a Buffer. */
+const binaryParser = (res: request.Response, cb: (err: Error | null, body: Buffer) => void) => {
+  const chunks: Buffer[] = [];
+  res.on('data', (chunk: Buffer) => chunks.push(chunk));
+  res.on('end', () => cb(null, Buffer.concat(chunks)));
+};
 
 const TEST_DEFAULT_REPO = {
   url: 'https://github.com/finos/git-proxy.git',
@@ -618,6 +638,519 @@ describe('proxyFilter', () => {
 
       expect(result).toBe(true);
     });
+  });
+});
+
+describe('isReceivePackPost', () => {
+  it('should return true for POST requests to git-receive-pack', () => {
+    const req = {
+      method: 'POST',
+      url: '/github.com/finos/git-proxy.git/git-receive-pack',
+    } as Request;
+    expect(isReceivePackPost(req)).toBe(true);
+  });
+
+  it('should return false for git-upload-pack POSTs and GET requests', () => {
+    expect(
+      isReceivePackPost({
+        method: 'POST',
+        url: '/github.com/finos/git-proxy.git/git-upload-pack',
+      } as Request),
+    ).toBe(false);
+    expect(
+      isReceivePackPost({
+        method: 'GET',
+        url: '/github.com/finos/git-proxy.git/git-receive-pack',
+      } as Request),
+    ).toBe(false);
+  });
+});
+
+describe('resolveUpstreamUrl', () => {
+  it('should resolve the upstream URL from the origin in the request path', () => {
+    const req = {
+      originalUrl: '/github.com/finos/git-proxy.git/git-receive-pack',
+    } as Request;
+    const url = resolveUpstreamUrl(req, ['github.com', 'gitlab.com']);
+
+    expect(url.href).toBe('https://github.com/finos/git-proxy.git/git-receive-pack');
+  });
+
+  it('should resolve non-github origins', () => {
+    const req = {
+      originalUrl: '/gitlab.com/gitlab-community/meta.git/git-receive-pack',
+    } as Request;
+    const url = resolveUpstreamUrl(req, ['github.com', 'gitlab.com']);
+
+    expect(url.href).toBe('https://gitlab.com/gitlab-community/meta.git/git-receive-pack');
+  });
+
+  it('should fall back to github.com for legacy URLs without an origin prefix', () => {
+    const req = {
+      originalUrl: '/finos/git-proxy.git/git-receive-pack',
+    } as Request;
+    const url = resolveUpstreamUrl(req, ['gitlab.com']);
+
+    expect(url.href).toBe('https://github.com/finos/git-proxy.git/git-receive-pack');
+  });
+});
+
+describe('endStreamedResponseWithMessage', () => {
+  it('should write the final message on band 2, a flush packet and end the response', () => {
+    const writes: Buffer[] = [];
+    const res = {
+      writableEnded: false,
+      write: vi.fn((chunk: Buffer | string) => {
+        writes.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        return true;
+      }),
+      end: vi.fn(),
+    } as unknown as Response;
+
+    endStreamedResponseWithMessage(res, 'Push blocked');
+
+    const body = Buffer.concat(writes).toString('utf8');
+    // eslint-disable-next-line no-control-regex
+    expect(body).toMatch(/^[0-9a-f]{4}\x02\tPush blocked\n0000$/);
+    expect(res.end).toHaveBeenCalledOnce();
+  });
+
+  it('should do nothing when the response has already ended', () => {
+    const res = {
+      writableEnded: true,
+      write: vi.fn(),
+      end: vi.fn(),
+    } as unknown as Response;
+
+    endStreamedResponseWithMessage(res, 'too late');
+
+    expect(res.write).not.toHaveBeenCalled();
+    expect(res.end).not.toHaveBeenCalled();
+  });
+
+  it('should write the status report between the message and the final flush', () => {
+    const writes: Buffer[] = [];
+    const res = {
+      writableEnded: false,
+      write: vi.fn((chunk: Buffer | string) => {
+        writes.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        return true;
+      }),
+      end: vi.fn(),
+    } as unknown as Response;
+    const report = encodeRejectionReportStatus(['refs/heads/main'], 'approval required');
+
+    endStreamedResponseWithMessage(res, 'Push blocked', report);
+
+    const body = Buffer.concat(writes).toString('utf8');
+    expect(body).toContain('Push blocked\n');
+    expect(body).toContain('unpack ok\n');
+    expect(body).toContain('ng refs/heads/main approval required\n');
+    // synthesized report (with its inner flush) comes before the outer flush
+    expect(body.endsWith('0000' + '0000')).toBe(true);
+    expect(res.end).toHaveBeenCalledOnce();
+  });
+});
+
+describe('createReceivePackHandler', () => {
+  const handler = createReceivePackHandler(['github.com']);
+  let mockReq: Partial<Request>;
+  let mockRes: Partial<Response> & { headersSent: boolean };
+  let nextMock: ReturnType<typeof vi.fn>;
+  let writes: Buffer[];
+
+  beforeEach(() => {
+    writes = [];
+    nextMock = vi.fn();
+    mockRes = {
+      headersSent: false,
+      writableEnded: false,
+      status: vi.fn().mockReturnThis(),
+      send: vi.fn().mockReturnThis(),
+      set: vi.fn().mockReturnThis(),
+      write: vi.fn((chunk: Buffer | string) => {
+        writes.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+        return true;
+      }),
+      end: vi.fn(),
+    } as unknown as Partial<Response> & { headersSent: boolean };
+
+    mockReq = {
+      method: 'POST',
+      url: '/github.com/finos/git-proxy.git/git-receive-pack',
+      originalUrl: '/github.com/finos/git-proxy.git/git-receive-pack',
+      headers: {
+        host: 'localhost:8080',
+        'user-agent': 'git/2.42.0',
+        accept: 'application/x-git-receive-pack-result',
+      },
+      body: Buffer.from('test'),
+    };
+
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('should defer to the next handler for non receive-pack requests', async () => {
+    mockReq.method = 'GET';
+
+    await handler(mockReq as Request, mockRes as Response, nextMock);
+
+    expect(nextMock).toHaveBeenCalledOnce();
+  });
+
+  it('should defer to the next handler when sidebandProgress is disabled', async () => {
+    vi.spyOn(config, 'getSidebandProgressEnabled').mockReturnValue(false);
+
+    await handler(mockReq as Request, mockRes as Response, nextMock);
+
+    expect(nextMock).toHaveBeenCalledOnce();
+  });
+
+  it('should reject invalid requests without invoking the chain', async () => {
+    vi.spyOn(helper, 'processUrlPath').mockReturnValue(null);
+    const executeChainSpy = vi.spyOn(chain, 'executeChain');
+
+    await handler(mockReq as Request, mockRes as Response, nextMock);
+
+    expect(executeChainSpy).not.toHaveBeenCalled();
+    expect(mockRes.status).toHaveBeenCalledWith(200);
+    expect(vi.mocked(mockRes.send!).mock.calls[0][0]).toContain('Invalid request received');
+  });
+
+  it('should send a buffered error response when the chain blocked without streaming', async () => {
+    vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+      gitPath: '/finos/git-proxy.git/git-receive-pack',
+      repoPath: 'github.com',
+    });
+    vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+    vi.spyOn(chain, 'executeChain').mockResolvedValue({
+      error: false,
+      blocked: true,
+      blockedMessage: 'Push blocked by policy',
+    } as Action);
+
+    await handler(mockReq as Request, mockRes as Response, nextMock);
+
+    expect(nextMock).not.toHaveBeenCalled();
+    expect(mockRes.set).toHaveBeenCalledWith(
+      'content-type',
+      'application/x-git-receive-pack-result',
+    );
+    const sentMessage = vi.mocked(mockRes.send!).mock.calls[0][0];
+    // eslint-disable-next-line no-control-regex
+    expect(sentMessage).toMatch(/^[0-9a-f]{4}\x02/);
+    expect(sentMessage).toContain('Push blocked by policy');
+  });
+
+  it('should finish the sideband stream when the chain blocked after streaming started', async () => {
+    vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+      gitPath: '/finos/git-proxy.git/git-receive-pack',
+      repoPath: 'github.com',
+    });
+    vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+    vi.spyOn(chain, 'executeChain').mockImplementation(async () => {
+      // simulate the progress writer having flushed headers mid-chain
+      mockRes.headersSent = true;
+      return {
+        error: false,
+        blocked: true,
+        blockedMessage: 'Push blocked by policy',
+      } as Action;
+    });
+
+    await handler(mockReq as Request, mockRes as Response, nextMock);
+
+    expect(mockRes.send).not.toHaveBeenCalled();
+    const body = Buffer.concat(writes).toString('utf8');
+    // eslint-disable-next-line no-control-regex
+    expect(body).toMatch(/^[0-9a-f]{4}\x02\tPush blocked by policy\n0000$/);
+    expect(mockRes.end).toHaveBeenCalledOnce();
+  });
+
+  it('should append a synthesized report-status when the client requested one (buffered)', async () => {
+    vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+      gitPath: '/finos/git-proxy.git/git-receive-pack',
+      repoPath: 'github.com',
+    });
+    vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+    vi.spyOn(chain, 'executeChain').mockResolvedValue({
+      error: false,
+      blocked: true,
+      blockedMessage: 'Push queued for approval',
+      capabilities: ['report-status', 'side-band-64k', 'agent=git/2.42.0'],
+      branch: 'refs/heads/main',
+    } as Action);
+
+    await handler(mockReq as Request, mockRes as Response, nextMock);
+
+    const sent = vi.mocked(mockRes.send!).mock.calls[0][0];
+    expect(Buffer.isBuffer(sent)).toBe(true);
+    const body = (sent as Buffer).toString('utf8');
+    expect(body).toContain('Push queued for approval');
+    expect(body).toContain('unpack ok\n');
+    expect(body).toContain('ng refs/heads/main approval required\n');
+    expect(body.endsWith('0000' + '0000')).toBe(true);
+  });
+
+  it('should append a synthesized report-status when the chain errored after streaming started', async () => {
+    vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+      gitPath: '/finos/git-proxy.git/git-receive-pack',
+      repoPath: 'github.com',
+    });
+    vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+    vi.spyOn(chain, 'executeChain').mockImplementation(async () => {
+      mockRes.headersSent = true;
+      return {
+        error: true,
+        blocked: false,
+        errorMessage: 'Secret detected',
+        capabilities: ['report-status-v2', 'side-band-64k'],
+        branch: 'refs/heads/feature',
+      } as Action;
+    });
+
+    await handler(mockReq as Request, mockRes as Response, nextMock);
+
+    expect(mockRes.send).not.toHaveBeenCalled();
+    const body = Buffer.concat(writes).toString('utf8');
+    expect(body).toContain('Secret detected');
+    expect(body).toContain('unpack ok\n');
+    expect(body).toContain('ng refs/heads/feature rejected by GitProxy\n');
+    expect(mockRes.end).toHaveBeenCalledOnce();
+  });
+
+  it('should not append a report-status when the client did not request one', async () => {
+    vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+      gitPath: '/finos/git-proxy.git/git-receive-pack',
+      repoPath: 'github.com',
+    });
+    vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+    vi.spyOn(chain, 'executeChain').mockResolvedValue({
+      error: false,
+      blocked: true,
+      blockedMessage: 'Push blocked by policy',
+      capabilities: ['side-band-64k'],
+      branch: 'refs/heads/main',
+    } as Action);
+
+    await handler(mockReq as Request, mockRes as Response, nextMock);
+
+    const sent = vi.mocked(mockRes.send!).mock.calls[0][0];
+    expect(sent.toString()).not.toContain('unpack ok');
+  });
+
+  it('should move the raw body onto req.body before invoking the chain', async () => {
+    vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+      gitPath: '/finos/git-proxy.git/git-receive-pack',
+      repoPath: 'github.com',
+    });
+    vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+    vi.spyOn(chain, 'executeChain').mockResolvedValue({
+      error: true,
+      blocked: false,
+      errorMessage: 'stop here',
+    } as Action);
+    (mockReq as any).bodyRaw = Buffer.from('raw pack data');
+
+    await handler(mockReq as Request, mockRes as Response, nextMock);
+
+    expect(mockReq.body).toEqual(Buffer.from('raw pack data'));
+    expect((mockReq as any).bodyRaw).toBeUndefined();
+  });
+});
+
+describe('forwardReceivePackUpstream', () => {
+  let upstreamServer: http.Server;
+  let upstreamPort: number;
+  let lastUpstreamReq: {
+    method?: string;
+    url?: string;
+    headers?: http.IncomingHttpHeaders;
+    body?: Buffer;
+  };
+
+  const upstreamBody = Buffer.concat([
+    encodeSidebandChunk(SidebandBand.Data, 'unpack ok\n'),
+    Buffer.from('0000'),
+  ]);
+
+  beforeAll(async () => {
+    upstreamServer = http.createServer((req, res) => {
+      const chunks: Buffer[] = [];
+      req.on('data', (chunk: Buffer) => chunks.push(chunk));
+      req.on('end', () => {
+        lastUpstreamReq = {
+          method: req.method,
+          url: req.url,
+          headers: req.headers,
+          body: Buffer.concat(chunks),
+        };
+        if (req.url === '/upstream-401') {
+          res.writeHead(401, { 'content-type': 'text/plain' });
+          res.end('auth required');
+          return;
+        }
+        res.writeHead(200, {
+          'content-type': 'application/x-git-receive-pack-result',
+          'x-upstream-header': 'yes',
+        });
+        res.end(upstreamBody);
+      });
+    });
+    await new Promise<void>((resolve) => upstreamServer.listen(0, resolve));
+    upstreamPort = (upstreamServer.address() as AddressInfo).port;
+  });
+
+  afterAll(async () => {
+    await new Promise<void>((resolve, reject) =>
+      upstreamServer.close((err) => (err ? reject(err) : resolve())),
+    );
+  });
+
+  const createApp = (streaming: boolean, upstreamPath = '/upstream') => {
+    const app = express();
+    app.post('/push', async (req, res, next) => {
+      try {
+        req.body = Buffer.from('PACKDATA');
+        if (streaming) {
+          res.status(200);
+          res.set('content-type', 'application/x-git-receive-pack-result');
+          res.flushHeaders();
+          res.write(encodeSidebandChunk(SidebandBand.Progress, 'validating...\n'));
+        }
+        await forwardReceivePackUpstream(
+          req,
+          res,
+          new URL(`http://127.0.0.1:${upstreamPort}${upstreamPath}`),
+        );
+      } catch (err) {
+        next(err);
+      }
+    });
+    return app;
+  };
+
+  it('should append the upstream response verbatim to an in-progress sideband stream', async () => {
+    const res = await request(createApp(true))
+      .post('/push')
+      .set('authorization', 'Basic dGVzdDp0ZXN0')
+      .set('accept-encoding', 'gzip')
+      .buffer(true)
+      .parse(binaryParser)
+      .send();
+
+    expect(res.status).toBe(200);
+    const body = (res.body as Buffer).toString('utf8');
+    expect(body).toContain('validating...');
+    expect(body).toContain('unpack ok');
+    expect(body.endsWith('0000')).toBe(true);
+
+    // proxy-generated packets come first, upstream bytes are appended verbatim
+    expect(body.indexOf('validating...')).toBeLessThan(body.indexOf('unpack ok'));
+
+    // upstream received the buffered body with credentials, but no accept-encoding
+    expect(lastUpstreamReq.method).toBe('POST');
+    expect(lastUpstreamReq.body?.toString('utf8')).toBe('PACKDATA');
+    expect(lastUpstreamReq.headers?.authorization).toBe('Basic dGVzdDp0ZXN0');
+    expect(lastUpstreamReq.headers?.['accept-encoding']).toBeUndefined();
+    expect(lastUpstreamReq.headers?.['content-length']).toBe('8');
+  });
+
+  it('should relay upstream status, headers and body when no streaming took place', async () => {
+    const res = await request(createApp(false))
+      .post('/push')
+      .buffer(true)
+      .parse(binaryParser)
+      .send();
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toBe('application/x-git-receive-pack-result');
+    expect(res.headers['x-upstream-header']).toBe('yes');
+    expect((res.body as Buffer).equals(upstreamBody)).toBe(true);
+  });
+
+  it('should end the stream with an error message when upstream responds with a non-200 status', async () => {
+    const res = await request(createApp(true, '/upstream-401'))
+      .post('/push')
+      .buffer(true)
+      .parse(binaryParser)
+      .send();
+
+    expect(res.status).toBe(200); // headers were already flushed before the upstream call
+    const body = (res.body as Buffer).toString('utf8');
+    expect(body).toContain('validating...');
+    expect(body).toContain('upstream responded with status 401');
+    expect(body.endsWith('0000')).toBe(true);
+  });
+});
+
+describe('receive-pack route wiring', () => {
+  let app: Express;
+
+  beforeEach(async () => {
+    app = express();
+    app.use('/', await getRouter());
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  const sendPush = () =>
+    request(app)
+      .post('/github.com/finos/git-proxy.git/git-receive-pack')
+      .set('user-agent', 'git/2.42.0')
+      .set('accept', 'application/x-git-receive-pack-result')
+      .set('content-type', 'application/x-git-receive-pack-request')
+      .buffer(true)
+      .parse(binaryParser)
+      .send(Buffer.from('0000'));
+
+  it('should stream chain progress followed by the final blocked message', async () => {
+    vi.spyOn(chain, 'executeChain').mockImplementation(async (req, res) => {
+      // simulate the progress writer streaming a step message mid-chain
+      res.status(200);
+      res.set('content-type', 'application/x-git-receive-pack-result');
+      res.flushHeaders();
+      res.write(
+        encodeSidebandChunk(SidebandBand.Progress, 'checking repository is authorised...\n'),
+      );
+      return {
+        error: false,
+        blocked: true,
+        blockedMessage: 'Push blocked by policy',
+      } as Action;
+    });
+
+    const res = await sendPush();
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('application/x-git-receive-pack-result');
+    const body = (res.body as Buffer).toString('utf8');
+    expect(body).toContain('checking repository is authorised...');
+    expect(body).toContain('Push blocked by policy');
+    expect(body.endsWith('0000')).toBe(true);
+  });
+
+  it('should send a single buffered response when the chain did not stream', async () => {
+    vi.spyOn(chain, 'executeChain').mockResolvedValue({
+      error: false,
+      blocked: true,
+      blockedMessage: 'Push blocked by policy',
+    } as Action);
+
+    const res = await sendPush();
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toContain('application/x-git-receive-pack-result');
+    const body = (res.body as Buffer).toString('utf8');
+    // eslint-disable-next-line no-control-regex
+    expect(body).toMatch(/^[0-9a-f]{4}\x02\tPush blocked by policy\n0000$/);
   });
 });
 
