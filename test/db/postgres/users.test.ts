@@ -26,6 +26,7 @@ describe('PostgreSQL - Users', async () => {
   const {
     findUser,
     findUserByEmail,
+    findUserByGitAccount,
     findUserByOIDC,
     findUserBySSHKey,
     createUser,
@@ -52,6 +53,12 @@ describe('PostgreSQL - Users', async () => {
       mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
       await findUserByEmail('USER@Example.COM');
       expect(mockQuery.mock.calls[0][1]).toEqual(['user@example.com']);
+    });
+
+    it('lower-cases gitAccount on findUserByGitAccount', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+      await findUserByGitAccount('Alice-Git');
+      expect(mockQuery.mock.calls[0][1]).toEqual(['alice-git']);
     });
 
     it('lower-cases username/email on createUser', async () => {
@@ -107,6 +114,17 @@ describe('PostgreSQL - Users', async () => {
         displayName: 'Alice A.',
         title: 'Dev',
       });
+    });
+  });
+
+  describe('findUserByGitAccount', () => {
+    it('queries by git_account and returns null when absent', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+      const user = await findUserByGitAccount('alice-git');
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('WHERE git_account = $1');
+      expect(params).toEqual(['alice-git']);
+      expect(user).toBeNull();
     });
   });
 

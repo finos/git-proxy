@@ -65,6 +65,14 @@ export const findUserByEmail = async (email: string): Promise<User | null> => {
   return result.rowCount === 0 ? null : rowToUser(result.rows[0]);
 };
 
+export const findUserByGitAccount = async (gitAccount: string): Promise<User | null> => {
+  const result = await query<UserRow>(
+    `SELECT ${SELECT_COLUMNS} FROM users WHERE git_account = $1`,
+    [gitAccount.toLowerCase()],
+  );
+  return result.rowCount === 0 ? null : rowToUser(result.rows[0]);
+};
+
 export const findUserByOIDC = async (oidcId: string): Promise<User | null> => {
   const result = await query<UserRow>(`SELECT ${SELECT_COLUMNS} FROM users WHERE oidc_id = $1`, [
     oidcId,

@@ -152,6 +152,7 @@
   "urlShortener": "",
   "contactEmail": "",
   "csrfProtection": true,
+  "sidebandProgress": true,
   "plugins": [],
   "apiAuthentication": [
     {

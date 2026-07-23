@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { CommitData } from './types';
+import { CommitData } from './processors/types';
 
 export const REFS_PREFIX = 'refs/';
 export const BRANCH_PREFIX = 'refs/heads/';
@@ -46,3 +46,16 @@ export const SAMPLE_REPO = {
     canAuthorise: ['bob'],
   },
 };
+
+/**
+ * Maximum payload bytes for a single side-band-64k packet
+ * 65520 bytes total minus 4 bytes of pkt-line length and 1 band byte.
+ */
+export const MAX_SIDEBAND_PAYLOAD_BYTES = 65515;
+
+/** Capability that must be negotiated by the client for streamed progress */
+export const SIDE_BAND_64K_CAPABILITY = 'side-band-64k';
+
+/** Capabilities with which the client requests a receive-pack status report.
+ * The `ng` (rejected ref) line syntax is identical in both protocol versions. */
+export const REPORT_STATUS_CAPABILITIES = ['report-status', 'report-status-v2'];
