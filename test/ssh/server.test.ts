@@ -20,8 +20,22 @@ import fs from 'fs';
 import * as config from '../../src/config';
 import * as db from '../../src/db';
 import * as chain from '../../src/proxy/chain';
+import * as ssh2 from 'ssh2';
 import SSHServer from '../../src/proxy/ssh/server';
 import * as GitProtocol from '../../src/proxy/ssh/GitProtocol';
+
+// Wrap the ssh2.Server constructor in a spy while keeping the real implementation,
+// so we can inspect the options it is built with. Its namespace export cannot be
+// patched with vi.spyOn under ESM, hence the module factory.
+vi.mock('ssh2', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('ssh2')>();
+  return {
+    ...actual,
+    Server: vi.fn(
+      (...args: ConstructorParameters<typeof actual.Server>) => new actual.Server(...args),
+    ),
+  };
+});
 
 /**
  * SSH Server Unit Test Suite
@@ -1367,8 +1381,38 @@ describe('SSHServer', () => {
         debug: true,
       } as any);
 
+      // Inspect the options passed to the ssh2.Server constructor (spied via vi.mock).
+      const serverSpy = vi.mocked(ssh2.Server);
+      serverSpy.mockClear();
+
       const debugServer = new SSHServer();
+
       expect(debugServer).toBeDefined();
+      // Debug mode is only observable through the options passed to ssh2.Server:
+      // when enabled, serverOptions.debug is a logging function.
+      const serverOptions = serverSpy.mock.calls[0][0] as any;
+      expect(typeof serverOptions.debug).toBe('function');
+    });
+
+    it('should not set a debug function when debug is disabled', () => {
+      vi.spyOn(config, 'getSSHConfig').mockReturnValue({
+        hostKey: {
+          privateKeyPath: `${testKeysDir}/test_key`,
+          publicKeyPath: `${testKeysDir}/test_key.pub`,
+        },
+        port: 2222,
+        enabled: true,
+        debug: false,
+      } as any);
+
+      const serverSpy = vi.mocked(ssh2.Server);
+      serverSpy.mockClear();
+
+      const plainServer = new SSHServer();
+
+      expect(plainServer).toBeDefined();
+      const serverOptions = serverSpy.mock.calls[0][0] as any;
+      expect(serverOptions.debug).toBeUndefined();
     });
   });
 });
