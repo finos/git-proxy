@@ -73,5 +73,6 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
 };
 
 exec.displayName = 'checkAuthorEmails.exec';
+exec.isCollectible = true;
 
 export { exec };

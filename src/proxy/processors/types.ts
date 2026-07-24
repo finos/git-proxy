@@ -19,8 +19,20 @@ import { Request } from 'express';
 import { Question } from '../../config/generated/config';
 import { Action } from '../actions';
 
+export interface ProcessorExec {
+  (req: Request, action: Action): Promise<Action>;
+  /** Used for progress and step reporting (e.g. 'checkMessages.exec'). */
+  readonly displayName?: string;
+  /**
+   * Failures in collectible steps are recoverable by the user. Failures are
+   * recorded and all rejection reasons are reported at the end of the chain.
+   * When false or unset, a failure stops the chain immediately.
+   */
+  readonly isCollectible?: boolean;
+}
+
 export interface Processor {
-  exec(req: Request, action: Action): Promise<Action>;
+  exec: ProcessorExec;
   metadata: ProcessorMetadata;
 }
 
