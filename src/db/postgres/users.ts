@@ -1,0 +1,255 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { PublicKeyRecord, User, UserQuery } from '../types';
+import { DuplicateSSHKeyError } from '../../errors/DatabaseErrors';
+import { query } from './helper';
+
+interface UserRow {
+  _id: string;
+  username: string;
+  email: string | null;
+  password: string | null;
+  git_account: string;
+  admin: boolean;
+  oidc_id: string | null;
+  public_keys: PublicKeyRecord[] | null;
+  display_name: string | null;
+  title: string | null;
+}
+
+const rowToUser = (row: UserRow): User => {
+  const user = new User(
+    row.username,
+    row.password ?? '',
+    row.git_account,
+    row.email ?? '',
+    row.admin,
+    row.oidc_id,
+    row.public_keys ?? [],
+    row._id,
+  );
+  user.password = row.password;
+  user.displayName = row.display_name;
+  user.title = row.title;
+  return user;
+};
+
+const SELECT_COLUMNS =
+  '_id, username, email, password, git_account, admin, oidc_id, public_keys, display_name, title';
+
+export const findUser = async (username: string): Promise<User | null> => {
+  const result = await query<UserRow>(`SELECT ${SELECT_COLUMNS} FROM users WHERE username = $1`, [
+    username.toLowerCase(),
+  ]);
+  return result.rowCount === 0 ? null : rowToUser(result.rows[0]);
+};
+
+export const findUserByEmail = async (email: string): Promise<User | null> => {
+  const result = await query<UserRow>(`SELECT ${SELECT_COLUMNS} FROM users WHERE email = $1`, [
+    email.toLowerCase(),
+  ]);
+  return result.rowCount === 0 ? null : rowToUser(result.rows[0]);
+};
+
+export const findUserByGitAccount = async (gitAccount: string): Promise<User | null> => {
+  const result = await query<UserRow>(
+    `SELECT ${SELECT_COLUMNS} FROM users WHERE git_account = $1`,
+    [gitAccount.toLowerCase()],
+  );
+  return result.rowCount === 0 ? null : rowToUser(result.rows[0]);
+};
+
+export const findUserByOIDC = async (oidcId: string): Promise<User | null> => {
+  const result = await query<UserRow>(`SELECT ${SELECT_COLUMNS} FROM users WHERE oidc_id = $1`, [
+    oidcId,
+  ]);
+  return result.rowCount === 0 ? null : rowToUser(result.rows[0]);
+};
+
+export const getUsers = async (q: Partial<UserQuery> = {}): Promise<User[]> => {
+  const clauses: string[] = [];
+  const values: unknown[] = [];
+  if (q.username) {
+    values.push(q.username.toLowerCase());
+    clauses.push(`username = $${values.length}`);
+  }
+  if (q.email) {
+    values.push(q.email.toLowerCase());
+    clauses.push(`email = $${values.length}`);
+  }
+
+  const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
+  // Match mongo's `.project({ password: 0 })` — omit password from list results.
+  const result = await query<UserRow>(
+    `SELECT _id, username, email, NULL::text AS password, git_account, admin, oidc_id, public_keys, display_name, title
+       FROM users ${where}`,
+    values,
+  );
+  return result.rows.map(rowToUser);
+};
+
+export const createUser = async (user: User): Promise<void> => {
+  await query(
+    `INSERT INTO users (username, email, password, git_account, admin, oidc_id, public_keys, display_name, title)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)`,
+    [
+      user.username.toLowerCase(),
+      user.email.toLowerCase(),
+      user.password ?? null,
+      user.gitAccount,
+      user.admin,
+      user.oidcId ?? null,
+      JSON.stringify(user.publicKeys ?? []),
+      user.displayName ?? null,
+      user.title ?? null,
+    ],
+  );
+};
+
+export const deleteUser = async (username: string): Promise<void> => {
+  await query(`DELETE FROM users WHERE username = $1`, [username.toLowerCase()]);
+};
+
+/**
+ * Update an existing user, or insert a new one if no matching row exists.
+ *
+ * Mirrors the mongo adapter's upsert semantics: partial updates are merged
+ * onto an existing row (only supplied fields are written), and a missing row
+ * is created. Identity is by `_id` when provided, otherwise by `username`.
+ */
+export const updateUser = async (user: Partial<User>): Promise<void> => {
+  const username = user.username?.toLowerCase();
+  const email = user.email?.toLowerCase();
+
+  // Track the supplied columns so both branches only ever write the fields
+  // the caller patched.
+  const columns: string[] = [];
+  const values: unknown[] = [];
+  const set = (column: string, value: unknown) => {
+    columns.push(column);
+    values.push(value);
+  };
+
+  if (username !== undefined) set('username', username);
+  if (email !== undefined) set('email', email);
+  if (user.password !== undefined) set('password', user.password);
+  if (user.gitAccount !== undefined) set('git_account', user.gitAccount);
+  if (user.admin !== undefined) set('admin', user.admin);
+  if (user.oidcId !== undefined) set('oidc_id', user.oidcId);
+  if (user.publicKeys !== undefined) set('public_keys', JSON.stringify(user.publicKeys));
+  if (user.displayName !== undefined) set('display_name', user.displayName);
+  if (user.title !== undefined) set('title', user.title);
+
+  // An empty SET list would be a SQL syntax error, so fail loudly rather than
+  // let callers (or future handlers copying this builder) hit that.
+  if (columns.length === 0) {
+    throw new Error('updateUser requires at least one field to update');
+  }
+
+  if (user._id) {
+    const sets = columns.map((column, i) => `${column} = $${i + 1}`);
+    values.push(user._id);
+    await query(`UPDATE users SET ${sets.join(', ')} WHERE _id = $${values.length}`, values);
+    return;
+  }
+
+  if (!username) {
+    throw new Error('updateUser requires either _id or username');
+  }
+
+  // Upsert by username when no _id is supplied, matching mongo's behaviour.
+  // A single atomic statement (rather than UPDATE-then-INSERT) so a
+  // concurrent insert of the same username can't drop the update; on
+  // conflict only the supplied fields are merged onto the existing row.
+  const assignments = columns.map((column) => `${column} = EXCLUDED.${column}`);
+  await query(
+    `INSERT INTO users (username, email, password, git_account, admin, oidc_id, public_keys, display_name, title)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)
+     ON CONFLICT (username) DO UPDATE SET ${assignments.join(', ')}`,
+    [
+      username,
+      email ?? null,
+      user.password ?? null,
+      user.gitAccount ?? '',
+      user.admin ?? false,
+      user.oidcId ?? null,
+      JSON.stringify(user.publicKeys ?? []),
+      user.displayName ?? null,
+      user.title ?? null,
+    ],
+  );
+};
+
+export const findUserBySSHKey = async (sshKey: string): Promise<User | null> => {
+  // JSONB containment: matches any element of public_keys with this exact key,
+  // equivalent to mongo's `{ 'publicKeys.key': sshKey }`.
+  const result = await query<UserRow>(
+    `SELECT ${SELECT_COLUMNS} FROM users WHERE public_keys @> $1::jsonb`,
+    [JSON.stringify([{ key: sshKey }])],
+  );
+  return result.rowCount === 0 ? null : rowToUser(result.rows[0]);
+};
+
+export const addPublicKey = async (username: string, publicKey: PublicKeyRecord): Promise<void> => {
+  const existingUser = await findUserBySSHKey(publicKey.key);
+  if (existingUser && existingUser.username.toLowerCase() !== username.toLowerCase()) {
+    throw new DuplicateSSHKeyError(existingUser.username);
+  }
+
+  const user = await findUser(username);
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const keyExists = user.publicKeys?.some(
+    (k) => k.key === publicKey.key || (k.fingerprint && k.fingerprint === publicKey.fingerprint),
+  );
+  if (keyExists) {
+    throw new Error('SSH key already exists');
+  }
+
+  await query(`UPDATE users SET public_keys = public_keys || $2::jsonb WHERE username = $1`, [
+    username.toLowerCase(),
+    JSON.stringify([publicKey]),
+  ]);
+};
+
+export const removePublicKey = async (username: string, fingerprint: string): Promise<void> => {
+  // Filter the matching key out of the JSONB array; like mongo's `$pull`, this
+  // is a no-op when the user or fingerprint does not exist.
+  await query(
+    `UPDATE users
+        SET public_keys = coalesce(
+          (
+            SELECT jsonb_agg(k)
+              FROM jsonb_array_elements(public_keys) AS k
+             WHERE (k->>'fingerprint') IS DISTINCT FROM $2
+          ),
+          '[]'::jsonb
+        )
+      WHERE username = $1`,
+    [username.toLowerCase(), fingerprint],
+  );
+};
+
+export const getPublicKeys = async (username: string): Promise<PublicKeyRecord[]> => {
+  const user = await findUser(username);
+  if (!user) {
+    throw new Error('User not found');
+  }
+  return user.publicKeys || [];
+};
