@@ -324,6 +324,10 @@ export const getDatabase = () => {
       if (db.type === 'mongo' && !db.connectionString) {
         db.connectionString = serverConfig.GIT_PROXY_MONGO_CONNECTION_STRING;
       }
+      // same fallback for postgres
+      if (db.type === 'postgres' && !db.connectionString) {
+        db.connectionString = serverConfig.GIT_PROXY_POSTGRES_CONNECTION_STRING;
+      }
       return db;
     }
   }
