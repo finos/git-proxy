@@ -12,6 +12,8 @@ For project governance, roles, and voting procedures, see the [Governance sectio
 - [Development Workflow](#development-workflow)
 - [Testing](#testing)
   - [Unit Tests](#unit-tests)
+  - [MongoDB Integration Tests](#mongodb-integration-tests)
+  - [PostgreSQL Integration Tests](#postgresql-integration-tests)
   - [End-to-End Tests](#end-to-end-tests)
   - [UI Tests (Cypress)](#ui-tests-cypress)
   - [Fuzz Tests](#fuzz-tests)
@@ -87,7 +89,7 @@ git-proxy/
 ├── src/
 │   ├── proxy/              # Core proxy logic (action chain, processors)
 │   ├── service/            # Express app, API routes, authentication (Passport.js)
-│   ├── db/                 # Database abstraction (MongoDB + NeDB)
+│   ├── db/                 # Database abstraction (MongoDB, PostgreSQL, NeDB)
 │   ├── config/             # Configuration loading and generated types
 │   ├── ui/                 # React dashboard (Material-UI)
 │   ├── plugin.ts           # Plugin base classes (PushActionPlugin, PullActionPlugin)
@@ -113,7 +115,7 @@ git-proxy/
 
 - **Action chain**: Git push/fetch requests flow through a chain of processors in `src/proxy/chain.ts`
 - **Plugin system**: Extends the action chain with custom logic (see `src/plugin.ts`)
-- **Dual database**: MongoDB for production state; [NeDB](https://github.com/seald/nedb) for local file-based development (`.data/` directory)
+- **Pluggable database**: MongoDB or PostgreSQL for production state; [NeDB](https://github.com/seald/nedb) for local file-based development (`.data/` directory)
 - **Authentication**: Passport.js strategies (local, Active Directory, OpenID Connect)
 
 ## Development Workflow
@@ -201,6 +203,31 @@ docker stop mongodb-test && docker rm mongodb-test
 Configuration: [vitest.config.integration.ts](vitest.config.integration.ts)
 
 In CI, `RUN_MONGO_TESTS` is set automatically in the workflow that runs integration tests.
+
+### PostgreSQL Integration Tests
+
+Some tests require a real PostgreSQL instance. These are guarded by the `RUN_POSTGRES_TESTS` environment variable and run separately from unit tests.
+
+```bash
+# Start PostgreSQL with Docker
+docker run -d --name postgres-test -p 5432:5432 \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=git_proxy_test \
+  postgres:16
+
+# Run PostgreSQL integration tests
+npm run test:integration:postgres
+
+# Cleanup
+docker stop postgres-test && docker rm postgres-test
+```
+
+Configuration: [vitest.config.integration.postgres.ts](vitest.config.integration.postgres.ts)
+
+Unlike the MongoDB lane, `RUN_POSTGRES_TESTS` and the connection string are set by the Vitest config itself, so no extra environment variables are required on the command line — you only need a PostgreSQL instance reachable at `postgresql://postgres:postgres@localhost:5432/git_proxy_test`.
+
+In CI, the PostgreSQL integration tests run against a `postgres:16` service container in the same workflow as the MongoDB integration tests.
 
 ### End-to-End Tests
 
