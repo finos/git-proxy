@@ -16,6 +16,7 @@
 
 import request, { Response } from 'supertest';
 import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
+import * as config from '../src/config';
 import * as db from '../src/db';
 import { Service } from '../src/service';
 import { Proxy } from '../src/proxy';
@@ -85,6 +86,8 @@ describe('Push API', () => {
   };
 
   beforeAll(async () => {
+    vi.spyOn(config, 'getUIPort').mockReturnValue(0);
+
     // remove existing repo and users if any
     const oldRepo = await db.getRepoByUrl(TEST_URL);
     if (oldRepo) {
