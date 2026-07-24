@@ -19,7 +19,12 @@ import { spawnSync } from 'child_process';
 import { rmSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
-import { isCompatiblePlugin, PushActionPlugin, PluginLoader } from '../../src/plugin';
+import {
+  isCompatiblePlugin,
+  PushActionPlugin,
+  PullActionPlugin,
+  PluginLoader,
+} from '../../src/plugin';
 
 // On Windows, ESM requires file:// URLs instead of absolute paths
 const toPluginPath = (filePath: string): string => {
@@ -171,5 +176,22 @@ describe('plugin functions', () => {
     const plugin = new CustomPlugin(async () => {});
     expect(isCompatiblePlugin(plugin)).toBe(true);
     expect(isCompatiblePlugin(plugin, 'isGitProxyPushActionPlugin')).toBe(true);
+  });
+
+  it('should default a PushActionPlugin chainPhase to "start"', () => {
+    const plugin = new PushActionPlugin(async () => {});
+    expect(plugin.chainPhase).toBe('start');
+  });
+
+  it('should honour an explicit "afterDiff" chainPhase option', () => {
+    const plugin = new PushActionPlugin(async () => {}, { chainPhase: 'afterDiff' });
+    expect(plugin.chainPhase).toBe('afterDiff');
+  });
+
+  it('should default a PullActionPlugin chainPhase to "start" and honour "afterAuth"', () => {
+    expect(new PullActionPlugin(async () => {}).chainPhase).toBe('start');
+    expect(new PullActionPlugin(async () => {}, { chainPhase: 'afterAuth' }).chainPhase).toBe(
+      'afterAuth',
+    );
   });
 });

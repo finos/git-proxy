@@ -117,6 +117,18 @@ const sendErrorResponse = (
     return;
   }
 
+  // Blocked pull/fetch: an upload-pack POST expects an upload-pack result. Send a protocol ERR
+  // packet (PKT-LINE("ERR" SP explanation)) so the git client aborts the fetch and prints the
+  // message ("remote error: ..."), rather than a receive-pack-shaped sideband it cannot parse.
+  if (req.url.endsWith('/git-upload-pack')) {
+    res.set('content-type', 'application/x-git-upload-pack-result');
+    res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
+    res.set('pragma', 'no-cache');
+    res.set('cache-control', 'no-cache, max-age=0, must-revalidate');
+    res.status(200).send(handleErrPacket(message));
+    return;
+  }
+
   // Standard git receive-pack response
   res.set('content-type', 'application/x-git-receive-pack-result');
   res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
@@ -163,6 +175,13 @@ const handleRefsErrorMessage = (message: string): string => {
   const errorBody = `ERR ${message}`;
   const len = (4 + Buffer.byteLength(errorBody)).toString(16).padStart(4, '0');
   return `${len}${errorBody}\n0000`;
+};
+
+const handleErrPacket = (message: string): string => {
+  // PKT-LINE("ERR" SP explanation-text LF) - the length header counts the trailing LF
+  const errorBody = `ERR ${message}\n`;
+  const len = (4 + Buffer.byteLength(errorBody)).toString(16).padStart(4, '0');
+  return `${len}${errorBody}0000`;
 };
 
 const getRequestPathResolver: (prefix: string) => ProxyOptions['proxyReqPathResolver'] = (
@@ -654,6 +673,7 @@ export {
   getRouter,
   handleMessage,
   handleRefsErrorMessage,
+  handleErrPacket,
   isPackPost,
   isReceivePackPost,
   extractRawBody,
