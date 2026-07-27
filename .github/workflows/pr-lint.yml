@@ -3,6 +3,8 @@
 name: 'PR'
 
 on:
+  # PR target used in accordance with README
+  # zizmor: ignore[dangerous-triggers]
   pull_request_target:
     types:
       - opened
@@ -54,7 +56,7 @@ jobs:
         uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: audit
-      - uses: release-drafter/release-drafter@4d75298e00d9e34c483e5ff8c68d0ea1c1940c1e # v7
+      - uses: release-drafter/release-drafter@eada3c96a64734dd381cfbda23511034e328ddb0 # v7.6.0
         with:
           commitish: main
         env:

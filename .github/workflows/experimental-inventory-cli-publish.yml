@@ -19,17 +19,21 @@ jobs:
           egress-policy: audit
 
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       # Setup .npmrc file to publish to npm
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '24.x'
           registry-url: 'https://registry.npmjs.org'
 
       - name: check version matches input
         run: |
-          grep "\"version\": \"${{ github.event.inputs.version }}\"," package.json
+          grep "\"version\": \"${GITHUB_EVENT_INPUTS_VERSION}\"," package.json
         working-directory: ./experimental/li-cli
+        env:
+          GITHUB_EVENT_INPUTS_VERSION: ${{ github.event.inputs.version }}
 
       - run: npm ci
         working-directory: ./experimental/li-cli
@@ -41,3 +45,5 @@ jobs:
         working-directory: ./experimental/li-cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        with:
+          persist-credentials: false
