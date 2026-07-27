@@ -17,7 +17,7 @@
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { exec as checkHidden } from '../src/proxy/processors/push-action/checkHiddenCommits';
 import { Action } from '../src/proxy/actions';
-import { EMPTY_COMMIT_HASH } from '../src/proxy/processors/constants';
+import { EMPTY_COMMIT_HASH } from '../src/proxy/constants';
 import { Request } from 'express';
 
 // must hoist these before mocking the modules
