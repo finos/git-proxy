@@ -20,8 +20,22 @@ import fs from 'fs';
 import * as config from '../../src/config';
 import * as db from '../../src/db';
 import * as chain from '../../src/proxy/chain';
+import * as ssh2 from 'ssh2';
 import SSHServer from '../../src/proxy/ssh/server';
 import * as GitProtocol from '../../src/proxy/ssh/GitProtocol';
+
+// Wrap the ssh2.Server constructor in a spy while keeping the real implementation,
+// so we can inspect the options it is built with. Its namespace export cannot be
+// patched with vi.spyOn under ESM, hence the module factory.
+vi.mock('ssh2', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('ssh2')>();
+  return {
+    ...actual,
+    Server: vi.fn(
+      (...args: ConstructorParameters<typeof actual.Server>) => new actual.Server(...args),
+    ),
+  };
+});
 
 /**
  * SSH Server Unit Test Suite
@@ -911,6 +925,494 @@ describe('SSHServer', () => {
       execHandler(acceptExec, rejectExec, info);
 
       expect(acceptExec).toHaveBeenCalled();
+    });
+  });
+
+  describe('Repository Path Security', () => {
+    let mockStream: any;
+    let mockClient: any;
+
+    beforeEach(() => {
+      mockStream = {
+        write: vi.fn(),
+        stderr: { write: vi.fn() },
+        exit: vi.fn(),
+        end: vi.fn(),
+        on: vi.fn(),
+        once: vi.fn(),
+      };
+      mockClient = {
+        authenticatedUser: {
+          username: 'test-user',
+          email: 'test@example.com',
+          gitAccount: 'testgit',
+        },
+        agentForwardingEnabled: true,
+        clientIp: '127.0.0.1',
+      };
+    });
+
+    it('should reject paths with path traversal sequences', async () => {
+      await server.handleCommand(
+        "git-upload-pack 'github.com/../secret/repo.git'",
+        mockStream,
+        mockClient,
+      );
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('path traversal'),
+      );
+      expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+
+    it('should reject paths with double slashes', async () => {
+      await server.handleCommand(
+        "git-upload-pack 'github.com//test/repo.git'",
+        mockStream,
+        mockClient,
+      );
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('path traversal'),
+      );
+      expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+
+    it('should reject paths with too few segments', async () => {
+      await server.handleCommand("git-upload-pack 'host.com/repo.git'", mockStream, mockClient);
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('host/org/repo.git'),
+      );
+      expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+
+    it('should reject paths with invalid hostname', async () => {
+      await server.handleCommand(
+        "git-upload-pack '-invalid.com/test/repo.git'",
+        mockStream,
+        mockClient,
+      );
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(expect.stringContaining('valid domain'));
+      expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+
+    it('should reject paths without .git extension', async () => {
+      await server.handleCommand("git-upload-pack 'github.com/test/repo'", mockStream, mockClient);
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(expect.stringContaining('Error:'));
+      expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+  });
+
+  describe('Push Operation - Full Flow', () => {
+    let mockStream: any;
+    let mockClient: any;
+
+    beforeEach(() => {
+      mockStream = {
+        write: vi.fn(),
+        stderr: { write: vi.fn() },
+        exit: vi.fn(),
+        end: vi.fn(),
+        on: vi.fn(),
+        once: vi.fn(),
+      };
+      mockClient = {
+        authenticatedUser: {
+          username: 'test-user',
+          email: 'test@example.com',
+          gitAccount: 'testgit',
+        },
+        agentForwardingEnabled: true,
+        clientIp: '127.0.0.1',
+      };
+    });
+
+    type Handler = (...args: unknown[]) => void;
+
+    async function setupPushHandlers() {
+      const handlers: Record<string, Handler> = {};
+
+      vi.spyOn(GitProtocol, 'fetchGitHubCapabilities').mockResolvedValue(
+        Buffer.from('capabilities'),
+      );
+
+      mockStream.on.mockImplementation((event: string, handler: Handler) => {
+        handlers[`on:${event}`] = handler;
+        return mockStream;
+      });
+      mockStream.once.mockImplementation((event: string, handler: Handler) => {
+        handlers[`once:${event}`] = handler;
+        return mockStream;
+      });
+
+      await server.handleCommand(
+        "git-receive-pack 'github.com/test/repo.git'",
+        mockStream,
+        mockClient,
+      );
+
+      return {
+        dataHandler: handlers['on:data'] as Handler,
+        endHandler: handlers['once:end'] as Handler,
+        errorHandler: handlers['on:error'] as Handler,
+      };
+    }
+
+    it('should detect no-op push when no data is sent', async () => {
+      const { endHandler } = await setupPushHandlers();
+
+      await endHandler();
+
+      expect(mockStream.exit).toHaveBeenCalledWith(0);
+      expect(mockStream.end).toHaveBeenCalled();
+    });
+
+    it('should detect no-op push with flush-only pkt-line data', async () => {
+      const { dataHandler, endHandler } = await setupPushHandlers();
+
+      dataHandler(Buffer.from('0000'));
+
+      await endHandler();
+
+      expect(mockStream.exit).toHaveBeenCalledWith(0);
+      expect(mockStream.end).toHaveBeenCalled();
+    });
+
+    it('should run security chain and forward pack data on valid push', async () => {
+      const chainSpy = vi.spyOn(chain.default, 'executeChain').mockResolvedValue({
+        error: false,
+        blocked: false,
+      } as any);
+      const forwardSpy = vi
+        .spyOn(GitProtocol, 'forwardPackDataToRemote')
+        .mockResolvedValue(undefined);
+
+      const { dataHandler, endHandler } = await setupPushHandlers();
+
+      // Construct a proper pkt-line with a ref update
+      const oldSha = '0'.repeat(40);
+      const newSha = 'a'.repeat(40);
+      const refLine = `${oldSha} ${newSha} refs/heads/main\0report-status\n`;
+      const pktLen = (4 + refLine.length).toString(16).padStart(4, '0');
+      const packData = Buffer.from(`${pktLen}${refLine}0000`);
+
+      dataHandler(packData);
+
+      await endHandler();
+
+      expect(chainSpy).toHaveBeenCalled();
+      const req = chainSpy.mock.calls[0][0];
+      expect(req.method).toBe('POST');
+      expect(req.isSSH).toBe(true);
+      expect(forwardSpy).toHaveBeenCalled();
+    });
+
+    it('should block push when security chain returns error', async () => {
+      vi.spyOn(chain.default, 'executeChain').mockResolvedValue({
+        error: true,
+        errorMessage: 'Push blocked by policy',
+      } as any);
+
+      const { dataHandler, endHandler } = await setupPushHandlers();
+
+      dataHandler(Buffer.from('arbitrary data triggers chain'));
+
+      await endHandler();
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Push blocked by policy'),
+      );
+      expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+
+    it('should block push when security chain returns blocked', async () => {
+      vi.spyOn(chain.default, 'executeChain').mockResolvedValue({
+        blocked: true,
+        blockedMessage: 'Blocked by admin',
+      } as any);
+
+      const { dataHandler, endHandler } = await setupPushHandlers();
+
+      dataHandler(Buffer.from('arbitrary data'));
+
+      await endHandler();
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Blocked by admin'),
+      );
+      expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+
+    it('should handle security chain execution error', async () => {
+      vi.spyOn(chain.default, 'executeChain').mockRejectedValue(new Error('Chain crashed'));
+
+      const { dataHandler, endHandler } = await setupPushHandlers();
+
+      dataHandler(Buffer.from('arbitrary data'));
+
+      await endHandler();
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Security chain execution failed'),
+      );
+      expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+
+    it('should use default blocked message when none provided', async () => {
+      vi.spyOn(chain.default, 'executeChain').mockResolvedValue({
+        blocked: true,
+      } as any);
+
+      const { dataHandler, endHandler } = await setupPushHandlers();
+
+      dataHandler(Buffer.from('data'));
+
+      await endHandler();
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Request blocked by proxy chain'),
+      );
+    });
+
+    it('should enforce pack size limit', async () => {
+      vi.spyOn(config, 'getMaxPackSizeBytes').mockReturnValue(100);
+
+      const { dataHandler } = await setupPushHandlers();
+
+      dataHandler(Buffer.alloc(101));
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('exceeds maximum size'),
+      );
+      expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+
+    it('should enforce maximum chunk count', async () => {
+      const { dataHandler } = await setupPushHandlers();
+
+      for (let i = 0; i < 10000; i++) {
+        dataHandler(Buffer.from('x'));
+      }
+
+      // Reset mocks to clearly see the rejection
+      mockStream.stderr.write.mockClear();
+      mockStream.exit.mockClear();
+
+      dataHandler(Buffer.from('x'));
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Exceeded maximum number of data chunks'),
+      );
+      expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+
+    it('should reject non-Buffer data', async () => {
+      const { dataHandler } = await setupPushHandlers();
+
+      dataHandler('not a buffer' as any);
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Invalid data format'),
+      );
+      expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+
+    it('should handle stream error during push', async () => {
+      const { errorHandler } = await setupPushHandlers();
+
+      errorHandler(new Error('Connection reset'));
+
+      expect(mockStream.stderr.write).toHaveBeenCalledWith(
+        expect.stringContaining('Connection reset'),
+      );
+      expect(mockStream.exit).toHaveBeenCalledWith(1);
+    });
+
+    it('should timeout if push takes too long', async () => {
+      vi.useFakeTimers();
+
+      try {
+        const handlers: Record<string, Handler> = {};
+        vi.spyOn(GitProtocol, 'fetchGitHubCapabilities').mockResolvedValue(Buffer.from('caps'));
+
+        mockStream.on.mockImplementation((event: string, handler: Handler) => {
+          handlers[`on:${event}`] = handler;
+          return mockStream;
+        });
+        mockStream.once.mockImplementation((event: string, handler: Handler) => {
+          handlers[`once:${event}`] = handler;
+          return mockStream;
+        });
+
+        await server.handleCommand(
+          "git-receive-pack 'github.com/test/repo.git'",
+          mockStream,
+          mockClient,
+        );
+
+        vi.advanceTimersByTime(300001);
+
+        expect(mockStream.stderr.write).toHaveBeenCalledWith('Error: Push operation timeout\n');
+        expect(mockStream.exit).toHaveBeenCalledWith(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
+  describe('Authentication Edge Cases', () => {
+    let mockClient: any;
+    let clientInfo: any;
+
+    beforeEach(() => {
+      mockClient = {
+        on: vi.fn(),
+        end: vi.fn(),
+        username: null,
+        agentForwardingEnabled: false,
+        authenticatedUser: null,
+        clientIp: null,
+      };
+      clientInfo = { ip: '127.0.0.1', family: 'IPv4' };
+    });
+
+    it('should handle database error during publickey auth', async () => {
+      const mockCtx = {
+        method: 'publickey',
+        key: { algo: 'ssh-rsa', data: Buffer.from('key-data') },
+        accept: vi.fn(),
+        reject: vi.fn(),
+      };
+
+      vi.spyOn(db, 'findUserBySSHKey').mockRejectedValue(new Error('DB connection lost'));
+
+      (server as any).handleClient(mockClient, clientInfo);
+      const authHandler = mockClient.on.mock.calls.find(
+        (call: any[]) => call[0] === 'authentication',
+      )?.[1];
+
+      authHandler(mockCtx);
+      // Rejection propagates through .then() → .catch(), needing two microtask ticks
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(mockCtx.reject).toHaveBeenCalled();
+      expect(mockCtx.accept).not.toHaveBeenCalled();
+    });
+
+    it('should reject unsupported authentication methods', async () => {
+      const mockCtx = {
+        method: 'password',
+        accept: vi.fn(),
+        reject: vi.fn(),
+      };
+
+      (server as any).handleClient(mockClient, clientInfo);
+      const authHandler = mockClient.on.mock.calls.find(
+        (call: any[]) => call[0] === 'authentication',
+      )?.[1];
+
+      authHandler(mockCtx);
+
+      expect(mockCtx.reject).toHaveBeenCalled();
+      expect(mockCtx.accept).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Agent Forwarding - wantReply=false', () => {
+    it('should handle auth-agent with non-function accept', () => {
+      const mockSession = { on: vi.fn(), end: vi.fn() };
+      const mockClient: any = {
+        on: vi.fn(),
+        end: vi.fn(),
+        username: null,
+        agentForwardingEnabled: false,
+        authenticatedUser: { username: 'test-user', email: 'test@example.com' },
+        clientIp: null,
+      };
+
+      (server as any).handleClient(mockClient, { ip: '127.0.0.1' });
+
+      const sessionHandler = mockClient.on.mock.calls.find(
+        (call: any[]) => call[0] === 'session',
+      )?.[1];
+
+      const accept = vi.fn().mockReturnValue(mockSession);
+      sessionHandler(accept, vi.fn());
+
+      const authAgentHandler = mockSession.on.mock.calls.find(
+        (call: any[]) => call[0] === 'auth-agent',
+      )?.[1];
+
+      // Pass non-function (simulates wantReply=false where ssh2 passes undefined)
+      authAgentHandler(undefined);
+
+      // Should still enable agent forwarding even when internal APIs fail
+      expect(mockClient.agentForwardingEnabled).toBe(true);
+    });
+  });
+
+  describe('Server Lifecycle - Listen Callback', () => {
+    it('should log when server starts listening', () => {
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      vi.spyOn((server as any).server, 'listen').mockImplementation(((...args: unknown[]) => {
+        const cb = args[1] as () => void;
+        cb();
+      }) as any);
+
+      server.start();
+
+      expect(consoleSpy).toHaveBeenCalledWith('[SSH] Server listening on port 2222');
+    });
+  });
+
+  describe('Debug Mode', () => {
+    it('should create server with debug function when debug is enabled', () => {
+      vi.spyOn(config, 'getSSHConfig').mockReturnValue({
+        hostKey: {
+          privateKeyPath: `${testKeysDir}/test_key`,
+          publicKeyPath: `${testKeysDir}/test_key.pub`,
+        },
+        port: 2222,
+        enabled: true,
+        debug: true,
+      } as any);
+
+      // Inspect the options passed to the ssh2.Server constructor (spied via vi.mock).
+      const serverSpy = vi.mocked(ssh2.Server);
+      serverSpy.mockClear();
+
+      const debugServer = new SSHServer();
+
+      expect(debugServer).toBeDefined();
+      // Debug mode is only observable through the options passed to ssh2.Server:
+      // when enabled, serverOptions.debug is a logging function.
+      const serverOptions = serverSpy.mock.calls[0][0] as any;
+      expect(typeof serverOptions.debug).toBe('function');
+    });
+
+    it('should not set a debug function when debug is disabled', () => {
+      vi.spyOn(config, 'getSSHConfig').mockReturnValue({
+        hostKey: {
+          privateKeyPath: `${testKeysDir}/test_key`,
+          publicKeyPath: `${testKeysDir}/test_key.pub`,
+        },
+        port: 2222,
+        enabled: true,
+        debug: false,
+      } as any);
+
+      const serverSpy = vi.mocked(ssh2.Server);
+      serverSpy.mockClear();
+
+      const plainServer = new SSHServer();
+
+      expect(plainServer).toBeDefined();
+      const serverOptions = serverSpy.mock.calls[0][0] as any;
+      expect(serverOptions.debug).toBeUndefined();
     });
   });
 });
