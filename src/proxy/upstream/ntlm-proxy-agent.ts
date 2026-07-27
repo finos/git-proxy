@@ -61,6 +61,13 @@ const parseHeaderBlock = (raw: Buffer): ParsedResponse => {
 // and push any over-read bytes back onto the socket via `unshift`. This is
 // load-bearing for NTLM: between Type1 and Type3 we must consume the 407 body
 // so the next read starts cleanly at the second response.
+//
+// KNOWN LIMITATION: this only frames the body via `Content-Length`. A 407
+// whose body is chunked (`Transfer-Encoding: chunked`), unframed, or spans
+// more than one TCP segment is not handled and can leave the handshake in a
+// bad state. This matches Squid's response shape. See
+// https://github.com/finos/git-proxy/pull/1551#pullrequestreview-4434186964
+// for the scenarios probed and the rationale for deferring full segment processing.
 const readProxyResponse = (socket: net.Socket): Promise<ParsedResponse> => {
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
