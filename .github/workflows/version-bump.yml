@@ -19,7 +19,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  bump-version-${{ inputs.branch }}:
+  bump-version:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
