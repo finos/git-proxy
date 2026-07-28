@@ -175,4 +175,7 @@ export interface Sink {
   addPublicKey: (username: string, publicKey: PublicKeyRecord) => Promise<void>;
   removePublicKey: (username: string, fingerprint: string) => Promise<void>;
   getPublicKeys: (username: string) => Promise<PublicKeyRecord[]>;
+  getAppliedMigrations: () => Promise<string[]>;
+  recordMigration: (id: string) => Promise<void>;
+  unrecordMigration: (id: string) => Promise<void>;
 }
