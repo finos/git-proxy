@@ -18,8 +18,11 @@ import * as users from './users';
 import * as repo from './repo';
 import * as pushes from './pushes';
 import * as helper from './helper';
+import * as migrations from './migrations';
 
 export const { getSessionStore } = helper;
+
+export const { getAppliedMigrations, recordMigration, unrecordMigration } = migrations;
 
 export const { getPushes, writeAudit, getPush, deletePush, authorise, cancel, reject } = pushes;
 
