@@ -29,7 +29,7 @@ import {
 } from '../src/proxy/processors/pre-processor/parsePush';
 import { parsePacketLines } from '../src/proxy/processors/pktLineParser';
 
-import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
+import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/constants';
 import { CommitContent } from '../src/proxy/processors/types';
 import { Action } from '../src/proxy/actions/Action';
 import { Request } from 'express';
@@ -582,6 +582,40 @@ describe('parsePackFile', () => {
         version: 2,
         entries: numEntries,
       });
+    });
+
+    it('should capture the client capability list from the first ref update line', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/main';
+      const packetLine = `${oldCommit} ${newCommit} ${ref}\0report-status side-band-64k agent=git/2.42.0\n`;
+
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'parent abcdef1234567890abcdef1234567890abcdef12\n' +
+        'author Test Author <author@example.com> 1234567890 +0000\n' +
+        'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
+        'feat: Add new feature\n';
+
+      const packBuffer = createSamplePackBuffer(1, commitContent, 1);
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
+
+      const result = await exec(req, action);
+
+      expect(result.capabilities).toEqual(['report-status', 'side-band-64k', 'agent=git/2.42.0']);
+    });
+
+    it('should set an empty capability list when the ref update line has no capabilities', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/main';
+      // no NUL byte, so no capability list
+      const packetLines = [`${oldCommit} ${newCommit} ${ref}\n`];
+      req.body = createPacketLineBuffer(packetLines);
+
+      const result = await exec(req, action);
+
+      expect(result.capabilities).toEqual([]);
     });
 
     it('should successfully parse a valid push request (captured)', async () => {
