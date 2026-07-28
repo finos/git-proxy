@@ -14,9 +14,18 @@
  * limitations under the License.
  */
 
+import { ObjectId } from 'mongodb';
 import { connect } from './helper';
 
 const collectionName = 'migrations';
+
+export const deriveCreatedAt = (id: string): string | undefined => {
+  try {
+    return new ObjectId(id).getTimestamp().toISOString();
+  } catch {
+    return undefined;
+  }
+};
 
 export const getAppliedMigrations = async (): Promise<string[]> => {
   const collection = await connect(collectionName);

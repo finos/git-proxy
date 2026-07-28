@@ -158,6 +158,7 @@ export interface Sink {
   getRepoByUrl: (url: string) => Promise<Repo | null>;
   getRepoById: (_id: string) => Promise<Repo | null>;
   createRepo: (repo: Repo) => Promise<Repo>;
+  updateRepo: (repo: Partial<Repo>) => Promise<void>;
   addUserCanPush: (_id: string, user: string) => Promise<void>;
   addUserCanAuthorise: (_id: string, user: string) => Promise<void>;
   removeUserCanPush: (_id: string, user: string) => Promise<void>;
@@ -178,4 +179,5 @@ export interface Sink {
   getAppliedMigrations: () => Promise<string[]>;
   recordMigration: (id: string) => Promise<void>;
   unrecordMigration: (id: string) => Promise<void>;
+  deriveCreatedAt: (id: string) => string | undefined;
 }

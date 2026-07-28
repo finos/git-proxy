@@ -22,7 +22,8 @@ import * as migrations from './migrations';
 
 export const { getSessionStore } = helper;
 
-export const { getAppliedMigrations, recordMigration, unrecordMigration } = migrations;
+export const { getAppliedMigrations, recordMigration, unrecordMigration, deriveCreatedAt } =
+  migrations;
 
 export const { getPushes, writeAudit, getPush, deletePush, authorise, cancel, reject } = pushes;
 
@@ -32,6 +33,7 @@ export const {
   getRepoByUrl,
   getRepoById,
   createRepo,
+  updateRepo,
   addUserCanPush,
   addUserCanAuthorise,
   removeUserCanPush,

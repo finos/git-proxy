@@ -28,6 +28,8 @@ if (process.env.NODE_ENV === 'test') {
 db.ensureIndex({ fieldName: 'id', unique: true });
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
+export const deriveCreatedAt = (): string | undefined => undefined;
+
 export const getAppliedMigrations = (): Promise<string[]> => {
   return new Promise<string[]>((resolve, reject) => {
     db.find({}, (err: Error | null, docs: { id: string }[]) => {
