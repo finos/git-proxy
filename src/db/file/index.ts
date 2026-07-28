@@ -49,6 +49,7 @@ export const {
 export const {
   findUser,
   findUserByEmail,
+  findUserByGitAccount,
   findUserByOIDC,
   findUserBySSHKey,
   getUsers,
