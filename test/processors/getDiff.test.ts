@@ -23,7 +23,7 @@ import fc from 'fast-check';
 
 import { Action } from '../../src/proxy/actions';
 import { exec } from '../../src/proxy/processors/push-action/getDiff';
-import { EMPTY_COMMIT_HASH, SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
+import { EMPTY_COMMIT_HASH, SAMPLE_COMMIT } from '../../src/proxy/constants';
 
 describe('getDiff', () => {
   let tempDir: string;

@@ -92,6 +92,19 @@ export const findUserByEmail = (email: string): Promise<User | null> => {
   });
 };
 
+export const findUserByGitAccount = (gitAccount: string): Promise<User | null> => {
+  return new Promise<User | null>((resolve, reject) => {
+    db.findOne({ gitAccount: gitAccount.toLowerCase() }, (err: Error | null, doc: User) => {
+      /* istanbul ignore if */
+      if (err) {
+        reject(err);
+      } else {
+        resolve(doc ?? null);
+      }
+    });
+  });
+};
+
 export const findUserByOIDC = function (oidcId: string): Promise<User | null> {
   return new Promise<User | null>((resolve, reject) => {
     db.findOne({ oidcId: oidcId }, (err: Error | null, doc: User) => {

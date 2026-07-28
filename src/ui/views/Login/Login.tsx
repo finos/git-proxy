@@ -16,27 +16,23 @@
 
 import React, { useState, FormEvent, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
-import FormControl from '@material-ui/core/FormControl';
-import InputLabel from '@material-ui/core/InputLabel';
 import GridItem from '../../components/Grid/GridItem';
 import GridContainer from '../../components/Grid/GridContainer';
-import Input from '@material-ui/core/Input';
-import Button from '../../components/CustomButtons/Button';
 import Card from '../../components/Card/Card';
 import CardHeader from '../../components/Card/CardHeader';
-import CardBody from '../../components/Card/CardBody';
-import CardFooter from '../../components/Card/CardFooter';
 import axios, { AxiosError } from 'axios';
 import logo from '../../assets/img/git-proxy.png';
-import { Badge, CircularProgress, FormLabel, Snackbar } from '@material-ui/core';
+import { Badge, Snackbar } from '@material-ui/core';
 import { useAuth } from '../../auth/AuthProvider';
 import { getBaseUrl } from '../../services/apiConfig';
 import { getAxiosConfig, processAuthError } from '../../services/auth';
 import { BackendResponse } from '../../types';
+import { PublicUser } from '../../../db/types';
+import AuthFormSection from './components/AuthFormSection';
 
 interface LoginResponse {
-  username: string;
-  password: string;
+  message: string;
+  user: PublicUser;
 }
 
 const Login: React.FC = () => {
@@ -51,6 +47,10 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [authMethods, setAuthMethods] = useState<string[]>([]);
   const [usernamePasswordMethod, setUsernamePasswordMethod] = useState<string>('');
+  const [requirePasswordChange, setRequirePasswordChange] = useState<boolean>(false);
+  const [currentPasswordForChange, setCurrentPasswordForChange] = useState<string>('');
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState<string>('');
 
   useEffect(() => {
     const fetchAuthConfig = async () => {
@@ -70,9 +70,25 @@ const Login: React.FC = () => {
     fetchAuthConfig();
   }, []);
 
+  useEffect(() => {
+    if (authContext.user?.mustChangePassword) {
+      setRequirePasswordChange(true);
+    }
+  }, [authContext.user]);
+
   function validateForm(): boolean {
     return (
       username.length > 0 && username.length < 100 && password.length > 0 && password.length < 200
+    );
+  }
+
+  function validatePasswordChangeForm(): boolean {
+    return (
+      currentPasswordForChange.length > 0 &&
+      newPassword.length >= 8 &&
+      confirmNewPassword.length >= 8 &&
+      newPassword === confirmNewPassword &&
+      newPassword !== currentPasswordForChange
     );
   }
 
@@ -88,7 +104,18 @@ const Login: React.FC = () => {
     try {
       const baseUrl = await getBaseUrl();
       const loginUrl = `${baseUrl}/api/auth/login`;
-      await axios.post<LoginResponse>(loginUrl, { username, password }, getAxiosConfig());
+      const response = await axios.post<LoginResponse>(
+        loginUrl,
+        { username, password },
+        getAxiosConfig(),
+      );
+      if (response.data?.user?.mustChangePassword) {
+        setRequirePasswordChange(true);
+        setCurrentPasswordForChange(password);
+        setMessage('For security, you must change your password before continuing.');
+        await authContext.refreshUser();
+        return;
+      }
       window.sessionStorage.setItem('git.proxy.login', 'success');
       setMessage('Success!');
       setSuccess(true);
@@ -112,6 +139,47 @@ const Login: React.FC = () => {
     }
   }
 
+  async function handlePasswordChangeSubmit(event: FormEvent): Promise<void> {
+    event.preventDefault();
+    setIsLoading(true);
+
+    if (!validatePasswordChangeForm()) {
+      setMessage(
+        'Please provide your current password and a new password (minimum 8 characters) that matches confirmation.',
+      );
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const baseUrl = await getBaseUrl();
+      await axios.post(
+        `${baseUrl}/api/auth/change-password`,
+        {
+          currentPassword: currentPasswordForChange,
+          newPassword,
+        },
+        getAxiosConfig(),
+      );
+      await authContext.refreshUser();
+      setRequirePasswordChange(false);
+      setSuccess(true);
+      setMessage('Password updated successfully.');
+      navigate('/dashboard/repo', { replace: true });
+    } catch (error: unknown) {
+      if (error instanceof AxiosError) {
+        const backendMessage =
+          (error.response?.data as BackendResponse | undefined)?.message ??
+          'Unable to update password';
+        setMessage(backendMessage);
+      } else {
+        setMessage('Unable to update password');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   if (gitAccountError) {
     return <Navigate to='/dashboard/profile' />;
   }
@@ -120,8 +188,12 @@ const Login: React.FC = () => {
     return <Navigate to='/dashboard/repo' />;
   }
 
+  if (authContext.user && !authContext.user.mustChangePassword && !requirePasswordChange) {
+    return <Navigate to='/dashboard/repo' />;
+  }
+
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={requirePasswordChange ? handlePasswordChangeSubmit : handleSubmit}>
       <Snackbar
         open={!!message}
         message={message}
@@ -143,87 +215,25 @@ const Login: React.FC = () => {
                 />
               </div>
             </CardHeader>
-            {usernamePasswordMethod ? (
-              <CardBody>
-                <GridContainer>
-                  <GridItem xs={12} sm={12} md={12}>
-                    <FormLabel component='legend' style={{ fontSize: '1.2rem', marginTop: 10 }}>
-                      Login
-                    </FormLabel>
-                    <FormControl fullWidth>
-                      <InputLabel htmlFor='username'>Username</InputLabel>
-                      <Input
-                        id='username'
-                        type='text'
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        autoFocus
-                        data-test='username'
-                      />
-                    </FormControl>
-                  </GridItem>
-                </GridContainer>
-                <GridContainer>
-                  <GridItem xs={12} sm={12} md={12}>
-                    <FormControl fullWidth>
-                      <InputLabel htmlFor='password'>Password</InputLabel>
-                      <Input
-                        id='password'
-                        type='password'
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        data-test='password'
-                      />
-                    </FormControl>
-                  </GridItem>
-                </GridContainer>
-              </CardBody>
-            ) : (
-              <CardBody>
-                <FormLabel
-                  component='legend'
-                  style={{ fontSize: '1rem', marginTop: 10, marginBottom: 0 }}
-                >
-                  Username/password authentication is not enabled at this time.
-                </FormLabel>
-              </CardBody>
-            )}
-            {/* Show login buttons if available (one on top of the other) */}
-            <CardFooter style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {!isLoading ? (
-                <>
-                  {usernamePasswordMethod && (
-                    <Button
-                      color='success'
-                      block
-                      disabled={!validateForm()}
-                      type='submit'
-                      data-test='login'
-                    >
-                      Login
-                    </Button>
-                  )}
-                  {authMethods.map((am) => (
-                    <Button
-                      color='success'
-                      block
-                      onClick={() => handleAuthMethodLogin(am)}
-                      data-test={`${am}-login`}
-                      key={am}
-                    >
-                      Login
-                      {authMethods.length > 1 || usernamePasswordMethod
-                        ? ` with ${am.toUpperCase()}`
-                        : ''}
-                    </Button>
-                  ))}
-                </>
-              ) : (
-                <div style={{ textAlign: 'center', width: '100%', opacity: 0.5, color: 'green' }}>
-                  <CircularProgress color='inherit' />
-                </div>
-              )}
-            </CardFooter>
+            <AuthFormSection
+              requirePasswordChange={requirePasswordChange}
+              isLoading={isLoading}
+              usernamePasswordMethod={usernamePasswordMethod}
+              authMethods={authMethods}
+              username={username}
+              password={password}
+              currentPasswordForChange={currentPasswordForChange}
+              newPassword={newPassword}
+              confirmNewPassword={confirmNewPassword}
+              canSubmitLogin={validateForm()}
+              canSubmitPasswordChange={validatePasswordChangeForm()}
+              onUsernameChange={setUsername}
+              onPasswordChange={setPassword}
+              onCurrentPasswordForChangeChange={setCurrentPasswordForChange}
+              onNewPasswordChange={setNewPassword}
+              onConfirmNewPasswordChange={setConfirmNewPassword}
+              onAuthMethodLogin={handleAuthMethodLogin}
+            />
           </Card>
           <div style={{ textAlign: 'center', opacity: 0.9, fontSize: 12, marginTop: 20 }}>
             <Badge
