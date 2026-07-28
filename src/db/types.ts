@@ -58,9 +58,18 @@ export class Repo {
   name: string;
   url: string;
   users: { canPush: string[]; canAuthorise: string[] };
-  /** ISO-8601; set on create, never overwritten thereafter */
+  /**
+   * ISO-8601; set on create, never overwritten thereafter.
+   * Existing repos missing this field are intentionally left unset here —
+   * backfill belongs in a follow-up versioned migration (Mongo: prefer
+   * `$toDate: "$_id"` over an epoch default). Do not reintroduce startup
+   * one-off backfills.
+   */
   dateCreated?: string;
-  /** ISO-8601; set on create and bumped on repo metadata mutations */
+  /**
+   * ISO-8601; set on create and bumped on repo metadata mutations.
+   * Same migration note as {@link Repo.dateCreated}.
+   */
   lastModified?: string;
   _id?: string;
 
