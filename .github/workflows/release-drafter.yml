@@ -18,11 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2.16.0
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
         with:
           egress-policy: audit
 
-      - uses: release-drafter/release-drafter@563bf132657a13ded0b01fcb723c5a58cdd824e2
+      - uses: release-drafter/release-drafter@34d80673e067bdc0c24568d3af899c216adcfaa9
         with:
           # Target the branch that triggered this run
           # Ex: "release/2.1" becomes the commitish for the draft
