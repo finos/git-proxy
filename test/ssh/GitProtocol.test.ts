@@ -18,12 +18,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock ssh2 module
 vi.mock('ssh2', () => ({
-  Client: vi.fn(() => ({
-    on: vi.fn(),
-    connect: vi.fn(),
-    end: vi.fn(),
-    exec: vi.fn(),
-  })),
+  Client: vi.fn(function () {
+    return {
+      on: vi.fn(),
+      connect: vi.fn(),
+      end: vi.fn(),
+      exec: vi.fn(),
+    };
+  }),
 }));
 
 // Mock sshHelpers
@@ -72,7 +74,7 @@ describe('GitProtocol', () => {
       const ssh2 = await import('ssh2');
       const Client = ssh2.Client as any;
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const mockClient = {
           on: vi.fn((event, handler) => {
             if (event === 'error') {
@@ -101,7 +103,7 @@ describe('GitProtocol', () => {
       const ssh2 = await import('ssh2');
       const Client = ssh2.Client as any;
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const mockClient = {
           on: vi.fn((event, handler) => {
             if (event === 'error') {
@@ -133,7 +135,7 @@ describe('GitProtocol', () => {
       const ssh2 = await import('ssh2');
       const Client = ssh2.Client as any;
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const mockClient = {
           on: vi.fn((event, handler) => {
             if (event === 'error') {
@@ -165,7 +167,7 @@ describe('GitProtocol', () => {
       const ssh2 = await import('ssh2');
       const Client = ssh2.Client as any;
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const mockClient = {
           on: vi.fn((event, handler) => {
             if (event === 'error') {
@@ -205,7 +207,7 @@ describe('GitProtocol', () => {
         end: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const mockClient = {
           on: vi.fn((event, handler) => {
             if (event === 'error') {
@@ -304,7 +306,7 @@ describe('GitProtocol', () => {
         end: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const mockClient = {
           on: vi.fn((event, handler) => {
             if (event === 'error') {
