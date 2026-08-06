@@ -27,6 +27,7 @@ import { User } from '../../db/types';
 import { AuthenticationElement } from '../../config/generated/config';
 import { isAdminUser, mustChangePassword, toPublicUser } from './utils';
 import { handleErrorAndLog } from '../../utils/errors';
+import { scmTokenCache } from '../../proxy/processors/push-action/tokenIdentity';
 
 const router = express.Router();
 const passport = getPassport();
@@ -325,6 +326,7 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
 
     user.gitAccount = req.body.gitAccount;
     await db.updateUser(user);
+    scmTokenCache.evictByUsername('github', user.username);
     return res.status(200).send({ message: 'Git account updated successfully' }).end();
   } catch (error: unknown) {
     const msg = handleErrorAndLog(error, 'Failed to update git account');
