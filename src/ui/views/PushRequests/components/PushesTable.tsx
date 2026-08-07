@@ -17,7 +17,7 @@
 import React, { useCallback, useLayoutEffect, useMemo, useRef } from 'react';
 import { DateTime } from 'luxon';
 import { useNavigate } from 'react-router';
-import { GitBranchIcon, GitCommitIcon } from '@primer/octicons-react';
+import { GitBranchIcon, GitCommitIcon, TagIcon } from '@primer/octicons-react';
 import { Link, Spinner, Text } from '@primer/react';
 import { DataTable, createColumnHelper } from '@primer/react/experimental';
 import Pagination from '../../../components/Pagination/Pagination';
@@ -75,6 +75,18 @@ function pushStatusLabel(row: PushActionView): { label: string; className: strin
 }
 
 function primaryAuthorLine(row: PushActionView): { label: string; title: string } {
+  const tag = row.tagData?.[0];
+  const tagger = tag?.tagger?.trim() ?? '';
+  const taggerEmail = tag?.taggerEmail?.trim() ?? '';
+  if (tagger) {
+    const title =
+      taggerEmail && tagger !== taggerEmail ? `${tagger} <${taggerEmail}>` : taggerEmail || tagger;
+    return { label: tagger, title };
+  }
+  if (taggerEmail) {
+    return { label: taggerEmail, title: taggerEmail };
+  }
+
   const head = row.commitData?.[0];
   const author = head?.author?.trim() ?? '';
   const authorEmail = head?.authorEmail?.trim() ?? '';
@@ -126,6 +138,16 @@ function reviewerDisplayNameFromReviewer(
 }
 
 function primaryAuthorFields(row: PushActionView): { name: string; email: string } {
+  const tag = row.tagData?.[0];
+  const tagger = tag?.tagger?.trim() ?? '';
+  const taggerEmail = tag?.taggerEmail?.trim() ?? '';
+  if (tagger) {
+    return { name: tagger, email: taggerEmail };
+  }
+  if (taggerEmail) {
+    return { name: '', email: taggerEmail };
+  }
+
   const head = row.commitData?.[0];
   const author = head?.author?.trim() ?? '';
   const authorEmail = head?.authorEmail?.trim() ?? '';
@@ -414,7 +436,9 @@ const PushesTable = ({
         minWidth: 'min(100%, 14rem)',
         renderCell: (row) => {
           const head = row.commitData?.[0];
-          const full = head?.message?.trim() ?? '';
+          const tag = row.tagData?.[0];
+          const tagName = tag?.tagName?.trim().replace(/^refs\/tags\//, '') ?? '';
+          const full = (tagName ? tag?.message?.trim() : '') || head?.message?.trim() || '';
           const repoLabel = resolveActivityRepoDisplay(row, repoDisplayIndex);
           const pushKey = canonicalRemoteUrl(row.url);
           const repoId = pushKey ? repoIdByCanonicalUrl.get(pushKey) : undefined;
@@ -458,6 +482,12 @@ const PushesTable = ({
                     </span>
                   )}
                 </span>
+                {tagName ? (
+                  <span className='inline-flex min-h-5 min-w-0 max-w-full items-center gap-1'>
+                    <TagIcon size={16} className='shrink-0 self-center' aria-hidden />
+                    <span className='min-w-0 truncate'>{tagName}</span>
+                  </span>
+                ) : null}
                 {branchRaw ? (
                   <span className='inline-flex min-h-5 min-w-0 max-w-full items-center gap-1'>
                     <GitBranchIcon size={16} className='shrink-0 self-center' aria-hidden />
