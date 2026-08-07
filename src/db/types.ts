@@ -116,6 +116,7 @@ export class User {
   publicKeys?: PublicKeyRecord[];
   displayName?: string | null;
   title?: string | null;
+  mustChangePassword?: boolean;
   _id?: string;
 
   constructor(
@@ -147,6 +148,7 @@ export interface PublicUser {
   gitAccount: string;
   admin: boolean;
   activity?: RepoActivityTabCounts;
+  mustChangePassword?: boolean;
 }
 
 export interface Sink {
@@ -172,6 +174,7 @@ export interface Sink {
   deleteRepo: (_id: string) => Promise<void>;
   findUser: (username: string) => Promise<User | null>;
   findUserByEmail: (email: string) => Promise<User | null>;
+  findUserByGitAccount: (gitAccount: string) => Promise<User | null>;
   findUserByOIDC: (oidcId: string) => Promise<User | null>;
   findUserBySSHKey: (sshKey: string) => Promise<User | null>;
   getUsers: (query?: Partial<UserQuery>) => Promise<User[]>;
