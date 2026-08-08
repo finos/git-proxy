@@ -2,6 +2,16 @@ name: Publish to NPM
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
 permissions:
   contents: read
   id-token: write
@@ -24,13 +34,45 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - name: Check if pre-release and publish to NPM
+      - name: Determine dist-tag and publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
         run: |
+          set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
+          PKG_NAME=$(node -p "require('./package.json').name")
+          echo "Publishing $PKG_NAME@$VERSION"
+
+          # Build the publish command flags.
+          PUBLISH_FLAGS=(--access=public)
+          if [[ "$DRY_RUN" == "true" ]]; then
+            PUBLISH_FLAGS+=(--dry-run)
+            echo "DRY RUN — nothing will actually be published."
+          fi
+
+          # Pre-releases (ex: 2.1.0-rc.1) get tagged as 'rc'
           if [[ "$VERSION" == *"-"* ]]; then
-            echo "Publishing pre-release: $VERSION"
-            npm publish --access=public --tag rc
+            echo "Pre-release detected, publishing under 'rc' tag"
+            npm publish "${PUBLISH_FLAGS[@]}" --tag rc
+            exit 0
+          fi
+
+          # Look up current 'latest' on NPM. If never published before,
+          # defaults to 0.0.0 so any release (0.1.0, 1.0.0, etc.) becomes latest
+          CURRENT_LATEST=$(npm view "$PKG_NAME" version 2>/dev/null || echo "0.0.0")
+          echo "Current 'latest' on npm: $CURRENT_LATEST"
+
+          # If this version is strictly greater than the current 'latest',
+          # it becomes latest
+          if npx --yes semver "$VERSION" -r ">$CURRENT_LATEST" >/dev/null 2>&1; then
+            echo "Publishing as 'latest'"
+            npm publish "${PUBLISH_FLAGS[@]}"
           else
-            echo "Publishing stable release: $VERSION"
-            npm publish --access=public
+            # Otherwise, this is a maintenance release on an older line
+            # Tag as v<major>.<minor> so users can pin to it
+            MAJOR_MINOR=$(echo "$VERSION" | cut -d. -f1,2)
+            DIST_TAG="release-${MAJOR_MINOR}"
+            echo "Maintenance release detected, publishing under '$DIST_TAG' tag"
+            npm publish "${PUBLISH_FLAGS[@]}" --tag "$DIST_TAG"
           fi
