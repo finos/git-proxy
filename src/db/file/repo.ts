@@ -119,6 +119,34 @@ export const createRepo = async (repo: Repo): Promise<Repo> => {
   });
 };
 
+export const updateRepo = async (repo: Partial<Repo>): Promise<void> => {
+  const { _id, ...fields } = repo;
+  const set: Record<string, unknown> = {};
+  const unset: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (value === undefined) unset[key] = true;
+    else set[key] = value;
+  }
+  const modifier: Record<string, unknown> = {};
+  if (Object.keys(set).length > 0) modifier.$set = set;
+  if (Object.keys(unset).length > 0) modifier.$unset = unset;
+
+  return new Promise<void>((resolve, reject) => {
+    if (Object.keys(modifier).length === 0) {
+      resolve();
+      return;
+    }
+    db.update({ _id: _id }, modifier, { multi: false, upsert: false }, (err) => {
+      /* istanbul ignore if */
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
+};
+
 export const addUserCanPush = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
   const repo = await getRepoById(_id);

@@ -56,6 +56,23 @@ export const createRepo = async (repo: Repo): Promise<Repo> => {
   return repo;
 };
 
+export const updateRepo = async (repo: Partial<Repo>): Promise<void> => {
+  const { _id, ...fields } = repo;
+  const collection = await connect(collectionName);
+  const set: Record<string, unknown> = {};
+  const unset: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(fields)) {
+    if (value === undefined) unset[key] = '';
+    else set[key] = value;
+  }
+  const update: Record<string, unknown> = {};
+  if (Object.keys(set).length > 0) update.$set = set;
+  if (Object.keys(unset).length > 0) update.$unset = unset;
+  if (Object.keys(update).length > 0) {
+    await collection.updateOne({ _id: new ObjectId(_id as string) }, update);
+  }
+};
+
 export const addUserCanPush = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
