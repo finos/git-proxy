@@ -25,7 +25,7 @@ def run_agent(
     model: str,
     terminal_tools: set | frozenset = frozenset(),
     max_turns: int = 10,
-    max_output_tokens: int = 5000,
+    max_output_tokens: int = 500000,
     token_budget: int = 1000000,
 ):
     """
