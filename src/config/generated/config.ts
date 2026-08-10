@@ -96,6 +96,15 @@ export interface GitProxyConfig {
   serverPort?: number;
   sessionMaxAgeHours?: number;
   /**
+   * Stream per-step validation progress messages to the git client's terminal during a push,
+   * using git sideband channel 2 (displayed as "remote: ..." lines). Requires the client to
+   * negotiate the side-band-64k capability, which all modern git clients do. When disabled,
+   * or when the client did not negotiate sideband, pushes receive a single buffered response
+   * as before. Operators behind intermediaries that buffer HTTP responses may wish to disable
+   * this.
+   */
+  sidebandProgress?: boolean;
+  /**
    * List of database sources. The first source in the configuration with enabled=true will be
    * used.
    */
@@ -673,6 +682,11 @@ export interface RouteAuthRule {
  */
 export interface UpstreamProxy {
   /**
+   * Credentials presented to the upstream proxy. Preferred over embedding credentials in
+   * `url`.
+   */
+  auth?: Auth;
+  /**
    * Whether to use an outbound HTTP(S) proxy for upstream Git hosts.
    */
   enabled?: boolean;
@@ -684,6 +698,36 @@ export interface UpstreamProxy {
    * Proxy URL used for outbound connections to upstream Git hosts when set.
    */
   url?: string;
+}
+
+/**
+ * Credentials presented to the upstream proxy. Preferred over embedding credentials in
+ * `url`.
+ *
+ * HTTP Basic — sends base64(username:password) in the Proxy-Authorization header on every
+ * CONNECT.
+ *
+ * Windows NTLM — multi-round CONNECT handshake (Type1/Type2/Type3) on the same TCP
+ * connection. Use when the proxy advertises `Proxy-Authenticate: NTLM`.
+ */
+export interface Auth {
+  password: string;
+  type: AuthType;
+  username: string;
+  /**
+   * NTLM domain / target. Optional; defaults to empty (proxy decides).
+   */
+  domain?: string;
+  /**
+   * Workstation name reported in the Type1/Type3 messages. Optional; defaults to the host's
+   * name.
+   */
+  workstation?: string;
+}
+
+export enum AuthType {
+  Basic = 'basic',
+  NTLM = 'ntlm',
 }
 
 // Converts JSON strings to/from your types
@@ -901,6 +945,7 @@ const typeMap: any = {
       { json: 'rateLimit', js: 'rateLimit', typ: u(undefined, r('RateLimit')) },
       { json: 'serverPort', js: 'serverPort', typ: u(undefined, 3.14) },
       { json: 'sessionMaxAgeHours', js: 'sessionMaxAgeHours', typ: u(undefined, 3.14) },
+      { json: 'sidebandProgress', js: 'sidebandProgress', typ: u(undefined, true) },
       { json: 'sink', js: 'sink', typ: u(undefined, a(r('Database'))) },
       { json: 'ssh', js: 'ssh', typ: u(undefined, r('SSH')) },
       { json: 'sslCertPemPath', js: 'sslCertPemPath', typ: u(undefined, '') },
@@ -1137,12 +1182,24 @@ const typeMap: any = {
   ),
   UpstreamProxy: o(
     [
+      { json: 'auth', js: 'auth', typ: u(undefined, r('Auth')) },
       { json: 'enabled', js: 'enabled', typ: u(undefined, true) },
       { json: 'noProxy', js: 'noProxy', typ: u(undefined, a('')) },
       { json: 'url', js: 'url', typ: u(undefined, '') },
     ],
     false,
   ),
+  Auth: o(
+    [
+      { json: 'password', js: 'password', typ: '' },
+      { json: 'type', js: 'type', typ: r('AuthType') },
+      { json: 'username', js: 'username', typ: '' },
+      { json: 'domain', js: 'domain', typ: u(undefined, '') },
+      { json: 'workstation', js: 'workstation', typ: u(undefined, '') },
+    ],
+    false,
+  ),
   AuthenticationElementType: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
   DatabaseType: ['fs', 'mongo'],
+  AuthType: ['basic', 'ntlm'],
 };

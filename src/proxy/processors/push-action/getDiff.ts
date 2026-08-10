@@ -18,7 +18,7 @@ import { Request } from 'express';
 import simpleGit from 'simple-git';
 
 import { Action, Step } from '../../actions';
-import { EMPTY_COMMIT_HASH } from '../constants';
+import { EMPTY_COMMIT_HASH } from '../../constants';
 import { getErrorMessage } from '../../../utils/errors';
 
 const exec = async (_req: Request, action: Action): Promise<Action> => {
