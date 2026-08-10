@@ -38,8 +38,8 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          # Set repo variable DEBUG_MODE=true to enable token/cost logging in job logs
-          DEBUG_MODE: ${{ secrets.DEBUG_AI_WORKFLOWS }}
+          # Enable token/cost logging in job logs
+          DEBUG_AI_WORKFLOWS: ${{ secrets.DEBUG_AI_WORKFLOWS }}
           # Obtained automatically by GH Actions
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
