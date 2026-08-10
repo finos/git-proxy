@@ -53,8 +53,13 @@ Use this exact format:
 
 ... (repeat for each finding)
 
-Disclaimer: This review is AI-generated. Please validate the findings before fixing.
+**Disclaimer:** This review is AI-generated. Please validate the findings before fixing.
+
+<sup><sub>Re-run by commenting `/security-review` on the PR.</sub></sup>
 """
+
+if os.environ["DEBUG_AI_WORKFLOWS"]:
+    SYSTEM_PROMPT += f"\n\n**Model:** {MODEL}"
 
 # GitHub helpers
 
