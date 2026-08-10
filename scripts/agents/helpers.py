@@ -14,11 +14,42 @@ def validate_env_vars(env_vars: list[str]):
             raise ValueError(f"{env_var} is not set")
 
 
+def _debug_mode_enabled():
+    return os.environ.get("DEBUG_AI_WORKFLOWS", "").strip().lower() in ("true", "1", "yes")
+
+
 def run_agent(messages: list, tools: list, handle_tool_call, model: str):
+    debug = _debug_mode_enabled()
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+    total_tokens = 0
+    total_cost = 0.0
+
     while True:
         response = litellm.completion(
             model=model, messages=messages, tools=tools, temperature=0
         )
+        if debug:
+            usage = getattr(response, "usage", None)
+            prompt_tokens = getattr(usage, "prompt_tokens", None) if usage else None
+            completion_tokens = getattr(usage, "completion_tokens", None) if usage else None
+            tokens = getattr(usage, "total_tokens", None) if usage else None
+            if prompt_tokens is not None:
+                total_prompt_tokens += prompt_tokens
+            if completion_tokens is not None:
+                total_completion_tokens += completion_tokens
+            if tokens is not None:
+                total_tokens += tokens
+            print(
+                f"[debug] tokens prompt={prompt_tokens} "
+                f"completion={completion_tokens} total={tokens}"
+            )
+            try:
+                cost = litellm.completion_cost(completion_response=response)
+                total_cost += cost
+                print(f"[debug] estimated cost=${cost:.6f}")
+            except Exception:
+                print("[debug] estimated cost=unavailable")
         message = response.choices[0].message
         if message.content:
             print(f"[agent] {message.content}")
@@ -35,3 +66,10 @@ def run_agent(messages: list, tools: list, handle_tool_call, model: str):
                 "content": result,
             })
         messages.extend(tool_results)
+
+    if debug:
+        print(
+            f"[debug] summary prompt={total_prompt_tokens} "
+            f"completion={total_completion_tokens} total={total_tokens} "
+            f"estimated_cost=${total_cost:.6f}"
+        )
