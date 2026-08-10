@@ -258,7 +258,7 @@ describe('GitProtocol', () => {
         end: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const mockClient = {
           on: vi.fn((event, handler) => {
             if (event === 'error') {
@@ -373,7 +373,7 @@ describe('GitProtocol', () => {
 
       const mockRemoteStream = createMockRemoteStream();
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -424,7 +424,7 @@ describe('GitProtocol', () => {
 
       const mockRemoteStream = createMockRemoteStream();
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -480,7 +480,7 @@ describe('GitProtocol', () => {
         write: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -536,7 +536,7 @@ describe('GitProtocol', () => {
         write: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -599,7 +599,7 @@ describe('GitProtocol', () => {
         write: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -662,7 +662,7 @@ describe('GitProtocol', () => {
         write: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -724,7 +724,7 @@ describe('GitProtocol', () => {
         write: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -783,7 +783,7 @@ describe('GitProtocol', () => {
         write: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -846,7 +846,7 @@ describe('GitProtocol', () => {
         write: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -891,7 +891,7 @@ describe('GitProtocol', () => {
       const ssh2 = await import('ssh2');
       const Client = ssh2.Client as any;
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -928,7 +928,7 @@ describe('GitProtocol', () => {
         write: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -976,7 +976,7 @@ describe('GitProtocol', () => {
         write: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -1031,7 +1031,7 @@ describe('GitProtocol', () => {
         write: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
@@ -1067,7 +1067,7 @@ describe('GitProtocol', () => {
       const ssh2 = await import('ssh2');
       const Client = ssh2.Client as any;
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'error') {
@@ -1107,7 +1107,7 @@ describe('GitProtocol', () => {
         write: vi.fn(),
       };
 
-      Client.mockImplementation(() => {
+      Client.mockImplementation(function () {
         const c = {
           on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
             if (event === 'ready') {
