@@ -23,7 +23,7 @@ import { Request } from 'express';
 import { Action, Step } from '../../src/proxy/actions';
 import { exec as getDiff } from '../../src/proxy/processors/push-action/getDiff';
 import { exec as scanDiff } from '../../src/proxy/processors/push-action/scanDiff';
-import { SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
+import { SAMPLE_COMMIT } from '../../src/proxy/constants';
 
 describe(
   'Force Push Integration Test',

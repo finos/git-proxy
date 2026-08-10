@@ -39,9 +39,14 @@ export const {
 export const {
   findUser,
   findUserByEmail,
+  findUserByGitAccount,
   findUserByOIDC,
+  findUserBySSHKey,
   getUsers,
   createUser,
   deleteUser,
   updateUser,
+  addPublicKey,
+  removePublicKey,
+  getPublicKeys,
 } = users;

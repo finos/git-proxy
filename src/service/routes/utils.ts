@@ -19,6 +19,7 @@ import { PublicUser, User as DbUser } from '../../db/types';
 interface User extends Express.User {
   username: string;
   admin?: boolean;
+  mustChangePassword?: boolean;
 }
 
 export function isAdminUser(user?: Express.User): user is User & { admin: true } {
@@ -26,7 +27,7 @@ export function isAdminUser(user?: Express.User): user is User & { admin: true }
 }
 
 export const toPublicUser = (user: DbUser): PublicUser => {
-  return {
+  const publicUser: PublicUser = {
     username: user.username || '',
     displayName: user.displayName || '',
     email: user.email || '',
@@ -34,4 +35,12 @@ export const toPublicUser = (user: DbUser): PublicUser => {
     gitAccount: user.gitAccount || '',
     admin: user.admin || false,
   };
+  if (user.mustChangePassword) {
+    publicUser.mustChangePassword = true;
+  }
+  return publicUser;
+};
+
+export const mustChangePassword = (user?: Express.User): boolean => {
+  return user !== null && user !== undefined && (user as User).mustChangePassword === true;
 };

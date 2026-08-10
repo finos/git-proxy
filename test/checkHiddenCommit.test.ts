@@ -17,7 +17,7 @@
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { exec as checkHidden } from '../src/proxy/processors/push-action/checkHiddenCommits';
 import { Action } from '../src/proxy/actions';
-import { EMPTY_COMMIT_HASH } from '../src/proxy/processors/constants';
+import { EMPTY_COMMIT_HASH } from '../src/proxy/constants';
 import { Request } from 'express';
 
 // must hoist these before mocking the modules
@@ -81,7 +81,7 @@ describe('checkHiddenCommits.exec', () => {
     expect(step?.logs).toContain(
       `checkHiddenCommits - Unreferenced commits in pack (2): ${COMMIT_1}, ${COMMIT_2}.\n` +
         `This usually happens when a branch was made from a commit that hasn't been approved and pushed to the remote.\n` +
-        `Please get approval on the commits, push them and try again.`,
+        `Please rebase the branch and push again.`,
     );
     expect(action.error).toBe(true);
   });
@@ -106,7 +106,7 @@ describe('checkHiddenCommits.exec', () => {
     expect(step?.logs).toContain(
       `checkHiddenCommits - Unreferenced commits in pack (1): ${COMMIT_2}.\n` +
         `This usually happens when a branch was made from a commit that hasn't been approved and pushed to the remote.\n` +
-        `Please get approval on the commits, push them and try again.`,
+        `Please rebase the branch and push again.`,
     );
     expect(action.error).toBe(true);
   });

@@ -20,7 +20,7 @@ import { describe, it, beforeAll, afterAll } from 'vitest';
 
 import { setConfigFile } from '../../../src/config/file';
 import { invalidateCache } from '../../../src/config';
-import { SAMPLE_REPO } from '../../../src/proxy/processors/constants';
+import { SAMPLE_REPO } from '../../../src/proxy/constants';
 import { handleErrorAndLog } from '../../../src/utils/errors';
 
 setConfigFile(
@@ -46,7 +46,7 @@ const TEST_PASSWORD = 'testpassword';
 const TEST_EMAIL = 'jane.doe@email.com';
 const TEST_GIT_ACCOUNT = 'testGitAccount';
 
-const CLI_PATH = 'npx git-proxy-cli';
+const CLI_PATH = 'node packages/git-proxy-cli/dist/index.js';
 
 describe('test git-proxy-cli', function () {
   // *** help ***

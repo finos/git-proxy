@@ -41,6 +41,7 @@ const TEST_USER = {
   gitAccount: 'db-test-user',
   email: 'db-test@test.com',
   admin: true,
+  mustChangePassword: false,
 };
 
 const TEST_PUSH = new Action(
@@ -169,6 +170,7 @@ describe('Database clients', () => {
       'email@domain.com',
       true,
       null,
+      [],
       'id',
     );
     expect(user.username).toBe('username');
@@ -185,6 +187,7 @@ describe('Database clients', () => {
       'email@domain.com',
       false,
       'oidcId',
+      [],
       'id',
     );
     expect(user2.admin).toBe(false);
@@ -418,7 +421,7 @@ describe('Database clients', () => {
 
     const user = await db.findUser(TEST_USER.username);
     const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
-    const { password: _2, _id: _3, ...DB_USER_CLEAN } = user!;
+    const { password: _2, _id: _3, publicKeys: _4, ...DB_USER_CLEAN } = user!;
     expect(DB_USER_CLEAN).toEqual(TEST_USER_CLEAN);
   });
 

@@ -98,5 +98,6 @@ const exec = async (
 };
 
 exec.displayName = 'executeExternalPreReceiveHook.exec';
+exec.isCollectible = true;
 
 export { exec };

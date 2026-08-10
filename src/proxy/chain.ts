@@ -17,16 +17,18 @@
 import { Request, Response } from 'express';
 
 import { PluginLoader } from '../plugin';
-import { Action } from './actions';
+import { Action, RequestType, PushType } from './actions';
 import * as proc from './processors';
+import { ProcessorExec } from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
+import { createProgressWriter } from './sideband';
 
-const pushActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
-  proc.push.parsePush,
+const branchPushChain: ProcessorExec[] = [
+  proc.push.resolveUserFromToken,
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
-  proc.push.checkCommitMessages,
+  proc.push.checkMessages,
   proc.push.checkAuthorEmails,
   proc.push.checkUserPushPermission,
   proc.push.pullRemote, // cleanup is handled after chain execution if successful
@@ -40,32 +42,141 @@ const pushActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
   proc.push.blockForAuth,
 ];
 
-const pullActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
+const tagPushChain: ProcessorExec[] = [
   proc.push.checkRepoInAuthorisedList,
+  proc.push.checkUserPushPermission,
+  proc.push.checkIfWaitingAuth,
+  proc.push.checkMessages,
+  proc.push.pullRemote,
+  proc.push.writePack,
+  proc.push.preReceive,
+  proc.push.blockForAuth,
 ];
 
-const defaultActionChain: ((req: Request, action: Action) => Promise<Action>)[] = [
-  proc.push.checkRepoInAuthorisedList,
-];
+const pullActionChain: ProcessorExec[] = [proc.push.checkRepoInAuthorisedList];
+
+const defaultActionChain: ProcessorExec[] = [proc.push.checkRepoInAuthorisedList];
 
 let pluginsInserted = false;
 
-export const executeChain = async (req: Request, _res: Response): Promise<Action> => {
+/**
+ * Compose a single error message from all failed steps, so that the git
+ * client displays every rejection reason for the push.
+ * @param {Action} action The action whose failed steps are reported.
+ * @return {string | undefined} The combined message, or undefined when there
+ * are fewer than two failed steps (the single step message is kept as-is).
+ */
+const composeErrorMessage = (action: Action): string | undefined => {
+  const messages = (action.steps ?? [])
+    .filter((step) => step.error && step.errorMessage)
+    .map((step) => (step.errorMessage as string).trim());
+
+  if (messages.length < 2) {
+    return undefined;
+  }
+
+  return (
+    `The following ${messages.length} checks failed:\n\n` +
+    messages.map((message, i) => `${i + 1}. ${message}`).join('\n\n')
+  );
+};
+
+const stepProgressLabels: Record<string, string> = {
+  'checkEmptyBranch.exec': 'Checking for empty branch',
+  'checkRepoInAuthorisedList.exec': 'Checking repository is authorised',
+  'checkMessages.exec': 'Checking commit messages',
+  'checkAuthorEmails.exec': 'Checking author emails',
+  'checkUserPushPermission.exec': 'Checking push permissions',
+  'pullRemote.exec': 'Fetching remote repository',
+  'writePack.exec': 'writing pack data',
+  'checkHiddenCommits.exec': 'Checking for hidden commits',
+  'checkIfWaitingAuth.exec': 'Checking approval status',
+  'executeExternalPreReceiveHook.exec': 'Running pre-receive hook',
+  'getDiff.exec': 'Computing diff',
+  'gitleaks.exec': 'Scanning for secrets',
+  'scanDiff.exec': 'Scanning diff contents',
+  'blockForAuth.exec': 'Requesting approval',
+};
+
+/**
+ * Obtain the message to display before a chain step.
+ * @param {ProcessorExec} fn The chain step about to be executed.
+ * @return {string} The message to display.
+ */
+const getProgressMessage = (fn: ProcessorExec): string => {
+  const { displayName } = fn;
+  if (displayName && stepProgressLabels[displayName]) {
+    return stepProgressLabels[displayName];
+  }
+  if (displayName) {
+    return `running ${displayName.replace(/\.exec$/, '')}`;
+  }
+  return 'running plugin';
+};
+
+export const executeChain = async (req: Request, res: Response): Promise<Action> => {
   let action: Action = {} as Action;
   let checkoutCleanUpRequired = false;
 
   try {
+    // 1) Initialize basic action fields
     action = await proc.pre.parseAction(req);
+    // 2) Parse refs and PACK data before chain selection
+    if (action.type === RequestType.PUSH) {
+      action = await proc.pre.parsePush(req, action);
+    }
+    // 3) Select the correct chain now that action.actionType is set
     const actionFns = await getChain(action);
 
+    let collectedErrors = false;
+    const progress = createProgressWriter(res, action);
+
+    // 4) Execute each step in the selected chain
     for (const fn of actionFns) {
-      action = await fn(req, action);
-      if (!action.continue() || action.allowPush) {
+      // a push that already failed checks must not be queued for approval
+      if (fn === proc.push.blockForAuth && !action.continue()) {
         break;
-      } else if (fn === proc.push.pullRemote) {
+      }
+
+      progress.message(`${getProgressMessage(fn)}...`);
+
+      const stepsBefore = action.steps?.length ?? 0;
+      action = await fn(req, action);
+
+      if (action.allowPush) {
+        break;
+      }
+
+      if (!action.continue()) {
+        if (action.blocked) {
+          break;
+        }
+
+        const failedNow = (action.steps ?? []).slice(stepsBefore).some((step) => step.error);
+        if (failedNow) {
+          // collectible steps have their failures can report all their
+          // rejection reasons at once, non-collectible steps fail immediately
+          if (!fn.isCollectible) {
+            break;
+          }
+          collectedErrors = true;
+        } else if (!collectedErrors) {
+          // error that predates the chain (e.g. produced while parsing the push)
+          break;
+        }
+      }
+
+      if (fn === proc.push.pullRemote) {
         //if the pull was successful then record the fact we need to clean it up again
         // pullRemote should cleanup unsuccessful clones itself
         checkoutCleanUpRequired = true;
+      }
+    }
+
+    if (collectedErrors) {
+      const combinedMessage = composeErrorMessage(action);
+      if (combinedMessage) {
+        action.errorMessage = combinedMessage;
       }
     }
   } catch (error: unknown) {
@@ -80,7 +191,8 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
 
     action = await proc.post.audit(req, action);
 
-    if (action.autoApproved) {
+    // a push that failed a later check must not be auto-approved
+    if (action.autoApproved && !action.error) {
       await attemptAutoApproval(action);
     } else if (action.autoRejected) {
       await attemptAutoRejection(action);
@@ -96,23 +208,22 @@ export const executeChain = async (req: Request, _res: Response): Promise<Action
  */
 let chainPluginLoader: PluginLoader;
 
-export const getChain = async (
-  action: Action,
-): Promise<((req: Request, action: Action) => Promise<Action>)[]> => {
+export const getChain = async (action: Action): Promise<ProcessorExec[]> => {
   if (chainPluginLoader === undefined) {
     console.error(
       'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',
     );
     pluginsInserted = true;
   }
+
   if (!pluginsInserted) {
     console.log(
       `Inserting loaded plugins (${chainPluginLoader.pushPlugins.length} push, ${chainPluginLoader.pullPlugins.length} pull) into proxy chains`,
     );
     for (const pluginObj of chainPluginLoader.pushPlugins) {
       console.log(`Inserting push plugin ${pluginObj.constructor.name} into chain`);
-      // insert custom functions after parsePush but before other actions
-      pushActionChain.splice(1, 0, pluginObj.exec);
+      branchPushChain.splice(0, 0, pluginObj.exec);
+      tagPushChain.splice(0, 0, pluginObj.exec);
     }
     for (const pluginObj of chainPluginLoader.pullPlugins) {
       console.log(`Inserting pull plugin ${pluginObj.constructor.name} into chain`);
@@ -122,12 +233,14 @@ export const getChain = async (
     // This is set to true so that we don't re-insert the plugins into the chain
     pluginsInserted = true;
   }
-  if (action.type === 'pull') {
-    return pullActionChain;
-  } else if (action.type === 'push') {
-    return pushActionChain;
-  } else {
-    return defaultActionChain;
+
+  switch (action.type) {
+    case RequestType.PULL:
+      return pullActionChain;
+    case RequestType.PUSH:
+      return action.actionType === PushType.TAG ? tagPushChain : branchPushChain;
+    default:
+      return defaultActionChain;
   }
 };
 
@@ -141,8 +254,11 @@ export default {
   get pluginsInserted() {
     return pluginsInserted;
   },
-  get pushActionChain() {
-    return pushActionChain;
+  get branchPushChain() {
+    return branchPushChain;
+  },
+  get tagPushChain() {
+    return tagPushChain;
   },
   get pullActionChain() {
     return pullActionChain;

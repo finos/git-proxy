@@ -18,22 +18,25 @@ import express, { Express } from 'express';
 import http from 'http';
 import https from 'https';
 import fs from 'fs';
+
 import { getRouter } from './routes';
+export * from './routes';
+
 import {
   getAuthorisedList,
   getPlugins,
   getTLSKeyPemPath,
   getTLSCertPemPath,
   getTLSEnabled,
+  getSSHConfig,
+  getServerPort,
+  getHttpsServerPort,
 } from '../config';
 import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos } from '../db';
 import { PluginLoader } from '../plugin';
 import chain from './chain';
 import { Repo } from '../db/types';
-import { serverConfig } from '../config/env';
-
-const { GIT_PROXY_SERVER_PORT: proxyHttpPort, GIT_PROXY_HTTPS_SERVER_PORT: proxyHttpsPort } =
-  serverConfig;
+import SSHServer from './ssh/server';
 
 interface ServerOptions {
   inflate: boolean;
@@ -55,6 +58,7 @@ export class Proxy {
   private httpServer: http.Server | null = null;
   private httpsServer: https.Server | null = null;
   private expressApp: Express | null = null;
+  private sshServer: any | null = null;
 
   constructor() {}
 
@@ -95,6 +99,8 @@ export class Proxy {
   }
 
   public async start() {
+    const proxyHttpPort = getServerPort();
+    const proxyHttpsPort = getHttpsServerPort();
     await this.proxyPreparations();
     this.expressApp = await this.createApp();
     await new Promise<void>((resolve, reject) => {
@@ -117,6 +123,13 @@ export class Proxy {
         });
         this.httpsServer = server;
       });
+    }
+
+    // Initialize SSH server if enabled
+    const sshConfig = getSSHConfig();
+    if (sshConfig.enabled) {
+      this.sshServer = new SSHServer();
+      this.sshServer.start();
     }
   }
 
@@ -157,6 +170,15 @@ export class Proxy {
               resolve();
             }
           });
+        }),
+      );
+    }
+
+    // Close SSH server if it exists
+    if (this.sshServer) {
+      closePromises.push(
+        this.sshServer.stop().then(() => {
+          this.sshServer = null;
         }),
       );
     }
