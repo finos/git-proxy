@@ -20,6 +20,8 @@ jobs:
           MODEL: ${{ vars.MODEL }}
           # Enable token/cost logging in job logs
           DEBUG_AI_WORKFLOWS: ${{ vars.DEBUG_AI_WORKFLOWS }}
+          MAX_OUTPUT_TOKENS: ${{ vars.MAX_OUTPUT_TOKENS }}
+          TOKEN_BUDGET: ${{ vars.TOKEN_BUDGET }}
           # Only API key for the chosen model is required
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
