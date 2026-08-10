@@ -60,6 +60,8 @@ Use this exact format:
 
 if os.environ["DEBUG_AI_WORKFLOWS"]:
     SYSTEM_PROMPT += f"\n\n**Model:** {MODEL}"
+    SYSTEM_PROMPT += f"\n\n**Max output tokens:** {os.environ.get('MAX_OUTPUT_TOKENS', 5000)}"
+    SYSTEM_PROMPT += f"\n\n**Token budget:** {os.environ.get('TOKEN_BUDGET', 1000000)}"
 
 # GitHub helpers
 
