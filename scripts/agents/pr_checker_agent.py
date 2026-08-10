@@ -119,7 +119,13 @@ def run_pr_review_agent():
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": build_initial_message()},
     ]
-    run_agent(messages, TOOLS, handle_tool_call, MODEL)
+    stats = run_agent(messages, TOOLS, handle_tool_call, MODEL,
+        terminal_tools={"post_comment"},
+        max_output_tokens=int(os.environ.get("MAX_OUTPUT_TOKENS", 5000)),
+        token_budget=int(os.environ.get("TOKEN_BUDGET", 1000000)),
+    )
+    if stats["truncated"]:
+        raise SystemExit("PR review output was truncated: results may be incomplete.")
 
 
 if __name__ == "__main__":
