@@ -46,7 +46,7 @@ def run_agent(
             messages=messages,
             tools=tools,
             temperature=0,
-            max_tokens=max_tokens,
+            max_tokens=max_output_tokens,
         )
 
         # Accounting always runs; only the printing is gated on debug.
@@ -76,7 +76,7 @@ def run_agent(
         if choice.finish_reason == "length":
             truncated = True
             print(
-                f"[agent] WARNING: output hit max_tokens={max_tokens} on turn {turn}. "
+                f"[agent] WARNING: output hit max_tokens={max_output_tokens} on turn {turn}. "
                 "Any tool call from this turn is likely malformed."
             )
 
