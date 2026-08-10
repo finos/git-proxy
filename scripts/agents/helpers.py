@@ -130,6 +130,7 @@ def run_agent(
             f"[debug] summary prompt={total_prompt_tokens} "
             f"completion={total_completion_tokens} total={total_tokens} "
             f"estimated_cost=${total_cost:.6f}"
+            f"model=${model}"
         )
 
     return {
