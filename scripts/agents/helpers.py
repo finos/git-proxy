@@ -18,54 +18,113 @@ def _debug_mode_enabled():
     return os.environ.get("DEBUG_AI_WORKFLOWS", "").strip().lower() in ("true", "1", "yes")
 
 
-def run_agent(messages: list, tools: list, handle_tool_call, model: str):
+def run_agent(
+    messages: list,
+    tools: list,
+    handle_tool_call,
+    model: str,
+    terminal_tools: set | frozenset = frozenset(),
+    max_turns: int = 10,
+    max_output_tokens: int = 5000,
+    token_budget: int = 1000000,
+):
+    """
+    Runs the agent loop until the model stops, calls no tools, or calls a tool
+    listed in `terminal_tools`. Terminal tools end the run immediately, to
+    prevent further model calls (and wasted tokens).
+    """
     debug = _debug_mode_enabled()
     total_prompt_tokens = 0
     total_completion_tokens = 0
     total_tokens = 0
     total_cost = 0.0
+    truncated = False
 
-    while True:
+    for turn in range(1, max_turns + 1):
         response = litellm.completion(
-            model=model, messages=messages, tools=tools, temperature=0
+            model=model,
+            messages=messages,
+            tools=tools,
+            temperature=0,
+            max_tokens=max_tokens,
         )
+
+        # Accounting always runs; only the printing is gated on debug.
+        usage = getattr(response, "usage", None)
+        prompt_tokens = (getattr(usage, "prompt_tokens", 0) if usage else 0) or 0
+        completion_tokens = (getattr(usage, "completion_tokens", 0) if usage else 0) or 0
+        tokens = (getattr(usage, "total_tokens", 0) if usage else 0) or 0
+        total_prompt_tokens += prompt_tokens
+        total_completion_tokens += completion_tokens
+        total_tokens += tokens or (prompt_tokens + completion_tokens)
+
+        try:
+            total_cost += litellm.completion_cost(completion_response=response)
+        except Exception:
+            pass
+
         if debug:
-            usage = getattr(response, "usage", None)
-            prompt_tokens = getattr(usage, "prompt_tokens", None) if usage else None
-            completion_tokens = getattr(usage, "completion_tokens", None) if usage else None
-            tokens = getattr(usage, "total_tokens", None) if usage else None
-            if prompt_tokens is not None:
-                total_prompt_tokens += prompt_tokens
-            if completion_tokens is not None:
-                total_completion_tokens += completion_tokens
-            if tokens is not None:
-                total_tokens += tokens
             print(
-                f"[debug] tokens prompt={prompt_tokens} "
-                f"completion={completion_tokens} total={tokens}"
+                f"[debug] turn={turn} tokens prompt={prompt_tokens} "
+                f"completion={completion_tokens} total={tokens} "
+                f"running_total={total_tokens}"
             )
-            try:
-                cost = litellm.completion_cost(completion_response=response)
-                total_cost += cost
-                print(f"[debug] estimated cost=${cost:.6f}")
-            except Exception:
-                print("[debug] estimated cost=unavailable")
-        message = response.choices[0].message
+
+        choice = response.choices[0]
+        message = choice.message
+
+        if choice.finish_reason == "length":
+            truncated = True
+            print(
+                f"[agent] WARNING: output hit max_tokens={max_tokens} on turn {turn}. "
+                "Any tool call from this turn is likely malformed."
+            )
+
         if message.content:
             print(f"[agent] {message.content}")
         messages.append(message.model_dump(exclude_none=True))
-        if response.choices[0].finish_reason == "stop" or not message.tool_calls:
+
+        if choice.finish_reason == "stop" or not message.tool_calls:
             break
+
+        finished = False
         tool_results = []
         for tool_call in message.tool_calls:
-            inputs = json.loads(tool_call.function.arguments)
-            result = handle_tool_call(tool_call.function.name, inputs)
+            name = tool_call.function.name
+            try:
+                inputs = json.loads(tool_call.function.arguments)
+            except json.JSONDecodeError as e:
+                print(f"[agent] Malformed arguments for {name}: {e}")
+                tool_results.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": f"Error: arguments were not valid JSON ({e}). Please retry.",
+                })
+                continue
+
+            result = handle_tool_call(name, inputs)
             tool_results.append({
                 "role": "tool",
                 "tool_call_id": tool_call.id,
                 "content": result,
             })
+            if name in terminal_tools:
+                finished = True
+
         messages.extend(tool_results)
+
+        if finished:
+            print("[agent] Terminal tool called, ending run.")
+            break
+
+        if token_budget is not None and total_tokens >= token_budget:
+            print(
+                f"[agent] Token budget exhausted "
+                f"({total_tokens} >= {token_budget}), stopping before next call."
+            )
+            break
+    else:
+        print(f"[agent] Hit max_turns={max_turns} without finishing.")
 
     if debug:
         print(
@@ -73,3 +132,11 @@ def run_agent(messages: list, tools: list, handle_tool_call, model: str):
             f"completion={total_completion_tokens} total={total_tokens} "
             f"estimated_cost=${total_cost:.6f}"
         )
+
+    return {
+        "prompt_tokens": total_prompt_tokens,
+        "completion_tokens": total_completion_tokens,
+        "total_tokens": total_tokens,
+        "estimated_cost": total_cost,
+        "truncated": truncated,
+    }
