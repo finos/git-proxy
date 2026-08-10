@@ -19,13 +19,13 @@ jobs:
           AVAILABLE_LABELS: automation,bug,dependencies,documentation,enhancement,good-first-issue,meeting,needs-info,plugins,protocol,question,security,tech-debt,testing
           LATEST_ISSUES_LIMIT: 100
           # e.g: "claude-sonnet-4-6", "gpt-4o", etc.
-          MODEL: ${{ secrets.MODEL }}
+          MODEL: ${{ vars.MODEL }}
+          # Enable token/cost logging in job logs
+          DEBUG_AI_WORKFLOWS: ${{ vars.DEBUG_AI_WORKFLOWS }}
           # Only API key for the chosen model is required
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          # Enable token/cost logging in job logs
-          DEBUG_AI_WORKFLOWS: ${{ secrets.DEBUG_AI_WORKFLOWS }}
           # Obtained automatically by GH Actions
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ISSUE_BODY: ${{ github.event.issue.body }}
