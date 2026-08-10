@@ -45,7 +45,6 @@ def run_agent(
             model=model,
             messages=messages,
             tools=tools,
-            temperature=0,
             max_tokens=max_output_tokens,
         )
 
