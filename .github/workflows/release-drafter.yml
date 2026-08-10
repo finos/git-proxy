@@ -29,5 +29,6 @@ jobs:
           commitish: ${{ github.ref_name }}
           repository: ${{ github.repository }}
           config-name: release-drafter-config.yml
+          filter-by-commitish: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
