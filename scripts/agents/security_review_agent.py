@@ -28,7 +28,7 @@ MAX_PATCH_CHARS_PER_FILE = int(os.environ.get("MAX_PATCH_CHARS_PER_FILE", 3000))
 
 # System prompt
 
-SYSTEM_PROMPT = """You are a security analysis assistant for a GitHub repository.
+SYSTEM_PROMPT = f"""You are a security analysis assistant for a GitHub repository.
 You are given a pull request diff and must identify potential security issues.
 
 Flag only: hardcoded secrets or credentials, injection vulnerabilities (SQL, shell, template), insecure cryptography or hashing, unsafe deserialization, path traversal, missing input validation on user-controlled data, known-vulnerable dependency versions, overly permissive file or network access.
@@ -55,7 +55,7 @@ Use this exact format:
 
 **Disclaimer:** This review is AI-generated. Please validate the findings before fixing.
 
-<sup><sub>Re-run by commenting `/security-review` on the PR.</sub></sup>
+<sub>Reviewed by {MODEL}. Re-run by commenting `/security-review` on this PR.</sub>
 """
 
 if os.environ["DEBUG_AI_WORKFLOWS"]:
