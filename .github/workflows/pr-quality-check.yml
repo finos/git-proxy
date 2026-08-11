@@ -3,9 +3,19 @@ on:
   pull_request:
     types: [opened, reopened]
 
+concurrency:
+  group: pr-quality-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 jobs:
   pr_quality_check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # GitHub withholds secrets from fork pull_request runs, so the agent can only
+    # authenticate for same-repo PRs opened by collaborators and members.
+    if: >
+      github.event.pull_request.user.type != 'Bot' &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
     permissions:
       pull-requests: write
     steps:

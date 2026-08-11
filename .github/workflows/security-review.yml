@@ -6,17 +6,26 @@ on:
   issue_comment:
     types: [created]
 
+concurrency:
+  group: security-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: true
+
 jobs:
   security-review:
     runs-on: ubuntu-latest
-    # Always runs on PR creation
-    # Also runs if comment on PR contains "/security-review"
+    timeout-minutes: 15
+    # Runs on PR creation by a collaborator/member
+    # or when collaborator/member comments "/security-review"
     if: >
-      github.event_name == 'pull_request' ||
       (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.user.type != 'Bot' &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
+      ) || (
         github.event_name == 'issue_comment' &&
         github.event.issue.pull_request != null &&
-        contains(github.event.comment.body, '/security-review')
+        startsWith(github.event.comment.body, '/security-review') &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
       )
     permissions:
       issues: write

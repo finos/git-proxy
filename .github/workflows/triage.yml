@@ -3,9 +3,15 @@ on:
   issues:
     types: [opened, reopened]
 
+concurrency:
+  group: issue-triage-${{ github.event.issue.number }}
+  cancel-in-progress: true
+
 jobs:
   triage:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: github.event.issue.user.type != 'Bot'
     permissions:
       issues: write
     steps:
