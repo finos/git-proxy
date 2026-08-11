@@ -197,6 +197,7 @@ Use this exact format:
 ### Summary
 <First sentence: "{diff["scanned_files"]} of {diff["total_files"]} changed files reviewed.">
 <list any excluded or truncated files, with the reason given below>
+<if files were truncated due to char budget, encourage user to split the PR into smaller chunks>
 <Final sentence: either "No security issues found." or a brief description of what was found>
 
 ### Findings (omit section if none)
