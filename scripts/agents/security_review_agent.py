@@ -109,8 +109,8 @@ def _allocate(files: list) -> dict[str, int]:
     it needs, so the unused remainder flows to the larger files behind it.
     Aims to cover the largest number of files possible.
     """
-    floor = min(MIN_CHARS_PER_FILE, DIFF_BUDGET // len(files))
-    remaining = DIFF_BUDGET
+    floor = min(MIN_CHARS_PER_FILE, DIFF_CHAR_BUDGET // len(files))
+    remaining = DIFF_CHAR_BUDGET
     allocations = {}
 
     for i, f in enumerate(sorted(files, key=lambda f: len(f.patch))):
@@ -162,7 +162,7 @@ def collect_diff() -> dict:
 
     print(
         f"[diff] {len(reviewable)}/{len(all_files)} files included, "
-        f"{sum(len(s) for s in sections)} of {DIFF_BUDGET} chars used"
+        f"{sum(len(s) for s in sections)} of {DIFF_CHAR_BUDGET} chars used"
     )
 
     return {
