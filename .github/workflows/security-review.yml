@@ -29,9 +29,7 @@ jobs:
       - run: pip install litellm PyGithub
       - name: Run security review agent
         env:
-          IGNORED_EXTENSIONS: .lock,.sum
-          IGNORED_FILENAMES: package-lock.json,yarn.lock,poetry.lock,Gemfile.lock,Cargo.lock,composer.lock,pnpm-lock.yaml,pip.lock
-          MAX_PATCH_CHARS_PER_FILE: 3000
+          IGNORED_PATTERNS: package-lock.json,yarn.lock,dist/*,build/*
           # e.g: "claude-sonnet-4-6", "gpt-4o", etc.
           MODEL: ${{ vars.MODEL }}
           # Enable token/cost logging in job logs
