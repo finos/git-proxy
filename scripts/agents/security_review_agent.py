@@ -195,9 +195,9 @@ No emojis.
 Use this exact format:
 
 ### Summary
-{diff["scanned_files"]} of {diff["total_files"]} changed files reviewed.
+<First sentence: "{diff["scanned_files"]} of {diff["total_files"]} changed files reviewed.">
 <list any excluded or truncated files, with the reason given below>
-<either "No security issues found." or a brief description of what was found>
+<Final sentence: either "No security issues found." or a brief description of what was found>
 
 ### Findings (omit section if none)
 
