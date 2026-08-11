@@ -13,6 +13,9 @@ MODEL = os.environ["MODEL"]
 validate_env_vars(["GITHUB_TOKEN", "REPO_NAME", "PR_NUMBER", "AUTHOR_USERNAME", "MODEL"])
 validate_api_keys()
 
+MAX_OUTPUT_TOKENS = 5000
+TOKEN_BUDGET = 50000
+
 # Tools
 
 TOOLS = [
@@ -121,8 +124,8 @@ def run_pr_review_agent():
     ]
     stats = run_agent(messages, TOOLS, handle_tool_call, MODEL,
         terminal_tools={"post_comment"},
-        max_output_tokens=int(os.environ.get("MAX_OUTPUT_TOKENS", 5000)),
-        token_budget=int(os.environ.get("TOKEN_BUDGET", 1000000)),
+        max_output_tokens=MAX_OUTPUT_TOKENS,
+        token_budget=TOKEN_BUDGET,
     )
     if stats["truncated"]:
         raise SystemExit("PR review output was truncated: results may be incomplete.")

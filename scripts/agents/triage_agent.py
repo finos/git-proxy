@@ -4,16 +4,19 @@ from helpers import validate_env_vars, validate_api_keys, run_agent
 
 # Setup
 
+validate_env_vars(["GITHUB_TOKEN", "REPO_NAME", "ISSUE_NUMBER", "ISSUE_TITLE", "MODEL"])
+validate_api_keys()
+
 gh = Github(auth=Auth.Token(os.environ["GITHUB_TOKEN"]))
 repo = gh.get_repo(os.environ["REPO_NAME"])
 issue = repo.get_issue(int(os.environ["ISSUE_NUMBER"]))
 
-LATEST_ISSUES_LIMIT = int(os.environ["LATEST_ISSUES_LIMIT"], 100)
+LATEST_ISSUES_LIMIT = int(os.environ.get("LATEST_ISSUES_LIMIT") or 100)
 AVAILABLE_LABELS = os.environ.get("AVAILABLE_LABELS", "bug,enhancement,question,documentation,needs-info")
 MODEL = os.environ["MODEL"]
 
-validate_env_vars(["GITHUB_TOKEN", "REPO_NAME", "ISSUE_NUMBER", "ISSUE_TITLE", "ISSUE_BODY", "MODEL"])
-validate_api_keys()
+MAX_OUTPUT_TOKENS = 5000
+TOKEN_BUDGET = 50000
 
 # Tools
 
@@ -220,8 +223,8 @@ def run_triage_agent():
     ]
     stats = run_agent(messages, TOOLS, handle_tool_call, MODEL,
         terminal_tools={"post_comment"},
-        max_output_tokens=int(os.environ.get("MAX_OUTPUT_TOKENS", 5000)),
-        token_budget=int(os.environ.get("TOKEN_BUDGET", 1000000)),
+        max_output_tokens=MAX_OUTPUT_TOKENS,
+        token_budget=TOKEN_BUDGET,
     )
     if stats["truncated"]:
         raise SystemExit("Triage output was truncated: results may be incomplete.")

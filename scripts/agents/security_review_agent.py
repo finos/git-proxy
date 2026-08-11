@@ -19,10 +19,15 @@ pr = repo.get_pull(int(os.environ["PR_NUMBER"]))
 # Configuration
 
 # Total characters of diff sent for the whole PR, shared across all files.
+# Not the same as the token budget (which includes prompt and output)
 DIFF_CHAR_BUDGET = 200000
 
-# No reviewable file is cut below this, so nothing disappears silently.
+# Minimum characters processed in a chunk to avoid silent truncation
 MIN_CHARS_PER_FILE = 2000
+
+# Maximum output and total token budget for agent
+MAX_OUTPUT_TOKENS = 10000
+TOKEN_BUDGET = 200000
 
 IGNORED_PATTERNS = [
     p.strip()
@@ -197,6 +202,7 @@ Use this exact format:
 ### Summary
 <First sentence: "{diff["scanned_files"]} of {diff["total_files"]} changed files reviewed.">
 <list any excluded or truncated files, with the reason given below>
+<if files were truncated due to char budget, encourage user to split the PR into smaller chunks>
 <Final sentence: either "No security issues found." or a brief description of what was found>
 
 ### Findings (omit section if none)
@@ -325,8 +331,8 @@ def run_security_review_agent():
         handle_tool_call,
         MODEL,
         terminal_tools={"post_security_review"},
-        max_output_tokens=int(os.environ.get("MAX_OUTPUT_TOKENS", 5000)),
-        token_budget=int(os.environ.get("TOKEN_BUDGET", 1000000)),
+        max_output_tokens=MAX_OUTPUT_TOKENS,
+        token_budget=TOKEN_BUDGET,
     )
 
     if stats["truncated"]:

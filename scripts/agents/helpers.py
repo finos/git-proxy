@@ -25,8 +25,8 @@ def run_agent(
     model: str,
     terminal_tools: set | frozenset = frozenset(),
     max_turns: int = 10,
-    max_output_tokens: int = 500000,
-    token_budget: int = 1000000,
+    max_output_tokens: int = 10000,
+    token_budget: int = 200000,
 ):
     """
     Runs the agent loop until the model stops, calls no tools, or calls a tool
