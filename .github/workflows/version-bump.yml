@@ -68,35 +68,69 @@ jobs:
             exit 1
           fi
 
-      - name: Bump root package
+      - name: Bump package versions
         env:
           VERSION: ${{ steps.version.outputs.version }}
-        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+        run: |
+          npm pkg set "version=$VERSION"
+          npm pkg set "version=$VERSION" --workspace @finos/git-proxy-cli
+          npm pkg set "dependencies.@finos/git-proxy=$VERSION" --workspace @finos/git-proxy-cli
 
-      - name: Bump git-proxy-cli package
-        working-directory: packages/git-proxy-cli
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
-
-      - name: Sync git-proxy-cli's pin on the root package
+      - name: Patch lockfile versions
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           node -e '
             const fs = require("fs");
-            const p = "packages/git-proxy-cli/package.json";
-            const pkg = JSON.parse(fs.readFileSync(p, "utf8"));
-            if (!pkg.dependencies || !pkg.dependencies["@finos/git-proxy"]) {
-              console.error("::error::Expected @finos/git-proxy in git-proxy-cli dependencies.");
-              process.exit(1);
+            const VERSION = process.env.VERSION;
+            const ROOT = "@finos/git-proxy";
+            const CLI_PATH = "packages/git-proxy-cli";
+            const LOCK = "package-lock.json";
+            const fail = (m) => { console.error("::error::" + m); process.exit(1); };
+
+            const lock = JSON.parse(fs.readFileSync(LOCK, "utf8"));
+            if (lock.lockfileVersion !== 3) fail("Expected lockfileVersion 3, got " + lock.lockfileVersion + ".");
+
+            const rootEntry = lock.packages[""];
+            const cliEntry = lock.packages[CLI_PATH];
+            if (!rootEntry) fail("Lockfile has no root package entry.");
+            if (!cliEntry) fail("Lockfile has no \"" + CLI_PATH + "\" entry.");
+            if (!(lock.packages["node_modules/" + ROOT] || {}).link) {
+              fail("Lockfile is missing the workspace link entry for " + ROOT + ". Something has already re-resolved the tree.");
             }
-            pkg.dependencies["@finos/git-proxy"] = process.env.VERSION;
-            fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + "\n");
+            if (!cliEntry.dependencies || cliEntry.dependencies[ROOT] === undefined) {
+              fail(CLI_PATH + " no longer pins " + ROOT + "; this workflow needs updating.");
+            }
+
+            lock.version = VERSION;
+            rootEntry.version = VERSION;
+            cliEntry.version = VERSION;
+            cliEntry.dependencies[ROOT] = VERSION;
+
+            fs.writeFileSync(LOCK, JSON.stringify(lock, null, 2) + "\n");
+            console.log("Patched " + LOCK + " to " + VERSION + ".");
           '
 
-      - name: Refresh the lockfile
-        run: npm install --package-lock-only --no-audit --no-fund
+      - name: Guard against unexpected changes
+        run: |
+          UNEXPECTED=$(git diff --name-only | grep -vE '^(package\.json|package-lock\.json|packages/git-proxy-cli/package\.json)$' || true)
+          if [ -n "$UNEXPECTED" ]; then
+            echo "::error::A version bump modified files it shouldn't have:"
+            echo "$UNEXPECTED"
+            exit 1
+          fi
+
+          CHANGED=$(git diff --numstat -- package-lock.json | awk '{print $1 + $2}')
+          CHANGED=${CHANGED:-0}
+          echo "package-lock.json changed lines: $CHANGED"
+          if [ "$CHANGED" -gt 12 ]; then
+            echo "::error::package-lock.json changed $CHANGED lines; a version bump should touch eight. Refusing to open the PR."
+            git --no-pager diff --stat -- package-lock.json
+            git --no-pager diff -- package-lock.json | head -n 120
+            exit 1
+          fi
+
+          git --no-pager diff -- package.json package-lock.json packages/git-proxy-cli/package.json
 
       - name: Open version bump PR
         env:
@@ -122,7 +156,7 @@ jobs:
             SOURCE_LINE="Triggered manually for version $VERSION."
           fi
 
-          BODY=$(printf '%s\n\nBumps:\n- `package.json`, `package-lock.json`\n- `packages/git-proxy-cli/package.json` (including its pin on `@finos/git-proxy`)\n\nOnce merged, cut `%s` from `main` per our [release process](https://git-proxy.finos.org/docs/development/releases) in order to generate a GitHub draft release.\n' "$SOURCE_LINE" "$RELEASE_BRANCH")
+          BODY=$(printf '%s\n\nBumps:\n- `package.json`, `package-lock.json`\n- `packages/git-proxy-cli/package.json`, including its pin on `@finos/git-proxy`\n\nOnce merged, cut `%s` from `main` per our [release process](https://git-proxy.finos.org/docs/development/releases) in order to generate a GitHub draft release.\n' "$SOURCE_LINE" "$RELEASE_BRANCH")
 
           if gh pr view "$BRANCH" >/dev/null 2>&1; then
             echo "PR for $BRANCH already exists. Branch updated, no new PR opened."
