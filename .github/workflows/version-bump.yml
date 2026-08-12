@@ -68,18 +68,35 @@ jobs:
             exit 1
           fi
 
-      - name: Install dependencies
-        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Bump root package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
 
-      - name: Bump root and workspace packages
+      - name: Bump git-proxy-cli package
+        working-directory: packages/git-proxy-cli
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Sync git-proxy-cli's pin on the root package
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          npm version "$VERSION" \
-            --no-git-tag-version \
-            --allow-same-version \
-            --workspaces \
-            --include-workspace-root
+          node -e '
+            const fs = require("fs");
+            const p = "packages/git-proxy-cli/package.json";
+            const pkg = JSON.parse(fs.readFileSync(p, "utf8"));
+            if (!pkg.dependencies || !pkg.dependencies["@finos/git-proxy"]) {
+              console.error("::error::Expected @finos/git-proxy in git-proxy-cli dependencies.");
+              process.exit(1);
+            }
+            pkg.dependencies["@finos/git-proxy"] = process.env.VERSION;
+            fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + "\n");
+          '
+
+      - name: Refresh the lockfile
+        run: npm install --package-lock-only --no-audit --no-fund
 
       - name: Open version bump PR
         env:
@@ -95,7 +112,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git checkout -b "$BRANCH"
-          git add package.json package-lock.json packages/*/package.json
+          git add package.json package-lock.json packages/git-proxy-cli/package.json
           git commit -m "chore: bump git-proxy and git-proxy-cli to $VERSION"
           git push -u origin "$BRANCH" --force-with-lease
 
@@ -105,7 +122,7 @@ jobs:
             SOURCE_LINE="Triggered manually for version $VERSION."
           fi
 
-          BODY=$(printf '%s\n\nBumps:\n- `package.json`, `package-lock.json`\n- `packages/git-proxy-cli/package.json`\n\nOnce merged, cut `%s` from `main` per our [release process](https://git-proxy.finos.org/docs/development/releases) in order to generate a GitHub draft release.\n' "$SOURCE_LINE" "$RELEASE_BRANCH")
+          BODY=$(printf '%s\n\nBumps:\n- `package.json`, `package-lock.json`\n- `packages/git-proxy-cli/package.json` (including its pin on `@finos/git-proxy`)\n\nOnce merged, cut `%s` from `main` per our [release process](https://git-proxy.finos.org/docs/development/releases) in order to generate a GitHub draft release.\n' "$SOURCE_LINE" "$RELEASE_BRANCH")
 
           if gh pr view "$BRANCH" >/dev/null 2>&1; then
             echo "PR for $BRANCH already exists. Branch updated, no new PR opened."
