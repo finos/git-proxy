@@ -16,8 +16,6 @@ permissions:
   contents: write
   pull-requests: write
 
-env:
-  NODE_VERSION: 22
 
 concurrency:
   group: version-bump-${{ github.event.milestone.number || github.run_id }}
@@ -71,18 +69,16 @@ jobs:
             exit 1
           fi
 
-      - name: Install dependencies
-        run: npm ci --ignore-scripts --no-audit --no-fund
-
-      - name: Bump root and workspace packages
+      - name: Bump root package
         env:
           VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          npm version "$VERSION" \
-            --no-git-tag-version \
-            --allow-same-version \
-            --workspaces \
-            --include-workspace-root
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Bump git-proxy-cli package
+        working-directory: packages/git-proxy-cli
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
 
       - name: Sync git-proxy-cli's pin on the root package
         env:
@@ -117,7 +113,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git checkout -b "$BRANCH"
-          git add package.json package-lock.json packages/*/package.json
+          git add package.json package-lock.json packages/git-proxy-cli/package.json
           git commit -m "chore: bump git-proxy and git-proxy-cli to $VERSION"
           git push -u origin "$BRANCH" --force-with-lease
 
