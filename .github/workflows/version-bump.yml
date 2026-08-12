@@ -16,7 +16,6 @@ permissions:
   contents: write
   pull-requests: write
 
-
 concurrency:
   group: version-bump-${{ github.event.milestone.number || github.run_id }}
   cancel-in-progress: false
