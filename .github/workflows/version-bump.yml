@@ -9,6 +9,8 @@ on:
       version:
         description: 'Version to bump to, e.g. 2.2.0'
         required: true
+env:
+  NODE_VERSION: 22
 
 permissions:
   contents: write
@@ -35,7 +37,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: '24'
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Resolve version
         id: version
@@ -66,16 +68,18 @@ jobs:
             exit 1
           fi
 
-      - name: Bump root package
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+      - name: Install dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
 
-      - name: Bump git-proxy-cli package
-        working-directory: packages/git-proxy-cli
+      - name: Bump root and workspace packages
         env:
           VERSION: ${{ steps.version.outputs.version }}
-        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+        run: |
+          npm version "$VERSION" \
+            --no-git-tag-version \
+            --allow-same-version \
+            --workspaces \
+            --include-workspace-root
 
       - name: Open version bump PR
         env:
@@ -91,9 +95,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git checkout -b "$BRANCH"
-          git add package.json package-lock.json packages/git-proxy-cli/package.json
+          git add package.json package-lock.json packages/*/package.json
           git commit -m "chore: bump git-proxy and git-proxy-cli to $VERSION"
-          git push -u origin "$BRANCH" --force
+          git push -u origin "$BRANCH" --force-with-lease
 
           if [ -n "$MILESTONE_URL" ]; then
             SOURCE_LINE="Triggered by closing milestone **$MILESTONE_TITLE** ($MILESTONE_URL)."
