@@ -44,7 +44,7 @@ def untrusted(tag: str, content: str, limit: int = 10000) -> str:
 def _neutralize(text: str) -> str:
     text = _HTML_COMMENT.sub("", text)
     text = _RISKY_TAG.sub("", text)
-    # A zero width space after the @ renders identically but does not notify anyone.
+    # A zero width space after the @ renders identically but does not notify anyone
     return _MENTION.sub("@\u200b\\1", text)
 
 
