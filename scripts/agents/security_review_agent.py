@@ -214,11 +214,42 @@ Use this exact format:
 <recommended fix>
 
 ... (repeat for each finding)
-
-**Disclaimer:** This review is AI-generated. Please validate the findings before fixing.
-
-<sub>Reviewed by {MODEL}. Re-run by commenting `/security-review` on this PR.</sub>
 """
+
+
+def _safe_path(path: str) -> str:
+    return path.replace("`", "'")
+
+
+def build_coverage_footer(diff: dict) -> str:
+    """
+    Coverage and the disclaimer are stated here rather than by the model, so an
+    injected diff cannot claim the review saw more than it did or drop the caveat.
+    """
+    lines = [
+        "---",
+        f"**Coverage:** {diff['scanned_files']} of {diff['total_files']} changed files were reviewed.",
+    ]
+
+    if diff["excluded"]:
+        listed = ", ".join(f"`{_safe_path(name)}` ({reason})" for name, reason in diff["excluded"])
+        lines.append(f"Not reviewed: {listed}.")
+
+    if diff["truncated"]:
+        listed = ", ".join(f"`{_safe_path(name)}`" for name in diff["truncated"])
+        lines.append(
+            f"Shown only partially, because the diff exceeded the size budget: {listed}. "
+            "Consider splitting this PR up so it can be reviewed in full."
+        )
+
+    lines.append(
+        "\n**Disclaimer:** This review is AI-generated and covers only what is listed above. "
+        "Please validate the findings before acting on them."
+    )
+    lines.append(
+        f"\n<sub>Reviewed by {MODEL}. Re-run by commenting `/security-review` on this PR.</sub>"
+    )
+    return "\n".join(lines)
 
 
 # GitHub helpers
@@ -279,13 +310,22 @@ TOOLS = [
 
 # Tool dispatch
 
-def handle_tool_call(name: str, inputs: dict) -> str:
-    if name == "post_security_review":
-        # Prepend a header to identify review comments across runs
-        body = f"## Automated Security Review\n\n{inputs['body']}"
-        post_or_update_comment(body)
+def make_tool_handler(diff: dict, state: dict):
+    def handle_tool_call(name: str, inputs: dict) -> str:
+        if name != "post_security_review":
+            return f"Unknown tool: {name}"
+
+        # Header identifies review comments across runs,footer is script-generated
+        body = (
+            f"## Automated Security Review\n\n"
+            f"{str(inputs.get('body') or '(the review produced no text)')}\n\n"
+            f"{build_coverage_footer(diff)}"
+        )
+        post_or_update_comment(sanitize_comment(body, max_len=25000))
+        state["posted"] = True
         return "Security review comment posted."
-    return f"Unknown tool: {name}"
+
+    return handle_tool_call
 
 # Agentic loop
 
