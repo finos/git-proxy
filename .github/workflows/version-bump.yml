@@ -132,14 +132,14 @@ jobs:
 
           git --no-pager diff -- package.json package-lock.json packages/git-proxy-cli/package.json
 
-      - name: Open version bump PR
+- name: Open version bump PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ steps.version.outputs.version }}
           MILESTONE_TITLE: ${{ github.event.milestone.title }}
           MILESTONE_URL: ${{ github.event.milestone.html_url }}
         run: |
-          BRANCH="chore/bump-version-$VERSION"
+          BRANCH="chore/bump-version-$VERSION-$GITHUB_RUN_ID"
           RELEASE_BRANCH="release/${VERSION%.*}"
 
           git config user.name "github-actions[bot]"
@@ -148,7 +148,7 @@ jobs:
           git checkout -b "$BRANCH"
           git add package.json package-lock.json packages/git-proxy-cli/package.json
           git commit -m "chore: bump git-proxy and git-proxy-cli to $VERSION"
-          git push -u origin "$BRANCH" --force-with-lease
+          git push -u origin "$BRANCH"
 
           if [ -n "$MILESTONE_URL" ]; then
             SOURCE_LINE="Triggered by closing milestone **$MILESTONE_TITLE** ($MILESTONE_URL)."
@@ -158,8 +158,5 @@ jobs:
 
           BODY=$(printf '%s\n\nBumps:\n- `package.json`, `package-lock.json`\n- `packages/git-proxy-cli/package.json`, including its pin on `@finos/git-proxy`\n\nOnce merged, cut `%s` from `main` per our [release process](https://git-proxy.finos.org/docs/development/releases) in order to generate a GitHub draft release.\n' "$SOURCE_LINE" "$RELEASE_BRANCH")
 
-          if gh pr view "$BRANCH" >/dev/null 2>&1; then
-            echo "PR for $BRANCH already exists. Branch updated, no new PR opened."
-          else
-            gh pr create --base main --head "$BRANCH" --title "chore: bump version to $VERSION" --body "$BODY"
-          fi
+          gh pr create --base main --head "$BRANCH" \
+            --title "chore: bump version to $VERSION" --body "$BODY"
