@@ -9,6 +9,8 @@ on:
       version:
         description: 'Version to bump to, e.g. 2.2.0'
         required: true
+env:
+  NODE_VERSION: 22
 
 permissions:
   contents: write
@@ -35,7 +37,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
-          node-version: '24'
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Resolve version
         id: version
@@ -77,6 +79,25 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: npm version "$VERSION" --no-git-tag-version --allow-same-version
 
+      - name: Sync git-proxy-cli's pin on the root package
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const p = "packages/git-proxy-cli/package.json";
+            const pkg = JSON.parse(fs.readFileSync(p, "utf8"));
+            if (!pkg.dependencies || !pkg.dependencies["@finos/git-proxy"]) {
+              console.error("::error::Expected @finos/git-proxy in git-proxy-cli dependencies.");
+              process.exit(1);
+            }
+            pkg.dependencies["@finos/git-proxy"] = process.env.VERSION;
+            fs.writeFileSync(p, JSON.stringify(pkg, null, 2) + "\n");
+          '
+
+      - name: Refresh the lockfile
+        run: npm install --package-lock-only --no-audit --no-fund
+
       - name: Open version bump PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -93,7 +114,7 @@ jobs:
           git checkout -b "$BRANCH"
           git add package.json package-lock.json packages/git-proxy-cli/package.json
           git commit -m "chore: bump git-proxy and git-proxy-cli to $VERSION"
-          git push -u origin "$BRANCH" --force
+          git push -u origin "$BRANCH" --force-with-lease
 
           if [ -n "$MILESTONE_URL" ]; then
             SOURCE_LINE="Triggered by closing milestone **$MILESTONE_TITLE** ($MILESTONE_URL)."
@@ -101,7 +122,7 @@ jobs:
             SOURCE_LINE="Triggered manually for version $VERSION."
           fi
 
-          BODY=$(printf '%s\n\nBumps:\n- `package.json`, `package-lock.json`\n- `packages/git-proxy-cli/package.json`\n\nOnce merged, cut `%s` from `main` per our [release process](https://git-proxy.finos.org/docs/development/releases) in order to generate a GitHub draft release.\n' "$SOURCE_LINE" "$RELEASE_BRANCH")
+          BODY=$(printf '%s\n\nBumps:\n- `package.json`, `package-lock.json`\n- `packages/git-proxy-cli/package.json` (including its pin on `@finos/git-proxy`)\n\nOnce merged, cut `%s` from `main` per our [release process](https://git-proxy.finos.org/docs/development/releases) in order to generate a GitHub draft release.\n' "$SOURCE_LINE" "$RELEASE_BRANCH")
 
           if gh pr view "$BRANCH" >/dev/null 2>&1; then
             echo "PR for $BRANCH already exists. Branch updated, no new PR opened."
