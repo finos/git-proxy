@@ -1,6 +1,6 @@
 {
   "name": "@finos/git-proxy-cli",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Command line interface tool for FINOS GitProxy.",
   "bin": {
     "git-proxy-cli": "./dist/index.js"
