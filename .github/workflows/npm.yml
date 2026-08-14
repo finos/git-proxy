@@ -5,7 +5,6 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: 'Dry run only (no actual publish)'
         required: false
         default: 'true'
         type: choice
@@ -73,7 +72,7 @@ jobs:
             # Otherwise, this is a maintenance release on an older line
             # Tag as v<major>.<minor> so users can pin to it
             MAJOR_MINOR=$(echo "$VERSION" | cut -d. -f1,2)
-            DIST_TAG="v${MAJOR_MINOR}"
+            DIST_TAG="release-${MAJOR_MINOR}"
             echo "Maintenance release detected, publishing under '$DIST_TAG' tag"
             npm publish "${PUBLISH_FLAGS[@]}" --tag "$DIST_TAG"
           fi
