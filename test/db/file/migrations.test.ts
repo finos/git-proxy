@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import * as migrations from '../../../src/db/file/migrations';
 
 describe('File DB migrations store', () => {
@@ -64,5 +64,45 @@ describe('File DB migrations store', () => {
     await migrations.unrecordMigration('does-not-exist');
 
     expect(await migrations.getAppliedMigrations()).toEqual([]);
+  });
+
+  it('deriveCreatedAt always returns undefined', () => {
+    expect(migrations.deriveCreatedAt()).toBeUndefined();
+  });
+
+  describe('error handling', () => {
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('rejects getAppliedMigrations when the store errors', async () => {
+      vi.spyOn(migrations.db, 'find').mockImplementation(((
+        _query: unknown,
+        cb: (err: Error | null, docs: unknown[]) => void,
+      ) => cb(new Error('find failed'), [])) as any);
+
+      await expect(migrations.getAppliedMigrations()).rejects.toThrow('find failed');
+    });
+
+    it('rejects recordMigration when the store errors', async () => {
+      vi.spyOn(migrations.db, 'update').mockImplementation(((
+        _query: unknown,
+        _update: unknown,
+        _options: unknown,
+        cb: (err: Error | null) => void,
+      ) => cb(new Error('update failed'))) as any);
+
+      await expect(migrations.recordMigration('20260701-alpha')).rejects.toThrow('update failed');
+    });
+
+    it('rejects unrecordMigration when the store errors', async () => {
+      vi.spyOn(migrations.db, 'remove').mockImplementation(((
+        _query: unknown,
+        _options: unknown,
+        cb: (err: Error | null) => void,
+      ) => cb(new Error('remove failed'))) as any);
+
+      await expect(migrations.unrecordMigration('20260701-alpha')).rejects.toThrow('remove failed');
+    });
   });
 });
