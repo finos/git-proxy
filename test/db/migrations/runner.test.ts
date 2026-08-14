@@ -162,4 +162,16 @@ describe('rollbackMigrations', () => {
 
     await expect(rollbackMigrations(sink, migrations, [A])).rejects.toThrow(/irreversible|down/i);
   });
+
+  // An id can be recorded as applied (in the db) but no longer exist in the
+  // current migrations list, e.g. its source file was deleted or renamed.
+  it('throws when asked to roll back an id that is applied but no longer defined', async () => {
+    const UNKNOWN = '20260704-unknown';
+    const { sink } = makeSink([A, UNKNOWN]);
+    const migrations = [A].map((id) => makeMigration(id, log));
+
+    await expect(rollbackMigrations(sink, migrations, [UNKNOWN])).rejects.toThrow(
+      `Cannot roll back unknown migration: ${UNKNOWN}`,
+    );
+  });
 });
