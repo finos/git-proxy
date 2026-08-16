@@ -1,4 +1,4 @@
-FROM httpd:2.4@sha256:331548c5249bdeced0f048bc2fb8c6b6427d2ec6508bed9c1fec6c57d0b27a60
+FROM httpd:2.4@sha256:2920ed8587277d6aa8ea785e143e970835057123dc7bf1199d102c60c80a73bb
 
 RUN apt-get update && apt-get install -y \
     git \
