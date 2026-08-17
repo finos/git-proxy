@@ -50,6 +50,7 @@ describe('MongoDB Repo', async () => {
     getRepoByUrl,
     getRepoById,
     createRepo,
+    updateRepo,
     addUserCanPush,
     addUserCanAuthorise,
     removeUserCanPush,
@@ -220,6 +221,57 @@ describe('MongoDB Repo', async () => {
       expect(consoleSpy).toHaveBeenCalled();
 
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('updateRepo', () => {
+    it('should $set fields with defined values', async () => {
+      mockUpdateOne.mockResolvedValue({ modifiedCount: 1 });
+
+      await updateRepo({ _id: TEST_REPO._id, name: 'renamed' });
+
+      expect(mockConnect).toHaveBeenCalledWith('repos');
+      expect(mockUpdateOne).toHaveBeenCalledWith(
+        { _id: new ObjectId(TEST_REPO._id!) },
+        { $set: { name: 'renamed' } },
+      );
+    });
+
+    it('should $unset fields with undefined values', async () => {
+      mockUpdateOne.mockResolvedValue({ modifiedCount: 1 });
+
+      await updateRepo({ _id: TEST_REPO._id, project: undefined });
+
+      expect(mockUpdateOne).toHaveBeenCalledWith(
+        { _id: new ObjectId(TEST_REPO._id!) },
+        { $unset: { project: '' } },
+      );
+    });
+
+    it('should combine $set and $unset for mixed fields', async () => {
+      mockUpdateOne.mockResolvedValue({ modifiedCount: 1 });
+
+      await updateRepo({ _id: TEST_REPO._id, name: 'renamed', project: undefined });
+
+      expect(mockUpdateOne).toHaveBeenCalledWith(
+        { _id: new ObjectId(TEST_REPO._id!) },
+        { $set: { name: 'renamed' }, $unset: { project: '' } },
+      );
+    });
+
+    it('should not call updateOne when no fields besides _id are given', async () => {
+      await updateRepo({ _id: TEST_REPO._id });
+
+      expect(mockUpdateOne).not.toHaveBeenCalled();
+    });
+
+    it('should not include _id in $set', async () => {
+      mockUpdateOne.mockResolvedValue({ modifiedCount: 1 });
+
+      await updateRepo({ _id: TEST_REPO._id, name: 'renamed' });
+
+      const [, update] = mockUpdateOne.mock.calls[0];
+      expect(update.$set).not.toHaveProperty('_id');
     });
   });
 

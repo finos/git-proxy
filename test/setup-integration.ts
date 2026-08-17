@@ -20,7 +20,7 @@ import { resetConnection } from '../src/db/mongo/helper';
 import { invalidateCache } from '../src/config';
 
 const DEFAULT_TEST_DB_NAME = 'git-proxy-test';
-const COLLECTIONS = ['repos', 'users', 'pushes', 'user_session'];
+const COLLECTIONS = ['repos', 'users', 'pushes', 'user_session', 'migrations'];
 
 let client: MongoClient | null = null;
 
