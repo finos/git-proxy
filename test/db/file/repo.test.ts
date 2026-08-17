@@ -86,4 +86,43 @@ describe('File DB', () => {
       ).rejects.toThrow('DB error');
     });
   });
+
+  describe('updateRepo', () => {
+    it('sets the given fields on the stored repo', async () => {
+      const created = await repoModule.createRepo(
+        new Repo('proj', 'update-me', 'https://example.com/update-me.git'),
+      );
+
+      await repoModule.updateRepo({
+        _id: created._id,
+        dateCreated: '2020-01-01T00:00:00.000Z',
+      } as Partial<Repo>);
+
+      const fetched = (await repoModule.getRepoById(created._id!)) as Record<
+        string,
+        unknown
+      > | null;
+      expect(fetched?.dateCreated).toBe('2020-01-01T00:00:00.000Z');
+      expect(fetched?.name).toBe('update-me');
+    });
+
+    it('removes fields passed as undefined', async () => {
+      const created = await repoModule.createRepo(
+        new Repo('proj', 'unset-me', 'https://example.com/unset-me.git'),
+      );
+      await repoModule.updateRepo({
+        _id: created._id,
+        dateCreated: '2020-01-01T00:00:00.000Z',
+      } as Partial<Repo>);
+
+      await repoModule.updateRepo({ _id: created._id, dateCreated: undefined } as Partial<Repo>);
+
+      const fetched = (await repoModule.getRepoById(created._id!)) as Record<
+        string,
+        unknown
+      > | null;
+      expect(fetched?.dateCreated).toBeUndefined();
+      expect(fetched?.name).toBe('unset-me');
+    });
+  });
 });
