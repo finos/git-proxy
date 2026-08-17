@@ -48,6 +48,10 @@ export const getRepoById = async (_id: string): Promise<Repo | null> => {
 };
 
 export const createRepo = async (repo: Repo): Promise<Repo> => {
+  const now = new Date().toISOString();
+  if (!repo.dateCreated) repo.dateCreated = now;
+  if (!repo.lastModified) repo.lastModified = now;
+
   const collection = await connect(collectionName);
   const response = await collection.insertOne(repo as OptionalId<Document>);
   console.log(`created new repo ${JSON.stringify(repo)}`);
@@ -76,25 +80,37 @@ export const updateRepo = async (repo: Partial<Repo>): Promise<void> => {
 export const addUserCanPush = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
-  await collection.updateOne({ _id: new ObjectId(_id) }, { $push: { 'users.canPush': user } });
+  await collection.updateOne(
+    { _id: new ObjectId(_id) },
+    { $push: { 'users.canPush': user }, $set: { lastModified: new Date().toISOString() } },
+  );
 };
 
 export const addUserCanAuthorise = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
-  await collection.updateOne({ _id: new ObjectId(_id) }, { $push: { 'users.canAuthorise': user } });
+  await collection.updateOne(
+    { _id: new ObjectId(_id) },
+    { $push: { 'users.canAuthorise': user }, $set: { lastModified: new Date().toISOString() } },
+  );
 };
 
 export const removeUserCanPush = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
-  await collection.updateOne({ _id: new ObjectId(_id) }, { $pull: { 'users.canPush': user } });
+  await collection.updateOne(
+    { _id: new ObjectId(_id) },
+    { $pull: { 'users.canPush': user }, $set: { lastModified: new Date().toISOString() } },
+  );
 };
 
 export const removeUserCanAuthorise = async (_id: string, user: string): Promise<void> => {
   user = user.toLowerCase();
   const collection = await connect(collectionName);
-  await collection.updateOne({ _id: new ObjectId(_id) }, { $pull: { 'users.canAuthorise': user } });
+  await collection.updateOne(
+    { _id: new ObjectId(_id) },
+    { $pull: { 'users.canAuthorise': user }, $set: { lastModified: new Date().toISOString() } },
+  );
 };
 
 export const deleteRepo = async (_id: string): Promise<void> => {
