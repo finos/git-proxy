@@ -255,8 +255,9 @@ const PushesTable = ({
         return;
       }
 
-      const activate = (e: MouseEvent) => {
-        if ((e.target as HTMLElement).closest('a, button')) {
+      // `e` is omitted for keyboard activation, where the row itself is the target.
+      const activate = (e?: Event) => {
+        if ((e?.target as HTMLElement | undefined)?.closest('a, button')) {
           return;
         }
         openPush(row.id);
@@ -309,7 +310,7 @@ const PushesTable = ({
             <Text
               as='span'
               className={`${mutedMetaClass} w-full text-left whitespace-nowrap`}
-              title={m.toISO()}
+              title={m.toISO() ?? undefined}
             >
               {primary}
             </Text>

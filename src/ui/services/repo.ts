@@ -21,6 +21,7 @@ import { RepoView } from '../types';
 import { getApiV1BaseUrl } from './apiConfig';
 import { ServiceResult, getServiceError, errorResult, successResult } from './errors';
 import { SCMRepositoryMetadata } from '../types';
+import type { RepoSortField } from '../views/RepoList/Components/repoSortField';
 
 const compareRepoName = (a: RepoView, b: RepoView, direction: 'asc' | 'desc'): number => {
   const cmp = (a.name ?? '').localeCompare(b.name ?? '');

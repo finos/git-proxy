@@ -129,7 +129,7 @@ const CommitDataTable = ({
             <Text
               as='span'
               className={`${mutedMetaClass} w-full text-left whitespace-nowrap`}
-              title={m.toISO()}
+              title={m.toISO() ?? undefined}
             >
               {primary}
             </Text>
