@@ -35,6 +35,8 @@ import MongoDBStore from 'connect-mongo';
 import { CompletedAttestation, Rejection } from '../proxy/processors/types';
 import { processGitUrl } from '../proxy/routes/helper';
 import { initializeFolders } from './file/helper';
+import { runMigrations as applyMigrations } from './migrations';
+import { migrations } from './migrations/registry';
 import { attachRepoActivityTabCounts } from './repoActivityMerge';
 import { collectUserProfileEmailVariants } from './userProfilePushQuery';
 import { activityPrimaryStatusFromFlags } from '../activity/activityPrimaryStatus';
@@ -124,12 +126,15 @@ export const createUser = async (
 };
 
 export const createRepo = async (repo: AuthorisedRepo) => {
+  const now = new Date().toISOString();
   const toCreate = {
     ...repo,
     users: {
       canPush: [],
       canAuthorise: [],
     },
+    dateCreated: now,
+    lastModified: now,
   };
   toCreate.name = repo.name.toLowerCase();
 
@@ -191,6 +196,7 @@ export const canUserCancelPush = async (id: string, user: string) => {
   }
 };
 
+export const runMigrations = (): Promise<void> => applyMigrations(start(), migrations);
 export const getSessionStore = (): MongoDBStore | undefined => start().getSessionStore();
 export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => start().getPushes(query);
 export const getPushesForUserProfile = async (username: string): Promise<Action[]> => {

@@ -32,7 +32,7 @@ import {
   getHttpsServerPort,
   getSSHConfig,
 } from '../config';
-import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos } from '../db';
+import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos, runMigrations } from '../db';
 import { PluginLoader } from '../plugin';
 import chain from './chain';
 import { Repo } from '../db/types';
@@ -72,6 +72,8 @@ export class Proxy {
     }
     console.log('Creating the .remote dir...');
     fs.mkdirSync(remoteDir);
+
+    await runMigrations();
 
     const plugins = getPlugins();
     const pluginLoader = new PluginLoader(plugins);

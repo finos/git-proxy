@@ -18,8 +18,12 @@ import * as helper from './helper';
 import * as pushes from './pushes';
 import * as repo from './repo';
 import * as users from './users';
+import * as migrations from './migrations';
 
 export const { getSessionStore } = helper;
+
+export const { getAppliedMigrations, recordMigration, unrecordMigration, deriveCreatedAt } =
+  migrations;
 
 export const {
   getPushes,
@@ -39,6 +43,7 @@ export const {
   getRepoByUrl,
   getRepoById,
   createRepo,
+  updateRepo,
   addUserCanPush,
   addUserCanAuthorise,
   removeUserCanPush,
