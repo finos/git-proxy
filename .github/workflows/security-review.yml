@@ -1,0 +1,55 @@
+name: Security Review
+
+on:
+  pull_request:
+    types: [opened, reopened]
+  issue_comment:
+    types: [created]
+
+concurrency:
+  group: security-review-${{ github.event.pull_request.number || github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  security-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Runs on PR creation by a collaborator/member
+    # or when collaborator/member comments "/security-review"
+    if: >
+      (
+        github.event_name == 'pull_request' &&
+        github.event.pull_request.user.type != 'Bot' &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.pull_request.author_association)
+      ) || (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request != null &&
+        startsWith(github.event.comment.body, '/security-review') &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)
+      )
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install litellm PyGithub
+      - name: Run security review agent
+        env:
+          IGNORED_PATTERNS: package-lock.json,yarn.lock,dist/*,build/*
+          MODEL: ${{ vars.MODEL }} # e.g: "claude-sonnet-5", "gpt-4o", etc.
+          DEBUG_AI_WORKFLOWS: ${{ vars.DEBUG_AI_WORKFLOWS }} # Enable token/cost logging
+
+          # Only API key for the chosen model is required
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+          # Obtained automatically by GH Actions
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
+          REPO_NAME: ${{ github.repository }}
+          TRIGGER: ${{ github.event_name }}
+        run: python scripts/agents/security_review_agent.py
