@@ -31,6 +31,26 @@ export interface ProcessorExec {
   readonly isCollectible?: boolean;
 }
 
+/**
+ * A single element of a chain. Can be a processor function, a push phase, or a pull phase.
+ */
+export type ChainElement = ProcessorExec | PushPhase | PullPhase;
+
+export const PushPhase = {
+  AFTER_PERMISSIONS: 'AFTER_PERMISSIONS',
+  AFTER_CHECKOUT: 'AFTER_CHECKOUT',
+  AFTER_DIFF: 'AFTER_DIFF',
+  BEFORE_APPROVAL: 'BEFORE_APPROVAL',
+};
+export type PushPhase = (typeof PushPhase)[keyof typeof PushPhase];
+
+export const PullPhase = {
+  AFTER_AUTHORISATION: 'AFTER_AUTHORISATION',
+};
+export type PullPhase = (typeof PullPhase)[keyof typeof PullPhase];
+
+export type PushChainName = 'tag' | 'branch';
+
 export interface Processor {
   exec: ProcessorExec;
   metadata: ProcessorMetadata;
