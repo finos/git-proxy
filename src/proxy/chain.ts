@@ -19,12 +19,12 @@ import { Request, Response } from 'express';
 import { PluginLoader } from '../plugin';
 import { Action, RequestType, PushType } from './actions';
 import * as proc from './processors';
-import { Processor } from './processors/types';
+import { ProcessorExec } from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
 import { createProgressWriter } from './sideband';
 
-const branchPushChain: Processor['exec'][] = [
+const branchPushChain: ProcessorExec[] = [
   proc.push.resolveUserFromToken,
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
@@ -42,7 +42,7 @@ const branchPushChain: Processor['exec'][] = [
   proc.push.blockForAuth,
 ];
 
-const tagPushChain: Processor['exec'][] = [
+const tagPushChain: ProcessorExec[] = [
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkUserPushPermission,
   proc.push.checkIfWaitingAuth,
@@ -53,11 +53,33 @@ const tagPushChain: Processor['exec'][] = [
   proc.push.blockForAuth,
 ];
 
-const pullActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorisedList];
+const pullActionChain: ProcessorExec[] = [proc.push.checkRepoInAuthorisedList];
 
-const defaultActionChain: Processor['exec'][] = [proc.push.checkRepoInAuthorisedList];
+const defaultActionChain: ProcessorExec[] = [proc.push.checkRepoInAuthorisedList];
 
 let pluginsInserted = false;
+
+/**
+ * Compose a single error message from all failed steps, so that the git
+ * client displays every rejection reason for the push.
+ * @param {Action} action The action whose failed steps are reported.
+ * @return {string | undefined} The combined message, or undefined when there
+ * are fewer than two failed steps (the single step message is kept as-is).
+ */
+const composeErrorMessage = (action: Action): string | undefined => {
+  const messages = (action.steps ?? [])
+    .filter((step) => step.error && step.errorMessage)
+    .map((step) => (step.errorMessage as string).trim());
+
+  if (messages.length < 2) {
+    return undefined;
+  }
+
+  return (
+    `The following ${messages.length} checks failed:\n\n` +
+    messages.map((message, i) => `${i + 1}. ${message}`).join('\n\n')
+  );
+};
 
 const stepProgressLabels: Record<string, string> = {
   'checkEmptyBranch.exec': 'Checking for empty branch',
@@ -78,11 +100,11 @@ const stepProgressLabels: Record<string, string> = {
 
 /**
  * Obtain the message to display before a chain step.
- * @param {Processor['exec']} fn The chain step about to be executed.
+ * @param {ProcessorExec} fn The chain step about to be executed.
  * @return {string} The message to display.
  */
-const getProgressMessage = (fn: Processor['exec']): string => {
-  const displayName = (fn as { displayName?: string }).displayName;
+const getProgressMessage = (fn: ProcessorExec): string => {
+  const { displayName } = fn;
   if (displayName && stepProgressLabels[displayName]) {
     return stepProgressLabels[displayName];
   }
@@ -106,20 +128,55 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
     // 3) Select the correct chain now that action.actionType is set
     const actionFns = await getChain(action);
 
+    let collectedErrors = false;
     const progress = createProgressWriter(res, action);
 
     // 4) Execute each step in the selected chain
     for (const fn of actionFns) {
-      if (progress.active && action.continue()) {
-        progress.message(`${getProgressMessage(fn)}...`);
-      }
-      action = await fn(req, action);
-      if (!action.continue() || action.allowPush) {
+      // a push that already failed checks must not be queued for approval
+      if (fn === proc.push.blockForAuth && !action.continue()) {
         break;
-      } else if (fn === proc.push.pullRemote) {
+      }
+
+      progress.message(`${getProgressMessage(fn)}...`);
+
+      const stepsBefore = action.steps?.length ?? 0;
+      action = await fn(req, action);
+
+      if (action.allowPush) {
+        break;
+      }
+
+      if (!action.continue()) {
+        if (action.blocked) {
+          break;
+        }
+
+        const failedNow = (action.steps ?? []).slice(stepsBefore).some((step) => step.error);
+        if (failedNow) {
+          // collectible steps have their failures can report all their
+          // rejection reasons at once, non-collectible steps fail immediately
+          if (!fn.isCollectible) {
+            break;
+          }
+          collectedErrors = true;
+        } else if (!collectedErrors) {
+          // error that predates the chain (e.g. produced while parsing the push)
+          break;
+        }
+      }
+
+      if (fn === proc.push.pullRemote) {
         //if the pull was successful then record the fact we need to clean it up again
         // pullRemote should cleanup unsuccessful clones itself
         checkoutCleanUpRequired = true;
+      }
+    }
+
+    if (collectedErrors) {
+      const combinedMessage = composeErrorMessage(action);
+      if (combinedMessage) {
+        action.errorMessage = combinedMessage;
       }
     }
   } catch (error: unknown) {
@@ -134,7 +191,8 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
 
     action = await proc.post.audit(req, action);
 
-    if (action.autoApproved) {
+    // a push that failed a later check must not be auto-approved
+    if (action.autoApproved && !action.error) {
       await attemptAutoApproval(action);
     } else if (action.autoRejected) {
       await attemptAutoRejection(action);
@@ -150,7 +208,7 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
  */
 let chainPluginLoader: PluginLoader;
 
-export const getChain = async (action: Action): Promise<Processor['exec'][]> => {
+export const getChain = async (action: Action): Promise<ProcessorExec[]> => {
   if (chainPluginLoader === undefined) {
     console.error(
       'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',
