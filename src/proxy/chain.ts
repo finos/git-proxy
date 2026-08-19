@@ -16,15 +16,21 @@
 
 import { Request, Response } from 'express';
 
-import { PluginLoader } from '../plugin';
+import { PluginLoader, ActionPlugin, PushActionPlugin } from '../plugin';
 import { Action, RequestType, PushType } from './actions';
 import * as proc from './processors';
-import { ProcessorExec } from './processors/types';
+import {
+  ProcessorExec,
+  PullPhase,
+  PushPhase,
+  ChainElement,
+  PushChainName,
+} from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
 import { createProgressWriter } from './sideband';
 
-const branchPushChain: ProcessorExec[] = [
+const branchPushChainElements: ChainElement[] = [
   proc.push.resolveUserFromToken,
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
@@ -42,7 +48,7 @@ const branchPushChain: ProcessorExec[] = [
   proc.push.blockForAuth,
 ];
 
-const tagPushChain: ProcessorExec[] = [
+const tagPushChainElements: ChainElement[] = [
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkUserPushPermission,
   proc.push.checkIfWaitingAuth,
@@ -53,11 +59,14 @@ const tagPushChain: ProcessorExec[] = [
   proc.push.blockForAuth,
 ];
 
-const pullActionChain: ProcessorExec[] = [proc.push.checkRepoInAuthorisedList];
+const pullActionChainElements: ChainElement[] = [
+  proc.push.checkRepoInAuthorisedList,
+  PullPhase.AFTER_AUTHORISATION,
+];
 
-const defaultActionChain: ProcessorExec[] = [proc.push.checkRepoInAuthorisedList];
+const defaultActionChainElements: ChainElement[] = [proc.push.checkRepoInAuthorisedList];
 
-let pluginsInserted = false;
+let builtChains: Record<string, ProcessorExec[]> = {};
 
 /**
  * Compose a single error message from all failed steps, so that the git
@@ -208,39 +217,52 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
  */
 let chainPluginLoader: PluginLoader;
 
+const buildChain = (
+  elements: ChainElement[],
+  chainName: string,
+  plugins: ActionPlugin[],
+): ProcessorExec[] =>
+  elements.flatMap((element) =>
+    typeof element === 'function'
+      ? [element]
+      : plugins.filter((plugin) => plugin.phase === element).map((plugin) => plugin.exec),
+  );
+
+const filterPushPluginsByChain = (plugins: readonly PushActionPlugin[], chainName: PushChainName) =>
+  plugins.filter((p) => (p.chains ?? ['branch', 'tag']).includes(chainName));
+
+const buildAllChains = (): Record<string, ProcessorExec[]> => {
+  const pushPlugins = chainPluginLoader.pushPlugins;
+  const pullPlugins = chainPluginLoader.pullPlugins;
+
+  return {
+    branch: buildChain(
+      branchPushChainElements,
+      'branch',
+      filterPushPluginsByChain(pushPlugins, 'branch'),
+    ),
+    tag: buildChain(tagPushChainElements, 'tag', filterPushPluginsByChain(pushPlugins, 'tag')),
+    pull: buildChain(pullActionChainElements, 'pull', pullPlugins),
+    default: [...defaultActionChainElements] as ProcessorExec[],
+  };
+};
+
 export const getChain = async (action: Action): Promise<ProcessorExec[]> => {
   if (chainPluginLoader === undefined) {
-    console.error(
-      'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',
+    throw new Error(
+      'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers.',
     );
-    pluginsInserted = true;
   }
 
-  if (!pluginsInserted) {
-    console.log(
-      `Inserting loaded plugins (${chainPluginLoader.pushPlugins.length} push, ${chainPluginLoader.pullPlugins.length} pull) into proxy chains`,
-    );
-    for (const pluginObj of chainPluginLoader.pushPlugins) {
-      console.log(`Inserting push plugin ${pluginObj.constructor.name} into chain`);
-      branchPushChain.splice(0, 0, pluginObj.exec);
-      tagPushChain.splice(0, 0, pluginObj.exec);
-    }
-    for (const pluginObj of chainPluginLoader.pullPlugins) {
-      console.log(`Inserting pull plugin ${pluginObj.constructor.name} into chain`);
-      // insert custom functions before other pull actions
-      pullActionChain.splice(0, 0, pluginObj.exec);
-    }
-    // This is set to true so that we don't re-insert the plugins into the chain
-    pluginsInserted = true;
-  }
+  builtChains ??= buildAllChains();
 
   switch (action.type) {
     case RequestType.PULL:
-      return pullActionChain;
+      return builtChains.pull;
     case RequestType.PUSH:
-      return action.actionType === PushType.TAG ? tagPushChain : branchPushChain;
+      return action.actionType === PushType.TAG ? builtChains.tag : builtChains.branch;
     default:
-      return defaultActionChain;
+      return builtChains.default;
   }
 };
 
@@ -251,20 +273,17 @@ export default {
   get chainPluginLoader() {
     return chainPluginLoader;
   },
-  get pluginsInserted() {
-    return pluginsInserted;
-  },
   get branchPushChain() {
-    return branchPushChain;
+    return builtChains.branch;
   },
   get tagPushChain() {
-    return tagPushChain;
+    return builtChains.tag;
   },
   get pullActionChain() {
-    return pullActionChain;
+    return builtChains.pull;
   },
   get defaultActionChain() {
-    return defaultActionChain;
+    return builtChains.default;
   },
   executeChain,
   getChain,
