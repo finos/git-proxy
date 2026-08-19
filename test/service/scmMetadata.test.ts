@@ -15,7 +15,23 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { ScmMetadataCache, cacheKeyForRepoUrl } from '../../src/service/scmMetadata';
+import { ScmMetadataCache, cacheKeyForRepoUrl, ttlMsFromEnv } from '../../src/service/scmMetadata';
+
+describe('ttlMsFromEnv', () => {
+  const fallback = 24 * 60 * 60 * 1000;
+
+  it('uses a positive numeric env value', () => {
+    expect(ttlMsFromEnv('1000', fallback)).toBe(1000);
+  });
+
+  it('falls back for missing, invalid, or non-positive values', () => {
+    expect(ttlMsFromEnv(undefined, fallback)).toBe(fallback);
+    expect(ttlMsFromEnv('', fallback)).toBe(fallback);
+    expect(ttlMsFromEnv('abc', fallback)).toBe(fallback);
+    expect(ttlMsFromEnv('0', fallback)).toBe(fallback);
+    expect(ttlMsFromEnv('-1', fallback)).toBe(fallback);
+  });
+});
 
 describe('cacheKeyForRepoUrl', () => {
   it('strips .git and lowercases host and path', () => {

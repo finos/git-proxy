@@ -20,10 +20,21 @@ import type { SCMRepositoryMetadata } from './gitProviders';
 
 export type { SCMRepositoryMetadata };
 
+export function ttlMsFromEnv(value: string | undefined, fallbackMs: number): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMs;
+}
+
 /** Repo card enrichment (description, language, license, fork, avatars) changes slowly. */
-const SUCCESS_TTL_MS = 24 * 60 * 60 * 1000;
+const SUCCESS_TTL_MS = ttlMsFromEnv(
+  process.env.GIT_PROXY_SCM_METADATA_SUCCESS_TTL_MS,
+  24 * 60 * 60 * 1000,
+);
 /** Cooldown after a failed fetch before treating cache as stale again. */
-const FAILURE_TTL_MS = Number(process.env.GIT_PROXY_SCM_METADATA_FAILURE_TTL_MS) || 15 * 60 * 1000;
+const FAILURE_TTL_MS = ttlMsFromEnv(
+  process.env.GIT_PROXY_SCM_METADATA_FAILURE_TTL_MS,
+  15 * 60 * 1000,
+);
 
 export const scmMetadataTtls = {
   successMs: SUCCESS_TTL_MS,
