@@ -487,7 +487,9 @@ describe('Users API', () => {
     const ok = await request(app).get('/users/bob/activity');
     expect(ok.status).toBe(200);
     expect(ok.body).toEqual([samplePush]);
-    expect(db.getPushesForUserProfile).toHaveBeenCalledWith('bob');
+    expect(db.getPushesForUserProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ username: 'bob', email: 'bob@example.com' }),
+    );
 
     vi.mocked(db.findUser).mockResolvedValueOnce(null);
     const missing = await request(app).get('/users/nobody/activity');

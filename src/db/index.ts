@@ -199,12 +199,7 @@ export const canUserCancelPush = async (id: string, user: string) => {
 export const runMigrations = (): Promise<void> => applyMigrations(start(), migrations);
 export const getSessionStore = (): MongoDBStore | undefined => start().getSessionStore();
 export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => start().getPushes(query);
-export const getPushesForUserProfile = async (username: string): Promise<Action[]> => {
-  const normalized = username.toLowerCase();
-  const user = await findUser(normalized);
-  if (!user) {
-    return [];
-  }
+export const getPushesForUserProfile = async (user: User): Promise<Action[]> => {
   const emailVariants = collectUserProfileEmailVariants(user);
   return start().getPushesForUserProfile(emailVariants, user.username);
 };
