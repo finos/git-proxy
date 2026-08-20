@@ -68,6 +68,9 @@ export const processGitUrl = (url: string): GitUrlBreakdown | null => {
  * into the embedded git end point and path for the git operation. */
 const PROXIED_URL_PATH_REGEX = /(.+\.git)(\/.*)?/;
 
+/** Fallback for smart-HTTP paths that omit the .git repo suffix (e.g. GitHub-style URLs). */
+const SMART_HTTP_PATH_REGEX = /^(.+?)(\/(?:info\/refs|git-upload-pack|git-receive-pack)(?:\?.*)?)$/;
+
 /** Type representing a breakdown of paths requested from the proxy server */
 export type UrlPathBreakdown = { repoPath: string; gitPath: string };
 
@@ -81,6 +84,11 @@ export type UrlPathBreakdown = { repoPath: string; gitPath: string };
  * - gitPath: /info/refs?service=git-upload-pack
  *
  * and processing /github.com/finos/git-proxy.git/info/refs?service=git-upload-pack
+ * would produce:
+ * - repoPath: /github.com/finos/git-proxy.git
+ * - gitPath: /info/refs?service=git-upload-pack
+ *
+ * Processing /github.com/finos/git-proxy/info/refs?service=git-upload-pack (no .git suffix)
  * would produce:
  * - repoPath: /github.com/finos/git-proxy.git
  * - gitPath: /info/refs?service=git-upload-pack
@@ -100,10 +108,18 @@ export const processUrlPath = (requestPath: string): UrlPathBreakdown | null => 
       repoPath: components[1],
       gitPath: components[2] ?? '/',
     };
-  } else {
-    console.error(`Failed to parse proxy url path: ${requestPath}`);
-    return null;
   }
+
+  const smartHttp = requestPath.match(SMART_HTTP_PATH_REGEX);
+  if (smartHttp) {
+    return {
+      repoPath: smartHttp[1] + '.git',
+      gitPath: smartHttp[2],
+    };
+  }
+
+  console.error(`Failed to parse proxy url path: ${requestPath}`);
+  return null;
 };
 
 /** Regex used to analyze repo URLs (with protocol and origin) to extract the repository name and
