@@ -140,7 +140,7 @@
     "luxon": "^3.7.2",
     "mongodb": "^5.9.2",
     "openid-client": "^6.8.1",
-    "parse-diff": "^0.11.1",
+    "parse-diff": "^0.12.0",
     "passport": "^0.7.0",
     "passport-activedirectory": "^1.4.0",
     "passport-local": "^1.0.0",
@@ -213,10 +213,10 @@
     "underscore": "^1.13.8"
   },
   "optionalDependencies": {
-    "@esbuild/darwin-arm64": "^0.27.2",
-    "@esbuild/darwin-x64": "^0.27.2",
-    "@esbuild/linux-x64": "0.27.2",
-    "@esbuild/win32-x64": "0.27.2"
+    "@esbuild/darwin-arm64": "^0.28.2",
+    "@esbuild/darwin-x64": "^0.28.2",
+    "@esbuild/linux-x64": "0.28.2",
+    "@esbuild/win32-x64": "0.28.2"
   },
   "browserslist": {
     "production": [
