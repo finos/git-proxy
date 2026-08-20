@@ -383,6 +383,7 @@ This file is the canonical project guide. Tool-specific entry points:
 
 - **Delegate everything:** Use the Task tool with specialized subagents for all research, code exploration, code writing, testing, and analysis. The main agent should plan, coordinate, and summarize — not do the work itself.
 - **Maximize parallelism:** Launch multiple subagents concurrently whenever their tasks are independent. For example, when exploring code patterns AND analyzing tests AND checking dependencies, spawn all three agents in a single message rather than sequentially. Always send independent Task calls in a **single message** with multiple tool-use blocks.
+
 <!-- - **Use the right agent type:** Pick `Explore` for codebase search/understanding, `Plan` for architecture decisions, `Bash` for commands, and specialized agents (e.g., `code-reviewer`, `test-automator`, `debugger`) when they match the task.
 - **Keep the main context clean:** Offload large file reads, multi-file searches, and deep analysis to subagents so the main conversation stays focused on coordination and user communication.
 - **Hooks run automatically — use subagents to respond:** When a hook (Spotless, build verification, code review, or simplification) reports an issue, delegate the fix to a subagent rather than doing it inline. If multiple hooks fail simultaneously, spawn parallel subagents to address each issue concurrently. -->

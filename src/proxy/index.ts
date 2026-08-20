@@ -28,9 +28,9 @@ import {
   getTLSKeyPemPath,
   getTLSCertPemPath,
   getTLSEnabled,
-  getSSHConfig,
   getServerPort,
   getHttpsServerPort,
+  getSSHConfig,
 } from '../config';
 import { addUserCanAuthorise, addUserCanPush, createRepo, getRepos, runMigrations } from '../db';
 import { PluginLoader } from '../plugin';

@@ -15,37 +15,29 @@
  */
 
 import React from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import ListItem from '@material-ui/core/ListItem';
-import List from '@material-ui/core/List';
-import styles from '../../assets/jss/material-dashboard-react/components/footerStyle';
+import { Text } from '@primer/react';
 import { MarkGithubIcon } from '@primer/octicons-react';
 
-const useStyles = makeStyles(styles);
-
-const Footer: React.FC = () => {
-  const classes = useStyles();
+const Footer = () => {
+  const year = new Date().getFullYear();
 
   return (
-    <footer className={classes.footer}>
-      <div className={classes.container}>
-        <div className={classes.left}>
-          <List className={classes.list}>
-            <ListItem className={classes.inlineBlock}>
-              <a
-                href='https://github.com/finos/git-proxy'
-                className={classes.block}
-                target='_blank'
-                rel='noopener noreferrer'
-              >
-                <MarkGithubIcon />
-              </a>
-            </ListItem>
-          </List>
+    <footer className='bg-white'>
+      <div className='mt-4 border-t border-gray-900/10 pt-4 md:flex md:items-center md:justify-between'>
+        <div className='flex gap-x-6 md:order-2'>
+          <a
+            href='https://github.com/finos/git-proxy'
+            target='_blank'
+            rel='noopener noreferrer'
+            className='gitproxy-footer-icon-link inline-flex items-center justify-center'
+            aria-label='GitProxy on GitHub'
+          >
+            <MarkGithubIcon size={16} aria-hidden />
+          </a>
         </div>
-        <p className={classes.right}>
-          <span>&copy; {new Date().getFullYear()} GitProxy</span>
-        </p>
+        <Text as='span' size='medium'>
+          &copy; {year} GitProxy. All rights reserved.
+        </Text>
       </div>
     </footer>
   );
