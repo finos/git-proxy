@@ -58,6 +58,19 @@ export class Repo {
   name: string;
   url: string;
   users: { canPush: string[]; canAuthorise: string[] };
+  /**
+   * ISO-8601; set on create, never overwritten thereafter.
+   * Existing repos missing this field are intentionally left unset here —
+   * backfill belongs in a follow-up versioned migration (Mongo: prefer
+   * `$toDate: "$_id"` over an epoch default). Do not reintroduce startup
+   * one-off backfills.
+   */
+  dateCreated?: string;
+  /**
+   * ISO-8601; set on create and bumped on repo metadata mutations.
+   * Same migration note as {@link Repo.dateCreated}.
+   */
+  lastModified?: string;
   _id?: string;
 
   constructor(
@@ -66,12 +79,16 @@ export class Repo {
     url: string,
     users?: Record<UserRole, string[]>,
     _id?: string,
+    dateCreated?: string,
+    lastModified?: string,
   ) {
     this.project = project;
     this.name = name;
     this.url = url;
     this.users = users ?? { canPush: [], canAuthorise: [] };
     this._id = _id;
+    this.dateCreated = dateCreated;
+    this.lastModified = lastModified;
   }
 }
 
@@ -158,6 +175,7 @@ export interface Sink {
   getRepoByUrl: (url: string) => Promise<Repo | null>;
   getRepoById: (_id: string) => Promise<Repo | null>;
   createRepo: (repo: Repo) => Promise<Repo>;
+  updateRepo: (repo: Partial<Repo>) => Promise<void>;
   addUserCanPush: (_id: string, user: string) => Promise<void>;
   addUserCanAuthorise: (_id: string, user: string) => Promise<void>;
   removeUserCanPush: (_id: string, user: string) => Promise<void>;
@@ -175,4 +193,8 @@ export interface Sink {
   addPublicKey: (username: string, publicKey: PublicKeyRecord) => Promise<void>;
   removePublicKey: (username: string, fingerprint: string) => Promise<void>;
   getPublicKeys: (username: string) => Promise<PublicKeyRecord[]>;
+  getAppliedMigrations: () => Promise<string[]>;
+  recordMigration: (id: string) => Promise<void>;
+  unrecordMigration: (id: string) => Promise<void>;
+  deriveCreatedAt: (id: string) => string | undefined;
 }

@@ -25,6 +25,8 @@ import MongoDBStore from 'connect-mongo';
 import { CompletedAttestation, Rejection } from '../proxy/processors/types';
 import { processGitUrl } from '../proxy/routes/helper';
 import { initializeFolders } from './file/helper';
+import { runMigrations as applyMigrations } from './migrations';
+import { migrations } from './migrations/registry';
 
 let _sink: Sink | null = null;
 
@@ -111,12 +113,15 @@ export const createUser = async (
 };
 
 export const createRepo = async (repo: AuthorisedRepo) => {
+  const now = new Date().toISOString();
   const toCreate = {
     ...repo,
     users: {
       canPush: [],
       canAuthorise: [],
     },
+    dateCreated: now,
+    lastModified: now,
   };
   toCreate.name = repo.name.toLowerCase();
 
@@ -178,6 +183,7 @@ export const canUserCancelPush = async (id: string, user: string) => {
   }
 };
 
+export const runMigrations = (): Promise<void> => applyMigrations(start(), migrations);
 export const getSessionStore = (): MongoDBStore | undefined => start().getSessionStore();
 export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => start().getPushes(query);
 export const writeAudit = (action: Action): Promise<void> => start().writeAudit(action);
