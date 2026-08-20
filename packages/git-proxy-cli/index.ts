@@ -604,7 +604,7 @@ yargs(hideBin(process.argv)) // eslint-disable-line @typescript-eslint/no-unused
   })
   .command({
     command: 'create-user',
-    describe: 'Create a new user',
+    describe: 'Create a new local database user',
     builder: {
       username: {
         describe: 'Username for the new user',
