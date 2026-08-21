@@ -221,3 +221,28 @@ HTTPS Proxy Listening on 8443
 Found 1 plugin modules
 Loaded plugin: PushActionPlugin
 ```
+
+## Plugin configuration
+
+Plugins accept options (`PushPluginOptions` and `PullPluginOptions` to fine-grain their behaviour:
+
+### Chain Phases
+
+Action chains are divided into phases. In each phase of the chain, certain conditions will be guaranteed and certain attributes will be available.
+
+For example, branch pushes include an `AFTER_PERMISSIONS` phase, which guarantees that the repository is in the authorised list before running the plugin. By default, plugins are set to `phase: AFTER_PERMISSIONS`, which tells GitProxy to execute the plugin *immediately after* we've finished checking that the repository can actually be pushed to.
+
+#### Push chain phases
+
+Currently, there are 4 different `PushPhase`s to run your plugins:
+
+- `AFTER_PERMISSIONS`: The push is guaranteed to be in the authorised list, and identity of the user pushing is also present. The following `Action` attributes will be populated: `action.user`, `action.userEmail`, `action.commitData`, etc.
+- `AFTER_CHECKOUT`: Commit messages, author emails and the user's push permission have finished validating. The actual remote is already pulled but the diff hasn't been processed. The following `Action` attributes will be populated: `action.newIdxFiles`.
+- `AFTER_DIFF`: The push will now contain the diff data in `action.diff`.
+- `BEFORE_APPROVAL`: The push has gone through the remaining checks (GitLeaks, built-in diff scanning) in the chain, and is about to request approval.
+
+Depending on what your plugin does, you'll want to pick a phase where the data you need is available. A custom diff scanning plugin must be set to `AFTER_DIFF` or `BEFORE_APPROVAL`, otherwise it will not have the `action.diff` readily available.
+
+#### Pull chain phases
+
+The pull chain currently has a single `PullPhase`: `AFTER_AUTHORISATION`. Plugins are set to run in the `AFTER_AUTHORISATION` phase by default. The reasoning is that it's unsafe to run plugins before validating that the repository is actually in the authorised list (an unauthorised repository could contain malicious code to exploit subsequent plugins).
