@@ -30,7 +30,7 @@ const RULES = [
   { name: 'Assigned secret', re: /(api[_-]?key|token|password)\s*[:=]\s*['"][^'"]{8,}/gi },
 ];
 
-class CustomPushSecretScanner extends PushActionPlugin {
+class CustomSecretScanner extends PushActionPlugin {
   constructor() {
     super(exec, pluginOptions);
   }
@@ -44,7 +44,7 @@ const pluginOptions: PushPluginOptions = {
 };
 
 async function exec(req: Request, action: Action) {
-  const step = new Step('CustomPushSecretScanner');
+  const step = new Step('CustomSecretScanner');
   const diff = action.steps.find((s) => s.stepName === 'diff')?.content;
 
   if (!diff) {
@@ -84,4 +84,4 @@ const findSecrets = (diff: string): { rule: string; file?: string; line: number 
   );
 
 // Default exports are supported and will be loaded by the plugin loader
-export default new CustomPushSecretScanner();
+export default new CustomSecretScanner();
