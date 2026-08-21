@@ -323,4 +323,14 @@ class PullActionPlugin extends ActionPlugin {
   }
 }
 
-export { PluginLoader, PushActionPlugin, PullActionPlugin, isCompatiblePlugin };
+export {
+  PluginLoader,
+  PushActionPlugin,
+  PullActionPlugin,
+  isCompatiblePlugin,
+  PushPhase,
+  PullPhase,
+  PushChainName,
+  PushPluginOptions,
+  PullPluginOptions,
+};

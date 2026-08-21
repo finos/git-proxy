@@ -35,28 +35,35 @@ const branchPushChainElements: ChainElement[] = [
   proc.push.resolveUserFromToken,
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
+  PushPhase.AFTER_PERMISSIONS,
   proc.push.checkMessages,
   proc.push.checkAuthorEmails,
   proc.push.checkUserPushPermission,
   proc.push.pullRemote, // cleanup is handled after chain execution if successful
   proc.push.writePack,
+  PushPhase.AFTER_CHECKOUT,
   proc.push.checkHiddenCommits,
   proc.push.checkIfWaitingAuth,
   proc.push.preReceive,
   proc.push.getDiff,
+  PushPhase.AFTER_DIFF,
   proc.push.gitleaks,
   proc.push.scanDiff,
+  PushPhase.BEFORE_APPROVAL,
   proc.push.blockForAuth,
 ];
 
 const tagPushChainElements: ChainElement[] = [
   proc.push.checkRepoInAuthorisedList,
+  PushPhase.AFTER_PERMISSIONS,
   proc.push.checkUserPushPermission,
   proc.push.checkIfWaitingAuth,
   proc.push.checkMessages,
   proc.push.pullRemote,
   proc.push.writePack,
+  PushPhase.AFTER_CHECKOUT,
   proc.push.preReceive,
+  PushPhase.BEFORE_APPROVAL,
   proc.push.blockForAuth,
 ];
 
