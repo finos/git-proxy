@@ -36,6 +36,13 @@ export interface ProcessorExec {
  */
 export type ChainElement = ProcessorExec | PushPhase | PullPhase;
 
+export interface BuiltChains {
+  branch: ProcessorExec[];
+  tag: ProcessorExec[];
+  pull: ProcessorExec[];
+  default: ProcessorExec[];
+}
+
 export const PushPhase = {
   AFTER_PERMISSIONS: 'AFTER_PERMISSIONS',
   AFTER_CHECKOUT: 'AFTER_CHECKOUT',

@@ -114,12 +114,9 @@ describe('proxy chain', function () {
     vi.resetModules();
   });
 
-  it('getChain should set pluginLoaded if loader is undefined', async () => {
+  it('getChain should throw an error if loader is undefined', async () => {
     chain.chainPluginLoader = undefined;
-    const actual = await chain.getChain({ type: 'push' });
-    expect(actual).toEqual(chain.branchPushChain);
-    expect(chain.chainPluginLoader).toBeUndefined();
-    expect(chain.pluginsInserted).toBe(true);
+    await expect(chain.getChain({ type: 'push' })).rejects.toThrow(/Plugin loader was not initialized/);
   });
 
   it('getChain should load plugins from an initialized PluginLoader', async () => {
@@ -127,7 +124,6 @@ describe('proxy chain', function () {
     const initialChain = [...chain.branchPushChain];
     const actual = await chain.getChain({ type: 'push' });
     expect(actual.length).toBeGreaterThan(initialChain.length);
-    expect(chain.pluginsInserted).toBe(true);
   });
 
   it('getChain should load pull plugins from an initialized PluginLoader', async () => {
@@ -135,7 +131,6 @@ describe('proxy chain', function () {
     const initialChain = [...chain.pullActionChain];
     const actual = await chain.getChain({ type: 'pull' });
     expect(actual.length).toBeGreaterThan(initialChain.length);
-    expect(chain.pluginsInserted).toBe(true);
   });
 
   it('executeChain should stop executing if action has continue returns false', async () => {
@@ -586,19 +581,10 @@ describe('proxy chain', function () {
     expect(branchChain).toEqual(chain.branchPushChain);
   });
 
-  it('getChain should return tagPushChain if loader is undefined for tag pushes', async () => {
-    chain.chainPluginLoader = undefined;
-    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
-    expect(actual).toEqual(chain.tagPushChain);
-    expect(chain.chainPluginLoader).toBeUndefined();
-    expect(chain.pluginsInserted).toBe(true);
-  });
-
   it('getChain should load tag plugins from an initialized PluginLoader', async () => {
     chain.chainPluginLoader = mockLoader;
     const initialChain = [...chain.tagPushChain];
     const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
     expect(actual.length).toBeGreaterThan(initialChain.length);
-    expect(chain.pluginsInserted).toBe(true);
   });
 });

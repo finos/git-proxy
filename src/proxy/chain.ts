@@ -25,6 +25,7 @@ import {
   PushPhase,
   ChainElement,
   PushChainName,
+  BuiltChains,
 } from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
@@ -66,7 +67,7 @@ const pullActionChainElements: ChainElement[] = [
 
 const defaultActionChainElements: ChainElement[] = [proc.push.checkRepoInAuthorisedList];
 
-let builtChains: Record<string, ProcessorExec[]> = {};
+let builtChains: BuiltChains | undefined;
 
 /**
  * Compose a single error message from all failed steps, so that the git
@@ -231,7 +232,7 @@ const buildChain = (
 const filterPushPluginsByChain = (plugins: readonly PushActionPlugin[], chainName: PushChainName) =>
   plugins.filter((p) => (p.chains ?? ['branch', 'tag']).includes(chainName));
 
-const buildAllChains = (): Record<string, ProcessorExec[]> => {
+const buildAllChains = (): BuiltChains => {
   const pushPlugins = chainPluginLoader.pushPlugins;
   const pullPlugins = chainPluginLoader.pullPlugins;
 
@@ -274,16 +275,16 @@ export default {
     return chainPluginLoader;
   },
   get branchPushChain() {
-    return builtChains.branch;
+    return builtChains?.branch ?? [];
   },
   get tagPushChain() {
-    return builtChains.tag;
+    return builtChains?.tag ?? [];
   },
   get pullActionChain() {
-    return builtChains.pull;
+    return builtChains?.pull ?? [];
   },
   get defaultActionChain() {
-    return builtChains.default;
+    return builtChains?.default ?? [];
   },
   executeChain,
   getChain,
