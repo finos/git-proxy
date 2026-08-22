@@ -238,13 +238,10 @@ const buildChain = (
   );
 
 const toPluginExec = (plugin: ActionPlugin): ProcessorExec =>
-  Object.assign(
-    (req: Request, action: Action) => plugin.exec(req, action),
-    {
-      displayName: plugin.displayName ?? `${plugin.constructor.name}.exec`,
-      isCollectible: plugin.isCollectible ?? false,
-    },
-  );
+  Object.assign((req: Request, action: Action) => plugin.exec(req, action), {
+    displayName: plugin.displayName ?? `${plugin.constructor.name}.exec`,
+    isCollectible: plugin.isCollectible ?? false,
+  });
 
 const filterPushPluginsByChain = (plugins: readonly PushActionPlugin[], chainName: PushChainName) =>
   plugins.filter((p) => (p.chains ?? ['branch', 'tag']).includes(chainName));

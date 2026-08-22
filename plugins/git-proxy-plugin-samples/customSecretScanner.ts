@@ -38,7 +38,7 @@ class CustomSecretScanner extends PushActionPlugin {
 
 const pluginOptions: PushPluginOptions = {
   phase: PushPhase.AFTER_DIFF, // When to execute the plugin within default chain steps
-  displayName: 'customSecretScanner.exec', // Display name for the plugin
+  displayName: 'CustomSecretScanner', // Display name for the plugin
   isCollectible: true, // If true, the chain will keep running even if plugin returns an error
   chains: ['branch', 'tag'], // Which chains to execute the plugin on
 };
@@ -55,9 +55,7 @@ async function exec(req: Request, action: Action) {
 
   const findings = findSecrets(diff);
   if (findings.length > 0) {
-    const report = findings
-      .map((f, i) => `${i + 1}. ${f.rule} in ${f.file}:${f.line}`)
-      .join('\n');
+    const report = findings.map((f, i) => `${i + 1}. ${f.rule} in ${f.file}:${f.line}`).join('\n');
     step.error = true;
     step.setError(`\n\nPush blocked: possible secrets detected.\n\n${report}\n`);
   }
