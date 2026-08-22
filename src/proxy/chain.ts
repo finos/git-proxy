@@ -99,13 +99,14 @@ const composeErrorMessage = (action: Action): string | undefined => {
 };
 
 const stepProgressLabels: Record<string, string> = {
+  'resolveUserFromToken.exec': 'Resolving user from token',
   'checkEmptyBranch.exec': 'Checking for empty branch',
   'checkRepoInAuthorisedList.exec': 'Checking repository is authorised',
   'checkMessages.exec': 'Checking commit messages',
   'checkAuthorEmails.exec': 'Checking author emails',
   'checkUserPushPermission.exec': 'Checking push permissions',
   'pullRemote.exec': 'Fetching remote repository',
-  'writePack.exec': 'writing pack data',
+  'writePack.exec': 'Writing pack data',
   'checkHiddenCommits.exec': 'Checking for hidden commits',
   'checkIfWaitingAuth.exec': 'Checking approval status',
   'executeExternalPreReceiveHook.exec': 'Running pre-receive hook',
@@ -126,9 +127,9 @@ const getProgressMessage = (fn: ProcessorExec): string => {
     return stepProgressLabels[displayName];
   }
   if (displayName) {
-    return `running ${displayName.replace(/\.exec$/, '')}`;
+    return `Running ${displayName.replace(/\.exec$/, '')}`;
   }
-  return 'running plugin';
+  return 'Running plugin';
 };
 
 export const executeChain = async (req: Request, res: Response): Promise<Action> => {
@@ -233,7 +234,16 @@ const buildChain = (
   elements.flatMap((element) =>
     typeof element === 'function'
       ? [element]
-      : plugins.filter((plugin) => plugin.phase === element).map((plugin) => plugin.exec),
+      : plugins.filter((plugin) => plugin.phase === element).map(toPluginExec),
+  );
+
+const toPluginExec = (plugin: ActionPlugin): ProcessorExec =>
+  Object.assign(
+    (req: Request, action: Action) => plugin.exec(req, action),
+    {
+      displayName: plugin.displayName ?? `${plugin.constructor.name}.exec`,
+      isCollectible: plugin.isCollectible ?? false,
+    },
   );
 
 const filterPushPluginsByChain = (plugins: readonly PushActionPlugin[], chainName: PushChainName) =>
