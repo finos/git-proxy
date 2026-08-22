@@ -116,7 +116,9 @@ describe('proxy chain', function () {
 
   it('getChain should throw an error if loader is undefined', async () => {
     chain.chainPluginLoader = undefined;
-    await expect(chain.getChain({ type: 'push' })).rejects.toThrow(/Plugin loader was not initialized/);
+    await expect(chain.getChain({ type: 'push' })).rejects.toThrow(
+      /Plugin loader was not initialized/,
+    );
   });
 
   it('getChain should load plugins from an initialized PluginLoader', async () => {
