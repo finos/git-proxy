@@ -25,7 +25,17 @@ export const { getSessionStore } = helper;
 export const { getAppliedMigrations, recordMigration, unrecordMigration, deriveCreatedAt } =
   migrations;
 
-export const { getPushes, writeAudit, getPush, deletePush, authorise, cancel, reject } = pushes;
+export const {
+  getPushes,
+  getPushesForUserProfile,
+  getRepoPushRollupsByCanonicalUrl,
+  writeAudit,
+  getPush,
+  deletePush,
+  authorise,
+  cancel,
+  reject,
+} = pushes;
 
 export const {
   getRepos,

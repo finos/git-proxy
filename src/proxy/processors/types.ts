@@ -49,7 +49,10 @@ type AttestationBase = {
   reviewer: {
     username: string;
     email: string;
-    gitAccount?: string; // Legacy field for GitHub usernames
+    /** Optional friendly name; absent on records written by the proxy itself. */
+    displayName?: string | null;
+    /** Legacy alias for `email` on attestations persisted by older versions. */
+    reviewerEmail?: string;
   };
   timestamp: string | Date;
   automated?: boolean;
@@ -91,6 +94,8 @@ export type CommitHeader = {
 };
 
 export type CommitData = {
+  /** Not derived by `getCommitData`; present only on pushes recorded with a per-commit hash. */
+  sha?: string;
   tree: string;
   parent: string;
   author: string;

@@ -14,28 +14,22 @@
  * limitations under the License.
  */
 
-import React, { useState, FormEvent, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
-import GridItem from '../../components/Grid/GridItem';
-import GridContainer from '../../components/Grid/GridContainer';
-import Card from '../../components/Card/Card';
-import CardHeader from '../../components/Card/CardHeader';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Navigate } from 'react-router';
+import { Button, Flash, FormControl, Stack, Text, TextInput } from '@primer/react';
+import { MarkGithubIcon } from '@primer/octicons-react';
 import axios, { AxiosError } from 'axios';
 import logo from '../../assets/img/git-proxy.png';
-import { Badge, Snackbar } from '@material-ui/core';
 import { useAuth } from '../../auth/AuthProvider';
 import { getBaseUrl } from '../../services/apiConfig';
 import { getAxiosConfig, processAuthError } from '../../services/auth';
-import { BackendResponse } from '../../types';
-import { PublicUser } from '../../../db/types';
-import AuthFormSection from './components/AuthFormSection';
 
 interface LoginResponse {
-  message: string;
-  user: PublicUser;
+  username: string;
+  password: string;
 }
 
-const Login: React.FC = () => {
+const Login = () => {
   const navigate = useNavigate();
   const authContext = useAuth();
 
@@ -47,10 +41,6 @@ const Login: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [authMethods, setAuthMethods] = useState<string[]>([]);
   const [usernamePasswordMethod, setUsernamePasswordMethod] = useState<string>('');
-  const [requirePasswordChange, setRequirePasswordChange] = useState<boolean>(false);
-  const [currentPasswordForChange, setCurrentPasswordForChange] = useState<string>('');
-  const [newPassword, setNewPassword] = useState<string>('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState<string>('');
 
   useEffect(() => {
     const fetchAuthConfig = async () => {
@@ -71,24 +61,14 @@ const Login: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (authContext.user?.mustChangePassword) {
-      setRequirePasswordChange(true);
-    }
-  }, [authContext.user]);
+    if (!message) return undefined;
+    const t = window.setTimeout(() => setMessage(''), 5000);
+    return () => window.clearTimeout(t);
+  }, [message]);
 
   function validateForm(): boolean {
     return (
       username.length > 0 && username.length < 100 && password.length > 0 && password.length < 200
-    );
-  }
-
-  function validatePasswordChangeForm(): boolean {
-    return (
-      currentPasswordForChange.length > 0 &&
-      newPassword.length >= 8 &&
-      confirmNewPassword.length >= 8 &&
-      newPassword === confirmNewPassword &&
-      newPassword !== currentPasswordForChange
     );
   }
 
@@ -97,25 +77,14 @@ const Login: React.FC = () => {
     window.location.href = `${baseUrl}/api/auth/${authMethod}`;
   }
 
-  async function handleSubmit(event: FormEvent): Promise<void> {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     setIsLoading(true);
 
     try {
       const baseUrl = await getBaseUrl();
       const loginUrl = `${baseUrl}/api/auth/login`;
-      const response = await axios.post<LoginResponse>(
-        loginUrl,
-        { username, password },
-        getAxiosConfig(),
-      );
-      if (response.data?.user?.mustChangePassword) {
-        setRequirePasswordChange(true);
-        setCurrentPasswordForChange(password);
-        setMessage('For security, you must change your password before continuing.');
-        await authContext.refreshUser();
-        return;
-      }
+      await axios.post<LoginResponse>(loginUrl, { username, password }, getAxiosConfig());
       window.sessionStorage.setItem('git.proxy.login', 'success');
       setMessage('Success!');
       setSuccess(true);
@@ -139,47 +108,6 @@ const Login: React.FC = () => {
     }
   }
 
-  async function handlePasswordChangeSubmit(event: FormEvent): Promise<void> {
-    event.preventDefault();
-    setIsLoading(true);
-
-    if (!validatePasswordChangeForm()) {
-      setMessage(
-        'Please provide your current password and a new password (minimum 8 characters) that matches confirmation.',
-      );
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const baseUrl = await getBaseUrl();
-      await axios.post(
-        `${baseUrl}/api/auth/change-password`,
-        {
-          currentPassword: currentPasswordForChange,
-          newPassword,
-        },
-        getAxiosConfig(),
-      );
-      await authContext.refreshUser();
-      setRequirePasswordChange(false);
-      setSuccess(true);
-      setMessage('Password updated successfully.');
-      navigate('/dashboard/repo', { replace: true });
-    } catch (error: unknown) {
-      if (error instanceof AxiosError) {
-        const backendMessage =
-          (error.response?.data as BackendResponse | undefined)?.message ??
-          'Unable to update password';
-        setMessage(backendMessage);
-      } else {
-        setMessage('Unable to update password');
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
   if (gitAccountError) {
     return <Navigate to='/dashboard/profile' />;
   }
@@ -188,67 +116,131 @@ const Login: React.FC = () => {
     return <Navigate to='/dashboard/repo' />;
   }
 
-  if (authContext.user && !authContext.user.mustChangePassword && !requirePasswordChange) {
-    return <Navigate to='/dashboard/repo' />;
-  }
+  const showErrorFlash = Boolean(message.trim());
 
   return (
-    <form onSubmit={requirePasswordChange ? handlePasswordChangeSubmit : handleSubmit}>
-      <Snackbar
-        open={!!message}
-        message={message}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        autoHideDuration={5000}
-        onClose={() => setMessage('')}
-      />
-      <GridContainer justifyContent='center' style={{ minHeight: '100vh' }} alignItems='center'>
-        <GridItem xs={12} sm={10} md={6} lg={4} xl={3}>
-          <Card>
-            <CardHeader color='primary'>
-              <div style={{ textAlign: 'center', margin: '12px 10px' }}>
+    <form
+      data-testid='login-form'
+      onSubmit={handleSubmit}
+      className='flex min-h-screen flex-col items-center justify-center bg-(--bgColor-muted) px-4 py-10 font-normal'
+    >
+      <div className='w-full max-w-100'>
+        <Stack direction='vertical' gap='normal' padding='none'>
+          <div className='overflow-hidden rounded-2xl border border-(--borderColor-default) bg-(--bgColor-default) shadow-[0_12px_36px_-12px_rgba(1,4,9,0.2),0_4px_16px_-8px_rgba(1,4,9,0.08)]'>
+            <div className='border-b border-gray-800 bg-gray-900 px-8 py-8'>
+              <div className='flex justify-center'>
                 <img
                   src={logo}
-                  alt='logo'
-                  width={150}
-                  style={{ verticalAlign: 'middle', filter: 'brightness(0) invert(1)' }}
+                  alt='GitProxy'
+                  className='h-auto max-h-17 w-auto max-w-[min(100%,18rem)] object-contain object-center'
                   data-test='git-proxy-logo'
                 />
               </div>
-            </CardHeader>
-            <AuthFormSection
-              requirePasswordChange={requirePasswordChange}
-              isLoading={isLoading}
-              usernamePasswordMethod={usernamePasswordMethod}
-              authMethods={authMethods}
-              username={username}
-              password={password}
-              currentPasswordForChange={currentPasswordForChange}
-              newPassword={newPassword}
-              confirmNewPassword={confirmNewPassword}
-              canSubmitLogin={validateForm()}
-              canSubmitPasswordChange={validatePasswordChangeForm()}
-              onUsernameChange={setUsername}
-              onPasswordChange={setPassword}
-              onCurrentPasswordForChangeChange={setCurrentPasswordForChange}
-              onNewPasswordChange={setNewPassword}
-              onConfirmNewPasswordChange={setConfirmNewPassword}
-              onAuthMethodLogin={handleAuthMethodLogin}
-            />
-          </Card>
-          <div style={{ textAlign: 'center', opacity: 0.9, fontSize: 12, marginTop: 20 }}>
-            <Badge
-              overlap='rectangular'
-              color='error'
-              badgeContent='NEW'
-              style={{ marginRight: 20 }}
-            />
-            <span style={{ paddingLeft: 20 }}>
-              View our <a href='/dashboard/push'>open source activity feed</a> or{' '}
-              <a href='/dashboard/repo'>scroll through projects</a> we contribute to
-            </span>
+            </div>
+
+            <div className='px-8 py-7'>
+              <Stack direction='vertical' gap='normal' padding='none'>
+                {!usernamePasswordMethod ? (
+                  <div className='text-center'>
+                    <Text
+                      as='p'
+                      size='medium'
+                      weight='normal'
+                      className='m-0 min-w-0 w-full text-[var(--fgColor-default)]'
+                    >
+                      Choose a sign-in method below.
+                    </Text>
+                  </div>
+                ) : null}
+
+                {usernamePasswordMethod ? (
+                  <Stack direction='vertical' gap='normal' padding='none'>
+                    <FormControl id='username'>
+                      <FormControl.Label>Username</FormControl.Label>
+                      <TextInput
+                        name='username'
+                        type='text'
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        autoFocus
+                        autoComplete='username'
+                        block
+                        data-test='username'
+                      />
+                    </FormControl>
+                    <FormControl id='password'>
+                      <FormControl.Label>Password</FormControl.Label>
+                      <TextInput
+                        name='password'
+                        type='password'
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        autoComplete='current-password'
+                        block
+                        data-test='password'
+                      />
+                    </FormControl>
+                  </Stack>
+                ) : (
+                  <Text
+                    as='p'
+                    size='medium'
+                    weight='normal'
+                    className='m-0 min-w-0 w-full text-[var(--fgColor-default)]'
+                  >
+                    Username/password authentication is not enabled at this time.
+                  </Text>
+                )}
+
+                <Stack direction='vertical' gap='condensed' padding='none' className='w-full mt-2!'>
+                  {usernamePasswordMethod ? (
+                    <Button
+                      type='submit'
+                      variant='primary'
+                      size='large'
+                      disabled={!validateForm() || isLoading}
+                      loading={isLoading}
+                      loadingAnnouncement='Signing in'
+                      block
+                      data-test='login'
+                    >
+                      Sign in
+                    </Button>
+                  ) : null}
+                  {authMethods.map((am) => {
+                    const upper = am.toUpperCase();
+                    const isGithub = am.toLowerCase() === 'github';
+                    return (
+                      <Button
+                        key={am}
+                        type='button'
+                        variant='primary'
+                        size='large'
+                        block
+                        disabled={isLoading}
+                        data-test={`${am}-login`}
+                        onClick={() => handleAuthMethodLogin(am)}
+                        leadingVisual={isGithub ? MarkGithubIcon : undefined}
+                      >
+                        Continue with {upper}
+                      </Button>
+                    );
+                  })}
+                </Stack>
+              </Stack>
+            </div>
           </div>
-        </GridItem>
-      </GridContainer>
+          {showErrorFlash ? (
+            <Flash
+              variant='danger'
+              className='m-0 rounded-xl border border-(--borderColor-danger-muted) shadow-sm'
+              data-test='login-error'
+            >
+              {message}
+            </Flash>
+          ) : null}
+        </Stack>
+      </div>
     </form>
   );
 };
