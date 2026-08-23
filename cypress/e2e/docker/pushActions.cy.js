@@ -126,7 +126,7 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
       cy.get('[data-testid="push-reject-confirm-btn"]').should('be.disabled');
 
       // Fill in rejection reason
-      cy.get('#reason').type('Rejecting for test purposes');
+      cy.get('#push-reject-reason').type('Rejecting for test purposes');
 
       // Confirm button should now be enabled
       cy.get('[data-testid="push-reject-confirm-btn"]').should('not.be.disabled');
