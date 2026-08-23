@@ -157,6 +157,22 @@ Cypress.Commands.add('createTestTagPush', (pushData = {}) => {
   return cy.wrap(defaultTagPush);
 });
 
+Cypress.Commands.add('registerTestRepo', (url) => {
+  cy.intercept('GET', '**/api/v1/repo*', {
+    statusCode: 200,
+    body: [
+      {
+        _id: 'cypress-test-repo-id',
+        project: 'cypress-test',
+        name: 'test-repo',
+        url,
+        proxyURL: '',
+        users: { canPush: [], canAuthorise: [] },
+      },
+    ],
+  }).as('getRepos');
+});
+
 Cypress.Commands.add('createUser', (username, password, email, gitAccount) => {
   cy.request({
     method: 'POST',
