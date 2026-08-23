@@ -20,7 +20,6 @@
     "rootDir": "./src",
     "noEmit": false,
     "types": ["node"],
-    "baseUrl": ".",
     "paths": {
       "@primer/react/experimental": ["./node_modules/@primer/react/dist/experimental/index"]
     }
