@@ -18,7 +18,7 @@ The project develops and maintains:
 Out of scope:
 
 - Organisation-specific policy content or plugin implementations
-- Hosting, infrastructure, or operational support for production deployments
+- Operational support for production deployments
 
 ## Maintainer Structure
 
