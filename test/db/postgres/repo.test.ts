@@ -249,4 +249,87 @@ describe('PostgreSQL - Repo', async () => {
       expect(mockQuery).not.toHaveBeenCalled();
     });
   });
+
+  describe('repo date fields', () => {
+    it('defaults dateCreated and lastModified on create', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [{ _id: 'r1' }] });
+
+      const repo = await createRepo({
+        project: 'p',
+        name: 'n',
+        url: 'https://github.com/p/n.git',
+      } as never);
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('date_created');
+      expect(sql).toContain('last_modified');
+      expect(repo.dateCreated).toBeTruthy();
+      expect(repo.lastModified).toBe(repo.dateCreated);
+      expect(params[4]).toBe(repo.dateCreated);
+    });
+
+    it('keeps caller-supplied dates on create', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [{ _id: 'r1' }] });
+
+      const repo = await createRepo({
+        project: 'p',
+        name: 'n',
+        url: 'https://github.com/p/n.git',
+        dateCreated: '2026-01-01T00:00:00.000Z',
+        lastModified: '2026-01-02T00:00:00.000Z',
+      } as never);
+
+      expect(repo.dateCreated).toBe('2026-01-01T00:00:00.000Z');
+      expect(repo.lastModified).toBe('2026-01-02T00:00:00.000Z');
+    });
+
+    it('updateRepo writes dateCreated and lastModified columns', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await updateRepo({
+        _id: 'r1',
+        dateCreated: '2026-01-01T00:00:00.000Z',
+        lastModified: '2026-01-01T00:00:00.000Z',
+      });
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('date_created = $1');
+      expect(sql).toContain('last_modified = $2');
+      expect(params).toEqual(['2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', 'r1']);
+    });
+
+    it('bumps last_modified when permissions change', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await addUserCanPush('r1', 'Alice');
+      await removeUserCanPush('r1', 'Alice');
+
+      for (const [sql, params] of mockQuery.mock.calls) {
+        expect(sql).toContain('last_modified = $5');
+        expect(typeof params[4]).toBe('string');
+      }
+    });
+
+    it('returns the date fields from reads', async () => {
+      mockQuery.mockResolvedValue({
+        rowCount: 1,
+        rows: [
+          {
+            _id: 'r1',
+            project: 'p',
+            name: 'n',
+            url: 'u',
+            users: null,
+            date_created: '2026-01-01T00:00:00.000Z',
+            last_modified: '2026-01-02T00:00:00.000Z',
+          },
+        ],
+      });
+
+      const repos = await getRepos();
+
+      expect(repos[0].dateCreated).toBe('2026-01-01T00:00:00.000Z');
+      expect(repos[0].lastModified).toBe('2026-01-02T00:00:00.000Z');
+    });
+  });
 });
