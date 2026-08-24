@@ -46,6 +46,32 @@ export type QueryValue = string | boolean | number | undefined;
 
 export type UserRole = 'canPush' | 'canAuthorise';
 
+/** Per-status push counts for a registered repository (matches Activity tabs except `all`). */
+export type RepoActivityTabCounts = {
+  pending: number;
+  approved: number;
+  canceled: number;
+  rejected: number;
+  error: number;
+};
+
+export const emptyRepoActivityTabCounts = (): RepoActivityTabCounts => ({
+  pending: 0,
+  approved: 0,
+  canceled: 0,
+  rejected: 0,
+  error: 0,
+});
+
+/** Tab counts and push timestamps keyed by canonical remote URL. */
+export type RepoPushRollupsByCanonicalUrl = {
+  tabCounts: Map<string, RepoActivityTabCounts>;
+  /** Largest `Action.timestamp` (ms) for pushes whose primary Activity tab is `pending`, per URL key. */
+  latestPendingReviewAtMs: Map<string, number>;
+  /** Largest `Action.timestamp` (ms) over all `type: push` rows per URL key. */
+  latestPushAtMs: Map<string, number>;
+};
+
 export type PublicKeyRecord = {
   key: string;
   name: string;
@@ -58,7 +84,25 @@ export class Repo {
   name: string;
   url: string;
   users: { canPush: string[]; canAuthorise: string[] };
+  /**
+   * ISO-8601; set on create, never overwritten thereafter.
+   * Existing repos missing this field are intentionally left unset here —
+   * backfill belongs in a follow-up versioned migration (Mongo: prefer
+   * `$toDate: "$_id"` over an epoch default). Do not reintroduce startup
+   * one-off backfills.
+   */
+  dateCreated?: string;
+  /**
+   * ISO-8601; set on create and bumped on repo metadata mutations.
+   * Same migration note as {@link Repo.dateCreated}.
+   */
+  lastModified?: string;
   _id?: string;
+  activity?: RepoActivityTabCounts;
+  /** Present when the repo has at least one push currently in the Activity Pending bucket. */
+  latestPendingReviewAtMs?: number;
+  /** Present when the repo has at least one recorded push in GitProxy. */
+  latestPushAtMs?: number;
 
   constructor(
     project: string,
@@ -66,12 +110,16 @@ export class Repo {
     url: string,
     users?: Record<UserRole, string[]>,
     _id?: string,
+    dateCreated?: string,
+    lastModified?: string,
   ) {
     this.project = project;
     this.name = name;
     this.url = url;
     this.users = users ?? { canPush: [], canAuthorise: [] };
     this._id = _id;
+    this.dateCreated = dateCreated;
+    this.lastModified = lastModified;
   }
 }
 
@@ -81,11 +129,11 @@ export class User {
   gitAccount: string;
   email: string;
   admin: boolean;
-  mustChangePassword?: boolean;
   oidcId?: string | null;
   publicKeys?: PublicKeyRecord[];
   displayName?: string | null;
   title?: string | null;
+  mustChangePassword?: boolean;
   _id?: string;
 
   constructor(
@@ -109,31 +157,6 @@ export class User {
   }
 }
 
-export type Push = {
-  id: string;
-  allowPush: boolean;
-  authorised: boolean;
-  blocked: boolean;
-  blockedMessage: string;
-  branch: string;
-  canceled: boolean;
-  commitData: object;
-  commitFrom: string;
-  commitTo: string;
-  error: boolean;
-  method: string;
-  project: string;
-  rejected: boolean;
-  repo: string;
-  repoName: string;
-  tag?: string;
-  tagData?: object;
-  timepstamp: string;
-  type: string;
-  url: string;
-  user?: string;
-};
-
 export interface PublicUser {
   username: string;
   displayName: string;
@@ -141,12 +164,15 @@ export interface PublicUser {
   title: string;
   gitAccount: string;
   admin: boolean;
+  activity?: RepoActivityTabCounts;
   mustChangePassword?: boolean;
 }
 
 export interface Sink {
   getSessionStore: () => MongoDBStore | undefined;
+  getRepoPushRollupsByCanonicalUrl: () => Promise<RepoPushRollupsByCanonicalUrl>;
   getPushes: (query: Partial<PushQuery>) => Promise<Action[]>;
+  getPushesForUserProfile: (emailVariants: string[], profileUsername: string) => Promise<Action[]>;
   writeAudit: (action: Action) => Promise<void>;
   getPush: (id: string) => Promise<Action | null>;
   deletePush: (id: string) => Promise<void>;
@@ -158,6 +184,7 @@ export interface Sink {
   getRepoByUrl: (url: string) => Promise<Repo | null>;
   getRepoById: (_id: string) => Promise<Repo | null>;
   createRepo: (repo: Repo) => Promise<Repo>;
+  updateRepo: (repo: Partial<Repo>) => Promise<void>;
   addUserCanPush: (_id: string, user: string) => Promise<void>;
   addUserCanAuthorise: (_id: string, user: string) => Promise<void>;
   removeUserCanPush: (_id: string, user: string) => Promise<void>;
@@ -175,4 +202,8 @@ export interface Sink {
   addPublicKey: (username: string, publicKey: PublicKeyRecord) => Promise<void>;
   removePublicKey: (username: string, fingerprint: string) => Promise<void>;
   getPublicKeys: (username: string) => Promise<PublicKeyRecord[]>;
+  getAppliedMigrations: () => Promise<string[]>;
+  recordMigration: (id: string) => Promise<void>;
+  unrecordMigration: (id: string) => Promise<void>;
+  deriveCreatedAt: (id: string) => string | undefined;
 }

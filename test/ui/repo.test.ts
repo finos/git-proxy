@@ -18,8 +18,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   addUser,
   deleteUser,
+  fetchRepoViews,
   getRepo,
-  getRepos,
   addRepo,
   deleteRepo,
 } from '../../src/ui/services/repo';
@@ -148,8 +148,8 @@ describe('repo service additional functions', () => {
     vi.clearAllMocks();
   });
 
-  describe('getRepos', () => {
-    it('returns sorted repos on success', async () => {
+  describe('fetchRepoViews', () => {
+    it('returns repo list on success', async () => {
       const reposData = [
         { name: 'zebra-repo', project: 'org', url: 'https://example.com/org/zebra-repo.git' },
         { name: 'alpha-repo', project: 'org', url: 'https://example.com/org/alpha-repo.git' },
@@ -157,27 +157,16 @@ describe('repo service additional functions', () => {
 
       axiosMock.mockResolvedValue({ data: reposData });
 
-      const result = await getRepos();
+      const result = await fetchRepoViews();
 
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual([
-        { name: 'alpha-repo', project: 'org', url: 'https://example.com/org/alpha-repo.git' },
-        { name: 'zebra-repo', project: 'org', url: 'https://example.com/org/zebra-repo.git' },
-      ]);
-    });
-
-    it('passes query parameters correctly', async () => {
-      axiosMock.mockResolvedValue({ data: [] });
-
-      await getRepos({ active: true });
-
+      expect(result).toEqual({ success: true, data: reposData });
       expect(axiosMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/repo?active=true',
+        'http://localhost:8080/api/v1/repo',
         expect.any(Object),
       );
     });
 
-    it('returns error result when getRepos fails', async () => {
+    it('returns error result on failure', async () => {
       axiosMock.mockRejectedValue({
         response: {
           status: 500,
@@ -187,7 +176,7 @@ describe('repo service additional functions', () => {
         },
       });
 
-      const result = await getRepos();
+      const result = await fetchRepoViews();
 
       expect(result).toEqual({
         success: false,
@@ -199,7 +188,7 @@ describe('repo service additional functions', () => {
     it('uses fallback message when error has no response data', async () => {
       axiosMock.mockRejectedValue(new Error('Connection timeout'));
 
-      const result = await getRepos();
+      const result = await fetchRepoViews();
 
       expect(result).toEqual({
         success: false,
