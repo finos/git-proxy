@@ -38,6 +38,18 @@ const makePool = (appliedRows: { version: number }[] = []) => {
 const sqlsOf = (query: ReturnType<typeof vi.fn>) => query.mock.calls.map((call) => String(call[0]));
 
 describe('PostgreSQL - migrations', () => {
+  it('defines the pushes hot-path indexes as version 6', () => {
+    const v6 = MIGRATIONS.find((m) => m.version === 6);
+    expect(v6?.name).toBe('pushes_hot_path_indexes');
+    expect(v6?.sql).toContain('pushes_rollup_idx');
+    expect(v6?.sql).toContain(
+      'INCLUDE (error, rejected, canceled, authorised, blocked, allow_push)',
+    );
+    expect(v6?.sql).toContain('pushes_pending_idx');
+    expect(v6?.sql).toContain('pushes_user_email_idx');
+    expect(v6?.sql).toContain('pushes_reviewer_idx');
+  });
+
   it('exposes an ordered, append-only migration list starting at version 1', () => {
     expect(MIGRATIONS[0].version).toBe(1);
 

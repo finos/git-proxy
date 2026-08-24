@@ -107,6 +107,34 @@ export const MIGRATIONS: Migration[] = [
   );
 `,
   },
+  // Versions 4 and 5 are reserved by the repo_users normalisation branch
+  // (repo_users_table and drop_repos_users_jsonb). The runner applies by
+  // version order, so the gap is harmless until those entries land.
+  {
+    version: 6,
+    name: 'pushes_hot_path_indexes',
+    sql: `
+  -- Covering index for the repo activity rollup: the scan becomes index-only
+  -- and never detoasts the large push JSONB documents.
+  CREATE INDEX IF NOT EXISTS pushes_rollup_idx
+    ON pushes ((data->>'url'), timestamp)
+    INCLUDE (error, rejected, canceled, authorised, blocked, allow_push)
+    WHERE type = 'push';
+
+  -- Matches the default dashboard query for pushes pending review.
+  CREATE INDEX IF NOT EXISTS pushes_pending_idx
+    ON pushes (timestamp DESC)
+    WHERE type = 'push' AND blocked AND NOT error AND NOT authorised AND NOT allow_push;
+
+  -- User profile lookups filter on JSONB expressions; index both predicates.
+  CREATE INDEX IF NOT EXISTS pushes_user_email_idx
+    ON pushes ((data->>'userEmail'))
+    WHERE type = 'push';
+  CREATE INDEX IF NOT EXISTS pushes_reviewer_idx
+    ON pushes ((lower(data->'attestation'->'reviewer'->>'username')))
+    WHERE type = 'push';
+`,
+  },
 ];
 
 const SCHEMA_MIGRATIONS_TABLE_SQL = `
