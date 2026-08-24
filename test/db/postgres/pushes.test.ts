@@ -23,8 +23,17 @@ vi.mock('../../../src/db/postgres/helper', () => ({
 }));
 
 describe('PostgreSQL - Pushes', async () => {
-  const { reject, getPushes, getPush, writeAudit, authorise, cancel, deletePush } =
-    await import('../../../src/db/postgres/pushes');
+  const {
+    reject,
+    getPushes,
+    getPush,
+    writeAudit,
+    authorise,
+    cancel,
+    deletePush,
+    getPushesForUserProfile,
+    getRepoPushRollupsByCanonicalUrl,
+  } = await import('../../../src/db/postgres/pushes');
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -201,6 +210,122 @@ describe('PostgreSQL - Pushes', async () => {
       const [sql, params] = mockQuery.mock.calls[0];
       expect(sql).toContain('DELETE FROM pushes WHERE id = $1');
       expect(params).toEqual(['p1']);
+    });
+  });
+
+  describe('getPushesForUserProfile', () => {
+    it('matches the reviewer case-insensitively when there are no emails', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+
+      await getPushesForUserProfile([], 'Alice');
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain("data->'attestation'->'reviewer'->>'username'");
+      expect(sql).toMatch(/ORDER BY timestamp DESC/);
+      expect(sql).not.toContain('userEmail');
+      expect(params).toEqual(['Alice']);
+    });
+
+    it('matches either the author email variants or the reviewer', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+
+      await getPushesForUserProfile(['a@b.com', 'A@B.com'], 'alice');
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain("(data->>'userEmail') = ANY($2::text[])");
+      expect(sql).toContain(' OR ');
+      expect(params).toEqual(['alice', ['a@b.com', 'A@B.com']]);
+    });
+
+    it('returns Action instances', async () => {
+      mockQuery.mockResolvedValue({
+        rowCount: 1,
+        rows: [{ data: { id: 'p1', url: 'https://github.com/a/b.git' } }],
+      });
+
+      const result = await getPushesForUserProfile([], 'alice');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('p1');
+    });
+  });
+
+  describe('getRepoPushRollupsByCanonicalUrl', () => {
+    const row = (over: Record<string, unknown> = {}) => ({
+      url: 'https://github.com/finos/git-proxy.git',
+      error: false,
+      rejected: false,
+      canceled: false,
+      authorised: false,
+      blocked: true,
+      allow_push: false,
+      timestamp: 1000,
+      ...over,
+    });
+
+    it('only scans push rows', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+
+      await getRepoPushRollupsByCanonicalUrl();
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).toContain("WHERE type = 'push'");
+    });
+
+    it('counts pushes per canonical url and tracks the latest timestamps', async () => {
+      mockQuery.mockResolvedValue({
+        rowCount: 2,
+        rows: [row({ timestamp: 1000 }), row({ timestamp: 5000 })],
+      });
+
+      const { tabCounts, latestPushAtMs, latestPendingReviewAtMs } =
+        await getRepoPushRollupsByCanonicalUrl();
+
+      const [key] = [...tabCounts.keys()];
+      expect(tabCounts.get(key)?.pending).toBe(2);
+      expect(latestPushAtMs.get(key)).toBe(5000);
+      expect(latestPendingReviewAtMs.get(key)).toBe(5000);
+    });
+
+    it('separates approved pushes from pending ones', async () => {
+      mockQuery.mockResolvedValue({
+        rowCount: 2,
+        rows: [row(), row({ authorised: true, blocked: false, timestamp: 9000 })],
+      });
+
+      const { tabCounts, latestPendingReviewAtMs } = await getRepoPushRollupsByCanonicalUrl();
+      const [key] = [...tabCounts.keys()];
+
+      expect(tabCounts.get(key)?.pending).toBe(1);
+      expect(tabCounts.get(key)?.approved).toBe(1);
+      // the approved push must not advance the pending-review timestamp
+      expect(latestPendingReviewAtMs.get(key)).toBe(1000);
+    });
+
+    it('skips rows with an unusable url', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 2, rows: [row({ url: null }), row({ url: '' })] });
+
+      const { tabCounts } = await getRepoPushRollupsByCanonicalUrl();
+
+      expect(tabCounts.size).toBe(0);
+    });
+
+    it('parses BIGINT timestamps returned as strings', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [row({ timestamp: '4200' })] });
+
+      const { latestPushAtMs } = await getRepoPushRollupsByCanonicalUrl();
+      const [key] = [...latestPushAtMs.keys()];
+
+      expect(latestPushAtMs.get(key)).toBe(4200);
+    });
+
+    it('ignores non-numeric timestamps', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [row({ timestamp: null })] });
+
+      const { tabCounts, latestPushAtMs } = await getRepoPushRollupsByCanonicalUrl();
+
+      expect(tabCounts.size).toBe(1);
+      expect(latestPushAtMs.size).toBe(0);
     });
   });
 });

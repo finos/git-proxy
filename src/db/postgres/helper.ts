@@ -19,7 +19,7 @@ import session, { Store } from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 
 import { getDatabase } from '../../config';
-import { runMigrations } from './migrations';
+import { runMigrations } from './schemaMigrations';
 
 let _pool: Pool | null = null;
 let _bootstrapPromise: Promise<void> | null = null;
