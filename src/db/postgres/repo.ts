@@ -23,6 +23,8 @@ interface RepoRow {
   name: string;
   url: string;
   users: { canPush: string[]; canAuthorise: string[] } | null;
+  date_created: string | null;
+  last_modified: string | null;
 }
 
 const rowToRepo = (row: RepoRow): Repo =>
@@ -36,9 +38,11 @@ const rowToRepo = (row: RepoRow): Repo =>
       canAuthorise: row.users?.canAuthorise ?? [],
     },
     row._id,
+    row.date_created ?? undefined,
+    row.last_modified ?? undefined,
   );
 
-const SELECT_COLUMNS = '_id, project, name, url, users';
+const SELECT_COLUMNS = '_id, project, name, url, users, date_created, last_modified';
 
 export const getRepos = async (q: Partial<RepoQuery> = {}): Promise<Repo[]> => {
   const clauses: string[] = [];
@@ -80,11 +84,21 @@ export const getRepoById = async (_id: string): Promise<Repo | null> => {
 
 export const createRepo = async (repo: Repo): Promise<Repo> => {
   const users = repo.users ?? { canPush: [], canAuthorise: [] };
+  const now = new Date().toISOString();
+  if (!repo.dateCreated) repo.dateCreated = now;
+  if (!repo.lastModified) repo.lastModified = now;
   const result = await query<{ _id: string }>(
-    `INSERT INTO repos (project, name, url, users)
-     VALUES ($1, $2, $3, $4::jsonb)
+    `INSERT INTO repos (project, name, url, users, date_created, last_modified)
+     VALUES ($1, $2, $3, $4::jsonb, $5, $6)
      RETURNING _id`,
-    [repo.project ?? '', repo.name, repo.url, JSON.stringify(users)],
+    [
+      repo.project ?? '',
+      repo.name,
+      repo.url,
+      JSON.stringify(users),
+      repo.dateCreated,
+      repo.lastModified,
+    ],
   );
   repo._id = result.rows[0]._id;
   repo.users = users;
@@ -107,6 +121,8 @@ export const updateRepo = async (repo: Partial<Repo>): Promise<void> => {
     name: 'name',
     url: 'url',
     users: 'users',
+    dateCreated: 'date_created',
+    lastModified: 'last_modified',
   };
 
   const sets: string[] = [];
@@ -161,9 +177,10 @@ const addUserToRole = async (
               )
             )
           )
-        )
+        ),
+            last_modified = $5
       WHERE _id = $1`,
-    [_id, `{${role}}`, role, lowered],
+    [_id, `{${role}}`, role, lowered, new Date().toISOString()],
   );
 };
 
@@ -187,9 +204,10 @@ const removeUserFromRole = async (
             ),
             '[]'::jsonb
           )
-        )
+        ),
+            last_modified = $5
       WHERE _id = $1`,
-    [_id, `{${role}}`, role, lowered],
+    [_id, `{${role}}`, role, lowered, new Date().toISOString()],
   );
 };
 
