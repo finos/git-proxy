@@ -473,7 +473,11 @@ describe('AgentForwarding', () => {
       function mockChannelModule(channelImpl?: (...args: unknown[]) => unknown) {
         const mockChannel = { on: vi.fn(), write: vi.fn(), end: vi.fn() };
         getChannelModuleSpy = vi.spyOn(sshInternals, 'getChannelModule').mockImplementation(() => ({
-          Channel: channelImpl ?? vi.fn().mockImplementation(() => mockChannel),
+          Channel:
+            channelImpl ??
+            (vi.fn(function () {
+              return mockChannel;
+            }) as any),
           MAX_WINDOW: 2 * 1024 * 1024,
           PACKET_SIZE: 32 * 1024,
         }));

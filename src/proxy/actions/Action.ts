@@ -77,11 +77,7 @@ class Action {
   protocol?: 'https' | 'ssh';
   capabilities?: string[];
   pullAuthStrategy?:
-    | 'basic'
-    | 'ssh-user-key'
-    | 'ssh-service-token'
-    | 'ssh-agent-forwarding'
-    | 'anonymous';
+    'basic' | 'ssh-user-key' | 'ssh-service-token' | 'ssh-agent-forwarding' | 'anonymous';
 
   /**
    * Create an action.
