@@ -494,7 +494,7 @@ Each entry has its own unique configuration parameters.
 
 ##### PostgreSQL configuration
 
-The `postgres` backend stores `users`, `repos`, `pushes`, and the `connect-pg-simple` `session` table in a single PostgreSQL database. The required tables are created on startup with `CREATE TABLE IF NOT EXISTS`, so pointing the proxy at an empty database is enough to get running — no migration tooling is required for the initial setup.
+The `postgres` backend stores `users`, `repos`, `pushes`, and the `connect-pg-simple` `session` table in a single PostgreSQL database. The required tables are created and kept up to date on startup by a built-in versioned migration runner (see [Schema migrations](#schema-migrations) below), so pointing the proxy at an empty database is enough to get running.
 
 ```json
 {
@@ -524,9 +524,19 @@ npm run migrate:postgres -- --from fs --dataDir ./.data/db
 
 The importer reads the source with its own driver while writing through the active (postgres) sink, so the two connections never clash. It is idempotent: users and repos that already exist (matched by username/email and URL) are skipped, and pushes are upserted by id, so it is safe to re-run. Record `_id`s are not carried over; PostgreSQL assigns fresh UUIDs (push ids, which are text, are preserved).
 
+##### Schema migrations
+
+Schema changes are applied by a small built-in migration runner (`src/db/postgres/migrations.ts`). On every startup it:
+
+- ensures a `schema_migrations` bookkeeping table exists,
+- takes a transaction-scoped advisory lock so concurrently starting processes do not race, and
+- applies any migrations whose version has not been recorded yet, in order, recording each as it goes.
+
+Migrations are an ordered, append-only list of SQL statements defined in code. Version 1 is the initial schema; because it uses `CREATE TABLE IF NOT EXISTS`, databases that were bootstrapped by earlier releases adopt the runner transparently (version 1 is simply recorded). To evolve the schema, append a new entry with the next version number; never edit or reorder migrations that have already shipped.
+
 Notes and current limitations:
 
-- Schema is bootstrapped via `CREATE TABLE IF NOT EXISTS` at startup. No formal migration mechanism ships with this release.
+- All pending migrations run inside a single transaction, so a statement that cannot run transactionally (for example `CREATE INDEX CONCURRENTLY`) is not yet supported by the runner.
 - Repo permissions (`canPush` / `canAuthorise`) are stored as a JSONB column on the `repos` table. A future PR may normalise these into a `repo_users` join table.
 - No AWS RDS IAM authentication helper (the mongo backend has one via `AWS_CREDENTIAL_PROVIDER`); use a standard connection string for v1.
 - Only the `connectionString` form is supported; split `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` env vars are not consulted.
