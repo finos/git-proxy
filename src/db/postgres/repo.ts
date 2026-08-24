@@ -24,6 +24,8 @@ interface RepoRow {
   url: string;
   can_push: string[] | null;
   can_authorise: string[] | null;
+  date_created: string | null;
+  last_modified: string | null;
 }
 
 const rowToRepo = (row: RepoRow): Repo =>
@@ -36,6 +38,8 @@ const rowToRepo = (row: RepoRow): Repo =>
       canAuthorise: row.can_authorise ?? [],
     },
     row._id,
+    row.date_created ?? undefined,
+    row.last_modified ?? undefined,
   );
 
 // Reconstruct the `canPush` / `canAuthorise` arrays from the normalised
@@ -43,7 +47,7 @@ const rowToRepo = (row: RepoRow): Repo =>
 // `coalesce(..., '{}')` makes a repo with no members come back as empty arrays
 // rather than null, matching the mongo/NeDB backends.
 const SELECT_REPOS = `
-  SELECT r._id, r.project, r.name, r.url,
+  SELECT r._id, r.project, r.name, r.url, r.date_created, r.last_modified,
     coalesce(
       array_agg(ru.username ORDER BY ru.username) FILTER (WHERE ru.role = 'canPush'),
       '{}'
@@ -106,6 +110,10 @@ const addUserToRole = async (
      ON CONFLICT DO NOTHING`,
     [_id, user.toLowerCase(), role],
   );
+  await query(`UPDATE repos SET last_modified = $2 WHERE _id = $1`, [
+    _id,
+    new Date().toISOString(),
+  ]);
 };
 
 const removeUserFromRole = async (
@@ -118,15 +126,22 @@ const removeUserFromRole = async (
     user.toLowerCase(),
     role,
   ]);
+  await query(`UPDATE repos SET last_modified = $2 WHERE _id = $1`, [
+    _id,
+    new Date().toISOString(),
+  ]);
 };
 
 export const createRepo = async (repo: Repo): Promise<Repo> => {
   const users = repo.users ?? { canPush: [], canAuthorise: [] };
+  const now = new Date().toISOString();
+  if (!repo.dateCreated) repo.dateCreated = now;
+  if (!repo.lastModified) repo.lastModified = now;
   const result = await query<{ _id: string }>(
-    `INSERT INTO repos (project, name, url)
-     VALUES ($1, $2, $3)
+    `INSERT INTO repos (project, name, url, date_created, last_modified)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING _id`,
-    [repo.project ?? '', repo.name, repo.url],
+    [repo.project ?? '', repo.name, repo.url, repo.dateCreated, repo.lastModified],
   );
   const _id = result.rows[0]._id;
 
@@ -161,6 +176,8 @@ export const updateRepo = async (repo: Partial<Repo>): Promise<void> => {
     project: 'project',
     name: 'name',
     url: 'url',
+    dateCreated: 'date_created',
+    lastModified: 'last_modified',
   };
 
   const sets: string[] = [];

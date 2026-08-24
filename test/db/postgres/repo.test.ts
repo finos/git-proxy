@@ -151,7 +151,14 @@ describe('PostgreSQL - Repo', async () => {
       expect(created._id).toBe('generated-uuid');
       const [sql, params] = mockQuery.mock.calls[0];
       expect(sql).toContain('INSERT INTO repos');
-      expect(params).toEqual(['finos', 'git-proxy', 'https://github.com/finos/git-proxy.git']);
+      expect(params.slice(0, 3)).toEqual([
+        'finos',
+        'git-proxy',
+        'https://github.com/finos/git-proxy.git',
+      ]);
+      // date_created and last_modified are stamped on create
+      expect(typeof params[3]).toBe('string');
+      expect(params[4]).toBe(params[3]);
       // No second call: empty permissions mean no repo_users inserts.
       expect(mockQuery).toHaveBeenCalledTimes(1);
     });
@@ -166,9 +173,11 @@ describe('PostgreSQL - Repo', async () => {
         users: { canPush: ['bob'], canAuthorise: ['amy'] },
       } as never);
 
-      const inserts = mockQuery.mock.calls.slice(1);
+      // each role change inserts into repo_users and bumps last_modified on repos
+      const inserts = mockQuery.mock.calls.filter(([sql]) =>
+        /INSERT INTO repo_users/.test(String(sql)),
+      );
       expect(inserts).toHaveLength(2);
-      expect(inserts.every(([sql]) => /INSERT INTO repo_users/.test(String(sql)))).toBe(true);
       expect(inserts[0][1]).toEqual(['r9', 'bob', 'canPush']);
       expect(inserts[1][1]).toEqual(['r9', 'amy', 'canAuthorise']);
     });
@@ -235,8 +244,9 @@ describe('PostgreSQL - Repo', async () => {
       const statements = mockQuery.mock.calls.map(([sql]) => sql);
       // old rows are cleared first, then each role is re-inserted
       expect(statements[0]).toContain('DELETE FROM repo_users WHERE repo_id = $1');
-      expect(statements.slice(1).join('\n')).toContain('INSERT INTO repo_users');
-      const roles = mockQuery.mock.calls.slice(1).map(([, params]) => params?.[2]);
+      const roles = mockQuery.mock.calls
+        .filter(([sql]) => /INSERT INTO repo_users/.test(String(sql)))
+        .map(([, params]) => params?.[2]);
       expect(roles).toEqual(['canPush', 'canAuthorise']);
     });
 
@@ -279,6 +289,93 @@ describe('PostgreSQL - Repo', async () => {
         'updateRepo requires at least one field to update',
       );
       expect(mockQuery).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('repo date fields', () => {
+    it('defaults dateCreated and lastModified on create', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [{ _id: 'r1' }] });
+
+      const repo = await createRepo({
+        project: 'p',
+        name: 'n',
+        url: 'https://github.com/p/n.git',
+      } as never);
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('date_created');
+      expect(sql).toContain('last_modified');
+      expect(repo.dateCreated).toBeTruthy();
+      expect(repo.lastModified).toBe(repo.dateCreated);
+      expect(params[3]).toBe(repo.dateCreated);
+    });
+
+    it('keeps caller-supplied dates on create', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [{ _id: 'r1' }] });
+
+      const repo = await createRepo({
+        project: 'p',
+        name: 'n',
+        url: 'https://github.com/p/n.git',
+        dateCreated: '2026-01-01T00:00:00.000Z',
+        lastModified: '2026-01-02T00:00:00.000Z',
+      } as never);
+
+      expect(repo.dateCreated).toBe('2026-01-01T00:00:00.000Z');
+      expect(repo.lastModified).toBe('2026-01-02T00:00:00.000Z');
+    });
+
+    it('updateRepo writes dateCreated and lastModified columns', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await updateRepo({
+        _id: 'r1',
+        dateCreated: '2026-01-01T00:00:00.000Z',
+        lastModified: '2026-01-01T00:00:00.000Z',
+      });
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('date_created = $1');
+      expect(sql).toContain('last_modified = $2');
+      expect(params).toEqual(['2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z', 'r1']);
+    });
+
+    it('bumps last_modified when permissions change', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await addUserCanPush('r1', 'Alice');
+      await removeUserCanPush('r1', 'Alice');
+
+      // each role change touches repo_users, then bumps last_modified on repos
+      const bumps = mockQuery.mock.calls.filter(([sql]) => sql.includes('SET last_modified = $2'));
+      expect(bumps).toHaveLength(2);
+      for (const [, params] of bumps) {
+        expect(params[0]).toBe('r1');
+        expect(typeof params[1]).toBe('string');
+      }
+    });
+
+    it('returns the date fields from reads', async () => {
+      mockQuery.mockResolvedValue({
+        rowCount: 1,
+        rows: [
+          {
+            _id: 'r1',
+            project: 'p',
+            name: 'n',
+            url: 'u',
+            can_push: [],
+            can_authorise: [],
+            date_created: '2026-01-01T00:00:00.000Z',
+            last_modified: '2026-01-02T00:00:00.000Z',
+          },
+        ],
+      });
+
+      const repos = await getRepos();
+
+      expect(repos[0].dateCreated).toBe('2026-01-01T00:00:00.000Z');
+      expect(repos[0].lastModified).toBe('2026-01-02T00:00:00.000Z');
     });
   });
 });

@@ -53,12 +53,16 @@ export const MIGRATIONS: Migration[] = [
   );
 
   CREATE TABLE IF NOT EXISTS repos (
-    _id      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project  TEXT NOT NULL DEFAULT '',
-    name     TEXT NOT NULL,
-    url      TEXT NOT NULL UNIQUE,
-    users    JSONB NOT NULL DEFAULT '{"canPush":[],"canAuthorise":[]}'::jsonb
+    _id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    project        TEXT NOT NULL DEFAULT '',
+    name           TEXT NOT NULL,
+    url            TEXT NOT NULL UNIQUE,
+    users          JSONB NOT NULL DEFAULT '{"canPush":[],"canAuthorise":[]}'::jsonb,
+    date_created   TEXT,
+    last_modified  TEXT
   );
+  ALTER TABLE repos ADD COLUMN IF NOT EXISTS date_created TEXT;
+  ALTER TABLE repos ADD COLUMN IF NOT EXISTS last_modified TEXT;
   CREATE INDEX IF NOT EXISTS repos_name_idx ON repos (name);
 
   CREATE TABLE IF NOT EXISTS pushes (
