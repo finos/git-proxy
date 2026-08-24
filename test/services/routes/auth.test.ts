@@ -45,6 +45,7 @@ const newApp = (username?: string, options?: { mustChangePassword?: boolean }): 
 
 describe('Auth API', () => {
   afterEach(() => {
+    vi.clearAllMocks();
     vi.restoreAllMocks();
   });
 
