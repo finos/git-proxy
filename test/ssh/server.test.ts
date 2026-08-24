@@ -31,9 +31,9 @@ vi.mock('ssh2', async (importOriginal) => {
   const actual = await importOriginal<typeof import('ssh2')>();
   return {
     ...actual,
-    Server: vi.fn(
-      (...args: ConstructorParameters<typeof actual.Server>) => new actual.Server(...args),
-    ),
+    Server: vi.fn(function (...args: ConstructorParameters<typeof actual.Server>) {
+      return new actual.Server(...args);
+    }),
   };
 });
 

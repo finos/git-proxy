@@ -14,395 +14,487 @@
  * limitations under the License.
  */
 
-import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
-import GridItem from '../../components/Grid/GridItem';
-import GridContainer from '../../components/Grid/GridContainer';
-import Card from '../../components/Card/Card';
-import CardBody from '../../components/Card/CardBody';
-import Button from '../../components/CustomButtons/Button';
-import FormLabel from '@material-ui/core/FormLabel';
-import { getUser, updateUser } from '../../services/user';
-import { UserContext, UserContextType } from '../../context';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { Navigate, useParams, useLocation } from 'react-router';
+import { GearIcon, KeyIcon, ListUnorderedIcon, PlusIcon, TrashIcon } from '@primer/octicons-react';
+import {
+  Button,
+  Dialog,
+  FormControl,
+  IconButton,
+  Label,
+  Link as PrimerLink,
+  Spinner,
+  Stack,
+  Text,
+  TextInput,
+} from '@primer/react';
+import type { DialogHeaderProps } from '@primer/react';
+import { XIcon } from '@primer/octicons-react';
+import { GitProxyUnderlineNav } from '../../components/GitProxyUnderlineTabs';
+
+import { useAuth } from '../../auth/AuthProvider';
+import TimedBanner from '../../components/TimedBanner/TimedBanner';
+import Danger from '../../components/Typography/Danger';
+import { sortRepoViews } from '../../services/repo';
+import { useRepoViewsListQuery } from '../../query/useRepoViewsListQuery';
+import PushesTable from '../PushRequests/components/PushesTable';
+import { useUserQuery } from '../../query/useUserQuery';
+import { useUserActivityQuery } from '../../query/useUserActivityQuery';
+import {
+  getSSHConfig,
+  getSSHKeys,
+  addSSHKey,
+  deleteSSHKey,
+  SSHKey,
+  SSHConfig,
+} from '../../services/ssh';
 
 import { PublicUser } from '../../../db/types';
-import { makeStyles } from '@material-ui/core/styles';
 
-import { LogoGithubIcon, KeyIcon, TrashIcon } from '@primer/octicons-react';
-import CloseRounded from '@material-ui/icons/CloseRounded';
-import { Check, Save, Add } from '@material-ui/icons';
-import {
-  TextField,
-  Theme,
-  Tooltip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-} from '@material-ui/core';
-import { getSSHKeys, addSSHKey, deleteSSHKey, SSHKey } from '../../services/ssh';
-import Snackbar from '../../components/Snackbar/Snackbar';
+const externalLinkClass =
+  'text-sm text-[#0969da] underline underline-offset-2 decoration-[#0969da]/80 hover:text-[#0550ae]';
 
-const useStyles = makeStyles((theme: Theme) => ({
-  root: {
-    '& .MuiTextField-root': {
-      margin: theme.spacing(1),
-      width: '100%',
-    },
-  },
-}));
+/** Route param can be missing under nested dashboard routes; pathname is authoritative for `/dashboard/user/:id`. */
+const dashboardUserProfileId = (pathname: string): string | undefined => {
+  const m = /^\/dashboard\/user\/([^/]+)\/?$/.exec(pathname);
+  return m?.[1];
+};
+
+const ProfileField = ({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}): React.ReactElement => (
+  <Stack direction='vertical' gap='condensed' padding='none'>
+    <Text className='text-sm font-semibold text-(--fgColor-default)'>{label}</Text>
+    <div className='text-sm text-(--fgColor-default)'>{children}</div>
+  </Stack>
+);
+
+const AddSSHKeyDialogHeader = ({
+  dialogLabelId,
+  title,
+  subtitle,
+  dialogDescriptionId,
+  onClose,
+}: DialogHeaderProps) => (
+  <Dialog.Header>
+    <div className='flex'>
+      <div className='flex min-w-0 flex-1 flex-col px-2 py-1.5'>
+        <Dialog.Title id={dialogLabelId}>{title ?? 'Dialog'}</Dialog.Title>
+        {subtitle ? <Dialog.Subtitle id={dialogDescriptionId}>{subtitle}</Dialog.Subtitle> : null}
+      </div>
+      <IconButton
+        icon={XIcon}
+        aria-label='Close'
+        variant='invisible'
+        onClick={() => onClose('close-button')}
+        unsafeDisableTooltip
+      />
+    </div>
+  </Dialog.Header>
+);
+
+const ACTIVITY_ITEMS_PER_PAGE = 100;
+
+type ProfileMainTab = 'activity' | 'settings' | 'ssh-keys';
 
 export default function UserProfile(): React.ReactElement {
-  const classes = useStyles();
-  const [user, setUser] = useState<PublicUser | null>(null);
-  const [auth, setAuth] = useState<boolean>(true);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [gitAccount, setGitAccount] = useState<string>('');
+  const { user: sessionUser } = useAuth();
+  const [showEmailSavedBanner, setShowEmailSavedBanner] = useState<boolean>(false);
+  const [localUser, setLocalUser] = useState<PublicUser | null>(null);
+  const [formErrorMessage, setFormErrorMessage] = useState<string>('');
+  const { data: repoListRaw } = useRepoViewsListQuery(true);
+  const registeredRepos = useMemo(
+    () => (repoListRaw ? sortRepoViews(repoListRaw, 'name-asc') : []),
+    [repoListRaw],
+  );
+  const [mainTab, setMainTab] = useState<ProfileMainTab>('activity');
+  const [activityPage, setActivityPage] = useState<number>(1);
+  const { id: idParam } = useParams<{ id?: string }>();
+  const { pathname } = useLocation();
+  const id = dashboardUserProfileId(pathname) ?? (idParam?.trim() || undefined);
+
+  // SSH state
+  const [sshConfig, setSshConfig] = useState<SSHConfig | null>(null);
   const [sshKeys, setSshKeys] = useState<SSHKey[]>([]);
-  const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
-  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
-  const [snackbarColor, setSnackbarColor] = useState<'success' | 'danger'>('success');
-  const [openSSHModal, setOpenSSHModal] = useState<boolean>(false);
-  const sshKeyNameRef = useRef<HTMLInputElement>(null);
-  const sshKeyRef = useRef<HTMLInputElement>(null);
-  const navigate = useNavigate();
-  const { id } = useParams<{ id?: string }>();
-  const { user: loggedInUser } = useContext<UserContextType>(UserContext);
-  const isOwnProfile = !id;
+  const [sshKeysLoading, setSshKeysLoading] = useState(false);
+  const [sshKeysError, setSshKeysError] = useState('');
+  const [showAddKeyDialog, setShowAddKeyDialog] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [newKeyValue, setNewKeyValue] = useState('');
+  const [addKeyError, setAddKeyError] = useState('');
+  const [addKeyLoading, setAddKeyLoading] = useState(false);
 
+  const { data: fetchedUser, isLoading, error: userError } = useUserQuery(id ?? null);
+
+  // Allow optimistic updates to user (e.g. after email save) without a refetch
+  const user = localUser ?? fetchedUser ?? null;
+
+  const activityUsername = useMemo(() => {
+    const fromRoute = id?.trim();
+    if (fromRoute) return fromRoute;
+    return user?.username?.trim() ?? '';
+  }, [id, user?.username]);
+
+  const {
+    data: activityRows = [],
+    isLoading: activityLoading,
+    error: activityError,
+  } = useUserActivityQuery(activityUsername || undefined);
+
+  const maxActivityPage = Math.max(1, Math.ceil(activityRows.length / ACTIVITY_ITEMS_PER_PAGE));
+  const effectiveActivityPage = Math.min(activityPage, maxActivityPage);
+
+  const handleActivityPageChange = useCallback((next: number) => {
+    setActivityPage(next);
+  }, []);
+
+  const isOwnProfile =
+    Boolean(sessionUser) &&
+    (id == null ||
+      id === '' ||
+      (sessionUser != null && sessionUser.username.toLowerCase() === (id ?? '').toLowerCase()));
+  const isSessionAdmin = Boolean(sessionUser?.admin);
+  const showSettingsTab = isOwnProfile || isSessionAdmin;
+
+  // Load SSH config once
   useEffect(() => {
-    getUser(
-      setIsLoading,
-      (user: PublicUser) => {
-        setUser(user);
-        setGitAccount(user.gitAccount || '');
-      },
-      setAuth,
-      setErrorMessage,
-      id,
-    );
-  }, [id]);
+    getSSHConfig()
+      .then(setSshConfig)
+      .catch(() => {});
+  }, []);
 
-  const loadSSHKeys = useCallback(async (): Promise<void> => {
-    if (!user) return;
+  const loadSSHKeys = useCallback(async () => {
+    if (!user?.username) return;
+    setSshKeysLoading(true);
+    setSshKeysError('');
     try {
       const keys = await getSSHKeys(user.username);
       setSshKeys(keys);
-    } catch (error) {
-      console.error('Error loading SSH keys:', error);
+    } catch {
+      setSshKeysError('Failed to load SSH keys.');
+    } finally {
+      setSshKeysLoading(false);
     }
-  }, [user]);
+  }, [user?.username]);
 
-  // Load SSH keys when user is available
+  const showSSHTab = isOwnProfile && Boolean(sshConfig?.enabled);
+
   useEffect(() => {
-    if (user && (isOwnProfile || loggedInUser?.admin)) {
+    if (showSSHTab && user?.username) {
       loadSSHKeys();
     }
-  }, [user, isOwnProfile, loggedInUser, loadSSHKeys]);
+  }, [showSSHTab, user?.username, loadSSHKeys]);
 
-  const showSnackbar = (message: string, color: 'success' | 'danger') => {
-    setSnackbarMessage(message);
-    setSnackbarColor(color);
-    setSnackbarOpen(true);
-
-    setTimeout(() => {
-      setSnackbarOpen(false);
-    }, 3000);
-  };
-
-  const handleCloseSSHModal = useCallback(() => {
-    setOpenSSHModal(false);
-    if (sshKeyNameRef.current) sshKeyNameRef.current.value = '';
-    if (sshKeyRef.current) sshKeyRef.current.value = '';
-  }, []);
-
-  const handleAddSSHKey = async (): Promise<void> => {
-    if (!user) return;
-
-    const keyValue = sshKeyRef.current?.value.trim() || '';
-    const nameValue = sshKeyNameRef.current?.value.trim() || 'Unnamed Key';
-
-    if (!keyValue) {
-      showSnackbar('Please enter an SSH key', 'danger');
+  const handleAddKey = async () => {
+    if (!user?.username) return;
+    const key = newKeyValue.trim();
+    const name = newKeyName.trim() || 'Unnamed Key';
+    if (!key) {
+      setAddKeyError('Please enter a public key.');
       return;
     }
-
+    setAddKeyLoading(true);
+    setAddKeyError('');
     try {
-      await addSSHKey(user.username, keyValue, nameValue);
-      showSnackbar('SSH key added successfully', 'success');
-      setOpenSSHModal(false);
-      if (sshKeyNameRef.current) sshKeyNameRef.current.value = '';
-      if (sshKeyRef.current) sshKeyRef.current.value = '';
+      await addSSHKey(user.username, key, name);
+      setShowAddKeyDialog(false);
+      setNewKeyName('');
+      setNewKeyValue('');
       await loadSSHKeys();
-    } catch (error: any) {
-      const errorMsg =
-        error.response?.data?.error || 'Failed to add SSH key. Please check the key format.';
-      showSnackbar(errorMsg, 'danger');
+    } catch (err: any) {
+      setAddKeyError(err?.response?.data?.error ?? 'Failed to add SSH key.');
+    } finally {
+      setAddKeyLoading(false);
     }
   };
 
-  const handleDeleteSSHKey = async (fingerprint: string): Promise<void> => {
-    if (!user) return;
+  const handleDeleteKey = async (fingerprint: string) => {
+    if (!user?.username) return;
     try {
       await deleteSSHKey(user.username, fingerprint);
-      showSnackbar('SSH key removed successfully', 'success');
       await loadSSHKeys();
-    } catch (error) {
-      showSnackbar('Failed to remove SSH key', 'danger');
+    } catch {
+      setSshKeysError('Failed to delete SSH key.');
     }
   };
 
-  if (isLoading) return <div>Loading...</div>;
-
-  if (!auth && window.location.pathname === '/dashboard/profile') {
-    return <Navigate to='/login' />;
+  if (isLoading) {
+    return (
+      <div className='flex w-full min-w-0 items-center gap-2'>
+        <Spinner />
+      </div>
+    );
   }
 
-  if (errorMessage) throw new Error(errorMessage);
+  if (userError) {
+    const status = (userError as any)?.response?.status;
+    if (status === 401 && window.location.pathname === '/dashboard/profile') {
+      return <Navigate to='/login' />;
+    }
+    return <Danger>{userError.message}</Danger>;
+  }
 
-  if (!user) return <div>No user data available</div>;
+  if (!user) {
+    return (
+      <Text
+        as='p'
+        size='medium'
+        weight='normal'
+        className='m-0 min-w-0 w-full text-[var(--fgColor-default)]'
+      >
+        No user data available
+      </Text>
+    );
+  }
 
-  const updateProfile = async (): Promise<void> => {
-    const updatedData = {
-      ...user,
-      gitAccount: escapeHTML(gitAccount),
-    };
+  const profileNameLabel = user.displayName?.trim() || user.username;
+  const roleText = user.title?.trim() ?? '';
+  const emailText = user.email?.trim() ?? '';
 
-    // Does not reject and will display any errors that occur
-    await updateUser(updatedData, setErrorMessage, setIsLoading);
-    setUser(updatedData);
-    navigate(`/dashboard/profile`);
-  };
-
-  const UpdateButton = (): React.ReactElement => (
-    <Button variant='outlined' color='success' onClick={updateProfile}>
-      <Save />
-      Update
-    </Button>
+  const activitySection = (
+    <Stack direction='vertical' gap='normal' padding='none' className='min-w-0 w-full'>
+      {!activityLoading && !activityError && activityRows.length > 0 ? (
+        <Text
+          as='p'
+          size='medium'
+          weight='normal'
+          className='m-0 min-w-0 w-full text-[var(--fgColor-default)]'
+        >
+          Pushes committed with this user&apos;s registered emails, or that they approved in the
+          dashboard.
+        </Text>
+      ) : null}
+      {activityError ? <Danger>{activityError.message}</Danger> : null}
+      {!activityError ? (
+        <div className='min-w-0 w-full'>
+          {!activityLoading && activityRows.length === 0 ? (
+            <Text
+              as='p'
+              size='medium'
+              weight='normal'
+              className='m-0 min-w-0 w-full text-[var(--fgColor-default)]'
+            >
+              No activity yet.
+            </Text>
+          ) : (
+            <PushesTable
+              registeredRepos={registeredRepos}
+              rows={activityRows}
+              isLoading={activityLoading}
+              currentPage={effectiveActivityPage}
+              onPageChange={handleActivityPageChange}
+              showStatus
+            />
+          )}
+        </div>
+      ) : null}
+    </Stack>
   );
 
-  const escapeHTML = (str: string): string => {
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#039;')
-      .replace(/\\/g, '&#39;')
-      .replace(/\//g, '&#x2F;');
+  const settingsSection = (
+    <Stack direction='vertical' gap='spacious' padding='none' className='min-w-0'>
+      {formErrorMessage ? <Danger>{formErrorMessage}</Danger> : null}
+      {roleText ? (
+        <Stack direction='vertical' gap='normal' padding='none' className='min-w-0'>
+          <ProfileField label='Role'>{roleText}</ProfileField>
+        </Stack>
+      ) : null}
+    </Stack>
+  );
+
+  const sshKeysSection = (
+    <Stack direction='vertical' gap='normal' padding='none' className='min-w-0 w-full'>
+      {sshKeysError ? <Danger>{sshKeysError}</Danger> : null}
+      {sshKeysLoading ? (
+        <Spinner />
+      ) : sshKeys.length === 0 ? (
+        <Text as='p' size='medium' className='m-0 text-[var(--fgColor-muted)]'>
+          No SSH keys configured. Add one to use SSH for git operations.
+        </Text>
+      ) : (
+        <Stack direction='vertical' gap='condensed' padding='none' className='w-full'>
+          {sshKeys.map((key) => (
+            <div
+              key={key.fingerprint}
+              className='flex items-center justify-between rounded-md border border-[var(--borderColor-default)] px-3 py-2'
+            >
+              <Stack direction='vertical' gap='none' padding='none' className='min-w-0'>
+                <Text className='text-sm font-semibold text-(--fgColor-default)'>{key.name}</Text>
+                <Text className='font-mono text-xs text-(--fgColor-muted)'>{key.fingerprint}</Text>
+                <Text className='text-xs text-(--fgColor-muted)'>
+                  Added {new Date(key.addedAt).toLocaleDateString()}
+                </Text>
+              </Stack>
+              <IconButton
+                icon={TrashIcon}
+                aria-label='Delete SSH key'
+                variant='invisible'
+                size='small'
+                className='!text-[var(--fgColor-danger)] shrink-0'
+                onClick={() => handleDeleteKey(key.fingerprint)}
+                unsafeDisableTooltip
+              />
+            </div>
+          ))}
+        </Stack>
+      )}
+      <div>
+        <Button leadingVisual={PlusIcon} onClick={() => setShowAddKeyDialog(true)}>
+          Add SSH key
+        </Button>
+      </div>
+
+      {showAddKeyDialog && (
+        <Dialog
+          title='Add SSH key'
+          renderHeader={AddSSHKeyDialogHeader}
+          onClose={() => {
+            setShowAddKeyDialog(false);
+            setNewKeyName('');
+            setNewKeyValue('');
+            setAddKeyError('');
+          }}
+          footerButtons={[
+            {
+              content: 'Cancel',
+              onClick: () => {
+                setShowAddKeyDialog(false);
+                setNewKeyName('');
+                setNewKeyValue('');
+                setAddKeyError('');
+              },
+            },
+            {
+              content: 'Add key',
+              variant: 'primary',
+              onClick: handleAddKey,
+              disabled: addKeyLoading,
+            },
+          ]}
+        >
+          <Stack direction='vertical' gap='normal' padding='none'>
+            {addKeyError ? <Danger>{addKeyError}</Danger> : null}
+            <FormControl>
+              <FormControl.Label>Key name</FormControl.Label>
+              <TextInput
+                placeholder='e.g. My Laptop'
+                value={newKeyName}
+                onChange={(e) => setNewKeyName(e.target.value)}
+                block
+              />
+            </FormControl>
+            <FormControl>
+              <FormControl.Label>Public key</FormControl.Label>
+              <textarea
+                className='w-full rounded-md border border-[var(--borderColor-default)] bg-[var(--bgColor-default)] px-3 py-2 font-mono text-xs text-(--fgColor-default) focus:outline-none focus:ring-2 focus:ring-[var(--focusOutlineColor)]'
+                rows={6}
+                placeholder='ssh-rsa AAAAB3NzaC1yc2E...'
+                value={newKeyValue}
+                onChange={(e) => setNewKeyValue(e.target.value)}
+              />
+              <FormControl.Caption>
+                Paste your public key (e.g. from ~/.ssh/id_rsa.pub)
+              </FormControl.Caption>
+            </FormControl>
+          </Stack>
+        </Dialog>
+      )}
+    </Stack>
+  );
+
+  const activeSection = () => {
+    if (mainTab === 'ssh-keys') return sshKeysSection;
+    if (mainTab === 'settings' && showSettingsTab) return settingsSection;
+    return activitySection;
   };
 
   return (
-    <form className={classes.root} noValidate autoComplete='off'>
-      <GridContainer>
-        <GridItem xs={12} sm={12} md={12}>
-          <Card>
-            <CardBody
-              style={{
-                padding: '20px',
-              }}
-            >
-              <GridContainer
-                style={{
-                  paddingTop: '10px',
-                }}
-              >
-                {user.gitAccount && (
-                  <GridItem xs={1} sm={1} md={1}>
-                    <img
-                      width={'75px'}
-                      style={{ borderRadius: '5px' }}
-                      src={`https://github.com/${user.gitAccount}.png`}
-                      alt={`${user.displayName}'s GitHub avatar`}
-                    />
-                  </GridItem>
-                )}
-                <GridItem xs={2} sm={2} md={2}>
-                  <FormLabel component='legend'>Name</FormLabel>
-                  {user.displayName}
-                </GridItem>
-                <GridItem xs={2} sm={2} md={2}>
-                  <FormLabel component='legend'>Role</FormLabel>
-                  {user.title}
-                </GridItem>
-                <GridItem xs={2} sm={2} md={2}>
-                  <FormLabel component='legend'>E-mail</FormLabel>
-                  <a href={`mailto:${user.email}`}>{user.email}</a>
-                </GridItem>
-                {user.gitAccount && (
-                  <GridItem xs={2} sm={2} md={2}>
-                    <FormLabel component='legend'>GitHub Username</FormLabel>
-                    <a
-                      href={`https://github.com/${user.gitAccount}`}
-                      rel='noreferrer'
-                      target='_blank'
-                    >
-                      {user.gitAccount}
-                    </a>
-                  </GridItem>
-                )}
-                <GridItem xs={2} sm={2} md={2}>
-                  <FormLabel component='legend'>Administrator</FormLabel>
-                  {user?.admin ? (
-                    <span style={{ color: 'green' }}>
-                      <Check fontSize='small' />
-                    </span>
-                  ) : (
-                    <CloseRounded color='error' />
-                  )}
-                </GridItem>
-              </GridContainer>
-              {isOwnProfile || loggedInUser.admin ? (
-                <div style={{ marginTop: '50px' }}>
-                  <hr style={{ opacity: 0.2 }} />
-                  <div style={{ marginTop: '25px' }}>
-                    <FormLabel component='legend'>
-                      What is your <LogoGithubIcon /> username?
-                    </FormLabel>
-                    <div style={{ textAlign: 'right' }}>
-                      <TextField
-                        id='gitAccount'
-                        aria-describedby='gitAccount-helper-text'
-                        variant='outlined'
-                        placeholder='Enter a new GitHub username...'
-                        value={gitAccount}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                          setGitAccount(e.target.value)
-                        }
-                      />
-                      <UpdateButton />
-                    </div>
-                  </div>
+    <div className='w-full min-w-0'>
+      <Stack direction='vertical' gap='spacious' padding='none'>
+        <TimedBanner
+          open={showEmailSavedBanner}
+          onDismiss={() => setShowEmailSavedBanner(false)}
+          title='External email saved'
+          description={
+            isOwnProfile
+              ? 'Your external email has been updated.'
+              : "This user's external email has been updated."
+          }
+        />
+        <Stack direction='vertical' gap='condensed' padding='none' className='min-w-0'>
+          <Stack direction='horizontal' gap='normal' padding='none' align='center' wrap='wrap'>
+            <Text as='h1' className='m-0! text-xl! font-semibold! tracking-tight!'>
+              {profileNameLabel}
+            </Text>
+            {user.admin ? (
+              <Label variant='accent' size='small'>
+                Admin
+              </Label>
+            ) : null}
+          </Stack>
+          {emailText ? (
+            <Text className='mt-1 block text-sm text-(--fgColor-muted)'>
+              <PrimerLink className={externalLinkClass} href={`mailto:${emailText}`}>
+                {emailText}
+              </PrimerLink>
+            </Text>
+          ) : null}
+        </Stack>
 
-                  {/* SSH Keys Section */}
-                  <div style={{ marginTop: '50px' }}>
-                    <hr style={{ opacity: 0.2 }} />
-                    <div style={{ marginTop: '25px' }}>
-                      <FormLabel component='legend'>
-                        <KeyIcon size={16} /> SSH Keys
-                      </FormLabel>
-                      <div style={{ marginTop: '15px' }}>
-                        {sshKeys.length === 0 ? (
-                          <p style={{ color: '#999', fontSize: '14px' }}>
-                            No SSH keys configured. Add one below to use SSH for git operations.
-                          </p>
-                        ) : (
-                          <div>
-                            {sshKeys.map((key) => (
-                              <div
-                                key={key.fingerprint}
-                                style={{
-                                  padding: '12px',
-                                  border: '1px solid #ddd',
-                                  borderRadius: '5px',
-                                  marginBottom: '10px',
-                                  display: 'flex',
-                                  justifyContent: 'space-between',
-                                  alignItems: 'center',
-                                }}
-                              >
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ fontWeight: 'bold', fontSize: '14px' }}>
-                                    {key.name}
-                                  </div>
-                                  <div
-                                    style={{
-                                      fontSize: '12px',
-                                      color: '#666',
-                                      fontFamily: 'monospace',
-                                      marginTop: '4px',
-                                    }}
-                                  >
-                                    {key.fingerprint}
-                                  </div>
-                                  <div
-                                    style={{ fontSize: '11px', color: '#999', marginTop: '4px' }}
-                                  >
-                                    Added: {new Date(key.addedAt).toLocaleDateString()}
-                                  </div>
-                                </div>
-                                <Tooltip title='Delete SSH key'>
-                                  <IconButton
-                                    size='small'
-                                    onClick={() => handleDeleteSSHKey(key.fingerprint)}
-                                    style={{ color: '#f44336' }}
-                                  >
-                                    <TrashIcon size={16} />
-                                  </IconButton>
-                                </Tooltip>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-
-                        <div style={{ marginTop: '20px' }}>
-                          <Button
-                            variant='contained'
-                            color='primary'
-                            onClick={() => setOpenSSHModal(true)}
-                            startIcon={<Add />}
-                          >
-                            Add SSH Key
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-            </CardBody>
-          </Card>
-        </GridItem>
-      </GridContainer>
-      <Snackbar
-        place='br'
-        color={snackbarColor}
-        message={snackbarMessage}
-        open={snackbarOpen}
-        closeNotification={() => setSnackbarOpen(false)}
-        close
-      />
-
-      {/* SSH Key Modal */}
-      <Dialog open={openSSHModal} onClose={handleCloseSSHModal} maxWidth='md' fullWidth>
-        <DialogTitle>
-          <KeyIcon size={16} /> Add New SSH Key
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            autoFocus
-            inputRef={sshKeyNameRef}
-            id='sshKeyName'
-            label='Key name'
-            variant='outlined'
-            placeholder='e.g., My Laptop, Work Computer'
-            defaultValue=''
-            margin='normal'
-          />
-          <TextField
-            fullWidth
-            inputRef={sshKeyRef}
-            id='newSSHKey'
-            label='Public key'
-            variant='outlined'
-            placeholder='ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC...'
-            defaultValue=''
-            multiline
-            rows={6}
-            helperText='Paste your SSH public key here (e.g., from ~/.ssh/id_rsa.pub)'
-            margin='normal'
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseSSHModal}>Cancel</Button>
-          <Button onClick={handleAddSSHKey} color='success'>
-            Add Key
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </form>
+        {user && activityUsername ? (
+          <Stack direction='vertical' gap='normal' padding='none' className='min-w-0 w-full'>
+            {showSettingsTab || showSSHTab ? (
+              <GitProxyUnderlineNav aria-label='Profile sections' className='min-w-0 w-full'>
+                <GitProxyUnderlineNav.Item
+                  href='#'
+                  leadingVisual={<ListUnorderedIcon />}
+                  counter={activityLoading ? undefined : activityRows.length}
+                  aria-current={mainTab === 'activity' ? 'page' : undefined}
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setMainTab('activity');
+                  }}
+                >
+                  Activity
+                </GitProxyUnderlineNav.Item>
+                {showSettingsTab ? (
+                  <GitProxyUnderlineNav.Item
+                    href='#'
+                    leadingVisual={<GearIcon />}
+                    aria-current={mainTab === 'settings' ? 'page' : undefined}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setMainTab('settings');
+                    }}
+                  >
+                    Settings
+                  </GitProxyUnderlineNav.Item>
+                ) : null}
+                {showSSHTab ? (
+                  <GitProxyUnderlineNav.Item
+                    href='#'
+                    leadingVisual={<KeyIcon />}
+                    counter={sshKeysLoading ? undefined : sshKeys.length}
+                    aria-current={mainTab === 'ssh-keys' ? 'page' : undefined}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setMainTab('ssh-keys');
+                    }}
+                  >
+                    SSH Keys
+                  </GitProxyUnderlineNav.Item>
+                ) : null}
+              </GitProxyUnderlineNav>
+            ) : null}
+            {activeSection()}
+          </Stack>
+        ) : null}
+      </Stack>
+    </div>
   );
 }

@@ -28,6 +28,7 @@ describe('PostgreSQL - Repo', async () => {
     getRepo,
     getRepoById,
     getRepoByUrl,
+    updateRepo,
     createRepo,
     addUserCanPush,
     addUserCanAuthorise,
@@ -191,6 +192,61 @@ describe('PostgreSQL - Repo', async () => {
       const [sql] = mockQuery.mock.calls[0];
       expect(sql).toContain('coalesce(');
       expect(sql).toContain("'[]'::jsonb");
+    });
+  });
+
+  describe('updateRepo', () => {
+    it('writes only the supplied fields', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await updateRepo({ _id: 'r1', name: 'renamed' });
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('UPDATE repos SET name = $1');
+      expect(sql).toContain('WHERE _id = $2');
+      expect(params).toEqual(['renamed', 'r1']);
+    });
+
+    it('serialises the users permission object as jsonb', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      const users = { canPush: ['alice'], canAuthorise: [] };
+      await updateRepo({ _id: 'r1', users });
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('users = $1::jsonb');
+      expect(params).toEqual([JSON.stringify(users), 'r1']);
+    });
+
+    it('resets a field back to its column default when set to undefined', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await updateRepo({ _id: 'r1', project: undefined, name: 'keep' });
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).toContain('project = DEFAULT');
+      expect(sql).toContain('name = $1');
+    });
+
+    it('ignores unknown fields', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await updateRepo({ _id: 'r1', name: 'x', bogus: 'y' } as never);
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).not.toContain('bogus');
+    });
+
+    it('requires an _id', async () => {
+      await expect(updateRepo({ name: 'x' })).rejects.toThrow('updateRepo requires a repo _id');
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+
+    it('rejects an update with nothing to change', async () => {
+      await expect(updateRepo({ _id: 'r1' })).rejects.toThrow(
+        'updateRepo requires at least one field to update',
+      );
+      expect(mockQuery).not.toHaveBeenCalled();
     });
   });
 });
