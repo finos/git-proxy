@@ -66,7 +66,11 @@ function bumpCount(
   row[tab] += 1;
 }
 
-function bumpMaxTimestampMs(m: Map<string, number>, canonicalKey: string, timestamp: unknown): void {
+function bumpMaxTimestampMs(
+  m: Map<string, number>,
+  canonicalKey: string,
+  timestamp: unknown,
+): void {
   if (!canonicalKey) {
     return;
   }
