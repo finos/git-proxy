@@ -532,6 +532,19 @@ Notes and current limitations:
 - Only the `connectionString` form is supported; split `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` env vars are not consulted.
 - If `postgres` is selected as the active sink and the connection string cannot be resolved, GitProxy refuses to start rather than silently falling back to an in-memory session store.
 
+##### PostgreSQL design decisions
+
+The adapter follows a few deliberate choices, made for parity with the existing backends rather than for idiomatic SQL:
+
+- **Pushes stay documents.** A push is an audit record: written once, updated through a handful of state flips, and read back whole. The `pushes` table therefore keeps the entire action as a JSONB `data` column, with typed columns (`timestamp`, the status booleans) only for the fields that queries filter and sort on. This mirrors how the mongo and NeDB backends treat pushes and keeps the row shape stable as the `Action` type evolves.
+- **Users and repos are typed rows with JSONB edges.** Fields that queries touch get real columns; genuinely document-shaped parts (a user's `publicKeys`, the repo permission map) are JSONB.
+- **Identifiers are server-generated UUIDs** (`gen_random_uuid()`), the SQL analogue of mongo's ObjectIds. No compatibility between the backends' id formats is assumed anywhere in the app.
+- **Timestamps the app treats as strings stay strings.** `dateCreated` and `lastModified` are ISO-8601 `TEXT` columns so values round-trip byte-for-byte identically to the mongo and NeDB backends, with no timezone conversion on the way through.
+- **Same case rules as mongo**: usernames are lowercased on permission changes, and repo name lookups are lowercase.
+- **Email uniqueness is best-effort**, enforced by a partial unique index: any number of users may have no email (the ActiveDirectory `mail` attribute is optional), while a real address can only be claimed once. This matches the permissive behaviour of the other backends.
+- **Sessions use `connect-pg-simple`**, the postgres counterpart of the mongo backend's `connect-mongo` session store.
+- **Failures are loud.** If `postgres` is the active sink and no connection can be resolved, GitProxy refuses to start rather than silently degrading to an in-memory session store.
+
 Extending GitProxy to support other databases requires adding the relevant handlers and setup to the [`/src/db`](https://github.com/finos/git-proxy/blob/main/src/db/) directory. Feel free to [open an issue](https://github.com/finos/git-proxy/issues) requesting support for any specific databases - or [open a PR](https://github.com/finos/git-proxy/pulls) with the desired changes!
 
 #### `authentication`
