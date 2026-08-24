@@ -28,6 +28,7 @@ describe('PostgreSQL - Repo', async () => {
     getRepo,
     getRepoById,
     getRepoByUrl,
+    updateRepo,
     createRepo,
     addUserCanPush,
     addUserCanAuthorise,
@@ -211,6 +212,73 @@ describe('PostgreSQL - Repo', async () => {
       const [sql, params] = mockQuery.mock.calls[0];
       expect(sql).toContain('DELETE FROM repos WHERE _id = $1');
       expect(params).toEqual(['r1']);
+    });
+  });
+
+  describe('updateRepo', () => {
+    it('writes only the supplied fields', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await updateRepo({ _id: 'r1', name: 'renamed' });
+
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('UPDATE repos SET name = $1');
+      expect(sql).toContain('WHERE _id = $2');
+      expect(params).toEqual(['renamed', 'r1']);
+    });
+
+    it('replaces permissions in the repo_users join table', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await updateRepo({ _id: 'r1', users: { canPush: ['alice'], canAuthorise: ['bob'] } });
+
+      const statements = mockQuery.mock.calls.map(([sql]) => sql);
+      // old rows are cleared first, then each role is re-inserted
+      expect(statements[0]).toContain('DELETE FROM repo_users WHERE repo_id = $1');
+      expect(statements.slice(1).join('\n')).toContain('INSERT INTO repo_users');
+      const roles = mockQuery.mock.calls.slice(1).map(([, params]) => params?.[2]);
+      expect(roles).toEqual(['canPush', 'canAuthorise']);
+    });
+
+    it('updates columns and permissions together', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await updateRepo({ _id: 'r1', name: 'renamed', users: { canPush: [], canAuthorise: [] } });
+
+      const statements = mockQuery.mock.calls.map(([sql]) => sql);
+      expect(statements[0]).toContain('UPDATE repos SET name = $1');
+      expect(statements[1]).toContain('DELETE FROM repo_users');
+    });
+
+    it('resets a field back to its column default when set to undefined', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await updateRepo({ _id: 'r1', project: undefined, name: 'keep' });
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).toContain('project = DEFAULT');
+      expect(sql).toContain('name = $1');
+    });
+
+    it('ignores unknown fields', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await updateRepo({ _id: 'r1', name: 'x', bogus: 'y' } as never);
+
+      const [sql] = mockQuery.mock.calls[0];
+      expect(sql).not.toContain('bogus');
+    });
+
+    it('requires an _id', async () => {
+      await expect(updateRepo({ name: 'x' })).rejects.toThrow('updateRepo requires a repo _id');
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+
+    it('rejects an update with nothing to change', async () => {
+      await expect(updateRepo({ _id: 'r1' })).rejects.toThrow(
+        'updateRepo requires at least one field to update',
+      );
+      expect(mockQuery).not.toHaveBeenCalled();
     });
   });
 });

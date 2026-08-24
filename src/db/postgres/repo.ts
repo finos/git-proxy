@@ -143,6 +143,59 @@ export const createRepo = async (repo: Repo): Promise<Repo> => {
   return repo;
 };
 
+/**
+ * Apply a partial update to a repo row. Only the supplied fields are written,
+ * matching mongo's `$set` / `$unset` behaviour: a field explicitly set to
+ * `undefined` is reset to the column default.
+ *
+ * Permissions live in the `repo_users` join table rather than a column, so a
+ * supplied `users` object replaces that repo's rows wholesale.
+ */
+export const updateRepo = async (repo: Partial<Repo>): Promise<void> => {
+  const { _id, users, ...fields } = repo;
+  if (!_id) {
+    throw new Error('updateRepo requires a repo _id');
+  }
+
+  const COLUMNS: Record<string, string> = {
+    project: 'project',
+    name: 'name',
+    url: 'url',
+  };
+
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  for (const [key, value] of Object.entries(fields)) {
+    const column = COLUMNS[key];
+    if (!column) continue;
+    if (value === undefined) {
+      sets.push(`${column} = DEFAULT`);
+      continue;
+    }
+    values.push(value);
+    sets.push(`${column} = $${values.length}`);
+  }
+
+  if (sets.length === 0 && users === undefined) {
+    throw new Error('updateRepo requires at least one field to update');
+  }
+
+  if (sets.length > 0) {
+    values.push(_id);
+    await query(`UPDATE repos SET ${sets.join(', ')} WHERE _id = $${values.length}`, values);
+  }
+
+  if (users !== undefined) {
+    await query(`DELETE FROM repo_users WHERE repo_id = $1`, [_id]);
+    for (const username of users.canPush ?? []) {
+      await addUserToRole(_id, username, 'canPush');
+    }
+    for (const username of users.canAuthorise ?? []) {
+      await addUserToRole(_id, username, 'canAuthorise');
+    }
+  }
+};
+
 export const addUserCanPush = (_id: string, user: string): Promise<void> =>
   addUserToRole(_id, user, 'canPush');
 
