@@ -1,0 +1,11 @@
+fail-on-severity: high
+sort-by: severity
+output-template-file: .grype-report.tmpl
+
+ignore:
+  - fix-state: 'wont-fix'
+  - fix-state: 'not-fixed'
+
+# Comment out to include scanning experimental license inventory
+exclude:
+  - './experimental/**'

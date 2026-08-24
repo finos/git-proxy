@@ -92,6 +92,50 @@ export const createRepo = async (repo: Repo): Promise<Repo> => {
 };
 
 /**
+ * Apply a partial update to a repo row. Only the supplied fields are written,
+ * matching mongo's `$set` / `$unset` behaviour: a field explicitly set to
+ * `undefined` is reset to the column default rather than left untouched.
+ */
+export const updateRepo = async (repo: Partial<Repo>): Promise<void> => {
+  const { _id, ...fields } = repo;
+  if (!_id) {
+    throw new Error('updateRepo requires a repo _id');
+  }
+
+  const COLUMNS: Record<string, string> = {
+    project: 'project',
+    name: 'name',
+    url: 'url',
+    users: 'users',
+  };
+
+  const sets: string[] = [];
+  const values: unknown[] = [];
+  for (const [key, value] of Object.entries(fields)) {
+    const column = COLUMNS[key];
+    if (!column) continue;
+    if (value === undefined) {
+      sets.push(`${column} = DEFAULT`);
+      continue;
+    }
+    if (column === 'users') {
+      values.push(JSON.stringify(value));
+      sets.push(`${column} = $${values.length}::jsonb`);
+      continue;
+    }
+    values.push(value);
+    sets.push(`${column} = $${values.length}`);
+  }
+
+  if (sets.length === 0) {
+    throw new Error('updateRepo requires at least one field to update');
+  }
+
+  values.push(_id);
+  await query(`UPDATE repos SET ${sets.join(', ')} WHERE _id = $${values.length}`, values);
+};
+
+/**
  * Append a user to one of the JSONB permission arrays. The query is a
  * read-modify-write that deduplicates the value, then re-serialises the array
  * so the stored shape matches the existing mongo/fs backends exactly.
