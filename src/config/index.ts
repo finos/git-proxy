@@ -24,6 +24,7 @@ import { serverConfig } from './env';
 import { getConfigFile } from './file';
 import { GIGABYTE } from '../constants';
 import { validateConfig } from './validators';
+import { getDeprecatedConfigWarnings } from './deprecatedFields';
 import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
 
 export { setConfigFile, getConfigFile, validate } from './file';
@@ -57,9 +58,9 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'sessionMaxAgeHours',
   'sidebandProgress',
   'sink',
+  'ssh',
   'tempPassword',
   'tls',
-  'ssh',
   'uiHost',
   'uiPort',
   'uiRouteAuth',
@@ -157,6 +158,10 @@ function loadFullConfiguration(): FullGitProxyConfig {
     } catch (error: unknown) {
       handleErrorAndThrow(error, `Error loading user config from ${userConfigFile}`);
     }
+  }
+
+  for (const message of getDeprecatedConfigWarnings(userSettings)) {
+    console.warn(message);
   }
 
   _currentConfig = mergeConfigurations(defaultConfig, userSettings);
@@ -523,7 +528,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     const validatedConfig = Convert.toGitProxyConfig(JSON.stringify(newConfig));
 
     // 2. Get proxy module dynamically to avoid circular dependency
-    const proxy = (await import('../proxy')) as any;
+    const proxy = (await import('../proxy/index.js')) as any;
 
     // 3. Stop existing services
     await proxy.stop();
@@ -540,7 +545,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     handleErrorAndLog(error, 'Failed to apply new configuration');
     // Attempt to restart with previous config
     try {
-      const proxy = (await import('../proxy')) as any;
+      const proxy = (await import('../proxy/index.js')) as any;
       await proxy.start();
     } catch (startError: unknown) {
       handleErrorAndLog(startError, 'Failed to restart services');

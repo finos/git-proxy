@@ -26,6 +26,7 @@ import {
   removeUserCanPush,
   removeUserCanAuthorise,
   deleteRepo,
+  updateRepo,
 } from '../../../src/db/mongo/repo';
 import { Repo } from '../../../src/db/types';
 
@@ -161,6 +162,37 @@ describe.runIf(shouldRunMongoTests)('MongoDB Repo Integration Tests', () => {
 
       const repo = await getRepoById(testRepoId);
       expect(repo?.users.canAuthorise).not.toContain('removeauth');
+    });
+  });
+
+  describe('updateRepo', () => {
+    it('sets the given fields on the stored repo', async () => {
+      const created = await createRepo(createTestRepo({ name: 'update-fields-repo' }));
+
+      await updateRepo({
+        _id: created._id,
+        dateCreated: '2020-01-01T00:00:00.000Z',
+        lastModified: '2020-01-01T00:00:00.000Z',
+      } as Partial<Repo>);
+
+      const fetched = (await getRepoById(created._id!)) as Record<string, unknown> | null;
+      expect(fetched?.dateCreated).toBe('2020-01-01T00:00:00.000Z');
+      expect(fetched?.lastModified).toBe('2020-01-01T00:00:00.000Z');
+      expect(fetched?.name).toBe('update-fields-repo');
+    });
+
+    it('removes fields passed as undefined', async () => {
+      const created = await createRepo(createTestRepo({ name: 'unset-fields-repo' }));
+      await updateRepo({
+        _id: created._id,
+        dateCreated: '2020-01-01T00:00:00.000Z',
+      } as Partial<Repo>);
+
+      await updateRepo({ _id: created._id, dateCreated: undefined } as Partial<Repo>);
+
+      const fetched = (await getRepoById(created._id!)) as Record<string, unknown> | null;
+      expect(fetched?.dateCreated).toBeUndefined();
+      expect(fetched?.name).toBe('unset-fields-repo');
     });
   });
 

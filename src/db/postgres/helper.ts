@@ -191,6 +191,10 @@ const APP_SCHEMA_SQL = `
     data        JSONB NOT NULL
   );
   CREATE INDEX IF NOT EXISTS pushes_timestamp_idx ON pushes (timestamp DESC);
+
+  CREATE TABLE IF NOT EXISTS migrations (
+    id TEXT PRIMARY KEY
+  );
 `;
 
 const bootstrapAppSchema = async (pool: Pool): Promise<void> => {
