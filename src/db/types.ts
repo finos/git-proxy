@@ -16,6 +16,7 @@
 
 import { Action } from '../proxy/actions/Action';
 import MongoDBStore from 'connect-mongo';
+import { Store } from 'express-session';
 import { CompletedAttestation, Rejection } from '../proxy/processors/types';
 
 export type PushQuery = {
@@ -169,7 +170,8 @@ export interface PublicUser {
 }
 
 export interface Sink {
-  getSessionStore: () => MongoDBStore | undefined;
+  getSessionStore: () => MongoDBStore | Store | undefined;
+  ensureSessionStoreReady?: () => Promise<void>;
   getRepoPushRollupsByCanonicalUrl: () => Promise<RepoPushRollupsByCanonicalUrl>;
   getPushes: (query: Partial<PushQuery>) => Promise<Action[]>;
   getPushesForUserProfile: (emailVariants: string[], profileUsername: string) => Promise<Action[]>;

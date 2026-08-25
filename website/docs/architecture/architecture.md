@@ -484,9 +484,63 @@ Sample values:
 
 #### `sink`
 
-List of database sources. The first source with `enabled` set to `true` will be used. Currently, MongoDB and filesystem databases ([NeDB](https://www.npmjs.com/package/@seald-io/nedb)) are supported. By default, the filesystem database is used.
+List of database sources. The first source with `enabled` set to `true` will be used. GitProxy supports three sink backends:
+
+- **`fs`** — filesystem-backed [NeDB](https://www.npmjs.com/package/@seald-io/nedb). Default. Suitable for single-process deployments.
+- **`mongo`** — MongoDB via `connect-mongo` for session storage.
+- **`postgres`** — PostgreSQL via [`pg`](https://node-postgres.com/) + [`connect-pg-simple`](https://github.com/voxpelli/node-connect-pg-simple) for session storage.
 
 Each entry has its own unique configuration parameters.
+
+##### PostgreSQL configuration
+
+The `postgres` backend stores `users`, `repos`, `pushes`, and the `connect-pg-simple` `session` table in a single PostgreSQL database. The required tables are created and kept up to date on startup by a built-in versioned migration runner (see [Schema migrations](#schema-migrations) below), so pointing the proxy at an empty database is enough to get running.
+
+```json
+{
+  "sink": [
+    {
+      "type": "postgres",
+      "connectionString": "postgresql://user:pass@host:5432/gitproxy",
+      "enabled": true
+    }
+  ]
+}
+```
+
+If `connectionString` is omitted on the config entry, GitProxy falls back to the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable. This mirrors the behaviour of the mongo backend's `GIT_PROXY_MONGO_CONNECTION_STRING`.
+
+##### Schema migrations
+
+Schema changes are applied by a small built-in migration runner (`src/db/postgres/migrations.ts`). On every startup it:
+
+- ensures a `schema_migrations` bookkeeping table exists,
+- takes a transaction-scoped advisory lock so concurrently starting processes do not race, and
+- applies any migrations whose version has not been recorded yet, in order, recording each as it goes.
+
+Migrations are an ordered, append-only list of SQL statements defined in code. Version 1 is the initial schema; because it uses `CREATE TABLE IF NOT EXISTS`, databases that were bootstrapped by earlier releases adopt the runner transparently (version 1 is simply recorded). To evolve the schema, append a new entry with the next version number; never edit or reorder migrations that have already shipped.
+
+Notes and current limitations:
+
+- All pending migrations run inside a single transaction, so a statement that cannot run transactionally (for example `CREATE INDEX CONCURRENTLY`) is not yet supported by the runner.
+- Repo permissions (`canPush` / `canAuthorise`) are stored as a JSONB column on the `repos` table. A future PR may normalise these into a `repo_users` join table.
+- No data migration utility from `fs` or `mongo` to `postgres` — copy data yourself if needed.
+- No AWS RDS IAM authentication helper (the mongo backend has one via `AWS_CREDENTIAL_PROVIDER`); use a standard connection string for v1.
+- Only the `connectionString` form is supported; split `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` env vars are not consulted.
+- If `postgres` is selected as the active sink and the connection string cannot be resolved, GitProxy refuses to start rather than silently falling back to an in-memory session store.
+
+##### PostgreSQL design decisions
+
+The adapter follows a few deliberate choices, made for parity with the existing backends rather than for idiomatic SQL:
+
+- **Pushes stay documents.** A push is an audit record: written once, updated through a handful of state flips, and read back whole. The `pushes` table therefore keeps the entire action as a JSONB `data` column, with typed columns (`timestamp`, the status booleans) only for the fields that queries filter and sort on. This mirrors how the mongo and NeDB backends treat pushes and keeps the row shape stable as the `Action` type evolves.
+- **Users and repos are typed rows with JSONB edges.** Fields that queries touch get real columns; genuinely document-shaped parts (a user's `publicKeys`, the repo permission map) are JSONB.
+- **Identifiers are server-generated UUIDs** (`gen_random_uuid()`), the SQL analogue of mongo's ObjectIds. No compatibility between the backends' id formats is assumed anywhere in the app.
+- **Timestamps the app treats as strings stay strings.** `dateCreated` and `lastModified` are ISO-8601 `TEXT` columns so values round-trip byte-for-byte identically to the mongo and NeDB backends, with no timezone conversion on the way through.
+- **Same case rules as mongo**: usernames are lowercased on permission changes, and repo name lookups are lowercase.
+- **Email uniqueness is best-effort**, enforced by a partial unique index: any number of users may have no email (the ActiveDirectory `mail` attribute is optional), while a real address can only be claimed once. This matches the permissive behaviour of the other backends.
+- **Sessions use `connect-pg-simple`**, the postgres counterpart of the mongo backend's `connect-mongo` session store.
+- **Failures are loud.** If `postgres` is the active sink and no connection can be resolved, GitProxy refuses to start rather than silently degrading to an in-memory session store.
 
 Extending GitProxy to support other databases requires adding the relevant handlers and setup to the [`/src/db`](https://github.com/finos/git-proxy/blob/main/src/db/) directory. Feel free to [open an issue](https://github.com/finos/git-proxy/issues) requesting support for any specific databases - or [open a PR](https://github.com/finos/git-proxy/pulls) with the desired changes!
 
