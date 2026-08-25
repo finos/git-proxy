@@ -27,7 +27,8 @@ jobs:
 
       - name: Checkout Repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
+        with:
+          persist-credentials: false
       - name: Log in to Docker Hub
         if: github.repository_owner == 'finos'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
@@ -39,7 +40,7 @@ jobs:
         id: tags
         run: |
           if [ "${{ github.event_name }}" = "release" ]; then
-            echo "tags=${{ github.repository }}:${{ github.ref_name }},${{ github.repository }}:latest" >> $GITHUB_OUTPUT
+            echo "tags=${{ github.repository }}:${GITHUB_REF_NAME},${{ github.repository }}:latest" >> $GITHUB_OUTPUT
           else
             echo "tags=${{ github.repository }}:main" >> $GITHUB_OUTPUT
           fi

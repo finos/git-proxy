@@ -17,6 +17,8 @@ For project governance, roles, and voting procedures, see the [Governance sectio
   - [Fuzz Tests](#fuzz-tests)
   - [Coverage Requirements](#coverage-requirements)
 - [Code Quality](#code-quality)
+  - [Linting & Formatting](#linting--formatting)
+  - [GitHub Actions Security (zizmor)](#github-actions-security-zizmor)
 - [Configuration Schema](#configuration-schema)
 - [Submitting a Pull Request](#submitting-a-pull-request)
 - [Community](#community)
@@ -25,12 +27,13 @@ For project governance, roles, and voting procedures, see the [Governance sectio
 
 We actively support and test against the latest two LTS Node versions, currently 22 and 24. When a new LTS version rolls out (26, 28, etc.), we deprecate the oldest one.
 
-| Tool                                                                                                       | Version              | Notes                       |
-| ---------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------- |
-| [Node.js](https://nodejs.org/en/download)                                                                  | 22.13.1+, or 24.0.0+ | Check with `node -v`        |
-| [npm](https://npmjs.com/)                                                                                  | 8+                   | Bundled with Node.js        |
-| [Git](https://git-scm.com/downloads)                                                                       | Any recent version   | Must support HTTP/S         |
-| [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/) | Any recent version   | Required for E2E tests only |
+| Tool                                                                                                       | Version              | Notes                                                                                   |
+| ---------------------------------------------------------------------------------------------------------- | -------------------- | --------------------------------------------------------------------------------------- |
+| [Node.js](https://nodejs.org/en/download)                                                                  | 22.13.1+, or 24.0.0+ | Check with `node -v`                                                                    |
+| [npm](https://npmjs.com/)                                                                                  | 8+                   | Bundled with Node.js                                                                    |
+| [Git](https://git-scm.com/downloads)                                                                       | Any recent version   | Must support HTTP/S                                                                     |
+| [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/) | Any recent version   | Required for E2E tests only                                                             |
+| [zizmor](https://docs.zizmor.sh/)                                                                          | Any recent version   | Optional; scans GitHub Actions workflows (see [below](#github-actions-security-zizmor)) |
 
 ## Getting Started
 
@@ -349,6 +352,8 @@ The coverage report is written to `./coverage/`. If your PR is below the thresho
 
 ## Code Quality
 
+### Linting & Formatting
+
 ```bash
 npm run lint           # Run ESLint
 npm run lint:fix       # ESLint with auto-fix
@@ -357,6 +362,62 @@ npm run format:check   # Check formatting without modifying files
 ```
 
 CI runs ESLint, Prettier, and TypeScript type checks on every PR (see [`.github/workflows/lint.yml`](.github/workflows/lint.yml)).
+
+### GitHub Actions Security (zizmor)
+
+We use [zizmor](https://docs.zizmor.sh/) to statically analyze our GitHub Actions workflows for security issues (template injection, credential persistence, overly broad permissions, etc.). It runs in CI on every push and PR to `main` (see [`.github/workflows/zizmor.yml`](.github/workflows/zizmor.yml)) and uploads results to GitHub Code Scanning. By design, the CI job does **not** fail the build, so running zizmor locally before pushing is the best way to catch and fix findings early.
+
+If you change anything under `.github/workflows/`, you should first run zizmor locally.
+
+#### Install
+
+zizmor is a standalone tool. Install it with your preferred tool:
+
+```bash
+# Using uv (recommended)
+uv tool install zizmor
+
+# Using pipx
+pipx install zizmor
+
+# Using pip
+pip install zizmor
+
+# Using Homebrew (macOS/Linux)
+brew install zizmor
+
+# Using Cargo (Rust toolchain)
+cargo install zizmor
+```
+
+See the [zizmor installation docs](https://docs.zizmor.sh/installation/) for more options.
+
+#### Run
+
+```bash
+# Scan all workflows in the repo (matches the CI thresholds)
+zizmor --min-severity low --min-confidence low .
+
+# Scan a single workflow
+zizmor .github/workflows/ci.yml
+```
+
+By default zizmor runs in offline mode; some audits such as version pinning require online access. To enable the full set of checks, pass a GitHub token:
+
+```bash
+zizmor . --gh-token <GH_TOKEN>
+```
+
+#### Fixing findings
+
+Some findings have auto-fixes. Preview them before applying:
+
+```bash
+zizmor --fix=all --dry-run .   # Show what would change
+zizmor --fix=all .             # Apply safe and unsafe fixes
+```
+
+Always review auto-fixes before committing. For findings without an auto-fix, follow the linked audit documentation in the zizmor output. If a finding is a false positive or an accepted risk, suppress it with an inline [`# zizmor: ignore[<rule>]` comment](https://docs.zizmor.sh/usage/#ignoring-results) rather than disabling the check globally.
 
 ## Configuration Schema
 
@@ -399,7 +460,7 @@ The following checks must pass before a PR can be merged:
 - **Lint & format**: ESLint, Prettier, TypeScript type checks
 - **Commit lint**: Conventional Commits validation
 - **Coverage**: 80%+ patch coverage via CodeCov
-- **Security**: CodeQL analysis, dependency review, OpenSSF Scorecard
+- **Security**: CodeQL analysis, dependency review, OpenSSF Scorecard, and [zizmor](#github-actions-security-zizmor) GitHub Actions analysis
 
 ### Contributor License Agreement (CLA)
 

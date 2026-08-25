@@ -3,6 +3,8 @@
 name: 'PR'
 
 on:
+  # PR target used in accordance with README
+  # zizmor: ignore[dangerous-triggers]
   pull_request_target:
     types:
       - opened
