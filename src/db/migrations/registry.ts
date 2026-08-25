@@ -15,5 +15,6 @@
  */
 
 import type { Migration } from './index';
+import { populateRepoDates } from './populateRepoDates';
 
-export const migrations: Migration[] = [];
+export const migrations: Migration[] = [populateRepoDates];
