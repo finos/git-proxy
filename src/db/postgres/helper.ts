@@ -19,6 +19,7 @@ import session, { Store } from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 
 import { getDatabase } from '../../config';
+import { runMigrations } from './schemaMigrations';
 
 type DatabaseConfig = ReturnType<typeof getDatabase>;
 
@@ -81,74 +82,16 @@ const ensurePool = (): Pool => {
   return _pool;
 };
 
-const APP_SCHEMA_SQL = `
-  CREATE TABLE IF NOT EXISTS users (
-    _id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    username      TEXT NOT NULL UNIQUE,
-    email         TEXT,
-    password      TEXT,
-    git_account   TEXT NOT NULL,
-    admin         BOOLEAN NOT NULL DEFAULT FALSE,
-    oidc_id       TEXT UNIQUE,
-    public_keys   JSONB NOT NULL DEFAULT '[]'::jsonb,
-    display_name  TEXT,
-    title         TEXT
-  );
-  ALTER TABLE users ADD COLUMN IF NOT EXISTS public_keys JSONB NOT NULL DEFAULT '[]'::jsonb;
-  ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
-  ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_key;
-  -- Email uniqueness is best-effort, like the mongo/fs backends: a real
-  -- address can only be claimed once, but any number of users may have no
-  -- email (the AD "mail" attribute is optional, for instance).
-  CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique
-    ON users (email) WHERE email IS NOT NULL AND email <> '';
-
-  CREATE TABLE IF NOT EXISTS repos (
-    _id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project        TEXT NOT NULL DEFAULT '',
-    name           TEXT NOT NULL,
-    url            TEXT NOT NULL UNIQUE,
-    users          JSONB NOT NULL DEFAULT '{"canPush":[],"canAuthorise":[]}'::jsonb,
-    date_created   TEXT,
-    last_modified  TEXT
-  );
-  ALTER TABLE repos ADD COLUMN IF NOT EXISTS date_created TEXT;
-  ALTER TABLE repos ADD COLUMN IF NOT EXISTS last_modified TEXT;
-  CREATE INDEX IF NOT EXISTS repos_name_idx ON repos (name);
-
-  CREATE TABLE IF NOT EXISTS pushes (
-    id          TEXT PRIMARY KEY,
-    timestamp   BIGINT NOT NULL,
-    type        TEXT,
-    error       BOOLEAN NOT NULL DEFAULT FALSE,
-    blocked     BOOLEAN NOT NULL DEFAULT FALSE,
-    allow_push  BOOLEAN NOT NULL DEFAULT FALSE,
-    authorised  BOOLEAN NOT NULL DEFAULT FALSE,
-    canceled    BOOLEAN NOT NULL DEFAULT FALSE,
-    rejected    BOOLEAN NOT NULL DEFAULT FALSE,
-    data        JSONB NOT NULL
-  );
-  CREATE INDEX IF NOT EXISTS pushes_timestamp_idx ON pushes (timestamp DESC);
-
-  CREATE TABLE IF NOT EXISTS migrations (
-    id TEXT PRIMARY KEY
-  );
-`;
-
-const bootstrapAppSchema = async (pool: Pool): Promise<void> => {
-  await pool.query(APP_SCHEMA_SQL);
-};
-
 /**
- * Lazily resolves the pg Pool and runs the app schema bootstrap exactly once
- * per process. All adapter modules acquire the pool through this function so
- * the bootstrap completes before any query against `users` / `repos` / `pushes`
+ * Lazily resolves the pg Pool and runs any pending schema migrations exactly
+ * once per process. All adapter modules acquire the pool through this function
+ * so migrations complete before any query against `users` / `repos` / `pushes`
  * is executed.
  */
 export const connect = async (): Promise<Pool> => {
   const pool = ensurePool();
   if (!_bootstrapPromise) {
-    _bootstrapPromise = bootstrapAppSchema(pool).catch((err) => {
+    _bootstrapPromise = runMigrations(pool).catch((err) => {
       // Reset so the next caller retries instead of being permanently latched
       // onto a rejected promise.
       _bootstrapPromise = null;
