@@ -19,6 +19,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 const mockPoolQuery = vi.fn();
 const mockPoolEnd = vi.fn();
 const mockPoolCtor = vi.fn();
+const mockPoolOn = vi.fn();
 const mockPoolConnect = vi.fn();
 const mockClientQuery = vi.fn();
 const mockClientRelease = vi.fn();
@@ -30,6 +31,7 @@ vi.mock('pg', () => {
     }
     query = mockPoolQuery;
     end = mockPoolEnd;
+    on = mockPoolOn;
     connect = mockPoolConnect;
   }
   return { Pool };
@@ -122,6 +124,28 @@ describe('PostgreSQL - helper', async () => {
       });
 
       await expect(query('SELECT 1')).rejects.toThrow('Postgres connection string is not provided');
+    });
+  });
+
+  describe('pool error handling', () => {
+    it('registers an idle-client error listener that logs without crashing', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+      });
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      await connect();
+
+      const errorRegistration = mockPoolOn.mock.calls.find((call) => call[0] === 'error');
+      expect(errorRegistration).toBeDefined();
+
+      const handler = errorRegistration![1] as (err: Error) => void;
+      expect(() => handler(new Error('connection terminated unexpectedly'))).not.toThrow();
+      expect(errorSpy).toHaveBeenCalled();
+
+      errorSpy.mockRestore();
     });
   });
 
