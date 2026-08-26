@@ -30,7 +30,10 @@ const getPush = async (id: string): Promise<ServiceResult<PushActionView>> => {
     const data: Action = response.data;
     const actionView: PushActionView = {
       ...data,
-      diff: data.steps.find((x: Step) => x.stepName === 'diff')!,
+      diff:
+        typeof data.diff == 'string'
+          ? data.diff
+          : data.steps.find((x: Step) => x.stepName === 'diff')!,
     };
     return successResult(actionView);
   } catch (error: unknown) {

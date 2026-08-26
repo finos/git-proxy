@@ -54,7 +54,7 @@ export interface BackendResponse {
 }
 
 export interface PushActionView extends Omit<Action, ActionMethods> {
-  diff: Step;
+  diff: Step | string;
 }
 
 export interface RepoView extends Repo {
