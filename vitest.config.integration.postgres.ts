@@ -24,11 +24,11 @@ export default defineConfig({
     hookTimeout: 10000,
     setupFiles: ['test/setup-integration-postgres.ts'],
     pool: 'forks',
-    poolOptions: {
-      forks: {
-        singleFork: true,
-      },
-    },
+    // The files share one database and some of them drop and recreate its
+    // tables, so they must not run concurrently. vitest 4 removed the old
+    // poolOptions.forks.singleFork switch (it silently no-ops), so file
+    // parallelism is disabled explicitly.
+    fileParallelism: false,
     env: {
       NODE_ENV: 'test',
       RUN_POSTGRES_TESTS: 'true',
