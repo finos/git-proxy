@@ -14,25 +14,90 @@
  * limitations under the License.
  */
 
-import { Pool, QueryResult, QueryResultRow } from 'pg';
+import { Pool, PoolConfig, QueryResult, QueryResultRow } from 'pg';
 import session, { Store } from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 
 import { getDatabase } from '../../config';
 import { runMigrations } from './schemaMigrations';
 
+type DatabaseConfig = ReturnType<typeof getDatabase>;
+
 let _pool: Pool | null = null;
 let _bootstrapPromise: Promise<void> | null = null;
+
+/**
+ * True when some Postgres connection is configured: an explicit connection
+ * string, the discrete `host` field, or any of the standard `PG*` environment
+ * variables that identify a target (`PGHOST`, `PGHOSTADDR`, `PGUSER`,
+ * `PGDATABASE`). Used to refuse startup loudly rather than silently defaulting
+ * to `localhost`.
+ */
+const hasConnectionConfig = (db: DatabaseConfig): boolean =>
+  Boolean(
+    db.connectionString ||
+    db.host ||
+    process.env.PGHOST ||
+    process.env.PGHOSTADDR ||
+    process.env.PGUSER ||
+    process.env.PGDATABASE,
+  );
+
+/**
+ * Build a `pg` PoolConfig from the resolved database config. A connection
+ * string (already env-resolved by `getDatabase`) takes precedence; otherwise
+ * the discrete fields are used. When neither is set, `pg` reads the `PG*`
+ * environment variables itself.
+ */
+const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
+  const config: PoolConfig = {};
+  if (db.connectionString) {
+    if (
+      db.host !== undefined ||
+      db.port !== undefined ||
+      db.user !== undefined ||
+      db.password !== undefined ||
+      db.database !== undefined
+    ) {
+      console.warn(
+        '[postgres] connectionString is set; ignoring the discrete host/port/user/password/database fields',
+      );
+    }
+    config.connectionString = db.connectionString;
+  } else {
+    if (db.host !== undefined) config.host = db.host;
+    if (db.port !== undefined) config.port = db.port;
+    if (db.user !== undefined) config.user = db.user;
+    if (db.password !== undefined) config.password = db.password;
+    if (db.database !== undefined) config.database = db.database;
+  }
+  // TLS applies regardless of how the connection itself was configured.
+  if (db.ssl !== undefined) config.ssl = db.ssl as PoolConfig['ssl'];
+
+  // Optional pool tuning.
+  if (db.pool) {
+    if (db.pool.max !== undefined) config.max = db.pool.max;
+    if (db.pool.idleTimeoutMillis !== undefined) {
+      config.idleTimeoutMillis = db.pool.idleTimeoutMillis;
+    }
+    if (db.pool.connectionTimeoutMillis !== undefined) {
+      config.connectionTimeoutMillis = db.pool.connectionTimeoutMillis;
+    }
+  }
+  return config;
+};
 
 const ensurePool = (): Pool => {
   if (_pool) return _pool;
 
-  const connectionString = getDatabase().connectionString;
-  if (!connectionString) {
-    throw new Error('Postgres connection string is not provided');
+  const db = getDatabase();
+  if (!hasConnectionConfig(db)) {
+    throw new Error(
+      'Postgres connection is not configured (set connectionString, the host/port/user/password/database fields, or the PG* environment variables)',
+    );
   }
 
-  _pool = new Pool({ connectionString });
+  _pool = new Pool(buildPoolConfig(db));
   // An idle client in the pool can emit 'error' (e.g. the backend dropped the
   // connection). Without a listener node treats this as an uncaught exception
   // and crashes the process; log it instead and let the pool recycle the client.
@@ -90,10 +155,9 @@ export const resetConnection = async (): Promise<void> => {
  * in any multi-process deployment. Throw loudly instead.
  */
 export const getSessionStore = (): Store => {
-  const connectionString = getDatabase().connectionString;
-  if (!connectionString) {
+  if (!hasConnectionConfig(getDatabase())) {
     throw new Error(
-      'Postgres connection string is required for session storage (set it in `sink[].connectionString` or via GIT_PROXY_POSTGRES_CONNECTION_STRING)',
+      'Postgres connection is required for session storage (set connectionString, the host/port/user/password/database fields, or the PG* environment variables)',
     );
   }
 
