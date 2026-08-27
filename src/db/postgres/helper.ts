@@ -106,6 +106,11 @@ const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
   if (iamAuthEnabled) {
     // IAM auth supplies the password as a generated token, so the connection is
     // driven by the discrete fields (or PG* env), never a connection string.
+    if (db.connectionString) {
+      console.warn(
+        '[postgres] awsIamAuth is enabled; ignoring connectionString (IAM mode uses the discrete host/port/user/database fields)',
+      );
+    }
     if (db.host !== undefined) config.host = db.host;
     if (db.port !== undefined) config.port = db.port;
     if (db.user !== undefined) config.user = db.user;
@@ -136,8 +141,26 @@ const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
   // auth mandates TLS, so default it on when IAM is enabled and `ssl` is unset.
   if (db.ssl !== undefined) {
     config.ssl = db.ssl as PoolConfig['ssl'];
+    if (iamAuthEnabled && typeof db.ssl === 'object' && db.ssl !== null && !('ca' in db.ssl)) {
+      console.warn(
+        '[postgres] awsIamAuth: the ssl options carry no `ca`; RDS server certificates chain to ' +
+          "Amazon's RDS root CA, which is not in Node's default trust store, so verification " +
+          'will fail unless the RDS CA bundle is supplied via ssl.ca',
+      );
+    }
   } else if (iamAuthEnabled) {
+    // RDS requires TLS for IAM auth, so it defaults on. `ssl: true` verifies
+    // against Node's default trust store, which does NOT contain Amazon's RDS
+    // root CA; connecting to a real RDS endpoint therefore needs the RDS CA
+    // bundle supplied via `ssl.ca`. The default stays verify-on rather than
+    // silently downgrading transport security.
     config.ssl = true;
+    console.warn(
+      '[postgres] awsIamAuth: ssl defaulted to true, which verifies against ' +
+        "Node's default trust store; connections to RDS will fail certificate " +
+        'verification unless the RDS CA bundle is supplied via ssl.ca ' +
+        '(see the PostgreSQL section of the architecture doc)',
+    );
   }
 
   // Optional pool tuning.

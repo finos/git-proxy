@@ -354,6 +354,57 @@ describe('PostgreSQL - helper', async () => {
       expect(getOpts().ssl).toEqual(ssl);
     });
 
+    it('warns that the connection string is ignored when IAM auth is enabled', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://ignored/x',
+        host: 'rds.example.com',
+        user: 'gp',
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await connect();
+
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('ignoring connectionString'));
+      warnSpy.mockRestore();
+    });
+
+    it('warns when ssl defaults to true in IAM mode (RDS CA is not in the default trust store)', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        user: 'gp',
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await connect();
+
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('ssl.ca'));
+      warnSpy.mockRestore();
+    });
+
+    it('does not warn about ssl when a CA bundle is supplied', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        user: 'gp',
+        ssl: { rejectUnauthorized: true, ca: 'RDS_CA' },
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await connect();
+
+      const sslWarnings = warnSpy.mock.calls.filter(([m]) => String(m).includes('ssl.ca'));
+      expect(sslWarnings).toEqual([]);
+      warnSpy.mockRestore();
+    });
+
     it('ignores a connection string when IAM auth is enabled', async () => {
       getDatabaseMock.mockReturnValue({
         type: 'postgres',
