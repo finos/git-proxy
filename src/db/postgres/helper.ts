@@ -28,12 +28,20 @@ let _bootstrapPromise: Promise<void> | null = null;
 
 /**
  * True when some Postgres connection is configured: an explicit connection
- * string, the discrete `host` field, or the standard `PGHOST` environment
- * variable (which implies the `PG*` family is in use). Used to refuse startup
- * loudly rather than silently defaulting to `localhost`.
+ * string, the discrete `host` field, or any of the standard `PG*` environment
+ * variables that identify a target (`PGHOST`, `PGHOSTADDR`, `PGUSER`,
+ * `PGDATABASE`). Used to refuse startup loudly rather than silently defaulting
+ * to `localhost`.
  */
 const hasConnectionConfig = (db: DatabaseConfig): boolean =>
-  Boolean(db.connectionString || db.host || process.env.PGHOST);
+  Boolean(
+    db.connectionString ||
+    db.host ||
+    process.env.PGHOST ||
+    process.env.PGHOSTADDR ||
+    process.env.PGUSER ||
+    process.env.PGDATABASE,
+  );
 
 /**
  * Minimal shape of the optional `@aws-sdk/rds-signer` module, declared locally
@@ -104,6 +112,17 @@ const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
     if (db.database !== undefined) config.database = db.database;
     config.password = buildIamTokenProvider(db);
   } else if (db.connectionString) {
+    if (
+      db.host !== undefined ||
+      db.port !== undefined ||
+      db.user !== undefined ||
+      db.password !== undefined ||
+      db.database !== undefined
+    ) {
+      console.warn(
+        '[postgres] connectionString is set; ignoring the discrete host/port/user/password/database fields',
+      );
+    }
     config.connectionString = db.connectionString;
   } else {
     if (db.host !== undefined) config.host = db.host;
@@ -145,6 +164,12 @@ const ensurePool = (): Pool => {
   }
 
   _pool = new Pool(buildPoolConfig(db));
+  // An idle client in the pool can emit 'error' (e.g. the backend dropped the
+  // connection). Without a listener node treats this as an uncaught exception
+  // and crashes the process; log it instead and let the pool recycle the client.
+  _pool.on('error', (err) => {
+    console.error('Postgres pool error on idle client:', err);
+  });
   return _pool;
 };
 
