@@ -19,6 +19,9 @@ import { SAMPLE_REPO } from '../../src/proxy/constants';
 
 vi.mock('../../src/db/mongo', () => ({
   getRepoByUrl: vi.fn(),
+  getRepos: vi.fn().mockResolvedValue([]),
+  updateRepo: vi.fn(),
+  deriveCreatedAt: vi.fn(),
   getAppliedMigrations: vi.fn().mockResolvedValue([]),
   recordMigration: vi.fn(),
   unrecordMigration: vi.fn(),
@@ -26,6 +29,9 @@ vi.mock('../../src/db/mongo', () => ({
 
 vi.mock('../../src/db/file', () => ({
   getRepoByUrl: vi.fn(),
+  getRepos: vi.fn().mockResolvedValue([]),
+  updateRepo: vi.fn(),
+  deriveCreatedAt: vi.fn(),
   getAppliedMigrations: vi.fn().mockResolvedValue([]),
   recordMigration: vi.fn(),
   unrecordMigration: vi.fn(),
