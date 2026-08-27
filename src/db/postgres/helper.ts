@@ -28,12 +28,20 @@ let _bootstrapPromise: Promise<void> | null = null;
 
 /**
  * True when some Postgres connection is configured: an explicit connection
- * string, the discrete `host` field, or the standard `PGHOST` environment
- * variable (which implies the `PG*` family is in use). Used to refuse startup
- * loudly rather than silently defaulting to `localhost`.
+ * string, the discrete `host` field, or any of the standard `PG*` environment
+ * variables that identify a target (`PGHOST`, `PGHOSTADDR`, `PGUSER`,
+ * `PGDATABASE`). Used to refuse startup loudly rather than silently defaulting
+ * to `localhost`.
  */
 const hasConnectionConfig = (db: DatabaseConfig): boolean =>
-  Boolean(db.connectionString || db.host || process.env.PGHOST);
+  Boolean(
+    db.connectionString ||
+    db.host ||
+    process.env.PGHOST ||
+    process.env.PGHOSTADDR ||
+    process.env.PGUSER ||
+    process.env.PGDATABASE,
+  );
 
 /**
  * Build a `pg` PoolConfig from the resolved database config. A connection
@@ -44,6 +52,17 @@ const hasConnectionConfig = (db: DatabaseConfig): boolean =>
 const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
   const config: PoolConfig = {};
   if (db.connectionString) {
+    if (
+      db.host !== undefined ||
+      db.port !== undefined ||
+      db.user !== undefined ||
+      db.password !== undefined ||
+      db.database !== undefined
+    ) {
+      console.warn(
+        '[postgres] connectionString is set; ignoring the discrete host/port/user/password/database fields',
+      );
+    }
     config.connectionString = db.connectionString;
   } else {
     if (db.host !== undefined) config.host = db.host;

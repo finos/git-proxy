@@ -117,8 +117,9 @@ describe('PostgreSQL - helper', async () => {
     });
 
     it('throws when no connection is configured', async () => {
-      const savedPgHost = process.env.PGHOST;
-      delete process.env.PGHOST;
+      const PG_VARS = ['PGHOST', 'PGHOSTADDR', 'PGUSER', 'PGDATABASE'] as const;
+      const saved = PG_VARS.map((v) => [v, process.env[v]] as const);
+      for (const v of PG_VARS) delete process.env[v];
       getDatabaseMock.mockReturnValue({
         type: 'postgres',
         enabled: true,
@@ -127,11 +128,62 @@ describe('PostgreSQL - helper', async () => {
 
       await expect(query('SELECT 1')).rejects.toThrow('Postgres connection is not configured');
 
-      if (savedPgHost !== undefined) process.env.PGHOST = savedPgHost;
+      for (const [v, val] of saved) {
+        if (val !== undefined) process.env[v] = val;
+      }
+    });
+
+    it('accepts a PG* env setup that has no PGHOST (for example PGUSER/PGDATABASE)', async () => {
+      const PG_VARS = ['PGHOST', 'PGHOSTADDR', 'PGUSER', 'PGDATABASE'] as const;
+      const saved = PG_VARS.map((v) => [v, process.env[v]] as const);
+      for (const v of PG_VARS) delete process.env[v];
+      process.env.PGUSER = 'gitproxy';
+      process.env.PGDATABASE = 'gitproxy';
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: undefined,
+      });
+
+      await expect(query('SELECT 1')).resolves.toBeDefined();
+
+      for (const [v, val] of saved) {
+        if (val === undefined) delete process.env[v];
+        else process.env[v] = val;
+      }
     });
   });
 
   describe('connection config', () => {
+    it('warns when a connection string overrides discrete fields', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+        host: 'ignored-host',
+      });
+
+      await query('SELECT 1');
+
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('ignoring the discrete'));
+      warnSpy.mockRestore();
+    });
+
+    it('does not warn when only a connection string is set', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+      });
+
+      await query('SELECT 1');
+
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
     it('uses the connection string when provided', async () => {
       getDatabaseMock.mockReturnValue({
         type: 'postgres',
