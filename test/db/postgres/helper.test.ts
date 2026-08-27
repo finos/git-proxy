@@ -302,16 +302,23 @@ describe('PostgreSQL - helper', async () => {
         connectionString: 'postgresql://localhost/x',
       });
 
+      // Warm the pool first so the schema bootstrap's own client activity
+      // does not blend into the assertions below.
+      await connect();
+      mockClientQuery.mockClear();
+      mockClientRelease.mockClear();
+
       const result = await withTransaction(async (client) => {
         await client.query('SELECT 1');
         return 'ok';
       });
 
       expect(result).toBe('ok');
-      const statements = mockClientQuery.mock.calls.map(([sql]) => sql);
-      expect(statements[0]).toBe('BEGIN');
-      expect(statements).toContain('SELECT 1');
-      expect(statements[statements.length - 1]).toBe('COMMIT');
+      expect(mockClientQuery.mock.calls.map(([sql]) => sql)).toEqual([
+        'BEGIN',
+        'SELECT 1',
+        'COMMIT',
+      ]);
       expect(mockClientRelease).toHaveBeenCalledTimes(1);
     });
 
@@ -322,15 +329,17 @@ describe('PostgreSQL - helper', async () => {
         connectionString: 'postgresql://localhost/x',
       });
 
+      await connect();
+      mockClientQuery.mockClear();
+      mockClientRelease.mockClear();
+
       await expect(
         withTransaction(async () => {
           throw new Error('boom');
         }),
       ).rejects.toThrow('boom');
 
-      const statements = mockClientQuery.mock.calls.map(([sql]) => sql);
-      expect(statements[0]).toBe('BEGIN');
-      expect(statements[statements.length - 1]).toBe('ROLLBACK');
+      expect(mockClientQuery.mock.calls.map(([sql]) => sql)).toEqual(['BEGIN', 'ROLLBACK']);
       expect(mockClientRelease).toHaveBeenCalledTimes(1);
     });
   });
