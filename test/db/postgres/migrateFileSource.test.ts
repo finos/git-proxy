@@ -59,16 +59,43 @@ describe('PostgreSQL - migrate file source', () => {
 
     expect((await source.getUsers()).map((u) => u.username)).toEqual(['alice']);
     expect((await source.getRepos()).map((r) => r.url)).toEqual(['https://x/n.git']);
-    expect((await source.getPushes()).map((p) => p.id)).toEqual(['push-1']);
+    const pushes: { id?: string }[] = [];
+    for await (const batch of source.getPushBatches(100)) pushes.push(...batch);
+    expect(pushes.map((p) => p.id)).toEqual(['push-1']);
 
     await source.close();
   });
 
-  it('returns empty arrays when the datastores have no records', async () => {
-    const source = createFileSource(makeDataDir());
+  it('returns empty results when the datastores exist but have no records', async () => {
+    const dir = makeDataDir();
+    for (const file of ['users.db', 'repos.db', 'pushes.db']) {
+      fs.writeFileSync(path.join(dir, file), '');
+    }
+    const source = createFileSource(dir);
 
     expect(await source.getUsers()).toEqual([]);
     expect(await source.getRepos()).toEqual([]);
-    expect(await source.getPushes()).toEqual([]);
+    const batches: unknown[] = [];
+    for await (const batch of source.getPushBatches(100)) batches.push(batch);
+    expect(batches).toEqual([]);
+  });
+
+  it('fails fast when the data directory does not exist', () => {
+    expect(() => createFileSource(path.join(os.tmpdir(), 'gp-definitely-missing'))).toThrow(
+      /does not exist/,
+    );
+  });
+
+  it('fails fast when the directory holds no fs sink datastores', () => {
+    expect(() => createFileSource(makeDataDir())).toThrow(/No fs sink datastores/);
+  });
+
+  it('reports a corrupt datastore instead of treating it as empty', async () => {
+    const dir = makeDataDir();
+    fs.writeFileSync(path.join(dir, 'users.db'), 'this is not nedb json\n{broken');
+
+    const source = createFileSource(dir);
+
+    await expect(source.getUsers()).rejects.toThrow(/Failed to load/);
   });
 });

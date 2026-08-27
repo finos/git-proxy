@@ -43,10 +43,30 @@ export const createMongoSource = async (
     return docs.map((doc) => toClass(doc, proto) as T);
   };
 
+  // Pushes are streamed through a cursor rather than materialised: production
+  // tables can hold tens of thousands of documents that each carry a full
+  // diff, so a single toArray() would hold the entire table in memory.
+  const getPushBatches = (batchSize: number): AsyncIterable<Action[]> => ({
+    async *[Symbol.asyncIterator]() {
+      const cursor = db.collection('pushes').find().batchSize(batchSize);
+      let batch: Action[] = [];
+      for await (const doc of cursor) {
+        batch.push(toClass(doc, Action.prototype) as Action);
+        if (batch.length >= batchSize) {
+          yield batch;
+          batch = [];
+        }
+      }
+      if (batch.length > 0) {
+        yield batch;
+      }
+    },
+  });
+
   return {
     getUsers: () => readAll<User>('users', User.prototype),
     getRepos: () => readAll<Repo>('repos', Repo.prototype),
-    getPushes: () => readAll<Action>('pushes', Action.prototype),
+    getPushBatches,
     close: () => client.close(),
   };
 };

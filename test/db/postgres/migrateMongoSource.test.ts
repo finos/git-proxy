@@ -32,7 +32,14 @@ vi.mock('mongodb', () => ({
     db() {
       return {
         collection: (name: string) => ({
-          find: () => ({ toArray: () => Promise.resolve(docsByCollection[name] ?? []) }),
+          find: () => ({
+            toArray: () => Promise.resolve(docsByCollection[name] ?? []),
+            batchSize: (_n: number) => ({
+              async *[Symbol.asyncIterator]() {
+                for (const doc of docsByCollection[name] ?? []) yield doc;
+              },
+            }),
+          }),
         }),
       };
     }
@@ -62,7 +69,8 @@ describe('PostgreSQL - migrate mongo source', async () => {
 
     const users = await source.getUsers();
     const repos = await source.getRepos();
-    const pushes = await source.getPushes();
+    const pushes: { id?: string }[] = [];
+    for await (const batch of source.getPushBatches(100)) pushes.push(...batch);
 
     expect(users.map((u) => u.username)).toEqual(['alice']);
     expect(repos.map((r) => r.url)).toEqual(['https://x/n.git']);
@@ -73,5 +81,19 @@ describe('PostgreSQL - migrate mongo source', async () => {
     const source = await createMongoSource('mongodb://localhost/src');
     await source.close();
     expect(mockClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('splits pushes into batches of the requested size', async () => {
+    docsByCollection.pushes = [
+      { id: 'push-1', type: 'push' },
+      { id: 'push-2', type: 'push' },
+      { id: 'push-3', type: 'push' },
+    ];
+    const source = await createMongoSource('mongodb://localhost/src');
+
+    const batches: unknown[][] = [];
+    for await (const batch of source.getPushBatches(2)) batches.push(batch);
+
+    expect(batches.map((b) => b.length)).toEqual([2, 1]);
   });
 });

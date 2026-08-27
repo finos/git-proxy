@@ -21,6 +21,7 @@ import { hideBin } from 'yargs/helpers';
 
 import { getDatabase } from '../src/config';
 import * as postgres from '../src/db/postgres';
+import { resetConnection } from '../src/db/postgres/helper';
 import { migrate, MigrationSource } from '../src/db/postgres/migrate';
 import { createFileSource } from '../src/db/postgres/migrateFileSource';
 import { createMongoSource } from '../src/db/postgres/migrateMongoSource';
@@ -74,6 +75,9 @@ const main = async (): Promise<void> => {
     console.log(`  pushes: ${summary.pushes.imported} imported`);
   } finally {
     await source.close();
+    // Close the destination pool too, or its open handles keep the process
+    // alive after the summary prints.
+    await resetConnection();
   }
 };
 

@@ -27,7 +27,7 @@ const repo = (url: string): Repo => new Repo('proj', `name-${url}`, url);
 const makeSource = (over: Partial<MigrationSource> = {}): MigrationSource => ({
   getUsers: vi.fn().mockResolvedValue([]),
   getRepos: vi.fn().mockResolvedValue([]),
-  getPushes: vi.fn().mockResolvedValue([]),
+  getPushBatches: vi.fn(async function* () {}),
   close: vi.fn().mockResolvedValue(undefined),
   ...over,
 });
@@ -47,7 +47,9 @@ describe('PostgreSQL - migrate', () => {
     const source = makeSource({
       getUsers: vi.fn().mockResolvedValue([user('alice', 'alice@x.com'), user('bob', 'bob@x.com')]),
       getRepos: vi.fn().mockResolvedValue([repo('https://x/a.git')]),
-      getPushes: vi.fn().mockResolvedValue([{ id: 'p1' }, { id: 'p2' }, { id: 'p3' }]),
+      getPushBatches: vi.fn(async function* () {
+        yield [{ id: 'p1' }, { id: 'p2' }, { id: 'p3' }] as never;
+      }),
     });
     const destination = makeDestination();
 
@@ -136,6 +138,57 @@ describe('PostgreSQL - migrate', () => {
 
     expect(log).toHaveBeenCalledWith('Migrating 1 user(s)...');
     expect(log).toHaveBeenCalledWith('Migrating 0 repo(s)...');
-    expect(log).toHaveBeenCalledWith('Migrating 0 push(es)...');
+    expect(log).toHaveBeenCalledWith('Migrating pushes...');
+  });
+
+  it('writes pushes batch by batch and counts across batches', async () => {
+    const source = makeSource({
+      getPushBatches: vi.fn(async function* () {
+        yield [{ id: 'p1' }, { id: 'p2' }] as never;
+        yield [{ id: 'p3' }] as never;
+      }),
+    });
+    const destination = makeDestination();
+
+    const summary = await migrate(source, destination as never);
+
+    expect(summary.pushes).toEqual({ imported: 3 });
+    expect(destination.writeAudit).toHaveBeenCalledTimes(3);
+  });
+
+  it('passes user passwords through unchanged (already hashed at the source)', async () => {
+    // The destination is the raw postgres adapter, whose createUser stores the
+    // supplied value verbatim; hashing lives in the service-level wrapper in
+    // src/db/index.ts. Source passwords are bcrypt hashes and must survive
+    // the copy byte for byte, or every migrated login would break.
+    const hashed = '$2a$10$abcdefghijklmnopqrstuv';
+    const source = makeSource({
+      getUsers: vi
+        .fn()
+        .mockResolvedValue([Object.assign(user('alice', 'alice@x.com'), { password: hashed })]),
+    });
+    const destination = makeDestination();
+
+    await migrate(source, destination as never);
+
+    expect(destination.createUser).toHaveBeenCalledWith(
+      expect.objectContaining({ password: hashed }),
+    );
+  });
+
+  it('passes repo permissions through createRepo without separate role calls', async () => {
+    // The adapter's createRepo persists the whole users permission map, so the
+    // migration needs no addUserCanPush / addUserCanAuthorise follow-ups.
+    const seeded = Object.assign(repo('https://x/a.git'), {
+      users: { canPush: ['alice'], canAuthorise: ['bob'] },
+    });
+    const source = makeSource({ getRepos: vi.fn().mockResolvedValue([seeded]) });
+    const destination = makeDestination();
+
+    await migrate(source, destination as never);
+
+    expect(destination.createRepo).toHaveBeenCalledWith(
+      expect.objectContaining({ users: { canPush: ['alice'], canAuthorise: ['bob'] } }),
+    );
   });
 });

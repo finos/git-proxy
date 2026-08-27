@@ -21,10 +21,17 @@ import { Repo, User } from '../types';
  * A read-only view over a backend (mongo or fs) that data is migrated *from*.
  * Implementations own their own connection and must be closed by the caller.
  */
+export const DEFAULT_PUSH_BATCH_SIZE = 500;
+
 export interface MigrationSource {
   getUsers(): Promise<User[]>;
   getRepos(): Promise<Repo[]>;
-  getPushes(): Promise<Action[]>;
+  /**
+   * Stream pushes in batches of at most `batchSize`. Production datasets can
+   * hold tens of thousands of large push documents, so sources must not
+   * require the whole table in memory at once.
+   */
+  getPushBatches(batchSize: number): AsyncIterable<Action[]>;
   close(): Promise<void>;
 }
 
@@ -50,6 +57,8 @@ export interface MigrationSummary {
 export interface MigrateOptions {
   /** Receives human-readable progress lines. Defaults to a no-op. */
   log?: (message: string) => void;
+  /** Maximum pushes fetched and written per batch. Defaults to 500. */
+  pushBatchSize?: number;
 }
 
 /**
@@ -104,11 +113,14 @@ export const migrate = async (
     summary.repos.imported++;
   }
 
-  const pushes = await source.getPushes();
-  log(`Migrating ${pushes.length} push(es)...`);
-  for (const push of pushes) {
-    await destination.writeAudit(push);
-    summary.pushes.imported++;
+  const batchSize = options.pushBatchSize ?? DEFAULT_PUSH_BATCH_SIZE;
+  log('Migrating pushes...');
+  for await (const batch of source.getPushBatches(batchSize)) {
+    for (const push of batch) {
+      await destination.writeAudit(push);
+      summary.pushes.imported++;
+    }
+    log(`  ${summary.pushes.imported} push(es) migrated`);
   }
 
   return summary;
