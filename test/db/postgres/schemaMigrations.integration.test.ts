@@ -39,7 +39,7 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Schema Migration Integration 
     const versions = await query<{ version: number }>(
       'SELECT version FROM schema_migrations ORDER BY version',
     );
-    expect(versions.rows.map((row) => row.version)).toEqual([1, 2]);
+    expect(versions.rows.map((row) => row.version)).toEqual([1, 2, 3]);
 
     const tables = await query<{ tablename: string }>(
       `SELECT tablename FROM pg_tables
@@ -71,6 +71,6 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Schema Migration Integration 
     await connect();
 
     const versions = await query<{ version: number }>('SELECT version FROM schema_migrations');
-    expect(versions.rows.map((row) => row.version)).toEqual([1, 2]);
+    expect(versions.rows.map((row) => row.version)).toEqual([1, 2, 3]);
   });
 });
