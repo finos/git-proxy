@@ -368,8 +368,12 @@ describe('PostgreSQL - helper', async () => {
 
   describe('getSessionStore', () => {
     it('throws when no connection is configured — no MemoryStore fallback', () => {
-      const savedPgHost = process.env.PGHOST;
-      delete process.env.PGHOST;
+      // GitHub-hosted runners preset PGUSER/PGPASSWORD for their bundled
+      // postgres tooling, and the connection guard honours the PG* family, so
+      // every variable it reads must be cleared here.
+      const PG_VARS = ['PGHOST', 'PGHOSTADDR', 'PGUSER', 'PGDATABASE'] as const;
+      const saved = PG_VARS.map((v) => [v, process.env[v]] as const);
+      for (const v of PG_VARS) delete process.env[v];
       getDatabaseMock.mockReturnValue({
         type: 'postgres',
         enabled: true,
@@ -380,7 +384,9 @@ describe('PostgreSQL - helper', async () => {
         /Postgres connection is required for session storage/,
       );
 
-      if (savedPgHost !== undefined) process.env.PGHOST = savedPgHost;
+      for (const [v, val] of saved) {
+        if (val !== undefined) process.env[v] = val;
+      }
     });
 
     it('passes the shared pool to connect-pg-simple with createTableIfMissing', () => {
