@@ -15,7 +15,7 @@
  */
 
 import { Repo, RepoQuery } from '../types';
-import { query } from './helper';
+import { query, withTransaction } from './helper';
 
 interface RepoRow {
   _id: string;
@@ -197,20 +197,39 @@ export const updateRepo = async (repo: Partial<Repo>): Promise<void> => {
     throw new Error('updateRepo requires at least one field to update');
   }
 
-  if (sets.length > 0) {
-    values.push(_id);
-    await query(`UPDATE repos SET ${sets.join(', ')} WHERE _id = $${values.length}`, values);
-  }
+  // One transaction for the whole update: the row change, the permission
+  // replacement and the last_modified bump land together or not at all, so a
+  // failure partway cannot leave a repo without its roles.
+  await withTransaction(async (client) => {
+    if (sets.length > 0) {
+      await client.query(`UPDATE repos SET ${sets.join(', ')} WHERE _id = $${values.length + 1}`, [
+        ...values,
+        _id,
+      ]);
+    }
 
-  if (users !== undefined) {
-    await query(`DELETE FROM repo_users WHERE repo_id = $1`, [_id]);
-    for (const username of users.canPush ?? []) {
-      await addUserToRole(_id, username, 'canPush');
+    if (users !== undefined) {
+      await client.query(`DELETE FROM repo_users WHERE repo_id = $1`, [_id]);
+      const roles = [
+        ['canPush', users.canPush ?? []],
+        ['canAuthorise', users.canAuthorise ?? []],
+      ] as const;
+      for (const [role, names] of roles) {
+        for (const username of names) {
+          await client.query(
+            `INSERT INTO repo_users (repo_id, username, role)
+             VALUES ($1, $2, $3)
+             ON CONFLICT DO NOTHING`,
+            [_id, username.toLowerCase(), role],
+          );
+        }
+      }
+      await client.query(`UPDATE repos SET last_modified = $2 WHERE _id = $1`, [
+        _id,
+        new Date().toISOString(),
+      ]);
     }
-    for (const username of users.canAuthorise ?? []) {
-      await addUserToRole(_id, username, 'canAuthorise');
-    }
-  }
+  });
 };
 
 export const addUserCanPush = (_id: string, user: string): Promise<void> =>

@@ -122,14 +122,17 @@ export const MIGRATIONS: Migration[] = [
   -- Backfill the normalised table from the existing JSONB permissions. The
   -- legacy repos.users column is dropped in a later migration once the adapter
   -- reads and writes repo_users instead.
+  -- Usernames are lowercased to match the runtime writers (addUserToRole and
+  -- friends lowercase on insert), so legacy mixed-case entries stay
+  -- retrievable; ON CONFLICT collapses any case-only duplicates.
   INSERT INTO repo_users (repo_id, username, role)
-  SELECT r._id, elem.username, 'canPush'
+  SELECT r._id, lower(elem.username), 'canPush'
     FROM repos r,
          jsonb_array_elements_text(coalesce(r.users->'canPush', '[]'::jsonb)) AS elem(username)
   ON CONFLICT DO NOTHING;
 
   INSERT INTO repo_users (repo_id, username, role)
-  SELECT r._id, elem.username, 'canAuthorise'
+  SELECT r._id, lower(elem.username), 'canAuthorise'
     FROM repos r,
          jsonb_array_elements_text(coalesce(r.users->'canAuthorise', '[]'::jsonb)) AS elem(username)
   ON CONFLICT DO NOTHING;
