@@ -18,7 +18,7 @@ import { describe, it, expect } from 'vitest';
 import { Pool } from 'pg';
 
 import { connect, query, resetConnection } from '../../../src/db/postgres/helper';
-import { MIGRATIONS, runMigrations } from '../../../src/db/postgres/migrations';
+import { MIGRATIONS, runMigrations } from '../../../src/db/postgres/schemaMigrations';
 
 const shouldRunPostgresTests = process.env.RUN_POSTGRES_TESTS === 'true';
 
