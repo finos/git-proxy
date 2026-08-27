@@ -117,4 +117,9 @@ describe('PostgreSQL - migrations', () => {
     await expect(runMigrations(pool as never)).rejects.toThrow('migration boom');
     expect(release).toHaveBeenCalledTimes(1);
   });
+
+  it('lowercases usernames in the repo_users backfill to match the runtime writers', () => {
+    const v4 = MIGRATIONS.find((m) => m.version === 4);
+    expect(v4?.sql).toContain('lower(elem.username)');
+  });
 });

@@ -131,6 +131,9 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Schema Migration Integration 
       const single = await seed('single', { canPush: ['alice'], canAuthorise: ['bob'] });
       const multi = await seed('multi', { canPush: ['amy', 'cara'], canAuthorise: ['dan'] });
       const both = await seed('both', { canPush: ['eve'], canAuthorise: ['eve'] });
+      // Legacy entries can be mixed case; the runtime writers lowercase, so the
+      // backfill must too or these users become unretrievable.
+      const mixed = await seed('mixed', { canPush: ['Alice'], canAuthorise: ['ALICE', 'alice'] });
       const empty = await seed('empty', { canPush: [], canAuthorise: [] });
 
       // Apply the remaining migrations: v3 creates repo_users + backfills, v4
@@ -170,6 +173,12 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Schema Migration Integration 
       expect(await permsOf(both)).toEqual([
         { username: 'eve', role: 'canAuthorise' },
         { username: 'eve', role: 'canPush' },
+      ]);
+
+      // Mixed-case entries are lowercased and case-only duplicates collapse.
+      expect(await permsOf(mixed)).toEqual([
+        { username: 'alice', role: 'canAuthorise' },
+        { username: 'alice', role: 'canPush' },
       ]);
       // A repo with no permissions backfills nothing.
       expect(await permsOf(empty)).toEqual([]);

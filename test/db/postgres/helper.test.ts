@@ -63,8 +63,14 @@ vi.mock('../../../src/config', () => ({
 }));
 
 describe('PostgreSQL - helper', async () => {
-  const { connect, query, resetConnection, getSessionStore, ensureSessionStoreReady } =
-    await import('../../../src/db/postgres/helper');
+  const {
+    connect,
+    query,
+    resetConnection,
+    getSessionStore,
+    ensureSessionStoreReady,
+    withTransaction,
+  } = await import('../../../src/db/postgres/helper');
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -285,6 +291,47 @@ describe('PostgreSQL - helper', async () => {
       });
       await connect();
       expect(mockPoolCtor).toHaveBeenCalledWith({ host: 'db', max: 5 });
+    });
+  });
+
+  describe('withTransaction', () => {
+    it('wraps the callback in BEGIN/COMMIT and releases the client', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+      });
+
+      const result = await withTransaction(async (client) => {
+        await client.query('SELECT 1');
+        return 'ok';
+      });
+
+      expect(result).toBe('ok');
+      const statements = mockClientQuery.mock.calls.map(([sql]) => sql);
+      expect(statements[0]).toBe('BEGIN');
+      expect(statements).toContain('SELECT 1');
+      expect(statements[statements.length - 1]).toBe('COMMIT');
+      expect(mockClientRelease).toHaveBeenCalledTimes(1);
+    });
+
+    it('rolls back and rethrows when the callback fails', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+      });
+
+      await expect(
+        withTransaction(async () => {
+          throw new Error('boom');
+        }),
+      ).rejects.toThrow('boom');
+
+      const statements = mockClientQuery.mock.calls.map(([sql]) => sql);
+      expect(statements[0]).toBe('BEGIN');
+      expect(statements[statements.length - 1]).toBe('ROLLBACK');
+      expect(mockClientRelease).toHaveBeenCalledTimes(1);
     });
   });
 

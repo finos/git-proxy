@@ -383,4 +383,15 @@ describe('PostgreSQL - Repo', async () => {
       expect(repos[0].lastModified).toBe('2026-01-02T00:00:00.000Z');
     });
   });
+
+  it('lowercases usernames when replacing permissions through updateRepo', async () => {
+    mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+    await updateRepo({ _id: 'r1', users: { canPush: ['Alice'], canAuthorise: ['BOB'] } });
+
+    const inserted = mockQuery.mock.calls
+      .filter(([sql]) => /INSERT INTO repo_users/.test(String(sql)))
+      .map(([, params]) => params?.[1]);
+    expect(inserted).toEqual(['alice', 'bob']);
+  });
 });
