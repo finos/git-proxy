@@ -20,6 +20,11 @@ const mockQuery = vi.fn();
 
 vi.mock('../../../src/db/postgres/helper', () => ({
   query: mockQuery,
+  // Runs the callback with a client whose query records into the same mock,
+  // so tests assert the statement sequence; transactional semantics themselves
+  // are covered by the withTransaction tests in helper.test.ts.
+  withTransaction: (fn: (client: { query: typeof mockQuery }) => Promise<unknown>) =>
+    fn({ query: mockQuery }),
 }));
 
 describe('PostgreSQL - Repo', async () => {
@@ -42,7 +47,7 @@ describe('PostgreSQL - Repo', async () => {
   });
 
   describe('getRepos', () => {
-    it('builds WHERE clauses for name, project and url and maps rows', async () => {
+    it('builds WHERE clauses and maps the join-aggregated rows', async () => {
       mockQuery.mockResolvedValue({
         rowCount: 1,
         rows: [
@@ -51,7 +56,8 @@ describe('PostgreSQL - Repo', async () => {
             project: 'finos',
             name: 'git-proxy',
             url: 'https://example.com/finos/git-proxy',
-            users: { canPush: ['bob'], canAuthorise: [] },
+            can_push: ['bob'],
+            can_authorise: [],
           },
         ],
       });
@@ -63,19 +69,23 @@ describe('PostgreSQL - Repo', async () => {
       });
 
       const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('LEFT JOIN repo_users');
       expect(sql).toContain('WHERE');
-      expect(sql).toContain('name = $1');
-      expect(sql).toContain('project = $2');
-      expect(sql).toContain('url = $3');
+      expect(sql).toContain('r.name = $1');
+      expect(sql).toContain('r.project = $2');
+      expect(sql).toContain('r.url = $3');
       expect(params).toEqual(['git-proxy', 'finos', 'https://example.com/finos/git-proxy']);
       expect(repos[0].users.canPush).toEqual(['bob']);
     });
 
-    it('omits the WHERE clause when no query is supplied', async () => {
+    it('adds no filter clause but still groups when no query is supplied', async () => {
       mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
       await getRepos();
-      const [sql] = mockQuery.mock.calls[0];
-      expect(sql).not.toContain('WHERE');
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(params).toEqual([]);
+      expect(sql).not.toContain('r.name =');
+      expect(sql).not.toContain('r.url =');
+      expect(sql).toContain('GROUP BY');
     });
   });
 
@@ -85,7 +95,7 @@ describe('PostgreSQL - Repo', async () => {
       expect(await getRepoByUrl('https://missing')).toBeNull();
     });
 
-    it('maps the row when found', async () => {
+    it('maps the aggregated row when found', async () => {
       mockQuery.mockResolvedValue({
         rowCount: 1,
         rows: [
@@ -94,7 +104,8 @@ describe('PostgreSQL - Repo', async () => {
             project: 'p',
             name: 'n',
             url: 'https://example.com/p/n',
-            users: { canPush: [], canAuthorise: ['amy'] },
+            can_push: [],
+            can_authorise: ['amy'],
           },
         ],
       });
@@ -103,18 +114,8 @@ describe('PostgreSQL - Repo', async () => {
     });
   });
 
-  describe('deleteRepo', () => {
-    it('issues a DELETE by _id', async () => {
-      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
-      await deleteRepo('r1');
-      const [sql, params] = mockQuery.mock.calls[0];
-      expect(sql).toContain('DELETE FROM repos WHERE _id = $1');
-      expect(params).toEqual(['r1']);
-    });
-  });
-
   describe('read normalization', () => {
-    it('returns empty arrays when stored users is null', async () => {
+    it('returns empty arrays when the aggregated columns are null', async () => {
       mockQuery.mockResolvedValue({
         rowCount: 1,
         rows: [
@@ -123,7 +124,8 @@ describe('PostgreSQL - Repo', async () => {
             project: 'p',
             name: 'n',
             url: 'https://example.com/p/n',
-            users: null,
+            can_push: null,
+            can_authorise: null,
           },
         ],
       });
@@ -141,7 +143,7 @@ describe('PostgreSQL - Repo', async () => {
   });
 
   describe('createRepo', () => {
-    it('serialises default users JSONB and stamps _id from RETURNING', async () => {
+    it('inserts the repo row and stamps _id from RETURNING', async () => {
       mockQuery.mockResolvedValue({ rowCount: 1, rows: [{ _id: 'generated-uuid' }] });
 
       const created = await createRepo({
@@ -152,46 +154,78 @@ describe('PostgreSQL - Repo', async () => {
       } as never);
 
       expect(created._id).toBe('generated-uuid');
-      const params = mockQuery.mock.calls[0][1] as unknown[];
-      // Last param is the JSONB string for users.
-      expect(JSON.parse(params[3] as string)).toEqual({ canPush: [], canAuthorise: [] });
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('INSERT INTO repos');
+      expect(params.slice(0, 3)).toEqual([
+        'finos',
+        'git-proxy',
+        'https://github.com/finos/git-proxy.git',
+      ]);
+      // date_created and last_modified are stamped on create
+      expect(typeof params[3]).toBe('string');
+      expect(params[4]).toBe(params[3]);
+      // No second call: empty permissions mean no repo_users inserts.
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+    });
+
+    it('persists supplied permissions into repo_users', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [{ _id: 'r9' }] });
+
+      await createRepo({
+        project: 'p',
+        name: 'n',
+        url: 'https://x/n.git',
+        users: { canPush: ['bob'], canAuthorise: ['amy'] },
+      } as never);
+
+      // each role change inserts into repo_users and bumps last_modified on repos
+      const inserts = mockQuery.mock.calls.filter(([sql]) =>
+        /INSERT INTO repo_users/.test(String(sql)),
+      );
+      expect(inserts).toHaveLength(2);
+      expect(inserts[0][1]).toEqual(['r9', 'bob', 'canPush']);
+      expect(inserts[1][1]).toEqual(['r9', 'amy', 'canAuthorise']);
     });
   });
 
-  describe('add/remove user — empty array invariant', () => {
-    it('lower-cases user on add', async () => {
+  describe('add / remove user', () => {
+    it('addUserCanPush inserts a lower-cased canPush row, ignoring duplicates', async () => {
       mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
       await addUserCanPush('r-1', 'Bob');
-      const params = mockQuery.mock.calls[0][1] as unknown[];
-      expect(params).toContain('bob');
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('INSERT INTO repo_users');
+      expect(sql).toContain('ON CONFLICT DO NOTHING');
+      expect(params).toEqual(['r-1', 'bob', 'canPush']);
     });
 
-    it('addUserCanAuthorise lower-cases user and targets the canAuthorise role', async () => {
+    it('addUserCanAuthorise targets the canAuthorise role', async () => {
       mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
       await addUserCanAuthorise('r-1', 'Amy');
-      const params = mockQuery.mock.calls[0][1] as unknown[];
-      expect(params).toContain('amy');
-      expect(params).toContain('{canAuthorise}');
+      expect(mockQuery.mock.calls[0][1]).toEqual(['r-1', 'amy', 'canAuthorise']);
     });
 
-    it('removeUserCanPush coalesces filtered array to [] when last user leaves', () => {
-      // The whole point of the issue: the SQL fragment must coalesce a NULL
-      // aggregate result back to '[]'::jsonb so the array does not collapse
-      // to null when the last user is removed.
+    it('removeUserCanPush deletes the lower-cased canPush row', async () => {
       mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
-      return removeUserCanPush('r-1', 'bob').then(() => {
-        const [sql] = mockQuery.mock.calls[0];
-        expect(sql).toContain('coalesce(');
-        expect(sql).toContain("'[]'::jsonb");
-      });
+      await removeUserCanPush('r-1', 'Bob');
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('DELETE FROM repo_users');
+      expect(params).toEqual(['r-1', 'bob', 'canPush']);
     });
 
-    it('removeUserCanAuthorise applies the same empty-array coalesce', async () => {
+    it('removeUserCanAuthorise deletes the canAuthorise row', async () => {
       mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
-      await removeUserCanAuthorise('r-1', 'bob');
-      const [sql] = mockQuery.mock.calls[0];
-      expect(sql).toContain('coalesce(');
-      expect(sql).toContain("'[]'::jsonb");
+      await removeUserCanAuthorise('r-1', 'Amy');
+      expect(mockQuery.mock.calls[0][1]).toEqual(['r-1', 'amy', 'canAuthorise']);
+    });
+  });
+
+  describe('deleteRepo', () => {
+    it('issues a DELETE by _id (repo_users cascades)', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+      await deleteRepo('r1');
+      const [sql, params] = mockQuery.mock.calls[0];
+      expect(sql).toContain('DELETE FROM repos WHERE _id = $1');
+      expect(params).toEqual(['r1']);
     });
   });
 
@@ -207,15 +241,28 @@ describe('PostgreSQL - Repo', async () => {
       expect(params).toEqual(['renamed', 'r1']);
     });
 
-    it('serialises the users permission object as jsonb', async () => {
+    it('replaces permissions in the repo_users join table', async () => {
       mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
 
-      const users = { canPush: ['alice'], canAuthorise: [] };
-      await updateRepo({ _id: 'r1', users });
+      await updateRepo({ _id: 'r1', users: { canPush: ['alice'], canAuthorise: ['bob'] } });
 
-      const [sql, params] = mockQuery.mock.calls[0];
-      expect(sql).toContain('users = $1::jsonb');
-      expect(params).toEqual([JSON.stringify(users), 'r1']);
+      const statements = mockQuery.mock.calls.map(([sql]) => sql);
+      // old rows are cleared first, then each role is re-inserted
+      expect(statements[0]).toContain('DELETE FROM repo_users WHERE repo_id = $1');
+      const roles = mockQuery.mock.calls
+        .filter(([sql]) => /INSERT INTO repo_users/.test(String(sql)))
+        .map(([, params]) => params?.[2]);
+      expect(roles).toEqual(['canPush', 'canAuthorise']);
+    });
+
+    it('updates columns and permissions together', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+      await updateRepo({ _id: 'r1', name: 'renamed', users: { canPush: [], canAuthorise: [] } });
+
+      const statements = mockQuery.mock.calls.map(([sql]) => sql);
+      expect(statements[0]).toContain('UPDATE repos SET name = $1');
+      expect(statements[1]).toContain('DELETE FROM repo_users');
     });
 
     it('resets a field back to its column default when set to undefined', async () => {
@@ -265,7 +312,7 @@ describe('PostgreSQL - Repo', async () => {
       expect(sql).toContain('last_modified');
       expect(repo.dateCreated).toBeTruthy();
       expect(repo.lastModified).toBe(repo.dateCreated);
-      expect(params[4]).toBe(repo.dateCreated);
+      expect(params[3]).toBe(repo.dateCreated);
     });
 
     it('keeps caller-supplied dates on create', async () => {
@@ -304,9 +351,12 @@ describe('PostgreSQL - Repo', async () => {
       await addUserCanPush('r1', 'Alice');
       await removeUserCanPush('r1', 'Alice');
 
-      for (const [sql, params] of mockQuery.mock.calls) {
-        expect(sql).toContain('last_modified = $5');
-        expect(typeof params[4]).toBe('string');
+      // each role change touches repo_users, then bumps last_modified on repos
+      const bumps = mockQuery.mock.calls.filter(([sql]) => sql.includes('SET last_modified = $2'));
+      expect(bumps).toHaveLength(2);
+      for (const [, params] of bumps) {
+        expect(params[0]).toBe('r1');
+        expect(typeof params[1]).toBe('string');
       }
     });
 
@@ -319,7 +369,8 @@ describe('PostgreSQL - Repo', async () => {
             project: 'p',
             name: 'n',
             url: 'u',
-            users: null,
+            can_push: [],
+            can_authorise: [],
             date_created: '2026-01-01T00:00:00.000Z',
             last_modified: '2026-01-02T00:00:00.000Z',
           },
@@ -331,5 +382,16 @@ describe('PostgreSQL - Repo', async () => {
       expect(repos[0].dateCreated).toBe('2026-01-01T00:00:00.000Z');
       expect(repos[0].lastModified).toBe('2026-01-02T00:00:00.000Z');
     });
+  });
+
+  it('lowercases usernames when replacing permissions through updateRepo', async () => {
+    mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+
+    await updateRepo({ _id: 'r1', users: { canPush: ['Alice'], canAuthorise: ['BOB'] } });
+
+    const inserted = mockQuery.mock.calls
+      .filter(([sql]) => /INSERT INTO repo_users/.test(String(sql)))
+      .map(([, params]) => params?.[1]);
+    expect(inserted).toEqual(['alice', 'bob']);
   });
 });
