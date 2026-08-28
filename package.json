@@ -218,6 +218,7 @@
     "underscore": "^1.13.8"
   },
   "optionalDependencies": {
+    "@aws-sdk/rds-signer": "^3.980.0",
     "@esbuild/darwin-arm64": "^0.27.2",
     "@esbuild/darwin-x64": "^0.27.2",
     "@esbuild/linux-x64": "0.27.2",

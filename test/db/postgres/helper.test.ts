@@ -62,6 +62,19 @@ vi.mock('../../../src/config', () => ({
   getDatabase: getDatabaseMock,
 }));
 
+// Stand in for the optional @aws-sdk/rds-signer dependency so the IAM token
+// path can be exercised without real AWS credentials.
+const mockGetAuthToken = vi.fn();
+const mockSignerCtor = vi.fn();
+vi.mock('@aws-sdk/rds-signer', () => ({
+  Signer: class {
+    constructor(opts: unknown) {
+      mockSignerCtor(opts);
+    }
+    getAuthToken = mockGetAuthToken;
+  },
+}));
+
 describe('PostgreSQL - helper', async () => {
   const {
     connect,
@@ -76,6 +89,7 @@ describe('PostgreSQL - helper', async () => {
     vi.clearAllMocks();
     await resetConnection();
     mockPoolQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+    mockGetAuthToken.mockResolvedValue('iam-token-123');
     mockClientQuery.mockResolvedValue({ rowCount: 0, rows: [] });
     mockPoolConnect.mockResolvedValue({ query: mockClientQuery, release: mockClientRelease });
   });
@@ -291,6 +305,272 @@ describe('PostgreSQL - helper', async () => {
       });
       await connect();
       expect(mockPoolCtor).toHaveBeenCalledWith({ host: 'db', max: 5 });
+    });
+  });
+
+  describe('AWS RDS IAM authentication', () => {
+    const getOpts = () => mockPoolCtor.mock.calls[0][0] as Record<string, any>;
+
+    it('uses a generated IAM token as the password and defaults TLS on', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        port: 5432,
+        user: 'gp',
+        database: 'gitproxy',
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await connect();
+
+      const opts = getOpts();
+      expect(opts.host).toBe('rds.example.com');
+      expect(opts.port).toBe(5432);
+      expect(opts.user).toBe('gp');
+      expect(opts.database).toBe('gitproxy');
+      // RDS IAM mandates TLS, so it defaults on when ssl is not configured.
+      expect(opts.ssl).toBe(true);
+      // No static password — a token provider function instead.
+      expect(opts.connectionString).toBeUndefined();
+      expect(typeof opts.password).toBe('function');
+
+      const token = await opts.password();
+      expect(token).toBe('iam-token-123');
+      expect(mockSignerCtor).toHaveBeenCalledWith({
+        hostname: 'rds.example.com',
+        port: 5432,
+        username: 'gp',
+        region: 'eu-west-2',
+      });
+    });
+
+    it('respects an explicit ssl setting instead of forcing true', async () => {
+      const ssl = { rejectUnauthorized: true, ca: 'RDS_CA' };
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        user: 'gp',
+        ssl,
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await connect();
+      expect(getOpts().ssl).toEqual(ssl);
+    });
+
+    it('warns that the connection string is ignored when IAM auth is enabled', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://ignored/x',
+        host: 'rds.example.com',
+        user: 'gp',
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await connect();
+
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('ignoring connectionString'));
+      warnSpy.mockRestore();
+    });
+
+    it('warns when ssl defaults to true in IAM mode (RDS CA is not in the default trust store)', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        user: 'gp',
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await connect();
+
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('ssl.ca'));
+      warnSpy.mockRestore();
+    });
+
+    it('does not warn about ssl when a CA bundle is supplied', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        user: 'gp',
+        ssl: { rejectUnauthorized: true, ca: 'RDS_CA' },
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await connect();
+
+      const sslWarnings = warnSpy.mock.calls.filter(([m]) => String(m).includes('ssl.ca'));
+      expect(sslWarnings).toEqual([]);
+      warnSpy.mockRestore();
+    });
+
+    it('ignores a connection string when IAM auth is enabled', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://ignored/x',
+        host: 'rds.example.com',
+        user: 'gp',
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await connect();
+      const opts = getOpts();
+      expect(opts.connectionString).toBeUndefined();
+      expect(opts.host).toBe('rds.example.com');
+      expect(typeof opts.password).toBe('function');
+    });
+
+    it('falls back to AWS_REGION when no region is configured', async () => {
+      const savedRegion = process.env.AWS_REGION;
+      process.env.AWS_REGION = 'us-east-1';
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        user: 'gp',
+        awsIamAuth: { enabled: true },
+      });
+
+      await connect();
+      await getOpts().password();
+      expect(mockSignerCtor).toHaveBeenCalledWith(expect.objectContaining({ region: 'us-east-1' }));
+
+      if (savedRegion === undefined) delete process.env.AWS_REGION;
+      else process.env.AWS_REGION = savedRegion;
+    });
+
+    it('throws a clear error when host or user cannot be resolved', async () => {
+      const savedPgUser = process.env.PGUSER;
+      delete process.env.PGUSER;
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await expect(connect()).rejects.toThrow(
+        /AWS RDS IAM authentication requires `host` and `user`/,
+      );
+
+      if (savedPgUser !== undefined) process.env.PGUSER = savedPgUser;
+    });
+
+    it('propagates a token-generation failure to the connection', async () => {
+      mockGetAuthToken.mockRejectedValueOnce(new Error('STS denied'));
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        user: 'gp',
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await connect();
+      await expect(getOpts().password()).rejects.toThrow('STS denied');
+    });
+
+    it('falls back to AWS_DEFAULT_REGION when AWS_REGION is unset', async () => {
+      const savedRegion = process.env.AWS_REGION;
+      const savedDefault = process.env.AWS_DEFAULT_REGION;
+      delete process.env.AWS_REGION;
+      process.env.AWS_DEFAULT_REGION = 'ap-south-1';
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        user: 'gp',
+        awsIamAuth: { enabled: true },
+      });
+
+      await connect();
+      await getOpts().password();
+      expect(mockSignerCtor).toHaveBeenCalledWith(
+        expect.objectContaining({ region: 'ap-south-1' }),
+      );
+
+      if (savedRegion === undefined) delete process.env.AWS_REGION;
+      else process.env.AWS_REGION = savedRegion;
+      if (savedDefault === undefined) delete process.env.AWS_DEFAULT_REGION;
+      else process.env.AWS_DEFAULT_REGION = savedDefault;
+    });
+
+    it('prefers AWS_REGION over AWS_DEFAULT_REGION', async () => {
+      const savedRegion = process.env.AWS_REGION;
+      const savedDefault = process.env.AWS_DEFAULT_REGION;
+      process.env.AWS_REGION = 'us-west-2';
+      process.env.AWS_DEFAULT_REGION = 'ap-south-1';
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        user: 'gp',
+        awsIamAuth: { enabled: true },
+      });
+
+      await connect();
+      await getOpts().password();
+      expect(mockSignerCtor).toHaveBeenCalledWith(expect.objectContaining({ region: 'us-west-2' }));
+
+      if (savedRegion === undefined) delete process.env.AWS_REGION;
+      else process.env.AWS_REGION = savedRegion;
+      if (savedDefault === undefined) delete process.env.AWS_DEFAULT_REGION;
+      else process.env.AWS_DEFAULT_REGION = savedDefault;
+    });
+
+    it('defaults the IAM token port to 5432 when none is configured', async () => {
+      const savedPgPort = process.env.PGPORT;
+      delete process.env.PGPORT;
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        user: 'gp',
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await connect();
+      await getOpts().password();
+      expect(mockSignerCtor).toHaveBeenCalledWith(expect.objectContaining({ port: 5432 }));
+
+      if (savedPgPort !== undefined) process.env.PGPORT = savedPgPort;
+    });
+
+    it('throws an actionable error when @aws-sdk/rds-signer is not installed', async () => {
+      // Re-import the helper against a registry where the optional dependency
+      // fails to resolve, to exercise loadRdsSigner's catch branch — the exact
+      // failure a user hits after `npm install --omit=optional`.
+      vi.resetModules();
+      vi.doMock('@aws-sdk/rds-signer', () => {
+        throw new Error('Cannot find module');
+      });
+
+      const fresh = await import('../../../src/db/postgres/helper');
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        host: 'rds.example.com',
+        user: 'gp',
+        awsIamAuth: { enabled: true, region: 'eu-west-2' },
+      });
+
+      await fresh.connect();
+      const opts = mockPoolCtor.mock.calls[0][0] as Record<string, any>;
+      await expect(opts.password()).rejects.toThrow(
+        /requires the optional `@aws-sdk\/rds-signer` dependency/,
+      );
+
+      await fresh.resetConnection();
+      vi.doUnmock('@aws-sdk/rds-signer');
+      vi.resetModules();
     });
   });
 

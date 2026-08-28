@@ -534,6 +534,28 @@ Connection precedence: `connectionString` (the config field, then `GIT_PROXY_POS
 }
 ```
 
+##### AWS RDS / Aurora IAM authentication
+
+For Amazon RDS or Aurora, GitProxy can authenticate with a short-lived IAM auth token instead of a static password. Enable `awsIamAuth` and supply the discrete `host` / `port` / `user` fields (a `connectionString` is not used in this mode):
+
+```json
+{
+  "type": "postgres",
+  "host": "mydb.abc123.eu-west-2.rds.amazonaws.com",
+  "port": 5432,
+  "user": "gitproxy_iam",
+  "database": "gitproxy",
+  "awsIamAuth": { "enabled": true, "region": "eu-west-2" },
+  "enabled": true
+}
+```
+
+- A fresh token is generated for every new pool connection from the AWS SDK default credential chain (via `@aws-sdk/rds-signer`), so no password is stored and token refresh is automatic.
+- `region` falls back to the `AWS_REGION` / `AWS_DEFAULT_REGION` environment variables, then the SDK's default region resolution.
+- TLS is required by RDS for IAM auth. Supply the RDS certificate authority bundle via `ssl` (for example `{ "rejectUnauthorized": true, "ca": "<contents of the RDS global-bundle.pem>" }`, downloadable from https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem): RDS server certificates chain to Amazon's own root CA, which is not in Node's default trust store, so the `ssl: true` fallback (used when `ssl` is omitted) fails certificate verification against a real RDS endpoint and logs a startup warning saying so. Do not work around a verification failure with `rejectUnauthorized: false`; that discards the transport security IAM auth depends on.
+- The database user must be granted the `rds_iam` role (`GRANT rds_iam TO gitproxy_iam;`).
+- IAM auth needs the optional `@aws-sdk/rds-signer` dependency, which installs by default. On a slim install (`npm install --omit=optional`) add it explicitly with `npm install @aws-sdk/rds-signer`.
+
 ##### Migrating data into PostgreSQL
 
 To copy existing `users`, `repos` and `pushes` from a `mongo` or `fs` (NeDB) backend into PostgreSQL, first switch the active sink to `postgres` (the destination), then run:
@@ -562,7 +584,6 @@ Notes and current limitations:
 
 - All pending migrations run inside a single transaction, so a statement that cannot run transactionally (for example `CREATE INDEX CONCURRENTLY`) is not yet supported by the runner.
 - Repo permissions (`canPush` / `canAuthorise`) are normalised into a `repo_users(repo_id, username, role)` join table (`ON DELETE CASCADE` from `repos`); the adapter reconstructs the permission arrays on read.
-- No AWS RDS IAM authentication helper (the mongo backend has one via `AWS_CREDENTIAL_PROVIDER`); use a standard connection string for v1.
 - If `postgres` is selected as the active sink and no connection can be resolved, GitProxy refuses to start rather than silently falling back to an in-memory session store.
 
 ##### PostgreSQL design decisions
