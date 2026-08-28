@@ -163,12 +163,15 @@ export const getPushesForUserProfile = async (
   }
 
   const result = await query<{ data: unknown }>(
-    `SELECT data FROM pushes WHERE type = 'push' AND ${predicate} ORDER BY timestamp DESC`,
+    `SELECT data - 'steps' AS data FROM pushes WHERE type = 'push' AND ${predicate} ORDER BY timestamp DESC`,
     values,
   );
   return result.rows.map(rowToAction);
 };
 
+// List queries drop `steps` from the returned document: it holds the full diff
+// (largest part of a push row) and the mongo backend's list projection excludes
+// it as well. The push-detail path (`getPush`) still returns the whole document.
 export const getPushes = async (q: Partial<PushQuery> = defaultPushQuery): Promise<Action[]> => {
   const clauses: string[] = [];
   const values: unknown[] = [];
@@ -181,7 +184,7 @@ export const getPushes = async (q: Partial<PushQuery> = defaultPushQuery): Promi
 
   const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
   const result = await query<{ data: unknown }>(
-    `SELECT data FROM pushes ${where} ORDER BY timestamp DESC`,
+    `SELECT data - 'steps' AS data FROM pushes ${where} ORDER BY timestamp DESC`,
     values,
   );
   return result.rows.map(rowToAction);
