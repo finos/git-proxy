@@ -375,6 +375,10 @@ This file is the canonical project guide. Tool-specific entry points:
 - OpenCode: `.opencode/commands/`
 - Codex: `AGENTS.md`
 
+### Database changes
+
+The fs, mongo and postgres sink backends must stay at feature parity. Before changing anything under `src/db`, read `.agents/skills/sink-parity/SKILL.md`: apparently simple adaptor changes usually cost more on the postgres side (explicit columns, update allowlists, append-only schema migrations) than on the document stores, and the skill carries the checklist that keeps the backends aligned.
+
 ---
 
 ## Agent Workflow

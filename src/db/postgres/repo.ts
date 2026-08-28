@@ -15,14 +15,15 @@
  */
 
 import { Repo, RepoQuery } from '../types';
-import { query } from './helper';
+import { query, withTransaction } from './helper';
 
 interface RepoRow {
   _id: string;
   project: string;
   name: string;
   url: string;
-  users: { canPush: string[]; canAuthorise: string[] } | null;
+  can_push: string[] | null;
+  can_authorise: string[] | null;
   date_created: string | null;
   last_modified: string | null;
 }
@@ -32,54 +33,103 @@ const rowToRepo = (row: RepoRow): Repo =>
     row.project,
     row.name,
     row.url,
-    // Guard against null/legacy rows so callers always see arrays.
     {
-      canPush: row.users?.canPush ?? [],
-      canAuthorise: row.users?.canAuthorise ?? [],
+      canPush: row.can_push ?? [],
+      canAuthorise: row.can_authorise ?? [],
     },
     row._id,
     row.date_created ?? undefined,
     row.last_modified ?? undefined,
   );
 
-const SELECT_COLUMNS = '_id, project, name, url, users, date_created, last_modified';
+// Reconstruct the `canPush` / `canAuthorise` arrays from the normalised
+// repo_users join table. `ORDER BY` keeps the arrays deterministic, and the
+// `coalesce(..., '{}')` makes a repo with no members come back as empty arrays
+// rather than null, matching the mongo/NeDB backends.
+const SELECT_REPOS = `
+  SELECT r._id, r.project, r.name, r.url, r.date_created, r.last_modified,
+    coalesce(
+      array_agg(ru.username ORDER BY ru.username) FILTER (WHERE ru.role = 'canPush'),
+      '{}'
+    ) AS can_push,
+    coalesce(
+      array_agg(ru.username ORDER BY ru.username) FILTER (WHERE ru.role = 'canAuthorise'),
+      '{}'
+    ) AS can_authorise
+  FROM repos r
+  LEFT JOIN repo_users ru ON ru.repo_id = r._id`;
+
+const GROUP_BY = 'GROUP BY r._id';
 
 export const getRepos = async (q: Partial<RepoQuery> = {}): Promise<Repo[]> => {
   const clauses: string[] = [];
   const values: unknown[] = [];
   if (q.name) {
     values.push(q.name.toLowerCase());
-    clauses.push(`name = $${values.length}`);
+    clauses.push(`r.name = $${values.length}`);
   }
   if (q.project !== undefined) {
     values.push(q.project);
-    clauses.push(`project = $${values.length}`);
+    clauses.push(`r.project = $${values.length}`);
   }
   if (q.url) {
     values.push(q.url);
-    clauses.push(`url = $${values.length}`);
+    clauses.push(`r.url = $${values.length}`);
   }
 
   const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
-  const result = await query<RepoRow>(`SELECT ${SELECT_COLUMNS} FROM repos ${where}`, values);
+  const result = await query<RepoRow>(`${SELECT_REPOS} ${where} ${GROUP_BY}`, values);
   return result.rows.map(rowToRepo);
 };
 
 export const getRepo = async (name: string): Promise<Repo | null> => {
-  const result = await query<RepoRow>(`SELECT ${SELECT_COLUMNS} FROM repos WHERE name = $1`, [
+  const result = await query<RepoRow>(`${SELECT_REPOS} WHERE r.name = $1 ${GROUP_BY}`, [
     name.toLowerCase(),
   ]);
   return result.rowCount === 0 ? null : rowToRepo(result.rows[0]);
 };
 
 export const getRepoByUrl = async (url: string): Promise<Repo | null> => {
-  const result = await query<RepoRow>(`SELECT ${SELECT_COLUMNS} FROM repos WHERE url = $1`, [url]);
+  const result = await query<RepoRow>(`${SELECT_REPOS} WHERE r.url = $1 ${GROUP_BY}`, [url]);
   return result.rowCount === 0 ? null : rowToRepo(result.rows[0]);
 };
 
 export const getRepoById = async (_id: string): Promise<Repo | null> => {
-  const result = await query<RepoRow>(`SELECT ${SELECT_COLUMNS} FROM repos WHERE _id = $1`, [_id]);
+  const result = await query<RepoRow>(`${SELECT_REPOS} WHERE r._id = $1 ${GROUP_BY}`, [_id]);
   return result.rowCount === 0 ? null : rowToRepo(result.rows[0]);
+};
+
+const addUserToRole = async (
+  _id: string,
+  user: string,
+  role: 'canPush' | 'canAuthorise',
+): Promise<void> => {
+  await query(
+    `INSERT INTO repo_users (repo_id, username, role)
+     VALUES ($1, $2, $3)
+     ON CONFLICT DO NOTHING`,
+    [_id, user.toLowerCase(), role],
+  );
+  await query(`UPDATE repos SET last_modified = $2 WHERE _id = $1`, [
+    _id,
+    new Date().toISOString(),
+  ]);
+};
+
+const removeUserFromRole = async (
+  _id: string,
+  user: string,
+  role: 'canPush' | 'canAuthorise',
+): Promise<void> => {
+  await query(`DELETE FROM repo_users WHERE repo_id = $1 AND username = $2 AND role = $3`, [
+    _id,
+    user.toLowerCase(),
+    role,
+  ]);
+  await query(`UPDATE repos SET last_modified = $2 WHERE _id = $1`, [
+    _id,
+    new Date().toISOString(),
+  ]);
 };
 
 export const createRepo = async (repo: Repo): Promise<Repo> => {
@@ -88,19 +138,22 @@ export const createRepo = async (repo: Repo): Promise<Repo> => {
   if (!repo.dateCreated) repo.dateCreated = now;
   if (!repo.lastModified) repo.lastModified = now;
   const result = await query<{ _id: string }>(
-    `INSERT INTO repos (project, name, url, users, date_created, last_modified)
-     VALUES ($1, $2, $3, $4::jsonb, $5, $6)
+    `INSERT INTO repos (project, name, url, date_created, last_modified)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING _id`,
-    [
-      repo.project ?? '',
-      repo.name,
-      repo.url,
-      JSON.stringify(users),
-      repo.dateCreated,
-      repo.lastModified,
-    ],
+    [repo.project ?? '', repo.name, repo.url, repo.dateCreated, repo.lastModified],
   );
-  repo._id = result.rows[0]._id;
+  const _id = result.rows[0]._id;
+
+  // Persist any permissions supplied at creation into the join table.
+  for (const username of users.canPush ?? []) {
+    await addUserToRole(_id, username, 'canPush');
+  }
+  for (const username of users.canAuthorise ?? []) {
+    await addUserToRole(_id, username, 'canAuthorise');
+  }
+
+  repo._id = _id;
   repo.users = users;
   return repo;
 };
@@ -108,10 +161,13 @@ export const createRepo = async (repo: Repo): Promise<Repo> => {
 /**
  * Apply a partial update to a repo row. Only the supplied fields are written,
  * matching mongo's `$set` / `$unset` behaviour: a field explicitly set to
- * `undefined` is reset to the column default rather than left untouched.
+ * `undefined` is reset to the column default.
+ *
+ * Permissions live in the `repo_users` join table rather than a column, so a
+ * supplied `users` object replaces that repo's rows wholesale.
  */
 export const updateRepo = async (repo: Partial<Repo>): Promise<void> => {
-  const { _id, ...fields } = repo;
+  const { _id, users, ...fields } = repo;
   if (!_id) {
     throw new Error('updateRepo requires a repo _id');
   }
@@ -120,7 +176,6 @@ export const updateRepo = async (repo: Partial<Repo>): Promise<void> => {
     project: 'project',
     name: 'name',
     url: 'url',
-    users: 'users',
     dateCreated: 'date_created',
     lastModified: 'last_modified',
   };
@@ -134,81 +189,47 @@ export const updateRepo = async (repo: Partial<Repo>): Promise<void> => {
       sets.push(`${column} = DEFAULT`);
       continue;
     }
-    if (column === 'users') {
-      values.push(JSON.stringify(value));
-      sets.push(`${column} = $${values.length}::jsonb`);
-      continue;
-    }
     values.push(value);
     sets.push(`${column} = $${values.length}`);
   }
 
-  if (sets.length === 0) {
+  if (sets.length === 0 && users === undefined) {
     throw new Error('updateRepo requires at least one field to update');
   }
 
-  values.push(_id);
-  await query(`UPDATE repos SET ${sets.join(', ')} WHERE _id = $${values.length}`, values);
-};
+  // One transaction for the whole update: the row change, the permission
+  // replacement and the last_modified bump land together or not at all, so a
+  // failure partway cannot leave a repo without its roles.
+  await withTransaction(async (client) => {
+    if (sets.length > 0) {
+      await client.query(`UPDATE repos SET ${sets.join(', ')} WHERE _id = $${values.length + 1}`, [
+        ...values,
+        _id,
+      ]);
+    }
 
-/**
- * Append a user to one of the JSONB permission arrays. The query is a
- * read-modify-write that deduplicates the value, then re-serialises the array
- * so the stored shape matches the existing mongo/fs backends exactly.
- */
-const addUserToRole = async (
-  _id: string,
-  user: string,
-  role: 'canPush' | 'canAuthorise',
-): Promise<void> => {
-  const lowered = user.toLowerCase();
-  await query(
-    `UPDATE repos
-        SET users = jsonb_set(
-          users,
-          $2::text[],
-          (
-            SELECT to_jsonb(
-              ARRAY(
-                SELECT DISTINCT v
-                  FROM jsonb_array_elements_text(coalesce(users->$3, '[]'::jsonb)) AS v
-                UNION
-                SELECT $4
-              )
-            )
-          )
-        ),
-            last_modified = $5
-      WHERE _id = $1`,
-    [_id, `{${role}}`, role, lowered, new Date().toISOString()],
-  );
-};
-
-const removeUserFromRole = async (
-  _id: string,
-  user: string,
-  role: 'canPush' | 'canAuthorise',
-): Promise<void> => {
-  const lowered = user.toLowerCase();
-  // The filter evaluates to `[]` if the last matching user is removed
-  await query(
-    `UPDATE repos
-        SET users = jsonb_set(
-          users,
-          $2::text[],
-          coalesce(
-            (
-              SELECT to_jsonb(array_agg(v))
-                FROM jsonb_array_elements_text(coalesce(users->$3, '[]'::jsonb)) AS v
-                WHERE v <> $4
-            ),
-            '[]'::jsonb
-          )
-        ),
-            last_modified = $5
-      WHERE _id = $1`,
-    [_id, `{${role}}`, role, lowered, new Date().toISOString()],
-  );
+    if (users !== undefined) {
+      await client.query(`DELETE FROM repo_users WHERE repo_id = $1`, [_id]);
+      const roles = [
+        ['canPush', users.canPush ?? []],
+        ['canAuthorise', users.canAuthorise ?? []],
+      ] as const;
+      for (const [role, names] of roles) {
+        for (const username of names) {
+          await client.query(
+            `INSERT INTO repo_users (repo_id, username, role)
+             VALUES ($1, $2, $3)
+             ON CONFLICT DO NOTHING`,
+            [_id, username.toLowerCase(), role],
+          );
+        }
+      }
+      await client.query(`UPDATE repos SET last_modified = $2 WHERE _id = $1`, [
+        _id,
+        new Date().toISOString(),
+      ]);
+    }
+  });
 };
 
 export const addUserCanPush = (_id: string, user: string): Promise<void> =>
@@ -224,5 +245,6 @@ export const removeUserCanAuthorise = (_id: string, user: string): Promise<void>
   removeUserFromRole(_id, user, 'canAuthorise');
 
 export const deleteRepo = async (_id: string): Promise<void> => {
+  // repo_users rows are removed by the ON DELETE CASCADE foreign key.
   await query(`DELETE FROM repos WHERE _id = $1`, [_id]);
 };

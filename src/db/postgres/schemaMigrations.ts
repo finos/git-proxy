@@ -107,9 +107,44 @@ export const MIGRATIONS: Migration[] = [
   );
 `,
   },
-  // Versions 4 and 5 are reserved by the repo_users normalisation branch
-  // (repo_users_table and drop_repos_users_jsonb). The runner applies by
-  // version order, so the gap is harmless until those entries land.
+  {
+    version: 4,
+    name: 'repo_users_table',
+    sql: `
+  CREATE TABLE IF NOT EXISTS repo_users (
+    repo_id  UUID NOT NULL REFERENCES repos(_id) ON DELETE CASCADE,
+    username TEXT NOT NULL,
+    role     TEXT NOT NULL CHECK (role IN ('canPush', 'canAuthorise')),
+    PRIMARY KEY (repo_id, username, role)
+  );
+  CREATE INDEX IF NOT EXISTS repo_users_repo_id_idx ON repo_users (repo_id);
+
+  -- Backfill the normalised table from the existing JSONB permissions. The
+  -- legacy repos.users column is dropped in a later migration once the adapter
+  -- reads and writes repo_users instead.
+  -- Usernames are lowercased to match the runtime writers (addUserToRole and
+  -- friends lowercase on insert), so legacy mixed-case entries stay
+  -- retrievable; ON CONFLICT collapses any case-only duplicates.
+  INSERT INTO repo_users (repo_id, username, role)
+  SELECT r._id, lower(elem.username), 'canPush'
+    FROM repos r,
+         jsonb_array_elements_text(coalesce(r.users->'canPush', '[]'::jsonb)) AS elem(username)
+  ON CONFLICT DO NOTHING;
+
+  INSERT INTO repo_users (repo_id, username, role)
+  SELECT r._id, lower(elem.username), 'canAuthorise'
+    FROM repos r,
+         jsonb_array_elements_text(coalesce(r.users->'canAuthorise', '[]'::jsonb)) AS elem(username)
+  ON CONFLICT DO NOTHING;
+`,
+  },
+  {
+    version: 5,
+    name: 'drop_repos_users_jsonb',
+    // The repo adapter now reads and writes permissions via repo_users, so the
+    // legacy JSONB column (backfilled in migration 4) is no longer used.
+    sql: `ALTER TABLE repos DROP COLUMN IF EXISTS users;`,
+  },
   {
     version: 6,
     name: 'pushes_hot_path_indexes',
