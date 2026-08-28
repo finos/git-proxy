@@ -89,7 +89,7 @@ jobs:
           wait-on: 'http://localhost:3000'
           wait-on-timeout: 120
           command: npm run cypress:run
-        
+
       - name: Smoke test build
         run: ./scripts/package-smoke-test.sh --no-clean-build
 

@@ -182,7 +182,9 @@ async function createApp(proxy: Proxy): Promise<Express> {
   });
 
   if (!fs.existsSync(path.join(absBuildPath, 'index.html'))) {
-    console.error(`UI build not found at ${absBuildPath}. The package may have been built or published incorrectly`);
+    console.error(
+      `UI build not found at ${absBuildPath}. The package may have been built or published incorrectly`,
+    );
   }
   return app;
 }
