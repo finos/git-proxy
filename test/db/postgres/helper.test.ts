@@ -76,8 +76,14 @@ vi.mock('@aws-sdk/rds-signer', () => ({
 }));
 
 describe('PostgreSQL - helper', async () => {
-  const { connect, query, resetConnection, getSessionStore, ensureSessionStoreReady } =
-    await import('../../../src/db/postgres/helper');
+  const {
+    connect,
+    query,
+    resetConnection,
+    getSessionStore,
+    ensureSessionStoreReady,
+    withTransaction,
+  } = await import('../../../src/db/postgres/helper');
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -565,6 +571,56 @@ describe('PostgreSQL - helper', async () => {
       await fresh.resetConnection();
       vi.doUnmock('@aws-sdk/rds-signer');
       vi.resetModules();
+    });
+  });
+
+  describe('withTransaction', () => {
+    it('wraps the callback in BEGIN/COMMIT and releases the client', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+      });
+
+      // Warm the pool first so the schema bootstrap's own client activity
+      // does not blend into the assertions below.
+      await connect();
+      mockClientQuery.mockClear();
+      mockClientRelease.mockClear();
+
+      const result = await withTransaction(async (client) => {
+        await client.query('SELECT 1');
+        return 'ok';
+      });
+
+      expect(result).toBe('ok');
+      expect(mockClientQuery.mock.calls.map(([sql]) => sql)).toEqual([
+        'BEGIN',
+        'SELECT 1',
+        'COMMIT',
+      ]);
+      expect(mockClientRelease).toHaveBeenCalledTimes(1);
+    });
+
+    it('rolls back and rethrows when the callback fails', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+      });
+
+      await connect();
+      mockClientQuery.mockClear();
+      mockClientRelease.mockClear();
+
+      await expect(
+        withTransaction(async () => {
+          throw new Error('boom');
+        }),
+      ).rejects.toThrow('boom');
+
+      expect(mockClientQuery.mock.calls.map(([sql]) => sql)).toEqual(['BEGIN', 'ROLLBACK']);
+      expect(mockClientRelease).toHaveBeenCalledTimes(1);
     });
   });
 

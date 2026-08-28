@@ -21,7 +21,9 @@ import { resetConnection } from '../src/db/postgres/helper';
 import { invalidateCache } from '../src/config';
 
 const DEFAULT_CONNECTION_STRING = 'postgresql://postgres:postgres@localhost:5432/git_proxy_test';
-const APP_TABLES = ['pushes', 'repos', 'users'];
+// repo_users is listed before repos so the child table is cleaned first; the
+// TRUNCATE/DROP CASCADE would handle the FK either way.
+const APP_TABLES = ['repo_users', 'pushes', 'repos', 'users'];
 const SESSION_TABLE = 'session';
 // Tracks applied schema versions. Persisted across tests (so the migration
 // runner correctly skips already-applied versions) but dropped in afterAll so

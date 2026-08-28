@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Pool, PoolConfig, QueryResult, QueryResultRow } from 'pg';
+import { Pool, PoolClient, PoolConfig, QueryResult, QueryResultRow } from 'pg';
 import session, { Store } from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 
@@ -214,6 +214,31 @@ export const connect = async (): Promise<Pool> => {
   }
   await _bootstrapPromise;
   return pool;
+};
+
+/**
+ * Run `fn` inside a single transaction: every statement issued through the
+ * supplied client commits or rolls back together. Used where one logical
+ * update spans several statements, so a failure cannot leave partial state.
+ */
+export const withTransaction = async <T>(fn: (client: PoolClient) => Promise<T>): Promise<T> => {
+  const pool = await connect();
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    try {
+      await client.query('ROLLBACK');
+    } catch {
+      // the original error is the one worth surfacing
+    }
+    throw err;
+  } finally {
+    client.release();
+  }
 };
 
 export const query = async <T extends QueryResultRow = QueryResultRow>(
