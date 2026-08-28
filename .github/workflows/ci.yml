@@ -89,6 +89,9 @@ jobs:
           wait-on: 'http://localhost:3000'
           wait-on-timeout: 120
           command: npm run cypress:run
+        
+      - name: Smoke test build
+        run: ./scripts/package-smoke-test.sh --no-clean-build
 
   # Windows build - single combination for development support
   build-windows:
@@ -137,6 +140,9 @@ jobs:
 
       - name: Build frontend
         run: npm run build-ui
+
+      - name: Smoke test build
+        run: ./scripts/package-smoke-test.sh
 
   # Execute a final job to collect the results and report a single check status
   results:

@@ -34,6 +34,9 @@ jobs:
       - run: npm ci
       - run: npm run build
 
+      - name: Smoke test package before publishing
+        run: ./scripts/package-smoke-test.sh --no-clean-build
+
       - name: Determine dist-tag and publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
