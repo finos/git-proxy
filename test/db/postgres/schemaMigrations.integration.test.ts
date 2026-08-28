@@ -53,7 +53,7 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Schema Migration Integration 
     const versions = await query<{ version: number }>(
       'SELECT version FROM schema_migrations ORDER BY version',
     );
-    expect(versions.rows.map((row) => row.version)).toEqual([1, 2, 3, 4, 5]);
+    expect(versions.rows.map((row) => row.version)).toEqual([1, 2, 3, 4, 5, 6]);
 
     const tables = await query<{ tablename: string }>(
       `SELECT tablename FROM pg_tables
@@ -90,7 +90,7 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Schema Migration Integration 
     await connect();
 
     const versions = await query<{ version: number }>('SELECT version FROM schema_migrations');
-    expect(versions.rows.map((row) => row.version)).toEqual([1, 2, 3, 4, 5]);
+    expect(versions.rows.map((row) => row.version)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   it('backfills existing JSONB repo permissions into repo_users (single, multi, same user in both roles)', async () => {
@@ -143,7 +143,7 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Schema Migration Integration 
       const versions = await pool.query<{ version: number }>(
         'SELECT version FROM schema_migrations ORDER BY version',
       );
-      expect(versions.rows.map((r) => r.version)).toEqual([1, 2, 3, 4, 5]);
+      expect(versions.rows.map((r) => r.version)).toEqual([1, 2, 3, 4, 5, 6]);
 
       // The legacy JSONB column is gone, dropped by v4.
       const usersCol = await pool.query(

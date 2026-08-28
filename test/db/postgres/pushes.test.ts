@@ -213,6 +213,23 @@ describe('PostgreSQL - Pushes', async () => {
     });
   });
 
+  describe('list projection', () => {
+    it('drops steps from list results but not from the detail view', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
+
+      await getPushes({});
+      await getPushesForUserProfile([], 'alice');
+      await getPush('p1');
+
+      const [listSql] = mockQuery.mock.calls[0];
+      const [profileSql] = mockQuery.mock.calls[1];
+      const [detailSql] = mockQuery.mock.calls[2];
+      expect(listSql).toContain("data - 'steps'");
+      expect(profileSql).toContain("data - 'steps'");
+      expect(detailSql).not.toContain("data - 'steps'");
+    });
+  });
+
   describe('getPushesForUserProfile', () => {
     it('matches the reviewer case-insensitively when there are no emails', async () => {
       mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
