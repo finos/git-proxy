@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+CLEAN_BUILD=true
+if [[ "$1" == "--no-clean-build" ]]; then
+  CLEAN_BUILD=false
+fi
+
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 WORK="$(mktemp -d)"
 SERVER_PID=""
@@ -11,9 +16,13 @@ cleanup() {
 trap cleanup EXIT
 
 cd "$ROOT"
+
+if [[ "$CLEAN_BUILD" == true ]]; then
 echo "Building from a clean slate..."
-rm -rf dist build
-npm run build
+  rm -rf dist build
+  npm run build
+fi
+
 TARBALL="$WORK/$(npm pack --silent --pack-destination "$WORK")"
 echo "Packed: $TARBALL"
 FILES="$(tar tzf "$TARBALL")"
