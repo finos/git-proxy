@@ -5,9 +5,9 @@ name: CI
 
 on:
   push:
-    branches: [main, feat/postgres]
+    branches: [main]
   pull_request:
-    branches: [main, feat/postgres]
+    branches: [main]
 
 permissions:
   pull-requests: write
