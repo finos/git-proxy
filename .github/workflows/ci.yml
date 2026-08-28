@@ -142,7 +142,7 @@ jobs:
         run: npm run build-ui
 
       - name: Smoke test build
-        run: bash ./scripts/package-smoke-test.sh
+        run: bash ./scripts/package-smoke-test.sh --no-clean-build
 
   # Execute a final job to collect the results and report a single check status
   results:
