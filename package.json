@@ -54,6 +54,7 @@
   "scripts": {
     "cli": "tsx ./packages/git-proxy-cli/index.ts",
     "cli:js": "node ./packages/git-proxy-cli/dist/index.js",
+    "migrate:postgres": "tsx scripts/migrate-to-postgres.ts",
     "client": "vite --config vite.config.ts",
     "clientinstall": "npm install --prefix client",
     "server": "cross-env ALLOWED_ORIGINS=* tsx index.ts",

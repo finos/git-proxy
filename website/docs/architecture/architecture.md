@@ -534,6 +534,20 @@ Connection precedence: `connectionString` (the config field, then `GIT_PROXY_POS
 }
 ```
 
+##### Migrating data into PostgreSQL
+
+To copy existing `users`, `repos` and `pushes` from a `mongo` or `fs` (NeDB) backend into PostgreSQL, first switch the active sink to `postgres` (the destination), then run:
+
+```bash
+# From MongoDB
+npm run migrate:postgres -- --from mongo --mongoUrl "mongodb://user:pass@host:27017/git-proxy"
+
+# From the filesystem (NeDB) backend
+npm run migrate:postgres -- --from fs --dataDir ./.data/db
+```
+
+The importer reads the source with its own driver while writing through the active (postgres) sink, so the two connections never clash. It is idempotent: users and repos that already exist (matched by username/email and URL) are skipped, and pushes are upserted by id, so it is safe to re-run. Record `_id`s are not carried over; PostgreSQL assigns fresh UUIDs (push ids, which are text, are preserved).
+
 ##### Schema migrations
 
 Schema changes are applied by a small built-in migration runner (`src/db/postgres/migrations.ts`). On every startup it:
@@ -548,7 +562,6 @@ Notes and current limitations:
 
 - All pending migrations run inside a single transaction, so a statement that cannot run transactionally (for example `CREATE INDEX CONCURRENTLY`) is not yet supported by the runner.
 - Repo permissions (`canPush` / `canAuthorise`) are normalised into a `repo_users(repo_id, username, role)` join table (`ON DELETE CASCADE` from `repos`); the adapter reconstructs the permission arrays on read.
-- No data migration utility from `fs` or `mongo` to `postgres` — copy data yourself if needed.
 - No AWS RDS IAM authentication helper (the mongo backend has one via `AWS_CREDENTIAL_PROVIDER`); use a standard connection string for v1.
 - If `postgres` is selected as the active sink and no connection can be resolved, GitProxy refuses to start rather than silently falling back to an in-memory session store.
 
