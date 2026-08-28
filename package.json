@@ -61,6 +61,7 @@
     "build": "npm run generate-config-types && npm run build-ui && npm run build-ts",
     "build-ts": "tsc --project tsconfig.publish.json && node scripts/fix-shebang.js",
     "build-ui": "vite build",
+    "build-validate": "./scripts/build-validate.sh",
     "check-types": "tsc",
     "check-types:server": "tsc --project tsconfig.publish.json --noEmit",
     "test-shuffle": "NODE_ENV=test vitest --run --dir ./test --sequence.shuffle",
