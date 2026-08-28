@@ -91,7 +91,7 @@ jobs:
           command: npm run cypress:run
 
       - name: Smoke test build
-        run: ./scripts/package-smoke-test.sh --no-clean-build
+        run: bash ./scripts/package-smoke-test.sh --no-clean-build
 
   # Windows build - single combination for development support
   build-windows:
@@ -142,7 +142,7 @@ jobs:
         run: npm run build-ui
 
       - name: Smoke test build
-        run: ./scripts/package-smoke-test.sh
+        run: bash ./scripts/package-smoke-test.sh
 
   # Execute a final job to collect the results and report a single check status
   results:
