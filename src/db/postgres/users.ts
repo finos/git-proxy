@@ -16,7 +16,7 @@
 
 import { PublicKeyRecord, User, UserQuery } from '../types';
 import { DuplicateSSHKeyError } from '../../errors/DatabaseErrors';
-import { query } from './helper';
+import { query, withTransaction } from './helper';
 
 interface UserRow {
   _id: string;
@@ -205,27 +205,46 @@ export const findUserBySSHKey = async (sshKey: string): Promise<User | null> => 
 };
 
 export const addPublicKey = async (username: string, publicKey: PublicKeyRecord): Promise<void> => {
-  const existingUser = await findUserBySSHKey(publicKey.key);
-  if (existingUser && existingUser.username.toLowerCase() !== username.toLowerCase()) {
-    throw new DuplicateSSHKeyError(existingUser.username);
-  }
+  await withTransaction(async (client) => {
+    // Key uniqueness spans elements of a JSONB array, which no unique
+    // constraint can enforce, so concurrent adds of the same key are
+    // serialised on a transaction-scoped advisory lock derived from the key
+    // text: the loser waits here and then sees the winner's row in the
+    // duplicate check below.
+    await client.query(`SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`, [publicKey.key]);
 
-  const user = await findUser(username);
-  if (!user) {
-    throw new Error('User not found');
-  }
+    const existing = await client.query<UserRow>(
+      `SELECT ${SELECT_COLUMNS} FROM users WHERE public_keys @> $1::jsonb`,
+      [JSON.stringify([{ key: publicKey.key }])],
+    );
+    const existingUser = existing.rowCount === 0 ? null : rowToUser(existing.rows[0]);
+    if (existingUser && existingUser.username.toLowerCase() !== username.toLowerCase()) {
+      throw new DuplicateSSHKeyError(existingUser.username);
+    }
 
-  const keyExists = user.publicKeys?.some(
-    (k) => k.key === publicKey.key || (k.fingerprint && k.fingerprint === publicKey.fingerprint),
-  );
-  if (keyExists) {
-    throw new Error('SSH key already exists');
-  }
+    // Lock the target row so a concurrent add of a different key for the same
+    // user cannot interleave with the duplicate-fingerprint check.
+    const found = await client.query<UserRow>(
+      `SELECT ${SELECT_COLUMNS} FROM users WHERE username = $1 FOR UPDATE`,
+      [username.toLowerCase()],
+    );
+    if (found.rowCount === 0) {
+      throw new Error('User not found');
+    }
+    const user = rowToUser(found.rows[0]);
 
-  await query(`UPDATE users SET public_keys = public_keys || $2::jsonb WHERE username = $1`, [
-    username.toLowerCase(),
-    JSON.stringify([publicKey]),
-  ]);
+    const keyExists = user.publicKeys?.some(
+      (k) => k.key === publicKey.key || (k.fingerprint && k.fingerprint === publicKey.fingerprint),
+    );
+    if (keyExists) {
+      throw new Error('SSH key already exists');
+    }
+
+    await client.query(
+      `UPDATE users SET public_keys = public_keys || $2::jsonb WHERE username = $1`,
+      [username.toLowerCase(), JSON.stringify([publicKey])],
+    );
+  });
 };
 
 export const removePublicKey = async (username: string, fingerprint: string): Promise<void> => {

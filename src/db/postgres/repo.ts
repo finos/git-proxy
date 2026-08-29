@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { PoolClient } from 'pg';
+
 import { Repo, RepoQuery } from '../types';
 import { query, withTransaction } from './helper';
 
@@ -132,26 +134,45 @@ const removeUserFromRole = async (
   ]);
 };
 
+// Insert one role's usernames as a single statement. Lowercased to match
+// addUserToRole; ON CONFLICT collapses duplicates (case-only ones included).
+const insertRoleRows = async (
+  client: PoolClient,
+  _id: string,
+  role: 'canPush' | 'canAuthorise',
+  usernames: string[],
+): Promise<void> => {
+  if (usernames.length === 0) return;
+  await client.query(
+    `INSERT INTO repo_users (repo_id, username, role)
+     SELECT $1, lower(u.username), $2 FROM unnest($3::text[]) AS u(username)
+     ON CONFLICT DO NOTHING`,
+    [_id, role, usernames],
+  );
+};
+
 export const createRepo = async (repo: Repo): Promise<Repo> => {
   const users = repo.users ?? { canPush: [], canAuthorise: [] };
   const now = new Date().toISOString();
   if (!repo.dateCreated) repo.dateCreated = now;
   if (!repo.lastModified) repo.lastModified = now;
-  const result = await query<{ _id: string }>(
-    `INSERT INTO repos (project, name, url, date_created, last_modified)
-     VALUES ($1, $2, $3, $4, $5)
-     RETURNING _id`,
-    [repo.project ?? '', repo.name, repo.url, repo.dateCreated, repo.lastModified],
-  );
-  const _id = result.rows[0]._id;
 
-  // Persist any permissions supplied at creation into the join table.
-  for (const username of users.canPush ?? []) {
-    await addUserToRole(_id, username, 'canPush');
-  }
-  for (const username of users.canAuthorise ?? []) {
-    await addUserToRole(_id, username, 'canAuthorise');
-  }
+  // One transaction: the repo row and any permissions supplied at creation
+  // land together or not at all. A crash partway must not leave a repo behind
+  // with empty canPush/canAuthorise, since those arrays gate pushing and
+  // approving.
+  const _id = await withTransaction(async (client) => {
+    const result = await client.query<{ _id: string }>(
+      `INSERT INTO repos (project, name, url, date_created, last_modified)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING _id`,
+      [repo.project ?? '', repo.name, repo.url, repo.dateCreated, repo.lastModified],
+    );
+    const newId = result.rows[0]._id;
+    await insertRoleRows(client, newId, 'canPush', users.canPush ?? []);
+    await insertRoleRows(client, newId, 'canAuthorise', users.canAuthorise ?? []);
+    return newId;
+  });
 
   repo._id = _id;
   repo.users = users;
@@ -210,20 +231,8 @@ export const updateRepo = async (repo: Partial<Repo>): Promise<void> => {
 
     if (users !== undefined) {
       await client.query(`DELETE FROM repo_users WHERE repo_id = $1`, [_id]);
-      const roles = [
-        ['canPush', users.canPush ?? []],
-        ['canAuthorise', users.canAuthorise ?? []],
-      ] as const;
-      for (const [role, names] of roles) {
-        for (const username of names) {
-          await client.query(
-            `INSERT INTO repo_users (repo_id, username, role)
-             VALUES ($1, $2, $3)
-             ON CONFLICT DO NOTHING`,
-            [_id, username.toLowerCase(), role],
-          );
-        }
-      }
+      await insertRoleRows(client, _id, 'canPush', users.canPush ?? []);
+      await insertRoleRows(client, _id, 'canAuthorise', users.canAuthorise ?? []);
       await client.query(`UPDATE repos SET last_modified = $2 WHERE _id = $1`, [
         _id,
         new Date().toISOString(),

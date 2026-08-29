@@ -20,6 +20,11 @@ const mockQuery = vi.fn();
 
 vi.mock('../../../src/db/postgres/helper', () => ({
   query: mockQuery,
+  // Runs the callback with a client whose query records into the same mock,
+  // so tests assert the statement sequence; transactional semantics themselves
+  // are covered by the withTransaction tests in helper.test.ts.
+  withTransaction: (fn: (client: { query: typeof mockQuery }) => Promise<unknown>) =>
+    fn({ query: mockQuery }),
 }));
 
 describe('PostgreSQL - Pushes', async () => {
@@ -114,8 +119,8 @@ describe('PostgreSQL - Pushes', async () => {
         reviewer: { username: 'r', reviewerEmail: 'r@example.com' },
       };
 
-      // First call: getPush → resolves to a row whose data is the action.
-      // Second call: writeAudit upsert.
+      // First call: locked read of the row inside the transaction.
+      // Second call: the audit upsert on the same client.
       mockQuery
         .mockResolvedValueOnce({
           rowCount: 1,
@@ -126,6 +131,9 @@ describe('PostgreSQL - Pushes', async () => {
       const result = await reject('p1', rejection as never);
 
       expect(result).toEqual({ message: 'reject p1' });
+
+      // The read must take a row lock so concurrent decisions serialise.
+      expect(String(mockQuery.mock.calls[0][0])).toContain('FOR UPDATE');
 
       // The upsert call serializes the action (with rejection assigned) into
       // the final query parameter as JSON text.

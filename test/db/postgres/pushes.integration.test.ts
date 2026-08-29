@@ -266,4 +266,33 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Pushes Integration Tests', ()
       await expect(cancel('non-existent')).rejects.toThrow('push non-existent not found');
     });
   });
+
+  describe('concurrent decisions', () => {
+    it('serialises concurrent authorise/reject so the final state is one coherent decision', async () => {
+      // Each decision reads the row FOR UPDATE inside a transaction, so the
+      // two calls run one after the other; whichever commits last defines the
+      // final state, but the flags can never blend into an inconsistent mix
+      // (e.g. authorised AND rejected both true) and neither write is lost
+      // mid-read-modify-write.
+      const action = createTestAction({ id: 'decision-race-test' });
+      await writeAudit(action);
+
+      const rejection = {
+        reason: { message: 'concurrent reject' },
+        timestamp: new Date(),
+        reviewer: { username: 'reviewer', reviewerEmail: 'reviewer@example.com' },
+      };
+      await Promise.all([
+        authorise('decision-race-test'),
+        reject('decision-race-test', rejection as never),
+      ]);
+
+      const final = await getPush('decision-race-test');
+      const flags = [final?.authorised, final?.rejected].filter(Boolean);
+      expect(flags).toHaveLength(1);
+      if (final?.rejected) {
+        expect(final.rejection).toBeTruthy();
+      }
+    });
+  });
 });

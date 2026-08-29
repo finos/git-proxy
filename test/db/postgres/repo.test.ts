@@ -178,13 +178,15 @@ describe('PostgreSQL - Repo', async () => {
         users: { canPush: ['bob'], canAuthorise: ['amy'] },
       } as never);
 
-      // each role change inserts into repo_users and bumps last_modified on repos
+      // one set-based insert per role, lowercasing in SQL via unnest
       const inserts = mockQuery.mock.calls.filter(([sql]) =>
         /INSERT INTO repo_users/.test(String(sql)),
       );
       expect(inserts).toHaveLength(2);
-      expect(inserts[0][1]).toEqual(['r9', 'bob', 'canPush']);
-      expect(inserts[1][1]).toEqual(['r9', 'amy', 'canAuthorise']);
+      expect(String(inserts[0][0])).toContain('unnest');
+      expect(String(inserts[0][0])).toContain('lower(u.username)');
+      expect(inserts[0][1]).toEqual(['r9', 'canPush', ['bob']]);
+      expect(inserts[1][1]).toEqual(['r9', 'canAuthorise', ['amy']]);
     });
   });
 
@@ -251,7 +253,7 @@ describe('PostgreSQL - Repo', async () => {
       expect(statements[0]).toContain('DELETE FROM repo_users WHERE repo_id = $1');
       const roles = mockQuery.mock.calls
         .filter(([sql]) => /INSERT INTO repo_users/.test(String(sql)))
-        .map(([, params]) => params?.[2]);
+        .map(([, params]) => params?.[1]);
       expect(roles).toEqual(['canPush', 'canAuthorise']);
     });
 
@@ -384,14 +386,19 @@ describe('PostgreSQL - Repo', async () => {
     });
   });
 
-  it('lowercases usernames when replacing permissions through updateRepo', async () => {
+  it('lowercases usernames in SQL when replacing permissions through updateRepo', async () => {
     mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
 
     await updateRepo({ _id: 'r1', users: { canPush: ['Alice'], canAuthorise: ['BOB'] } });
 
-    const inserted = mockQuery.mock.calls
-      .filter(([sql]) => /INSERT INTO repo_users/.test(String(sql)))
-      .map(([, params]) => params?.[1]);
-    expect(inserted).toEqual(['alice', 'bob']);
+    // lowercasing happens in the statement itself (lower(u.username) over the
+    // unnested array), so the parameters carry the caller's original casing
+    const inserts = mockQuery.mock.calls.filter(([sql]) =>
+      /INSERT INTO repo_users/.test(String(sql)),
+    );
+    for (const [sql] of inserts) {
+      expect(String(sql)).toContain('lower(u.username)');
+    }
+    expect(inserts.map(([, params]) => params?.[2])).toEqual([['Alice'], ['BOB']]);
   });
 });

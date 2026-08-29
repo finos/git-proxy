@@ -250,6 +250,31 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Users Integration Tests', () 
       await expect(addPublicKey('ssh-ghost', makeKey('ghost'))).rejects.toThrow('User not found');
     });
 
+    it('serialises concurrent adds of the same key: exactly one wins', async () => {
+      // Without the advisory lock inside addPublicKey, both calls can pass the
+      // duplicate check before either commits and the key ends up on two
+      // users. With it, the loser waits and then sees the winner's row.
+      const key = makeKey('race');
+      await createUser(createTestUser({ username: 'sshracer1' }));
+      await createUser(createTestUser({ username: 'sshracer2' }));
+
+      const results = await Promise.allSettled([
+        addPublicKey('sshracer1', key),
+        addPublicKey('sshracer2', key),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === 'fulfilled');
+      const rejected = results.filter((r) => r.status === 'rejected');
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+      expect((rejected[0] as PromiseRejectedResult).reason).toBeInstanceOf(DuplicateSSHKeyError);
+
+      // The key must belong to exactly one of the two users.
+      const keys1 = await getPublicKeys('sshracer1');
+      const keys2 = await getPublicKeys('sshracer2');
+      expect(keys1.length + keys2.length).toBe(1);
+    });
+
     it('removes a key by fingerprint and leaves the rest', async () => {
       const keep = makeKey('keep');
       const drop = makeKey('drop');

@@ -25,7 +25,7 @@ import {
   RepoActivityTabCounts,
   RepoPushRollupsByCanonicalUrl,
 } from '../types';
-import { query } from './helper';
+import { query, withTransaction } from './helper';
 
 const defaultPushQuery: Partial<PushQuery> = {
   error: false,
@@ -200,7 +200,7 @@ export const deletePush = async (id: string): Promise<void> => {
   await query(`DELETE FROM pushes WHERE id = $1`, [id]);
 };
 
-export const writeAudit = async (action: Action): Promise<void> => {
+const buildAuditUpsert = (action: Action): { text: string; values: unknown[] } => {
   if (typeof action.id !== 'string') {
     throw new Error('Invalid id');
   }
@@ -210,8 +210,8 @@ export const writeAudit = async (action: Action): Promise<void> => {
   const data = JSON.parse(JSON.stringify(action));
   delete data._id;
 
-  await query(
-    `INSERT INTO pushes (
+  return {
+    text: `INSERT INTO pushes (
        id, timestamp, type, error, blocked, allow_push,
        authorised, canceled, rejected, data
      )
@@ -226,7 +226,7 @@ export const writeAudit = async (action: Action): Promise<void> => {
        canceled = EXCLUDED.canceled,
        rejected = EXCLUDED.rejected,
        data = EXCLUDED.data`,
-    [
+    values: [
       action.id,
       action.timestamp ?? Date.now(),
       action.type ?? null,
@@ -238,48 +238,66 @@ export const writeAudit = async (action: Action): Promise<void> => {
       action.rejected ?? false,
       JSON.stringify(data),
     ],
-  );
+  };
 };
+
+export const writeAudit = async (action: Action): Promise<void> => {
+  const { text, values } = buildAuditUpsert(action);
+  await query(text, values);
+};
+
+/**
+ * Load a push, apply `mutate`, and persist the result atomically. The row is
+ * read with `FOR UPDATE` inside a transaction, so two concurrent decisions on
+ * the same push (or a step-result write from the proxy racing a reviewer's
+ * decision) serialise instead of the later write silently discarding the
+ * earlier one.
+ */
+const mutatePush = async (id: string, mutate: (action: Action) => void): Promise<void> =>
+  withTransaction(async (client) => {
+    const result = await client.query<{ data: unknown }>(
+      `SELECT data FROM pushes WHERE id = $1 FOR UPDATE`,
+      [id],
+    );
+    if (result.rowCount === 0) {
+      throw new Error(`push ${id} not found`);
+    }
+    const action = rowToAction(result.rows[0]);
+    mutate(action);
+    const { text, values } = buildAuditUpsert(action);
+    await client.query(text, values);
+  });
 
 export const authorise = async (
   id: string,
   attestation?: CompletedAttestation,
 ): Promise<{ message: string }> => {
-  const action = await getPush(id);
-  if (!action) {
-    throw new Error(`push ${id} not found`);
-  }
-  action.authorised = true;
-  action.canceled = false;
-  action.rejected = false;
-  action.attestation = attestation;
-  await writeAudit(action);
+  await mutatePush(id, (action) => {
+    action.authorised = true;
+    action.canceled = false;
+    action.rejected = false;
+    action.attestation = attestation;
+  });
   return { message: `authorised ${id}` };
 };
 
 export const reject = async (id: string, rejection: Rejection): Promise<{ message: string }> => {
-  const action = await getPush(id);
-  if (!action) {
-    throw new Error(`push ${id} not found`);
-  }
-  action.authorised = false;
-  action.canceled = false;
-  action.rejected = true;
-  // Preserve the existing rejection-payload shape used by the fs/mongo
-  // backends — the issue calls this out explicitly as a must-fix.
-  action.rejection = rejection;
-  await writeAudit(action);
+  await mutatePush(id, (action) => {
+    action.authorised = false;
+    action.canceled = false;
+    action.rejected = true;
+    // Preserve the existing rejection-payload shape used by the fs/mongo
+    // backends — the issue calls this out explicitly as a must-fix.
+    action.rejection = rejection;
+  });
   return { message: `reject ${id}` };
 };
 
 export const cancel = async (id: string): Promise<{ message: string }> => {
-  const action = await getPush(id);
-  if (!action) {
-    throw new Error(`push ${id} not found`);
-  }
-  action.authorised = false;
-  action.canceled = true;
-  action.rejected = false;
-  await writeAudit(action);
+  await mutatePush(id, (action) => {
+    action.authorised = false;
+    action.canceled = true;
+    action.rejected = false;
+  });
   return { message: `canceled ${id}` };
 };

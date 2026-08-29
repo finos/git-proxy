@@ -20,6 +20,11 @@ const mockQuery = vi.fn();
 
 vi.mock('../../../src/db/postgres/helper', () => ({
   query: mockQuery,
+  // Runs the callback with a client whose query records into the same mock,
+  // so tests assert the statement sequence; transactional semantics themselves
+  // are covered by the withTransaction tests in helper.test.ts.
+  withTransaction: (fn: (client: { query: typeof mockQuery }) => Promise<unknown>) =>
+    fn({ query: mockQuery }),
 }));
 
 describe('PostgreSQL - Users', async () => {
@@ -253,21 +258,29 @@ describe('PostgreSQL - Users', async () => {
     });
 
     describe('addPublicKey', () => {
+      // The first statement inside the transaction is the advisory lock that
+      // serialises concurrent adds of the same key.
+      const lockResult = { rowCount: 1, rows: [] };
+
       it('appends the key to the user public_keys array', async () => {
         mockQuery
-          .mockResolvedValueOnce({ rowCount: 0, rows: [] }) // findUserBySSHKey
-          .mockResolvedValueOnce({ rowCount: 1, rows: [userRow()] }) // findUser
+          .mockResolvedValueOnce(lockResult) // pg_advisory_xact_lock
+          .mockResolvedValueOnce({ rowCount: 0, rows: [] }) // duplicate-key check
+          .mockResolvedValueOnce({ rowCount: 1, rows: [userRow()] }) // locked user row
           .mockResolvedValueOnce({ rowCount: 1, rows: [] }); // UPDATE
 
         await addPublicKey('Alice', keyRecord);
 
-        const [sql, params] = mockQuery.mock.calls[2];
+        expect(String(mockQuery.mock.calls[0][0])).toContain('pg_advisory_xact_lock');
+        expect(mockQuery.mock.calls[0][1]).toEqual([keyRecord.key]);
+        expect(String(mockQuery.mock.calls[2][0])).toContain('FOR UPDATE');
+        const [sql, params] = mockQuery.mock.calls[3];
         expect(sql).toContain('public_keys = public_keys || $2::jsonb');
         expect(params).toEqual(['alice', JSON.stringify([keyRecord])]);
       });
 
       it('throws DuplicateSSHKeyError when the key belongs to another user', async () => {
-        mockQuery.mockResolvedValueOnce({
+        mockQuery.mockResolvedValueOnce(lockResult).mockResolvedValueOnce({
           rowCount: 1,
           rows: [userRow({ username: 'bob', public_keys: [keyRecord] })],
         });
@@ -275,10 +288,11 @@ describe('PostgreSQL - Users', async () => {
         await expect(addPublicKey('alice', keyRecord)).rejects.toThrow(
           "SSH key already in use by user 'bob'",
         );
-        expect(mockQuery).toHaveBeenCalledTimes(1);
+        expect(mockQuery).toHaveBeenCalledTimes(2);
       });
 
       it('allows re-checking a key that already maps to the same user', async () => {
+        mockQuery.mockResolvedValueOnce(lockResult);
         mockQuery.mockResolvedValueOnce({
           rowCount: 1,
           rows: [userRow({ public_keys: [keyRecord] })],
@@ -293,8 +307,9 @@ describe('PostgreSQL - Users', async () => {
 
       it('throws when the user does not exist', async () => {
         mockQuery
-          .mockResolvedValueOnce({ rowCount: 0, rows: [] }) // findUserBySSHKey
-          .mockResolvedValueOnce({ rowCount: 0, rows: [] }); // findUser
+          .mockResolvedValueOnce(lockResult) // pg_advisory_xact_lock
+          .mockResolvedValueOnce({ rowCount: 0, rows: [] }) // duplicate-key check
+          .mockResolvedValueOnce({ rowCount: 0, rows: [] }); // locked user row
 
         await expect(addPublicKey('ghost', keyRecord)).rejects.toThrow('User not found');
       });
@@ -302,6 +317,7 @@ describe('PostgreSQL - Users', async () => {
       it('throws when the fingerprint already exists for the user', async () => {
         const existing = { ...keyRecord, key: 'ssh-ed25519 DIFFERENT-KEY' };
         mockQuery
+          .mockResolvedValueOnce(lockResult)
           .mockResolvedValueOnce({ rowCount: 0, rows: [] })
           .mockResolvedValueOnce({ rowCount: 1, rows: [userRow({ public_keys: [existing] })] });
 
