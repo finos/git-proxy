@@ -118,6 +118,45 @@ describe('PostgreSQL - helper', async () => {
       expect(sqls[sqls.length - 1]).toBe('COMMIT');
     });
 
+    it('verifies instead of migrating when autoMigrate is false', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+        autoMigrate: false,
+      });
+
+      const { MIGRATIONS } = await import('../../../src/db/postgres/schemaMigrations');
+      mockPoolQuery
+        .mockResolvedValueOnce({ rowCount: 1, rows: [{ table_oid: 'schema_migrations' }] })
+        .mockResolvedValueOnce({
+          rowCount: MIGRATIONS.length,
+          rows: MIGRATIONS.map((m) => ({ version: m.version })),
+        });
+
+      await connect();
+
+      // No migration client acquired: nothing ran any DDL.
+      expect(mockPoolConnect).not.toHaveBeenCalled();
+      const sqls = mockPoolQuery.mock.calls.map((call) => String(call[0]));
+      expect(sqls.some((sql) => /to_regclass/.test(sql))).toBe(true);
+    });
+
+    it('refuses to start when autoMigrate is false and migrations are pending', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+        autoMigrate: false,
+      });
+
+      // A brand-new database: the bookkeeping table does not even exist.
+      mockPoolQuery.mockResolvedValueOnce({ rowCount: 1, rows: [{ table_oid: null }] });
+
+      await expect(connect()).rejects.toThrow(/pending migrations: 1 \(initial_schema\)/);
+      expect(mockPoolConnect).not.toHaveBeenCalled();
+    });
+
     it('retries migrations on the next call if they failed', async () => {
       getDatabaseMock.mockReturnValue({
         type: 'postgres',
@@ -669,7 +708,7 @@ describe('PostgreSQL - helper', async () => {
       }
     });
 
-    it('passes the shared pool to connect-pg-simple with createTableIfMissing', () => {
+    it('passes the shared pool to connect-pg-simple without its own DDL path', () => {
       getDatabaseMock.mockReturnValue({
         type: 'postgres',
         enabled: true,
@@ -681,7 +720,9 @@ describe('PostgreSQL - helper', async () => {
       expect(mockStoreCtor).toHaveBeenCalledTimes(1);
       const opts = mockStoreCtor.mock.calls[0][0] as Record<string, unknown>;
       expect(opts.tableName).toBe('session');
-      expect(opts.createTableIfMissing).toBe(true);
+      // The session table is owned by the versioned migration list; the store
+      // creating it would be a second, unversioned DDL path.
+      expect(opts.createTableIfMissing).toBe(false);
       expect(opts.pool).toBeDefined();
     });
 
@@ -696,6 +737,22 @@ describe('PostgreSQL - helper', async () => {
 
       expect(mockStoreCtor).toHaveBeenCalledTimes(1);
       expect(mockPoolQuery).toHaveBeenCalled();
+    });
+
+    it('runs migrations before probing the store, which no longer owns its DDL', async () => {
+      getDatabaseMock.mockReturnValue({
+        type: 'postgres',
+        enabled: true,
+        connectionString: 'postgresql://localhost/x',
+      });
+
+      await ensureSessionStoreReady();
+
+      // The migration client ran (the session table is created by migration
+      // 7, so readiness must not probe an unmigrated database).
+      expect(mockPoolConnect).toHaveBeenCalledTimes(1);
+      const sqls = mockClientQuery.mock.calls.map((call) => String(call[0]));
+      expect(sqls.some((sql) => /CREATE TABLE IF NOT EXISTS "session"/.test(sql))).toBe(true);
     });
   });
 });

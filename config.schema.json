@@ -600,6 +600,10 @@
               "type": "string",
               "description": "Database name. Used when `connectionString` is not set. Falls back to the `PGDATABASE` environment variable."
             },
+            "autoMigrate": {
+              "type": "boolean",
+              "description": "Run pending schema migrations automatically at startup (default `true`). Set to `false` when the runtime database role must not hold DDL rights: apply migrations out-of-band with DDL-capable credentials (`npm run migrate:postgres:schema`), and startup will only verify the schema is current, refusing to start while any migration is pending."
+            },
             "ssl": {
               "description": "TLS configuration for the connection. `true` enables TLS with default certificate verification; an object is passed to the PostgreSQL client as TLS options (for example `rejectUnauthorized`, `ca`, `cert`, `key`).",
               "oneOf": [{ "type": "boolean" }, { "type": "object", "additionalProperties": true }]

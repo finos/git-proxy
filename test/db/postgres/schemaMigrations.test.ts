@@ -16,7 +16,11 @@
 
 import { describe, it, expect, vi } from 'vitest';
 
-import { runMigrations, MIGRATIONS } from '../../../src/db/postgres/schemaMigrations';
+import {
+  assertMigrationsCurrent,
+  runMigrations,
+  MIGRATIONS,
+} from '../../../src/db/postgres/schemaMigrations';
 
 const SELECT_VERSIONS = /SELECT version FROM schema_migrations/;
 
@@ -133,5 +137,58 @@ describe('PostgreSQL - migrations', () => {
   it('lowercases usernames in the repo_users backfill to match the runtime writers', () => {
     const v4 = MIGRATIONS.find((m) => m.version === 4);
     expect(v4?.sql).toContain('lower(elem.username)');
+  });
+
+  it('owns the connect-pg-simple session table as version 7', () => {
+    const v7 = MIGRATIONS.find((m) => m.version === 7);
+    expect(v7?.name).toBe('session_table');
+    // IF NOT EXISTS adopts databases where the store already created the table.
+    expect(v7?.sql).toContain('CREATE TABLE IF NOT EXISTS "session"');
+    expect(v7?.sql).toContain('IDX_session_expire');
+  });
+
+  describe('assertMigrationsCurrent', () => {
+    const makeCheckPool = (tableOid: string | null, appliedRows: { version: number }[]) => {
+      const query = vi.fn().mockImplementation((sql: string) => {
+        if (/to_regclass/.test(sql)) {
+          return Promise.resolve({ rows: [{ table_oid: tableOid }], rowCount: 1 });
+        }
+        if (SELECT_VERSIONS.test(sql)) {
+          return Promise.resolve({ rows: appliedRows, rowCount: appliedRows.length });
+        }
+        return Promise.reject(new Error(`unexpected statement: ${sql}`));
+      });
+      return { pool: { query }, query };
+    };
+
+    it('passes silently when every migration is recorded', async () => {
+      const { pool } = makeCheckPool(
+        'schema_migrations',
+        MIGRATIONS.map((m) => ({ version: m.version })),
+      );
+
+      await expect(assertMigrationsCurrent(pool as never)).resolves.toBeUndefined();
+    });
+
+    it('names the pending versions when the schema is behind', async () => {
+      const allButLast = MIGRATIONS.slice(0, -1).map((m) => ({ version: m.version }));
+      const last = MIGRATIONS[MIGRATIONS.length - 1];
+      const { pool } = makeCheckPool('schema_migrations', allButLast);
+
+      await expect(assertMigrationsCurrent(pool as never)).rejects.toThrow(
+        new RegExp(`pending migrations: ${last.version} \\(${last.name}\\)`),
+      );
+    });
+
+    it('treats a database without the bookkeeping table as fully pending, without DDL', async () => {
+      const { pool, query } = makeCheckPool(null, []);
+
+      await expect(assertMigrationsCurrent(pool as never)).rejects.toThrow(/autoMigrate/);
+
+      // Only the existence probe ran — never a SELECT against the missing
+      // table, and no CREATE of any kind.
+      expect(query).toHaveBeenCalledTimes(1);
+      expect(String(query.mock.calls[0][0])).toContain('to_regclass');
+    });
   });
 });

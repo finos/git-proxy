@@ -18,7 +18,11 @@ import { describe, it, expect } from 'vitest';
 import { Pool } from 'pg';
 
 import { connect, query, resetConnection } from '../../../src/db/postgres/helper';
-import { MIGRATIONS, runMigrations } from '../../../src/db/postgres/schemaMigrations';
+import {
+  assertMigrationsCurrent,
+  MIGRATIONS,
+  runMigrations,
+} from '../../../src/db/postgres/schemaMigrations';
 
 const shouldRunPostgresTests = process.env.RUN_POSTGRES_TESTS === 'true';
 
@@ -33,6 +37,10 @@ const migration = (version: number) => {
   if (!entry) throw new Error(`migration ${version} not found`);
   return entry;
 };
+
+// Every shipped version, in order — the expected schema_migrations content
+// after a full run, without hardcoding the list length in each test.
+const ALL_VERSIONS = MIGRATIONS.map((m) => m.version).sort((a, b) => a - b);
 
 // Drop everything so the next `connect()` exercises the migration runner from a
 // genuinely empty database. The initial `query` self-bootstraps the schema; the
@@ -53,7 +61,7 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Schema Migration Integration 
     const versions = await query<{ version: number }>(
       'SELECT version FROM schema_migrations ORDER BY version',
     );
-    expect(versions.rows.map((row) => row.version)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(versions.rows.map((row) => row.version)).toEqual(ALL_VERSIONS);
 
     const tables = await query<{ tablename: string }>(
       `SELECT tablename FROM pg_tables
@@ -84,13 +92,37 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Schema Migration Integration 
     expect(publicKeysColumn.rows[0].data_type).toBe('jsonb');
   });
 
+  it('creates the connect-pg-simple session table via the migration list', async () => {
+    await resetToEmptyDatabase();
+    await connect();
+
+    const table = await query(
+      `SELECT 1 FROM pg_tables WHERE schemaname = 'public' AND tablename = 'session'`,
+    );
+    expect(table.rowCount).toBe(1);
+  });
+
+  it('assertMigrationsCurrent fails on an empty database and passes after migrating', async () => {
+    const pool = new Pool({ connectionString: getConnectionString() });
+    try {
+      await resetToEmptyDatabase();
+      await expect(assertMigrationsCurrent(pool)).rejects.toThrow(/pending migrations/);
+
+      // connect() runs every migration; the verification then finds nothing pending.
+      await connect();
+      await expect(assertMigrationsCurrent(pool)).resolves.toBeUndefined();
+    } finally {
+      await pool.end();
+    }
+  });
+
   it('is idempotent — re-running migrations does not duplicate the version row', async () => {
     await connect();
     await resetConnection();
     await connect();
 
     const versions = await query<{ version: number }>('SELECT version FROM schema_migrations');
-    expect(versions.rows.map((row) => row.version)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(versions.rows.map((row) => row.version)).toEqual(ALL_VERSIONS);
   });
 
   it('backfills existing JSONB repo permissions into repo_users (single, multi, same user in both roles)', async () => {
@@ -143,7 +175,7 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Schema Migration Integration 
       const versions = await pool.query<{ version: number }>(
         'SELECT version FROM schema_migrations ORDER BY version',
       );
-      expect(versions.rows.map((r) => r.version)).toEqual([1, 2, 3, 4, 5, 6]);
+      expect(versions.rows.map((r) => r.version)).toEqual(ALL_VERSIONS);
 
       // The legacy JSONB column is gone, dropped by v4.
       const usersCol = await pool.query(

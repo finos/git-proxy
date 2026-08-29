@@ -170,6 +170,25 @@ export const MIGRATIONS: Migration[] = [
     WHERE type = 'push';
 `,
   },
+  {
+    version: 7,
+    name: 'session_table',
+    // The express-session table, previously created by connect-pg-simple's
+    // createTableIfMissing outside the versioned migration list. Owning it
+    // here keeps all DDL in one place, so a role without DDL rights can run
+    // with autoMigrate off. The definition matches connect-pg-simple's
+    // table.sql, and IF NOT EXISTS adopts databases where the store already
+    // created it.
+    sql: `
+  CREATE TABLE IF NOT EXISTS "session" (
+    "sid"    varchar NOT NULL COLLATE "default",
+    "sess"   json NOT NULL,
+    "expire" timestamp(6) NOT NULL,
+    CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE
+  );
+  CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+`,
+  },
 ];
 
 const SCHEMA_MIGRATIONS_TABLE_SQL = `
@@ -232,5 +251,38 @@ export const runMigrations = async (pool: Pool): Promise<void> => {
     throw err;
   } finally {
     client.release();
+  }
+};
+
+/**
+ * Verify that every known migration has been applied, without issuing any DDL.
+ * Used at startup when `autoMigrate` is disabled: the operator applies
+ * migrations out-of-band (`npm run migrate:postgres:schema`, run with
+ * DDL-capable credentials) and the runtime role only needs DML rights.
+ * Throws a descriptive error naming the pending versions.
+ */
+export const assertMigrationsCurrent = async (pool: Pool): Promise<void> => {
+  // to_regclass returns null when the table does not exist, so a brand-new
+  // database is reported as "everything pending" rather than a query error.
+  const tableCheck = await pool.query<{ table_oid: string | null }>(
+    `SELECT to_regclass('schema_migrations') AS table_oid`,
+  );
+
+  const applied = new Set<number>();
+  if (tableCheck.rows[0]?.table_oid) {
+    const { rows } = await pool.query<{ version: number }>('SELECT version FROM schema_migrations');
+    for (const row of rows) {
+      applied.add(row.version);
+    }
+  }
+
+  const pending = MIGRATIONS.filter((migration) => !applied.has(migration.version));
+  if (pending.length > 0) {
+    const versions = pending.map((m) => `${m.version} (${m.name})`).join(', ');
+    throw new Error(
+      `postgres schema is out of date and autoMigrate is disabled; pending migrations: ${versions}. ` +
+        'Apply them with DDL-capable credentials via `npm run migrate:postgres:schema` ' +
+        '(or temporarily enable autoMigrate), then restart.',
+    );
   }
 };

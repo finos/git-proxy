@@ -567,6 +567,13 @@ export interface Database {
   options?: Options;
   type: DatabaseType;
   /**
+   * Run pending schema migrations automatically at startup (default `true`). Set to `false`
+   * when the runtime database role must not hold DDL rights: apply migrations out-of-band
+   * with DDL-capable credentials (`npm run migrate:postgres:schema`), and startup will only
+   * verify the schema is current, refusing to start while any migration is pending.
+   */
+  autoMigrate?: boolean;
+  /**
    * Authenticate to Amazon RDS/Aurora with an IAM auth token instead of a static password.
    * When enabled, a short-lived token is generated for each new connection from the AWS SDK
    * default credential chain, so no password is stored. Requires the discrete
@@ -1208,6 +1215,7 @@ const typeMap: any = {
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'options', js: 'options', typ: u(undefined, r('Options')) },
       { json: 'type', js: 'type', typ: r('DatabaseType') },
+      { json: 'autoMigrate', js: 'autoMigrate', typ: u(undefined, true) },
       { json: 'awsIamAuth', js: 'awsIamAuth', typ: u(undefined, r('AwsIamAuth')) },
       { json: 'database', js: 'database', typ: u(undefined, '') },
       { json: 'host', js: 'host', typ: u(undefined, '') },

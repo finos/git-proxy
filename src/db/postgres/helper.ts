@@ -19,7 +19,7 @@ import session, { Store } from 'express-session';
 import connectPgSimple from 'connect-pg-simple';
 
 import { getDatabase } from '../../config';
-import { runMigrations } from './schemaMigrations';
+import { assertMigrationsCurrent, runMigrations } from './schemaMigrations';
 
 type DatabaseConfig = ReturnType<typeof getDatabase>;
 
@@ -91,54 +91,32 @@ const buildIamTokenProvider = (db: DatabaseConfig): (() => Promise<string>) => {
   };
 };
 
+const hasDiscreteFields = (db: DatabaseConfig): boolean =>
+  db.host !== undefined ||
+  db.port !== undefined ||
+  db.user !== undefined ||
+  db.password !== undefined ||
+  db.database !== undefined;
+
 /**
- * Build a `pg` PoolConfig from the resolved database config. A connection
- * string (already env-resolved by `getDatabase`) takes precedence; otherwise
- * the discrete fields are used. When neither is set, `pg` reads the `PG*`
- * environment variables itself. When `awsIamAuth` is enabled, the static
- * password is replaced by a generated IAM token and the discrete fields drive
- * the connection.
+ * Copy whichever discrete connection fields are set onto the pool config.
+ * `password` is excluded in IAM mode, where a token provider replaces it.
  */
-const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
-  const config: PoolConfig = {};
-  const iamAuthEnabled = Boolean(db.awsIamAuth?.enabled);
+const applyDiscreteFields = (
+  db: DatabaseConfig,
+  config: PoolConfig,
+  { includePassword }: { includePassword: boolean },
+): void => {
+  if (db.host !== undefined) config.host = db.host;
+  if (db.port !== undefined) config.port = db.port;
+  if (db.user !== undefined) config.user = db.user;
+  if (includePassword && db.password !== undefined) config.password = db.password;
+  if (db.database !== undefined) config.database = db.database;
+};
 
-  if (iamAuthEnabled) {
-    // IAM auth supplies the password as a generated token, so the connection is
-    // driven by the discrete fields (or PG* env), never a connection string.
-    if (db.connectionString) {
-      console.warn(
-        '[postgres] awsIamAuth is enabled; ignoring connectionString (IAM mode uses the discrete host/port/user/database fields)',
-      );
-    }
-    if (db.host !== undefined) config.host = db.host;
-    if (db.port !== undefined) config.port = db.port;
-    if (db.user !== undefined) config.user = db.user;
-    if (db.database !== undefined) config.database = db.database;
-    config.password = buildIamTokenProvider(db);
-  } else if (db.connectionString) {
-    if (
-      db.host !== undefined ||
-      db.port !== undefined ||
-      db.user !== undefined ||
-      db.password !== undefined ||
-      db.database !== undefined
-    ) {
-      console.warn(
-        '[postgres] connectionString is set; ignoring the discrete host/port/user/password/database fields',
-      );
-    }
-    config.connectionString = db.connectionString;
-  } else {
-    if (db.host !== undefined) config.host = db.host;
-    if (db.port !== undefined) config.port = db.port;
-    if (db.user !== undefined) config.user = db.user;
-    if (db.password !== undefined) config.password = db.password;
-    if (db.database !== undefined) config.database = db.database;
-  }
-
-  // TLS applies regardless of how the connection itself was configured. RDS IAM
-  // auth mandates TLS, so default it on when IAM is enabled and `ssl` is unset.
+// TLS applies regardless of how the connection itself was configured. RDS IAM
+// auth mandates TLS, so default it on when IAM is enabled and `ssl` is unset.
+const applySsl = (db: DatabaseConfig, config: PoolConfig, iamAuthEnabled: boolean): void => {
   if (db.ssl !== undefined) {
     config.ssl = db.ssl as PoolConfig['ssl'];
     if (iamAuthEnabled && typeof db.ssl === 'object' && db.ssl !== null && !('ca' in db.ssl)) {
@@ -162,17 +140,54 @@ const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
         '(see the PostgreSQL section of the architecture doc)',
     );
   }
+};
 
-  // Optional pool tuning.
-  if (db.pool) {
-    if (db.pool.max !== undefined) config.max = db.pool.max;
-    if (db.pool.idleTimeoutMillis !== undefined) {
-      config.idleTimeoutMillis = db.pool.idleTimeoutMillis;
-    }
-    if (db.pool.connectionTimeoutMillis !== undefined) {
-      config.connectionTimeoutMillis = db.pool.connectionTimeoutMillis;
-    }
+const applyPoolTuning = (db: DatabaseConfig, config: PoolConfig): void => {
+  if (!db.pool) return;
+  if (db.pool.max !== undefined) config.max = db.pool.max;
+  if (db.pool.idleTimeoutMillis !== undefined) {
+    config.idleTimeoutMillis = db.pool.idleTimeoutMillis;
   }
+  if (db.pool.connectionTimeoutMillis !== undefined) {
+    config.connectionTimeoutMillis = db.pool.connectionTimeoutMillis;
+  }
+};
+
+/**
+ * Build a `pg` PoolConfig from the resolved database config. A connection
+ * string (already env-resolved by `getDatabase`) takes precedence; otherwise
+ * the discrete fields are used. When neither is set, `pg` reads the `PG*`
+ * environment variables itself. When `awsIamAuth` is enabled, the static
+ * password is replaced by a generated IAM token and the discrete fields drive
+ * the connection.
+ */
+const buildPoolConfig = (db: DatabaseConfig): PoolConfig => {
+  const config: PoolConfig = {};
+  const iamAuthEnabled = Boolean(db.awsIamAuth?.enabled);
+
+  if (iamAuthEnabled) {
+    // IAM auth supplies the password as a generated token, so the connection is
+    // driven by the discrete fields (or PG* env), never a connection string.
+    if (db.connectionString) {
+      console.warn(
+        '[postgres] awsIamAuth is enabled; ignoring connectionString (IAM mode uses the discrete host/port/user/database fields)',
+      );
+    }
+    applyDiscreteFields(db, config, { includePassword: false });
+    config.password = buildIamTokenProvider(db);
+  } else if (db.connectionString) {
+    if (hasDiscreteFields(db)) {
+      console.warn(
+        '[postgres] connectionString is set; ignoring the discrete host/port/user/password/database fields',
+      );
+    }
+    config.connectionString = db.connectionString;
+  } else {
+    applyDiscreteFields(db, config, { includePassword: true });
+  }
+
+  applySsl(db, config, iamAuthEnabled);
+  applyPoolTuning(db, config);
   return config;
 };
 
@@ -205,7 +220,13 @@ const ensurePool = (): Pool => {
 export const connect = async (): Promise<Pool> => {
   const pool = ensurePool();
   if (!_bootstrapPromise) {
-    _bootstrapPromise = runMigrations(pool).catch((err) => {
+    // `autoMigrate: false` supports deployments where the runtime role holds
+    // no DDL rights: migrations are applied out-of-band with elevated
+    // credentials (`npm run migrate:postgres:schema`) and startup only
+    // verifies the schema is current, failing fast when it is not.
+    const bootstrap =
+      getDatabase().autoMigrate === false ? assertMigrationsCurrent(pool) : runMigrations(pool);
+    _bootstrapPromise = bootstrap.catch((err) => {
       // Reset so the next caller retries instead of being permanently latched
       // onto a rejected promise.
       _bootstrapPromise = null;
@@ -214,6 +235,16 @@ export const connect = async (): Promise<Pool> => {
   }
   await _bootstrapPromise;
   return pool;
+};
+
+/**
+ * Apply pending schema migrations regardless of the `autoMigrate` setting.
+ * Backs the `migrate:postgres:schema` npm script, which deployments running
+ * with `autoMigrate: false` use to apply DDL out-of-band with credentials
+ * that do hold DDL rights.
+ */
+export const applySchemaMigrations = async (): Promise<void> => {
+  await runMigrations(ensurePool());
 };
 
 /**
@@ -280,11 +311,19 @@ export const getSessionStore = (): Store => {
   return new PgStore({
     pool,
     tableName: 'session',
-    createTableIfMissing: true,
+    // The session table is owned by the versioned migration list (see
+    // schemaMigrations.ts) so all DDL lives in one place; letting the store
+    // create it would be a second, unversioned DDL path needing DDL rights
+    // at runtime even when autoMigrate is off.
+    createTableIfMissing: false,
   });
 };
 
 export const ensureSessionStoreReady = async (): Promise<void> => {
+  // Run (or, with autoMigrate off, verify) migrations before probing the
+  // store: the session table is created by the migration runner, not the
+  // store itself.
+  await connect();
   const store = getSessionStore();
 
   await new Promise<void>((resolve, reject) => {

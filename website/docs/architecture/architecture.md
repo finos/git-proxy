@@ -572,7 +572,7 @@ The importer reads the source with its own driver while writing through the acti
 
 ##### Schema migrations
 
-Schema changes are applied by a small built-in migration runner (`src/db/postgres/migrations.ts`). On every startup it:
+Schema changes are applied by a small built-in migration runner (`src/db/postgres/schemaMigrations.ts`). On every startup it:
 
 - ensures a `schema_migrations` bookkeeping table exists,
 - takes a transaction-scoped advisory lock so concurrently starting processes do not race, and
@@ -584,14 +584,30 @@ Notes and current limitations:
 
 - All pending migrations run inside a single transaction, so a statement that cannot run transactionally (for example `CREATE INDEX CONCURRENTLY`) is not yet supported by the runner.
 - Repo permissions (`canPush` / `canAuthorise`) are normalised into a `repo_users(repo_id, username, role)` join table (`ON DELETE CASCADE` from `repos`); the adapter reconstructs the permission arrays on read.
+- The `connect-pg-simple` session table is created by the migration list too (rather than by the store's own `createTableIfMissing`), so every piece of DDL flows through the same versioned, locked runner.
 - If `postgres` is selected as the active sink and no connection can be resolved, GitProxy refuses to start rather than silently falling back to an in-memory session store.
+
+###### Disabling automatic migrations (`autoMigrate: false`)
+
+Running migrations lazily at startup means the runtime database role permanently holds DDL rights. Where that is not acceptable — regulated deployments commonly separate DDL and DML credentials — set `"autoMigrate": false` on the postgres sink entry. Startup then only verifies that the schema is current, refusing to start (and naming the pending versions) when it is not, and migrations are applied out-of-band with DDL-capable credentials:
+
+```bash
+npm run migrate:postgres:schema
+```
+
+The script connects using the configured sink (or the standard `PG*` / `GIT_PROXY_POSTGRES_CONNECTION_STRING` overrides, letting you substitute elevated credentials), applies any pending migrations under the same advisory lock as the startup path, and exits.
+
+###### Deploy ordering
+
+A migration can retire schema that an older, still-running GitProxy process depends on (migration 5, for instance, drops the legacy `repos.users` column that older processes read). When upgrading a multi-process deployment across such a migration, stop or fully drain the processes running the older version before the new version boots — or, with `autoMigrate` off, before running `migrate:postgres:schema`. A rolling deploy that applies migrations while old processes are still serving can break those processes mid-flight.
 
 ##### PostgreSQL design decisions
 
 The adapter follows a few deliberate choices, made for parity with the existing backends rather than for idiomatic SQL:
 
 - **Pushes stay documents.** A push is an audit record: written once, updated through a handful of state flips, and read back whole. The `pushes` table therefore keeps the entire action as a JSONB `data` column, with typed columns (`timestamp`, the status booleans) only for the fields that queries filter and sort on. This mirrors how the mongo and NeDB backends treat pushes and keeps the row shape stable as the `Action` type evolves.
-- **Users and repos are typed rows with JSONB edges.** Fields that queries touch get real columns; genuinely document-shaped parts (a user's `publicKeys`, the repo permission map) are JSONB.
+- **JSONB over full normalisation is deliberate.** Fully normalising an action would decompose a deeply nested document (steps, commit data, attestation) across many tables on every write and reassemble it with multi-way joins on every read, to serve relational queries the application never makes: pushes are fetched whole by id and listed by timestamp, and the few filtered fields are already real columns (with expression indexes covering the JSONB lookups the profile and activity pages make). Reads are single-row fetches either way, and a write is one upsert instead of a transactional multi-table write, so for this workload the document layout is at least as fast in both directions. It also keeps all three backends operating on the same document shapes, which is what makes feature parity across sinks tractable and lets `migrate:postgres` move data between backends without lossy transformation. Where the data _is_ queried relationally — repo permissions — the schema is normalised instead (`repo_users` above): JSONB is reserved for data that is genuinely a document.
+- **Users and repos are typed rows with JSONB edges.** Fields that queries touch get real columns; genuinely document-shaped parts (a user's `publicKeys`) are JSONB, while repo permissions live in the normalised `repo_users` join table.
 - **Identifiers are server-generated UUIDs** (`gen_random_uuid()`), the SQL analogue of mongo's ObjectIds. No compatibility between the backends' id formats is assumed anywhere in the app.
 - **Timestamps the app treats as strings stay strings.** `dateCreated` and `lastModified` are ISO-8601 `TEXT` columns so values round-trip byte-for-byte identically to the mongo and NeDB backends, with no timezone conversion on the way through.
 - **Same case rules as mongo**: usernames are lowercased on permission changes, and repo name lookups are lowercase.
