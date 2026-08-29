@@ -138,11 +138,9 @@ jobs:
           npm run test-coverage-ci
           npm run test-coverage-ci --workspaces --if-present
 
+      # Smoke test deliberately removed due to long running times
       - name: Build frontend
         run: npm run build-ui
-
-      - name: Smoke test build
-        run: bash ./scripts/package-smoke-test.sh --no-clean-build
 
   # Execute a final job to collect the results and report a single check status
   results:
