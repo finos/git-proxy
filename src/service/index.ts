@@ -17,6 +17,8 @@
 import express, { Express } from 'express';
 import session from 'express-session';
 import http from 'http';
+import https from 'https';
+import fs from 'fs';
 import cors from 'cors';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
@@ -24,19 +26,26 @@ import lusca from 'lusca';
 
 import * as config from '../config';
 import * as db from '../db';
-import { serverConfig } from '../config/env';
 import { Proxy } from '../proxy';
 import routes from './routes';
 import { configure } from './passport';
 
 const limiter = rateLimit(config.getRateLimit());
 
-const { GIT_PROXY_UI_PORT: uiPort } = serverConfig;
-
-const DEFAULT_SESSION_MAX_AGE_HOURS = 12;
-
 const app: Express = express();
 let _httpServer: http.Server | null = null;
+let _httpsServer: https.Server | null = null;
+
+const getServiceTLSOptions = () => ({
+  key:
+    config.getTLSEnabled() && config.getTLSKeyPemPath()
+      ? fs.readFileSync(config.getTLSKeyPemPath()!)
+      : undefined,
+  cert:
+    config.getTLSEnabled() && config.getTLSCertPemPath()
+      ? fs.readFileSync(config.getTLSCertPemPath()!)
+      : undefined,
+});
 
 /**
  * CORS Configuration
@@ -121,7 +130,7 @@ const corsOptions: cors.CorsOptions = {
 };
 
 /**
- * Internal function used to bootstrap the Git Proxy API's express application.
+ * Internal function used to bootstrap GitProxy's API express application.
  * @param {Proxy} proxy A reference to the proxy, used to restart it when necessary.
  * @return {Promise<Express>} the express application
  */
@@ -143,7 +152,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
       cookie: {
         secure: 'auto',
         httpOnly: true,
-        maxAge: (config.getSessionMaxAgeHours() || DEFAULT_SESSION_MAX_AGE_HOURS) * 60 * 60 * 1000,
+        maxAge: config.getSessionMaxAgeHours() * 60 * 60 * 1000,
       },
     }),
   );
@@ -187,10 +196,22 @@ async function start(proxy: Proxy) {
   const app = await createApp(proxy);
 
   _httpServer = http.createServer(app);
-  _httpServer.listen(uiPort);
+  _httpServer.listen(config.getUIPort());
 
-  console.log(`Service Listening on ${uiPort}`);
+  console.log(`Service Listening on ${config.getUIPort()}`);
   app.emit('ready');
+
+  if (config.getTLSEnabled()) {
+    await new Promise<void>((resolve, reject) => {
+      const server = https.createServer(getServiceTLSOptions(), app);
+      server.on('error', reject);
+      server.listen(config.getHttpsUIPort(), () => {
+        console.log(`HTTPS Service Listening on ${config.getHttpsUIPort()}`);
+        resolve();
+      });
+      _httpsServer = server;
+    });
+  }
 
   return app;
 }
@@ -199,22 +220,42 @@ async function start(proxy: Proxy) {
  * Stops the proxy service.
  */
 async function stop(): Promise<void> {
-  if (!_httpServer) {
-    return Promise.resolve();
+  const closePromises: Promise<void>[] = [];
+
+  if (_httpServer) {
+    closePromises.push(
+      new Promise((resolve, reject) => {
+        console.log(`Stopping Service Listening on ${config.getUIPort()}`);
+        _httpServer!.close((err) => {
+          if (err) {
+            reject(err);
+          } else {
+            console.log('Service stopped');
+            _httpServer = null;
+            resolve();
+          }
+        });
+      }),
+    );
   }
 
-  return new Promise((resolve, reject) => {
-    console.log(`Stopping Service Listening on ${uiPort}`);
-    _httpServer!.close((err) => {
-      if (err) {
-        reject(err);
-      } else {
-        console.log('Service stopped');
-        _httpServer = null;
-        resolve();
-      }
-    });
-  });
+  if (_httpsServer) {
+    closePromises.push(
+      new Promise((resolve, reject) => {
+        _httpsServer!.close((err) => {
+          if (err) {
+            reject(err);
+          } else {
+            console.log('HTTPS Service stopped');
+            _httpsServer = null;
+            resolve();
+          }
+        });
+      }),
+    );
+  }
+
+  return Promise.all(closePromises).then(() => {});
 }
 
 export const Service = {
@@ -222,5 +263,8 @@ export const Service = {
   stop,
   get httpServer() {
     return _httpServer;
+  },
+  get httpsServer() {
+    return _httpsServer;
   },
 };

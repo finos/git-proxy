@@ -18,10 +18,24 @@ import * as helper from './helper';
 import * as pushes from './pushes';
 import * as repo from './repo';
 import * as users from './users';
+import * as migrations from './migrations';
 
 export const { getSessionStore } = helper;
 
-export const { getPushes, writeAudit, getPush, deletePush, authorise, cancel, reject } = pushes;
+export const { getAppliedMigrations, recordMigration, unrecordMigration, deriveCreatedAt } =
+  migrations;
+
+export const {
+  getPushes,
+  getPushesForUserProfile,
+  getRepoPushRollupsByCanonicalUrl,
+  writeAudit,
+  getPush,
+  deletePush,
+  authorise,
+  cancel,
+  reject,
+} = pushes;
 
 export const {
   getRepos,
@@ -29,6 +43,7 @@ export const {
   getRepoByUrl,
   getRepoById,
   createRepo,
+  updateRepo,
   addUserCanPush,
   addUserCanAuthorise,
   removeUserCanPush,
@@ -39,9 +54,14 @@ export const {
 export const {
   findUser,
   findUserByEmail,
+  findUserByGitAccount,
   findUserByOIDC,
+  findUserBySSHKey,
   getUsers,
   createUser,
   deleteUser,
   updateUser,
+  addPublicKey,
+  removePublicKey,
+  getPublicKeys,
 } = users;

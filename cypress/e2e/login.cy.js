@@ -19,7 +19,7 @@ describe('Login page', () => {
     cy.visit('/login');
   });
 
-  it('should have git proxy logo', () => {
+  it('should have GitProxy logo', () => {
     cy.get('[data-test="git-proxy-logo"]').should('exist');
   });
 
@@ -47,13 +47,13 @@ describe('Login page', () => {
     cy.url().should('include', '/dashboard/repo');
   });
 
-  it('should show an error snackbar on invalid login', () => {
+  it('should show an error flash on invalid login', () => {
     cy.get('[data-test="username"]').type('wronguser');
     cy.get('[data-test="password"]').type('wrongpass');
     cy.get('[data-test="login"]').click();
 
-    cy.get('.MuiSnackbarContent-message')
+    cy.get('[data-test="login-error"]')
       .should('be.visible')
-      .and('contain', 'You entered an invalid username or password...');
+      .and('contain', 'You entered an invalid username or password.');
   });
 });

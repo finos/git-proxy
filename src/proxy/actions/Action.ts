@@ -16,14 +16,32 @@
 
 import { processGitURLForNameAndOrg, processUrlPath } from '../routes/helper';
 import { Step } from './Step';
-import { Attestation, CommitData, Rejection } from '../processors/types';
+import { CompletedAttestation, CommitData, Rejection } from '../processors/types';
+import { TagData } from '../../types/models';
+
+export enum RequestType {
+  PUSH = 'push',
+
+  PULL = 'pull',
+
+  DEFAULT = 'default',
+}
+
+export enum PushType {
+  /** Push to a tag ref (refs/tags/*) */
+  TAG = 'tag',
+
+  /** Push to a branch ref (refs/heads/*) or any other non-tag ref */
+  BRANCH = 'branch',
+}
 
 /**
  * Class representing a Push.
  */
 class Action {
   id: string;
-  type: string;
+  type: RequestType;
+  actionType?: PushType;
   method: string;
   timestamp: number;
   project: string;
@@ -49,11 +67,21 @@ class Action {
   author?: string;
   user?: string;
   userEmail?: string;
-  attestation?: Attestation;
+  attestation?: CompletedAttestation;
   rejection?: Rejection;
   lastStep?: Step;
   proxyGitPath?: string;
+  tags?: string[];
+  tagData?: TagData[];
   newIdxFiles?: string[];
+  protocol?: 'https' | 'ssh';
+  capabilities?: string[];
+  pullAuthStrategy?:
+    | 'basic'
+    | 'ssh-user-key'
+    | 'ssh-service-token'
+    | 'ssh-agent-forwarding'
+    | 'anonymous';
 
   /**
    * Create an action.
@@ -63,7 +91,7 @@ class Action {
    * @param {number} timestamp The timestamp of the action
    * @param {string} url The URL to the repo that should be proxied (with protocol, origin, repo path, but not the path for the git operation).
    */
-  constructor(id: string, type: string, method: string, timestamp: number, url: string) {
+  constructor(id: string, type: RequestType, method: string, timestamp: number, url: string) {
     this.id = id;
     this.type = type;
     this.method = method;

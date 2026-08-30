@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-import { writeAudit } from '../../../db';
-import { Action } from '../../actions';
+import { Request } from 'express';
 
-const exec = async (req: any, action: Action) => {
-  if (action.type !== 'pull') {
+import { writeAudit } from '../../../db';
+import { Action, RequestType } from '../../actions';
+
+const exec = async (_req: Request, action: Action) => {
+  if (action.type !== RequestType.PULL) {
     await writeAudit(action);
   }
 

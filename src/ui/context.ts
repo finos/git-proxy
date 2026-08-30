@@ -14,24 +14,22 @@
  * limitations under the License.
  */
 
-import { createContext } from 'react';
+import { createContext, type Dispatch, type SetStateAction } from 'react';
 import { PublicUser } from '../db/types';
 
-export const UserContext = createContext<UserContextType>({
-  user: {
-    admin: false,
-  },
-});
-
 export interface UserContextType {
-  user: {
-    admin: boolean;
-  };
+  user: PublicUser | null;
+  setUser: Dispatch<SetStateAction<PublicUser | null>>;
 }
+
+export const UserContext = createContext<UserContextType>({
+  user: null,
+  setUser: () => {},
+});
 
 export interface AuthContextType {
   user: PublicUser | null;
-  setUser: React.Dispatch<any>;
+  setUser: React.Dispatch<React.SetStateAction<PublicUser | null>>;
   refreshUser: () => Promise<void>;
   isLoading: boolean;
 }

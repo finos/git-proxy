@@ -14,11 +14,25 @@
  * limitations under the License.
  */
 
+import { Request } from 'express';
+
 import { Question } from '../../config/generated/config';
 import { Action } from '../actions';
 
+export interface ProcessorExec {
+  (req: Request, action: Action): Promise<Action>;
+  /** Used for progress and step reporting (e.g. 'checkMessages.exec'). */
+  readonly displayName?: string;
+  /**
+   * Failures in collectible steps are recoverable by the user. Failures are
+   * recorded and all rejection reasons are reported at the end of the chain.
+   * When false or unset, a failure stops the chain immediately.
+   */
+  readonly isCollectible?: boolean;
+}
+
 export interface Processor {
-  exec(req: any, action: Action): Promise<Action>;
+  exec: ProcessorExec;
   metadata: ProcessorMetadata;
 }
 
@@ -26,21 +40,33 @@ export interface ProcessorMetadata {
   displayName: string;
 }
 
-export type Attestation = {
+export interface AttestationAnswer {
+  label: string;
+  checked: boolean;
+}
+
+type AttestationBase = {
   reviewer: {
     username: string;
-    gitAccount: string;
+    email: string;
+    /** Optional friendly name; absent on records written by the proxy itself. */
+    displayName?: string | null;
+    /** Legacy alias for `email` on attestations persisted by older versions. */
+    reviewerEmail?: string;
   };
   timestamp: string | Date;
+  automated?: boolean;
+};
+
+export type Attestation = AttestationBase & {
   questions: Question[];
 };
 
-export type Rejection = {
-  reviewer: {
-    username: string;
-    reviewerEmail: string;
-  };
-  timestamp: string | Date;
+export type CompletedAttestation = AttestationBase & {
+  answers: AttestationAnswer[];
+};
+
+export type Rejection = AttestationBase & {
   reason: string;
 };
 
@@ -68,6 +94,8 @@ export type CommitHeader = {
 };
 
 export type CommitData = {
+  /** Not derived by `getCommitData`; present only on pushes recorded with a per-commit hash. */
+  sha?: string;
   tree: string;
   parent: string;
   author: string;

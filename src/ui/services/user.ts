@@ -17,14 +17,43 @@
 import axios, { AxiosError, AxiosResponse } from 'axios';
 import { getAxiosConfig, processAuthError } from './auth';
 import { PublicUser } from '../../db/types';
+import { BackendResponse } from '../types';
 import { getBaseUrl, getApiV1BaseUrl } from './apiConfig';
-import { getServiceError, formatErrorMessage } from './errors';
+import { errorResult, formatErrorMessage, getServiceError, successResult } from './errors';
+import type { ServiceResult } from './errors';
+import type { UserSortField } from '../views/UserList/Components/userSortField';
+import { DEFAULT_USER_SORT, userSortDirection } from '../views/UserList/Components/userSortField';
 
 type SetStateCallback<T> = (value: T | ((prevValue: T) => T)) => void;
 
+const userNameSortKey = (user: PublicUser): string =>
+  (user.displayName?.trim() || user.username || '').toLowerCase();
+
+const totalUserActivity = (user: PublicUser): number => {
+  if (!user.activity) return 0;
+  const { pending, approved, canceled, rejected, error } = user.activity;
+  return pending + approved + canceled + rejected + error;
+};
+
+const sortUsers = (users: PublicUser[], sort: UserSortField): PublicUser[] => {
+  const next = [...users];
+  if (sort === 'activity') {
+    next.sort((a, b) => totalUserActivity(b) - totalUserActivity(a));
+    return next;
+  }
+  const direction = userSortDirection(sort);
+  next.sort((a, b) => {
+    const cmp = userNameSortKey(a).localeCompare(userNameSortKey(b), undefined, {
+      sensitivity: 'base',
+    });
+    return direction === 'asc' ? cmp : -cmp;
+  });
+  return next;
+};
+
 const getUser = async (
   setIsLoading?: SetStateCallback<boolean>,
-  setUser?: (user: PublicUser) => void,
+  setUser?: (user: PublicUser | null) => void,
   setAuth?: SetStateCallback<boolean>,
   setErrorMessage?: SetStateCallback<string>,
   id: string | null = null,
@@ -43,11 +72,12 @@ const getUser = async (
 
     setUser?.(user);
     setIsLoading?.(false);
-  } catch (error) {
+  } catch (error: unknown) {
     const { status, message } = getServiceError(error, 'Unknown error');
     if (status === 401) {
+      setUser?.(null);
       setAuth?.(false);
-      setErrorMessage?.(processAuthError(error as AxiosError));
+      setErrorMessage?.(processAuthError(error as AxiosError<BackendResponse>));
     } else {
       setErrorMessage?.(formatErrorMessage('Error fetching user', status, message));
     }
@@ -60,6 +90,7 @@ const getUsers = async (
   setUsers: SetStateCallback<PublicUser[]>,
   setAuth: SetStateCallback<boolean>,
   setErrorMessage: SetStateCallback<string>,
+  sort: UserSortField = DEFAULT_USER_SORT,
 ): Promise<void> => {
   setIsLoading(true);
 
@@ -69,12 +100,12 @@ const getUsers = async (
       `${apiV1BaseUrl}/user`,
       getAxiosConfig(),
     );
-    setUsers(response.data);
+    setUsers(sortUsers(response.data, sort));
   } catch (error) {
     const { status, message } = getServiceError(error, 'Unknown error');
     if (status === 401) {
       setAuth(false);
-      setErrorMessage(processAuthError(error as AxiosError));
+      setErrorMessage(processAuthError(error as AxiosError<BackendResponse>));
     } else {
       setErrorMessage(formatErrorMessage('Error fetching users', status, message));
     }
@@ -83,19 +114,57 @@ const getUsers = async (
   }
 };
 
-const updateUser = async (
-  user: PublicUser,
-  setErrorMessage: SetStateCallback<string>,
-  setIsLoading: SetStateCallback<boolean>,
-): Promise<void> => {
+const fetchUsersForAutocomplete = async (): Promise<PublicUser[]> => {
+  const apiV1BaseUrl = await getApiV1BaseUrl();
+  const response: AxiosResponse<PublicUser[]> = await axios(
+    `${apiV1BaseUrl}/user`,
+    getAxiosConfig(),
+  );
+  return sortUsers(response.data, DEFAULT_USER_SORT);
+};
+
+const resolveUsernameByEmail = async (email: string): Promise<ServiceResult<string | null>> => {
   try {
-    const baseUrl = await getBaseUrl();
-    await axios.post(`${baseUrl}/api/auth/gitAccount`, user, getAxiosConfig());
+    const apiV1BaseUrl = await getApiV1BaseUrl();
+    const url = new URL(`${apiV1BaseUrl}/user/lookup/by-email`);
+    url.searchParams.set('email', email.trim().toLowerCase());
+    const response: AxiosResponse<{ username: string | null }> = await axios(
+      url.toString(),
+      getAxiosConfig(),
+    );
+    return successResult(response.data.username);
   } catch (error) {
-    const { status, message } = getServiceError(error, 'Unknown error');
-    setErrorMessage(formatErrorMessage('Error updating user', status, message));
-    setIsLoading(false);
+    return errorResult(error, 'Error resolving user by email');
   }
 };
 
-export { getUser, getUsers, updateUser };
+/**
+ * Returns the user's display name from the directory, or null if unavailable.
+ */
+const resolveDisplayNameByUsername = async (username: string): Promise<string | null> => {
+  const key = username.trim().toLowerCase();
+  if (!key) {
+    return null;
+  }
+
+  try {
+    const apiV1BaseUrl = await getApiV1BaseUrl();
+    const response: AxiosResponse<PublicUser> = await axios(
+      `${apiV1BaseUrl}/user/${encodeURIComponent(key)}`,
+      getAxiosConfig(),
+    );
+    const dn = response.data.displayName?.trim();
+    return dn || null;
+  } catch {
+    return null;
+  }
+};
+
+export {
+  getUser,
+  getUsers,
+  fetchUsersForAutocomplete,
+  sortUsers,
+  resolveUsernameByEmail,
+  resolveDisplayNameByUsername,
+};

@@ -15,8 +15,9 @@
  */
 
 import express, { Request, Response, NextFunction } from 'express';
+import bcrypt from 'bcryptjs';
 import { getPassport, authStrategies } from '../passport';
-import { getAuthMethods } from '../../config';
+import { getAuthMethods, getUIHost, getUIPort } from '../../config';
 
 import * as db from '../../db';
 import * as passportLocal from '../passport/local';
@@ -24,14 +25,38 @@ import * as passportAD from '../passport/activeDirectory';
 
 import { User } from '../../db/types';
 import { AuthenticationElement } from '../../config/generated/config';
-
-import { isAdminUser, toPublicUser } from './utils';
+import { isAdminUser, mustChangePassword, toPublicUser } from './utils';
+import { handleErrorAndLog } from '../../utils/errors';
+import { scmTokenCache } from '../../proxy/processors/push-action/tokenIdentity';
 
 const router = express.Router();
 const passport = getPassport();
 
-const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
-  process.env;
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_CHANGE_ALLOWED_PATHS = new Set([
+  '/',
+  '/config',
+  '/login',
+  '/logout',
+  '/profile',
+  '/change-password',
+  '/openidconnect',
+  '/openidconnect/callback',
+]);
+
+router.use((req: Request, res: Response, next: NextFunction) => {
+  if (!mustChangePassword(req.user)) {
+    return next();
+  }
+
+  if (PASSWORD_CHANGE_ALLOWED_PATHS.has(req.path)) {
+    return next();
+  }
+
+  return res.status(428).send({
+    message: 'Password change required before accessing this endpoint',
+  });
+});
 
 router.get('/', (_req: Request, res: Response) => {
   res.status(200).json({
@@ -82,9 +107,9 @@ const loginSuccessHandler = () => async (req: Request, res: Response) => {
       message: 'success',
       user: currentUser,
     });
-  } catch (e) {
-    console.log(`service.routes.auth.login: Error logging user in ${JSON.stringify(e)}`);
-    res.status(500).send('Failed to login').end();
+  } catch (error: unknown) {
+    const msg = handleErrorAndLog(error, 'Error logging user in');
+    res.status(500).send(`Failed to login: ${msg}`).end();
   }
 };
 
@@ -119,32 +144,114 @@ router.post(
 router.get('/openidconnect', passport.authenticate(authStrategies['openidconnect'].type));
 
 router.get('/openidconnect/callback', (req: Request, res: Response, next: NextFunction) => {
-  passport.authenticate(authStrategies['openidconnect'].type, (err: any, user: any, info: any) => {
-    if (err) {
-      console.error('Authentication error:', err);
-      return res.status(500).end();
-    }
-    if (!user) {
-      console.error('No user found:', info);
-      return res.status(401).end();
-    }
-    req.logIn(user, (err) => {
+  passport.authenticate(
+    authStrategies['openidconnect'].type,
+    (err: unknown, user: Partial<db.User>, info: unknown) => {
       if (err) {
-        console.error('Login error:', err);
+        console.error('Authentication error:', err);
         return res.status(500).end();
       }
-      console.log('Logged in successfully. User:', user);
-      return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
-    });
-  })(req, res, next);
+      if (!user) {
+        console.error('No user found:', info);
+        return res.status(401).end();
+      }
+      req.logIn(user, (err) => {
+        if (err) {
+          console.error('Login error:', err);
+          return res.status(500).end();
+        }
+        console.log('Logged in successfully. User:', user);
+        return res.redirect(`${getUIHost()}:${getUIPort()}/dashboard/profile`);
+      });
+    },
+  )(req, res, next);
 });
 
 router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
-  req.logout((err: any) => {
+  req.logout((err: unknown) => {
     if (err) return next(err);
   });
   res.clearCookie('connect.sid');
   res.send({ isAuth: req.isAuthenticated(), user: req.user });
+});
+
+router.post('/change-password', async (req: Request, res: Response) => {
+  if (!req.user) {
+    res
+      .status(401)
+      .send({
+        message: 'Not logged in',
+      })
+      .end();
+    return;
+  }
+
+  const { currentPassword, newPassword } = req.body ?? {};
+  if (
+    typeof currentPassword !== 'string' ||
+    typeof newPassword !== 'string' ||
+    currentPassword.trim().length === 0 ||
+    newPassword.trim().length < PASSWORD_MIN_LENGTH
+  ) {
+    res
+      .status(400)
+      .send({
+        message: `currentPassword and newPassword are required, and newPassword must be at least ${PASSWORD_MIN_LENGTH} characters`,
+      })
+      .end();
+    return;
+  }
+
+  if (currentPassword === newPassword) {
+    res
+      .status(400)
+      .send({
+        message: 'newPassword must be different from currentPassword',
+      })
+      .end();
+    return;
+  }
+
+  try {
+    const user = await db.findUser((req.user as User).username);
+    if (!user) {
+      res.status(404).send({ message: 'User not found' }).end();
+      return;
+    }
+
+    if (!user.password) {
+      res
+        .status(400)
+        .send({ message: 'Password changes are not supported for this account' })
+        .end();
+      return;
+    }
+
+    const currentPasswordCorrect = await bcrypt.compare(currentPassword, user.password ?? '');
+    if (!currentPasswordCorrect) {
+      res.status(401).send({ message: 'Current password is incorrect' }).end();
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.updateUser({
+      username: user.username,
+      password: hashedPassword,
+      mustChangePassword: false,
+    });
+
+    (req.user as User).mustChangePassword = false;
+
+    res.status(200).send({ message: 'Password updated successfully' }).end();
+  } catch (error: unknown) {
+    const msg = handleErrorAndLog(error, 'Failed to update password');
+    res
+      .status(500)
+      .send({
+        message: msg,
+      })
+      .end();
+  }
 });
 
 router.get('/profile', async (req: Request, res: Response) => {
@@ -218,15 +325,12 @@ router.post('/gitAccount', async (req: Request, res: Response) => {
     }
 
     user.gitAccount = req.body.gitAccount;
-    db.updateUser(user);
-    res.status(200).end();
-  } catch (e: any) {
-    res
-      .status(500)
-      .send({
-        message: `Failed to update git account: ${e.message}`,
-      })
-      .end();
+    await db.updateUser(user);
+    scmTokenCache.evictByUsername('github', user.username);
+    return res.status(200).send({ message: 'Git account updated successfully' }).end();
+  } catch (error: unknown) {
+    const msg = handleErrorAndLog(error, 'Failed to update git account');
+    return res.status(500).send({ message: msg }).end();
   }
 });
 
@@ -263,12 +367,20 @@ router.post('/create-user', async (req: Request, res: Response) => {
         username,
       })
       .end();
-  } catch (error: any) {
-    console.error('Error creating user:', error);
-    res.status(500).send({
-      message: error.message || 'Failed to create user',
-    });
+  } catch (error: unknown) {
+    const msg = handleErrorAndLog(error, 'Failed to create user');
+    res
+      .status(500)
+      .send({
+        message: msg,
+      })
+      .end();
   }
+});
+
+router.get('/csrf-token', (req: Request, res: Response) => {
+  console.log('req.user', req.user);
+  res.send({ csrfToken: (req as any).csrfToken() });
 });
 
 export default { router, loginSuccessHandler };

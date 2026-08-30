@@ -27,8 +27,10 @@
 import { describe, it, beforeAll, afterAll, beforeEach, afterEach, expect, vi } from 'vitest';
 import request from 'supertest';
 import { Service } from '../src/service';
+import * as config from '../src/config';
 import * as db from '../src/db';
 import { Proxy } from '../src/proxy';
+import { Express } from 'express';
 
 // Create constants for values used in multiple tests
 const TEST_REPO = {
@@ -39,11 +41,13 @@ const TEST_REPO = {
 };
 
 describe('init', () => {
-  let app: any;
+  let app: Express;
 
   // Runs before all tests
   beforeAll(async function () {
     // Starts the service and returns the express app
+    // Auto-assign free port (prevents EADDRINUSE errors when running tests in parallel)
+    vi.spyOn(config, 'getUIPort').mockReturnValue(0);
     const proxy = new Proxy();
     app = await Service.start(proxy);
   });
@@ -68,7 +72,7 @@ describe('init', () => {
   // Runs after all tests
   afterAll(function () {
     // Must close the server to avoid EADDRINUSE errors when running tests in parallel
-    Service.httpServer.close();
+    Service.httpServer?.close();
   });
 
   // Example test: check server is running
@@ -90,7 +94,7 @@ describe('init', () => {
     // fs must be mocked BEFORE importing the config module
     // We also mock existsSync to ensure the file "exists"
     vi.doMock('fs', async (importOriginal) => {
-      const actual: any = await importOriginal();
+      const actual = await importOriginal<typeof import('fs')>();
       return {
         ...actual,
         readFileSync: vi.fn().mockReturnValue(

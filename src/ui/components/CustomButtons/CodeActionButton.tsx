@@ -14,133 +14,149 @@
  * limitations under the License.
  */
 
-import Popper from '@material-ui/core/Popper';
-import Paper from '@material-ui/core/Paper';
-import ClickAwayListener from '@material-ui/core/ClickAwayListener';
-import {
-  CheckIcon,
-  ChevronDownIcon,
-  CodeIcon,
-  CopyIcon,
-  TerminalIcon,
-} from '@primer/octicons-react';
-import React, { useState } from 'react';
-import { PopperPlacementType } from '@material-ui/core/Popper';
-import Button from './Button';
+import React, { useState, useEffect } from 'react';
+import { ActionMenu, IconButton, Text } from '@primer/react';
+import { CheckIcon, CodeIcon, CopyIcon, TerminalIcon } from '@primer/octicons-react';
+import { getSSHConfig, SSHConfig } from '../../services/ssh';
+
+/** Git-style green (matches common "Code" affordance). */
+const codeButtonGreenClassName =
+  '!border-0 !shadow-none !bg-[#1a7f37] !text-white hover:!bg-[#136c2e] hover:!text-white active:!bg-[#115f2a]';
+
+const tabActiveClassName =
+  'border-b-2 border-[#fd8c73] font-semibold text-[var(--fgColor-default)]';
+const tabInactiveClassName =
+  'border-b-2 border-transparent text-[var(--fgColor-muted)] hover:text-[var(--fgColor-default)]';
 
 interface CodeActionButtonProps {
   cloneURL: string;
 }
 
-const CodeActionButton: React.FC<CodeActionButtonProps> = ({ cloneURL }) => {
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [open, setOpen] = useState<boolean>(false);
-  const [placement, setPlacement] = useState<PopperPlacementType>();
-  const [isCopied, setIsCopied] = useState<boolean>(false);
+const buildSSHUrl = (httpsUrl: string, config: SSHConfig): string => {
+  try {
+    const url = new URL(httpsUrl);
+    const hostname = url.hostname;
+    const path = url.pathname.substring(1);
+    if (config.port !== 22) {
+      return `ssh://git@${hostname}:${config.port}/${path}`;
+    }
+    return `git@${hostname}:${path}`;
+  } catch {
+    return '';
+  }
+};
 
-  const handleClick =
-    (newPlacement: PopperPlacementType) => (event: React.MouseEvent<HTMLElement>) => {
-      setIsCopied(false);
-      setAnchorEl(event.currentTarget);
-      setOpen((prev) => placement !== newPlacement || !prev);
-      setPlacement(newPlacement);
-    };
+const CodeActionButton = ({ cloneURL }: CodeActionButtonProps) => {
+  const [isCopied, setIsCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<'https' | 'ssh'>('https');
+  const [sshConfig, setSshConfig] = useState<SSHConfig | null>(null);
+  const [sshURL, setSSHURL] = useState('');
 
-  const handleClickAway = () => {
-    setOpen(false);
+  useEffect(() => {
+    getSSHConfig()
+      .then((config) => {
+        setSshConfig(config);
+        if (config.enabled && cloneURL) {
+          setSSHURL(buildSSHUrl(cloneURL, config));
+        }
+      })
+      .catch(() => {});
+  }, [cloneURL]);
+
+  const currentURL = activeTab === 'https' ? cloneURL : sshURL;
+
+  const copyCloneUrl = (): void => {
+    void navigator.clipboard.writeText(currentURL);
+    setIsCopied(true);
   };
 
+  const sshEnabled = Boolean(sshConfig?.enabled && sshURL);
+
   return (
-    <>
-      <Button
-        color='success'
-        style={{
-          borderRadius: '5px',
-          padding: '6px 10px 6px 10px',
-          fontWeight: 'bold',
-          boxSizing: 'border-box',
-          whiteSpace: 'nowrap',
-        }}
-        onClick={handleClick('bottom-end')}
+    <ActionMenu
+      onOpenChange={(open: boolean) => {
+        if (open) {
+          setIsCopied(false);
+          setActiveTab('https');
+        }
+      }}
+    >
+      <ActionMenu.Button
+        variant='primary'
+        size='small'
+        leadingVisual={CodeIcon}
+        className={`rounded-md font-semibold whitespace-nowrap ${codeButtonGreenClassName}`}
       >
-        <CodeIcon size='small' verticalAlign='middle' />{' '}
-        <span style={{ padding: '4px 10px' }}>Code</span>
-        <ChevronDownIcon size='small' verticalAlign='text-top' />
-      </Button>
-      <Popper
-        open={open}
-        anchorEl={anchorEl}
-        placement={placement}
-        style={{
-          border: '1px solid rgba(211, 211, 211, 0.3)',
-          borderRadius: '5px',
-          minWidth: '300px',
-          maxWidth: '450px',
-          zIndex: 99,
-        }}
+        Code
+      </ActionMenu.Button>
+      <ActionMenu.Overlay
+        width='auto'
+        align='end'
+        side='outside-bottom'
+        displayInViewport
+        className='!min-w-[300px] !max-w-[min(100vw-24px,450px)]'
       >
-        <ClickAwayListener onClickAway={handleClickAway}>
-          <Paper>
-            <div style={{ padding: '15px', gap: '5px' }}>
-              <TerminalIcon size='small' verticalAlign='middle' />{' '}
-              <span style={{ paddingLeft: '5px', fontSize: '14px', fontWeight: 'bold' }}>
-                Clone
-              </span>
-              <div style={{ marginTop: '5px', maxWidth: '299px' }}>
-                <div
-                  style={{
-                    padding: '3px 8px 3px 8px',
-                    border: '1px solid gray',
-                    borderRadius: '5px',
-                    fontSize: '12px',
-                    minHeight: '22px',
-                  }}
-                >
-                  <span
-                    style={{
-                      float: 'left',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      width: '90%',
-                    }}
-                  >
-                    {cloneURL}
-                  </span>
-                  <span
-                    style={{
-                      float: 'right',
-                    }}
-                  >
-                    {!isCopied && (
-                      <span
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => {
-                          navigator.clipboard.writeText(`git clone ${cloneURL}`);
-                          setIsCopied(true);
-                        }}
-                      >
-                        <CopyIcon />
-                      </span>
-                    )}
-                    {isCopied && (
-                      <span style={{ color: 'green' }}>
-                        <CheckIcon />
-                      </span>
-                    )}
-                  </span>
-                </div>
-              </div>
-              <div style={{ marginTop: '5px' }}>
-                <span style={{ fontWeight: 'lighter', fontSize: '12px', opacity: 0.9 }}>
-                  Use Git and run this command in your IDE or Terminal 👍
-                </span>
-              </div>
+        <div className='flex flex-col gap-2 p-3'>
+          {/* Tab bar — only shown when SSH is enabled */}
+          {sshEnabled && (
+            <div className='flex gap-4 border-b border-[var(--borderColor-default)] text-xs'>
+              <button
+                type='button'
+                className={`pb-1.5 transition-colors ${activeTab === 'https' ? tabActiveClassName : tabInactiveClassName}`}
+                onClick={() => {
+                  setActiveTab('https');
+                  setIsCopied(false);
+                }}
+              >
+                HTTPS
+              </button>
+              <button
+                type='button'
+                className={`pb-1.5 transition-colors ${activeTab === 'ssh' ? tabActiveClassName : tabInactiveClassName}`}
+                onClick={() => {
+                  setActiveTab('ssh');
+                  setIsCopied(false);
+                }}
+              >
+                SSH
+              </button>
             </div>
-          </Paper>
-        </ClickAwayListener>
-      </Popper>
-    </>
+          )}
+
+          {/* Clone header */}
+          <div className='flex items-center gap-2 font-semibold text-sm text-[var(--fgColor-default)]'>
+            <TerminalIcon size='small' />
+            Clone
+          </div>
+
+          {/* URL + copy button */}
+          <div className='flex min-h-[2rem] items-center gap-1 rounded-md border border-[var(--borderColor-default)] bg-[var(--bgColor-muted)] px-2 py-1.5 text-xs'>
+            <span className='min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap font-mono'>
+              {currentURL}
+            </span>
+            <IconButton
+              data-testid='repo-url'
+              icon={isCopied ? CheckIcon : CopyIcon}
+              variant='invisible'
+              aria-label={isCopied ? 'Copied to clipboard' : 'Copy URL to clipboard'}
+              title={isCopied ? 'Copied to clipboard' : 'Copy URL to clipboard'}
+              className={isCopied ? '!text-[#1a7f37]' : undefined}
+              onClick={(event: React.MouseEvent) => {
+                event.preventDefault();
+                copyCloneUrl();
+              }}
+            />
+          </div>
+
+          {/* Description */}
+          <Text as='p' size='small' className='m-0 text-[var(--fgColor-muted)]'>
+            {activeTab === 'https'
+              ? 'Clone using the web URL.'
+              : 'Use a password-protected SSH key.'}
+          </Text>
+        </div>
+      </ActionMenu.Overlay>
+    </ActionMenu>
   );
 };
 

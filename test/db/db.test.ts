@@ -15,13 +15,26 @@
  */
 
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
+import { SAMPLE_REPO } from '../../src/proxy/constants';
 
 vi.mock('../../src/db/mongo', () => ({
   getRepoByUrl: vi.fn(),
+  getRepos: vi.fn().mockResolvedValue([]),
+  updateRepo: vi.fn(),
+  deriveCreatedAt: vi.fn(),
+  getAppliedMigrations: vi.fn().mockResolvedValue([]),
+  recordMigration: vi.fn(),
+  unrecordMigration: vi.fn(),
 }));
 
 vi.mock('../../src/db/file', () => ({
   getRepoByUrl: vi.fn(),
+  getRepos: vi.fn().mockResolvedValue([]),
+  updateRepo: vi.fn(),
+  deriveCreatedAt: vi.fn(),
+  getAppliedMigrations: vi.fn().mockResolvedValue([]),
+  recordMigration: vi.fn(),
+  unrecordMigration: vi.fn(),
 }));
 
 vi.mock('../../src/config', () => ({
@@ -40,14 +53,22 @@ describe('db', () => {
     vi.restoreAllMocks();
   });
 
+  describe('runMigrations', () => {
+    it('runs the registry against the configured backend sink', async () => {
+      await db.runMigrations();
+      expect(mongo.getAppliedMigrations).toHaveBeenCalled();
+    });
+  });
+
   describe('isUserPushAllowed', () => {
     it('returns true if user is in canPush', async () => {
       vi.mocked(mongo.getRepoByUrl).mockResolvedValue({
+        ...SAMPLE_REPO,
         users: {
           canPush: ['alice'],
           canAuthorise: [],
         },
-      } as any);
+      });
 
       const result = await db.isUserPushAllowed('myrepo', 'alice');
       expect(result).toBe(true);
@@ -55,11 +76,12 @@ describe('db', () => {
 
     it('returns true if user is in canAuthorise', async () => {
       vi.mocked(mongo.getRepoByUrl).mockResolvedValue({
+        ...SAMPLE_REPO,
         users: {
           canPush: [],
           canAuthorise: ['bob'],
         },
-      } as any);
+      });
 
       const result = await db.isUserPushAllowed('myrepo', 'bob');
       expect(result).toBe(true);
@@ -67,11 +89,12 @@ describe('db', () => {
 
     it('returns false if user is in neither', async () => {
       vi.mocked(mongo.getRepoByUrl).mockResolvedValue({
+        ...SAMPLE_REPO,
         users: {
           canPush: [],
           canAuthorise: [],
         },
-      } as any);
+      });
 
       const result = await db.isUserPushAllowed('myrepo', 'charlie');
       expect(result).toBe(false);

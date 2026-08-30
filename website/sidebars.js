@@ -36,6 +36,8 @@ module.exports = {
         'quickstart/approve',
       ],
     },
+    'deployment',
+    'upgrading-to-v2',
     {
       type: 'category',
       label: 'Configuration',
@@ -52,6 +54,24 @@ module.exports = {
     },
     {
       type: 'category',
+      label: 'Architecture',
+      link: {
+        type: 'generated-index',
+        title: 'Architecture',
+        slug: '/category/architecture',
+        keywords: ['architecture'],
+        image: '/img/github-mark.png',
+      },
+      collapsible: true,
+      collapsed: false,
+      items: [
+        'architecture/architecture',
+        'architecture/processors',
+        'architecture/ssh-architecture',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Development',
       link: {
         type: 'generated-index',
@@ -62,7 +82,9 @@ module.exports = {
       },
       collapsible: true,
       collapsed: false,
-      items: ['development/contributing', 'development/plugins'],
+      items: ['development/contributing', 'development/plugins', 'development/releases'],
     },
+    'user-manual',
+    'ssh-setup',
   ],
 };

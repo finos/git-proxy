@@ -15,15 +15,31 @@
  */
 
 import { AuthorisedRepo } from '../config/generated/config';
-import { PushQuery, Repo, RepoQuery, Sink, User, UserQuery } from './types';
+import {
+  PushQuery,
+  PublicKeyRecord,
+  Repo,
+  RepoActivityTabCounts,
+  RepoQuery,
+  Sink,
+  User,
+  UserQuery,
+  emptyRepoActivityTabCounts,
+} from './types';
 import * as bcrypt from 'bcryptjs';
 import * as config from '../config';
 import * as mongo from './mongo';
 import * as neDb from './file';
 import { Action } from '../proxy/actions/Action';
 import MongoDBStore from 'connect-mongo';
+import { CompletedAttestation, Rejection } from '../proxy/processors/types';
 import { processGitUrl } from '../proxy/routes/helper';
 import { initializeFolders } from './file/helper';
+import { runMigrations as applyMigrations } from './migrations';
+import { migrations } from './migrations/registry';
+import { attachRepoActivityTabCounts } from './repoActivityMerge';
+import { collectUserProfileEmailVariants } from './userProfilePushQuery';
+import { activityPrimaryStatusFromFlags } from '../activity/activityPrimaryStatus';
 
 let _sink: Sink | null = null;
 
@@ -59,6 +75,7 @@ export const createUser = async (
   gitAccount: string,
   admin: boolean = false,
   oidcId: string = '',
+  mustChangePassword: boolean = false,
 ) => {
   console.log(
     `creating user
@@ -75,6 +92,7 @@ export const createUser = async (
     gitAccount: gitAccount,
     email: email,
     admin: admin,
+    mustChangePassword,
   };
 
   if (isBlank(username)) {
@@ -108,12 +126,15 @@ export const createUser = async (
 };
 
 export const createRepo = async (repo: AuthorisedRepo) => {
+  const now = new Date().toISOString();
   const toCreate = {
     ...repo,
     users: {
       canPush: [],
       canAuthorise: [],
     },
+    dateCreated: now,
+    lastModified: now,
   };
   toCreate.name = repo.name.toLowerCase();
 
@@ -175,17 +196,36 @@ export const canUserCancelPush = async (id: string, user: string) => {
   }
 };
 
+export const runMigrations = (): Promise<void> => applyMigrations(start(), migrations);
 export const getSessionStore = (): MongoDBStore | undefined => start().getSessionStore();
 export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => start().getPushes(query);
+export const getPushesForUserProfile = async (user: User): Promise<Action[]> => {
+  const emailVariants = collectUserProfileEmailVariants(user);
+  return start().getPushesForUserProfile(emailVariants, user.username);
+};
 export const writeAudit = (action: Action): Promise<void> => start().writeAudit(action);
 export const getPush = (id: string): Promise<Action | null> => start().getPush(id);
 export const deletePush = (id: string): Promise<void> => start().deletePush(id);
-export const authorise = (id: string, attestation: any): Promise<{ message: string }> =>
-  start().authorise(id, attestation);
+export const authorise = (
+  id: string,
+  attestation?: CompletedAttestation,
+): Promise<{ message: string }> => start().authorise(id, attestation);
 export const cancel = (id: string): Promise<{ message: string }> => start().cancel(id);
-export const reject = (id: string, rejection: any): Promise<{ message: string }> =>
+export const reject = (id: string, rejection: Rejection): Promise<{ message: string }> =>
   start().reject(id, rejection);
-export const getRepos = (query?: Partial<RepoQuery>): Promise<Repo[]> => start().getRepos(query);
+export const getRepos = async (query?: Partial<RepoQuery>): Promise<Repo[]> => {
+  const sink = start();
+  const [repos, rollups] = await Promise.all([
+    sink.getRepos(query),
+    sink.getRepoPushRollupsByCanonicalUrl(),
+  ]);
+  return attachRepoActivityTabCounts(
+    repos,
+    rollups.tabCounts,
+    rollups.latestPendingReviewAtMs,
+    rollups.latestPushAtMs,
+  );
+};
 export const getRepo = (name: string): Promise<Repo | null> => start().getRepo(name);
 export const getRepoByUrl = (url: string): Promise<Repo | null> => start().getRepoByUrl(url);
 export const getRepoById = (_id: string): Promise<Repo | null> => start().getRepoById(_id);
@@ -201,19 +241,29 @@ export const deleteRepo = (_id: string): Promise<void> => start().deleteRepo(_id
 export const findUser = (username: string): Promise<User | null> => start().findUser(username);
 export const findUserByEmail = (email: string): Promise<User | null> =>
   start().findUserByEmail(email);
+export const findUserByGitAccount = (gitAccount: string): Promise<User | null> =>
+  start().findUserByGitAccount(gitAccount);
 export const findUserByOIDC = (oidcId: string): Promise<User | null> =>
   start().findUserByOIDC(oidcId);
+export const findUserBySSHKey = (sshKey: string): Promise<User | null> =>
+  start().findUserBySSHKey(sshKey);
 export const getUsers = (query?: Partial<UserQuery>): Promise<User[]> => start().getUsers(query);
 export const deleteUser = (username: string): Promise<void> => start().deleteUser(username);
 
 export const updateUser = (user: Partial<User>): Promise<void> => start().updateUser(user);
+export const addPublicKey = (username: string, publicKey: PublicKeyRecord): Promise<void> =>
+  start().addPublicKey(username, publicKey);
+export const removePublicKey = (username: string, fingerprint: string): Promise<void> =>
+  start().removePublicKey(username, fingerprint);
+export const getPublicKeys = (username: string): Promise<PublicKeyRecord[]> =>
+  start().getPublicKeys(username);
+
 /**
  * Collect the Set of all host (host and port if specified) that we
  * will be proxying requests for, to be used to initialize the proxy.
  *
  * @return {string[]} an array of origins
  */
-
 export const getAllProxiedHosts = async (): Promise<string[]> => {
   const repos = await getRepos();
   const origins = new Set<string>();
@@ -226,4 +276,69 @@ export const getAllProxiedHosts = async (): Promise<string[]> => {
   return Array.from(origins);
 };
 
-export type { PushQuery, Repo, Sink, User } from './types';
+function bumpUserActivityCount(
+  counts: Map<string, RepoActivityTabCounts>,
+  username: string,
+  tab: keyof RepoActivityTabCounts,
+): void {
+  let row = counts.get(username);
+  if (!row) {
+    row = emptyRepoActivityTabCounts();
+    counts.set(username, row);
+  }
+  row[tab] += 1;
+}
+
+export const getUserActivityTabCountsByUsername = async (): Promise<
+  Map<string, RepoActivityTabCounts>
+> => {
+  const sink = start();
+  const [users, pushes] = await Promise.all([sink.getUsers(), sink.getPushes({ type: 'push' })]);
+
+  // Build email (lowercase) → username lookup, including externalEmail
+  const emailToUsername = new Map<string, string>();
+  for (const user of users) {
+    for (const email of collectUserProfileEmailVariants(user)) {
+      emailToUsername.set(email.toLowerCase(), user.username.toLowerCase());
+    }
+  }
+
+  const counts = new Map<string, RepoActivityTabCounts>();
+
+  for (const push of pushes) {
+    const tab = activityPrimaryStatusFromFlags(push);
+    const attributedUsernames = new Set<string>();
+
+    // Author via userEmail
+    const authorEmail = typeof push.userEmail === 'string' ? push.userEmail.toLowerCase() : '';
+    const authorUsername = authorEmail ? emailToUsername.get(authorEmail) : undefined;
+    if (authorUsername) {
+      attributedUsernames.add(authorUsername);
+    }
+
+    // Reviewer via attestation.reviewer.username
+    const reviewerUsername =
+      typeof push.attestation?.reviewer?.username === 'string'
+        ? push.attestation.reviewer.username.toLowerCase()
+        : '';
+    if (reviewerUsername) {
+      attributedUsernames.add(reviewerUsername);
+    }
+
+    for (const username of attributedUsernames) {
+      bumpUserActivityCount(counts, username, tab);
+    }
+  }
+
+  return counts;
+};
+
+export type {
+  PushQuery,
+  PublicKeyRecord,
+  Repo,
+  RepoActivityTabCounts,
+  RepoPushRollupsByCanonicalUrl,
+  Sink,
+  User,
+} from './types';

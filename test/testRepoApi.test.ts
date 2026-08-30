@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+import { Express } from 'express';
 import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
+
+import * as config from '../src/config';
 import * as db from '../src/db';
 import { Service } from '../src/service';
-
 import { Proxy } from '../src/proxy';
 import { getAllProxiedHosts } from '../src/db';
 
@@ -59,8 +61,8 @@ const fetchRepoOrThrow = async (url: string) => {
 };
 
 describe('add new repo', () => {
-  let app: any;
-  let proxy: any;
+  let app: Express;
+  let proxy: Proxy;
   let cookie: string;
   const repoIds: string[] = [];
 
@@ -98,6 +100,8 @@ describe('add new repo', () => {
   };
 
   beforeAll(async () => {
+    vi.spyOn(config, 'getUIPort').mockReturnValue(0);
+
     proxy = new Proxy();
     app = await Service.start(proxy);
     // Prepare the data.
@@ -414,10 +418,9 @@ describe('add new repo', () => {
   });
 
   afterAll(async () => {
-    await proxy.stop();
-    await Service.stop();
     await cleanupRepo(TEST_REPO_NON_GITHUB.url);
     await cleanupRepo(TEST_REPO_NAKED.url);
+    await Service.httpServer?.close();
   });
 });
 
@@ -442,6 +445,8 @@ describe('repo routes - edge cases', () => {
   };
 
   beforeAll(async () => {
+    vi.spyOn(config, 'getUIPort').mockReturnValue(0);
+
     proxy = new Proxy();
     app = await Service.start(proxy);
 
@@ -480,7 +485,7 @@ describe('repo routes - edge cases', () => {
     });
 
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('You are not authorised to perform this action...');
+    expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
   it('should return 401 when unauthenticated user tries to create repo', async () => {
@@ -492,7 +497,7 @@ describe('repo routes - edge cases', () => {
     });
 
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('You are not authorised to perform this action...');
+    expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
   it('should return 400 when repo url is missing', async () => {
@@ -524,7 +529,7 @@ describe('repo routes - edge cases', () => {
       .send({ username: 'testuser' });
 
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('You are not authorised to perform this action...');
+    expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
   it('should return 401 when unauthenticated user tries to add push user', async () => {
@@ -533,7 +538,7 @@ describe('repo routes - edge cases', () => {
       .send({ username: 'testuser' });
 
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('You are not authorised to perform this action...');
+    expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
   it('should return 401 when non-admin user tries to add authorise user', async () => {
@@ -543,7 +548,7 @@ describe('repo routes - edge cases', () => {
       .send({ username: 'testuser' });
 
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('You are not authorised to perform this action...');
+    expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
   it('should return 401 when unauthenticated user tries to add authorise user', async () => {
@@ -552,7 +557,7 @@ describe('repo routes - edge cases', () => {
       .send({ username: 'testuser' });
 
     expect(res.status).toBe(401);
-    expect(res.body.message).toBe('You are not authorised to perform this action...');
+    expect(res.body.message).toBe('You are not authorised to perform this action.');
   });
 
   describe('DELETE /api/v1/repo/:id/user/push/:username', () => {
@@ -568,14 +573,14 @@ describe('repo routes - edge cases', () => {
         .send();
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorised to perform this action...');
+      expect(res.body.message).toBe('You are not authorised to perform this action.');
     });
 
     it('should return 401 when unauthenticated user tries to remove push user', async () => {
       const res = await request(app).delete(`/api/v1/repo/${repoId}/user/push/testuser`).send();
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorised to perform this action...');
+      expect(res.body.message).toBe('You are not authorised to perform this action.');
     });
 
     it('should return 400 when trying to remove non-existent user', async () => {
@@ -602,7 +607,7 @@ describe('repo routes - edge cases', () => {
         .send();
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorised to perform this action...');
+      expect(res.body.message).toBe('You are not authorised to perform this action.');
     });
 
     it('should return 401 when unauthenticated user tries to remove authorise user', async () => {
@@ -611,7 +616,7 @@ describe('repo routes - edge cases', () => {
         .send();
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorised to perform this action...');
+      expect(res.body.message).toBe('You are not authorised to perform this action.');
     });
 
     it('should return 400 when trying to remove non-existent user', async () => {
@@ -633,14 +638,14 @@ describe('repo routes - edge cases', () => {
         .send();
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorised to perform this action...');
+      expect(res.body.message).toBe('You are not authorised to perform this action.');
     });
 
     it('should return 401 when unauthenticated user tries to delete repo', async () => {
       const res = await request(app).delete(`/api/v1/repo/${repoId}/delete`).send();
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('You are not authorised to perform this action...');
+      expect(res.body.message).toBe('You are not authorised to perform this action.');
     });
   });
 
