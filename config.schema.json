@@ -408,6 +408,11 @@
       "description": "Configuration for bare repository cache (hybrid cache system)",
       "type": "object",
       "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable the bare repository cache. When disabled, each push clones directly from the remote as usual.",
+          "default": false
+        },
         "maxSizeGB": {
           "type": "number",
           "description": "Maximum cache size in gigabytes (default 2GB)"

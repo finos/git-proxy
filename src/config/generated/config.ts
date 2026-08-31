@@ -378,6 +378,11 @@ export interface Cache {
    */
   cacheDir: string;
   /**
+   * Enable the bare repository cache. When disabled, each push clones directly from the
+   * remote as usual.
+   */
+  enabled?: boolean;
+  /**
    * Maximum number of repositories in cache (default 50)
    */
   maxRepositories: number;
@@ -1079,6 +1084,7 @@ const typeMap: any = {
   Cache: o(
     [
       { json: 'cacheDir', js: 'cacheDir', typ: '' },
+      { json: 'enabled', js: 'enabled', typ: u(undefined, true) },
       { json: 'maxRepositories', js: 'maxRepositories', typ: 3.14 },
       { json: 'maxSizeGB', js: 'maxSizeGB', typ: 3.14 },
     ],

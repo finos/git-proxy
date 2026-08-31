@@ -42,6 +42,7 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'attestationConfig',
   'authentication',
   'authorisedList',
+  'cache',
   'commitConfig',
   'configurationSources',
   'contactEmail',
@@ -481,6 +482,15 @@ export const getRateLimit = () => {
 export const getCacheConfig = () => {
   const config = loadFullConfiguration();
   return config.cache;
+};
+
+/**
+ * Whether the bare repository cache is enabled. When disabled (the default),
+ * each push clones directly from the remote.
+ * @return {boolean} true when the cache should be used
+ */
+export const isCacheEnabled = (): boolean => {
+  return getCacheConfig()?.enabled === true;
 };
 
 export const getMaxPackSizeBytes = (): number => {
