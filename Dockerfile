@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM node:24@sha256:5a593d74b632d1c6f816457477b6819760e13624455d587eef0fa418c8d0777b AS builder
 
 USER root
@@ -7,7 +8,8 @@ WORKDIR /out
 COPY package*.json ./
 COPY tsconfig.json tsconfig.publish.json proxy.config.json config.schema.json test-e2e.proxy.config.json vite.config.ts index.html index.ts ./
 
-RUN npm pkg delete scripts.prepare && npm ci --include=dev
+# Cache hit if no changes to /root/.npm, miss if dependencies change
+RUN --mount=type=cache,target=/root/.npm npm pkg delete scripts.prepare && npm ci --include=dev
 
 COPY src/ /out/src/
 COPY public/ /out/public/
@@ -33,7 +35,6 @@ COPY --chown=1000:1000 --from=builder /out/dist/ ./dist/
 COPY --chown=1000:1000 --from=builder /out/build ./dist/build/
 COPY --chown=1000:1000 proxy.config.json config.schema.json ./
 COPY docker-entrypoint.sh /docker-entrypoint.sh
-
 
 USER 1000
 
