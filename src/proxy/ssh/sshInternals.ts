@@ -79,7 +79,8 @@ export interface ChannelModule {
  */
 export function getProtocol(client: ssh2.Connection): Ssh2Protocol {
   const proto = (client as unknown as { _protocol?: unknown })._protocol as
-    Partial<Ssh2Protocol> | undefined;
+    | Partial<Ssh2Protocol>
+    | undefined;
   if (!proto) fail('client._protocol is missing');
   if (typeof proto.openssh_authAgent !== 'function') {
     fail('client._protocol.openssh_authAgent is missing or not a function');
@@ -98,7 +99,8 @@ export function getProtocol(client: ssh2.Connection): Ssh2Protocol {
  */
 export function getChannelManager(client: ssh2.Connection): Ssh2ChannelManager {
   const chanMgr = (client as unknown as { _chanMgr?: unknown })._chanMgr as
-    Partial<Ssh2ChannelManager> | undefined;
+    | Partial<Ssh2ChannelManager>
+    | undefined;
   if (!chanMgr) fail('client._chanMgr is missing');
   if (!chanMgr._channels || typeof chanMgr._channels !== 'object') {
     fail('client._chanMgr._channels is missing or not an object');

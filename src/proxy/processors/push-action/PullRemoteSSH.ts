@@ -15,7 +15,7 @@
  */
 
 import { Action, Step } from '../../actions';
-import { PullRemoteBase, CloneResult } from './PullRemoteBase';
+import { PullRemoteBase, CloneResult, RemoteAccess } from './PullRemoteBase';
 import { ClientWithUser } from '../../ssh/types';
 import {
   validateAgentSocketPath,
@@ -48,34 +48,10 @@ export class PullRemoteSSH extends PullRemoteBase {
 
     step.log(`Cloning repository via system git: ${sshUrl}`);
 
-    // Create temporary directory for SSH config and known_hosts
-    const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'git-proxy-ssh-'));
-    const sshConfigPath = path.join(tempDir, 'ssh_config');
+    const access = await this.prepareRemoteAccess({ sshClient: client }, action, step);
+    const sshCommand = access.env!.GIT_SSH_COMMAND;
 
     try {
-      // Validate and get the agent socket path
-      const rawAgentSocketPath = (client as any)._agent?._sock?.path || process.env.SSH_AUTH_SOCK;
-      const agentSocketPath = validateAgentSocketPath(rawAgentSocketPath);
-
-      step.log(`Using SSH agent socket: ${agentSocketPath}`);
-
-      // Create secure known_hosts file with verified host keys
-      const knownHostsPath = await createKnownHostsFile(tempDir, sshUrl);
-      step.log(`Created secure known_hosts file with verified host keys`);
-
-      // Create secure SSH config with StrictHostKeyChecking enabled
-      const sshConfig = `Host *
-  StrictHostKeyChecking yes
-  UserKnownHostsFile ${knownHostsPath}
-  IdentityAgent ${agentSocketPath}
-  # Additional security settings
-  HashKnownHosts no
-  PasswordAuthentication no
-  PubkeyAuthentication yes
-`;
-
-      await fs.promises.writeFile(sshConfigPath, sshConfig, { mode: 0o600 });
-
       await new Promise<void>((resolve, reject) => {
         const gitProc = spawn(
           'git',
@@ -84,7 +60,7 @@ export class PullRemoteSSH extends PullRemoteBase {
             cwd: action.proxyGitPath,
             env: {
               ...process.env,
-              GIT_SSH_COMMAND: `ssh -F "${sshConfigPath}"`,
+              GIT_SSH_COMMAND: sshCommand,
             },
           },
         );
@@ -120,8 +96,66 @@ export class PullRemoteSSH extends PullRemoteBase {
       });
     } finally {
       // Cleanup temp SSH config and known_hosts
-      await fs.promises.rm(tempDir, { recursive: true, force: true });
+      await access.cleanup!();
     }
+  }
+
+  /**
+   * Describe how native git should reach the remote over SSH.
+   *
+   * Writes a temporary ssh_config that pins the verified host keys and points
+   * ssh at the client's forwarded agent, and hands back the GIT_SSH_COMMAND
+   * that makes git use it. The caller must invoke `cleanup` when done.
+   *
+   * @param req Request-like object carrying the SSH client
+   * @param action Action object
+   * @param step Step for logging
+   * @return Remote access descriptor carrying GIT_SSH_COMMAND and a cleanup
+   */
+  protected async prepareRemoteAccess(req: any, action: Action, step: Step): Promise<RemoteAccess> {
+    const client: ClientWithUser = req.sshClient;
+    const sshUrl = convertToSSHUrl(action.url);
+
+    const tempDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), 'git-proxy-ssh-'));
+    const sshConfigPath = path.join(tempDir, 'ssh_config');
+    const cleanup = async () => {
+      await fs.promises.rm(tempDir, { recursive: true, force: true });
+    };
+
+    try {
+      // Validate and get the agent socket path
+      const rawAgentSocketPath = (client as any)._agent?._sock?.path || process.env.SSH_AUTH_SOCK;
+      const agentSocketPath = validateAgentSocketPath(rawAgentSocketPath);
+
+      step.log(`Using SSH agent socket: ${agentSocketPath}`);
+
+      // Create secure known_hosts file with verified host keys
+      const knownHostsPath = await createKnownHostsFile(tempDir, sshUrl);
+      step.log(`Created secure known_hosts file with verified host keys`);
+
+      // Create secure SSH config with StrictHostKeyChecking enabled
+      const sshConfig = `Host *
+  StrictHostKeyChecking yes
+  UserKnownHostsFile ${knownHostsPath}
+  IdentityAgent ${agentSocketPath}
+  # Additional security settings
+  HashKnownHosts no
+  PasswordAuthentication no
+  PubkeyAuthentication yes
+`;
+
+      await fs.promises.writeFile(sshConfigPath, sshConfig, { mode: 0o600 });
+    } catch (error) {
+      // Nothing downstream can call cleanup if we never return the descriptor
+      await cleanup();
+      throw error;
+    }
+
+    return {
+      url: sshUrl,
+      env: { GIT_SSH_COMMAND: `ssh -F "${sshConfigPath}"` },
+      cleanup,
+    };
   }
 
   /**
