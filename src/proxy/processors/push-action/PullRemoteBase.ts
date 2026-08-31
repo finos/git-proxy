@@ -24,6 +24,21 @@ export type CloneResult = {
 };
 
 /**
+ * Everything native git needs to reach the remote, independent of protocol.
+ *
+ * HTTPS supplies credentials that get embedded in the URL; SSH supplies a
+ * GIT_SSH_COMMAND pointing at the client's forwarded agent plus a cleanup
+ * callback for the temporary ssh_config/known_hosts it had to write.
+ */
+export type RemoteAccess = {
+  url: string;
+  username?: string;
+  password?: string;
+  env?: NodeJS.ProcessEnv;
+  cleanup?: () => Promise<void>;
+};
+
+/**
  * Base class for pull remote implementations
  */
 export abstract class PullRemoteBase {

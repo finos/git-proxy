@@ -25,12 +25,14 @@ import fs from 'fs';
  * Build spawn environment, mapping NODE_TLS_REJECT_UNAUTHORIZED=0 to GIT_SSL_NO_VERIFY=1
  * so native git commands respect the same TLS settings as the Node.js process.
  */
-function buildEnv(): NodeJS.ProcessEnv {
+function buildEnv(extraEnv?: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const env = { ...process.env };
   if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
     env.GIT_SSL_NO_VERIFY = '1';
   }
-  return env;
+  // Callers on the SSH path pass GIT_SSH_COMMAND here so that native git
+  // authenticates through the client's forwarded agent.
+  return { ...env, ...extraEnv };
 }
 
 /**
@@ -54,6 +56,7 @@ interface CloneOptions {
   bare?: boolean;
   depth?: number;
   singleBranch?: boolean;
+  env?: NodeJS.ProcessEnv;
 }
 
 interface FetchOptions {
@@ -64,13 +67,14 @@ interface FetchOptions {
   depth?: number;
   prune?: boolean;
   bare?: boolean;
+  env?: NodeJS.ProcessEnv;
 }
 
 /**
  * Clone a repository using native git
  */
 export async function clone(options: CloneOptions): Promise<void> {
-  const { dir, url, username, password, bare = false, depth, singleBranch = false } = options;
+  const { dir, url, username, password, bare = false, depth, singleBranch = false, env } = options;
 
   const authUrl = buildAuthUrl(url, username, password);
 
@@ -93,7 +97,7 @@ export async function clone(options: CloneOptions): Promise<void> {
 
   args.push(authUrl, dir);
 
-  const result = spawnSync('git', args, { stdio: 'pipe', env: buildEnv() });
+  const result = spawnSync('git', args, { stdio: 'pipe', env: buildEnv(env) });
   if (result.status !== 0) {
     throw new Error(`Git clone failed: ${result.stderr?.toString() || 'Unknown error'}`);
   }
@@ -108,7 +112,7 @@ export async function clone(options: CloneOptions): Promise<void> {
  * Fetch updates in a repository using native git
  */
 export async function fetch(options: FetchOptions): Promise<void> {
-  const { dir, url, username, password, depth, prune = false, bare = false } = options;
+  const { dir, url, username, password, depth, prune = false, bare = false, env } = options;
 
   const authUrl = buildAuthUrl(url, username, password);
 
@@ -125,7 +129,7 @@ export async function fetch(options: FetchOptions): Promise<void> {
   args.push(authUrl);
   args.push('+refs/heads/*:refs/heads/*'); // Fetch all branches
 
-  const result = spawnSync('git', args, { stdio: 'pipe', env: buildEnv() });
+  const result = spawnSync('git', args, { stdio: 'pipe', env: buildEnv(env) });
   if (result.status !== 0) {
     throw new Error(`Git fetch failed: ${result.stderr?.toString() || 'Unknown error'}`);
   }
