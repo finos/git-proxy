@@ -53,8 +53,8 @@ export interface BackendResponse {
   message: string;
 }
 
-export interface PushActionView extends Omit<Action, ActionMethods> {
-  diff: Step | string;
+export interface PushActionView extends Omit<Action, ActionMethods | 'diff'> {
+  diff?: string | Step;
 }
 
 export interface RepoView extends Repo {

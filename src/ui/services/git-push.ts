@@ -31,7 +31,7 @@ const getPush = async (id: string): Promise<ServiceResult<PushActionView>> => {
     const actionView: PushActionView = {
       ...data,
       diff:
-        typeof data.diff == 'string'
+        typeof data.diff === 'string'
           ? data.diff
           : data.steps.find((x: Step) => x.stepName === 'diff')!,
     };
