@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import fs from 'fs';
 import { exec as pullRemote } from '../../src/proxy/processors/push-action/pullRemote';
 import { exec as clearBareClone } from '../../src/proxy/processors/post-processor/clearBareClone';
 import { Action } from '../../src/proxy/actions/Action';
 import { cacheManager } from '../../src/proxy/processors/push-action/cache-manager';
+import * as config from '../../src/config';
 
 describe('Hybrid Cache Integration Tests', () => {
   const testRepoUrl = 'https://github.com/finos/git-proxy.git';
@@ -27,7 +28,15 @@ describe('Hybrid Cache Integration Tests', () => {
   const authorization = `Basic ${Buffer.from('test:test').toString('base64')}`;
 
   // Shared test data populated by before() hook
-  let testData = {
+  const testData: {
+    cacheMissAction: Action | null;
+    cacheHitAction: Action | null;
+    cacheMissDuration: number;
+    cacheHitDuration: number;
+    bareRepoPath: string;
+    inodeBefore: number | null;
+    inodeAfter: number | null;
+  } = {
     cacheMissAction: null,
     cacheHitAction: null,
     cacheMissDuration: 0,
@@ -39,6 +48,10 @@ describe('Hybrid Cache Integration Tests', () => {
 
   beforeAll(async () => {
     console.log('\n  === Setting up test data (one-time setup) ===');
+
+    // The cache is opt-in, so the factory only returns the cached
+    // implementations when it is switched on.
+    vi.spyOn(config, 'isCacheEnabled').mockReturnValue(true);
 
     // Clean up before starting
     if (fs.existsSync('./.remote')) {
@@ -106,10 +119,10 @@ describe('Hybrid Cache Integration Tests', () => {
       const actionId = testData.cacheMissAction.id;
 
       // Verify working copy was created
-      expect(fs.existsSync(`./.remote/work/${actionId}`)).toBe(true);
+      expect(fs.existsSync(`./.remote/${actionId}`)).toBe(true);
 
       // Check the content inside working copy directory
-      const workCopyContents = fs.readdirSync(`./.remote/work/${actionId}`);
+      const workCopyContents = fs.readdirSync(`./.remote/${actionId}`);
       expect(workCopyContents.length).toBeGreaterThan(0);
 
       // Verify we have a git repository directory inside
@@ -117,10 +130,10 @@ describe('Hybrid Cache Integration Tests', () => {
       expect(repoDir).toBeDefined();
 
       // Verify it has .git folder (not bare)
-      expect(fs.existsSync(`./.remote/work/${actionId}/${repoDir}/.git`)).toBe(true);
+      expect(fs.existsSync(`./.remote/${actionId}/${repoDir}/.git`)).toBe(true);
 
       // Verify working copy has actual files
-      expect(fs.existsSync(`./.remote/work/${actionId}/${repoDir}/package.json`)).toBe(true);
+      expect(fs.existsSync(`./.remote/${actionId}/${repoDir}/package.json`)).toBe(true);
     });
   });
 
@@ -138,11 +151,11 @@ describe('Hybrid Cache Integration Tests', () => {
       const cacheHitActionId = testData.cacheHitAction.id;
 
       // Verify new working copy was created
-      expect(fs.existsSync(`./.remote/work/${cacheHitActionId}`)).toBe(true);
+      expect(fs.existsSync(`./.remote/${cacheHitActionId}`)).toBe(true);
 
       // Verify both working copies exist (isolated)
-      expect(fs.existsSync(`./.remote/work/${cacheMissActionId}`)).toBe(true);
-      expect(fs.existsSync(`./.remote/work/${cacheHitActionId}`)).toBe(true);
+      expect(fs.existsSync(`./.remote/${cacheMissActionId}`)).toBe(true);
+      expect(fs.existsSync(`./.remote/${cacheHitActionId}`)).toBe(true);
 
       // Verify they are different directories
       expect(cacheMissActionId).not.toBe(cacheHitActionId);
@@ -161,17 +174,17 @@ describe('Hybrid Cache Integration Tests', () => {
 
   describe('Hybrid cache structure', () => {
     it('should maintain separate bare cache and working directories', () => {
-      // Verify directory structure
+      // The shared mirrors live in the cache, the per-push working copies are
+      // action-id folders created by PullRemoteBase alongside it
       expect(fs.existsSync('./.remote/cache')).toBe(true);
-      expect(fs.existsSync('./.remote/work')).toBe(true);
 
       // Verify bare cache contains .git repositories
       const cacheContents = fs.readdirSync('./.remote/cache');
       expect(cacheContents.some((name) => name.endsWith('.git'))).toBe(true);
 
-      // Verify work directory contains action-specific folders
-      const workContents = fs.readdirSync('./.remote/work');
-      expect(workContents.length).toBeGreaterThanOrEqual(2); // At least 2 working copies
+      // Verify the working copies of both pushes sit outside the cache
+      const remoteContents = fs.readdirSync('./.remote').filter((name) => name !== 'cache');
+      expect(remoteContents.length).toBeGreaterThanOrEqual(2);
     });
 
     it('should share one bare cache for multiple working copies', () => {
@@ -205,7 +218,7 @@ describe('Hybrid Cache Integration Tests', () => {
       const actionId = testData.cacheMissAction.id;
       await clearBareClone(null, testData.cacheMissAction);
 
-      expect(fs.existsSync(`./.remote/work/${actionId}`)).toBe(false);
+      expect(fs.existsSync(`./.remote/${actionId}`)).toBe(false);
       expect(fs.existsSync('./.remote/cache')).toBe(true);
     });
   });

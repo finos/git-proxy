@@ -20,8 +20,8 @@ import path from 'path';
 import { CacheManager } from '../../src/proxy/processors/push-action/cache-manager';
 
 describe('CacheManager', () => {
-  let testCacheDir;
-  let cacheManager;
+  let testCacheDir: string;
+  let cacheManager: CacheManager;
 
   beforeEach(() => {
     // Create temporary test cache directory
