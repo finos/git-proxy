@@ -14,27 +14,42 @@
  * limitations under the License.
  */
 
+import _ from 'lodash';
+import schema from '../../config.schema.json';
 import { GitProxyConfig } from './generated/config';
+
+interface SchemaProperty {
+  deprecated?: boolean;
+  'x-deprecated-replacement'?: string;
+}
+
+const schemaProperties = (schema as { properties: Record<string, SchemaProperty> }).properties;
+
+function isSet(value: unknown): boolean {
+  return typeof value === 'string' && value.trim() !== '';
+}
 
 /**
  * Returns deprecation warnings for legacy top-level config keys in user overrides.
  * PR 3.0 (#1545) will replace warnings with startup failure for legacy-only configs.
  */
 export function getDeprecatedConfigWarnings(userSettings: Partial<GitProxyConfig>): string[] {
+  const settings = userSettings as Record<string, unknown>;
   const warnings: string[] = [];
 
-  if (userSettings.sslKeyPemPath?.trim() && !userSettings.tls?.key?.trim()) {
-    warnings.push('"sslKeyPemPath" is deprecated; use "tls.key" instead (removal in GitProxy 3.0)');
-  }
+  for (const [key, property] of Object.entries(schemaProperties)) {
+    if (!property.deprecated || !isSet(settings[key])) {
+      continue;
+    }
 
-  if (userSettings.sslCertPemPath?.trim() && !userSettings.tls?.cert?.trim()) {
-    warnings.push(
-      '"sslCertPemPath" is deprecated; use "tls.cert" instead (removal in GitProxy 3.0)',
-    );
-  }
-
-  if (typeof userSettings.proxyUrl === 'string' && userSettings.proxyUrl.trim() !== '') {
-    warnings.push('"proxyUrl" is deprecated and ignored; remove it before GitProxy 3.0');
+    const replacement = property['x-deprecated-replacement'];
+    if (!replacement) {
+      warnings.push(`"${key}" is deprecated and ignored; remove it before GitProxy 3.0`);
+    } else if (!isSet(_.get(settings, replacement))) {
+      warnings.push(
+        `"${key}" is deprecated; use "${replacement}" instead (removal in GitProxy 3.0)`,
+      );
+    }
   }
 
   return warnings;
