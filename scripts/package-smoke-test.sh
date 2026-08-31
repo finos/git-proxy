@@ -2,7 +2,7 @@
 set -euo pipefail
 
 CLEAN_BUILD=true
-if [[ "$1" == "--no-clean-build" ]]; then
+if [[ "${1:-}" == "--no-clean-build" ]]; then
   CLEAN_BUILD=false
 fi
 
@@ -18,7 +18,7 @@ trap cleanup EXIT
 cd "$ROOT"
 
 if [[ "$CLEAN_BUILD" == true ]]; then
-echo "Building from a clean slate..."
+  echo "Building from a clean slate..."
   rm -rf dist build
   npm run build
 fi
@@ -45,12 +45,22 @@ cd "$WORK"
 npm init -y >/dev/null
 npm install --no-audit --no-fund --loglevel=error "$TARBALL"
 
+if (exec 3<>/dev/tcp/127.0.0.1/8080) 2>/dev/null; then
+  echo "FAIL: port 8080 is already in use, refusing to test against a foreign server."
+  exit 1
+fi
+
 # Boot from a scratch cwd so it writes its .data/.tmp
 mkdir -p "$WORK/run" && cd "$WORK/run"
 "$WORK/node_modules/.bin/git-proxy" > "$WORK/server.log" 2>&1 &
 SERVER_PID=$!
 
 for i in $(seq 1 60); do
+  if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+    echo "FAIL: server exited before answering (see log below)"
+    cat "$WORK/server.log"
+    exit 1
+  fi
   curl -fsS http://localhost:8080/api/v1/healthcheck >/dev/null 2>&1 && break
   if [[ $i -eq 60 ]]; then
     echo "FAIL: server did not come up within 60s"
