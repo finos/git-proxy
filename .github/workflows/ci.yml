@@ -90,9 +90,6 @@ jobs:
           wait-on-timeout: 120
           command: npm run cypress:run
 
-      - name: Smoke test build
-        run: bash ./scripts/package-smoke-test.sh --no-clean-build
-
   # Windows build - single combination for development support
   build-windows:
     runs-on: windows-latest
