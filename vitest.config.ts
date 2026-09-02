@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
     pool: 'forks',
     fileParallelism: false,
+    exclude: [...configDefaults.exclude, '**/e2e/**'],
     coverage: {
       provider: 'v8',
       reportsDirectory: './coverage',

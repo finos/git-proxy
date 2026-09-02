@@ -14,16 +14,25 @@
  * limitations under the License.
  */
 
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+
+const testDir = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   test: {
-    name: 'e2e',
-    include: ['tests/e2e/**/*.test.{js,ts}'],
+    dir: testDir,
+    include: ['**/*.integration.test.ts'],
     testTimeout: 30000,
     hookTimeout: 10000,
-    globals: true,
-    environment: 'node',
-    setupFiles: ['tests/e2e/setup.ts'],
+    setupFiles: [fileURLToPath(new URL('./setup-integration.ts', import.meta.url))],
+    pool: 'forks',
+    fileParallelism: false,
+    env: {
+      NODE_ENV: 'test',
+      RUN_MONGO_TESTS: 'true',
+      CONFIG_FILE: fileURLToPath(new URL('./integration/proxy.config.json', import.meta.url)),
+      GIT_PROXY_MONGO_CONNECTION_STRING: 'mongodb://localhost:27017/git-proxy-test',
+    },
   },
 });

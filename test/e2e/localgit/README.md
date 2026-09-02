@@ -2,7 +2,7 @@
 
 This directory contains the local git HTTP server used by GitProxy's end-to-end test suite. It provides an isolated environment for testing real git operations without requiring external services.
 
-For instructions on running E2E tests, managing the Docker environment, and interacting with test repositories, see the [End-to-End Tests](../CONTRIBUTING.md#end-to-end-tests) section of CONTRIBUTING.md.
+For instructions on running E2E tests, managing the Docker environment, and interacting with test repositories, see the [End-to-End Tests](../../../CONTRIBUTING.md#end-to-end-tests) section of CONTRIBUTING.md.
 
 ## What it does
 
@@ -54,7 +54,7 @@ Filename pattern: `{YYYYMMDD}-{HHMMSS}-{microseconds}-{service}-{repo}.{type}.{e
 ### Extracting captures and PACK files
 
 ```bash
-cd localgit
+cd test/e2e/localgit
 
 # Copy all captures from the container to a local directory
 ./extract-captures.sh ./captured-data
@@ -77,7 +77,7 @@ Captured data can be copied into `test/fixtures/` for use in unit tests:
 ./extract-captures.sh ./my-captures
 
 # 3. Copy to test fixtures
-cp ./my-captures/*receive-pack*.request.bin ../test/fixtures/my-scenario.bin
+cp ./my-captures/*receive-pack*.request.bin ../../fixtures/my-scenario.bin
 ```
 
 ## Customization
