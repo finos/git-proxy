@@ -220,10 +220,10 @@ Configuration: [test/e2e/vitest.config.ts](test/e2e/vitest.config.ts), [test/e2e
 
 The E2E environment is defined in [docker-compose.yml](docker-compose.yml) and consists of three services:
 
-| Service      | Port       | Description                                                                                   |
-| ------------ | ---------- | --------------------------------------------------------------------------------------------- |
-| `git-proxy`  | 8000, 8081 | GitProxy application under test                                                               |
-| `mongodb`    | 27017      | MongoDB 7 instance                                                                            |
+| Service      | Port       | Description                                                                                 |
+| ------------ | ---------- | ------------------------------------------------------------------------------------------- |
+| `git-proxy`  | 8000, 8081 | GitProxy application under test                                                             |
+| `mongodb`    | 27017      | MongoDB 7 instance                                                                          |
 | `git-server` | 8443       | Apache-based git HTTP server with test repos (see [test/e2e/localgit/](test/e2e/localgit/)) |
 
 All services run in an isolated `git-network` Docker bridge network.
