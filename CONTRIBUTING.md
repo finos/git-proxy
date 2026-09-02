@@ -105,8 +105,7 @@ git-proxy/
 ├── proxy.config.json       # Default proxy configuration
 ├── config.schema.json      # JSON Schema for configuration
 ├── vite.config.ts          # Frontend build configuration
-├── vitest.config.ts        # Unit test configuration
-└── vitest.config.e2e.ts    # E2E test configuration
+└── vitest.config.ts        # Unit test configuration
 ```
 
 ### Key architectural concepts
@@ -198,7 +197,7 @@ RUN_MONGO_TESTS=true npm run test:integration
 docker stop mongodb-test && docker rm mongodb-test
 ```
 
-Configuration: [vitest.config.integration.ts](vitest.config.integration.ts), [test/integration/proxy.config.json](test/integration/proxy.config.json)
+Configuration: [test/vitest.integration.config.ts](test/vitest.integration.config.ts), [test/integration/proxy.config.json](test/integration/proxy.config.json)
 
 In CI, `RUN_MONGO_TESTS` is set automatically in the workflow that runs integration tests.
 
@@ -216,7 +215,7 @@ npm run test:e2e
 npm run test:e2e:watch
 ```
 
-Configuration: [vitest.config.e2e.ts](vitest.config.e2e.ts), [tests/e2e/proxy.config.json](tests/e2e/proxy.config.json)
+Configuration: [tests/e2e/vitest.config.ts](tests/e2e/vitest.config.ts), [tests/e2e/proxy.config.json](tests/e2e/proxy.config.json)
 
 #### Docker Compose environment
 

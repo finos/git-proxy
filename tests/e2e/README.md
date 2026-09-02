@@ -89,6 +89,7 @@ Maintainers can trigger e2e tests on any PR by commenting with specific commands
 
 ## Test Structure
 
+- `vitest.config.ts` - Vitest config for this suite (`npm run test:e2e`)
 - `setup.ts` - Common setup utilities and configuration
 - `fetch.test.ts` - Tests for git repository fetching operations
 - `push.test.ts` - Tests for git repository push operations and authorization checks

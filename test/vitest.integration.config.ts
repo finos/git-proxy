@@ -14,21 +14,24 @@
  * limitations under the License.
  */
 
-import path from 'path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+
+const testDir = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   test: {
-    include: ['test/**/*.integration.test.ts'],
+    dir: testDir,
+    include: ['**/*.integration.test.ts'],
     testTimeout: 30000,
     hookTimeout: 10000,
-    setupFiles: ['test/setup-integration.ts'],
+    setupFiles: [fileURLToPath(new URL('./setup-integration.ts', import.meta.url))],
     pool: 'forks',
     fileParallelism: false,
     env: {
       NODE_ENV: 'test',
       RUN_MONGO_TESTS: 'true',
-      CONFIG_FILE: path.resolve(__dirname, 'test/integration/proxy.config.json'),
+      CONFIG_FILE: fileURLToPath(new URL('./integration/proxy.config.json', import.meta.url)),
       GIT_PROXY_MONGO_CONNECTION_STRING: 'mongodb://localhost:27017/git-proxy-test',
     },
   },

@@ -14,16 +14,20 @@
  * limitations under the License.
  */
 
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+
+const e2eDir = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   test: {
     name: 'e2e',
-    include: ['tests/e2e/**/*.test.{js,ts}'],
+    dir: e2eDir,
+    include: ['**/*.test.{js,ts}'],
     testTimeout: 30000,
     hookTimeout: 10000,
     globals: true,
     environment: 'node',
-    setupFiles: ['tests/e2e/setup.ts'],
+    setupFiles: [fileURLToPath(new URL('./setup.ts', import.meta.url))],
   },
 });
