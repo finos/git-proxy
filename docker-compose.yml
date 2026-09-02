@@ -57,7 +57,7 @@ services:
       start_period: 5s
 
   git-server:
-    build: localgit/
+    build: tests/e2e/localgit/
     ports:
       - '8443:8443' # HTTPS git server
     environment:

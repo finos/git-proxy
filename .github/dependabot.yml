@@ -22,7 +22,7 @@ updates:
   - package-ecosystem: docker
     directories:
       - '/'
-      - '/localgit'
+      - '/tests/e2e/localgit'
     schedule:
       interval: weekly
     cooldown:

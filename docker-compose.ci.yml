@@ -9,7 +9,7 @@ services:
 
   git-server:
     build:
-      context: localgit/
+      context: tests/e2e/localgit/
       cache_from:
         - type=gha
       cache_to:
