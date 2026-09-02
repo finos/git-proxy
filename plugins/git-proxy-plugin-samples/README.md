@@ -10,6 +10,43 @@ These plugins are maintained by the core GitProxy team. As a future roadmap item
 certain features of GitProxy by simply removing the dependency from a deployed version of the application.
 
 - `git-proxy-plugin-samples`: "hello world" examples of the GitProxy plugin system
+- `check-dependency-vulnerabilities`: blocks pushes that introduce dependencies with known CVEs
+
+### check-dependency-vulnerabilities
+
+Scans dependency files changed in a push (e.g. `package.json`, `pom.xml`, `requirements.txt`) against
+the [OWASP National Vulnerability Database](https://jeremylong.github.io/DependencyCheck/analyzers/index.html)
+using the [dependency-check](https://owasp.org/www-project-dependency-check/) CLI tool.
+
+**Prerequisites**
+
+- The `dependency-check` CLI must be installed and available in `PATH`.
+- Run `dependency-check --updateonly` at least once after installation to populate the NVD database.
+  Repeat periodically to keep vulnerability data current (the plugin uses `--noupdate` on each scan
+  to avoid the 20-30 minute refresh overhead).
+
+**Configuration**
+
+Set the `DEPENDENCY_VULN_THRESHOLD` environment variable to control which severity levels trigger a block.
+Pushes containing vulnerabilities at or above the threshold will be held for human review.
+
+| Value      | Blocks                      |
+| ---------- | --------------------------- |
+| `CRITICAL` | Critical only               |
+| `HIGH`     | High and Critical (default) |
+| `MEDIUM`   | Medium, High, and Critical  |
+| `LOW`      | Low and above               |
+| `INFO`     | All findings                |
+
+**Enabling the plugin**
+
+Add the plugin path to the `plugins` array in your `proxy.config.json`:
+
+```json
+{
+  "plugins": ["./plugins/git-proxy-plugin-samples/checkDependencyVuln.js"]
+}
+```
 
 ## Contributing
 
