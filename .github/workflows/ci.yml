@@ -137,6 +137,7 @@ jobs:
           npm run test-coverage-ci
           npm run test-coverage-ci --workspaces --if-present
 
+      # Smoke test deliberately removed due to long running times
       - name: Build frontend
         run: npm run build-ui
 
