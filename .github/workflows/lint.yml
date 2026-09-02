@@ -29,7 +29,9 @@ jobs:
           fetch-depth: 0
 
       - name: Install Dependencies
-        run: npm ci
+        run: |
+          npm i -g npm@11
+          npm ci
 
       - name: Code Linting
         run: |
