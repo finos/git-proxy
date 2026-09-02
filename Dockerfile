@@ -5,7 +5,7 @@ USER root
 WORKDIR /out
 
 COPY package*.json ./
-COPY tsconfig.json tsconfig.publish.json proxy.config.json config.schema.json test-e2e.proxy.config.json vite.config.ts index.html index.ts ./
+COPY tsconfig.json tsconfig.publish.json proxy.config.json config.schema.json vite.config.ts index.html index.ts ./
 
 RUN npm pkg delete scripts.prepare && npm ci --include=dev
 

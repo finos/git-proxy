@@ -198,7 +198,7 @@ RUN_MONGO_TESTS=true npm run test:integration
 docker stop mongodb-test && docker rm mongodb-test
 ```
 
-Configuration: [vitest.config.integration.ts](vitest.config.integration.ts)
+Configuration: [vitest.config.integration.ts](vitest.config.integration.ts), [test/integration/proxy.config.json](test/integration/proxy.config.json)
 
 In CI, `RUN_MONGO_TESTS` is set automatically in the workflow that runs integration tests.
 
@@ -216,7 +216,7 @@ npm run test:e2e
 npm run test:e2e:watch
 ```
 
-Configuration: [vitest.config.e2e.ts](vitest.config.e2e.ts)
+Configuration: [vitest.config.e2e.ts](vitest.config.e2e.ts), [tests/e2e/proxy.config.json](tests/e2e/proxy.config.json)
 
 #### Docker Compose environment
 

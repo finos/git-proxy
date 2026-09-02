@@ -113,5 +113,5 @@ Maintainers can trigger e2e tests on any PR by commenting with specific commands
 ## Prerequisites
 
 - Git Proxy service running and accessible
-- Test repositories available (see `integration-test.config.json`)
+- Test repositories available (see `proxy.config.json`)
 - Git client installed for clone operations
