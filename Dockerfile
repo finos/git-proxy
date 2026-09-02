@@ -10,7 +10,6 @@ COPY tsconfig.json tsconfig.publish.json proxy.config.json config.schema.json vi
 RUN npm pkg delete scripts.prepare && npm ci --include=dev
 
 COPY src/ /out/src/
-COPY public/ /out/public/
 
 RUN npm run build-ui \
   && npx tsc --project tsconfig.publish.json \
