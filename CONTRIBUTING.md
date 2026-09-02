@@ -93,9 +93,8 @@ git-proxy/
 │   ├── plugin.ts           # Plugin base classes (PushActionPlugin, PullActionPlugin)
 │   └── types/              # Shared TypeScript types
 ├── test/                   # Unit and integration tests (Vitest)
-├── tests/e2e/              # End-to-end tests (Vitest + Docker)
+├── tests/e2e/              # End-to-end tests (Vitest + Docker, includes localgit/)
 ├── cypress/                # UI tests (Cypress)
-├── localgit/               # Local git server for E2E testing (see localgit/README.md)
 ├── packages/
 │   └── git-proxy-cli/      # CLI package
 ├── plugins/                # Sample plugin packages
@@ -225,7 +224,7 @@ The E2E environment is defined in [docker-compose.yml](docker-compose.yml) and c
 | ------------ | ---------- | ------------------------------------------------------------------------- |
 | `git-proxy`  | 8000, 8081 | GitProxy application under test                                           |
 | `mongodb`    | 27017      | MongoDB 7 instance                                                        |
-| `git-server` | 8443       | Apache-based git HTTP server with test repos (see [localgit/](localgit/)) |
+| `git-server` | 8443       | Apache-based git HTTP server with test repos (see [tests/e2e/localgit/](tests/e2e/localgit/)) |
 
 All services run in an isolated `git-network` Docker bridge network.
 
@@ -240,7 +239,7 @@ docker compose up -d
 # Verify all three containers are running
 docker compose ps
 
-# Rebuild from scratch (e.g., after changing localgit/ or Dockerfile)
+# Rebuild from scratch (e.g., after changing tests/e2e/localgit/ or Dockerfile)
 docker compose down -v
 docker compose build --no-cache
 docker compose up -d
@@ -312,7 +311,7 @@ docker compose exec mongodb mongosh --eval "db.adminCommand('ping')"
 
 #### Generating test fixtures
 
-The git server includes a data capture system that records raw git protocol data for every operation. This is useful for creating binary test fixtures (e.g., PACK files) for unit tests. See [localgit/README.md](localgit/README.md) for details on the capture system, PACK extraction tools, and fixture generation workflow.
+The git server includes a data capture system that records raw git protocol data for every operation. This is useful for creating binary test fixtures (e.g., PACK files) for unit tests. See [tests/e2e/localgit/README.md](tests/e2e/localgit/README.md) for details on the capture system, PACK extraction tools, and fixture generation workflow.
 
 ### UI Tests (Cypress)
 
