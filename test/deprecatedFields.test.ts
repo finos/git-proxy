@@ -39,6 +39,11 @@ describe('getDeprecatedConfigWarnings', () => {
     ]);
   });
 
+  it('treats non-string values as set', () => {
+    expect(getDeprecatedConfigWarnings({ proxyUrl: 0 } as never)).toHaveLength(1);
+    expect(getDeprecatedConfigWarnings({ proxyUrl: false } as never)).toHaveLength(1);
+  });
+
   it('stays quiet when the replacement is already set', () => {
     expect(
       getDeprecatedConfigWarnings({

@@ -26,7 +26,9 @@ interface SchemaProperty {
 const schemaProperties = (schema as { properties: Record<string, SchemaProperty> }).properties;
 
 function isSet(value: unknown): boolean {
-  return typeof value === 'string' && value.trim() !== '';
+  return (
+    value !== undefined && value !== null && (typeof value !== 'string' || value.trim() !== '')
+  );
 }
 
 /**
