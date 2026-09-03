@@ -15,6 +15,8 @@
  */
 
 import { Request } from 'express';
+import path from 'path';
+import fs from 'fs';
 
 import * as config from '../config';
 
@@ -42,3 +44,15 @@ export const getServiceUIURL = (req: Request): string => {
     )
   );
 };
+
+function findPackageRoot(from: string = __dirname): string {
+  let dir = from;
+  for (;;) {
+    if (fs.existsSync(path.join(dir, 'package.json'))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) throw new Error('Could not locate GitProxy package root');
+    dir = parent;
+  }
+}
+
+export const UI_BUILD_PATH = path.join(findPackageRoot(), 'dist', 'build');

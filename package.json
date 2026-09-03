@@ -61,6 +61,7 @@
     "build": "npm run generate-config-types && npm run build-ui && npm run build-ts",
     "build-ts": "tsc --project tsconfig.publish.json && node scripts/fix-shebang.js",
     "build-ui": "vite build",
+    "build-validate": "./scripts/package-smoke-test.sh",
     "check-types": "tsc",
     "check-types:server": "tsc --project tsconfig.publish.json --noEmit",
     "test-shuffle": "NODE_ENV=test vitest --run --dir ./test --sequence.shuffle",
@@ -230,7 +231,8 @@
     ]
   },
   "engines": {
-    "node": ">=22.13.1 || >=24.0.0"
+    "node": ">=22.13.1 || >=24.0.0",
+    "npm": ">=11.0.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json,md,yml,yaml,css,scss}": [
