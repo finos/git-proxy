@@ -131,7 +131,16 @@ describe('ScmTokenCache', () => {
   it('should return username on cache hit', () => {
     const cache = new ScmTokenCache();
     cache.store('github', 'sometoken', 'octocat');
-    expect(cache.lookup('github', 'sometoken')).toBe('octocat');
+    expect(cache.lookup('github', 'sometoken')).toEqual({ username: 'octocat', email: null });
+  });
+
+  it('should return stored email on cache hit', () => {
+    const cache = new ScmTokenCache();
+    cache.store('github', 'sometoken', 'octocat', 'octocat@github.com');
+    expect(cache.lookup('github', 'sometoken')).toEqual({
+      username: 'octocat',
+      email: 'octocat@github.com',
+    });
   });
 
   it('should return null after TTL expires', () => {
@@ -153,10 +162,10 @@ describe('ScmTokenCache', () => {
       provider: 'github',
       cachedAt: Date.now() - 90,
     });
-    expect(cache.lookup('github', 'sometoken')).toBe('octocat'); // hit resets cachedAt
+    expect(cache.lookup('github', 'sometoken')).toEqual({ username: 'octocat', email: null }); // hit resets cachedAt
     // backdate again to 90ms — if TTL had not been reset, this would be 180ms total (expired)
     (cache as any).cache.get(key).cachedAt = Date.now() - 90;
-    expect(cache.lookup('github', 'sometoken')).toBe('octocat'); // still valid because TTL was reset
+    expect(cache.lookup('github', 'sometoken')).toEqual({ username: 'octocat', email: null }); // still valid because TTL was reset
   });
 
   it('should not share entries across providers', () => {
@@ -173,14 +182,14 @@ describe('ScmTokenCache', () => {
     cache.evictByUsername('github', 'alice');
     expect(cache.lookup('github', 'token1')).toBeNull();
     expect(cache.lookup('github', 'token2')).toBeNull();
-    expect(cache.lookup('github', 'token3')).toBe('bob');
+    expect(cache.lookup('github', 'token3')).toEqual({ username: 'bob', email: null });
   });
 
   it('should not evict across providers', () => {
     const cache = new ScmTokenCache();
     cache.store('github', 'sometoken', 'alice');
     cache.evictByUsername('gitlab', 'alice');
-    expect(cache.lookup('github', 'sometoken')).toBe('alice');
+    expect(cache.lookup('github', 'sometoken')).toEqual({ username: 'alice', email: null });
   });
 });
 
@@ -397,6 +406,31 @@ describe('resolveUserFromToken cache integration', () => {
     const result = await mod.exec(req, action);
 
     expect(result.user).toBe('cached-user');
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('should set userEmail from cache so permission checks the pusher not the last committer', async () => {
+    vi.doMock('../../src/db', () => ({
+      findUserByGitAccount: vi.fn(),
+    }));
+    vi.doMock('../../src/proxy/processors/push-action/tokenIdentity', async () => {
+      const real = await vi.importActual<
+        typeof import('../../src/proxy/processors/push-action/tokenIdentity')
+      >('../../src/proxy/processors/push-action/tokenIdentity');
+      const cache = new real.ScmTokenCache();
+      cache.store('github', 'ghp_testtoken123', 'bob', 'bob@corp.example');
+      return { ...real, scmTokenCache: cache };
+    });
+    const mod = await import('../../src/proxy/processors/push-action/resolveUserFromToken');
+    const req = makeRequest();
+    const action = makeAction('https://github.com/finos/git-proxy.git');
+    action.user = 'eve';
+    action.userEmail = 'eve@corp.example';
+
+    const result = await mod.exec(req, action);
+
+    expect(result.user).toBe('bob');
+    expect(result.userEmail).toBe('bob@corp.example');
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
