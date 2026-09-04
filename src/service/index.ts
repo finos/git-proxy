@@ -29,6 +29,7 @@ import * as db from '../db';
 import { Proxy } from '../proxy';
 import routes from './routes';
 import { configure } from './passport';
+import { UI_BUILD_PATH } from './urls';
 
 const limiter = rateLimit(config.getRateLimit());
 
@@ -144,7 +145,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
   // configuration of passport is async
   // Before we can bind the routes - we need the passport strategy
   const passport = await configure();
-  const absBuildPath = path.join(__dirname, '../../build');
+  const absBuildPath = UI_BUILD_PATH;
   app.use(cors(corsOptions));
   app.set('trust proxy', 1);
   app.use(limiter);
@@ -194,9 +195,14 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.use('/', routes(proxy));
   app.use('/', express.static(absBuildPath));
   app.get('/*path', (_req, res) => {
-    res.sendFile(path.join(`${absBuildPath}/index.html`));
+    res.sendFile(path.join(absBuildPath, 'index.html'));
   });
 
+  if (!fs.existsSync(path.join(absBuildPath, 'index.html'))) {
+    console.error(
+      `UI build not found at ${absBuildPath}. The package may have been built or published incorrectly`,
+    );
+  }
   return app;
 }
 

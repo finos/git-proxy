@@ -123,9 +123,10 @@ git-proxy/
 ### Building
 
 ```bash
-npm run build          # Full build: generate config types, build UI, compile TypeScript
-npm run build-ts       # Compile TypeScript server code to dist/
-npm run build-ui       # Build React frontend with Vite to build/
+npm run build            # Full build: generate config types, build UI, compile TypeScript
+npm run build-ts         # Compile TypeScript server code to dist/
+npm run build-ui         # Build React frontend with Vite to build/
+npm run build-validate   # Check that UI files are correctly included in build
 ```
 
 ### Type checking

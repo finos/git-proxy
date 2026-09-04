@@ -61,7 +61,9 @@ jobs:
           mongodb-version: ${{ matrix.mongodb-version }}
 
       - name: Install dependencies
-        run: npm ci --no-fund
+        run: |
+          npm i -g npm@11
+          npm ci --no-fund
 
       # for now only check the types of the server
       # tsconfig isn't quite set up right to respect what vite accepts
@@ -105,7 +107,7 @@ jobs:
         run: npm run build-ui
 
       - name: Run cypress test
-        uses: cypress-io/github-action@c32f12761482a282d24ca0fd7466d8ae86f54ba8 # v7.4.2
+        uses: cypress-io/github-action@09090944bd8aaa2a517cefb6e38bf1aae336b42b # v7.4.3
         with:
           # skip the action's internal npm ci — dependencies are already installed above
           install: false
@@ -159,6 +161,7 @@ jobs:
           npm run test-coverage-ci
           npm run test-coverage-ci --workspaces --if-present
 
+      # Smoke test deliberately removed due to long running times
       - name: Build frontend
         run: npm run build-ui
 

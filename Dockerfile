@@ -30,7 +30,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends git tini \
 COPY --chown=1000:1000 --from=builder /out/package*.json ./
 COPY --chown=1000:1000 --from=builder /out/node_modules/ ./node_modules/
 COPY --chown=1000:1000 --from=builder /out/dist/ ./dist/
-COPY --chown=1000:1000 --from=builder /out/build ./dist/build/
 COPY --chown=1000:1000 proxy.config.json config.schema.json ./
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 
