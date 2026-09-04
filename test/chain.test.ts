@@ -564,6 +564,14 @@ describe('proxy chain', function () {
     expect(pullChain).toEqual(chain.pullActionChain);
   });
 
+  it('runs resolveUserFromToken before checkUserPushPermission on tag pushes', () => {
+    const tag = chain.tagPushChain;
+    const resolveIdx = tag.indexOf(processors.push.resolveUserFromToken);
+    const permIdx = tag.indexOf(processors.push.checkUserPushPermission);
+    expect(resolveIdx).toBeGreaterThanOrEqual(0);
+    expect(permIdx).toBeGreaterThan(resolveIdx);
+  });
+
   it('returns tagPushChain when action.type is push and action.actionType is TAG', async () => {
     const action = new Action(
       '2',
