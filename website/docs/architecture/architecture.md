@@ -484,9 +484,136 @@ Sample values:
 
 #### `sink`
 
-List of database sources. The first source with `enabled` set to `true` will be used. Currently, MongoDB and filesystem databases ([NeDB](https://www.npmjs.com/package/@seald-io/nedb)) are supported. By default, the filesystem database is used.
+List of database sources. The first source with `enabled` set to `true` will be used. GitProxy supports three sink backends:
+
+- **`fs`** — filesystem-backed [NeDB](https://www.npmjs.com/package/@seald-io/nedb). Default. Suitable for single-process deployments.
+- **`mongo`** — MongoDB via `connect-mongo` for session storage.
+- **`postgres`** — PostgreSQL via [`pg`](https://node-postgres.com/) + [`connect-pg-simple`](https://github.com/voxpelli/node-connect-pg-simple) for session storage.
 
 Each entry has its own unique configuration parameters.
+
+##### PostgreSQL configuration
+
+The `postgres` backend stores `users`, `repos`, `pushes`, and the `connect-pg-simple` `session` table in a single PostgreSQL database. The required tables are created and kept up to date on startup by a built-in versioned migration runner (see [Schema migrations](#schema-migrations) below), so pointing the proxy at an empty database is enough to get running.
+
+```json
+{
+  "sink": [
+    {
+      "type": "postgres",
+      "connectionString": "postgresql://user:pass@host:5432/gitproxy",
+      "enabled": true
+    }
+  ]
+}
+```
+
+If `connectionString` is omitted on the config entry, GitProxy falls back to the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable. This mirrors the behaviour of the mongo backend's `GIT_PROXY_MONGO_CONNECTION_STRING`.
+
+##### Connection options
+
+Beyond `connectionString`, the `postgres` sink accepts discrete connection fields and tuning options:
+
+- `host`, `port`, `user`, `password`, `database` - used when `connectionString` is not set.
+- `ssl` - `true` for TLS with default certificate verification, or an object of TLS options (`rejectUnauthorized`, `ca`, `cert`, `key`, ...).
+- `pool` - pool tuning: `max`, `idleTimeoutMillis`, `connectionTimeoutMillis`.
+
+Connection precedence: `connectionString` (the config field, then `GIT_PROXY_POSTGRES_CONNECTION_STRING`) wins; otherwise the discrete fields are used; if neither is set, the standard `PGHOST` / `PGPORT` / `PGUSER` / `PGPASSWORD` / `PGDATABASE` environment variables are read by the client. `ssl` and `pool` are applied in all cases. If none of these resolve to a connection, GitProxy refuses to start rather than silently defaulting to `localhost`.
+
+```json
+{
+  "type": "postgres",
+  "host": "db.example.com",
+  "port": 5432,
+  "user": "gitproxy",
+  "password": "...",
+  "database": "gitproxy",
+  "ssl": { "rejectUnauthorized": true },
+  "pool": { "max": 20, "idleTimeoutMillis": 30000 },
+  "enabled": true
+}
+```
+
+##### AWS RDS / Aurora IAM authentication
+
+For Amazon RDS or Aurora, GitProxy can authenticate with a short-lived IAM auth token instead of a static password. Enable `awsIamAuth` and supply the discrete `host` / `port` / `user` fields (a `connectionString` is not used in this mode):
+
+```json
+{
+  "type": "postgres",
+  "host": "mydb.abc123.eu-west-2.rds.amazonaws.com",
+  "port": 5432,
+  "user": "gitproxy_iam",
+  "database": "gitproxy",
+  "awsIamAuth": { "enabled": true, "region": "eu-west-2" },
+  "enabled": true
+}
+```
+
+- A fresh token is generated for every new pool connection from the AWS SDK default credential chain (via `@aws-sdk/rds-signer`), so no password is stored and token refresh is automatic.
+- `region` falls back to the `AWS_REGION` / `AWS_DEFAULT_REGION` environment variables, then the SDK's default region resolution.
+- TLS is required by RDS for IAM auth. Supply the RDS certificate authority bundle via `ssl` (for example `{ "rejectUnauthorized": true, "ca": "<contents of the RDS global-bundle.pem>" }`, downloadable from https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem): RDS server certificates chain to Amazon's own root CA, which is not in Node's default trust store, so the `ssl: true` fallback (used when `ssl` is omitted) fails certificate verification against a real RDS endpoint and logs a startup warning saying so. Do not work around a verification failure with `rejectUnauthorized: false`; that discards the transport security IAM auth depends on.
+- The database user must be granted the `rds_iam` role (`GRANT rds_iam TO gitproxy_iam;`).
+- IAM auth needs the optional `@aws-sdk/rds-signer` dependency, which installs by default. On a slim install (`npm install --omit=optional`) add it explicitly with `npm install @aws-sdk/rds-signer`.
+
+##### Migrating data into PostgreSQL
+
+To copy existing `users`, `repos` and `pushes` from a `mongo` or `fs` (NeDB) backend into PostgreSQL, first switch the active sink to `postgres` (the destination), then run:
+
+```bash
+# From MongoDB
+npm run migrate:postgres -- --from mongo --mongoUrl "mongodb://user:pass@host:27017/git-proxy"
+
+# From the filesystem (NeDB) backend
+npm run migrate:postgres -- --from fs --dataDir ./.data/db
+```
+
+The importer reads the source with its own driver while writing through the active (postgres) sink, so the two connections never clash. It is idempotent: users and repos that already exist (matched by username/email and URL) are skipped, and pushes are upserted by id, so it is safe to re-run. Record `_id`s are not carried over; PostgreSQL assigns fresh UUIDs (push ids, which are text, are preserved).
+
+##### Schema migrations
+
+Schema changes are applied by a small built-in migration runner (`src/db/postgres/schemaMigrations.ts`). On every startup it:
+
+- ensures a `schema_migrations` bookkeeping table exists,
+- takes a transaction-scoped advisory lock so concurrently starting processes do not race, and
+- applies any migrations whose version has not been recorded yet, in order, recording each as it goes.
+
+Migrations are an ordered, append-only list of SQL statements defined in code. Version 1 is the initial schema; because it uses `CREATE TABLE IF NOT EXISTS`, databases that were bootstrapped by earlier releases adopt the runner transparently (version 1 is simply recorded). To evolve the schema, append a new entry with the next version number; never edit or reorder migrations that have already shipped.
+
+Notes and current limitations:
+
+- All pending migrations run inside a single transaction, so a statement that cannot run transactionally (for example `CREATE INDEX CONCURRENTLY`) is not yet supported by the runner.
+- Repo permissions (`canPush` / `canAuthorise`) are normalised into a `repo_users(repo_id, username, role)` join table (`ON DELETE CASCADE` from `repos`); the adapter reconstructs the permission arrays on read.
+- The `connect-pg-simple` session table is created by the migration list too (rather than by the store's own `createTableIfMissing`), so every piece of DDL flows through the same versioned, locked runner.
+- If `postgres` is selected as the active sink and no connection can be resolved, GitProxy refuses to start rather than silently falling back to an in-memory session store.
+
+###### Disabling automatic migrations (`autoMigrate: false`)
+
+Running migrations lazily at startup means the runtime database role permanently holds DDL rights. Where that is not acceptable — regulated deployments commonly separate DDL and DML credentials — set `"autoMigrate": false` on the postgres sink entry. Startup then only verifies that the schema is current, refusing to start (and naming the pending versions) when it is not, and migrations are applied out-of-band with DDL-capable credentials:
+
+```bash
+npm run migrate:postgres:schema
+```
+
+The script connects using the configured sink (or the standard `PG*` / `GIT_PROXY_POSTGRES_CONNECTION_STRING` overrides, letting you substitute elevated credentials), applies any pending migrations under the same advisory lock as the startup path, and exits.
+
+###### Deploy ordering
+
+A migration can retire schema that an older, still-running GitProxy process depends on (migration 5, for instance, drops the legacy `repos.users` column that older processes read). When upgrading a multi-process deployment across such a migration, stop or fully drain the processes running the older version before the new version boots — or, with `autoMigrate` off, before running `migrate:postgres:schema`. A rolling deploy that applies migrations while old processes are still serving can break those processes mid-flight.
+
+##### PostgreSQL design decisions
+
+The adapter follows a few deliberate choices, made for parity with the existing backends rather than for idiomatic SQL:
+
+- **Pushes stay documents.** A push is an audit record: written once, updated through a handful of state flips, and read back whole. The `pushes` table therefore keeps the entire action as a JSONB `data` column, with typed columns (`timestamp`, the status booleans) only for the fields that queries filter and sort on. This mirrors how the mongo and NeDB backends treat pushes and keeps the row shape stable as the `Action` type evolves.
+- **JSONB over full normalisation is deliberate.** Fully normalising an action would decompose a deeply nested document (steps, commit data, attestation) across many tables on every write and reassemble it with multi-way joins on every read, to serve relational queries the application never makes: pushes are fetched whole by id and listed by timestamp, and the few filtered fields are already real columns (with expression indexes covering the JSONB lookups the profile and activity pages make). Reads are single-row fetches either way, and a write is one upsert instead of a transactional multi-table write, so for this workload the document layout is at least as fast in both directions. It also keeps all three backends operating on the same document shapes, which is what makes feature parity across sinks tractable and lets `migrate:postgres` move data between backends without lossy transformation. Where the data _is_ queried relationally — repo permissions — the schema is normalised instead (`repo_users` above): JSONB is reserved for data that is genuinely a document.
+- **Users and repos are typed rows with JSONB edges.** Fields that queries touch get real columns; genuinely document-shaped parts (a user's `publicKeys`) are JSONB, while repo permissions live in the normalised `repo_users` join table.
+- **Identifiers are server-generated UUIDs** (`gen_random_uuid()`), the SQL analogue of mongo's ObjectIds. No compatibility between the backends' id formats is assumed anywhere in the app.
+- **Timestamps the app treats as strings stay strings.** `dateCreated` and `lastModified` are ISO-8601 `TEXT` columns so values round-trip byte-for-byte identically to the mongo and NeDB backends, with no timezone conversion on the way through.
+- **Same case rules as mongo**: usernames are lowercased on permission changes, and repo name lookups are lowercase.
+- **Email uniqueness is best-effort**, enforced by a partial unique index: any number of users may have no email (the ActiveDirectory `mail` attribute is optional), while a real address can only be claimed once. This matches the permissive behaviour of the other backends.
+- **Sessions use `connect-pg-simple`**, the postgres counterpart of the mongo backend's `connect-mongo` session store.
+- **Failures are loud.** If `postgres` is the active sink and no connection can be resolved, GitProxy refuses to start rather than silently degrading to an in-memory session store.
 
 Extending GitProxy to support other databases requires adding the relevant handlers and setup to the [`/src/db`](https://github.com/finos/git-proxy/blob/main/src/db/) directory. Feel free to [open an issue](https://github.com/finos/git-proxy/issues) requesting support for any specific databases - or [open a PR](https://github.com/finos/git-proxy/pulls) with the desired changes!
 
