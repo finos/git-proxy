@@ -126,6 +126,19 @@ describe('Scan commit diff', () => {
     await db.deleteRepo(TEST_REPO._id);
   });
 
+  it('prefers action.diff over diff step content if both exist', async () => {
+    const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
+    action.diff = generateDiff('AKIAIOSFODNN7EXAMPLE'); // AWS key in action.diff (should trigger block)
+    const harmlessStep = generateDiffStep('harmless content without key');
+    action.steps = [harmlessStep];
+    action.setCommit('38cdc3e', '8a9c321');
+    action.setBranch('b');
+    action.setMessage('Message');
+
+    const { error } = await processor.exec({} as Request, action);
+    expect(error).toBe(true);
+  });
+
   it('should block push when diff includes AWS Access Key ID', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
     const diffStep = generateDiffStep(generateDiff('AKIAIOSFODNN7EXAMPLE'));
