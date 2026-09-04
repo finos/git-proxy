@@ -33,6 +33,27 @@ describe('getDeprecatedConfigWarnings', () => {
     );
   });
 
+  it('warns for a deprecated field that has no replacement', () => {
+    expect(getDeprecatedConfigWarnings({ proxyUrl: 'https://github.com' })).toEqual([
+      '"proxyUrl" is deprecated and ignored; remove it before GitProxy 3.0',
+    ]);
+  });
+
+  it('treats non-string values as set', () => {
+    expect(getDeprecatedConfigWarnings({ proxyUrl: 0 } as never)).toHaveLength(1);
+    expect(getDeprecatedConfigWarnings({ proxyUrl: false } as never)).toHaveLength(1);
+  });
+
+  it('stays quiet when the replacement is already set', () => {
+    expect(
+      getDeprecatedConfigWarnings({
+        sslKeyPemPath: 'key.pem',
+        sslCertPemPath: 'cert.pem',
+        tls: { enabled: true, key: 'k.pem', cert: 'c.pem' },
+      }),
+    ).toEqual([]);
+  });
+
   it('returns no warnings for non-deprecated overrides', () => {
     expect(getDeprecatedConfigWarnings({ uiPort: 9000 })).toEqual([]);
     expect(
