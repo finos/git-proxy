@@ -30,7 +30,7 @@ Tests use environment variables for configuration, allowing them to run against 
 1. Start the Git Proxy services (outside of the test):
 
    ```bash
-   docker-compose up -d --build
+   docker compose -f test/e2e/docker-compose.yml up -d --build
    ```
 
 2. Run the e2e tests:
@@ -90,6 +90,7 @@ Maintainers can trigger e2e tests on any PR by commenting with specific commands
 ## Test Structure
 
 - `vitest.config.ts` - Vitest config for this suite (`npm run test:e2e`)
+- `docker-compose.yml` - Docker Compose environment (git-proxy, mongodb, git-server)
 - `proxy.config.json` - GitProxy config used by the Docker Compose environment
 - `localgit/` - Apache git HTTP server image used by Docker Compose
 - `setup.ts` - Common setup utilities and configuration

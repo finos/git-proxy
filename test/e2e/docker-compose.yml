@@ -1,14 +1,16 @@
+name: git-proxy
+
 services:
   git-proxy:
-    build: .
+    build: ../..
     ports:
       - '8000:8000'
       - '8081:8081'
     command: ['node', 'dist/index.js', '--config', '/app/e2e.proxy.config.json']
     volumes:
-      - ./test/e2e/proxy.config.json:/app/e2e.proxy.config.json:ro
+      - ./proxy.config.json:/app/e2e.proxy.config.json:ro
       # If using Podman, you might need to add the :Z or :z option for SELinux
-      # - ./test/e2e/proxy.config.json:/app/e2e.proxy.config.json:ro,Z
+      # - ./proxy.config.json:/app/e2e.proxy.config.json:ro,Z
     depends_on:
       mongodb:
         condition: service_healthy
@@ -57,7 +59,7 @@ services:
       start_period: 5s
 
   git-server:
-    build: test/e2e/localgit/
+    build: ./localgit
     ports:
       - '8443:8443' # HTTPS git server
     environment:

@@ -84,6 +84,6 @@ cp ./my-captures/*receive-pack*.request.bin ../../fixtures/my-scenario.bin
 
 **Add repositories**: Edit `init-repos.sh`, then rebuild (`docker compose build --no-cache git-server`).
 
-**Toggle data capture**: Set `GIT_CAPTURE_ENABLE=0` in `docker-compose.yml` under `git-server.environment` to disable.
+**Toggle data capture**: Set `GIT_CAPTURE_ENABLE=0` in `test/e2e/docker-compose.yml` under `git-server.environment` to disable.
 
 **Modify Apache**: Edit `httpd.conf` for authentication, CGI, or other server changes.

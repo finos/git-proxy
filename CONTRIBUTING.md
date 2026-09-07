@@ -99,7 +99,6 @@ git-proxy/
 ├── plugins/                # Sample plugin packages
 ├── website/                # Documentation site (Docusaurus)
 ├── index.ts                # CLI entry point
-├── docker-compose.yml      # Docker Compose for E2E environment
 ├── proxy.config.json       # Default proxy configuration
 ├── config.schema.json      # JSON Schema for configuration
 └── vite.config.ts          # Frontend build configuration
@@ -176,7 +175,7 @@ test/
 ├── db/                # Database operations
 ├── services/          # API and service tests
 ├── integration/       # Cross-module integration tests
-├── e2e/               # End-to-end tests (Vitest + Docker, includes localgit/)
+├── e2e/               # End-to-end tests (Vitest + Docker, includes localgit/ and Compose)
 ├── plugin/            # Plugin system tests
 ├── preReceive/        # Git hook tests
 └── fixtures/          # Binary test data for protocol-level tests
@@ -219,7 +218,7 @@ Configuration: [test/e2e/vitest.config.ts](test/e2e/vitest.config.ts), [test/e2e
 
 #### Docker Compose environment
 
-The E2E environment is defined in [docker-compose.yml](docker-compose.yml) and consists of three services:
+The E2E environment is defined in [test/e2e/docker-compose.yml](test/e2e/docker-compose.yml) and consists of three services:
 
 | Service      | Port       | Description                                                                                 |
 | ------------ | ---------- | ------------------------------------------------------------------------------------------- |
@@ -231,7 +230,9 @@ All services run in an isolated `git-network` Docker bridge network.
 
 #### Managing the environment manually
 
-When developing or debugging E2E tests, you'll often want to keep the containers running between test runs rather than letting the test script tear them down:
+When developing or debugging E2E tests, you'll often want to keep the containers running between test runs rather than letting the test script tear them down.
+
+From the repository root, either `cd test/e2e` first or set `export COMPOSE_FILE=test/e2e/docker-compose.yml` so the following commands find the Compose file:
 
 ```bash
 # Start all services in the background

@@ -1,7 +1,7 @@
 services:
   git-proxy:
     build:
-      context: .
+      context: ../..
       cache_from:
         - type=gha
       cache_to:
@@ -9,7 +9,7 @@ services:
 
   git-server:
     build:
-      context: test/e2e/localgit/
+      context: ./localgit
       cache_from:
         - type=gha
       cache_to:

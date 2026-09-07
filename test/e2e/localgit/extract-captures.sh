@@ -5,7 +5,7 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COMPOSE_FILE="$(cd "$SCRIPT_DIR/../../.." && pwd)/docker-compose.yml"
+COMPOSE_FILE="$(cd "$SCRIPT_DIR/.." && pwd)/docker-compose.yml"
 COMPOSE=(docker compose -f "$COMPOSE_FILE")
 
 SERVICE_NAME="git-server"
