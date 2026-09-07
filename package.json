@@ -139,7 +139,7 @@
     "lodash": "^4.17.23",
     "lusca": "^1.7.0",
     "luxon": "^3.7.2",
-    "mongodb": "^5.9.2",
+    "mongodb": "^7.6.0",
     "openid-client": "^6.8.1",
     "parse-diff": "^0.12.0",
     "passport": "^0.7.0",
