@@ -21,7 +21,7 @@ export default ({ mode }: { mode: string }) => {
   const env = loadEnv(mode, process.cwd(), '');
   return defineConfig({
     build: {
-      outDir: 'build',
+      outDir: 'dist/build',
     },
     server: {
       port: 3000,
