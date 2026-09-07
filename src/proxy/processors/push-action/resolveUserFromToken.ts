@@ -73,8 +73,11 @@ async function exec(req: Request, action: Action): Promise<Action> {
 
     const cached = scmTokenCache.lookup(provider.name, token);
     if (cached) {
-      step.log(`${provider.name}: resolved push identity from cache: ${cached}`);
-      action.user = cached;
+      step.log(`${provider.name}: resolved push identity from cache: ${cached.username}`);
+      action.user = cached.username;
+      if (cached.email) {
+        action.userEmail = cached.email;
+      }
       action.addStep(step);
       return action;
     }
@@ -97,7 +100,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
       );
       action.user = user.username;
       action.userEmail = user.email;
-      scmTokenCache.store(provider.name, token, user.username);
+      scmTokenCache.store(provider.name, token, user.username, user.email);
     } else {
       step.log(
         `No git-proxy user has gitAccount '${identity.login}' — ` +

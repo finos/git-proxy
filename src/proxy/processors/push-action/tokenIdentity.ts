@@ -20,7 +20,9 @@ export type ScmUserInfo = {
   login: string;
 };
 
-type CacheEntry = { username: string; provider: string; cachedAt: number };
+export type CachedIdentity = { username: string; email: string | null };
+
+type CacheEntry = CachedIdentity & { provider: string; cachedAt: number };
 // 7 days — PATs are rarely rotated more frequently than this in practice; the cache is a
 // rate-limit optimization only (keys are one-way SHA-512 hashes, not recoverable tokens).
 const DEFAULT_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -37,7 +39,7 @@ export class ScmTokenCache {
     return crypto.createHash('sha512').update(`${provider}:${token}`).digest('hex');
   }
 
-  lookup(provider: string, token: string): string | null {
+  lookup(provider: string, token: string): CachedIdentity | null {
     const k = this.key(provider, token);
     const entry = this.cache.get(k);
     if (!entry) return null;
@@ -46,11 +48,16 @@ export class ScmTokenCache {
       return null;
     }
     entry.cachedAt = Date.now();
-    return entry.username;
+    return { username: entry.username, email: entry.email ?? null };
   }
 
-  store(provider: string, token: string, username: string): void {
-    this.cache.set(this.key(provider, token), { username, provider, cachedAt: Date.now() });
+  store(provider: string, token: string, username: string, email: string | null = null): void {
+    this.cache.set(this.key(provider, token), {
+      username,
+      email,
+      provider,
+      cachedAt: Date.now(),
+    });
   }
 
   evictByUsername(provider: string, username: string): void {
