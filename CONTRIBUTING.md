@@ -102,8 +102,7 @@ git-proxy/
 ├── docker-compose.yml      # Docker Compose for E2E environment
 ├── proxy.config.json       # Default proxy configuration
 ├── config.schema.json      # JSON Schema for configuration
-├── vite.config.ts          # Frontend build configuration
-└── vitest.config.ts        # Unit test configuration
+└── vite.config.ts          # Frontend build configuration
 ```
 
 ### Key architectural concepts
@@ -166,12 +165,13 @@ npm run test-shuffle   # Randomized execution order (detects test coupling)
 npm run test-coverage  # Run with coverage report
 ```
 
-Configuration: [vitest.config.ts](vitest.config.ts)
+Configuration: [test/vitest.config.ts](test/vitest.config.ts)
 
 Test files are organized by module:
 
 ```
 test/
+├── vitest.config.ts   # Unit test configuration (`npm test`)
 ├── processors/        # Proxy processor logic
 ├── db/                # Database operations
 ├── services/          # API and service tests
@@ -327,7 +327,7 @@ npm run cypress:open   # Interactive test runner (recommended for development)
 npm run cypress:run    # Headless mode (used in CI)
 ```
 
-Configuration: [cypress.config.js](cypress.config.js)
+Configuration: [cypress/cypress.config.js](cypress/cypress.config.js)
 
 Cypress tests live in `cypress/e2e/` and use custom commands defined in `cypress/support/commands.js` (e.g., `cy.login(username, password)`).
 
