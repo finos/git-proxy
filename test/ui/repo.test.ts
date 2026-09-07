@@ -22,7 +22,9 @@ import {
   getRepo,
   addRepo,
   deleteRepo,
+  sortRepoViews,
 } from '../../src/ui/services/repo';
+import type { RepoView } from '../../src/ui/types';
 
 const { axiosMock } = vi.hoisted(() => {
   const axiosFn = vi.fn() as any;
@@ -381,5 +383,69 @@ describe('repo service additional functions', () => {
 
       await expect(deleteRepo('repo-1')).rejects.toThrow('Connection refused');
     });
+  });
+});
+
+describe('sortRepoViews created axis', () => {
+  const makeRepo = (name: string, dateCreated?: string): RepoView =>
+    ({
+      name,
+      project: 'org',
+      url: `https://example.com/org/${name}.git`,
+      users: { canPush: [], canAuthorise: [] },
+      proxyURL: 'https://proxy.example.com',
+      ...(dateCreated ? { dateCreated } : {}),
+    }) as RepoView;
+
+  it('sorts by created desc: newest created first, repos without a date last', () => {
+    const repos = [
+      makeRepo('no-date'),
+      makeRepo('older', '2024-01-01T00:00:00.000Z'),
+      makeRepo('newer', '2025-01-01T00:00:00.000Z'),
+    ];
+
+    const result = sortRepoViews(repos, 'created-desc');
+
+    expect(result.map((r) => r.name)).toEqual(['newer', 'older', 'no-date']);
+  });
+
+  it('sorts by created asc: oldest created first, repos without a date last', () => {
+    const repos = [
+      makeRepo('no-date'),
+      makeRepo('newer', '2025-01-01T00:00:00.000Z'),
+      makeRepo('older', '2024-01-01T00:00:00.000Z'),
+    ];
+
+    const result = sortRepoViews(repos, 'created-asc');
+
+    expect(result.map((r) => r.name)).toEqual(['older', 'newer', 'no-date']);
+  });
+
+  it('falls back to name ascending when created dates are equal', () => {
+    const repos = [
+      makeRepo('zebra', '2025-01-01T00:00:00.000Z'),
+      makeRepo('alpha', '2025-01-01T00:00:00.000Z'),
+    ];
+
+    expect(sortRepoViews(repos, 'created-desc').map((r) => r.name)).toEqual(['alpha', 'zebra']);
+    expect(sortRepoViews(repos, 'created-asc').map((r) => r.name)).toEqual(['alpha', 'zebra']);
+  });
+
+  it('treats an unparseable created date as missing and sorts it last', () => {
+    const repos = [makeRepo('broken', 'not-a-date'), makeRepo('valid', '2024-01-01T00:00:00.000Z')];
+
+    expect(sortRepoViews(repos, 'created-desc').map((r) => r.name)).toEqual(['valid', 'broken']);
+    expect(sortRepoViews(repos, 'created-asc').map((r) => r.name)).toEqual(['valid', 'broken']);
+  });
+
+  it('does not mutate the input array', () => {
+    const repos = [
+      makeRepo('older', '2024-01-01T00:00:00.000Z'),
+      makeRepo('newer', '2025-01-01T00:00:00.000Z'),
+    ];
+
+    sortRepoViews(repos, 'created-desc');
+
+    expect(repos.map((r) => r.name)).toEqual(['older', 'newer']);
   });
 });

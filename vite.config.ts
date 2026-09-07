@@ -24,7 +24,7 @@ export default ({ mode }: { mode: string }) => {
   const apiTarget = `http://127.0.0.1:${apiPort}`;
   return defineConfig({
     build: {
-      outDir: 'build',
+      outDir: 'dist/build',
     },
     server: {
       port: 3000,
