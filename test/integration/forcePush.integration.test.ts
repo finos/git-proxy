@@ -116,6 +116,10 @@ describe('Force Push Integration Test', () => {
       expect(typeof diffStep.content).toBe('string');
       expect(diffStep.content.length).toBeGreaterThan(0);
 
+      expect(typeof afterGetDiff.diff).toBe('string');
+      expect((afterGetDiff.diff as string).length).toBeGreaterThan(0);
+      expect(afterGetDiff.diff).toEqual(diffStep.content);
+
       const afterScanDiff = await scanDiff(req, afterGetDiff);
       const scanStep = afterScanDiff.steps.find((s: Step) => s.stepName === 'scanDiff');
 

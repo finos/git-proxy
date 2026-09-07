@@ -73,8 +73,8 @@ describe('getDiff', () => {
     const result = await exec({} as Request, action);
 
     expect(result.steps[0].error).toBe(false);
-    expect(result.steps[0].content).toContain('modified content');
-    expect(result.steps[0].content).toContain('initial content');
+    expect(result.diff).toContain('modified content');
+    expect(result.diff).toContain('initial content');
   });
 
   it('should get diff between commits with no changes', async () => {
