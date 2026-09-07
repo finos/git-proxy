@@ -1,6 +1,6 @@
 fail-on-severity: high
 sort-by: severity
-output-template-file: .grype-report.tmpl
+output-template-file: .github/security/grype-report.tmpl
 
 ignore:
   - fix-state: 'wont-fix'

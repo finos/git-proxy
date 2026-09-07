@@ -576,6 +576,8 @@ Allows configuring TLS (Transport Layer Security) **for the proxy** (not for the
 }
 ```
 
+TLS is disabled by default. For local HTTPS, generate a self-signed pair with `./scripts/create-cert.sh` (writes `certs/key.pem` and `certs/cert.pem`, which are gitignored) and set `enabled` to `true`.
+
 #### `configurationSources`
 
 Allows setting custom sources for configuring GitProxy. Configuration can be customised through files, HTTP or Git servers.

@@ -196,21 +196,16 @@ git-proxy/
 │   ├── ui/                 # React dashboard (Material-UI)
 │   ├── plugin.ts           # Plugin base classes (PushActionPlugin, PullActionPlugin)
 │   └── types/              # Shared TypeScript types
-├── test/                   # Unit and integration tests (Vitest)
-├── tests/e2e/              # End-to-end tests (Vitest + Docker)
+├── test/                   # Unit, integration, and e2e tests (Vitest)
 ├── cypress/                # UI tests (Cypress)
-├── localgit/               # Local git server for E2E testing (see localgit/README.md)
 ├── packages/
 │   └── git-proxy-cli/      # CLI package
 ├── plugins/                # Sample plugin packages
 ├── website/                # Documentation site (Docusaurus)
 ├── index.ts                # CLI entry point
-├── docker-compose.yml      # Docker Compose for E2E environment
 ├── proxy.config.json       # Default proxy configuration
 ├── config.schema.json      # JSON Schema for configuration
-├── vite.config.ts          # Frontend build configuration
-├── vitest.config.ts        # Unit test configuration
-└── vitest.config.e2e.ts    # E2E test configuration
+└── vite.config.ts          # Frontend build configuration
 ```
 
 ### Key architectural concepts
@@ -273,16 +268,18 @@ npm run test-shuffle   # Randomized execution order (detects test coupling)
 npm run test-coverage  # Run with coverage report
 ```
 
-Configuration: [vitest.config.ts](vitest.config.ts)
+Configuration: [test/vitest.config.ts](test/vitest.config.ts)
 
 Test files are organized by module:
 
 ```
 test/
+├── vitest.config.ts   # Unit test configuration (`npm test`)
 ├── processors/        # Proxy processor logic
 ├── db/                # Database operations
 ├── services/          # API and service tests
 ├── integration/       # Cross-module integration tests
+├── e2e/               # End-to-end tests (Vitest + Docker, includes localgit/ and Compose)
 ├── plugin/            # Plugin system tests
 ├── preReceive/        # Git hook tests
 └── fixtures/          # Binary test data for protocol-level tests
@@ -303,7 +300,7 @@ RUN_MONGO_TESTS=true npm run test:integration
 docker stop mongodb-test && docker rm mongodb-test
 ```
 
-Configuration: [vitest.config.integration.ts](vitest.config.integration.ts)
+Configuration: [test/vitest.integration.config.ts](test/vitest.integration.config.ts), [test/integration/proxy.config.json](test/integration/proxy.config.json)
 
 In CI, `RUN_MONGO_TESTS` is set automatically in the workflow that runs integration tests.
 
@@ -321,23 +318,25 @@ npm run test:e2e
 npm run test:e2e:watch
 ```
 
-Configuration: [vitest.config.e2e.ts](vitest.config.e2e.ts)
+Configuration: [test/e2e/vitest.config.ts](test/e2e/vitest.config.ts), [test/e2e/proxy.config.json](test/e2e/proxy.config.json)
 
 #### Docker Compose environment
 
-The E2E environment is defined in [docker-compose.yml](docker-compose.yml) and consists of three services:
+The E2E environment is defined in [test/e2e/docker-compose.yml](test/e2e/docker-compose.yml) and consists of three services:
 
-| Service      | Port       | Description                                                               |
-| ------------ | ---------- | ------------------------------------------------------------------------- |
-| `git-proxy`  | 8000, 8081 | GitProxy application under test                                           |
-| `mongodb`    | 27017      | MongoDB 7 instance                                                        |
-| `git-server` | 8443       | Apache-based git HTTP server with test repos (see [localgit/](localgit/)) |
+| Service      | Port       | Description                                                                                 |
+| ------------ | ---------- | ------------------------------------------------------------------------------------------- |
+| `git-proxy`  | 8000, 8081 | GitProxy application under test                                                             |
+| `mongodb`    | 27017      | MongoDB 7 instance                                                                          |
+| `git-server` | 8443       | Apache-based git HTTP server with test repos (see [test/e2e/localgit/](test/e2e/localgit/)) |
 
 All services run in an isolated `git-network` Docker bridge network.
 
 #### Managing the environment manually
 
-When developing or debugging E2E tests, you'll often want to keep the containers running between test runs rather than letting the test script tear them down:
+When developing or debugging E2E tests, you'll often want to keep the containers running between test runs rather than letting the test script tear them down.
+
+From the repository root, either `cd test/e2e` first or set `export COMPOSE_FILE=test/e2e/docker-compose.yml` so the following commands find the Compose file:
 
 ```bash
 # Start all services in the background
@@ -346,7 +345,7 @@ docker compose up -d
 # Verify all three containers are running
 docker compose ps
 
-# Rebuild from scratch (e.g., after changing localgit/ or Dockerfile)
+# Rebuild from scratch (e.g., after changing test/e2e/localgit/ or Dockerfile)
 docker compose down -v
 docker compose build --no-cache
 docker compose up -d
@@ -418,7 +417,7 @@ docker compose exec mongodb mongosh --eval "db.adminCommand('ping')"
 
 #### Generating test fixtures
 
-The git server includes a data capture system that records raw git protocol data for every operation. This is useful for creating binary test fixtures (e.g., PACK files) for unit tests. See [localgit/README.md](localgit/README.md) for details on the capture system, PACK extraction tools, and fixture generation workflow.
+The git server includes a data capture system that records raw git protocol data for every operation. This is useful for creating binary test fixtures (e.g., PACK files) for unit tests. See [test/e2e/localgit/README.md](test/e2e/localgit/README.md) for details on the capture system, PACK extraction tools, and fixture generation workflow.
 
 ### UI Tests (Cypress)
 
@@ -433,7 +432,7 @@ npm run cypress:open   # Interactive test runner (recommended for development)
 npm run cypress:run    # Headless mode (used in CI)
 ```
 
-Configuration: [cypress.config.js](cypress.config.js)
+Configuration: [cypress/cypress.config.js](cypress/cypress.config.js)
 
 Cypress tests live in `cypress/e2e/` and use custom commands defined in `cypress/support/commands.js` (e.g., `cy.login(username, password)`).
 
