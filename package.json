@@ -173,7 +173,7 @@
     "@types/lodash": "^4.17.24",
     "@types/lusca": "^1.7.5",
     "@types/luxon": "^3.7.1",
-    "@types/node": "^22.19.7",
+    "@types/node": "^26.4.0",
     "@types/passport": "^1.0.17",
     "@types/passport-local": "^1.0.38",
     "@types/react": "^19.2.14",
