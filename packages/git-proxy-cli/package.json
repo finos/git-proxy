@@ -6,7 +6,9 @@
     "git-proxy-cli": "./dist/index.js"
   },
   "dependencies": {
-    "@finos/git-proxy": "2.1.0"
+    "@finos/git-proxy": "2.1.0",
+    "axios": "^1.13.6",
+    "yargs": "^17.7.2"
   },
   "scripts": {
     "build": "tsc",
