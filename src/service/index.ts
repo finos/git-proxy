@@ -23,7 +23,6 @@ import cors from 'cors';
 import path from 'path';
 import rateLimit from 'express-rate-limit';
 import lusca from 'lusca';
-import fs from 'fs';
 
 import * as config from '../config';
 import * as db from '../db';
