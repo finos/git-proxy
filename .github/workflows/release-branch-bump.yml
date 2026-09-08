@@ -94,16 +94,19 @@ jobs:
             exit 1
           fi
 
-      - name: Bump root package
+      - name: Bump package versions
         env:
           VERSION: ${{ steps.version.outputs.version }}
-        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+        run: |
+          npm pkg set "version=$VERSION"
+          npm pkg set "version=$VERSION" --workspace @finos/git-proxy-cli
+          npm pkg set "dependencies.@finos/git-proxy=$VERSION" --workspace @finos/git-proxy-cli
 
-      - name: Bump git-proxy-cli package
-        working-directory: packages/git-proxy-cli
+      - name: Patch lockfile versions
         env:
           VERSION: ${{ steps.version.outputs.version }}
-        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+        run: |
+          # same node -e script as bump-version.yml
 
       - name: Open patch bump PR
         env:
@@ -118,11 +121,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git checkout -b "$BRANCH"
-          git add package.json package-lock.json packages/git-proxy-cli/package.json packages/git-proxy-cli/package-lock.json
+          git add package.json package-lock.json packages/git-proxy-cli/package.json
           git commit -m "chore: bump version to $VERSION"
           git push -u origin "$BRANCH" --force
 
-          BODY=$(printf 'Automated patch bump on `%s`: `%s` -> `%s`.\n\nBumps:\n- `package.json` / `package-lock.json`\n- `packages/git-proxy-cli/package.json`\n\nOnce merged, this drafts a release on `%s`. Please publish it immedietaly, otherwise the draft release will get overwritten. Then, cascade-merge it forward into the next supported release branch (bumping that line too) if one exists.\nFor more details see our guide on [How to Publish a Patch Release](https://git-proxy.finos.org/docs/development/releases/#publishing-a-patch-release).\n' "$BASE_BRANCH" "$CURRENT" "$VERSION" "$BASE_BRANCH")
+          BODY=$(printf 'Automated patch bump on `%s`: `%s` -> `%s`.\n\nBumps:\n- `package.json` / `package-lock.json`\n- `packages/git-proxy-cli/package.json`\n\nOnce merged, this drafts a release on `%s`. Please publish it immediately, otherwise the draft release will get overwritten. Then, cascade-merge it forward into the next supported release branch (bumping that line too) if one exists.\nFor more details see our guide on [How to Publish a Patch Release](https://git-proxy.finos.org/docs/development/releases/#publishing-a-patch-release).\n' "$BASE_BRANCH" "$CURRENT" "$VERSION" "$BASE_BRANCH")
 
           if gh pr view "$BRANCH" >/dev/null 2>&1; then
             echo "PR for $BRANCH already exists. Branch updated, no new PR opened."
