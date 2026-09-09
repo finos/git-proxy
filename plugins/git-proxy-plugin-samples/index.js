@@ -19,7 +19,7 @@
  * ES modules to demonstrate the use of ESM in plugins.
  */
 
-// Peer dependencies; its expected that these deps exist on Node module path if you've installed @finos/git-proxy
+// Peer dependencies; it's expected that these deps exist on Node module path if you've installed @finos/git-proxy
 import { PullActionPlugin } from '@finos/git-proxy/plugin';
 import { Step } from '@finos/git-proxy/proxy/actions';
 

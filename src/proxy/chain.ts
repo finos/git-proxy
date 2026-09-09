@@ -16,48 +16,65 @@
 
 import { Request, Response } from 'express';
 
-import { PluginLoader } from '../plugin';
+import { PluginLoader, ActionPlugin, PushActionPlugin } from '../plugin';
 import { Action, RequestType, PushType } from './actions';
 import * as proc from './processors';
-import { ProcessorExec } from './processors/types';
+import {
+  ProcessorExec,
+  PullPhase,
+  PushPhase,
+  ChainElement,
+  PushChainName,
+  BuiltChains,
+} from './processors/types';
 import { attemptAutoApproval, attemptAutoRejection } from './actions/autoActions';
 import { handleErrorAndLog } from '../utils/errors';
 import { createProgressWriter } from './sideband';
 
-const branchPushChain: ProcessorExec[] = [
+const branchPushChainElements: ChainElement[] = [
   proc.push.resolveUserFromToken,
   proc.push.checkEmptyBranch,
   proc.push.checkRepoInAuthorisedList,
+  PushPhase.AFTER_PERMISSIONS,
   proc.push.checkMessages,
   proc.push.checkAuthorEmails,
   proc.push.checkUserPushPermission,
   proc.push.pullRemote, // cleanup is handled after chain execution if successful
   proc.push.writePack,
+  PushPhase.AFTER_CHECKOUT,
   proc.push.checkHiddenCommits,
   proc.push.checkIfWaitingAuth,
   proc.push.preReceive,
   proc.push.getDiff,
+  PushPhase.AFTER_DIFF,
   proc.push.gitleaks,
   proc.push.scanDiff,
+  PushPhase.BEFORE_APPROVAL,
   proc.push.blockForAuth,
 ];
 
-const tagPushChain: ProcessorExec[] = [
+const tagPushChainElements: ChainElement[] = [
   proc.push.checkRepoInAuthorisedList,
+  PushPhase.AFTER_PERMISSIONS,
   proc.push.checkUserPushPermission,
   proc.push.checkIfWaitingAuth,
   proc.push.checkMessages,
   proc.push.pullRemote,
   proc.push.writePack,
+  PushPhase.AFTER_CHECKOUT,
   proc.push.preReceive,
+  PushPhase.BEFORE_APPROVAL,
   proc.push.blockForAuth,
 ];
 
-const pullActionChain: ProcessorExec[] = [proc.push.checkRepoInAuthorisedList];
+const pullActionChainElements: ChainElement[] = [
+  proc.push.checkRepoInAuthorisedList,
+  PullPhase.AFTER_AUTHORISATION,
+];
 
-const defaultActionChain: ProcessorExec[] = [proc.push.checkRepoInAuthorisedList];
+const defaultActionChainElements: ChainElement[] = [proc.push.checkRepoInAuthorisedList];
 
-let pluginsInserted = false;
+let builtChains: BuiltChains | undefined;
 
 /**
  * Compose a single error message from all failed steps, so that the git
@@ -82,13 +99,14 @@ const composeErrorMessage = (action: Action): string | undefined => {
 };
 
 const stepProgressLabels: Record<string, string> = {
+  'resolveUserFromToken.exec': 'Resolving user from token',
   'checkEmptyBranch.exec': 'Checking for empty branch',
   'checkRepoInAuthorisedList.exec': 'Checking repository is authorised',
   'checkMessages.exec': 'Checking commit messages',
   'checkAuthorEmails.exec': 'Checking author emails',
   'checkUserPushPermission.exec': 'Checking push permissions',
   'pullRemote.exec': 'Fetching remote repository',
-  'writePack.exec': 'writing pack data',
+  'writePack.exec': 'Writing pack data',
   'checkHiddenCommits.exec': 'Checking for hidden commits',
   'checkIfWaitingAuth.exec': 'Checking approval status',
   'executeExternalPreReceiveHook.exec': 'Running pre-receive hook',
@@ -109,9 +127,9 @@ const getProgressMessage = (fn: ProcessorExec): string => {
     return stepProgressLabels[displayName];
   }
   if (displayName) {
-    return `running ${displayName.replace(/\.exec$/, '')}`;
+    return `Running ${displayName.replace(/\.exec$/, '')}`;
   }
-  return 'running plugin';
+  return 'Running plugin';
 };
 
 export const executeChain = async (req: Request, res: Response): Promise<Action> => {
@@ -208,39 +226,58 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
  */
 let chainPluginLoader: PluginLoader;
 
+const buildChain = (
+  elements: ChainElement[],
+  chainName: string,
+  plugins: ActionPlugin[],
+): ProcessorExec[] =>
+  elements.flatMap((element) =>
+    typeof element === 'function'
+      ? [element]
+      : plugins.filter((plugin) => plugin.phase === element).map(toPluginExec),
+  );
+
+const toPluginExec = (plugin: ActionPlugin): ProcessorExec =>
+  Object.assign((req: Request, action: Action) => plugin.exec(req, action), {
+    displayName: plugin.displayName ?? `${plugin.constructor.name}.exec`,
+    isCollectible: plugin.isCollectible ?? false,
+  });
+
+const filterPushPluginsByChain = (plugins: readonly PushActionPlugin[], chainName: PushChainName) =>
+  plugins.filter((p) => (p.chains ?? ['branch', 'tag']).includes(chainName));
+
+const buildAllChains = (): BuiltChains => {
+  const pushPlugins = chainPluginLoader.pushPlugins;
+  const pullPlugins = chainPluginLoader.pullPlugins;
+
+  return {
+    branch: buildChain(
+      branchPushChainElements,
+      'branch',
+      filterPushPluginsByChain(pushPlugins, 'branch'),
+    ),
+    tag: buildChain(tagPushChainElements, 'tag', filterPushPluginsByChain(pushPlugins, 'tag')),
+    pull: buildChain(pullActionChainElements, 'pull', pullPlugins),
+    default: [...defaultActionChainElements] as ProcessorExec[],
+  };
+};
+
 export const getChain = async (action: Action): Promise<ProcessorExec[]> => {
   if (chainPluginLoader === undefined) {
-    console.error(
-      'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers. Skipping plugins...',
+    throw new Error(
+      'Plugin loader was not initialized! This is an application error. Please report it to the GitProxy maintainers.',
     );
-    pluginsInserted = true;
   }
 
-  if (!pluginsInserted) {
-    console.log(
-      `Inserting loaded plugins (${chainPluginLoader.pushPlugins.length} push, ${chainPluginLoader.pullPlugins.length} pull) into proxy chains`,
-    );
-    for (const pluginObj of chainPluginLoader.pushPlugins) {
-      console.log(`Inserting push plugin ${pluginObj.constructor.name} into chain`);
-      branchPushChain.splice(0, 0, pluginObj.exec);
-      tagPushChain.splice(0, 0, pluginObj.exec);
-    }
-    for (const pluginObj of chainPluginLoader.pullPlugins) {
-      console.log(`Inserting pull plugin ${pluginObj.constructor.name} into chain`);
-      // insert custom functions before other pull actions
-      pullActionChain.splice(0, 0, pluginObj.exec);
-    }
-    // This is set to true so that we don't re-insert the plugins into the chain
-    pluginsInserted = true;
-  }
+  builtChains ??= buildAllChains();
 
   switch (action.type) {
     case RequestType.PULL:
-      return pullActionChain;
+      return builtChains.pull;
     case RequestType.PUSH:
-      return action.actionType === PushType.TAG ? tagPushChain : branchPushChain;
+      return action.actionType === PushType.TAG ? builtChains.tag : builtChains.branch;
     default:
-      return defaultActionChain;
+      return builtChains.default;
   }
 };
 
@@ -251,20 +288,17 @@ export default {
   get chainPluginLoader() {
     return chainPluginLoader;
   },
-  get pluginsInserted() {
-    return pluginsInserted;
-  },
   get branchPushChain() {
-    return branchPushChain;
+    return builtChains?.branch ?? [];
   },
   get tagPushChain() {
-    return tagPushChain;
+    return builtChains?.tag ?? [];
   },
   get pullActionChain() {
-    return pullActionChain;
+    return builtChains?.pull ?? [];
   },
   get defaultActionChain() {
-    return defaultActionChain;
+    return builtChains?.default ?? [];
   },
   executeChain,
   getChain,
