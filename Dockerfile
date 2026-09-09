@@ -5,12 +5,11 @@ USER root
 WORKDIR /out
 
 COPY package*.json ./
-COPY tsconfig.json tsconfig.publish.json proxy.config.json config.schema.json test-e2e.proxy.config.json vite.config.ts index.html index.ts ./
+COPY tsconfig.json tsconfig.publish.json proxy.config.json config.schema.json vite.config.ts index.html index.ts ./
 
 RUN npm pkg delete scripts.prepare && npm ci --include=dev
 
 COPY src/ /out/src/
-COPY public/ /out/public/
 
 RUN npm run build-ui \
   && npx tsc --project tsconfig.publish.json \
@@ -30,9 +29,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends git tini \
 COPY --chown=1000:1000 --from=builder /out/package*.json ./
 COPY --chown=1000:1000 --from=builder /out/node_modules/ ./node_modules/
 COPY --chown=1000:1000 --from=builder /out/dist/ ./dist/
-COPY --chown=1000:1000 --from=builder /out/build ./dist/build/
 COPY --chown=1000:1000 proxy.config.json config.schema.json ./
-COPY docker-entrypoint.sh /docker-entrypoint.sh
+COPY scripts/docker-entrypoint.sh /docker-entrypoint.sh
 
 
 USER 1000

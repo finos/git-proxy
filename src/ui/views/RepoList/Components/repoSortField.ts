@@ -18,12 +18,15 @@ export type RepoSortField =
   | 'relevance'
   | 'lastPushed-asc'
   | 'lastPushed-desc'
+  | 'created-asc'
+  | 'created-desc'
   | 'name-asc'
   | 'name-desc'
   | 'activity'
   | 'latestPendingReview';
 
-export type RepoSortAxis = 'relevance' | 'lastPushed' | 'name' | 'activity' | 'latestPendingReview';
+export type RepoSortAxis =
+  'relevance' | 'lastPushed' | 'created' | 'name' | 'activity' | 'latestPendingReview';
 
 export const DEFAULT_REPO_SORT: RepoSortField = 'relevance';
 
@@ -31,6 +34,8 @@ export const REPO_SORT_VALUES = [
   'relevance',
   'lastPushed-asc',
   'lastPushed-desc',
+  'created-asc',
+  'created-desc',
   'name-asc',
   'name-desc',
   'activity',
@@ -40,6 +45,7 @@ export const REPO_SORT_VALUES = [
 export const REPO_SORT_AXIS_LABEL = {
   relevance: 'Relevance',
   lastPushed: 'Last pushed',
+  created: 'Created',
   name: 'Name',
   activity: 'Activity',
   latestPendingReview: 'Pending',
@@ -52,7 +58,9 @@ export const repoSortAxis = (sort: RepoSortField): RepoSortAxis => {
   if (sort === 'relevance') return 'relevance';
   if (sort === 'activity') return 'activity';
   if (sort === 'latestPendingReview') return 'latestPendingReview';
-  return sort.startsWith('lastPushed') ? 'lastPushed' : 'name';
+  if (sort.startsWith('lastPushed')) return 'lastPushed';
+  if (sort.startsWith('created')) return 'created';
+  return 'name';
 };
 
 export const repoSortDirection = (sort: RepoSortField): 'asc' | 'desc' => {
@@ -64,7 +72,9 @@ export const repoSortCombine = (axis: RepoSortAxis, dir: 'asc' | 'desc'): RepoSo
   if (axis === 'relevance') return 'relevance';
   if (axis === 'activity') return 'activity';
   if (axis === 'latestPendingReview') return 'latestPendingReview';
-  return axis === 'lastPushed' ? `lastPushed-${dir}` : `name-${dir}`;
+  if (axis === 'lastPushed') return `lastPushed-${dir}`;
+  if (axis === 'created') return `created-${dir}`;
+  return `name-${dir}`;
 };
 
 export const repoSortSetAxis = (prev: RepoSortField, axis: RepoSortAxis): RepoSortField => {
@@ -72,7 +82,7 @@ export const repoSortSetAxis = (prev: RepoSortField, axis: RepoSortAxis): RepoSo
   if (axis === 'activity') return 'activity';
   if (axis === 'latestPendingReview') return 'latestPendingReview';
   if (prev === 'relevance' || prev === 'activity' || prev === 'latestPendingReview') {
-    return repoSortCombine(axis, axis === 'lastPushed' ? 'desc' : 'asc');
+    return repoSortCombine(axis, axis === 'lastPushed' || axis === 'created' ? 'desc' : 'asc');
   }
   return repoSortCombine(axis, repoSortDirection(prev));
 };
