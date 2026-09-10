@@ -39,6 +39,11 @@
         "ssl": true
       },
       "enabled": false
+    },
+    {
+      "type": "postgres",
+      "connectionString": "postgresql://localhost:5432/gitproxy",
+      "enabled": false
     }
   ],
   "authentication": [
