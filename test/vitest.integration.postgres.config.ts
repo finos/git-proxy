@@ -35,7 +35,9 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       RUN_POSTGRES_TESTS: 'true',
-      CONFIG_FILE: fileURLToPath(new URL('./integration/postgres.proxy.config.json', import.meta.url)),
+      CONFIG_FILE: fileURLToPath(
+        new URL('./integration/postgres.proxy.config.json', import.meta.url),
+      ),
       // Default for local runs; an exported GIT_PROXY_POSTGRES_CONNECTION_STRING
       // (e.g. in CI or a non-default local setup) takes precedence.
       GIT_PROXY_POSTGRES_CONNECTION_STRING:
