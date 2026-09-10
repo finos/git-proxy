@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-import path from 'path';
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+
+const testDir = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   test: {
-    include: ['test/db/postgres/**/*.integration.test.ts'],
+    dir: testDir,
+    include: ['db/postgres/**/*.integration.test.ts'],
     testTimeout: 30000,
     hookTimeout: 10000,
-    setupFiles: ['test/setup-integration-postgres.ts'],
+    setupFiles: [fileURLToPath(new URL('./setup-integration-postgres.ts', import.meta.url))],
     pool: 'forks',
     // The files share one database and some of them drop and recreate its
     // tables, so they must not run concurrently. vitest 4 removed the old
@@ -32,7 +35,7 @@ export default defineConfig({
     env: {
       NODE_ENV: 'test',
       RUN_POSTGRES_TESTS: 'true',
-      CONFIG_FILE: path.resolve(__dirname, 'test-integration.postgres.proxy.config.json'),
+      CONFIG_FILE: fileURLToPath(new URL('./integration/postgres.proxy.config.json', import.meta.url)),
       // Default for local runs; an exported GIT_PROXY_POSTGRES_CONNECTION_STRING
       // (e.g. in CI or a non-default local setup) takes precedence.
       GIT_PROXY_POSTGRES_CONNECTION_STRING:

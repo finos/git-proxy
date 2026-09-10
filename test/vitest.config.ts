@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-import { defineConfig } from 'vitest/config';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { configDefaults, defineConfig } from 'vitest/config';
+
+const repoRoot = fileURLToPath(new URL('..', import.meta.url));
 
 export default defineConfig({
+  root: repoRoot,
   test: {
     pool: 'forks',
     fileParallelism: false,
+    exclude: [...configDefaults.exclude, '**/e2e/**'],
     coverage: {
       provider: 'v8',
-      reportsDirectory: './coverage',
+      reportsDirectory: path.join(repoRoot, 'coverage'),
       reporter: ['text', 'lcov'],
       include: ['src/**/*.ts'],
       exclude: [

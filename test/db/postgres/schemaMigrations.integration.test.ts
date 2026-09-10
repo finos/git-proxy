@@ -26,7 +26,7 @@ import {
 
 const shouldRunPostgresTests = process.env.RUN_POSTGRES_TESTS === 'true';
 
-// Mirrors the default in vitest.config.integration.postgres.ts. Used only by the
+// Mirrors the default in test/vitest.integration.postgres.config.ts. Used only by the
 // backfill test below, which needs a raw pool to stage a pre-repo_users database.
 const getConnectionString = () =>
   process.env.GIT_PROXY_POSTGRES_CONNECTION_STRING ||
