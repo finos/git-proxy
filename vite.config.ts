@@ -33,6 +33,7 @@ export default ({ mode }: { mode: string }) => {
       },
     },
     plugins: [tailwindcss(), react()],
+    publicDir: 'src/ui/public',
     define: {
       'process.env': JSON.stringify(env),
     },

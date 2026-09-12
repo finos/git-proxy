@@ -36,14 +36,14 @@ jobs:
       - name: Scan (table)
         run: |
           ${{ steps.grype.outputs.cmd }} dir:. \
-            --config .grype.yaml \
+            --config .github/security/grype.yaml \
             --output template
 
       - name: Scan (SARIF)
         if: ${{ always() }}
         run: |
           ${{ steps.grype.outputs.cmd }} dir:. \
-            --config .grype.yaml \
+            --config .github/security/grype.yaml \
             --output sarif --file grype-results.sarif || true
 
       - name: Upload SARIF report
