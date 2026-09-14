@@ -49,6 +49,7 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
     step.log(`Executing "git diff ${commitFrom} ${action.commitTo}" in ${path}`);
     const revisionRange = `${commitFrom}..${action.commitTo}`;
     const diff = await git.diff([revisionRange]);
+    action.diff = diff;
     step.log(diff);
     step.setContent(diff);
   } catch (error: unknown) {

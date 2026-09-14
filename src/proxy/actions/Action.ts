@@ -62,6 +62,7 @@ class Action {
   commitData?: CommitData[] = [];
   commitFrom?: string;
   commitTo?: string;
+  diff?: string;
   branch?: string;
   message?: string;
   author?: string;

@@ -78,6 +78,42 @@ describe('git-push service', () => {
       );
     });
 
+    it('returns push data with string diff when top-level diff is a string', async () => {
+      const pushData = {
+        id: 'push-123',
+        diff: 'diff content string',
+        steps: [{ stepName: 'diff', data: 'fallback step diff' }],
+      };
+
+      axiosMock.mockResolvedValue({ data: pushData });
+
+      const result = await getPush('push-123');
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({
+        ...pushData,
+        diff: 'diff content string',
+      });
+    });
+
+    it('returns push data with empty string diff when top-level diff is empty string', async () => {
+      const pushData = {
+        id: 'push-123',
+        diff: '',
+        steps: [{ stepName: 'diff', data: 'fallback step diff' }],
+      };
+
+      axiosMock.mockResolvedValue({ data: pushData });
+
+      const result = await getPush('push-123');
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({
+        ...pushData,
+        diff: '',
+      });
+    });
+
     it('returns error result when getPush fails', async () => {
       axiosMock.mockRejectedValue({
         response: {

@@ -179,11 +179,10 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
 
   const { steps, commitFrom, commitTo } = action;
   step.log(`Scanning diff: ${commitFrom}:${commitTo}`);
+  const diff = action.diff ?? steps.find((s) => s.stepName === 'diff')?.content;
 
-  const diff = steps.find((s) => s.stepName === 'diff')?.content;
-
-  step.log(diff);
-  const diffViolations = getDiffViolations(diff, action.project, step);
+  step.log(diff as string);
+  const diffViolations = getDiffViolations(diff as string, action.project, step);
 
   if (diffViolations) {
     const formattedMatches = Array.isArray(diffViolations)
