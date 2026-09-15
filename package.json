@@ -161,7 +161,7 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/compat": "^2.0.2",
-    "@eslint/js": "^9.39.4",
+    "@eslint/js": "^10.0.1",
     "@eslint/json": "^2.0.0",
     "@tailwindcss/vite": "^4.2.2",
     "@types/activedirectory2": "^1.2.6",
