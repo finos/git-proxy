@@ -17,6 +17,7 @@
 import passport, { type PassportStatic } from 'passport';
 import * as local from './local';
 import * as activeDirectory from './activeDirectory';
+import * as ldap from './ldap';
 import * as oidc from './oidc';
 import * as config from '../../config';
 import { AuthenticationElement } from '../../config/generated/config';
@@ -30,6 +31,7 @@ type StrategyModule = {
 export const authStrategies: Record<string, StrategyModule> = {
   local,
   activedirectory: activeDirectory,
+  ldap,
   openidconnect: oidc,
 };
 
