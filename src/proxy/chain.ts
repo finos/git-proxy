@@ -183,12 +183,6 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
           break;
         }
       }
-
-      if (fn === proc.push.pullRemote) {
-        //if the pull was successful then record the fact we need to clean it up again
-        // pullRemote should cleanup unsuccessful clones itself
-        checkoutCleanUpRequired = true;
-      }
     }
 
     if (collectedErrors) {
@@ -202,8 +196,8 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
     action.error = true;
     action.errorMessage = msg;
   } finally {
-    //clean up the clone created
-    if (checkoutCleanUpRequired) {
+    // If a clone was created, clean it up
+    if (action.proxyGitPath) {
       action = await proc.post.clearBareClone(req, action);
     }
 
