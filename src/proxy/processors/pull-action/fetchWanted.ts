@@ -170,7 +170,6 @@ const exec = async (req: Request, action: Action): Promise<Action> => {
       step.log('.remote checkout removed after failure.');
     }
   } finally {
-    console.log('fetchWanted: action', action);
     action.addStep(step);
   }
 
