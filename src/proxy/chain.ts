@@ -196,6 +196,11 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
         action.errorMessage = combinedMessage;
       }
     }
+
+    // Only remember "want" sets that passed all checks (to retry bad pulls)
+    if (action.type === RequestType.PULL && action.continue()) {
+      proc.pull.rememberRecentFetch(action);
+    }
   } catch (error: unknown) {
     const msg = handleErrorAndLog(error, 'An unexpected error occurred when executing the chain');
     action.error = true;
