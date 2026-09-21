@@ -1,0 +1,61 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { CommitData } from './processors/types';
+
+export const REFS_PREFIX = 'refs/';
+export const BRANCH_PREFIX = 'refs/heads/';
+export const TAG_PREFIX = 'refs/tags/';
+export const EMPTY_COMMIT_HASH = '0000000000000000000000000000000000000000';
+export const FLUSH_PACKET = '0000';
+export const PACK_SIGNATURE = 'PACK';
+export const PACKET_SIZE = 4;
+export const GIT_OBJECT_TYPE_COMMIT = 1;
+export const GIT_OBJECT_TYPE_TAG = 4;
+
+export const SAMPLE_COMMIT: CommitData = {
+  tree: '1234567890',
+  parent: '0000000000000000000000000000000000000000',
+  author: 'test',
+  committer: 'test',
+  authorEmail: 'test@test.com',
+  committerEmail: 'test@test.com',
+  commitTimestamp: '1234567890',
+  message: 'test',
+};
+
+export const SAMPLE_REPO = {
+  project: 'myrepo',
+  name: 'myrepo',
+  url: 'https://github.com/myrepo.git',
+  users: {
+    canPush: ['alice'],
+    canAuthorise: ['bob'],
+  },
+};
+
+/**
+ * Maximum payload bytes for a single side-band-64k packet
+ * 65520 bytes total minus 4 bytes of pkt-line length and 1 band byte.
+ */
+export const MAX_SIDEBAND_PAYLOAD_BYTES = 65515;
+
+/** Capability that must be negotiated by the client for streamed progress */
+export const SIDE_BAND_64K_CAPABILITY = 'side-band-64k';
+
+/** Capabilities with which the client requests a receive-pack status report.
+ * The `ng` (rejected ref) line syntax is identical in both protocol versions. */
+export const REPORT_STATUS_CAPABILITIES = ['report-status', 'report-status-v2'];

@@ -1,0 +1,207 @@
+/**
+ * Tailwind without Preflight — keeps legacy dashboard CSS predictable.
+ * @see https://tailwindcss.com/docs/preflight
+ */
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+/* Primer portals mount here with inner z-index:1; dashboard header is z-[100], so menus would hide behind it. */
+#__primerPortalRoot__ {
+  z-index: 200;
+}
+
+/*
+ * Primer Dialog header close: invisible IconButton adds hover/active wash; keep the X visually static.
+ */
+[role='dialog'] button[data-component='IconButton'][aria-label='Close']:is(:hover, :active) {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+[role='dialog']
+  button[data-component='IconButton'][aria-label='Close']:is(:hover, :active)
+  [data-component='leadingVisual'] {
+  color: var(--button-invisible-iconColor-rest, #59636e) !important;
+}
+
+/*
+ * GitHub-style global header: Primer semantic header tokens + scoped fg/border/muted vars so
+ * UnderlineNav (which reads --fgColor-default / --borderColor-muted) renders correctly on dark.
+ */
+.dashboard-app-header {
+  /* Near-black masthead (GitHub.com-style); keep Primer header fg tokens from the theme */
+  /* Slightly shorter Primer underline row (default ~48px) → less empty band under the orange tab line */
+  --control-xlarge-size: 2rem;
+  --header-bgColor: #010409;
+  --header-borderColor-divider: rgba(240, 246, 252, 0.15);
+  /* Warm accent on dark chrome (avoids default blue --fgColor-accent on tabs/focus) */
+  --header-accent: #f78166;
+  background-color: var(--header-bgColor);
+  border-bottom: 1px solid var(--header-borderColor-divider);
+  color: var(--header-fgColor-default);
+  --fgColor-default: var(--header-fgColor-default);
+  --fgColor-muted: rgba(255, 255, 255, 0.55);
+  --fgColor-accent: var(--header-accent);
+  --underlineNav-borderColor-active: var(--header-accent);
+  --borderColor-muted: rgba(255, 255, 255, 0.22);
+  --bgColor-neutral-muted: rgba(255, 255, 255, 0.12);
+  /* Space below tabs/actions before border */
+  padding-bottom: 0.3125rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard-app-header {
+    padding-bottom: 0.375rem;
+  }
+}
+
+/* Primer UnderlineNav item padding (avoid fragile Tailwind arbitrary variants on UnderlineNav) */
+.dashboard-app-header nav[aria-label='Main navigation'] [class*='UnderlineItem-'] {
+  padding-top: 0.125rem;
+  padding-bottom: 0;
+}
+
+/*
+ * material-dashboard-react.css sets all anchors to GitHub blue (#0969da) on rest/hover — undo that
+ * inside the dark masthead so UnderlineNav and logo link stay on-header colors.
+ */
+.dashboard-app-header a {
+  color: var(--fgColor-default);
+  font-weight: inherit;
+  text-decoration: none;
+}
+
+.dashboard-app-header a:hover,
+.dashboard-app-header a:focus {
+  color: var(--header-fgColor-logo);
+  text-decoration: none;
+}
+
+/*
+ * Settings: Primer IconButton + NavLink (Navbar). Masthead is custom dark chrome while Primer theme is "day"; invisible-button hover tokens can be too subtle, and Tailwind hover:* is gated behind @media (hover: hover). Force the same wash as the account IconButton with a plain :hover rule.
+ */
+.dashboard-app-header a[data-header-settings]:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: transparent !important;
+}
+
+.dashboard-app-header a[data-header-settings][aria-current='page'] {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  color: var(--header-fgColor-logo);
+}
+
+.dashboard-app-header a[data-header-settings][aria-current='page']:hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: var(--header-fgColor-logo);
+}
+
+/*
+ * Headless UI Navbar — not wrapped in .dashboard-app-header.
+ * material-dashboard-react.css `a { color: #0969da }` still applies unless we scope a reset here.
+ */
+/* github.com HeaderMenu-link: ~14px medium, f0f6fc @ 82% rest → full white hover */
+.gitproxy-navbar a:not([data-header-settings]) {
+  color: rgb(240 246 252 / 0.82) !important;
+  font-weight: inherit;
+  text-decoration: none !important;
+}
+
+.gitproxy-navbar a:not([data-header-settings]):hover,
+.gitproxy-navbar a:not([data-header-settings]):focus-visible {
+  color: rgb(255 255 255) !important;
+  text-decoration: none !important;
+}
+
+.gitproxy-navbar a.gitproxy-navbar-link--active:not([data-header-settings]) {
+  color: rgb(255 255 255) !important;
+}
+
+.gitproxy-navbar a[data-header-settings] {
+  color: rgb(240 246 252 / 0.82) !important;
+}
+
+.gitproxy-navbar a[data-header-settings]:hover,
+.gitproxy-navbar a[data-header-settings]:focus-visible {
+  color: rgb(255 255 255) !important;
+}
+
+/*
+ * Primer UnderlineNav / UnderlinePanels: github.com-style tab strip (repo details, user profile).
+ * material-dashboard-react.css sets body { font-weight: 300 }; tab controls use font:inherit → too light.
+ */
+.gitproxy-primer-underline-tabs {
+  font-family: var(--fontStack-sansSerif, ui-sans-serif, system-ui, sans-serif);
+}
+
+.gitproxy-primer-underline-tabs [class*='UnderlineItem-'] {
+  font-family: inherit !important;
+  font-size: 0.875rem !important;
+  line-height: 1.4285 !important;
+  font-weight: var(--base-text-weight-normal, 400) !important;
+}
+
+.gitproxy-primer-underline-tabs
+  [class*='UnderlineItem-'][aria-current]:not([aria-current='false'])
+  [data-component='text'],
+.gitproxy-primer-underline-tabs
+  [class*='UnderlineItem-'][aria-selected='true']
+  [data-component='text'] {
+  font-weight: var(--base-text-weight-semibold, 600) !important;
+}
+
+/*
+ * Unselected: blend toward default for readability (pure muted too faint).
+ * Selected: full default + semibold on label.
+ */
+.gitproxy-primer-underline-tabs
+  [class*='UnderlineItem-']:not([aria-current]):not([aria-selected='true']) {
+  color: color-mix(in srgb, var(--fgColor-default) 82%, var(--fgColor-muted)) !important;
+}
+
+.gitproxy-primer-underline-tabs [class*='UnderlineItem-'][aria-current]:not([aria-current='false']),
+.gitproxy-primer-underline-tabs [class*='UnderlineItem-'][aria-selected='true'] {
+  color: var(--fgColor-default) !important;
+}
+
+.gitproxy-primer-underline-tabs
+  [class*='UnderlineItem-']:not([aria-current]):not([aria-selected='true'])
+  [data-component='icon'] {
+  color: color-mix(in srgb, var(--fgColor-default) 72%, var(--fgColor-muted)) !important;
+}
+
+.gitproxy-primer-underline-tabs
+  [class*='UnderlineItem-'][aria-current]:not([aria-current='false'])
+  [data-component='icon'],
+.gitproxy-primer-underline-tabs
+  [class*='UnderlineItem-'][aria-selected='true']
+  [data-component='icon'] {
+  color: var(--fgColor-default) !important;
+}
+
+/* Footer GitHub (etc.) icon links — material-dashboard `a` uses GitHub blue */
+.gitproxy-footer-icon-link {
+  color: #0d1117 !important;
+  text-decoration: none !important;
+}
+
+.gitproxy-footer-icon-link:hover,
+.gitproxy-footer-icon-link:focus-visible {
+  color: #24292f !important;
+  text-decoration: none !important;
+}
+
+/* Octicons: set fill on svg and path so nothing inherits link blue (#0969da) */
+.gitproxy-footer-icon-link svg,
+.gitproxy-footer-icon-link svg path {
+  fill: #0d1117 !important;
+}
+
+.gitproxy-footer-icon-link:hover svg,
+.gitproxy-footer-icon-link:hover svg path,
+.gitproxy-footer-icon-link:focus-visible svg,
+.gitproxy-footer-icon-link:focus-visible svg path {
+  fill: #24292f !important;
+}

@@ -32,7 +32,7 @@ import { processGitUrl } from '../routes/helper';
 import { ensureHostKey } from './hostKeyManager';
 import { getProtocol, getSessionOutgoingChannelId } from './sshInternals';
 import { parsePacketLines } from '../processors/pktLineParser';
-import { BRANCH_PREFIX } from '../processors/constants';
+import { BRANCH_PREFIX } from '../constants';
 
 export class SSHServer {
   private server: ssh2.Server;

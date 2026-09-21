@@ -17,7 +17,8 @@
 import * as db from '../../db';
 import { PassportStatic } from 'passport';
 import { getAuthMethods } from '../../config';
-import { type UserInfoResponse } from 'openid-client';
+import type { UserInfoResponse } from 'openid-client';
+import type { Request } from 'express';
 import { handleErrorAndLog } from '../../utils/errors';
 
 export const type = 'openidconnect';
@@ -25,7 +26,6 @@ export const type = 'openidconnect';
 export const configure = async (passport: PassportStatic): Promise<PassportStatic> => {
   // Use dynamic imports to avoid ESM/CommonJS issues
   const { discovery, fetchUserInfo } = await import('openid-client');
-  // @ts-expect-error - throws error due to missing type definitions
   const { Strategy } = await import('openid-client/passport');
 
   const authMethods = getAuthMethods();

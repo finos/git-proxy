@@ -1,0 +1,22 @@
+/**
+ * Copyright 2026 GitProxy Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Tailwind + CSS in `tailwind.css` (`.gitproxy-primer-underline-tabs`) implement GitHub-style
+ * tab typography; this class must be present on the Primer UnderlineWrapper root.
+ */
+export const GITPROXY_PRIMER_UNDERLINE_TAB_STRIP_CLASS =
+  'gitproxy-primer-underline-tabs !bg-[var(--bgColor-default)]';

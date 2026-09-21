@@ -14,22 +14,22 @@
  * limitations under the License.
  */
 
-import * as Diff2Html from 'diff2html';
-import reactHtmlParser from 'react-html-parser'; // Renamed to follow function naming conventions
 import React from 'react';
+import * as Diff2Html from 'diff2html';
+import parse from 'html-react-parser';
 
 interface DiffProps {
   diff: string;
 }
 
-const Diff: React.FC<DiffProps> = ({ diff }) => {
+const Diff = ({ diff }: DiffProps) => {
   const outputHtml = Diff2Html.html(diff, {
     drawFileList: true,
     matching: 'lines',
     outputFormat: 'side-by-side',
   });
 
-  return <>{reactHtmlParser(outputHtml)}</>;
+  return <>{parse(outputHtml)}</>;
 };
 
 export default Diff;

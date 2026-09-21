@@ -18,11 +18,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   addUser,
   deleteUser,
+  fetchRepoViews,
   getRepo,
-  getRepos,
   addRepo,
   deleteRepo,
+  sortRepoViews,
 } from '../../src/ui/services/repo';
+import type { RepoView } from '../../src/ui/types';
 
 const { axiosMock } = vi.hoisted(() => {
   const axiosFn = vi.fn() as any;
@@ -148,8 +150,8 @@ describe('repo service additional functions', () => {
     vi.clearAllMocks();
   });
 
-  describe('getRepos', () => {
-    it('returns sorted repos on success', async () => {
+  describe('fetchRepoViews', () => {
+    it('returns repo list on success', async () => {
       const reposData = [
         { name: 'zebra-repo', project: 'org', url: 'https://example.com/org/zebra-repo.git' },
         { name: 'alpha-repo', project: 'org', url: 'https://example.com/org/alpha-repo.git' },
@@ -157,27 +159,16 @@ describe('repo service additional functions', () => {
 
       axiosMock.mockResolvedValue({ data: reposData });
 
-      const result = await getRepos();
+      const result = await fetchRepoViews();
 
-      expect(result.success).toBe(true);
-      expect(result.data).toEqual([
-        { name: 'alpha-repo', project: 'org', url: 'https://example.com/org/alpha-repo.git' },
-        { name: 'zebra-repo', project: 'org', url: 'https://example.com/org/zebra-repo.git' },
-      ]);
-    });
-
-    it('passes query parameters correctly', async () => {
-      axiosMock.mockResolvedValue({ data: [] });
-
-      await getRepos({ active: true });
-
+      expect(result).toEqual({ success: true, data: reposData });
       expect(axiosMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/repo?active=true',
+        'http://localhost:8080/api/v1/repo',
         expect.any(Object),
       );
     });
 
-    it('returns error result when getRepos fails', async () => {
+    it('returns error result on failure', async () => {
       axiosMock.mockRejectedValue({
         response: {
           status: 500,
@@ -187,7 +178,7 @@ describe('repo service additional functions', () => {
         },
       });
 
-      const result = await getRepos();
+      const result = await fetchRepoViews();
 
       expect(result).toEqual({
         success: false,
@@ -199,7 +190,7 @@ describe('repo service additional functions', () => {
     it('uses fallback message when error has no response data', async () => {
       axiosMock.mockRejectedValue(new Error('Connection timeout'));
 
-      const result = await getRepos();
+      const result = await fetchRepoViews();
 
       expect(result).toEqual({
         success: false,
@@ -392,5 +383,69 @@ describe('repo service additional functions', () => {
 
       await expect(deleteRepo('repo-1')).rejects.toThrow('Connection refused');
     });
+  });
+});
+
+describe('sortRepoViews created axis', () => {
+  const makeRepo = (name: string, dateCreated?: string): RepoView =>
+    ({
+      name,
+      project: 'org',
+      url: `https://example.com/org/${name}.git`,
+      users: { canPush: [], canAuthorise: [] },
+      proxyURL: 'https://proxy.example.com',
+      ...(dateCreated ? { dateCreated } : {}),
+    }) as RepoView;
+
+  it('sorts by created desc: newest created first, repos without a date last', () => {
+    const repos = [
+      makeRepo('no-date'),
+      makeRepo('older', '2024-01-01T00:00:00.000Z'),
+      makeRepo('newer', '2025-01-01T00:00:00.000Z'),
+    ];
+
+    const result = sortRepoViews(repos, 'created-desc');
+
+    expect(result.map((r) => r.name)).toEqual(['newer', 'older', 'no-date']);
+  });
+
+  it('sorts by created asc: oldest created first, repos without a date last', () => {
+    const repos = [
+      makeRepo('no-date'),
+      makeRepo('newer', '2025-01-01T00:00:00.000Z'),
+      makeRepo('older', '2024-01-01T00:00:00.000Z'),
+    ];
+
+    const result = sortRepoViews(repos, 'created-asc');
+
+    expect(result.map((r) => r.name)).toEqual(['older', 'newer', 'no-date']);
+  });
+
+  it('falls back to name ascending when created dates are equal', () => {
+    const repos = [
+      makeRepo('zebra', '2025-01-01T00:00:00.000Z'),
+      makeRepo('alpha', '2025-01-01T00:00:00.000Z'),
+    ];
+
+    expect(sortRepoViews(repos, 'created-desc').map((r) => r.name)).toEqual(['alpha', 'zebra']);
+    expect(sortRepoViews(repos, 'created-asc').map((r) => r.name)).toEqual(['alpha', 'zebra']);
+  });
+
+  it('treats an unparseable created date as missing and sorts it last', () => {
+    const repos = [makeRepo('broken', 'not-a-date'), makeRepo('valid', '2024-01-01T00:00:00.000Z')];
+
+    expect(sortRepoViews(repos, 'created-desc').map((r) => r.name)).toEqual(['valid', 'broken']);
+    expect(sortRepoViews(repos, 'created-asc').map((r) => r.name)).toEqual(['valid', 'broken']);
+  });
+
+  it('does not mutate the input array', () => {
+    const repos = [
+      makeRepo('older', '2024-01-01T00:00:00.000Z'),
+      makeRepo('newer', '2025-01-01T00:00:00.000Z'),
+    ];
+
+    sortRepoViews(repos, 'created-desc');
+
+    expect(repos.map((r) => r.name)).toEqual(['older', 'newer']);
   });
 });

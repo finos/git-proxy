@@ -18,6 +18,55 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as dbUsers from '../../../src/db/file/users';
 import { User, PublicKeyRecord } from '../../../src/db/types';
 
+describe('db/file/users findUserByGitAccount', () => {
+  beforeEach(async () => {
+    const allUsers = await dbUsers.getUsers();
+    for (const user of allUsers) {
+      await dbUsers.deleteUser(user.username);
+    }
+  });
+
+  it('should find user by gitAccount', async () => {
+    const testUser: User = {
+      username: 'testuser',
+      password: 'password',
+      email: 'test@example.com',
+      publicKeys: [],
+      gitAccount: 'octocat',
+      admin: false,
+    };
+
+    await dbUsers.createUser(testUser);
+
+    const found = await dbUsers.findUserByGitAccount('octocat');
+    expect(found).toBeDefined();
+    expect(found?.username).toBe('testuser');
+    expect(found?.gitAccount).toBe('octocat');
+  });
+
+  it('should be case-insensitive', async () => {
+    const testUser: User = {
+      username: 'testuser',
+      password: 'password',
+      email: 'test@example.com',
+      publicKeys: [],
+      gitAccount: 'octocat',
+      admin: false,
+    };
+
+    await dbUsers.createUser(testUser);
+
+    const found = await dbUsers.findUserByGitAccount('Octocat');
+    expect(found).toBeDefined();
+    expect(found?.username).toBe('testuser');
+  });
+
+  it('should return null when no user has the gitAccount', async () => {
+    const found = await dbUsers.findUserByGitAccount('nonexistent');
+    expect(found).toBeNull();
+  });
+});
+
 describe('db/file/users SSH Key Functions', () => {
   beforeEach(async () => {
     // Clear the database before each test

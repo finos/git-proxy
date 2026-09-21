@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import moment from 'moment';
-
 describe('Auto-Approved Push Test', () => {
   beforeEach(() => {
     cy.login('admin', 'admin');
@@ -55,33 +53,22 @@ describe('Auto-Approved Push Test', () => {
           },
         ],
         attestation: {
-          timestamp: '2023-10-01T12:00:00Z',
-          autoApproved: true,
+          timestamp: 1696161600000,
+          reviewer: {
+            username: 'system',
+            displayName: '',
+          },
         },
       },
     }).as('getPush');
   });
 
-  it('should display auto-approved message and verify tooltip contains the expected timestamp', () => {
+  it('should display auto-approved message', () => {
     cy.visit('/dashboard/push/123');
 
     cy.wait('@getPush');
 
     cy.contains('Auto-approved by system').should('be.visible');
-
-    cy.get('svg.MuiSvgIcon-root')
-      .filter((_, el) => getComputedStyle(el).fill === 'rgb(0, 128, 0)')
-      .invoke('attr', 'style')
-      .should('include', 'cursor: default')
-      .and('include', 'opacity: 0.5');
-
-    const expectedTooltipTimestamp = moment('2023-10-01T12:00:00Z')
-      .local()
-      .format('dddd, MMMM Do YYYY, h:mm:ss a');
-
-    cy.get('kbd').trigger('mouseover');
-
-    cy.get('.MuiTooltip-tooltip').should('contain', expectedTooltipTimestamp);
 
     cy.contains('approved this contribution').should('not.exist');
   });

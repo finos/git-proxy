@@ -14,125 +14,95 @@
  * limitations under the License.
  */
 
-import React, { useState, useEffect, ChangeEvent } from 'react';
-import {
-  TextField,
-  IconButton,
-  InputAdornment,
-  FormLabel,
-  Snackbar,
-  Typography,
-} from '@material-ui/core';
-import { Visibility, VisibilityOff, Save, Clear } from '@material-ui/icons';
-import { makeStyles } from '@material-ui/core/styles';
+import React, { useEffect, useState } from 'react';
+import { Banner, Button, FormControl, Stack, Text, TextInput } from '@primer/react';
+import { CheckIcon, EyeClosedIcon, EyeIcon, TrashIcon } from '@primer/octicons-react';
 
-import GridContainer from '../../components/Grid/GridContainer';
-import GridItem from '../../components/Grid/GridItem';
-import Card from '../../components/Card/Card';
-import CardBody from '../../components/Card/CardBody';
-import Button from '../../components/CustomButtons/Button';
+const JWT_FIELD_ID = 'jwt-token';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    '& .MuiTextField-root': {
-      margin: theme.spacing(1),
-      width: '100%',
-    },
-  },
-  buttonRow: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    marginTop: theme.spacing(2),
-    gap: theme.spacing(1),
-  },
-}));
-
-const SettingsView: React.FC = () => {
-  const classes = useStyles();
-
+const SettingsView = () => {
   const [jwtToken, setJwtToken] = useState<string>('');
   const [showToken, setShowToken] = useState<boolean>(false);
-  const [snackbarMessage, setSnackbarMessage] = useState<string>('');
-  const [snackbarOpen, setSnackbarOpen] = useState<boolean>(false);
+  const [feedbackMessage, setFeedbackMessage] = useState<string>('');
 
   useEffect(() => {
     const savedToken = localStorage.getItem('ui_jwt_token');
     if (savedToken) setJwtToken(savedToken);
   }, []);
 
+  useEffect(() => {
+    if (!feedbackMessage) return undefined;
+    const t = window.setTimeout(() => setFeedbackMessage(''), 3000);
+    return () => window.clearTimeout(t);
+  }, [feedbackMessage]);
+
   const handleSave = (): void => {
     localStorage.setItem('ui_jwt_token', jwtToken);
-    setSnackbarMessage('JWT token saved');
-    setSnackbarOpen(true);
+    setFeedbackMessage('JWT token saved');
   };
 
   const handleClear = (): void => {
     setJwtToken('');
     localStorage.removeItem('ui_jwt_token');
-    setSnackbarMessage('JWT token cleared');
-    setSnackbarOpen(true);
-  };
-
-  const toggleShowToken = (): void => {
-    setShowToken(!showToken);
+    setFeedbackMessage('JWT token cleared');
   };
 
   return (
-    <form className={classes.root} noValidate autoComplete='off'>
-      <GridContainer justify='center'>
-        <GridItem xs={12} sm={12} lg={6}>
-          <Card>
-            <CardBody>
-              {/* Title */}
-              <FormLabel component='legend' style={{ fontSize: '1.2rem' }}>
-                JWT Token for UI Authentication
-              </FormLabel>
-              <Typography variant='body2'>
-                Authenticates UI requests to the server when &quot;apiAuthentication&quot; is
-                enabled in the config.
-              </Typography>
-              <TextField
-                id='jwt-token'
-                type={showToken ? 'text' : 'password'}
-                variant='outlined'
-                placeholder='Enter your JWT token...'
-                value={jwtToken}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setJwtToken(e.target.value)}
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position='end'>
-                      <IconButton onClick={toggleShowToken} edge='end'>
-                        {showToken ? <Visibility /> : <VisibilityOff />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                  style: {
-                    marginTop: '10px',
-                    marginLeft: '-8px',
-                    marginRight: '8px',
-                  },
-                }}
-              />
-              <div className={classes.buttonRow}>
-                <Button onClick={handleClear}>
-                  <Clear style={{ marginRight: '5px' }} />
-                  Clear
-                </Button>
-                <Button color='success' onClick={handleSave}>
-                  <Save style={{ marginRight: '5px' }} />
-                  Save
-                </Button>
-              </div>
-            </CardBody>
-          </Card>
-        </GridItem>
-      </GridContainer>
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        message={snackbarMessage}
-      />
+    <form noValidate autoComplete='off' className='w-full min-w-0'>
+      <Stack direction='vertical' gap='spacious' padding='none'>
+        <Stack direction='vertical' gap='condensed' padding='none' className='min-w-0'>
+          <Text as='h1' className='m-0! text-xl! font-semibold! tracking-tight!'>
+            JWT Token for UI Authentication
+          </Text>
+          <Text as='p' className='m-0! mt-1 block text-sm text-(--fgColor-muted)'>
+            Authenticates UI requests to the server when &quot;apiAuthentication&quot; is enabled in
+            the config.
+          </Text>
+        </Stack>
+
+        {feedbackMessage ? (
+          <Banner
+            variant='success'
+            layout='compact'
+            title={feedbackMessage}
+            onDismiss={() => setFeedbackMessage('')}
+          />
+        ) : null}
+
+        <Stack direction='vertical' gap='normal' padding='none' className='min-w-0'>
+          <FormControl>
+            <FormControl.Label htmlFor={JWT_FIELD_ID} visuallyHidden>
+              JWT token
+            </FormControl.Label>
+            <TextInput
+              id={JWT_FIELD_ID}
+              name='jwtToken'
+              type={showToken ? 'text' : 'password'}
+              placeholder='Enter your JWT token...'
+              value={jwtToken}
+              onChange={(e) => setJwtToken(e.target.value)}
+              block
+              autoComplete='off'
+              autoFocus
+              trailingAction={
+                <TextInput.Action
+                  icon={showToken ? EyeClosedIcon : EyeIcon}
+                  aria-label={showToken ? 'Hide token' : 'Show token'}
+                  onClick={() => setShowToken((s) => !s)}
+                />
+              }
+            />
+          </FormControl>
+          <div className='flex w-full justify-end gap-2'>
+            <Button type='button' onClick={handleClear} leadingVisual={TrashIcon}>
+              Clear
+            </Button>
+            <Button type='button' variant='primary' onClick={handleSave} leadingVisual={CheckIcon}>
+              Save
+            </Button>
+          </div>
+        </Stack>
+      </Stack>
     </form>
   );
 };

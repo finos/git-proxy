@@ -1,0 +1,53 @@
+name: CVE Scanning
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: ['main']
+  pull_request:
+    branches: ['main']
+  schedule:
+    - cron: '0 6 * * 1' # Weekly Monday 6am UTC
+
+jobs:
+  grype:
+    name: Grype dependency scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v6
+
+      - name: Install Grype
+        id: grype
+        uses: anchore/scan-action/download-grype@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+        with:
+          cache-db: true
+
+      - name: Scan (table)
+        run: |
+          ${{ steps.grype.outputs.cmd }} dir:. \
+            --config .github/security/grype.yaml \
+            --output template
+
+      - name: Scan (SARIF)
+        if: ${{ always() }}
+        run: |
+          ${{ steps.grype.outputs.cmd }} dir:. \
+            --config .github/security/grype.yaml \
+            --output sarif --file grype-results.sarif || true
+
+      - name: Upload SARIF report
+        if: ${{ always() }}
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4
+        with:
+          sarif_file: grype-results.sarif

@@ -17,7 +17,7 @@
 import { Request } from 'express';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Action } from '../../src/proxy/actions';
-import { EMPTY_COMMIT_HASH, SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
+import { EMPTY_COMMIT_HASH, SAMPLE_COMMIT } from '../../src/proxy/constants';
 
 vi.mock('simple-git');
 vi.mock('fs');

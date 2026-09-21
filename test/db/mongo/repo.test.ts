@@ -50,6 +50,7 @@ describe('MongoDB Repo', async () => {
     getRepoByUrl,
     getRepoById,
     createRepo,
+    updateRepo,
     addUserCanPush,
     addUserCanAuthorise,
     removeUserCanPush,
@@ -215,9 +216,62 @@ describe('MongoDB Repo', async () => {
       expect(mockInsertOne).toHaveBeenCalledWith(newRepo);
       expect(result._id).toBe(insertedId.toString());
       expect(result.name).toBe('new-repo');
+      expect(result.dateCreated).toEqual(expect.any(String));
+      expect(result.lastModified).toEqual(expect.any(String));
       expect(consoleSpy).toHaveBeenCalled();
 
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('updateRepo', () => {
+    it('should $set fields with defined values', async () => {
+      mockUpdateOne.mockResolvedValue({ modifiedCount: 1 });
+
+      await updateRepo({ _id: TEST_REPO._id, name: 'renamed' });
+
+      expect(mockConnect).toHaveBeenCalledWith('repos');
+      expect(mockUpdateOne).toHaveBeenCalledWith(
+        { _id: new ObjectId(TEST_REPO._id!) },
+        { $set: { name: 'renamed' } },
+      );
+    });
+
+    it('should $unset fields with undefined values', async () => {
+      mockUpdateOne.mockResolvedValue({ modifiedCount: 1 });
+
+      await updateRepo({ _id: TEST_REPO._id, project: undefined });
+
+      expect(mockUpdateOne).toHaveBeenCalledWith(
+        { _id: new ObjectId(TEST_REPO._id!) },
+        { $unset: { project: '' } },
+      );
+    });
+
+    it('should combine $set and $unset for mixed fields', async () => {
+      mockUpdateOne.mockResolvedValue({ modifiedCount: 1 });
+
+      await updateRepo({ _id: TEST_REPO._id, name: 'renamed', project: undefined });
+
+      expect(mockUpdateOne).toHaveBeenCalledWith(
+        { _id: new ObjectId(TEST_REPO._id!) },
+        { $set: { name: 'renamed' }, $unset: { project: '' } },
+      );
+    });
+
+    it('should not call updateOne when no fields besides _id are given', async () => {
+      await updateRepo({ _id: TEST_REPO._id });
+
+      expect(mockUpdateOne).not.toHaveBeenCalled();
+    });
+
+    it('should not include _id in $set', async () => {
+      mockUpdateOne.mockResolvedValue({ modifiedCount: 1 });
+
+      await updateRepo({ _id: TEST_REPO._id, name: 'renamed' });
+
+      const [, update] = mockUpdateOne.mock.calls[0];
+      expect(update.$set).not.toHaveProperty('_id');
     });
   });
 
@@ -230,7 +284,10 @@ describe('MongoDB Repo', async () => {
       expect(mockConnect).toHaveBeenCalledWith('repos');
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { _id: new ObjectId(TEST_REPO._id!) },
-        { $push: { 'users.canPush': 'newuser' } },
+        {
+          $push: { 'users.canPush': 'newuser' },
+          $set: { lastModified: expect.any(String) },
+        },
       );
     });
 
@@ -241,7 +298,10 @@ describe('MongoDB Repo', async () => {
 
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { _id: new ObjectId(TEST_REPO._id!) },
-        { $push: { 'users.canPush': 'uppercase' } },
+        {
+          $push: { 'users.canPush': 'uppercase' },
+          $set: { lastModified: expect.any(String) },
+        },
       );
     });
   });
@@ -255,7 +315,10 @@ describe('MongoDB Repo', async () => {
       expect(mockConnect).toHaveBeenCalledWith('repos');
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { _id: new ObjectId(TEST_REPO._id!) },
-        { $push: { 'users.canAuthorise': 'newadmin' } },
+        {
+          $push: { 'users.canAuthorise': 'newadmin' },
+          $set: { lastModified: expect.any(String) },
+        },
       );
     });
 
@@ -266,7 +329,10 @@ describe('MongoDB Repo', async () => {
 
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { _id: new ObjectId(TEST_REPO._id!) },
-        { $push: { 'users.canAuthorise': 'admin' } },
+        {
+          $push: { 'users.canAuthorise': 'admin' },
+          $set: { lastModified: expect.any(String) },
+        },
       );
     });
   });
@@ -280,7 +346,10 @@ describe('MongoDB Repo', async () => {
       expect(mockConnect).toHaveBeenCalledWith('repos');
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { _id: new ObjectId(TEST_REPO._id!) },
-        { $pull: { 'users.canPush': 'user1' } },
+        {
+          $pull: { 'users.canPush': 'user1' },
+          $set: { lastModified: expect.any(String) },
+        },
       );
     });
 
@@ -291,7 +360,10 @@ describe('MongoDB Repo', async () => {
 
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { _id: new ObjectId(TEST_REPO._id!) },
-        { $pull: { 'users.canPush': 'user' } },
+        {
+          $pull: { 'users.canPush': 'user' },
+          $set: { lastModified: expect.any(String) },
+        },
       );
     });
   });
@@ -305,7 +377,10 @@ describe('MongoDB Repo', async () => {
       expect(mockConnect).toHaveBeenCalledWith('repos');
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { _id: new ObjectId(TEST_REPO._id!) },
-        { $pull: { 'users.canAuthorise': 'admin1' } },
+        {
+          $pull: { 'users.canAuthorise': 'admin1' },
+          $set: { lastModified: expect.any(String) },
+        },
       );
     });
 
@@ -316,7 +391,10 @@ describe('MongoDB Repo', async () => {
 
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { _id: new ObjectId(TEST_REPO._id!) },
-        { $pull: { 'users.canAuthorise': 'admin' } },
+        {
+          $pull: { 'users.canAuthorise': 'admin' },
+          $set: { lastModified: expect.any(String) },
+        },
       );
     });
   });

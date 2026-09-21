@@ -27,6 +27,7 @@
 import { describe, it, beforeAll, afterAll, beforeEach, afterEach, expect, vi } from 'vitest';
 import request from 'supertest';
 import { Service } from '../src/service';
+import * as config from '../src/config';
 import * as db from '../src/db';
 import { Proxy } from '../src/proxy';
 import { Express } from 'express';
@@ -45,6 +46,8 @@ describe('init', () => {
   // Runs before all tests
   beforeAll(async function () {
     // Starts the service and returns the express app
+    // Auto-assign free port (prevents EADDRINUSE errors when running tests in parallel)
+    vi.spyOn(config, 'getUIPort').mockReturnValue(0);
     const proxy = new Proxy();
     app = await Service.start(proxy);
   });
@@ -69,7 +72,7 @@ describe('init', () => {
   // Runs after all tests
   afterAll(function () {
     // Must close the server to avoid EADDRINUSE errors when running tests in parallel
-    Service.httpServer.close();
+    Service.httpServer?.close();
   });
 
   // Example test: check server is running

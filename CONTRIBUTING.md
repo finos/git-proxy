@@ -1,8 +1,112 @@
-# Contributing to GitProxy
+# GitProxy Contribution and Governance Policies
 
-Thanks for your interest in contributing to GitProxy! This guide covers everything you need to get a local development environment running, understand the codebase, and submit high-quality pull requests.
+This document describes the contribution process and governance policies of the FINOS GitProxy project. The project is also governed by the [Linux Foundation Antitrust Policy](https://www.linuxfoundation.org/antitrust-policy/), and the FINOS [IP Policy](https://community.finos.org/assets/files/IP-Policy-fe5925025fc0a57b1cbed64f86b26a73.pdf), [Code of Conduct](https://www.finos.org/code-of-conduct), [Collaborative Principles](https://community.finos.org/docs/governance/collaborative-principles/), and [Meeting Procedures](https://community.finos.org/docs/governance/meeting-procedures/).
 
-For project governance, roles, and voting procedures, see the [Governance section on the website](https://git-proxy.finos.org).
+## Technical Charter
+
+The project's [Technical Charter](CHARTER.md) defines its mission, scope, maintainer structure, intellectual property framework, and amendment process. Do not duplicate that material here.
+
+## Contribution Process
+
+Before making a contribution, please take the following steps:
+
+1. Check whether there's already an [open issue](https://github.com/finos/git-proxy/issues) related to your proposed contribution. If there is, join the discussion and propose your contribution there.
+1. If there isn't already a relevant issue, [create one](https://github.com/finos/git-proxy/issues/new), describing your contribution and the problem you're trying to solve.
+1. Respond to any questions or suggestions raised in the issue by other developers.
+1. Fork the project repository and prepare your proposed contribution.
+1. Submit a pull request.
+
+> **NOTE:** Contributors must meet FINOS contribution requirements (CLA). Please read the [FINOS Contribution Requirements](https://community.finos.org/docs/governance/Software-Projects/contribution) before opening pull requests.
+
+## Governance
+
+### Roles
+
+The project community consists of Contributors and Maintainers:
+
+- A **Contributor** is anyone who submits a contribution to the project. (Contributions may include code, issues, comments, documentation, media, or any combination of the above.)
+- A **Maintainer** is a Contributor who, by virtue of their contribution history, has been given write access to project repositories and may merge approved contributions.
+- The **Lead Maintainer** is the project's interface with the FINOS team and Board. They are responsible for approving quarterly project reports and communicating on behalf of the project. The Lead Maintainer is elected by a vote of the Maintainers.
+
+### Contribution Rules
+
+Anyone is welcome to submit a contribution to the project. The rules below apply to all contributions. (The key words "MUST", "SHALL", "SHOULD", "MAY", etc. in this document are to be interpreted as described in [IETF RFC 2119](https://www.ietf.org/rfc/rfc2119.txt).)
+
+- All contributions MUST be submitted as pull requests, including contributions by Maintainers.
+- All pull requests MUST be reviewed by a Maintainer (other than the Contributor) before being merged.
+- Pull requests for non-trivial contributions SHOULD remain open for a review period sufficient to give all Maintainers a reasonable opportunity to review and comment on them.
+- After the review period, if no Maintainer has an objection to the pull request, any Maintainer MAY merge it.
+- If any Maintainer objects to a pull request, the Maintainers SHOULD try to come to consensus through discussion. If consensus cannot be reached, any Maintainer MAY call for a vote on the contribution using the Maintainer Voting process below.
+
+#### Cross-Firm Review
+
+GitProxy is used as a risk control in regulated financial institutions. To ensure broad consensus among the firms involved in project maintenance, pull requests that introduce new features (corresponding to `feat:` conventional commits), breaking changes (corresponding to a major version bump), or other changes that a Maintainer judges to be significant MUST be approved by at least one Maintainer from a different organisation than the contributing author before being merged.
+
+This requirement does NOT apply to:
+
+- Bug fixes
+- Documentation updates
+- Dependency patches and vulnerability remediation
+- CI/infrastructure maintenance
+- Refactoring that does not change external behaviour
+- Other routine upkeep
+
+Maintainers contributing such changes are expected to abide by the spirit of this rule — i.e., seek cross-firm review proactively rather than requiring it to be enforced.
+
+### Maintainer Voting
+
+The Maintainers MAY hold votes only when they are unable to reach consensus on an issue. Any Maintainer MAY call a vote on a contested issue, after which Maintainers SHALL have 36 hours to register their votes. Votes SHALL take the form of "+1" (agree), "-1" (disagree), "+0" (abstain). Issues SHALL be decided by the majority of votes cast. If there is only one Maintainer, they SHALL decide any issue otherwise requiring a Maintainer vote. If a vote is tied, FINOS (via [help@finos.org](mailto:help@finos.org)) SHALL cast the deciding vote.
+
+The Maintainers SHALL decide the following matters by consensus or, if necessary, a vote:
+
+- Contested pull requests
+- Election and removal of the Lead Maintainer
+- Election and removal of Maintainers
+
+All Maintainer votes MUST be carried out transparently, with all discussion and voting occurring in public, either:
+
+- in comments associated with the relevant issue or pull request, if applicable;
+- on the project mailing list or other official public communication channel; or
+- during a regular, minuted community meeting.
+
+### Dispute Resolution
+
+If a contribution or project decision is contested, the following escalation process applies:
+
+1. Discussion in the relevant PR or issue thread to seek consensus among Maintainers.
+1. If unresolved, raise the matter at the next community meeting for open discussion.
+1. If still unresolved, any Maintainer MAY call a vote (36-hour window, majority decides per the Maintainer Voting process above).
+1. If the vote is tied, FINOS (via [help@finos.org](mailto:help@finos.org)) SHALL cast the deciding vote.
+
+A contributor whose pull request is closed may address the concerns raised and re-submit. If a contributor believes their contribution was unfairly rejected, they may invoke the dispute resolution process above.
+
+### Maintainer Qualifications
+
+Any Contributor who has made a substantial contribution to the project MAY apply (or be nominated) to become a Maintainer. The existing Maintainers SHALL decide whether to approve the nomination according to the Maintainer Voting process above.
+
+### Maintainer List
+
+The current Maintainer roster is recorded in [`MAINTAINERS.md`](MAINTAINERS.md). All changes to the maintainer list are managed publicly:
+
+- Any addition, removal, or update MUST be submitted as a pull request to `MAINTAINERS.md`.
+- If the change requires a Maintainer vote (e.g. election or removal of a Maintainer or the Lead Maintainer), the vote outcome MUST be documented in, or linked from, the pull request description or comments.
+- This process creates a public audit trail of project leadership over time.
+
+Whenever `MAINTAINERS.md` is updated with a change to maintainership, please email [help@finos.org](mailto:help@finos.org).
+
+### Changes to this Document
+
+This document MAY be amended by a vote of the Maintainers according to the Maintainer Voting process above.
+
+## Contributor License Agreement (CLA)
+
+All contributors must have a CLA on file with FINOS before PRs can be merged. Review the FINOS [contribution requirements](https://community.finos.org/docs/governance/Software-Projects/contribution) and submit (or have your employer submit) the required CLA via [EasyCLA](https://community.finos.org/docs/governance/Software-Projects/easycla).
+
+---
+
+# Development Guide
+
+Thanks for your interest in contributing to GitProxy! This section covers everything you need to get a local development environment running, understand the codebase, and submit high-quality pull requests.
 
 ## Table of Contents
 
@@ -92,21 +196,16 @@ git-proxy/
 │   ├── ui/                 # React dashboard (Material-UI)
 │   ├── plugin.ts           # Plugin base classes (PushActionPlugin, PullActionPlugin)
 │   └── types/              # Shared TypeScript types
-├── test/                   # Unit and integration tests (Vitest)
-├── tests/e2e/              # End-to-end tests (Vitest + Docker)
+├── test/                   # Unit, integration, and e2e tests (Vitest)
 ├── cypress/                # UI tests (Cypress)
-├── localgit/               # Local git server for E2E testing (see localgit/README.md)
 ├── packages/
 │   └── git-proxy-cli/      # CLI package
 ├── plugins/                # Sample plugin packages
 ├── website/                # Documentation site (Docusaurus)
 ├── index.ts                # CLI entry point
-├── docker-compose.yml      # Docker Compose for E2E environment
 ├── proxy.config.json       # Default proxy configuration
 ├── config.schema.json      # JSON Schema for configuration
-├── vite.config.ts          # Frontend build configuration
-├── vitest.config.ts        # Unit test configuration
-└── vitest.config.e2e.ts    # E2E test configuration
+└── vite.config.ts          # Frontend build configuration
 ```
 
 ### Key architectural concepts
@@ -121,9 +220,10 @@ git-proxy/
 ### Building
 
 ```bash
-npm run build          # Full build: generate config types, build UI, compile TypeScript
-npm run build-ts       # Compile TypeScript server code to dist/
-npm run build-ui       # Build React frontend with Vite to build/
+npm run build            # Full build: generate config types, build UI, compile TypeScript
+npm run build-ts         # Compile TypeScript server code to dist/
+npm run build-ui         # Build React frontend with Vite to build/
+npm run build-validate   # Check that UI files are correctly included in build
 ```
 
 ### Type checking
@@ -168,16 +268,18 @@ npm run test-shuffle   # Randomized execution order (detects test coupling)
 npm run test-coverage  # Run with coverage report
 ```
 
-Configuration: [vitest.config.ts](vitest.config.ts)
+Configuration: [test/vitest.config.ts](test/vitest.config.ts)
 
 Test files are organized by module:
 
 ```
 test/
+├── vitest.config.ts   # Unit test configuration (`npm test`)
 ├── processors/        # Proxy processor logic
 ├── db/                # Database operations
 ├── services/          # API and service tests
 ├── integration/       # Cross-module integration tests
+├── e2e/               # End-to-end tests (Vitest + Docker, includes localgit/ and Compose)
 ├── plugin/            # Plugin system tests
 ├── preReceive/        # Git hook tests
 └── fixtures/          # Binary test data for protocol-level tests
@@ -198,7 +300,7 @@ RUN_MONGO_TESTS=true npm run test:integration
 docker stop mongodb-test && docker rm mongodb-test
 ```
 
-Configuration: [vitest.config.integration.ts](vitest.config.integration.ts)
+Configuration: [test/vitest.integration.config.ts](test/vitest.integration.config.ts), [test/integration/proxy.config.json](test/integration/proxy.config.json)
 
 In CI, `RUN_MONGO_TESTS` is set automatically in the workflow that runs integration tests.
 
@@ -216,23 +318,25 @@ npm run test:e2e
 npm run test:e2e:watch
 ```
 
-Configuration: [vitest.config.e2e.ts](vitest.config.e2e.ts)
+Configuration: [test/e2e/vitest.config.ts](test/e2e/vitest.config.ts), [test/e2e/proxy.config.json](test/e2e/proxy.config.json)
 
 #### Docker Compose environment
 
-The E2E environment is defined in [docker-compose.yml](docker-compose.yml) and consists of three services:
+The E2E environment is defined in [test/e2e/docker-compose.yml](test/e2e/docker-compose.yml) and consists of three services:
 
-| Service      | Port       | Description                                                               |
-| ------------ | ---------- | ------------------------------------------------------------------------- |
-| `git-proxy`  | 8000, 8081 | GitProxy application under test                                           |
-| `mongodb`    | 27017      | MongoDB 7 instance                                                        |
-| `git-server` | 8443       | Apache-based git HTTP server with test repos (see [localgit/](localgit/)) |
+| Service      | Port       | Description                                                                                 |
+| ------------ | ---------- | ------------------------------------------------------------------------------------------- |
+| `git-proxy`  | 8000, 8081 | GitProxy application under test                                                             |
+| `mongodb`    | 27017      | MongoDB 7 instance                                                                          |
+| `git-server` | 8443       | Apache-based git HTTP server with test repos (see [test/e2e/localgit/](test/e2e/localgit/)) |
 
 All services run in an isolated `git-network` Docker bridge network.
 
 #### Managing the environment manually
 
-When developing or debugging E2E tests, you'll often want to keep the containers running between test runs rather than letting the test script tear them down:
+When developing or debugging E2E tests, you'll often want to keep the containers running between test runs rather than letting the test script tear them down.
+
+From the repository root, either `cd test/e2e` first or set `export COMPOSE_FILE=test/e2e/docker-compose.yml` so the following commands find the Compose file:
 
 ```bash
 # Start all services in the background
@@ -241,7 +345,7 @@ docker compose up -d
 # Verify all three containers are running
 docker compose ps
 
-# Rebuild from scratch (e.g., after changing localgit/ or Dockerfile)
+# Rebuild from scratch (e.g., after changing test/e2e/localgit/ or Dockerfile)
 docker compose down -v
 docker compose build --no-cache
 docker compose up -d
@@ -313,7 +417,7 @@ docker compose exec mongodb mongosh --eval "db.adminCommand('ping')"
 
 #### Generating test fixtures
 
-The git server includes a data capture system that records raw git protocol data for every operation. This is useful for creating binary test fixtures (e.g., PACK files) for unit tests. See [localgit/README.md](localgit/README.md) for details on the capture system, PACK extraction tools, and fixture generation workflow.
+The git server includes a data capture system that records raw git protocol data for every operation. This is useful for creating binary test fixtures (e.g., PACK files) for unit tests. See [test/e2e/localgit/README.md](test/e2e/localgit/README.md) for details on the capture system, PACK extraction tools, and fixture generation workflow.
 
 ### UI Tests (Cypress)
 
@@ -328,7 +432,7 @@ npm run cypress:open   # Interactive test runner (recommended for development)
 npm run cypress:run    # Headless mode (used in CI)
 ```
 
-Configuration: [cypress.config.js](cypress.config.js)
+Configuration: [cypress/cypress.config.js](cypress/cypress.config.js)
 
 Cypress tests live in `cypress/e2e/` and use custom commands defined in `cypress/support/commands.js` (e.g., `cy.login(username, password)`).
 
@@ -403,7 +507,7 @@ The following checks must pass before a PR can be merged:
 
 ### Contributor License Agreement (CLA)
 
-All contributors must have a CLA on file with FINOS before PRs can be merged. Review the FINOS [contribution requirements](https://finosfoundation.atlassian.net/wiki/spaces/FINOS/pages/75530375/Contribution+Compliance+Requirements) and submit the required CLA.
+See the [CLA section](#contributor-license-agreement-cla) in the Governance section above.
 
 ## Community
 

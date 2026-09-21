@@ -15,7 +15,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getUser, getUsers, updateUser } from '../../src/ui/services/user';
+import { getUser, getUsers } from '../../src/ui/services/user';
 
 const { axiosMock } = vi.hoisted(() => {
   const axiosFn = vi.fn() as any;
@@ -222,59 +222,6 @@ describe('user service', () => {
       await getUsers(setIsLoading, setUsers, setAuth, setErrorMessage);
 
       expect(setIsLoading).toHaveBeenCalledWith(true);
-      expect(setIsLoading).toHaveBeenCalledWith(false);
-    });
-  });
-
-  describe('updateUser', () => {
-    it('successfully updates user', async () => {
-      const userData = { id: 'user-1', username: 'alice', email: 'alice@example.com' };
-      const setErrorMessage = vi.fn();
-      const setIsLoading = vi.fn();
-
-      axiosMock.post.mockResolvedValue({ data: {} });
-
-      await updateUser(userData as any, setErrorMessage, setIsLoading);
-
-      expect(axiosMock.post).toHaveBeenCalledWith(
-        'http://localhost:8080/api/auth/gitAccount',
-        userData,
-        expect.any(Object),
-      );
-      expect(setErrorMessage).not.toHaveBeenCalled();
-      expect(setIsLoading).not.toHaveBeenCalled();
-    });
-
-    it('handles update errors', async () => {
-      const userData = { id: 'user-1', username: 'alice', email: 'alice@example.com' };
-      const setErrorMessage = vi.fn();
-      const setIsLoading = vi.fn();
-
-      axiosMock.post.mockRejectedValue({
-        response: {
-          status: 400,
-          data: {
-            message: 'Invalid email format',
-          },
-        },
-      });
-
-      await updateUser(userData as any, setErrorMessage, setIsLoading);
-
-      expect(setErrorMessage).toHaveBeenCalledWith('Error updating user: 400 Invalid email format');
-      expect(setIsLoading).toHaveBeenCalledWith(false);
-    });
-
-    it('handles errors without status code', async () => {
-      const userData = { id: 'user-1', username: 'alice', email: 'alice@example.com' };
-      const setErrorMessage = vi.fn();
-      const setIsLoading = vi.fn();
-
-      axiosMock.post.mockRejectedValue(new Error('Connection failed'));
-
-      await updateUser(userData as any, setErrorMessage, setIsLoading);
-
-      expect(setErrorMessage).toHaveBeenCalledWith('Error updating user: Connection failed');
       expect(setIsLoading).toHaveBeenCalledWith(false);
     });
   });

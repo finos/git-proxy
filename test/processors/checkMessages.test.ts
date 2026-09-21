@@ -19,7 +19,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { exec } from '../../src/proxy/processors/push-action/checkMessages';
 import { Action } from '../../src/proxy/actions';
 import * as configModule from '../../src/config';
-import { SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
+import { SAMPLE_COMMIT } from '../../src/proxy/constants';
 
 vi.mock('../../src/config', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../src/config')>();
