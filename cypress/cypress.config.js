@@ -16,6 +16,8 @@
 
 const { defineConfig } = require('cypress');
 
+// npm scripts pass cypress/cypress.config.js as config
+// file and run from there
 module.exports = defineConfig({
   e2e: {
     baseUrl: process.env.CYPRESS_BASE_URL || 'http://localhost:3000',

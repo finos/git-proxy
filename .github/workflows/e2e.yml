@@ -19,6 +19,7 @@ jobs:
         suite: [vitest, cypress]
     env:
       BUILDX_CACHE_SCOPE: ${{ matrix.suite }}-build
+      COMPOSE_FILE: test/e2e/docker-compose.yml:test/e2e/docker-compose.ci.yml
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
@@ -30,7 +31,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e
         with:
           install: true
 
@@ -56,7 +57,7 @@ jobs:
           git config --global init.defaultBranch main
 
       - name: Build and start services with Docker Compose
-        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build --wait
+        run: docker compose up -d --build --wait
 
       - name: Debug service state
         if: failure()

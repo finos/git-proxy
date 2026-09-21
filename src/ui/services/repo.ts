@@ -79,6 +79,29 @@ const compareLatestPush = (a: RepoView, b: RepoView, direction: 'asc' | 'desc'):
   return compareRepoName(a, b, 'asc');
 };
 
+const createdAtMs = (repo: RepoView): number | undefined => {
+  if (!repo.dateCreated) return undefined;
+  const ms = Date.parse(repo.dateCreated);
+  return Number.isNaN(ms) ? undefined : ms;
+};
+
+const compareCreated = (a: RepoView, b: RepoView, direction: 'asc' | 'desc'): number => {
+  if (direction === 'desc') {
+    const aMs = createdAtMs(a) ?? Number.NEGATIVE_INFINITY;
+    const bMs = createdAtMs(b) ?? Number.NEGATIVE_INFINITY;
+    if (bMs !== aMs) {
+      return bMs - aMs;
+    }
+  } else {
+    const aMs = createdAtMs(a) ?? Number.POSITIVE_INFINITY;
+    const bMs = createdAtMs(b) ?? Number.POSITIVE_INFINITY;
+    if (aMs !== bMs) {
+      return aMs - bMs;
+    }
+  }
+  return compareRepoName(a, b, 'asc');
+};
+
 export const sortRepoViews = (
   repos: RepoView[],
   sort: RepoSortField,
@@ -100,6 +123,12 @@ export const sortRepoViews = (
       break;
     case 'lastPushed-asc':
       next.sort((a, b) => compareLatestPush(a, b, 'asc'));
+      break;
+    case 'created-desc':
+      next.sort((a, b) => compareCreated(a, b, 'desc'));
+      break;
+    case 'created-asc':
+      next.sort((a, b) => compareCreated(a, b, 'asc'));
       break;
     case 'name-desc':
       next.sort((a, b) => compareRepoName(a, b, 'desc'));

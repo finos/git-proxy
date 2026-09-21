@@ -17,6 +17,7 @@
 import React from 'react';
 import { ActionMenu, ActionList } from '@primer/react';
 import {
+  CalendarIcon,
   ClockIcon,
   PersonIcon,
   PulseIcon,
@@ -122,6 +123,15 @@ const RepositoriesSortMenu = ({ sort, onSortChange }: RepositoriesSortMenuProps)
                 <RepoPushIcon />
               </ActionList.LeadingVisual>
               Last pushed
+            </ActionList.Item>
+            <ActionList.Item
+              selected={axisMatchesSort('created', sort)}
+              onSelect={() => onSortChange(repoSortSetAxis(sort, 'created'))}
+            >
+              <ActionList.LeadingVisual>
+                <CalendarIcon />
+              </ActionList.LeadingVisual>
+              Created
             </ActionList.Item>
           </ActionList.Group>
           {sort !== 'relevance' && sort !== 'activity' && sort !== 'latestPendingReview' ? (

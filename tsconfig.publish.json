@@ -10,7 +10,6 @@
     "experimental/**",
     "plugins/**",
     "./dist/**",
-    "src/ui/**",
     "**/*.tsx",
     "**/*.jsx",
     "./src/context.js",
