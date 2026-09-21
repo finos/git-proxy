@@ -70,6 +70,9 @@ const tagPushChainElements: ChainElement[] = [
 const pullActionChainElements: ChainElement[] = [
   proc.push.checkRepoInAuthorisedList,
   PullPhase.AFTER_AUTHORISATION,
+  proc.pull.fetchWanted,
+  proc.pull.resolveWants,
+  PullPhase.AFTER_CHECKOUT,
 ];
 
 const defaultActionChainElements: ChainElement[] = [proc.push.checkRepoInAuthorisedList];
@@ -142,6 +145,8 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
     // 2) Parse refs and PACK data before chain selection
     if (action.type === RequestType.PUSH) {
       action = await proc.pre.parsePush(req, action);
+    } else if (action.type === RequestType.PULL) {
+      action = await proc.pre.parsePull(req, action);
     }
     // 3) Select the correct chain now that action.actionType is set
     const actionFns = await getChain(action);

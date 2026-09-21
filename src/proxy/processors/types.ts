@@ -53,6 +53,7 @@ export type PushPhase = (typeof PushPhase)[keyof typeof PushPhase];
 
 export const PullPhase = {
   AFTER_AUTHORISATION: 'AFTER_AUTHORISATION',
+  AFTER_CHECKOUT: 'AFTER_CHECKOUT',
 };
 export type PullPhase = (typeof PullPhase)[keyof typeof PullPhase];
 
