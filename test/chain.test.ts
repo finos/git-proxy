@@ -157,7 +157,12 @@ describe('proxy chain', function () {
 
   it('executeChain should stop executing if action has continue returns false', async () => {
     const req = {};
-    const continuingAction = { type: 'push', continue: () => true, allowPush: false };
+    const continuingAction = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
@@ -168,6 +173,7 @@ describe('proxy chain', function () {
       type: 'push',
       continue: () => false,
       allowPush: false,
+      proxyGitPath: './.remote/test',
     });
 
     const result = await chain.executeChain(req);
@@ -203,7 +209,12 @@ describe('proxy chain', function () {
 
   it('executeChain should stop executing if action has allowPush is set to true', async () => {
     const req = {};
-    const continuingAction = { type: 'push', continue: () => true, allowPush: false };
+    const continuingAction = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
@@ -214,6 +225,7 @@ describe('proxy chain', function () {
       type: 'push',
       continue: () => true,
       allowPush: true,
+      proxyGitPath: './.remote/test',
     });
 
     const result = await chain.executeChain(req);
@@ -249,7 +261,12 @@ describe('proxy chain', function () {
 
   it('executeChain should execute all steps if all actions succeed', async () => {
     const req = {};
-    const continuingAction = { type: 'push', continue: () => true, allowPush: false };
+    const continuingAction = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
@@ -323,7 +340,12 @@ describe('proxy chain', function () {
 
   it('executeChain should handle errors after pullRemote and still call clearBareClone', async () => {
     const req = {};
-    const action = { type: 'push', continue: () => true, allowPush: false };
+    const action = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
 
     processors.pre.parseAction.mockResolvedValue(action);
     processors.pre.parsePush.mockResolvedValue(action);
