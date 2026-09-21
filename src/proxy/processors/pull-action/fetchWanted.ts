@@ -38,7 +38,7 @@ const OID_RE = /^[0-9a-f]{40}(?:[0-9a-f]{24})?$/;
 /**
  * Negotiation rounds repeat the same wants over HTTP. We want to remember
  * "wants" that already passed so later rounds can skip the check
- * 
+ *
  * Only successful pulls are recorded. See `rememberRecentFetch` for details
  */
 const RECENT_TTL_MS = 5 * 60 * 1000;

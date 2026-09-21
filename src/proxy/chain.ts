@@ -137,7 +137,6 @@ const getProgressMessage = (fn: ProcessorExec): string => {
 
 export const executeChain = async (req: Request, res: Response): Promise<Action> => {
   let action: Action = {} as Action;
-  let checkoutCleanUpRequired = false;
 
   try {
     // 1) Initialize basic action fields

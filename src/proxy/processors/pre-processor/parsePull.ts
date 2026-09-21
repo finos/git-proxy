@@ -75,7 +75,7 @@ const emptyPullData = (protocolVersion: 1 | 2, command: PullType): PullData => (
 
 /**
  * Applies a single fetch / ls-refs argument line to the request data.
- * 
+ *
  * @param {PullData} data The data being built.
  * @param {string} line The argument line without trailing newline
  * @return {string[]} Any trailing tokens after the value (v1 capabilities)

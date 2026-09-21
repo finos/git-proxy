@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { PullType } from "../proxy/actions";
+import { PullType } from '../proxy/actions';
 
 interface AttestationReviewer {
   username: string;
