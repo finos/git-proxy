@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { PullType } from '../proxy/actions';
+
 interface AttestationReviewer {
   username: string;
   gitAccount: string;
@@ -84,6 +86,25 @@ export interface PushData {
   tags?: string[];
   tagData?: TagData[];
   user?: string; // Used for tag pushes as the tagger
+}
+
+export interface PullData {
+  protocolVersion: 1 | 2;
+  command: PullType;
+  capabilities: string[];
+  wants: string[];
+  haves: string[];
+  wantRefs: string[];
+  refPrefixes: string[];
+  shallow: string[];
+  deepen?: string;
+  filter?: string;
+  done: boolean;
+  options: string[];
+  fetchedWants?: string[];
+  base?: string;
+  wantedRefs?: string[];
+  repeatedRound?: boolean;
 }
 
 export interface Route {

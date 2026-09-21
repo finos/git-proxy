@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-import * as pre from './pre-processor';
-import * as push from './push-action';
-import * as post from './post-processor';
-import * as pull from './pull-action';
+import { exec as fetchWanted, rememberRecentFetch } from './fetchWanted';
+import { exec as resolveWants } from './resolveWants';
 
-export { pre, push, post, pull };
+export { fetchWanted, resolveWants, rememberRecentFetch };

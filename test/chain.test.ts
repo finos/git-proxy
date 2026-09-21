@@ -58,9 +58,18 @@ const initMockPostProcessors = () => {
   };
 };
 
+const initMockPullProcessors = () => {
+  return {
+    fetchWanted: nonCollectibleFn(),
+    resolveWants: nonCollectibleFn(),
+    rememberRecentFetch: vi.fn(),
+  };
+};
+
 const mockPreProcessors = {
   parseAction: vi.fn(),
   parsePush: vi.fn(),
+  parsePull: vi.fn(),
 };
 
 describe('proxy chain', function () {
@@ -69,6 +78,7 @@ describe('proxy chain', function () {
   let db: any;
   let mockPushProcessors: any;
   let mockPostProcessors: any;
+  let mockPullProcessors: any;
 
   beforeEach(async () => {
     vi.resetModules();
@@ -76,16 +86,19 @@ describe('proxy chain', function () {
     // Initialize the mocks
     mockPushProcessors = initMockPushProcessors();
     mockPostProcessors = initMockPostProcessors();
+    mockPullProcessors = initMockPullProcessors();
 
     // mockPreProcessors lives at module scope so needs manual reset
     mockPreProcessors.parseAction.mockReset();
     mockPreProcessors.parsePush.mockReset();
+    mockPreProcessors.parsePull.mockReset();
 
     // Mock the processors module
     vi.doMock('../src/proxy/processors', async () => ({
       pre: mockPreProcessors,
       push: mockPushProcessors,
       post: mockPostProcessors,
+      pull: mockPullProcessors,
     }));
 
     vi.doMock('../src/db', async () => ({
@@ -111,6 +124,9 @@ describe('proxy chain', function () {
     Object.keys(mockPostProcessors).forEach((key) => {
       mockPostProcessors[key].mockImplementation(passThroughImpl);
     });
+    mockPullProcessors.fetchWanted.mockImplementation(passThroughImpl);
+    mockPullProcessors.resolveWants.mockImplementation(passThroughImpl);
+    mockPreProcessors.parsePull.mockImplementation(passThroughImpl);
   });
 
   afterEach(() => {
@@ -118,12 +134,11 @@ describe('proxy chain', function () {
     vi.resetModules();
   });
 
-  it('getChain should set pluginLoaded if loader is undefined', async () => {
+  it('getChain should throw an error if loader is undefined', async () => {
     chain.chainPluginLoader = undefined;
-    const actual = await chain.getChain({ type: 'push' });
-    expect(actual).toEqual(chain.branchPushChain);
-    expect(chain.chainPluginLoader).toBeUndefined();
-    expect(chain.pluginsInserted).toBe(true);
+    await expect(chain.getChain({ type: 'push' })).rejects.toThrow(
+      /Plugin loader was not initialized/,
+    );
   });
 
   it('getChain should load plugins from an initialized PluginLoader', async () => {
@@ -131,7 +146,6 @@ describe('proxy chain', function () {
     const initialChain = [...chain.branchPushChain];
     const actual = await chain.getChain({ type: 'push' });
     expect(actual.length).toBeGreaterThan(initialChain.length);
-    expect(chain.pluginsInserted).toBe(true);
   });
 
   it('getChain should load pull plugins from an initialized PluginLoader', async () => {
@@ -139,12 +153,16 @@ describe('proxy chain', function () {
     const initialChain = [...chain.pullActionChain];
     const actual = await chain.getChain({ type: 'pull' });
     expect(actual.length).toBeGreaterThan(initialChain.length);
-    expect(chain.pluginsInserted).toBe(true);
   });
 
   it('executeChain should stop executing if action has continue returns false', async () => {
     const req = {};
-    const continuingAction = { type: 'push', continue: () => true, allowPush: false };
+    const continuingAction = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
@@ -155,6 +173,7 @@ describe('proxy chain', function () {
       type: 'push',
       continue: () => false,
       allowPush: false,
+      proxyGitPath: './.remote/test',
     });
 
     const result = await chain.executeChain(req);
@@ -190,7 +209,12 @@ describe('proxy chain', function () {
 
   it('executeChain should stop executing if action has allowPush is set to true', async () => {
     const req = {};
-    const continuingAction = { type: 'push', continue: () => true, allowPush: false };
+    const continuingAction = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
@@ -201,6 +225,7 @@ describe('proxy chain', function () {
       type: 'push',
       continue: () => true,
       allowPush: true,
+      proxyGitPath: './.remote/test',
     });
 
     const result = await chain.executeChain(req);
@@ -236,7 +261,12 @@ describe('proxy chain', function () {
 
   it('executeChain should execute all steps if all actions succeed', async () => {
     const req = {};
-    const continuingAction = { type: 'push', continue: () => true, allowPush: false };
+    const continuingAction = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
@@ -276,12 +306,16 @@ describe('proxy chain', function () {
     const req = {};
     const continuingAction = { type: 'pull', continue: () => true, allowPush: false };
     mockPreProcessors.parseAction.mockResolvedValue({ type: 'pull' });
-    mockPushProcessors.checkRepoInAuthorisedList.mockResolvedValue(continuingAction);
+    mockPreProcessors.parsePull.mockResolvedValue(continuingAction);
 
     const result = await chain.executeChain(req);
 
-    expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
+    expect(mockPreProcessors.parsePull).toHaveBeenCalled();
     expect(mockPreProcessors.parsePush).not.toHaveBeenCalled();
+    expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
+    expect(mockPullProcessors.fetchWanted).toHaveBeenCalled();
+    expect(mockPullProcessors.resolveWants).toHaveBeenCalled();
+    expect(mockPullProcessors.rememberRecentFetch).toHaveBeenCalled();
 
     expect(mockPostProcessors.audit).toHaveBeenCalled();
     expect(mockPostProcessors.clearBareClone).not.toHaveBeenCalled();
@@ -306,7 +340,12 @@ describe('proxy chain', function () {
 
   it('executeChain should handle errors after pullRemote and still call clearBareClone', async () => {
     const req = {};
-    const action = { type: 'push', continue: () => true, allowPush: false };
+    const action = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
 
     processors.pre.parseAction.mockResolvedValue(action);
     processors.pre.parsePush.mockResolvedValue(action);
@@ -564,6 +603,42 @@ describe('proxy chain', function () {
     expect(pullChain).toEqual(chain.pullActionChain);
   });
 
+  describe('pull chain rememberRecentFetch', () => {
+    const setupPullAction = (overrides: Record<string, unknown> = {}) => {
+      const action = {
+        type: RequestType.PULL,
+        steps: [],
+        continue: () => true,
+        allowPush: false,
+        ...overrides,
+      };
+      mockPreProcessors.parseAction.mockResolvedValue(action);
+      mockPreProcessors.parsePull.mockResolvedValue(action);
+      return action;
+    };
+
+    it('records approved want-sets so later negotiation rounds can skip checkout', async () => {
+      const action = setupPullAction();
+
+      await chain.executeChain({});
+
+      expect(mockPullProcessors.rememberRecentFetch).toHaveBeenCalledWith(action);
+    });
+
+    it('does not record a blocked pull so a retry is scanned again', async () => {
+      const action = setupPullAction();
+      mockPullProcessors.fetchWanted.mockImplementation(async (_req: any, a: any) => {
+        a.error = true;
+        a.continue = () => false;
+        return a;
+      });
+
+      await chain.executeChain({});
+
+      expect(mockPullProcessors.rememberRecentFetch).not.toHaveBeenCalled();
+    });
+  });
+
   it('returns tagPushChain when action.type is push and action.actionType is TAG', async () => {
     const action = new Action(
       '2',
@@ -590,19 +665,10 @@ describe('proxy chain', function () {
     expect(branchChain).toEqual(chain.branchPushChain);
   });
 
-  it('getChain should return tagPushChain if loader is undefined for tag pushes', async () => {
-    chain.chainPluginLoader = undefined;
-    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
-    expect(actual).toEqual(chain.tagPushChain);
-    expect(chain.chainPluginLoader).toBeUndefined();
-    expect(chain.pluginsInserted).toBe(true);
-  });
-
   it('getChain should load tag plugins from an initialized PluginLoader', async () => {
     chain.chainPluginLoader = mockLoader;
     const initialChain = [...chain.tagPushChain];
     const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
     expect(actual.length).toBeGreaterThan(initialChain.length);
-    expect(chain.pluginsInserted).toBe(true);
   });
 });

@@ -17,7 +17,7 @@
 import { processGitURLForNameAndOrg, processUrlPath } from '../routes/helper';
 import { Step } from './Step';
 import { CompletedAttestation, CommitData, Rejection } from '../processors/types';
-import { TagData } from '../../types/models';
+import { TagData, PullData } from '../../types/models';
 
 export enum RequestType {
   PUSH = 'push',
@@ -35,13 +35,18 @@ export enum PushType {
   BRANCH = 'branch',
 }
 
+export enum PullType {
+  FETCH = 'fetch',
+  LS_REFS = 'ls-refs',
+}
+
 /**
  * Class representing a Push.
  */
 class Action {
   id: string;
   type: RequestType;
-  actionType?: PushType;
+  actionType?: PushType | PullType;
   method: string;
   timestamp: number;
   project: string;
@@ -78,6 +83,7 @@ class Action {
   capabilities?: string[];
   pullAuthStrategy?:
     'basic' | 'ssh-user-key' | 'ssh-service-token' | 'ssh-agent-forwarding' | 'anonymous';
+  pullData?: PullData;
 
   /**
    * Create an action.
