@@ -58,9 +58,18 @@ const initMockPostProcessors = () => {
   };
 };
 
+const initMockPullProcessors = () => {
+  return {
+    fetchWanted: nonCollectibleFn(),
+    resolveWants: nonCollectibleFn(),
+    rememberRecentFetch: vi.fn(),
+  };
+};
+
 const mockPreProcessors = {
   parseAction: vi.fn(),
   parsePush: vi.fn(),
+  parsePull: vi.fn(),
 };
 
 describe('proxy chain', function () {
@@ -69,6 +78,7 @@ describe('proxy chain', function () {
   let db: any;
   let mockPushProcessors: any;
   let mockPostProcessors: any;
+  let mockPullProcessors: any;
 
   beforeEach(async () => {
     vi.resetModules();
@@ -76,16 +86,19 @@ describe('proxy chain', function () {
     // Initialize the mocks
     mockPushProcessors = initMockPushProcessors();
     mockPostProcessors = initMockPostProcessors();
+    mockPullProcessors = initMockPullProcessors();
 
     // mockPreProcessors lives at module scope so needs manual reset
     mockPreProcessors.parseAction.mockReset();
     mockPreProcessors.parsePush.mockReset();
+    mockPreProcessors.parsePull.mockReset();
 
     // Mock the processors module
     vi.doMock('../src/proxy/processors', async () => ({
       pre: mockPreProcessors,
       push: mockPushProcessors,
       post: mockPostProcessors,
+      pull: mockPullProcessors,
     }));
 
     vi.doMock('../src/db', async () => ({
@@ -111,6 +124,9 @@ describe('proxy chain', function () {
     Object.keys(mockPostProcessors).forEach((key) => {
       mockPostProcessors[key].mockImplementation(passThroughImpl);
     });
+    mockPullProcessors.fetchWanted.mockImplementation(passThroughImpl);
+    mockPullProcessors.resolveWants.mockImplementation(passThroughImpl);
+    mockPreProcessors.parsePull.mockImplementation(passThroughImpl);
   });
 
   afterEach(() => {
@@ -273,12 +289,16 @@ describe('proxy chain', function () {
     const req = {};
     const continuingAction = { type: 'pull', continue: () => true, allowPush: false };
     mockPreProcessors.parseAction.mockResolvedValue({ type: 'pull' });
-    mockPushProcessors.checkRepoInAuthorisedList.mockResolvedValue(continuingAction);
+    mockPreProcessors.parsePull.mockResolvedValue(continuingAction);
 
     const result = await chain.executeChain(req);
 
-    expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
+    expect(mockPreProcessors.parsePull).toHaveBeenCalled();
     expect(mockPreProcessors.parsePush).not.toHaveBeenCalled();
+    expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
+    expect(mockPullProcessors.fetchWanted).toHaveBeenCalled();
+    expect(mockPullProcessors.resolveWants).toHaveBeenCalled();
+    expect(mockPullProcessors.rememberRecentFetch).toHaveBeenCalled();
 
     expect(mockPostProcessors.audit).toHaveBeenCalled();
     expect(mockPostProcessors.clearBareClone).not.toHaveBeenCalled();
@@ -559,6 +579,42 @@ describe('proxy chain', function () {
     );
     const pullChain = await chain.getChain(action);
     expect(pullChain).toEqual(chain.pullActionChain);
+  });
+
+  describe('pull chain rememberRecentFetch', () => {
+    const setupPullAction = (overrides: Record<string, unknown> = {}) => {
+      const action = {
+        type: RequestType.PULL,
+        steps: [],
+        continue: () => true,
+        allowPush: false,
+        ...overrides,
+      };
+      mockPreProcessors.parseAction.mockResolvedValue(action);
+      mockPreProcessors.parsePull.mockResolvedValue(action);
+      return action;
+    };
+
+    it('records approved want-sets so later negotiation rounds can skip checkout', async () => {
+      const action = setupPullAction();
+
+      await chain.executeChain({});
+
+      expect(mockPullProcessors.rememberRecentFetch).toHaveBeenCalledWith(action);
+    });
+
+    it('does not record a blocked pull so a retry is scanned again', async () => {
+      const action = setupPullAction();
+      mockPullProcessors.fetchWanted.mockImplementation(async (_req: any, a: any) => {
+        a.error = true;
+        a.continue = () => false;
+        return a;
+      });
+
+      await chain.executeChain({});
+
+      expect(mockPullProcessors.rememberRecentFetch).not.toHaveBeenCalled();
+    });
   });
 
   it('returns tagPushChain when action.type is push and action.actionType is TAG', async () => {
