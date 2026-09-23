@@ -24,9 +24,12 @@ import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '.
 import {
   BRANCH_PREFIX,
   EMPTY_COMMIT_HASH,
+  GIT_OBJECT_ID_REGEX,
   PACK_SIGNATURE,
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
+  SEVEN_BIT_MASK,
+  EIGHTH_BIT_MASK,
 } from '../constants';
 import { getErrorMessage } from '../../../utils/errors';
 
@@ -36,13 +39,10 @@ if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir);
 }
 
-/** Bit mask for the seven bits used in variable length size encodings
- * (size and ofd_delta offset) to encode the value. */
-const SEVEN_BIT_MASK = 0x7f;
-/** Bit mask for the continuation bit (8th bit) used in the variable length
- * size encodings (size and ofs_delta offsets) in Git object headers used in
- * PACK files. */
-const EIGHTH_BIT_MASK = 0x80;
+// Validates a value is a well-formed Git object ID (40-char lowercase hex).
+export const isValidGitObjectId = (oid: string): boolean => {
+  return GIT_OBJECT_ID_REGEX.test(oid);
+};
 
 /**
  * Executes the parsing of a push request.
@@ -77,6 +77,11 @@ async function exec(req: Request, action: Action): Promise<Action> {
 
     const [oldCommit, newCommit, ref] = parts;
 
+    // Reject malformed commit IDs before they are used to build the action id and paths.
+    if (!isValidGitObjectId(oldCommit) || !isValidGitObjectId(newCommit)) {
+      throw new Error('Your push has been blocked. Invalid commit ID format.');
+    }
+
     // Strip everything after NUL, which is cap-list from
     // https://git-scm.com/docs/http-protocol#_smart_server_response
     action.branch = ref.replace(/\0.*/, '').trim();
@@ -107,6 +112,11 @@ async function exec(req: Request, action: Action): Promise<Action> {
     } else {
       if (action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
+      }
+
+      // commitFrom may have been reassigned from PACK data above; re-validate it.
+      if (action.commitFrom && !isValidGitObjectId(action.commitFrom)) {
+        throw new Error('Your push has been blocked. Invalid commit ID format.');
       }
 
       const { committer, committerEmail } = action.commitData[action.commitData.length - 1];

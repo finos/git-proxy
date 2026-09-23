@@ -25,6 +25,7 @@ import {
   getCommitData,
   getContents,
   getPackMeta,
+  isValidGitObjectId,
   parsePacketLines,
 } from '../src/proxy/processors/push-action/parsePush';
 import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
@@ -431,9 +432,13 @@ describe('parsePackFile', () => {
     });
 
     it('should add error step if multiple ref updates found', async () => {
+      const mainOldCommit = 'a'.repeat(40);
+      const mainNewCommit = 'b'.repeat(40);
+      const developOldCommit = 'c'.repeat(40);
+      const developNewCommit = 'd'.repeat(40);
       const packetLines = [
-        'oldhash1 newhash1 refs/heads/main\0caps\n',
-        'oldhash2 newhash2 refs/heads/develop\0caps\n',
+        `${mainOldCommit} ${mainNewCommit} refs/heads/main\0caps\n`,
+        `${developOldCommit} ${developNewCommit} refs/heads/develop\0caps\n`,
       ];
       req.body = createPacketLineBuffer(packetLines);
       const result = await exec(req, action);
@@ -755,9 +760,11 @@ describe('parsePackFile', () => {
     it('should add error step if multiple tree lines are found in a commit', async () => {
       const commitContent =
         'tree 123\ntree 456\nparent 789\nauthor Test Author <test@example.com> 1234567890 +0000\ncommitter Test Committer <committer@example.com> 1234567890 +0000\n\nCommit message';
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([
-        createPacketLineBuffer(['oldhash1 newhash1 refs/heads/main\0caps\n']),
+        createPacketLineBuffer([`${oldCommit} ${newCommit} refs/heads/main\0caps\n`]),
         samplePackBuffer,
       ]);
       const result = await exec(req, action);
@@ -770,9 +777,11 @@ describe('parsePackFile', () => {
     it('should add error step if multiple author lines are found in a commit', async () => {
       const commitContent =
         'tree 123\nauthor Test Author <test@example.com> 1234567890 +0000\nauthor Test Author <test@example.com> 1234567890 +0000\nparent 789\ncommitter Test Committer <committer@example.com> 1234567890 +0000\n\nCommit message';
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([
-        createPacketLineBuffer(['oldhash1 newhash1 refs/heads/main\0caps\n']),
+        createPacketLineBuffer([`${oldCommit} ${newCommit} refs/heads/main\0caps\n`]),
         samplePackBuffer,
       ]);
       const result = await exec(req, action);
@@ -785,9 +794,11 @@ describe('parsePackFile', () => {
     it('should add error step if multiple committer lines are found in a commit', async () => {
       const commitContent =
         'tree 123\nauthor Test Author <test@example.com> 1234567890 +0000\ncommitter Test Committer <committer@example.com> 1234567890 +0000\ncommitter Test Committer <committer@example.com> 1234567890 +0000\nparent 789\n\nCommit message';
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([
-        createPacketLineBuffer(['oldhash1 newhash1 refs/heads/main\0caps\n']),
+        createPacketLineBuffer([`${oldCommit} ${newCommit} refs/heads/main\0caps\n`]),
         samplePackBuffer,
       ]);
       const result = await exec(req, action);
@@ -800,9 +811,11 @@ describe('parsePackFile', () => {
     it('should correctly handle trailing new lines in the commit content', async () => {
       const commitContent =
         'tree 123\nparent 789\nauthor Test Author <test@example.com> 1234567890 +0000\ncommitter Test Committer <committer@example.com> 1234567890 +0000\n\nCommit message\n\n\n';
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([
-        createPacketLineBuffer(['oldhash1 newhash1 refs/heads/main\0caps\n']),
+        createPacketLineBuffer([`${oldCommit} ${newCommit} refs/heads/main\0caps\n`]),
         samplePackBuffer,
       ]);
       const result = await exec(req, action);
@@ -816,9 +829,11 @@ describe('parsePackFile', () => {
     it('should correctly handle trailing spaces in the commit content', async () => {
       const commitContent =
         'tree 123\nparent 789\nauthor Test Author <test@example.com> 1234567890 +0000\ncommitter Test Committer <committer@example.com> 1234567890 +0000\n\nCommit message   ';
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([
-        createPacketLineBuffer(['oldhash1 newhash1 refs/heads/main\0caps\n']),
+        createPacketLineBuffer([`${oldCommit} ${newCommit} refs/heads/main\0caps\n`]),
         samplePackBuffer,
       ]);
       const result = await exec(req, action);
@@ -831,9 +846,11 @@ describe('parsePackFile', () => {
 
     it('should error if commit data is empty (headerEndIndex is -1)', async () => {
       const commitContent = 'tree 123';
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([
-        createPacketLineBuffer(['oldhash1 newhash1 refs/heads/main\0caps\n']),
+        createPacketLineBuffer([`${oldCommit} ${newCommit} refs/heads/main\0caps\n`]),
         samplePackBuffer,
       ]);
       const result = await exec(req, action);
@@ -949,6 +966,42 @@ describe('parsePackFile', () => {
       expect(action.branch).toBe(ref);
       expect(action.setCommit).toHaveBeenCalledWith(EMPTY_COMMIT_HASH, newCommit);
       expect(action.commitData).toHaveLength(0);
+    });
+
+    it('rejects a push whose old commit ID is not a valid object ID', async () => {
+      const emptyPackBuffer = createEmptyPackBuffer();
+      const maliciousOldCommit = '../../mnt/evidence/x';
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/feature/attack';
+      const packetLine = `${maliciousOldCommit} ${newCommit} ${ref}\0capabilities\n`;
+
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), emptyPackBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).toBe(action);
+
+      const step = action.steps.find((s: any) => s.stepName === 'parsePackFile');
+      expect(step).toBeTruthy();
+      expect(step.error).toBe(true);
+      expect(step.errorMessage).toContain('Invalid commit ID format');
+    });
+
+    it('rejects a push whose new commit ID is not a valid object ID', async () => {
+      const emptyPackBuffer = createEmptyPackBuffer();
+      const oldCommit = 'a'.repeat(40);
+      const maliciousNewCommit = '../../etc/passwd';
+      const ref = 'refs/heads/feature/attack';
+      const packetLine = `${oldCommit} ${maliciousNewCommit} ${ref}\0capabilities\n`;
+
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), emptyPackBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).toBe(action);
+
+      const step = action.steps.find((s: any) => s.stepName === 'parsePackFile');
+      expect(step).toBeTruthy();
+      expect(step.error).toBe(true);
+      expect(step.errorMessage).toContain('Invalid commit ID format');
     });
   });
 
@@ -1214,5 +1267,58 @@ describe('parsePackFile', () => {
       const incompleteBuffer = Buffer.from('0008');
       expect(() => parsePacketLines(incompleteBuffer)).toThrow(/Invalid packet line length 0008/);
     });
+  });
+});
+
+// Tests for isValidGitObjectId, which validates commit IDs parsed from push
+// requests. Covers valid object IDs and the malformed inputs that must be
+// rejected (wrong length, non-hex, wrong case, embedded separators, anchors).
+describe('isValidGitObjectId', () => {
+  it('accepts a valid 40-character hex string', () => {
+    expect(isValidGitObjectId('a'.repeat(40))).toBe(true);
+  });
+
+  it('accepts the all-zeros commit hash', () => {
+    expect(isValidGitObjectId('0'.repeat(40))).toBe(true);
+  });
+
+  it('rejects a too-short string', () => {
+    expect(isValidGitObjectId('a'.repeat(39))).toBe(false);
+  });
+
+  it('rejects a too-long string', () => {
+    expect(isValidGitObjectId('a'.repeat(41))).toBe(false);
+  });
+
+  it('rejects a non-hex character', () => {
+    expect(isValidGitObjectId('g'.repeat(40))).toBe(false);
+  });
+
+  it('rejects uppercase hex', () => {
+    expect(isValidGitObjectId('A'.repeat(40))).toBe(false);
+  });
+
+  it('rejects a value with a trailing newline', () => {
+    expect(isValidGitObjectId('a'.repeat(40) + '\n')).toBe(false);
+  });
+
+  it('rejects a path traversal payload', () => {
+    expect(isValidGitObjectId('../../mnt/evidence/x')).toBe(false);
+  });
+
+  it('rejects an empty string', () => {
+    expect(isValidGitObjectId('')).toBe(false);
+  });
+
+  it('rejects a value with a leading newline', () => {
+    expect(isValidGitObjectId('\n' + 'a'.repeat(40))).toBe(false);
+  });
+
+  it('rejects a slash embedded within 40 characters', () => {
+    expect(isValidGitObjectId('a'.repeat(20) + '/' + 'a'.repeat(19))).toBe(false);
+  });
+
+  it('accepts a realistic mixed-hex commit hash', () => {
+    expect(isValidGitObjectId('3f2a1b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a')).toBe(true);
   });
 });

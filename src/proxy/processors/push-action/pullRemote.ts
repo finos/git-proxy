@@ -15,6 +15,7 @@
  */
 
 import { Request } from 'express';
+import crypto from 'crypto';
 import fs from 'fs';
 import git from 'isomorphic-git';
 import gitHttpClient from 'isomorphic-git/http/node';
@@ -24,13 +25,23 @@ import { getErrorMessage } from '../../../utils/errors';
 
 const dir = './.remote';
 
+/**
+ * Directory name for a push's checkout: a digest of the action id, which
+ * eliminates potentially dangerous characters such as path separators.
+ * @param {string} actionId The id of the action
+ * @return {string} The checkout directory name
+ */
+const checkoutDirName = (actionId: string): string => {
+  return crypto.createHash('sha256').update(actionId).digest('hex').slice(0, 32);
+};
+
 const exec = async (req: Request, action: Action): Promise<Action> => {
   const step = new Step('pullRemote');
-  action.proxyGitPath = `${dir}/${action.id}`;
+  const checkoutPath = `${dir}/${checkoutDirName(action.id)}`;
 
   //the specific checkout folder should not exist
   // - fail out if it does to avoid concurrent processing of conflicting requests
-  if (fs.existsSync(action.proxyGitPath)) {
+  if (fs.existsSync(checkoutPath)) {
     const errMsg =
       'The checkout folder already exists - we may be processing a concurrent request for this push. If this issue persists the proxy may need to be restarted.';
     // do not delete the folder so that the other request can complete if its going to
@@ -38,6 +49,9 @@ const exec = async (req: Request, action: Action): Promise<Action> => {
     action.addStep(step);
     throw new Error(errMsg);
   } else {
+    // Assigned only once the checkout is known to be usable, so the cleanup
+    // below is never handed a path this processor refused to create.
+    action.proxyGitPath = checkoutPath;
     try {
       step.log(`Creating folder ${action.proxyGitPath}`);
       fs.mkdirSync(action.proxyGitPath, 0o755);
@@ -83,4 +97,4 @@ const exec = async (req: Request, action: Action): Promise<Action> => {
 
 exec.displayName = 'pullRemote.exec';
 
-export { exec };
+export { exec, checkoutDirName };
