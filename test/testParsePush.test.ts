@@ -30,7 +30,7 @@ import {
 } from '../src/proxy/processors/push-action/parsePush';
 import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
 import { CommitContent } from '../src/proxy/processors/types';
-import { Action } from '../src/proxy/actions/Action';
+import { Action, buildPushId } from '../src/proxy/actions/Action';
 import { Request } from 'express';
 import { Step } from '../src/proxy/actions/Step';
 
@@ -1002,6 +1002,117 @@ describe('parsePackFile', () => {
       expect(step).toBeTruthy();
       expect(step.error).toBe(true);
       expect(step.errorMessage).toContain('Invalid commit ID format');
+    });
+  });
+
+  describe('push id scoping', () => {
+    const REPO_1_URL = 'https://example.com/repo1.git';
+    const REPO_2_URL = 'https://example.com/repo2.git';
+    const newCommit = 'b'.repeat(40);
+
+    const buildBranchPushBody = (ref: string, oldCommit: string): Buffer =>
+      Buffer.concat([
+        createPacketLineBuffer([`${oldCommit} ${newCommit} ${ref}\0capabilities\n`]),
+        createSamplePackBuffer(),
+      ]);
+
+    const parseWithRealAction = async (url: string, body: Buffer): Promise<Action> => {
+      const realAction = new Action('initial-id', 'push', 'POST', 1234567890, url);
+      const result = await exec({ body } as Request, realAction);
+      const step = result.steps.find((s) => s.stepName === 'parsePackFile');
+      expect(step?.error).toBe(false);
+      return result;
+    };
+
+    it('should derive different ids for the same push body sent to different repositories', async () => {
+      const ref = 'refs/heads/feature/scoped';
+      const oldCommit = 'a'.repeat(40);
+      const body = buildBranchPushBody(ref, oldCommit);
+
+      const repo1 = await parseWithRealAction(REPO_1_URL, body);
+      const repo2 = await parseWithRealAction(REPO_2_URL, body);
+
+      expect(repo1.branch).toBe(ref);
+      expect(repo2.branch).toBe(ref);
+
+      expect(repo1.id).not.toBe(repo2.id);
+      expect(repo1.id).toBe(
+        buildPushId({
+          url: REPO_1_URL,
+          branch: ref,
+          commitFrom: oldCommit,
+          commitTo: newCommit,
+        }),
+      );
+      expect(repo2.id).toBe(
+        buildPushId({
+          url: REPO_2_URL,
+          branch: ref,
+          commitFrom: oldCommit,
+          commitTo: newCommit,
+        }),
+      );
+    });
+
+    it('should derive different ids for the same push body sent to different refs', async () => {
+      const oldCommit = 'a'.repeat(40);
+
+      const spike = await parseWithRealAction(
+        REPO_1_URL,
+        buildBranchPushBody('refs/heads/spike', oldCommit),
+      );
+      const release = await parseWithRealAction(
+        REPO_1_URL,
+        buildBranchPushBody('refs/heads/release-x', oldCommit),
+      );
+
+      expect(spike.id).not.toBe(release.id);
+      expect(spike.id).toBe(
+        buildPushId({
+          url: REPO_1_URL,
+          branch: 'refs/heads/spike',
+          commitFrom: oldCommit,
+          commitTo: newCommit,
+        }),
+      );
+      expect(release.id).toBe(
+        buildPushId({
+          url: REPO_1_URL,
+          branch: 'refs/heads/release-x',
+          commitFrom: oldCommit,
+          commitTo: newCommit,
+        }),
+      );
+    });
+
+    it('should compute the id from the raw ref-line oids even when commitFrom is rewritten for a new branch', async () => {
+      const ref = 'refs/heads/feature/new-branch';
+      const parent = 'c'.repeat(40);
+      const commitContent =
+        `tree ${'d'.repeat(40)}\n` +
+        `parent ${parent}\n` +
+        'author A <a@a> 123 +0000\n' +
+        'committer C <c@c> 456 +0000\n\n' +
+        'message';
+      const body = Buffer.concat([
+        createPacketLineBuffer([`${EMPTY_COMMIT_HASH} ${newCommit} ${ref}\0capabilities\n`]),
+        createSamplePackBuffer(1, commitContent, 1),
+      ]);
+
+      const parsed = await parseWithRealAction(REPO_1_URL, body);
+
+      // parsePush rewrites commitFrom to the parent of the last commit in the pack
+      expect(parsed.commitFrom).toBe(parent);
+      expect(parsed.commitFrom).not.toBe(EMPTY_COMMIT_HASH);
+      // id still derived from the raw values on the ref line
+      expect(parsed.id).toBe(
+        buildPushId({
+          url: REPO_1_URL,
+          branch: ref,
+          commitFrom: EMPTY_COMMIT_HASH,
+          commitTo: newCommit,
+        }),
+      );
     });
   });
 
