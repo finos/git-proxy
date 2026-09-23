@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { createHash } from 'crypto';
+
 import { processGitURLForNameAndOrg, processUrlPath } from '../routes/helper';
 import { Step } from './Step';
 import { CompletedAttestation, CommitData, Rejection } from '../processors/types';
@@ -35,11 +37,38 @@ export enum PushType {
   BRANCH = 'branch',
 }
 
+export type PushIdParts = {
+  url: string;
+  branch?: string;
+  tags?: string[];
+  commitFrom: string;
+  commitTo: string;
+};
+
+/**
+ * Build the push ID based on to/from commits, repo, refs and tags.
+ *
+ * @param {PushIdParts} parts Parts that identify the push
+ * @return {string} A sha256 hash of the push
+ */
+export const buildPushId = (parts: PushIdParts): string => {
+  const tags = [...(parts.tags ?? [])].sort();
+  const material = [
+    parts.url,
+    parts.branch ?? '',
+    tags.join('\n'),
+    parts.commitFrom,
+    parts.commitTo,
+  ].join('\0');
+  return createHash('sha256').update(material).digest('hex');
+};
+
 /**
  * Class representing a Push.
  */
 class Action {
   id: string;
+  legacyId?: string; // "commitFrom__commitTo" id for legacy pushes
   type: RequestType;
   actionType?: PushType;
   method: string;
@@ -71,7 +100,7 @@ class Action {
   rejection?: Rejection;
   lastStep?: Step;
   proxyGitPath?: string;
-  tags?: string[];
+  tags?: string[]; // legacy records can contain multiple tags
   tagData?: TagData[];
   newIdxFiles?: string[];
   protocol?: 'https' | 'ssh';
@@ -136,22 +165,40 @@ class Action {
 
   /**
    * Set the commit range for the action. Changes the action.id to be based on
-   * the commit details.
+   * commit details and repo/ref details from the push.
    * @param {string} commitFrom the starting commit
    * @param {string} commitTo the ending commit
    */
   setCommit(commitFrom: string, commitTo: string): void {
     this.commitFrom = commitFrom;
     this.commitTo = commitTo;
-    this.id = `${commitFrom}__${commitTo}`;
+    this.id = buildPushId({
+      url: this.url,
+      branch: this.branch,
+      tags: this.tags,
+      commitFrom,
+      commitTo,
+    });
   }
 
   /**
-   * Set the branch for the action.
+   * Set the branch for the action. Also recomputes the push ID
+   * if commit range is known.
+   *
    * @param {string} branch the branch
    */
   setBranch(branch: string): void {
     this.branch = branch;
+    // if commit range is known, recompute appropriate push ID
+    if (this.commitFrom !== undefined && this.commitTo !== undefined) {
+      this.id = buildPushId({
+        url: this.url,
+        branch: this.branch,
+        tags: this.tags,
+        commitFrom: this.commitFrom,
+        commitTo: this.commitTo,
+      });
+    }
   }
 
   /**

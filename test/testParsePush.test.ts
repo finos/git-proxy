@@ -32,7 +32,8 @@ import { parsePacketLines } from '../src/proxy/processors/pktLineParser';
 
 import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/constants';
 import { CommitContent } from '../src/proxy/processors/types';
-import { Action } from '../src/proxy/actions/Action';
+import { Action, RequestType, buildPushId } from '../src/proxy/actions/Action';
+import { pushWasApproved } from '../src/proxy/processors/push-action/checkIfWaitingAuth';
 import { Request } from 'express';
 import { Step } from '../src/proxy/actions/Step';
 
@@ -497,7 +498,10 @@ describe('parsePackFile', () => {
       const step = action.steps[0];
       expect(step.stepName).toBe('parsePackFile');
       expect(step.error).toBe(true);
-      expect(step.errorMessage).toContain('push one branch at a time');
+      expect(step.errorMessage).toContain('push a single branch or tag at a time');
+      expect(step.logs.some((l: string) => l.includes('Received 2 ref updates (branches).'))).toBe(
+        true,
+      );
     });
 
     it('should add error step if extra part in ref update', async () => {
@@ -1157,7 +1161,7 @@ describe('parsePackFile', () => {
       expect(action.tags).toEqual([ref]);
     });
 
-    it('should successfully parse a multi-tag push request', async () => {
+    it('should block a multi-tag push request (e.g. git push --tags)', async () => {
       const old1 = '0'.repeat(40);
       const new1 = 'a'.repeat(40);
       const old2 = '0'.repeat(40);
@@ -1187,14 +1191,17 @@ describe('parsePackFile', () => {
 
       const step = action.steps.find((s: any) => s.stepName === 'parsePackFile');
       expect(step).toBeDefined();
-      expect(step.error).toBe(false);
+      expect(step.error).toBe(true);
+      expect(step.errorMessage).toContain('Multi-ref pushes are not supported');
+      expect(step.errorMessage).toContain('push a single branch or tag at a time');
+      expect(step.logs.some((l: string) => l.includes('Received 2 ref updates (tags).'))).toBe(
+        true,
+      );
 
-      expect(action.actionType).toBe('tag');
-      expect(action.tags).toEqual([ref1, ref2]);
-      expect(action.setCommit).toHaveBeenCalledWith(old1, new1);
-      expect(action.tagData).toHaveLength(2);
-      expect(action.tagData[0].tagName).toBe('v1.0.0');
-      expect(action.tagData[1].tagName).toBe('v2.0.0');
+      expect(action.actionType).toBeNull();
+      expect(action.tags).toBeNull();
+      expect(action.setCommit).not.toHaveBeenCalled();
+      expect(action.tagData).toEqual([]);
     });
 
     it('should block mixed tag and branch ref updates', async () => {
@@ -1208,7 +1215,12 @@ describe('parsePackFile', () => {
       expect(result).toBe(action);
       const step = action.steps[0];
       expect(step.error).toBe(true);
-      expect(step.errorMessage).toContain('push one branch at a time');
+      expect(step.errorMessage).toContain('push a single branch or tag at a time');
+      expect(
+        step.logs.some((l: string) =>
+          l.includes('Received 2 ref updates (mixed branch and tag refs).'),
+        ),
+      ).toBe(true);
     });
 
     it('should block lightweight (non-annotated) tag push', async () => {
@@ -1227,6 +1239,211 @@ describe('parsePackFile', () => {
       expect(step).toBeDefined();
       expect(step.error).toBe(true);
       expect(step.errorMessage).toContain('Lightweight (non-annotated) tags are not supported');
+    });
+  });
+
+  describe('push id scoping', () => {
+    const REPO_1_URL = 'https://example.com/repo1.git';
+    const REPO_2_URL = 'https://example.com/repo2.git';
+    const newCommit = 'b'.repeat(40);
+
+    const buildBranchPushBody = (ref: string, oldCommit: string): Buffer =>
+      Buffer.concat([
+        createPacketLineBuffer([`${oldCommit} ${newCommit} ${ref}\0capabilities\n`]),
+        createSamplePackBuffer(),
+      ]);
+
+    const parseWithRealAction = async (url: string, body: Buffer): Promise<Action> => {
+      const realAction = new Action('initial-id', RequestType.PUSH, 'POST', 1234567890, url);
+      const result = await exec({ body } as Request, realAction);
+      const step = result.steps.find((s) => s.stepName === 'parsePackFile');
+      expect(step?.error).toBe(false);
+      return result;
+    };
+
+    it('should derive different ids for the same push body sent to different repositories', async () => {
+      const ref = 'refs/heads/feature/scoped';
+      const oldCommit = 'a'.repeat(40);
+      const body = buildBranchPushBody(ref, oldCommit);
+
+      const repo1 = await parseWithRealAction(REPO_1_URL, body);
+      const repo2 = await parseWithRealAction(REPO_2_URL, body);
+
+      expect(repo1.branch).toBe(ref);
+      expect(repo2.branch).toBe(ref);
+      expect(repo1.tags).toBeUndefined();
+      expect(repo2.tags).toBeUndefined();
+
+      expect(repo1.id).not.toBe(repo2.id);
+      expect(repo1.id).toBe(
+        buildPushId({
+          url: REPO_1_URL,
+          branch: ref,
+          tags: repo1.tags,
+          commitFrom: oldCommit,
+          commitTo: newCommit,
+        }),
+      );
+      expect(repo2.id).toBe(
+        buildPushId({
+          url: REPO_2_URL,
+          branch: ref,
+          tags: repo2.tags,
+          commitFrom: oldCommit,
+          commitTo: newCommit,
+        }),
+      );
+    });
+
+    it('should derive different ids for the same push body sent to different refs', async () => {
+      const oldCommit = 'a'.repeat(40);
+
+      const spike = await parseWithRealAction(
+        REPO_1_URL,
+        buildBranchPushBody('refs/heads/spike', oldCommit),
+      );
+      const release = await parseWithRealAction(
+        REPO_1_URL,
+        buildBranchPushBody('refs/heads/release-x', oldCommit),
+      );
+
+      expect(spike.id).not.toBe(release.id);
+      expect(spike.id).toBe(
+        buildPushId({
+          url: REPO_1_URL,
+          branch: 'refs/heads/spike',
+          tags: spike.tags,
+          commitFrom: oldCommit,
+          commitTo: newCommit,
+        }),
+      );
+      expect(release.id).toBe(
+        buildPushId({
+          url: REPO_1_URL,
+          branch: 'refs/heads/release-x',
+          tags: release.tags,
+          commitFrom: oldCommit,
+          commitTo: newCommit,
+        }),
+      );
+    });
+
+    it('should compute the id from the raw ref-line oids even when commitFrom is rewritten for a new branch', async () => {
+      const ref = 'refs/heads/feature/new-branch';
+      const body = buildBranchPushBody(ref, EMPTY_COMMIT_HASH);
+
+      const parsed = await parseWithRealAction(REPO_1_URL, body);
+
+      // parsePush rewrites commitFrom to the parent of the last commit in the pack
+      expect(parsed.commitFrom).toBe('456');
+      expect(parsed.commitFrom).not.toBe(EMPTY_COMMIT_HASH);
+      // id still derived from the raw values on the ref line
+      expect(parsed.id).toBe(
+        buildPushId({
+          url: REPO_1_URL,
+          branch: ref,
+          tags: parsed.tags,
+          commitFrom: EMPTY_COMMIT_HASH,
+          commitTo: newCommit,
+        }),
+      );
+    });
+
+    describe('tag pushes', () => {
+      const TAG_1 = 'refs/tags/v1.0.0';
+      const TAG_2 = 'refs/tags/v2.0.0';
+      const TAG_OBJ_1 = 'a'.repeat(40);
+      const TAG_OBJ_2 = 'b'.repeat(40);
+      // a commit that already exists upstream, e.g. an old vulnerable release
+      const OLD_RELEASE_COMMIT = 'e'.repeat(40);
+      const tag1Content =
+        'object 1234567890abcdef1234567890abcdef12345678\n' +
+        'type commit\n' +
+        'tag v1.0.0\n' +
+        'tagger Tagger One <one@example.com> 1234567890 +0000\n\n' +
+        'Release v1.0.0';
+      const tag2Content =
+        'object abcdef1234567890abcdef1234567890abcdef12\n' +
+        'type commit\n' +
+        'tag v2.0.0\n' +
+        'tagger Tagger Two <two@example.com> 1234567891 +0000\n\n' +
+        'Release v2.0.0';
+
+      const buildTagPushBody = (refLines: string[], tagContents: string[]): Buffer =>
+        Buffer.concat([createPacketLineBuffer(refLines), createMultiTagPackBuffer(tagContents)]);
+
+      const parseExpectingRejection = async (body: Buffer): Promise<Action> => {
+        const realAction = new Action(
+          'initial-id',
+          RequestType.PUSH,
+          'POST',
+          1234567890,
+          REPO_1_URL,
+        );
+        const result = await exec({ body } as Request, realAction);
+        const step = result.steps.find((s) => s.stepName === 'parsePackFile');
+        expect(step?.error).toBe(true);
+        expect(step?.errorMessage).toContain('Multi-ref pushes are not supported');
+        return result;
+      };
+
+      it('should bind the id of a single-tag push to the object the tag points to', async () => {
+        const genuine = await parseWithRealAction(
+          REPO_1_URL,
+          buildTagPushBody(
+            [`${EMPTY_COMMIT_HASH} ${TAG_OBJ_1} ${TAG_1}\0capabilities\n`],
+            [tag1Content],
+          ),
+        );
+        const retargeted = await parseWithRealAction(
+          REPO_1_URL,
+          buildTagPushBody(
+            [`${EMPTY_COMMIT_HASH} ${OLD_RELEASE_COMMIT} ${TAG_1}\0capabilities\n`],
+            [tag1Content],
+          ),
+        );
+
+        expect(genuine.tags).toEqual(retargeted.tags);
+        expect(genuine.id).toBe(
+          buildPushId({
+            url: REPO_1_URL,
+            tags: [TAG_1],
+            commitFrom: EMPTY_COMMIT_HASH,
+            commitTo: TAG_OBJ_1,
+          }),
+        );
+        expect(retargeted.id).not.toBe(genuine.id);
+
+        genuine.authorised = true;
+        expect(pushWasApproved(genuine, retargeted)).toBe(false);
+      });
+
+      it('should reject a multi-tag push so that no ref can escape the commit range that is reviewed', async () => {
+        const genuine = await parseExpectingRejection(
+          buildTagPushBody(
+            [
+              `${EMPTY_COMMIT_HASH} ${TAG_OBJ_1} ${TAG_1}\0capabilities\n`,
+              `${EMPTY_COMMIT_HASH} ${TAG_OBJ_2} ${TAG_2}\n`,
+            ],
+            [tag1Content, tag2Content],
+          ),
+        );
+        // it never becomes a reviewable push
+        expect(genuine.id).toBe('initial-id');
+        expect(genuine.tags).toBeUndefined();
+
+        const replay = await parseExpectingRejection(
+          buildTagPushBody(
+            [
+              `${EMPTY_COMMIT_HASH} ${TAG_OBJ_1} ${TAG_1}\0capabilities\n`,
+              `${EMPTY_COMMIT_HASH} ${OLD_RELEASE_COMMIT} ${TAG_2}\n`,
+            ],
+            [tag1Content],
+          ),
+        );
+        expect(replay.id).toBe('initial-id');
+        expect(replay.tagData).toBeUndefined();
+      });
     });
   });
 
