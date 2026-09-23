@@ -508,7 +508,7 @@ The `postgres` backend stores `users`, `repos`, `pushes`, and the `connect-pg-si
 }
 ```
 
-If `connectionString` is omitted on the config entry, GitProxy falls back to the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable. This mirrors the behaviour of the mongo backend's `GIT_PROXY_MONGO_CONNECTION_STRING`.
+When set, the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable overrides the `connectionString` from the config file, following the same precedence as GitProxy's other environment variable overrides: environment variable, then user config, then the default config.
 
 ##### Connection options
 
@@ -518,7 +518,7 @@ Beyond `connectionString`, the `postgres` sink accepts discrete connection field
 - `ssl` - `true` for TLS with default certificate verification, or an object of TLS options (`rejectUnauthorized`, `ca`, `cert`, `key`, ...).
 - `pool` - pool tuning: `max`, `idleTimeoutMillis`, `connectionTimeoutMillis`.
 
-Connection precedence: `connectionString` (the config field, then `GIT_PROXY_POSTGRES_CONNECTION_STRING`) wins; otherwise the discrete fields are used; if neither is set, the standard `PGHOST` / `PGPORT` / `PGUSER` / `PGPASSWORD` / `PGDATABASE` environment variables are read by the client. `ssl` and `pool` are applied in all cases. If none of these resolve to a connection, GitProxy refuses to start rather than silently defaulting to `localhost`.
+Connection precedence: a connection string wins (`GIT_PROXY_POSTGRES_CONNECTION_STRING` if set, otherwise the `connectionString` config field); otherwise the discrete fields are used; if neither is set, the standard `PGHOST` / `PGPORT` / `PGUSER` / `PGPASSWORD` / `PGDATABASE` environment variables are read by the client. `ssl` and `pool` are applied in all cases. If none of these resolve to a connection, GitProxy refuses to start rather than silently defaulting to `localhost`.
 
 ```json
 {

@@ -91,6 +91,10 @@ const buildIamTokenProvider = (db: DatabaseConfig): (() => Promise<string>) => {
   };
 };
 
+/**
+ * Tests whether *any* discrete connection field is set. Those fields are ignored
+ * when a connection string is set.
+ */
 const hasDiscreteFields = (db: DatabaseConfig): boolean =>
   db.host !== undefined ||
   db.port !== undefined ||

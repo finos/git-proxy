@@ -539,11 +539,11 @@ export interface RateLimit {
  *
  * Connection properties for an neDB file-based database
  *
- * Connection properties for PostgreSQL. The `connectionString` may also be supplied via the
- * `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable. If neither a
- * `connectionString` nor the discrete `host`/`port`/`user`/`password`/`database` fields are
- * set, the standard `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` environment
- * variables are used.
+ * Connection properties for PostgreSQL. When set, the
+ * `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable overrides `connectionString`.
+ * If neither a `connectionString` nor the discrete
+ * `host`/`port`/`user`/`password`/`database` fields are set, the standard
+ * `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` environment variables are used.
  */
 export interface Database {
   /**
@@ -552,9 +552,10 @@ export interface Database {
    *
    * PostgreSQL client connection string, see
    * [https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING).
-   * If omitted, `GIT_PROXY_POSTGRES_CONNECTION_STRING` is used as a fallback, then the
-   * discrete fields below, then the `PG*` environment variables. Takes precedence over the
-   * discrete fields when set.
+   * Overridden by the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable when that
+   * is set, matching GitProxy's other environment variable overrides. If neither is set, the
+   * discrete fields below are used, then the `PG*` environment variables. Takes precedence
+   * over the discrete fields when set.
    */
   connectionString?: string;
   enabled: boolean;
@@ -638,7 +639,6 @@ export interface AwsIamAuth {
    * `AWS_DEFAULT_REGION` environment variables, then the AWS SDK's default region resolution.
    */
   region?: string;
-  [property: string]: any;
 }
 
 /**
@@ -677,7 +677,6 @@ export interface Pool {
    * Maximum number of clients the pool may hold.
    */
   max?: number;
-  [property: string]: any;
 }
 
 export enum DatabaseType {
@@ -1232,7 +1231,7 @@ const typeMap: any = {
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'region', js: 'region', typ: u(undefined, '') },
     ],
-    'any',
+    false,
   ),
   Options: o(
     [
@@ -1254,7 +1253,7 @@ const typeMap: any = {
       { json: 'idleTimeoutMillis', js: 'idleTimeoutMillis', typ: u(undefined, 3.14) },
       { json: 'max', js: 'max', typ: u(undefined, 3.14) },
     ],
-    'any',
+    false,
   ),
   SSH: o(
     [
