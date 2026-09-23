@@ -99,25 +99,28 @@ async function exec(req: Request, action: Action): Promise<Action> {
       };
     });
 
-    const allTags = parsedRefs.every((r) => r.isTag);
-
-    if (parsedRefs.length > 1 && !allTags) {
-      step.log(`Received ${parsedRefs.length} ref updates with mixed or multiple branch refs.`);
+    if (parsedRefs.length > 1) {
+      const kinds = parsedRefs.every((r) => r.isTag)
+        ? 'tags'
+        : parsedRefs.some((r) => r.isTag)
+          ? 'mixed branch and tag refs'
+          : 'branches';
+      step.log(`Received ${parsedRefs.length} ref updates (${kinds}).`);
       throw new Error(
-        'Your push has been blocked. Multi-ref pushes are only supported for tags. Please push one branch at a time.',
+        'Your push has been blocked. Multi-ref pushes are not supported. Please push a single branch or tag at a time.',
       );
     }
 
-    if (allTags) {
+    const [ref] = parsedRefs;
+    if (ref.isTag) {
       action.actionType = PushType.TAG;
-      action.tags = parsedRefs.map((r) => r.refName);
+      action.tags = [ref.refName];
     } else {
       action.actionType = PushType.BRANCH;
-      action.branch = parsedRefs[0].refName;
+      action.branch = ref.refName;
     }
 
-    // Use the first ref's commit range for the action id
-    action.setCommit(parsedRefs[0].oldCommit, parsedRefs[0].newCommit);
+    action.setCommit(ref.oldCommit, ref.newCommit);
 
     // Check if the offset is valid and if there's data after it
     if (packDataOffset >= req.body.length) {
