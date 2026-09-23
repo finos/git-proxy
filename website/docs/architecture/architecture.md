@@ -110,7 +110,7 @@ The default action chain, much like the pull chain, is only checking that the re
 
 After processors in the chain are done executing, [`audit`](processors.md#audit) is called to store the action along with all of its execution steps in the database for auditing purposes.
 
-If [`pullRemote`](processors.md#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](processors.md#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes involving the same SHA.
+If [`pullRemote`](processors.md#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](processors.md#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes with the same push ID.
 
 Finally, if the action was auto-approved or auto-rejected as a result of running [`preReceive`](processors.md#prereceive), it will attempt to auto-approve or auto-reject it.
 

@@ -16,5 +16,6 @@
 
 import type { Migration } from './index';
 import { populateRepoDates } from './populateRepoDates';
+import { refactorLegacyPushIds } from './refactorLegacyPushIds';
 
-export const migrations: Migration[] = [populateRepoDates];
+export const migrations: Migration[] = [populateRepoDates, refactorLegacyPushIds];

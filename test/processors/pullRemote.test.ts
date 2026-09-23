@@ -16,6 +16,7 @@
 
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { Action } from '../../src/proxy/actions/Action';
+import { PullRemoteBase } from '../../src/proxy/processors/push-action/PullRemoteBase';
 
 // Mock stubs that will be configured in beforeEach - use vi.hoisted to ensure they're available in mock factories
 const { fsStub, gitCloneStub, simpleGitCloneStub, simpleGitStub, childProcessStub } = vi.hoisted(
@@ -357,7 +358,7 @@ describe('pullRemote processor', () => {
       'git',
       expect.arrayContaining(['clone', '--depth', '1', '--single-branch']),
       expect.objectContaining({
-        cwd: `./.remote/${action.id}`,
+        cwd: `./.remote/${PullRemoteBase.checkoutDirName(action.id)}`,
         env: expect.objectContaining({
           GIT_SSH_COMMAND: expect.stringContaining('ssh -F'),
         }),
