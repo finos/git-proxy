@@ -20,11 +20,21 @@ export const REFS_PREFIX = 'refs/';
 export const BRANCH_PREFIX = 'refs/heads/';
 export const TAG_PREFIX = 'refs/tags/';
 export const EMPTY_COMMIT_HASH = '0000000000000000000000000000000000000000';
+// Matches a well-formed Git object ID (40-char lowercase hex).
+export const GIT_OBJECT_ID_REGEX = /^[0-9a-f]{40}$/;
 export const FLUSH_PACKET = '0000';
 export const PACK_SIGNATURE = 'PACK';
 export const PACKET_SIZE = 4;
 export const GIT_OBJECT_TYPE_COMMIT = 1;
 export const GIT_OBJECT_TYPE_TAG = 4;
+
+/** Bit mask for the seven bits used in variable length size encodings
+ * (size and ofs_delta offset) to encode the value. */
+export const SEVEN_BIT_MASK = 0x7f;
+/** Bit mask for the continuation bit (8th bit) used in the variable length
+ * size encodings (size and ofs_delta offsets) in Git object headers used in
+ * PACK files. */
+export const EIGHTH_BIT_MASK = 0x80;
 
 export const SAMPLE_COMMIT: CommitData = {
   tree: '1234567890',

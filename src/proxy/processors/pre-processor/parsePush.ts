@@ -24,12 +24,15 @@ import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '.
 import { TagData } from '../../../types/models';
 import {
   EMPTY_COMMIT_HASH,
+  GIT_OBJECT_ID_REGEX,
   REFS_PREFIX,
   TAG_PREFIX,
   PACK_SIGNATURE,
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
   GIT_OBJECT_TYPE_TAG,
+  SEVEN_BIT_MASK,
+  EIGHTH_BIT_MASK,
 } from '../../constants';
 import { parsePacketLines } from '../pktLineParser';
 import { getErrorMessage } from '../../../utils/errors';
@@ -40,13 +43,10 @@ if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir);
 }
 
-/** Bit mask for the seven bits used in variable length size encodings
- * (size and ofd_delta offset) to encode the value. */
-const SEVEN_BIT_MASK = 0x7f;
-/** Bit mask for the continuation bit (8th bit) used in the variable length
- * size encodings (size and ofs_delta offsets) in Git object headers used in
- * PACK files. */
-const EIGHTH_BIT_MASK = 0x80;
+// Validates a value is a well-formed Git object ID (40-char lowercase hex).
+export const isValidGitObjectId = (oid: string): boolean => {
+  return GIT_OBJECT_ID_REGEX.test(oid);
+};
 
 /**
  * Executes the parsing of a push request.
@@ -85,6 +85,11 @@ async function exec(req: Request, action: Action): Promise<Action> {
       if (parts.length !== 3) {
         throw new Error('Your push has been blocked. Invalid ref update format.');
       }
+      // Reject malformed commit IDs before they are used to build the action id and paths.
+      if (!isValidGitObjectId(parts[0]) || !isValidGitObjectId(parts[1])) {
+        throw new Error('Your push has been blocked. Invalid commit ID format.');
+      }
+
       const refName = parts[2].replace(/\0.*/, '').trim();
       return {
         oldCommit: parts[0],
@@ -94,25 +99,28 @@ async function exec(req: Request, action: Action): Promise<Action> {
       };
     });
 
-    const allTags = parsedRefs.every((r) => r.isTag);
-
-    if (parsedRefs.length > 1 && !allTags) {
-      step.log(`Received ${parsedRefs.length} ref updates with mixed or multiple branch refs.`);
+    if (parsedRefs.length > 1) {
+      const kinds = parsedRefs.every((r) => r.isTag)
+        ? 'tags'
+        : parsedRefs.some((r) => r.isTag)
+          ? 'mixed branch and tag refs'
+          : 'branches';
+      step.log(`Received ${parsedRefs.length} ref updates (${kinds}).`);
       throw new Error(
-        'Your push has been blocked. Multi-ref pushes are only supported for tags. Please push one branch at a time.',
+        'Your push has been blocked. Multi-ref pushes are not supported. Please push a single branch or tag at a time.',
       );
     }
 
-    if (allTags) {
+    const [ref] = parsedRefs;
+    if (ref.isTag) {
       action.actionType = PushType.TAG;
-      action.tags = parsedRefs.map((r) => r.refName);
+      action.tags = [ref.refName];
     } else {
       action.actionType = PushType.BRANCH;
-      action.branch = parsedRefs[0].refName;
+      action.branch = ref.refName;
     }
 
-    // Use the first ref's commit range for the action id
-    action.setCommit(parsedRefs[0].oldCommit, parsedRefs[0].newCommit);
+    action.setCommit(ref.oldCommit, ref.newCommit);
 
     // Check if the offset is valid and if there's data after it
     if (packDataOffset >= req.body.length) {
@@ -151,6 +159,11 @@ async function exec(req: Request, action: Action): Promise<Action> {
     } else if (action.actionType === PushType.BRANCH) {
       if (action.commitData.length && action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
+      }
+
+      // commitFrom may have been reassigned from PACK data above; re-validate it.
+      if (action.commitFrom && !isValidGitObjectId(action.commitFrom)) {
+        throw new Error('Your push has been blocked. Invalid commit ID format.');
       }
 
       if (req.user) {
