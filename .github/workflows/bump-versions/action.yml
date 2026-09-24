@@ -1,0 +1,45 @@
+name: Bump git-proxy versions
+description: Sets root and CLI package versions, patches lockfile
+inputs:
+  version:
+    description: Target version, X.Y.Z
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Bump package versions
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        npm pkg set "version=$VERSION"
+        npm pkg set "version=$VERSION" --workspace @finos/git-proxy-cli
+        npm pkg set "dependencies.@finos/git-proxy=$VERSION" --workspace @finos/git-proxy-cli
+
+    - name: Patch lockfile versions
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: node scripts/patch-lockfile-version.js
+
+    - name: Guard against unexpected changes
+      shell: bash
+      run: |
+        UNEXPECTED=$(git diff --name-only | grep -vE '^(package\.json|package-lock\.json|packages/git-proxy-cli/package\.json)$' || true)
+        if [ -n "$UNEXPECTED" ]; then
+          echo "::error::A version bump modified files it shouldn't have:"
+          echo "$UNEXPECTED"
+          exit 1
+        fi
+
+        CHANGED=$(git diff --numstat -- package-lock.json | awk '{print $1 + $2}')
+        CHANGED=${CHANGED:-0}
+        echo "package-lock.json changed lines: $CHANGED"
+        if [ "$CHANGED" -gt 12 ]; then
+          echo "::error::package-lock.json changed $CHANGED lines; a version bump should touch eight. Refusing to open the PR."
+          git --no-pager diff --stat -- package-lock.json
+          git --no-pager diff -- package-lock.json | head -n 120
+          exit 1
+        fi
+
+        git --no-pager diff -- package.json package-lock.json packages/git-proxy-cli/package.json
