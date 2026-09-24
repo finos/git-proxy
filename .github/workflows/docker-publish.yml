@@ -53,3 +53,5 @@ jobs:
           push: true
           tags: ${{ steps.tags.outputs.tags }}
           provenance: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
