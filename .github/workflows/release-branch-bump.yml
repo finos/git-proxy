@@ -94,19 +94,19 @@ jobs:
             exit 1
           fi
 
-      - name: Bump package versions
+      - name: Check if version tag already exists
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          npm pkg set "version=$VERSION"
-          npm pkg set "version=$VERSION" --workspace @finos/git-proxy-cli
-          npm pkg set "dependencies.@finos/git-proxy=$VERSION" --workspace @finos/git-proxy-cli
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::Version v$VERSION already exists"
+            exit 1
+          fi
 
-      - name: Patch lockfile versions
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          # same node -e script as bump-version.yml
+      - name: Bump versions
+        uses: ./.github/actions/bump-versions
+        with:
+          version: ${{ steps.version.outputs.version }}
 
       - name: Open patch bump PR
         env:
