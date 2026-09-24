@@ -42,6 +42,7 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'attestationConfig',
   'authentication',
   'authorisedList',
+  'cache',
   'commitConfig',
   'configurationSources',
   'contactEmail',
@@ -214,6 +215,9 @@ function mergeConfigurations(
     commitConfig: { ...defaultConfig.commitConfig, ...userSettings.commitConfig },
     attestationConfig: { ...defaultConfig.attestationConfig, ...userSettings.attestationConfig },
     rateLimit: userSettings.rateLimit || defaultConfig.rateLimit,
+    cache: userSettings.cache
+      ? { ...defaultConfig.cache, ...userSettings.cache }
+      : defaultConfig.cache,
     tls: tlsConfig,
     tempPassword: { ...defaultConfig.tempPassword, ...userSettings.tempPassword },
     ssh: {
@@ -380,6 +384,7 @@ export const logConfiguration = () => {
   console.log(`data sink = ${JSON.stringify(getDatabase())}`);
   console.log(`authentication = ${JSON.stringify(getAuthMethods())}`);
   console.log(`rateLimit = ${JSON.stringify(getRateLimit())}`);
+  console.log(`cache = ${JSON.stringify(getCacheConfig())}`);
 };
 
 export const getAPIs = () => {
@@ -472,6 +477,20 @@ export const getUIRouteAuth = () => {
 export const getRateLimit = () => {
   const config = loadFullConfiguration();
   return config.rateLimit;
+};
+
+export const getCacheConfig = () => {
+  const config = loadFullConfiguration();
+  return config.cache;
+};
+
+/**
+ * Whether the bare repository cache is enabled. When disabled (the default),
+ * each push clones directly from the remote.
+ * @return {boolean} true when the cache should be used
+ */
+export const isCacheEnabled = (): boolean => {
+  return getCacheConfig()?.enabled === true;
 };
 
 export const getMaxPackSizeBytes = (): number => {

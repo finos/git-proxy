@@ -17,8 +17,11 @@
 import { Request } from 'express';
 
 import { Action } from '../../actions';
+import * as config from '../../../config';
 import { PullRemoteHTTPS } from './PullRemoteHTTPS';
 import { PullRemoteSSH } from './PullRemoteSSH';
+import { PullRemoteHTTPSCached } from './PullRemoteHTTPSCached';
+import { PullRemoteSSHCached } from './PullRemoteSSHCached';
 import { PullRemoteBase } from './PullRemoteBase';
 
 /**
@@ -27,8 +30,13 @@ import { PullRemoteBase } from './PullRemoteBase';
  * Strategy:
  * - SSH protocol requires agent forwarding (no fallback)
  * - HTTPS protocol uses Basic Auth credentials
+ * - When the bare repository cache is enabled, the cached variant of the
+ *   protocol implementation is used; when it is disabled (the default) the
+ *   uncached ones are returned unchanged.
  */
-function createPullRemote(req: Request, action: Action): PullRemoteBase {
+export function createPullRemote(req: Request, action: Action): PullRemoteBase {
+  const cached = config.isCacheEnabled();
+
   if (action.protocol === 'ssh') {
     if (!req?.sshClient?.agentForwardingEnabled || !req?.sshClient) {
       throw new Error(
@@ -36,10 +44,10 @@ function createPullRemote(req: Request, action: Action): PullRemoteBase {
           'Please ensure your SSH client is configured with agent forwarding (ssh -A).',
       );
     }
-    return new PullRemoteSSH();
+    return cached ? new PullRemoteSSHCached() : new PullRemoteSSH();
   }
 
-  return new PullRemoteHTTPS();
+  return cached ? new PullRemoteHTTPSCached() : new PullRemoteHTTPS();
 }
 
 /**
