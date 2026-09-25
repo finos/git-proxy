@@ -16,6 +16,12 @@
       "url": "https://github.com/finos/git-proxy.git"
     }
   ],
+  "limits": {
+    "maxDecompressedPackSizeBytes": 134217728,
+    "maxDecompressedObjectSizeBytes": 67108864,
+    "maxPackExpansionRatio": 100,
+    "maxPackObjects": 100000
+  },
   "sink": [
     {
       "type": "fs",

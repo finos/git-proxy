@@ -291,6 +291,29 @@
         "$ref": "#/definitions/authorisedRepo"
       }
     },
+    "limits": {
+      "description": "Configuration for various limits",
+      "type": "object",
+      "properties": {
+        "maxDecompressedPackSizeBytes": {
+          "type": "number",
+          "description": "Maximum total decompressed size of all objects in a pack file in bytes (default 128MB)."
+        },
+        "maxDecompressedObjectSizeBytes": {
+          "type": "number",
+          "description": "Maximum decompressed size of a single object in a pack file in bytes (default 64MB). Capped by maxDecompressedPackSizeBytes."
+        },
+        "maxPackExpansionRatio": {
+          "type": "number",
+          "description": "Maximum allowed expansion ratio (decompressed/compressed size) of a pack file (default 100)."
+        },
+        "maxPackObjects": {
+          "type": "number",
+          "description": "Maximum number of objects in a pack file (default 100,000)."
+        }
+      },
+      "additionalProperties": false
+    },
     "sink": {
       "description": "List of database sources. The first source in the configuration with enabled=true will be used.",
       "type": "array",
