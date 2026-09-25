@@ -306,6 +306,36 @@ describe('user configuration', () => {
     expect(config.getDatabase().connectionString).toBe('mongodb://example.com:27017/test');
   });
 
+  it('should let the postgres connection string env var override the config file', async () => {
+    const user = {
+      sink: [
+        { type: 'postgres', enabled: true, connectionString: 'postgresql://config-host/gitproxy' },
+      ],
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+    process.env.GIT_PROXY_POSTGRES_CONNECTION_STRING = 'postgresql://env-host/gitproxy';
+
+    const config = await import('../src/config');
+    config.invalidateCache();
+
+    expect(config.getDatabase().connectionString).toBe('postgresql://env-host/gitproxy');
+  });
+
+  it('should use the postgres connection string from the config file when the env var is unset', async () => {
+    const user = {
+      sink: [
+        { type: 'postgres', enabled: true, connectionString: 'postgresql://config-host/gitproxy' },
+      ],
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+    delete process.env.GIT_PROXY_POSTGRES_CONNECTION_STRING;
+
+    const config = await import('../src/config');
+    config.invalidateCache();
+
+    expect(config.getDatabase().connectionString).toBe('postgresql://config-host/gitproxy');
+  });
+
   it('should use config file defaults for server settings when no env var is set', async () => {
     fs.writeFileSync(tempUserFile, '{}');
     delete process.env.GIT_PROXY_SERVER_PORT;
