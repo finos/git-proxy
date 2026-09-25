@@ -22,7 +22,11 @@
     }
   ],
   "limits": {
-    "maxPackSizeBytes": 1073741824
+    "maxPackSizeBytes": 1073741824,
+    "maxDecompressedPackSizeBytes": 134217728,
+    "maxDecompressedObjectSizeBytes": 67108864,
+    "maxPackExpansionRatio": 100,
+    "maxPackObjects": 100000
   },
   "scmProviders": [
     {

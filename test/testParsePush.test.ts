@@ -445,6 +445,157 @@ describe('parsePackFile', () => {
         getContents(brokenContentBuffer, TEST_MULTI_OBJ_COMMIT_CONTENT.length),
       ).rejects.toThrowError(/Error during/);
     });
+
+    it('should reject a PACK object with excessive decompression amplification', async () => {
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'author Test <test@example.com> 1234567890 +0000\n' +
+        'committer Test <test@example.com> 1234567890 +0000\n\n' +
+        'A'.repeat(128 * 1024);
+      const packBuffer = createSamplePackBuffer(1, commitContent);
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      await expect(getContents(contentBuffer, 1)).rejects.toThrowError(
+        /decompressed size exceeds the safety limit/,
+      );
+    });
+
+    it('should reject a PACK object that inflates past its declared size', async () => {
+      const inflated = 'A'.repeat(2048);
+      const compressed = deflateSync(Buffer.from(inflated, 'utf8'));
+      const lyingHeader = encodeGitObjectHeader(1, 16);
+      const packHeader = Buffer.alloc(12);
+      packHeader.write(PACK_SIGNATURE, 0, 4, 'utf-8');
+      packHeader.writeUInt32BE(2, 4);
+      packHeader.writeUInt32BE(1, 8);
+      const packWithoutChecksum = Buffer.concat([packHeader, lyingHeader, compressed]);
+      const checksum = createHash('sha1').update(packWithoutChecksum).digest();
+      const [, contentBuffer] = getPackMeta(Buffer.concat([packWithoutChecksum, checksum]));
+
+      await expect(getContents(contentBuffer, 1)).rejects.toThrowError(
+        /exceeds its declared size|does not match its declared size|Error during inflation/,
+      );
+    });
+
+    it('should reject a PACK whose header declares too many objects', async () => {
+      const packBuffer = createSamplePackBuffer(100_001);
+      const [packMeta, contentBuffer] = getPackMeta(packBuffer);
+
+      expect(packMeta.entries).toBe(100_001);
+      await expect(getContents(contentBuffer, packMeta.entries)).rejects.toThrowError(
+        /object count exceeds the safety limit/,
+      );
+    });
+
+    it('should reject extra PACK objects beyond the configured object limit', async () => {
+      const packBuffer = createMultiObjectSamplePackBuffer();
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      await expect(getContents(contentBuffer, 1, { maxPackObjects: 2 })).rejects.toThrowError(
+        /object count exceeds the safety limit/,
+      );
+    });
+
+    it('should reject a PACK whose declared object count exceeds maxPackObjects', async () => {
+      const packBuffer = createSamplePackBuffer();
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      await expect(getContents(contentBuffer, 3, { maxPackObjects: 2 })).rejects.toThrowError(
+        /object count exceeds the safety limit/,
+      );
+    });
+
+    it('should reject a single object larger than the per-object limit', async () => {
+      const packBuffer = createSamplePackBuffer();
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      await expect(
+        getContents(contentBuffer, 1, { maxDecompressedObjectSizeBytes: 16 }),
+      ).rejects.toThrowError(/object decompressed size exceeds the safety limit/);
+    });
+
+    it('should reject multiple objects that together exceed the cumulative budget', async () => {
+      const packBuffer = createMultiObjectSamplePackBuffer();
+      const [, contentBuffer] = getPackMeta(packBuffer);
+      const firstSize = Buffer.byteLength(TEST_MULTI_OBJ_COMMIT_CONTENT[0].content);
+      const secondSize = Buffer.byteLength(TEST_MULTI_OBJ_COMMIT_CONTENT[1].content);
+      // Room for the first object but not for both.
+      const maxDecompressedPackSizeBytes = firstSize + secondSize - 1;
+
+      await expect(
+        getContents(contentBuffer, TEST_MULTI_OBJ_COMMIT_CONTENT.length, {
+          maxDecompressedPackSizeBytes,
+        }),
+      ).rejects.toThrowError(/PACK decompressed size exceeds the safety limit/);
+    });
+
+    it('should reject a compressible PACK when the configured expansion ratio is too low', async () => {
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'author Test <test@example.com> 1234567890 +0000\n' +
+        'committer Test <test@example.com> 1234567890 +0000\n\n' +
+        'A'.repeat(2 * 1024);
+      const packBuffer = createSamplePackBuffer(1, commitContent);
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      await expect(
+        getContents(contentBuffer, 1, { maxPackExpansionRatio: 2 }),
+      ).rejects.toThrowError(/decompressed size exceeds the safety limit/);
+    });
+
+    it('should accept a compressible PACK when the configured expansion ratio allows it', async () => {
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'author Test <test@example.com> 1234567890 +0000\n' +
+        'committer Test <test@example.com> 1234567890 +0000\n\n' +
+        'A'.repeat(128 * 1024);
+      const packBuffer = createSamplePackBuffer(1, commitContent);
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      const entries = await getContents(contentBuffer, 1, { maxPackExpansionRatio: 10_000 });
+      expect(entries).toHaveLength(1);
+      expect(entries[0].content).toBe(commitContent);
+    });
+
+    it('should not let trailing padding raise the decompression allowance', async () => {
+      // A tiny payload behind a header declaring 256 MiB, followed by padding that would
+      // otherwise buy a 100x expansion allowance against the size of the request body.
+      const compressed = deflateSync(Buffer.from('A'.repeat(64), 'utf8'));
+      const lyingHeader = encodeGitObjectHeader(1, 256 * 1024 * 1024);
+      const packHeader = Buffer.alloc(12);
+      packHeader.write(PACK_SIGNATURE, 0, 4, 'utf-8');
+      packHeader.writeUInt32BE(2, 4);
+      packHeader.writeUInt32BE(1, 8);
+      const padding = Buffer.alloc(8 * 1024 * 1024, 0x41);
+      const [, contentBuffer] = getPackMeta(
+        Buffer.concat([packHeader, lyingHeader, compressed, padding]),
+      );
+
+      await expect(getContents(contentBuffer, 1)).rejects.toThrowError(
+        /object decompressed size exceeds the safety limit/,
+      );
+    });
+
+    it('should log object metadata without logging decompressed contents', async () => {
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        const commitContent =
+          'tree 1234567890abcdef1234567890abcdef12345678\n' +
+          'author Test <test@example.com> 1234567890 +0000\n' +
+          'committer Test <test@example.com> 1234567890 +0000\n\n' +
+          'SENSITIVE-PAYLOAD';
+        const packBuffer = createSamplePackBuffer(1, commitContent);
+        const [, contentBuffer] = getPackMeta(packBuffer);
+
+        await getContents(contentBuffer, 1);
+
+        const logged = logSpy.mock.calls.flat().join('\n');
+        expect(logged).not.toContain('SENSITIVE-PAYLOAD');
+        expect(logged).toContain('commit=1');
+      } finally {
+        logSpy.mockRestore();
+      }
+    });
   });
 
   describe('exec', () => {
@@ -534,6 +685,28 @@ describe('parsePackFile', () => {
       expect(action.branch).toBe(ref);
       expect(action.setCommit).toHaveBeenCalledOnce();
       expect(action.setCommit).toHaveBeenCalledWith(oldCommit, newCommit);
+    });
+
+    it('should add error step if PACK decompression exceeds the safety limit', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/main';
+      const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'parent abcdef1234567890abcdef1234567890abcdef12\n' +
+        'author Test Author <author@example.com> 1234567890 +0000\n' +
+        'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
+        'A'.repeat(128 * 1024);
+      const packBuffer = createSamplePackBuffer(1, commitContent, 1);
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
+
+      const result = await exec(req, action);
+      const step = result.steps[0];
+
+      expect(step.error).toBe(true);
+      expect(step.errorMessage).toContain('decompressed size exceeds the safety limit');
+      expect(result.commitData).toEqual([]);
     });
 
     it('should successfully parse a valid push request (simulated)', async () => {
@@ -1750,6 +1923,13 @@ describe('parsePackFile', () => {
       // 0008 -> length 8, but buffer ends after header (no content)
       const incompleteBuffer = Buffer.from('0008');
       expect(() => parsePacketLines(incompleteBuffer)).toThrow(/Invalid packet line length 0008/);
+    });
+
+    it('should reject an excessive number of packet lines', () => {
+      const lines = ['line1', 'line2', 'line3'];
+      const buffer = createPacketLineBuffer(lines);
+
+      expect(() => parsePacketLines(buffer, 2)).toThrow(/Too many packet lines/);
     });
   });
 

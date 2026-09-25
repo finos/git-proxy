@@ -22,7 +22,7 @@ import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
 import { getConfigFile } from './file';
-import { GIGABYTE } from '../constants';
+import { GIGABYTE, MEGABYTE } from '../constants';
 import { validateConfig } from './validators';
 import { getDeprecatedConfigWarnings } from './deprecatedFields';
 import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
@@ -475,11 +475,7 @@ export const getRateLimit = () => {
   return config.rateLimit;
 };
 
-export const getMaxPackSizeBytes = (): number => {
-  const config = loadFullConfiguration();
-  const configuredValue = config.limits?.maxPackSizeBytes;
-  const fallback = 1 * GIGABYTE; // 1 GiB default
-
+const resolveLimit = (configuredValue: number | undefined, fallback: number): number => {
   if (
     typeof configuredValue === 'number' &&
     Number.isFinite(configuredValue) &&
@@ -489,6 +485,31 @@ export const getMaxPackSizeBytes = (): number => {
   }
 
   return fallback;
+};
+
+export const getMaxPackSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackSizeBytes, 1 * GIGABYTE);
+};
+
+export const getMaxDecompressedPackSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxDecompressedPackSizeBytes, 128 * MEGABYTE);
+};
+
+export const getMaxDecompressedObjectSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxDecompressedObjectSizeBytes, 64 * MEGABYTE);
+};
+
+export const getMaxPackExpansionRatio = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackExpansionRatio, 100);
+};
+
+export const getMaxPackObjects = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackObjects, 100_000);
 };
 
 /**

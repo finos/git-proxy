@@ -510,6 +510,25 @@ export interface Domains {
  */
 export interface Limits {
   /**
+   * Maximum decompressed size of a single object in a pack file in bytes (default 64MB).
+   * Capped by maxDecompressedPackSizeBytes.
+   */
+  maxDecompressedObjectSizeBytes?: number;
+  /**
+   * Maximum total decompressed size of all objects in a pack file in bytes (default 128MB).
+   * Set to a value lower than maxPackSizeBytes to prevent memory exhaustion.
+   */
+  maxDecompressedPackSizeBytes?: number;
+  /**
+   * Maximum allowed expansion ratio (decompressed/compressed size) of a pack file (default
+   * 100).
+   */
+  maxPackExpansionRatio?: number;
+  /**
+   * Maximum number of objects in a pack file (default 100,000).
+   */
+  maxPackObjects?: number;
+  /**
    * Maximum size of a pack file in bytes (default 1GB)
    */
   maxPackSizeBytes?: number;
@@ -1132,7 +1151,24 @@ const typeMap: any = {
     ],
     'any',
   ),
-  Limits: o([{ json: 'maxPackSizeBytes', js: 'maxPackSizeBytes', typ: u(undefined, 3.14) }], false),
+  Limits: o(
+    [
+      {
+        json: 'maxDecompressedObjectSizeBytes',
+        js: 'maxDecompressedObjectSizeBytes',
+        typ: u(undefined, 3.14),
+      },
+      {
+        json: 'maxDecompressedPackSizeBytes',
+        js: 'maxDecompressedPackSizeBytes',
+        typ: u(undefined, 3.14),
+      },
+      { json: 'maxPackExpansionRatio', js: 'maxPackExpansionRatio', typ: u(undefined, 3.14) },
+      { json: 'maxPackObjects', js: 'maxPackObjects', typ: u(undefined, 3.14) },
+      { json: 'maxPackSizeBytes', js: 'maxPackSizeBytes', typ: u(undefined, 3.14) },
+    ],
+    false,
+  ),
   RateLimit: o(
     [
       { json: 'limit', js: 'limit', typ: 3.14 },

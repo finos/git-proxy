@@ -1135,6 +1135,38 @@ description: JSON schema reference documentation for GitProxy
 </blockquote>
 </details>
 
+<details>
+<summary>
+<strong> <a name="limits_maxDecompressedPackSizeBytes"></a>21.2. [Optional] Property GitProxy configuration file > limits > maxDecompressedPackSizeBytes</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** Maximum total decompressed size of all objects in a pack file in bytes (default 128MB). Parsing a pack holds the decompressed objects in memory, so this is much lower than maxPackSizeBytes.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="limits_maxDecompressedObjectSizeBytes"></a>21.3. [Optional] Property GitProxy configuration file > limits > maxDecompressedObjectSizeBytes</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** Maximum decompressed size of a single object in a pack file in bytes (default 64MB). Capped by maxDecompressedPackSizeBytes.
+
+</blockquote>
+</details>
+
 </blockquote>
 </details>
 
