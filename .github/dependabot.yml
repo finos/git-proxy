@@ -15,7 +15,12 @@ updates:
       - 'dependencies'
       - 'automated'
     groups:
+      github-actions-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
       github-actions:
+        applies-to: version-updates
         patterns:
           - '*'
 
@@ -35,6 +40,7 @@ updates:
       - 'automated'
     groups:
       docker:
+        applies-to: version-updates
         patterns:
           - '*'
 
@@ -49,6 +55,7 @@ updates:
       interval: weekly
     versioning-strategy: increase-if-necessary
     cooldown:
+      # Only applies to version updates (security updates are never delayed)
       semver-patch-days: 3
       semver-minor-days: 3
       semver-major-days: 7
@@ -60,7 +67,12 @@ updates:
       - 'dependencies'
       - 'automated'
     groups:
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
       npm-non-major:
+        applies-to: version-updates
         patterns:
           - '*'
         update-types:
