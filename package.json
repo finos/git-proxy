@@ -202,7 +202,7 @@
     "tailwindcss": "^4.2.2",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.61.1",
     "vite": "^8.0.14",
     "vite-tsconfig-paths": "^6.1.1",
