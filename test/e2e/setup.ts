@@ -17,6 +17,9 @@
 import { beforeAll } from 'vitest';
 import { execSync } from 'child_process';
 
+// The Forgejo test server presents a self-signed certificate.
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
 // Environment configuration - can be overridden for different environments
 export const testConfig = {
   gitProxyUrl: process.env.GIT_PROXY_URL || 'http://localhost:8000/git-server:8443',
@@ -24,8 +27,13 @@ export const testConfig = {
   gitServerUrl: process.env.GIT_SERVER_URL || 'https://localhost:8443',
   timeout: parseInt(process.env.E2E_TIMEOUT || '30000'),
   // Git credentials for authentication
-  gitUsername: process.env.GIT_USERNAME || 'admin',
+  // The seeded Forgejo site admin (test/e2e/forgejo/seed.sh). Not `admin`: Forgejo reserves it.
+  gitUsername: process.env.GIT_USERNAME || 'gitadmin',
   gitPassword: process.env.GIT_PASSWORD || 'admin123',
+  // Access token for gitUsername, minted in beforeAll. Pushes must present a token rather than a
+  // password: the proxy resolves the pusher by asking the upstream's identity API who the token
+  // belongs to, and Forgejo's API does not accept a password in that position.
+  gitToken: '',
   // Base URL for git credential configuration (without credentials)
   // Should match the protocol and host of gitProxyUrl
   gitProxyBaseUrl:
@@ -39,6 +47,31 @@ const INFRA_HINT =
   'The E2E test infrastructure is not running. ' +
   'Start it with: docker compose up -d\n' +
   'See CONTRIBUTING.md for details.';
+
+/**
+ * Mints a Forgejo access token for a seeded user from their password. Forgejo allows this with plain
+ * basic auth on the tokens endpoint, so the suite never needs a token handed to it by the seed.
+ * Token names must be unique per user, so each run mints its own.
+ */
+export async function mintUpstreamToken(username: string, password: string): Promise<string> {
+  const response = await fetch(`${testConfig.gitServerUrl}/api/v1/users/${username}/tokens`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
+    },
+    body: JSON.stringify({
+      name: `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      scopes: ['write:repository', 'read:user'],
+    }),
+    signal: AbortSignal.timeout(10000),
+  });
+  if (!response.ok) {
+    throw new Error(`Could not mint a token for ${username}: HTTP ${response.status}`);
+  }
+  const { sha1 } = (await response.json()) as { sha1: string };
+  return sha1;
+}
 
 /**
  * Verifies GitProxy is reachable by hitting its healthcheck endpoint.
@@ -104,6 +137,9 @@ beforeAll(async () => {
   // waiting through retries when the Docker environment isn't running.
   await checkGitProxy();
   checkGitServer();
+
+  testConfig.gitToken = await mintUpstreamToken(testConfig.gitUsername, testConfig.gitPassword);
+  console.log(`Minted an upstream token for ${testConfig.gitUsername}`);
 
   console.log('E2E test environment is ready');
 }, testConfig.timeout);

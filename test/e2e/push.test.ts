@@ -16,7 +16,7 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { execSync } from 'child_process';
-import { testConfig } from './setup';
+import { mintUpstreamToken, testConfig } from './setup';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -24,7 +24,7 @@ import os from 'os';
 describe('Git Proxy E2E - Repository Push Tests', () => {
   const tempDir: string = path.join(os.tmpdir(), 'git-proxy-push-e2e-tests', Date.now().toString());
 
-  // Test users matching the localgit Apache basic auth setup
+  // Test users matching the Forgejo seed (test/e2e/forgejo/seed.sh)
   const adminUser = {
     username: 'admin',
     password: 'admin', // Default admin password in git-proxy
@@ -34,14 +34,14 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
     username: 'testuser',
     password: 'user123',
     email: 'testuser@example.com',
-    gitAccount: 'testuser', // matches git commit author
+    // Upstream access token, minted in beforeAll; pushes present this, not the password.
+    upstreamToken: '',
   };
 
   const approverUser = {
     username: 'approver',
     password: 'approver123',
     email: 'approver@example.com',
-    gitAccount: 'approver',
   };
 
   /**
@@ -95,7 +95,6 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
     username: string,
     password: string,
     email: string,
-    gitAccount: string,
     admin: boolean = false,
   ): Promise<void> {
     const response = await fetch(`${testConfig.gitProxyUiUrl}/api/auth/create-user`, {
@@ -104,12 +103,39 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
         'Content-Type': 'application/json',
         Cookie: sessionCookie,
       },
-      body: JSON.stringify({ username, password, email, gitAccount, admin }),
+      // the git server authenticates the same username, so link it as the
+      // user's identity on the 'git-server' provider
+      body: JSON.stringify({
+        username,
+        password,
+        email,
+        admin,
+        scmIdentities: { 'git-server': username },
+      }),
     });
 
     if (!response.ok) {
       const error = await response.text();
       throw new Error(`Create user failed: ${response.status} - ${error}`);
+    }
+  }
+
+  /**
+   * Helper to (re)link a user's git-server identity, for users that already existed
+   */
+  async function linkGitServerIdentity(sessionCookie: string, username: string): Promise<void> {
+    const response = await fetch(`${testConfig.gitProxyUiUrl}/api/auth/scm-identity`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: sessionCookie,
+      },
+      body: JSON.stringify({ username, provider: 'git-server', login: username }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Link identity failed: ${response.status} - ${error}`);
     }
   }
 
@@ -230,13 +256,13 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
           authorizedUser.username,
           authorizedUser.password,
           authorizedUser.email,
-          authorizedUser.gitAccount,
           false,
         );
         console.log(`[SETUP] Created user ${authorizedUser.username}`);
       } catch (error: any) {
         if (error.message?.includes('already exists')) {
           console.log(`[SETUP] User ${authorizedUser.username} already exists`);
+          await linkGitServerIdentity(adminCookie, authorizedUser.username);
         } else {
           throw error;
         }
@@ -249,7 +275,6 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
           approverUser.username,
           approverUser.password,
           approverUser.email,
-          approverUser.gitAccount,
           false,
         );
         console.log(`[SETUP] Created user ${approverUser.username}`);
@@ -273,11 +298,24 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
 
         await addUserCanAuthorise(adminCookie, testRepo._id, approverUser.username);
         console.log(`[SETUP] Added authorise permission for ${approverUser.username} to test-repo`);
+
+        // The pusher is an approver too, so the self-approval check is exercised against a user
+        // who would otherwise be allowed to approve, not someone lacking the permission.
+        await addUserCanAuthorise(adminCookie, testRepo._id, authorizedUser.username);
+        console.log(
+          `[SETUP] Added authorise permission for ${authorizedUser.username} to test-repo`,
+        );
       } else {
         console.warn(
           '[SETUP] WARNING: test-repo not found in database, user may not be able to push',
         );
       }
+
+      authorizedUser.upstreamToken = await mintUpstreamToken(
+        authorizedUser.username,
+        authorizedUser.password,
+      );
+      console.log(`[SETUP] Minted an upstream token for ${authorizedUser.username}`);
 
       console.log('[SETUP] User setup complete');
     } catch (error: any) {
@@ -294,7 +332,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
         // Build URL with embedded credentials for reliable authentication
         const baseUrl = new URL(testConfig.gitProxyUrl);
         baseUrl.username = testConfig.gitUsername;
-        baseUrl.password = testConfig.gitPassword;
+        baseUrl.password = testConfig.gitToken;
         const repoUrl = `${baseUrl.toString()}/test-owner/test-repo.git`;
         const cloneDir: string = path.join(tempDir, 'test-repo-push');
 
@@ -416,7 +454,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
         // Build URL with authorized user credentials
         const baseUrl = new URL(testConfig.gitProxyUrl);
         baseUrl.username = authorizedUser.username;
-        baseUrl.password = authorizedUser.password;
+        baseUrl.password = authorizedUser.upstreamToken;
         const repoUrl = `${baseUrl.toString()}/test-owner/test-repo.git`;
         const cloneDir: string = path.join(tempDir, 'test-repo-authorized-push');
 
@@ -442,7 +480,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
 
           // Step 2: Configure git user to match authorized user
           console.log('[TEST] Step 2: Configuring git author to match authorized user...');
-          execSync(`git config user.name "${authorizedUser.gitAccount}"`, {
+          execSync(`git config user.name "${authorizedUser.username}"`, {
             cwd: cloneDir,
             encoding: 'utf8',
           });
@@ -573,12 +611,12 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
     );
 
     it(
-      'should successfully push, approve, and complete the push workflow',
+      'should block the pusher approving their own push, then complete the approve and re-push workflow',
       async () => {
         // Build URL with authorized user credentials
         const baseUrl = new URL(testConfig.gitProxyUrl);
         baseUrl.username = authorizedUser.username;
-        baseUrl.password = authorizedUser.password;
+        baseUrl.password = authorizedUser.upstreamToken;
         const repoUrl = `${baseUrl.toString()}/test-owner/test-repo.git`;
         const cloneDir: string = path.join(tempDir, 'test-repo-approved-push');
 
@@ -604,7 +642,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
 
           // Step 2: Configure git user
           console.log('[TEST] Step 2: Configuring git author...');
-          execSync(`git config user.name "${authorizedUser.gitAccount}"`, {
+          execSync(`git config user.name "${authorizedUser.username}"`, {
             cwd: cloneDir,
             encoding: 'utf8',
           });
@@ -667,10 +705,6 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
           expect(pushId).toBeTruthy();
           console.log(`[TEST] SUCCESS: Push queued for approval with ID: ${pushId}`);
 
-          // Step 6: Login as approver and approve the push
-          console.log('[TEST] Step 6: Approving push as authorized approver...');
-          const approverCookie = await login(approverUser.username, approverUser.password);
-
           const defaultQuestions = [
             {
               label: 'I am happy for this to be pushed to the upstream repository',
@@ -679,11 +713,28 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
             },
           ];
 
+          // Step 6: The pusher, who is also an approver on this repo, must not be able to approve
+          // their own push. The pusher was identified from the upstream token, so this is the
+          // four-eyes rule applied to the identity the proxy resolved, not to anything the client
+          // wrote into the commits.
+          console.log('[TEST] Step 6: Attempting self-approval as the pusher...');
+          const pusherCookie = await login(authorizedUser.username, authorizedUser.password);
+          await expect(approvePush(pusherCookie, pushId!, defaultQuestions)).rejects.toThrow(
+            /403.*Cannot approve your own changes/,
+          );
+          console.log(
+            `[TEST] SUCCESS: ${authorizedUser.username} was refused approval of their own push`,
+          );
+
+          // Step 7: Login as approver and approve the push
+          console.log('[TEST] Step 7: Approving push as authorized approver...');
+          const approverCookie = await login(approverUser.username, approverUser.password);
+
           await approvePush(approverCookie, pushId!, defaultQuestions);
           console.log(`[TEST] SUCCESS: Push ${pushId} approved by ${approverUser.username}`);
 
-          // Step 7: Re-push after approval (should succeed)
-          console.log('[TEST] Step 7: Re-pushing after approval...');
+          // Step 8: Re-push after approval (should succeed)
+          console.log('[TEST] Step 8: Re-pushing after approval...');
           let finalPushOutput = '';
           let finalPushSucceeded = false;
 

@@ -98,7 +98,6 @@ export class SSHServer {
       protocol: 'ssh' as const,
       username: client.authenticatedUser?.username,
       email: client.authenticatedUser?.email,
-      gitAccount: client.authenticatedUser?.gitAccount,
       clientIp: client.clientIp,
       agentForwardingEnabled: client.agentForwardingEnabled || false,
     };

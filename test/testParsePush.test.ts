@@ -568,8 +568,8 @@ describe('parsePackFile', () => {
       expect(action.setCommit).toHaveBeenCalledWith(oldCommit, newCommit);
       expect(action.commitFrom).toBe(oldCommit);
       expect(action.commitTo).toBe(newCommit);
-      expect(action.user).toBe('Test Committer');
-      expect(action.userEmail).toBe('committer@example.com');
+      expect(action.user).toBeNull();
+      expect(action.userEmail).toBeNull();
 
       // Check parsed commit data
       expect(action.commitData).toHaveLength(1);
@@ -657,7 +657,7 @@ describe('parsePackFile', () => {
       expect(action.setCommit).toHaveBeenCalledWith(oldCommit, newCommit);
       expect(action.commitFrom).toBe(oldCommit);
       expect(action.commitTo).toBe(newCommit);
-      expect(action.user).toBe(author);
+      expect(action.user).toBeNull();
 
       // Check parsed commit data
       expect(action.commitData).toHaveLength(1);
@@ -701,8 +701,8 @@ describe('parsePackFile', () => {
       expect(action.setCommit).toHaveBeenCalledWith(oldCommit, newCommit);
       expect(action.commitFrom).toBe(oldCommit);
       expect(action.commitTo).toBe(newCommit);
-      expect(action.user).toBe('CCCCCCCCCCC');
-      expect(action.userEmail).toBe('ccccccccc@cccccccc.com');
+      expect(action.user).toBeNull();
+      expect(action.userEmail).toBeNull();
 
       // Check parsed commit messages only
       const expectedCommits = TEST_MULTI_OBJ_COMMIT_CONTENT.filter((v) => v.type === 1);
@@ -758,7 +758,7 @@ describe('parsePackFile', () => {
       // commitFrom should still be the zero hash
       expect(action.commitFrom).toBe(oldCommit);
       expect(action.commitTo).toBe(newCommit);
-      expect(action.user).toBe('Test Committer');
+      expect(action.user).toBeNull();
 
       // Check parsed commit data reflects no parent (zero hash)
       expect(action.commitData[0].parent).toBe(oldCommit);
@@ -989,7 +989,7 @@ describe('parsePackFile', () => {
       expect(action.commitData).toHaveLength(1);
       expect(action.commitData[0].message).toBe('Test commit message with PACK inside');
       expect(action.commitData[0].committer).toBe('Test Committer');
-      expect(action.user).toBe('Test Committer');
+      expect(action.user).toBeNull();
     });
 
     it('should handle PACK data starting immediately after flush packet', async () => {
@@ -1125,8 +1125,8 @@ describe('parsePackFile', () => {
       expect(action.setCommit).toHaveBeenCalledWith(oldCommit, newCommit);
       expect(action.commitFrom).toBe(oldCommit);
       expect(action.commitTo).toBe(newCommit);
-      expect(action.user).toBe('Test Tagger');
-      expect(action.userEmail).toBe('tagger@example.com');
+      expect(action.user).toBeNull();
+      expect(action.userEmail).toBeNull();
 
       expect(action.tagData).toHaveLength(1);
       expect(action.tagData[0].tagName).toBe('v1.0.0');
@@ -1136,6 +1136,38 @@ describe('parsePackFile', () => {
       expect(action.tagData[0].object).toBe('1234567890abcdef1234567890abcdef12345678');
       expect(action.tagData[0].type).toBe('commit');
       expect(action.commitData).toHaveLength(0);
+    });
+
+    it('should use req.user identity, not commit committer identity', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/main';
+      const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
+
+      // Commit with committer alice
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'parent abcdef1234567890abcdef1234567890abcdef12\n' +
+        'author Alice Author <alice@example.com> 1234567890 +0000\n' +
+        'committer Alice Committer <alice@example.com> 1234567890 +0000\n\n' +
+        'feat: A commit by alice\n';
+
+      const packBuffer = createSamplePackBuffer(1, commitContent, 1);
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
+
+      // Authenticated as mallory
+      req.user = { username: 'mallory', email: 'mallory@example.com' };
+
+      const result = await exec(req, action);
+      expect(result).toBe(action);
+
+      // action.user should be mallory (from req.user), not alice (from commit)
+      expect(action.user).toBe('mallory');
+      expect(action.userEmail).toBe('mallory@example.com');
+      expect(action.pusherVerified).toBe(true);
+
+      // But commit data should still show alice as committer
+      expect(action.commitData[0].committer).toBe('Alice Committer');
     });
 
     it('should set actionType to TAG for tag refs', async () => {

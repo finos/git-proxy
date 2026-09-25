@@ -53,7 +53,7 @@ Don't forget to save and update the attached .drawio (XML)! -->
 Three types of policies can be applied to incoming pushes:
 
 - Default policies: These are already present in the GitProxy pull/push chain and require modifying source code to change their behaviour.
-  - For example, [`checkUserPushPermission`](processors.md#checkuserpushpermission) which simply checks if the pusher's email exists in the GitProxy database, and if their user is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
+  - For example, [`checkUserPushPermission`](processors.md#checkuserpushpermission) which checks that the pusher resolved from the push credential is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
 - Configurable policies: These are policies that can be easily configured through the GitProxy config (`proxy.config.json` or a custom file).
   - For example, [`checkCommitMessages`](processors.md#checkcommitmessages) which reads the configuration and matches the string patterns provided with the commit messages in the push in order to block it.
 - Custom policies:
@@ -75,6 +75,7 @@ Action chains are a list of processors that a Git operation goes through before 
 Executed when a user makes a `git push` to GitProxy. These are the actions in `pushActionChain`, by order of execution:
 
 - [`parsePush`](processors.md#parsepush)
+- [`resolveUserFromToken`](processors.md#resolveuserfromtoken)
 - [`checkEmptyBranch`](processors.md#checkemptybranch)
 - [`checkRepoInAuthorisedList`](processors.md#checkrepoinauthorisedlist)
 - [`checkCommitMessages`](processors.md#checkcommitmessages)

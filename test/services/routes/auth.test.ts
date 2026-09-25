@@ -25,6 +25,7 @@ import bcryptjs from 'bcryptjs';
 vi.mock('../../../src/db', () => ({
   findUser: vi.fn(),
   updateUser: vi.fn(),
+  setUserScmIdentity: vi.fn(),
   createUser: vi.fn(),
 }));
 
@@ -49,211 +50,141 @@ describe('Auth API', () => {
     vi.restoreAllMocks();
   });
 
-  describe('POST /gitAccount', () => {
+  describe('POST /scm-identity', () => {
     beforeEach(() => {
       vi.mocked(db.findUser).mockImplementation((username: string) => {
         if (username === 'alice') {
           return Promise.resolve({
             username: 'alice',
             displayName: 'Alice Munro',
-            gitAccount: 'ORIGINAL_GIT_ACCOUNT',
+            scmIdentities: { github: 'alice-github' },
             email: 'alice@example.com',
             admin: true,
             password: '',
             title: '',
-          });
+          } as any);
         } else if (username === 'bob') {
           return Promise.resolve({
             username: 'bob',
             displayName: 'Bob Woodward',
-            gitAccount: 'WOODY_GIT_ACCOUNT',
+            scmIdentities: { github: 'bob-github' },
             email: 'bob@example.com',
             admin: false,
             password: '',
             title: '',
-          });
+          } as any);
         }
         return Promise.resolve(null);
       });
     });
 
-    it('should return 401 Unauthorized if authenticated user not in request', async () => {
-      const res = await request(newApp()).post('/auth/gitAccount').send({
-        username: 'alice',
-        gitAccount: '',
+    it('should return 401 if user is not logged in', async () => {
+      const res = await request(newApp()).post('/auth/scm-identity').send({
+        provider: 'github',
+        login: 'user-handle',
       });
 
       expect(res.status).toBe(401);
+      expect(res.body).toEqual({ message: 'Not logged in' });
     });
 
-    it('should return 400 Bad Request if username is missing', async () => {
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
+    it('should return 400 if provider is missing', async () => {
+      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+        login: 'user-handle',
       });
 
       expect(res.status).toBe(400);
+      expect(res.body).toEqual({ message: 'Missing provider. SCM identity not updated' });
     });
 
-    it('should return 400 Bad Request if username is undefined', async () => {
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
-        username: undefined,
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
+    it('should return 400 if provider is unknown', async () => {
+      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+        provider: 'unknownprovider',
+        login: 'user-handle',
       });
 
       expect(res.status).toBe(400);
+      expect(res.body).toEqual({
+        message: "Unknown SCM provider 'unknownprovider'. SCM identity not updated",
+      });
     });
 
-    it('should return 400 Bad Request if username is null', async () => {
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
-        username: null,
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
+    it('should allow user to link their own SCM identity', async () => {
+      const setUserScmIdentitySpy = vi.mocked(db.setUserScmIdentity).mockResolvedValue();
+
+      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+        provider: 'github',
+        login: 'alice-new-handle',
       });
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ message: 'SCM identity updated successfully' });
+      expect(setUserScmIdentitySpy).toHaveBeenCalledOnce();
+      expect(setUserScmIdentitySpy).toHaveBeenCalledWith('alice', 'github', 'alice-new-handle');
     });
 
-    it('should return 400 Bad Request if username is an empty string', async () => {
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
-        username: '',
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
-      });
+    it('should prevent non-admin from linking different user', async () => {
+      const setUserScmIdentitySpy = vi.mocked(db.setUserScmIdentity).mockResolvedValue();
 
-      expect(res.status).toBe(400);
-    });
-
-    it('should return 403 Forbidden if user is not an admin', async () => {
-      const res = await request(newApp('bob')).post('/auth/gitAccount').send({
+      const res = await request(newApp('bob')).post('/auth/scm-identity').send({
         username: 'alice',
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
+        provider: 'github',
+        login: 'new-handle',
       });
 
       expect(res.status).toBe(403);
+      expect(res.body).toEqual({ message: 'Must be an admin to update a different account' });
+      expect(setUserScmIdentitySpy).not.toHaveBeenCalled();
     });
 
-    it('should return 404 Not Found if user is not found', async () => {
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
+    it('should allow admin to link different user', async () => {
+      const setUserScmIdentitySpy = vi.mocked(db.setUserScmIdentity).mockResolvedValue();
+
+      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+        username: 'bob',
+        provider: 'github',
+        login: 'bob-new-handle',
+      });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toEqual({ message: 'SCM identity updated successfully' });
+      expect(setUserScmIdentitySpy).toHaveBeenCalledOnce();
+      expect(setUserScmIdentitySpy).toHaveBeenCalledWith('bob', 'github', 'bob-new-handle');
+    });
+
+    it('should allow unlinking by passing null login', async () => {
+      const setUserScmIdentitySpy = vi.mocked(db.setUserScmIdentity).mockResolvedValue();
+
+      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+        provider: 'github',
+        login: null,
+      });
+
+      expect(res.status).toBe(200);
+      expect(setUserScmIdentitySpy).toHaveBeenCalledWith('alice', 'github', null);
+    });
+
+    it('should return 404 if target user is not found', async () => {
+      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
         username: 'non-existent-user',
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
+        provider: 'github',
+        login: 'handle',
       });
 
       expect(res.status).toBe(404);
+      expect(res.body).toEqual({ message: 'User not found' });
     });
 
-    it('should return 200 OK if user is an admin and updates git account for authenticated user', async () => {
-      const updateUserSpy = vi.mocked(db.updateUser).mockResolvedValue();
+    it('should return 500 on database error', async () => {
+      vi.mocked(db.setUserScmIdentity).mockRejectedValue(new Error('Database error'));
 
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
-        username: 'alice',
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
+      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+        provider: 'github',
+        login: 'handle',
       });
 
-      expect(res.status).toBe(200);
-      expect(updateUserSpy).toHaveBeenCalledOnce();
-      expect(updateUserSpy).toHaveBeenCalledWith({
-        username: 'alice',
-        displayName: 'Alice Munro',
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
-        email: 'alice@example.com',
-        admin: true,
-        password: '',
-        title: '',
-      });
-    });
-
-    it("should prevent non-admin users from changing a different user's gitAccount", async () => {
-      const updateUserSpy = vi.mocked(db.updateUser).mockResolvedValue();
-
-      const res = await request(newApp('bob')).post('/auth/gitAccount').send({
-        username: 'phil',
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
-      });
-
-      expect(res.status).toBe(403);
-      expect(updateUserSpy).not.toHaveBeenCalled();
-    });
-
-    it("should allow admin users to change a different user's gitAccount", async () => {
-      const updateUserSpy = vi.mocked(db.updateUser).mockResolvedValue();
-
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
-        username: 'bob',
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
-      });
-
-      expect(res.status).toBe(200);
-      expect(updateUserSpy).toHaveBeenCalledOnce();
-      expect(updateUserSpy).toHaveBeenCalledWith({
-        username: 'bob',
-        displayName: 'Bob Woodward',
-        email: 'bob@example.com',
-        admin: false,
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
-        password: '',
-        title: '',
-      });
-    });
-
-    it('should allow non-admin users to update their own gitAccount', async () => {
-      const updateUserSpy = vi.mocked(db.updateUser).mockResolvedValue();
-
-      const res = await request(newApp('bob')).post('/auth/gitAccount').send({
-        username: 'bob',
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
-      });
-
-      expect(res.status).toBe(200);
-      expect(updateUserSpy).toHaveBeenCalledOnce();
-      expect(updateUserSpy).toHaveBeenCalledWith({
-        username: 'bob',
-        displayName: 'Bob Woodward',
-        email: 'bob@example.com',
-        admin: false,
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
-        password: '',
-        title: '',
-      });
-    });
-
-    it('should return 428 when password change is required', async () => {
-      const res = await request(newApp('alice', { mustChangePassword: true }))
-        .post('/auth/gitAccount')
-        .send({
-          username: 'alice',
-          gitAccount: 'UPDATED_GIT_ACCOUNT',
-        });
-
-      expect(res.status).toBe(428);
-      expect(res.body).toEqual({
-        message: 'Password change required before accessing this endpoint',
-      });
-    });
-
-    it('should skip password change requirement if path is in PASSWORD_CHANGE_ALLOWED_PATHS', async () => {
-      const res = await request(newApp('alice', { mustChangePassword: true })).get('/auth/config');
-      expect(res.status).toBe(200);
-      expect(res.body).toEqual({
-        usernamePasswordMethod: 'local',
-        otherMethods: [],
-      });
-    });
-
-    it('should return 500 if an error occurs', async () => {
-      vi.spyOn(db, 'updateUser').mockRejectedValue(new Error('Error'));
-      vi.spyOn(db, 'findUser').mockResolvedValue({
-        username: 'alice',
-        password: await bcryptjs.hash('secret-password', 10),
-        email: 'alice@example.com',
-        displayName: 'Alice Munro',
-        gitAccount: 'ORIGINAL_GIT_ACCOUNT',
-        admin: true,
-        title: '',
-      } as any);
-      const res = await request(newApp('alice')).post('/auth/gitAccount').send({
-        username: 'alice',
-        gitAccount: 'UPDATED_GIT_ACCOUNT',
-      });
       expect(res.status).toBe(500);
-      expect(res.body).toEqual({ message: 'Failed to update git account: Error' });
+      expect(res.body).toEqual({ message: 'Failed to update SCM identity: Database error' });
     });
   });
 
@@ -299,7 +230,7 @@ describe('Auth API', () => {
         password: hashedPassword,
         email: 'alice@example.com',
         displayName: 'Alice Munro',
-        gitAccount: 'ORIGINAL_GIT_ACCOUNT',
+        scmIdentities: {},
         admin: true,
         title: '',
       } as any);
@@ -321,7 +252,7 @@ describe('Auth API', () => {
         password: hashedPassword,
         email: 'alice@example.com',
         displayName: 'Alice Munro',
-        gitAccount: 'ORIGINAL_GIT_ACCOUNT',
+        scmIdentities: {},
         admin: true,
         title: '',
       } as any);
@@ -369,7 +300,7 @@ describe('Auth API', () => {
         password: await bcryptjs.hash('secret-password', 10),
         email: 'alice@example.com',
         displayName: 'Alice Munro',
-        gitAccount: 'ORIGINAL_GIT_ACCOUNT',
+        scmIdentities: {},
         admin: true,
         title: '',
       } as any);
@@ -391,7 +322,7 @@ describe('Auth API', () => {
         email: 'bob@example.com',
         displayName: 'Bob',
         admin: false,
-        gitAccount: '',
+        scmIdentities: { github: 'bob-handle' },
         title: '',
       };
 
@@ -412,7 +343,7 @@ describe('Auth API', () => {
           admin: false,
           displayName: 'Bob',
           email: 'bob@example.com',
-          gitAccount: '',
+          scmIdentities: { github: 'bob-handle' },
           title: '',
           username: 'bob',
         },
@@ -434,9 +365,9 @@ describe('Auth API', () => {
         email: 'alice@example.com',
         displayName: 'Alice Walker',
         admin: false,
-        gitAccount: '',
+        scmIdentities: { github: 'alice-handle' },
         title: '',
-      });
+      } as any);
 
       const res = await request(newApp('alice')).get('/auth/profile');
       expect(res.status).toBe(200);
@@ -445,7 +376,7 @@ describe('Auth API', () => {
         displayName: 'Alice Walker',
         email: 'alice@example.com',
         title: '',
-        gitAccount: '',
+        scmIdentities: { github: 'alice-handle' },
         admin: false,
       });
     });

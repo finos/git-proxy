@@ -17,7 +17,7 @@
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
-import { GitProxyConfig, Convert } from './generated/config';
+import { GitProxyConfig, Convert, SCMProvider } from './generated/config';
 import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
@@ -54,6 +54,7 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'plugins',
   'privateOrganizations',
   'rateLimit',
+  'scmProviders',
   'serverPort',
   'sessionMaxAgeHours',
   'sidebandProgress',
@@ -488,6 +489,16 @@ export const getMaxPackSizeBytes = (): number => {
   }
 
   return fallback;
+};
+
+/**
+ * SCM providers the proxy may ask to identify a pusher from the credential that
+ * accompanied the push. A user-supplied list replaces the built-in defaults.
+ * @return {SCMProvider[]} configured providers
+ */
+export const getScmProviders = (): SCMProvider[] => {
+  const config = loadFullConfiguration();
+  return config.scmProviders ?? [];
 };
 
 /**

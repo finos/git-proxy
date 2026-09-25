@@ -14,8 +14,8 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
-      git-server:
-        condition: service_healthy
+      git-server-seed:
+        condition: service_completed_successfully
     networks:
       - git-network
     environment:
@@ -58,25 +58,64 @@ services:
       retries: 12
       start_period: 5s
 
+  # Forgejo stands in for the upstream SCM: a real forge with a real identity API, which is what the
+  # proxy's `forgejo` provider talks to. It serves HTTPS on 8443 with a self-signed certificate
+  # because the proxy reconstructs upstream URLs as https://. Pulled from the project's own mirror
+  # rather than codeberg.org.
   git-server:
-    build: ./localgit
+    image: data.forgejo.org/forgejo/forgejo:16.0.5-rootless@sha256:bda6d9357909df2f315b921fb5b6da88fbfc1ca622698225e5a4b0a7a3b7b42c
     ports:
-      - '8443:8443' # HTTPS git server
+      - '8443:8443'
+    hostname: git-server
     environment:
-      - GIT_HTTP_EXPORT_ALL=true
+      - FORGEJO__security__INSTALL_LOCK=true
+      - FORGEJO__security__SECRET_KEY=e2e-only-not-a-secret
+      - FORGEJO__server__PROTOCOL=https
+      - FORGEJO__server__CERT_FILE=/var/lib/gitea/cert.pem
+      - FORGEJO__server__KEY_FILE=/var/lib/gitea/key.pem
+      - FORGEJO__server__HTTP_PORT=8443
+      - FORGEJO__server__DOMAIN=git-server
+      - FORGEJO__server__ROOT_URL=https://git-server:8443/
+      - FORGEJO__server__DISABLE_SSH=true
+      - FORGEJO__database__DB_TYPE=sqlite3
+      - FORGEJO__repository__DEFAULT_BRANCH=main
+      - FORGEJO__service__DISABLE_REGISTRATION=true
+      - FORGEJO__log__LEVEL=Warn
+    # Generate the certificate before the stock entrypoint starts the server.
+    command:
+      - sh
+      - -c
+      - |
+        cd /var/lib/gitea && { [ -f cert.pem ] || forgejo cert --host git-server,localhost >/dev/null 2>&1; } \
+          && exec /usr/local/bin/docker-entrypoint.sh
+    volumes:
+      - forgejo_data:/var/lib/gitea
     networks:
       - git-network
-    hostname: git-server
     healthcheck:
-      test:
-        [
-          'CMD-SHELL',
-          'GIT_TERMINAL_PROMPT=0 GIT_SSL_NO_VERIFY=1 git ls-remote https://admin:admin123@localhost:8443/test-owner/test-repo.git HEAD || exit 1',
-        ]
+      test: ['CMD', 'curl', '-fsk', 'https://localhost:8443/api/healthz']
       interval: 5s
       timeout: 5s
       retries: 12
-      start_period: 5s
+      start_period: 10s
+
+  # Creates the users, orgs and repos the suite expects, then exits. Idempotent, so it runs on every
+  # `up` and a re-run against an existing volume is a no-op. Reuses the Forgejo image for its CLI and
+  # curl, and shares the data volume so the CLI writes to the same database.
+  git-server-seed:
+    image: data.forgejo.org/forgejo/forgejo:16.0.5-rootless@sha256:bda6d9357909df2f315b921fb5b6da88fbfc1ca622698225e5a4b0a7a3b7b42c
+    depends_on:
+      git-server:
+        condition: service_healthy
+    volumes:
+      - forgejo_data:/var/lib/gitea
+      - ./forgejo/seed.sh:/seed.sh:ro
+      # If using Podman, you might need to add the :Z or :z option for SELinux
+      # - ./forgejo/seed.sh:/seed.sh:ro,Z
+    entrypoint: ['/bin/sh', '/seed.sh']
+    networks:
+      - git-network
+    restart: 'no'
 
 networks:
   git-network:
@@ -84,3 +123,4 @@ networks:
 
 volumes:
   mongodb_data:
+  forgejo_data:

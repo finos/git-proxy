@@ -22,9 +22,30 @@ Parses the push request data which comes from the Git client as a buffer that co
 
 A push must update only one ref (branch or annotated tag). Pushes to multiple refs (such as `git push --tags`, `git push origin v1.0.0 v1.0.1` or `git push --follow-tags`) are rejected and must be split into multiple pushes.
 
-Also handles extraction of push contents, such as the details of the individual commits contained in the push and the details of `committer` (the user attempting to push the commits through the proxy).
+Also extracts the push contents: the ref being updated and the individual commits or the annotated tag contained in the pack, including their `author`, `committer` and `tagger` lines.
+
+Those lines are recorded for display and for the [`checkAuthorEmails`](#checkauthoremails) policy only. They are not used to decide who is pushing: they are text the client wrote. If the request arrived over an authenticated session (SSH or the dashboard), `parsePush` records that session's user as the pusher; otherwise the pusher is established by [`resolveUserFromToken`](#resolveuserfromtoken).
 
 Source: [/src/proxy/processors/push-action/parsePush.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/parsePush.ts)
+
+## `resolveUserFromToken`
+
+Establishes who is pushing from the credential that accompanied the push. The first processor in both the branch and tag chains.
+
+For an HTTPS push the token in the Basic-auth password is sent to the upstream SCM's "current user" endpoint. The account the SCM reports is looked up in the GitProxy user records (`scmIdentities`), and the matching user is recorded on the push as `user` and `userEmail`. The Basic-auth username half is ignored. Which hosts can be asked, and how, is set by [`scmProviders`](../configuration/push-identity.md) in the configuration.
+
+The push is blocked when:
+
+- no credential was presented, or it is not HTTP Basic
+- no provider is configured for the repository's host
+- the provider rejects the token or is unreachable
+- the account the token belongs to is not linked to any GitProxy user
+
+Successful lookups are cached for seven days by a hash of the token; rejections are not cached.
+
+Requests that already carry a session user (SSH, dashboard) skip this step.
+
+Source: [/src/proxy/processors/push-action/resolveUserFromToken.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/resolveUserFromToken.ts)
 
 ## `checkEmptyBranch`
 
@@ -80,15 +101,15 @@ Note that invalid regex patterns will throw an error during proxy startup. These
 
 Source: [/src/proxy/processors/push-action/checkAuthorEmails.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/checkAuthorEmails.ts)
 
-#### `checkUserPushPermission`
+## `checkUserPushPermission`
 
-Checks if the push has a valid user email associated to it (the email of the user making the push, **not the individual commit authors**), and if that user is allowed to push to that specific repo.
+Checks that the pusher recorded on the push by [`resolveUserFromToken`](#resolveuserfromtoken) (or by the SSH or dashboard session) is allowed to push to that specific repo.
 
-This step will fail on various scenarios such as:
+This step will fail when:
 
-- Push has no email associated to it (potentially a push parsing error)
-- The email associated to the push matches multiple GitProxy users
-- The user with the given email isn't in the repo's contributor list (`canPush`)
+- No pusher was recorded on the push
+- The recorded username no longer exists
+- The user isn't in the repo's contributor list (`canPush`)
 
 Note: The _pusher_ can potentially be a different user from the _commit author(s)_. In order to filter the commit authors, you must use the `commitConfig.author` config entry. See [`checkAuthorEmails`](#checkauthoremails) for more details.
 
@@ -126,7 +147,7 @@ Source: [/src/proxy/processors/push-action/checkHiddenCommits.ts](https://github
 
 Checks if the action has been authorised (approved by a reviewer). If so, allows the push to continue to the remote. It simply continues chain execution if the push hasn't been approved.
 
-Only previously approved pushes can go through: the stored push must target the same repository and the same ref (branch or tag), and the ref must end up pointing at the same commit or tag object as the one being checked. Furthermore, every commit and tag object in the incoming pack must have been part of the approved push. If pushing the same commits to another repository or ref, pointing the ref somewhere else, or adding objects, approval is once again required.
+An approval is only honoured on a record whose pusher was verified from a session or a push credential (`pusherVerified`). A record written before pusher verification existed carries whatever the pushed objects said, so an approval on it is ignored and the push is held for review again.
 
 Source: [/src/proxy/processors/push-action/checkIfWaitingAuth.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/checkIfWaitingAuth.ts)
 

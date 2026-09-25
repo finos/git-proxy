@@ -24,6 +24,28 @@
   "limits": {
     "maxPackSizeBytes": 1073741824
   },
+  "scmProviders": [
+    {
+      "name": "github",
+      "type": "github",
+      "host": "github.com"
+    },
+    {
+      "name": "gitlab",
+      "type": "gitlab",
+      "host": "gitlab.com"
+    },
+    {
+      "name": "codeberg",
+      "type": "forgejo",
+      "host": "codeberg.org"
+    },
+    {
+      "name": "gitea",
+      "type": "forgejo",
+      "host": "gitea.com"
+    }
+  ],
   "sink": [
     {
       "type": "fs",

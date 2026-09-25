@@ -173,11 +173,11 @@ Cypress.Commands.add('registerTestRepo', (url) => {
   }).as('getRepos');
 });
 
-Cypress.Commands.add('createUser', (username, password, email, gitAccount) => {
+Cypress.Commands.add('createUser', (username, password, email, scmIdentities = {}) => {
   cy.request({
     method: 'POST',
     url: `${getApiBaseUrl()}/api/auth/create-user`,
-    body: { username, password, email, gitAccount, admin: false },
+    body: { username, password, email, admin: false, scmIdentities },
     failOnStatusCode: false,
   });
 });
@@ -262,6 +262,30 @@ Cypress.Commands.add('deleteRepo', (repoId) => {
       },
       failOnStatusCode: false,
     });
+  });
+});
+
+/**
+ * Mints a Forgejo access token for a seeded user from their password. The proxy identifies a
+ * pusher by asking the upstream's API who the token belongs to, and that API does not accept a
+ * password in the token's place, so pushes must present a token. Forgejo allows creating one
+ * with plain basic auth. Token names must be unique per user, so each call mints its own.
+ */
+Cypress.Commands.add('mintUpstreamToken', (username, password) => {
+  const gitServerUrl = Cypress.env('GIT_SERVER_URL') || 'https://localhost:8443';
+  const name = `cypress-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const body = JSON.stringify({ name, scopes: ['write:repository', 'read:user'] });
+  // curl rather than cy.request: the test server's certificate is self-signed.
+  cy.exec(
+    `curl -sk -u '${username}:${password}' -H 'Content-Type: application/json' ` +
+      `-d '${body}' ${gitServerUrl}/api/v1/users/${username}/tokens`,
+    { timeout: 15000 },
+  ).then((result) => {
+    const token = JSON.parse(result.stdout).sha1;
+    if (!token) {
+      throw new Error(`Could not mint a token for ${username}: ${result.stdout}`);
+    }
+    return cy.wrap(token, { log: false });
   });
 });
 

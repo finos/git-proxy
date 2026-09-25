@@ -88,7 +88,6 @@ describe.sequential('Git Proxy E2E - Password reset flow', () => {
           username,
           password: initialPassword,
           email,
-          gitAccount: username,
           admin: false,
         }),
       });

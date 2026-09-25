@@ -90,14 +90,18 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
   const step = new Step('checkIfWaitingAuth');
   try {
     const existingAction = await getPush(action.id);
-    if (existingAction && !action.error && existingAction.authorised) {
-      if (pushWasApproved(existingAction, action)) {
-        action = existingAction;
-        action.setAllowPush();
-      } else {
-        step.log(
-          `${action.id} was approved for another repository, ref or commit range and doesn't apply to this push.`,
-        );
+    if (existingAction) {
+      if (!action.error) {
+        // An approval on a record whose pusher was never verified is not honoured:
+        // it may have been granted against an identity the client made up.
+        if (existingAction.authorised && existingAction.pusherVerified) {
+          action = existingAction;
+          action.setAllowPush();
+        } else if (existingAction.authorised) {
+          step.log(
+            'An approval exists for this push but the record predates pusher verification; it is not reused',
+          );
+        }
       }
     }
   } catch (error: unknown) {

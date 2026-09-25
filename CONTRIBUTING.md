@@ -279,7 +279,7 @@ test/
 ├── db/                # Database operations
 ├── services/          # API and service tests
 ├── integration/       # Cross-module integration tests
-├── e2e/               # End-to-end tests (Vitest + Docker, includes localgit/ and Compose)
+├── e2e/               # End-to-end tests (Vitest + Docker, includes forgejo/ and Compose)
 ├── plugin/            # Plugin system tests
 ├── preReceive/        # Git hook tests
 └── fixtures/          # Binary test data for protocol-level tests

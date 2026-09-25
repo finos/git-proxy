@@ -51,6 +51,7 @@ import {
 } from '../../services/ssh';
 
 import { PublicUser } from '../../../db/types';
+import LinkedAccounts from './Components/LinkedAccounts';
 
 const externalLinkClass =
   'text-sm text-[#0969da] underline underline-offset-2 decoration-[#0969da]/80 hover:text-[#0550ae]';
@@ -303,6 +304,14 @@ export default function UserProfile(): React.ReactElement {
         <Stack direction='vertical' gap='normal' padding='none' className='min-w-0'>
           <ProfileField label='Role'>{roleText}</ProfileField>
         </Stack>
+      ) : null}
+      {user ? (
+        <LinkedAccounts
+          username={user.username}
+          identities={user.scmIdentities ?? {}}
+          isOwnProfile={isOwnProfile}
+          onChange={(scmIdentities) => setLocalUser({ ...user, scmIdentities })}
+        />
       ) : null}
     </Stack>
   );

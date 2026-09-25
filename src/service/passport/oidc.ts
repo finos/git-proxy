@@ -111,7 +111,7 @@ export const handleUserAuthentication = async (
         oidcId: userInfo.sub,
       };
 
-      await db.createUser(newUser.username, '', newUser.email, 'Edit me', false, newUser.oidcId);
+      await db.createUser(newUser.username, '', newUser.email, false, newUser.oidcId);
       return done(null, newUser);
     }
 

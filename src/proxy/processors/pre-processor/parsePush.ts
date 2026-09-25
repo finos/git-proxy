@@ -146,17 +146,14 @@ async function exec(req: Request, action: Action): Promise<Action> {
       else if (obj.type === GIT_OBJECT_TYPE_TAG) action.tagData.push(getTagData(obj));
     }
 
-    if (action.actionType === PushType.TAG) {
-      if (action.tagData.length) {
-        action.user = action.tagData.at(-1)!.tagger;
-        action.userEmail = action.tagData.at(-1)!.taggerEmail;
-      } else {
-        // TODO: support lightweight tags once we have a reliable way to identify the pusher
-        throw new Error(
-          'Lightweight (non-annotated) tags are not supported. Please use "git tag -a" to create an annotated tag.',
-        );
-      }
-    } else if (action.actionType === PushType.BRANCH) {
+    if (action.actionType === PushType.TAG && !action.tagData.length) {
+      // TODO: support lightweight tags once we have a reliable way to identify the pusher
+      throw new Error(
+        'Lightweight (non-annotated) tags are not supported. Please use "git tag -a" to create an annotated tag.',
+      );
+    }
+
+    if (action.actionType === PushType.BRANCH) {
       if (action.commitData.length && action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }
@@ -165,22 +162,18 @@ async function exec(req: Request, action: Action): Promise<Action> {
       if (action.commitFrom && !isValidGitObjectId(action.commitFrom)) {
         throw new Error('Your push has been blocked. Invalid commit ID format.');
       }
+    }
 
-      if (req.user) {
-        const { username, email } = req.user as { username: string; email?: string };
-        step.log(`Push request received from authenticated user ${username} with email ${email}`);
-        action.user = username;
-        action.userEmail = email;
-      } else if (action.commitData.length) {
-        const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
-        // Note: This is not always the pusher's email, it's the last committer's email.
-        // See https://github.com/finos/git-proxy/issues/1400
-        step.log(`Push request received from user ${committer} with email ${committerEmail}`);
-        action.user = committer;
-        action.userEmail = committerEmail;
-      } else {
-        step.log('No commit data found when parsing push.');
-      }
+    // The pusher is never taken from the pushed objects. Author, committer and
+    // tagger lines are client-controlled text. A session (dashboard or SSH key)
+    // identifies the pusher here; otherwise resolveUserFromToken does it from
+    // the credential that accompanied the push.
+    if (req.user) {
+      const { username, email } = req.user as { username: string; email?: string };
+      step.log(`Push request received from authenticated user ${username} with email ${email}`);
+      action.user = username;
+      action.userEmail = email;
+      action.pusherVerified = true;
     }
 
     step.content = {

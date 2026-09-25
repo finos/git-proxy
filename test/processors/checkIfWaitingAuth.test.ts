@@ -106,6 +106,7 @@ describe('checkIfWaitingAuth', () => {
         'test/repo.git',
       );
       authorizedAction.authorised = true;
+      authorizedAction.pusherVerified = true;
       getPushMock.mockResolvedValue(authorizedAction);
 
       const result = await checkIfWaitingAuthModule.exec(req, action);
@@ -114,6 +115,21 @@ describe('checkIfWaitingAuth', () => {
       expect(result.steps[0].error).toBe(false);
       expect(result.allowPush).toBe(true);
       expect(result).toEqual(authorizedAction);
+    });
+
+    it('should not reuse an approval on a record whose pusher was never verified', async () => {
+      const legacyApproved = new Action('1234567890', 'push', 'POST', 1234567890, 'test/repo.git');
+      legacyApproved.authorised = true;
+      legacyApproved.user = 'John Doe';
+      getPushMock.mockResolvedValue(legacyApproved);
+
+      const result = await checkIfWaitingAuthModule.exec(req, action);
+
+      expect(result.steps).toHaveLength(1);
+      expect(result.steps[0].error).toBe(false);
+      expect(result.allowPush).toBe(false);
+      expect(result).toBe(action);
+      expect(result.steps[0].logs.join('\n')).toContain('predates pusher verification');
     });
 
     it('should not set allowPush when action exists but not authorized', async () => {

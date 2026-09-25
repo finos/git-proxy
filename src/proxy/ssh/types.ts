@@ -23,7 +23,6 @@ import { SSHAgentProxy } from './AgentProxy';
 export interface AuthenticatedUser {
   username: string;
   email?: string;
-  gitAccount?: string;
 }
 
 /**

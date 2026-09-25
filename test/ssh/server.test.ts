@@ -239,7 +239,6 @@ describe('SSHServer', () => {
       const mockUser = {
         username: 'test-user',
         email: 'test@example.com',
-        gitAccount: 'testgit',
         password: 'hashed-password',
         admin: false,
       };
@@ -466,7 +465,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -525,7 +523,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -601,7 +598,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -701,7 +697,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -766,7 +761,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -830,7 +824,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -1071,7 +1064,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -1149,7 +1141,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
