@@ -75,6 +75,25 @@ describe('url helpers and filter functions used in the proxy', () => {
     expect(processUrlPath(VERY_LONG_PATH)).toBeNull();
   });
 
+  it('processUrlPath should parse smart-HTTP paths without a .git repo suffix', () => {
+    expect(processUrlPath('/octocat/hello-world/info/refs?service=git-upload-pack')).toEqual({
+      repoPath: '/octocat/hello-world.git',
+      gitPath: '/info/refs?service=git-upload-pack',
+    });
+
+    expect(
+      processUrlPath('/github.com/octocat/hello-world/info/refs?service=git-upload-pack'),
+    ).toEqual({
+      repoPath: '/github.com/octocat/hello-world.git',
+      gitPath: '/info/refs?service=git-upload-pack',
+    });
+
+    expect(processUrlPath('/org/owner/repo/git-upload-pack')).toEqual({
+      repoPath: '/org/owner/repo.git',
+      gitPath: '/git-upload-pack',
+    });
+  });
+
   it('processGitUrl should return breakdown of a git URL separating out the protocol, host and repository path', () => {
     expect(processGitUrl('https://somegithost.com/octocat/hello-world.git')).toEqual({
       protocol: 'https://',
