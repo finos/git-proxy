@@ -197,7 +197,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.0.5",
     "prettier": "^3.8.1",
-    "quicktype": "^23.2.6",
+    "quicktype": "^26.0.0",
     "supertest": "^7.2.2",
     "tailwindcss": "^4.2.2",
     "ts-node": "^10.9.2",
