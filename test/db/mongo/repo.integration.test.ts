@@ -141,6 +141,17 @@ describe.runIf(shouldRunMongoTests)('MongoDB Repo Integration Tests', () => {
       expect(repo?.users.canPush).toContain('testuser');
     });
 
+    it('should not add the same user twice', async () => {
+      await addUserCanPush(testRepoId, 'dupuser');
+      await addUserCanPush(testRepoId, 'DupUser');
+      await addUserCanAuthorise(testRepoId, 'dupuser');
+      await addUserCanAuthorise(testRepoId, 'DupUser');
+
+      const repo = await getRepoById(testRepoId);
+      expect(repo?.users.canPush).toEqual(['dupuser']);
+      expect(repo?.users.canAuthorise).toEqual(['dupuser']);
+    });
+
     it('should add a user to canAuthorise (lowercased)', async () => {
       await addUserCanAuthorise(testRepoId, 'AuthUser');
 

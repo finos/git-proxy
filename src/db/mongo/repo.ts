@@ -82,7 +82,7 @@ export const addUserCanPush = async (_id: string, user: string): Promise<void> =
   const collection = await connect(collectionName);
   await collection.updateOne(
     { _id: new ObjectId(_id) },
-    { $push: { 'users.canPush': user }, $set: { lastModified: new Date().toISOString() } },
+    { $addToSet: { 'users.canPush': user }, $set: { lastModified: new Date().toISOString() } },
   );
 };
 
@@ -91,7 +91,7 @@ export const addUserCanAuthorise = async (_id: string, user: string): Promise<vo
   const collection = await connect(collectionName);
   await collection.updateOne(
     { _id: new ObjectId(_id) },
-    { $push: { 'users.canAuthorise': user }, $set: { lastModified: new Date().toISOString() } },
+    { $addToSet: { 'users.canAuthorise': user }, $set: { lastModified: new Date().toISOString() } },
   );
 };
 
