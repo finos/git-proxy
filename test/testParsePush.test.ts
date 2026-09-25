@@ -1330,12 +1330,22 @@ describe('parsePackFile', () => {
 
     it('should compute the id from the raw ref-line oids even when commitFrom is rewritten for a new branch', async () => {
       const ref = 'refs/heads/feature/new-branch';
-      const body = buildBranchPushBody(ref, EMPTY_COMMIT_HASH);
+      const parent = 'c'.repeat(40);
+      const commitContent =
+        `tree ${'d'.repeat(40)}\n` +
+        `parent ${parent}\n` +
+        'author A <a@a> 123 +0000\n' +
+        'committer C <c@c> 456 +0000\n\n' +
+        'message';
+      const body = Buffer.concat([
+        createPacketLineBuffer([`${EMPTY_COMMIT_HASH} ${newCommit} ${ref}\0capabilities\n`]),
+        createSamplePackBuffer(1, commitContent, 1),
+      ]);
 
       const parsed = await parseWithRealAction(REPO_1_URL, body);
 
       // parsePush rewrites commitFrom to the parent of the last commit in the pack
-      expect(parsed.commitFrom).toBe('456');
+      expect(parsed.commitFrom).toBe(parent);
       expect(parsed.commitFrom).not.toBe(EMPTY_COMMIT_HASH);
       // id still derived from the raw values on the ref line
       expect(parsed.id).toBe(
