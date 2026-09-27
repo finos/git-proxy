@@ -68,8 +68,16 @@ jobs:
             exit 1
           fi
 
+      - name: Checkout bump action
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          path: .bump-action
+          persist-credentials: false
+          sparse-checkout: .github/actions/bump-versions
+
       - name: Bump versions
-        uses: ./.github/actions/bump-versions
+        uses: ./.bump-action/.github/actions/bump-versions
         with:
           version: ${{ steps.version.outputs.version }}
 

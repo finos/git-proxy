@@ -20,7 +20,7 @@ runs:
       shell: bash
       env:
         VERSION: ${{ inputs.version }}
-      run: node scripts/patch-lockfile-version.js
+      run: node "$GITHUB_ACTION_PATH/patch-lockfile-version.js"
 
     - name: Guard against unexpected changes
       shell: bash
