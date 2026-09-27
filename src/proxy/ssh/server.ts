@@ -262,7 +262,6 @@ export class SSHServer {
             clientWithUser.authenticatedUser = {
               username: user.username,
               email: user.email,
-              gitAccount: user.gitAccount,
             };
             ctx.accept();
           })
