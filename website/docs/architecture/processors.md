@@ -173,7 +173,7 @@ Source: [/src/proxy/processors/push-action/preReceive.ts](https://github.com/fin
 
 Executes `git diff` to obtain the diff for the given revision range. If there are no commits (possibly due to a malformed push), the push is blocked.
 
-The data extracted in this step is later used in [`scanDiff`](#scandiff).
+The full diff is stored in this step's `content` for review and later used in [`scanDiff`](#scandiff). The processors log the diff's byte count and scan findings without logging another copy of the full diff.
 
 Source: [/src/proxy/processors/push-action/getDiff.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/getDiff.ts)
 
@@ -243,6 +243,8 @@ Source: [/src/proxy/processors/push-action/blockForAuth.ts](https://github.com/f
 ## `audit`
 
 This action runs after a chain has been executed. It stores in the database the entire `Action` object along with the list of `steps` that the action has gone through and their associated logs or error messages that occurred during processing of the chain.
+
+Push list and profile activity responses return metadata without processor steps, `lastStep`, or diff content. Use `GET /api/v1/push/:id` to retrieve the full audit record and diff for review. Existing stored records remain readable and are not rewritten or truncated.
 
 Note: **`audit` writes all actions** (push, pull, default/unclassified) to the DB.
 
