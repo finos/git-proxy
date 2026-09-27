@@ -54,7 +54,7 @@ export const {
 export const {
   findUser,
   findUserByEmail,
-  findUserByGitAccount,
+  findUserByScmIdentity,
   findUserByOIDC,
   findUserBySSHKey,
   getUsers,

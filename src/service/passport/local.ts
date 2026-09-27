@@ -26,14 +26,12 @@ const DEFAULT_LOCAL_USERS: DefaultLocalUser[] = [
     username: 'admin',
     password: 'admin',
     email: 'admin@place.com',
-    gitAccount: 'none',
     admin: true,
   },
   {
     username: 'user',
     password: 'user',
     email: 'user@place.com',
-    gitAccount: 'none',
     admin: false,
   },
 ];
@@ -116,16 +114,15 @@ export const createDefaultAdmin = async () => {
     username: string,
     password: string,
     email: string,
-    type: string,
     isAdmin: boolean,
   ) => {
     const user = await db.findUser(username);
     if (!user) {
-      await db.createUser(username, password, email, type, isAdmin, '', isProduction());
+      await db.createUser(username, password, email, isAdmin, '', isProduction());
     }
   };
 
   for (const u of DEFAULT_LOCAL_USERS) {
-    await createIfNotExists(u.username, u.password, u.email, u.gitAccount, u.admin);
+    await createIfNotExists(u.username, u.password, u.email, u.admin);
   }
 };

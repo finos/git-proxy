@@ -221,9 +221,11 @@ const AddUserDialog = ({
       if (!q) return true;
       const u = users.find((x) => x.username === item.id);
       const un = (item.id || '').toLowerCase();
-      const git = (u?.gitAccount || '').toLowerCase();
+      const scm = Object.values(u?.scmIdentities || {})
+        .join(' ')
+        .toLowerCase();
       const dn = (u?.displayName || '').toLowerCase();
-      return un.includes(q) || git.includes(q) || dn.includes(q);
+      return un.includes(q) || scm.includes(q) || dn.includes(q);
     },
     [filterVal, users],
   );

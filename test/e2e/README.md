@@ -90,9 +90,9 @@ Maintainers can trigger e2e tests on any PR by commenting with specific commands
 ## Test Structure
 
 - `vitest.config.ts` - Vitest config for this suite (`npm run test:e2e`)
-- `docker-compose.yml` - Docker Compose environment (git-proxy, mongodb, git-server)
+- `docker-compose.yml` - Docker Compose environment (git-proxy, mongodb, git-server running Forgejo, and its seed)
 - `proxy.config.json` - GitProxy config used by the Docker Compose environment
-- `localgit/` - Apache git HTTP server image used by Docker Compose
+- `forgejo/` - seed script that creates the Forgejo users, orgs and repositories the suite expects
 - `setup.ts` - Common setup utilities and configuration
 - `fetch.test.ts` - Tests for git repository fetching operations
 - `push.test.ts` - Tests for git repository push operations and authorization checks

@@ -96,6 +96,8 @@ class Action {
   author?: string;
   user?: string;
   userEmail?: string;
+  /** Set only when `user` came from a session or a credential the SCM vouched for; never from pushed objects. */
+  pusherVerified?: boolean;
   attestation?: CompletedAttestation;
   rejection?: Rejection;
   lastStep?: Step;
