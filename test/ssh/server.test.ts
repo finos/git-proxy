@@ -286,7 +286,7 @@ describe('SSHServer', () => {
         ssh2.utils.generateKeyPairSync('ed25519').private,
       ) as ssh2.ParsedKey;
       const blob = Buffer.from('session-bound-data-to-be-signed');
-      const mockUser = { username: 'test-user', email: 'test@example.com', gitAccount: 'testgit' };
+      const mockUser = { username: 'test-user', email: 'test@example.com' };
 
       const authHandler = getAuthHandler();
 
@@ -327,7 +327,7 @@ describe('SSHServer', () => {
         ssh2.utils.generateKeyPairSync('ed25519').private,
       ) as ssh2.ParsedKey;
       const blob = Buffer.from('session-bound-data-to-be-signed');
-      const mockUser = { username: 'test-user', email: 'test@example.com', gitAccount: 'testgit' };
+      const mockUser = { username: 'test-user', email: 'test@example.com' };
 
       vi.spyOn(db, 'findUserBySSHKey').mockResolvedValue(mockUser as any);
 
@@ -349,7 +349,7 @@ describe('SSHServer', () => {
     });
 
     it('should reject a signed request when the presented key cannot be parsed', async () => {
-      const mockUser = { username: 'test-user', email: 'test@example.com', gitAccount: 'testgit' };
+      const mockUser = { username: 'test-user', email: 'test@example.com' };
       vi.spyOn(db, 'findUserBySSHKey').mockResolvedValue(mockUser as any);
       vi.spyOn(ssh2.utils, 'parseKey').mockReturnValue(new Error('unparseable key'));
 
@@ -375,7 +375,7 @@ describe('SSHServer', () => {
         ssh2.utils.generateKeyPairSync('rsa', { bits: 2048 }).private,
       ) as ssh2.ParsedKey;
       const blob = Buffer.from('session-bound-data-to-be-signed');
-      const mockUser = { username: 'test-user', email: 'test@example.com', gitAccount: 'testgit' };
+      const mockUser = { username: 'test-user', email: 'test@example.com' };
 
       vi.spyOn(db, 'findUserBySSHKey').mockResolvedValue(mockUser as any);
 

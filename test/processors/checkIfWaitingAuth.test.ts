@@ -199,6 +199,7 @@ describe('checkIfWaitingAuth', () => {
       it('should not reuse an approval granted for another repository', async () => {
         const approved = makeAction('test/other.git', {
           authorised: true,
+          pusherVerified: true,
           branch: 'refs/heads/main',
           commitFrom: SHA_A,
           commitTo: SHA_B,
@@ -225,6 +226,7 @@ describe('checkIfWaitingAuth', () => {
       it('should not reuse an approval granted for another ref (branch)', async () => {
         const approved = makeAction('test/repo.git', {
           authorised: true,
+          pusherVerified: true,
           branch: 'refs/heads/spike',
           commitFrom: SHA_A,
           commitTo: SHA_B,
@@ -250,6 +252,7 @@ describe('checkIfWaitingAuth', () => {
       it('should not reuse an approval granted for different tags', async () => {
         const approved = makeAction('test/repo.git', {
           authorised: true,
+          pusherVerified: true,
           actionType: PushType.TAG,
           tags: ['refs/tags/v1.0.0'],
           commitFrom: SHA_A,
@@ -278,6 +281,7 @@ describe('checkIfWaitingAuth', () => {
         const tag2 = makeTag({ tagName: 'v2.0.0', object: SHA_C });
         const approved = makeAction('test/repo.git', {
           authorised: true,
+          pusherVerified: true,
           actionType: PushType.TAG,
           tags: ['refs/tags/v1.0.0', 'refs/tags/v2.0.0'],
           commitFrom: SHA_A,
@@ -304,6 +308,7 @@ describe('checkIfWaitingAuth', () => {
       it('should not reuse an approval when the pack carries commits that were not approved', async () => {
         const approved = makeAction('test/repo.git', {
           authorised: true,
+          pusherVerified: true,
           branch: 'refs/heads/main',
           commitFrom: SHA_A,
           commitTo: SHA_B,
@@ -328,6 +333,7 @@ describe('checkIfWaitingAuth', () => {
       it('should not reuse an approval when a commit in the pack has been altered', async () => {
         const approved = makeAction('test/repo.git', {
           authorised: true,
+          pusherVerified: true,
           branch: 'refs/heads/main',
           commitFrom: SHA_A,
           commitTo: SHA_B,
@@ -352,6 +358,7 @@ describe('checkIfWaitingAuth', () => {
       it('should honour an approval when the re-push carries a subset of the approved commits (thinner pack)', async () => {
         const approved = makeAction('test/repo.git', {
           authorised: true,
+          pusherVerified: true,
           branch: 'refs/heads/main',
           commitFrom: SHA_A,
           commitTo: SHA_B,
@@ -376,6 +383,7 @@ describe('checkIfWaitingAuth', () => {
       it('should not reuse an approval for a different commitTo', async () => {
         const approved = makeAction('test/repo.git', {
           authorised: true,
+          pusherVerified: true,
           branch: 'refs/heads/main',
           commitFrom: SHA_C,
           commitTo: SHA_A,
@@ -400,6 +408,7 @@ describe('checkIfWaitingAuth', () => {
       it('should not reuse an approval when the tag objects differ', async () => {
         const approved = makeAction('test/repo.git', {
           authorised: true,
+          pusherVerified: true,
           actionType: PushType.TAG,
           tags: ['refs/tags/v1.0.0'],
           commitFrom: SHA_A,
