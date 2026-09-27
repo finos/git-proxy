@@ -20,6 +20,7 @@ import { mintUpstreamToken, testConfig } from './setup';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import type { Action } from '../../src/proxy/actions';
 
 describe('Git Proxy E2E - Repository Push Tests', () => {
   const tempDir: string = path.join(os.tmpdir(), 'git-proxy-push-e2e-tests', Date.now().toString());
@@ -730,8 +731,38 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
           console.log('[TEST] Step 7: Approving push as authorized approver...');
           const approverCookie = await login(approverUser.username, approverUser.password);
 
+          // Reviewing a push needs the full diff; the dashboard list only needs metadata.
+          const detailUrl = `${testConfig.gitProxyUiUrl}/api/v1/push/${pushId}`;
+          const reviewHeaders = { Cookie: approverCookie };
+          const detailResponse = await fetch(detailUrl, { headers: reviewHeaders });
+          expect(detailResponse.status).toBe(200);
+          const pendingPush: Action = await detailResponse.json();
+          const diff = pendingPush.steps.find((step) => step.stepName === 'diff')?.content;
+          expect(diff).toEqual(expect.stringContaining('Approved Workflow Test'));
+          expect(diff).toContain('approved-workflow-test.txt');
+          const encodedDiff = JSON.stringify(diff).slice(1, -1);
+          expect(JSON.stringify(pendingPush).split(encodedDiff)).toHaveLength(2);
+          expect(pendingPush.authorised).toBe(false);
+
+          const listResponse = await fetch(`${testConfig.gitProxyUiUrl}/api/v1/push`, {
+            headers: reviewHeaders,
+          });
+          expect(listResponse.status).toBe(200);
+          const pushes: Action[] = await listResponse.json();
+          const summary = pushes.find((push) => push.id === pushId);
+          expect(summary).toMatchObject({ id: pushId, authorised: false });
+          for (const field of ['steps', 'lastStep', 'diff']) {
+            expect(summary).not.toHaveProperty(field);
+          }
+
           await approvePush(approverCookie, pushId!, defaultQuestions);
           console.log(`[TEST] SUCCESS: Push ${pushId} approved by ${approverUser.username}`);
+
+          const approvedResponse = await fetch(detailUrl, { headers: reviewHeaders });
+          expect(approvedResponse.status).toBe(200);
+          const approvedPush: Action = await approvedResponse.json();
+          expect(approvedPush.authorised).toBe(true);
+          expect(approvedPush.steps).toEqual(pendingPush.steps);
 
           // Step 8: Re-push after approval (should succeed)
           console.log('[TEST] Step 8: Re-pushing after approval...');
