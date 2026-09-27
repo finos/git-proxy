@@ -20,6 +20,7 @@ import { activityPrimaryStatusFromFlags } from '../../activity/activityPrimarySt
 import { canonicalRemoteUrl } from '../../activity/canonicalRemoteUrl';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
+import { pushListProjection } from '../pushProjection';
 import {
   PushQuery,
   RepoActivityTabCounts,
@@ -154,6 +155,7 @@ export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => {
   if (!query) query = defaultPushQuery;
   return new Promise((resolve, reject) => {
     db.find(query)
+      .projection(pushListProjection)
       .sort({ timestamp: -1 })
       .exec((err, docs) => {
         // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -178,6 +180,7 @@ export const getPushesForUserProfile = (
   const filter = buildUserProfilePushFilter(emailVariants, profileUsername);
   return new Promise((resolve, reject) => {
     db.find(filter)
+      .projection(pushListProjection)
       .sort({ timestamp: -1 })
       .exec((err, docs) => {
         /* istanbul ignore if */

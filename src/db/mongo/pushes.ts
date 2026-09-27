@@ -19,6 +19,7 @@ import { canonicalRemoteUrl } from '../../activity/canonicalRemoteUrl';
 import { connect, findDocuments, findOneDocument } from './helper';
 import { Action } from '../../proxy/actions';
 import { toClass } from '../helper';
+import { pushListProjection } from '../pushProjection';
 import {
   PushQuery,
   RepoActivityTabCounts,
@@ -119,33 +120,6 @@ const defaultPushQuery: Partial<PushQuery> = {
   authorised: false,
   type: 'push',
 };
-
-/** Fields returned for push list / activity UIs (shared by getPushes and getPushesForUserProfile). */
-const pushListProjection = {
-  _id: 0,
-  id: 1,
-  allowPush: 1,
-  attestation: 1,
-  authorised: 1,
-  blocked: 1,
-  blockedMessage: 1,
-  branch: 1,
-  canceled: 1,
-  commitData: 1,
-  commitFrom: 1,
-  commitTo: 1,
-  error: 1,
-  method: 1,
-  project: 1,
-  rejected: 1,
-  rejection: 1,
-  repo: 1,
-  repoName: 1,
-  timestamp: 1,
-  type: 1,
-  url: 1,
-  userEmail: 1,
-} as const;
 
 export const getPushes = async (
   query: Partial<PushQuery> = defaultPushQuery,

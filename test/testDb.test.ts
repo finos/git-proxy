@@ -583,8 +583,16 @@ describe('Database clients', () => {
     it('should be able to create a push', async () => {
       await db.writeAudit(TEST_PUSH);
       const pushes = await db.getPushes({});
-      const cleanPushes = cleanResponseData(TEST_PUSH, pushes);
-      expect(cleanPushes).toContainEqual(TEST_PUSH);
+      expect(pushes).toContainEqual(
+        expect.objectContaining({
+          id: TEST_PUSH.id,
+          user: TEST_PUSH.user,
+          userEmail: TEST_PUSH.userEmail,
+        }),
+      );
+      expect(pushes.find((push) => push.id === TEST_PUSH.id)).not.toHaveProperty('steps');
+      const detail = await db.getPush(TEST_PUSH.id);
+      expect(cleanResponseData(TEST_PUSH, detail!)).toEqual(TEST_PUSH);
     }, 20000);
 
     it('should be able to delete a push', async () => {
