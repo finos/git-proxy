@@ -19,9 +19,8 @@ import { populateRepoDates } from './populateRepoDates';
 import { refactorLegacyPushIds } from './refactorLegacyPushIds';
 import { gitAccountToScmIdentities } from './gitAccountToScmIdentities';
 
-
 export const migrations: Migration[] = [
   populateRepoDates,
   refactorLegacyPushIds,
-  gitAccountToScmIdentities
+  gitAccountToScmIdentities,
 ];
