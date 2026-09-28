@@ -142,6 +142,27 @@ export class SSHServer {
     };
   }
 
+  /**
+   * Verify that the client holds the private key for the public key it presented.
+   * ssh2 does not check the signature so we must do it ourselves
+   */
+  private verifyPublicKeySignature(ctx: ssh2.PublicKeyAuthContext, keyString: string): boolean {
+    if (!ctx.signature || !ctx.blob) {
+      return false;
+    }
+
+    try {
+      const parsed = ssh2.utils.parseKey(keyString);
+      if (!parsed || parsed instanceof Error) {
+        return false;
+      }
+      return parsed.verify(ctx.blob, ctx.signature, ctx.hashAlgo) === true;
+    } catch (err) {
+      console.error('[SSH] Error verifying public key signature:', err);
+      return false;
+    }
+  }
+
   private formatBytes(bytes: number): string {
     if (!Number.isFinite(bytes) || bytes <= 0) {
       return `${bytes} bytes`;
@@ -214,20 +235,37 @@ export class SSHServer {
 
         db.findUserBySSHKey(keyString)
           .then((user: any) => {
-            if (user) {
-              console.log(
-                `[SSH] Public key authentication successful for user: ${user.username} from ${clientIp}`,
-              );
-              clientWithUser.authenticatedUser = {
-                username: user.username,
-                email: user.email,
-                gitAccount: user.gitAccount,
-              };
-              ctx.accept();
-            } else {
+            if (!user) {
               console.log('[SSH] Public key authentication failed - key not found');
               ctx.reject();
+              return;
             }
+
+            // Without a signature the client is only asking whether this key would
+            // be accepted. ssh2 answers that with PK_OK; the session is not
+            // authenticated until the signed request below has been verified.
+            if (!ctx.signature) {
+              ctx.accept();
+              return;
+            }
+
+            if (!this.verifyPublicKeySignature(ctx, keyString)) {
+              console.log(
+                `[SSH] Public key authentication failed - invalid signature for user: ${user.username} from ${clientIp}`,
+              );
+              ctx.reject();
+              return;
+            }
+
+            console.log(
+              `[SSH] Public key authentication successful for user: ${user.username} from ${clientIp}`,
+            );
+            clientWithUser.authenticatedUser = {
+              username: user.username,
+              email: user.email,
+              gitAccount: user.gitAccount,
+            };
+            ctx.accept();
           })
           .catch((err: Error) => {
             console.error('[SSH] Database error during public key auth:', err);

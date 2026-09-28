@@ -21,13 +21,13 @@ All pushes that flow through GitProxy require an approval (authorisation). Until
 Following on from [Push via GitProxy](/docs/quickstart/intercept#push-via-git-proxy), a unique & shareable link is generated:
 
 ```
-http://localhost:8080/dashboard/push/0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
+http://localhost:8080/dashboard/push/3f9c2a7e1b8d4c6f0a5e9b2d7c1f4a8e6b3d0c9f2e5a7b1d4c8f0e3a6b9d2c5f
 ```
 
-The `ID` for your push corresponds to the last part of the URL:
+The `ID` for your push corresponds to the last part of the URL. It is a hash of the repository, the branch (or tag) and the commit range being pushed, so an approval only applies to that exact push:
 
 ```
-0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
+3f9c2a7e1b8d4c6f0a5e9b2d7c1f4a8e6b3d0c9f2e5a7b1d4c8f0e3a6b9d2c5f
 ```
 
 #### 2. Authenticate with the API
@@ -88,13 +88,13 @@ remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
 Following on from [Push via GitProxy](/docs/quickstart/intercept#push-via-git-proxy), you'll receive a unique URL:
 
 ```
-http://localhost:8080/requests/0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
+http://localhost:8080/dashboard/push/3f9c2a7e1b8d4c6f0a5e9b2d7c1f4a8e6b3d0c9f2e5a7b1d4c8f0e3a6b9d2c5f
 ```
 
 The `ID` for your push corresponds to the last part of the URL:
 
 ```
-0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
+3f9c2a7e1b8d4c6f0a5e9b2d7c1f4a8e6b3d0c9f2e5a7b1d4c8f0e3a6b9d2c5f
 ```
 
 #### 2. Authenticate with the CLI
@@ -108,11 +108,11 @@ Login "admin" <admin@place.com> (admin): OK
 
 #### 3. Approve the push with `ID`
 
-Use the commit `ID` to approve your push with the CLI:
+Use the push `ID` to approve your push with the CLI:
 
 ```bash
-$ npx -- @finos/git-proxy-cli authorise --id 0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f
-Authorise: ID: '0000000000000000000000000000000000000000__79b4d8953cbc324bcc1eb53d6412ff89666c241f': OK
+$ npx -- @finos/git-proxy-cli authorise --id 3f9c2a7e1b8d4c6f0a5e9b2d7c1f4a8e6b3d0c9f2e5a7b1d4c8f0e3a6b9d2c5f
+Authorise: ID: '3f9c2a7e1b8d4c6f0a5e9b2d7c1f4a8e6b3d0c9f2e5a7b1d4c8f0e3a6b9d2c5f': OK
 ```
 
 #### 4. Re-push your code
@@ -174,7 +174,7 @@ Following on from [Push via GitProxy](/docs/quickstart/intercept#push-via-git-pr
 remote: GitProxy has received your push ✅
 remote:
 remote: 🔗 Shareable Link
-remote: http://localhost:8080/dashboard/push/000000__b12557
+remote: http://localhost:8080/dashboard/push/3f9c2a7e1b8d4c6f0a5e9b2d7c1f4a8e6b3d0c9f2e5a7b1d4c8f0e3a6b9d2c5f
 ```
 
 Insert the URL directly into your web browser.

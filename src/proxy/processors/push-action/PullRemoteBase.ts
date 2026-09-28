@@ -15,6 +15,7 @@
  */
 
 import { Action, Step } from '../../actions';
+import crypto from 'crypto';
 import fs from 'fs';
 import { getErrorMessage } from '../../../utils/errors';
 
@@ -37,16 +38,28 @@ export abstract class PullRemoteBase {
   }
 
   /**
+   * Directory name for a push's checkout: a digest of the action id, which
+   * eliminates potentially dangerous characters such as path separators.
+   */
+  static checkoutDirName(actionId: string): string {
+    return crypto.createHash('sha256').update(actionId).digest('hex').slice(0, 32);
+  }
+
+  /**
    * Setup directories for clone operation
    */
   protected async setupDirectories(action: Action): Promise<void> {
-    action.proxyGitPath = `${PullRemoteBase.REMOTE_DIR}/${action.id}`;
+    const checkoutPath = `${PullRemoteBase.REMOTE_DIR}/${PullRemoteBase.checkoutDirName(action.id)}`;
 
-    if (fs.existsSync(action.proxyGitPath)) {
+    if (fs.existsSync(checkoutPath)) {
       throw new Error(
         'The checkout folder already exists - we may be processing a concurrent request for this push. If this issue persists the proxy may need to be restarted.',
       );
     }
+
+    // Assigned only once the checkout is known to be usable, so the cleanup in
+    // exec() is never handed a path this method refused to create.
+    action.proxyGitPath = checkoutPath;
 
     await this.ensureDirectory(PullRemoteBase.REMOTE_DIR);
     await this.ensureDirectory(action.proxyGitPath);
