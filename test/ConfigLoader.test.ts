@@ -460,7 +460,7 @@ describe('ConfigLoader', () => {
         type: 'git',
         repository: 'https://github.com/finos/git-proxy.git',
         path: 'proxy.config.json',
-        branch: 'main',
+        branch: 'release/2.1',
         enabled: true,
       };
 
@@ -500,7 +500,7 @@ describe('ConfigLoader', () => {
     it('should load configuration from http', async function () {
       const source: HttpSource = {
         type: 'http',
-        url: 'https://raw.githubusercontent.com/finos/git-proxy/refs/heads/main/proxy.config.json',
+        url: 'https://raw.githubusercontent.com/finos/git-proxy/refs/heads/release/2.1/proxy.config.json',
         enabled: true,
       };
 
