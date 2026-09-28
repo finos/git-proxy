@@ -25,11 +25,12 @@ import {
   getCommitData,
   getContents,
   getPackMeta,
+  isValidGitObjectId,
   parsePacketLines,
 } from '../src/proxy/processors/push-action/parsePush';
 import { EMPTY_COMMIT_HASH, FLUSH_PACKET, PACK_SIGNATURE } from '../src/proxy/processors/constants';
 import { CommitContent } from '../src/proxy/processors/types';
-import { Action } from '../src/proxy/actions/Action';
+import { Action, buildPushId } from '../src/proxy/actions/Action';
 import { Request } from 'express';
 import { Step } from '../src/proxy/actions/Step';
 
@@ -392,6 +393,157 @@ describe('parsePackFile', () => {
         getContents(brokenContentBuffer, TEST_MULTI_OBJ_COMMIT_CONTENT.length),
       ).rejects.toThrowError(/Error during/);
     });
+
+    it('should reject a PACK object with excessive decompression amplification', async () => {
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'author Test <test@example.com> 1234567890 +0000\n' +
+        'committer Test <test@example.com> 1234567890 +0000\n\n' +
+        'A'.repeat(128 * 1024);
+      const packBuffer = createSamplePackBuffer(1, commitContent);
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      await expect(getContents(contentBuffer, 1)).rejects.toThrowError(
+        /decompressed size exceeds the safety limit/,
+      );
+    });
+
+    it('should reject a PACK object that inflates past its declared size', async () => {
+      const inflated = 'A'.repeat(2048);
+      const compressed = deflateSync(Buffer.from(inflated, 'utf8'));
+      const lyingHeader = encodeGitObjectHeader(1, 16);
+      const packHeader = Buffer.alloc(12);
+      packHeader.write(PACK_SIGNATURE, 0, 4, 'utf-8');
+      packHeader.writeUInt32BE(2, 4);
+      packHeader.writeUInt32BE(1, 8);
+      const packWithoutChecksum = Buffer.concat([packHeader, lyingHeader, compressed]);
+      const checksum = createHash('sha1').update(packWithoutChecksum).digest();
+      const [, contentBuffer] = getPackMeta(Buffer.concat([packWithoutChecksum, checksum]));
+
+      await expect(getContents(contentBuffer, 1)).rejects.toThrowError(
+        /exceeds its declared size|does not match its declared size|Error during inflation/,
+      );
+    });
+
+    it('should reject a PACK whose header declares too many objects', async () => {
+      const packBuffer = createSamplePackBuffer(100_001);
+      const [packMeta, contentBuffer] = getPackMeta(packBuffer);
+
+      expect(packMeta.entries).toBe(100_001);
+      await expect(getContents(contentBuffer, packMeta.entries)).rejects.toThrowError(
+        /object count exceeds the safety limit/,
+      );
+    });
+
+    it('should reject extra PACK objects beyond the configured object limit', async () => {
+      const packBuffer = createMultiObjectSamplePackBuffer();
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      await expect(getContents(contentBuffer, 1, { maxPackObjects: 2 })).rejects.toThrowError(
+        /object count exceeds the safety limit/,
+      );
+    });
+
+    it('should reject a PACK whose declared object count exceeds maxPackObjects', async () => {
+      const packBuffer = createSamplePackBuffer();
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      await expect(getContents(contentBuffer, 3, { maxPackObjects: 2 })).rejects.toThrowError(
+        /object count exceeds the safety limit/,
+      );
+    });
+
+    it('should reject a single object larger than the per-object limit', async () => {
+      const packBuffer = createSamplePackBuffer();
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      await expect(
+        getContents(contentBuffer, 1, { maxDecompressedObjectSizeBytes: 16 }),
+      ).rejects.toThrowError(/object decompressed size exceeds the safety limit/);
+    });
+
+    it('should reject multiple objects that together exceed the cumulative budget', async () => {
+      const packBuffer = createMultiObjectSamplePackBuffer();
+      const [, contentBuffer] = getPackMeta(packBuffer);
+      const firstSize = Buffer.byteLength(TEST_MULTI_OBJ_COMMIT_CONTENT[0].content);
+      const secondSize = Buffer.byteLength(TEST_MULTI_OBJ_COMMIT_CONTENT[1].content);
+      // Room for the first object but not for both.
+      const maxDecompressedPackSizeBytes = firstSize + secondSize - 1;
+
+      await expect(
+        getContents(contentBuffer, TEST_MULTI_OBJ_COMMIT_CONTENT.length, {
+          maxDecompressedPackSizeBytes,
+        }),
+      ).rejects.toThrowError(/PACK decompressed size exceeds the safety limit/);
+    });
+
+    it('should reject a compressible PACK when the configured expansion ratio is too low', async () => {
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'author Test <test@example.com> 1234567890 +0000\n' +
+        'committer Test <test@example.com> 1234567890 +0000\n\n' +
+        'A'.repeat(2 * 1024);
+      const packBuffer = createSamplePackBuffer(1, commitContent);
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      await expect(
+        getContents(contentBuffer, 1, { maxPackExpansionRatio: 2 }),
+      ).rejects.toThrowError(/decompressed size exceeds the safety limit/);
+    });
+
+    it('should accept a compressible PACK when the configured expansion ratio allows it', async () => {
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'author Test <test@example.com> 1234567890 +0000\n' +
+        'committer Test <test@example.com> 1234567890 +0000\n\n' +
+        'A'.repeat(128 * 1024);
+      const packBuffer = createSamplePackBuffer(1, commitContent);
+      const [, contentBuffer] = getPackMeta(packBuffer);
+
+      const entries = await getContents(contentBuffer, 1, { maxPackExpansionRatio: 10_000 });
+      expect(entries).toHaveLength(1);
+      expect(entries[0].content).toBe(commitContent);
+    });
+
+    it('should not let trailing padding raise the decompression allowance', async () => {
+      // A tiny payload behind a header declaring 256 MiB, followed by padding that would
+      // otherwise buy a 100x expansion allowance against the size of the request body.
+      const compressed = deflateSync(Buffer.from('A'.repeat(64), 'utf8'));
+      const lyingHeader = encodeGitObjectHeader(1, 256 * 1024 * 1024);
+      const packHeader = Buffer.alloc(12);
+      packHeader.write(PACK_SIGNATURE, 0, 4, 'utf-8');
+      packHeader.writeUInt32BE(2, 4);
+      packHeader.writeUInt32BE(1, 8);
+      const padding = Buffer.alloc(8 * 1024 * 1024, 0x41);
+      const [, contentBuffer] = getPackMeta(
+        Buffer.concat([packHeader, lyingHeader, compressed, padding]),
+      );
+
+      await expect(getContents(contentBuffer, 1)).rejects.toThrowError(
+        /object decompressed size exceeds the safety limit/,
+      );
+    });
+
+    it('should log object metadata without logging decompressed contents', async () => {
+      const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      try {
+        const commitContent =
+          'tree 1234567890abcdef1234567890abcdef12345678\n' +
+          'author Test <test@example.com> 1234567890 +0000\n' +
+          'committer Test <test@example.com> 1234567890 +0000\n\n' +
+          'SENSITIVE-PAYLOAD';
+        const packBuffer = createSamplePackBuffer(1, commitContent);
+        const [, contentBuffer] = getPackMeta(packBuffer);
+
+        await getContents(contentBuffer, 1);
+
+        const logged = logSpy.mock.calls.flat().join('\n');
+        expect(logged).not.toContain('SENSITIVE-PAYLOAD');
+        expect(logged).toContain('commit=1');
+      } finally {
+        logSpy.mockRestore();
+      }
+    });
   });
 
   describe('exec', () => {
@@ -431,9 +583,13 @@ describe('parsePackFile', () => {
     });
 
     it('should add error step if multiple ref updates found', async () => {
+      const mainOldCommit = 'a'.repeat(40);
+      const mainNewCommit = 'b'.repeat(40);
+      const developOldCommit = 'c'.repeat(40);
+      const developNewCommit = 'd'.repeat(40);
       const packetLines = [
-        'oldhash1 newhash1 refs/heads/main\0caps\n',
-        'oldhash2 newhash2 refs/heads/develop\0caps\n',
+        `${mainOldCommit} ${mainNewCommit} refs/heads/main\0caps\n`,
+        `${developOldCommit} ${developNewCommit} refs/heads/develop\0caps\n`,
       ];
       req.body = createPacketLineBuffer(packetLines);
       const result = await exec(req, action);
@@ -479,6 +635,28 @@ describe('parsePackFile', () => {
       expect(action.branch).toBe(ref);
       expect(action.setCommit).toHaveBeenCalledOnce();
       expect(action.setCommit).toHaveBeenCalledWith(oldCommit, newCommit);
+    });
+
+    it('should add error step if PACK decompression exceeds the safety limit', async () => {
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/main';
+      const packetLine = `${oldCommit} ${newCommit} ${ref}\0capabilities\n`;
+      const commitContent =
+        'tree 1234567890abcdef1234567890abcdef12345678\n' +
+        'parent abcdef1234567890abcdef1234567890abcdef12\n' +
+        'author Test Author <author@example.com> 1234567890 +0000\n' +
+        'committer Test Committer <committer@example.com> 1234567890 +0000\n\n' +
+        'A'.repeat(128 * 1024);
+      const packBuffer = createSamplePackBuffer(1, commitContent, 1);
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), packBuffer]);
+
+      const result = await exec(req, action);
+      const step = result.steps[0];
+
+      expect(step.error).toBe(true);
+      expect(step.errorMessage).toContain('decompressed size exceeds the safety limit');
+      expect(result.commitData).toEqual([]);
     });
 
     it('should successfully parse a valid push request (simulated)', async () => {
@@ -755,9 +933,11 @@ describe('parsePackFile', () => {
     it('should add error step if multiple tree lines are found in a commit', async () => {
       const commitContent =
         'tree 123\ntree 456\nparent 789\nauthor Test Author <test@example.com> 1234567890 +0000\ncommitter Test Committer <committer@example.com> 1234567890 +0000\n\nCommit message';
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([
-        createPacketLineBuffer(['oldhash1 newhash1 refs/heads/main\0caps\n']),
+        createPacketLineBuffer([`${oldCommit} ${newCommit} refs/heads/main\0caps\n`]),
         samplePackBuffer,
       ]);
       const result = await exec(req, action);
@@ -770,9 +950,11 @@ describe('parsePackFile', () => {
     it('should add error step if multiple author lines are found in a commit', async () => {
       const commitContent =
         'tree 123\nauthor Test Author <test@example.com> 1234567890 +0000\nauthor Test Author <test@example.com> 1234567890 +0000\nparent 789\ncommitter Test Committer <committer@example.com> 1234567890 +0000\n\nCommit message';
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([
-        createPacketLineBuffer(['oldhash1 newhash1 refs/heads/main\0caps\n']),
+        createPacketLineBuffer([`${oldCommit} ${newCommit} refs/heads/main\0caps\n`]),
         samplePackBuffer,
       ]);
       const result = await exec(req, action);
@@ -785,9 +967,11 @@ describe('parsePackFile', () => {
     it('should add error step if multiple committer lines are found in a commit', async () => {
       const commitContent =
         'tree 123\nauthor Test Author <test@example.com> 1234567890 +0000\ncommitter Test Committer <committer@example.com> 1234567890 +0000\ncommitter Test Committer <committer@example.com> 1234567890 +0000\nparent 789\n\nCommit message';
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([
-        createPacketLineBuffer(['oldhash1 newhash1 refs/heads/main\0caps\n']),
+        createPacketLineBuffer([`${oldCommit} ${newCommit} refs/heads/main\0caps\n`]),
         samplePackBuffer,
       ]);
       const result = await exec(req, action);
@@ -800,9 +984,11 @@ describe('parsePackFile', () => {
     it('should correctly handle trailing new lines in the commit content', async () => {
       const commitContent =
         'tree 123\nparent 789\nauthor Test Author <test@example.com> 1234567890 +0000\ncommitter Test Committer <committer@example.com> 1234567890 +0000\n\nCommit message\n\n\n';
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([
-        createPacketLineBuffer(['oldhash1 newhash1 refs/heads/main\0caps\n']),
+        createPacketLineBuffer([`${oldCommit} ${newCommit} refs/heads/main\0caps\n`]),
         samplePackBuffer,
       ]);
       const result = await exec(req, action);
@@ -816,9 +1002,11 @@ describe('parsePackFile', () => {
     it('should correctly handle trailing spaces in the commit content', async () => {
       const commitContent =
         'tree 123\nparent 789\nauthor Test Author <test@example.com> 1234567890 +0000\ncommitter Test Committer <committer@example.com> 1234567890 +0000\n\nCommit message   ';
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([
-        createPacketLineBuffer(['oldhash1 newhash1 refs/heads/main\0caps\n']),
+        createPacketLineBuffer([`${oldCommit} ${newCommit} refs/heads/main\0caps\n`]),
         samplePackBuffer,
       ]);
       const result = await exec(req, action);
@@ -831,9 +1019,11 @@ describe('parsePackFile', () => {
 
     it('should error if commit data is empty (headerEndIndex is -1)', async () => {
       const commitContent = 'tree 123';
+      const oldCommit = 'a'.repeat(40);
+      const newCommit = 'b'.repeat(40);
       const samplePackBuffer = createSamplePackBuffer(1, commitContent, 1);
       req.body = Buffer.concat([
-        createPacketLineBuffer(['oldhash1 newhash1 refs/heads/main\0caps\n']),
+        createPacketLineBuffer([`${oldCommit} ${newCommit} refs/heads/main\0caps\n`]),
         samplePackBuffer,
       ]);
       const result = await exec(req, action);
@@ -949,6 +1139,153 @@ describe('parsePackFile', () => {
       expect(action.branch).toBe(ref);
       expect(action.setCommit).toHaveBeenCalledWith(EMPTY_COMMIT_HASH, newCommit);
       expect(action.commitData).toHaveLength(0);
+    });
+
+    it('rejects a push whose old commit ID is not a valid object ID', async () => {
+      const emptyPackBuffer = createEmptyPackBuffer();
+      const maliciousOldCommit = '../../mnt/evidence/x';
+      const newCommit = 'b'.repeat(40);
+      const ref = 'refs/heads/feature/attack';
+      const packetLine = `${maliciousOldCommit} ${newCommit} ${ref}\0capabilities\n`;
+
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), emptyPackBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).toBe(action);
+
+      const step = action.steps.find((s: any) => s.stepName === 'parsePackFile');
+      expect(step).toBeTruthy();
+      expect(step.error).toBe(true);
+      expect(step.errorMessage).toContain('Invalid commit ID format');
+    });
+
+    it('rejects a push whose new commit ID is not a valid object ID', async () => {
+      const emptyPackBuffer = createEmptyPackBuffer();
+      const oldCommit = 'a'.repeat(40);
+      const maliciousNewCommit = '../../etc/passwd';
+      const ref = 'refs/heads/feature/attack';
+      const packetLine = `${oldCommit} ${maliciousNewCommit} ${ref}\0capabilities\n`;
+
+      req.body = Buffer.concat([createPacketLineBuffer([packetLine]), emptyPackBuffer]);
+
+      const result = await exec(req, action);
+      expect(result).toBe(action);
+
+      const step = action.steps.find((s: any) => s.stepName === 'parsePackFile');
+      expect(step).toBeTruthy();
+      expect(step.error).toBe(true);
+      expect(step.errorMessage).toContain('Invalid commit ID format');
+    });
+  });
+
+  describe('push id scoping', () => {
+    const REPO_1_URL = 'https://example.com/repo1.git';
+    const REPO_2_URL = 'https://example.com/repo2.git';
+    const newCommit = 'b'.repeat(40);
+
+    const buildBranchPushBody = (ref: string, oldCommit: string): Buffer =>
+      Buffer.concat([
+        createPacketLineBuffer([`${oldCommit} ${newCommit} ${ref}\0capabilities\n`]),
+        createSamplePackBuffer(),
+      ]);
+
+    const parseWithRealAction = async (url: string, body: Buffer): Promise<Action> => {
+      const realAction = new Action('initial-id', 'push', 'POST', 1234567890, url);
+      const result = await exec({ body } as Request, realAction);
+      const step = result.steps.find((s) => s.stepName === 'parsePackFile');
+      expect(step?.error).toBe(false);
+      return result;
+    };
+
+    it('should derive different ids for the same push body sent to different repositories', async () => {
+      const ref = 'refs/heads/feature/scoped';
+      const oldCommit = 'a'.repeat(40);
+      const body = buildBranchPushBody(ref, oldCommit);
+
+      const repo1 = await parseWithRealAction(REPO_1_URL, body);
+      const repo2 = await parseWithRealAction(REPO_2_URL, body);
+
+      expect(repo1.branch).toBe(ref);
+      expect(repo2.branch).toBe(ref);
+
+      expect(repo1.id).not.toBe(repo2.id);
+      expect(repo1.id).toBe(
+        buildPushId({
+          url: REPO_1_URL,
+          branch: ref,
+          commitFrom: oldCommit,
+          commitTo: newCommit,
+        }),
+      );
+      expect(repo2.id).toBe(
+        buildPushId({
+          url: REPO_2_URL,
+          branch: ref,
+          commitFrom: oldCommit,
+          commitTo: newCommit,
+        }),
+      );
+    });
+
+    it('should derive different ids for the same push body sent to different refs', async () => {
+      const oldCommit = 'a'.repeat(40);
+
+      const spike = await parseWithRealAction(
+        REPO_1_URL,
+        buildBranchPushBody('refs/heads/spike', oldCommit),
+      );
+      const release = await parseWithRealAction(
+        REPO_1_URL,
+        buildBranchPushBody('refs/heads/release-x', oldCommit),
+      );
+
+      expect(spike.id).not.toBe(release.id);
+      expect(spike.id).toBe(
+        buildPushId({
+          url: REPO_1_URL,
+          branch: 'refs/heads/spike',
+          commitFrom: oldCommit,
+          commitTo: newCommit,
+        }),
+      );
+      expect(release.id).toBe(
+        buildPushId({
+          url: REPO_1_URL,
+          branch: 'refs/heads/release-x',
+          commitFrom: oldCommit,
+          commitTo: newCommit,
+        }),
+      );
+    });
+
+    it('should compute the id from the raw ref-line oids even when commitFrom is rewritten for a new branch', async () => {
+      const ref = 'refs/heads/feature/new-branch';
+      const parent = 'c'.repeat(40);
+      const commitContent =
+        `tree ${'d'.repeat(40)}\n` +
+        `parent ${parent}\n` +
+        'author A <a@a> 123 +0000\n' +
+        'committer C <c@c> 456 +0000\n\n' +
+        'message';
+      const body = Buffer.concat([
+        createPacketLineBuffer([`${EMPTY_COMMIT_HASH} ${newCommit} ${ref}\0capabilities\n`]),
+        createSamplePackBuffer(1, commitContent, 1),
+      ]);
+
+      const parsed = await parseWithRealAction(REPO_1_URL, body);
+
+      // parsePush rewrites commitFrom to the parent of the last commit in the pack
+      expect(parsed.commitFrom).toBe(parent);
+      expect(parsed.commitFrom).not.toBe(EMPTY_COMMIT_HASH);
+      // id still derived from the raw values on the ref line
+      expect(parsed.id).toBe(
+        buildPushId({
+          url: REPO_1_URL,
+          branch: ref,
+          commitFrom: EMPTY_COMMIT_HASH,
+          commitTo: newCommit,
+        }),
+      );
     });
   });
 
@@ -1214,5 +1551,65 @@ describe('parsePackFile', () => {
       const incompleteBuffer = Buffer.from('0008');
       expect(() => parsePacketLines(incompleteBuffer)).toThrow(/Invalid packet line length 0008/);
     });
+
+    it('should reject an excessive number of packet lines', () => {
+      const lines = ['line1', 'line2', 'line3'];
+      const buffer = createPacketLineBuffer(lines);
+
+      expect(() => parsePacketLines(buffer, 2)).toThrow(/Too many packet lines/);
+    });
+  });
+});
+
+// Tests for isValidGitObjectId, which validates commit IDs parsed from push
+// requests. Covers valid object IDs and the malformed inputs that must be
+// rejected (wrong length, non-hex, wrong case, embedded separators, anchors).
+describe('isValidGitObjectId', () => {
+  it('accepts a valid 40-character hex string', () => {
+    expect(isValidGitObjectId('a'.repeat(40))).toBe(true);
+  });
+
+  it('accepts the all-zeros commit hash', () => {
+    expect(isValidGitObjectId('0'.repeat(40))).toBe(true);
+  });
+
+  it('rejects a too-short string', () => {
+    expect(isValidGitObjectId('a'.repeat(39))).toBe(false);
+  });
+
+  it('rejects a too-long string', () => {
+    expect(isValidGitObjectId('a'.repeat(41))).toBe(false);
+  });
+
+  it('rejects a non-hex character', () => {
+    expect(isValidGitObjectId('g'.repeat(40))).toBe(false);
+  });
+
+  it('rejects uppercase hex', () => {
+    expect(isValidGitObjectId('A'.repeat(40))).toBe(false);
+  });
+
+  it('rejects a value with a trailing newline', () => {
+    expect(isValidGitObjectId('a'.repeat(40) + '\n')).toBe(false);
+  });
+
+  it('rejects a path traversal payload', () => {
+    expect(isValidGitObjectId('../../mnt/evidence/x')).toBe(false);
+  });
+
+  it('rejects an empty string', () => {
+    expect(isValidGitObjectId('')).toBe(false);
+  });
+
+  it('rejects a value with a leading newline', () => {
+    expect(isValidGitObjectId('\n' + 'a'.repeat(40))).toBe(false);
+  });
+
+  it('rejects a slash embedded within 40 characters', () => {
+    expect(isValidGitObjectId('a'.repeat(20) + '/' + 'a'.repeat(19))).toBe(false);
+  });
+
+  it('accepts a realistic mixed-hex commit hash', () => {
+    expect(isValidGitObjectId('3f2a1b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a')).toBe(true);
   });
 });

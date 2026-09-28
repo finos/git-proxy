@@ -17,12 +17,16 @@
 import { describe, it, expect, afterAll, beforeAll } from 'vitest';
 import fs from 'fs';
 import { exec as clearBareClone } from '../../src/proxy/processors/post-processor/clearBareClone';
-import { exec as pullRemote } from '../../src/proxy/processors/push-action/pullRemote';
+import {
+  exec as pullRemote,
+  checkoutDirName,
+} from '../../src/proxy/processors/push-action/pullRemote';
 import { Action } from '../../src/proxy/actions/Action';
 
 const actionId = '123__456';
 const timestamp = Date.now();
 const remoteFolder = `./.remote`;
+const checkoutFolder = `${remoteFolder}/${checkoutDirName(actionId)}`;
 
 describe('clear local clones', () => {
   beforeAll(() => {
@@ -46,11 +50,11 @@ describe('clear local clones', () => {
       action,
     );
 
-    expect(fs.existsSync(`${remoteFolder}/${actionId}`)).toBe(true);
+    expect(fs.existsSync(checkoutFolder)).toBe(true);
 
     action = await clearBareClone(null, action);
 
-    expect(fs.existsSync(`${remoteFolder}/${actionId}`)).toBe(false);
+    expect(fs.existsSync(checkoutFolder)).toBe(false);
   }, 20000);
 
   afterAll(() => {

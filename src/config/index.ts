@@ -317,6 +317,40 @@ export const getRateLimit = () => {
   return config.rateLimit;
 };
 
+const MEGABYTE = 1024 * 1024;
+
+const resolveLimit = (configuredValue: number | undefined, fallback: number): number => {
+  if (
+    typeof configuredValue === 'number' &&
+    Number.isFinite(configuredValue) &&
+    configuredValue > 0
+  ) {
+    return configuredValue;
+  }
+
+  return fallback;
+};
+
+export const getMaxDecompressedPackSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxDecompressedPackSizeBytes, 128 * MEGABYTE);
+};
+
+export const getMaxDecompressedObjectSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxDecompressedObjectSizeBytes, 64 * MEGABYTE);
+};
+
+export const getMaxPackExpansionRatio = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackExpansionRatio, 100);
+};
+
+export const getMaxPackObjects = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackObjects, 100_000);
+};
+
 // Function to handle configuration updates
 const handleConfigUpdate = async (newConfig: Configuration) => {
   console.log('Configuration updated from external source');

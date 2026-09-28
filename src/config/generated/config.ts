@@ -56,6 +56,10 @@ export interface GitProxyConfig {
    */
   domains?: Domains;
   /**
+   * Configuration for various limits
+   */
+  limits?: Limits;
+  /**
    * List of plugins to integrate on GitProxy's push or pull actions. Each value is either a
    * file path or a module name.
    */
@@ -452,6 +456,30 @@ export interface Domains {
 }
 
 /**
+ * Configuration for various limits
+ */
+export interface Limits {
+  /**
+   * Maximum decompressed size of a single object in a pack file in bytes (default 64MB).
+   * Capped by maxDecompressedPackSizeBytes.
+   */
+  maxDecompressedObjectSizeBytes?: number;
+  /**
+   * Maximum total decompressed size of all objects in a pack file in bytes (default 128MB).
+   */
+  maxDecompressedPackSizeBytes?: number;
+  /**
+   * Maximum allowed expansion ratio (decompressed/compressed size) of a pack file (default
+   * 100).
+   */
+  maxPackExpansionRatio?: number;
+  /**
+   * Maximum number of objects in a pack file (default 100,000).
+   */
+  maxPackObjects?: number;
+}
+
+/**
  * API Rate limiting configuration.
  */
 export interface RateLimit {
@@ -769,6 +797,7 @@ const typeMap: any = {
       { json: 'cookieSecret', js: 'cookieSecret', typ: u(undefined, '') },
       { json: 'csrfProtection', js: 'csrfProtection', typ: u(undefined, true) },
       { json: 'domains', js: 'domains', typ: u(undefined, r('Domains')) },
+      { json: 'limits', js: 'limits', typ: u(undefined, r('Limits')) },
       { json: 'plugins', js: 'plugins', typ: u(undefined, a('')) },
       { json: 'privateOrganizations', js: 'privateOrganizations', typ: u(undefined, a('any')) },
       { json: 'proxyUrl', js: 'proxyUrl', typ: u(undefined, '') },
@@ -918,6 +947,23 @@ const typeMap: any = {
       { json: 'service', js: 'service', typ: u(undefined, '') },
     ],
     'any',
+  ),
+  Limits: o(
+    [
+      {
+        json: 'maxDecompressedObjectSizeBytes',
+        js: 'maxDecompressedObjectSizeBytes',
+        typ: u(undefined, 3.14),
+      },
+      {
+        json: 'maxDecompressedPackSizeBytes',
+        js: 'maxDecompressedPackSizeBytes',
+        typ: u(undefined, 3.14),
+      },
+      { json: 'maxPackExpansionRatio', js: 'maxPackExpansionRatio', typ: u(undefined, 3.14) },
+      { json: 'maxPackObjects', js: 'maxPackObjects', typ: u(undefined, 3.14) },
+    ],
+    false,
   ),
   RateLimit: o(
     [

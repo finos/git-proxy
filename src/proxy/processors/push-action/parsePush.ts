@@ -24,11 +24,21 @@ import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '.
 import {
   BRANCH_PREFIX,
   EMPTY_COMMIT_HASH,
+  GIT_OBJECT_ID_REGEX,
   PACK_SIGNATURE,
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
+  SEVEN_BIT_MASK,
+  EIGHTH_BIT_MASK,
 } from '../constants';
 import { getErrorMessage } from '../../../utils/errors';
+import {
+  getMaxDecompressedObjectSizeBytes,
+  getMaxDecompressedPackSizeBytes,
+  getMaxPackExpansionRatio,
+  getMaxPackObjects,
+} from '../../../config';
+import { Limits } from '../../../config/generated/config';
 
 const dir = './.tmp/';
 
@@ -36,13 +46,10 @@ if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir);
 }
 
-/** Bit mask for the seven bits used in variable length size encodings
- * (size and ofd_delta offset) to encode the value. */
-const SEVEN_BIT_MASK = 0x7f;
-/** Bit mask for the continuation bit (8th bit) used in the variable length
- * size encodings (size and ofs_delta offsets) in Git object headers used in
- * PACK files. */
-const EIGHTH_BIT_MASK = 0x80;
+// Validates a value is a well-formed Git object ID (40-char lowercase hex).
+export const isValidGitObjectId = (oid: string): boolean => {
+  return GIT_OBJECT_ID_REGEX.test(oid);
+};
 
 /**
  * Executes the parsing of a push request.
@@ -77,6 +84,11 @@ async function exec(req: Request, action: Action): Promise<Action> {
 
     const [oldCommit, newCommit, ref] = parts;
 
+    // Reject malformed commit IDs before they are used to build the action id and paths.
+    if (!isValidGitObjectId(oldCommit) || !isValidGitObjectId(newCommit)) {
+      throw new Error('Your push has been blocked. Invalid commit ID format.');
+    }
+
     // Strip everything after NUL, which is cap-list from
     // https://git-scm.com/docs/http-protocol#_smart_server_response
     action.branch = ref.replace(/\0.*/, '').trim();
@@ -107,6 +119,11 @@ async function exec(req: Request, action: Action): Promise<Action> {
     } else {
       if (action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
+      }
+
+      // commitFrom may have been reassigned from PACK data above; re-validate it.
+      if (action.commitFrom && !isValidGitObjectId(action.commitFrom)) {
+        throw new Error('Your push has been blocked. Invalid commit ID format.');
       }
 
       const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
@@ -306,12 +323,38 @@ const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
  * Gets the contents of a pack file.
  * @param {Buffer} buffer The buffer containing the pack file data.
  * @param {number} numEntries The expected number of entries in the pack file.
+ * @param {object} [options] Optional decompression limits (overrides `limits` config).
  * @return {CommitContent[]}
  */
-const getContents = async (buffer: Buffer, numEntries: number): Promise<CommitContent[]> => {
+const getContents = async (
+  buffer: Buffer,
+  numEntries: number,
+  options: Partial<Limits> = {},
+): Promise<CommitContent[]> => {
+  // Expansion ratio is measured against the whole remaining buffer, including padding
+  // absolute limit is set to the worst case memory use
+  const expansionRatio = options.maxPackExpansionRatio ?? getMaxPackExpansionRatio();
+  const maxDecompressedSize =
+    options.maxDecompressedPackSizeBytes ??
+    Math.min(getMaxDecompressedPackSizeBytes(), buffer.length * expansionRatio);
+  const maxObjectDecompressedSize = Math.min(
+    options.maxDecompressedObjectSizeBytes ?? getMaxDecompressedObjectSizeBytes(),
+    maxDecompressedSize,
+  );
+  const maxObjects = options.maxPackObjects ?? getMaxPackObjects();
+
+  if (!Number.isSafeInteger(numEntries) || numEntries < 0 || numEntries > maxObjects) {
+    throw new Error('PACK object count exceeds the safety limit.');
+  }
+
   const entries: CommitContent[] = [];
 
-  const gitObjects = await decompressGitObjects(buffer);
+  const gitObjects = await decompressGitObjects(
+    buffer,
+    maxDecompressedSize,
+    maxObjectDecompressedSize,
+    maxObjects,
+  );
   for (let index = 0; index < gitObjects.length; index++) {
     const obj = gitObjects[index];
 
@@ -328,13 +371,32 @@ const getContents = async (buffer: Buffer, numEntries: number): Promise<CommitCo
 
   if (numEntries != entries.length) {
     console.warn(
-      `getContents returned an unexpected number of entries: ${entries.length}, expected ${numEntries}, entries:\n${JSON.stringify(entries, null, 2)}`,
+      `getContents returned an unexpected number of entries: ${entries.length}, expected ${numEntries}, ${summariseEntries(entries)}`,
     );
   } else {
-    console.log(`getContents returned ${numEntries} entries:\n${JSON.stringify(entries, null, 2)}`);
+    console.log(`getContents returned ${numEntries} entries, ${summariseEntries(entries)}`);
   }
 
   return entries;
+};
+
+/**
+ * Summarises object metadata for logging
+ *
+ * @param {CommitContent[]} entries The objects extracted from a PACK file
+ * @return {string} Human readable summary of the entries
+ */
+const summariseEntries = (entries: CommitContent[]): string => {
+  const countsByType = new Map<string, number>();
+  let totalSize = 0;
+
+  for (const entry of entries) {
+    countsByType.set(entry.typeName, (countsByType.get(entry.typeName) ?? 0) + 1);
+    totalSize += entry.size;
+  }
+
+  const byType = [...countsByType].map(([type, count]) => `${type}=${count}`).join(' ');
+  return `${totalSize} decompressed bytes (${byType})`;
 };
 
 /**
@@ -460,14 +522,23 @@ const parseGitObjectHeader = (buffer: Buffer, offset: number): GitObjectHeader =
  * the 12-byte PACK file headers (which should already have been removed from
  * the buffer before processing it with this function).
  * @param {Buffer} buffer The buffer to decompress
+ * @param {number} maxDecompressedSize Maximum allowed total decompressed size.
+ * @param {number} maxObjectDecompressedSize Maximum allowed decompressed size of a single object.
+ * @param {number} maxObjects Maximum allowed object count.
  * @return {Promise<GitObject[]>} A promise to return an array of GitObjects
  * representing the decompressed data.
  */
-const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
+const decompressGitObjects = async (
+  buffer: Buffer,
+  maxDecompressedSize: number,
+  maxObjectDecompressedSize: number,
+  maxObjects: number,
+): Promise<GitObject[]> => {
   const results: GitObject[] = [];
   let offset = 0;
-  let currentWriteResolve: () => void | undefined;
+  let currentWriteResolve: (() => void) | undefined;
   let error: Error | null = null;
+  let declaredDecompressedSize = 0;
 
   // keep going while there is more buffer to consume
   // the buffer will end with either a 20 or 32 byte checksum - we don't know which
@@ -475,17 +546,43 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
   // no point continuing if we have < 32 bytes remaining.
   // TODO: figure how many bytes we finish up with and then validate with the appropriate SHA type
   while (offset < buffer.length - 32 && !error) {
+    if (results.length >= maxObjects) {
+      throw new Error('PACK object count exceeds the safety limit.');
+    }
+
     const startOffset = offset;
     const header = parseGitObjectHeader(buffer, offset);
     offset += header.headerLength;
 
-    // create a new inflater for each object
-    const inflater = createInflate();
+    if (
+      !Number.isSafeInteger(header.size) ||
+      header.size < 0 ||
+      header.size > maxObjectDecompressedSize
+    ) {
+      throw new Error('PACK object decompressed size exceeds the safety limit.');
+    }
+
+    declaredDecompressedSize += header.size;
+    if (declaredDecompressedSize > maxDecompressedSize) {
+      throw new Error('PACK decompressed size exceeds the safety limit.');
+    }
+
+    // create a new inflater for each object; cap output at the declared size
+    const inflater = createInflate({ maxOutputLength: Math.max(header.size, 1) });
     const chunks: Buffer[] = [];
     let done = false;
+    let actualDecompressedSize = 0;
 
     // store any data returned
     const onData = (data: Buffer) => {
+      actualDecompressedSize += data.length;
+      if (actualDecompressedSize > header.size) {
+        error = new Error('Inflated PACK object exceeds its declared size.');
+        done = true;
+        inflater.destroy();
+        if (currentWriteResolve) currentWriteResolve();
+        return;
+      }
       chunks.push(data);
     };
 
@@ -529,6 +626,16 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
         error = new Error(`Error during decompression: ${msg}`);
       }
     }
+    if (error) {
+      inflater.removeAllListeners();
+      inflater.destroy();
+      break;
+    }
+    if (actualDecompressedSize !== header.size) {
+      inflater.removeAllListeners();
+      inflater.destroy();
+      throw new Error('Inflated PACK object does not match its declared size.');
+    }
     const result = {
       header,
       data: Buffer.concat(chunks).toString('utf-8'),
@@ -551,13 +658,17 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
   return results;
 };
 
+/** Maximum pkt-lines accepted from a single receive-pack / protocol buffer. */
+export const MAX_PACKET_LINES = 100_000;
+
 /**
  * Parses the packet lines from a buffer into an array of strings.
  * Also returns the offset immediately following the parsed lines (including the flush packet).
  * @param {Buffer} buffer - The buffer containing the packet data.
+ * @param {number} [maxLines] - Maximum number of pkt-lines to accept.
  * @return {[string[], number]} An array containing the parsed lines and the offset after the last parsed line/flush packet.
  */
-const parsePacketLines = (buffer: Buffer): [string[], number] => {
+const parsePacketLines = (buffer: Buffer, maxLines = MAX_PACKET_LINES): [string[], number] => {
   const lines: string[] = [];
   let offset = 0;
 
@@ -579,6 +690,10 @@ const parsePacketLines = (buffer: Buffer): [string[], number] => {
     // Make sure we don't read past the end of the buffer
     if (offset + length > buffer.length) {
       throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
+    }
+
+    if (lines.length >= maxLines) {
+      throw new Error(`Too many packet lines (limit ${maxLines})`);
     }
 
     const line = buffer.toString('utf8', offset + PACKET_SIZE, offset + length);

@@ -94,13 +94,13 @@ Source: [/src/proxy/processors/push-action/checkUserPushPermission.ts](/src/prox
 
 ## `pullRemote`
 
-Clones the repository and temporarily stores it locally in a subdirectory of the _.remote_ folder in the deployment. Each clone is named using the base and head SHA of the push, ensuring a unique clone for each different push. The path to the subdirectory is set in the action as the `proxyGitPath` property and is used in subsequent steps.
+Clones the repository and temporarily stores it locally in a subdirectory of the _.remote_ folder in the deployment. Each clone is named using the push ID (a hash of the repository, branch and commit range), ensuring a unique clone for each different push. The path to the subdirectory is set in the action as the `proxyGitPath` property and is used in subsequent steps.
 
 For private repos, `pullRemote` uses the authorization headers from the push and uses them to authenticate the `git clone` operation.
 
 In the event that the clone fails, pullRemote will automatically delete the _.remote/\*_ directory that it created - unless that failure was caused by a concurrent request for the same push (so that the earlier request can complete if it is going to).
 
-If the clone succeeds then the chain will schedule deletion of the clone by [`clearBareClone`](#clearbareclone) after processing of the chain completes. This ensures that disk space used is recovered, subsequent pushes of the same SHA don't conflict and that user credentials cached in the `git clone` are removed.
+If the clone succeeds then the chain will schedule deletion of the clone by [`clearBareClone`](#clearbareclone) after processing of the chain completes. This ensures that disk space used is recovered, subsequent pushes with the same ID don't conflict and that user credentials cached in the `git clone` are removed.
 
 Source: [/src/proxy/processors/push-action/pullRemote.ts](/src/proxy/processors/push-action/pullRemote.ts)
 
@@ -123,6 +123,8 @@ Source: [/src/proxy/processors/push-action/checkHiddenCommits.ts](/src/proxy/pro
 ## `checkIfWaitingAuth`
 
 Checks if the action has been authorised (approved by a reviewer). If so, allows the push to continue to the remote. It simply continues chain execution if the push hasn't been approved.
+
+Only previously approved pushes can go through: the stored push must target the same repository and the same branch, and the branch must end up pointing at the same commit as the one being checked. Furthermore, every commit in the incoming pack must have been part of the approved push. If pushing the same commits to another repository or branch, pointing the branch somewhere else, or adding objects, approval is once again required.
 
 Source: [/src/proxy/processors/push-action/checkIfWaitingAuth.ts](/src/proxy/processors/push-action/checkIfWaitingAuth.ts)
 
