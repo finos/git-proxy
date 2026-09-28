@@ -323,9 +323,32 @@
         "maxPackSizeBytes": {
           "type": "number",
           "description": "Maximum size of a pack file in bytes (default 1GB)"
+        },
+        "maxDecompressedPackSizeBytes": {
+          "type": "number",
+          "description": "Maximum total decompressed size of all objects in a pack file in bytes (default 128MB). Set to a value lower than maxPackSizeBytes to prevent memory exhaustion."
+        },
+        "maxDecompressedObjectSizeBytes": {
+          "type": "number",
+          "description": "Maximum decompressed size of a single object in a pack file in bytes (default 64MB). Capped by maxDecompressedPackSizeBytes."
+        },
+        "maxPackExpansionRatio": {
+          "type": "number",
+          "description": "Maximum allowed expansion ratio (decompressed/compressed size) of a pack file (default 100)."
+        },
+        "maxPackObjects": {
+          "type": "number",
+          "description": "Maximum number of objects in a pack file (default 100,000)."
         }
       },
       "additionalProperties": false
+    },
+    "scmProviders": {
+      "description": "SCM providers the proxy can ask to identify a pusher from the credential presented with a push. Setting this replaces the built-in list (github.com, gitlab.com, codeberg.org, gitea.com).",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/scmProvider"
+      }
     },
     "sink": {
       "description": "List of database sources. The first source in the configuration with enabled=true will be used.",
@@ -572,6 +595,30 @@
           "required": ["type", "enabled"]
         }
       ]
+    },
+    "scmProvider": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Identifier for this provider. Stored on user records under scmIdentities and used in logs. Must be unique."
+        },
+        "type": {
+          "type": "string",
+          "enum": ["github", "gitlab", "forgejo"],
+          "description": "Which API the host speaks. Gitea and Codeberg speak the Forgejo API."
+        },
+        "host": {
+          "type": "string",
+          "description": "Hostname of the git remote this provider serves, for example github.example.com."
+        },
+        "apiUrl": {
+          "type": "string",
+          "description": "Base URL of the REST API without a trailing slash. Derived from host and type when omitted."
+        }
+      },
+      "required": ["name", "type", "host"],
+      "additionalProperties": false
     },
     "authenticationElement": {
       "type": "object",

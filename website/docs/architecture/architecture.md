@@ -53,7 +53,7 @@ Don't forget to save and update the attached .drawio (XML)! -->
 Three types of policies can be applied to incoming pushes:
 
 - Default policies: These are already present in the GitProxy pull/push chain and require modifying source code to change their behaviour.
-  - For example, [`checkUserPushPermission`](processors.md#checkuserpushpermission) which simply checks if the pusher's email exists in the GitProxy database, and if their user is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
+  - For example, [`checkUserPushPermission`](processors.md#checkuserpushpermission) which checks that the pusher resolved from the push credential is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
 - Configurable policies: These are policies that can be easily configured through the GitProxy config (`proxy.config.json` or a custom file).
   - For example, [`checkCommitMessages`](processors.md#checkcommitmessages) which reads the configuration and matches the string patterns provided with the commit messages in the push in order to block it.
 - Custom policies:
@@ -75,6 +75,7 @@ Action chains are a list of processors that a Git operation goes through before 
 Executed when a user makes a `git push` to GitProxy. These are the actions in `pushActionChain`, by order of execution:
 
 - [`parsePush`](processors.md#parsepush)
+- [`resolveUserFromToken`](processors.md#resolveuserfromtoken)
 - [`checkEmptyBranch`](processors.md#checkemptybranch)
 - [`checkRepoInAuthorisedList`](processors.md#checkrepoinauthorisedlist)
 - [`checkCommitMessages`](processors.md#checkcommitmessages)
@@ -110,7 +111,7 @@ The default action chain, much like the pull chain, is only checking that the re
 
 After processors in the chain are done executing, [`audit`](processors.md#audit) is called to store the action along with all of its execution steps in the database for auditing purposes.
 
-If [`pullRemote`](processors.md#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](processors.md#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes involving the same SHA.
+If [`pullRemote`](processors.md#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](processors.md#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes with the same push ID.
 
 Finally, if the action was auto-approved or auto-rejected as a result of running [`preReceive`](processors.md#prereceive), it will attempt to auto-approve or auto-reject it.
 
