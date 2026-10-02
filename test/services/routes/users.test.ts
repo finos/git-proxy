@@ -36,19 +36,19 @@ describe('Users API', () => {
         password: 'secret-hashed-password',
         email: 'alice@example.com',
         displayName: 'Alice Walker',
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       },
-    ]);
+    ] as any);
 
     vi.spyOn(db, 'findUser').mockResolvedValue({
       username: 'bob',
       password: 'hidden',
       email: 'bob@example.com',
       displayName: '',
-      gitAccount: '',
+      scmIdentities: {},
       admin: false,
-    });
+    } as any);
 
     vi.spyOn(db, 'getPushesForUserProfile').mockResolvedValue([]);
 
@@ -69,7 +69,7 @@ describe('Users API', () => {
         displayName: 'Alice Walker',
         email: 'alice@example.com',
         title: '',
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       },
     ]);
@@ -85,7 +85,7 @@ describe('Users API', () => {
       displayName: '',
       email: 'bob@example.com',
       title: '',
-      gitAccount: '',
+      scmIdentities: {},
       admin: false,
     });
   });
