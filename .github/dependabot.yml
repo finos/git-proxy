@@ -1,12 +1,38 @@
 version: 2
 
+# ---------------------------------------------------------------------------
+# CVE resolutions vs. routine evergreening
+# ---------------------------------------------------------------------------
+# Every ecosystem below defines two kinds of group, distinguished by a
+# group's `applies-to`:
+#
+#   * security-updates — raised to resolve a known CVE/advisory. Dependabot
+#     never applies `cooldown` to security updates and exempts them from
+#     `open-pull-requests-limit`, so they are raised as soon as a fixed
+#     version exists. Each ecosystem has a single "*-security" group so
+#     these PRs are clearly differentiated by name (surfaced in the PR title
+#     and branch name) from routine evergreening PRs.
+#
+#   * version-updates — routine evergreening. These are grouped by tooling
+#     domain (e.g. linting, types, vitest) where related packages share
+#     peer dependencies or must be kept in version lockstep, to reduce PR
+#     noise and avoid conflicting/broken PRs. A `minor-and-patch` catch-all
+#     group picks up anything not covered by a domain-specific group.
+#
+# NOTE: `labels` and `commit-message` are ecosystem-wide and cannot differ
+# per group, so CVE-vs-evergreen differentiation is carried by the GROUP
+# NAME (visible in the PR title/branch), not by a bespoke label.
+# ---------------------------------------------------------------------------
+
 updates:
+  # ---- GitHub Actions -----------------------------------------------------
   - package-ecosystem: github-actions
     directories:
       - '/'
     schedule:
       interval: weekly
     cooldown:
+      # Only applies to version updates (security updates are never delayed)
       default-days: 3
     commit-message:
       prefix: 'chore'
@@ -24,12 +50,14 @@ updates:
         patterns:
           - '*'
 
+  # ---- Docker ---------------------------------------------------------------
   - package-ecosystem: docker
     directories:
       - '/'
     schedule:
       interval: weekly
     cooldown:
+      # Only applies to version updates (security updates are never delayed)
       default-days: 3
     commit-message:
       prefix: 'chore'
@@ -38,17 +66,92 @@ updates:
       - 'dependencies'
       - 'automated'
     groups:
+      docker-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
       docker:
         applies-to: version-updates
         patterns:
           - '*'
 
+  # ---- npm dependencies (root, cli package, plugin samples, test fixtures)
   - package-ecosystem: npm
     directories:
       - '/'
       - '/packages/git-proxy-cli'
       - '/plugins/git-proxy-plugin-samples'
       - '/test/fixtures/test-package'
+    schedule:
+      interval: weekly
+    versioning-strategy: increase-if-necessary
+    cooldown:
+      # Only applies to version updates (security updates are never delayed)
+      semver-patch-days: 3
+      semver-minor-days: 3
+      semver-major-days: 7
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'automated'
+    groups:
+      # CVE resolutions — grouped and prioritised; the "security" group name
+      # surfaces in the PR title/branch to differentiate from evergreening.
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+      # Evergreening — recurring cross-package dev tooling grouped together
+      # so a single PR updates them in lockstep and avoids conflicting PRs.
+      types:
+        applies-to: version-updates
+        patterns:
+          - '@types/*'
+      linting:
+        applies-to: version-updates
+        patterns:
+          - 'eslint'
+          - '@eslint/*'
+          - 'typescript-eslint'
+          - 'eslint-config-prettier'
+          - 'eslint-plugin-*'
+          - 'globals'
+          - 'prettier'
+          - 'lint-staged'
+      vitest:
+        applies-to: version-updates
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+      vite:
+        applies-to: version-updates
+        patterns:
+          - 'vite'
+          - '@vitejs/*'
+          - 'vite-tsconfig-paths'
+      # react and react-dom (plus their type defs) must stay version-aligned.
+      react:
+        applies-to: version-updates
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - 'react-is'
+          - '@types/react'
+          - '@types/react-dom'
+      npm-non-major:
+        applies-to: version-updates
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+
+  # ---- npm dependencies — website (separate lock file, Docusaurus app) ----
+  - package-ecosystem: npm
+    directories:
       - '/website'
     schedule:
       interval: weekly
@@ -66,10 +169,26 @@ updates:
       - 'dependencies'
       - 'automated'
     groups:
+      # CVE resolutions — prioritised; differentiated by the "security"
+      # group name in the PR title/branch.
       npm-security:
         applies-to: security-updates
         patterns:
           - '*'
+      # Docusaurus and its rendering stack must move together — they share
+      # peer dependencies on react/react-dom and layout-elk, so upgrading
+      # any one in isolation risks peer dep conflicts.
+      docusaurus:
+        applies-to: version-updates
+        patterns:
+          - '@docusaurus/*'
+          - '@mermaid-js/layout-elk'
+      # react and react-dom must always be the same version.
+      react:
+        applies-to: version-updates
+        patterns:
+          - 'react'
+          - 'react-dom'
       npm-non-major:
         applies-to: version-updates
         patterns:
