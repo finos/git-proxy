@@ -19,7 +19,7 @@ CRA stewardship: This project is supported under the Linux Foundation CRA stewar
 
 **Project maintainers MUST escalate** the issue to the LF steward at [steward@linuxfoundation.org](mailto:steward@linuxfoundation.org) if the project experiences either of the following:
 
-* **Actively exploited vulnerabilities:** a security vulnerability where the project has reliable evidence that a malicious actor has exploited it.
-* **Severe incident:** a security compromise of the project’s own IT infrastructure.
+- **Actively exploited vulnerabilities:** a security vulnerability where the project has reliable evidence that a malicious actor has exploited it.
+- **Severe incident:** a security compromise of the project’s own IT infrastructure.
 
 Ordinary vulnerabilities with no evidence of exploitation are not CRA escalation events. Escalate those that are actively exploited.
