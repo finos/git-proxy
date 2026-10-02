@@ -90,6 +90,12 @@ export interface GitProxyConfig {
    */
   rateLimit?: RateLimit;
   /**
+   * SCM providers the proxy can ask to identify a pusher from the credential presented with a
+   * push. Setting this replaces the built-in list (github.com, gitlab.com, codeberg.org,
+   * gitea.com).
+   */
+  scmProviders?: SCMProvider[];
+  /**
    * Port the proxy HTTP server listens on. Can also be set with the GIT_PROXY_SERVER_PORT
    * environment variable, which takes precedence over this value.
    */
@@ -504,6 +510,25 @@ export interface Domains {
  */
 export interface Limits {
   /**
+   * Maximum decompressed size of a single object in a pack file in bytes (default 64MB).
+   * Capped by maxDecompressedPackSizeBytes.
+   */
+  maxDecompressedObjectSizeBytes?: number;
+  /**
+   * Maximum total decompressed size of all objects in a pack file in bytes (default 128MB).
+   * Set to a value lower than maxPackSizeBytes to prevent memory exhaustion.
+   */
+  maxDecompressedPackSizeBytes?: number;
+  /**
+   * Maximum allowed expansion ratio (decompressed/compressed size) of a pack file (default
+   * 100).
+   */
+  maxPackExpansionRatio?: number;
+  /**
+   * Maximum number of objects in a pack file (default 100,000).
+   */
+  maxPackObjects?: number;
+  /**
    * Maximum size of a pack file in bytes (default 1GB)
    */
   maxPackSizeBytes?: number;
@@ -529,6 +554,36 @@ export interface RateLimit {
    * How long to remember requests for, in milliseconds (default 10 mins).
    */
   windowMs: number;
+}
+
+export interface SCMProvider {
+  /**
+   * Base URL of the REST API without a trailing slash. Derived from host and type when
+   * omitted.
+   */
+  apiUrl?: string;
+  /**
+   * Hostname of the git remote this provider serves, for example github.example.com.
+   */
+  host: string;
+  /**
+   * Identifier for this provider. Stored on user records under scmIdentities and used in
+   * logs. Must be unique.
+   */
+  name: string;
+  /**
+   * Which API the host speaks. Gitea and Codeberg speak the Forgejo API.
+   */
+  type: SCMProviderType;
+}
+
+/**
+ * Which API the host speaks. Gitea and Codeberg speak the Forgejo API.
+ */
+export enum SCMProviderType {
+  Forgejo = 'forgejo',
+  Github = 'github',
+  Gitlab = 'gitlab',
 }
 
 /**
@@ -943,6 +998,7 @@ const typeMap: any = {
       { json: 'privateOrganizations', js: 'privateOrganizations', typ: u(undefined, a('any')) },
       { json: 'proxyUrl', js: 'proxyUrl', typ: u(undefined, '') },
       { json: 'rateLimit', js: 'rateLimit', typ: u(undefined, r('RateLimit')) },
+      { json: 'scmProviders', js: 'scmProviders', typ: u(undefined, a(r('SCMProvider'))) },
       { json: 'serverPort', js: 'serverPort', typ: u(undefined, 3.14) },
       { json: 'sessionMaxAgeHours', js: 'sessionMaxAgeHours', typ: u(undefined, 3.14) },
       { json: 'sidebandProgress', js: 'sidebandProgress', typ: u(undefined, true) },
@@ -1095,13 +1151,39 @@ const typeMap: any = {
     ],
     'any',
   ),
-  Limits: o([{ json: 'maxPackSizeBytes', js: 'maxPackSizeBytes', typ: u(undefined, 3.14) }], false),
+  Limits: o(
+    [
+      {
+        json: 'maxDecompressedObjectSizeBytes',
+        js: 'maxDecompressedObjectSizeBytes',
+        typ: u(undefined, 3.14),
+      },
+      {
+        json: 'maxDecompressedPackSizeBytes',
+        js: 'maxDecompressedPackSizeBytes',
+        typ: u(undefined, 3.14),
+      },
+      { json: 'maxPackExpansionRatio', js: 'maxPackExpansionRatio', typ: u(undefined, 3.14) },
+      { json: 'maxPackObjects', js: 'maxPackObjects', typ: u(undefined, 3.14) },
+      { json: 'maxPackSizeBytes', js: 'maxPackSizeBytes', typ: u(undefined, 3.14) },
+    ],
+    false,
+  ),
   RateLimit: o(
     [
       { json: 'limit', js: 'limit', typ: 3.14 },
       { json: 'message', js: 'message', typ: u(undefined, '') },
       { json: 'statusCode', js: 'statusCode', typ: u(undefined, 3.14) },
       { json: 'windowMs', js: 'windowMs', typ: 3.14 },
+    ],
+    false,
+  ),
+  SCMProvider: o(
+    [
+      { json: 'apiUrl', js: 'apiUrl', typ: u(undefined, '') },
+      { json: 'host', js: 'host', typ: '' },
+      { json: 'name', js: 'name', typ: '' },
+      { json: 'type', js: 'type', typ: r('SCMProviderType') },
     ],
     false,
   ),
@@ -1200,6 +1282,7 @@ const typeMap: any = {
     false,
   ),
   AuthenticationElementType: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
+  SCMProviderType: ['forgejo', 'github', 'gitlab'],
   DatabaseType: ['fs', 'mongo'],
   AuthType: ['basic', 'ntlm'],
 };

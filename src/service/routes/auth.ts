@@ -27,7 +27,7 @@ import { User } from '../../db/types';
 import { AuthenticationElement } from '../../config/generated/config';
 import { isAdminUser, mustChangePassword, toPublicUser } from './utils';
 import { handleErrorAndLog } from '../../utils/errors';
-import { scmTokenCache } from '../../proxy/processors/push-action/tokenIdentity';
+import { getProviderByName } from '../../proxy/processors/push-action/tokenIdentity';
 
 const router = express.Router();
 const passport = getPassport();
@@ -274,62 +274,45 @@ router.get('/profile', async (req: Request, res: Response) => {
   res.send(toPublicUser(userVal));
 });
 
-router.post('/gitAccount', async (req: Request, res: Response) => {
+router.post('/scm-identity', async (req: Request, res: Response) => {
   if (!req.user) {
-    res
-      .status(401)
-      .send({
-        message: 'Not logged in',
-      })
-      .end();
+    res.status(401).send({ message: 'Not logged in' }).end();
     return;
   }
 
   try {
-    let username =
-      req.body.username == null || req.body.username === 'undefined'
-        ? req.body.id
-        : req.body.username;
-    username = username?.split('@')[0];
+    const { provider, login } = req.body as { provider?: string; login?: string | null };
+    const username: string = req.body.username || (req.user as User).username;
 
-    if (!username) {
+    if (!provider || typeof provider !== 'string') {
+      res.status(400).send({ message: 'Missing provider. SCM identity not updated' }).end();
+      return;
+    }
+
+    if (!getProviderByName(provider)) {
       res
         .status(400)
-        .send({
-          message: 'Missing username. Git account not updated',
-        })
+        .send({ message: `Unknown SCM provider '${provider}'. SCM identity not updated` })
         .end();
       return;
     }
 
     const reqUser = await db.findUser((req.user as User).username);
     if (username !== reqUser?.username && !reqUser?.admin) {
-      res
-        .status(403)
-        .send({
-          message: 'Must be an admin to update a different account',
-        })
-        .end();
+      res.status(403).send({ message: 'Must be an admin to update a different account' }).end();
       return;
     }
 
     const user = await db.findUser(username);
     if (!user) {
-      res
-        .status(404)
-        .send({
-          message: 'User not found',
-        })
-        .end();
+      res.status(404).send({ message: 'User not found' }).end();
       return;
     }
 
-    user.gitAccount = req.body.gitAccount;
-    await db.updateUser(user);
-    scmTokenCache.evictByUsername('github', user.username);
-    return res.status(200).send({ message: 'Git account updated successfully' }).end();
+    await db.setUserScmIdentity(user.username, provider, login ?? null);
+    return res.status(200).send({ message: 'SCM identity updated successfully' }).end();
   } catch (error: unknown) {
-    const msg = handleErrorAndLog(error, 'Failed to update git account');
+    const msg = handleErrorAndLog(error, 'Failed to update SCM identity');
     return res.status(500).send({ message: msg }).end();
   }
 });
@@ -346,20 +329,33 @@ router.post('/create-user', async (req: Request, res: Response) => {
   }
 
   try {
-    const { username, password, email, gitAccount, admin: isAdmin = false } = req.body;
+    const { username, password, email, scmIdentities = {}, admin: isAdmin = false } = req.body;
 
-    if (!username || !password || !email || !gitAccount) {
+    if (!username || !password || !email) {
       res
         .status(400)
         .send({
-          message:
-            'Missing required fields: username, password, email, and gitAccount are required',
+          message: 'Missing required fields: username, password, and email are required',
         })
         .end();
       return;
     }
 
-    await db.createUser(username, password, email, gitAccount, isAdmin);
+    if (
+      typeof scmIdentities !== 'object' ||
+      Array.isArray(scmIdentities) ||
+      Object.entries(scmIdentities).some(
+        ([provider, login]) => typeof login !== 'string' || !getProviderByName(provider),
+      )
+    ) {
+      res
+        .status(400)
+        .send({ message: 'scmIdentities must map configured provider names to account names' })
+        .end();
+      return;
+    }
+
+    await db.createUser(username, password, email, isAdmin, '', false, scmIdentities);
     res
       .status(201)
       .send({

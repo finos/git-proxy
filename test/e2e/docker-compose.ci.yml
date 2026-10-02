@@ -6,11 +6,3 @@ services:
         - type=gha
       cache_to:
         - type=gha,mode=max
-
-  git-server:
-    build:
-      context: ./localgit
-      cache_from:
-        - type=gha
-      cache_to:
-        - type=gha,mode=max

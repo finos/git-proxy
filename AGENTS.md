@@ -142,6 +142,7 @@ React-based UI used to:
 
 ```
 parsePush
+resolveUserFromToken
 checkEmptyBranch
 checkRepoInAuthorisedList
 checkCommitMessages
