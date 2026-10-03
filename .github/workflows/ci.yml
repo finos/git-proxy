@@ -5,9 +5,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'release/**']
   pull_request:
-    branches: [main]
+    branches: [main, 'release/**']
 
 permissions:
   pull-requests: write
@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: audit
 
@@ -43,7 +43,9 @@ jobs:
           mongodb-version: ${{ matrix.mongodb-version }}
 
       - name: Install dependencies
-        run: npm ci --no-fund
+        run: |
+          npm i -g npm@11
+          npm ci --no-fund
 
       # for now only check the types of the server
       # tsconfig isn't quite set up right to respect what vite accepts
@@ -72,7 +74,7 @@ jobs:
         run: npm run test:integration
 
       - name: Upload test coverage report
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           files: ./coverage/lcov.info,./coverage-cli/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -81,7 +83,7 @@ jobs:
         run: npm run build-ui
 
       - name: Run cypress test
-        uses: cypress-io/github-action@c32f12761482a282d24ca0fd7466d8ae86f54ba8 # v7.4.2
+        uses: cypress-io/github-action@01e3b659a495b41649cdd0aa82e1d1624e26520b # v7.4.4
         with:
           # skip the action's internal npm ci — dependencies are already installed above
           install: false
@@ -96,7 +98,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: audit
 
@@ -135,6 +137,7 @@ jobs:
           npm run test-coverage-ci
           npm run test-coverage-ci --workspaces --if-present
 
+      # Smoke test deliberately removed due to long running times
       - name: Build frontend
         run: npm run build-ui
 
@@ -146,7 +149,7 @@ jobs:
     needs: [build-ubuntu, build-windows]
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@05e31511f85b41b11d1cf0ef85d0992719546e2c # v2.21.0
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: audit
 
