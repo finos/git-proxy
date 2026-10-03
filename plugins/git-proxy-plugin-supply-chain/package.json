@@ -1,0 +1,29 @@
+{
+  "name": "@finos/git-proxy-plugin-supply-chain",
+  "version": "0.1.0",
+  "description": "GitProxy push plugin that flags common supply-chain-attack signatures (install scripts, non-registry sources, typosquats, unpinned versions) on changed dependency manifests.",
+  "type": "module",
+  "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
+  "scripts": {
+    "test": "echo \"Unit tests live in the git-proxy root test/ suite (test/plugins/supply-chain)\" && exit 0"
+  },
+  "keywords": [
+    "git-proxy",
+    "plugin",
+    "supply-chain",
+    "security",
+    "npm"
+  ],
+  "author": "GitProxy Contributors",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "parse-diff": "^0.11.1",
+    "simple-git": "^3.30.0"
+  },
+  "peerDependencies": {
+    "@finos/git-proxy": "^2.0.0"
+  }
+}
