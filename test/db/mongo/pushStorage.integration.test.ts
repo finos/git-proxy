@@ -19,6 +19,7 @@ import { Collection } from 'mongodb';
 import * as pushes from '../../../src/db/mongo/pushes';
 import { definePushStorageContract } from '../pushStorage.contract';
 import { connect, resetConnection } from '../../../src/db/mongo/helper';
+import * as mongoHelper from '../../../src/db/mongo/helper';
 import { rebuildRepoPushRollups } from '../../../src/db/mongo/repoActivity';
 import { Action, RequestType, Step } from '../../../src/proxy/actions';
 
@@ -38,6 +39,109 @@ describe.runIf(process.env.RUN_MONGO_TESTS === 'true')('MongoDB storage contract
   };
 
   afterEach(() => vi.restoreAllMocks());
+
+  it('retries initialization after index creation fails', async () => {
+    const createIndex = vi
+      .spyOn(Collection.prototype, 'createIndex')
+      .mockRejectedValueOnce(new Error('index creation failed'));
+    await expect(pushes.writeAudit(makePush())).rejects.toThrow('index creation failed');
+    expect(await (await connect('pushes')).findOne({ id: 'recovery' })).toBeNull();
+    await pushes.writeAudit(makePush());
+    expect(createIndex).toHaveBeenCalledTimes(8);
+    expect((await pushes.getRepoPushRollupsByCanonicalUrl()).tabCounts.get(key)?.pending).toBe(1);
+  });
+
+  it('rejects initialization if the connection disappears and succeeds on retry', async () => {
+    vi.spyOn(mongoHelper, 'getDb').mockReturnValueOnce(null);
+    await expect(pushes.writeAudit(makePush())).rejects.toThrow(
+      'MongoDB connection is not available',
+    );
+    await pushes.writeAudit(makePush());
+    expect((await pushes.getRepoPushRollupsByCanonicalUrl()).tabCounts.get(key)?.pending).toBe(1);
+  });
+
+  it('deletes a historical push before backfill and tolerates repeated deletion', async () => {
+    await (await connect('pushes')).insertOne(JSON.parse(JSON.stringify(makePush())));
+    await pushes.deletePush('recovery');
+    const replace = vi.spyOn(Collection.prototype, 'replaceOne');
+    await pushes.deletePush('recovery');
+    expect(replace).not.toHaveBeenCalled();
+    expect(await pushes.getPush('recovery')).toBeNull();
+    expect((await pushes.getRepoPushRollupsByCanonicalUrl()).tabCounts.size).toBe(0);
+    expect(await (await connect('pushes')).findOne({ id: 'recovery' })).toBeNull();
+  });
+
+  it.each([1, 3])('handles %i concurrent updates during deletion', async (conflicts) => {
+    await pushes.writeAudit(makePush());
+    const original = Collection.prototype.replaceOne;
+    let attempts = 0;
+    const replace = vi
+      .spyOn(Collection.prototype, 'replaceOne')
+      .mockImplementation(async function (filter, replacement, options) {
+        if (this.collectionName === 'pushes' && attempts++ < conflicts) {
+          await pushes.authorise('recovery');
+        }
+        return original.call(this, filter, replacement, options);
+      });
+    if (conflicts === 1) {
+      await pushes.deletePush('recovery');
+      expect(attempts).toBe(2);
+      expect(await pushes.getPush('recovery')).toBeNull();
+    } else {
+      await expect(pushes.deletePush('recovery')).rejects.toThrow(
+        'Push recovery changed repeatedly during deletion; retry the request',
+      );
+      expect(attempts).toBe(3);
+      expect((await pushes.getPush('recovery'))?.authorised).toBe(true);
+      expect((await pushes.getRepoPushRollupsByCanonicalUrl()).tabCounts.get(key)?.approved).toBe(
+        1,
+      );
+      replace.mockRestore();
+      await pushes.deletePush('recovery');
+    }
+    expect((await pushes.getRepoPushRollupsByCanonicalUrl()).tabCounts.size).toBe(0);
+  });
+
+  it('backfills non-push records without adding repository activity or leaving them dirty', async () => {
+    const action = new Action('pull', RequestType.PULL, 'GET', 123, `https://${key}`);
+    const collection = await connect('pushes');
+    await collection.insertOne(JSON.parse(JSON.stringify(action)));
+    expect((await pushes.getRepoPushRollupsByCanonicalUrl()).tabCounts.size).toBe(0);
+    expect(await collection.findOne({ id: action.id })).toMatchObject({
+      _activity: { key: '', dirty: false },
+    });
+    expect(await pushes.getPush(action.id)).toMatchObject(action);
+  });
+
+  it('retries when a summary becomes unfinished during an otherwise clean read', async () => {
+    await pushes.writeAudit(makePush());
+    await pushes.getRepoPushRollupsByCanonicalUrl();
+    const summaries = await connect('repoPushActivity');
+    const original = Collection.prototype.find;
+    let interleaved = false;
+    vi.spyOn(Collection.prototype, 'find').mockImplementation(function (filter, options) {
+      const cursor = original.call(this, filter, options);
+      if (
+        !interleaved &&
+        this.collectionName === 'repoPushActivity' &&
+        !Object.keys(filter).length
+      ) {
+        interleaved = true;
+        const toArray = cursor.toArray.bind(cursor);
+        vi.spyOn(cursor, 'toArray').mockImplementationOnce(async () => {
+          await pushes.authorise('recovery');
+          await summaries.updateOne({ key }, { $set: { ready: false } });
+          return toArray();
+        });
+      }
+      return cursor;
+    });
+    const rollups = await pushes.getRepoPushRollupsByCanonicalUrl();
+    expect(interleaved).toBe(true);
+    expect(rollups.tabCounts.get(key)?.approved).toBe(1);
+    expect(rollups.tabCounts.get(key)?.pending).toBe(0);
+    expect(await summaries.findOne({ key })).toMatchObject({ ready: true });
+  });
 
   it('backfills historical records without changing their audit data', async () => {
     const action = makePush();
