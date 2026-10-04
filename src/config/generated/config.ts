@@ -596,8 +596,10 @@ export enum SCMProviderType {
  */
 export interface Database {
   /**
-   * mongoDB Client connection string, see
-   * [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)
+   * MongoDB client connection string. A non-empty GIT_PROXY_MONGO_CONNECTION_STRING
+   * environment variable overrides this value. An enabled MongoDB sink requires a non-empty
+   * connection string from either source. See
+   * [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/).
    */
   connectionString?: string;
   enabled: boolean;
@@ -609,7 +611,6 @@ export interface Database {
    */
   options?: Options;
   type: DatabaseType;
-  [property: string]: any;
 }
 
 /**
@@ -1194,7 +1195,7 @@ const typeMap: any = {
       { json: 'options', js: 'options', typ: u(undefined, r('Options')) },
       { json: 'type', js: 'type', typ: r('DatabaseType') },
     ],
-    'any',
+    false,
   ),
   Options: o(
     [

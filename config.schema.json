@@ -561,7 +561,7 @@
             "enabled": { "type": "boolean" },
             "connectionString": {
               "type": "string",
-              "description": "mongoDB Client connection string, see [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)"
+              "description": "MongoDB client connection string. A non-empty GIT_PROXY_MONGO_CONNECTION_STRING environment variable overrides this value. An enabled MongoDB sink requires a non-empty connection string from either source. See [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)."
             },
             "options": {
               "type": "object",
@@ -582,7 +582,8 @@
               "additionalProperties": true
             }
           },
-          "required": ["type", "enabled", "connectionString"]
+          "required": ["type", "enabled"],
+          "additionalProperties": false
         },
         {
           "type": "object",
@@ -592,7 +593,8 @@
             "type": { "type": "string", "const": "fs" },
             "enabled": { "type": "boolean" }
           },
-          "required": ["type", "enabled"]
+          "required": ["type", "enabled"],
+          "additionalProperties": false
         }
       ]
     },
