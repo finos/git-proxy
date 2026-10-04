@@ -20,6 +20,33 @@ import { Action, RequestType } from '../../../src/proxy/actions';
 describe('file repository rollup initialization', () => {
   afterEach(() => vi.restoreAllMocks());
 
+  it('retries a failed history load and shares the successful index between readers', async () => {
+    vi.resetModules();
+    const sink = await import('../../../src/db/file/pushes');
+    const action = new Action('history', RequestType.PUSH, 'POST', 123, 'https://example.com/a/b');
+    await sink.db.insertAsync(action);
+    const failure = new Error('history read failed');
+    const original = sink.db.find.bind(sink.db);
+    const find = vi
+      .spyOn(sink.db, 'find')
+      .mockImplementationOnce(
+        (query: unknown, projection: unknown, callback?: (error: Error, rows: never[]) => void) => {
+          queueMicrotask(() => callback?.(failure, []));
+          return original(query, projection);
+        },
+      );
+    await expect(sink.getRepoPushRollupsByCanonicalUrl()).rejects.toThrow(failure);
+    const readers = await Promise.all([
+      sink.getRepoPushRollupsByCanonicalUrl(),
+      sink.getRepoPushRollupsByCanonicalUrl(),
+    ]);
+    for (const rollups of readers) {
+      expect(rollups.tabCounts.get('example.com/a/b')?.pending).toBe(1);
+      expect(rollups.latestPushAtMs.get('example.com/a/b')).toBe(123);
+    }
+    expect(find).toHaveBeenCalledTimes(2);
+  });
+
   it('loads historical rows once and applies writes after initialization', async () => {
     vi.resetModules();
     const sink = await import('../../../src/db/file/pushes');
