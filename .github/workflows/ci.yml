@@ -71,12 +71,12 @@ jobs:
         env:
           RUN_MONGO_TESTS: 'true'
           GIT_PROXY_MONGO_CONNECTION_STRING: mongodb://localhost:27017/git-proxy-test
-        run: npm run test:integration
+        run: npm run test:integration -- --coverage --coverage.reporter=lcovonly --coverage.reportsDirectory=coverage/integration
 
       - name: Upload test coverage report
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
-          files: ./coverage/lcov.info,./coverage-cli/lcov.info
+          files: ./coverage/lcov.info,./coverage/integration/lcov.info,./coverage-cli/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Build frontend
