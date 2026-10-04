@@ -26,7 +26,7 @@
     "react-player": "^3.4.0",
     "react-slick": "^0.31.0",
     "react-social-media-embed": "^2.5.18",
-    "slick-carousel": "^1.8.1",
+    "slick-carousel": "^2.0.0",
     "webpack": "~5.105.0"
   },
   "browserslist": {
