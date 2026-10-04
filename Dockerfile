@@ -1,4 +1,4 @@
-FROM node:24@sha256:5a593d74b632d1c6f816457477b6819760e13624455d587eef0fa418c8d0777b AS builder
+FROM node:26@sha256:a723b54c35a76e947095a20a67d39585bb09c862e6b1adeb8a9f518f95e34fb0 AS builder
 
 USER root
 
@@ -16,7 +16,7 @@ RUN npm run build-ui \
   && cp config.schema.json dist/ \
   && npm prune --omit=dev
 
-FROM node:24@sha256:5a593d74b632d1c6f816457477b6819760e13624455d587eef0fa418c8d0777b AS production
+FROM node:26@sha256:a723b54c35a76e947095a20a67d39585bb09c862e6b1adeb8a9f518f95e34fb0 AS production
 
 WORKDIR /app
 
