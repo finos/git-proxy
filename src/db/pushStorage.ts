@@ -18,11 +18,12 @@ import { isEqual } from 'lodash';
 import { Action } from '../proxy/actions';
 import { toClass } from './helper';
 
-type StoredPush = Action & { _lastStepIndex?: number };
+type StoredPush = Action & { _lastStepIndex?: number; _activity?: unknown };
 
 export const compactPush = (action: Action) => {
   const stored: Partial<StoredPush> = { ...action };
   delete stored._lastStepIndex;
+  delete stored._activity;
   const index = action.steps?.length - 1;
   if (action.lastStep && index >= 0 && isEqual(action.lastStep, action.steps[index])) {
     stored._lastStepIndex = index;
@@ -38,5 +39,6 @@ export const restorePush = (doc: unknown): Action => {
     action.lastStep = action.steps?.[index];
   }
   delete action._lastStepIndex;
+  delete action._activity;
   return action;
 };

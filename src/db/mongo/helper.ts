@@ -32,7 +32,9 @@ export const resetConnection = async (): Promise<void> => {
 
 export const getDb = (): Db | null => _db;
 
-export const connect = async (collectionName: string): Promise<Collection> => {
+export const connect = async <T extends Document = Document>(
+  collectionName: string,
+): Promise<Collection<T>> => {
   //retrieve config at point of use (rather than import)
   const dbConfig = getDatabase();
   const connectionString = dbConfig.connectionString;
@@ -53,7 +55,7 @@ export const connect = async (collectionName: string): Promise<Collection> => {
     _db = _client.db();
   }
 
-  return _db.collection(collectionName);
+  return _db.collection<T>(collectionName);
 };
 
 export const findDocuments = async <T>(
