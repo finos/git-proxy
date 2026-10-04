@@ -30,7 +30,10 @@ const AttestationInfo = ({ push }: AttestationInfoProps) => {
   }
 
   const att = push.attestation;
-  const ts = DateTime.fromMillis(Number(att.timestamp));
+  const numericTimestamp = Number(att.timestamp);
+  const ts = Number.isFinite(numericTimestamp)
+    ? DateTime.fromMillis(numericTimestamp)
+    : DateTime.fromISO(String(att.timestamp));
   const tsTitle = ts.toFormat('cccc, MMMM d yyyy, h:mm:ss a');
   const presetDisplayName = att.reviewer.displayName?.trim() || undefined;
 
