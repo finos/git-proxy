@@ -329,15 +329,83 @@ describe('user configuration', () => {
     expect(config.getCookieSecret()).toBe('test-cookie-secret');
   });
 
-  it('should override default settings for mongo connection string if env var is used', async () => {
-    const user = { sink: [{ type: 'mongo', enabled: true }] };
+  it.each([
+    [
+      'mongodb://configured:27017/test',
+      'mongodb://environment:27017/test',
+      'mongodb://environment:27017/test',
+    ],
+    [undefined, 'mongodb://environment:27017/test', 'mongodb://environment:27017/test'],
+    ['', 'mongodb://environment:27017/test', 'mongodb://environment:27017/test'],
+    ['mongodb://configured:27017/test', undefined, 'mongodb://configured:27017/test'],
+    ['mongodb://configured:27017/test', '', 'mongodb://configured:27017/test'],
+  ])('should resolve mongo connection %s with env %s to %s', async (configured, env, expected) => {
+    const options = { appName: 'git-proxy', maxPoolSize: 5 };
+    const user = {
+      sink: [{ type: 'mongo', enabled: true, connectionString: configured, options }],
+    };
     fs.writeFileSync(tempUserFile, JSON.stringify(user));
-    process.env.GIT_PROXY_MONGO_CONNECTION_STRING = 'mongodb://example.com:27017/test';
+    if (env === undefined) {
+      delete process.env.GIT_PROXY_MONGO_CONNECTION_STRING;
+    } else {
+      process.env.GIT_PROXY_MONGO_CONNECTION_STRING = env;
+    }
 
     const config = await import('../src/config');
-    config.invalidateCache();
+    const database = config.getDatabase();
 
-    expect(config.getDatabase().connectionString).toBe('mongodb://example.com:27017/test');
+    expect(database).toEqual({ type: 'mongo', enabled: true, connectionString: expected, options });
+  });
+
+  it.each([
+    [undefined, undefined],
+    [undefined, ''],
+    ['', undefined],
+    ['', ''],
+  ])('should reject mongo connection %s with env %s', async (configured, env) => {
+    const user = { sink: [{ type: 'mongo', enabled: true, connectionString: configured }] };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+    if (env === undefined) {
+      delete process.env.GIT_PROXY_MONGO_CONNECTION_STRING;
+    } else {
+      process.env.GIT_PROXY_MONGO_CONNECTION_STRING = env;
+    }
+
+    const config = await import('../src/config');
+
+    expect(() => config.getDatabase()).toThrow(
+      'MongoDB connection string is required: set GIT_PROXY_MONGO_CONNECTION_STRING or sink.connectionString',
+    );
+  });
+
+  it('should skip a disabled mongo sink without a connection string', async () => {
+    const user = {
+      sink: [
+        { type: 'mongo', enabled: false },
+        { type: 'fs', enabled: true },
+      ],
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+    delete process.env.GIT_PROXY_MONGO_CONNECTION_STRING;
+
+    const config = await import('../src/config');
+
+    expect(config.getDatabase()).toEqual({ type: 'fs', enabled: true });
+  });
+
+  it('should select the first enabled sink when a mongo environment override is set', async () => {
+    const user = {
+      sink: [
+        { type: 'fs', enabled: true },
+        { type: 'mongo', enabled: true },
+      ],
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+    process.env.GIT_PROXY_MONGO_CONNECTION_STRING = 'mongodb://environment:27017/test';
+
+    const config = await import('../src/config');
+
+    expect(config.getDatabase()).toEqual({ type: 'fs', enabled: true });
   });
 
   it('should use config file defaults for server settings when no env var is set', async () => {

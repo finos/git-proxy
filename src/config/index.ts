@@ -326,9 +326,15 @@ export const getDatabase = () => {
 
   for (const db of databases) {
     if (db.enabled) {
-      // if mongodb is configured and connection string unspecified, fallback to env var
-      if (db.type === 'mongo' && !db.connectionString) {
-        db.connectionString = serverConfig.GIT_PROXY_MONGO_CONNECTION_STRING;
+      if (db.type === 'mongo') {
+        const connectionString =
+          serverConfig.GIT_PROXY_MONGO_CONNECTION_STRING || db.connectionString;
+        if (!connectionString) {
+          throw new Error(
+            'MongoDB connection string is required: set GIT_PROXY_MONGO_CONNECTION_STRING or sink.connectionString',
+          );
+        }
+        return { ...db, connectionString };
       }
       return db;
     }
