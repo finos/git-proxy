@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-import { PublicKeyRecord, User, UserQuery } from '../types';
+import { User } from '../types';
+import type { PublicKeyRecord, ScmIdentities, UserQuery } from '../types';
+import { normaliseScmLogin, scmIdentityField } from '../helper';
 import { DuplicateSSHKeyError } from '../../errors/DatabaseErrors';
 import { query, withTransaction } from './helper';
 
@@ -24,6 +26,8 @@ interface UserRow {
   email: string | null;
   password: string | null;
   git_account: string;
+  scm_identities: ScmIdentities;
+  must_change_password: boolean;
   admin: boolean;
   oidc_id: string | null;
   public_keys: PublicKeyRecord[] | null;
@@ -35,7 +39,7 @@ const rowToUser = (row: UserRow): User => {
   const user = new User(
     row.username,
     row.password ?? '',
-    row.git_account,
+    row.scm_identities,
     row.email ?? '',
     row.admin,
     row.oidc_id,
@@ -45,11 +49,14 @@ const rowToUser = (row: UserRow): User => {
   user.password = row.password;
   user.displayName = row.display_name;
   user.title = row.title;
+  user.mustChangePassword = row.must_change_password;
+  // Keep the legacy value available to the shared SCM migration and its rollback.
+  Object.assign(user, { gitAccount: row.git_account });
   return user;
 };
 
 const SELECT_COLUMNS =
-  '_id, username, email, password, git_account, admin, oidc_id, public_keys, display_name, title';
+  '_id, username, email, password, git_account, scm_identities, must_change_password, admin, oidc_id, public_keys, display_name, title';
 
 export const findUser = async (username: string): Promise<User | null> => {
   const result = await query<UserRow>(`SELECT ${SELECT_COLUMNS} FROM users WHERE username = $1`, [
@@ -65,11 +72,18 @@ export const findUserByEmail = async (email: string): Promise<User | null> => {
   return result.rowCount === 0 ? null : rowToUser(result.rows[0]);
 };
 
-export const findUserByGitAccount = async (gitAccount: string): Promise<User | null> => {
+export const findUserByScmIdentity = async (
+  provider: string,
+  login: string,
+): Promise<User | null> => {
+  if (!scmIdentityField(provider)) return null;
   const result = await query<UserRow>(
-    `SELECT ${SELECT_COLUMNS} FROM users WHERE git_account = $1`,
-    [gitAccount.toLowerCase()],
+    `SELECT ${SELECT_COLUMNS} FROM users WHERE scm_identities @> $1::jsonb LIMIT 2`,
+    [JSON.stringify({ [provider]: normaliseScmLogin(login) })],
   );
+  if (result.rows.length > 1) {
+    throw new Error(`${provider} account ${login} is linked to more than one user`);
+  }
   return result.rowCount === 0 ? null : rowToUser(result.rows[0]);
 };
 
@@ -95,7 +109,7 @@ export const getUsers = async (q: Partial<UserQuery> = {}): Promise<User[]> => {
   const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
   // Match mongo's `.project({ password: 0 })` — omit password from list results.
   const result = await query<UserRow>(
-    `SELECT _id, username, email, NULL::text AS password, git_account, admin, oidc_id, public_keys, display_name, title
+    `SELECT _id, username, email, NULL::text AS password, git_account, scm_identities, must_change_password, admin, oidc_id, public_keys, display_name, title
        FROM users ${where}`,
     values,
   );
@@ -104,18 +118,20 @@ export const getUsers = async (q: Partial<UserQuery> = {}): Promise<User[]> => {
 
 export const createUser = async (user: User): Promise<void> => {
   await query(
-    `INSERT INTO users (username, email, password, git_account, admin, oidc_id, public_keys, display_name, title)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)`,
+    `INSERT INTO users (username, email, password, git_account, admin, oidc_id, public_keys, display_name, title, scm_identities, must_change_password)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10::jsonb, $11)`,
     [
       user.username.toLowerCase(),
       user.email.toLowerCase(),
       user.password ?? null,
-      user.gitAccount,
+      'gitAccount' in user && typeof user.gitAccount === 'string' ? user.gitAccount : '',
       user.admin,
       user.oidcId ?? null,
       JSON.stringify(user.publicKeys ?? []),
       user.displayName ?? null,
       user.title ?? null,
+      JSON.stringify(user.scmIdentities ?? {}),
+      user.mustChangePassword ?? false,
     ],
   );
 };
@@ -147,7 +163,8 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
   if (username !== undefined) set('username', username);
   if (email !== undefined) set('email', email);
   if (user.password !== undefined) set('password', user.password);
-  if (user.gitAccount !== undefined) set('git_account', user.gitAccount);
+  if (user.scmIdentities !== undefined) set('scm_identities', JSON.stringify(user.scmIdentities));
+  if (user.mustChangePassword !== undefined) set('must_change_password', user.mustChangePassword);
   if (user.admin !== undefined) set('admin', user.admin);
   if (user.oidcId !== undefined) set('oidc_id', user.oidcId);
   if (user.publicKeys !== undefined) set('public_keys', JSON.stringify(user.publicKeys));
@@ -177,19 +194,20 @@ export const updateUser = async (user: Partial<User>): Promise<void> => {
   // conflict only the supplied fields are merged onto the existing row.
   const assignments = columns.map((column) => `${column} = EXCLUDED.${column}`);
   await query(
-    `INSERT INTO users (username, email, password, git_account, admin, oidc_id, public_keys, display_name, title)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9)
+    `INSERT INTO users (username, email, password, scm_identities, admin, oidc_id, public_keys, display_name, title, must_change_password)
+     VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7::jsonb, $8, $9, $10)
      ON CONFLICT (username) DO UPDATE SET ${assignments.join(', ')}`,
     [
       username,
       email ?? null,
       user.password ?? null,
-      user.gitAccount ?? '',
+      JSON.stringify(user.scmIdentities ?? {}),
       user.admin ?? false,
       user.oidcId ?? null,
       JSON.stringify(user.publicKeys ?? []),
       user.displayName ?? null,
       user.title ?? null,
+      user.mustChangePassword ?? false,
     ],
   );
 };

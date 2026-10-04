@@ -16,6 +16,9 @@
 
 import { describe, it, expect } from 'vitest';
 import { Pool } from 'pg';
+import * as postgres from '../../../src/db/postgres';
+import { runMigrations as applyLogicalMigrations } from '../../../src/db/migrations';
+import { gitAccountToScmIdentities } from '../../../src/db/migrations/gitAccountToScmIdentities';
 
 import { connect, query, resetConnection } from '../../../src/db/postgres/helper';
 import {
@@ -52,6 +55,56 @@ const resetToEmptyDatabase = async () => {
 };
 
 describe.runIf(shouldRunPostgresTests)('PostgreSQL Schema Migration Integration Tests', () => {
+  it('upgrades version 7 users and migrates only unambiguous legacy identities', async () => {
+    const pool = new Pool({ connectionString: getConnectionString() });
+    try {
+      await pool.query(
+        'DROP TABLE IF EXISTS schema_migrations, migrations, repo_users, pushes, repos, users CASCADE',
+      );
+      await pool.query(
+        'CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL)',
+      );
+      for (const entry of MIGRATIONS.filter((m) => m.version <= 7)) {
+        await pool.query(entry.sql);
+        await pool.query('INSERT INTO schema_migrations (version, name) VALUES ($1, $2)', [
+          entry.version,
+          entry.name,
+        ]);
+      }
+      for (const [username, handle] of [
+        ['alice', ' Alice-Git '],
+        ['bob', 'Shared'],
+        ['carol', 'shared'],
+        ['seed', 'none'],
+      ]) {
+        await pool.query('INSERT INTO users (username, git_account) VALUES ($1, $2)', [
+          username,
+          handle,
+        ]);
+      }
+
+      await runMigrations(pool);
+      await applyLogicalMigrations(postgres, [gitAccountToScmIdentities]);
+
+      expect(await postgres.findUserByScmIdentity('github', 'alice-git')).toMatchObject({
+        username: 'alice',
+        scmIdentities: { github: 'alice-git' },
+        mustChangePassword: false,
+      });
+      expect(await postgres.findUserByScmIdentity('github', 'shared')).toBeNull();
+      expect(await postgres.findUserByScmIdentity('github', 'none')).toBeNull();
+      expect(await postgres.getAppliedMigrations()).toContain(gitAccountToScmIdentities.id);
+      expect(await postgres.findUser('alice')).toHaveProperty('gitAccount', ' Alice-Git ');
+
+      await gitAccountToScmIdentities.down(postgres);
+      expect((await postgres.findUser('alice'))?.scmIdentities).toEqual({});
+      await gitAccountToScmIdentities.up(postgres);
+      expect((await postgres.findUser('alice'))?.scmIdentities).toEqual({ github: 'alice-git' });
+    } finally {
+      await pool.end();
+    }
+  });
+
   it('creates schema_migrations and the app tables and records version 1', async () => {
     await resetToEmptyDatabase();
 

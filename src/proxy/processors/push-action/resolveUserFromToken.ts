@@ -17,10 +17,20 @@
 import { Request } from 'express';
 
 import { Action, Step } from '../../actions';
-import { getProviderForHost, scmTokenCache } from './tokenIdentity';
-import { findUserByGitAccount } from '../../../db';
+import { getProviderForHost, PushCredential, scmTokenCache } from './tokenIdentity';
+import { findUserByScmIdentity } from '../../../db';
 import { getErrorMessage } from '../../../utils/errors';
 
+/**
+ * Establishes who is pushing from the credential that accompanied the push.
+ *
+ * The identity is never taken from the pushed objects: author, committer and
+ * tagger lines are whatever the client chose to write. The only things bound to
+ * a real person are the session (dashboard or SSH key) or the token presented
+ * over HTTP Basic auth, which the upstream SCM can be asked about.
+ *
+ * A push whose identity cannot be established is blocked.
+ */
 async function exec(req: Request, action: Action): Promise<Action> {
   const step = new Step('resolveUserFromToken');
 
@@ -31,88 +41,106 @@ async function exec(req: Request, action: Action): Promise<Action> {
   }
 
   try {
-    const authHeader = req.headers?.authorization;
-    if (!authHeader) {
-      step.log('No Authorization header — cannot resolve push identity from token');
+    const credential = extractBasicCredential(req, step);
+    if (!credential) {
       action.addStep(step);
       return action;
     }
-
-    const [scheme, encoded] = authHeader.split(' ');
-    if (!scheme || !encoded || scheme.toLowerCase() !== 'basic') {
-      step.log('Authorization header is not Basic — cannot resolve push identity');
-      action.addStep(step);
-      return action;
-    }
-
-    const credentials = Buffer.from(encoded, 'base64').toString();
-    const separatorIndex = credentials.indexOf(':');
-    if (separatorIndex === -1) {
-      step.log('Malformed Basic auth credentials');
-      action.addStep(step);
-      return action;
-    }
-
-    const token = credentials.slice(separatorIndex + 1);
 
     let hostname: string;
     try {
       hostname = new URL(action.url).hostname;
     } catch {
-      step.log(`Cannot parse hostname from action URL: ${action.url}`);
+      step.setError(`Push blocked: cannot parse hostname from repository URL '${action.url}'`);
       action.addStep(step);
       return action;
     }
 
     const provider = getProviderForHost(hostname);
     if (!provider) {
-      step.log(`No token identity provider for host '${hostname}' — identity resolution skipped`);
-      action.addStep(step);
-      return action;
-    }
-
-    const cached = scmTokenCache.lookup(provider.name, token);
-    if (cached) {
-      step.log(`${provider.name}: resolved push identity from cache: ${cached}`);
-      action.user = cached;
-      action.addStep(step);
-      return action;
-    }
-
-    const identity = await provider.fetchScmIdentity(token);
-    if (!identity) {
-      step.log(
-        `${provider.name}: failed to resolve identity from token (invalid token or missing scope?)`,
+      step.setError(
+        `Push blocked: no SCM provider is configured for host '${hostname}', so the pusher ` +
+          `cannot be identified. Add the host to 'scmProviders' in the proxy configuration.`,
       );
       action.addStep(step);
       return action;
     }
 
-    step.log(`${provider.name}: resolved SCM identity from token: ${identity.login}`);
-
-    const user = await findUserByGitAccount(identity.login);
-    if (user) {
-      step.log(
-        `Mapped SCM identity '${identity.login}' to git-proxy user '${user.username}' (${user.email})`,
-      );
-      action.user = user.username;
-      action.userEmail = user.email;
-      scmTokenCache.store(provider.name, token, user.username);
+    let identity = scmTokenCache.lookup(provider.name, credential);
+    if (identity) {
+      step.log(`${provider.name}: credential belongs to '${identity.username}' (cached)`);
     } else {
-      step.log(
-        `No git-proxy user has gitAccount '${identity.login}' — ` +
-          `falling back to SCM identity. ` +
-          `Users can associate their account via POST /api/auth/gitAccount`,
-      );
-      action.user = identity.login;
+      identity = await provider.fetchScmIdentity(credential);
+      if (!identity) {
+        step.setError(
+          `Push blocked: ${provider.name} did not accept the credential presented with this push ` +
+            `(invalid token, or missing the scope to read the token owner).`,
+        );
+        action.addStep(step);
+        return action;
+      }
+      step.log(`${provider.name}: credential belongs to '${identity.username}'`);
+      scmTokenCache.store(provider.name, credential, identity);
     }
+
+    const user = await findUserByScmIdentity(identity.provider, identity.username);
+    if (!user) {
+      step.setError(
+        `Push blocked: ${provider.name} account '${identity.username}' is not linked to a ` +
+          `git-proxy user. Link it from your profile or ask an administrator.`,
+      );
+      action.addStep(step);
+      return action;
+    }
+
+    step.log(`Mapped ${provider.name}:${identity.username} to git-proxy user '${user.username}'`);
+    action.user = user.username;
+    action.userEmail = user.email;
+    action.pusherVerified = true;
   } catch (error: unknown) {
-    const msg = getErrorMessage(error);
-    step.log(`Failed to resolve push identity from token: ${msg}`);
+    step.setError(`Push blocked: failed to resolve push identity: ${getErrorMessage(error)}`);
   }
 
   action.addStep(step);
   return action;
+}
+
+/**
+ * Split an HTTP Basic credential. git sends the token in the password half.
+ * The username half is free text and identifies nobody; the provider resolves
+ * the token to an account.
+ * @param {Request} req incoming request
+ * @param {Step} step step to record the outcome on
+ * @return {PushCredential | null} the credential, or null with the step marked as an error
+ */
+function extractBasicCredential(req: Request, step: Step): PushCredential | null {
+  const authHeader = req.headers?.authorization;
+  if (!authHeader) {
+    step.setError(
+      'Push blocked: no credentials were presented, so the pusher cannot be identified.',
+    );
+    return null;
+  }
+
+  const [scheme, encoded] = authHeader.split(' ');
+  if (!scheme || !encoded || scheme.toLowerCase() !== 'basic') {
+    step.setError('Push blocked: only HTTP Basic credentials can be used to identify the pusher.');
+    return null;
+  }
+
+  const credentials = Buffer.from(encoded, 'base64').toString();
+  const separatorIndex = credentials.indexOf(':');
+  if (separatorIndex === -1) {
+    step.setError('Push blocked: malformed HTTP Basic credentials.');
+    return null;
+  }
+
+  const token = credentials.slice(separatorIndex + 1);
+  if (!token) {
+    step.setError('Push blocked: the credential presented with this push has no token.');
+    return null;
+  }
+  return { username: credentials.slice(0, separatorIndex), token };
 }
 
 exec.displayName = 'resolveUserFromToken.exec';

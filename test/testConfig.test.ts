@@ -56,6 +56,8 @@ describe('default configuration', () => {
     );
     expect(config.getPrivateOrganizations()).toEqual(defaultSettings.privateOrganizations);
     expect(config.getUIRouteAuth()).toEqual(defaultSettings.uiRouteAuth);
+    expect(config.getMaxPackExpansionRatio()).toBe(defaultSettings.limits.maxPackExpansionRatio);
+    expect(config.getMaxPackObjects()).toBe(defaultSettings.limits.maxPackObjects);
   });
 });
 
@@ -171,6 +173,38 @@ describe('user configuration', () => {
 
     expect(config.getRateLimit()?.windowMs).toBe(limitConfig.rateLimit.windowMs);
     expect(config.getRateLimit()?.limit).toBe(limitConfig.rateLimit.limit);
+  });
+
+  it('should override default pack expansion and object count limits', async () => {
+    const user = {
+      limits: {
+        maxPackExpansionRatio: 10,
+        maxPackObjects: 50,
+      },
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = await import('../src/config');
+    config.invalidateCache();
+
+    expect(config.getMaxPackExpansionRatio()).toBe(10);
+    expect(config.getMaxPackObjects()).toBe(50);
+  });
+
+  it('should fall back when pack expansion or object count limits are invalid', async () => {
+    const user = {
+      limits: {
+        maxPackExpansionRatio: 0,
+        maxPackObjects: -1,
+      },
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = await import('../src/config');
+    config.invalidateCache();
+
+    expect(config.getMaxPackExpansionRatio()).toBe(100);
+    expect(config.getMaxPackObjects()).toBe(100_000);
   });
 
   it('should override default settings for attestation config', async () => {

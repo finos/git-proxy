@@ -19,7 +19,7 @@ import {
   createUser,
   findUser,
   findUserByEmail,
-  findUserByGitAccount,
+  findUserByScmIdentity,
   findUserByOIDC,
   findUserBySSHKey,
   getUsers,
@@ -40,7 +40,7 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Users Integration Tests', () 
     return new User(
       overrides.username || `testuser-${timestamp}`,
       overrides.password || 'hashedpassword123',
-      overrides.gitAccount || `git-${timestamp}`,
+      overrides.scmIdentities ?? { github: `git-${timestamp}` },
       overrides.email || `test-${timestamp}@example.com`,
       overrides.admin ?? false,
       overrides.oidcId || null,
@@ -48,6 +48,26 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Users Integration Tests', () 
   };
 
   describe('createUser', () => {
+    it('persists the forced password change flag through reads and password updates', async () => {
+      const user = createTestUser({ username: 'password-reset' });
+      user.mustChangePassword = true;
+      await createUser(user);
+
+      expect((await findUser(user.username))?.mustChangePassword).toBe(true);
+      expect((await getUsers({ username: user.username }))[0].mustChangePassword).toBe(true);
+
+      await updateUser({
+        username: user.username,
+        password: 'new-hash',
+        mustChangePassword: false,
+      });
+
+      expect(await findUser(user.username)).toMatchObject({
+        password: 'new-hash',
+        mustChangePassword: false,
+      });
+    });
+
     it('lowercases username and email on insert', async () => {
       const user = createTestUser({ username: 'CreateUser', email: 'Create@Example.COM' });
       await createUser(user);
@@ -82,15 +102,57 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Users Integration Tests', () 
     });
   });
 
-  describe('findUserByGitAccount', () => {
-    it('finds a user by git account (case-insensitive), mirroring mongo', async () => {
-      await createUser(createTestUser({ username: 'gitacctuser', gitAccount: 'findbygit-acct' }));
-      const result = await findUserByGitAccount('FindByGit-Acct');
-      expect(result?.gitAccount).toBe('findbygit-acct');
+  describe('findUserByScmIdentity', () => {
+    it('finds a normalized handle only on the requested provider', async () => {
+      await createUser(
+        createTestUser({ username: 'gitacctuser', scmIdentities: { github: 'findbygit-acct' } }),
+      );
+      const result = await findUserByScmIdentity('github', ' FindByGit-Acct ');
+      expect(result?.scmIdentities).toEqual({ github: 'findbygit-acct' });
+      expect(await findUserByScmIdentity('gitlab', 'findbygit-acct')).toBeNull();
     });
 
-    it('returns null for a non-existent git account', async () => {
-      expect(await findUserByGitAccount('non-existent-git-account')).toBeNull();
+    it('returns null for an absent identity or invalid provider', async () => {
+      expect(await findUserByScmIdentity('github', 'non-existent-git-account')).toBeNull();
+      expect(await findUserByScmIdentity("github' OR TRUE --", 'alice')).toBeNull();
+    });
+
+    it('rejects a handle claimed by multiple users', async () => {
+      await createUser(
+        createTestUser({
+          username: 'claim1',
+          email: 'claim1@example.com',
+          scmIdentities: { github: 'shared' },
+        }),
+      );
+      await createUser(
+        createTestUser({
+          username: 'claim2',
+          email: 'claim2@example.com',
+          scmIdentities: { github: 'shared' },
+        }),
+      );
+
+      await expect(findUserByScmIdentity('github', 'shared')).rejects.toThrow(
+        'linked to more than one user',
+      );
+    });
+
+    it('replaces identities without retaining an unlinked provider', async () => {
+      await createUser(
+        createTestUser({
+          username: 'unlink',
+          scmIdentities: { github: 'alice', gitlab: 'alice-lab' },
+        }),
+      );
+
+      await updateUser({ username: 'unlink', scmIdentities: { gitlab: 'alice-lab' } });
+
+      expect(await findUserByScmIdentity('github', 'alice')).toBeNull();
+      expect((await findUserByScmIdentity('gitlab', 'alice-lab'))?.username).toBe('unlink');
+      expect((await getUsers({ username: 'unlink' }))[0].scmIdentities).toEqual({
+        gitlab: 'alice-lab',
+      });
     });
   });
 
@@ -154,10 +216,10 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Users Integration Tests', () 
     it('updates by _id when provided', async () => {
       await createUser(createTestUser({ username: 'updatebyid' }));
       const created = await findUser('updatebyid');
-      await updateUser({ _id: created?._id as string, gitAccount: 'new-git-account' });
+      await updateUser({ _id: created?._id, scmIdentities: { github: 'new-git-account' } });
 
       const updated = await findUser('updatebyid');
-      expect(updated?.gitAccount).toBe('new-git-account');
+      expect(updated?.scmIdentities).toEqual({ github: 'new-git-account' });
     });
 
     it('lowercases email during update', async () => {
@@ -172,18 +234,20 @@ describe.runIf(shouldRunPostgresTests)('PostgreSQL Users Integration Tests', () 
       await updateUser({
         username: 'brand-new-user',
         email: 'brand-new@example.com',
-        gitAccount: 'brand-new-git',
+        scmIdentities: { github: 'brand-new-git' },
+        mustChangePassword: true,
       });
 
       const inserted = await findUser('brand-new-user');
       expect(inserted?.email).toBe('brand-new@example.com');
-      expect(inserted?.gitAccount).toBe('brand-new-git');
+      expect(inserted?.scmIdentities).toEqual({ github: 'brand-new-git' });
+      expect(inserted?.mustChangePassword).toBe(true);
     });
 
     it('allows multiple users without an email', async () => {
       // e.g. users synced from AD, where the mail attribute is optional
-      await updateUser({ username: 'no-email-1', gitAccount: 'git-1' });
-      await updateUser({ username: 'no-email-2', gitAccount: 'git-2' });
+      await updateUser({ username: 'no-email-1' });
+      await updateUser({ username: 'no-email-2' });
 
       expect((await findUser('no-email-1'))?.username).toBe('no-email-1');
       expect((await findUser('no-email-2'))?.username).toBe('no-email-2');

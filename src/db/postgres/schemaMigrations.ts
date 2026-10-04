@@ -189,6 +189,18 @@ export const MIGRATIONS: Migration[] = [
   CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
 `,
   },
+  {
+    version: 8,
+    name: 'user_scm_identities_and_password_change',
+    sql: `
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS scm_identities JSONB NOT NULL DEFAULT '{}'::jsonb;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN NOT NULL DEFAULT FALSE;
+  -- Preserve legacy handles for the shared gitAccountToScmIdentities migration,
+  -- which excludes ambiguous claims and supports rollback.
+  ALTER TABLE users ALTER COLUMN git_account SET DEFAULT '';
+  CREATE INDEX IF NOT EXISTS users_scm_identities_idx ON users USING GIN (scm_identities jsonb_path_ops);
+`,
+  },
 ];
 
 const SCHEMA_MIGRATIONS_TABLE_SQL = `

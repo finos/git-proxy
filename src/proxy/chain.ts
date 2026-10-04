@@ -43,6 +43,7 @@ const branchPushChain: ProcessorExec[] = [
 ];
 
 const tagPushChain: ProcessorExec[] = [
+  proc.push.resolveUserFromToken,
   proc.push.checkRepoInAuthorisedList,
   proc.push.checkUserPushPermission,
   proc.push.checkIfWaitingAuth,

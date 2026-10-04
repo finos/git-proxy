@@ -93,11 +93,12 @@ export const migrate = async (
     }
     // Legacy documents can lack optional fields the writers dereference:
     // users synced from AD may have no email (the mail attribute is
-    // optional) or gitAccount. Default them like the mongo upsert path does.
+    // optional) or SCM identities. Preserve legacy gitAccount in the spread
+    // so the shared logical migration can resolve unambiguous GitHub handles.
     await destination.createUser({
       ...user,
       email: user.email ?? '',
-      gitAccount: user.gitAccount ?? '',
+      scmIdentities: user.scmIdentities ?? {},
     });
     summary.users.imported++;
   }

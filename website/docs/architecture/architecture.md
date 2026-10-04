@@ -53,7 +53,7 @@ Don't forget to save and update the attached .drawio (XML)! -->
 Three types of policies can be applied to incoming pushes:
 
 - Default policies: These are already present in the GitProxy pull/push chain and require modifying source code to change their behaviour.
-  - For example, [`checkUserPushPermission`](processors.md#checkuserpushpermission) which simply checks if the pusher's email exists in the GitProxy database, and if their user is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
+  - For example, [`checkUserPushPermission`](processors.md#checkuserpushpermission) which checks that the pusher resolved from the push credential is marked in the "Contributors" list (`canPush`) for the repository they're trying to push to.
 - Configurable policies: These are policies that can be easily configured through the GitProxy config (`proxy.config.json` or a custom file).
   - For example, [`checkCommitMessages`](processors.md#checkcommitmessages) which reads the configuration and matches the string patterns provided with the commit messages in the push in order to block it.
 - Custom policies:
@@ -75,6 +75,7 @@ Action chains are a list of processors that a Git operation goes through before 
 Executed when a user makes a `git push` to GitProxy. These are the actions in `pushActionChain`, by order of execution:
 
 - [`parsePush`](processors.md#parsepush)
+- [`resolveUserFromToken`](processors.md#resolveuserfromtoken)
 - [`checkEmptyBranch`](processors.md#checkemptybranch)
 - [`checkRepoInAuthorisedList`](processors.md#checkrepoinauthorisedlist)
 - [`checkCommitMessages`](processors.md#checkcommitmessages)
@@ -579,6 +580,8 @@ Schema changes are applied by a small built-in migration runner (`src/db/postgre
 - applies any migrations whose version has not been recorded yet, in order, recording each as it goes.
 
 Migrations are an ordered, append-only list of SQL statements defined in code. Version 1 is the initial schema; because it uses `CREATE TABLE IF NOT EXISTS`, databases that were bootstrapped by earlier releases adopt the runner transparently (version 1 is simply recorded). To evolve the schema, append a new entry with the next version number; never edit or reorder migrations that have already shipped.
+
+Version 8 adds provider-scoped SCM identities and the forced password-change flag to users. Identities are stored as a JSONB map with a GIN index. Lookups reject ambiguous handles, matching the other backends. The legacy `git_account` column remains available to the shared `gitAccountToScmIdentities` migration, which runs during application startup and links only unambiguous GitHub handles. Data imports preserve both modern identity maps and legacy account values so this migration can also process users copied from older deployments.
 
 Notes and current limitations:
 

@@ -31,7 +31,7 @@ describe('PostgreSQL - Users', async () => {
   const {
     findUser,
     findUserByEmail,
-    findUserByGitAccount,
+    findUserByScmIdentity,
     findUserByOIDC,
     findUserBySSHKey,
     createUser,
@@ -60,10 +60,10 @@ describe('PostgreSQL - Users', async () => {
       expect(mockQuery.mock.calls[0][1]).toEqual(['user@example.com']);
     });
 
-    it('lower-cases gitAccount on findUserByGitAccount', async () => {
+    it('normalizes the SCM login and scopes it to the provider', async () => {
       mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
-      await findUserByGitAccount('Alice-Git');
-      expect(mockQuery.mock.calls[0][1]).toEqual(['alice-git']);
+      await findUserByScmIdentity('github', ' Alice-Git ');
+      expect(mockQuery.mock.calls[0][1]).toEqual([JSON.stringify({ github: 'alice-git' })]);
     });
 
     it('lower-cases username/email on createUser', async () => {
@@ -71,7 +71,7 @@ describe('PostgreSQL - Users', async () => {
       await createUser({
         username: 'Alice',
         password: 'pw',
-        gitAccount: 'alice-git',
+        scmIdentities: { github: 'alice-git' },
         email: 'Alice@Example.com',
         admin: false,
       } as never);
@@ -99,6 +99,8 @@ describe('PostgreSQL - Users', async () => {
             email: 'alice@example.com',
             password: 'hash',
             git_account: 'alice-git',
+            scm_identities: { github: 'alice-git', gitlab: 'alice-lab' },
+            must_change_password: true,
             admin: true,
             oidc_id: null,
             display_name: 'Alice A.',
@@ -114,7 +116,8 @@ describe('PostgreSQL - Users', async () => {
         username: 'alice',
         email: 'alice@example.com',
         password: 'hash',
-        gitAccount: 'alice-git',
+        scmIdentities: { github: 'alice-git', gitlab: 'alice-lab' },
+        mustChangePassword: true,
         admin: true,
         displayName: 'Alice A.',
         title: 'Dev',
@@ -122,14 +125,29 @@ describe('PostgreSQL - Users', async () => {
     });
   });
 
-  describe('findUserByGitAccount', () => {
-    it('queries by git_account and returns null when absent', async () => {
+  describe('findUserByScmIdentity', () => {
+    it('queries by provider and returns null when absent', async () => {
       mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
-      const user = await findUserByGitAccount('alice-git');
+      const user = await findUserByScmIdentity('github', 'alice-git');
       const [sql, params] = mockQuery.mock.calls[0];
-      expect(sql).toContain('WHERE git_account = $1');
-      expect(params).toEqual(['alice-git']);
+      expect(sql).toContain('WHERE scm_identities @> $1::jsonb LIMIT 2');
+      expect(params).toEqual([JSON.stringify({ github: 'alice-git' })]);
       expect(user).toBeNull();
+    });
+
+    it('does not query for an invalid provider', async () => {
+      await expect(findUserByScmIdentity('$where', 'alice')).resolves.toBeNull();
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+
+    it('rejects ambiguous identities instead of selecting a user', async () => {
+      mockQuery.mockResolvedValue({
+        rowCount: 2,
+        rows: [{ username: 'alice' }, { username: 'bob' }],
+      });
+      await expect(findUserByScmIdentity('github', 'shared')).rejects.toThrow(
+        'github account shared is linked to more than one user',
+      );
     });
   });
 
@@ -163,6 +181,14 @@ describe('PostgreSQL - Users', async () => {
   });
 
   describe('updateUser', () => {
+    it('writes SCM identities and an explicit false password-change flag', async () => {
+      mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
+      await updateUser({ _id: 'u1', scmIdentities: {}, mustChangePassword: false });
+      expect(mockQuery.mock.calls[0][1]).toEqual(['{}', false, 'u1']);
+      expect(mockQuery.mock.calls[0][0]).toContain(
+        'scm_identities = $1, must_change_password = $2',
+      );
+    });
     it('updates by _id when provided', async () => {
       mockQuery.mockResolvedValue({ rowCount: 1, rows: [] });
 
@@ -229,6 +255,8 @@ describe('PostgreSQL - Users', async () => {
       email: 'alice@example.com',
       password: null,
       git_account: 'alice-git',
+      scm_identities: { github: 'alice-git' },
+      must_change_password: false,
       admin: false,
       oidc_id: null,
       public_keys: [],

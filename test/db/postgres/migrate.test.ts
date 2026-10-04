@@ -20,7 +20,7 @@ import { migrate, MigrationDestination, MigrationSource } from '../../../src/db/
 import { Repo, User } from '../../../src/db/types';
 
 const user = (username: string, email: string): User =>
-  new User(username, 'hash', `${username}-git`, email, false);
+  new User(username, 'hash', { github: `${username}-git` }, email, false);
 
 const repo = (url: string): Repo => new Repo('proj', `name-${url}`, url);
 
@@ -65,10 +65,13 @@ describe('PostgreSQL - migrate', () => {
     expect(destination.writeAudit).toHaveBeenCalledTimes(3);
   });
 
-  it('defaults missing email and gitAccount on legacy users', async () => {
-    const legacy = user('ad-user', 'ignored');
-    delete (legacy as Partial<User>).email;
-    delete (legacy as Partial<User>).gitAccount;
+  it('defaults missing email and identities while preserving the legacy account', async () => {
+    const legacy: Partial<User> & { gitAccount: string } = {
+      ...user('ad-user', 'ignored'),
+      gitAccount: 'legacy-handle',
+    };
+    delete legacy.email;
+    delete legacy.scmIdentities;
     const source = makeSource({ getUsers: vi.fn().mockResolvedValue([legacy]) });
     const destination = makeDestination();
 
@@ -76,7 +79,12 @@ describe('PostgreSQL - migrate', () => {
 
     expect(summary.users).toEqual({ imported: 1, skipped: 0 });
     expect(destination.createUser).toHaveBeenCalledWith(
-      expect.objectContaining({ username: 'ad-user', email: '', gitAccount: '' }),
+      expect.objectContaining({
+        username: 'ad-user',
+        email: '',
+        scmIdentities: {},
+        gitAccount: 'legacy-handle',
+      }),
     );
     // No email to dedupe on, so the email lookup is skipped entirely.
     expect(destination.findUserByEmail).not.toHaveBeenCalled();
@@ -120,7 +128,7 @@ describe('PostgreSQL - migrate', () => {
   });
 
   it('does not look up by email when the source user has none', async () => {
-    const noEmail = new User('svc', 'hash', 'svc-git', '', false);
+    const noEmail = new User('svc', 'hash', {}, '', false);
     const source = makeSource({ getUsers: vi.fn().mockResolvedValue([noEmail]) });
     const destination = makeDestination();
 
