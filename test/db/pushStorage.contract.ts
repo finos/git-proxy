@@ -244,5 +244,55 @@ export const definePushStorageContract = (
       expect((await sink.getRepoPushRollupsByCanonicalUrl()).tabCounts.has(key)).toBe(false);
       expect(await sink.getPush(action.id)).toBeNull();
     });
+
+    it('handles retries, concurrent writes, and removal of the latest pending push', async () => {
+      const key = canonicalRemoteUrl(url);
+      const actions = ids.map((id, index) => {
+        const action = makePush(id);
+        action.timestamp = 100 + index;
+        return action;
+      });
+      await Promise.all(actions.map((action) => sink.writeAudit(action)));
+      await Promise.all(actions.map((action) => sink.writeAudit(action)));
+      expect((await sink.getRepoPushRollupsByCanonicalUrl()).tabCounts.get(key)?.pending).toBe(3);
+      await Promise.all([sink.authorise(ids[2], attestation), sink.reject(ids[0], rejection)]);
+      const reviewed = await sink.getRepoPushRollupsByCanonicalUrl();
+      expect(reviewed.tabCounts.get(key)).toEqual({
+        pending: 1,
+        approved: 1,
+        rejected: 1,
+        canceled: 0,
+        error: 0,
+      });
+      expect(reviewed.latestPushAtMs.get(key)).toBe(102);
+      expect(reviewed.latestPendingReviewAtMs.get(key)).toBe(101);
+      await sink.deletePush(ids[2]);
+      await sink.deletePush(ids[2]);
+      expect((await sink.getRepoPushRollupsByCanonicalUrl()).latestPushAtMs.get(key)).toBe(101);
+    });
+
+    it('moves activity when a stored push changes its canonical repository or request type', async () => {
+      const action = makePush();
+      await sink.writeAudit(action);
+      await sink.getRepoPushRollupsByCanonicalUrl();
+      action.url = 'git@EXAMPLE.com:storage-contract/REPO.git';
+      await sink.writeAudit(action);
+      expect(
+        (await sink.getRepoPushRollupsByCanonicalUrl()).tabCounts.get(canonicalRemoteUrl(url))
+          ?.pending,
+      ).toBe(1);
+      action.url = 'https://example.com/storage-contract/moved.git';
+      await sink.writeAudit(action);
+      const moved = await sink.getRepoPushRollupsByCanonicalUrl();
+      expect(moved.tabCounts.has(canonicalRemoteUrl(url))).toBe(false);
+      expect(moved.tabCounts.get(canonicalRemoteUrl(action.url))?.pending).toBe(1);
+      action.type = RequestType.PULL;
+      await sink.writeAudit(action);
+      expect(
+        (await sink.getRepoPushRollupsByCanonicalUrl()).tabCounts.has(
+          canonicalRemoteUrl(action.url),
+        ),
+      ).toBe(false);
+    });
   });
 };

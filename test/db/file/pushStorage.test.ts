@@ -16,5 +16,18 @@
 
 import * as pushes from '../../../src/db/file/pushes';
 import { definePushStorageContract } from '../pushStorage.contract';
+import { expect, it, vi } from 'vitest';
 
 definePushStorageContract('NeDB push storage', pushes, (id) => pushes.db.findOneAsync({ id }));
+
+it('serves repeated repository reads without querying push history again', async () => {
+  await pushes.getRepoPushRollupsByCanonicalUrl();
+  const find = vi.spyOn(pushes.db, 'find');
+  try {
+    await pushes.getRepoPushRollupsByCanonicalUrl();
+    await pushes.getRepoPushRollupsByCanonicalUrl();
+    expect(find).not.toHaveBeenCalled();
+  } finally {
+    find.mockRestore();
+  }
+});
