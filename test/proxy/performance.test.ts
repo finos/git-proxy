@@ -15,7 +15,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import express from 'express';
+import request from 'supertest';
 import { KILOBYTE, MEGABYTE, GIGABYTE } from '../../src/constants';
+import { Action, RequestType } from '../../src/proxy/actions/Action';
+import { exec as parsePush } from '../../src/proxy/processors/pre-processor/parsePush';
 
 describe('HTTP/HTTPS Performance Tests', () => {
   describe('Memory Usage Tests', () => {
@@ -221,28 +225,37 @@ describe('HTTP/HTTPS Performance Tests', () => {
   });
 
   describe('Error Handling Performance', () => {
-    it('should handle errors quickly without memory leaks', async () => {
-      const startMemory = process.memoryUsage().heapUsed;
-      const startTime = Date.now();
+    it('rejects malformed push data and records the parsing error', async () => {
+      const app = express();
+      app.post('/git-receive-pack', express.raw({ type: '*/*' }), async (req, res) => {
+        const action = new Action(
+          'invalid-pack',
+          RequestType.PUSH,
+          'POST',
+          0,
+          'https://example.com/test/repo.git',
+        );
+        res.json(await parsePush(req, action));
+      });
 
-      // Simulate error scenario
-      try {
-        const invalidData = 'invalid-pack-data';
-        if (!Buffer.isBuffer(invalidData)) {
-          throw new Error('Invalid data format');
-        }
-      } catch (error) {
-        // Error handling
-      }
+      const response = await request(app)
+        .post('/git-receive-pack')
+        .set('Content-Type', 'application/x-git-receive-pack-request')
+        .send(Buffer.from('invalid-pack-data'));
 
-      const endMemory = process.memoryUsage().heapUsed;
-      const endTime = Date.now();
-
-      const memoryIncrease = endMemory - startMemory;
-      const processingTime = endTime - startTime;
-
-      expect(processingTime).toBeLessThan(100); // Should handle errors quickly
-      expect(memoryIncrease).toBeLessThan(10 * KILOBYTE); // Should not leak memory (allow for GC timing and normal variance)
+      expect(response.body).toMatchObject({
+        error: true,
+        allowPush: false,
+        authorised: false,
+        steps: [
+          {
+            stepName: 'parsePackFile',
+            error: true,
+            errorMessage: expect.stringContaining('Invalid packet line length'),
+            logs: [expect.stringContaining('Invalid packet line length')],
+          },
+        ],
+      });
     });
 
     it('should handle malformed requests efficiently', async () => {
