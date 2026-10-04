@@ -62,13 +62,35 @@ const makePush = (id = ids[0], content = diff): Action => {
 };
 
 /** Exercise real sinks with one shared contract; mocks cannot validate database projections. */
-export const definePushStorageContract = (name: string, sink: PushStorage): void => {
+export const definePushStorageContract = (
+  name: string,
+  sink: PushStorage,
+  readStored: (id: string) => Promise<unknown>,
+): void => {
   describe(name, () => {
     const cleanup = async () => {
       for (const id of ids) await sink.deletePush(id);
     };
     beforeEach(cleanup);
     afterEach(cleanup);
+
+    it('stores a diff in the final step once without changing the detail response', async () => {
+      const action = makePush();
+      action.steps[0].logs = ['diff - Generated diff'];
+      await sink.writeAudit(action);
+      const stored = await readStored(action.id);
+      expect(stored).not.toHaveProperty('lastStep');
+      expect(JSON.stringify(stored).match(/private payload/g)).toHaveLength(1);
+      const detail = await sink.getPush(action.id);
+      expect(detail?.lastStep).toEqual(action.lastStep);
+      expect(detail).not.toHaveProperty('_lastStepIndex');
+
+      action.lastStep = new Step('failedAfterDiff');
+      action.lastStep.setError('Preserve a separate diagnostic');
+      await sink.writeAudit(action);
+      expect(await readStored(action.id)).not.toHaveProperty('_lastStepIndex');
+      expect((await sink.getPush(action.id))?.lastStep).toEqual(action.lastStep);
+    });
 
     it('keeps legacy audit content on detail reads while excluding every diff copy from lists', async () => {
       const action = makePush();

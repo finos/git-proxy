@@ -17,7 +17,10 @@
 import { describe } from 'vitest';
 import * as pushes from '../../../src/db/mongo/pushes';
 import { definePushStorageContract } from '../pushStorage.contract';
+import { connect } from '../../../src/db/mongo/helper';
 
 describe.runIf(process.env.RUN_MONGO_TESTS === 'true')('MongoDB storage contract', () => {
-  definePushStorageContract('MongoDB push storage', pushes);
+  definePushStorageContract('MongoDB push storage', pushes, async (id) =>
+    (await connect('pushes')).findOne({ id }),
+  );
 });

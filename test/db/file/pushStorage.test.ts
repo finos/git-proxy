@@ -17,4 +17,4 @@
 import * as pushes from '../../../src/db/file/pushes';
 import { definePushStorageContract } from '../pushStorage.contract';
 
-definePushStorageContract('NeDB push storage', pushes);
+definePushStorageContract('NeDB push storage', pushes, (id) => pushes.db.findOneAsync({ id }));
