@@ -20,6 +20,8 @@ When a milestone reaches completion, we cut a `release/X.Y` branch from `main`, 
 
 When a bug affecting a released version is reported, we **open a PR against the oldest supported release branch containing the bug**. After the fix is merged to that branch, we **merge it forward**. Suppose we support the following versions: `1.1`, `2.2` and `3.0`. If a bug affecting `2.2` is discovered, we first merge the fix into `2.2`. Then, we merge `2.2` into `3.0`, which ensures that all affected, supported versions inherit the bugfix. Since commit identity is preserved, a single SHA exists on all branches the fix was applied to. We can then easily audit that a particular version contains a fix by using `git merge-base --is-ancestor`.
 
+PRs and merges against `release/*` branches run the same CI checks as `main` (including unit/e2e tests, NPM package smoke tests, CodeQL, and CVE scanning).
+
 Features and changes other than bugfixes never go into a release branch. If you want a feature included in the next minor release, you should target `main` so it gets picked up in the next milestone.
 
 ## Release Planning

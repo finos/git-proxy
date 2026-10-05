@@ -11,14 +11,14 @@ All pushes that flow through GitProxy require an approval (authorisation). Until
 
 - [x] Proxy and REST API are running ([default behaviour](https://github.com/finos/git-proxy/blob/main/index.js))
 - [x] Proxy and REST API are running on `localhost:8000` and `localhost:8080`, respectively
-- [x] [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via GitProxy](/docs/quickstart/intercept#push-via-git-proxy)
+- [x] [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via GitProxy](/docs/quickstart/intercept#push-via-gitproxy)
 - [x] [`curl`](https://curl.se/) is installed
 
 ### Instructions
 
 #### 1. Find the tracking `ID`
 
-Following on from [Push via GitProxy](/docs/quickstart/intercept#push-via-git-proxy), a unique & shareable link is generated:
+Following on from [Push via GitProxy](/docs/quickstart/intercept#push-via-gitproxy), a unique & shareable link is generated:
 
 ```
 http://localhost:8080/dashboard/push/3f9c2a7e1b8d4c6f0a5e9b2d7c1f4a8e6b3d0c9f2e5a7b1d4c8f0e3a6b9d2c5f
@@ -79,13 +79,13 @@ remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
 
 - Proxy and REST API are running ([default behaviour](https://github.com/finos/git-proxy/blob/main/index.js))
 - The GitProxy URL is configured via the GIT_PROXY_UI_HOST (defaults to `http://localhost`) and GIT_PROXY_UI_PORT (defaults to `8080`) environment variables. Note: this documentation assumes that GitProxy UI is running on `http://git-proxy.com:8080`.
-- [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via GitProxy](/docs/quickstart/intercept#push-via-git-proxy)
+- [Intercepting a push](/docs/quickstart/intercept) instructions have been followed and you've reached [Push via GitProxy](/docs/quickstart/intercept#push-via-gitproxy)
 
 ### Instructions
 
 #### 1. Find the tracking `ID`
 
-Following on from [Push via GitProxy](/docs/quickstart/intercept#push-via-git-proxy), you'll receive a unique URL:
+Following on from [Push via GitProxy](/docs/quickstart/intercept#push-via-gitproxy), you'll receive a unique URL:
 
 ```
 http://localhost:8080/dashboard/push/3f9c2a7e1b8d4c6f0a5e9b2d7c1f4a8e6b3d0c9f2e5a7b1d4c8f0e3a6b9d2c5f
@@ -168,7 +168,7 @@ Once submitted, you should be logged in as administrator 💪
 
 #### 2. Visit the shareable link
 
-Following on from [Push via GitProxy](/docs/quickstart/intercept#push-via-git-proxy), a unique & shareable link is generated:
+Following on from [Push via GitProxy](/docs/quickstart/intercept#push-via-gitproxy), a unique & shareable link is generated:
 
 ```bash
 remote: GitProxy has received your push ✅
