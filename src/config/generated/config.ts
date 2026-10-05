@@ -607,10 +607,10 @@ export interface Database {
    *
    * PostgreSQL client connection string, see
    * [https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING).
-   * Overridden by the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable when that
-   * is set, matching GitProxy's other environment variable overrides. If neither is set, the
-   * discrete fields below are used, then the `PG*` environment variables. Takes precedence
-   * over the discrete fields when set.
+   * Connection settings are selected in this order: `GIT_PROXY_POSTGRES_CONNECTION_STRING`,
+   * `connectionString` from the user config or default config, then the discrete connection
+   * fields. When using discrete fields, missing values fall back to the `PG*` environment
+   * variables.
    */
   connectionString?: string;
   enabled: boolean;
