@@ -25,11 +25,9 @@ import { ClientWithUser } from '../../src/proxy/ssh/types';
 import * as fs from 'fs';
 import * as config from '../../src/config';
 import { generateKeyPairSync } from 'crypto';
-import { tmpdir } from 'os';
-import { join } from 'path';
 
 describe('SSH Security Tests', () => {
-  const testKeysDir = fs.mkdtempSync(join(tmpdir(), 'gitproxy-ssh-security-'));
+  const testKeysDir = fs.mkdtempSync('test/ssh-security-keys-');
 
   beforeAll(() => {
     const { privateKey, publicKey } = generateKeyPairSync('rsa', {
@@ -37,16 +35,16 @@ describe('SSH Security Tests', () => {
       privateKeyEncoding: { type: 'pkcs1', format: 'pem' },
       publicKeyEncoding: { type: 'spki', format: 'pem' },
     });
-    fs.writeFileSync(join(testKeysDir, 'test_key'), privateKey);
-    fs.writeFileSync(join(testKeysDir, 'test_key.pub'), publicKey);
+    fs.writeFileSync(`${testKeysDir}/test_key`, privateKey);
+    fs.writeFileSync(`${testKeysDir}/test_key.pub`, publicKey);
 
     // Mock SSH config to use test keys
     vi.spyOn(config, 'getSSHConfig').mockReturnValue({
       enabled: true,
       port: 2222,
       hostKey: {
-        privateKeyPath: join(testKeysDir, 'test_key'),
-        publicKeyPath: join(testKeysDir, 'test_key.pub'),
+        privateKeyPath: `${testKeysDir}/test_key`,
+        publicKeyPath: `${testKeysDir}/test_key.pub`,
       },
     } as any);
   });
