@@ -1,4 +1,15 @@
 [build]
-  # The CACHED_COMMIT_REF guard is required: when empty, git diffs the checkout against
-  # itself, always exits 0, and cancels every build.
-  ignore = '[ -n "$CACHED_COMMIT_REF" ] && git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../package.json'
+  # Always publish main. Gating this froze the site for four months: $CACHED_COMMIT_REF
+  # lives in the build cache, and once that was evicted the comparison always reported
+  # "no changes", which cancelled the build, which wrote no cache. Silent, and in the one
+  # direction that matters: don't publish.
+  ignore = "false"
+
+[context.deploy-preview]
+  # Previews are where the build minutes go (~265/month vs 35) and what #324 asked for.
+  # A wrong skip here costs a preview, not a stale site.
+  #
+  # merge-base compares the whole PR against main. Assigning it before the diff keeps its
+  # exit status: inlined as $(...) a failure would leave a one-revision diff that exits 0
+  # and skips silently.
+  ignore = 'BASE=$(git merge-base origin/main HEAD) && git diff --quiet "$BASE" HEAD -- . ../package.json'
