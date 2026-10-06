@@ -336,6 +336,13 @@ export const getDatabase = () => {
         }
         return { ...db, connectionString };
       }
+      // The postgres connection string follows the same precedence as GitProxy's
+      // other environment variable overrides: env var, then user config, then the
+      // default config. The default config ships a connectionString, so a
+      // fallback-only env var would never apply.
+      if (db.type === 'postgres' && serverConfig.GIT_PROXY_POSTGRES_CONNECTION_STRING) {
+        db.connectionString = serverConfig.GIT_PROXY_POSTGRES_CONNECTION_STRING;
+      }
       return db;
     }
   }
