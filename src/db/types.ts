@@ -123,10 +123,18 @@ export class Repo {
   }
 }
 
+/**
+ * Accounts a user holds on configured SCM providers, keyed by provider name
+ * (see `scmProviders` in the configuration) with the account handle as value.
+ * A push is attributed to a user when the credential it carries resolves, via
+ * the provider's API, to one of these handles.
+ */
+export type ScmIdentities = Record<string, string>;
+
 export class User {
   username: string;
   password: string | null; // null if oidcId is set
-  gitAccount: string;
+  scmIdentities: ScmIdentities;
   email: string;
   admin: boolean;
   oidcId?: string | null;
@@ -139,7 +147,7 @@ export class User {
   constructor(
     username: string,
     password: string,
-    gitAccount: string,
+    scmIdentities: ScmIdentities,
     email: string,
     admin: boolean,
     oidcId: string | null = null,
@@ -148,7 +156,7 @@ export class User {
   ) {
     this.username = username;
     this.password = password;
-    this.gitAccount = gitAccount;
+    this.scmIdentities = scmIdentities;
     this.email = email;
     this.admin = admin;
     this.oidcId = oidcId ?? null;
@@ -162,7 +170,7 @@ export interface PublicUser {
   displayName: string;
   email: string;
   title: string;
-  gitAccount: string;
+  scmIdentities: ScmIdentities;
   admin: boolean;
   activity?: RepoActivityTabCounts;
   mustChangePassword?: boolean;
@@ -192,7 +200,7 @@ export interface Sink {
   deleteRepo: (_id: string) => Promise<void>;
   findUser: (username: string) => Promise<User | null>;
   findUserByEmail: (email: string) => Promise<User | null>;
-  findUserByGitAccount: (gitAccount: string) => Promise<User | null>;
+  findUserByScmIdentity: (provider: string, login: string) => Promise<User | null>;
   findUserByOIDC: (oidcId: string) => Promise<User | null>;
   findUserBySSHKey: (sshKey: string) => Promise<User | null>;
   getUsers: (query?: Partial<UserQuery>) => Promise<User[]>;

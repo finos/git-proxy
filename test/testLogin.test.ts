@@ -65,19 +65,19 @@ describe('login', () => {
       expect(res.status).toBe(200);
     });
 
-    it('should be able to set the git account', async () => {
+    it('should be able to set an SCM identity', async () => {
       const cookie = await loginAsAdmin();
-      const res = await request(app).post('/api/auth/gitAccount').set('Cookie', cookie).send({
-        username: 'admin',
-        gitAccount: 'new-account',
+      const res = await request(app).post('/api/auth/scm-identity').set('Cookie', cookie).send({
+        provider: 'github',
+        login: 'new-account',
       });
       expect(res.status).toBe(200);
     });
 
-    it('should throw an error if the username is not provided when setting the git account', async () => {
+    it('should throw an error if the provider is not provided when setting an SCM identity', async () => {
       const cookie = await loginAsAdmin();
-      const res = await request(app).post('/api/auth/gitAccount').set('Cookie', cookie).send({
-        gitAccount: 'new-account',
+      const res = await request(app).post('/api/auth/scm-identity').set('Cookie', cookie).send({
+        login: 'new-account',
       });
       expect(res.status).toBe(400);
     });
@@ -112,10 +112,10 @@ describe('login', () => {
       expect(res.status).toBe(401);
     });
 
-    it('should fail to set the git account if the user is not logged in', async () => {
-      const res = await request(app).post('/api/auth/gitAccount').send({
-        username: 'admin',
-        gitAccount: 'new-account',
+    it('should fail to set an SCM identity if the user is not logged in', async () => {
+      const res = await request(app).post('/api/auth/scm-identity').send({
+        provider: 'github',
+        login: 'new-account',
       });
       expect(res.status).toBe(401);
     });
@@ -145,7 +145,6 @@ describe('login', () => {
         username: 'newuser',
         password: 'newpass',
         email: 'new@email.com',
-        gitAccount: 'newgit',
       });
 
       expect(res.status).toBe(403);
@@ -154,7 +153,7 @@ describe('login', () => {
 
     it('should fail to create user when not admin', async () => {
       await db.deleteUser('nonadmin');
-      await db.createUser('nonadmin', 'nonadmin', 'nonadmin@test.com', 'nonadmin', false);
+      await db.createUser('nonadmin', 'nonadmin', 'nonadmin@test.com', false);
 
       const loginRes = await request(app).post('/api/auth/login').send({
         username: 'nonadmin',
@@ -177,7 +176,6 @@ describe('login', () => {
           username: 'newuser',
           password: 'newpass',
           email: 'new@email.com',
-          gitAccount: 'newgit',
         });
 
       expect(res.status).toBe(403);
@@ -195,12 +193,11 @@ describe('login', () => {
       const res = await request(app).post('/api/auth/create-user').set('Cookie', adminCookie).send({
         username: 'newuser',
         email: 'new@email.com',
-        gitAccount: 'newgit',
       });
 
       expect(res.status).toBe(400);
       expect(res.body.message).toBe(
-        'Missing required fields: username, password, email, and gitAccount are required',
+        'Missing required fields: username, password, and email are required',
       );
     });
 
@@ -216,7 +213,6 @@ describe('login', () => {
         username: 'newuser',
         password: 'newpass',
         email: 'new@email.com',
-        gitAccount: 'newgit',
         admin: false,
       });
 
@@ -244,7 +240,6 @@ describe('login', () => {
         username: 'newuser',
         password: 'newpass',
         email: 'new@email.com',
-        gitAccount: 'newgit',
         admin: false,
       });
 
@@ -257,7 +252,6 @@ describe('login', () => {
           username: 'newuser',
           password: 'newpass',
           email: 'new@email.com',
-          gitAccount: 'newgit',
           admin: false,
         });
 

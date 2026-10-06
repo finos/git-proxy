@@ -54,6 +54,7 @@ const branchPushChainElements: ChainElement[] = [
 ];
 
 const tagPushChainElements: ChainElement[] = [
+  proc.push.resolveUserFromToken,
   proc.push.checkRepoInAuthorisedList,
   PushPhase.AFTER_PERMISSIONS,
   proc.push.checkUserPushPermission,

@@ -285,7 +285,7 @@ describe('MongoDB Repo', async () => {
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { _id: new ObjectId(TEST_REPO._id!) },
         {
-          $push: { 'users.canPush': 'newuser' },
+          $addToSet: { 'users.canPush': 'newuser' },
           $set: { lastModified: expect.any(String) },
         },
       );
@@ -299,7 +299,7 @@ describe('MongoDB Repo', async () => {
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { _id: new ObjectId(TEST_REPO._id!) },
         {
-          $push: { 'users.canPush': 'uppercase' },
+          $addToSet: { 'users.canPush': 'uppercase' },
           $set: { lastModified: expect.any(String) },
         },
       );
@@ -316,7 +316,7 @@ describe('MongoDB Repo', async () => {
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { _id: new ObjectId(TEST_REPO._id!) },
         {
-          $push: { 'users.canAuthorise': 'newadmin' },
+          $addToSet: { 'users.canAuthorise': 'newadmin' },
           $set: { lastModified: expect.any(String) },
         },
       );
@@ -330,7 +330,7 @@ describe('MongoDB Repo', async () => {
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { _id: new ObjectId(TEST_REPO._id!) },
         {
-          $push: { 'users.canAuthorise': 'admin' },
+          $addToSet: { 'users.canAuthorise': 'admin' },
           $set: { lastModified: expect.any(String) },
         },
       );
