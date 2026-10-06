@@ -38,7 +38,7 @@ const TEST_NONEXISTENT_REPO = {
 const TEST_USER = {
   username: 'db-u1',
   password: 'abc',
-  gitAccount: 'db-test-user',
+  scmIdentities: { github: 'db-test-user' },
   email: 'db-test@test.com',
   admin: true,
   mustChangePassword: false,
@@ -108,8 +108,10 @@ const ensureUserExists = async (testUser = TEST_USER) => {
       testUser.username,
       testUser.password,
       testUser.email,
-      testUser.gitAccount,
       testUser.admin,
+      '',
+      false,
+      testUser.scmIdentities,
     );
   }
 };
@@ -166,7 +168,7 @@ describe('Database clients', () => {
     const user = new User(
       'username',
       'password',
-      'gitAccount',
+      { github: 'gitHandle' },
       'email@domain.com',
       true,
       null,
@@ -174,7 +176,7 @@ describe('Database clients', () => {
       'id',
     );
     expect(user.username).toBe('username');
-    expect(user.gitAccount).toBe('gitAccount');
+    expect(user.scmIdentities.github).toBe('gitHandle');
     expect(user.email).toBe('email@domain.com');
     expect(user.admin).toBe(true);
     expect(user.oidcId).toBeNull();
@@ -183,7 +185,7 @@ describe('Database clients', () => {
     const user2 = new User(
       'username',
       'password',
-      'gitAccount',
+      { github: 'gitHandle' },
       'email@domain.com',
       false,
       'oidcId',
@@ -337,14 +339,13 @@ describe('Database clients', () => {
         null as unknown as string,
         TEST_USER.password,
         TEST_USER.email,
-        TEST_USER.gitAccount,
         TEST_USER.admin,
       ),
     ).rejects.toThrow('username cannot be empty');
 
     // blank username
     await expect(
-      db.createUser('', TEST_USER.password, TEST_USER.email, TEST_USER.gitAccount, TEST_USER.admin),
+      db.createUser('', TEST_USER.password, TEST_USER.email, TEST_USER.admin),
     ).rejects.toThrow('username cannot be empty');
 
     // null email
@@ -353,20 +354,13 @@ describe('Database clients', () => {
         TEST_USER.username,
         TEST_USER.password,
         null as unknown as string,
-        TEST_USER.gitAccount,
         TEST_USER.admin,
       ),
     ).rejects.toThrow('email cannot be empty');
 
     // blank email
     await expect(
-      db.createUser(
-        TEST_USER.username,
-        TEST_USER.password,
-        '',
-        TEST_USER.gitAccount,
-        TEST_USER.admin,
-      ),
+      db.createUser(TEST_USER.username, TEST_USER.password, '', TEST_USER.admin),
     ).rejects.toThrow('email cannot be empty');
   });
 
@@ -378,8 +372,10 @@ describe('Database clients', () => {
       TEST_USER.username,
       TEST_USER.password,
       TEST_USER.email,
-      TEST_USER.gitAccount,
       TEST_USER.admin,
+      '',
+      false,
+      TEST_USER.scmIdentities,
     );
     const users = await db.getUsers();
     // remove password as it will have been hashed
@@ -396,7 +392,6 @@ describe('Database clients', () => {
         TEST_USER.username,
         TEST_USER.password,
         'prefix_' + TEST_USER.email,
-        TEST_USER.gitAccount,
         TEST_USER.admin,
       ),
     ).rejects.toThrow(`user ${TEST_USER.username} already exists`);
@@ -410,7 +405,6 @@ describe('Database clients', () => {
         'prefix_' + TEST_USER.username,
         TEST_USER.password,
         TEST_USER.email,
-        TEST_USER.gitAccount,
         TEST_USER.admin,
       ),
     ).rejects.toThrow(`A user with email ${TEST_USER.email} already exists`);
@@ -455,14 +449,16 @@ describe('Database clients', () => {
       TEST_USER.username,
       TEST_USER.password,
       TEST_USER.email,
-      TEST_USER.gitAccount,
       TEST_USER.admin,
+      '',
+      false,
+      TEST_USER.scmIdentities,
     );
 
     // has fewer properties to prove that records are merged
     const updateToApply = {
       username: TEST_USER.username,
-      gitAccount: 'updatedGitAccount',
+      scmIdentities: { github: 'updatedGitHandle' },
       admin: false,
     };
 
@@ -470,7 +466,7 @@ describe('Database clients', () => {
       // remove password as it will have been hashed
       username: TEST_USER.username,
       email: TEST_USER.email,
-      gitAccount: 'updatedGitAccount',
+      scmIdentities: { github: 'updatedGitHandle' },
       admin: false,
     };
 
@@ -490,7 +486,7 @@ describe('Database clients', () => {
     await db.updateUser(TEST_USER);
     const users = await db.getUsers();
     // remove password as it will have been hashed
-    const { password: _, ...TEST_USER_CLEAN } = TEST_USER;
+    const { password: _, mustChangePassword: _2, ...TEST_USER_CLEAN } = TEST_USER;
     const cleanUsers = cleanResponseData(TEST_USER_CLEAN, users);
     expect(cleanUsers).toContainEqual(TEST_USER_CLEAN);
   });
@@ -706,6 +702,166 @@ describe('Database clients', () => {
     // clean up
     await db.deletePush(TEST_PUSH_DOT_GIT.id);
     await db.removeUserCanAuthorise(repo._id, TEST_USER.username);
+  });
+
+  it('should be able to find user by scm identity', async () => {
+    await ensureUserExists();
+
+    const user = await db.findUserByScmIdentity('github', 'db-test-user');
+    expect(user).not.toBeNull();
+    expect(user?.username).toBe(TEST_USER.username);
+  });
+
+  it('should find user by scm identity case-insensitively', async () => {
+    await ensureUserExists();
+
+    const user = await db.findUserByScmIdentity('github', 'DB-TEST-USER');
+    expect(user).not.toBeNull();
+    expect(user?.username).toBe(TEST_USER.username);
+  });
+
+  it('should return null when scm identity not found', async () => {
+    const user = await db.findUserByScmIdentity('github', 'nonexistent');
+    expect(user).toBeNull();
+  });
+
+  it('should return null with wrong provider', async () => {
+    await ensureUserExists();
+
+    const user = await db.findUserByScmIdentity('gitlab', 'db-test-user');
+    expect(user).toBeNull();
+  });
+
+  it('should return null with invalid provider name', async () => {
+    const user = await db.findUserByScmIdentity('$bad', 'octocat');
+    expect(user).toBeNull();
+  });
+
+  it('should link an scm identity to a user', async () => {
+    // Create a clean user
+    const username = 'scm-test-user';
+    await db.deleteUser(username);
+    await db.createUser(username, 'password', 'scm@example.com', false);
+
+    await db.setUserScmIdentity(username, 'gitlab', 'gitlabuser');
+
+    const user = await db.findUser(username);
+    expect(user?.scmIdentities.gitlab).toBe('gitlabuser');
+
+    // cleanup
+    await db.deleteUser(username);
+  });
+
+  it('should relink an scm identity to a user', async () => {
+    // Create a clean user
+    const username = 'scm-relink-user';
+    await db.deleteUser(username);
+    await db.createUser(username, 'password', 'scm-relink@example.com', false, '', false, {
+      gitlab: 'oldhandle',
+    });
+
+    await db.setUserScmIdentity(username, 'gitlab', 'newhandle');
+
+    const user = await db.findUser(username);
+    expect(user?.scmIdentities.gitlab).toBe('newhandle');
+
+    // cleanup
+    await db.deleteUser(username);
+  });
+
+  it('should unlink an scm identity from a user', async () => {
+    // Create a clean user
+    const username = 'scm-unlink-user';
+    await db.deleteUser(username);
+    await db.createUser(username, 'password', 'scm-unlink@example.com', false, '', false, {
+      github: 'githubuser',
+    });
+
+    await db.setUserScmIdentity(username, 'github', null);
+
+    const user = await db.findUser(username);
+    expect(user?.scmIdentities.github).toBeUndefined();
+
+    // cleanup
+    await db.deleteUser(username);
+  });
+
+  it('should throw error when linking identity already held by another user', async () => {
+    // Create two clean users
+    const user1 = 'conflict-user-1';
+    const user2 = 'conflict-user-2';
+    await db.deleteUser(user1);
+    await db.deleteUser(user2);
+    await db.createUser(user1, 'password', 'conflict1@example.com', false, '', false, {
+      github: 'octocat',
+    });
+    await db.createUser(user2, 'password', 'conflict2@example.com', false);
+
+    await expect(db.setUserScmIdentity(user2, 'github', 'octocat')).rejects.toThrow(
+      'github account octocat is already linked to another user',
+    );
+
+    // cleanup
+    await db.deleteUser(user1);
+    await db.deleteUser(user2);
+  });
+
+  it('should reject a link that only differs from an existing one by case or whitespace', async () => {
+    const user1 = 'norm-user-1';
+    const user2 = 'norm-user-2';
+    await db.deleteUser(user1);
+    await db.deleteUser(user2);
+    await db.createUser(user1, 'password', 'norm1@example.com', false, '', false, {
+      github: 'octocat',
+    });
+    await db.createUser(user2, 'password', 'norm2@example.com', false);
+
+    await expect(db.setUserScmIdentity(user2, 'github', '  OctoCat ')).rejects.toThrow(
+      'github account octocat is already linked to another user',
+    );
+    expect((await db.findUser(user2))?.scmIdentities?.github).toBeUndefined();
+
+    await db.deleteUser(user1);
+    await db.deleteUser(user2);
+  });
+
+  it('should reject creating a user with an identity another user already holds', async () => {
+    const user1 = 'create-dup-1';
+    const user2 = 'create-dup-2';
+    await db.deleteUser(user1);
+    await db.deleteUser(user2);
+    await db.createUser(user1, 'password', 'cd1@example.com', false, '', false, {
+      github: 'taken-handle',
+    });
+
+    await expect(
+      db.createUser(user2, 'password', 'cd2@example.com', false, '', false, {
+        github: ' Taken-Handle ',
+      }),
+    ).rejects.toThrow('github account taken-handle is already linked to another user');
+    expect(await db.findUser(user2)).toBeNull();
+
+    await db.deleteUser(user1);
+  });
+
+  it('resolves every spelling of a handle to the one user linked under it', async () => {
+    const user1 = 'case-user-1';
+    await db.deleteUser(user1);
+    await db.createUser(user1, 'password', 'case1@example.com', false, '', false, {
+      github: 'OctoCat',
+    });
+
+    for (const spelling of ['octocat', 'OCTOCAT', 'OctoCat', ' octocat ']) {
+      expect((await db.findUserByScmIdentity('github', spelling))?.username).toBe(user1);
+    }
+
+    await db.deleteUser(user1);
+  });
+
+  it('should throw error when user not found', async () => {
+    await expect(db.setUserScmIdentity('nonexistent-user', 'github', 'octocat')).rejects.toThrow(
+      'user nonexistent-user not found',
+    );
   });
 
   afterAll(async () => {

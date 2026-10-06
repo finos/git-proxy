@@ -52,6 +52,7 @@ TEST_PUSH.repoName = TEST_REPO + '.git';
 TEST_PUSH.repo = TEST_ORG + '/' + TEST_REPO + '.git';
 TEST_PUSH.user = TEST_USERNAME_2;
 TEST_PUSH.userEmail = TEST_EMAIL_2;
+TEST_PUSH.pusherVerified = true;
 TEST_PUSH.blockedMessage =
   '\n\n\nGitProxy has received your push:\n\nhttp://localhost:8080/requests/0000000000000000000000000000000000000000__1744380874110\n\n\n';
 
@@ -108,11 +109,11 @@ describe('Push API', () => {
     });
 
     // Create a new user for the approver
-    await db.createUser(TEST_USERNAME_1, TEST_PASSWORD_1, TEST_EMAIL_1, TEST_USERNAME_1, false);
+    await db.createUser(TEST_USERNAME_1, TEST_PASSWORD_1, TEST_EMAIL_1, false);
     await db.addUserCanAuthorise(testRepo._id!, TEST_USERNAME_1);
 
     // create a new user for the committer
-    await db.createUser(TEST_USERNAME_2, TEST_PASSWORD_2, TEST_EMAIL_2, TEST_USERNAME_2, false);
+    await db.createUser(TEST_USERNAME_2, TEST_PASSWORD_2, TEST_EMAIL_2, false);
     await db.addUserCanPush(testRepo._id!, TEST_USERNAME_2);
 
     // logout of admin account
@@ -177,6 +178,35 @@ describe('Push API', () => {
       expect(res.status).toBe(200);
     });
 
+    it('should NOT allow approving a push recorded without a verified pusher', async () => {
+      // a record from before this fix: user is the committer display name from the pushed objects
+      const legacyPush = { ...TEST_PUSH, user: 'John Doe' } as Action;
+      delete legacyPush.pusherVerified;
+      await db.writeAudit(legacyPush);
+      await loginAsApprover();
+      const res = await request(app)
+        .post(`/api/v1/push/${TEST_PUSH.id}/authorise`)
+        .set('Cookie', `${cookie}`)
+        .set('content-type', 'application/json')
+        .send({
+          params: {
+            attestation: [
+              {
+                label: 'I am happy for this to be pushed to the upstream repository',
+                tooltip: {
+                  text: 'Are you happy for this contribution to be pushed upstream?',
+                  links: [],
+                },
+                checked: true,
+              },
+            ],
+          },
+        });
+      expect(res.status).toBe(409);
+      expect(res.body.message).toContain('without a verified pusher identity');
+      expect((await db.getPush(TEST_PUSH.id))?.authorised).toBeFalsy();
+    });
+
     it('should NOT allow an authorizer to approve if attestation is incomplete', async () => {
       // make the approver also the committer
       const testPush = Object.assign({}, TEST_PUSH);
@@ -206,8 +236,8 @@ describe('Push API', () => {
       expect(res.body.message).toBe('Attestation is not complete');
     });
 
-    it('should NOT allow an authorizer to approve if committer is unknown', async () => {
-      // make the approver also the committer
+    it('should allow approving a push from an unknown committer (only checks permission)', async () => {
+      // Push from unknown user should be approvable if no four-eyes check needed
       const testPush = Object.assign({}, TEST_PUSH);
       testPush.user = TEST_USERNAME_3;
       testPush.userEmail = TEST_EMAIL_3;
@@ -231,10 +261,7 @@ describe('Push API', () => {
             ],
           },
         });
-      expect(res.status).toBe(404);
-      expect(res.body.message).toBe(
-        "No user found with the committer's email address: push-test-3@test.com",
-      );
+      expect(res.status).toBe(200);
     });
   });
 
@@ -347,9 +374,9 @@ describe('Push API', () => {
     expect(res.body.message).toBe('Cannot reject your own changes');
   });
 
-  it('should throw 400 if rejecting a push with empty user email', async () => {
+  it('should throw 400 if rejecting a push with missing pusher', async () => {
     const testPush = { ...TEST_PUSH };
-    testPush.userEmail = '';
+    testPush.user = '';
     await db.writeAudit(testPush as any);
     await loginAsApprover();
     const res = await request(app)
@@ -357,11 +384,12 @@ describe('Push API', () => {
       .set('Cookie', `${cookie}`)
       .send({ reason: 'Testing rejection' });
     expect(res.status).toBe(400);
-    expect(res.body.message).toBe('Push request has no user email');
+    expect(res.body.message).toBe('Push request has no pusher recorded');
   });
 
-  it('should throw 404 if committer of push is not found', async () => {
+  it('should allow rejecting a push from unknown committer', async () => {
     const testPush = { ...TEST_PUSH };
+    testPush.user = 'unknown-user';
     testPush.userEmail = 'non-existent-email@test.com';
     await db.writeAudit(testPush as any);
     await loginAsApprover();
@@ -369,10 +397,7 @@ describe('Push API', () => {
       .post(`/api/v1/push/${TEST_PUSH.id}/reject`)
       .set('Cookie', `${cookie}`)
       .send({ reason: 'Testing rejection' });
-    expect(res.status).toBe(404);
-    expect(res.body.message).toBe(
-      "No user found with the committer's email address: non-existent-email@test.com",
-    );
+    expect(res.status).toBe(200);
   });
 
   it('should NOT allow a non-authorizer to reject a push', async () => {

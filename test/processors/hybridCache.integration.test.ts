@@ -21,6 +21,9 @@ import { exec as clearBareClone } from '../../src/proxy/processors/post-processo
 import { Action } from '../../src/proxy/actions/Action';
 import { cacheManager } from '../../src/proxy/processors/push-action/cache-manager';
 import * as config from '../../src/config';
+import { PullRemoteBase } from '../../src/proxy/processors/push-action/PullRemoteBase';
+
+const checkoutPath = (actionId: string) => `./.remote/${PullRemoteBase.checkoutDirName(actionId)}`;
 
 describe('Hybrid Cache Integration Tests', () => {
   const testRepoUrl = 'https://github.com/finos/git-proxy.git';
@@ -119,10 +122,10 @@ describe('Hybrid Cache Integration Tests', () => {
       const actionId = testData.cacheMissAction.id;
 
       // Verify working copy was created
-      expect(fs.existsSync(`./.remote/${actionId}`)).toBe(true);
+      expect(fs.existsSync(checkoutPath(actionId))).toBe(true);
 
       // Check the content inside working copy directory
-      const workCopyContents = fs.readdirSync(`./.remote/${actionId}`);
+      const workCopyContents = fs.readdirSync(checkoutPath(actionId));
       expect(workCopyContents.length).toBeGreaterThan(0);
 
       // Verify we have a git repository directory inside
@@ -130,10 +133,10 @@ describe('Hybrid Cache Integration Tests', () => {
       expect(repoDir).toBeDefined();
 
       // Verify it has .git folder (not bare)
-      expect(fs.existsSync(`./.remote/${actionId}/${repoDir}/.git`)).toBe(true);
+      expect(fs.existsSync(`${checkoutPath(actionId)}/${repoDir}/.git`)).toBe(true);
 
       // Verify working copy has actual files
-      expect(fs.existsSync(`./.remote/${actionId}/${repoDir}/package.json`)).toBe(true);
+      expect(fs.existsSync(`${checkoutPath(actionId)}/${repoDir}/package.json`)).toBe(true);
     });
   });
 
@@ -151,11 +154,11 @@ describe('Hybrid Cache Integration Tests', () => {
       const cacheHitActionId = testData.cacheHitAction.id;
 
       // Verify new working copy was created
-      expect(fs.existsSync(`./.remote/${cacheHitActionId}`)).toBe(true);
+      expect(fs.existsSync(checkoutPath(cacheHitActionId))).toBe(true);
 
       // Verify both working copies exist (isolated)
-      expect(fs.existsSync(`./.remote/${cacheMissActionId}`)).toBe(true);
-      expect(fs.existsSync(`./.remote/${cacheHitActionId}`)).toBe(true);
+      expect(fs.existsSync(checkoutPath(cacheMissActionId))).toBe(true);
+      expect(fs.existsSync(checkoutPath(cacheHitActionId))).toBe(true);
 
       // Verify they are different directories
       expect(cacheMissActionId).not.toBe(cacheHitActionId);
@@ -218,7 +221,7 @@ describe('Hybrid Cache Integration Tests', () => {
       const actionId = testData.cacheMissAction.id;
       await clearBareClone(null, testData.cacheMissAction);
 
-      expect(fs.existsSync(`./.remote/${actionId}`)).toBe(false);
+      expect(fs.existsSync(checkoutPath(actionId))).toBe(false);
       expect(fs.existsSync('./.remote/cache')).toBe(true);
     });
   });

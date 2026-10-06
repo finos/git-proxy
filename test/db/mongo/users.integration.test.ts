@@ -34,7 +34,7 @@ describe.runIf(shouldRunMongoTests)('MongoDB Users Integration Tests', () => {
     return new User(
       overrides.username || `testuser-${timestamp}`,
       overrides.password || 'hashedpassword123',
-      overrides.gitAccount || `git-${timestamp}`,
+      overrides.scmIdentities || { github: `git-${timestamp}` },
       overrides.email || `test-${timestamp}@example.com`,
       overrides.admin ?? false,
       overrides.oidcId || null,
@@ -161,10 +161,13 @@ describe.runIf(shouldRunMongoTests)('MongoDB Users Integration Tests', () => {
       await createUser(user);
 
       const created = await findUser('updatebyid');
-      await updateUser({ _id: (created as any)._id.toString(), gitAccount: 'new-git-account' });
+      await updateUser({
+        _id: (created as any)._id.toString(),
+        scmIdentities: { github: 'new-github-handle' },
+      });
 
       const updated = await findUser('updatebyid');
-      expect(updated?.gitAccount).toBe('new-git-account');
+      expect(updated?.scmIdentities?.github).toBe('new-github-handle');
     });
 
     it('should lowercase username and email during update', async () => {
