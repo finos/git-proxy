@@ -1,4 +1,24 @@
 [build]
-  # The CACHED_COMMIT_REF guard is required: when empty, git diffs the checkout against
-  # itself, always exits 0, and cancels every build.
-  ignore = '[ -n "$CACHED_COMMIT_REF" ] && git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../package.json'
+  # Production always publishes: the live site must be main. ~35 builds/month at 85s.
+  #
+  # Gating this is what silently froze the site from 2026-06-06 to 2026-10: the ignore
+  # command compared $CACHED_COMMIT_REF against $COMMIT_REF, and when the build cache
+  # that variable lives in was evicted it started resolving to a commit with an identical
+  # tree. The comparison then reported "no changes" forever — cancelling the build, which
+  # wrote no cache, which kept the comparison broken. No error, no notification, 56
+  # consecutive cancelled deploys.
+  #
+  # Any reference-based comparison fails the same way once the reference coincides with
+  # HEAD, and always in the same direction: don't publish. On main there is nothing worth
+  # comparing against, so there is nothing to degenerate.
+  ignore = "false"
+
+[context.deploy-preview]
+  # Previews are where the build minutes actually go (~265/month vs 35 production) and
+  # where the original request in #324 came from. A wrong skip here costs a missing
+  # preview, not a stale site.
+  #
+  # merge-base compares the PR as a whole against main, so a change in an earlier commit
+  # of a multi-commit PR still triggers a build. If origin/main is unavailable the command
+  # errors, which builds — it fails in the safe direction.
+  ignore = 'git diff --quiet $(git merge-base origin/main HEAD) HEAD -- . ../package.json'
