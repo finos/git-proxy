@@ -55,7 +55,7 @@ $ npm install -g \
   "plugins": [
     "@finos/git-proxy-plugin-samples",
     "@finos/git-proxy-plugin-samples/example.cjs",
-    "@finos/git-proxy-plugin-samples/customSecretScanner.ts
+    "@finos/git-proxy-plugin-samples/customSecretScanner.ts"
   ]
 }
 ```
@@ -234,11 +234,11 @@ For example, branch pushes include an `AFTER_PERMISSIONS` phase, which guarantee
 
 #### Push chain phases
 
-Currently, there are 4 different `PushPhase`s to run your plugins:
+Currently, there are 4 different `PushPhase`s to run your plugins. Note that the phases executed will depend on the type of object being pushed (tags vs pushes).
 
 - `AFTER_PERMISSIONS`: The push is guaranteed to be in the authorised list, and identity of the user pushing is also present. The following `Action` attributes will be populated: `action.user`, `action.userEmail`, `action.commitData`, etc.
 - `AFTER_CHECKOUT`: Commit messages, author emails and the user's push permission have finished validating. The actual remote is already pulled but the diff hasn't been processed. The following `Action` attributes will be populated: `action.newIdxFiles`.
-- `AFTER_DIFF`: The push will now contain the diff data in `action.diff`.
+- `AFTER_DIFF`: The push will now contain the diff data in `action.diff`. Note that tag pushes do not contain any diff, thus the `AFTER_DIFF` `PushPhase` would be invalid for tag pushes. 
 - `BEFORE_APPROVAL`: The push has gone through the remaining checks (GitLeaks, built-in diff scanning) in the chain, and is about to request approval.
 
 Depending on what your plugin does, you'll want to pick a phase where the data you need is available. A custom diff scanning plugin must be set to `AFTER_DIFF` or `BEFORE_APPROVAL`, otherwise it will not have the `action.diff` readily available.
@@ -256,6 +256,8 @@ Setting `isCollectible` to `true` allows for a better user experience, as users 
 ### `chains`
 
 Currently, `chains` are only available for `PushActionPlugin`. By default, plugins run for _both_ branch pushes and tag pushes. However, you can fine-tune which chains to execute on, by passing in a `PushChainName[]` as follows: `chains: ['tag', 'branch']`.
+
+The phase must exist on the chain to be valid. For example, a diff scanner plugin would have to set the phase to `AFTER_DIFF` and `chains: ['branch']`, because tags don't have a diff or an `AFTER_DIFF` phase.
 
 ### `displayName`
 
