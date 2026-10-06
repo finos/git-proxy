@@ -246,8 +246,6 @@ This action runs after a chain has been executed. It stores in the database the 
 
 Push list and profile activity responses return metadata without processor steps, `lastStep`, or diff content. Use `GET /api/v1/push/:id` to retrieve the full audit record and diff for review. When `lastStep` exactly matches the final entry in `steps`, the database stores a reference and restores `lastStep` on detail reads. A distinct `lastStep` is preserved. Historical diff content and logs remain readable and are not truncated.
 
-Repository activity counts use derived summaries. NeDB builds an in-memory index on the first repository read and updates it after successful push writes and deletions. MongoDB records activity metadata alongside each push and refreshes summaries for changed repositories on the next repository read. Unchanged repository reads do not scan push history. The first read after an upgrade backfills historical activity metadata; it does not rewrite historical audit content. Under continuous concurrent changes, MongoDB bounds refresh retries and falls back to a metadata-only scan for that request.
-
 Note: **`audit` writes all actions** (push, pull, default/unclassified) to the DB.
 
 An action object (or entry in the pushes table) might look like this:

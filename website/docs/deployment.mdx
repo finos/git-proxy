@@ -286,17 +286,6 @@ Switch from the default file-based database to MongoDB for production use:
 - Configure replica sets for high availability
 - Schedule regular backups of audit data (`mongodump`)
 
-Repository activity summaries are derived from the push audit records. GitProxy creates the required indexes, including a unique push ID index, and backfills activity metadata on the first repository read after upgrade. Use the same GitProxy version across instances during this upgrade: older writers do not update the activity revisions. Standalone MongoDB is supported; summary updates do not require transactions or a replica set.
-
-Interrupted summary refreshes recover on the next repository read. Deleting a push removes its audit payload immediately; a small internal deletion marker remains until its repository summary is refreshed. If restoring only the `pushes` collection or repairing summaries manually, rebuild the derived data from a source checkout with the deployment's configuration:
-
-```bash
-CONFIG_FILE=/path/to/proxy.config.json npx tsx -e \
-  "import { rebuildRepoPushRollups } from './src/db/mongo/repoActivity'; import { resetConnection } from './src/db/mongo/helper'; rebuildRepoPushRollups().finally(resetConnection)"
-```
-
-For NeDB, restarting GitProxy rebuilds the in-memory summaries from the saved push records.
-
 ### Health Checks
 
 GitProxy provides health check endpoints on both servers:

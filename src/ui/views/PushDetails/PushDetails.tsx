@@ -42,10 +42,7 @@ import { sortRepoViews } from '../../services/repo';
 import { useRepoViewsListQuery } from '../../query/useRepoViewsListQuery';
 import { usePushQuery } from '../../query/usePushQuery';
 import { usePushPermissionsQuery } from '../../query/usePushPermissionsQuery';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { pushQueryKeys } from '../../query/pushQueryKeys';
-import { repoQueryKeys } from '../../query/repoQueryKeys';
-import { userQueryKeys } from '../../query/userQueryKeys';
+import { useMutation } from '@tanstack/react-query';
 import {
   buildRepoDisplayIndex,
   resolveActivityRepoDisplay,
@@ -133,7 +130,6 @@ function CanceledPushBanner({ push }: { push: PushActionView }): React.ReactElem
 const PushDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [message, setMessage] = useState('');
   const { data: repoListRaw } = useRepoViewsListQuery(true);
   const registeredRepos = useMemo(
@@ -174,35 +170,40 @@ const PushDetails = () => {
     setMessage(result.message || 'Something went wrong...');
   };
 
-  const handleActionSuccess = async (result: ServiceResult) => {
-    if (!result.success) {
-      handleActionFailure(result);
-      return;
-    }
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: pushQueryKeys.all }),
-      queryClient.invalidateQueries({ queryKey: repoQueryKeys.list() }),
-      queryClient.invalidateQueries({ queryKey: userQueryKeys.all }),
-    ]);
-    navigate('/dashboard/push/');
-  };
-
   const authoriseMutation = useMutation({
     mutationFn: (attestationData: Array<{ label: string; checked: boolean }>) =>
       authorisePush(id!, attestationData),
-    onSuccess: handleActionSuccess,
+    onSuccess: (result) => {
+      if (result.success) {
+        navigate('/dashboard/push/');
+      } else {
+        handleActionFailure(result);
+      }
+    },
     onError: () => setMessage('Something went wrong...'),
   });
 
   const rejectMutation = useMutation({
     mutationFn: (reason: string) => rejectPush(id!, reason),
-    onSuccess: handleActionSuccess,
+    onSuccess: (result) => {
+      if (result.success) {
+        navigate('/dashboard/push/');
+      } else {
+        handleActionFailure(result);
+      }
+    },
     onError: () => setMessage('Something went wrong...'),
   });
 
   const cancelMutation = useMutation({
     mutationFn: () => cancelPush(id!),
-    onSuccess: handleActionSuccess,
+    onSuccess: (result) => {
+      if (result.success) {
+        navigate('/dashboard/push/');
+      } else {
+        handleActionFailure(result);
+      }
+    },
     onError: () => setMessage('Something went wrong...'),
   });
 

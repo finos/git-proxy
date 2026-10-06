@@ -16,17 +16,18 @@
 
 import _ from 'lodash';
 import Datastore from '@seald-io/nedb';
+import { activityPrimaryStatusFromFlags } from '../../activity/activityPrimaryStatus';
+import { canonicalRemoteUrl } from '../../activity/canonicalRemoteUrl';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
 import { pushListProjection } from '../pushProjection';
 import { compactPush, restorePush } from '../pushStorage';
-import { PushQuery, RepoPushRollupsByCanonicalUrl } from '../types';
 import {
-  RepoActivityIndex,
-  pushActivity,
-  pushActivityProjection,
-  type PushActivityRow,
-} from '../repoActivity';
+  PushQuery,
+  RepoActivityTabCounts,
+  RepoPushRollupsByCanonicalUrl,
+  emptyRepoActivityTabCounts,
+} from '../types';
 import { CompletedAttestation, Rejection } from '../../proxy/processors/types';
 import { handleErrorAndLog } from '../../utils/errors';
 import { buildUserProfilePushFilter } from '../userProfilePushQuery';
@@ -50,29 +51,98 @@ try {
 }
 db.setAutocompactionInterval(COMPACTION_INTERVAL);
 
-let activityIndex: RepoActivityIndex | undefined;
-let activityIndexLoad: Promise<RepoActivityIndex> | undefined;
+function bumpCount(
+  m: Map<string, RepoActivityTabCounts>,
+  canonicalKey: string,
+  tab: keyof RepoActivityTabCounts,
+): void {
+  if (!canonicalKey) {
+    return;
+  }
+  let row = m.get(canonicalKey);
+  if (!row) {
+    row = emptyRepoActivityTabCounts();
+    m.set(canonicalKey, row);
+  }
+  row[tab] += 1;
+}
 
-export const getRepoPushRollupsByCanonicalUrl =
-  async (): Promise<RepoPushRollupsByCanonicalUrl> => {
-    if (!activityIndexLoad) {
-      activityIndexLoad = new Promise<RepoActivityIndex>((resolve, reject) => {
-        db.find({}, pushActivityProjection, (err, docs: PushActivityRow[]) => {
-          if (err) {
-            reject(err);
-            return;
+function bumpMaxTimestampMs(
+  m: Map<string, number>,
+  canonicalKey: string,
+  timestamp: unknown,
+): void {
+  if (!canonicalKey) {
+    return;
+  }
+  const ts = typeof timestamp === 'number' ? timestamp : NaN;
+  if (!Number.isFinite(ts)) {
+    return;
+  }
+  const prev = m.get(canonicalKey);
+  if (prev === undefined || ts > prev) {
+    m.set(canonicalKey, ts);
+  }
+}
+
+type PushActivityProjection = {
+  url?: string;
+  error?: boolean;
+  rejected?: boolean;
+  canceled?: boolean;
+  authorised?: boolean;
+  blocked?: boolean;
+  allowPush?: boolean;
+  timestamp?: number;
+};
+
+export const getRepoPushRollupsByCanonicalUrl = (): Promise<RepoPushRollupsByCanonicalUrl> => {
+  return new Promise((resolve, reject) => {
+    db.find(
+      { type: 'push' },
+      {
+        url: 1,
+        error: 1,
+        rejected: 1,
+        canceled: 1,
+        authorised: 1,
+        blocked: 1,
+        allowPush: 1,
+        timestamp: 1,
+      },
+      (err, docs: PushActivityProjection[]) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        const tabCounts = new Map<string, RepoActivityTabCounts>();
+        const latestPendingReviewAtMs = new Map<string, number>();
+        const latestPushAtMs = new Map<string, number>();
+        for (const doc of docs) {
+          const url = typeof doc.url === 'string' ? doc.url : '';
+          const key = canonicalRemoteUrl(url);
+          if (!key) {
+            continue;
           }
-          activityIndex = new RepoActivityIndex();
-          for (const doc of docs) activityIndex.set(doc.id, pushActivity(doc));
-          resolve(activityIndex);
-        });
-      }).catch((error: unknown) => {
-        activityIndexLoad = undefined;
-        throw error;
-      });
-    }
-    return (await activityIndexLoad).snapshot();
-  };
+          const tab = activityPrimaryStatusFromFlags({
+            error: doc.error === true,
+            rejected: doc.rejected === true,
+            canceled: doc.canceled === true,
+            authorised: doc.authorised === true,
+            blocked: doc.blocked === true,
+            allowPush: doc.allowPush === true,
+          });
+          bumpCount(tabCounts, key, tab);
+          bumpMaxTimestampMs(latestPushAtMs, key, doc.timestamp);
+          if (tab === 'pending') {
+            bumpMaxTimestampMs(latestPendingReviewAtMs, key, doc.timestamp);
+          }
+        }
+        resolve({ tabCounts, latestPendingReviewAtMs, latestPushAtMs });
+      },
+    );
+  });
+};
 
 const defaultPushQuery: Partial<PushQuery> = {
   error: false,
@@ -154,7 +224,6 @@ export const deletePush = async (id: string): Promise<void> => {
       if (err) {
         reject(err);
       } else {
-        activityIndex?.set(id, null);
         resolve();
       }
     });
@@ -163,7 +232,6 @@ export const deletePush = async (id: string): Promise<void> => {
 
 export const writeAudit = async (action: Action): Promise<void> => {
   return new Promise((resolve, reject) => {
-    const contribution = pushActivity(action);
     const options = { multi: false, upsert: true };
     db.update({ id: action.id }, compactPush(action), options, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -171,7 +239,6 @@ export const writeAudit = async (action: Action): Promise<void> => {
       if (err) {
         reject(err);
       } else {
-        activityIndex?.set(action.id, contribution);
         resolve();
       }
     });

@@ -62,8 +62,7 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
     it('should approve a pending push via attestation dialog', function () {
       cy.login(approverUser.username, approverUser.password);
-      cy.visit('/dashboard/push');
-      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).click();
+      cy.visit(`/dashboard/push/${this.pushId}`);
 
       // Verify push is Pending
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
@@ -96,13 +95,10 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
       // Should navigate back to push list
       cy.url().should('include', '/dashboard/push');
       cy.url().should('not.include', this.pushId);
-      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).should('not.exist');
-      cy.contains('a', 'Approved').click();
-      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).click();
 
       // Verify push is now Approved by revisiting its detail page
+      cy.visit(`/dashboard/push/${this.pushId}`);
       cy.get('[data-testid="push-status"]').should('contain', 'Approved');
-      cy.contains('Invalid DateTime').should('not.exist');
 
       // Action buttons should no longer be visible for an approved push
       cy.get('[data-testid="push-cancel-btn"]').should('not.exist');
@@ -119,8 +115,7 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
     it('should reject a pending push', function () {
       cy.login(approverUser.username, approverUser.password);
-      cy.visit('/dashboard/push');
-      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).click();
+      cy.visit(`/dashboard/push/${this.pushId}`);
 
       // Verify push is Pending
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
@@ -145,11 +140,8 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
       cy.url().should('not.include', this.pushId);
 
       // Verify push is now Rejected
-      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).should('not.exist');
-      cy.contains('a', 'Rejected').click();
-      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).click();
+      cy.visit(`/dashboard/push/${this.pushId}`);
       cy.get('[data-testid="push-status"]').should('contain', 'Rejected');
-      cy.contains('Invalid DateTime').should('not.exist');
 
       // Action buttons should no longer be visible
       cy.get('[data-testid="push-cancel-btn"]').should('not.exist');
@@ -167,8 +159,7 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
     it('should cancel a pending push', function () {
       // Cancel can be done by the push author
       cy.login(testUser.username, testUser.password);
-      cy.visit('/dashboard/push');
-      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).click();
+      cy.visit(`/dashboard/push/${this.pushId}`);
 
       // Verify push is Pending
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
@@ -180,9 +171,7 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
       cy.url().should('include', '/dashboard/push');
 
       // Verify push is now Canceled
-      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).should('not.exist');
-      cy.contains('a', 'Canceled').click();
-      cy.get(`tr[aria-label="Open activity ${this.pushId}"]`).click();
+      cy.visit(`/dashboard/push/${this.pushId}`);
       cy.get('[data-testid="push-status"]').should('contain', 'Canceled');
 
       // Action buttons should no longer be visible

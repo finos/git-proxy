@@ -30,10 +30,7 @@ const RejectionInfo = ({ push }: RejectionInfoProps) => {
   }
 
   const rej = push.rejection;
-  const numericTimestamp = Number(rej.timestamp);
-  const ts = Number.isFinite(numericTimestamp)
-    ? DateTime.fromMillis(numericTimestamp)
-    : DateTime.fromISO(String(rej.timestamp));
+  const ts = DateTime.fromMillis(Number(rej.timestamp));
   const tsTitle = ts.toFormat('cccc, MMMM d yyyy, h:mm:ss a');
 
   return (
