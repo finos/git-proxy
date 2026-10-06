@@ -286,6 +286,32 @@ Switch from the default file-based database to MongoDB for production use:
 - Configure replica sets for high availability
 - Schedule regular backups of audit data (`mongodump`)
 
+Repository activity summaries are derived from the push audit records. GitProxy creates the required indexes, including a unique push ID index, and backfills activity metadata on the first repository read after upgrade. Use the same GitProxy version across instances during this upgrade: older writers do not update the activity revisions. Standalone MongoDB is supported; summary updates do not require transactions or a replica set.
+
+Interrupted summary refreshes recover on the next repository read. Deleting a push removes its audit payload immediately; a small internal deletion marker remains until its repository summary is refreshed. If restoring only the `pushes` collection or repairing summaries manually, rebuild the derived data from a source checkout with the deployment's configuration:
+
+```bash
+CONFIG_FILE=/path/to/proxy.config.json npx tsx -e \
+  "import { rebuildRepoPushRollups } from './src/db/mongo/repoActivity'; import { resetConnection } from './src/db/mongo/helper'; rebuildRepoPushRollups().finally(resetConnection)"
+```
+
+For NeDB, restarting GitProxy rebuilds the in-memory summaries from the saved push records.
+
+### PostgreSQL Repository Activity
+
+Schema migration 9 adds derived activity tables and a trigger that records push inserts, updates, and deletes in the same transaction as the audit change. It queues existing pushes without rewriting their audit content. The first repository read fills the summaries; subsequent reads refresh only changed pushes and affected repositories. Reads with no changes use the saved summaries without scanning audit history.
+
+Refreshes run in a transaction. A failed refresh is retried on the next repository read, and concurrent audit updates remain queued for another refresh. The database trigger also tracks writes from older GitProxy instances and the PostgreSQL importer.
+
+If `autoMigrate` is disabled, apply the new migration with `npm run migrate:postgres:schema` using DDL-capable credentials before starting the updated application. The runtime role needs SELECT, INSERT, UPDATE, and DELETE on `push_activity_changes`, `push_activity`, and `repo_push_activity`, in addition to its existing permissions.
+
+Back up the database together with its derived tables. After a partial restore, a restore with triggers disabled, or manual summary repair, rebuild from a source checkout using the deployment's configuration:
+
+```bash
+CONFIG_FILE=/path/to/proxy.config.json npx tsx -e \
+  "import { rebuildRepoPushRollups } from './src/db/postgres/repoActivity'; import { resetConnection } from './src/db/postgres/helper'; rebuildRepoPushRollups().finally(resetConnection)"
+```
+
 ### Health Checks
 
 GitProxy provides health check endpoints on both servers:
