@@ -56,6 +56,8 @@ describe('default configuration', () => {
     );
     expect(config.getPrivateOrganizations()).toEqual(defaultSettings.privateOrganizations);
     expect(config.getUIRouteAuth()).toEqual(defaultSettings.uiRouteAuth);
+    expect(config.getMaxPackExpansionRatio()).toBe(defaultSettings.limits.maxPackExpansionRatio);
+    expect(config.getMaxPackObjects()).toBe(defaultSettings.limits.maxPackObjects);
   });
 });
 
@@ -171,6 +173,38 @@ describe('user configuration', () => {
 
     expect(config.getRateLimit()?.windowMs).toBe(limitConfig.rateLimit.windowMs);
     expect(config.getRateLimit()?.limit).toBe(limitConfig.rateLimit.limit);
+  });
+
+  it('should override default pack expansion and object count limits', async () => {
+    const user = {
+      limits: {
+        maxPackExpansionRatio: 10,
+        maxPackObjects: 50,
+      },
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = await import('../src/config');
+    config.invalidateCache();
+
+    expect(config.getMaxPackExpansionRatio()).toBe(10);
+    expect(config.getMaxPackObjects()).toBe(50);
+  });
+
+  it('should fall back when pack expansion or object count limits are invalid', async () => {
+    const user = {
+      limits: {
+        maxPackExpansionRatio: 0,
+        maxPackObjects: -1,
+      },
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+
+    const config = await import('../src/config');
+    config.invalidateCache();
+
+    expect(config.getMaxPackExpansionRatio()).toBe(100);
+    expect(config.getMaxPackObjects()).toBe(100_000);
   });
 
   it('should override default settings for attestation config', async () => {
@@ -304,6 +338,36 @@ describe('user configuration', () => {
     config.invalidateCache();
 
     expect(config.getDatabase().connectionString).toBe('mongodb://example.com:27017/test');
+  });
+
+  it('should let the postgres connection string env var override the config file', async () => {
+    const user = {
+      sink: [
+        { type: 'postgres', enabled: true, connectionString: 'postgresql://config-host/gitproxy' },
+      ],
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+    process.env.GIT_PROXY_POSTGRES_CONNECTION_STRING = 'postgresql://env-host/gitproxy';
+
+    const config = await import('../src/config');
+    config.invalidateCache();
+
+    expect(config.getDatabase().connectionString).toBe('postgresql://env-host/gitproxy');
+  });
+
+  it('should use the postgres connection string from the config file when the env var is unset', async () => {
+    const user = {
+      sink: [
+        { type: 'postgres', enabled: true, connectionString: 'postgresql://config-host/gitproxy' },
+      ],
+    };
+    fs.writeFileSync(tempUserFile, JSON.stringify(user));
+    delete process.env.GIT_PROXY_POSTGRES_CONNECTION_STRING;
+
+    const config = await import('../src/config');
+    config.invalidateCache();
+
+    expect(config.getDatabase().connectionString).toBe('postgresql://config-host/gitproxy');
   });
 
   it('should use config file defaults for server settings when no env var is set', async () => {

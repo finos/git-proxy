@@ -22,6 +22,14 @@
       "url": "https://git-server:8443/e2e-org/sample-repo.git"
     }
   ],
+  "scmProviders": [
+    {
+      "name": "git-server",
+      "type": "forgejo",
+      "host": "git-server",
+      "apiUrl": "https://git-server:8443/api/v1"
+    }
+  ],
   "sink": [
     {
       "type": "fs",

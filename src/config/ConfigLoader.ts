@@ -294,10 +294,10 @@ export class ConfigLoader extends EventEmitter {
     console.log(`Using repository directory: ${repoDir}`);
 
     const gitEnv = {
+      ...process.env,
       // dont wait for credentials; the command should be sufficiently authed
       // https://git-scm.com/docs/git#Documentation/git.txt-codeGITTERMINALPROMPTcode
       GIT_TERMINAL_PROMPT: 'false',
-      ...process.env,
       ...(source.auth?.type === 'ssh'
         ? {
             GIT_SSH_COMMAND: `ssh -i ${source.auth.privateKeyPath}`,
@@ -305,7 +305,6 @@ export class ConfigLoader extends EventEmitter {
         : {}),
     };
 
-    // Clone or pull repository
     if (!fs.existsSync(repoDir)) {
       console.log(`Cloning repository ${source.repository} to ${repoDir}`);
       const execOptions = {
@@ -320,7 +319,9 @@ export class ConfigLoader extends EventEmitter {
         handleErrorAndThrow(error, 'Failed to clone repository');
       }
     } else {
-      console.log(`Fetching latest changes from ${source.repository}`);
+      console.log(
+        `${source.branch ? 'Fetching' : 'Pulling'} latest changes from ${source.repository}`,
+      );
       try {
         if (source.branch) {
           await execFileAsync('git', ['fetch', '--all', '--prune'], { cwd: repoDir, env: gitEnv });
@@ -341,21 +342,14 @@ export class ConfigLoader extends EventEmitter {
     if (source.branch) {
       console.log(`Checking out branch: ${source.branch}`);
       try {
-        await execFileAsync('git', ['checkout', source.branch], { cwd: repoDir });
+        await execFileAsync(
+          'git',
+          ['checkout', '-f', '-B', source.branch, `origin/${source.branch}`],
+          { cwd: repoDir, env: gitEnv },
+        );
         console.log(`Branch ${source.branch} checked out successfully`);
       } catch (error: unknown) {
         handleErrorAndThrow(error, `Failed to checkout branch ${source.branch}`);
-      }
-
-      console.log(`Pulling latest changes from ${source.branch}`);
-      try {
-        await execFileAsync('git', ['pull', '--ff-only', 'origin', source.branch], {
-          cwd: repoDir,
-          env: gitEnv,
-        });
-        console.log('Repository pulled successfully');
-      } catch (error: unknown) {
-        handleErrorAndThrow(error, 'Failed to pull repository');
       }
     }
 
