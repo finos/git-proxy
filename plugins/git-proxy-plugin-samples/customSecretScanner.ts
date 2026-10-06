@@ -40,7 +40,7 @@ const pluginOptions: PushPluginOptions = {
   phase: PushPhase.AFTER_DIFF, // When to execute the plugin within default chain steps
   displayName: 'CustomSecretScanner', // Display name for the plugin
   isCollectible: true, // If true, the chain will keep running even if plugin returns an error
-  chains: ['branch', 'tag'], // Which chains to execute the plugin on
+  chains: ['branch'], // Which chains to execute the plugin on
 };
 
 async function exec(req: Request, action: Action) {

@@ -226,16 +226,35 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
  */
 let chainPluginLoader: PluginLoader;
 
+const phaseNames = (elements: readonly ChainElement[]): string =>
+  elements.filter((element) => typeof element !== 'function').join(', ');
+
+const describeUnattached = (plugin: ActionPlugin, kind: 'push' | 'pull'): string => {
+  const name = plugin.displayName || plugin.constructor?.name || 'unnamed plugin';
+  const phase = plugin.phase || 'none';
+  if (kind === 'pull') {
+    return `${name} (phase: ${phase})`;
+  }
+  const chains = (plugin as PushActionPlugin).chains ?? ['branch', 'tag'];
+  const chainLabel = chains.length > 0 ? chains.join(', ') : 'none';
+  return `${name} (phase: ${phase}, chains: ${chainLabel})`;
+};
+
 const buildChain = (
   elements: ChainElement[],
-  chainName: string,
   plugins: ActionPlugin[],
+  attached: Set<ActionPlugin>,
 ): ProcessorExec[] =>
-  elements.flatMap((element) =>
-    typeof element === 'function'
-      ? [element]
-      : plugins.filter((plugin) => plugin.phase === element).map(toPluginExec),
-  );
+  elements.flatMap((element) => {
+    if (typeof element === 'function') {
+      return [element];
+    }
+    const matched = plugins.filter((plugin) => plugin.phase === element);
+    for (const plugin of matched) {
+      attached.add(plugin);
+    }
+    return matched.map(toPluginExec);
+  });
 
 const toPluginExec = (plugin: ActionPlugin): ProcessorExec =>
   Object.assign((req: Request, action: Action) => plugin.exec(req, action), {
@@ -249,17 +268,40 @@ const filterPushPluginsByChain = (plugins: readonly PushActionPlugin[], chainNam
 const buildAllChains = (): BuiltChains => {
   const pushPlugins = chainPluginLoader.pushPlugins;
   const pullPlugins = chainPluginLoader.pullPlugins;
+  const attached = new Set<ActionPlugin>();
 
-  return {
+
+  const built: BuiltChains = {
     branch: buildChain(
       branchPushChainElements,
-      'branch',
       filterPushPluginsByChain(pushPlugins, 'branch'),
+      attached,
     ),
-    tag: buildChain(tagPushChainElements, 'tag', filterPushPluginsByChain(pushPlugins, 'tag')),
-    pull: buildChain(pullActionChainElements, 'pull', pullPlugins),
+    tag: buildChain(tagPushChainElements, filterPushPluginsByChain(pushPlugins, 'tag'), attached),
+    pull: buildChain(pullActionChainElements, pullPlugins, attached),
     default: [...defaultActionChainElements] as ProcessorExec[],
   };
+
+  const missing = [
+    ...pushPlugins
+      .filter((plugin) => !attached.has(plugin))
+      .map((plugin) => describeUnattached(plugin, 'push')),
+    ...pullPlugins
+      .filter((plugin) => !attached.has(plugin))
+      .map((plugin) => describeUnattached(plugin, 'pull')),
+  ];
+
+  if (missing.length > 0) {
+    throw new Error(
+      `Loaded plugin(s) were not added to any action chain: ${missing.join(', ')}. ` +
+        'Each plugin phase must exist on at least one chain it targets. ' +
+        `Branch phases: ${phaseNames(branchPushChainElements)}. ` +
+        `Tag phases: ${phaseNames(tagPushChainElements)}. ` +
+        `Pull phases: ${phaseNames(pullActionChainElements)}.`,
+    );
+  }
+
+  return built;
 };
 
 export const getChain = async (action: Action): Promise<ProcessorExec[]> => {
