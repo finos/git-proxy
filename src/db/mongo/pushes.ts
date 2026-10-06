@@ -159,7 +159,8 @@ export const writeAudit = async (action: Action): Promise<void> => {
   if (typeof data.id !== 'string') {
     throw new Error('Invalid id');
   }
-  const unset = data._lastStepIndex === undefined ? { _lastStepIndex: '' } : { lastStep: '' };
+  const unset: Record<string, ''> =
+    data._lastStepIndex === undefined ? { _lastStepIndex: '' } : { lastStep: '' };
   await collection.updateOne({ id: data.id }, { $set: data, $unset: unset }, options);
 };
 
