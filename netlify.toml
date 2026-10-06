@@ -19,6 +19,11 @@
   # preview, not a stale site.
   #
   # merge-base compares the PR as a whole against main, so a change in an earlier commit
-  # of a multi-commit PR still triggers a build. If origin/main is unavailable the command
-  # errors, which builds — it fails in the safe direction.
-  ignore = 'git diff --quiet $(git merge-base origin/main HEAD) HEAD -- . ../package.json'
+  # of a multi-commit PR still triggers a build.
+  #
+  # The result is assigned before the diff rather than inlined as $(...): a command
+  # substitution swallows its own exit status, so a failing merge-base would leave
+  # `git diff --quiet HEAD -- ...` — a one-revision diff of the checkout against itself,
+  # which exits 0 and silently skips. Assigning and chaining with && surfaces the failure,
+  # and a failure then builds.
+  ignore = 'BASE=$(git merge-base origin/main HEAD) && git diff --quiet "$BASE" HEAD -- . ../package.json'
