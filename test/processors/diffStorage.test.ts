@@ -23,7 +23,7 @@ import { exec as scanDiff } from '../../src/proxy/processors/push-action/scanDif
 
 const { gitDiff } = vi.hoisted(() => ({ gitDiff: vi.fn() }));
 
-vi.mock('simple-git', () => ({ default: () => ({ diff: gitDiff }) }));
+vi.mock('simple-git', () => ({ simpleGit: () => ({ diff: gitDiff }) }));
 vi.mock('../../src/config', () => ({
   getCommitConfig: () => ({ diff: { block: { literals: ['BLOCKED_MARKER'] } } }),
   getPrivateOrganizations: () => [],
