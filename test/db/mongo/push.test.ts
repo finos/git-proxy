@@ -16,14 +16,43 @@
 
 import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
 import { Action } from '../../../src/proxy/actions';
+const pushListProjection = {
+  _id: 0,
+  id: 1,
+  allowPush: 1,
+  attestation: 1,
+  authorised: 1,
+  blocked: 1,
+  blockedMessage: 1,
+  branch: 1,
+  canceled: 1,
+  commitData: 1,
+  commitFrom: 1,
+  commitTo: 1,
+  error: 1,
+  method: 1,
+  project: 1,
+  rejected: 1,
+  rejection: 1,
+  repo: 1,
+  repoName: 1,
+  timestamp: 1,
+  type: 1,
+  url: 1,
+  userEmail: 1,
+} as const;
 
 const mockFindOne = vi.fn();
 const mockDeleteOne = vi.fn();
+const mockReplaceOne = vi.fn();
+const mockDatabase = {};
 const mockUpdateOne = vi.fn();
 const mockFind = vi.fn();
 
 const mockConnect = vi.fn(() => ({
   findOne: mockFindOne,
+  replaceOne: mockReplaceOne,
+  createIndex: vi.fn().mockResolvedValue('index'),
   deleteOne: mockDeleteOne,
   updateOne: mockUpdateOne,
   find: mockFind,
@@ -34,6 +63,7 @@ const mockFindOneDocument = vi.fn();
 
 vi.mock('../../../src/db/mongo/helper', () => ({
   connect: mockConnect,
+  getDb: () => mockDatabase,
   findDocuments: mockFindDocuments,
   findOneDocument: mockFindOneDocument,
 }));
@@ -101,33 +131,10 @@ describe('MongoDB Push Handler', async () => {
           allowPush: false,
           authorised: false,
           type: 'push',
+          '_activity.deleted': { $ne: true },
         },
         {
-          projection: {
-            _id: 0,
-            id: 1,
-            allowPush: 1,
-            attestation: 1,
-            authorised: 1,
-            blocked: 1,
-            blockedMessage: 1,
-            branch: 1,
-            canceled: 1,
-            commitData: 1,
-            commitFrom: 1,
-            commitTo: 1,
-            error: 1,
-            method: 1,
-            project: 1,
-            rejected: 1,
-            rejection: 1,
-            repo: 1,
-            repoName: 1,
-            timestamp: 1,
-            type: 1,
-            url: 1,
-            userEmail: 1,
-          },
+          projection: pushListProjection,
           sort: {
             timestamp: -1,
           },
@@ -145,7 +152,7 @@ describe('MongoDB Push Handler', async () => {
 
       expect(mockFindDocuments).toHaveBeenCalledWith(
         'pushes',
-        customQuery,
+        { ...customQuery, '_activity.deleted': { $ne: true } },
         expect.objectContaining({
           projection: expect.any(Object),
         }),
@@ -191,7 +198,10 @@ describe('MongoDB Push Handler', async () => {
 
       const result = await getPush(TEST_PUSH.id);
 
-      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', { id: TEST_PUSH.id });
+      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', {
+        id: TEST_PUSH.id,
+        '_activity.deleted': { $ne: true },
+      });
       expect(mockToClass).toHaveBeenCalledWith(TEST_PUSH, Action.prototype);
       expect(result).toBeTruthy();
     });
@@ -201,7 +211,10 @@ describe('MongoDB Push Handler', async () => {
 
       const result = await getPush('non-existent-id');
 
-      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', { id: 'non-existent-id' });
+      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', {
+        id: 'non-existent-id',
+        '_activity.deleted': { $ne: true },
+      });
       expect(result).toBeNull();
       expect(mockToClass).not.toHaveBeenCalled();
     });
@@ -209,12 +222,20 @@ describe('MongoDB Push Handler', async () => {
 
   describe('deletePush', () => {
     it('should delete a push by id', async () => {
-      mockDeleteOne.mockResolvedValue({ deletedCount: 1 });
+      mockFindOne.mockResolvedValue({ ...TEST_PUSH, _id: 'stored-push' });
+      mockReplaceOne.mockResolvedValue({ matchedCount: 1 });
 
       await deletePush(TEST_PUSH.id);
 
       expect(mockConnect).toHaveBeenCalledWith('pushes');
-      expect(mockDeleteOne).toHaveBeenCalledWith({ id: TEST_PUSH.id });
+      expect(mockReplaceOne).toHaveBeenCalledWith(
+        { _id: 'stored-push', '_activity.revision': { $exists: false } },
+        {
+          id: TEST_PUSH.id,
+          _activity: expect.objectContaining({ deleted: true, dirty: true, key: 'example.com/' }),
+        },
+      );
+      expect(mockDeleteOne).not.toHaveBeenCalled();
     });
   });
 
@@ -234,6 +255,7 @@ describe('MongoDB Push Handler', async () => {
             allowPush: TEST_PUSH.allowPush,
             authorised: TEST_PUSH.authorised,
           }),
+          $addToSet: { '_activity.keys': 'example.com/' },
         },
         { upsert: true },
       );
@@ -258,7 +280,10 @@ describe('MongoDB Push Handler', async () => {
       const attestation = { signature: 'test-sig' };
       const result = await authorise(TEST_PUSH.id, attestation);
 
-      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', { id: TEST_PUSH.id });
+      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', {
+        id: TEST_PUSH.id,
+        '_activity.deleted': { $ne: true },
+      });
       expect(mockConnect).toHaveBeenCalledWith('pushes');
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { id: TEST_PUSH.id },
@@ -269,6 +294,7 @@ describe('MongoDB Push Handler', async () => {
             rejected: false,
             attestation: attestation,
           }),
+          $addToSet: { '_activity.keys': 'example.com/' },
         },
         { upsert: true },
       );
@@ -293,7 +319,10 @@ describe('MongoDB Push Handler', async () => {
       const rejection = { signature: 'test-sig' };
       const result = await reject(TEST_PUSH.id, rejection);
 
-      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', { id: TEST_PUSH.id });
+      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', {
+        id: TEST_PUSH.id,
+        '_activity.deleted': { $ne: true },
+      });
       expect(mockConnect).toHaveBeenCalledWith('pushes');
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { id: TEST_PUSH.id },
@@ -304,6 +333,7 @@ describe('MongoDB Push Handler', async () => {
             rejected: true,
             rejection: rejection,
           }),
+          $addToSet: { '_activity.keys': 'example.com/' },
         },
         { upsert: true },
       );
@@ -327,7 +357,10 @@ describe('MongoDB Push Handler', async () => {
 
       const result = await cancel(TEST_PUSH.id);
 
-      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', { id: TEST_PUSH.id });
+      expect(mockFindOneDocument).toHaveBeenCalledWith('pushes', {
+        id: TEST_PUSH.id,
+        '_activity.deleted': { $ne: true },
+      });
       expect(mockConnect).toHaveBeenCalledWith('pushes');
       expect(mockUpdateOne).toHaveBeenCalledWith(
         { id: TEST_PUSH.id },
@@ -337,6 +370,7 @@ describe('MongoDB Push Handler', async () => {
             canceled: true,
             rejected: false,
           }),
+          $addToSet: { '_activity.keys': 'example.com/' },
         },
         { upsert: true },
       );
