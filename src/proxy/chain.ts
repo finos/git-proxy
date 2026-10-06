@@ -271,7 +271,6 @@ const buildAllChains = (): BuiltChains => {
   const pullPlugins = chainPluginLoader.pullPlugins;
   const attached = new Set<ActionPlugin>();
 
-
   const built: BuiltChains = {
     branch: buildChain(
       branchPushChainElements,
