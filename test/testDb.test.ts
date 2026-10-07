@@ -583,8 +583,11 @@ describe('Database clients', () => {
     it('should be able to create a push', async () => {
       await db.writeAudit(TEST_PUSH);
       const pushes = await db.getPushes({});
-      const cleanPushes = cleanResponseData(TEST_PUSH, pushes);
-      expect(cleanPushes).toContainEqual(TEST_PUSH);
+      // List responses omit `steps` (and `diff`): both carry the full diff, and
+      // every backend's list projection excludes them. `getPush` still returns them.
+      const { steps, ...expected } = TEST_PUSH;
+      const cleanPushes = cleanResponseData(expected, pushes);
+      expect(cleanPushes).toContainEqual(expected);
     }, 20000);
 
     it('should be able to delete a push', async () => {
