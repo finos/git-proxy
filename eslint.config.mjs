@@ -52,6 +52,8 @@ export default defineConfig(
       // vendored code we're not changing
       'src/ui/assets/js/**',
       'src/ui/assets/css/**',
+      // local claude worktrees / scratch
+      '.claude/**',
     ],
   },
 
