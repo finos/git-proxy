@@ -17,12 +17,12 @@
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
-import { GitProxyConfig, Convert } from './generated/config';
+import { GitProxyConfig, Convert, SCMProvider } from './generated/config';
 import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
 import { getConfigFile } from './file';
-import { GIGABYTE } from '../constants';
+import { GIGABYTE, MEGABYTE } from '../constants';
 import { validateConfig } from './validators';
 import { getDeprecatedConfigWarnings } from './deprecatedFields';
 import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
@@ -54,6 +54,7 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'plugins',
   'privateOrganizations',
   'rateLimit',
+  'scmProviders',
   'serverPort',
   'sessionMaxAgeHours',
   'sidebandProgress',
@@ -329,6 +330,13 @@ export const getDatabase = () => {
       if (db.type === 'mongo' && !db.connectionString) {
         db.connectionString = serverConfig.GIT_PROXY_MONGO_CONNECTION_STRING;
       }
+      // The postgres connection string follows the same precedence as GitProxy's
+      // other environment variable overrides: env var, then user config, then the
+      // default config. The default config ships a connectionString, so a
+      // fallback-only env var would never apply.
+      if (db.type === 'postgres' && serverConfig.GIT_PROXY_POSTGRES_CONNECTION_STRING) {
+        db.connectionString = serverConfig.GIT_PROXY_POSTGRES_CONNECTION_STRING;
+      }
       return db;
     }
   }
@@ -474,11 +482,7 @@ export const getRateLimit = () => {
   return config.rateLimit;
 };
 
-export const getMaxPackSizeBytes = (): number => {
-  const config = loadFullConfiguration();
-  const configuredValue = config.limits?.maxPackSizeBytes;
-  const fallback = 1 * GIGABYTE; // 1 GiB default
-
+const resolveLimit = (configuredValue: number | undefined, fallback: number): number => {
   if (
     typeof configuredValue === 'number' &&
     Number.isFinite(configuredValue) &&
@@ -488,6 +492,41 @@ export const getMaxPackSizeBytes = (): number => {
   }
 
   return fallback;
+};
+
+export const getMaxPackSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackSizeBytes, 1 * GIGABYTE);
+};
+
+export const getMaxDecompressedPackSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxDecompressedPackSizeBytes, 128 * MEGABYTE);
+};
+
+export const getMaxDecompressedObjectSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxDecompressedObjectSizeBytes, 64 * MEGABYTE);
+};
+
+export const getMaxPackExpansionRatio = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackExpansionRatio, 100);
+};
+
+export const getMaxPackObjects = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackObjects, 100_000);
+};
+
+/**
+ * SCM providers the proxy may ask to identify a pusher from the credential that
+ * accompanied the push. A user-supplied list replaces the built-in defaults.
+ * @return {SCMProvider[]} configured providers
+ */
+export const getScmProviders = (): SCMProvider[] => {
+  const config = loadFullConfiguration();
+  return config.scmProviders ?? [];
 };
 
 /**

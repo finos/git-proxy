@@ -1,2 +1,9 @@
 [build]
-  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF . ../website/ package.json"
+  # Always publish main.
+  ignore = "false"
+
+[context.deploy-preview]
+  # merge-base compares the whole PR against main. Assigning it before the diff keeps its
+  # exit status: inlined as $(...) a failure would leave a one-revision diff that exits 0
+  # and skips silently.
+  ignore = 'BASE=$(git merge-base origin/main HEAD) && git diff --quiet "$BASE" HEAD -- . ../package.json'

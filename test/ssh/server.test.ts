@@ -24,6 +24,23 @@ import * as ssh2 from 'ssh2';
 import SSHServer from '../../src/proxy/ssh/server';
 import * as GitProtocol from '../../src/proxy/ssh/GitProtocol';
 
+const createEd25519Signer = () => {
+  const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519');
+  const { x } = publicKey.export({ format: 'jwk' });
+  if (!x) throw new Error('Generated Ed25519 key is missing its public bytes');
+  const publicSSH = Buffer.concat([
+    Buffer.from([0, 0, 0, 11]),
+    Buffer.from('ssh-ed25519'),
+    Buffer.from([0, 0, 0, 32]),
+    Buffer.from(x, 'base64url'),
+  ]);
+  return {
+    type: 'ssh-ed25519',
+    getPublicSSH: () => publicSSH,
+    sign: (blob: Buffer) => crypto.sign(null, blob, privateKey),
+  };
+};
+
 // Wrap the ssh2.Server constructor in a spy while keeping the real implementation,
 // so we can inspect the options it is built with. Its namespace export cannot be
 // patched with vi.spyOn under ESM, hence the module factory.
@@ -31,6 +48,7 @@ vi.mock('ssh2', async (importOriginal) => {
   const actual = await importOriginal<typeof import('ssh2')>();
   return {
     ...actual,
+    utils: actual.utils,
     Server: vi.fn(function (...args: ConstructorParameters<typeof actual.Server>) {
       return new actual.Server(...args);
     }),
@@ -211,7 +229,19 @@ describe('SSHServer', () => {
       };
     });
 
-    it('should accept publickey authentication with valid key', async () => {
+    const getAuthHandler = () => {
+      (server as any).handleClient(mockClient, clientInfo);
+      return mockClient.on.mock.calls.find((call: any[]) => call[0] === 'authentication')?.[1];
+    };
+
+    const flushAuth = async (handler: (ctx: unknown) => void, ctx: unknown) => {
+      await handler(ctx);
+      // findUserBySSHKey is then-able; yield so the handler's .then() runs
+      await Promise.resolve();
+      await Promise.resolve();
+    };
+
+    it('should acknowledge a known key on the probe round without authenticating', async () => {
       const mockCtx = {
         method: 'publickey',
         key: {
@@ -226,23 +256,19 @@ describe('SSHServer', () => {
       const mockUser = {
         username: 'test-user',
         email: 'test@example.com',
-        gitAccount: 'testgit',
         password: 'hashed-password',
         admin: false,
       };
 
       vi.spyOn(db, 'findUserBySSHKey').mockResolvedValue(mockUser as any);
 
-      (server as any).handleClient(mockClient, clientInfo);
-      const authHandler = mockClient.on.mock.calls.find(
-        (call: any[]) => call[0] === 'authentication',
-      )?.[1];
-
-      await authHandler(mockCtx);
+      await flushAuth(getAuthHandler(), mockCtx);
 
       expect(db.findUserBySSHKey).toHaveBeenCalled();
+      // No signature on the context, so this is the probe round. ssh2 turns this
+      // accept into PK_OK; the user must not be treated as authenticated yet.
       expect(mockCtx.accept).toHaveBeenCalled();
-      expect(mockClient.authenticatedUser).toBeDefined();
+      expect(mockClient.authenticatedUser).toBeNull();
     });
 
     it('should reject publickey authentication with invalid key', async () => {
@@ -253,22 +279,132 @@ describe('SSHServer', () => {
           data: Buffer.from('invalid-key'),
           comment: 'test-key',
         },
+        signature: Buffer.alloc(64, 0x41),
+        blob: Buffer.from('session-bound-data-to-be-signed'),
         accept: vi.fn(),
         reject: vi.fn(),
       };
 
       vi.spyOn(db, 'findUserBySSHKey').mockResolvedValue(null);
 
-      (server as any).handleClient(mockClient, clientInfo);
-      const authHandler = mockClient.on.mock.calls.find(
-        (call: any[]) => call[0] === 'authentication',
-      )?.[1];
-
-      await authHandler(mockCtx);
+      await flushAuth(getAuthHandler(), mockCtx);
 
       expect(db.findUserBySSHKey).toHaveBeenCalled();
       expect(mockCtx.reject).toHaveBeenCalled();
       expect(mockCtx.accept).not.toHaveBeenCalled();
+      expect(mockClient.authenticatedUser).toBeNull();
+    });
+
+    it('should authenticate a signed request only when the signature verifies', async () => {
+      const signer = createEd25519Signer();
+      const otherKey = createEd25519Signer();
+      const blob = Buffer.from('session-bound-data-to-be-signed');
+      const mockUser = { username: 'test-user', email: 'test@example.com' };
+
+      const authHandler = getAuthHandler();
+
+      const authenticateWith = async (signature: Buffer) => {
+        mockClient.authenticatedUser = null;
+        const mockCtx = {
+          method: 'publickey',
+          key: { algo: signer.type, data: signer.getPublicSSH(), comment: 'test-key' },
+          blob,
+          signature,
+          hashAlgo: undefined,
+          accept: vi.fn(),
+          reject: vi.fn(),
+        };
+        vi.spyOn(db, 'findUserBySSHKey').mockResolvedValue(mockUser as any);
+        await flushAuth(authHandler, mockCtx);
+        return mockCtx;
+      };
+
+      const valid = await authenticateWith(signer.sign(blob));
+      expect(valid.accept).toHaveBeenCalled();
+      expect(valid.reject).not.toHaveBeenCalled();
+      expect(mockClient.authenticatedUser).toEqual(mockUser);
+
+      const forged = await authenticateWith(Buffer.alloc(64, 0x41));
+      expect(forged.reject).toHaveBeenCalled();
+      expect(forged.accept).not.toHaveBeenCalled();
+      expect(mockClient.authenticatedUser).toBeNull();
+
+      const wrongKey = await authenticateWith(otherKey.sign(blob));
+      expect(wrongKey.reject).toHaveBeenCalled();
+      expect(wrongKey.accept).not.toHaveBeenCalled();
+      expect(mockClient.authenticatedUser).toBeNull();
+    });
+
+    it('should reject a signed request that omits the data blob', async () => {
+      const signer = createEd25519Signer();
+      const blob = Buffer.from('session-bound-data-to-be-signed');
+      const mockUser = { username: 'test-user', email: 'test@example.com' };
+
+      vi.spyOn(db, 'findUserBySSHKey').mockResolvedValue(mockUser as any);
+
+      const mockCtx = {
+        method: 'publickey',
+        key: { algo: signer.type, data: signer.getPublicSSH(), comment: 'test-key' },
+        signature: signer.sign(blob) as Buffer,
+        blob: undefined,
+        hashAlgo: undefined,
+        accept: vi.fn(),
+        reject: vi.fn(),
+      };
+
+      await flushAuth(getAuthHandler(), mockCtx);
+
+      expect(mockCtx.reject).toHaveBeenCalled();
+      expect(mockCtx.accept).not.toHaveBeenCalled();
+      expect(mockClient.authenticatedUser).toBeNull();
+    });
+
+    it('should reject a signed request when the presented key cannot be parsed', async () => {
+      const mockUser = { username: 'test-user', email: 'test@example.com' };
+      vi.spyOn(db, 'findUserBySSHKey').mockResolvedValue(mockUser as any);
+      vi.spyOn(ssh2.utils, 'parseKey').mockReturnValue(new Error('unparseable key'));
+
+      const mockCtx = {
+        method: 'publickey',
+        key: { algo: 'ssh-ed25519', data: Buffer.from('not-a-real-key'), comment: 'test-key' },
+        blob: Buffer.from('session-bound-data-to-be-signed'),
+        signature: Buffer.alloc(64, 0x41),
+        hashAlgo: undefined,
+        accept: vi.fn(),
+        reject: vi.fn(),
+      };
+
+      await flushAuth(getAuthHandler(), mockCtx);
+
+      expect(mockCtx.reject).toHaveBeenCalled();
+      expect(mockCtx.accept).not.toHaveBeenCalled();
+      expect(mockClient.authenticatedUser).toBeNull();
+    });
+
+    it('should authenticate an RSA signed request when hashAlgo is provided', async () => {
+      const signer = ssh2.utils.parseKey(
+        ssh2.utils.generateKeyPairSync('rsa', { bits: 2048 }).private,
+      ) as ssh2.ParsedKey;
+      const blob = Buffer.from('session-bound-data-to-be-signed');
+      const mockUser = { username: 'test-user', email: 'test@example.com' };
+
+      vi.spyOn(db, 'findUserBySSHKey').mockResolvedValue(mockUser as any);
+
+      const mockCtx = {
+        method: 'publickey',
+        key: { algo: signer.type, data: signer.getPublicSSH(), comment: 'test-key' },
+        blob,
+        signature: signer.sign(blob, 'sha256') as Buffer,
+        hashAlgo: 'sha256',
+        accept: vi.fn(),
+        reject: vi.fn(),
+      };
+
+      await flushAuth(getAuthHandler(), mockCtx);
+
+      expect(mockCtx.accept).toHaveBeenCalled();
+      expect(mockCtx.reject).not.toHaveBeenCalled();
+      expect(mockClient.authenticatedUser).toEqual(mockUser);
     });
   });
 
@@ -340,7 +476,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -399,7 +534,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -475,7 +609,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -575,7 +708,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -640,7 +772,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -704,7 +835,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -945,7 +1075,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -1023,7 +1152,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
