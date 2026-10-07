@@ -217,6 +217,7 @@
   },
   "overrides": {
     "rolldown": "1.0.1",
+    "shell-quote": "^1.11.0",
     "underscore": "^1.13.8"
   },
   "optionalDependencies": {
