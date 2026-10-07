@@ -19,9 +19,9 @@
  */
 
 // Peer dependencies; it's expected that these deps exist on Node module path if you've installed @finos/git-proxy
-import { PushActionPlugin, PushPhase, PushPluginOptions } from '@finos/git-proxy/plugin';
-import { Action, Step } from '@finos/git-proxy/proxy/actions';
-import { Request } from 'express';
+import { PushActionPlugin, PushPhase, type PushPluginOptions } from '@finos/git-proxy/plugin';
+import { type Action, Step } from '@finos/git-proxy/proxy/actions';
+import type { Request } from 'express';
 import parseDiff from 'parse-diff';
 
 const RULES = [
