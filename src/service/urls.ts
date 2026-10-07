@@ -45,7 +45,7 @@ export const getServiceUIURL = (req: Request): string => {
   );
 };
 
-function findPackageRoot(from: string = __dirname): string {
+export function findPackageRoot(from: string = __dirname): string {
   let dir = from;
   for (;;) {
     if (fs.existsSync(path.join(dir, 'package.json'))) return dir;

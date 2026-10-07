@@ -16,13 +16,17 @@
 
 import axios from 'axios';
 import crypto from 'crypto';
-import { NextFunction } from 'express';
+import express, { Request } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
+import request from 'supertest';
 import { describe, it, expect, vi, beforeEach, afterEach, MockInstance } from 'vitest';
 
+import * as config from '../src/config';
+import * as db from '../src/db';
+import { Proxy } from '../src/proxy';
+import { createApiMiddleware } from '../src/service/orpc';
 import { assignRoles, getJwks, validateJwt } from '../src/service/passport/jwtUtils';
-import { jwtAuthHandler } from '../src/service/passport/jwtAuthHandler';
-import { JwtConfig, RoleMapping } from '../src/config/generated/config';
+import { AuthenticationElementType, JwtConfig, RoleMapping } from '../src/config/generated/config';
 
 function generateRsaKeyPair() {
   return crypto.generateKeyPairSync('rsa', {
@@ -190,16 +194,29 @@ describe('JWT', () => {
   });
 
   describe('jwtAuthHandler', () => {
-    let req: any;
-    let res: any;
-    let next: NextFunction;
+    let isAuthenticated: boolean;
     let jwtConfig: JwtConfig;
     let validVerifyResponse: JwtPayload;
 
+    // The JWT guard runs in front of every /api/v1/{push,repo,user} procedure.
+    const newApp = () => {
+      const app = express();
+      app.use((req, _res, next) => {
+        req.isAuthenticated = (() => isAuthenticated) as Request['isAuthenticated'];
+        next();
+      });
+      app.use(createApiMiddleware(new Proxy()));
+      return app;
+    };
+
+    const enableJwt = () =>
+      vi
+        .spyOn(config, 'getAPIAuthMethods')
+        .mockReturnValue([{ type: 'jwt' as AuthenticationElementType, enabled: true, jwtConfig }]);
+
     beforeEach(() => {
-      req = { header: vi.fn(), isAuthenticated: vi.fn(), user: {} };
-      res = { status: vi.fn().mockReturnThis(), send: vi.fn() };
-      next = vi.fn();
+      isAuthenticated = false;
+      vi.spyOn(db, 'getPushes').mockResolvedValue([]);
 
       jwtConfig = {
         clientID: 'client-id',
@@ -219,51 +236,58 @@ describe('JWT', () => {
     afterEach(() => vi.restoreAllMocks());
 
     it('should call next if user is authenticated', async () => {
-      req.isAuthenticated.mockReturnValue(true);
-      await jwtAuthHandler()(req, res, next);
-      expect(next).toHaveBeenCalledOnce();
+      isAuthenticated = true;
+      const res = await request(newApp()).get('/api/v1/push');
+      expect(res.status).toBe(200);
+      expect(db.getPushes).toHaveBeenCalledOnce();
     });
 
     it('should return 401 if no token provided', async () => {
-      req.header.mockReturnValue(null);
-      await jwtAuthHandler(jwtConfig)(req, res, next);
+      enableJwt();
+      const res = await request(newApp()).get('/api/v1/push');
 
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.send).toHaveBeenCalledWith('No token provided\n');
+      expect(res.status).toBe(401);
+      expect(res.text).toBe('No token provided\n');
     });
 
     it('should return 500 if authorityURL not configured', async () => {
-      req.header.mockReturnValue('Bearer fake-token');
       jwtConfig.authorityURL = null;
-      vi.spyOn(jwt, 'verify').mockReturnValue(validVerifyResponse);
+      enableJwt();
+      vi.spyOn(jwt, 'verify').mockReturnValue(validVerifyResponse as any);
 
-      await jwtAuthHandler(jwtConfig)(req, res, next);
+      const res = await request(newApp())
+        .get('/api/v1/push')
+        .set('Authorization', 'Bearer fake-token');
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith({ message: 'OIDC authority URL is not configured\n' });
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ message: 'OIDC authority URL is not configured\n' });
     });
 
     it('should return 500 if clientID not configured', async () => {
-      req.header.mockReturnValue('Bearer fake-token');
       jwtConfig.clientID = null;
-      vi.spyOn(jwt, 'verify').mockReturnValue(validVerifyResponse);
+      enableJwt();
+      vi.spyOn(jwt, 'verify').mockReturnValue(validVerifyResponse as any);
 
-      await jwtAuthHandler(jwtConfig)(req, res, next);
+      const res = await request(newApp())
+        .get('/api/v1/push')
+        .set('Authorization', 'Bearer fake-token');
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.send).toHaveBeenCalledWith({ message: 'OIDC client ID is not configured\n' });
+      expect(res.status).toBe(500);
+      expect(res.body).toEqual({ message: 'OIDC client ID is not configured\n' });
     });
 
     it('should return 401 if JWT validation fails', async () => {
-      req.header.mockReturnValue('Bearer fake-token');
+      enableJwt();
       vi.spyOn(jwt, 'verify').mockImplementation(() => {
         throw new Error('Invalid token');
       });
 
-      await jwtAuthHandler(jwtConfig)(req, res, next);
+      const res = await request(newApp())
+        .get('/api/v1/push')
+        .set('Authorization', 'Bearer fake-token');
 
-      expect(res.status).toHaveBeenCalledWith(401);
-      expect(res.send).toHaveBeenCalledWith(expect.stringMatching(/Invalid JWT:/));
+      expect(res.status).toBe(401);
+      expect(res.text).toMatch(/Invalid JWT:/);
     });
   });
 });

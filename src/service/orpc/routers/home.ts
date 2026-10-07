@@ -14,14 +14,20 @@
  * limitations under the License.
  */
 
-import { RequestHandler } from 'express';
-import { mustChangePassword } from '../routes/utils';
+import { z } from 'zod';
 
-export const passwordChangeHandler: RequestHandler = (req, res, next) => {
-  if (mustChangePassword(req.user)) {
-    return res.status(428).send({
-      message: 'Password change required before accessing this endpoint',
-    });
-  }
-  return next();
+import { pub } from '../base';
+import { docOnly } from '../schemas';
+
+const resource = {
+  healthcheck: '/api/v1/healthcheck',
+  push: '/api/v1/push',
+  auth: '/api/auth',
+};
+
+export const homeRouter = {
+  index: pub
+    .route({ method: 'GET', path: '/', summary: 'API resource index' })
+    .output(docOnly<typeof resource>(z.record(z.string(), z.string())))
+    .handler(() => resource),
 };

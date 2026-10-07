@@ -17,7 +17,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import express, { Express } from 'express';
 import request from 'supertest';
-import healthcheck from '../../../src/service/routes/healthcheck';
+import { createApiMiddleware } from '../../../src/service/orpc';
+import { Proxy } from '../../../src/proxy';
 
 describe('Health Check API', () => {
   let app: Express;
@@ -25,11 +26,11 @@ describe('Health Check API', () => {
   beforeEach(() => {
     app = express();
     app.use(express.json());
-    app.use('/healthCheck', healthcheck);
+    app.use(createApiMiddleware(new Proxy()));
   });
 
   it('GET /healthCheck should return 200 OK and the health check message', async () => {
-    const res = await request(app).get('/healthCheck');
+    const res = await request(app).get('/api/v1/healthcheck');
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ message: 'ok' });
   });
