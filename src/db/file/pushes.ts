@@ -150,10 +150,17 @@ const defaultPushQuery: Partial<PushQuery> = {
   type: 'push',
 };
 
+// List queries drop `steps` and `diff` from the returned document: both hold the
+// full diff (largest part of a push row), and the mongo and postgres list
+// projections exclude them as well. The push-detail path (`getPush`) still returns
+// the whole document.
+const pushListProjection = { steps: 0, diff: 0 } as const;
+
 export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => {
   if (!query) query = defaultPushQuery;
   return new Promise((resolve, reject) => {
     db.find(query)
+      .projection(pushListProjection)
       .sort({ timestamp: -1 })
       .exec((err, docs) => {
         // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -178,6 +185,7 @@ export const getPushesForUserProfile = (
   const filter = buildUserProfilePushFilter(emailVariants, profileUsername);
   return new Promise((resolve, reject) => {
     db.find(filter)
+      .projection(pushListProjection)
       .sort({ timestamp: -1 })
       .exec((err, docs) => {
         /* istanbul ignore if */
