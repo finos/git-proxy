@@ -17,6 +17,8 @@
 import { describe, it, beforeEach, afterEach, afterAll, expect, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
 import { getConfigFile } from '../src/config/file';
 import {
   ConfigLoader,
@@ -32,6 +34,9 @@ import {
   HttpSource,
 } from '../src/config/types';
 import axios from 'axios';
+import { DatabaseType } from '../src/config/generated/config';
+
+const execFileAsync = promisify(execFile);
 
 describe('ConfigLoader', () => {
   let configLoader: ConfigLoader;
@@ -470,6 +475,151 @@ describe('ConfigLoader', () => {
       expect(config).toBeTypeOf('object');
       expect(config).toHaveProperty('cookieSecret');
     }, 10000);
+
+    describe('cached git sources', () => {
+      let source: GitSource;
+      let remoteDir: string;
+      let workDir: string;
+      let repoDir: string;
+      const postgresSink = {
+        type: DatabaseType.Postgres,
+        enabled: true,
+        connectionString: 'postgresql://localhost/git_proxy_test',
+        autoMigrate: false,
+        pool: { max: 4 },
+      };
+
+      async function commitConfig(cookieSecret: string): Promise<void> {
+        const config = { cookieSecret, sink: [postgresSink] } satisfies Configuration;
+        fs.writeFileSync(path.join(workDir, source.path), JSON.stringify(config));
+        await execFileAsync('git', ['add', source.path], { cwd: workDir });
+        await execFileAsync('git', ['commit', '-m', cookieSecret], { cwd: workDir });
+      }
+
+      async function updateRemote(): Promise<void> {
+        await commitConfig('updated');
+        await execFileAsync('git', ['push', 'origin', 'main'], { cwd: workDir });
+      }
+
+      beforeEach(async () => {
+        source = {
+          type: 'git',
+          repository: `https://example.com/${path.basename(tempDir)}.git`,
+          path: 'proxy.config.json',
+          branch: 'main',
+          enabled: true,
+        };
+        remoteDir = path.resolve(tempDir, 'remote.git');
+        workDir = path.resolve(tempDir, 'work');
+        const envPaths = (await import('env-paths')).default;
+        const paths = envPaths('git-proxy', { suffix: '' });
+        const repoDirName = Buffer.from(source.repository)
+          .toString('base64')
+          .replace(/[^a-zA-Z0-9]/g, '_');
+        repoDir = path.join(paths.cache, 'git-config-cache', repoDirName);
+
+        vi.stubEnv('GIT_CONFIG_COUNT', '4');
+        vi.stubEnv('GIT_CONFIG_KEY_0', `url.${remoteDir.replaceAll(path.sep, '/')}.insteadOf`);
+        vi.stubEnv('GIT_CONFIG_VALUE_0', source.repository);
+        vi.stubEnv('GIT_CONFIG_KEY_1', 'user.name');
+        vi.stubEnv('GIT_CONFIG_VALUE_1', 'git-proxy test');
+        vi.stubEnv('GIT_CONFIG_KEY_2', 'user.email');
+        vi.stubEnv('GIT_CONFIG_VALUE_2', 'test@example.com');
+        vi.stubEnv('GIT_CONFIG_KEY_3', 'commit.gpgsign');
+        vi.stubEnv('GIT_CONFIG_VALUE_3', 'false');
+
+        await execFileAsync('git', ['init', '--bare', '--initial-branch=main', remoteDir]);
+        await execFileAsync('git', ['init', '--initial-branch=main', workDir]);
+        await commitConfig('initial');
+        await execFileAsync('git', ['remote', 'add', 'origin', remoteDir], { cwd: workDir });
+        await execFileAsync('git', ['push', '-u', 'origin', 'main'], { cwd: workDir });
+        await execFileAsync('git', ['clone', remoteDir, repoDir]);
+      });
+
+      afterEach(() => {
+        fs.rmSync(repoDir, { recursive: true, force: true });
+        vi.unstubAllEnvs();
+      });
+
+      it('loads PostgreSQL settings from a fresh clone', async () => {
+        fs.rmSync(repoDir, { recursive: true });
+
+        const config = await configLoader.loadFromSource(source);
+
+        expect(config).toMatchObject({ cookieSecret: 'initial', sink: [postgresSink] });
+      });
+
+      it('loads the configured branch when the remote default branch is unborn', async () => {
+        fs.rmSync(repoDir, { recursive: true });
+        await execFileAsync('git', ['symbolic-ref', 'HEAD', 'refs/heads/unborn'], {
+          cwd: remoteDir,
+        });
+
+        const config = await configLoader.loadFromSource(source);
+
+        expect(config.cookieSecret).toBe('initial');
+      });
+
+      it('loads new commits when the cached HEAD is detached', async () => {
+        await updateRemote();
+        await execFileAsync('git', ['checkout', '--detach'], { cwd: repoDir });
+
+        const config = await configLoader.loadFromSource(source);
+
+        expect(config.cookieSecret).toBe('updated');
+      });
+
+      it('recovers when the cached HEAD is on an unborn branch', async () => {
+        await updateRemote();
+        await execFileAsync('git', ['symbolic-ref', 'HEAD', 'refs/heads/unborn'], {
+          cwd: repoDir,
+        });
+
+        const config = await configLoader.loadFromSource(source);
+
+        expect(config.cookieSecret).toBe('updated');
+      });
+
+      it('loads new commits from the configured branch', async () => {
+        await updateRemote();
+
+        const config = await configLoader.loadFromSource(source);
+
+        expect(config.cookieSecret).toBe('updated');
+      });
+
+      it('recovers when the configured branch is force-pushed', async () => {
+        await execFileAsync('git', ['checkout', '--orphan', 'replacement'], { cwd: workDir });
+        await commitConfig('rewritten');
+        await execFileAsync('git', ['push', '--force', 'origin', 'HEAD:main'], { cwd: workDir });
+
+        const config = await configLoader.loadFromSource(source);
+
+        expect(config.cookieSecret).toBe('rewritten');
+      });
+
+      it('rejects a deleted remote branch instead of loading its cached config', async () => {
+        await execFileAsync('git', ['update-ref', '-d', 'refs/heads/main'], { cwd: remoteDir });
+
+        await expect(configLoader.loadFromSource(source)).rejects.toThrow(
+          /Failed to checkout branch main/,
+        );
+      });
+
+      it('keeps pulling the tracking branch when no branch is configured', async () => {
+        await updateRemote();
+        const unpinnedSource: GitSource = {
+          type: 'git',
+          repository: source.repository,
+          path: source.path,
+          enabled: true,
+        };
+
+        const config = await configLoader.loadFromSource(unpinnedSource);
+
+        expect(config.cookieSecret).toBe('updated');
+      });
+    });
 
     it('should throw error for invalid configuration file path (git)', async () => {
       const source: GitSource = {
