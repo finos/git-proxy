@@ -100,12 +100,11 @@ Each item is classified according to importance, size and status. Maintainers up
 
 ## Overview
 
-# | Item | Tier | Size | Status
-
-:-: | -- | :-: | :-: | :-:
-1 | [{{ITEM_NAME}}](#1-{{item-anchor}}) | 1 | 🔴 | 🟠
-2 | [{{ITEM_NAME}}](#2-{{item-anchor}}) | 2 | 🟡 | 🔵
-3 | [{{ITEM_NAME}}](#3-{{item-anchor}}) | 3 | 🟢 | ⚪
+|  #  | Item                                | Tier | Size | Status |
+| :-: | ----------------------------------- | :--: | :--: | :----: |
+|  1  | [{{ITEM_NAME}}](#1-{{item-anchor}}) |  1   |  🔴  |   🟠   |
+|  2  | [{{ITEM_NAME}}](#2-{{item-anchor}}) |  2   |  🟡  |   🔵   |
+|  3  | [{{ITEM_NAME}}](#3-{{item-anchor}}) |  3   |  🟢  |   ⚪   |
 
 ---
 
