@@ -24,6 +24,23 @@ import * as ssh2 from 'ssh2';
 import SSHServer from '../../src/proxy/ssh/server';
 import * as GitProtocol from '../../src/proxy/ssh/GitProtocol';
 
+const createEd25519Signer = () => {
+  const { privateKey, publicKey } = crypto.generateKeyPairSync('ed25519');
+  const { x } = publicKey.export({ format: 'jwk' });
+  if (!x) throw new Error('Generated Ed25519 key is missing its public bytes');
+  const publicSSH = Buffer.concat([
+    Buffer.from([0, 0, 0, 11]),
+    Buffer.from('ssh-ed25519'),
+    Buffer.from([0, 0, 0, 32]),
+    Buffer.from(x, 'base64url'),
+  ]);
+  return {
+    type: 'ssh-ed25519',
+    getPublicSSH: () => publicSSH,
+    sign: (blob: Buffer) => crypto.sign(null, blob, privateKey),
+  };
+};
+
 // Wrap the ssh2.Server constructor in a spy while keeping the real implementation,
 // so we can inspect the options it is built with. Its namespace export cannot be
 // patched with vi.spyOn under ESM, hence the module factory.
@@ -239,7 +256,6 @@ describe('SSHServer', () => {
       const mockUser = {
         username: 'test-user',
         email: 'test@example.com',
-        gitAccount: 'testgit',
         password: 'hashed-password',
         admin: false,
       };
@@ -280,14 +296,10 @@ describe('SSHServer', () => {
     });
 
     it('should authenticate a signed request only when the signature verifies', async () => {
-      const signer = ssh2.utils.parseKey(
-        ssh2.utils.generateKeyPairSync('ed25519').private,
-      ) as ssh2.ParsedKey;
-      const otherKey = ssh2.utils.parseKey(
-        ssh2.utils.generateKeyPairSync('ed25519').private,
-      ) as ssh2.ParsedKey;
+      const signer = createEd25519Signer();
+      const otherKey = createEd25519Signer();
       const blob = Buffer.from('session-bound-data-to-be-signed');
-      const mockUser = { username: 'test-user', email: 'test@example.com', gitAccount: 'testgit' };
+      const mockUser = { username: 'test-user', email: 'test@example.com' };
 
       const authHandler = getAuthHandler();
 
@@ -307,7 +319,7 @@ describe('SSHServer', () => {
         return mockCtx;
       };
 
-      const valid = await authenticateWith(signer.sign(blob) as Buffer);
+      const valid = await authenticateWith(signer.sign(blob));
       expect(valid.accept).toHaveBeenCalled();
       expect(valid.reject).not.toHaveBeenCalled();
       expect(mockClient.authenticatedUser).toEqual(mockUser);
@@ -317,18 +329,16 @@ describe('SSHServer', () => {
       expect(forged.accept).not.toHaveBeenCalled();
       expect(mockClient.authenticatedUser).toBeNull();
 
-      const wrongKey = await authenticateWith(otherKey.sign(blob) as Buffer);
+      const wrongKey = await authenticateWith(otherKey.sign(blob));
       expect(wrongKey.reject).toHaveBeenCalled();
       expect(wrongKey.accept).not.toHaveBeenCalled();
       expect(mockClient.authenticatedUser).toBeNull();
     });
 
     it('should reject a signed request that omits the data blob', async () => {
-      const signer = ssh2.utils.parseKey(
-        ssh2.utils.generateKeyPairSync('ed25519').private,
-      ) as ssh2.ParsedKey;
+      const signer = createEd25519Signer();
       const blob = Buffer.from('session-bound-data-to-be-signed');
-      const mockUser = { username: 'test-user', email: 'test@example.com', gitAccount: 'testgit' };
+      const mockUser = { username: 'test-user', email: 'test@example.com' };
 
       vi.spyOn(db, 'findUserBySSHKey').mockResolvedValue(mockUser as any);
 
@@ -350,7 +360,7 @@ describe('SSHServer', () => {
     });
 
     it('should reject a signed request when the presented key cannot be parsed', async () => {
-      const mockUser = { username: 'test-user', email: 'test@example.com', gitAccount: 'testgit' };
+      const mockUser = { username: 'test-user', email: 'test@example.com' };
       vi.spyOn(db, 'findUserBySSHKey').mockResolvedValue(mockUser as any);
       vi.spyOn(ssh2.utils, 'parseKey').mockReturnValue(new Error('unparseable key'));
 
@@ -376,7 +386,7 @@ describe('SSHServer', () => {
         ssh2.utils.generateKeyPairSync('rsa', { bits: 2048 }).private,
       ) as ssh2.ParsedKey;
       const blob = Buffer.from('session-bound-data-to-be-signed');
-      const mockUser = { username: 'test-user', email: 'test@example.com', gitAccount: 'testgit' };
+      const mockUser = { username: 'test-user', email: 'test@example.com' };
 
       vi.spyOn(db, 'findUserBySSHKey').mockResolvedValue(mockUser as any);
 
@@ -466,7 +476,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -525,7 +534,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -601,7 +609,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -701,7 +708,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -766,7 +772,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -830,7 +835,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -1071,7 +1075,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
@@ -1149,7 +1152,6 @@ describe('SSHServer', () => {
         authenticatedUser: {
           username: 'test-user',
           email: 'test@example.com',
-          gitAccount: 'testgit',
         },
         agentForwardingEnabled: true,
         clientIp: '127.0.0.1',
