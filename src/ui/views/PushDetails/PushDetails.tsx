@@ -232,10 +232,7 @@ const PushDetails = () => {
   if (!push) return <div>No push data found</div>;
 
   const commitCount = push.commitData?.length ?? 0;
-  const diffText =
-    typeof push.diff === 'string'
-      ? push.diff
-      : (push.diff?.content ?? push.steps?.find((s) => s.stepName === 'diff')?.content ?? '');
+  const diffText = push.diff ?? '';
   const changeFileCount = countDiffFiles(diffText);
   const stepCount = push.steps?.length ?? 0;
 

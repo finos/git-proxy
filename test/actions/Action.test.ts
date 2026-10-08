@@ -199,4 +199,50 @@ describe('Action', () => {
       });
     });
   });
+
+  describe('setDiff', () => {
+    const DIFF = 'diff --git a/a.txt b/a.txt\n+hello\n';
+
+    it('should set the diff', () => {
+      const action = makeAction(REPO_1_URL);
+
+      action.setDiff(DIFF);
+
+      expect(action.diff).toBe(DIFF);
+    });
+
+    it('should keep an empty diff rather than leaving it unset', () => {
+      const action = makeAction(REPO_1_URL);
+
+      action.setDiff('');
+
+      expect(action.diff).toBe('');
+    });
+
+    it('should still serialise the diff to the DB and the API', () => {
+      const action = makeAction(REPO_1_URL);
+
+      action.setDiff(DIFF);
+
+      expect(JSON.parse(JSON.stringify(action)).diff).toBe(DIFF);
+    });
+
+    it('should reject assignment to the diff', () => {
+      const action = makeAction(REPO_1_URL);
+      action.setDiff(DIFF);
+
+      expect(() => {
+        (action as { diff?: string }).diff = 'tampered';
+      }).toThrow(TypeError);
+      expect(action.diff).toBe(DIFF);
+    });
+
+    it('should reject a second call', () => {
+      const action = makeAction(REPO_1_URL);
+      action.setDiff(DIFF);
+
+      expect(() => action.setDiff('tampered')).toThrow(TypeError);
+      expect(action.diff).toBe(DIFF);
+    });
+  });
 });

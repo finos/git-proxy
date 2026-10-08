@@ -15,7 +15,6 @@
  */
 
 import { Action } from '../proxy/actions';
-import { Step } from '../proxy/actions/Step';
 import { Repo } from '../db/types';
 import { Attestation } from '../proxy/processors/types';
 import { Question } from '../config/generated/config';
@@ -26,6 +25,7 @@ type ActionMethods =
   | 'setCommit'
   | 'setBranch'
   | 'setMessage'
+  | 'setDiff'
   | 'setAllowPush'
   | 'setAutoApproval'
   | 'setAutoRejection'
@@ -53,9 +53,7 @@ export interface BackendResponse {
   message: string;
 }
 
-export interface PushActionView extends Omit<Action, ActionMethods | 'diff'> {
-  diff?: string | Step;
-}
+export type PushActionView = Omit<Action, ActionMethods>;
 
 export interface RepoView extends Repo {
   proxyURL: string;

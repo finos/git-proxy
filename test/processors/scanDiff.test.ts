@@ -128,7 +128,7 @@ describe('Scan commit diff', () => {
 
   it('prefers action.diff over diff step content if both exist', async () => {
     const action = new Action('1', 'type', 'method', 1, 'test/repo.git');
-    action.diff = generateDiff('AKIAIOSFODNN7EXAMPLE'); // AWS key in action.diff (should trigger block)
+    action.setDiff(generateDiff('AKIAIOSFODNN7EXAMPLE')); // AWS key in action.diff (should trigger block)
     const harmlessStep = generateDiffStep('harmless content without key');
     action.steps = [harmlessStep];
     action.setCommit('38cdc3e', '8a9c321');

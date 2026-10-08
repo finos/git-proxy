@@ -28,14 +28,9 @@ const getPush = async (id: string): Promise<ServiceResult<PushActionView>> => {
   try {
     const response = await axios<Action>(url, getAxiosConfig());
     const data: Action = response.data;
-    const actionView: PushActionView = {
-      ...data,
-      diff:
-        typeof data.diff === 'string'
-          ? data.diff
-          : data.steps.find((x: Step) => x.stepName === 'diff')!,
-    };
-    return successResult(actionView);
+    // Pushes stored before `action.diff` existed only have the diff in the step.
+    const diff = data.diff ?? data.steps?.find((s: Step) => s.stepName === 'diff')?.content;
+    return successResult({ ...data, diff });
   } catch (error: unknown) {
     return errorResult(error, 'Failed to load push');
   }
