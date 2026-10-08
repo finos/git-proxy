@@ -54,13 +54,43 @@ describe('git-push service', () => {
   });
 
   describe('getPush', () => {
-    it('returns push data with diff step on success', async () => {
+    it('falls back to the diff step for pushes stored without a top-level diff', async () => {
       const pushData = {
         id: 'push-123',
         steps: [
-          { stepName: 'diff', data: 'some diff' },
-          { stepName: 'validate', data: 'validation data' },
+          { stepName: 'diff', content: 'some diff' },
+          { stepName: 'validate', content: 'validation data' },
         ],
+      };
+
+      axiosMock.mockResolvedValue({ data: pushData });
+
+      const result = await getPush('push-123');
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({ ...pushData, diff: 'some diff' });
+      expect(axiosMock).toHaveBeenCalledWith(
+        'http://localhost:8080/api/v1/push/push-123',
+        expect.any(Object),
+      );
+    });
+
+    it('leaves the diff undefined for a push that never produced one', async () => {
+      const pushData = { id: 'push-123', steps: [{ stepName: 'validate', content: 'ok' }] };
+
+      axiosMock.mockResolvedValue({ data: pushData });
+
+      const result = await getPush('push-123');
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({ ...pushData, diff: undefined });
+    });
+
+    it('returns push data with string diff when top-level diff is a string', async () => {
+      const pushData = {
+        id: 'push-123',
+        diff: 'diff content string',
+        steps: [{ stepName: 'diff', content: 'fallback step diff' }],
       };
 
       axiosMock.mockResolvedValue({ data: pushData });
@@ -70,12 +100,26 @@ describe('git-push service', () => {
       expect(result.success).toBe(true);
       expect(result.data).toEqual({
         ...pushData,
-        diff: { stepName: 'diff', data: 'some diff' },
+        diff: 'diff content string',
       });
-      expect(axiosMock).toHaveBeenCalledWith(
-        'http://localhost:8080/api/v1/push/push-123',
-        expect.any(Object),
-      );
+    });
+
+    it('returns push data with empty string diff when top-level diff is empty string', async () => {
+      const pushData = {
+        id: 'push-123',
+        diff: '',
+        steps: [{ stepName: 'diff', content: 'fallback step diff' }],
+      };
+
+      axiosMock.mockResolvedValue({ data: pushData });
+
+      const result = await getPush('push-123');
+
+      expect(result.success).toBe(true);
+      expect(result.data).toEqual({
+        ...pushData,
+        diff: '',
+      });
     });
 
     it('returns error result when getPush fails', async () => {

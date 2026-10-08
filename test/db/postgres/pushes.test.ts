@@ -222,7 +222,7 @@ describe('PostgreSQL - Pushes', async () => {
   });
 
   describe('list projection', () => {
-    it('drops steps from list results but not from the detail view', async () => {
+    it('drops steps and diff from list results but not from the detail view', async () => {
       mockQuery.mockResolvedValue({ rowCount: 0, rows: [] });
 
       await getPushes({});
@@ -232,9 +232,11 @@ describe('PostgreSQL - Pushes', async () => {
       const [listSql] = mockQuery.mock.calls[0];
       const [profileSql] = mockQuery.mock.calls[1];
       const [detailSql] = mockQuery.mock.calls[2];
-      expect(listSql).toContain("data - 'steps'");
-      expect(profileSql).toContain("data - 'steps'");
+      // Both hold the full diff, so neither may reach a list response.
+      expect(listSql).toContain("data - 'steps' - 'diff'");
+      expect(profileSql).toContain("data - 'steps' - 'diff'");
       expect(detailSql).not.toContain("data - 'steps'");
+      expect(detailSql).not.toContain("- 'diff'");
     });
   });
 
