@@ -114,7 +114,7 @@ Each item is classified according to importance, size and status. Maintainers up
 
 Size: {{🟢 | 🟡 | 🔴 | N/A}} | Owners: {{@handle, @handle | TBD}} | Blocks: {{item numbers}}
 
-{{1–2 sentences: what problem this solves and why it matters. Mention if other items depend on it.}}
+<!-- 1–2 sentences: what problem this solves and why it matters. Mention if other items depend on it. -->
 
 #### Sub-issues/PRs
 
@@ -129,7 +129,7 @@ Size: {{🟢 | 🟡 | 🔴 | N/A}} | Owners: {{@handle, @handle | TBD}} | Blocks
 
 Size: {{🟢 | 🟡 | 🔴 | N/A}} | Owners: {{@handle | TBD}} | Depends on: {{item numbers}}
 
-{{1–2 sentences: what problem this solves.}}
+<!-- 1–2 sentences: what problem this solves. -->
 
 #### Sub-issues/PRs
 
