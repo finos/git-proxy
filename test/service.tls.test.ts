@@ -89,8 +89,8 @@ describe('Service Module TLS', () => {
       }),
     }));
 
-    vi.doMock('../src/service/routes', () => ({
-      default: vi.fn().mockReturnValue((_req: any, _res: any, next: any) => next()),
+    vi.doMock('../src/service/orpc', () => ({
+      createApiMiddleware: vi.fn().mockReturnValue((_req: any, _res: any, next: any) => next()),
     }));
 
     vi.spyOn(http, 'createServer').mockReturnValue(mockHttpServer as any);

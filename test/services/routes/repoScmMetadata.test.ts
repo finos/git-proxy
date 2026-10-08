@@ -17,7 +17,7 @@
 import express, { Express } from 'express';
 import request from 'supertest';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import repo from '../../../src/service/routes/repo';
+import { createApiMiddleware } from '../../../src/service/orpc';
 import { Proxy } from '../../../src/proxy';
 import * as db from '../../../src/db';
 
@@ -45,7 +45,7 @@ describe('GET /api/v1/repo/:id/scm-metadata', () => {
     });
     app = express();
     app.use(express.json());
-    app.use('/api/v1/repo', repo(proxy));
+    app.use(createApiMiddleware(proxy));
   });
 
   afterEach(() => {
