@@ -19,6 +19,54 @@ import { Convert, GitProxyConfig } from '../src/config/generated/config';
 import defaultSettings from '../proxy.config.json';
 
 describe('Generated Config (QuickType)', () => {
+  describe('database configuration', () => {
+    it.each(['mongo', 'fs'])('should reject unknown %s sink properties', (type) => {
+      const config = {
+        sink: [{ type, enabled: true, connectionStrng: 'mongodb://localhost/test' }],
+      };
+
+      expect(() => Convert.toGitProxyConfig(JSON.stringify(config))).toThrow('connectionStrng');
+    });
+
+    it.each(['mongo', 'fs'])('should accept a %s sink without a connection string', (type) => {
+      const config = { sink: [{ type, enabled: true }] };
+
+      const result = Convert.toGitProxyConfig(JSON.stringify(config));
+
+      expect(result.sink).toEqual(config.sink);
+    });
+
+    it('should preserve MongoDB driver options', () => {
+      const options = {
+        appName: 'git-proxy',
+        maxPoolSize: 5,
+        tls: true,
+        authMechanismProperties: {
+          AWS_CREDENTIAL_PROVIDER: true,
+          SERVICE_NAME: 'mongodb',
+        },
+      };
+      const config = {
+        sink: [
+          { type: 'mongo', enabled: true, connectionString: 'mongodb://localhost/test', options },
+        ],
+      };
+
+      const result = Convert.toGitProxyConfig(JSON.stringify(config));
+
+      expect(result.sink).toEqual(config.sink);
+    });
+
+    it.each([42, null, false])(
+      'should reject a non-string MongoDB connection: %s',
+      (connectionString) => {
+        const config = { sink: [{ type: 'mongo', enabled: true, connectionString }] };
+
+        expect(() => Convert.toGitProxyConfig(JSON.stringify(config))).toThrow('connectionString');
+      },
+    );
+  });
+
   describe('Convert class', () => {
     it('should parse valid configuration JSON', () => {
       const validConfig = {

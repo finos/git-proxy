@@ -77,6 +77,33 @@ These server settings can also be set in the [configuration file](./reference) u
 `serverPort`, `httpsServerPort`, `uiHost`, `uiPort` and `httpsUiPort` properties. When a value is
 provided in both places, the environment variable takes precedence over the config file.
 
+For MongoDB, a non-empty `GIT_PROXY_MONGO_CONNECTION_STRING` overrides the selected sink's
+`connectionString`. If the variable is unset or empty, GitProxy uses the configured value.
+You can keep the connection string out of the configuration file by setting the environment
+variable and configuring the sink as follows:
+
+```json
+{
+  "sink": [{ "type": "mongo", "enabled": true }]
+}
+```
+
+An enabled MongoDB sink must have a non-empty connection string from either source. GitProxy
+reports an error if both are missing; it does not silently connect to localhost.
+
+:::note Upgrade note
+
+Previously, `GIT_PROXY_MONGO_CONNECTION_STRING` only took effect when the configured connection
+string was missing. If your deployment sets both to different values, upgrading switches the
+connection to the environment value. Unset the variable to keep using the configured value.
+The implicit `mongodb://localhost:27017/git-proxy` fallback has also been removed. The connection
+string in the shipped configuration remains unchanged.
+
+MongoDB and filesystem sink entries now reject unknown properties during schema validation.
+MongoDB's `options` object continues to accept arbitrary driver options.
+
+:::
+
 ### Validate configuration
 
 To validate your GitProxy configuration, run:

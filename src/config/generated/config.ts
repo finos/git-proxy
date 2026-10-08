@@ -602,8 +602,10 @@ export enum SCMProviderType {
  */
 export interface Database {
   /**
-   * mongoDB Client connection string, see
-   * [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)
+   * MongoDB client connection string. A non-empty GIT_PROXY_MONGO_CONNECTION_STRING
+   * environment variable overrides this value. An enabled MongoDB sink requires a non-empty
+   * connection string from either source. See
+   * [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/).
    *
    * PostgreSQL client connection string, see
    * [https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING).
@@ -673,7 +675,6 @@ export interface Database {
    * environment variable.
    */
   user?: string;
-  [property: string]: any;
 }
 
 /**
@@ -1306,7 +1307,7 @@ const typeMap: any = {
       { json: 'ssl', js: 'ssl', typ: u(undefined, u(true, m('any'))) },
       { json: 'user', js: 'user', typ: u(undefined, '') },
     ],
-    'any',
+    false,
   ),
   AwsIamAuth: o(
     [
