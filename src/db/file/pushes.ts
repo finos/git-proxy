@@ -20,6 +20,8 @@ import { activityPrimaryStatusFromFlags } from '../../activity/activityPrimarySt
 import { canonicalRemoteUrl } from '../../activity/canonicalRemoteUrl';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
+import { pushListProjection } from '../pushProjection';
+import { compactPush, restorePush } from '../pushStorage';
 import {
   PushQuery,
   RepoActivityTabCounts,
@@ -154,6 +156,7 @@ export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => {
   if (!query) query = defaultPushQuery;
   return new Promise((resolve, reject) => {
     db.find(query)
+      .projection(pushListProjection)
       .sort({ timestamp: -1 })
       .exec((err, docs) => {
         // ignore for code coverage as neDB rarely returns errors even for an invalid query
@@ -178,6 +181,7 @@ export const getPushesForUserProfile = (
   const filter = buildUserProfilePushFilter(emailVariants, profileUsername);
   return new Promise((resolve, reject) => {
     db.find(filter)
+      .projection(pushListProjection)
       .sort({ timestamp: -1 })
       .exec((err, docs) => {
         /* istanbul ignore if */
@@ -205,7 +209,7 @@ export const getPush = async (id: string): Promise<Action | null> => {
         if (!doc) {
           resolve(null);
         } else {
-          resolve(toClass(doc, Action.prototype));
+          resolve(restorePush(doc));
         }
       }
     });
@@ -229,7 +233,7 @@ export const deletePush = async (id: string): Promise<void> => {
 export const writeAudit = async (action: Action): Promise<void> => {
   return new Promise((resolve, reject) => {
     const options = { multi: false, upsert: true };
-    db.update({ id: action.id }, action, options, (err) => {
+    db.update({ id: action.id }, compactPush(action), options, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {
