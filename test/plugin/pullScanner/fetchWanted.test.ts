@@ -16,8 +16,8 @@
 
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { Request } from 'express';
-import { Action, PullType, RequestType } from '../../src/proxy/actions';
-import { PullData } from '../../src/types/models';
+import { Action, PullType, RequestType } from '../../../src/proxy/actions/index.ts';
+import { PullData } from '../../../src/types/models.ts';
 
 const { existsSync, mkdir, rmSync, gitRaw } = vi.hoisted(() => ({
   existsSync: vi.fn(),
@@ -43,7 +43,7 @@ import {
   exec as fetchWanted,
   rememberRecentFetch,
   clearRecentFetches,
-} from '../../src/proxy/processors/pull-action/fetchWanted';
+} from '../../../plugins/git-proxy-plugin-samples/pullScanner/fetchWanted.ts';
 
 const WANT = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 

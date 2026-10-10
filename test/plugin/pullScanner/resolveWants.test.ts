@@ -16,8 +16,8 @@
 
 import { describe, it, beforeEach, expect, vi } from 'vitest';
 import { Request } from 'express';
-import { Action, PullType, RequestType } from '../../src/proxy/actions';
-import { PullData } from '../../src/types/models';
+import { Action, PullType, RequestType } from '../../../src/proxy/actions/index.ts';
+import { PullData } from '../../../src/types/models.ts';
 
 const { gitRaw } = vi.hoisted(() => ({
   gitRaw: vi.fn(),
@@ -27,7 +27,7 @@ vi.mock('simple-git', () => ({
   simpleGit: () => ({ raw: gitRaw }),
 }));
 
-import { exec as resolveWants } from '../../src/proxy/processors/pull-action/resolveWants';
+import { exec as resolveWants } from '../../../plugins/git-proxy-plugin-samples/pullScanner/resolveWants.ts';
 
 const WANT = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const WANT2 = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';

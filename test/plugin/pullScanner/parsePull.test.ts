@@ -17,8 +17,11 @@
 import { describe, it, expect } from 'vitest';
 import { Request } from 'express';
 import { deflateSync, gzipSync } from 'zlib';
-import { Action, PullType, RequestType } from '../../src/proxy/actions';
-import { exec, tokenizePktLines } from '../../src/proxy/processors/pre-processor/parsePull';
+import { Action, PullType, RequestType } from '../../../src/proxy/actions/index.ts';
+import {
+  exec,
+  tokenizePktLines,
+} from '../../../plugins/git-proxy-plugin-samples/pullScanner/parsePull.ts';
 
 const OID1 = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const OID2 = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
