@@ -24,7 +24,7 @@ const { gitRaw } = vi.hoisted(() => ({
 }));
 
 vi.mock('simple-git', () => ({
-  default: () => ({ raw: gitRaw }),
+  simpleGit: () => ({ raw: gitRaw }),
 }));
 
 import { exec as resolveWants } from '../../src/proxy/processors/pull-action/resolveWants';

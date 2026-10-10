@@ -36,7 +36,7 @@ vi.mock('fs', () => {
 });
 
 vi.mock('simple-git', () => ({
-  default: () => ({ raw: gitRaw }),
+  simpleGit: () => ({ raw: gitRaw }),
 }));
 
 import {
