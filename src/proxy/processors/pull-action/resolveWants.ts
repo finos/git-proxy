@@ -15,7 +15,7 @@
  */
 
 import { Request } from 'express';
-import simpleGit from 'simple-git';
+import { simpleGit } from 'simple-git';
 
 import { Action, Step, PullType } from '../../actions';
 import { getErrorMessage } from '../../../utils/errors';

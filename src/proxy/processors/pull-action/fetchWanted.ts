@@ -16,7 +16,7 @@
 
 import { Request } from 'express';
 import fs from 'fs';
-import simpleGit from 'simple-git';
+import { simpleGit } from 'simple-git';
 
 import { Action, Step, PullType } from '../../actions';
 import { EMPTY_COMMIT_HASH } from '../../constants';
