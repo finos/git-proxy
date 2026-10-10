@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-import { Request } from 'express';
-import fs from 'fs';
+import type { Request } from 'express';
+import fs from 'node:fs';
 import { simpleGit } from 'simple-git';
 
-import { Action, Step, PullType } from '../../actions';
-import { EMPTY_COMMIT_HASH } from '../../constants';
-import { getErrorMessage } from '../../../utils/errors';
+import { type Action, Step, PullType } from '@finos/git-proxy/proxy/actions';
+import { getErrorMessage } from '@finos/git-proxy/utils/errors';
+
+const EMPTY_COMMIT_HASH = '0000000000000000000000000000000000000000';
 
 /**
  * Pull-chain equivalent of pullRemote.

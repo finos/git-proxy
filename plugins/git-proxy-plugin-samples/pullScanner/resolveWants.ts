@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import { Request } from 'express';
+import type { Request } from 'express';
 import { simpleGit } from 'simple-git';
 
-import { Action, Step, PullType } from '../../actions';
-import { getErrorMessage } from '../../../utils/errors';
+import { type Action, Step, PullType } from '@finos/git-proxy/proxy/actions';
+import { getErrorMessage } from '@finos/git-proxy/utils/errors';
 
 /**
  * Turns `pullData.wants` (object ids) into human-readable ref names by

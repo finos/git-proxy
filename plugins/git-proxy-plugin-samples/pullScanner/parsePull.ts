@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-import { Request } from 'express';
-import { gunzipSync, inflateSync } from 'zlib';
+import type { Request } from 'express';
+import { gunzipSync, inflateSync } from 'node:zlib';
 
-import { Action, Step, PullType } from '../../actions';
-import { PACKET_SIZE } from '../../constants';
-import { PullData } from '../../../types/models';
-import { getErrorMessage } from '../../../utils/errors';
+import { type Action, Step, PullType } from '@finos/git-proxy/proxy/actions';
+import { getErrorMessage } from '@finos/git-proxy/utils/errors';
+
+type PullData = NonNullable<Action['pullData']>;
+
+const PACKET_SIZE = 4;
 
 type Pkt = { kind: 'data'; line: string } | { kind: 'flush' | 'delim' | 'end' };
 
