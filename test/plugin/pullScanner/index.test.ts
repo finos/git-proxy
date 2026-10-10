@@ -26,14 +26,14 @@ const { parsePull, fetchWanted, resolveWants, rememberRecentFetch } = vi.hoisted
   rememberRecentFetch: vi.fn(),
 }));
 
-vi.mock('../../../plugins/git-proxy-plugin-samples/pullInspection/parsePull.ts', () => ({
+vi.mock('../../../plugins/git-proxy-plugin-samples/pullScanner/parsePull.ts', () => ({
   exec: parsePull,
 }));
-vi.mock('../../../plugins/git-proxy-plugin-samples/pullInspection/fetchWanted.ts', () => ({
+vi.mock('../../../plugins/git-proxy-plugin-samples/pullScanner/fetchWanted.ts', () => ({
   exec: fetchWanted,
   rememberRecentFetch,
 }));
-vi.mock('../../../plugins/git-proxy-plugin-samples/pullInspection/resolveWants.ts', () => ({
+vi.mock('../../../plugins/git-proxy-plugin-samples/pullScanner/resolveWants.ts', () => ({
   exec: resolveWants,
 }));
 
