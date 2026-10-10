@@ -19,7 +19,7 @@ import { createHash } from 'crypto';
 import { processGitURLForNameAndOrg, processUrlPath } from '../routes/helper';
 import { Step } from './Step';
 import { CompletedAttestation, CommitData, Rejection } from '../processors/types';
-import { TagData } from '../../types/models';
+import { TagData, PullData } from '../../types/models';
 
 export enum RequestType {
   PUSH = 'push',
@@ -35,6 +35,11 @@ export enum PushType {
 
   /** Push to a branch ref (refs/heads/*) or any other non-tag ref */
   BRANCH = 'branch',
+}
+
+export enum PullType {
+  FETCH = 'fetch',
+  LS_REFS = 'ls-refs',
 }
 
 export type PushIdParts = {
@@ -70,7 +75,7 @@ class Action {
   id: string;
   legacyId?: string; // "commitFrom__commitTo" id for legacy pushes
   type: RequestType;
-  actionType?: PushType;
+  actionType?: PushType | PullType;
   method: string;
   timestamp: number;
   project: string;
@@ -109,6 +114,7 @@ class Action {
   capabilities?: string[];
   pullAuthStrategy?:
     'basic' | 'ssh-user-key' | 'ssh-service-token' | 'ssh-agent-forwarding' | 'anonymous';
+  pullData?: PullData;
 
   /**
    * Create an action.
