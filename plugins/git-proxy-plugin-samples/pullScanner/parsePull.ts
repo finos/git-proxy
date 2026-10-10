@@ -34,7 +34,7 @@ type Pkt = { kind: 'data'; line: string } | { kind: 'flush' | 'delim' | 'end' };
  * @return {Pkt[]} The parsed packets.
  */
 export const tokenizePktLines = (buffer: Buffer): Pkt[] => {
-  if (!Buffer.isBuffer(buffer)) {
+  if (typeof buffer === 'string' || Array.isArray(buffer) || !Buffer.isBuffer(buffer)) {
     throw new Error('tokenizePktLines expected a Buffer');
   }
   const pkts: Pkt[] = [];
@@ -202,7 +202,13 @@ const parseV2 = (pkts: Pkt[]): PullData => {
  */
 const decodeBody = (req: Request): Buffer => {
   const body = req.body as unknown;
-  if (!body || !Buffer.isBuffer(body) || body.length === 0) {
+  if (
+    !body ||
+    typeof body === 'string' ||
+    Array.isArray(body) ||
+    !Buffer.isBuffer(body) ||
+    body.length === 0
+  ) {
     throw new Error('Request body must be a non-empty Buffer');
   }
 
