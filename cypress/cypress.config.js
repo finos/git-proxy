@@ -27,6 +27,8 @@ module.exports = defineConfig({
       API_BASE_URL: process.env.CYPRESS_API_BASE_URL || 'http://localhost:8080',
       GIT_PROXY_URL: process.env.CYPRESS_GIT_PROXY_URL || 'http://localhost:8000',
       GIT_SERVER_TARGET: process.env.CYPRESS_GIT_SERVER_TARGET || 'git-server:8443',
+      // The Forgejo test server as reached from the Cypress host, for minting push tokens
+      GIT_SERVER_URL: process.env.CYPRESS_GIT_SERVER_URL || 'https://localhost:8443',
     },
     setupNodeEvents(on, config) {
       on('task', {

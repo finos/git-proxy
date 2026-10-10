@@ -48,14 +48,18 @@ export const PushPhase = {
   AFTER_CHECKOUT: 'AFTER_CHECKOUT',
   AFTER_DIFF: 'AFTER_DIFF',
   BEFORE_APPROVAL: 'BEFORE_APPROVAL',
-};
+} as const;
 export type PushPhase = (typeof PushPhase)[keyof typeof PushPhase];
 
 export const PullPhase = {
   AFTER_AUTHORISATION: 'AFTER_AUTHORISATION',
   AFTER_CHECKOUT: 'AFTER_CHECKOUT',
-};
+} as const;
 export type PullPhase = (typeof PullPhase)[keyof typeof PullPhase];
+
+type Assert<T extends true> = T;
+type _PushPhaseIsLiteral = Assert<string extends PushPhase ? false : true>;
+type _PullPhaseIsLiteral = Assert<string extends PullPhase ? false : true>;
 
 export type PushChainName = 'tag' | 'branch';
 

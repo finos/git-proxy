@@ -19,9 +19,9 @@
  */
 
 // Peer dependencies; it's expected that these deps exist on Node module path if you've installed @finos/git-proxy
-import { PushActionPlugin, PushPhase, PushPluginOptions } from '@finos/git-proxy/plugin';
-import { Action, Step } from '@finos/git-proxy/proxy/actions';
-import { Request } from 'express';
+import { PushActionPlugin, PushPhase, type PushPluginOptions } from '@finos/git-proxy/plugin';
+import { type Action, Step } from '@finos/git-proxy/proxy/actions';
+import type { Request } from 'express';
 import parseDiff from 'parse-diff';
 
 const RULES = [
@@ -40,7 +40,7 @@ const pluginOptions: PushPluginOptions = {
   phase: PushPhase.AFTER_DIFF, // When to execute the plugin within default chain steps
   displayName: 'CustomSecretScanner', // Display name for the plugin
   isCollectible: true, // If true, the chain will keep running even if plugin returns an error
-  chains: ['branch', 'tag'], // Which chains to execute the plugin on
+  chains: ['branch'], // Which chains to execute the plugin on
 };
 
 async function exec(req: Request, action: Action) {
