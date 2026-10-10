@@ -16,8 +16,6 @@
 
 import { exec } from './parseAction';
 import { exec as parsePushExec } from './parsePush';
-import { exec as parsePullExec } from './parsePull';
 
 export const parseAction = exec;
 export const parsePush = parsePushExec;
-export const parsePull = parsePullExec;

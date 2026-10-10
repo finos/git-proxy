@@ -29,6 +29,7 @@ export interface ProcessorExec {
    * When false or unset, a failure stops the chain immediately.
    */
   readonly isCollectible?: boolean;
+  readonly onChainSuccess?: (req: Request, action: Action) => Promise<void> | void;
 }
 
 /**

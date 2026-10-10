@@ -71,8 +71,6 @@ const tagPushChainElements: ChainElement[] = [
 const pullActionChainElements: ChainElement[] = [
   proc.push.checkRepoInAuthorisedList,
   PullPhase.AFTER_AUTHORISATION,
-  proc.pull.fetchWanted,
-  proc.pull.resolveWants,
   PullPhase.AFTER_CHECKOUT,
 ];
 
@@ -145,13 +143,12 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
     // 2) Parse refs and PACK data before chain selection
     if (action.type === RequestType.PUSH) {
       action = await proc.pre.parsePush(req, action);
-    } else if (action.type === RequestType.PULL) {
-      action = await proc.pre.parsePull(req, action);
     }
     // 3) Select the correct chain now that action.actionType is set
     const actionFns = await getChain(action);
 
     let collectedErrors = false;
+    const executed: ProcessorExec[] = [];
     const progress = createProgressWriter(res, action);
 
     // 4) Execute each step in the selected chain
@@ -165,6 +162,7 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
 
       const stepsBefore = action.steps?.length ?? 0;
       action = await fn(req, action);
+      executed.push(fn);
 
       if (action.allowPush) {
         break;
@@ -197,9 +195,14 @@ export const executeChain = async (req: Request, res: Response): Promise<Action>
       }
     }
 
-    // Only remember "want" sets that passed all checks (to retry bad pulls)
-    if (action.type === RequestType.PULL && action.continue()) {
-      proc.pull.rememberRecentFetch(action);
+    if (action.continue()) {
+      for (const fn of executed) {
+        try {
+          await fn.onChainSuccess?.(req, action);
+        } catch (error: unknown) {
+          handleErrorAndLog(error, `onChainSuccess failed for ${fn.displayName ?? 'plugin'}`);
+        }
+      }
     }
   } catch (error: unknown) {
     const msg = handleErrorAndLog(error, 'An unexpected error occurred when executing the chain');
@@ -264,6 +267,7 @@ const toPluginExec = (plugin: ActionPlugin): ProcessorExec =>
   Object.assign((req: Request, action: Action) => plugin.exec(req, action), {
     displayName: plugin.displayName ?? `${plugin.constructor.name}.exec`,
     isCollectible: plugin.isCollectible ?? false,
+    onChainSuccess: plugin.onChainSuccess?.bind(plugin),
   });
 
 const filterPushPluginsByChain = (plugins: readonly PushActionPlugin[], chainName: PushChainName) =>

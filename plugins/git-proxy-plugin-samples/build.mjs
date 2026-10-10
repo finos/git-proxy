@@ -20,26 +20,37 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 const packageRoot = dirname(fileURLToPath(import.meta.url));
-const sourcePath = join(packageRoot, 'customSecretScanner.ts');
 const outDir = join(packageRoot, 'dist');
-const source = readFileSync(sourcePath, 'utf8');
-const result = ts.transpileModule(source, {
-  fileName: sourcePath,
-  compilerOptions: {
-    target: ts.ScriptTarget.ES2022,
-    module: ts.ModuleKind.ESNext,
-    verbatimModuleSyntax: true,
-  },
-});
+const sources = [
+  'customSecretScanner.ts',
+  'pullScanner/index.ts',
+  'pullScanner/parsePull.ts',
+  'pullScanner/fetchWanted.ts',
+  'pullScanner/resolveWants.ts',
+];
 
-if (result.diagnostics?.length) {
-  const message = ts.formatDiagnostics(result.diagnostics, {
-    getCanonicalFileName: (fileName) => fileName,
-    getCurrentDirectory: () => packageRoot,
-    getNewLine: () => '\n',
+for (const source of sources) {
+  const sourcePath = join(packageRoot, source);
+  const result = ts.transpileModule(readFileSync(sourcePath, 'utf8'), {
+    fileName: sourcePath,
+    compilerOptions: {
+      target: ts.ScriptTarget.ES2022,
+      module: ts.ModuleKind.ESNext,
+      verbatimModuleSyntax: true,
+      rewriteRelativeImportExtensions: true,
+    },
   });
-  throw new Error(message);
-}
 
-mkdirSync(outDir, { recursive: true });
-writeFileSync(join(outDir, 'customSecretScanner.js'), result.outputText);
+  if (result.diagnostics?.length) {
+    const message = ts.formatDiagnostics(result.diagnostics, {
+      getCanonicalFileName: (fileName) => fileName,
+      getCurrentDirectory: () => packageRoot,
+      getNewLine: () => '\n',
+    });
+    throw new Error(message);
+  }
+
+  const outPath = join(outDir, source.replace(/\.ts$/, '.js'));
+  mkdirSync(dirname(outPath), { recursive: true });
+  writeFileSync(outPath, result.outputText);
+}

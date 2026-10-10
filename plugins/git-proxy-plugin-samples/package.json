@@ -13,18 +13,22 @@
     ".": "./index.js",
     "./example": "./example.cjs",
     "./example.cjs": "./example.cjs",
-    "./customSecretScanner": "./dist/customSecretScanner.js"
+    "./customSecretScanner": "./dist/customSecretScanner.js",
+    "./pullScanner": "./dist/pullScanner/index.js"
   },
   "files": [
     "index.js",
     "example.cjs",
     "customSecretScanner.ts",
     "dist/customSecretScanner.js",
+    "pullScanner/*.ts",
+    "dist/pullScanner/*.js",
     "README.md"
   ],
   "dependencies": {
     "express": "^5.2.1",
-    "parse-diff": "^0.12.0"
+    "parse-diff": "^0.12.0",
+    "simple-git": "^4.0.2"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
