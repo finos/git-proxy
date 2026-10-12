@@ -478,6 +478,7 @@ describe('ConfigLoader', () => {
 
     describe('cached git sources', () => {
       let source: GitSource;
+      let unpinnedSource: GitSource;
       let remoteDir: string;
       let workDir: string;
       let repoDir: string;
@@ -501,12 +502,27 @@ describe('ConfigLoader', () => {
         await execFileAsync('git', ['push', 'origin', 'main'], { cwd: workDir });
       }
 
+      async function changeRemoteDefault(branch: string): Promise<void> {
+        await execFileAsync('git', ['checkout', '-b', branch], { cwd: workDir });
+        await commitConfig('new-default');
+        await execFileAsync('git', ['push', 'origin', branch], { cwd: workDir });
+        await execFileAsync('git', ['symbolic-ref', 'HEAD', `refs/heads/${branch}`], {
+          cwd: remoteDir,
+        });
+      }
+
       beforeEach(async () => {
         source = {
           type: 'git',
           repository: `https://example.com/${path.basename(tempDir)}.git`,
           path: 'proxy.config.json',
           branch: 'main',
+          enabled: true,
+        };
+        unpinnedSource = {
+          type: 'git',
+          repository: source.repository,
+          path: source.path,
           enabled: true,
         };
         remoteDir = path.resolve(tempDir, 'remote.git');
@@ -606,18 +622,113 @@ describe('ConfigLoader', () => {
         );
       });
 
-      it('keeps pulling the tracking branch when no branch is configured', async () => {
+      it('loads new commits from the remote default when no branch is configured', async () => {
         await updateRemote();
-        const unpinnedSource: GitSource = {
-          type: 'git',
-          repository: source.repository,
-          path: source.path,
-          enabled: true,
-        };
 
         const config = await configLoader.loadFromSource(unpinnedSource);
 
         expect(config.cookieSecret).toBe('updated');
+      });
+
+      it('loads the remote default from a fresh clone when no branch is configured', async () => {
+        await changeRemoteDefault('release/config');
+        fs.rmSync(repoDir, { recursive: true });
+
+        const config = await configLoader.loadFromSource(unpinnedSource);
+
+        expect(config).toMatchObject({ cookieSecret: 'new-default', sink: [postgresSink] });
+      });
+
+      it('recovers an unpinned source when the cached HEAD is detached', async () => {
+        await updateRemote();
+        await execFileAsync('git', ['checkout', '--detach'], { cwd: repoDir });
+
+        const config = await configLoader.loadFromSource(unpinnedSource);
+
+        expect(config.cookieSecret).toBe('updated');
+      });
+
+      it('recovers an unpinned source when the cached HEAD is unborn', async () => {
+        await updateRemote();
+        await execFileAsync('git', ['symbolic-ref', 'HEAD', 'refs/heads/unborn'], {
+          cwd: repoDir,
+        });
+
+        const config = await configLoader.loadFromSource(unpinnedSource);
+
+        expect(config.cookieSecret).toBe('updated');
+      });
+
+      it.each(['true', 'false'])(
+        'recovers a force-pushed remote default with pull.rebase=%s',
+        async (rebase) => {
+          await execFileAsync('git', ['config', 'pull.rebase', rebase], { cwd: repoDir });
+          await execFileAsync('git', ['config', 'pull.ff', 'only'], { cwd: repoDir });
+          await execFileAsync('git', ['checkout', '--orphan', 'replacement'], {
+            cwd: workDir,
+          });
+          await commitConfig('rewritten');
+          await execFileAsync('git', ['push', '--force', 'origin', 'HEAD:main'], {
+            cwd: workDir,
+          });
+
+          const config = await configLoader.loadFromSource(unpinnedSource);
+
+          expect(config.cookieSecret).toBe('rewritten');
+        },
+      );
+
+      it('follows a changed remote default instead of the cached tracking branch', async () => {
+        await changeRemoteDefault('release/config');
+
+        const config = await configLoader.loadFromSource(unpinnedSource);
+
+        expect(config.cookieSecret).toBe('new-default');
+      });
+
+      it('keeps following the configured branch when the remote default changes', async () => {
+        await changeRemoteDefault('release/config');
+
+        const config = await configLoader.loadFromSource(source);
+
+        expect(config.cookieSecret).toBe('initial');
+      });
+
+      it('follows a changed remote default after the original branch is deleted', async () => {
+        await changeRemoteDefault('release/config');
+        await execFileAsync('git', ['update-ref', '-d', 'refs/heads/main'], {
+          cwd: remoteDir,
+        });
+
+        const config = await configLoader.loadFromSource(unpinnedSource);
+
+        expect(config.cookieSecret).toBe('new-default');
+      });
+
+      it('rejects an unresolvable remote default instead of loading cached config', async () => {
+        await execFileAsync('git', ['symbolic-ref', 'HEAD', 'refs/heads/missing'], {
+          cwd: remoteDir,
+        });
+        const errorLog = vi.spyOn(console, 'error');
+
+        await expect(configLoader.loadFromSource(unpinnedSource)).rejects.toThrow(
+          /Failed to resolve repository default branch/,
+        );
+
+        expect(errorLog).toHaveBeenCalledWith('Failed to resolve repository default branch');
+      });
+
+      it('rejects an unpinned refresh when the remote cannot be fetched', async () => {
+        await execFileAsync('git', ['remote', 'set-url', 'origin', `${remoteDir}.missing`], {
+          cwd: repoDir,
+        });
+        const errorLog = vi.spyOn(console, 'error');
+
+        await expect(configLoader.loadFromSource(unpinnedSource)).rejects.toThrow(
+          /Failed to fetch repository/,
+        );
+
+        expect(errorLog).toHaveBeenCalledWith('Failed to fetch repository');
       });
     });
 

@@ -304,6 +304,7 @@ export class ConfigLoader extends EventEmitter {
           }
         : {}),
     };
+    const gitOptions = { cwd: repoDir, env: gitEnv };
 
     if (!fs.existsSync(repoDir)) {
       console.log(`Cloning repository ${source.repository} to ${repoDir}`);
@@ -319,38 +320,36 @@ export class ConfigLoader extends EventEmitter {
         handleErrorAndThrow(error, 'Failed to clone repository');
       }
     } else {
-      console.log(
-        `${source.branch ? 'Fetching' : 'Pulling'} latest changes from ${source.repository}`,
-      );
+      console.log(`Fetching latest changes from ${source.repository}`);
       try {
-        if (source.branch) {
-          await execFileAsync('git', ['fetch', '--all', '--prune'], { cwd: repoDir, env: gitEnv });
-          console.log('Repository fetched successfully');
-        } else {
-          await execFileAsync('git', ['pull'], { cwd: repoDir, env: gitEnv });
-          console.log('Repository pulled successfully');
-        }
+        await execFileAsync('git', ['fetch', '--prune', 'origin'], gitOptions);
+        console.log('Repository fetched successfully');
       } catch (error: unknown) {
-        handleErrorAndThrow(
-          error,
-          source.branch ? 'Failed to fetch repository' : 'Failed to pull repository',
-        );
+        handleErrorAndThrow(error, 'Failed to fetch repository');
       }
     }
 
-    // Checkout specific branch if specified
-    if (source.branch) {
-      console.log(`Checking out branch: ${source.branch}`);
+    let branch = source.branch;
+    if (!branch) {
       try {
-        await execFileAsync(
+        await execFileAsync('git', ['remote', 'set-head', 'origin', '--auto'], gitOptions);
+        const { stdout } = await execFileAsync(
           'git',
-          ['checkout', '-f', '-B', source.branch, `origin/${source.branch}`],
-          { cwd: repoDir, env: gitEnv },
+          ['symbolic-ref', 'refs/remotes/origin/HEAD'],
+          gitOptions,
         );
-        console.log(`Branch ${source.branch} checked out successfully`);
+        branch = stdout.trim().slice('refs/remotes/origin/'.length);
       } catch (error: unknown) {
-        handleErrorAndThrow(error, `Failed to checkout branch ${source.branch}`);
+        return handleErrorAndThrow(error, 'Failed to resolve repository default branch');
       }
+    }
+
+    console.log(`Checking out branch: ${branch}`);
+    try {
+      await execFileAsync('git', ['checkout', '-f', '-B', branch, `origin/${branch}`], gitOptions);
+      console.log(`Branch ${branch} checked out successfully`);
+    } catch (error: unknown) {
+      handleErrorAndThrow(error, `Failed to checkout branch ${branch}`);
     }
 
     // Read and parse config file
