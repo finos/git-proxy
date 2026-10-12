@@ -26,7 +26,7 @@ const steps = [parsePull, fetchWanted, resolveWants];
 
 const pluginOptions: PullPluginOptions = {
   phase: PullPhase.AFTER_AUTHORISATION,
-  displayName: 'PullInspection',
+  displayName: 'ExtractPullData',
 };
 
 async function exec(req: Request, action: Action): Promise<Action> {
@@ -37,7 +37,7 @@ async function exec(req: Request, action: Action): Promise<Action> {
   return action;
 }
 
-class PullInspectionPlugin extends PullActionPlugin {
+class ExtractPullDataPlugin extends PullActionPlugin {
   constructor() {
     super(exec, pluginOptions);
   }
@@ -48,4 +48,4 @@ class PullInspectionPlugin extends PullActionPlugin {
   }
 }
 
-export default new PullInspectionPlugin();
+export default new ExtractPullDataPlugin();
