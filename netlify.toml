@@ -1,4 +1,9 @@
 [build]
-  # The CACHED_COMMIT_REF guard is required: when empty, git diffs the checkout against
-  # itself, always exits 0, and cancels every build.
-  ignore = '[ -n "$CACHED_COMMIT_REF" ] && git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- . ../package.json'
+  # Always publish main.
+  ignore = "false"
+
+[context.deploy-preview]
+  # merge-base compares the whole PR against main. Assigning it before the diff keeps its
+  # exit status: inlined as $(...) a failure would leave a one-revision diff that exits 0
+  # and skips silently.
+  ignore = 'BASE=$(git merge-base origin/main HEAD) && git diff --quiet "$BASE" HEAD -- . ../package.json'
