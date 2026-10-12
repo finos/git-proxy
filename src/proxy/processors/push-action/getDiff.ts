@@ -51,7 +51,6 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
     const diff = await git.diff([revisionRange]);
     action.setDiff(diff);
     step.log(diff);
-    step.setContent(diff);
   } catch (error: unknown) {
     const msg = getErrorMessage(error);
     step.setError(msg);

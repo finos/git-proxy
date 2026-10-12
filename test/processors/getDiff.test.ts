@@ -97,7 +97,7 @@ describe('getDiff', () => {
     const result = await exec({} as Request, action);
 
     expect(result.steps[0].error).toBe(false);
-    expect(result.steps[0].content).toContain('initial content');
+    expect(result.diff).toContain('initial content');
   });
 
   it('should throw an error if no commit data is provided', async () => {
@@ -150,8 +150,8 @@ describe('getDiff', () => {
     const result = await exec({} as Request, action);
 
     expect(result.steps[0].error).toBe(false);
-    expect(result.steps[0].content).not.toBeNull();
-    expect(result.steps[0].content!.length).toBeGreaterThan(0);
+    expect(result.diff).not.toBeUndefined();
+    expect(result.diff!.length).toBeGreaterThan(0);
   });
   describe('fuzzing', () => {
     it('should handle random action inputs without crashing', async function () {
