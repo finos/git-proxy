@@ -192,7 +192,7 @@ By default, GitProxy blocks all pushes. To allow pushes for a specific repo, add
 git-proxy/
 ├── src/
 │   ├── proxy/              # Core proxy logic (action chain, processors)
-│   ├── service/            # Express app, API routes, authentication (Passport.js)
+│   ├── service/            # Express/oRPC app, API routes, authentication (Passport.js)
 │   ├── db/                 # Database abstraction (MongoDB, PostgreSQL, NeDB)
 │   ├── config/             # Configuration loading and generated types
 │   ├── ui/                 # React dashboard (Material-UI)

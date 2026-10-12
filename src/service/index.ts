@@ -27,7 +27,7 @@ import lusca from 'lusca';
 import * as config from '../config';
 import * as db from '../db';
 import { Proxy } from '../proxy';
-import routes from './routes';
+import { createApiMiddleware } from './orpc';
 import { configure } from './passport';
 import { UI_BUILD_PATH } from './urls';
 
@@ -192,7 +192,7 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.use(passport.session());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
-  app.use('/', routes(proxy));
+  app.use(createApiMiddleware(proxy));
   app.use('/', express.static(absBuildPath));
   app.get('/*path', (_req, res) => {
     res.sendFile(path.join(absBuildPath, 'index.html'));

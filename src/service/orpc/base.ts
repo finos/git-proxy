@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-import express, { Request, Response } from 'express';
+import { os } from '@orpc/server';
 
-const router = express.Router();
+import type { ServiceContext } from './context';
 
-router.get('/', (_req: Request, res: Response) => {
-  res.send({
-    message: 'ok',
-  });
-});
-
-export default router;
+/**
+ * Root builder for every procedure.
+ *
+ * `inputStructure: 'detailed'` keeps `params`, `query` and `body` apart, which
+ * maps one-to-one onto the `req.params`, `req.query` and `req.body` the Express
+ * routes used.
+ */
+export const pub = os.$context<ServiceContext>().$route({ inputStructure: 'detailed' });

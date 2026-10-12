@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-import express, { Request, Response } from 'express';
+import { pub } from '../base';
+import { MessageBody } from '../errors';
+import { docOnly } from '../schemas';
 
-const router = express.Router();
-
-const resource = {
-  healthcheck: '/api/v1/healthcheck',
-  push: '/api/v1/push',
-  auth: '/api/auth',
+export const healthcheckRouter = {
+  check: pub
+    .route({ method: 'GET', path: '/', summary: 'Liveness probe' })
+    .output(docOnly<{ message: string }>(MessageBody))
+    .handler(() => ({ message: 'ok' })),
 };
-
-router.get('/', (_req: Request, res: Response) => {
-  res.send(resource);
-});
-
-export default router;

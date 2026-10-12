@@ -17,7 +17,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import express, { Express } from 'express';
 import request from 'supertest';
-import usersRouter from '../../../src/service/routes/users';
+import { createApiMiddleware } from '../../../src/service/orpc';
+import { Proxy } from '../../../src/proxy';
 import * as db from '../../../src/db';
 import { utils } from 'ssh2';
 import crypto from 'crypto';
@@ -28,7 +29,7 @@ describe('Users API', () => {
   beforeEach(() => {
     app = express();
     app.use(express.json());
-    app.use('/users', usersRouter);
+    app.use(createApiMiddleware(new Proxy()));
 
     vi.spyOn(db, 'getUsers').mockResolvedValue([
       {
@@ -60,7 +61,7 @@ describe('Users API', () => {
   });
 
   it('GET /users only serializes public data needed for ui, not user secrets like password', async () => {
-    const res = await request(app).get('/users');
+    const res = await request(app).get('/api/v1/user');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual([
@@ -76,7 +77,7 @@ describe('Users API', () => {
   });
 
   it('GET /users/:id does not serialize password', async () => {
-    const res = await request(app).get('/users/bob');
+    const res = await request(app).get('/api/v1/user/bob');
 
     expect(res.status).toBe(200);
     console.log(`Response body: ${JSON.stringify(res.body)}`);
@@ -108,7 +109,7 @@ describe('Users API', () => {
 
     describe('GET /users/:username/ssh-key-fingerprints', () => {
       it('should return 401 when not authenticated', async () => {
-        const res = await request(app).get('/users/alice/ssh-key-fingerprints');
+        const res = await request(app).get('/api/v1/user/alice/ssh-key-fingerprints');
 
         expect(res.status).toBe(401);
         expect(res.body).toEqual({ error: 'Authentication required' });
@@ -121,9 +122,9 @@ describe('Users API', () => {
           req.user = { username: 'bob', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
-        const res = await request(testApp).get('/users/alice/ssh-key-fingerprints');
+        const res = await request(testApp).get('/api/v1/user/alice/ssh-key-fingerprints');
 
         expect(res.status).toBe(403);
         expect(res.body).toEqual({ error: 'Not authorized to view keys for this user' });
@@ -136,9 +137,9 @@ describe('Users API', () => {
           req.user = { username: 'alice', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
-        const res = await request(testApp).get('/users/alice/ssh-key-fingerprints');
+        const res = await request(testApp).get('/api/v1/user/alice/ssh-key-fingerprints');
 
         expect(res.status).toBe(200);
         expect(res.body).toEqual([
@@ -157,9 +158,9 @@ describe('Users API', () => {
           req.user = { username: 'admin', admin: true };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
-        const res = await request(testApp).get('/users/alice/ssh-key-fingerprints');
+        const res = await request(testApp).get('/api/v1/user/alice/ssh-key-fingerprints');
 
         expect(res.status).toBe(200);
         expect(db.getPublicKeys).toHaveBeenCalledWith('alice');
@@ -174,9 +175,9 @@ describe('Users API', () => {
           req.user = { username: 'alice', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
-        const res = await request(testApp).get('/users/alice/ssh-key-fingerprints');
+        const res = await request(testApp).get('/api/v1/user/alice/ssh-key-fingerprints');
 
         expect(res.status).toBe(500);
         expect(res.body).toEqual({ error: 'Failed to retrieve SSH keys' });
@@ -200,7 +201,7 @@ describe('Users API', () => {
 
       it('should return 401 when not authenticated', async () => {
         const res = await request(app)
-          .post('/users/alice/ssh-keys')
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(401);
@@ -214,10 +215,10 @@ describe('Users API', () => {
           req.user = { username: 'bob', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
         const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(403);
@@ -231,9 +232,9 @@ describe('Users API', () => {
           req.user = { username: 'alice', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
-        const res = await request(testApp).post('/users/alice/ssh-keys').send({});
+        const res = await request(testApp).post('/api/v1/user/alice/ssh-keys').send({});
 
         expect(res.status).toBe(400);
         expect(res.body).toEqual({ error: 'Public key is required' });
@@ -248,10 +249,10 @@ describe('Users API', () => {
           req.user = { username: 'alice', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
         const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: 'invalid-key' });
 
         expect(res.status).toBe(400);
@@ -265,10 +266,10 @@ describe('Users API', () => {
           req.user = { username: 'alice', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
         const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey, name: 'My Key' });
 
         expect(res.status).toBe(201);
@@ -292,10 +293,10 @@ describe('Users API', () => {
           req.user = { username: 'alice', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
         const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(201);
@@ -316,10 +317,10 @@ describe('Users API', () => {
           req.user = { username: 'alice', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
         const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(409);
@@ -335,10 +336,10 @@ describe('Users API', () => {
           req.user = { username: 'alice', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
         const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(404);
@@ -354,10 +355,10 @@ describe('Users API', () => {
           req.user = { username: 'alice', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
         const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(500);
@@ -371,10 +372,10 @@ describe('Users API', () => {
           req.user = { username: 'admin', admin: true };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
         const res = await request(testApp)
-          .post('/users/alice/ssh-keys')
+          .post('/api/v1/user/alice/ssh-keys')
           .send({ publicKey: validPublicKey });
 
         expect(res.status).toBe(201);
@@ -384,7 +385,7 @@ describe('Users API', () => {
 
     describe('DELETE /users/:username/ssh-keys/:fingerprint', () => {
       it('should return 401 when not authenticated', async () => {
-        const res = await request(app).delete('/users/alice/ssh-keys/SHA256:test123');
+        const res = await request(app).delete('/api/v1/user/alice/ssh-keys/SHA256:test123');
 
         expect(res.status).toBe(401);
         expect(res.body).toEqual({ error: 'Authentication required' });
@@ -397,9 +398,9 @@ describe('Users API', () => {
           req.user = { username: 'bob', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
-        const res = await request(testApp).delete('/users/alice/ssh-keys/SHA256:test123');
+        const res = await request(testApp).delete('/api/v1/user/alice/ssh-keys/SHA256:test123');
 
         expect(res.status).toBe(403);
         expect(res.body).toEqual({ error: 'Not authorized to remove keys for this user' });
@@ -412,9 +413,9 @@ describe('Users API', () => {
           req.user = { username: 'alice', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
-        const res = await request(testApp).delete('/users/alice/ssh-keys/SHA256:test123');
+        const res = await request(testApp).delete('/api/v1/user/alice/ssh-keys/SHA256:test123');
 
         expect(res.status).toBe(200);
         expect(res.body).toEqual({ message: 'SSH key removed successfully' });
@@ -430,9 +431,9 @@ describe('Users API', () => {
           req.user = { username: 'alice', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
-        const res = await request(testApp).delete('/users/alice/ssh-keys/SHA256:test123');
+        const res = await request(testApp).delete('/api/v1/user/alice/ssh-keys/SHA256:test123');
 
         expect(res.status).toBe(404);
         expect(res.body).toEqual({ error: 'User not found' });
@@ -447,9 +448,9 @@ describe('Users API', () => {
           req.user = { username: 'alice', admin: false };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
-        const res = await request(testApp).delete('/users/alice/ssh-keys/SHA256:test123');
+        const res = await request(testApp).delete('/api/v1/user/alice/ssh-keys/SHA256:test123');
 
         expect(res.status).toBe(500);
         expect(res.body).toEqual({ error: 'Database error' });
@@ -462,9 +463,9 @@ describe('Users API', () => {
           req.user = { username: 'admin', admin: true };
           next();
         });
-        testApp.use('/users', usersRouter);
+        testApp.use(createApiMiddleware(new Proxy()));
 
-        const res = await request(testApp).delete('/users/alice/ssh-keys/SHA256:test123');
+        const res = await request(testApp).delete('/api/v1/user/alice/ssh-keys/SHA256:test123');
 
         expect(res.status).toBe(200);
         expect(db.removePublicKey).toHaveBeenCalledWith('alice', 'SHA256:test123');
@@ -475,7 +476,7 @@ describe('Users API', () => {
   it('GET /users/:id should return 404 Not Found if user is not found', async () => {
     vi.restoreAllMocks();
 
-    const res = await request(app).get('/users/non-existent');
+    const res = await request(app).get('/api/v1/user/non-existent');
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ message: 'User non-existent not found' });
   });
@@ -484,7 +485,7 @@ describe('Users API', () => {
     const samplePush = { id: 'push-1', type: 'push', timestamp: 1 } as any;
     vi.mocked(db.getPushesForUserProfile).mockResolvedValue([samplePush]);
 
-    const ok = await request(app).get('/users/bob/activity');
+    const ok = await request(app).get('/api/v1/user/bob/activity');
     expect(ok.status).toBe(200);
     expect(ok.body).toEqual([samplePush]);
     expect(db.getPushesForUserProfile).toHaveBeenCalledWith(
@@ -492,7 +493,7 @@ describe('Users API', () => {
     );
 
     vi.mocked(db.findUser).mockResolvedValueOnce(null);
-    const missing = await request(app).get('/users/nobody/activity');
+    const missing = await request(app).get('/api/v1/user/nobody/activity');
     expect(missing.status).toBe(404);
   });
 });

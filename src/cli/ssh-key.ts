@@ -42,7 +42,7 @@ interface ErrorWithResponse {
 }
 
 // Calculate SHA-256 fingerprint from SSH public key
-// Note: This function is duplicated in src/service/routes/users.js to keep CLI and server independent
+// Note: This function is duplicated in src/service/orpc/routers/users.ts to keep CLI and server independent
 export function calculateFingerprint(publicKeyStr: string): string | null {
   try {
     const parsed = utils.parseKey(publicKeyStr);

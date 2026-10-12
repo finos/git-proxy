@@ -16,8 +16,10 @@
 
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import request from 'supertest';
-import express, { Express, Request, Response } from 'express';
-import authRoutes from '../../../src/service/routes/auth';
+import express, { Express } from 'express';
+import { createApiMiddleware } from '../../../src/service/orpc';
+import { buildLoginSuccessResponse } from '../../../src/service/orpc/routers/auth';
+import { Proxy } from '../../../src/proxy';
 import * as db from '../../../src/db';
 import * as config from '../../../src/config';
 import bcryptjs from 'bcryptjs';
@@ -40,7 +42,7 @@ const newApp = (username?: string, options?: { mustChangePassword?: boolean }): 
     });
   }
 
-  app.use('/auth', authRoutes.router);
+  app.use(createApiMiddleware(new Proxy()));
   return app;
 };
 
@@ -79,7 +81,7 @@ describe('Auth API', () => {
     });
 
     it('should return 401 if user is not logged in', async () => {
-      const res = await request(newApp()).post('/auth/scm-identity').send({
+      const res = await request(newApp()).post('/api/auth/scm-identity').send({
         provider: 'github',
         login: 'user-handle',
       });
@@ -89,7 +91,7 @@ describe('Auth API', () => {
     });
 
     it('should return 400 if provider is missing', async () => {
-      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+      const res = await request(newApp('alice')).post('/api/auth/scm-identity').send({
         login: 'user-handle',
       });
 
@@ -98,7 +100,7 @@ describe('Auth API', () => {
     });
 
     it('should return 400 if provider is unknown', async () => {
-      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+      const res = await request(newApp('alice')).post('/api/auth/scm-identity').send({
         provider: 'unknownprovider',
         login: 'user-handle',
       });
@@ -112,7 +114,7 @@ describe('Auth API', () => {
     it('should allow user to link their own SCM identity', async () => {
       const setUserScmIdentitySpy = vi.mocked(db.setUserScmIdentity).mockResolvedValue();
 
-      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+      const res = await request(newApp('alice')).post('/api/auth/scm-identity').send({
         provider: 'github',
         login: 'alice-new-handle',
       });
@@ -126,7 +128,7 @@ describe('Auth API', () => {
     it('should prevent non-admin from linking different user', async () => {
       const setUserScmIdentitySpy = vi.mocked(db.setUserScmIdentity).mockResolvedValue();
 
-      const res = await request(newApp('bob')).post('/auth/scm-identity').send({
+      const res = await request(newApp('bob')).post('/api/auth/scm-identity').send({
         username: 'alice',
         provider: 'github',
         login: 'new-handle',
@@ -140,7 +142,7 @@ describe('Auth API', () => {
     it('should allow admin to link different user', async () => {
       const setUserScmIdentitySpy = vi.mocked(db.setUserScmIdentity).mockResolvedValue();
 
-      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+      const res = await request(newApp('alice')).post('/api/auth/scm-identity').send({
         username: 'bob',
         provider: 'github',
         login: 'bob-new-handle',
@@ -155,7 +157,7 @@ describe('Auth API', () => {
     it('should allow unlinking by passing null login', async () => {
       const setUserScmIdentitySpy = vi.mocked(db.setUserScmIdentity).mockResolvedValue();
 
-      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+      const res = await request(newApp('alice')).post('/api/auth/scm-identity').send({
         provider: 'github',
         login: null,
       });
@@ -165,7 +167,7 @@ describe('Auth API', () => {
     });
 
     it('should return 404 if target user is not found', async () => {
-      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+      const res = await request(newApp('alice')).post('/api/auth/scm-identity').send({
         username: 'non-existent-user',
         provider: 'github',
         login: 'handle',
@@ -178,7 +180,7 @@ describe('Auth API', () => {
     it('should return 500 on database error', async () => {
       vi.mocked(db.setUserScmIdentity).mockRejectedValue(new Error('Database error'));
 
-      const res = await request(newApp('alice')).post('/auth/scm-identity').send({
+      const res = await request(newApp('alice')).post('/api/auth/scm-identity').send({
         provider: 'github',
         login: 'handle',
       });
@@ -194,7 +196,7 @@ describe('Auth API', () => {
     });
 
     it('should return 401 if user is not logged in', async () => {
-      const res = await request(newApp()).post('/auth/change-password').send({
+      const res = await request(newApp()).post('/api/auth/change-password').send({
         currentPassword: 'admin',
         newPassword: 'new-password-123',
       });
@@ -203,7 +205,7 @@ describe('Auth API', () => {
     });
 
     it('should return 400 for invalid payload', async () => {
-      const res = await request(newApp('alice')).post('/auth/change-password').send({
+      const res = await request(newApp('alice')).post('/api/auth/change-password').send({
         currentPassword: 'admin',
         newPassword: 'short',
       });
@@ -214,7 +216,7 @@ describe('Auth API', () => {
     it('should return 404 if user is not found', async () => {
       vi.spyOn(db, 'findUser').mockResolvedValue(null);
 
-      const res = await request(newApp('alice')).post('/auth/change-password').send({
+      const res = await request(newApp('alice')).post('/api/auth/change-password').send({
         currentPassword: 'admin-password',
         newPassword: 'new-password-123',
       });
@@ -235,7 +237,7 @@ describe('Auth API', () => {
         title: '',
       } as any);
 
-      const res = await request(newApp('alice')).post('/auth/change-password').send({
+      const res = await request(newApp('alice')).post('/api/auth/change-password').send({
         currentPassword: 'wrong-password',
         newPassword: 'new-password-123',
       });
@@ -257,7 +259,7 @@ describe('Auth API', () => {
         title: '',
       } as any);
 
-      const res = await request(newApp('alice')).post('/auth/change-password').send({
+      const res = await request(newApp('alice')).post('/api/auth/change-password').send({
         currentPassword: 'admin',
         newPassword: 'new-password-123',
       });
@@ -271,7 +273,7 @@ describe('Auth API', () => {
     });
 
     it('should return 400 if current password is the same as the new password', async () => {
-      const res = await request(newApp('alice')).post('/auth/change-password').send({
+      const res = await request(newApp('alice')).post('/api/auth/change-password').send({
         currentPassword: 'secret-password',
         newPassword: 'secret-password',
       });
@@ -281,7 +283,7 @@ describe('Auth API', () => {
     });
 
     it('should return 400 if current password is missing (i.e: OIDC login)', async () => {
-      const res = await request(newApp('alice')).post('/auth/change-password').send({
+      const res = await request(newApp('alice')).post('/api/auth/change-password').send({
         currentPassword: undefined,
         newPassword: 'new-password-123',
       });
@@ -304,7 +306,7 @@ describe('Auth API', () => {
         admin: true,
         title: '',
       } as any);
-      const res = await request(newApp('alice')).post('/auth/change-password').send({
+      const res = await request(newApp('alice')).post('/api/auth/change-password').send({
         currentPassword: 'secret-password',
         newPassword: 'new-password-123',
       });
@@ -326,18 +328,9 @@ describe('Auth API', () => {
         title: '',
       };
 
-      const sendSpy = vi.fn();
-      const res = {
-        send: sendSpy,
-      };
+      const body = buildLoginSuccessResponse(user);
 
-      await authRoutes.loginSuccessHandler()(
-        { user } as unknown as Request,
-        res as unknown as Response,
-      );
-
-      expect(sendSpy).toHaveBeenCalledOnce();
-      expect(sendSpy).toHaveBeenCalledWith({
+      expect(body).toEqual({
         message: 'success',
         user: {
           admin: false,
@@ -353,7 +346,7 @@ describe('Auth API', () => {
 
   describe('GET /profile', () => {
     it('should return 401 Unauthorized if user is not logged in', async () => {
-      const res = await request(newApp()).get('/auth/profile');
+      const res = await request(newApp()).get('/api/auth/profile');
 
       expect(res.status).toBe(401);
     });
@@ -369,7 +362,7 @@ describe('Auth API', () => {
         title: '',
       } as any);
 
-      const res = await request(newApp('alice')).get('/auth/profile');
+      const res = await request(newApp('alice')).get('/api/auth/profile');
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
         username: 'alice',
@@ -384,7 +377,7 @@ describe('Auth API', () => {
     it('should return 404 Not Found if user is not found', async () => {
       vi.spyOn(db, 'findUser').mockResolvedValue(null);
 
-      const res = await request(newApp('non-existent-user')).get('/auth/profile');
+      const res = await request(newApp('non-existent-user')).get('/api/auth/profile');
       expect(res.status).toBe(404);
       expect(res.body).toEqual({ message: 'User not found' });
     });
@@ -392,7 +385,7 @@ describe('Auth API', () => {
 
   describe('GET /', () => {
     it('should return 200 OK and the auth endpoints', async () => {
-      const res = await request(newApp()).get('/auth');
+      const res = await request(newApp()).get('/api/auth');
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
         login: {
@@ -413,7 +406,7 @@ describe('Auth API', () => {
 
   describe('GET /config', () => {
     it('should return 200 OK and the default auth config', async () => {
-      const res = await request(newApp()).get('/auth/config');
+      const res = await request(newApp()).get('/api/auth/config');
       expect(res.status).toBe(200);
       expect(res.body).toEqual({
         usernamePasswordMethod: 'local',
@@ -425,7 +418,7 @@ describe('Auth API', () => {
       // Mock the getAuthMethods function to return an empty array
       vi.spyOn(config, 'getAuthMethods').mockReturnValue([]);
 
-      const res = await request(newApp()).get('/auth/config');
+      const res = await request(newApp()).get('/api/auth/config');
       expect(res.status).toBe(200);
       expect(res.body.usernamePasswordMethod).toBeNull();
     });
