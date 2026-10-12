@@ -21,7 +21,7 @@ import { Action, PullType, RequestType } from '../../../src/proxy/actions/index.
 import {
   exec,
   tokenizePktLines,
-} from '../../../plugins/git-proxy-plugin-samples/pullScanner/parsePull.ts';
+} from '../../../plugins/git-proxy-plugin-samples/extractPullData/parsePull.ts';
 
 const OID1 = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const OID2 = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';

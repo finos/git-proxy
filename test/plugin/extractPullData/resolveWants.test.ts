@@ -27,7 +27,7 @@ vi.mock('simple-git', () => ({
   simpleGit: () => ({ raw: gitRaw }),
 }));
 
-import { exec as resolveWants } from '../../../plugins/git-proxy-plugin-samples/pullScanner/resolveWants.ts';
+import { exec as resolveWants } from '../../../plugins/git-proxy-plugin-samples/extractPullData/resolveWants.ts';
 
 const WANT = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const WANT2 = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';

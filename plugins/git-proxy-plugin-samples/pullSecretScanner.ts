@@ -17,7 +17,7 @@
 /**
  * Demonstrates how to scan commits fetched during a git pull operation.
  *
- * Requires the pullScanner sample to run first in order to fetch the wanted commits.
+ * Requires the extractPullData sample to run first in order to fetch the wanted commits.
  */
 
 import { PullActionPlugin, PullPhase, type PullPluginOptions } from '@finos/git-proxy/plugin';

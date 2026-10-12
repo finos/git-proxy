@@ -26,18 +26,18 @@ const { parsePull, fetchWanted, resolveWants, rememberRecentFetch } = vi.hoisted
   rememberRecentFetch: vi.fn(),
 }));
 
-vi.mock('../../../plugins/git-proxy-plugin-samples/pullScanner/parsePull.ts', () => ({
+vi.mock('../../../plugins/git-proxy-plugin-samples/extractPullData/parsePull.ts', () => ({
   exec: parsePull,
 }));
-vi.mock('../../../plugins/git-proxy-plugin-samples/pullScanner/fetchWanted.ts', () => ({
+vi.mock('../../../plugins/git-proxy-plugin-samples/extractPullData/fetchWanted.ts', () => ({
   exec: fetchWanted,
   rememberRecentFetch,
 }));
-vi.mock('../../../plugins/git-proxy-plugin-samples/pullScanner/resolveWants.ts', () => ({
+vi.mock('../../../plugins/git-proxy-plugin-samples/extractPullData/resolveWants.ts', () => ({
   exec: resolveWants,
 }));
 
-import plugin from '../../../plugins/git-proxy-plugin-samples/pullScanner/index.ts';
+import plugin from '../../../plugins/git-proxy-plugin-samples/extractPullData/index.ts';
 
 const makeAction = (): Action =>
   new Action(
@@ -62,7 +62,7 @@ const failingStep = (name: string) => async (_req: Request, action: Action) => {
   return action;
 };
 
-describe('PullInspection plugin', () => {
+describe('ExtractPullData plugin', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     parsePull.mockImplementation(passingStep('parsePull'));
@@ -74,7 +74,7 @@ describe('PullInspection plugin', () => {
     expect(plugin).toBeInstanceOf(PullActionPlugin);
     expect(plugin.phase).toBe(PullPhase.AFTER_AUTHORISATION);
     expect(plugin.phase).toBe('AFTER_AUTHORISATION');
-    expect(plugin.displayName).toBe('PullInspection');
+    expect(plugin.displayName).toBe('ExtractPullData');
     expect(isCompatiblePlugin(plugin, 'isGitProxyPullActionPlugin')).toBe(true);
   });
 

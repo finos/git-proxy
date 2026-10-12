@@ -43,7 +43,7 @@ import {
   exec as fetchWanted,
   rememberRecentFetch,
   clearRecentFetches,
-} from '../../../plugins/git-proxy-plugin-samples/pullScanner/fetchWanted.ts';
+} from '../../../plugins/git-proxy-plugin-samples/extractPullData/fetchWanted.ts';
 
 const WANT = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 

@@ -24,10 +24,10 @@ const outDir = join(packageRoot, 'dist');
 const sources = [
   'customSecretScanner.ts',
   'pullSecretScanner.ts',
-  'pullScanner/index.ts',
-  'pullScanner/parsePull.ts',
-  'pullScanner/fetchWanted.ts',
-  'pullScanner/resolveWants.ts',
+  'extractPullData/index.ts',
+  'extractPullData/parsePull.ts',
+  'extractPullData/fetchWanted.ts',
+  'extractPullData/resolveWants.ts',
 ];
 
 for (const source of sources) {
