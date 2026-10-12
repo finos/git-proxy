@@ -101,4 +101,9 @@ describe('isPackPost()', () => {
   it('returns false for other URLs', () => {
     expect(isPackPost({ method: 'POST', url: '/info/refs' } as Request)).toBe(false);
   });
+
+  // Single path segment is not a repo + pack operation (boundary for optional .git).
+  it('returns false for git-upload-pack POST with no repository path segment', () => {
+    expect(isPackPost({ method: 'POST', url: '/git-upload-pack' } as Request)).toBe(false);
+  });
 });

@@ -65,10 +65,11 @@ export const processGitUrl = (url: string): GitUrlBreakdown | null => {
 };
 
 /** Regex used to analyze url paths for requests to the proxy and split them
- * into the embedded git end point and path for the git operation. */
-const PROXIED_URL_PATH_REGEX = /(.+\.git)(\/.*)?/;
+ * into the embedded git end point and path for the git operation.
+ * Anchored to the full path to avoid silent partial matches on ".git" substrings. */
+const PROXIED_URL_PATH_REGEX = /^(.+\.git)(\/.*)?$/;
 
-/** Fallback for smart-HTTP paths that omit the .git repo suffix (e.g. GitHub-style URLs). */
+/** Match smart-HTTP operation suffixes (/info/refs, pack endpoints), with or without a .git repo suffix. */
 const SMART_HTTP_PATH_REGEX = /^(.+?)(\/(?:info\/refs|git-upload-pack|git-receive-pack)(?:\?.*)?)$/;
 
 /** Type representing a breakdown of paths requested from the proxy server */
@@ -93,6 +94,9 @@ export type UrlPathBreakdown = { repoPath: string; gitPath: string };
  * - repoPath: /github.com/finos/git-proxy.git
  * - gitPath: /info/refs?service=git-upload-pack
  *
+ * Git-operation suffixes are matched first so repo names that contain ".git" as a substring
+ * (e.g. .github, user.github.io) parse correctly when the client omits an explicit .git suffix.
+ *
  * @param {string} requestPath The URL path to process.
  * @return {GitUrlBreakdown | null} A breakdown of the components of the URL path.
  */
@@ -102,19 +106,22 @@ export const processUrlPath = (requestPath: string): UrlPathBreakdown | null => 
     console.error(`The requestPath is too long: ${requestPath}`);
     return null;
   }
+
+  // Prefer protocol operation suffix over unanchored ".git" matching.
+  const smartHttp = requestPath.match(SMART_HTTP_PATH_REGEX);
+  if (smartHttp) {
+    const repoPrefix = smartHttp[1];
+    return {
+      repoPath: repoPrefix.endsWith('.git') ? repoPrefix : `${repoPrefix}.git`,
+      gitPath: smartHttp[2],
+    };
+  }
+
   const components = requestPath.match(PROXIED_URL_PATH_REGEX);
   if (components && components.length >= 3) {
     return {
       repoPath: components[1],
       gitPath: components[2] ?? '/',
-    };
-  }
-
-  const smartHttp = requestPath.match(SMART_HTTP_PATH_REGEX);
-  if (smartHttp) {
-    return {
-      repoPath: smartHttp[1] + '.git',
-      gitPath: smartHttp[2],
     };
   }
 

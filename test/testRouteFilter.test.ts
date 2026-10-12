@@ -94,6 +94,45 @@ describe('url helpers and filter functions used in the proxy', () => {
     });
   });
 
+  // Pins match order: git-operation suffix before unanchored ".git" substring match.
+  // Names like .github / *.github.io contain ".git" inside the repo segment.
+  it('processUrlPath should prefer smart-HTTP op suffix over .git substring in repo names', () => {
+    expect(processUrlPath('/github.com/finos/.github/info/refs?service=git-upload-pack')).toEqual({
+      repoPath: '/github.com/finos/.github.git',
+      gitPath: '/info/refs?service=git-upload-pack',
+    });
+
+    expect(processUrlPath('/github.com/user/user.github.io/git-receive-pack')).toEqual({
+      repoPath: '/github.com/user/user.github.io.git',
+      gitPath: '/git-receive-pack',
+    });
+
+    // Query values may contain ".git"; must not swallow the whole path into repoPath.
+    expect(
+      processUrlPath('/octocat/hello-world/info/refs?service=git-upload-pack&foo=.git'),
+    ).toEqual({
+      repoPath: '/octocat/hello-world.git',
+      gitPath: '/info/refs?service=git-upload-pack&foo=.git',
+    });
+
+    // Explicit .git on .github remotes must keep working (not a regression).
+    expect(
+      processUrlPath('/github.com/finos/.github.git/info/refs?service=git-upload-pack'),
+    ).toEqual({
+      repoPath: '/github.com/finos/.github.git',
+      gitPath: '/info/refs?service=git-upload-pack',
+    });
+
+    // Already ends with .git — must not become …/b.git.git when op-suffix matching runs first.
+    expect(processUrlPath('/a/b.git/git-upload-pack')).toEqual({
+      repoPath: '/a/b.git',
+      gitPath: '/git-upload-pack',
+    });
+
+    // No git operation to split on — must not invent a repo path.
+    expect(processUrlPath('/github.com/finos/git-proxy')).toBeNull();
+  });
+
   it('processGitUrl should return breakdown of a git URL separating out the protocol, host and repository path', () => {
     expect(processGitUrl('https://somegithost.com/octocat/hello-world.git')).toEqual({
       protocol: 'https://',
