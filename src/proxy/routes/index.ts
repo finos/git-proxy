@@ -119,6 +119,14 @@ const sendErrorResponse = (
     return;
   }
 
+  // Fetch clients don't expect sideband data before the packfile section, but all of them
+  // report an ERR packet as "remote error"
+  if (req.method === 'POST' && /\/git-upload-pack(?:\?|$)/.test(req.url)) {
+    res.set('content-type', 'application/x-git-upload-pack-result');
+    res.status(200).send(handleRefsErrorMessage(message));
+    return;
+  }
+
   // Standard git receive-pack response
   res.set('content-type', 'application/x-git-receive-pack-result');
   res.set('expires', 'Fri, 01 Jan 1980 00:00:00 GMT');
@@ -162,9 +170,9 @@ const handleMessage = (message: string): string => {
 
 const handleRefsErrorMessage = (message: string): string => {
   // Git protocol for GET /info/refs error packets: PKT-LINE("ERR" SP explanation-text)
-  const errorBody = `ERR ${message}`;
+  const errorBody = `ERR ${message}\n`;
   const len = (4 + Buffer.byteLength(errorBody)).toString(16).padStart(4, '0');
-  return `${len}${errorBody}\n0000`;
+  return `${len}${errorBody}0000`;
 };
 
 const getRequestPathResolver: (prefix: string) => ProxyOptions['proxyReqPathResolver'] = (

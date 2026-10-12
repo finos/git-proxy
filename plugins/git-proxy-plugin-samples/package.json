@@ -14,13 +14,16 @@
     "./example": "./example.cjs",
     "./example.cjs": "./example.cjs",
     "./customSecretScanner": "./dist/customSecretScanner.js",
-    "./pullScanner": "./dist/pullScanner/index.js"
+    "./pullScanner": "./dist/pullScanner/index.js",
+    "./pullSecretScanner": "./dist/pullSecretScanner.js"
   },
   "files": [
     "index.js",
     "example.cjs",
     "customSecretScanner.ts",
     "dist/customSecretScanner.js",
+    "pullSecretScanner.ts",
+    "dist/pullSecretScanner.js",
     "pullScanner/*.ts",
     "dist/pullScanner/*.js",
     "README.md"

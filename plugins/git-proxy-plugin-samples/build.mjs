@@ -23,6 +23,7 @@ const packageRoot = dirname(fileURLToPath(import.meta.url));
 const outDir = join(packageRoot, 'dist');
 const sources = [
   'customSecretScanner.ts',
+  'pullSecretScanner.ts',
   'pullScanner/index.ts',
   'pullScanner/parsePull.ts',
   'pullScanner/fetchWanted.ts',
