@@ -204,7 +204,6 @@ describe('PullSecretScanner sample plugin', () => {
   });
 
   describe('skipping without a checkout', () => {
-    const PULLSCANNER_HINT = 'no pull data available (is the pullScanner plugin loaded?)';
     const NOTHING_FETCHED = 'no commits were fetched for this fetch request';
 
     it('skips when proxyGitPath is undefined', async () => {
@@ -222,13 +221,6 @@ describe('PullSecretScanner sample plugin', () => {
       expect(step.logs.join('\n')).toContain(NOTHING_FETCHED);
     });
 
-    it('skips when there is no pullData at all', async () => {
-      const { step } = await scan(undefined);
-
-      expect(step.error).toBe(false);
-      expect(step.logs.join('\n')).toContain(PULLSCANNER_HINT);
-    });
-
     it('logs the negotiation-round message on a repeated round', async () => {
       const { step } = await scan({ repeatedRound: true }, { checkout: false });
 
@@ -236,11 +228,20 @@ describe('PullSecretScanner sample plugin', () => {
       expect(step.logs.join('\n')).toContain(
         'want-set was already scanned in a recent negotiation round; skipping scan',
       );
-      expect(step.logs.join('\n')).not.toContain('pullScanner');
+      expect(step.logs.join('\n')).not.toContain('extractPullData');
     });
   });
 
   describe('failing closed', () => {
+    it('errors when the extractPullData plugin is not loaded', async () => {
+      const { result, step } = await scan(undefined);
+
+      expect(step.error).toBe(true);
+      expect(result.error).toBe(true);
+      expect(step.errorMessage).toContain('requires the extractPullData plugin');
+      expect(step.errorMessage).toContain('@finos/git-proxy-plugin-samples/extractPullData');
+    });
+
     it('errors when a wanted commit is missing from the checkout', async () => {
       const { result, step } = await scan({ base: c1, fetchedWants: ['f'.repeat(40)] });
 

@@ -59,10 +59,18 @@ async function exec(req: Request, action: Action) {
   const pull = action.pullData;
   const wants = pull?.fetchedWants ?? [];
 
+  if (!pull) {
+    step.setError(
+      'PullSecretScanner requires the extractPullData plugin ' +
+        '"@finos/git-proxy-plugin-samples/extractPullData" in the GitProxy "plugins" configuration. ' +
+        'Please contact an administrator.',
+    );
+    action.addStep(step);
+    return action;
+  }
+
   if (!action.proxyGitPath || wants.length === 0) {
-    if (!pull) {
-      step.log('no pull data available (is the pullScanner plugin loaded?); skipping scan');
-    } else if (pull.repeatedRound) {
+    if (pull.repeatedRound) {
       step.log('want-set was already scanned in a recent negotiation round; skipping scan');
     } else {
       step.log(`no commits were fetched for this ${pull.command} request; nothing to scan`);
