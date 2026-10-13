@@ -31,6 +31,7 @@ let strategyCallback: (
   ad: ActiveDirectory,
   done: (err: unknown, user: unknown) => void,
 ) => void;
+let strategyOptions: { ldap?: { password?: string } };
 
 const newConfig = JSON.stringify({
   authentication: [
@@ -83,7 +84,11 @@ describe('ActiveDirectory auth method', () => {
     vi.doMock('../../../src/db', () => dbStub);
 
     vi.doMock('passport-activedirectory', () => ({
-      default: function (_: unknown, callback: (err: unknown, user: unknown) => void) {
+      default: function (
+        options: { ldap?: { password?: string } },
+        callback: (err: unknown, user: unknown) => void,
+      ) {
+        strategyOptions = options;
         strategyCallback = callback;
         return {
           name: 'ActiveDirectory',
@@ -186,5 +191,79 @@ describe('ActiveDirectory auth method', () => {
     const [err, user] = done.mock.calls[0];
     expect(err).toContain('LDAP error');
     expect(user).toBeNull();
+  });
+});
+
+describe('ActiveDirectory LDAP password env var override', () => {
+  const configWithPassword = JSON.stringify({
+    authentication: [
+      {
+        type: 'ActiveDirectory',
+        enabled: true,
+        adminGroup: 'test-admin-group',
+        userGroup: 'test-user-group',
+        domain: 'test.com',
+        adConfig: {
+          url: 'ldap://test-url',
+          baseDN: 'dc=test,dc=com',
+          searchBase: 'ou=users,dc=test,dc=com',
+          password: 'password-from-config',
+        },
+      },
+    ],
+  });
+
+  const adAuthMethod = JSON.parse(configWithPassword).authentication[0];
+
+  const setup = async () => {
+    vi.resetModules();
+
+    passportStub = {
+      use: vi.fn(),
+      serializeUser: vi.fn(),
+      deserializeUser: vi.fn(),
+    };
+
+    // Mock getAuthMethods directly so this test is independent of the config-file
+    // loading machinery (and the other describe's fs mock). The env override logic
+    // under test lives in activeDirectory.ts, not in config loading.
+    vi.doMock('../../../src/config', () => ({
+      getAuthMethods: () => [adAuthMethod],
+    }));
+
+    vi.doMock('../../../src/service/passport/ldaphelper', () => ({ isUserInAdGroup: vi.fn() }));
+    vi.doMock('../../../src/db', () => ({ updateUser: vi.fn() }));
+
+    vi.doMock('passport-activedirectory', () => ({
+      default: function (
+        options: { ldap?: { password?: string } },
+        callback: (err: unknown, user: unknown) => void,
+      ) {
+        strategyOptions = options;
+        strategyCallback = callback;
+        return { name: 'ActiveDirectory', authenticate: () => {} };
+      },
+    }));
+
+    const { configure } = await import('../../../src/service/passport/activeDirectory.js');
+    await configure(passportStub as any);
+  };
+
+  afterEach(() => {
+    delete process.env.GIT_PROXY_LDAP_PASSWORD;
+    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  it('should use the config file password when GIT_PROXY_LDAP_PASSWORD is not set', async () => {
+    delete process.env.GIT_PROXY_LDAP_PASSWORD;
+    await setup();
+    expect(strategyOptions.ldap?.password).toBe('password-from-config');
+  });
+
+  it('should prefer GIT_PROXY_LDAP_PASSWORD over the config file password', async () => {
+    process.env.GIT_PROXY_LDAP_PASSWORD = 'password-from-env';
+    await setup();
+    expect(strategyOptions.ldap?.password).toBe('password-from-env');
   });
 });

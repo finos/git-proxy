@@ -261,7 +261,8 @@ export interface AdConfig {
    */
   baseDN: string;
   /**
-   * Password for the given `username`.
+   * Password for the given `username`. Can also be set with the GIT_PROXY_LDAP_PASSWORD
+   * environment variable, which takes precedence over this value.
    */
   password: string;
   /**
@@ -301,6 +302,10 @@ export interface RoleMapping {
 export interface OidcConfig {
   callbackURL: string;
   clientID: string;
+  /**
+   * The OIDC client secret. Can also be set with the GIT_PROXY_OIDC_CLIENT_SECRET environment
+   * variable, which takes precedence over this value.
+   */
   clientSecret: string;
   issuer: string;
   scope: string;

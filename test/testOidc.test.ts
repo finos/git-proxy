@@ -116,6 +116,31 @@ describe('OIDC auth method', () => {
     expect(passportStub.deserializeUser).toHaveBeenCalledOnce();
   });
 
+  it('should use the config file client secret when GIT_PROXY_OIDC_CLIENT_SECRET is not set', async () => {
+    delete process.env.GIT_PROXY_OIDC_CLIENT_SECRET;
+    vi.resetModules();
+    const oidcModule = await import('../src/service/passport/oidc');
+    await oidcModule.configure(passportStub);
+
+    // discovery is called as discovery(server, clientID, clientSecret)
+    expect(discoveryStub).toHaveBeenCalledOnce();
+    expect(discoveryStub.mock.calls[0][2]).toBe('test-client-secret');
+  });
+
+  it('should prefer GIT_PROXY_OIDC_CLIENT_SECRET over the config file client secret', async () => {
+    process.env.GIT_PROXY_OIDC_CLIENT_SECRET = 'secret-from-env';
+    try {
+      vi.resetModules();
+      const oidcModule = await import('../src/service/passport/oidc');
+      await oidcModule.configure(passportStub);
+
+      expect(discoveryStub).toHaveBeenCalledOnce();
+      expect(discoveryStub.mock.calls[0][2]).toBe('secret-from-env');
+    } finally {
+      delete process.env.GIT_PROXY_OIDC_CLIENT_SECRET;
+    }
+  });
+
   it('should authenticate an existing user', async () => {
     dbStub.findUserByOIDC.mockResolvedValue({ id: 'user123', username: 'test-user' });
 
