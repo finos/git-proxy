@@ -1,4 +1,4 @@
-import { LicenseDataService } from '@/services/data';
+import { LicenseDataService } from '../../services/data';
 import { jest } from '@jest/globals';
 
 export const genMockLicenseDataService = (): jest.Mocked<LicenseDataService> => {

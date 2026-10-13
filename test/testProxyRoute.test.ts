@@ -15,6 +15,7 @@
  */
 
 import http from 'http';
+import https from 'https';
 import { AddressInfo } from 'net';
 import request from 'supertest';
 import express, { Express, Request, Response } from 'express';
@@ -191,14 +192,53 @@ describe('proxy express application', () => {
     const numCurrent = (await db.getRepos({ url: /https:\/\/gitlab\.com/ as any })).length;
     expect(numCurrent).toBe(1);
 
-    // proxy a request to the new repo
-    const res2 = await request(proxy.getExpressApp()!)
-      .get(`${TEST_GITLAB_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
-      .set('user-agent', 'git/2.42.0')
-      .set('accept', 'application/x-git-upload-pack-request');
+    const upstreamRequests: string[] = [];
+    // mock server to prevent actual requests from timing out
+    const fakeGitlab = http.createServer((req, res) => {
+      upstreamRequests.push(req.url ?? '');
+      res.writeHead(200, { 'content-type': 'application/x-git-upload-pack-advertisement' });
+      res.end('001e# service=git-upload-pack\n0000');
+    });
+    await new Promise<void>((resolve) => fakeGitlab.listen(0, '127.0.0.1', resolve));
+    const fakeGitlabPort = (fakeGitlab.address() as AddressInfo).port;
 
-    expect(res2.status).toBe(200);
-    expect(res2.text).toContain('git-upload-pack');
+    const realHttpsRequest = https.request;
+    const httpsRequestSpy = vi.spyOn(https, 'request').mockImplementation(((
+      options: https.RequestOptions,
+      callback?: (res: http.IncomingMessage) => void,
+    ) => {
+      if (options.host === TEST_GITLAB_REPO.host || options.hostname === TEST_GITLAB_REPO.host) {
+        return http.request(
+          {
+            ...options,
+            protocol: 'http:',
+            host: '127.0.0.1',
+            hostname: '127.0.0.1',
+            port: fakeGitlabPort,
+            agent: undefined,
+          },
+          callback,
+        );
+      }
+      return realHttpsRequest(options, callback);
+    }) as typeof https.request);
+
+    try {
+      // proxy a request to the new repo
+      const res2 = await request(proxy.getExpressApp()!)
+        .get(`${TEST_GITLAB_REPO.proxyUrlPrefix}/info/refs?service=git-upload-pack`)
+        .set('user-agent', 'git/2.42.0')
+        .set('accept', 'application/x-git-upload-pack-request');
+
+      expect(res2.status).toBe(200);
+      expect(res2.text).toContain('git-upload-pack');
+      // the request was routed to the new host, for the right repository
+      expect(upstreamRequests).toHaveLength(1);
+      expect(upstreamRequests[0]).toContain('/gitlab-community/meta.git/info/refs');
+    } finally {
+      httpsRequestSpy.mockRestore();
+      await new Promise<void>((resolve) => fakeGitlab.close(() => resolve()));
+    }
   }, 5000);
 
   it('should restart and stop proxying for a host when project is DELETED', async () => {

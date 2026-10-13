@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
-import { licenseValidation } from '@/db/schemas/license/license';
-import { LicenseDataService } from '@/services/data';
+import { licenseValidation } from '../../../db/schemas/license/license';
+import { LicenseDataService } from '../../../services/data';
 
 const createRouter = (licenseService: LicenseDataService) => {
   const router = express.Router();

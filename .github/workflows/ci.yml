@@ -22,24 +22,6 @@ jobs:
         node-version: [22.x, 24.x]
         mongodb-version: ['6.0', '7.0', '8.0']
 
-    # PostgreSQL service container for the postgres integration tests. A
-    # single version (postgres:16) keeps the lane fast; a broader version
-    # matrix can follow later if needed.
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: git_proxy_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
@@ -91,16 +73,10 @@ jobs:
           GIT_PROXY_MONGO_CONNECTION_STRING: mongodb://localhost:27017/git-proxy-test
         run: npm run test:integration -- --coverage --coverage.reporter=lcovonly --coverage.reportsDirectory=coverage/integration
 
-      - name: PostgreSQL Integration Tests
-        env:
-          RUN_POSTGRES_TESTS: 'true'
-          GIT_PROXY_POSTGRES_CONNECTION_STRING: postgresql://postgres:postgres@localhost:5432/git_proxy_test
-        run: npm run test:integration:postgres -- --coverage --coverage.reporter=lcovonly --coverage.reportsDirectory=coverage/postgres
-
       - name: Upload test coverage report
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
-          files: ./coverage/lcov.info,./coverage/integration/lcov.info,./coverage/postgres/lcov.info,./coverage-cli/lcov.info
+          files: ./coverage/lcov.info,./coverage/integration/lcov.info,./coverage-cli/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Build frontend
@@ -115,6 +91,61 @@ jobs:
           wait-on: 'http://localhost:3000'
           wait-on-timeout: 120
           command: npm run cypress:run
+
+  integration-postgres:
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [22.x, 24.x]
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: git_proxy_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        with:
+          egress-policy: audit
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies
+        run: |
+          npm i -g npm@11
+          npm ci --no-fund
+
+      - name: PostgreSQL Integration Tests
+        env:
+          RUN_POSTGRES_TESTS: 'true'
+          GIT_PROXY_POSTGRES_CONNECTION_STRING: postgresql://postgres:postgres@localhost:5432/git_proxy_test
+        run: npm run test:integration:postgres -- --coverage --coverage.reporter=lcovonly --coverage.reportsDirectory=coverage/postgres
+
+      - name: Upload PostgreSQL coverage report
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        with:
+          files: ./coverage/postgres/lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   # Windows build - single combination for development support
   build-windows:
@@ -170,7 +201,7 @@ jobs:
     if: ${{ always() }}
     runs-on: ubuntu-latest
     name: build result
-    needs: [build-ubuntu, build-windows]
+    needs: [build-ubuntu, build-windows, integration-postgres]
     steps:
       - name: Harden the runner (Audit all outbound calls)
         uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
@@ -181,18 +212,20 @@ jobs:
         run: |
           ubuntu_result="${{ needs.build-ubuntu.result }}"
           windows_result="${{ needs.build-windows.result }}"
-          if [[ ($ubuntu_result == "success" || $ubuntu_result == "skipped") && ($windows_result == "success" || $windows_result == "skipped") ]]; then
+          postgres_result="${{ needs.integration-postgres.result }}"
+          if [[ ($ubuntu_result == "success" || $ubuntu_result == "skipped") && ($windows_result == "success" || $windows_result == "skipped") && ($postgres_result == "success" || $postgres_result == "skipped") ]]; then
             echo "### ✅ All builds passed" >> $GITHUB_STEP_SUMMARY
             exit 0
           else
             echo "### ❌ Some builds failed" >> $GITHUB_STEP_SUMMARY
             echo "- Ubuntu: $ubuntu_result" >> $GITHUB_STEP_SUMMARY
             echo "- Windows: $windows_result" >> $GITHUB_STEP_SUMMARY
+            echo "- PostgreSQL: $postgres_result" >> $GITHUB_STEP_SUMMARY
             exit 1
           fi
 
       - name: Parse failed matrix jobs
-        if: needs.build-ubuntu.result == 'failure' || needs.build-windows.result == 'failure'
+        if: needs.build-ubuntu.result == 'failure' || needs.build-windows.result == 'failure' || needs.integration-postgres.result == 'failure'
         run: |
           echo "## Failed Matrix Combinations" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
