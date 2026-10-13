@@ -1,4 +1,4 @@
-import type { AsyncResult } from '@/types';
+import type { AsyncResult } from '../../types';
 import type { License, LicenseNoID, LicenseNoIDPartial } from './license';
 
 export interface LicenseDataService {

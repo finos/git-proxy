@@ -18,7 +18,7 @@
 
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import addLicenseCMD from '@/cmds/add-license';
+import addLicenseCMD from './cmds/add-license';
 import process from 'node:process';
 
 yargs(hideBin(process.argv))
