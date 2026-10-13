@@ -2,7 +2,7 @@
 
 // To parse this data:
 //
-//   import { Convert, GitProxyConfig } from "./file";
+//   import { Convert, GitProxyConfig } from "./config";
 //
 //   const gitProxyConfig = Convert.toGitProxyConfig(json);
 //
@@ -41,7 +41,7 @@ export interface GitProxyConfig {
    * message content and diff content
    */
   commitConfig?: CommitConfig;
-  configurationSources?: any;
+  configurationSources?: unknown;
   /**
    * Customisable e-mail address to share in proxy responses and warnings
    */
@@ -78,7 +78,7 @@ export interface GitProxyConfig {
    * Provider searches for listed private organizations are disabled, see
    * commitConfig.diff.block.providers
    */
-  privateOrganizations?: any[];
+  privateOrganizations?: unknown[];
   /**
    * Deprecated: Used in early versions of GitProxy to configure the remote host that traffic
    * is proxied to. In later versions, the repository URL is used to determine the domain
@@ -187,7 +187,7 @@ export interface Gitleaks {
   enabled?: boolean;
   ignoreGitleaksAllow?: boolean;
   noColor?: boolean;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 /**
@@ -244,7 +244,7 @@ export interface AuthenticationElement {
    * Additional JWT configuration.
    */
   jwtConfig?: JwtConfig;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 /**
@@ -276,7 +276,7 @@ export interface AdConfig {
    * An account name capable of performing the operations desired.
    */
   username: string;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 /**
@@ -287,12 +287,12 @@ export interface JwtConfig {
   clientID: string;
   expectedAudience?: string;
   roleMapping?: RoleMapping;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 export interface RoleMapping {
-  admin?: { [key: string]: any };
-  [property: string]: any;
+  admin?: { [key: string]: unknown };
+  [property: string]: unknown;
 }
 
 /**
@@ -304,15 +304,10 @@ export interface OidcConfig {
   clientSecret: string;
   issuer: string;
   scope: string;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
-export enum AuthenticationElementType {
-  ActiveDirectory = 'ActiveDirectory',
-  Jwt = 'jwt',
-  Local = 'local',
-  Openidconnect = 'openidconnect',
-}
+export type AuthenticationElementType = 'local' | 'ActiveDirectory' | 'openidconnect' | 'jwt';
 
 /**
  * Configuration for the attestation form displayed to reviewers. Reviewers will need to
@@ -368,7 +363,7 @@ export interface AuthorisedRepo {
   name: string;
   project: string;
   url: string;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 /**
@@ -457,7 +452,7 @@ export interface DiffBlock {
   /**
    * Block commits where the commit diff content matches any of the given regular expressions
    */
-  patterns?: any[];
+  patterns?: unknown[];
   /**
    * Block commits where the commit diff content matches any of the given regular expressions,
    * except where the repository path (project/organisation) matches one of the listed
@@ -502,7 +497,7 @@ export interface Domains {
    * Override for the service UI URL, should include the protocol
    */
   service?: string;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 /**
@@ -580,11 +575,7 @@ export interface SCMProvider {
 /**
  * Which API the host speaks. Gitea and Codeberg speak the Forgejo API.
  */
-export enum SCMProviderType {
-  Forgejo = 'forgejo',
-  Github = 'github',
-  Gitlab = 'gitlab',
-}
+export type SCMProviderType = 'github' | 'gitlab' | 'forgejo';
 
 /**
  * Configuration entry for a database
@@ -667,13 +658,13 @@ export interface Database {
    * verification; an object is passed to the PostgreSQL client as TLS options (for example
    * `rejectUnauthorized`, `ca`, `cert`, `key`).
    */
-  ssl?: boolean | { [key: string]: any };
+  ssl?: boolean | { [key: string]: unknown };
   /**
    * Database user. Used when `connectionString` is not set. Falls back to the `PGUSER`
    * environment variable.
    */
   user?: string;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 /**
@@ -704,7 +695,7 @@ export interface AwsIamAuth {
  */
 export interface Options {
   authMechanismProperties?: AuthMechanismProperties;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 export interface AuthMechanismProperties {
@@ -713,7 +704,7 @@ export interface AuthMechanismProperties {
    * is passed as the `AWS_CREDENTIAL_PROVIDER`
    */
   AWS_CREDENTIAL_PROVIDER?: boolean;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 /**
@@ -734,11 +725,7 @@ export interface Pool {
   max?: number;
 }
 
-export enum DatabaseType {
-  FS = 'fs',
-  Mongo = 'mongo',
-  Postgres = 'postgres',
-}
+export type DatabaseType = 'mongo' | 'fs' | 'postgres';
 
 /**
  * SSH proxy server configuration. The proxy uses SSH agent forwarding to authenticate with
@@ -804,9 +791,9 @@ export interface TempPassword {
    * Generic object to configure nodemailer. For full type information, please see
    * https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/nodemailer
    */
-  emailConfig?: { [key: string]: any };
+  emailConfig?: { [key: string]: unknown };
   sendEmail?: boolean;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 /**
@@ -816,7 +803,7 @@ export interface TLS {
   cert: string;
   enabled: boolean;
   key: string;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 /**
@@ -825,14 +812,14 @@ export interface TLS {
 export interface UIRouteAuth {
   enabled?: boolean;
   rules?: RouteAuthRule[];
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 export interface RouteAuthRule {
   adminOnly?: boolean;
   loginRequired?: boolean;
   pattern?: string;
-  [property: string]: any;
+  [property: string]: unknown;
 }
 
 /**
@@ -883,10 +870,7 @@ export interface Auth {
   workstation?: string;
 }
 
-export enum AuthType {
-  Basic = 'basic',
-  NTLM = 'ntlm',
-}
+export type AuthType = 'basic' | 'ntlm';
 
 // Converts JSON strings to/from your types
 // and asserts the results of JSON.parse at runtime
