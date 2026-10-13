@@ -89,7 +89,7 @@
     "cypress:run": "cypress run --config-file cypress/cypress.config.js",
     "cypress:run:docker": "cypress run --config-file cypress/cypress.config.js --config specPattern='cypress/e2e/docker/**/*.cy.{js,ts}'",
     "cypress:open": "cypress open --config-file cypress/cypress.config.js",
-    "generate-config-types": "quicktype --src-lang schema --lang typescript --out src/config/generated/config.ts --top-level GitProxyConfig config.schema.json && ts-node scripts/add-banner.ts src/config/generated/config.ts && prettier --write src/config/generated/config.ts"
+    "generate-config-types": "quicktype --src-lang schema --lang typescript --no-prefer-unions --no-prefer-unknown --out src/config/generated/config.ts --top-level GitProxyConfig config.schema.json && ts-node scripts/add-banner.ts src/config/generated/config.ts && prettier --write src/config/generated/config.ts"
   },
   "bin": {
     "git-proxy": "./dist/index.js",
@@ -204,7 +204,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.0.5",
     "prettier": "^3.8.1",
-    "quicktype": "^23.2.6",
+    "quicktype": "^26.0.0",
     "supertest": "^7.2.2",
     "tailwindcss": "^4.2.2",
     "ts-node": "^10.9.2",

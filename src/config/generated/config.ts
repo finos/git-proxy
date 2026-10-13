@@ -2,7 +2,7 @@
 
 // To parse this data:
 //
-//   import { Convert, GitProxyConfig } from "./file";
+//   import { Convert, GitProxyConfig } from "./config";
 //
 //   const gitProxyConfig = Convert.toGitProxyConfig(json);
 //
