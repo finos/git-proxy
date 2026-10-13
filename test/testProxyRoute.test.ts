@@ -192,7 +192,6 @@ describe('proxy express application', () => {
     const numCurrent = (await db.getRepos({ url: /https:\/\/gitlab\.com/ as any })).length;
     expect(numCurrent).toBe(1);
 
-
     const upstreamRequests: string[] = [];
     // mock server to prevent actual requests from timing out
     const fakeGitlab = http.createServer((req, res) => {
