@@ -75,16 +75,13 @@ updates:
         patterns:
           - '*'
 
-  # ---- npm dependencies (root, cli, plugin samples, test fixtures, experimental)
-  # version updates for a dependency open one PR for each directory that uses it
+  # ---- npm dependencies (root, cli package, plugin samples, test fixtures)
   - package-ecosystem: npm
     directories:
       - '/'
       - '/packages/git-proxy-cli'
       - '/plugins/git-proxy-plugin-samples'
       - '/test/fixtures/test-package'
-      - '/experimental/li-cli'
-      - '/experimental/license-inventory'
     schedule:
       interval: weekly
     versioning-strategy: increase-if-necessary
@@ -111,12 +108,10 @@ updates:
       # so a single PR updates them in lockstep and avoids conflicting PRs.
       types:
         applies-to: version-updates
-        group-by: dependency-name
         patterns:
           - '@types/*'
       linting:
         applies-to: version-updates
-        group-by: dependency-name
         patterns:
           - 'eslint'
           - '@eslint/*'
@@ -128,13 +123,11 @@ updates:
           - 'lint-staged'
       vitest:
         applies-to: version-updates
-        group-by: dependency-name
         patterns:
           - 'vitest'
           - '@vitest/*'
       vite:
         applies-to: version-updates
-        group-by: dependency-name
         patterns:
           - 'vite'
           - '@vitejs/*'
@@ -142,16 +135,62 @@ updates:
       # react and react-dom (plus their type defs) must stay version-aligned.
       react:
         applies-to: version-updates
-        group-by: dependency-name
         patterns:
           - 'react'
           - 'react-dom'
           - 'react-is'
           - '@types/react'
           - '@types/react-dom'
+      npm-non-major:
+        applies-to: version-updates
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+
+  - package-ecosystem: npm
+      directories:
+        - '/experimental/li-cli'
+        - '/experimental/license-inventory'
+      schedule:
+        interval: weekly
+      versioning-strategy: increase-if-necessary
+      cooldown:
+        # Only applies to version updates (security updates are never delayed)
+        semver-patch-days: 3
+        semver-minor-days: 3
+        semver-major-days: 7
+      open-pull-requests-limit: 10
+      commit-message:
+        prefix: 'chore'
+        include: 'scope'
+      labels:
+        - 'dependencies'
+        - 'automated'
+      groups:
+        npm-security:
+          applies-to: security-updates
+          patterns:
+            - '*'
+        types:
+          applies-to: version-updates
+          patterns:
+            - '@types/*'
+        linting:
+          applies-to: version-updates
+          patterns:
+            - 'eslint'
+            - '@eslint/*'
+            - 'typescript-eslint'
+            - '@typescript-eslint/*'
+            - 'eslint-config-prettier'
+            - 'eslint-plugin-*'
+            - 'globals'
+            - 'prettier'
+            - 'lint-staged'
       jest:
         applies-to: version-updates
-        group-by: dependency-name
         patterns:
           - 'jest'
           - 'jest-*'
@@ -160,7 +199,6 @@ updates:
           - 'babel-jest'
       npm-non-major:
         applies-to: version-updates
-        group-by: dependency-name
         patterns:
           - '*'
         update-types:
