@@ -5,12 +5,15 @@
     "strict": true,
     "lib": ["ES2022", "esnext.asynciterable"],
     "typeRoots": ["node_modules/@types"],
+    "types": ["node"],
     "allowSyntheticDefaultImports": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "module": "commonjs",
+    "rootDir": "./src",
+    "ignoreDeprecations": "6.0",
     "pretty": true,
     "sourceMap": true,
     "declaration": true,
@@ -19,11 +22,7 @@
     "noEmit": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "importHelpers": true,
-    "baseUrl": "./src",
-    "paths": {
-      "@/*": ["*"]
-    }
+    "importHelpers": true
   },
   "include": ["src/**/*.ts", "src/**/*.json", ".env"],
   "exclude": ["node_modules"]
