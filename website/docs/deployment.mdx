@@ -80,6 +80,7 @@ git-proxy --config ./proxy.config.json
 ```
 
 Expected output:
+
 ```
 Listening on 8000
 Service Listening on 8080
@@ -100,6 +101,7 @@ git remote add proxy http://localhost:8000/my-org/my-repo.git
 ```
 
 Or replace the existing origin:
+
 ```bash
 git remote set-url origin http://localhost:8000/my-org/my-repo.git
 ```
@@ -113,6 +115,7 @@ git push proxy main
 ```
 
 You should receive a message with a review URL:
+
 ```
 remote: GitProxy has received your push
 remote: Shareable Link
@@ -127,6 +130,7 @@ remote: http://localhost:8080/dashboard/push/3f9c2a7e1b8d4c6f0a5e9b2d7c1f4a8e6b3
    - Password: `admin`
 
    See the [Authentication](/docs/architecture/architecture.md#authentication) section of the architecture guide for more details.
+
 3. Review the push and approve it
 4. Push again to forward to upstream:
    ```bash
@@ -161,6 +165,7 @@ docker build -t git-proxy:local .
 The Dockerfile uses a multi-stage build with Node.js 22, installs `git` and `tini`, and runs as a non-root user (UID 1000). Ports 8000 (proxy) and 8080 (UI/API) are exposed.
 
 View logs:
+
 ```bash
 docker logs -f git-proxy
 ```
@@ -169,16 +174,17 @@ docker logs -f git-proxy
 
 The following environment variables can be set at container runtime:
 
-| Variable                 | Default      | Description                                              |
-| ------------------------ | ------------ | -------------------------------------------------------- |
-| `GIT_PROXY_SERVER_PORT`  | `8000`       | Proxy server port                                        |
-| `GIT_PROXY_UI_PORT`      | `8080`       | UI/API server port (HTTP)                                |
-| `GIT_PROXY_HTTPS_UI_PORT`| `8444`       | UI/API server port (HTTPS, active when `tls.enabled`)    |
-| `ALLOWED_ORIGINS`        | (empty)      | CORS allowed origins (comma-separated, or `*` for all)   |
-| `API_URL`                | (empty)      | API URL for the UI (leave empty for same-origin)         |
-| `NODE_ENV`               | `production` | Node environment                                         |
+| Variable                  | Default      | Description                                            |
+| ------------------------- | ------------ | ------------------------------------------------------ |
+| `GIT_PROXY_SERVER_PORT`   | `8000`       | Proxy server port                                      |
+| `GIT_PROXY_UI_PORT`       | `8080`       | UI/API server port (HTTP)                              |
+| `GIT_PROXY_HTTPS_UI_PORT` | `8444`       | UI/API server port (HTTPS, active when `tls.enabled`)  |
+| `ALLOWED_ORIGINS`         | (empty)      | CORS allowed origins (comma-separated, or `*` for all) |
+| `API_URL`                 | (empty)      | API URL for the UI (leave empty for same-origin)       |
+| `NODE_ENV`                | `production` | Node environment                                       |
 
 Example with environment variables:
+
 ```bash
 docker run -d \
   --name git-proxy \
@@ -234,21 +240,25 @@ git push origin main
 GitProxy prompts for credentials on each push. To cache credentials:
 
 **macOS:**
+
 ```bash
 git config --global credential.helper osxkeychain
 ```
 
 **Windows:**
+
 ```bash
 git config --global credential.helper manager
 ```
 
 **Linux:**
+
 ```bash
 git config --global credential.helper store
 ```
 
 **Required credentials for pushing through GitProxy to GitHub:**
+
 - GitHub username
 - Personal Access Token (PAT) with at minimum `public_repo` scope
 
@@ -281,36 +291,36 @@ Switch from the default file-based database to MongoDB for production use:
 ```
 
 **Recommendations:**
+
 - Use MongoDB 6.0 or later
 - Enable authentication and TLS/SSL
 - Configure replica sets for high availability
 - Schedule regular backups of audit data (`mongodump`)
 
-Repository activity summaries are derived from the push audit records. GitProxy creates the required indexes, including a unique push ID index, and backfills activity metadata on the first repository read after upgrade. Use the same GitProxy version across instances during this upgrade: older writers do not update the activity revisions. Standalone MongoDB is supported; summary updates do not require transactions or a replica set.
+Repository activity summaries are derived from the push audit records. Startup migration `20261013-repository-activity` creates the required indexes and backfills activity metadata before the proxy and API start accepting requests. Allow extra startup time for large audit histories. Use the same GitProxy version across instances during this upgrade: older writers do not update the activity revisions. Standalone MongoDB is supported; summary updates do not require transactions or a replica set.
 
-Interrupted summary refreshes recover on the next repository read. Deleting a push removes its audit payload immediately; a small internal deletion marker remains until its repository summary is refreshed. If restoring only the `pushes` collection or repairing summaries manually, rebuild the derived data from a source checkout with the deployment's configuration:
+The migration checks for duplicate push IDs before creating the unique index. If duplicates exist, startup fails with example IDs and leaves the audit records intact. Stop all writers, back up the database, and inspect every record with each reported ID. Reconcile their IDs and any external references according to your audit retention policy, preserving distinct historical attempts. GitProxy cannot safely choose which audit to discard. Restart after reconciliation; a failed migration is not marked complete and will be retried.
+
+Interrupted summary refreshes recover on the next repository read. Each read checks indexed dirty markers and refreshes only affected repositories. Simultaneous readers in one process share the refresh; revision checks prevent older work in other instances from overwriting newer summaries. Deleting a push removes its audit payload immediately; a small internal deletion marker remains until its repository summary is refreshed.
+
+After restoring only the `pushes` collection or repairing summaries manually, stop application instances and rebuild through the shared database API. From an installation with `@finos/git-proxy` available, use the deployment's configuration:
 
 ```bash
-CONFIG_FILE=/path/to/proxy.config.json npx tsx -e \
-  "import { rebuildRepoPushRollups } from './src/db/mongo/repoActivity'; import { resetConnection } from './src/db/mongo/helper'; rebuildRepoPushRollups().finally(resetConnection)"
+CONFIG_FILE=/path/to/proxy.config.json node -e \
+  "require('@finos/git-proxy/db').rebuildRepoPushRollups().then(() => process.exit(0), error => { console.error(error); process.exit(1); })"
 ```
 
-For NeDB, restarting GitProxy rebuilds the in-memory summaries from the saved push records.
+This API uses the configured sink and supports MongoDB, PostgreSQL, and NeDB. Restart application instances after a successful rebuild. For NeDB, summaries are in memory and are also rebuilt from saved push records on restart.
 
 ### PostgreSQL Repository Activity
 
-Schema migration 9 adds derived activity tables and a trigger that records push inserts, updates, and deletes in the same transaction as the audit change. It queues existing pushes without rewriting their audit content. The first repository read fills the summaries; subsequent reads refresh only changed pushes and affected repositories. Reads with no changes use the saved summaries without scanning audit history.
+Schema migration 9 adds derived activity tables and a trigger that records push inserts, updates, and deletes in the same transaction as the audit change. It queues existing pushes without rewriting their audit content. Startup migration `20261013-repository-activity` fills the summaries before the proxy and API accept requests; subsequent reads refresh only changed pushes and affected repositories. Reads with no changes use the saved summaries without scanning audit history.
 
 Refreshes run in a transaction. A failed refresh is retried on the next repository read, and concurrent audit updates remain queued for another refresh. The database trigger also tracks writes from older GitProxy instances and the PostgreSQL importer.
 
 If `autoMigrate` is disabled, apply the new migration with `npm run migrate:postgres:schema` using DDL-capable credentials before starting the updated application. The runtime role needs SELECT, INSERT, UPDATE, and DELETE on `push_activity_changes`, `push_activity`, and `repo_push_activity`, in addition to its existing permissions.
 
-Back up the database together with its derived tables. After a partial restore, a restore with triggers disabled, or manual summary repair, rebuild from a source checkout using the deployment's configuration:
-
-```bash
-CONFIG_FILE=/path/to/proxy.config.json npx tsx -e \
-  "import { rebuildRepoPushRollups } from './src/db/postgres/repoActivity'; import { resetConnection } from './src/db/postgres/helper'; rebuildRepoPushRollups().finally(resetConnection)"
-```
+Back up the database together with its derived tables. After a partial restore, a restore with triggers disabled, or manual summary repair, use the shared rebuild command above with the PostgreSQL sink enabled.
 
 ### Health Checks
 
@@ -333,11 +343,13 @@ GitProxy does not currently ship with built-in metrics or structured logging. Re
 ### Backup
 
 **MongoDB:**
+
 ```bash
 mongodump --uri="mongodb://localhost:27017/gitproxy" --out=/backup/$(date +%Y%m%d)
 ```
 
 **File-based (NeDB):**
+
 ```bash
 tar -czf gitproxy-backup-$(date +%Y%m%d).tar.gz ./.data
 ```
