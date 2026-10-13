@@ -95,7 +95,13 @@ export const definePushStorageContract = (
     it('keeps legacy audit content on detail reads while excluding every diff copy from lists', async () => {
       const action = makePush();
       // Future top-level diff records from #1693 must also remain outside list responses.
-      Object.assign(action, { diff, pluginPrivateData: diff });
+      const detailOnly = {
+        author: 'audit author',
+        message: diff,
+        errorMessage: diff,
+        protocol: 'http',
+      };
+      Object.assign(action, { diff, pluginPrivateData: diff, ...detailOnly });
       await sink.writeAudit(action);
 
       const summaries = await sink.getPushes({ type: 'push' });
@@ -109,12 +115,24 @@ export const definePushStorageContract = (
         commitTo: action.commitTo,
         blocked: true,
       });
-      for (const field of ['steps', 'lastStep', 'diff', '_id', 'pluginPrivateData']) {
+      for (const field of [
+        'steps',
+        'lastStep',
+        'diff',
+        '_id',
+        'pluginPrivateData',
+        ...Object.keys(detailOnly),
+      ]) {
         expect(summary).not.toHaveProperty(field);
+      }
+      const profile = await sink.getPushesForUserProfile(['author@example.com'], 'reviewer');
+      for (const field of Object.keys(detailOnly)) {
+        expect(profile.find((push) => push.id === action.id)).not.toHaveProperty(field);
       }
       expect(JSON.stringify(summary)).not.toContain('private payload');
 
       const detail = await sink.getPush(action.id);
+      expect(detail).toMatchObject(detailOnly);
       expect(detail?.steps[0].content).toBe(diff);
       expect(detail?.steps[0].logs).toEqual([`diff - ${diff}`]);
       expect(detail?.lastStep?.content).toBe(diff);

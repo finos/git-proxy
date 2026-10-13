@@ -47,11 +47,11 @@ describe.runIf(process.env.RUN_POSTGRES_TESTS === 'true')('PostgreSQL storage co
 
   it('preserves explicit null metadata while omitting absent fields', async () => {
     const action = new Action('metadata', RequestType.PUSH, 'POST', 123, 'https://example.com/a/b');
-    Object.assign(action, { author: null });
+    Object.assign(action, { blockedMessage: null });
     delete action.rejection;
     await pushes.writeAudit(action);
     const [summary] = await pushes.getPushes({});
-    expect(summary).toHaveProperty('author', null);
+    expect(summary).toHaveProperty('blockedMessage', null);
     expect(summary).not.toHaveProperty('rejection');
   });
 });
