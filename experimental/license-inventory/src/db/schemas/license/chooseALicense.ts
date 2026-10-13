@@ -1,4 +1,4 @@
-import { Mongoosify } from '@/db/types';
+import { Mongoosify } from '../../types';
 import { Schema } from 'mongoose';
 import { z } from 'zod';
 

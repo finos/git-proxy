@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach, jest } from '@jest/globals';
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
-import { createApp } from '@/app';
-import { genMockLicenseDataService } from '@/test/mock/db';
+import { createApp } from '../../../app';
+import { genMockLicenseDataService } from '../../../test/mock/db';
 
 const basePath = '/api/v0/licenses';
 const genRoute = (p: string) => basePath + p;

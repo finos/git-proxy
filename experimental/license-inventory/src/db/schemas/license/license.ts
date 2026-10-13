@@ -1,7 +1,7 @@
 import { Schema, model } from 'mongoose';
 import { calSchema, calValidation } from './chooseALicense';
 import { z } from 'zod';
-import { Mongoosify } from '@/db/types';
+import { Mongoosify } from '../../types';
 
 export const licenseValidation = z.object({
   id: z.string().uuid(),
