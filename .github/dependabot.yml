@@ -106,10 +106,21 @@ updates:
           - '*'
       # Evergreening — recurring cross-package dev tooling grouped together
       # so a single PR updates them in lockstep and avoids conflicting PRs.
+      react:
+        applies-to: version-updates
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - 'react-is'
+          - '@types/react'
+          - '@types/react-dom'
       types:
         applies-to: version-updates
         patterns:
           - '@types/*'
+        exclude-patterns:
+          - '@types/react'
+          - '@types/react-dom'
       linting:
         applies-to: version-updates
         patterns:
@@ -132,15 +143,6 @@ updates:
           - 'vite'
           - '@vitejs/*'
           - 'vite-tsconfig-paths'
-      # react and react-dom (plus their type defs) must stay version-aligned.
-      react:
-        applies-to: version-updates
-        patterns:
-          - 'react'
-          - 'react-dom'
-          - 'react-is'
-          - '@types/react'
-          - '@types/react-dom'
       npm-non-major:
         applies-to: version-updates
         patterns:
@@ -149,47 +151,49 @@ updates:
           - minor
           - patch
 
+  # ---- npm dependencies — experimental packages ---------------------------
   - package-ecosystem: npm
-      directories:
-        - '/experimental/li-cli'
-        - '/experimental/license-inventory'
-      schedule:
-        interval: weekly
-      versioning-strategy: increase-if-necessary
-      cooldown:
-        # Only applies to version updates (security updates are never delayed)
-        semver-patch-days: 3
-        semver-minor-days: 3
-        semver-major-days: 7
-      open-pull-requests-limit: 10
-      commit-message:
-        prefix: 'chore'
-        include: 'scope'
-      labels:
-        - 'dependencies'
-        - 'automated'
-      groups:
-        npm-security:
-          applies-to: security-updates
-          patterns:
-            - '*'
-        types:
-          applies-to: version-updates
-          patterns:
-            - '@types/*'
-        linting:
-          applies-to: version-updates
-          patterns:
-            - 'eslint'
-            - '@eslint/*'
-            - 'typescript-eslint'
-            - '@typescript-eslint/*'
-            - 'eslint-config-prettier'
-            - 'eslint-plugin-*'
-            - 'globals'
-            - 'prettier'
-            - 'lint-staged'
-      jest:
+    directories:
+      - '/experimental/li-cli'
+      - '/experimental/license-inventory'
+    schedule:
+      interval: weekly
+    versioning-strategy: increase-if-necessary
+    cooldown:
+      # Only applies to version updates (security updates are never delayed)
+      semver-patch-days: 3
+      semver-minor-days: 3
+      semver-major-days: 7
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'automated'
+      - 'experimental'
+    groups:
+      experimental-security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+      experimental-types:
+        applies-to: version-updates
+        patterns:
+          - '@types/*'
+      experimental-linting:
+        applies-to: version-updates
+        patterns:
+          - 'eslint'
+          - '@eslint/*'
+          - 'typescript-eslint'
+          - '@typescript-eslint/*'
+          - 'eslint-config-prettier'
+          - 'eslint-plugin-*'
+          - 'globals'
+          - 'prettier'
+          - 'lint-staged'
+      experimental-jest:
         applies-to: version-updates
         patterns:
           - 'jest'
@@ -197,7 +201,7 @@ updates:
           - '@jest/*'
           - 'ts-jest'
           - 'babel-jest'
-      npm-non-major:
+      experimental-non-major:
         applies-to: version-updates
         patterns:
           - '*'
@@ -224,28 +228,29 @@ updates:
     labels:
       - 'dependencies'
       - 'automated'
+      - 'website'
     groups:
       # CVE resolutions — prioritised; differentiated by the "security"
-      # group name in the PR title/branch.
-      npm-security:
+      # group name in the PR title.
+      website-security:
         applies-to: security-updates
         patterns:
           - '*'
       # Docusaurus and its rendering stack must move together — they share
       # peer dependencies on react/react-dom and layout-elk, so upgrading
       # any one in isolation risks peer dep conflicts.
-      docusaurus:
+      website-docusaurus:
         applies-to: version-updates
         patterns:
           - '@docusaurus/*'
           - '@mermaid-js/layout-elk'
       # react and react-dom must always be the same version.
-      react:
+      website-react:
         applies-to: version-updates
         patterns:
           - 'react'
           - 'react-dom'
-      npm-non-major:
+      website-non-major:
         applies-to: version-updates
         patterns:
           - '*'
