@@ -19,6 +19,7 @@ import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
 const mockFindOneDocument = vi.fn();
 const mockUpdateOne = vi.fn();
 const mockConnect = vi.fn(() => ({
+  aggregate: vi.fn(() => ({ toArray: vi.fn().mockResolvedValue([]) })),
   updateOne: mockUpdateOne,
   createIndex: vi.fn().mockResolvedValue('index'),
 }));

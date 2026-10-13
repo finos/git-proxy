@@ -50,6 +50,7 @@ const mockUpdateOne = vi.fn();
 const mockFind = vi.fn();
 
 const mockConnect = vi.fn(() => ({
+  aggregate: vi.fn(() => ({ toArray: vi.fn().mockResolvedValue([]) })),
   findOne: mockFindOne,
   replaceOne: mockReplaceOne,
   createIndex: vi.fn().mockResolvedValue('index'),

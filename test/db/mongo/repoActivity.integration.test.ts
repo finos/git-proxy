@@ -17,6 +17,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Collection } from 'mongodb';
 import * as pushes from '../../../src/db/mongo/pushes';
+import * as sink from '../../../src/db/mongo';
+import { runMigrations } from '../../../src/db/migrations';
+import { repositoryActivity } from '../../../src/db/migrations/repositoryActivity';
 import { defineRepoActivityContract } from '../repoActivity.contract';
 import { connect, resetConnection } from '../../../src/db/mongo/helper';
 import * as mongoHelper from '../../../src/db/mongo/helper';
@@ -37,6 +40,55 @@ describe.runIf(process.env.RUN_MONGO_TESTS === 'true')('MongoDB repository activ
   };
 
   afterEach(() => vi.restoreAllMocks());
+
+  it('migrates historical activity once before repository reads', async () => {
+    const collection = await connect('pushes');
+    const action = makePush();
+    await collection.insertOne(JSON.parse(JSON.stringify(action)));
+    await runMigrations(sink, [repositoryActivity]);
+    expect(await sink.getAppliedMigrations()).toContain(repositoryActivity.id);
+    expect((await sink.getRepoPushRollupsByCanonicalUrl()).tabCounts.get(key)?.pending).toBe(1);
+    expect(await sink.getPush(action.id)).toMatchObject(action);
+    const rebuild = vi.spyOn(sink, 'rebuildRepoPushRollups');
+    await runMigrations(sink, [repositoryActivity]);
+    expect(rebuild).not.toHaveBeenCalled();
+  });
+
+  it('preserves duplicate historical audits and leaves a failed migration retryable', async () => {
+    const collection = await connect('pushes');
+    await collection.dropIndexes();
+    const first = JSON.parse(JSON.stringify(makePush()));
+    const second = { ...first, blockedMessage: 'another historical attempt' };
+    await collection.insertMany([first, second]);
+    const before = await collection.find({}).toArray();
+    await expect(runMigrations(sink, [repositoryActivity])).rejects.toThrow(
+      'duplicate push IDs "recovery"',
+    );
+    expect(await collection.find({}).toArray()).toEqual(before);
+    expect(await sink.getAppliedMigrations()).not.toContain(repositoryActivity.id);
+    await collection.updateOne({ _id: second._id }, { $set: { id: 'reconciled' } });
+    await runMigrations(sink, [repositoryActivity]);
+    expect((await sink.getRepoPushRollupsByCanonicalUrl()).tabCounts.get(key)?.pending).toBe(2);
+    expect(await sink.getAppliedMigrations()).toContain(repositoryActivity.id);
+  });
+
+  it('shares one dirty repository refresh among simultaneous readers', async () => {
+    await pushes.writeAudit(makePush());
+    const find = vi.spyOn(Collection.prototype, 'find');
+    const results = await Promise.all(
+      Array.from({ length: 10 }, () => pushes.getRepoPushRollupsByCanonicalUrl()),
+    );
+    const scans = find.mock.calls.filter(
+      ([query], index) =>
+        find.mock.contexts[index].collectionName === 'pushes' && query['_activity.key'] === key,
+    );
+    expect(scans).toHaveLength(1);
+    for (const result of results) expect(result.tabCounts.get(key)?.pending).toBe(1);
+    const firstCounts = results[0].tabCounts.get(key);
+    if (!firstCounts) throw new Error('Expected repository counts');
+    firstCounts.pending = 99;
+    expect(results[1].tabCounts.get(key)?.pending).toBe(1);
+  });
 
   it('retries initialization after index creation fails', async () => {
     const createIndex = vi
@@ -104,7 +156,7 @@ describe.runIf(process.env.RUN_MONGO_TESTS === 'true')('MongoDB repository activ
     const action = new Action('pull', RequestType.PULL, 'GET', 123, `https://${key}`);
     const collection = await connect('pushes');
     await collection.insertOne(JSON.parse(JSON.stringify(action)));
-    expect((await pushes.getRepoPushRollupsByCanonicalUrl()).tabCounts.size).toBe(0);
+    expect((await rebuildRepoPushRollups()).tabCounts.size).toBe(0);
     expect(await collection.findOne({ id: action.id })).toMatchObject({
       _activity: { key: '', dirty: false },
     });
@@ -145,7 +197,7 @@ describe.runIf(process.env.RUN_MONGO_TESTS === 'true')('MongoDB repository activ
     const action = makePush();
     const collection = await connect('pushes');
     await collection.insertOne(JSON.parse(JSON.stringify(action)));
-    expect((await pushes.getRepoPushRollupsByCanonicalUrl()).tabCounts.get(key)?.pending).toBe(1);
+    expect((await rebuildRepoPushRollups()).tabCounts.get(key)?.pending).toBe(1);
     expect(await pushes.getPush(action.id)).toMatchObject(action);
     expect(await collection.findOne({ id: action.id })).toMatchObject({
       steps: action.steps,
@@ -162,10 +214,7 @@ describe.runIf(process.env.RUN_MONGO_TESTS === 'true')('MongoDB repository activ
     const queries = find.mock.calls
       .filter((_, index) => find.mock.contexts[index].collectionName === 'pushes')
       .map(([query]) => query);
-    expect(queries).toEqual([
-      { '_activity.dirty': { $exists: false } },
-      { '_activity.dirty': true },
-    ]);
+    expect(queries).toEqual([{ '_activity.dirty': true }]);
     const collection = await connect('pushes');
     for (const query of queries) {
       const plan = await collection.find(query).explain('executionStats');
@@ -199,6 +248,9 @@ describe.runIf(process.env.RUN_MONGO_TESTS === 'true')('MongoDB repository activ
 
   it('prevents an older refresh from overwriting a newer completed refresh', async () => {
     await pushes.writeAudit(makePush());
+    const database = mongoHelper.getDb();
+    if (!database) throw new Error('Expected an active database');
+    const otherProcess = database.client.db(database.databaseName);
     const original = Collection.prototype.updateOne;
     let interleaved = false;
     vi.spyOn(Collection.prototype, 'updateOne').mockImplementation(
@@ -210,6 +262,7 @@ describe.runIf(process.env.RUN_MONGO_TESTS === 'true')('MongoDB repository activ
         ) {
           interleaved = true;
           await pushes.authorise('recovery');
+          vi.spyOn(mongoHelper, 'getDb').mockReturnValueOnce(otherProcess);
           expect(
             (await pushes.getRepoPushRollupsByCanonicalUrl()).tabCounts.get(key)?.approved,
           ).toBe(1);
@@ -222,7 +275,7 @@ describe.runIf(process.env.RUN_MONGO_TESTS === 'true')('MongoDB repository activ
     expect(stored).toMatchObject({ ready: true, counts: { approved: 1, pending: 0 } });
   });
 
-  it('recovers an interrupted refresh after reconnecting', async () => {
+  it.each([false, true])('recovers an interrupted refresh (reconnect: %s)', async (reconnect) => {
     await pushes.writeAudit(makePush());
     const original = Collection.prototype.updateOne;
     const update = vi
@@ -235,7 +288,7 @@ describe.runIf(process.env.RUN_MONGO_TESTS === 'true')('MongoDB repository activ
       });
     await expect(pushes.getRepoPushRollupsByCanonicalUrl()).rejects.toThrow('interrupted refresh');
     update.mockRestore();
-    await resetConnection();
+    if (reconnect) await resetConnection();
     expect((await pushes.getRepoPushRollupsByCanonicalUrl()).tabCounts.get(key)?.pending).toBe(1);
   });
 
@@ -258,6 +311,35 @@ describe.runIf(process.env.RUN_MONGO_TESTS === 'true')('MongoDB repository activ
     await pushes.getRepoPushRollupsByCanonicalUrl();
     await (await connect('repoPushActivity')).deleteMany({});
     expect((await rebuildRepoPushRollups()).tabCounts.get(key)?.pending).toBe(1);
+  });
+
+  it('queues a rebuild behind an active refresh and includes restored history', async () => {
+    await pushes.writeAudit(makePush());
+    const entered = Promise.withResolvers<void>();
+    const release = Promise.withResolvers<void>();
+    const original = Collection.prototype.updateOne;
+    let paused = false;
+    vi.spyOn(Collection.prototype, 'updateOne').mockImplementation(
+      async function (filter, update, options) {
+        if (!paused && this.collectionName === 'repoPushActivity' && update.$set?.ready === true) {
+          paused = true;
+          entered.resolve();
+          await release.promise;
+        }
+        return original.call(this, filter, update, options);
+      },
+    );
+    const refresh = pushes.getRepoPushRollupsByCanonicalUrl();
+    await entered.promise;
+    await (await connect('pushes')).insertOne(JSON.parse(JSON.stringify(makePush('restored'))));
+    const rebuild = rebuildRepoPushRollups();
+    await vi.waitFor(async () => {
+      const summaries = await connect('repoPushActivity');
+      expect(await summaries.findOne({ key })).toMatchObject({ ready: false });
+    });
+    release.resolve();
+    await refresh;
+    expect((await rebuild).tabCounts.get(key)?.pending).toBe(2);
   });
 
   it('counts concurrent retries of one push only once', async () => {

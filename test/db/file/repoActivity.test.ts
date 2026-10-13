@@ -20,6 +20,15 @@ import { Action, RequestType } from '../../../src/proxy/actions';
 describe('file repository rollup initialization', () => {
   afterEach(() => vi.restoreAllMocks());
 
+  it('rebuilds a warm index after an external restore', async () => {
+    vi.resetModules();
+    const sink = await import('../../../src/db/file/pushes');
+    await sink.getRepoPushRollupsByCanonicalUrl();
+    const action = new Action('restored', RequestType.PUSH, 'POST', 123, 'https://example.com/a/b');
+    await sink.db.insertAsync(action);
+    expect((await sink.rebuildRepoPushRollups()).tabCounts.get('example.com/a/b')?.pending).toBe(1);
+  });
+
   it('retries a failed history load and shares the successful index between readers', async () => {
     vi.resetModules();
     const sink = await import('../../../src/db/file/pushes');

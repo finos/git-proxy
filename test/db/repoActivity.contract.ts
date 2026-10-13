@@ -28,6 +28,7 @@ type ActivitySink = Pick<
   | 'reject'
   | 'cancel'
   | 'getRepoPushRollupsByCanonicalUrl'
+  | 'rebuildRepoPushRollups'
 >;
 const ids = ['activity-contract-1', 'activity-contract-2', 'activity-contract-3'];
 const url = 'https://example.com/activity-contract/repo.git';
@@ -54,6 +55,18 @@ export const defineRepoActivityContract = (name: string, sink: ActivitySink): vo
     };
     beforeEach(cleanup);
     afterEach(cleanup);
+
+    it('rebuilds activity through the sink API without changing audit records', async () => {
+      const action = makePush();
+      await sink.writeAudit(action);
+      await sink.authorise(action.id, attestation);
+      const before = await sink.getPush(action.id);
+      const rebuilt = await sink.rebuildRepoPushRollups();
+      expect(rebuilt.tabCounts.get(canonicalRemoteUrl(url))?.approved).toBe(1);
+      expect(rebuilt.latestPushAtMs.get(canonicalRemoteUrl(url))).toBe(100);
+      expect(await sink.getPush(action.id)).toEqual(before);
+      expect(await sink.rebuildRepoPushRollups()).toEqual(rebuilt);
+    });
 
     it('keeps activity counts and timestamps correct after updates and deletion', async () => {
       const action = makePush();

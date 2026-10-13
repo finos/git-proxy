@@ -18,7 +18,7 @@ import { Action } from '../../proxy/actions';
 import { CompletedAttestation, Rejection } from '../../proxy/processors/types';
 import { toClass } from '../helper';
 import { PushQuery } from '../types';
-export { getRepoPushRollupsByCanonicalUrl } from './repoActivity';
+export { getRepoPushRollupsByCanonicalUrl, rebuildRepoPushRollups } from './repoActivity';
 import { query, withTransaction } from './helper';
 
 const defaultPushQuery: Partial<PushQuery> = {

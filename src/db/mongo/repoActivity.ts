@@ -40,6 +40,7 @@ export type ActivityState = PushActivity & {
 type ActivityDocument = PushActivityRow & { _activity?: ActivityState };
 type StoredSummary = RepoActivitySummary & { revision: string; ready: boolean };
 const initialized = new WeakMap<Db, Promise<void>>();
+const refreshes = new WeakMap<Db, Promise<RepoPushRollupsByCanonicalUrl>>();
 
 export const activityState = (row: PushActivityRow): ActivityState => {
   const activity = pushActivity(row) ?? { key: '', tab: 'pending', timestamp: null };
@@ -51,28 +52,44 @@ export const activityCollections = async () => {
   const summaries = await connect<StoredSummary>('repoPushActivity');
   const database = getDb();
   if (!database) throw new Error('MongoDB connection is not available');
+  return { pushes, summaries, database };
+};
+
+export const initializeRepoActivity = async (): Promise<void> => {
+  const { pushes, summaries, database } = await activityCollections();
   let initialization = initialized.get(database);
   if (!initialization) {
-    initialization = Promise.all([
-      pushes.createIndex({ id: 1 }, { unique: true }),
-      pushes.createIndex({ '_activity.dirty': 1 }),
-      pushes.createIndex({
-        '_activity.key': 1,
-        '_activity.deleted': 1,
-        '_activity.tab': 1,
-        '_activity.timestamp': 1,
-      }),
-      summaries.createIndex({ key: 1 }, { unique: true }),
-    ])
-      .then(() => undefined)
-      .catch((error: unknown) => {
-        initialized.delete(database);
-        throw error;
-      });
+    initialization = (async () => {
+      const duplicates = await pushes
+        .aggregate<{ _id: string; count: number }>([
+          { $group: { _id: '$id', count: { $sum: 1 } } },
+          { $match: { count: { $gt: 1 } } },
+          { $limit: 5 },
+        ])
+        .toArray();
+      if (duplicates.length) {
+        throw new Error(
+          `Cannot initialize repository activity: duplicate push IDs ${duplicates.map((row) => JSON.stringify(row._id)).join(', ')}. Back up and reconcile these audit records before restarting; no records were removed.`,
+        );
+      }
+      await Promise.all([
+        pushes.createIndex({ id: 1 }, { unique: true }),
+        pushes.createIndex({ '_activity.dirty': 1 }),
+        pushes.createIndex({
+          '_activity.key': 1,
+          '_activity.deleted': 1,
+          '_activity.tab': 1,
+          '_activity.timestamp': 1,
+        }),
+        summaries.createIndex({ key: 1 }, { unique: true }),
+      ]);
+    })().catch((error: unknown) => {
+      initialized.delete(database);
+      throw error;
+    });
     initialized.set(database, initialization);
   }
   await initialization;
-  return { pushes, summaries };
 };
 
 const backfillActivity = async (): Promise<void> => {
@@ -121,46 +138,55 @@ const scanActivity = async (): Promise<RepoPushRollupsByCanonicalUrl> => {
   return index.snapshot();
 };
 
-export const getRepoPushRollupsByCanonicalUrl =
-  async (): Promise<RepoPushRollupsByCanonicalUrl> => {
-    await backfillActivity();
-    const { pushes, summaries } = await activityCollections();
-    for (let attempt = 0; attempt < 3; attempt++) {
-      const dirty = await pushes
-        .find({ '_activity.dirty': true }, { projection: { _id: 1, _activity: 1 } })
-        .toArray();
-      const unfinished = await summaries
-        .find({ ready: false }, { projection: { key: 1 } })
-        .toArray();
-      if (!dirty.length && !unfinished.length) {
-        const rows = await summaries.find({}).toArray();
-        if (rows.every((row) => row.ready)) return repoRollups(rows);
-        continue;
-      }
-      const keys = new Set(unfinished.map((row) => row.key));
-      for (const row of dirty) {
-        for (const key of row._activity?.keys ?? []) if (key) keys.add(key);
-      }
-      const refreshed = new Set<string>();
-      for (const key of keys) {
-        if (await refreshRepository(key)) refreshed.add(key);
-      }
-      for (const row of dirty) {
-        const activity = row._activity;
-        if (!activity || activity.keys.some((key) => key && !refreshed.has(key))) continue;
-        // Clear only the exact revision summarized above. Concurrent writes remain dirty.
-        const filter = { _id: row._id, '_activity.revision': activity.revision };
-        if (activity.deleted) {
-          await pushes.deleteOne(filter);
-        } else {
-          await pushes.updateOne(filter, {
-            $set: { '_activity.dirty': false, '_activity.keys': [activity.key] },
-          });
-        }
+const refreshActivity = async (): Promise<RepoPushRollupsByCanonicalUrl> => {
+  const { pushes, summaries } = await activityCollections();
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const dirty = await pushes
+      .find({ '_activity.dirty': true }, { projection: { _id: 1, _activity: 1 } })
+      .toArray();
+    const unfinished = await summaries.find({ ready: false }, { projection: { key: 1 } }).toArray();
+    if (!dirty.length && !unfinished.length) {
+      const rows = await summaries.find({}).toArray();
+      if (rows.every((row) => row.ready)) return repoRollups(rows);
+      continue;
+    }
+    const keys = new Set(unfinished.map((row) => row.key));
+    for (const row of dirty) {
+      for (const key of row._activity?.keys ?? []) if (key) keys.add(key);
+    }
+    const refreshed = new Set<string>();
+    for (const key of keys) {
+      if (await refreshRepository(key)) refreshed.add(key);
+    }
+    for (const row of dirty) {
+      const activity = row._activity;
+      if (!activity || activity.keys.some((key) => key && !refreshed.has(key))) continue;
+      // Clear only the exact revision summarized above. Concurrent writes remain dirty.
+      const filter = { _id: row._id, '_activity.revision': activity.revision };
+      if (activity.deleted) {
+        await pushes.deleteOne(filter);
+      } else {
+        await pushes.updateOne(filter, {
+          $set: { '_activity.dirty': false, '_activity.keys': [activity.key] },
+        });
       }
     }
-    // Bound request latency under continuous writes; the source rows remain authoritative.
-    return scanActivity();
+  }
+  // Bound request latency under continuous writes; the source rows remain authoritative.
+  return scanActivity();
+};
+
+export const getRepoPushRollupsByCanonicalUrl =
+  async (): Promise<RepoPushRollupsByCanonicalUrl> => {
+    const { database } = await activityCollections();
+    let refresh = refreshes.get(database);
+    if (!refresh) {
+      refresh = refreshActivity().finally(() => {
+        if (refreshes.get(database) === refresh) refreshes.delete(database);
+      });
+      refreshes.set(database, refresh);
+    }
+    return structuredClone(await refresh);
   };
 
 export const deletePushWithActivity = async (id: string): Promise<void> => {
@@ -191,14 +217,22 @@ export const deletePushWithActivity = async (id: string): Promise<void> => {
 };
 
 export const rebuildRepoPushRollups = async (): Promise<RepoPushRollupsByCanonicalUrl> => {
-  const { pushes, summaries } = await activityCollections();
-  await backfillActivity();
-  await summaries.updateMany({}, { $set: { ready: false } });
-  await pushes.updateMany(
-    {},
-    {
-      $set: { '_activity.dirty': true, '_activity.revision': randomUUID() },
-    },
-  );
-  return getRepoPushRollupsByCanonicalUrl();
+  await initializeRepoActivity();
+  const { pushes, summaries, database } = await activityCollections();
+  const preceding = refreshes.get(database) ?? Promise.resolve();
+  const rebuild = preceding
+    .then(async () => {
+      await backfillActivity();
+      await summaries.updateMany({}, { $set: { ready: false } });
+      await pushes.updateMany(
+        {},
+        { $set: { '_activity.dirty': true, '_activity.revision': randomUUID() } },
+      );
+      return refreshActivity();
+    })
+    .finally(() => {
+      if (refreshes.get(database) === rebuild) refreshes.delete(database);
+    });
+  refreshes.set(database, rebuild);
+  return structuredClone(await rebuild);
 };

@@ -72,6 +72,12 @@ export const getRepoPushRollupsByCanonicalUrl =
     return (await activityIndexLoad).snapshot();
   };
 
+export const rebuildRepoPushRollups = async (): Promise<RepoPushRollupsByCanonicalUrl> => {
+  await activityIndexLoad;
+  activityIndexLoad = undefined;
+  return getRepoPushRollupsByCanonicalUrl();
+};
+
 const defaultPushQuery: Partial<PushQuery> = {
   error: false,
   blocked: true,

@@ -15,8 +15,13 @@
  */
 
 import { findDocuments, findOneDocument } from './helper';
-import { activityCollections, activityState, deletePushWithActivity } from './repoActivity';
-export { getRepoPushRollupsByCanonicalUrl } from './repoActivity';
+import {
+  activityCollections,
+  activityState,
+  deletePushWithActivity,
+  initializeRepoActivity,
+} from './repoActivity';
+export { getRepoPushRollupsByCanonicalUrl, rebuildRepoPushRollups } from './repoActivity';
 import { Action } from '../../proxy/actions';
 import { toClass } from '../helper';
 import { PushQuery } from '../types';
@@ -103,6 +108,7 @@ export const deletePush = async function (id: string): Promise<void> {
 };
 
 export const writeAudit = async (action: Action): Promise<void> => {
+  await initializeRepoActivity();
   const data = JSON.parse(JSON.stringify(action));
   const options = { upsert: true };
   const { pushes: collection } = await activityCollections();
