@@ -1,9 +1,9 @@
 import { type LicenseDataService } from '../';
-import { type Database } from '@/db';
+import { type Database } from '../../../db';
 import { v4 as uuidv4 } from 'uuid';
 import type { License, LicenseNoID, LicenseNoIDPartial } from '../license';
 import { trace } from '@opentelemetry/api';
-import { logger } from '@/logger';
+import { logger } from '../../../logger';
 
 export class MongooseLicenseDataService implements LicenseDataService {
   db: Database;

@@ -37,7 +37,7 @@ describe('checkEmptyBranch', () => {
     }));
 
     vi.doMock('simple-git', () => ({
-      default: simpleGitMock,
+      simpleGit: simpleGitMock,
     }));
 
     // mocking fs to prevent simple-git from validating directories

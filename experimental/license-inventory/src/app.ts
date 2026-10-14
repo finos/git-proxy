@@ -1,6 +1,6 @@
 import express from 'express';
-import { logger } from '@/logger';
-import createApiRouter from '@/routes/api';
+import { logger } from './logger';
+import createApiRouter from './routes/api';
 import pinoHTTP from 'pino-http';
 import bodyParser from 'body-parser';
 import { rateLimit } from 'express-rate-limit';

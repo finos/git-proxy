@@ -1,6 +1,6 @@
-import { logger } from '@/logger';
+import { logger } from './logger';
 import { connectDB } from './db/connect';
-import env from '@/env';
+import env from './env';
 import { createApp } from './app';
 import { MongooseLicenseDataService } from './services/data/mongoose';
 import { Database } from './db';

@@ -15,7 +15,7 @@
  */
 
 import path from 'path';
-import simpleGit, { SimpleGit } from 'simple-git';
+import { simpleGit, SimpleGit } from 'simple-git';
 import fs from 'fs/promises';
 import { describe, it, beforeAll, afterAll, expect } from 'vitest';
 import { Request } from 'express';
