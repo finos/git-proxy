@@ -28,7 +28,7 @@
     "pino-caller": "^3.4.0",
     "pino-http": "^10.4.0",
     "uuid": "^11.1.0",
-    "zod": "^3.24.2"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.2",
