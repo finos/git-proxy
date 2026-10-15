@@ -175,6 +175,8 @@ Each source can be one of three types:
 2. `http`: Load from an HTTP endpoint
 3. `git`: Load from a Git repository
 
+For Git sources, `branch` is optional. When set, GitProxy follows that branch. Otherwise, it follows the repository's current default branch, including later default-branch changes. Refreshes replace the cached checkout with the remote version, recovering from force pushes and detached checkouts. If the remote has no usable default branch, a Git source without `branch` fails to load.
+
 When configuration changes are detected, GitProxy will:
 
 1. Validate the new configuration

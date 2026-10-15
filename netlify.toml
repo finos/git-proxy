@@ -2,6 +2,10 @@
   # Always publish main.
   ignore = "false"
 
+[build.environment]
+  # Docusaurus 4 canary requires Node 24.21 or newer.
+  NODE_VERSION = "24.21.0"
+
 [context.deploy-preview]
   # merge-base compares the whole PR against main. Assigning it before the diff keeps its
   # exit status: inlined as $(...) a failure would leave a one-revision diff that exits 0
