@@ -37,7 +37,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/mongoose": "^5.11.97",
-    "@types/node": "^22.19.7",
+    "@types/node": "^26.6.4",
     "@types/semver": "^7.5.8",
     "@types/supertest": "^7.2.0",
     "@typescript-eslint/eslint-plugin": "^8.61.1",
