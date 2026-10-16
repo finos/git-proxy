@@ -15,7 +15,7 @@
  */
 
 import { Action, Step } from '../../actions';
-import { PullRemoteBase, CloneResult } from './PullRemoteBase';
+import { PullRemoteBase, CloneResult, RemoteAccess } from './PullRemoteBase';
 import fs from 'fs';
 import git from 'isomorphic-git';
 import gitHttpClient from 'isomorphic-git/http/node';
@@ -52,6 +52,29 @@ export class PullRemoteHTTPS extends PullRemoteBase {
     return {
       username: credentials.slice(0, separatorIndex),
       password: credentials.slice(separatorIndex + 1),
+    };
+  }
+
+  /**
+   * Describe how native git should reach the remote over HTTPS.
+   *
+   * Used by the cached variant, which shells out to git rather than using
+   * isomorphic-git
+   *
+   * @param req Request object
+   * @param action Action object
+   * @return Remote access descriptor carrying the Basic credentials
+   */
+  protected async prepareRemoteAccess(req: any, action: Action): Promise<RemoteAccess> {
+    const credentials = this.decodeBasicAuth(req.headers?.authorization);
+    if (!credentials) {
+      throw new Error('Missing Authorization header for HTTPS clone');
+    }
+
+    return {
+      url: action.url,
+      username: credentials.username,
+      password: credentials.password,
     };
   }
 
