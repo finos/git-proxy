@@ -74,27 +74,36 @@ export const definePushStorageContract = (
     beforeEach(cleanup);
     afterEach(cleanup);
 
-    it('stores a diff in the final step once without changing the detail response', async () => {
-      const action = makePush();
-      action.steps[0].logs = ['diff - Generated diff'];
-      await sink.writeAudit(action);
-      const stored = await readStored(action.id);
-      expect(stored).not.toHaveProperty('lastStep');
-      expect(JSON.stringify(stored).match(/private payload/g)).toHaveLength(1);
-      const detail = await sink.getPush(action.id);
-      expect(detail?.lastStep).toEqual(action.lastStep);
-      expect(detail).not.toHaveProperty('_lastStepIndex');
+    it.each(['step', 'action'])(
+      'stores a diff on the %s once without changing the detail response',
+      async (location) => {
+        const action = makePush();
+        action.steps[0].logs = ['diff - Generated diff'];
+        if (location === 'action') {
+          action.setDiff(diff);
+          action.steps[0].content = null;
+        }
+        await sink.writeAudit(action);
+        const stored = await readStored(action.id);
+        expect(stored).not.toHaveProperty('lastStep');
+        expect(JSON.stringify(stored).match(/private payload/g)).toHaveLength(1);
+        const detail = await sink.getPush(action.id);
+        expect(detail?.diff).toBe(action.diff);
+        expect(detail?.steps).toEqual(action.steps);
+        expect(detail?.lastStep).toEqual(action.lastStep);
+        expect(detail).not.toHaveProperty('_lastStepIndex');
 
-      action.lastStep = new Step('failedAfterDiff');
-      action.lastStep.setError('Preserve a separate diagnostic');
-      await sink.writeAudit(action);
-      expect(await readStored(action.id)).not.toHaveProperty('_lastStepIndex');
-      expect((await sink.getPush(action.id))?.lastStep).toEqual(action.lastStep);
-    });
+        action.lastStep = new Step('failedAfterDiff');
+        action.lastStep.setError('Preserve a separate diagnostic');
+        await sink.writeAudit(action);
+        expect(await readStored(action.id)).not.toHaveProperty('_lastStepIndex');
+        expect((await sink.getPush(action.id))?.lastStep).toEqual(action.lastStep);
+      },
+    );
 
     it('keeps legacy audit content on detail reads while excluding every diff copy from lists', async () => {
       const action = makePush();
-      // Future top-level diff records from #1693 must also remain outside list responses.
+      // Top-level diff records must also remain outside list responses.
       const detailOnly = {
         author: 'audit author',
         message: diff,

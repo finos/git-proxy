@@ -18,7 +18,7 @@ import type { Action } from '../proxy/actions';
 
 /**
  * List and profile responses contain metadata only. Keep every diff representation
- * (steps, lastStep, and the proposed top-level diff) out of this allowlist.
+ * (steps, lastStep, and the top-level diff) out of this allowlist.
  * Detail reads and audit writes retain the complete record.
  */
 export const pushListProjection = {

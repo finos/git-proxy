@@ -28,11 +28,11 @@
     "pino-caller": "^3.4.0",
     "pino-http": "^10.4.0",
     "uuid": "^11.1.0",
-    "zod": "^3.24.2"
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.2",
-    "@eslint/js": "^9.39.4",
+    "@eslint/js": "^10.0.1",
     "@jest/globals": "^30.0.3",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
@@ -43,7 +43,7 @@
     "@typescript-eslint/eslint-plugin": "^8.61.1",
     "@typescript-eslint/parser": "^8.61.1",
     "cross-env": "^10.1.0",
-    "eslint": "^9.39.4",
+    "eslint": "^10.12.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.2.3",
     "globals": "^17.6.0",

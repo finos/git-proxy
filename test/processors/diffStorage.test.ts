@@ -72,7 +72,8 @@ describe('diff storage and audit logging', () => {
     await scanDiff(request, action);
 
     expect(action.error).toBe(false);
-    expect(action.steps.find((step) => step.stepName === 'diff')?.content).toBe(diff);
+    expect(action.diff).toBe(diff);
+    expect(action.steps.find((step) => step.stepName === 'diff')?.content).toBeNull();
     const encodedDiff = JSON.stringify(diff).slice(1, -1);
     expect(JSON.stringify(action).split(encodedDiff)).toHaveLength(2);
     expect(action.steps.flatMap((step) => step.logs).join('\n')).not.toContain(diff);
@@ -92,7 +93,8 @@ describe('diff storage and audit logging', () => {
     expect(action.continue()).toBe(false);
     expect(action.errorMessage).toContain('BLOCKED_MARKER');
     expect(action.errorMessage).toContain('example.txt');
-    expect(action.steps[0].content).toBe(diff);
+    expect(action.diff).toBe(diff);
+    expect(action.steps[0].content).toBeNull();
     expect(action.steps[1].logs).toContain(
       'scanDiff - Diff is blocked via configured literals/patterns/providers.',
     );
@@ -106,7 +108,8 @@ describe('diff storage and audit logging', () => {
     await scanDiff(request, action);
 
     expect(action.error).toBe(false);
-    expect(action.steps[0].content).toBe('');
+    expect(action.diff).toBe('');
+    expect(action.steps[0].content).toBeNull();
     expect(action.steps[0].logs).toContain('diff - Generated diff (0 bytes)');
     expect(action.steps[1].logs).toContain(
       'scanDiff - No commit diff found, but this may be legitimate (empty diff).',

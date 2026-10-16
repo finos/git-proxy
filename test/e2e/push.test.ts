@@ -737,7 +737,7 @@ describe('Git Proxy E2E - Repository Push Tests', () => {
           const detailResponse = await fetch(detailUrl, { headers: reviewHeaders });
           expect(detailResponse.status).toBe(200);
           const pendingPush: Action = await detailResponse.json();
-          const diff = pendingPush.steps.find((step) => step.stepName === 'diff')?.content;
+          const diff = pendingPush.diff;
           expect(diff).toEqual(expect.stringContaining('Approved Workflow Test'));
           expect(diff).toContain('approved-workflow-test.txt');
           const encodedDiff = JSON.stringify(diff).slice(1, -1);

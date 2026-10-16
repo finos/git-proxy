@@ -173,7 +173,7 @@ Source: [/src/proxy/processors/push-action/preReceive.ts](https://github.com/fin
 
 Executes `git diff` to obtain the diff for the given revision range. If there are no commits (possibly due to a malformed push), the push is blocked.
 
-The full diff is stored in this step's `content` for review and later used in [`scanDiff`](#scandiff). The processors log the diff's byte count and scan findings without logging another copy of the full diff.
+The full diff is stored once in `action.diff` for review and later used in [`scanDiff`](#scandiff). The processors log the diff's byte count and scan findings without logging another copy of the full diff. Historical records with the diff in the step's `content` remain readable.
 
 Source: [/src/proxy/processors/push-action/getDiff.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/push-action/getDiff.ts)
 
