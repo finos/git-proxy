@@ -77,6 +77,27 @@ These server settings can also be set in the [configuration file](./reference) u
 `serverPort`, `httpsServerPort`, `uiHost`, `uiPort` and `httpsUiPort` properties. When a value is
 provided in both places, the environment variable takes precedence over the config file.
 
+Authentication secrets can likewise be supplied with environment variables instead of being written
+into the configuration file, keeping them out of version control and allowing them to be injected at
+runtime from a secret store:
+
+| Environment variable           | Config file field                          | Used by                 |
+| ------------------------------ | ------------------------------------------ | ----------------------- |
+| `GIT_PROXY_LDAP_PASSWORD`      | `authentication[].adConfig.password`       | Active Directory / LDAP |
+| `GIT_PROXY_OIDC_CLIENT_SECRET` | `authentication[].oidcConfig.clientSecret` | OpenID Connect          |
+
+```
+export GIT_PROXY_LDAP_PASSWORD="your-ldap-password"
+export GIT_PROXY_OIDC_CLIENT_SECRET="your-oidc-client-secret"
+```
+
+Each secret follows the same precedence as the server settings above: a non-empty environment
+variable takes precedence over the config file, and an empty or unset environment variable falls
+back to the config file value. Because the secret can come from either source, the matching config
+file field is optional. An enabled authentication method needs its secret from at least one source.
+If both the environment variable and the config field are empty or unset, GitProxy fails to start,
+with an error naming both.
+
 ### Validate configuration
 
 To validate your GitProxy configuration, run:

@@ -21,8 +21,7 @@ import { Request } from 'express';
 
 import * as ldaphelper from './ldaphelper';
 import * as db from '../../db';
-import { getAuthMethods } from '../../config';
-import { serverConfig } from '../../config/env';
+import { getADPassword, getAuthMethods } from '../../config';
 import { ADProfile } from './types';
 import { handleErrorAndLog } from '../../utils/errors';
 
@@ -55,13 +54,12 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
       {
         passReqToCallback: true,
         integrated: false,
-        // The LDAP password may be supplied via the GIT_PROXY_LDAP_PASSWORD environment
-        // variable, which takes precedence over the config file (mirroring
-        // GIT_PROXY_COOKIE_SECRET). This keeps the secret out of the config file so it
-        // can be injected at runtime from a secret store.
+        // The LDAP password is resolved from the GIT_PROXY_LDAP_PASSWORD environment
+        // variable (which takes precedence) or the config file. Resolving on a copy of
+        // adConfig avoids mutating the shared config object.
         ldap: {
           ...adConfig,
-          password: serverConfig.GIT_PROXY_LDAP_PASSWORD || adConfig.password,
+          password: getADPassword(adConfig),
         },
       },
       async function (

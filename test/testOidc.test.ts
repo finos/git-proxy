@@ -71,10 +71,15 @@ describe('OIDC auth method', () => {
     // First mock the dependencies
     vi.resetModules();
     vi.doMock('../src/config', async () => {
-      const actual = await vi.importActual('../src/config');
+      const actual = await vi.importActual<typeof import('../src/config')>('../src/config');
       return {
         ...actual,
         initUserConfig: vi.fn(),
+        // Resolve the client secret with the same precedence as the real resolver but
+        // reading process.env live, so the env-override test is not affected by when
+        // serverConfig captured the environment at module load.
+        getOIDCClientSecret: (oidcConfig: { clientSecret?: string }) =>
+          process.env.GIT_PROXY_OIDC_CLIENT_SECRET || oidcConfig.clientSecret,
       };
     });
     vi.doMock('fs', async (importOriginal) => {

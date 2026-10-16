@@ -45,6 +45,7 @@ const newConfig = JSON.stringify({
         url: 'ldap://test-url',
         baseDN: 'dc=test,dc=com',
         searchBase: 'ou=users,dc=test,dc=com',
+        password: 'test-password',
       },
     },
   ],
@@ -225,10 +226,14 @@ describe('ActiveDirectory LDAP password env var override', () => {
     };
 
     // Mock getAuthMethods directly so this test is independent of the config-file
-    // loading machinery (and the other describe's fs mock). The env override logic
-    // under test lives in activeDirectory.ts, not in config loading.
+    // loading machinery (and the other describe's fs mock). Password resolution now
+    // lives in config.getADPassword (env var takes precedence over the config file);
+    // mock it with the same precedence so this test exercises activeDirectory.ts
+    // delegating to the resolver.
     vi.doMock('../../../src/config', () => ({
       getAuthMethods: () => [adAuthMethod],
+      getADPassword: (adConfig: { password?: string }) =>
+        process.env.GIT_PROXY_LDAP_PASSWORD || adConfig.password,
     }));
 
     vi.doMock('../../../src/service/passport/ldaphelper', () => ({ isUserInAdGroup: vi.fn() }));

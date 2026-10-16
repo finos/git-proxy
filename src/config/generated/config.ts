@@ -261,10 +261,11 @@ export interface AdConfig {
    */
   baseDN: string;
   /**
-   * Password for the given `username`. Can also be set with the GIT_PROXY_LDAP_PASSWORD
-   * environment variable, which takes precedence over this value.
+   * Password for the given `username`. A non-empty GIT_PROXY_LDAP_PASSWORD environment
+   * variable overrides this value. An enabled Active Directory method requires a non-empty
+   * password from either source.
    */
-  password: string;
+  password?: string;
   /**
    * Override baseDN to query for users in other OUs or sub-trees.
    */
@@ -303,10 +304,11 @@ export interface OidcConfig {
   callbackURL: string;
   clientID: string;
   /**
-   * The OIDC client secret. Can also be set with the GIT_PROXY_OIDC_CLIENT_SECRET environment
-   * variable, which takes precedence over this value.
+   * The OIDC client secret. A non-empty GIT_PROXY_OIDC_CLIENT_SECRET environment variable
+   * overrides this value. An enabled OIDC method requires a non-empty client secret from
+   * either source.
    */
-  clientSecret: string;
+  clientSecret?: string;
   issuer: string;
   scope: string;
   [property: string]: any;
@@ -1157,7 +1159,7 @@ const typeMap: any = {
   AdConfig: o(
     [
       { json: 'baseDN', js: 'baseDN', typ: '' },
-      { json: 'password', js: 'password', typ: '' },
+      { json: 'password', js: 'password', typ: u(undefined, '') },
       { json: 'searchBase', js: 'searchBase', typ: u(undefined, '') },
       { json: 'url', js: 'url', typ: '' },
       { json: 'username', js: 'username', typ: '' },
@@ -1178,7 +1180,7 @@ const typeMap: any = {
     [
       { json: 'callbackURL', js: 'callbackURL', typ: '' },
       { json: 'clientID', js: 'clientID', typ: '' },
-      { json: 'clientSecret', js: 'clientSecret', typ: '' },
+      { json: 'clientSecret', js: 'clientSecret', typ: u(undefined, '') },
       { json: 'issuer', js: 'issuer', typ: '' },
       { json: 'scope', js: 'scope', typ: '' },
     ],
