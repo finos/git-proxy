@@ -18,6 +18,7 @@ import { describe, it, expect, afterEach, vi, beforeEach } from 'vitest';
 import { SAMPLE_REPO } from '../../src/proxy/constants';
 
 vi.mock('../../src/db/mongo', () => ({
+  rebuildRepoPushRollups: vi.fn(),
   getRepoByUrl: vi.fn(),
   getRepos: vi.fn().mockResolvedValue([]),
   getPushes: vi.fn().mockResolvedValue([]),
@@ -31,6 +32,7 @@ vi.mock('../../src/db/mongo', () => ({
 }));
 
 vi.mock('../../src/db/file', () => ({
+  rebuildRepoPushRollups: vi.fn(),
   getRepoByUrl: vi.fn(),
   getRepos: vi.fn().mockResolvedValue([]),
   getPushes: vi.fn().mockResolvedValue([]),
@@ -63,7 +65,18 @@ describe('db', () => {
     it('runs the registry against the configured backend sink', async () => {
       await db.runMigrations();
       expect(mongo.getAppliedMigrations).toHaveBeenCalled();
+      expect(mongo.rebuildRepoPushRollups).toHaveBeenCalled();
     });
+  });
+
+  it('rebuilds activity through the configured sink', async () => {
+    const rollups = {
+      tabCounts: new Map(),
+      latestPushAtMs: new Map(),
+      latestPendingReviewAtMs: new Map(),
+    };
+    vi.mocked(mongo.rebuildRepoPushRollups).mockResolvedValueOnce(rollups);
+    expect(await db.rebuildRepoPushRollups()).toBe(rollups);
   });
 
   describe('isUserPushAllowed', () => {
