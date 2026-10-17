@@ -1,6 +1,6 @@
 {
   "name": "@finos/git-proxy",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Deploy custom push protections and policies on top of Git.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
