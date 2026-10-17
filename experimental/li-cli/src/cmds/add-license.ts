@@ -16,9 +16,9 @@
 
 import { setTimeout } from 'node:timers/promises';
 import { search } from '@inquirer/prompts';
-import { getLicenseList, LicensesMap } from '@/lib/spdx';
-import { CalInfo, InventoryLicense, pushLicense } from '@/lib/inventory';
-import { getCALData } from '@/lib/chooseALicense';
+import { getLicenseList, LicensesMap } from '../lib/spdx';
+import { CalInfo, InventoryLicense, pushLicense } from '../lib/inventory';
+import { getCALData } from '../lib/chooseALicense';
 
 // const answer = await input({ message: 'Enter your name' });
 

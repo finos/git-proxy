@@ -16,7 +16,7 @@
 
 import * as db from '../../db';
 import { PassportStatic } from 'passport';
-import { getAuthMethods } from '../../config';
+import { getAuthMethods, getOIDCClientSecret } from '../../config';
 import type { UserInfoResponse } from 'openid-client';
 import type { Request } from 'express';
 import { handleErrorAndLog } from '../../utils/errors';
@@ -35,7 +35,10 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
     throw new Error('Missing OIDC issuer in configuration');
   }
 
-  const { issuer, clientID, clientSecret, callbackURL, scope } = oidcConfig;
+  const { issuer, clientID, callbackURL, scope } = oidcConfig;
+  // The OIDC client secret is resolved from the GIT_PROXY_OIDC_CLIENT_SECRET
+  // environment variable (which takes precedence) or the config file.
+  const clientSecret = getOIDCClientSecret(oidcConfig);
 
   const server = new URL(issuer);
   let config;

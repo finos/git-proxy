@@ -17,7 +17,7 @@
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
-import { GitProxyConfig, Convert, SCMProvider } from './generated/config';
+import { GitProxyConfig, Convert, SCMProvider, AdConfig, OidcConfig } from './generated/config';
 import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
@@ -380,6 +380,48 @@ export const getAPIAuthMethods = () => {
 export const getAuthentication = () => {
   const authMethods = getAuthMethods();
   return authMethods[0]; // Return first enabled method for backward compatibility
+};
+
+/**
+ * Resolve the Active Directory bind password.
+ *
+ * A non-empty GIT_PROXY_LDAP_PASSWORD environment variable takes precedence over
+ * the config file value, allowing the secret to be injected at runtime from a
+ * secret store and kept out of the config file. The schema no longer requires the
+ * config field, so an enabled Active Directory method must supply the password
+ * from one of the two sources; otherwise this throws.
+ * @param {AdConfig} adConfig The Active Directory configuration
+ * @return {string} The resolved, non-empty password
+ */
+export const getADPassword = (adConfig: AdConfig): string => {
+  const password = serverConfig.GIT_PROXY_LDAP_PASSWORD || adConfig.password;
+  if (!password) {
+    throw new Error(
+      'Active Directory password is required: set the GIT_PROXY_LDAP_PASSWORD environment variable or authentication adConfig.password',
+    );
+  }
+  return password;
+};
+
+/**
+ * Resolve the OIDC client secret.
+ *
+ * A non-empty GIT_PROXY_OIDC_CLIENT_SECRET environment variable takes precedence
+ * over the config file value, allowing the secret to be injected at runtime from a
+ * secret store and kept out of the config file. The schema no longer requires the
+ * config field, so an enabled OIDC method must supply the client secret from one of
+ * the two sources; otherwise this throws.
+ * @param {OidcConfig} oidcConfig The OIDC configuration
+ * @return {string} The resolved, non-empty client secret
+ */
+export const getOIDCClientSecret = (oidcConfig: OidcConfig): string => {
+  const clientSecret = serverConfig.GIT_PROXY_OIDC_CLIENT_SECRET || oidcConfig.clientSecret;
+  if (!clientSecret) {
+    throw new Error(
+      'OIDC client secret is required: set the GIT_PROXY_OIDC_CLIENT_SECRET environment variable or authentication oidcConfig.clientSecret',
+    );
+  }
+  return clientSecret;
 };
 
 // Log configuration to console
