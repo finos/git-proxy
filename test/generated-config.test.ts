@@ -67,6 +67,93 @@ describe('Generated Config (QuickType)', () => {
     );
   });
 
+  describe('authentication secrets', () => {
+    // password / clientSecret are optional in the schema because they can be supplied
+    // via GIT_PROXY_LDAP_PASSWORD / GIT_PROXY_OIDC_CLIENT_SECRET. The validator (used by
+    // git-proxy --validate and loadConfig) must accept a config that omits them.
+    it('should accept an Active Directory config without a password', () => {
+      const config = {
+        authentication: [
+          {
+            type: 'ActiveDirectory',
+            enabled: true,
+            adminGroup: 'admins',
+            userGroup: 'users',
+            domain: 'example.com',
+            adConfig: {
+              url: 'ldap://ad.example.com',
+              baseDN: 'dc=example,dc=com',
+              username: 'svc-account',
+            },
+          },
+        ],
+      };
+
+      expect(() => Convert.toGitProxyConfig(JSON.stringify(config))).not.toThrow();
+    });
+
+    it('should accept an OIDC config without a client secret', () => {
+      const config = {
+        authentication: [
+          {
+            type: 'openidconnect',
+            enabled: true,
+            oidcConfig: {
+              issuer: 'https://issuer.example.com',
+              clientID: 'client-id',
+              callbackURL: 'https://proxy.example.com/cb',
+              scope: 'openid email',
+            },
+          },
+        ],
+      };
+
+      expect(() => Convert.toGitProxyConfig(JSON.stringify(config))).not.toThrow();
+    });
+
+    it('should reject a non-string Active Directory password', () => {
+      const config = {
+        authentication: [
+          {
+            type: 'ActiveDirectory',
+            enabled: true,
+            adminGroup: 'admins',
+            userGroup: 'users',
+            domain: 'example.com',
+            adConfig: {
+              url: 'ldap://ad.example.com',
+              baseDN: 'dc=example,dc=com',
+              username: 'svc-account',
+              password: 42,
+            },
+          },
+        ],
+      };
+
+      expect(() => Convert.toGitProxyConfig(JSON.stringify(config))).toThrow('password');
+    });
+
+    it('should reject a non-string OIDC client secret', () => {
+      const config = {
+        authentication: [
+          {
+            type: 'openidconnect',
+            enabled: true,
+            oidcConfig: {
+              issuer: 'https://issuer.example.com',
+              clientID: 'client-id',
+              clientSecret: 42,
+              callbackURL: 'https://proxy.example.com/cb',
+              scope: 'openid email',
+            },
+          },
+        ],
+      };
+
+      expect(() => Convert.toGitProxyConfig(JSON.stringify(config))).toThrow('clientSecret');
+    });
+  });
+
   describe('Convert class', () => {
     it('should parse valid configuration JSON', () => {
       const validConfig = {

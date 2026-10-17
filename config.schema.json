@@ -746,14 +746,14 @@
                 },
                 "password": {
                   "type": "string",
-                  "description": "Password for the given `username`."
+                  "description": "Password for the given `username`. A non-empty GIT_PROXY_LDAP_PASSWORD environment variable overrides this value. An enabled Active Directory method requires a non-empty password from either source."
                 },
                 "searchBase": {
                   "type": "string",
                   "description": "Override baseDN to query for users in other OUs or sub-trees."
                 }
               },
-              "required": ["url", "baseDN", "username", "password"]
+              "required": ["url", "baseDN", "username"]
             }
           },
           "required": ["type", "enabled", "adminGroup", "userGroup", "domain"]
@@ -770,11 +770,14 @@
               "properties": {
                 "issuer": { "type": "string" },
                 "clientID": { "type": "string" },
-                "clientSecret": { "type": "string" },
+                "clientSecret": {
+                  "type": "string",
+                  "description": "The OIDC client secret. A non-empty GIT_PROXY_OIDC_CLIENT_SECRET environment variable overrides this value. An enabled OIDC method requires a non-empty client secret from either source."
+                },
                 "callbackURL": { "type": "string" },
                 "scope": { "type": "string" }
               },
-              "required": ["issuer", "clientID", "clientSecret", "callbackURL", "scope"]
+              "required": ["issuer", "clientID", "callbackURL", "scope"]
             }
           },
           "required": ["type", "enabled", "oidcConfig"]

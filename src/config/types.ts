@@ -25,6 +25,8 @@ export type ServerConfig = {
   GIT_PROXY_COOKIE_SECRET: string | undefined;
   GIT_PROXY_MONGO_CONNECTION_STRING: string | undefined;
   GIT_PROXY_POSTGRES_CONNECTION_STRING: string | undefined;
+  GIT_PROXY_LDAP_PASSWORD: string | undefined;
+  GIT_PROXY_OIDC_CLIENT_SECRET: string | undefined;
 };
 
 interface GitAuth {
