@@ -1340,11 +1340,11 @@ Must be one of:
 
 #### <a name="sink_items_oneOf_i0"></a>23.1.1. Property `GitProxy configuration file > sink > sink items > oneOf > item 0`
 
-|                           |                  |
-| ------------------------- | ---------------- |
-| **Type**                  | `object`         |
-| **Required**              | No               |
-| **Additional properties** | Any type allowed |
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
 
 **Description:** Connection properties for mongoDB. Options may be passed in either the connection string or broken out in the options object
 
@@ -1380,16 +1380,16 @@ Specific value: `"mongo"`
 
 <details>
 <summary>
-<strong> <a name="sink_items_oneOf_i0_connectionString"></a>23.1.1.3. [Required] Property GitProxy configuration file > sink > sink items > oneOf > item 0 > connectionString</strong>
+<strong> <a name="sink_items_oneOf_i0_connectionString"></a>23.1.1.3. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 0 > connectionString</strong>
 </summary>
 <blockquote>
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
-| **Required** | Yes      |
+| **Required** | No       |
 
-**Description:** mongoDB Client connection string, see [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)
+**Description:** MongoDB client connection string. A non-empty GIT_PROXY_MONGO_CONNECTION_STRING environment variable overrides this value. An enabled MongoDB sink requires a non-empty connection string from either source. See [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/).
 
 </blockquote>
 </details>
@@ -1447,11 +1447,11 @@ Specific value: `"mongo"`
 
 #### <a name="sink_items_oneOf_i1"></a>23.1.2. Property `GitProxy configuration file > sink > sink items > oneOf > item 1`
 
-|                           |                  |
-| ------------------------- | ---------------- |
-| **Type**                  | `object`         |
-| **Required**              | No               |
-| **Additional properties** | Any type allowed |
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
 
 **Description:** Connection properties for an neDB file-based database
 
