@@ -340,6 +340,146 @@ describe('user configuration', () => {
     expect(config.getDatabase().connectionString).toBe('mongodb://example.com:27017/test');
   });
 
+  // The LDAP password and OIDC client secret may be omitted from the config file and
+  // supplied via GIT_PROXY_LDAP_PASSWORD / GIT_PROXY_OIDC_CLIENT_SECRET. These tests
+  // drive the real configuration path (file load + schema validation + resolver),
+  // which is where the environment-only case was previously rejected.
+  it.each([
+    ['file-password', 'env-password', 'env-password'],
+    [undefined, 'env-password', 'env-password'],
+    ['', 'env-password', 'env-password'],
+    ['file-password', undefined, 'file-password'],
+    ['file-password', '', 'file-password'],
+  ])(
+    'should resolve the AD password from config %s and env %s to %s',
+    async (configured, env, expected) => {
+      const adConfig = {
+        url: 'ldap://ad.example.com',
+        baseDN: 'dc=example,dc=com',
+        username: 'svc-account',
+        ...(configured === undefined ? {} : { password: configured }),
+      };
+      fs.writeFileSync(
+        tempUserFile,
+        JSON.stringify({ authentication: [{ type: 'ActiveDirectory', enabled: true, adConfig }] }),
+      );
+      if (env === undefined) {
+        delete process.env.GIT_PROXY_LDAP_PASSWORD;
+      } else {
+        process.env.GIT_PROXY_LDAP_PASSWORD = env;
+      }
+
+      const config = await import('../src/config');
+      config.invalidateCache();
+
+      const method = config.getAuthMethods().find((m) => m.type === 'ActiveDirectory');
+      expect(config.getADPassword(method!.adConfig!)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [undefined, undefined],
+    [undefined, ''],
+    ['', undefined],
+    ['', ''],
+  ])(
+    'should reject an AD password that is empty in config %s and env %s',
+    async (configured, env) => {
+      const adConfig = {
+        url: 'ldap://ad.example.com',
+        baseDN: 'dc=example,dc=com',
+        username: 'svc-account',
+        ...(configured === undefined ? {} : { password: configured }),
+      };
+      fs.writeFileSync(
+        tempUserFile,
+        JSON.stringify({ authentication: [{ type: 'ActiveDirectory', enabled: true, adConfig }] }),
+      );
+      if (env === undefined) {
+        delete process.env.GIT_PROXY_LDAP_PASSWORD;
+      } else {
+        process.env.GIT_PROXY_LDAP_PASSWORD = env;
+      }
+
+      const config = await import('../src/config');
+      config.invalidateCache();
+
+      const method = config.getAuthMethods().find((m) => m.type === 'ActiveDirectory');
+      expect(() => config.getADPassword(method!.adConfig!)).toThrow(
+        'Active Directory password is required: set the GIT_PROXY_LDAP_PASSWORD environment variable or authentication adConfig.password',
+      );
+    },
+  );
+
+  it.each([
+    ['file-secret', 'env-secret', 'env-secret'],
+    [undefined, 'env-secret', 'env-secret'],
+    ['', 'env-secret', 'env-secret'],
+    ['file-secret', undefined, 'file-secret'],
+    ['file-secret', '', 'file-secret'],
+  ])(
+    'should resolve the OIDC client secret from config %s and env %s to %s',
+    async (configured, env, expected) => {
+      const oidcConfig = {
+        issuer: 'https://issuer.example.com',
+        clientID: 'client-id',
+        callbackURL: 'https://proxy.example.com/cb',
+        scope: 'openid email',
+        ...(configured === undefined ? {} : { clientSecret: configured }),
+      };
+      fs.writeFileSync(
+        tempUserFile,
+        JSON.stringify({ authentication: [{ type: 'openidconnect', enabled: true, oidcConfig }] }),
+      );
+      if (env === undefined) {
+        delete process.env.GIT_PROXY_OIDC_CLIENT_SECRET;
+      } else {
+        process.env.GIT_PROXY_OIDC_CLIENT_SECRET = env;
+      }
+
+      const config = await import('../src/config');
+      config.invalidateCache();
+
+      const method = config.getAuthMethods().find((m) => m.type === 'openidconnect');
+      expect(config.getOIDCClientSecret(method!.oidcConfig!)).toBe(expected);
+    },
+  );
+
+  it.each([
+    [undefined, undefined],
+    [undefined, ''],
+    ['', undefined],
+    ['', ''],
+  ])(
+    'should reject an OIDC client secret that is empty in config %s and env %s',
+    async (configured, env) => {
+      const oidcConfig = {
+        issuer: 'https://issuer.example.com',
+        clientID: 'client-id',
+        callbackURL: 'https://proxy.example.com/cb',
+        scope: 'openid email',
+        ...(configured === undefined ? {} : { clientSecret: configured }),
+      };
+      fs.writeFileSync(
+        tempUserFile,
+        JSON.stringify({ authentication: [{ type: 'openidconnect', enabled: true, oidcConfig }] }),
+      );
+      if (env === undefined) {
+        delete process.env.GIT_PROXY_OIDC_CLIENT_SECRET;
+      } else {
+        process.env.GIT_PROXY_OIDC_CLIENT_SECRET = env;
+      }
+
+      const config = await import('../src/config');
+      config.invalidateCache();
+
+      const method = config.getAuthMethods().find((m) => m.type === 'openidconnect');
+      expect(() => config.getOIDCClientSecret(method!.oidcConfig!)).toThrow(
+        'OIDC client secret is required: set the GIT_PROXY_OIDC_CLIENT_SECRET environment variable or authentication oidcConfig.clientSecret',
+      );
+    },
+  );
+
   it('should let the postgres connection string env var override the config file', async () => {
     const user = {
       sink: [
