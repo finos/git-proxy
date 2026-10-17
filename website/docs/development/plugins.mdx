@@ -3,6 +3,7 @@ title: Plugins
 ---
 
 ## How plugins work
+
 GitProxy supports extensibility in the form of plugins. These plugins are specified via [configuration](/docs/category/configuration) as NPM packages or JavaScript/TypeScript code on disk. For each plugin configured, GitProxy will attempt to load each package or file as a standard [Node module](https://nodejs.org/api/modules.html). Plugin authors will create instances of the extension classes exposed by GitProxy and use these objects to implement custom functionality.
 
 For each loaded "plugin object", it is inserted into GitProxy's chain of actions which are triggered on a given Git action received by GitProxy such as `git push` or `git fetch`. Action chains are divided into different [phases](#chain-phases), according to the available data and completed checks.
@@ -14,12 +15,15 @@ Before v2.3, plugins executed _before_ GitProxy's built-in steps by default. Now
 GitProxy uses the [load-plugin package](https://www.npmjs.com/package/load-plugin) to provide the Node module resolution.
 
 ## TypeScript Support
-Plugins can be written in TypeScript, as shown in our [push secret scanner sample](https://github.com/finos/git-proxy/tree/main/plugins/git-proxy-plugin-samples/customPushSecretScanner.ts).
+
+Plugins can be written in TypeScript, as shown in our [push secret scanner sample](https://github.com/finos/git-proxy/tree/main/plugins/git-proxy-plugin-samples/customSecretScanner.ts).
 
 ## Limitations
+
 - Plugins are only supported on the Git HTTP proxy server. There is no similar extensibility today for the dashboard UI or its backing API.
 
 ## Using plugins
+
 The primary goals of the plugin system is to:
 
 - Allow users deploying GitProxy to do so via the distributed binary package. ie. `npx -- @finos/git-proxy`
@@ -28,9 +32,10 @@ The primary goals of the plugin system is to:
 
 The below instructions are using the [`@finos/git-proxy-plugin-samples`](https://www.npmjs.com/package/@finos/git-proxy-plugin-samples) package as an demonstrative set of plugins.
 
-
 ### via npm packages
+
 #### Steps
+
 1. Install both `@finos/git-proxy` and the `@finos/git-proxy-plugin-samples` package to the local `node_modules/` directory using the following command:
 
 ```bash
@@ -38,6 +43,7 @@ $ npm install -g @finos/git-proxy @finos/git-proxy-plugin-samples
 ```
 
 Alternatively, you can create local packages from source and install those instead.
+
 ```bash
 $ git clone https://github.com/finos/git-proxy
 $ cd git-proxy
@@ -55,7 +61,9 @@ $ npm install -g \
   "plugins": [
     "@finos/git-proxy-plugin-samples",
     "@finos/git-proxy-plugin-samples/example.cjs",
-    "@finos/git-proxy-plugin-samples/customSecretScanner"
+    "@finos/git-proxy-plugin-samples/customSecretScanner",
+    "@finos/git-proxy-plugin-samples/extractPullData",
+    "@finos/git-proxy-plugin-samples/pullSecretScanner"
   ]
 }
 ```
@@ -67,13 +75,16 @@ $ git-proxy
 Service Listening on 8080
 HTTP Proxy Listening on 8000
 HTTPS Proxy Listening on 8443
-Found 3 plugin modules
+Found 5 plugin modules
 Loaded plugin: RunOnPullPlugin
 Loaded plugin: HelloPlugin
 Loaded plugin: CustomSecretScanner
+Loaded plugin: ExtractPullDataPlugin
+Loaded plugin: PullSecretScanner
 ```
 
 ### via JavaScript/TypeScript file(s)
+
 :::caution
 This section is considered highly experimental and not recommended for general use. Even when authoring local plugins that are not distributed, it is best to use `node_modules/` and not rely on bespoke system setup or layout of files. Use `npm pack` and `npm install path/to/plugin.tgz` if you must use local plugin code to ensure GitProxy's plugin manager can properly load your plugins.
 :::
@@ -107,9 +118,7 @@ $ npm install
 
 ```json
 {
-  "plugins": [
-    "path/to/plugin/index.js"
-  ]
+  "plugins": ["path/to/plugin/index.js"]
 }
 ```
 
@@ -129,20 +138,21 @@ Loaded plugin: FooPlugin
 To develop a new plugin, you must add `@finos/git-proxy` as a [peer dependency](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#peerdependencies). The plugin & proxy classes can then be imported from `@finos/git-proxy` via the following extension points:
 
 ```js
-import { PushActionPlugin } from '@finos/git-proxy/plugin'
+import { PushActionPlugin } from '@finos/git-proxy/plugin';
 ```
+
 - Use this class to execute as an action in the proxy chain during a `git push`
 
-
 ```js
-import { PullActionPlugin } from '@finos/git-proxy/plugin'
+import { PullActionPlugin } from '@finos/git-proxy/plugin';
 ```
+
 - Use this class to execute as an action in the proxy chain during a `git fetch`
 
-
 ```js
-import { Step, Action } from '@finos/git-proxy/proxy/actions'
+import { Step, Action } from '@finos/git-proxy/proxy/actions';
 ```
+
 - These are internal classes which act as carriers for `git` state during proxying. Plugins should modify the passed in `Action` for affecting any global state of the git operation and add its own custom `Step` object to capture the plugin's own internal state (logs, errored/blocked status, etc).
 
 GitProxy will load your plugin only if it extends one of the two plugin classes above.
@@ -152,7 +162,7 @@ Please see the [sample plugin package included in the repo](https://github.com/f
 If your plugin relies on custom state, it is recommended to create subclasses in the following manner:
 
 ```javascript
-import { PushActionPlugin } from "@finos/git-proxy/plugin";
+import { PushActionPlugin } from '@finos/git-proxy/plugin';
 
 class FooPlugin extends PushActionPlugin {
   constructor() {
@@ -165,7 +175,7 @@ class FooPlugin extends PushActionPlugin {
       this.utilMethod();
       // do something
       return action;
-    }
+    };
   }
 
   utilMethod() {
@@ -174,9 +184,28 @@ class FooPlugin extends PushActionPlugin {
 }
 ```
 
+### Reacting to successful actions with `onChainSuccess`
+
+Plugins may optionally define an `onChainSuccess(req, action)` method. GitProxy calls it once the whole action chain has finished without being rejected/blocked by intermediate steps or the plugin itself. Any errors thrown inside `onChainSuccess` will be logged and won't affect the result of the git operation.
+
+This is useful for storing state that requires the whole action to execute successfully before running the plugin. For example, [`extractPullData`](#scanning-pulls) caches the `wants` to prevent re-fetching, but only for pulls that weren't blocked:
+
+```javascript
+class ExtractPullDataPlugin extends PullActionPlugin {
+  constructor() {
+    super(exec, { phase: PullPhase.AFTER_AUTHORISATION });
+  }
+
+  onChainSuccess(req, action) {
+    rememberRecentFetch(action);
+  }
+}
+```
+
 ### Instructions for creating a new plugin package
 
 1. Create a new directory for your plugin package and initialize a new npm package:
+
 ```bash
 $ npm init
 # ...
@@ -186,18 +215,18 @@ $ npm install --save-peer @finos/git-proxy
 2. Create a new JavaScript file for your plugin. The file should export an instance of `PushActionPlugin` or `PullActionPlugin`:
 
 ```javascript
-import { PushActionPlugin } from "@finos/git-proxy/plugin";
-import { Step } from "@finos/git-proxy/proxy/actions";
+import { PushActionPlugin } from '@finos/git-proxy/plugin';
+import { Step } from '@finos/git-proxy/proxy/actions';
 
 //Note: Only use a default export if you do not rely on any state. Otherwise, create a sub-class of [Push/Pull]ActionPlugin
-export default new PushActionPlugin(function(req, action) {
+export default new PushActionPlugin(function (req, action) {
   // the action parameter holds all the details about a push.
   // see https://github.com/finos/git-proxy/blob/main/src/proxy/actions/Action.js
 
   // create a new Step to track any side effects of this plugin function (errors, blocking pushes, logs, etc)
   // see https://github.com/finos/git-proxy/blob/main/src/proxy/actions/Step.js
   const step = new Step('bar-plugin');
-  action.addStep(step); 
+  action.addStep(step);
   // add custom logic here.
   // ...
   return action; // always return the action - even in the case of errors
@@ -245,7 +274,49 @@ Depending on what your plugin does, you'll want to pick a phase where the data y
 
 #### Pull chain phases
 
-The pull chain currently has a single `PullPhase`: `AFTER_AUTHORISATION`. Plugins are set to run in the `AFTER_AUTHORISATION` phase by default. The reasoning is that it's unsafe to run plugins before validating that the repository is actually in the authorised list (an unauthorised repository could contain malicious code to exploit subsequent plugins).
+The pull chain currently executes `checkRepoInAuthorisedList` followed by two `PullPhase`s:
+
+- `AFTER_AUTHORISATION`: The repository is guaranteed to be in the `authorisedList`. By default, plugins run in this phase. This is because it's unsafe to run plugins before validating that the repository can actually be pulled from.
+- `AFTER_CHECKOUT`: Runs right after `AFTER_AUTHORISATION`. Core GitProxy does not parse pulls or fetch their data, so this phase is meant to be used *after* a plugin such as [`extractPullData`](#scanning-pulls) has checked out the repo and populated the pull data. It's meant for policy plugins that inspect the content of commits being fetched.
+
+#### Scanning pulls
+
+GitProxy doesn't parse or fetch pulls by default, it merely checks that an admin has enabled to pull from that repo. Pull plugins only see basic `Action` fields (`action.url`, `action.repo`, etc.). In order to inspect actual content being fetched, you need two types of plugins (both of these available in `@finos/git-proxy-plugin-samples`):
+
+- A **data plugin** that parses the raw git request and stores information about the pull into the `Action`. It doesn't enforce any policies by itself, but may reject the pull if it fails to extract the data. [`extractPullData`](https://github.com/finos/git-proxy/tree/main/plugins/git-proxy-plugin-samples/extractPullData) is the sample data plugin.
+- A **policy plugin** that reads the data and decides whether the pull is allowed. [`pullSecretScanner`](https://github.com/finos/git-proxy/tree/main/plugins/git-proxy-plugin-samples/pullSecretScanner.ts) is a sample policy plugin.
+
+These two sample plugins can be used as follows:
+
+```json
+{
+  "plugins": [
+    "@finos/git-proxy-plugin-samples/extractPullData",
+    "@finos/git-proxy-plugin-samples/pullSecretScanner"
+  ]
+}
+```
+
+If you look at the plugin code, you'll notice that they don't import each other. They work by sharing the `Action` fields described below. Their order in `plugins` doesn't matter either, since they run in their defined `Phase`.
+
+##### Data provided by `extractPullData`
+
+- `action.pullData`: The parsed upload-pack request object which includes: `command`, `wants`, `haves`, `wantRefs`, `refPrefixes`, `shallow`, `capabilities`, etc. `action.actionType` is set to `fetch` or `ls-refs`.
+- `action.proxyGitPath`: A *temporary* bare repository containing a shallow, blobless fetch of the wanted commits (`pullData.fetchedWants`). It gets deleted once the chain has finished.
+- `pullData.base` / `action.commitFrom` and `action.commitTo`: The pull's diff range. The base is the first of the client's `haves` that exists upstream (all zeros if none, meaning a full-tree scan). `commitTo` is the first want.
+- `pullData.wantedRefs`, `action.branch` and `action.tags`: The ref names the wanted commits resolve to.
+
+The plugin runs `git` through `simple-git`. For HTTPS upstreams with self-signed certificates, configure git with the right CA (or set `GIT_SSL_NO_VERIFY`).
+
+##### Writing your own policy plugin
+
+Set `phase: PullPhase.AFTER_CHECKOUT`, then:
+
+- Check that `action.pullData` is present. If not, the data plugin isn't configured correctly and the pull must be rejected.
+- If `action.proxyGitPath` isn't set, there is nothing to inspect. This could happen with an `ls-refs` request, or `pullData.repeatedRound` when the same commits were alreadry accepted.
+- Otherwise, run `git` against `action.proxyGitPath`. Blobs are fetched from the upstream repository on demand.
+
+The sample `pullSecretScanner` provided follows these rules. It scans the content based on the `pullData.fetchedWants` and blocks the fetch if a secret is found or git fails. Note how it scans the *net* diff rather than each commit.
 
 ### `isCollectible`
 
