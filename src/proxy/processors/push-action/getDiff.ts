@@ -50,7 +50,7 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
     const revisionRange = `${commitFrom}..${action.commitTo}`;
     const diff = await git.diff([revisionRange]);
     action.setDiff(diff);
-    step.log(diff);
+    step.log(`Generated diff (${Buffer.byteLength(diff, 'utf8')} bytes)`);
   } catch (error: unknown) {
     const msg = getErrorMessage(error);
     step.setError(msg);

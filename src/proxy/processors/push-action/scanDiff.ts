@@ -181,7 +181,6 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
   step.log(`Scanning diff: ${commitFrom}:${commitTo}`);
   const diff = action.diff ?? steps.find((s) => s.stepName === 'diff')?.content;
 
-  step.log(diff);
   const diffViolations = getDiffViolations(diff, action.project, step);
 
   if (diffViolations) {
