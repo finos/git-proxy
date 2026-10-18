@@ -25,7 +25,7 @@
     "http-status-codes": "^2.3.0",
     "mongoose": "^8.10.1",
     "pino": "^9.6.0",
-    "pino-caller": "^3.4.0",
+    "pino-caller": "^4.0.0",
     "pino-http": "^10.4.0",
     "uuid": "^11.1.0",
     "zod": "^4.6.5"
