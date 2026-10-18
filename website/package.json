@@ -16,11 +16,11 @@
     "node": ">=24.21"
   },
   "devDependencies": {
-    "@docusaurus/core": "4.0.0-canary-6881",
-    "@docusaurus/faster": "4.0.0-canary-6881",
-    "@docusaurus/plugin-google-gtag": "4.0.0-canary-6881",
-    "@docusaurus/preset-classic": "4.0.0-canary-6881",
-    "@docusaurus/theme-mermaid": "4.0.0-canary-6881",
+    "@docusaurus/core": "4.0.0-canary-6985",
+    "@docusaurus/faster": "4.0.0-canary-6904",
+    "@docusaurus/plugin-google-gtag": "4.0.0-canary-6985",
+    "@docusaurus/preset-classic": "4.0.0-canary-6985",
+    "@docusaurus/theme-mermaid": "4.0.0-canary-6985",
     "@mermaid-js/layout-elk": "^1.0.1",
     "ajv": "^8.17.1",
     "axios": "^1.13.4",
