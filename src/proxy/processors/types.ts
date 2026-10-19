@@ -29,6 +29,7 @@ export interface ProcessorExec {
    * When false or unset, a failure stops the chain immediately.
    */
   readonly isCollectible?: boolean;
+  readonly onChainSuccess?: (req: Request, action: Action) => Promise<void> | void;
 }
 
 /**
@@ -53,6 +54,7 @@ export type PushPhase = (typeof PushPhase)[keyof typeof PushPhase];
 
 export const PullPhase = {
   AFTER_AUTHORISATION: 'AFTER_AUTHORISATION',
+  AFTER_CHECKOUT: 'AFTER_CHECKOUT',
 } as const;
 export type PullPhase = (typeof PullPhase)[keyof typeof PullPhase];
 
