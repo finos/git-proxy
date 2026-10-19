@@ -16,26 +16,19 @@
 
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 
-export default ({ mode }: { mode: string }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  const apiPort = env.GIT_PROXY_UI_PORT || '8080';
-  const apiTarget = `http://127.0.0.1:${apiPort}`;
-  return defineConfig({
-    build: {
-      outDir: 'dist/build',
+export default defineConfig({
+  build: {
+    outDir: 'dist/build',
+  },
+  server: {
+    port: 3000,
+    watch: {
+      ignored: ['**/.data/**', '**/.remote/**', '**/.tmp/**'],
     },
-    server: {
-      port: 3000,
-      watch: {
-        ignored: ['**/.data/**', '**/.remote/**', '**/.tmp/**'],
-      },
-    },
-    plugins: [tailwindcss(), react()],
-    publicDir: 'src/ui/public',
-    define: {
-      'process.env': JSON.stringify(env),
-    },
-  });
-};
+  },
+  plugins: [tailwindcss(), react()],
+  publicDir: 'src/ui/public',
+  envPrefix: 'VITE_',
+});
