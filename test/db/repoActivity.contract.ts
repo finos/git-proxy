@@ -15,7 +15,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { Action, RequestType } from '../../src/proxy/actions';
+import { Action, RequestType, Step } from '../../src/proxy/actions';
 import { canonicalRemoteUrl } from '../../src/activity/canonicalRemoteUrl';
 import type { Sink } from '../../src/db/types';
 
@@ -23,6 +23,8 @@ type ActivitySink = Pick<
   Sink,
   | 'writeAudit'
   | 'getPush'
+  | 'getPushes'
+  | 'getPushesForUserProfile'
   | 'deletePush'
   | 'authorise'
   | 'reject'
@@ -55,6 +57,48 @@ export const defineRepoActivityContract = (name: string, sink: ActivitySink): vo
     };
     beforeEach(cleanup);
     afterEach(cleanup);
+
+    it.each(['authorise', 'reject', 'cancel'] as const)(
+      'preserves detail payloads and list projections after %s and activity rebuilds',
+      async (review) => {
+        const action = makePush();
+        action.userEmail = 'author@example.com';
+        action.setDiff('diff --git a/file b/file\n+preserved diff');
+        action.addStep(new Step('audit', false, null, false, null, 'preserved step payload'));
+        await sink.writeAudit(action);
+
+        const checkPayloads = async () => {
+          expect(await sink.getPush(action.id)).toMatchObject({
+            diff: action.diff,
+            steps: action.steps,
+          });
+          const lists = [
+            await sink.getPushes({}),
+            await sink.getPushesForUserProfile([action.userEmail!], 'author'),
+          ];
+          for (const list of lists) {
+            const push = list.find((entry) => entry.id === action.id);
+            expect(push).toBeDefined();
+            expect(push).not.toHaveProperty('diff');
+            expect(push).not.toHaveProperty('steps');
+          }
+        };
+
+        await checkPayloads();
+        if (review === 'authorise') await sink.authorise(action.id, attestation);
+        else if (review === 'reject') await sink.reject(action.id, rejection);
+        else await sink.cancel(action.id);
+        const counts = (await sink.getRepoPushRollupsByCanonicalUrl()).tabCounts.get(
+          canonicalRemoteUrl(url),
+        );
+        const status = { authorise: 'approved', reject: 'rejected', cancel: 'canceled' } as const;
+        expect(counts?.[status[review]]).toBe(1);
+        expect(counts?.pending).toBe(0);
+        await checkPayloads();
+        await sink.rebuildRepoPushRollups();
+        await checkPayloads();
+      },
+    );
 
     it('rebuilds activity through the sink API without changing audit records', async () => {
       const action = makePush();
