@@ -16,6 +16,7 @@
 
 import express, { Request, Response } from 'express';
 import * as config from '../../config';
+import { getProviders } from '../../proxy/processors/push-action/tokenIdentity';
 
 const router = express.Router();
 
@@ -33,6 +34,10 @@ router.get('/contactEmail', (_req: Request, res: Response) => {
 
 router.get('/uiRouteAuth', (_req: Request, res: Response) => {
   res.send(config.getUIRouteAuth());
+});
+
+router.get('/scmProviders', (_req: Request, res: Response) => {
+  res.send(getProviders().map(({ name, type, host }) => ({ name, type, host })));
 });
 
 router.get('/ssh', (_req: Request, res: Response) => {

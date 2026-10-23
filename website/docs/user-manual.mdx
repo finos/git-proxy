@@ -395,7 +395,8 @@ Once your contribution has been approved by a reviewer:
 
 - You must push the exact same commits that were approved.
 - If you make new commits after approval, they will require a new review.
-- The approval is specific to the commit SHA(s) that were reviewed.
+- The approval is specific to the repository, the branch or tag, and the commit SHA(s) that were reviewed. Pushing the same commits to a different branch or repository, or pointing the tag at a different commit, requires a new review.
+- Each push may update a single ref (one branch or one tag), thus multiple ref updates are rejected.
 - After successful push to upstream, you can create a pull request on the target platform as normal.
   :::
 
@@ -520,7 +521,7 @@ The login method depends on your organisation's GitProxy configuration. It may u
 
 Ensure that:
 
-- You are pushing the exact same commits that were approved (same SHA)
+- You are pushing the exact same commits that were approved (same SHA) to the same repository and branch
 - You haven't made additional commits since the approval
 - Your credentials are still valid and not expired
 - The upstream repository still exists and you have access to it

@@ -37,12 +37,7 @@ const gitignorePath = fileURLToPath(
   ),
 );
 
-const licenseHeaderPath = fileURLToPath(
-  new URL(
-    'licenseHeader.js',
-    import.meta.url,
-  ),
-);
+const licenseHeaderPath = fileURLToPath(new URL('scripts/licenseHeader.js', import.meta.url));
 
 export default defineConfig(
   includeIgnoreFile(gitignorePath, 'Imported .gitignore patterns'),
@@ -57,6 +52,8 @@ export default defineConfig(
       // vendored code we're not changing
       'src/ui/assets/js/**',
       'src/ui/assets/css/**',
+      // local claude worktrees / scratch
+      '.claude/**',
     ],
   },
 

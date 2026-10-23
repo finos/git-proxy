@@ -2,7 +2,7 @@
 
 // To parse this data:
 //
-//   import { Convert, GitProxyConfig } from "./file";
+//   import { Convert, GitProxyConfig } from "./config";
 //
 //   const gitProxyConfig = Convert.toGitProxyConfig(json);
 //
@@ -89,6 +89,12 @@ export interface GitProxyConfig {
    * API Rate limiting configuration.
    */
   rateLimit?: RateLimit;
+  /**
+   * SCM providers the proxy can ask to identify a pusher from the credential presented with a
+   * push. Setting this replaces the built-in list (github.com, gitlab.com, codeberg.org,
+   * gitea.com).
+   */
+  scmProviders?: SCMProvider[];
   /**
    * Port the proxy HTTP server listens on. Can also be set with the GIT_PROXY_SERVER_PORT
    * environment variable, which takes precedence over this value.
@@ -255,9 +261,11 @@ export interface AdConfig {
    */
   baseDN: string;
   /**
-   * Password for the given `username`.
+   * Password for the given `username`. A non-empty GIT_PROXY_LDAP_PASSWORD environment
+   * variable overrides this value. An enabled Active Directory method requires a non-empty
+   * password from either source.
    */
-  password: string;
+  password?: string;
   /**
    * Override baseDN to query for users in other OUs or sub-trees.
    */
@@ -295,7 +303,12 @@ export interface RoleMapping {
 export interface OidcConfig {
   callbackURL: string;
   clientID: string;
-  clientSecret: string;
+  /**
+   * The OIDC client secret. A non-empty GIT_PROXY_OIDC_CLIENT_SECRET environment variable
+   * overrides this value. An enabled OIDC method requires a non-empty client secret from
+   * either source.
+   */
+  clientSecret?: string;
   issuer: string;
   scope: string;
   [property: string]: any;
@@ -504,6 +517,25 @@ export interface Domains {
  */
 export interface Limits {
   /**
+   * Maximum decompressed size of a single object in a pack file in bytes (default 64MB).
+   * Capped by maxDecompressedPackSizeBytes.
+   */
+  maxDecompressedObjectSizeBytes?: number;
+  /**
+   * Maximum total decompressed size of all objects in a pack file in bytes (default 128MB).
+   * Set to a value lower than maxPackSizeBytes to prevent memory exhaustion.
+   */
+  maxDecompressedPackSizeBytes?: number;
+  /**
+   * Maximum allowed expansion ratio (decompressed/compressed size) of a pack file (default
+   * 100).
+   */
+  maxPackExpansionRatio?: number;
+  /**
+   * Maximum number of objects in a pack file (default 100,000).
+   */
+  maxPackObjects?: number;
+  /**
    * Maximum size of a pack file in bytes (default 1GB)
    */
   maxPackSizeBytes?: number;
@@ -531,6 +563,36 @@ export interface RateLimit {
   windowMs: number;
 }
 
+export interface SCMProvider {
+  /**
+   * Base URL of the REST API without a trailing slash. Derived from host and type when
+   * omitted.
+   */
+  apiUrl?: string;
+  /**
+   * Hostname of the git remote this provider serves, for example github.example.com.
+   */
+  host: string;
+  /**
+   * Identifier for this provider. Stored on user records under scmIdentities and used in
+   * logs. Must be unique.
+   */
+  name: string;
+  /**
+   * Which API the host speaks. Gitea and Codeberg speak the Forgejo API.
+   */
+  type: SCMProviderType;
+}
+
+/**
+ * Which API the host speaks. Gitea and Codeberg speak the Forgejo API.
+ */
+export enum SCMProviderType {
+  Forgejo = 'forgejo',
+  Github = 'github',
+  Gitlab = 'gitlab',
+}
+
 /**
  * Configuration entry for a database
  *
@@ -538,11 +600,26 @@ export interface RateLimit {
  * or broken out in the options object
  *
  * Connection properties for an neDB file-based database
+ *
+ * Connection properties for PostgreSQL. When set, the
+ * `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable overrides `connectionString`.
+ * If neither a `connectionString` nor the discrete
+ * `host`/`port`/`user`/`password`/`database` fields are set, the standard
+ * `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` environment variables are used.
  */
 export interface Database {
   /**
-   * mongoDB Client connection string, see
-   * [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)
+   * MongoDB client connection string. A non-empty GIT_PROXY_MONGO_CONNECTION_STRING
+   * environment variable overrides this value. An enabled MongoDB sink requires a non-empty
+   * connection string from either source. See
+   * [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/).
+   *
+   * PostgreSQL client connection string, see
+   * [https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING).
+   * Connection settings are selected in this order: `GIT_PROXY_POSTGRES_CONNECTION_STRING`,
+   * `connectionString` from the user config or default config, then the discrete connection
+   * fields. When using discrete fields, missing values fall back to the `PG*` environment
+   * variables.
    */
   connectionString?: string;
   enabled: boolean;
@@ -554,7 +631,77 @@ export interface Database {
    */
   options?: Options;
   type: DatabaseType;
-  [property: string]: any;
+  /**
+   * Run pending schema migrations automatically at startup (default `true`). Set to `false`
+   * when the runtime database role must not hold DDL rights: apply migrations out-of-band
+   * with DDL-capable credentials (`npm run migrate:postgres:schema`), and startup will only
+   * verify the schema is current, refusing to start while any migration is pending.
+   */
+  autoMigrate?: boolean;
+  /**
+   * Authenticate to Amazon RDS/Aurora with an IAM auth token instead of a static password.
+   * When enabled, a short-lived token is generated for each new connection from the AWS SDK
+   * default credential chain, so no password is stored. Requires the discrete
+   * `host`/`port`/`user` fields (or the `PGHOST`/`PGPORT`/`PGUSER` environment variables)
+   * rather than a `connectionString`, requires TLS (`ssl` defaults to `true` when omitted),
+   * and needs the optional `@aws-sdk/rds-signer` dependency to be installed.
+   */
+  awsIamAuth?: AwsIamAuth;
+  /**
+   * Database name. Used when `connectionString` is not set. Falls back to the `PGDATABASE`
+   * environment variable.
+   */
+  database?: string;
+  /**
+   * Database server host. Used when `connectionString` is not set. Falls back to the `PGHOST`
+   * environment variable.
+   */
+  host?: string;
+  /**
+   * Database password. Used when `connectionString` is not set. Falls back to the
+   * `PGPASSWORD` environment variable.
+   */
+  password?: string;
+  /**
+   * Connection pool tuning passed to the PostgreSQL client.
+   */
+  pool?: Pool;
+  /**
+   * Database server port. Used when `connectionString` is not set. Falls back to the `PGPORT`
+   * environment variable.
+   */
+  port?: number;
+  /**
+   * TLS configuration for the connection. `true` enables TLS with default certificate
+   * verification; an object is passed to the PostgreSQL client as TLS options (for example
+   * `rejectUnauthorized`, `ca`, `cert`, `key`).
+   */
+  ssl?: boolean | { [key: string]: any };
+  /**
+   * Database user. Used when `connectionString` is not set. Falls back to the `PGUSER`
+   * environment variable.
+   */
+  user?: string;
+}
+
+/**
+ * Authenticate to Amazon RDS/Aurora with an IAM auth token instead of a static password.
+ * When enabled, a short-lived token is generated for each new connection from the AWS SDK
+ * default credential chain, so no password is stored. Requires the discrete
+ * `host`/`port`/`user` fields (or the `PGHOST`/`PGPORT`/`PGUSER` environment variables)
+ * rather than a `connectionString`, requires TLS (`ssl` defaults to `true` when omitted),
+ * and needs the optional `@aws-sdk/rds-signer` dependency to be installed.
+ */
+export interface AwsIamAuth {
+  /**
+   * Enable IAM token authentication for the PostgreSQL connection.
+   */
+  enabled: boolean;
+  /**
+   * AWS region of the RDS/Aurora instance. Falls back to the `AWS_REGION` /
+   * `AWS_DEFAULT_REGION` environment variables, then the AWS SDK's default region resolution.
+   */
+  region?: string;
 }
 
 /**
@@ -577,9 +724,28 @@ export interface AuthMechanismProperties {
   [property: string]: any;
 }
 
+/**
+ * Connection pool tuning passed to the PostgreSQL client.
+ */
+export interface Pool {
+  /**
+   * Milliseconds to wait for a connection before timing out.
+   */
+  connectionTimeoutMillis?: number;
+  /**
+   * Milliseconds a client may sit idle in the pool before being closed.
+   */
+  idleTimeoutMillis?: number;
+  /**
+   * Maximum number of clients the pool may hold.
+   */
+  max?: number;
+}
+
 export enum DatabaseType {
   FS = 'fs',
   Mongo = 'mongo',
+  Postgres = 'postgres',
 }
 
 /**
@@ -682,6 +848,11 @@ export interface RouteAuthRule {
  */
 export interface UpstreamProxy {
   /**
+   * Credentials presented to the upstream proxy. Preferred over embedding credentials in
+   * `url`.
+   */
+  auth?: Auth;
+  /**
    * Whether to use an outbound HTTP(S) proxy for upstream Git hosts.
    */
   enabled?: boolean;
@@ -693,6 +864,36 @@ export interface UpstreamProxy {
    * Proxy URL used for outbound connections to upstream Git hosts when set.
    */
   url?: string;
+}
+
+/**
+ * Credentials presented to the upstream proxy. Preferred over embedding credentials in
+ * `url`.
+ *
+ * HTTP Basic — sends base64(username:password) in the Proxy-Authorization header on every
+ * CONNECT.
+ *
+ * Windows NTLM — multi-round CONNECT handshake (Type1/Type2/Type3) on the same TCP
+ * connection. Use when the proxy advertises `Proxy-Authenticate: NTLM`.
+ */
+export interface Auth {
+  password: string;
+  type: AuthType;
+  username: string;
+  /**
+   * NTLM domain / target. Optional; defaults to empty (proxy decides).
+   */
+  domain?: string;
+  /**
+   * Workstation name reported in the Type1/Type3 messages. Optional; defaults to the host's
+   * name.
+   */
+  workstation?: string;
+}
+
+export enum AuthType {
+  Basic = 'basic',
+  NTLM = 'ntlm',
 }
 
 // Converts JSON strings to/from your types
@@ -908,6 +1109,7 @@ const typeMap: any = {
       { json: 'privateOrganizations', js: 'privateOrganizations', typ: u(undefined, a('any')) },
       { json: 'proxyUrl', js: 'proxyUrl', typ: u(undefined, '') },
       { json: 'rateLimit', js: 'rateLimit', typ: u(undefined, r('RateLimit')) },
+      { json: 'scmProviders', js: 'scmProviders', typ: u(undefined, a(r('SCMProvider'))) },
       { json: 'serverPort', js: 'serverPort', typ: u(undefined, 3.14) },
       { json: 'sessionMaxAgeHours', js: 'sessionMaxAgeHours', typ: u(undefined, 3.14) },
       { json: 'sidebandProgress', js: 'sidebandProgress', typ: u(undefined, true) },
@@ -958,7 +1160,7 @@ const typeMap: any = {
   AdConfig: o(
     [
       { json: 'baseDN', js: 'baseDN', typ: '' },
-      { json: 'password', js: 'password', typ: '' },
+      { json: 'password', js: 'password', typ: u(undefined, '') },
       { json: 'searchBase', js: 'searchBase', typ: u(undefined, '') },
       { json: 'url', js: 'url', typ: '' },
       { json: 'username', js: 'username', typ: '' },
@@ -979,7 +1181,7 @@ const typeMap: any = {
     [
       { json: 'callbackURL', js: 'callbackURL', typ: '' },
       { json: 'clientID', js: 'clientID', typ: '' },
-      { json: 'clientSecret', js: 'clientSecret', typ: '' },
+      { json: 'clientSecret', js: 'clientSecret', typ: u(undefined, '') },
       { json: 'issuer', js: 'issuer', typ: '' },
       { json: 'scope', js: 'scope', typ: '' },
     ],
@@ -1060,7 +1262,24 @@ const typeMap: any = {
     ],
     'any',
   ),
-  Limits: o([{ json: 'maxPackSizeBytes', js: 'maxPackSizeBytes', typ: u(undefined, 3.14) }], false),
+  Limits: o(
+    [
+      {
+        json: 'maxDecompressedObjectSizeBytes',
+        js: 'maxDecompressedObjectSizeBytes',
+        typ: u(undefined, 3.14),
+      },
+      {
+        json: 'maxDecompressedPackSizeBytes',
+        js: 'maxDecompressedPackSizeBytes',
+        typ: u(undefined, 3.14),
+      },
+      { json: 'maxPackExpansionRatio', js: 'maxPackExpansionRatio', typ: u(undefined, 3.14) },
+      { json: 'maxPackObjects', js: 'maxPackObjects', typ: u(undefined, 3.14) },
+      { json: 'maxPackSizeBytes', js: 'maxPackSizeBytes', typ: u(undefined, 3.14) },
+    ],
+    false,
+  ),
   RateLimit: o(
     [
       { json: 'limit', js: 'limit', typ: 3.14 },
@@ -1070,14 +1289,39 @@ const typeMap: any = {
     ],
     false,
   ),
+  SCMProvider: o(
+    [
+      { json: 'apiUrl', js: 'apiUrl', typ: u(undefined, '') },
+      { json: 'host', js: 'host', typ: '' },
+      { json: 'name', js: 'name', typ: '' },
+      { json: 'type', js: 'type', typ: r('SCMProviderType') },
+    ],
+    false,
+  ),
   Database: o(
     [
       { json: 'connectionString', js: 'connectionString', typ: u(undefined, '') },
       { json: 'enabled', js: 'enabled', typ: true },
       { json: 'options', js: 'options', typ: u(undefined, r('Options')) },
       { json: 'type', js: 'type', typ: r('DatabaseType') },
+      { json: 'autoMigrate', js: 'autoMigrate', typ: u(undefined, true) },
+      { json: 'awsIamAuth', js: 'awsIamAuth', typ: u(undefined, r('AwsIamAuth')) },
+      { json: 'database', js: 'database', typ: u(undefined, '') },
+      { json: 'host', js: 'host', typ: u(undefined, '') },
+      { json: 'password', js: 'password', typ: u(undefined, '') },
+      { json: 'pool', js: 'pool', typ: u(undefined, r('Pool')) },
+      { json: 'port', js: 'port', typ: u(undefined, 3.14) },
+      { json: 'ssl', js: 'ssl', typ: u(undefined, u(true, m('any'))) },
+      { json: 'user', js: 'user', typ: u(undefined, '') },
     ],
-    'any',
+    false,
+  ),
+  AwsIamAuth: o(
+    [
+      { json: 'enabled', js: 'enabled', typ: true },
+      { json: 'region', js: 'region', typ: u(undefined, '') },
+    ],
+    false,
   ),
   Options: o(
     [
@@ -1092,6 +1336,14 @@ const typeMap: any = {
   AuthMechanismProperties: o(
     [{ json: 'AWS_CREDENTIAL_PROVIDER', js: 'AWS_CREDENTIAL_PROVIDER', typ: u(undefined, true) }],
     'any',
+  ),
+  Pool: o(
+    [
+      { json: 'connectionTimeoutMillis', js: 'connectionTimeoutMillis', typ: u(undefined, 3.14) },
+      { json: 'idleTimeoutMillis', js: 'idleTimeoutMillis', typ: u(undefined, 3.14) },
+      { json: 'max', js: 'max', typ: u(undefined, 3.14) },
+    ],
+    false,
   ),
   SSH: o(
     [
@@ -1147,12 +1399,25 @@ const typeMap: any = {
   ),
   UpstreamProxy: o(
     [
+      { json: 'auth', js: 'auth', typ: u(undefined, r('Auth')) },
       { json: 'enabled', js: 'enabled', typ: u(undefined, true) },
       { json: 'noProxy', js: 'noProxy', typ: u(undefined, a('')) },
       { json: 'url', js: 'url', typ: u(undefined, '') },
     ],
     false,
   ),
+  Auth: o(
+    [
+      { json: 'password', js: 'password', typ: '' },
+      { json: 'type', js: 'type', typ: r('AuthType') },
+      { json: 'username', js: 'username', typ: '' },
+      { json: 'domain', js: 'domain', typ: u(undefined, '') },
+      { json: 'workstation', js: 'workstation', typ: u(undefined, '') },
+    ],
+    false,
+  ),
   AuthenticationElementType: ['ActiveDirectory', 'jwt', 'local', 'openidconnect'],
-  DatabaseType: ['fs', 'mongo'],
+  SCMProviderType: ['forgejo', 'github', 'gitlab'],
+  DatabaseType: ['fs', 'mongo', 'postgres'],
+  AuthType: ['basic', 'ntlm'],
 };

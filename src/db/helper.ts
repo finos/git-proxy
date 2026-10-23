@@ -37,3 +37,18 @@ export const trimPrefixRefsHeads = (str: string): string => {
   }
   return str;
 };
+
+const PROVIDER_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/;
+
+/**
+ * Document path for a user's handle on a provider. Provider names come from
+ * configuration and API input, so they are checked before being spliced into a
+ * query path: no dots, no leading `$`.
+ * @param {string} provider provider name
+ * @return {string | null} the field path, or null when the name is not usable
+ */
+export const scmIdentityField = (provider: string): string | null =>
+  PROVIDER_NAME.test(provider) ? `scmIdentities.${provider}` : null;
+
+/** One form for an SCM handle everywhere it is stored or looked up. */
+export const normaliseScmLogin = (login: string): string => login.trim().toLowerCase();

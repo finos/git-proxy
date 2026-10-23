@@ -7,7 +7,7 @@ permissions:
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'release/**']
   pull_request:
   workflow_dispatch:
 
@@ -19,18 +19,19 @@ jobs:
         suite: [vitest, cypress]
     env:
       BUILDX_CACHE_SCOPE: ${{ matrix.suite }}-build
+      COMPOSE_FILE: test/e2e/docker-compose.yml:test/e2e/docker-compose.ci.yml
 
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
         with:
           egress-policy: audit
 
       - name: Checkout code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
         with:
           install: true
 
@@ -38,10 +39,10 @@ jobs:
         uses: crazy-max/ghaction-github-runtime@04d248b84655b509d8c44dc1d6f990c879747487 # v4.0.0
 
       - name: Set up Docker Compose
-        uses: docker/setup-compose-action@3408803818f5b5065308cdf3293ecbddf1ab2fac
+        uses: docker/setup-compose-action@54042514f505b273907334ae2b9cdbb9a0213c1a
 
       - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
           node-version: '24'
           cache: 'npm'
@@ -56,7 +57,7 @@ jobs:
           git config --global init.defaultBranch main
 
       - name: Build and start services with Docker Compose
-        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --build --wait
+        run: docker compose up -d --build --wait
 
       - name: Debug service state
         if: failure()
@@ -83,7 +84,7 @@ jobs:
         run: docker compose logs git-proxy --tail=100
 
       - name: Upload Cypress screenshots on failure
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         if: failure() && matrix.suite == 'cypress'
         with:
           name: cypress-screenshots
@@ -101,7 +102,7 @@ jobs:
     needs: [e2e]
     steps:
       - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
         with:
           egress-policy: audit
 

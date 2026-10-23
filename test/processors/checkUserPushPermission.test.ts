@@ -21,20 +21,20 @@ import type { Mock } from 'vitest';
 import { Request } from 'express';
 
 vi.mock('../../src/db', () => ({
-  getUsers: vi.fn(),
+  findUser: vi.fn(),
   isUserPushAllowed: vi.fn(),
 }));
 
 // import after mocking
-import { getUsers, isUserPushAllowed } from '../../src/db';
+import { findUser, isUserPushAllowed } from '../../src/db';
 import { exec } from '../../src/proxy/processors/push-action/checkUserPushPermission';
 
 describe('checkUserPushPermission', () => {
-  let getUsersMock: Mock;
+  let findUserMock: Mock;
   let isUserPushAllowedMock: Mock;
 
   beforeEach(() => {
-    getUsersMock = vi.mocked(getUsers);
+    findUserMock = vi.mocked(findUser);
     isUserPushAllowedMock = vi.mocked(isUserPushAllowed);
   });
 
@@ -57,15 +57,12 @@ describe('checkUserPushPermission', () => {
         1234567890,
         'https://github.com/finos/git-proxy.git',
       );
-      action.user = 'git-user';
-      action.userEmail = 'db-user@test.com';
+      action.user = 'db-user';
       stepLogSpy = vi.spyOn(Step.prototype, 'log');
     });
 
     it('should allow push when user has permission', async () => {
-      getUsersMock.mockResolvedValue([
-        { username: 'db-user', email: 'db-user@test.com', gitAccount: 'git-user' },
-      ]);
+      findUserMock.mockResolvedValue({ username: 'db-user', email: 'db-user@test.com' });
       isUserPushAllowedMock.mockResolvedValue(true);
 
       const result = await exec(req, action);
@@ -73,14 +70,12 @@ describe('checkUserPushPermission', () => {
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(false);
       expect(stepLogSpy).toHaveBeenLastCalledWith(
-        'User db-user@test.com is allowed to push on repo https://github.com/finos/git-proxy.git',
+        'User db-user is allowed to push on repo https://github.com/finos/git-proxy.git',
       );
     });
 
     it('should reject push when user has no permission', async () => {
-      getUsersMock.mockResolvedValue([
-        { username: 'db-user', email: 'db-user@test.com', gitAccount: 'git-user' },
-      ]);
+      findUserMock.mockResolvedValue({ username: 'db-user', email: 'db-user@test.com' });
       isUserPushAllowedMock.mockResolvedValue(false);
 
       const result = await exec(req, action);
@@ -88,43 +83,27 @@ describe('checkUserPushPermission', () => {
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(true);
       expect(stepLogSpy).toHaveBeenLastCalledWith(
-        `Your push has been blocked (db-user@test.com is not allowed to push on repo https://github.com/finos/git-proxy.git)`,
+        `Your push has been blocked (db-user is not allowed to push on repo https://github.com/finos/git-proxy.git)`,
       );
       expect(result.steps[0].errorMessage).toContain('Your push has been blocked');
     });
 
-    it('should reject push when no user found for git account', async () => {
-      getUsersMock.mockResolvedValue([]);
+    it('should reject push when no user found', async () => {
+      findUserMock.mockResolvedValue(null);
 
       const result = await exec(req, action);
 
       expect(result.steps).toHaveLength(1);
       expect(result.steps[0].error).toBe(true);
       expect(stepLogSpy).toHaveBeenLastCalledWith(
-        `Your push has been blocked (db-user@test.com is not allowed to push on repo https://github.com/finos/git-proxy.git)`,
+        `Your push has been blocked (db-user is not allowed to push on repo https://github.com/finos/git-proxy.git)`,
       );
       expect(result.steps[0].errorMessage).toContain('Your push has been blocked');
-    });
-
-    it('should handle multiple users for git account by rejecting the push', async () => {
-      getUsersMock.mockResolvedValue([
-        { username: 'user1', email: 'db-user@test.com', gitAccount: 'git-user' },
-        { username: 'user2', email: 'db-user@test.com', gitAccount: 'git-user' },
-      ]);
-
-      const result = await exec(req, action);
-
-      expect(result.steps).toHaveLength(1);
-      expect(result.steps[0].error).toBe(true);
-      expect(stepLogSpy).toHaveBeenLastCalledWith(
-        'Your push has been blocked (there are multiple users with email db-user@test.com)',
-      );
     });
 
     it('should return error when no user is set in the action', async () => {
       action.user = undefined;
-      action.userEmail = undefined;
-      getUsersMock.mockResolvedValue([]);
+      findUserMock.mockResolvedValue(null);
 
       const result = await exec(req, action);
 
@@ -136,23 +115,27 @@ describe('checkUserPushPermission', () => {
     });
 
     describe('fuzzing', () => {
-      it('should not crash on arbitrary getUsers return values (fuzzing)', async () => {
-        const userList = fc.sample(
-          fc.array(
+      it('should not crash on arbitrary findUser return values (fuzzing)', async () => {
+        const maybeUser = fc.sample(
+          fc.oneof(
+            fc.constant(null),
             fc.record({
               username: fc.string(),
-              gitAccount: fc.string(),
+              email: fc.option(fc.string()),
             }),
-            { maxLength: 5 },
           ),
           1,
         )[0];
-        getUsersMock.mockResolvedValue(userList);
+        findUserMock.mockResolvedValue(maybeUser);
 
         const result = await exec(req, action);
 
         expect(result.steps).toHaveLength(1);
-        expect(result.steps[0].error).toBe(true);
+        if (maybeUser) {
+          expect(result.steps[0].error).toBe(true);
+        } else {
+          expect(result.steps[0].error).toBe(true);
+        }
       });
     });
   });

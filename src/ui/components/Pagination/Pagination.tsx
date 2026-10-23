@@ -15,7 +15,7 @@
  */
 
 import React from 'react';
-import './Pagination.css';
+import { Pagination as PrimerPagination } from '@primer/react';
 
 interface PaginationProps {
   currentPage: number;
@@ -24,40 +24,31 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
 }
 
-const Pagination: React.FC<PaginationProps> = ({
+const Pagination = ({
   currentPage,
   totalItems = 0,
   itemsPerPage,
   onPageChange,
-}) => {
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+}: PaginationProps) => {
+  const perPage = itemsPerPage > 0 ? itemsPerPage : 1;
+  const pageCount = Math.ceil(totalItems / perPage);
 
-  const handlePageClick = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
+  if (pageCount <= 1) return null;
+
+  const handlePageChange = (e: React.MouseEvent, page: number) => {
+    e.preventDefault();
+    if (page >= 1 && page <= pageCount) {
       onPageChange(page);
     }
   };
 
   return (
-    <div className='paginationContainer'>
-      <button
-        className='pageButton'
-        onClick={() => handlePageClick(currentPage - 1)}
-        disabled={currentPage === 1}
-      >
-        Previous
-      </button>
-
-      <span>Page {totalPages === 0 ? '0 of 0' : `${currentPage} of ${totalPages}`}</span>
-
-      <button
-        className='pageButton'
-        onClick={() => handlePageClick(currentPage + 1)}
-        disabled={currentPage === totalPages || totalPages === 0}
-      >
-        Next
-      </button>
-    </div>
+    <PrimerPagination
+      className='mt-5'
+      pageCount={pageCount}
+      currentPage={currentPage}
+      onPageChange={handlePageChange}
+    />
   );
 };
 

@@ -15,7 +15,7 @@
  */
 
 import { Request } from 'express';
-import simpleGit from 'simple-git';
+import { simpleGit } from 'simple-git';
 
 import { Action, Step } from '../../actions';
 import { EMPTY_COMMIT_HASH } from '../../constants';
@@ -49,8 +49,8 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
     step.log(`Executing "git diff ${commitFrom} ${action.commitTo}" in ${path}`);
     const revisionRange = `${commitFrom}..${action.commitTo}`;
     const diff = await git.diff([revisionRange]);
+    action.setDiff(diff);
     step.log(diff);
-    step.setContent(diff);
   } catch (error: unknown) {
     const msg = getErrorMessage(error);
     step.setError(msg);

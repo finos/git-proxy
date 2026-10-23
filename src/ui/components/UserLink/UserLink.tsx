@@ -15,15 +15,25 @@
  */
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 
 interface UserLinkProps {
-  username: string;
+  username?: string | null;
   children?: React.ReactNode;
 }
 
-const UserLink: React.FC<UserLinkProps> = ({ username, children }) => {
-  return <Link to={`/dashboard/user/${username}`}>{children || username}</Link>;
+function getUserProfilePath(username: string): string {
+  return `/dashboard/user/${username}`;
+}
+
+const UserLink = ({ username, children }: UserLinkProps) => {
+  const trimmedUsername = username?.trim() ?? '';
+  const content = children ?? trimmedUsername ?? null;
+  if (!content) {
+    return null;
+  }
+
+  return <Link to={getUserProfilePath(trimmedUsername)}>{content}</Link>;
 };
 
 export default UserLink;

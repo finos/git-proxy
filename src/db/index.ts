@@ -15,16 +15,35 @@
  */
 
 import { AuthorisedRepo } from '../config/generated/config';
-import { PushQuery, Repo, RepoQuery, Sink, User, UserQuery, PublicKeyRecord } from './types';
+import {
+  PushQuery,
+  PublicKeyRecord,
+  Repo,
+  RepoActivityTabCounts,
+  RepoQuery,
+  Sink,
+  User,
+  UserQuery,
+  emptyRepoActivityTabCounts,
+  ScmIdentities,
+} from './types';
 import * as bcrypt from 'bcryptjs';
 import * as config from '../config';
 import * as mongo from './mongo';
 import * as neDb from './file';
+import * as postgres from './postgres';
 import { Action } from '../proxy/actions/Action';
 import MongoDBStore from 'connect-mongo';
+import { Store } from 'express-session';
 import { CompletedAttestation, Rejection } from '../proxy/processors/types';
 import { processGitUrl } from '../proxy/routes/helper';
 import { initializeFolders } from './file/helper';
+import { runMigrations as applyMigrations } from './migrations';
+import { migrations } from './migrations/registry';
+import { attachRepoActivityTabCounts } from './repoActivityMerge';
+import { collectUserProfileEmailVariants } from './userProfilePushQuery';
+import { activityPrimaryStatusFromFlags } from '../activity/activityPrimaryStatus';
+import { normaliseScmLogin } from './helper';
 
 let _sink: Sink | null = null;
 
@@ -41,6 +60,9 @@ const start = () => {
       console.log('Loading neDB database adaptor');
       initializeFolders();
       _sink = neDb;
+    } else if (config.getDatabase().type === 'postgres') {
+      console.log('Loading PostgreSQL database adaptor');
+      _sink = postgres;
     } else {
       console.error(`Unsupported database type: ${config.getDatabase().type}`);
       process.exit(1);
@@ -53,28 +75,35 @@ const isBlank = (str: string) => {
   return !str || /^\s*$/.test(str);
 };
 
+const normaliseScmIdentities = (identities: ScmIdentities): ScmIdentities =>
+  Object.fromEntries(
+    Object.entries(identities)
+      .filter(([provider, login]) => !isBlank(provider) && !isBlank(login))
+      .map(([provider, login]) => [provider.trim(), normaliseScmLogin(login)]),
+  );
+
 export const createUser = async (
   username: string,
   password: string,
   email: string,
-  gitAccount: string,
   admin: boolean = false,
   oidcId: string = '',
   mustChangePassword: boolean = false,
+  scmIdentities: ScmIdentities = {},
 ) => {
   console.log(
     `creating user
         user=${username},
-        gitAccount=${gitAccount}
         email=${email},
         admin=${admin}
-        oidcId=${oidcId}`,
+        oidcId=${oidcId}
+        scmIdentities=${JSON.stringify(scmIdentities)}`,
   );
 
   const data = {
     username: username,
     password: oidcId ? null : await bcrypt.hash(password, 10),
-    gitAccount: gitAccount,
+    scmIdentities: normaliseScmIdentities(scmIdentities),
     email: email,
     admin: admin,
     mustChangePassword,
@@ -82,11 +111,6 @@ export const createUser = async (
 
   if (isBlank(username)) {
     const errorMessage = `username cannot be empty`;
-    throw new Error(errorMessage);
-  }
-
-  if (isBlank(gitAccount)) {
-    const errorMessage = `gitAccount cannot be empty`;
     throw new Error(errorMessage);
   }
 
@@ -107,16 +131,25 @@ export const createUser = async (
     throw new Error(errorMessage);
   }
 
+  for (const [provider, login] of Object.entries(data.scmIdentities)) {
+    if (await sink.findUserByScmIdentity(provider, login)) {
+      throw new Error(`${provider} account ${login} is already linked to another user`);
+    }
+  }
+
   await sink.createUser(data);
 };
 
 export const createRepo = async (repo: AuthorisedRepo) => {
+  const now = new Date().toISOString();
   const toCreate = {
     ...repo,
     users: {
       canPush: [],
       canAuthorise: [],
     },
+    dateCreated: now,
+    lastModified: now,
   };
   toCreate.name = repo.name.toLowerCase();
 
@@ -178,8 +211,15 @@ export const canUserCancelPush = async (id: string, user: string) => {
   }
 };
 
-export const getSessionStore = (): MongoDBStore | undefined => start().getSessionStore();
+export const runMigrations = (): Promise<void> => applyMigrations(start(), migrations);
+export const getSessionStore = (): MongoDBStore | Store | undefined => start().getSessionStore();
+export const ensureSessionStoreReady = (): Promise<void> =>
+  start().ensureSessionStoreReady?.() ?? Promise.resolve();
 export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => start().getPushes(query);
+export const getPushesForUserProfile = async (user: User): Promise<Action[]> => {
+  const emailVariants = collectUserProfileEmailVariants(user);
+  return start().getPushesForUserProfile(emailVariants, user.username);
+};
 export const writeAudit = (action: Action): Promise<void> => start().writeAudit(action);
 export const getPush = (id: string): Promise<Action | null> => start().getPush(id);
 export const deletePush = (id: string): Promise<void> => start().deletePush(id);
@@ -190,7 +230,19 @@ export const authorise = (
 export const cancel = (id: string): Promise<{ message: string }> => start().cancel(id);
 export const reject = (id: string, rejection: Rejection): Promise<{ message: string }> =>
   start().reject(id, rejection);
-export const getRepos = (query?: Partial<RepoQuery>): Promise<Repo[]> => start().getRepos(query);
+export const getRepos = async (query?: Partial<RepoQuery>): Promise<Repo[]> => {
+  const sink = start();
+  const [repos, rollups] = await Promise.all([
+    sink.getRepos(query),
+    sink.getRepoPushRollupsByCanonicalUrl(),
+  ]);
+  return attachRepoActivityTabCounts(
+    repos,
+    rollups.tabCounts,
+    rollups.latestPendingReviewAtMs,
+    rollups.latestPushAtMs,
+  );
+};
 export const getRepo = (name: string): Promise<Repo | null> => start().getRepo(name);
 export const getRepoByUrl = (url: string): Promise<Repo | null> => start().getRepoByUrl(url);
 export const getRepoById = (_id: string): Promise<Repo | null> => start().getRepoById(_id);
@@ -206,8 +258,36 @@ export const deleteRepo = (_id: string): Promise<void> => start().deleteRepo(_id
 export const findUser = (username: string): Promise<User | null> => start().findUser(username);
 export const findUserByEmail = (email: string): Promise<User | null> =>
   start().findUserByEmail(email);
-export const findUserByGitAccount = (gitAccount: string): Promise<User | null> =>
-  start().findUserByGitAccount(gitAccount);
+export const findUserByScmIdentity = (provider: string, login: string): Promise<User | null> =>
+  start().findUserByScmIdentity(provider, login);
+
+/**
+ * Link or unlink an SCM account on a user. Handles are compared
+ * case-insensitively by the providers, so they are stored lower-cased.
+ * @param {string} username the git-proxy user
+ * @param {string} provider configured provider name
+ * @param {string | null} login account handle on that provider, or null to unlink
+ */
+export const setUserScmIdentity = async (
+  username: string,
+  provider: string,
+  login: string | null,
+): Promise<void> => {
+  const user = await findUser(username);
+  if (!user) throw new Error(`user ${username} not found`);
+  const scmIdentities = { ...(user.scmIdentities ?? {}) };
+  if (login && !isBlank(login)) {
+    const handle = normaliseScmLogin(login);
+    const existing = await findUserByScmIdentity(provider, handle);
+    if (existing && existing.username !== user.username) {
+      throw new Error(`${provider} account ${handle} is already linked to another user`);
+    }
+    scmIdentities[provider] = handle;
+  } else {
+    delete scmIdentities[provider];
+  }
+  await updateUser({ username: user.username, scmIdentities });
+};
 export const findUserByOIDC = (oidcId: string): Promise<User | null> =>
   start().findUserByOIDC(oidcId);
 export const findUserBySSHKey = (sshKey: string): Promise<User | null> =>
@@ -241,4 +321,69 @@ export const getAllProxiedHosts = async (): Promise<string[]> => {
   return Array.from(origins);
 };
 
-export type { PushQuery, Repo, Sink, User, PublicKeyRecord } from './types';
+function bumpUserActivityCount(
+  counts: Map<string, RepoActivityTabCounts>,
+  username: string,
+  tab: keyof RepoActivityTabCounts,
+): void {
+  let row = counts.get(username);
+  if (!row) {
+    row = emptyRepoActivityTabCounts();
+    counts.set(username, row);
+  }
+  row[tab] += 1;
+}
+
+export const getUserActivityTabCountsByUsername = async (): Promise<
+  Map<string, RepoActivityTabCounts>
+> => {
+  const sink = start();
+  const [users, pushes] = await Promise.all([sink.getUsers(), sink.getPushes({ type: 'push' })]);
+
+  // Build email (lowercase) → username lookup, including externalEmail
+  const emailToUsername = new Map<string, string>();
+  for (const user of users) {
+    for (const email of collectUserProfileEmailVariants(user)) {
+      emailToUsername.set(email.toLowerCase(), user.username.toLowerCase());
+    }
+  }
+
+  const counts = new Map<string, RepoActivityTabCounts>();
+
+  for (const push of pushes) {
+    const tab = activityPrimaryStatusFromFlags(push);
+    const attributedUsernames = new Set<string>();
+
+    // Author via userEmail
+    const authorEmail = typeof push.userEmail === 'string' ? push.userEmail.toLowerCase() : '';
+    const authorUsername = authorEmail ? emailToUsername.get(authorEmail) : undefined;
+    if (authorUsername) {
+      attributedUsernames.add(authorUsername);
+    }
+
+    // Reviewer via attestation.reviewer.username
+    const reviewerUsername =
+      typeof push.attestation?.reviewer?.username === 'string'
+        ? push.attestation.reviewer.username.toLowerCase()
+        : '';
+    if (reviewerUsername) {
+      attributedUsernames.add(reviewerUsername);
+    }
+
+    for (const username of attributedUsernames) {
+      bumpUserActivityCount(counts, username, tab);
+    }
+  }
+
+  return counts;
+};
+
+export type {
+  PushQuery,
+  PublicKeyRecord,
+  Repo,
+  RepoActivityTabCounts,
+  RepoPushRollupsByCanonicalUrl,
+  Sink,
+  User,
+} from './types';

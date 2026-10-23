@@ -26,7 +26,9 @@ export const getServiceError = (
   fallbackMessage: string,
 ): { status?: number; message: string } => {
   const status = error?.response?.status;
-  const responseMessage = error?.response?.data?.message;
+  const responseMessage =
+    error?.response?.data?.message ??
+    (typeof error?.response?.data?.error === 'string' ? error.response.data.error : undefined);
   const message =
     typeof responseMessage === 'string' && responseMessage.trim().length > 0
       ? responseMessage

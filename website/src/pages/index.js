@@ -240,6 +240,24 @@ function Home() {
               />
             </div>
           </div>
+          <div className='col col--4'>
+            <div className='col-demo'>
+              <Avatar
+                name='Fabio Vincenzi'
+                description='Open Source Software Engineer at G-Research'
+                username='fabiovincenzi'
+              />
+            </div>
+          </div>
+          <div className='col col--4'>
+            <div className='col-demo'>
+              <Avatar
+                name='Denis Coric'
+                description='Open Source Software Engineer at G-Research'
+                username='dcoric'
+              />
+            </div>
+          </div>
         </div>
       </div>
       <div className='container text--center'>

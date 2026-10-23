@@ -278,6 +278,9 @@ website/.docusaurus
 test/keys/
 test/.ssh/
 
+# Generated local TLS certificates (see scripts/create-cert.sh)
+certs/*.pem
+
 # VS COde IDE
 .vscode/settings.json
 

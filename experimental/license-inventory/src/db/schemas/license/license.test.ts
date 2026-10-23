@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { License } from '@/db/collections';
+import { License } from '../../collections';
 import { v4 as uuidv4 } from 'uuid';
 
 // these tests require a mongodb instance

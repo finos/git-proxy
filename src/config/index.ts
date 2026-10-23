@@ -17,13 +17,14 @@
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
-import { GitProxyConfig, Convert } from './generated/config';
+import { GitProxyConfig, Convert, SCMProvider, AdConfig, OidcConfig } from './generated/config';
 import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
 import { getConfigFile } from './file';
-import { GIGABYTE } from '../constants';
+import { GIGABYTE, MEGABYTE } from '../constants';
 import { validateConfig } from './validators';
+import { getDeprecatedConfigWarnings } from './deprecatedFields';
 import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
 
 export { setConfigFile, getConfigFile, validate } from './file';
@@ -53,13 +54,14 @@ const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
   'plugins',
   'privateOrganizations',
   'rateLimit',
+  'scmProviders',
   'serverPort',
   'sessionMaxAgeHours',
   'sidebandProgress',
   'sink',
+  'ssh',
   'tempPassword',
   'tls',
-  'ssh',
   'uiHost',
   'uiPort',
   'uiRouteAuth',
@@ -157,6 +159,10 @@ function loadFullConfiguration(): FullGitProxyConfig {
     } catch (error: unknown) {
       handleErrorAndThrow(error, `Error loading user config from ${userConfigFile}`);
     }
+  }
+
+  for (const message of getDeprecatedConfigWarnings(userSettings)) {
+    console.warn(message);
   }
 
   _currentConfig = mergeConfigurations(defaultConfig, userSettings);
@@ -320,9 +326,22 @@ export const getDatabase = () => {
 
   for (const db of databases) {
     if (db.enabled) {
-      // if mongodb is configured and connection string unspecified, fallback to env var
-      if (db.type === 'mongo' && !db.connectionString) {
-        db.connectionString = serverConfig.GIT_PROXY_MONGO_CONNECTION_STRING;
+      if (db.type === 'mongo') {
+        const connectionString =
+          serverConfig.GIT_PROXY_MONGO_CONNECTION_STRING || db.connectionString;
+        if (!connectionString) {
+          throw new Error(
+            'MongoDB connection string is required: set GIT_PROXY_MONGO_CONNECTION_STRING or sink.connectionString',
+          );
+        }
+        return { ...db, connectionString };
+      }
+      // The postgres connection string follows the same precedence as GitProxy's
+      // other environment variable overrides: env var, then user config, then the
+      // default config. The default config ships a connectionString, so a
+      // fallback-only env var would never apply.
+      if (db.type === 'postgres' && serverConfig.GIT_PROXY_POSTGRES_CONNECTION_STRING) {
+        db.connectionString = serverConfig.GIT_PROXY_POSTGRES_CONNECTION_STRING;
       }
       return db;
     }
@@ -367,6 +386,48 @@ export const getAPIAuthMethods = () => {
 export const getAuthentication = () => {
   const authMethods = getAuthMethods();
   return authMethods[0]; // Return first enabled method for backward compatibility
+};
+
+/**
+ * Resolve the Active Directory bind password.
+ *
+ * A non-empty GIT_PROXY_LDAP_PASSWORD environment variable takes precedence over
+ * the config file value, allowing the secret to be injected at runtime from a
+ * secret store and kept out of the config file. The schema no longer requires the
+ * config field, so an enabled Active Directory method must supply the password
+ * from one of the two sources; otherwise this throws.
+ * @param {AdConfig} adConfig The Active Directory configuration
+ * @return {string} The resolved, non-empty password
+ */
+export const getADPassword = (adConfig: AdConfig): string => {
+  const password = serverConfig.GIT_PROXY_LDAP_PASSWORD || adConfig.password;
+  if (!password) {
+    throw new Error(
+      'Active Directory password is required: set the GIT_PROXY_LDAP_PASSWORD environment variable or authentication adConfig.password',
+    );
+  }
+  return password;
+};
+
+/**
+ * Resolve the OIDC client secret.
+ *
+ * A non-empty GIT_PROXY_OIDC_CLIENT_SECRET environment variable takes precedence
+ * over the config file value, allowing the secret to be injected at runtime from a
+ * secret store and kept out of the config file. The schema no longer requires the
+ * config field, so an enabled OIDC method must supply the client secret from one of
+ * the two sources; otherwise this throws.
+ * @param {OidcConfig} oidcConfig The OIDC configuration
+ * @return {string} The resolved, non-empty client secret
+ */
+export const getOIDCClientSecret = (oidcConfig: OidcConfig): string => {
+  const clientSecret = serverConfig.GIT_PROXY_OIDC_CLIENT_SECRET || oidcConfig.clientSecret;
+  if (!clientSecret) {
+    throw new Error(
+      'OIDC client secret is required: set the GIT_PROXY_OIDC_CLIENT_SECRET environment variable or authentication oidcConfig.clientSecret',
+    );
+  }
+  return clientSecret;
 };
 
 // Log configuration to console
@@ -469,11 +530,7 @@ export const getRateLimit = () => {
   return config.rateLimit;
 };
 
-export const getMaxPackSizeBytes = (): number => {
-  const config = loadFullConfiguration();
-  const configuredValue = config.limits?.maxPackSizeBytes;
-  const fallback = 1 * GIGABYTE; // 1 GiB default
-
+const resolveLimit = (configuredValue: number | undefined, fallback: number): number => {
   if (
     typeof configuredValue === 'number' &&
     Number.isFinite(configuredValue) &&
@@ -483,6 +540,41 @@ export const getMaxPackSizeBytes = (): number => {
   }
 
   return fallback;
+};
+
+export const getMaxPackSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackSizeBytes, 1 * GIGABYTE);
+};
+
+export const getMaxDecompressedPackSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxDecompressedPackSizeBytes, 128 * MEGABYTE);
+};
+
+export const getMaxDecompressedObjectSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxDecompressedObjectSizeBytes, 64 * MEGABYTE);
+};
+
+export const getMaxPackExpansionRatio = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackExpansionRatio, 100);
+};
+
+export const getMaxPackObjects = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackObjects, 100_000);
+};
+
+/**
+ * SCM providers the proxy may ask to identify a pusher from the credential that
+ * accompanied the push. A user-supplied list replaces the built-in defaults.
+ * @return {SCMProvider[]} configured providers
+ */
+export const getScmProviders = (): SCMProvider[] => {
+  const config = loadFullConfiguration();
+  return config.scmProviders ?? [];
 };
 
 /**
@@ -519,7 +611,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     const validatedConfig = Convert.toGitProxyConfig(JSON.stringify(newConfig));
 
     // 2. Get proxy module dynamically to avoid circular dependency
-    const proxy = (await import('../proxy')) as any;
+    const proxy = (await import('../proxy/index.js')) as any;
 
     // 3. Stop existing services
     await proxy.stop();
@@ -536,7 +628,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     handleErrorAndLog(error, 'Failed to apply new configuration');
     // Attempt to restart with previous config
     try {
-      const proxy = (await import('../proxy')) as any;
+      const proxy = (await import('../proxy/index.js')) as any;
       await proxy.start();
     } catch (startError: unknown) {
       handleErrorAndLog(startError, 'Failed to restart services');

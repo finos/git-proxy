@@ -236,6 +236,8 @@ async function addGitPushToDb(
   );
   action.user = user || '';
   action.userEmail = userEmail || '';
+  // A seeded push stands in for one whose pusher the proxy resolved from the push credential.
+  action.pusherVerified = !!user;
   const step = new Step(
     'authBlock', // stepName
     false, // error
@@ -276,7 +278,7 @@ async function removeGitPushFromDb(id: string) {
  * @param {string} username The user name.
  * @param {string} password The user password.
  * @param {string} email The user email.
- * @param {string} gitAccount The user git account.
+ * @param {string} gitAccount The user git account (for backward compatibility, maps to github identity).
  * @param {boolean} admin Flag to make the user administrator.
  * @param {boolean} debug Flag to enable logging for debugging.
  */
@@ -288,7 +290,8 @@ async function addUserToDb(
   admin: boolean = false,
   debug: boolean = false,
 ) {
-  const result = await db.createUser(username, password, email, gitAccount, admin);
+  const scmIdentities = gitAccount ? { github: gitAccount } : {};
+  const result = await db.createUser(username, password, email, admin, '', false, scmIdentities);
   if (debug) {
     console.log(`New user added to DB: ${util.inspect(result)}`);
   }

@@ -14,24 +14,21 @@
  * limitations under the License.
  */
 
-import { defineConfig, loadEnv } from 'vite';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 
-export default ({ mode }: { mode: string }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  return defineConfig({
-    build: {
-      outDir: 'build',
+export default defineConfig({
+  build: {
+    outDir: 'dist/build',
+  },
+  server: {
+    port: 3000,
+    watch: {
+      ignored: ['**/.data/**', '**/.remote/**', '**/.tmp/**'],
     },
-    server: {
-      port: 3000,
-      watch: {
-        ignored: ['**/.data/**', '**/.remote/**', '**/.tmp/**'],
-      },
-    },
-    plugins: [react()],
-    define: {
-      'process.env': JSON.stringify(env),
-    },
-  });
-};
+  },
+  plugins: [tailwindcss(), react()],
+  publicDir: 'src/ui/public',
+  envPrefix: 'VITE_',
+});

@@ -532,7 +532,7 @@ describe('test git-proxy-cli', function () {
         await helper.closeServer();
       }
 
-      const cli = `${CLI_PATH} create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+      const cli = `${CLI_PATH} create-user --username newuser --password newpass --email new@email.com`;
       const expectedExitCode = 2;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: Create User:'];
@@ -542,7 +542,7 @@ describe('test git-proxy-cli', function () {
     it('attempt to create user should fail when not authenticated', async function () {
       await helper.removeCookiesFile();
 
-      const cli = `${CLI_PATH} create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+      const cli = `${CLI_PATH} create-user --username newuser --password newpass --email new@email.com`;
       const expectedExitCode = 1;
       const expectedMessages = null;
       const expectedErrorMessages = ['Error: Create User: Authentication required'];
@@ -554,7 +554,7 @@ describe('test git-proxy-cli', function () {
         await helper.startServer();
         await helper.runCli(`${CLI_PATH} login --username testuser --password testpassword`);
 
-        const cli = `${CLI_PATH} create-user --username newuser --password newpass --email new@email.com --gitAccount newgit`;
+        const cli = `${CLI_PATH} create-user --username newuser --password newpass --email new@email.com`;
         const expectedExitCode = 3;
         const expectedMessages = null;
         const expectedErrorMessages = ['Error: Create User: Authentication required'];
@@ -569,7 +569,7 @@ describe('test git-proxy-cli', function () {
         await helper.startServer();
         await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `${CLI_PATH} create-user --username newuser --password "" --email new@email.com --gitAccount newgit`;
+        const cli = `${CLI_PATH} create-user --username newuser --password "" --email new@email.com`;
         const expectedExitCode = 4;
         const expectedMessages = null;
         const expectedErrorMessages = ['Error: Create User: Missing required fields'];
@@ -585,7 +585,7 @@ describe('test git-proxy-cli', function () {
         await helper.startServer();
         await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `${CLI_PATH} create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com --gitAccount newgit`;
+        const cli = `${CLI_PATH} create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com`;
         const expectedExitCode = 0;
         const expectedMessages = [`User '${uniqueUsername}' created successfully`];
         const expectedErrorMessages = null;
@@ -615,7 +615,7 @@ describe('test git-proxy-cli', function () {
         await helper.startServer();
         await helper.runCli(`${CLI_PATH} login --username admin --password admin`);
 
-        const cli = `${CLI_PATH} create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com --gitAccount newgit --admin`;
+        const cli = `${CLI_PATH} create-user --username ${uniqueUsername} --password newpass --email ${uniqueUsername}@email.com --admin`;
         const expectedExitCode = 0;
         const expectedMessages = [`User '${uniqueUsername}' created successfully`];
         const expectedErrorMessages = null;

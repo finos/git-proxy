@@ -32,7 +32,7 @@ export const toPublicUser = (user: DbUser): PublicUser => {
     displayName: user.displayName || '',
     email: user.email || '',
     title: user.title || '',
-    gitAccount: user.gitAccount || '',
+    scmIdentities: { ...(user.scmIdentities || {}) },
     admin: user.admin || false,
   };
   if (user.mustChangePassword) {

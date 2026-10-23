@@ -1,4 +1,4 @@
-import { AsyncResult } from '@/types';
+import { AsyncResult } from '../types';
 import mongoose, { type Mongoose } from 'mongoose';
 
 export const connectDB = async (dbURI: string): AsyncResult<Mongoose> => {

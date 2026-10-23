@@ -24,15 +24,25 @@ import { CommitContent, CommitData, CommitHeader, PackMeta, PersonLine } from '.
 import { TagData } from '../../../types/models';
 import {
   EMPTY_COMMIT_HASH,
+  GIT_OBJECT_ID_REGEX,
   REFS_PREFIX,
   TAG_PREFIX,
   PACK_SIGNATURE,
   PACKET_SIZE,
   GIT_OBJECT_TYPE_COMMIT,
   GIT_OBJECT_TYPE_TAG,
+  SEVEN_BIT_MASK,
+  EIGHTH_BIT_MASK,
 } from '../../constants';
 import { parsePacketLines } from '../pktLineParser';
 import { getErrorMessage } from '../../../utils/errors';
+import {
+  getMaxDecompressedObjectSizeBytes,
+  getMaxDecompressedPackSizeBytes,
+  getMaxPackExpansionRatio,
+  getMaxPackObjects,
+} from '../../../config';
+import { Limits } from '../../../config/generated/config';
 
 const dir = './.tmp/';
 
@@ -40,13 +50,10 @@ if (!fs.existsSync(dir)) {
   fs.mkdirSync(dir);
 }
 
-/** Bit mask for the seven bits used in variable length size encodings
- * (size and ofd_delta offset) to encode the value. */
-const SEVEN_BIT_MASK = 0x7f;
-/** Bit mask for the continuation bit (8th bit) used in the variable length
- * size encodings (size and ofs_delta offsets) in Git object headers used in
- * PACK files. */
-const EIGHTH_BIT_MASK = 0x80;
+// Validates a value is a well-formed Git object ID (40-char lowercase hex).
+export const isValidGitObjectId = (oid: string): boolean => {
+  return GIT_OBJECT_ID_REGEX.test(oid);
+};
 
 /**
  * Executes the parsing of a push request.
@@ -85,6 +92,11 @@ async function exec(req: Request, action: Action): Promise<Action> {
       if (parts.length !== 3) {
         throw new Error('Your push has been blocked. Invalid ref update format.');
       }
+      // Reject malformed commit IDs before they are used to build the action id and paths.
+      if (!isValidGitObjectId(parts[0]) || !isValidGitObjectId(parts[1])) {
+        throw new Error('Your push has been blocked. Invalid commit ID format.');
+      }
+
       const refName = parts[2].replace(/\0.*/, '').trim();
       return {
         oldCommit: parts[0],
@@ -94,25 +106,28 @@ async function exec(req: Request, action: Action): Promise<Action> {
       };
     });
 
-    const allTags = parsedRefs.every((r) => r.isTag);
-
-    if (parsedRefs.length > 1 && !allTags) {
-      step.log(`Received ${parsedRefs.length} ref updates with mixed or multiple branch refs.`);
+    if (parsedRefs.length > 1) {
+      const kinds = parsedRefs.every((r) => r.isTag)
+        ? 'tags'
+        : parsedRefs.some((r) => r.isTag)
+          ? 'mixed branch and tag refs'
+          : 'branches';
+      step.log(`Received ${parsedRefs.length} ref updates (${kinds}).`);
       throw new Error(
-        'Your push has been blocked. Multi-ref pushes are only supported for tags. Please push one branch at a time.',
+        'Your push has been blocked. Multi-ref pushes are not supported. Please push a single branch or tag at a time.',
       );
     }
 
-    if (allTags) {
+    const [ref] = parsedRefs;
+    if (ref.isTag) {
       action.actionType = PushType.TAG;
-      action.tags = parsedRefs.map((r) => r.refName);
+      action.tags = [ref.refName];
     } else {
       action.actionType = PushType.BRANCH;
-      action.branch = parsedRefs[0].refName;
+      action.branch = ref.refName;
     }
 
-    // Use the first ref's commit range for the action id
-    action.setCommit(parsedRefs[0].oldCommit, parsedRefs[0].newCommit);
+    action.setCommit(ref.oldCommit, ref.newCommit);
 
     // Check if the offset is valid and if there's data after it
     if (packDataOffset >= req.body.length) {
@@ -138,36 +153,34 @@ async function exec(req: Request, action: Action): Promise<Action> {
       else if (obj.type === GIT_OBJECT_TYPE_TAG) action.tagData.push(getTagData(obj));
     }
 
-    if (action.actionType === PushType.TAG) {
-      if (action.tagData.length) {
-        action.user = action.tagData.at(-1)!.tagger;
-        action.userEmail = action.tagData.at(-1)!.taggerEmail;
-      } else {
-        // TODO: support lightweight tags once we have a reliable way to identify the pusher
-        throw new Error(
-          'Lightweight (non-annotated) tags are not supported. Please use "git tag -a" to create an annotated tag.',
-        );
-      }
-    } else if (action.actionType === PushType.BRANCH) {
+    if (action.actionType === PushType.TAG && !action.tagData.length) {
+      // TODO: support lightweight tags once we have a reliable way to identify the pusher
+      throw new Error(
+        'Lightweight (non-annotated) tags are not supported. Please use "git tag -a" to create an annotated tag.',
+      );
+    }
+
+    if (action.actionType === PushType.BRANCH) {
       if (action.commitData.length && action.commitFrom === EMPTY_COMMIT_HASH) {
         action.commitFrom = action.commitData[action.commitData.length - 1].parent;
       }
 
-      if (req.user) {
-        const { username, email } = req.user as { username: string; email?: string };
-        step.log(`Push request received from authenticated user ${username} with email ${email}`);
-        action.user = username;
-        action.userEmail = email;
-      } else if (action.commitData.length) {
-        const { committer, committerEmail } = action.commitData[action.commitData.length - 1];
-        // Note: This is not always the pusher's email, it's the last committer's email.
-        // See https://github.com/finos/git-proxy/issues/1400
-        step.log(`Push request received from user ${committer} with email ${committerEmail}`);
-        action.user = committer;
-        action.userEmail = committerEmail;
-      } else {
-        step.log('No commit data found when parsing push.');
+      // commitFrom may have been reassigned from PACK data above; re-validate it.
+      if (action.commitFrom && !isValidGitObjectId(action.commitFrom)) {
+        throw new Error('Your push has been blocked. Invalid commit ID format.');
       }
+    }
+
+    // The pusher is never taken from the pushed objects. Author, committer and
+    // tagger lines are client-controlled text. A session (dashboard or SSH key)
+    // identifies the pusher here; otherwise resolveUserFromToken does it from
+    // the credential that accompanied the push.
+    if (req.user) {
+      const { username, email } = req.user as { username: string; email?: string };
+      step.log(`Push request received from authenticated user ${username} with email ${email}`);
+      action.user = username;
+      action.userEmail = email;
+      action.pusherVerified = true;
     }
 
     step.content = {
@@ -397,12 +410,38 @@ const getPackMeta = (buffer: Buffer): [PackMeta, Buffer] => {
  * Gets the contents of a pack file.
  * @param {Buffer} buffer The buffer containing the pack file data.
  * @param {number} numEntries The expected number of entries in the pack file.
+ * @param {object} [options] Optional decompression limits (overrides `limits` config).
  * @return {CommitContent[]}
  */
-const getContents = async (buffer: Buffer, numEntries: number): Promise<CommitContent[]> => {
+const getContents = async (
+  buffer: Buffer,
+  numEntries: number,
+  options: Partial<Limits> = {},
+): Promise<CommitContent[]> => {
+  // Expansion ratio is measured against the whole remaining buffer, including padding
+  // absolute limit is set to the worst case memory use
+  const expansionRatio = options.maxPackExpansionRatio ?? getMaxPackExpansionRatio();
+  const maxDecompressedSize =
+    options.maxDecompressedPackSizeBytes ??
+    Math.min(getMaxDecompressedPackSizeBytes(), buffer.length * expansionRatio);
+  const maxObjectDecompressedSize = Math.min(
+    options.maxDecompressedObjectSizeBytes ?? getMaxDecompressedObjectSizeBytes(),
+    maxDecompressedSize,
+  );
+  const maxObjects = options.maxPackObjects ?? getMaxPackObjects();
+
+  if (!Number.isSafeInteger(numEntries) || numEntries < 0 || numEntries > maxObjects) {
+    throw new Error('PACK object count exceeds the safety limit.');
+  }
+
   const entries: CommitContent[] = [];
 
-  const gitObjects = await decompressGitObjects(buffer);
+  const gitObjects = await decompressGitObjects(
+    buffer,
+    maxDecompressedSize,
+    maxObjectDecompressedSize,
+    maxObjects,
+  );
   for (let index = 0; index < gitObjects.length; index++) {
     const obj = gitObjects[index];
 
@@ -419,13 +458,32 @@ const getContents = async (buffer: Buffer, numEntries: number): Promise<CommitCo
 
   if (numEntries != entries.length) {
     console.warn(
-      `getContents returned an unexpected number of entries: ${entries.length}, expected ${numEntries}, entries:\n${JSON.stringify(entries, null, 2)}`,
+      `getContents returned an unexpected number of entries: ${entries.length}, expected ${numEntries}, ${summariseEntries(entries)}`,
     );
   } else {
-    console.log(`getContents returned ${numEntries} entries:\n${JSON.stringify(entries, null, 2)}`);
+    console.log(`getContents returned ${numEntries} entries, ${summariseEntries(entries)}`);
   }
 
   return entries;
+};
+
+/**
+ * Summarises object metadata for logging
+ *
+ * @param {CommitContent[]} entries The objects extracted from a PACK file
+ * @return {string} Human readable summary of the entries
+ */
+const summariseEntries = (entries: CommitContent[]): string => {
+  const countsByType = new Map<string, number>();
+  let totalSize = 0;
+
+  for (const entry of entries) {
+    countsByType.set(entry.typeName, (countsByType.get(entry.typeName) ?? 0) + 1);
+    totalSize += entry.size;
+  }
+
+  const byType = [...countsByType].map(([type, count]) => `${type}=${count}`).join(' ');
+  return `${totalSize} decompressed bytes (${byType})`;
 };
 
 /**
@@ -551,14 +609,23 @@ const parseGitObjectHeader = (buffer: Buffer, offset: number): GitObjectHeader =
  * the 12-byte PACK file headers (which should already have been removed from
  * the buffer before processing it with this function).
  * @param {Buffer} buffer The buffer to decompress
+ * @param {number} maxDecompressedSize Maximum allowed total decompressed size.
+ * @param {number} maxObjectDecompressedSize Maximum allowed decompressed size of a single object.
+ * @param {number} maxObjects Maximum allowed object count.
  * @return {Promise<GitObject[]>} A promise to return an array of GitObjects
  * representing the decompressed data.
  */
-const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
+const decompressGitObjects = async (
+  buffer: Buffer,
+  maxDecompressedSize: number,
+  maxObjectDecompressedSize: number,
+  maxObjects: number,
+): Promise<GitObject[]> => {
   const results: GitObject[] = [];
   let offset = 0;
-  let currentWriteResolve: () => void | undefined;
+  let currentWriteResolve: (() => void) | undefined;
   let error: Error | null = null;
+  let declaredDecompressedSize = 0;
 
   // keep going while there is more buffer to consume
   // the buffer will end with either a 20 or 32 byte checksum - we don't know which
@@ -566,17 +633,43 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
   // no point continuing if we have < 32 bytes remaining.
   // TODO: figure how many bytes we finish up with and then validate with the appropriate SHA type
   while (offset < buffer.length - 32 && !error) {
+    if (results.length >= maxObjects) {
+      throw new Error('PACK object count exceeds the safety limit.');
+    }
+
     const startOffset = offset;
     const header = parseGitObjectHeader(buffer, offset);
     offset += header.headerLength;
 
-    // create a new inflater for each object
-    const inflater = createInflate();
+    if (
+      !Number.isSafeInteger(header.size) ||
+      header.size < 0 ||
+      header.size > maxObjectDecompressedSize
+    ) {
+      throw new Error('PACK object decompressed size exceeds the safety limit.');
+    }
+
+    declaredDecompressedSize += header.size;
+    if (declaredDecompressedSize > maxDecompressedSize) {
+      throw new Error('PACK decompressed size exceeds the safety limit.');
+    }
+
+    // create a new inflater for each object; cap output at the declared size
+    const inflater = createInflate({ maxOutputLength: Math.max(header.size, 1) });
     const chunks: Buffer[] = [];
     let done = false;
+    let actualDecompressedSize = 0;
 
     // store any data returned
     const onData = (data: Buffer) => {
+      actualDecompressedSize += data.length;
+      if (actualDecompressedSize > header.size) {
+        error = new Error('Inflated PACK object exceeds its declared size.');
+        done = true;
+        inflater.destroy();
+        if (currentWriteResolve) currentWriteResolve();
+        return;
+      }
       chunks.push(data);
     };
 
@@ -619,6 +712,16 @@ const decompressGitObjects = async (buffer: Buffer): Promise<GitObject[]> => {
         console.warn(`Error during decompression: ${msg}`);
         error = new Error(`Error during decompression: ${msg}`);
       }
+    }
+    if (error) {
+      inflater.removeAllListeners();
+      inflater.destroy();
+      break;
+    }
+    if (actualDecompressedSize !== header.size) {
+      inflater.removeAllListeners();
+      inflater.destroy();
+      throw new Error('Inflated PACK object does not match its declared size.');
     }
     const result = {
       header,

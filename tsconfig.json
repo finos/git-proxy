@@ -5,11 +5,11 @@
     "allowJs": true,
     "checkJs": false,
     "jsx": "react-jsx",
-    "moduleResolution": "Node",
+    "moduleResolution": "nodenext",
     "strict": true,
     "skipLibCheck": true,
     "isolatedModules": false,
-    "module": "CommonJS",
+    "module": "NodeNext",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
@@ -19,7 +19,10 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "noEmit": false,
-    "types": ["node"]
+    "types": ["node"],
+    "paths": {
+      "@primer/react/experimental": ["./node_modules/@primer/react/dist/experimental/index"]
+    }
   },
   "include": ["src"],
   "exclude": ["node_modules", "dist", "**/*.test.ts"]

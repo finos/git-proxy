@@ -14,308 +14,297 @@
  * limitations under the License.
  */
 
-import React, { useState, useEffect, useContext } from 'react';
-import GridItem from '../../components/Grid/GridItem';
-import GridContainer from '../../components/Grid/GridContainer';
-import Card from '../../components/Card/Card';
-import CardBody from '../../components/Card/CardBody';
-import FormLabel from '@material-ui/core/FormLabel';
-import Paper from '@material-ui/core/Paper';
-import Button from '@material-ui/core/Button';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import Grid from '@material-ui/core/Grid';
-import { getRepo, deleteUser, deleteRepo } from '../../services/repo';
-import { makeStyles } from '@material-ui/core/styles';
-import AddUser from './Components/AddUser';
-import { Code, Delete, RemoveCircle, Visibility } from '@material-ui/icons';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useCallback, useContext, useMemo, useState } from 'react';
+import { Link as PrimerLink, Spinner, Stack, Text } from '@primer/react';
+import { GitProxyUnderlineNav } from '../../components/GitProxyUnderlineTabs';
+import { Button as PrimerButton } from '@primer/react';
+import { TrashIcon } from '@primer/octicons-react';
+import { deleteUser, deleteRepo } from '../../services/repo';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { UserContext } from '../../context';
+import { useAuth } from '../../auth/AuthProvider';
+import { PublicUser } from '../../../db/types';
 import CodeActionButton from '../../components/CustomButtons/CodeActionButton';
 import { trimTrailingDotGit } from '../../../db/helper';
-import { fetchRemoteRepositoryData } from '../../utils';
-
-import { RepoView, SCMRepositoryMetadata } from '../../types';
 import { UserContextType } from '../../context';
-import UserLink from '../../components/UserLink/UserLink';
 import DeleteRepoDialog from './Components/DeleteRepoDialog';
 import Danger from '../../components/Typography/Danger';
+import TimedBanner from '../../components/TimedBanner/TimedBanner';
+import RepoAccessUserTable from './Components/RepoAccessUserTable';
+import RepoActivityPanel from './Components/RepoActivityPanel';
+import {
+  REPO_ACCESS_TABS,
+  REPO_ACTIVITY_NAV,
+  REPO_NAV_TAB_ORDER,
+  isAccessTab,
+  parseRepoNavTab,
+  type RepoNavTab,
+} from './repoAccessConfig';
+import { useRepoScmMetadataQuery } from '../../query/useRepoScmMetadataQuery';
+import { useRepoQuery } from '../../query/useRepoQuery';
+import { useUsersListQuery } from '../../query/useUsersListQuery';
+import { usePushesQuery } from '../../query/usePushesQuery';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { repoQueryKeys } from '../../query/repoQueryKeys';
 
-const useStyles = makeStyles((theme) => ({
-  root: {
-    '& .MuiTextField-root': {
-      margin: theme.spacing(1),
-      width: '100%',
-    },
-  },
-}));
+const isGitHubUrl = (url: string | undefined): boolean => {
+  try {
+    const { hostname } = new URL(url ?? '');
+    return hostname === 'github.com' || hostname.endsWith('.github.com');
+  } catch {
+    return false;
+  }
+};
 
-const RepoDetails: React.FC = () => {
+const RepoDetails = () => {
   const navigate = useNavigate();
-  const classes = useStyles();
-  const [repo, setRepo] = useState<RepoView | null>(null);
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isError, setIsError] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [remoteRepoData, setRemoteRepoData] = useState<SCMRepositoryMetadata | null>(null);
-  const { user } = useContext<UserContextType>(UserContext);
-  const { id: repoId } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navTab = useMemo(() => parseRepoNavTab(searchParams.get('tab')), [searchParams]);
+  const activeAccess = isAccessTab(navTab) ? REPO_ACCESS_TABS[navTab] : null;
 
-  useEffect(() => {
-    if (!repoId) return;
-    const load = async () => {
-      setIsLoading(true);
-      const result = await getRepo(repoId);
-      if (result.success && result.data) {
-        setRepo(result.data);
-      } else if (result.status === 401) {
-        setIsLoading(false);
-        navigate('/login', { replace: true });
-        return;
+  const setNavTab = useCallback(
+    (tab: RepoNavTab) => {
+      const next = new URLSearchParams(searchParams);
+      if (tab === 'activity') {
+        next.delete('tab');
       } else {
-        setIsError(true);
-        setErrorMessage(result.message || 'Something went wrong...');
+        next.set('tab', tab);
       }
-      setIsLoading(false);
-    };
-    load();
-  }, [repoId]);
+      setSearchParams(next, { replace: true });
+    },
+    [searchParams, setSearchParams],
+  );
 
-  useEffect(() => {
-    if (repo) {
-      fetchRemoteRepositoryData(repo.project, repo.name, repo.url).then(setRemoteRepoData);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState<boolean>(false);
+  const [mutationError, setMutationError] = useState<string>('');
+  const { user } = useContext<UserContextType>(UserContext);
+  const { user: sessionUser, isLoading: authLoading } = useAuth();
+  const { id: repoId } = useParams<{ id: string }>();
+  const queryClient = useQueryClient();
+
+  const { data: repo, isLoading, error: repoError } = useRepoQuery(repoId);
+
+  const { data: remoteRepoData } = useRepoScmMetadataQuery(repo?._id);
+
+  const { data: usersRaw = [] } = useUsersListQuery();
+  const userByUsername = useMemo<Record<string, PublicUser>>(() => {
+    const next: Record<string, PublicUser> = {};
+    for (const u of usersRaw) {
+      if (u.username) next[u.username] = u;
     }
-  }, [repo]);
+    return next;
+  }, [usersRaw]);
 
-  const removeUser = async (userToRemove: string, action: 'authorise' | 'push') => {
-    if (!repoId) return;
-    try {
-      await deleteUser(userToRemove, repoId, action);
-    } catch (err: any) {
-      setIsError(true);
-      setErrorMessage(err.message || 'Failed to remove user');
-      return;
-    }
-    const result = await getRepo(repoId);
-    if (result.success && result.data) {
-      setRepo(result.data);
-    } else if (result.status === 401) {
-      navigate('/login', { replace: true });
-    } else {
-      setIsError(true);
-      setErrorMessage(result.message || 'Failed to refresh repository data');
-    }
-  };
+  const {
+    data: repoActivityPushes = [],
+    isLoading: repoActivityLoading,
+    error: repoActivityError,
+  } = usePushesQuery({ url: repo?.url }, Boolean(repo?.url));
 
-  const removeRepository = async (id: string) => {
-    try {
-      await deleteRepo(id);
-    } catch (err: any) {
-      setIsError(true);
-      setErrorMessage(err.message || 'Failed to delete repository');
-      return;
-    }
-    navigate('/dashboard/repo', { replace: true });
-  };
+  const removeUserMutation = useMutation({
+    mutationFn: ({ username, action }: { username: string; action: 'authorise' | 'push' }) =>
+      deleteUser(username, repoId!, action),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: repoQueryKeys.detail(repoId!) });
+    },
+    onError: (err: unknown) => {
+      setMutationError(err instanceof Error ? err.message : 'Failed to remove user');
+    },
+  });
 
-  const refresh = async () => {
-    if (!repoId) return;
-    const result = await getRepo(repoId);
-    if (result.success && result.data) {
-      setRepo(result.data);
-    } else if (result.status === 401) {
-      navigate('/login', { replace: true });
-    } else {
-      setIsError(true);
-      setErrorMessage(result.message || 'Failed to refresh repository data');
-    }
-  };
+  const deleteRepoMutation = useMutation({
+    mutationFn: (id: string) => deleteRepo(id),
+    onSuccess: () => {
+      navigate('/dashboard/repo', { replace: true });
+    },
+    onError: (err: unknown) => {
+      setMutationError(err instanceof Error ? err.message : 'Failed to delete repository');
+    },
+  });
 
-  if (isLoading) return <div>Loading...</div>;
-  if (isError) return <Danger>{errorMessage || 'Something went wrong ...'}</Danger>;
-  if (!repo) return <div>No repository data found</div>;
+  const removeAccessUser = useCallback(
+    (username: string) => {
+      if (!activeAccess || !repoId) return;
+      removeUserMutation.mutate({ username, action: activeAccess.apiAction });
+    },
+    [removeUserMutation, activeAccess, repoId],
+  );
 
-  const { url: remoteUrl, proxyURL } = repo || {};
+  const refresh = useCallback(async (): Promise<void> => {
+    await queryClient.invalidateQueries({ queryKey: repoQueryKeys.detail(repoId!) });
+  }, [queryClient, repoId]);
+
+  if (isLoading) {
+    return (
+      <div className='flex w-full min-w-0 items-center gap-2'>
+        <Spinner />
+        <Text>Loading repository…</Text>
+      </div>
+    );
+  }
+
+  if (!repo) return <Danger>{repoError?.message || 'No repository data found'}</Danger>;
+
+  const { url: remoteUrl, proxyURL } = repo;
   const parsedUrl = new URL(remoteUrl);
   const cloneURL = `${proxyURL}/${parsedUrl.host}${parsedUrl.port ? `:${parsedUrl.port}` : ''}${parsedUrl.pathname}`;
+  const orgHref = remoteRepoData?.profileUrl;
+  const repoHref = isGitHubUrl(remoteRepoData?.htmlUrl)
+    ? remoteRepoData?.htmlUrl
+    : trimTrailingDotGit(repo.url);
 
   return (
-    <GridContainer>
-      <GridItem xs={12} sm={12} md={12}>
-        <Card>
-          <CardBody>
-            <Grid
-              spacing={2}
-              container
-              direction='row'
-              justifyContent='flex-end'
-              alignItems='center'
-            >
-              {user?.admin && (
-                <Grid item>
-                  <Button
-                    variant='contained'
-                    color='secondary'
-                    data-testid='delete-repo-button'
-                    onClick={() => setConfirmDeleteOpen(true)}
-                  >
-                    <Delete />
-                  </Button>
-                </Grid>
-              )}
-              <Grid item>
-                <CodeActionButton cloneURL={cloneURL} />
-              </Grid>
-            </Grid>
-            <form className={classes.root} noValidate autoComplete='off'>
-              <GridContainer>
-                {remoteRepoData?.avatarUrl && (
-                  <GridItem xs={12} sm={2} md={2}>
-                    <img
-                      width='75px'
-                      style={{ borderRadius: '5px' }}
-                      src={remoteRepoData.avatarUrl}
-                      alt={`${repo.project} logo`}
-                    />
-                  </GridItem>
+    <div className='w-full min-w-0'>
+      <TimedBanner
+        open={Boolean(mutationError)}
+        onDismiss={() => setMutationError('')}
+        variant='critical'
+        title='Operation failed'
+        description={mutationError || undefined}
+        className='w-full'
+      />
+      <Stack direction='vertical' gap='normal' padding='none'>
+        <Stack
+          direction='horizontal'
+          gap='normal'
+          padding='none'
+          align='center'
+          justify='space-between'
+        >
+          <Stack direction='horizontal' gap='spacious' padding='none' align='center'>
+            {remoteRepoData?.avatarUrl ? (
+              <img
+                width={48}
+                height={48}
+                className='rounded-md'
+                src={remoteRepoData.avatarUrl}
+                alt=''
+              />
+            ) : null}
+            <div className='min-w-0'>
+              <Text as='h1' className='m-0! text-xl! font-semibold! tracking-tight!'>
+                {orgHref ? (
+                  <PrimerLink href={orgHref} target='_blank' rel='noopener noreferrer'>
+                    {repo.project}
+                  </PrimerLink>
+                ) : (
+                  <span>{repo.project}</span>
                 )}
+                <span className='text-(--fgColor-muted)'> / </span>
+                <PrimerLink href={repoHref} target='_blank' rel='noopener noreferrer'>
+                  {repo.name}
+                </PrimerLink>
+              </Text>
+              <Text className='mt-1 block text-sm text-(--fgColor-muted)'>
+                <PrimerLink href={repo.url} target='_blank' rel='noopener noreferrer'>
+                  {trimTrailingDotGit(repo.url)}
+                </PrimerLink>
+              </Text>
+            </div>
+          </Stack>
+          <Stack direction='horizontal' gap='condensed' padding='none' align='center'>
+            {user?.admin ? (
+              <PrimerButton
+                variant='danger'
+                size='small'
+                leadingVisual={TrashIcon}
+                data-testid='delete-repo-button'
+                onClick={() => setConfirmDeleteOpen(true)}
+              >
+                Delete
+              </PrimerButton>
+            ) : null}
+            <CodeActionButton cloneURL={cloneURL} />
+          </Stack>
+        </Stack>
 
-                <GridItem xs={12} sm={2} md={2}>
-                  <FormLabel component='legend'>Organization</FormLabel>
-                  <h4>
-                    {remoteRepoData?.profileUrl && (
-                      <a href={remoteRepoData.profileUrl} target='_blank' rel='noopener noreferrer'>
-                        {repo.project}
-                      </a>
-                    )}
-                    {!remoteRepoData?.profileUrl && <span>{repo.project}</span>}
-                  </h4>
-                </GridItem>
-                <GridItem xs={12} sm={2} md={2}>
-                  <FormLabel component='legend'>Name</FormLabel>
-                  <h4>
-                    <a
-                      href={trimTrailingDotGit(repo.url)}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                    >
-                      {repo.name}
-                    </a>
-                  </h4>
-                </GridItem>
-                <GridItem xs={12} sm={6} md={6}>
-                  <FormLabel component='legend'>URL</FormLabel>
-                  <h4>
-                    <a href={repo.url} target='_blank' rel='noopener noreferrer'>
-                      {trimTrailingDotGit(repo.url)}
-                    </a>
-                  </h4>
-                </GridItem>
-              </GridContainer>
-            </form>
-            <hr style={{ opacity: 0.2 }} />
+        {remoteRepoData?.description && (
+          <Text
+            as='p'
+            size='medium'
+            weight='normal'
+            className='m-0 min-w-0 w-full text-[var(--fgColor-default)]'
+          >
+            {remoteRepoData.description}
+          </Text>
+        )}
 
-            <GridContainer>
-              <GridItem xs={12} sm={12} md={12}>
-                <h3>
-                  <Visibility /> Reviewers
-                </h3>
-                {user?.admin && (
-                  <div style={{ textAlign: 'right' }}>
-                    <AddUser repoId={repoId || ''} type='authorise' refreshFn={refresh} />
-                  </div>
-                )}
-                <TableContainer component={Paper}>
-                  <Table aria-label='List of repository reviewers'>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell align='left'>Username</TableCell>
-                        {user?.admin && <TableCell align='right'></TableCell>}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {repo.users?.canAuthorise?.map((username) => (
-                        <TableRow key={username}>
-                          <TableCell align='left'>
-                            <UserLink username={username} />
-                          </TableCell>
-                          {user?.admin && (
-                            <TableCell align='right' component='th' scope='row'>
-                              <Button
-                                variant='contained'
-                                color='secondary'
-                                onClick={() => removeUser(username, 'authorise')}
-                              >
-                                <RemoveCircle />
-                              </Button>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </GridItem>
-            </GridContainer>
+        <GitProxyUnderlineNav aria-label='Repository' variant='flush'>
+          {REPO_NAV_TAB_ORDER.map((tab) => {
+            if (tab === 'activity') {
+              const NavIcon = REPO_ACTIVITY_NAV.NavIcon;
+              return (
+                <GitProxyUnderlineNav.Item
+                  key={tab}
+                  href='#'
+                  leadingVisual={<NavIcon />}
+                  aria-current={navTab === 'activity' ? 'page' : undefined}
+                  counter={repoActivityLoading ? undefined : repoActivityPushes.length}
+                  onSelect={(
+                    e: React.MouseEvent<HTMLAnchorElement> | React.KeyboardEvent<HTMLAnchorElement>,
+                  ) => {
+                    e.preventDefault();
+                    setNavTab('activity');
+                  }}
+                >
+                  {REPO_ACTIVITY_NAV.navLabel}
+                </GitProxyUnderlineNav.Item>
+              );
+            }
+            const cfg = REPO_ACCESS_TABS[tab];
+            const NavIcon = cfg.NavIcon;
+            const count = cfg.selectUsers(repo).length;
+            return (
+              <GitProxyUnderlineNav.Item
+                key={tab}
+                href='#'
+                leadingVisual={<NavIcon />}
+                aria-current={navTab === tab ? 'page' : undefined}
+                counter={count}
+                onSelect={(
+                  e: React.MouseEvent<HTMLAnchorElement> | React.KeyboardEvent<HTMLAnchorElement>,
+                ) => {
+                  e.preventDefault();
+                  setNavTab(tab);
+                }}
+              >
+                {cfg.navLabel}
+              </GitProxyUnderlineNav.Item>
+            );
+          })}
+        </GitProxyUnderlineNav>
 
-            <GridContainer>
-              <GridItem xs={12} sm={12} md={12}>
-                <h3>
-                  <Code /> Contributors
-                </h3>
-                {user?.admin && (
-                  <div style={{ textAlign: 'right' }}>
-                    <AddUser repoId={repoId || ''} type='push' refreshFn={refresh} />
-                  </div>
-                )}
-                <TableContainer component={Paper}>
-                  <Table aria-label='List of repository contributors'>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell align='left'>Username</TableCell>
-                        {user?.admin && <TableCell align='right'></TableCell>}
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {repo.users?.canPush?.map((username) => (
-                        <TableRow key={username}>
-                          <TableCell align='left'>
-                            <UserLink username={username} />
-                          </TableCell>
-                          {user?.admin && (
-                            <TableCell align='right' component='th' scope='row'>
-                              <Button
-                                variant='contained'
-                                color='secondary'
-                                onClick={() => removeUser(username, 'push')}
-                              >
-                                <RemoveCircle />
-                              </Button>
-                            </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-              </GridItem>
-            </GridContainer>
-          </CardBody>
-        </Card>
-      </GridItem>
+        {isAccessTab(navTab) && activeAccess ? (
+          <RepoAccessUserTable
+            usernames={activeAccess.selectUsers(repo)}
+            isAdmin={Boolean(user?.admin)}
+            onRemove={removeAccessUser}
+            ariaLabel={activeAccess.ariaLabel}
+            memberLabelPlural={activeAccess.memberLabelPlural}
+            repoId={repoId || ''}
+            accessAction={activeAccess.apiAction}
+            refreshFn={refresh}
+            userByUsername={userByUsername}
+            sessionUser={sessionUser}
+            authLoading={authLoading}
+          />
+        ) : (
+          <RepoActivityPanel
+            registeredRepos={[repo]}
+            pushes={repoActivityPushes}
+            isLoading={repoActivityLoading}
+            errorMessage={repoActivityError?.message ?? null}
+          />
+        )}
+      </Stack>
 
       <DeleteRepoDialog
         repoName={repo.name}
         open={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}
-        onConfirm={() => removeRepository(repo._id!)}
+        onConfirm={() => deleteRepoMutation.mutate(repo._id!)}
       />
-    </GridContainer>
+    </div>
   );
 };
 

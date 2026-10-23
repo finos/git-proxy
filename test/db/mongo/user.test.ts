@@ -42,13 +42,19 @@ vi.mock('../../../src/db/mongo/helper', () => ({
 
 vi.mock('../../../src/db/helper', () => ({
   toClass: mockToClass,
+  normaliseScmLogin: (login: string) => login.trim().toLowerCase(),
+  scmIdentityField: (provider: string) => {
+    // Match the real implementation: /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/
+    const PROVIDER_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$/;
+    return PROVIDER_NAME.test(provider) ? `scmIdentities.${provider}` : null;
+  },
 }));
 
 describe('MongoDB User', async () => {
   const {
     findUser,
     findUserByEmail,
-    findUserByGitAccount,
+    findUserByScmIdentity,
     findUserByOIDC,
     getUsers,
     deleteUser,
@@ -143,36 +149,60 @@ describe('MongoDB User', async () => {
     });
   });
 
-  describe('findUserByGitAccount', () => {
-    it('should find user by git account', async () => {
-      const userData = { ...TEST_USER, gitAccount: 'octocat' };
-      mockFindOne.mockResolvedValue(userData);
+  describe('findUserByScmIdentity', () => {
+    const mockLimit = vi.fn();
+    const matching = (docs: unknown[]) => {
+      mockToArray.mockResolvedValue(docs);
+      mockLimit.mockReturnValue({ toArray: mockToArray });
+      mockFind.mockReturnValue({ limit: mockLimit });
+    };
+
+    it('should find user by scm identity', async () => {
+      const userData = { ...TEST_USER, scmIdentities: { github: 'octocat' } };
+      matching([userData]);
       mockToClass.mockReturnValue(userData);
 
-      const result = await findUserByGitAccount('Octocat');
+      const result = await findUserByScmIdentity('github', 'Octocat');
 
       expect(mockConnect).toHaveBeenCalledWith('users');
-      expect(mockFindOne).toHaveBeenCalledWith({ gitAccount: { $eq: 'octocat' } });
+      expect(mockFind).toHaveBeenCalledWith({ 'scmIdentities.github': { $eq: 'octocat' } });
+      expect(mockLimit).toHaveBeenCalledWith(2);
       expect(mockToClass).toHaveBeenCalledWith(userData, User.prototype);
       expect(result).toEqual(userData);
     });
 
-    it('should convert git account to lowercase', async () => {
-      mockFindOne.mockResolvedValue(TEST_USER);
+    it('should normalise the login: trimmed and lower-cased', async () => {
+      matching([TEST_USER]);
       mockToClass.mockReturnValue(TEST_USER);
 
-      await findUserByGitAccount('UPPERCASE');
+      await findUserByScmIdentity('github', '  UPPERCASE ');
 
-      expect(mockFindOne).toHaveBeenCalledWith({ gitAccount: { $eq: 'uppercase' } });
+      expect(mockFind).toHaveBeenCalledWith({ 'scmIdentities.github': { $eq: 'uppercase' } });
     });
 
     it('should return null when user not found', async () => {
-      mockFindOne.mockResolvedValue(null);
+      matching([]);
 
-      const result = await findUserByGitAccount('nonexistent');
+      const result = await findUserByScmIdentity('github', 'nonexistent');
 
       expect(result).toBeNull();
       expect(mockToClass).not.toHaveBeenCalled();
+    });
+
+    it('should refuse to pick one user when two share the same scm identity', async () => {
+      matching([TEST_USER, { ...TEST_USER, username: 'other' }]);
+
+      await expect(findUserByScmIdentity('github', 'shared')).rejects.toThrow(
+        'github account shared is linked to more than one user',
+      );
+      expect(mockToClass).not.toHaveBeenCalled();
+    });
+
+    it('should return null with invalid provider name', async () => {
+      const result = await findUserByScmIdentity('$bad', 'octocat');
+
+      expect(result).toBeNull();
+      expect(mockFind).not.toHaveBeenCalled();
     });
   });
 

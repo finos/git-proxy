@@ -18,6 +18,9 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import { buildUpstreamProxyAgent, getOrCreateProxyAgent } from '../src/proxy/routes';
 import * as config from '../src/config';
+import { AuthType } from '../src/config/generated/config';
+import { NtlmProxyAgent } from '../src/proxy/upstream/ntlm-proxy-agent';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 vi.mock('../src/config', async (importOriginal) => {
   const actual: any = await importOriginal();
@@ -26,6 +29,14 @@ vi.mock('../src/config', async (importOriginal) => {
     getUpstreamProxyConfig: vi.fn(),
   };
 });
+
+// Narrow http.Agent → HttpsProxyAgent for Basic / no-auth assertions.
+const asHttps = (agent: unknown): HttpsProxyAgent<string> => {
+  if (!(agent instanceof HttpsProxyAgent)) {
+    throw new Error(`expected HttpsProxyAgent, got ${agent?.constructor?.name ?? typeof agent}`);
+  }
+  return agent;
+};
 
 describe('getOrCreateProxyAgent', () => {
   it('accepts http:// URLs', () => {
@@ -100,7 +111,7 @@ describe('buildUpstreamProxyAgent', () => {
 
     const agent = buildUpstreamProxyAgent({ host: 'github.com', headers: {} });
     expect(agent).toBeDefined();
-    expect(agent?.proxy.href).toBe('http://config-proxy.example.com:8080/');
+    expect(asHttps(agent).proxy.href).toBe('http://config-proxy.example.com:8080/');
   });
 
   it('creates an agent when only HTTPS_PROXY is set and config is empty', () => {
@@ -109,7 +120,7 @@ describe('buildUpstreamProxyAgent', () => {
 
     const agent = buildUpstreamProxyAgent({ host: 'github.com', headers: {} });
     expect(agent).toBeDefined();
-    expect(agent?.proxy.href).toBe('http://env-proxy.example.com:8080/');
+    expect(asHttps(agent).proxy.href).toBe('http://env-proxy.example.com:8080/');
   });
 
   it('does not create an agent when upstreamProxy.enabled is false', () => {
@@ -140,5 +151,111 @@ describe('buildUpstreamProxyAgent', () => {
 
     const agent = buildUpstreamProxyAgent({ host: 'github.com', headers: {} });
     expect(agent).toBeUndefined();
+  });
+
+  it('builds a Basic Proxy-Authorization header from structured auth config', () => {
+    vi.mocked(config.getUpstreamProxyConfig).mockReturnValue({
+      enabled: true,
+      url: 'http://proxy.example.com:8080',
+      auth: { type: AuthType.Basic, username: 'alice', password: 's3cret' },
+    });
+
+    const agent = buildUpstreamProxyAgent({ host: 'github.com', headers: {} });
+    expect(agent).toBeDefined();
+
+    const headers = asHttps(agent).proxyHeaders as Record<string, string>;
+    const expected = `Basic ${Buffer.from('alice:s3cret').toString('base64')}`;
+    expect(headers['Proxy-Authorization']).toBe(expected);
+  });
+
+  it('returns a fresh agent when auth credentials change', () => {
+    vi.mocked(config.getUpstreamProxyConfig).mockReturnValue({
+      enabled: true,
+      url: 'http://proxy.example.com:8080',
+      auth: { type: AuthType.Basic, username: 'alice', password: 's3cret' },
+    });
+    const first = buildUpstreamProxyAgent({ host: 'github.com', headers: {} });
+
+    vi.mocked(config.getUpstreamProxyConfig).mockReturnValue({
+      enabled: true,
+      url: 'http://proxy.example.com:8080',
+      auth: { type: AuthType.Basic, username: 'alice', password: 'rotated' },
+    });
+    const second = buildUpstreamProxyAgent({ host: 'github.com', headers: {} });
+
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+    expect(second).not.toBe(first);
+
+    const headers = asHttps(second).proxyHeaders as Record<string, string>;
+    expect(headers['Proxy-Authorization']).toBe(
+      `Basic ${Buffer.from('alice:rotated').toString('base64')}`,
+    );
+  });
+
+  it('strips URL userinfo when structured auth is provided so structured auth wins', () => {
+    vi.mocked(config.getUpstreamProxyConfig).mockReturnValue({
+      enabled: true,
+      url: 'http://urluser:urlpass@proxy.example.com:8080',
+      auth: { type: AuthType.Basic, username: 'alice', password: 's3cret' },
+    });
+
+    const agent = buildUpstreamProxyAgent({ host: 'github.com', headers: {} });
+    expect(agent).toBeDefined();
+    expect(asHttps(agent).proxy.username).toBe('');
+    expect(asHttps(agent).proxy.password).toBe('');
+
+    const headers = asHttps(agent).proxyHeaders as Record<string, string>;
+    expect(headers['Proxy-Authorization']).toBe(
+      `Basic ${Buffer.from('alice:s3cret').toString('base64')}`,
+    );
+  });
+
+  it('leaves URL userinfo intact when no structured auth is provided', () => {
+    vi.mocked(config.getUpstreamProxyConfig).mockReturnValue({
+      enabled: true,
+      url: 'http://urluser:urlpass@proxy.example.com:8080',
+    });
+
+    const agent = buildUpstreamProxyAgent({ host: 'github.com', headers: {} });
+    expect(agent).toBeDefined();
+    expect(asHttps(agent).proxy.username).toBe('urluser');
+    expect(asHttps(agent).proxy.password).toBe('urlpass');
+  });
+
+  it('returns an NtlmProxyAgent when auth.type is ntlm', () => {
+    vi.mocked(config.getUpstreamProxyConfig).mockReturnValue({
+      enabled: true,
+      url: 'http://proxy.example.com:8080',
+      auth: {
+        type: AuthType.NTLM,
+        username: 'alice',
+        password: 's3cret',
+        domain: 'CORP',
+        workstation: 'LAPTOP-42',
+      },
+    });
+
+    const agent = buildUpstreamProxyAgent({ host: 'github.com', headers: {} });
+    expect(agent).toBeInstanceOf(NtlmProxyAgent);
+  });
+
+  it('returns a fresh agent when switching from Basic to NTLM', () => {
+    vi.mocked(config.getUpstreamProxyConfig).mockReturnValue({
+      enabled: true,
+      url: 'http://proxy.example.com:8080',
+      auth: { type: AuthType.Basic, username: 'alice', password: 's3cret' },
+    });
+    const first = buildUpstreamProxyAgent({ host: 'github.com', headers: {} });
+    expect(first).toBeInstanceOf(HttpsProxyAgent);
+
+    vi.mocked(config.getUpstreamProxyConfig).mockReturnValue({
+      enabled: true,
+      url: 'http://proxy.example.com:8080',
+      auth: { type: AuthType.NTLM, username: 'alice', password: 's3cret' },
+    });
+    const second = buildUpstreamProxyAgent({ host: 'github.com', headers: {} });
+    expect(second).toBeInstanceOf(NtlmProxyAgent);
+    expect(second).not.toBe(first);
   });
 });

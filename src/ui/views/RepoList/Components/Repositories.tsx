@@ -14,189 +14,124 @@
  * limitations under the License.
  */
 
-import React, { useState, useEffect, useContext } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import { useNavigate } from 'react-router-dom';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableContainer from '@material-ui/core/TableContainer';
-import styles from '../../../assets/jss/material-dashboard-react/views/dashboardStyle';
-import { getRepos } from '../../../services/repo';
-import GridContainer from '../../../components/Grid/GridContainer';
-import GridItem from '../../../components/Grid/GridItem';
+import React, { useContext, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
+import { sortRepoViews } from '../../../services/repo';
 import NewRepo from './NewRepo';
 import { RepoView } from '../../../types';
-import RepoOverview from './RepoOverview';
 import { UserContext, UserContextType } from '../../../context';
-import Search from '../../../components/Search/Search';
-import Pagination from '../../../components/Pagination/Pagination';
-import Filtering, { FilterOption, SortOrder } from '../../../components/Filtering/Filtering';
+import { useAuth } from '../../../auth/AuthProvider';
 import Danger from '../../../components/Typography/Danger';
-
-interface GridContainerLayoutProps {
-  classes: any;
-  openRepo: (repo: string) => void;
-  repos: RepoView[];
-  repoButton: React.ReactNode;
-  onSearch: (query: string) => void;
-  currentPage: number;
-  totalItems: number;
-  itemsPerPage: number;
-  onPageChange: (page: number) => void;
-  onFilterChange: (filterOption: FilterOption, sortOrder: SortOrder) => void;
-  tableId: string;
-  key: string;
-}
+import RepoListTable from './RepoListTable';
+import { applyRepoListUrlPatch, parseRepoListUrlState } from './repoListQuery';
+import { type RepoSortField } from './RepositoriesSortMenu';
+import { useRepoViewsListQuery } from '../../../query/useRepoViewsListQuery';
+import { repoQueryKeys } from '../../../query/repoQueryKeys';
+import { useClientPagination } from '../../../hooks/useClientPagination';
 
 export default function Repositories(): React.ReactElement {
-  const useStyles = makeStyles(styles as any);
-  const classes = useStyles();
-  const [repos, setRepos] = useState<RepoView[]>([]);
-  const [filteredRepos, setFilteredRepos] = useState<RepoView[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isError, setIsError] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage: number = 5;
-  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const itemsPerPage: number = 20;
   const { user } = useContext<UserContextType>(UserContext);
-  const openRepo = (repoId: string): void => navigate(`/dashboard/repo/${repoId}`);
+  const { isLoading: authLoading } = useAuth();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const load = async () => {
-      setIsLoading(true);
-      const result = await getRepos();
-      if (result.success && result.data) {
-        setRepos(result.data);
-        setFilteredRepos(result.data);
-      } else if (result.status === 401) {
-        setIsLoading(false);
-        navigate('/login', { replace: true });
-        return;
-      } else {
-        setIsError(true);
-        setErrorMessage(result.message || 'Failed to load repositories');
-      }
-      setIsLoading(false);
-    };
-    load();
-  }, []);
+  const { sort, filter, page } = useMemo(() => parseRepoListUrlState(searchParams), [searchParams]);
 
-  const refresh = async (repo: RepoView): Promise<void> => {
-    const updatedRepos = [...repos, repo];
-    setRepos(updatedRepos);
-    setFilteredRepos(updatedRepos);
-  };
+  const {
+    data: repoListRaw,
+    isPending: repoListPending,
+    isError: repoListError,
+    error: repoListErrorObj,
+  } = useRepoViewsListQuery(!authLoading);
 
-  const handleSearch = (query: string): void => {
-    setCurrentPage(1);
-    if (!query) {
-      setFilteredRepos(repos);
-    } else {
-      const lowercasedQuery = query.toLowerCase();
-      setFilteredRepos(
-        repos.filter(
-          (repo) =>
-            repo.name.toLowerCase().includes(lowercasedQuery) ||
-            repo.project.toLowerCase().includes(lowercasedQuery),
-        ),
-      );
-    }
-  };
-
-  const handleFilterChange = (filterOption: FilterOption, sortOrder: SortOrder): void => {
-    const sortedRepos = [...repos];
-    switch (filterOption) {
-      case 'Date Modified':
-        sortedRepos.sort(
-          (a, b) =>
-            new Date(a.lastModified || 0).getTime() - new Date(b.lastModified || 0).getTime(),
-        );
-        break;
-      case 'Date Created':
-        sortedRepos.sort(
-          (a, b) => new Date(a.dateCreated || 0).getTime() - new Date(b.dateCreated || 0).getTime(),
-        );
-        break;
-      case 'Alphabetical':
-        sortedRepos.sort((a, b) => a.name.localeCompare(b.name));
-        break;
-      default:
-        break;
-    }
-    if (sortOrder === 'desc') {
-      sortedRepos.reverse();
-    }
-
-    setFilteredRepos(sortedRepos);
-  };
-
-  const handlePageChange = (page: number): void => setCurrentPage(page);
-  const startIdx = (currentPage - 1) * itemsPerPage;
-  const paginatedRepos = filteredRepos.slice(startIdx, startIdx + itemsPerPage);
-
-  if (isLoading) return <div>Loading...</div>;
-  if (isError) return <Danger>{errorMessage}</Danger>;
-
-  const addrepoButton = user?.admin ? (
-    <GridItem>
-      <NewRepo onSuccess={refresh} />
-    </GridItem>
-  ) : (
-    <GridItem />
+  const repos = useMemo(
+    () =>
+      repoListRaw ? sortRepoViews(repoListRaw, sort, user?.username ?? null) : ([] as RepoView[]),
+    [repoListRaw, sort, user?.username],
   );
 
-  return getGridContainerLayOut({
-    key: 'x',
-    classes: classes,
-    openRepo: openRepo,
-    repos: paginatedRepos,
-    repoButton: addrepoButton,
-    onSearch: handleSearch,
-    currentPage: currentPage,
-    totalItems: filteredRepos.length,
-    itemsPerPage: itemsPerPage,
-    onPageChange: handlePageChange,
-    onFilterChange: handleFilterChange,
-    tableId: 'RepoListTable',
-  });
-}
+  const handleSortChange = useCallback(
+    (next: RepoSortField) => {
+      setSearchParams((prev) => applyRepoListUrlPatch(prev, { sort: next }), { replace: true });
+    },
+    [setSearchParams],
+  );
 
-function getGridContainerLayOut(props: GridContainerLayoutProps): React.ReactElement {
+  const refreshRepoList = useCallback(
+    async (_repo: RepoView) => {
+      await queryClient.invalidateQueries({ queryKey: repoQueryKeys.list() });
+    },
+    [queryClient],
+  );
+
+  const handleSearch = useCallback(
+    (query: string): void => {
+      setSearchParams((prev) => applyRepoListUrlPatch(prev, { filter: query, page: 1 }), {
+        replace: true,
+      });
+    },
+    [setSearchParams],
+  );
+
+  const handlePageChange = useCallback(
+    (nextPage: number): void => {
+      setSearchParams((prev) => applyRepoListUrlPatch(prev, { page: nextPage }), {
+        replace: true,
+      });
+    },
+    [setSearchParams],
+  );
+
+  const filteredRepos = useMemo(() => {
+    if (!filter) return repos;
+    const lowercasedQuery = filter.toLowerCase();
+    return repos.filter(
+      (repo) =>
+        repo.name.toLowerCase().includes(lowercasedQuery) ||
+        repo.project.toLowerCase().includes(lowercasedQuery),
+    );
+  }, [repos, filter]);
+
+  const isLoading = authLoading || repoListPending || !repoListRaw;
+
+  const { effectivePage, currentItems: paginatedRepos } = useClientPagination(
+    filteredRepos,
+    page,
+    itemsPerPage,
+    isLoading,
+    (corrected) =>
+      setSearchParams((p) => applyRepoListUrlPatch(p, { page: corrected }), { replace: true }),
+  );
+
+  if (authLoading || (repoListPending && !repoListRaw)) {
+    return <div>Loading...</div>;
+  }
+  if (repoListError) {
+    return (
+      <Danger>
+        {repoListErrorObj instanceof Error
+          ? repoListErrorObj.message
+          : 'Failed to load repositories'}
+      </Danger>
+    );
+  }
+
+  const newRepoAction = user?.admin ? <NewRepo onSuccess={refreshRepoList} /> : null;
+
   return (
-    <GridContainer>
-      {props.repoButton}
-      <GridItem xs={12} sm={12} md={12}>
-        <Search onSearch={props.onSearch} />
-        <Filtering onFilterChange={props.onFilterChange} />
-        <TableContainer
-          style={{ background: 'transparent', borderRadius: '5px', border: '1px solid #d0d7de' }}
-        >
-          <Table id={props.tableId} className={props.classes.table} aria-label='simple table'>
-            <TableBody>
-              {props.repos.map((repo) => {
-                if (repo.url) {
-                  return (
-                    <RepoOverview
-                      repo={{ ...repo, proxyURL: repo.proxyURL || '' }}
-                      key={repo._id}
-                    />
-                  );
-                }
-                return null;
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </GridItem>
-      <GridItem xs={12} sm={12} md={12}>
-        <Pagination
-          currentPage={props.currentPage}
-          totalItems={props.totalItems}
-          itemsPerPage={props.itemsPerPage}
-          onPageChange={props.onPageChange}
-        />
-      </GridItem>
-    </GridContainer>
+    <RepoListTable
+      repos={paginatedRepos}
+      newRepoAction={newRepoAction}
+      filterValue={filter}
+      onSearch={handleSearch}
+      sort={sort}
+      onSortChange={handleSortChange}
+      currentPage={effectivePage}
+      totalItems={filteredRepos.length}
+      itemsPerPage={itemsPerPage}
+      onPageChange={handlePageChange}
+    />
   );
 }

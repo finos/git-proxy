@@ -18,7 +18,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import * as dbUsers from '../../../src/db/file/users';
 import { User, PublicKeyRecord } from '../../../src/db/types';
 
-describe('db/file/users findUserByGitAccount', () => {
+describe('db/file/users findUserByScmIdentity', () => {
   beforeEach(async () => {
     const allUsers = await dbUsers.getUsers();
     for (const user of allUsers) {
@@ -26,43 +26,95 @@ describe('db/file/users findUserByGitAccount', () => {
     }
   });
 
-  it('should find user by gitAccount', async () => {
+  it('should find user by scm identity', async () => {
     const testUser: User = {
       username: 'testuser',
       password: 'password',
+      scmIdentities: { github: 'octocat' },
       email: 'test@example.com',
       publicKeys: [],
-      gitAccount: 'octocat',
       admin: false,
     };
 
     await dbUsers.createUser(testUser);
 
-    const found = await dbUsers.findUserByGitAccount('octocat');
+    const found = await dbUsers.findUserByScmIdentity('github', 'octocat');
     expect(found).toBeDefined();
     expect(found?.username).toBe('testuser');
-    expect(found?.gitAccount).toBe('octocat');
+    expect(found?.scmIdentities.github).toBe('octocat');
   });
 
   it('should be case-insensitive', async () => {
     const testUser: User = {
       username: 'testuser',
       password: 'password',
+      scmIdentities: { github: 'octocat' },
       email: 'test@example.com',
       publicKeys: [],
-      gitAccount: 'octocat',
       admin: false,
     };
 
     await dbUsers.createUser(testUser);
 
-    const found = await dbUsers.findUserByGitAccount('Octocat');
+    const found = await dbUsers.findUserByScmIdentity('github', 'Octocat');
     expect(found).toBeDefined();
     expect(found?.username).toBe('testuser');
   });
 
-  it('should return null when no user has the gitAccount', async () => {
-    const found = await dbUsers.findUserByGitAccount('nonexistent');
+  it('should trim the login before looking it up', async () => {
+    await dbUsers.createUser({
+      username: 'testuser',
+      password: 'password',
+      scmIdentities: { github: 'octocat' },
+      email: 'test@example.com',
+      publicKeys: [],
+      admin: false,
+    });
+
+    const found = await dbUsers.findUserByScmIdentity('github', '  Octocat ');
+    expect(found?.username).toBe('testuser');
+  });
+
+  it('should refuse to pick one user when two share the same scm identity', async () => {
+    for (const username of ['first', 'second']) {
+      await dbUsers.createUser({
+        username,
+        password: 'password',
+        scmIdentities: { github: 'shared' },
+        email: `${username}@example.com`,
+        publicKeys: [],
+        admin: false,
+      });
+    }
+
+    await expect(dbUsers.findUserByScmIdentity('github', 'shared')).rejects.toThrow(
+      'linked to more than one user',
+    );
+  });
+
+  it('should return null when no user has the scm identity', async () => {
+    const found = await dbUsers.findUserByScmIdentity('github', 'nonexistent');
+    expect(found).toBeNull();
+  });
+
+  it('should return null with wrong provider', async () => {
+    const testUser: User = {
+      username: 'testuser',
+      password: 'password',
+      scmIdentities: { github: 'octocat' },
+      email: 'test@example.com',
+      publicKeys: [],
+      admin: false,
+    };
+
+    await dbUsers.createUser(testUser);
+
+    const found = await dbUsers.findUserByScmIdentity('gitlab', 'octocat');
+    expect(found).toBeNull();
+  });
+
+  it('should return null with invalid provider name', async () => {
+    const found = await dbUsers.findUserByScmIdentity('$bad', 'octocat');
     expect(found).toBeNull();
   });
 });
@@ -83,7 +135,7 @@ describe('db/file/users SSH Key Functions', () => {
         password: 'password',
         email: 'test@example.com',
         publicKeys: [],
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       };
 
@@ -123,7 +175,7 @@ describe('db/file/users SSH Key Functions', () => {
         password: 'password',
         email: 'test@example.com',
         publicKeys: [],
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       };
 
@@ -150,7 +202,7 @@ describe('db/file/users SSH Key Functions', () => {
         password: 'password',
         email: 'user1@example.com',
         publicKeys: [],
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       };
 
@@ -159,7 +211,7 @@ describe('db/file/users SSH Key Functions', () => {
         password: 'password',
         email: 'user2@example.com',
         publicKeys: [],
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       };
 
@@ -185,7 +237,7 @@ describe('db/file/users SSH Key Functions', () => {
         password: 'password',
         email: 'test@example.com',
         publicKeys: [],
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       };
 
@@ -253,7 +305,7 @@ describe('db/file/users SSH Key Functions', () => {
             addedAt: new Date().toISOString(),
           },
         ],
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       };
 
@@ -307,7 +359,7 @@ describe('db/file/users SSH Key Functions', () => {
             addedAt: new Date().toISOString(),
           },
         ],
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       };
 
@@ -333,7 +385,7 @@ describe('db/file/users SSH Key Functions', () => {
             addedAt: new Date().toISOString(),
           },
         ],
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       };
 
@@ -360,7 +412,7 @@ describe('db/file/users SSH Key Functions', () => {
             addedAt: new Date().toISOString(),
           },
         ],
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       };
 
@@ -399,7 +451,7 @@ describe('db/file/users SSH Key Functions', () => {
             addedAt: new Date().toISOString(),
           },
         ],
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       };
 
@@ -434,7 +486,7 @@ describe('db/file/users SSH Key Functions', () => {
             addedAt: '2024-01-02T00:00:00Z',
           },
         ],
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       };
 
@@ -453,7 +505,7 @@ describe('db/file/users SSH Key Functions', () => {
         password: 'password',
         email: 'test@example.com',
         publicKeys: [],
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       };
 

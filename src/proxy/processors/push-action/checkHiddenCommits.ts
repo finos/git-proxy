@@ -41,6 +41,17 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
       .split('\n')
       .filter(Boolean);
     revList.forEach((sha) => introducedCommits.add(sha));
+
+    // The parent commit (commitFrom) is already present on the remote by
+    // definition, so it is never a "hidden" commit even when it appears in the
+    // pushed pack. In practice `git receive-pack` can write the already-present
+    // base into its own pack, which writePack then records in newIdxFiles; that
+    // base is not part of the exclusive commitFrom..commitTo range and would
+    // otherwise be flagged as unreferenced. Only the parent is exempted here, so
+    // a genuinely hidden commit (one built on an unapproved base) is still detected.
+    if (oldOid !== EMPTY_COMMIT_HASH) {
+      introducedCommits.add(oldOid);
+    }
     step.log(`Total introduced commits: ${introducedCommits.size}`);
 
     // build packCommits set

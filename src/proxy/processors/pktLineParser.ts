@@ -16,13 +16,20 @@
 
 import { PACKET_SIZE } from '../constants';
 
+/** Maximum pkt-lines accepted from a single receive-pack / protocol buffer. */
+export const MAX_PACKET_LINES = 100_000;
+
 /**
  * Parses the packet lines from a buffer into an array of strings.
  * Also returns the offset immediately following the parsed lines (including the flush packet).
  * @param {Buffer} buffer - The buffer containing the packet data.
+ * @param {number} [maxLines] - Maximum number of pkt-lines to accept.
  * @return {[string[], number]} An array containing the parsed lines and the offset after the last parsed line/flush packet.
  */
-export const parsePacketLines = (buffer: Buffer): [string[], number] => {
+export const parsePacketLines = (
+  buffer: Buffer,
+  maxLines = MAX_PACKET_LINES,
+): [string[], number] => {
   if (typeof buffer === 'string' || Array.isArray(buffer) || !Buffer.isBuffer(buffer)) {
     throw new Error('parsePacketLines expected a Buffer');
   }
@@ -47,6 +54,10 @@ export const parsePacketLines = (buffer: Buffer): [string[], number] => {
     // Make sure we don't read past the end of the buffer
     if (offset + length > buffer.length) {
       throw new Error(`Invalid packet line length ${lengthHex} at offset ${offset}`);
+    }
+
+    if (lines.length >= maxLines) {
+      throw new Error(`Too many packet lines (limit ${maxLines})`);
     }
 
     const line = buffer.toString('utf8', offset + PACKET_SIZE, offset + length);
