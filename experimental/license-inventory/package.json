@@ -23,7 +23,7 @@
     "express-rate-limit": "^8.2.1",
     "helmet": "^8.0.0",
     "http-status-codes": "^2.3.0",
-    "mongoose": "^8.10.1",
+    "mongoose": "^9.11.2",
     "pino": "^9.6.0",
     "pino-caller": "^3.4.0",
     "pino-http": "^10.4.0",
