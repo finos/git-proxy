@@ -38,18 +38,7 @@ jobs:
         run: npm run build -w packages/git-proxy-cli
 
       - name: Verify git-proxy-cli is in lockstep with the root package
-        run: |
-          ROOT_VERSION=$(node -p "require('./package.json').version")
-          CLI_VERSION=$(node -p "require('./packages/git-proxy-cli/package.json').version")
-          CLI_PIN=$(node -p "require('./packages/git-proxy-cli/package.json').dependencies['@finos/git-proxy']")
-          if [[ "$CLI_VERSION" != "$ROOT_VERSION" ]]; then
-            echo "Version mismatch: root=$ROOT_VERSION cli=$CLI_VERSION"
-            exit 1
-          fi
-          if [[ "$CLI_PIN" != "$ROOT_VERSION" ]]; then
-            echo "CLI pins @finos/git-proxy@$CLI_PIN but root is $ROOT_VERSION"
-            exit 1
-          fi
+        run: node scripts/release/versions.mjs check
 
       - name: Smoke test package before publishing
         run: ./scripts/package-smoke-test.sh --no-clean-build
@@ -62,7 +51,7 @@ jobs:
           set -euo pipefail
           VERSION=$(node -p "require('./package.json').version")
           PKG_NAME=$(node -p "require('./package.json').name")
-          echo "Publishing $PKG_NAME@$VERSION"
+          CLI_NAME=$(node -p "require('./packages/git-proxy-cli/package.json').name")
 
           # Build the publish command flags.
           PUBLISH_FLAGS=(--access=public)
@@ -71,39 +60,18 @@ jobs:
             echo "DRY RUN — nothing will actually be published."
           fi
 
-          # Pre-releases (ex: 2.1.0-rc.1) get tagged as 'rc'
-          if [[ "$VERSION" == *"-"* ]]; then
-            echo "Pre-release detected, publishing under 'rc' tag"
-            npm publish "${PUBLISH_FLAGS[@]}" --tag rc
-            exit 0
-          fi
-
           # Look up current 'latest' on NPM. If never published before,
           # defaults to 0.0.0 so any release (0.1.0, 1.0.0, etc.) becomes latest
           CURRENT_LATEST=$(npm view "$PKG_NAME" version 2>/dev/null || echo "0.0.0")
           echo "Current 'latest' on npm: $CURRENT_LATEST"
 
-          # If this version is strictly greater than the current 'latest',
-          # it becomes latest
-          if npx --yes semver "$VERSION" -r ">$CURRENT_LATEST" >/dev/null 2>&1; then
-            echo "Publishing as 'latest'"
-            npm publish "${PUBLISH_FLAGS[@]}"
-          else
-            # Otherwise, this is a maintenance release on an older line
-            # Tag as v<major>.<minor> so users can pin to it
-            MAJOR_MINOR=$(echo "$VERSION" | cut -d. -f1,2)
-            DIST_TAG="release-${MAJOR_MINOR}"
-            echo "Maintenance release detected, publishing under '$DIST_TAG' tag"
-            npm publish "${PUBLISH_FLAGS[@]}" --tag "$DIST_TAG"
-          fi
+          # Pre-releases (ex: 2.1.0-rc.1) get 'rc', versions above the current
+          # 'latest' become 'latest', and maintenance releases on an older line
+          # get 'release-<major>.<minor>' so users can pin to it.
+          # Both packages share a version (checked above), so they share a tag.
+          DIST_TAG=$(node scripts/release/versions.mjs dist-tag "$VERSION" "$CURRENT_LATEST")
+          echo "Publishing $PKG_NAME@$VERSION and $CLI_NAME@$VERSION under '$DIST_TAG'"
 
-      - name: Check if pre-release and publish @finos/git-proxy-cli to NPM
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          if [[ "$VERSION" == *"-"* ]]; then
-            echo "Publishing pre-release: $VERSION"
-            npm publish -w packages/git-proxy-cli --access=public --tag rc
-          else
-            echo "Publishing stable release: $VERSION"
-            npm publish -w packages/git-proxy-cli --access=public
-          fi
+          # The CLI pins the root package at this exact version, so publish the root first
+          npm publish "${PUBLISH_FLAGS[@]}" --tag "$DIST_TAG"
+          npm publish "${PUBLISH_FLAGS[@]}" --tag "$DIST_TAG" -w packages/git-proxy-cli
