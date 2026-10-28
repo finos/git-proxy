@@ -47,8 +47,6 @@ export default defineConfig(
       // generated files we don't control
       '**/package-lock.json',
       'src/config/generated/**',
-      // has it's own eslint
-      'experimental/license-inventory',
       // vendored code we're not changing
       'src/ui/assets/js/**',
       'src/ui/assets/css/**',
