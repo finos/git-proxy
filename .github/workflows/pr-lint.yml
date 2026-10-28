@@ -9,6 +9,7 @@ on:
       - reopened
       - edited
       - synchronize
+  merge_group:
 
 permissions:
   contents: read
@@ -18,6 +19,7 @@ jobs:
     permissions:
       pull-requests: read
     name: Validate & Label PR
+    if: github.event_name == 'pull_request_target'
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
