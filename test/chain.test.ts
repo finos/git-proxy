@@ -167,7 +167,12 @@ describe('proxy chain', function () {
 
   it('executeChain should stop executing if action has continue returns false', async () => {
     const req = {};
-    const continuingAction = { type: 'push', continue: () => true, allowPush: false };
+    const continuingAction = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
@@ -178,6 +183,7 @@ describe('proxy chain', function () {
       type: 'push',
       continue: () => false,
       allowPush: false,
+      proxyGitPath: './.remote/test',
     });
 
     const result = await chain.executeChain(req);
@@ -213,7 +219,12 @@ describe('proxy chain', function () {
 
   it('executeChain should stop executing if action has allowPush is set to true', async () => {
     const req = {};
-    const continuingAction = { type: 'push', continue: () => true, allowPush: false };
+    const continuingAction = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
@@ -224,6 +235,7 @@ describe('proxy chain', function () {
       type: 'push',
       continue: () => true,
       allowPush: true,
+      proxyGitPath: './.remote/test',
     });
 
     const result = await chain.executeChain(req);
@@ -259,7 +271,12 @@ describe('proxy chain', function () {
 
   it('executeChain should execute all steps if all actions succeed', async () => {
     const req = {};
-    const continuingAction = { type: 'push', continue: () => true, allowPush: false };
+    const continuingAction = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
     const action = { type: 'push' } as Action;
     mockPreProcessors.parseAction.mockResolvedValue(action);
 
@@ -298,13 +315,13 @@ describe('proxy chain', function () {
   it('executeChain should run the expected steps for pulls', async () => {
     const req = {};
     const continuingAction = { type: 'pull', continue: () => true, allowPush: false };
-    mockPreProcessors.parseAction.mockResolvedValue({ type: 'pull' });
-    mockPushProcessors.checkRepoInAuthorisedList.mockResolvedValue(continuingAction);
+    mockPreProcessors.parseAction.mockResolvedValue(continuingAction);
 
     const result = await chain.executeChain(req);
 
-    expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
     expect(mockPreProcessors.parsePush).not.toHaveBeenCalled();
+    expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
+    expect(chain.pullActionChain).toHaveLength(1);
 
     expect(mockPostProcessors.audit).toHaveBeenCalled();
     expect(mockPostProcessors.clearBareClone).not.toHaveBeenCalled();
@@ -329,7 +346,12 @@ describe('proxy chain', function () {
 
   it('executeChain should handle errors after pullRemote and still call clearBareClone', async () => {
     const req = {};
-    const action = { type: 'push', continue: () => true, allowPush: false };
+    const action = {
+      type: 'push',
+      continue: () => true,
+      allowPush: false,
+      proxyGitPath: './.remote/test',
+    };
 
     processors.pre.parseAction.mockResolvedValue(action);
     processors.pre.parsePush.mockResolvedValue(action);
@@ -585,6 +607,88 @@ describe('proxy chain', function () {
     );
     const pullChain = await chain.getChain(action);
     expect(pullChain).toEqual(chain.pullActionChain);
+  });
+
+  describe('plugin onChainSuccess', () => {
+    const pullPlugin = (phase: string, displayName: string, exec?: any) => ({
+      exec: vi.fn(exec ?? (async (_req: unknown, action: unknown) => action)),
+      onChainSuccess: vi.fn(),
+      phase,
+      displayName,
+    });
+
+    const setupPullAction = () => {
+      const action = {
+        type: RequestType.PULL,
+        steps: [],
+        continue: () => true,
+        allowPush: false,
+      };
+      mockPreProcessors.parseAction.mockResolvedValue(action);
+      return action;
+    };
+
+    it('is called for every executed plugin once the chain succeeds', async () => {
+      const first = pullPlugin(PullPhase.AFTER_AUTHORISATION, 'first');
+      const second = pullPlugin(PullPhase.AFTER_CHECKOUT, 'second');
+      chain.chainPluginLoader = { pushPlugins: [], pullPlugins: [first, second] };
+      const action = setupPullAction();
+      const req = {};
+
+      await chain.executeChain(req);
+
+      expect(first.onChainSuccess).toHaveBeenCalledWith(req, action);
+      expect(second.onChainSuccess).toHaveBeenCalledWith(req, action);
+    });
+
+    it('is not called when a later step rejects the action', async () => {
+      const first = pullPlugin(PullPhase.AFTER_AUTHORISATION, 'first');
+      const rejecting = pullPlugin(
+        PullPhase.AFTER_CHECKOUT,
+        'rejecting',
+        async (_req: any, a: any) => {
+          a.steps = [...a.steps, { error: true, errorMessage: 'rejected' }];
+          a.error = true;
+          a.continue = () => false;
+          return a;
+        },
+      );
+      chain.chainPluginLoader = { pushPlugins: [], pullPlugins: [first, rejecting] };
+      setupPullAction();
+
+      await chain.executeChain({});
+
+      expect(first.onChainSuccess).not.toHaveBeenCalled();
+      expect(rejecting.onChainSuccess).not.toHaveBeenCalled();
+    });
+
+    it('is not called for plugins that did not execute', async () => {
+      const skipped = pullPlugin(PullPhase.AFTER_AUTHORISATION, 'skipped');
+      chain.chainPluginLoader = { pushPlugins: [], pullPlugins: [skipped] };
+      const action = setupPullAction();
+      mockPushProcessors.checkRepoInAuthorisedList.mockResolvedValue({
+        ...action,
+        allowPush: true,
+      });
+
+      await chain.executeChain({});
+
+      expect(skipped.exec).not.toHaveBeenCalled();
+      expect(skipped.onChainSuccess).not.toHaveBeenCalled();
+    });
+
+    it('logs hook errors without failing the action', async () => {
+      const failing = pullPlugin(PullPhase.AFTER_AUTHORISATION, 'failing');
+      failing.onChainSuccess.mockRejectedValue(new Error('hook failed'));
+      chain.chainPluginLoader = { pushPlugins: [], pullPlugins: [failing] };
+      setupPullAction();
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      const result = await chain.executeChain({});
+
+      expect(result.error).toBeUndefined();
+      expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('hook failed'));
+    });
   });
 
   it('returns tagPushChain when action.type is push and action.actionType is TAG', async () => {
