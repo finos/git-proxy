@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-import { spawnSync } from 'child_process';
-import fs from 'fs';
+import { spawn } from 'child_process';
 
 /**
  * Git operations using native git commands
@@ -26,7 +25,7 @@ import fs from 'fs';
  * so native git commands respect the same TLS settings as the Node.js process.
  */
 function buildEnv(extraEnv?: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  const env = { ...process.env };
+  const env: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0' };
   if (process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0') {
     env.GIT_SSL_NO_VERIFY = '1';
   }
@@ -36,47 +35,92 @@ function buildEnv(extraEnv?: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
 }
 
 /**
- * Build URL with credentials if provided
+ * Build the environment that hands the client's Basic credentials to git.
+ *
+ * The credentials travel as an Authorization header set through GIT_CONFIG_*
+ * variables, never in the URL: arguments are visible to every local user via
+ * `ps`, and a URL with credentials would also be written to the repo config.
+ * The header is scoped to the remote's origin, and credential helpers are
+ * disabled so that a rejected token can never fall back to credentials stored
+ * on the proxy host.
+ *
+ * @param url The remote URL
+ * @param username Client username
+ * @param password Client password or token
+ * @return Environment variables for git
  */
-function buildAuthUrl(url: string, username?: string, password?: string): string {
-  if (username && password) {
-    return url.replace(
-      /^(https?:\/\/)/,
-      `$1${encodeURIComponent(username)}:${encodeURIComponent(password)}@`,
-    );
+export function buildAuthEnv(url: string, username?: string, password?: string): NodeJS.ProcessEnv {
+  const entries: Array<[string, string]> = [['credential.helper', '']];
+
+  const origin = httpOrigin(url);
+  if (origin && username && password) {
+    const token = Buffer.from(`${username}:${password}`).toString('base64');
+    entries.push([`http.${origin}/.extraHeader`, `Authorization: Basic ${token}`]);
   }
-  return url;
+
+  const env: NodeJS.ProcessEnv = { GIT_CONFIG_COUNT: String(entries.length) };
+  entries.forEach(([key, value], index) => {
+    env[`GIT_CONFIG_KEY_${index}`] = key;
+    env[`GIT_CONFIG_VALUE_${index}`] = value;
+  });
+  return env;
 }
 
-interface CloneOptions {
+/**
+ * Origin of an HTTP(S) remote, or null for SSH URLs and local paths.
+ */
+function httpOrigin(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.origin : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Run a git command without blocking the event loop.
+ *
+ * @param args Arguments passed to git
+ * @param env Extra environment variables for the child process
+ * @return Exit code and captured stderr
+ */
+function runGit(
+  args: string[],
+  env?: NodeJS.ProcessEnv,
+): Promise<{ status: number; stderr: string }> {
+  return new Promise((resolve, reject) => {
+    const proc = spawn('git', args, { stdio: ['ignore', 'ignore', 'pipe'], env: buildEnv(env) });
+    let stderr = '';
+    proc.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+    proc.on('error', reject);
+    proc.on('close', (code) => resolve({ status: code ?? 1, stderr }));
+  });
+}
+
+interface RemoteOptions {
   dir: string;
   url: string;
   username?: string;
   password?: string;
-  bare?: boolean;
-  depth?: number;
-  singleBranch?: boolean;
   env?: NodeJS.ProcessEnv;
 }
 
-interface FetchOptions {
-  dir: string;
-  url: string;
-  username?: string;
-  password?: string;
-  depth?: number;
+interface CloneOptions extends RemoteOptions {
+  bare?: boolean;
+}
+
+interface FetchOptions extends RemoteOptions {
   prune?: boolean;
-  bare?: boolean;
-  env?: NodeJS.ProcessEnv;
 }
 
 /**
  * Clone a repository using native git
  */
 export async function clone(options: CloneOptions): Promise<void> {
-  const { dir, url, username, password, bare = false, depth, singleBranch = false, env } = options;
-
-  const authUrl = buildAuthUrl(url, username, password);
+  const { dir, url, username, password, bare = false, env } = options;
 
   const args: string[] = ['clone'];
 
@@ -84,27 +128,11 @@ export async function clone(options: CloneOptions): Promise<void> {
     args.push('--bare');
   }
 
-  if (depth) {
-    args.push('--depth', depth.toString());
-  }
+  args.push(url, dir);
 
-  if (singleBranch) {
-    args.push('--single-branch');
-  } else {
-    // Explicitly clone all branches (needed when using --depth)
-    args.push('--no-single-branch');
-  }
-
-  args.push(authUrl, dir);
-
-  const result = spawnSync('git', args, { stdio: 'pipe', env: buildEnv(env) });
+  const result = await runGit(args, { ...buildAuthEnv(url, username, password), ...env });
   if (result.status !== 0) {
-    throw new Error(`Git clone failed: ${result.stderr?.toString() || 'Unknown error'}`);
-  }
-
-  // Sanitize credentials from git config
-  if (username && password) {
-    sanitizeCredentials(dir, url, bare);
+    throw new Error(`Git clone failed: ${result.stderr || 'Unknown error'}`);
   }
 }
 
@@ -112,94 +140,31 @@ export async function clone(options: CloneOptions): Promise<void> {
  * Fetch updates in a repository using native git
  */
 export async function fetch(options: FetchOptions): Promise<void> {
-  const { dir, url, username, password, depth, prune = false, bare = false, env } = options;
-
-  const authUrl = buildAuthUrl(url, username, password);
+  const { dir, url, username, password, prune = false, env } = options;
 
   const args: string[] = ['-C', dir, 'fetch'];
-
-  if (depth) {
-    args.push('--depth', depth.toString());
-  }
 
   if (prune) {
     args.push('--prune');
   }
 
-  args.push(authUrl);
-  args.push('+refs/heads/*:refs/heads/*'); // Fetch all branches
+  // Mirror every branch and tag; --prune drops the ones deleted upstream
+  args.push(url, '+refs/heads/*:refs/heads/*', '+refs/tags/*:refs/tags/*');
 
-  const result = spawnSync('git', args, { stdio: 'pipe', env: buildEnv(env) });
+  const result = await runGit(args, { ...buildAuthEnv(url, username, password), ...env });
   if (result.status !== 0) {
-    throw new Error(`Git fetch failed: ${result.stderr?.toString() || 'Unknown error'}`);
-  }
-
-  // Sanitize credentials from git config
-  if (username && password) {
-    sanitizeCredentials(dir, url, bare);
-  }
-}
-
-/**
- * Remove credentials from git config and set clean URL
- */
-function sanitizeCredentials(dir: string, cleanUrl: string, isBare: boolean): void {
-  try {
-    // For bare repositories, git clone --bare doesn't set up a remote by default
-    // We need to add it first if it doesn't exist
-    if (isBare) {
-      let result = spawnSync('git', ['-C', dir, 'remote', 'add', 'origin', cleanUrl], {
-        stdio: 'pipe',
-      });
-      if (result.status !== 0) {
-        // If remote already exists, update it
-        result = spawnSync('git', ['-C', dir, 'remote', 'set-url', 'origin', cleanUrl], {
-          stdio: 'pipe',
-        });
-        if (result.status !== 0) {
-          throw new Error(`Failed to set remote: ${result.stderr?.toString()}`);
-        }
-      }
-    } else {
-      // For non-bare repositories, remote origin should exist
-      // Unset the URL with credentials (ignore error if already unset)
-      spawnSync('git', ['-C', dir, 'config', '--unset', 'remote.origin.url'], {
-        stdio: 'pipe',
-      });
-
-      // Set clean URL without credentials
-      const result = spawnSync('git', ['-C', dir, 'remote', 'set-url', 'origin', cleanUrl], {
-        stdio: 'pipe',
-      });
-      if (result.status !== 0) {
-        throw new Error(`Failed to set remote: ${result.stderr?.toString()}`);
-      }
-    }
-  } catch (e) {
-    console.warn(`Warning: Failed to sanitize credentials for ${dir}:`, e);
+    throw new Error(`Git fetch failed: ${result.stderr || 'Unknown error'}`);
   }
 }
 
 /**
  * Clone from local repository (for working copy from bare cache)
  */
-export async function cloneLocal(options: {
-  sourceDir: string;
-  targetDir: string;
-  depth?: number;
-}): Promise<void> {
-  const { sourceDir, targetDir, depth } = options;
+export async function cloneLocal(options: { sourceDir: string; targetDir: string }): Promise<void> {
+  const { sourceDir, targetDir } = options;
 
-  const args: string[] = ['clone'];
-
-  if (depth) {
-    args.push('--depth', depth.toString());
-  }
-
-  args.push(sourceDir, targetDir);
-
-  const result = spawnSync('git', args, { stdio: 'pipe', env: buildEnv() });
+  const result = await runGit(['clone', sourceDir, targetDir]);
   if (result.status !== 0) {
-    throw new Error(`Git local clone failed: ${result.stderr?.toString() || 'Unknown error'}`);
+    throw new Error(`Git local clone failed: ${result.stderr || 'Unknown error'}`);
   }
 }
