@@ -2,199 +2,94 @@
 
 ## Overview
 
-The hybrid cache architecture optimizes Git repository cloning by splitting the cache into two layers:
+The hybrid cache speeds up the `pullRemote` step by splitting the clone into two layers:
 
-1. **Bare Cache** (persistent, shared) - Stores minimal Git data shared across all requests
-2. **Working Copy** (temporary, isolated) - Per-request workspace for push validation
+1. **Bare mirror** (persistent, shared) - one bare repository per upstream repository, kept in `cache.cacheDir`
+2. **Working copy** (temporary, isolated) - the usual per-push checkout in `.remote/<hash of action id>/`, cloned locally from the mirror
 
-## How pullRemote Works
+The cache is **opt-in**. With `cache.enabled: false` (the default) `pullRemote` uses the original `PullRemoteHTTPS` / `PullRemoteSSH` implementations unchanged.
 
-### Phase 1: Bare Cache (Persistent, Shared)
-
-```typescript
-const bareRepo = path.join(BARE_CACHE, action.repoName);
-
-if (bareExists) {
-  // CACHE HIT: Fast fetch to update existing bare repo
-  await gitOps.fetch({
-    dir: bareRepo,
-    url: action.url,
-    bare: true,
-    depth: 1,
-  });
-  cacheManager.touchRepository(action.repoName); // Update LRU timestamp
-} else {
-  // CACHE MISS: Clone new bare repository
-  await gitOps.clone({
-    dir: bareRepo,
-    url: action.url,
-    bare: true,
-    depth: 1,
-  });
-}
-```
-
-**Key Points:**
-
-- Bare repositories contain only `.git` data (no working tree)
-- Shared across all push requests for the same repository
-- Uses LRU eviction based on `maxSizeGB` and `maxRepositories` limits
-- `touchRepository()` updates access time for LRU tracking
-
-### Phase 2: Working Copy (Temporary, Isolated)
-
-```typescript
-const workCopy = path.join(WORK_DIR, action.id);
-const workCopyPath = path.join(workCopy, action.repoName);
-
-// Fast local clone from bare cache
-await gitOps.cloneLocal({
-  sourceDir: bareRepo,
-  targetDir: workCopyPath,
-  depth: 1,
-});
-
-action.proxyGitPath = workCopy; // Used by subsequent processors
-```
-
-**Key Points:**
-
-- Each push request gets an isolated working copy
-- Cloned from local bare cache (fast, no network)
-- Cleaned up after push validation completes
-
-### Phase 3: Cache Management
-
-```typescript
-const evictionResult = await cacheManager.enforceLimits();
-```
-
-**CacheManager** uses LRU (Least Recently Used) eviction:
-
-- Monitors total cache size and repository count
-- Removes oldest repositories when limits are exceeded
-- Thread-safe via mutex to prevent race conditions
-
-## Performance Benchmarks
-
-Real-world performance comparison using the Backstage repository (177MB cached bare repo with `depth: 1`).
-
-### Benchmark Setup
-
-- **Test Repository**: Backstage (medium-large repository, 177MB cached)
-- **Test Method**: 10 consecutive push operations (1 cold + 9 warm)
-- **Cache Configuration**: Bare repositories with `depth: 1` (shallow clone)
-- **Benchmark Script**: [`cache-benchmark.sh`](../../../../scripts/cache-benchmark.sh)
-
-### Results Comparison
-
-| Metric              | Without Cache (main) | With Cache (PR) | Improvement          |
-| ------------------- | -------------------- | --------------- | -------------------- |
-| **Cold Push**       | 20.63s               | 17.58s          | 1.2x faster          |
-| **Warm Push (avg)** | 19.88s               | **6.68s**       | **3x faster**        |
-| **Warm Push (min)** | 18.37s               | 6.34s           | 2.9x faster          |
-| **Warm Push (max)** | 21.22s               | 7.12s           | 3x faster            |
-| **Std Deviation**   | 0.99s                | 0.19s           | 5x more consistent   |
-| **Speedup Ratio**   | 1.03x                | **2.63x**       | **2.6x improvement** |
-
-### Time Saved
-
-**Without Cache (main branch)**:
-
-- 9 warm pushes: 178.93s total
-- Every push requires full GitHub clone
-
-**With Cache (this PR)**:
-
-- 9 warm pushes: 60.16s total
-- **Time saved: 98.10s (1.6 minutes)**
-- **Efficiency gain: 66%**
-
-### Running the Benchmark
-
-To reproduce these results with your own repository fork:
-
-```bash
-# Test with cache (this PR branch)
-./scripts/cache-benchmark.sh owner/repo
-```
-
-**Example**:
-
-```bash
-./scripts/cache-benchmark.sh yourFork/backstage main 10
-```
-
-**Note**: Results may vary based on network conditions, GitHub server load, and repository size. The benchmark uses `depth: 1` for all git operations. You must have push access to the repository you're testing.
-
-## Cache Configuration
+## Configuration
 
 In `proxy.config.json`:
 
 ```json
 {
   "cache": {
-    "maxSizeGB": 2, // Maximum total cache size
-    "maxRepositories": 50, // Maximum number of cached repos
-    "cacheDir": "./.remote/cache" // Bare cache location
+    "enabled": true,
+    "maxSizeGB": 2,
+    "maxRepositories": 50,
+    "cacheDir": "./.remote/cache"
   }
 }
 ```
 
-## Concurrency & Thread Safety
+| Option            | Default           | Meaning                                         |
+| ----------------- | ----------------- | ----------------------------------------------- |
+| `enabled`         | `false`           | Use the cached pull implementations             |
+| `maxSizeGB`       | `2`               | Total size above which LRU eviction kicks in    |
+| `maxRepositories` | `50`              | Number of mirrors above which eviction kicks in |
+| `cacheDir`        | `./.remote/cache` | Where the bare mirrors live                     |
 
-The `CacheManager` uses a Promise-based mutex to serialize cache operations:
+## How a cached pull works
 
-```typescript
-private mutex: Promise<void> = Promise.resolve();
+`createPullRemote()` returns `PullRemoteHTTPSCached` or `PullRemoteSSHCached` when the cache is enabled. Both only override `performClone()`: they build a protocol-specific `RemoteAccess` (Basic credentials for HTTPS, a `GIT_SSH_COMMAND` pointing at the forwarded agent for SSH) and hand it to `performCachedClone()` in [`cachedClone.ts`](./cachedClone.ts).
 
-async touchRepository(repoName: string): Promise<void> {
-  return this.acquireLock(() => {
-    // Atomic operation
-  });
-}
+### Phase 1 - bare mirror
 
-async enforceLimits(): Promise<{ removedRepos: string[]; freedBytes: number }> {
-  return this.acquireLock(() => {
-    // Atomic operation
-  });
-}
+The mirror lives at `<cacheDir>/<host>__<project>__<repo>`, e.g. `github.com__finos__git-proxy.git`, so the same repository name on different hosts or projects never shares a mirror.
+
+- **Miss**: the remote is cloned with `git clone --bare` (full history, all branches and tags).
+- **Hit**: the mirror is updated with `git fetch --prune` of `refs/heads/*` and `refs/tags/*`.
+- **Fetch fails**: the mirror is rebuilt. If the rebuild also fails (for example because the client's credentials are wrong) the push fails and **the existing mirror is left untouched** for everyone else.
+
+Every clone into the cache is done in a dot-prefixed staging folder (`.staging-<key>-<uuid>`) and only moved into place once it succeeded, so a failed or interrupted clone never leaves a half-written mirror behind. Staging folders are ignored by the cache statistics and by eviction.
+
+Every push still talks to the remote with **its own** credentials, so the cache never lets a client read a repository it could not clone itself.
+
+### Phase 2 - working copy
+
+`git clone <mirror> <proxyGitPath>/<repo>` creates the working copy used by the rest of the chain. This is a local clone (no network). The working copy is deleted by `clearBareClone` as before; the mirror stays.
+
+## Concurrency
+
+`CacheManager.withRepositoryLock(key, fn)` serialises all work on one mirror: concurrent pushes to the same repository fetch / rebuild / clone one after the other, while pushes to different repositories run in parallel. A repository that is locked, or waited for, is never evicted.
+
+The global `CacheManager` mutex additionally serialises `touchRepository()` and `enforceLimits()`.
+
+> The locks are in-process. Several GitProxy instances must not share the same `cacheDir`.
+
+All git commands are run with an asynchronous `spawn`, so a long clone never blocks the event loop.
+
+## Credentials
+
+HTTPS credentials are never put on the command line or in a URL. [`git-operations.ts`](./git-operations.ts) passes them to git through `GIT_CONFIG_*` environment variables as an `http.<origin>/.extraHeader` Authorization header, and resets `credential.helper` so a rejected token can never fall back to credentials stored on the proxy host. `GIT_TERMINAL_PROMPT=0` makes git fail instead of waiting for input. This requires git 2.31 or later.
+
+## Eviction
+
+After each cached pull, `enforceLimits()` removes the least recently used mirrors (by the folder's mtime, which `touchRepository()` updates) until both limits are respected. The mirror the current push just used is always kept: a repository larger than `maxSizeGB` therefore stays cached and a warning is logged on the push; it is evicted once another repository becomes more recent.
+
+## Performance
+
+Measured with the Backstage repository (10 consecutive pushes: 1 cold + 9 warm) using [`scripts/cache-benchmark.sh`](../../../../scripts/cache-benchmark.sh):
+
+| Metric              | Without cache | With cache | Improvement |
+| ------------------- | ------------- | ---------- | ----------- |
+| **Cold push**       | 20.63s        | 17.58s     | 1.2x faster |
+| **Warm push (avg)** | 19.88s        | **6.68s**  | **3x**      |
+| **Std deviation**   | 0.99s         | 0.19s      | 5x steadier |
+
+Results depend on network conditions and repository size. Note that the cold push of a large repository downloads its full history, while the uncached path uses a shallow (`depth: 1`) clone.
+
+```bash
+./scripts/cache-benchmark.sh <owner/repo> [branch] [num_pushes]
 ```
 
-**Race Conditions Prevented:**
+You need push access to the repository used for the benchmark.
 
-- Multiple `enforceLimits()` calls removing the same repository
-- `touchRepository()` updating while `enforceLimits()` is removing
-- `getCacheStats()` reading while repositories are being deleted
+## Tests
 
-## Cleanup Strategy
-
-**Bare Cache:**
-
-- Cleaned via LRU eviction (oldest repositories removed first)
-- Triggered after every push via `enforceLimits()`
-- Respects `maxSizeGB` and `maxRepositories` limits
-
-**Working Copies:**
-
-- Automatically cleaned by `clearBareClone.ts` after push completes
-- Each request's `action.id` directory is deleted
-- No manual cleanup needed
-
-## Monitoring & Debugging
-
-**Cache Statistics:**
-
-```typescript
-const stats = cacheManager.getCacheStats();
-console.log(`Total repos: ${stats.totalRepositories}`);
-console.log(`Total size: ${stats.totalSizeBytes / (1024 * 1024)}MB`);
-```
-
-**LRU Eviction Logs:**
-
-```typescript
-const result = await cacheManager.enforceLimits();
-console.log(`Evicted ${result.removedRepos.length} repositories`);
-console.log(`Freed ${result.freedBytes / (1024 * 1024)}MB`);
-```
+- `test/processors/cachedClone.test.ts` - cache keys, miss/hit/rebuild, concurrency, eviction, both cached pull classes; runs offline against a local bare remote
+- `test/processors/cacheManager.test.ts` - stats, LRU eviction, locks
+- `test/processors/gitOperations.test.ts` - git argv/env, credential handling, error paths
+- `test/processors/hybridCache.integration.test.ts` - end-to-end against github.com, only with `RUN_NETWORK_TESTS=true`
