@@ -25,9 +25,12 @@ import { PullRemoteBase } from '../../src/proxy/processors/push-action/PullRemot
 
 const checkoutPath = (actionId: string) => `./.remote/${PullRemoteBase.checkoutDirName(actionId)}`;
 
-describe('Hybrid Cache Integration Tests', () => {
+// Clones finos/git-proxy from github.com, so it only runs when explicitly asked for.
+// The same flows are covered offline, against a local remote, in cachedClone.test.ts.
+const shouldRunNetworkTests = process.env.RUN_NETWORK_TESTS === 'true';
+
+describe.runIf(shouldRunNetworkTests)('Hybrid Cache Integration Tests', () => {
   const testRepoUrl = 'https://github.com/finos/git-proxy.git';
-  const testRepoName = 'finos/git-proxy.git';
   const authorization = `Basic ${Buffer.from('test:test').toString('base64')}`;
 
   // Shared test data populated by before() hook
@@ -44,7 +47,7 @@ describe('Hybrid Cache Integration Tests', () => {
     cacheHitAction: null,
     cacheMissDuration: 0,
     cacheHitDuration: 0,
-    bareRepoPath: './.remote/cache/git-proxy.git',
+    bareRepoPath: './.remote/cache/github.com__finos__git-proxy.git',
     inodeBefore: null,
     inodeAfter: null,
   };
@@ -66,8 +69,7 @@ describe('Hybrid Cache Integration Tests', () => {
 
     // First clone - cache MISS
     console.log('Executing cache MISS...');
-    const cacheMissAction = new Action(cacheMissActionId, 'push', 'POST', Date.now(), testRepoName);
-    cacheMissAction.url = testRepoUrl;
+    const cacheMissAction = new Action(cacheMissActionId, 'push', 'POST', Date.now(), testRepoUrl);
 
     const cacheMissStart = Date.now();
     await pullRemote({ headers: { authorization } }, cacheMissAction);
@@ -85,8 +87,7 @@ describe('Hybrid Cache Integration Tests', () => {
 
     // Second clone - cache HIT
     console.log('Executing cache HIT...');
-    const cacheHitAction = new Action(cacheHitActionId, 'push', 'POST', Date.now(), testRepoName);
-    cacheHitAction.url = testRepoUrl;
+    const cacheHitAction = new Action(cacheHitActionId, 'push', 'POST', Date.now(), testRepoUrl);
 
     const cacheHitStart = Date.now();
     await pullRemote({ headers: { authorization } }, cacheHitAction);
@@ -101,6 +102,8 @@ describe('Hybrid Cache Integration Tests', () => {
   }, 120000);
 
   afterAll(() => {
+    vi.restoreAllMocks();
+
     // Clean up all .remote directories after all tests
     if (fs.existsSync('./.remote')) {
       fs.rmSync('./.remote', { recursive: true, force: true });
@@ -207,7 +210,9 @@ describe('Hybrid Cache Integration Tests', () => {
       expect(Array.isArray(stats.repositories)).toBe(true);
       expect(stats.repositories.length).toBeGreaterThanOrEqual(1);
 
-      const gitProxyRepo = stats.repositories.find((r) => r.name === 'git-proxy.git');
+      const gitProxyRepo = stats.repositories.find(
+        (r) => r.name === 'github.com__finos__git-proxy.git',
+      );
       expect(gitProxyRepo).toBeDefined();
       expect(gitProxyRepo.sizeBytes).toBeGreaterThan(0);
       expect(gitProxyRepo.lastAccessed).toBeInstanceOf(Date);
