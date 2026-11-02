@@ -44,7 +44,18 @@ function Home() {
       <div className='hero hero--secondary'>
         <div className='container text--center'>
           <h1 className='hero__title'>GitProxy v{siteConfig.customFields.version} is out! 🥳</h1>
-          <p style={{ fontSize: '20px' }}>{siteConfig.tagline}</p>
+          <div className='hero-intro'>
+            <p>
+              GitProxy deploys custom push protections and policies on top of Git. It is a highly
+              configurable framework allowing developers and organizations to enforce push
+              protections relevant to their developer workflow, security posture and risk appetite.
+            </p>
+            <p>
+              GitProxy is built with a developer-first mindset. By presenting simple-to-follow
+              remediation instructions in the CLI/Terminal, it minimises the friction of use and
+              adoption, and keeps developers focused on what matters: committing and pushing code.
+            </p>
+          </div>
           <div className='margin-top--lg'>
             <a
               className='button button--outline button--primary button--lg margin-right--sm'
