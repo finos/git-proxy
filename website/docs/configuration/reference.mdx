@@ -1146,7 +1146,7 @@ description: JSON schema reference documentation for GitProxy
 | **Type**     | `number` |
 | **Required** | No       |
 
-**Description:** Maximum total decompressed size of all objects in a pack file in bytes (default 128MB). Parsing a pack holds the decompressed objects in memory, so this is much lower than maxPackSizeBytes.
+**Description:** Maximum total decompressed size of all objects in a pack file in bytes (default 128MB). Set to a value lower than maxPackSizeBytes to prevent memory exhaustion.
 
 </blockquote>
 </details>
@@ -1163,6 +1163,38 @@ description: JSON schema reference documentation for GitProxy
 | **Required** | No       |
 
 **Description:** Maximum decompressed size of a single object in a pack file in bytes (default 64MB). Capped by maxDecompressedPackSizeBytes.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="limits_maxPackExpansionRatio"></a>21.4. [Optional] Property GitProxy configuration file > limits > maxPackExpansionRatio</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** Maximum allowed expansion ratio (decompressed/compressed size) of a pack file (default 100).
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="limits_maxPackObjects"></a>21.5. [Optional] Property GitProxy configuration file > limits > maxPackObjects</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** Maximum number of objects in a pack file (default 100,000).
 
 </blockquote>
 </details>
@@ -1302,16 +1334,17 @@ Must be one of:
 | ------------------------------ |
 | [item 0](#sink_items_oneOf_i0) |
 | [item 1](#sink_items_oneOf_i1) |
+| [item 2](#sink_items_oneOf_i2) |
 
 <blockquote>
 
 #### <a name="sink_items_oneOf_i0"></a>23.1.1. Property `GitProxy configuration file > sink > sink items > oneOf > item 0`
 
-|                           |                  |
-| ------------------------- | ---------------- |
-| **Type**                  | `object`         |
-| **Required**              | No               |
-| **Additional properties** | Any type allowed |
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
 
 **Description:** Connection properties for mongoDB. Options may be passed in either the connection string or broken out in the options object
 
@@ -1347,16 +1380,16 @@ Specific value: `"mongo"`
 
 <details>
 <summary>
-<strong> <a name="sink_items_oneOf_i0_connectionString"></a>23.1.1.3. [Required] Property GitProxy configuration file > sink > sink items > oneOf > item 0 > connectionString</strong>
+<strong> <a name="sink_items_oneOf_i0_connectionString"></a>23.1.1.3. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 0 > connectionString</strong>
 </summary>
 <blockquote>
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
-| **Required** | Yes      |
+| **Required** | No       |
 
-**Description:** mongoDB Client connection string, see [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/)
+**Description:** MongoDB client connection string. A non-empty GIT_PROXY_MONGO_CONNECTION_STRING environment variable overrides this value. An enabled MongoDB sink requires a non-empty connection string from either source. See [https://www.mongodb.com/docs/manual/reference/connection-string/](https://www.mongodb.com/docs/manual/reference/connection-string/).
 
 </blockquote>
 </details>
@@ -1414,11 +1447,11 @@ Specific value: `"mongo"`
 
 #### <a name="sink_items_oneOf_i1"></a>23.1.2. Property `GitProxy configuration file > sink > sink items > oneOf > item 1`
 
-|                           |                  |
-| ------------------------- | ---------------- |
-| **Type**                  | `object`         |
-| **Required**              | No               |
-| **Additional properties** | Any type allowed |
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
 
 **Description:** Connection properties for an neDB file-based database
 
@@ -1448,6 +1481,323 @@ Specific value: `"fs"`
 | ------------ | --------- |
 | **Type**     | `boolean` |
 | **Required** | Yes       |
+
+</blockquote>
+</details>
+
+</blockquote>
+<blockquote>
+
+#### <a name="sink_items_oneOf_i2"></a>23.1.3. Property `GitProxy configuration file > sink > sink items > oneOf > item 2`
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Connection properties for PostgreSQL. When set, the `GIT_PROXY_POSTGRES_CONNECTION_STRING` environment variable overrides `connectionString`. If neither a `connectionString` nor the discrete `host`/`port`/`user`/`password`/`database` fields are set, the standard `PGHOST`/`PGPORT`/`PGUSER`/`PGPASSWORD`/`PGDATABASE` environment variables are used.
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_type"></a>23.1.3.1. [Required] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > type</strong>
+</summary>
+<blockquote>
+
+|              |         |
+| ------------ | ------- |
+| **Type**     | `const` |
+| **Required** | Yes     |
+
+Specific value: `"postgres"`
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_enabled"></a>23.1.3.2. [Required] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > enabled</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | Yes       |
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_connectionString"></a>23.1.3.3. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > connectionString</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** PostgreSQL client connection string, see [https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING). Connection settings are selected in this order: `GIT_PROXY_POSTGRES_CONNECTION_STRING`, `connectionString` from the user config or default config, then the discrete connection fields. When using discrete fields, missing values fall back to the `PG*` environment variables.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_host"></a>23.1.3.4. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > host</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** Database server host. Used when `connectionString` is not set. Falls back to the `PGHOST` environment variable.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_port"></a>23.1.3.5. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > port</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** Database server port. Used when `connectionString` is not set. Falls back to the `PGPORT` environment variable.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_user"></a>23.1.3.6. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > user</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** Database user. Used when `connectionString` is not set. Falls back to the `PGUSER` environment variable.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_password"></a>23.1.3.7. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > password</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** Database password. Used when `connectionString` is not set. Falls back to the `PGPASSWORD` environment variable.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_database"></a>23.1.3.8. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > database</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** Database name. Used when `connectionString` is not set. Falls back to the `PGDATABASE` environment variable.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_autoMigrate"></a>23.1.3.9. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > autoMigrate</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | No        |
+
+**Description:** Run pending schema migrations automatically at startup (default `true`). Set to `false` when the runtime database role must not hold DDL rights: apply migrations out-of-band with DDL-capable credentials (`npm run migrate:postgres:schema`), and startup will only verify the schema is current, refusing to start while any migration is pending.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_ssl"></a>23.1.3.10. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > ssl</strong>
+</summary>
+<blockquote>
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `combining`      |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
+
+**Description:** TLS configuration for the connection. `true` enables TLS with default certificate verification; an object is passed to the PostgreSQL client as TLS options (for example `rejectUnauthorized`, `ca`, `cert`, `key`).
+
+<blockquote>
+
+| One of(Option)                              |
+| ------------------------------------------- |
+| [item 0](#sink_items_oneOf_i2_ssl_oneOf_i0) |
+| [item 1](#sink_items_oneOf_i2_ssl_oneOf_i1) |
+
+<blockquote>
+
+###### <a name="sink_items_oneOf_i2_ssl_oneOf_i0"></a>23.1.3.10.1. Property `GitProxy configuration file > sink > sink items > oneOf > item 2 > ssl > oneOf > item 0`
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | No        |
+
+</blockquote>
+<blockquote>
+
+###### <a name="sink_items_oneOf_i2_ssl_oneOf_i1"></a>23.1.3.10.2. Property `GitProxy configuration file > sink > sink items > oneOf > item 2 > ssl > oneOf > item 1`
+
+|                           |                  |
+| ------------------------- | ---------------- |
+| **Type**                  | `object`         |
+| **Required**              | No               |
+| **Additional properties** | Any type allowed |
+
+</blockquote>
+
+</blockquote>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_pool"></a>23.1.3.11. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > pool</strong>
+</summary>
+<blockquote>
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Connection pool tuning passed to the PostgreSQL client.
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_pool_max"></a>23.1.3.11.1. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > pool > max</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** Maximum number of clients the pool may hold.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_pool_idleTimeoutMillis"></a>23.1.3.11.2. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > pool > idleTimeoutMillis</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** Milliseconds a client may sit idle in the pool before being closed.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_pool_connectionTimeoutMillis"></a>23.1.3.11.3. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > pool > connectionTimeoutMillis</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `number` |
+| **Required** | No       |
+
+**Description:** Milliseconds to wait for a connection before timing out.
+
+</blockquote>
+</details>
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_awsIamAuth"></a>23.1.3.12. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > awsIamAuth</strong>
+</summary>
+<blockquote>
+
+|                           |             |
+| ------------------------- | ----------- |
+| **Type**                  | `object`    |
+| **Required**              | No          |
+| **Additional properties** | Not allowed |
+
+**Description:** Authenticate to Amazon RDS/Aurora with an IAM auth token instead of a static password. When enabled, a short-lived token is generated for each new connection from the AWS SDK default credential chain, so no password is stored. Requires the discrete `host`/`port`/`user` fields (or the `PGHOST`/`PGPORT`/`PGUSER` environment variables) rather than a `connectionString`, requires TLS (`ssl` defaults to `true` when omitted), and needs the optional `@aws-sdk/rds-signer` dependency to be installed.
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_awsIamAuth_enabled"></a>23.1.3.12.1. [Required] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > awsIamAuth > enabled</strong>
+</summary>
+<blockquote>
+
+|              |           |
+| ------------ | --------- |
+| **Type**     | `boolean` |
+| **Required** | Yes       |
+
+**Description:** Enable IAM token authentication for the PostgreSQL connection.
+
+</blockquote>
+</details>
+
+<details>
+<summary>
+<strong> <a name="sink_items_oneOf_i2_awsIamAuth_region"></a>23.1.3.12.2. [Optional] Property GitProxy configuration file > sink > sink items > oneOf > item 2 > awsIamAuth > region</strong>
+</summary>
+<blockquote>
+
+|              |          |
+| ------------ | -------- |
+| **Type**     | `string` |
+| **Required** | No       |
+
+**Description:** AWS region of the RDS/Aurora instance. Falls back to the `AWS_REGION` / `AWS_DEFAULT_REGION` environment variables, then the AWS SDK's default region resolution.
+
+</blockquote>
+</details>
 
 </blockquote>
 </details>
@@ -1697,16 +2047,16 @@ Specific value: `"ActiveDirectory"`
 
 <details>
 <summary>
-<strong> <a name="authentication_items_oneOf_i1_adConfig_password"></a>24.1.2.6.4. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config > adConfig > password</strong>
+<strong> <a name="authentication_items_oneOf_i1_adConfig_password"></a>24.1.2.6.4. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > Active Directory Auth Config > adConfig > password</strong>
 </summary>
 <blockquote>
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
-| **Required** | Yes      |
+| **Required** | No       |
 
-**Description:** Password for the given `username`.
+**Description:** Password for the given `username`. A non-empty GIT_PROXY_LDAP_PASSWORD environment variable overrides this value. An enabled Active Directory method requires a non-empty password from either source.
 
 </blockquote>
 </details>
@@ -1819,14 +2169,16 @@ Specific value: `"openidconnect"`
 
 <details>
 <summary>
-<strong> <a name="authentication_items_oneOf_i2_oidcConfig_clientSecret"></a>24.1.3.3.3. [Required] Property GitProxy configuration file > authentication > authentication items > oneOf > Open ID Connect Auth Config > oidcConfig > clientSecret</strong>
+<strong> <a name="authentication_items_oneOf_i2_oidcConfig_clientSecret"></a>24.1.3.3.3. [Optional] Property GitProxy configuration file > authentication > authentication items > oneOf > Open ID Connect Auth Config > oidcConfig > clientSecret</strong>
 </summary>
 <blockquote>
 
 |              |          |
 | ------------ | -------- |
 | **Type**     | `string` |
-| **Required** | Yes      |
+| **Required** | No       |
+
+**Description:** The OIDC client secret. A non-empty GIT_PROXY_OIDC_CLIENT_SECRET environment variable overrides this value. An enabled OIDC method requires a non-empty client secret from either source.
 
 </blockquote>
 </details>
@@ -2702,4 +3054,4 @@ Specific value: `"ntlm"`
 </details>
 
 ----------------------------------------------------------------------------------------------------------------------------
-Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2026-09-18 at 10:24:03 -0400
+Generated using [json-schema-for-humans](https://github.com/coveooss/json-schema-for-humans) on 2026-10-15 at 16:42:27 +0100

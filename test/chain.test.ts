@@ -17,14 +17,40 @@
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { PluginLoader } from '../src/plugin';
 import { Action, PushType, RequestType } from '../src/proxy/actions';
+import { PullPhase, PushPhase } from '../src/proxy/processors/types';
 
-const mockLoader = {
-  pushPlugins: [
-    { exec: Object.assign(async () => console.log('foo'), { displayName: 'foo.exec' }) },
-  ],
-  pullPlugins: [
-    { exec: Object.assign(async () => console.log('foo'), { displayName: 'bar.exec' }) },
-  ],
+const createMockLoader = () => {
+  const pushExec = vi.fn(async (_req: unknown, action: unknown) => action);
+  const pullExec = vi.fn(async (_req: unknown, action: unknown) => action);
+  return {
+    pushPlugins: [
+      {
+        exec: pushExec,
+        phase: PushPhase.AFTER_PERMISSIONS,
+        displayName: 'mockPushPlugin',
+      },
+    ],
+    pullPlugins: [
+      {
+        exec: pullExec,
+        phase: PullPhase.AFTER_AUTHORISATION,
+        displayName: 'mockPullPlugin',
+      },
+    ],
+  };
+};
+
+const expectChainRunsPlugin = async (
+  chainFns: ReadonlyArray<{ displayName?: string }>,
+  plugin: { exec: ReturnType<typeof vi.fn>; displayName: string },
+) => {
+  const inserted = chainFns.find((fn) => fn.displayName === plugin.displayName) as
+    ((req: unknown, action: unknown) => Promise<unknown>) | undefined;
+  expect(inserted).toEqual(expect.any(Function));
+  const action = { id: plugin.displayName };
+  await inserted!({}, action);
+  expect(plugin.exec).toHaveBeenCalledTimes(1);
+  expect(plugin.exec).toHaveBeenCalledWith({}, action);
 };
 
 const collectibleFn = () => Object.assign(vi.fn(), { isCollectible: true });
@@ -118,28 +144,25 @@ describe('proxy chain', function () {
     vi.resetModules();
   });
 
-  it('getChain should set pluginLoaded if loader is undefined', async () => {
+  it('getChain should throw an error if loader is undefined', async () => {
     chain.chainPluginLoader = undefined;
-    const actual = await chain.getChain({ type: 'push' });
-    expect(actual).toEqual(chain.branchPushChain);
-    expect(chain.chainPluginLoader).toBeUndefined();
-    expect(chain.pluginsInserted).toBe(true);
+    await expect(chain.getChain({ type: 'push' })).rejects.toThrow(
+      /Plugin loader was not initialized/,
+    );
   });
 
   it('getChain should load plugins from an initialized PluginLoader', async () => {
-    chain.chainPluginLoader = mockLoader;
-    const initialChain = [...chain.branchPushChain];
+    const loader = createMockLoader();
+    chain.chainPluginLoader = loader;
     const actual = await chain.getChain({ type: 'push' });
-    expect(actual.length).toBeGreaterThan(initialChain.length);
-    expect(chain.pluginsInserted).toBe(true);
+    await expectChainRunsPlugin(actual, loader.pushPlugins[0]);
   });
 
   it('getChain should load pull plugins from an initialized PluginLoader', async () => {
-    chain.chainPluginLoader = mockLoader;
-    const initialChain = [...chain.pullActionChain];
+    const loader = createMockLoader();
+    chain.chainPluginLoader = loader;
     const actual = await chain.getChain({ type: 'pull' });
-    expect(actual.length).toBeGreaterThan(initialChain.length);
-    expect(chain.pluginsInserted).toBe(true);
+    await expectChainRunsPlugin(actual, loader.pullPlugins[0]);
   });
 
   it('executeChain should stop executing if action has continue returns false', async () => {
@@ -590,19 +613,66 @@ describe('proxy chain', function () {
     expect(branchChain).toEqual(chain.branchPushChain);
   });
 
-  it('getChain should return tagPushChain if loader is undefined for tag pushes', async () => {
-    chain.chainPluginLoader = undefined;
+  it('getChain should load tag plugins from an initialized PluginLoader', async () => {
+    const loader = createMockLoader();
+    chain.chainPluginLoader = loader;
     const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
-    expect(actual).toEqual(chain.tagPushChain);
-    expect(chain.chainPluginLoader).toBeUndefined();
-    expect(chain.pluginsInserted).toBe(true);
+    await expectChainRunsPlugin(actual, loader.pushPlugins[0]);
   });
 
-  it('getChain should load tag plugins from an initialized PluginLoader', async () => {
-    chain.chainPluginLoader = mockLoader;
-    const initialChain = [...chain.tagPushChain];
-    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
-    expect(actual.length).toBeGreaterThan(initialChain.length);
-    expect(chain.pluginsInserted).toBe(true);
+  it('getChain throws when a loaded plugin does not attach to any chain', async () => {
+    chain.chainPluginLoader = {
+      pushPlugins: [{ exec: async () => undefined, displayName: 'LegacyPushPlugin' }],
+      pullPlugins: [],
+    };
+
+    await expect(chain.getChain({ type: 'push' })).rejects.toThrow(
+      /LegacyPushPlugin \(phase: none, chains: branch, tag\)/,
+    );
+    await expect(chain.getChain({ type: 'push' })).rejects.toThrow(/not added to any action chain/);
+  });
+
+  it('getChain throws when a plugin phase is missing from every chain it targets', async () => {
+    chain.chainPluginLoader = {
+      pushPlugins: [
+        {
+          exec: async () => undefined,
+          displayName: 'TagDiffPlugin',
+          phase: PushPhase.AFTER_DIFF,
+          chains: ['tag'],
+        },
+      ],
+      pullPlugins: [],
+    };
+
+    await expect(
+      chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG }),
+    ).rejects.toThrow(/TagDiffPlugin \(phase: AFTER_DIFF, chains: tag\)/);
+  });
+
+  it('keeps a plugin that attaches to one targeted chain when another chain lacks its phase', async () => {
+    const exec = vi.fn(async (_req: unknown, action: unknown) => action);
+    chain.chainPluginLoader = {
+      pushPlugins: [
+        {
+          exec,
+          displayName: 'branchDiffPlugin',
+          phase: PushPhase.AFTER_DIFF,
+          chains: ['branch', 'tag'],
+        },
+      ],
+      pullPlugins: [],
+    };
+
+    const branchChain = await chain.getChain({
+      type: RequestType.PUSH,
+      actionType: PushType.BRANCH,
+    });
+    await expectChainRunsPlugin(branchChain, { exec, displayName: 'branchDiffPlugin' });
+
+    const tagChain = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
+    expect(
+      tagChain.some((fn: { displayName?: string }) => fn.displayName === 'branchDiffPlugin'),
+    ).toBe(false);
   });
 });

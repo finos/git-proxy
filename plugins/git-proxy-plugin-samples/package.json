@@ -1,8 +1,9 @@
 {
   "name": "@finos/git-proxy-plugin-samples",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "A set of sample (dummy) plugins for GitProxy to demonstrate how plugins are authored.",
   "scripts": {
+    "build": "node build.mjs",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Thomas Cooper",
@@ -10,12 +11,25 @@
   "type": "module",
   "exports": {
     ".": "./index.js",
-    "./example": "./example.cjs"
+    "./example": "./example.cjs",
+    "./example.cjs": "./example.cjs",
+    "./customSecretScanner": "./dist/customSecretScanner.js"
   },
+  "files": [
+    "index.js",
+    "example.cjs",
+    "customSecretScanner.ts",
+    "dist/customSecretScanner.js",
+    "README.md"
+  ],
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "parse-diff": "^0.12.0"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "@finos/git-proxy": "^2.0.0"
+    "@finos/git-proxy": "^2.2.0"
   }
 }

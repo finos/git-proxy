@@ -37,7 +37,7 @@ const exec = async (req: Request, action: Action) => {
       encoding: 'utf-8',
     });
     const before = new Set(fs.readdirSync(packDir).filter((f) => f.endsWith('.idx')));
-    spawnSync('git', ['receive-pack', action.repoName], {
+    spawnSync('git', ['receive-pack', '--stateless-rpc', action.repoName], {
       cwd: action.proxyGitPath,
       input: req.body,
     });
