@@ -167,6 +167,98 @@ describe('CacheManager', () => {
     });
   });
 
+  describe('protected repositories', () => {
+    it('should keep protected repositories and report the bytes left', async () => {
+      const repoPath = path.join(testCacheDir, 'current.git');
+      fs.mkdirSync(repoPath);
+      fs.writeFileSync(path.join(repoPath, 'largefile.txt'), 'a'.repeat(2 * 1024 * 1024)); // 2MB
+
+      const result = await cacheManager.enforceLimits(['current.git']);
+
+      expect(result.removedRepos).toHaveLength(0);
+      expect(result.remainingBytes).toBeGreaterThan(1024 * 1024);
+      expect(fs.existsSync(repoPath)).toBe(true);
+    });
+  });
+
+  describe('staging folders', () => {
+    it('should ignore dot-prefixed staging folders in stats and eviction', async () => {
+      const staging = path.join(testCacheDir, '.staging-repo1.git-123');
+      fs.mkdirSync(staging);
+      fs.writeFileSync(path.join(staging, 'largefile.txt'), 'a'.repeat(2 * 1024 * 1024)); // 2MB
+
+      expect(cacheManager.getCacheStats().totalRepositories).toBe(0);
+
+      const result = await cacheManager.enforceLimits();
+      expect(result.removedRepos).toHaveLength(0);
+      expect(fs.existsSync(staging)).toBe(true);
+    });
+  });
+
+  describe('withRepositoryLock', () => {
+    it('should run operations on the same repository one at a time', async () => {
+      const events: string[] = [];
+      const work = (label: string) => async () => {
+        events.push(`${label}:start`);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        events.push(`${label}:end`);
+        return label;
+      };
+
+      const results = await Promise.all([
+        cacheManager.withRepositoryLock('repo.git', work('a')),
+        cacheManager.withRepositoryLock('repo.git', work('b')),
+      ]);
+
+      expect(results).toEqual(['a', 'b']);
+      expect(events).toEqual(['a:start', 'a:end', 'b:start', 'b:end']);
+    });
+
+    it('should not block operations on different repositories', async () => {
+      const events: string[] = [];
+      const work = (label: string) => async () => {
+        events.push(`${label}:start`);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        events.push(`${label}:end`);
+      };
+
+      await Promise.all([
+        cacheManager.withRepositoryLock('one.git', work('a')),
+        cacheManager.withRepositoryLock('two.git', work('b')),
+      ]);
+
+      expect(events.slice(0, 2)).toEqual(['a:start', 'b:start']);
+    });
+
+    it('should release the lock when the operation throws', async () => {
+      await expect(
+        cacheManager.withRepositoryLock('repo.git', async () => {
+          throw new Error('boom');
+        }),
+      ).rejects.toThrow('boom');
+
+      await expect(cacheManager.withRepositoryLock('repo.git', async () => 'next')).resolves.toBe(
+        'next',
+      );
+    });
+
+    it('should not evict a repository while it is locked', async () => {
+      const repoPath = path.join(testCacheDir, 'busy.git');
+      fs.mkdirSync(repoPath);
+      fs.writeFileSync(path.join(repoPath, 'largefile.txt'), 'a'.repeat(2 * 1024 * 1024)); // 2MB
+
+      await cacheManager.withRepositoryLock('busy.git', async () => {
+        const result = await cacheManager.enforceLimits();
+        expect(result.removedRepos).toHaveLength(0);
+        expect(fs.existsSync(repoPath)).toBe(true);
+      });
+
+      // Once released it is fair game again
+      const result = await cacheManager.enforceLimits();
+      expect(result.removedRepos).toEqual(['busy.git']);
+    });
+  });
+
   describe('getConfig', () => {
     it('should return cache configuration', () => {
       const config = cacheManager.getConfig();

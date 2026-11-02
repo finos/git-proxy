@@ -33,6 +33,8 @@ export class CacheManager {
   private maxSizeGB: number;
   private maxRepositories: number;
   private mutex: Promise<void> = Promise.resolve();
+  private repoLocks = new Map<string, Promise<void>>();
+  private activeRepos = new Map<string, number>();
 
   constructor(
     repoCacheDir: string = './.remote/cache',
@@ -60,6 +62,42 @@ export class CacheManager {
       return await operation();
     } finally {
       releaseLock!();
+    }
+  }
+
+  /**
+   * Serialize all work on one cached repository.
+   *
+   * Pushes to the same repository run one after the other, so two of them never
+   * clone, fetch or rebuild the same mirror at once. While a push holds or waits
+   * for the lock, enforceLimits() will not evict that repository.
+   */
+  async withRepositoryLock<T>(repoName: string, operation: () => Promise<T>): Promise<T> {
+    const previous = this.repoLocks.get(repoName) ?? Promise.resolve();
+    let releaseLock: () => void;
+    const current = new Promise<void>((resolve) => {
+      releaseLock = resolve;
+    });
+    const tail = previous.then(() => current);
+
+    this.repoLocks.set(repoName, tail);
+    this.activeRepos.set(repoName, (this.activeRepos.get(repoName) ?? 0) + 1);
+
+    try {
+      await previous;
+      return await operation();
+    } finally {
+      releaseLock!();
+
+      const remaining = this.activeRepos.get(repoName)! - 1;
+      if (remaining === 0) {
+        this.activeRepos.delete(repoName);
+      } else {
+        this.activeRepos.set(repoName, remaining);
+      }
+      if (this.repoLocks.get(repoName) === tail) {
+        this.repoLocks.delete(repoName);
+      }
     }
   }
 
@@ -94,7 +132,8 @@ export class CacheManager {
     const entries = fs.readdirSync(this.repoCacheDir, { withFileTypes: true });
 
     for (const entry of entries) {
-      if (entry.isDirectory()) {
+      // Dot-prefixed folders are staging clones still being built, not cached repos
+      if (entry.isDirectory() && !entry.name.startsWith('.')) {
         const repoPath = path.join(this.repoCacheDir, entry.name);
         const sizeBytes = this.getDirectorySize(repoPath);
         const stats = fs.statSync(repoPath);
@@ -102,7 +141,7 @@ export class CacheManager {
         repositories.push({
           name: entry.name,
           sizeBytes,
-          lastAccessed: stats.atime,
+          lastAccessed: stats.mtime,
         });
 
         totalSizeBytes += sizeBytes;
@@ -118,8 +157,14 @@ export class CacheManager {
 
   /**
    * Enforce cache limits using LRU eviction
+   *
+   * @param protectedRepos Repositories that must survive this pass, typically the
+   *   one the current push just used, even if it alone exceeds the size limit
+   * @return The evicted repositories, the bytes freed and the bytes left in the cache
    */
-  async enforceLimits(): Promise<{ removedRepos: string[]; freedBytes: number }> {
+  async enforceLimits(
+    protectedRepos: string[] = [],
+  ): Promise<{ removedRepos: string[]; freedBytes: number; remainingBytes: number }> {
     return this.acquireLock(() => {
       const stats = this.getCacheStats();
       const removedRepos: string[] = [];
@@ -135,6 +180,10 @@ export class CacheManager {
       const maxSizeBytes = this.maxSizeGB * 1024 * 1024 * 1024;
 
       for (const repo of reposToEvaluate) {
+        if (this.activeRepos.has(repo.name) || protectedRepos.includes(repo.name)) {
+          continue;
+        }
+
         const shouldRemove =
           currentSizeBytes > maxSizeBytes || // Over size limit
           stats.totalRepositories - removedRepos.length > this.maxRepositories; // Over count limit
@@ -149,7 +198,7 @@ export class CacheManager {
         }
       }
 
-      return { removedRepos, freedBytes };
+      return { removedRepos, freedBytes, remainingBytes: currentSizeBytes };
     });
   }
 
