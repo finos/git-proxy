@@ -7,7 +7,6 @@
   },
   "include": ["src/**/*", "index.ts"],
   "exclude": [
-    "experimental/**",
     "plugins/**",
     "./dist/**",
     "**/*.tsx",

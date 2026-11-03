@@ -1,5 +1,5 @@
 name: 'Dependency Review'
-on: [pull_request]
+on: [pull_request, merge_group]
 
 permissions:
   contents: read
@@ -7,6 +7,7 @@ permissions:
 
 jobs:
   dependency-review:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
