@@ -29,6 +29,7 @@ import * as db from '../db';
 import { Proxy } from '../proxy';
 import routes from './routes';
 import { configure } from './passport';
+import { UI_BUILD_PATH } from './urls';
 
 const limiter = rateLimit(config.getRateLimit());
 
@@ -134,18 +135,35 @@ const corsOptions: cors.CorsOptions = {
  * @param {Proxy} proxy A reference to the proxy, used to restart it when necessary.
  * @return {Promise<Express>} the express application
  */
+// Backend sink types that promise a persistent session store. If one of these
+// is active and getSessionStore() returns undefined, express-session would
+// silently fall back to MemoryStore — which loses sessions on restart and is
+// unsafe in any multi-process deployment. Throw loudly instead.
+const PERSISTENT_SESSION_BACKENDS = new Set(['mongo', 'postgres']);
+
 async function createApp(proxy: Proxy): Promise<Express> {
   // configuration of passport is async
   // Before we can bind the routes - we need the passport strategy
   const passport = await configure();
-  const absBuildPath = path.join(__dirname, '../../build');
+  const absBuildPath = UI_BUILD_PATH;
   app.use(cors(corsOptions));
   app.set('trust proxy', 1);
   app.use(limiter);
 
+  const backendType = config.getDatabase().type;
+  if (PERSISTENT_SESSION_BACKENDS.has(backendType)) {
+    await db.ensureSessionStoreReady();
+  }
+  const sessionStore = db.getSessionStore();
+  if (PERSISTENT_SESSION_BACKENDS.has(backendType) && !sessionStore) {
+    throw new Error(
+      `Session store for backend "${backendType}" failed to initialize — refusing to fall back to MemoryStore`,
+    );
+  }
+
   app.use(
     session({
-      store: db.getSessionStore(),
+      store: sessionStore,
       secret: config.getCookieSecret(),
       resave: false,
       saveUninitialized: false,
@@ -177,9 +195,14 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.use('/', routes(proxy));
   app.use('/', express.static(absBuildPath));
   app.get('/*path', (_req, res) => {
-    res.sendFile(path.join(`${absBuildPath}/index.html`));
+    res.sendFile(path.join(absBuildPath, 'index.html'));
   });
 
+  if (!fs.existsSync(path.join(absBuildPath, 'index.html'))) {
+    console.error(
+      `UI build not found at ${absBuildPath}. The package may have been built or published incorrectly`,
+    );
+  }
   return app;
 }
 

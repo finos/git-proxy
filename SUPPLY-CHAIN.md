@@ -138,15 +138,16 @@ attached**, and a real `git clone` of a poisoned repo **fails in the terminal**.
 - Node.js >= 22, Git, and this repo checked out.
 - A test upstream repository you control (e.g. a throwaway GitHub repo) - call it
   `github.com/<you>/demo-supply-chain`.
-- One-time build so the compiled core includes the plugin hook:
+- One-time build so the compiled core includes the plugin phase hooks:
 
   ```bash
   npm ci
   npm run build
   ```
 
-  > `npm run build` is required: it compiles the `chainPhase` plugin hook into `dist/`, which the
-  > plugin relies on to run after the diff (push) and after the auth check (pull).
+  > `npm run build` is required: it compiles the plugin `phase` hooks (`PushPhase.AFTER_DIFF`,
+  > `PullPhase.AFTER_AUTHORISATION`) into `dist/`, which the plugin relies on to run after the diff
+  > (push) and after the auth check (pull).
 
 ### Step 1 - enable and configure the plugin
 

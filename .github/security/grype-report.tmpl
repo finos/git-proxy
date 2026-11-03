@@ -1,0 +1,6 @@
+{{printf "%-8s | %-19s | %-50s | %-15s | %s" "SEVERITY" "ADVISORY" "PACKAGE" "FIXED IN" "SOURCE"}}
+{{printf "%-8s | %-19s | %-50s | %-15s | %s" "--------" "-------------------" "--------------------------------------------------" "---------------" "------"}}
+{{- range .Matches -}}
+{{- $loc := "" -}}{{- range .Artifact.Locations -}}{{- $loc = .RealPath -}}{{- end}}
+{{printf "%-8s | %-19s | %-50s | %-15s | %s" .Vulnerability.Severity .Vulnerability.ID (printf "%s@%s" .Artifact.Name .Artifact.Version) (join ", " .Vulnerability.Fix.Versions) $loc}}
+{{- end}}

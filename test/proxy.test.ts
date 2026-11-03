@@ -75,7 +75,9 @@ describe('Proxy Module TLS Certificate Loading', () => {
 
     vi.doMock('../src/plugin', () => {
       return {
-        PluginLoader: vi.fn(() => mockPluginLoader),
+        PluginLoader: vi.fn(function () {
+          return mockPluginLoader;
+        }),
       };
     });
 

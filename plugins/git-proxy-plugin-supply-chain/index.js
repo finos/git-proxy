@@ -19,8 +19,9 @@
  * supply-chain-attack signatures: install lifecycle scripts (postinstall etc.), non-registry
  * dependency sources, typosquatted package names and unpinned versions.
  *
- * It runs with `chainPhase: 'afterDiff'` so the remote has already been cloned and the unified
- * diff computed - letting it read the post-push contents of each changed manifest via git.
+ * It runs in the `AFTER_DIFF` push phase so the remote has already been cloned and the unified
+ * diff computed - letting it read the post-push contents of each changed manifest via git. Tag
+ * pushes have no diff (and no `AFTER_DIFF` phase), so it only targets the branch push chain.
  *
  * By default it is non-blocking: findings are attached to the push's review dashboard. Set
  * `failOn` in the config (see lib/config.js) to hard-block pushes at/above a severity.
@@ -31,7 +32,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 // Peer dependencies; expected on the Node module path where @finos/git-proxy is installed.
-import { PushActionPlugin, PullActionPlugin } from '@finos/git-proxy/plugin';
+import { PushActionPlugin, PullActionPlugin, PushPhase, PullPhase } from '@finos/git-proxy/plugin';
 import { Step } from '@finos/git-proxy/proxy/actions';
 import simpleGit from 'simple-git';
 
@@ -115,14 +116,18 @@ export async function exec(req, action) {
 /** GitProxy push plugin wrapper for the supply-chain scanner. */
 class SupplyChainPlugin extends PushActionPlugin {
   constructor() {
-    super(exec, { chainPhase: 'afterDiff' });
+    super(exec, {
+      phase: PushPhase.AFTER_DIFF,
+      chains: ['branch'],
+      displayName: 'supplyChain',
+    });
   }
 }
 
 /**
  * Pull-chain step: fetch the repository being cloned and scan its dependency manifests for
  * supply-chain signatures - so a developer is warned (or the clone is blocked) before they pull
- * a poisoned repository. Runs with `chainPhase: 'afterAuth'` (only for authorised repos).
+ * a poisoned repository. Runs in the `AFTER_AUTHORISATION` pull phase (only for authorised repos).
  *
  * Since a fresh clone has no "previous" state, the whole tree is scanned as newly introduced.
  * Warning findings are logged; findings at/above `pull.failOn` block the clone (the message is
@@ -223,7 +228,7 @@ export async function pullExec(req, action) {
 /** GitProxy pull plugin wrapper: scans a repository as it is cloned/fetched. */
 class SupplyChainPullPlugin extends PullActionPlugin {
   constructor() {
-    super(pullExec, { chainPhase: 'afterAuth' });
+    super(pullExec, { phase: PullPhase.AFTER_AUTHORISATION, displayName: 'supplyChainPull' });
   }
 }
 

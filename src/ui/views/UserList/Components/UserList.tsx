@@ -14,127 +14,83 @@
  * limitations under the License.
  */
 
-import React, { useState, useEffect } from 'react';
-import { makeStyles } from '@material-ui/core/styles';
-import GridItem from '../../../components/Grid/GridItem';
-import GridContainer from '../../../components/Grid/GridContainer';
-import { useNavigate } from 'react-router-dom';
-import Button from '@material-ui/core/Button';
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableContainer from '@material-ui/core/TableContainer';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import Paper from '@material-ui/core/Paper';
-import { getUsers } from '../../../services/user';
-import Pagination from '../../../components/Pagination/Pagination';
-import { CloseRounded, Check, KeyboardArrowRight } from '@material-ui/icons';
-import Search from '../../../components/Search/Search';
+import React, { useState, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router';
+import { sortUsers } from '../../../services/user';
 import Danger from '../../../components/Typography/Danger';
-import { PublicUser } from '../../../../db/types';
+import UserListTable from './UserListTable';
+import { type UserSortField } from './userSortField';
+import { applyUserListUrlPatch, parseUserListUrlState } from './userListQuery';
+import { useClientPagination } from '../../../hooks/useClientPagination';
+import { useUsersListQuery } from '../../../query/useUsersListQuery';
 
-const UserList: React.FC = () => {
-  const [users, setUsers] = useState<PublicUser[]>([]);
-  const [, setAuth] = useState<boolean>(true);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const navigate = useNavigate();
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 5;
-  const [searchQuery, setSearchQuery] = useState<string>('');
+const UserList = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const itemsPerPage = 26;
 
-  const openUser = (username: string) => navigate(`/dashboard/user/${username}`);
+  const { sort, filter, page } = useMemo(() => parseUserListUrlState(searchParams), [searchParams]);
 
-  useEffect(() => {
-    getUsers(setIsLoading, setUsers, setAuth, setErrorMessage);
-  }, []);
+  const { data: rawUsers = [], isLoading, error } = useUsersListQuery();
 
-  if (isLoading) return <div>Loading...</div>;
-  if (errorMessage) return <Danger>{errorMessage}</Danger>;
+  const users = useMemo(() => sortUsers(rawUsers, sort), [rawUsers, sort]);
 
-  const filteredUsers = users.filter(
-    (user) =>
-      (user.displayName && user.displayName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (user.username && user.username.toLowerCase().includes(searchQuery.toLowerCase())),
+  const handleSortChange = useCallback(
+    (next: UserSortField) => {
+      setSearchParams((prev) => applyUserListUrlPatch(prev, { sort: next }), { replace: true });
+    },
+    [setSearchParams],
   );
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
-  const totalItems = filteredUsers.length;
+  const handleSearch = useCallback(
+    (query: string): void => {
+      setSearchParams((prev) => applyUserListUrlPatch(prev, { filter: query, page: 1 }), {
+        replace: true,
+      });
+    },
+    [setSearchParams],
+  );
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
+  const handlePageChange = useCallback(
+    (nextPage: number): void => {
+      setSearchParams((prev) => applyUserListUrlPatch(prev, { page: nextPage }), { replace: true });
+    },
+    [setSearchParams],
+  );
 
-  const handleSearch = (query: string) => {
-    setSearchQuery(query);
-    setCurrentPage(1);
-  };
+  const filteredUsers = useMemo(() => {
+    if (!filter) return users;
+    const lowercasedQuery = filter.toLowerCase();
+    return users.filter(
+      (user) =>
+        (user.displayName && user.displayName.toLowerCase().includes(lowercasedQuery)) ||
+        (user.username && user.username.toLowerCase().includes(lowercasedQuery)),
+    );
+  }, [users, filter]);
+
+  const { effectivePage, currentItems } = useClientPagination(
+    filteredUsers,
+    page,
+    itemsPerPage,
+    isLoading,
+    (corrected) =>
+      setSearchParams((p) => applyUserListUrlPatch(p, { page: corrected }), { replace: true }),
+  );
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <Danger>{error.message}</Danger>;
 
   return (
-    <GridContainer>
-      <GridItem xs={12} sm={12} md={12}>
-        <Search onSearch={handleSearch} placeholder='Search users...' />
-        <TableContainer component={Paper}>
-          <Table aria-label='simple table'>
-            <TableHead>
-              <TableRow>
-                <TableCell align='left'>Name</TableCell>
-                <TableCell align='left'>Role</TableCell>
-                <TableCell align='left'>E-mail</TableCell>
-                <TableCell align='left'>GitHub Username</TableCell>
-                <TableCell align='left'>Administrator</TableCell>
-                <TableCell align='left'></TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {currentItems.map((user) => (
-                <TableRow key={user.username}>
-                  <TableCell align='left'>{user.displayName}</TableCell>
-                  <TableCell align='left'>{user.title}</TableCell>
-                  <TableCell align='left'>
-                    <a href={`mailto:${user.email}`}>{user.email}</a>
-                  </TableCell>
-                  <TableCell align='left'>
-                    <a
-                      href={`https://github.com/${user.gitAccount}`}
-                      target='_blank'
-                      rel='noreferrer'
-                    >
-                      {user.gitAccount}
-                    </a>
-                  </TableCell>
-                  <TableCell align='left'>
-                    {user?.admin ? (
-                      <Check fontSize='small' color='primary' />
-                    ) : (
-                      <CloseRounded color='error' />
-                    )}
-                  </TableCell>
-                  <TableCell component='th' scope='row'>
-                    <Button
-                      variant='contained'
-                      color='primary'
-                      onClick={() => openUser(user.username)}
-                    >
-                      <KeyboardArrowRight />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-        <Pagination
-          currentPage={currentPage}
-          totalItems={totalItems}
-          itemsPerPage={itemsPerPage}
-          onPageChange={handlePageChange}
-        />
-      </GridItem>
-    </GridContainer>
+    <UserListTable
+      users={currentItems}
+      filterValue={filter}
+      onSearch={handleSearch}
+      sort={sort}
+      onSortChange={handleSortChange}
+      currentPage={effectivePage}
+      totalItems={filteredUsers.length}
+      itemsPerPage={itemsPerPage}
+      onPageChange={handlePageChange}
+    />
   );
 };
 

@@ -36,19 +36,23 @@ describe('Users API', () => {
         password: 'secret-hashed-password',
         email: 'alice@example.com',
         displayName: 'Alice Walker',
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       },
-    ]);
+    ] as any);
 
     vi.spyOn(db, 'findUser').mockResolvedValue({
       username: 'bob',
       password: 'hidden',
       email: 'bob@example.com',
       displayName: '',
-      gitAccount: '',
+      scmIdentities: {},
       admin: false,
-    });
+    } as any);
+
+    vi.spyOn(db, 'getPushesForUserProfile').mockResolvedValue([]);
+
+    vi.spyOn(db, 'getUserActivityTabCountsByUsername').mockResolvedValue(new Map());
   });
 
   afterEach(() => {
@@ -65,7 +69,7 @@ describe('Users API', () => {
         displayName: 'Alice Walker',
         email: 'alice@example.com',
         title: '',
-        gitAccount: '',
+        scmIdentities: {},
         admin: false,
       },
     ]);
@@ -81,7 +85,7 @@ describe('Users API', () => {
       displayName: '',
       email: 'bob@example.com',
       title: '',
-      gitAccount: '',
+      scmIdentities: {},
       admin: false,
     });
   });
@@ -474,5 +478,21 @@ describe('Users API', () => {
     const res = await request(app).get('/users/non-existent');
     expect(res.status).toBe(404);
     expect(res.body).toEqual({ message: 'User non-existent not found' });
+  });
+
+  it('GET /users/:id/activity returns pushes and 404 when user missing', async () => {
+    const samplePush = { id: 'push-1', type: 'push', timestamp: 1 } as any;
+    vi.mocked(db.getPushesForUserProfile).mockResolvedValue([samplePush]);
+
+    const ok = await request(app).get('/users/bob/activity');
+    expect(ok.status).toBe(200);
+    expect(ok.body).toEqual([samplePush]);
+    expect(db.getPushesForUserProfile).toHaveBeenCalledWith(
+      expect.objectContaining({ username: 'bob', email: 'bob@example.com' }),
+    );
+
+    vi.mocked(db.findUser).mockResolvedValueOnce(null);
+    const missing = await request(app).get('/users/nobody/activity');
+    expect(missing.status).toBe(404);
   });
 });

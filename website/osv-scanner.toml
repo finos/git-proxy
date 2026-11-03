@@ -1,0 +1,5 @@
+# This file skips website deps in OSV scans since it isn't shipped to users
+[[PackageOverrides]]
+ecosystem = "npm"
+ignore = true
+reason = "Docusaurus documentation site only, not part of the distributed @finos/git-proxy package or Docker image"

@@ -92,5 +92,6 @@ const exec = async (_req: Request, action: Action): Promise<Action> => {
 };
 
 exec.displayName = 'checkMessages.exec';
+exec.isCollectible = true;
 
 export { exec };

@@ -24,8 +24,12 @@ describe('Tag Push Functionality', () => {
   });
 
   describe('Tag Push Display in PushesTable', () => {
+    beforeEach(() => {
+      cy.registerTestRepo('https://github.com/cypress-test/test-repo.git');
+    });
+
     it('can navigate to push dashboard and view push table', () => {
-      cy.visit('/dashboard/push');
+      cy.visit('/dashboard/push?tab=all');
 
       // Wait for API call to complete
       cy.wait('@getPushes');
@@ -50,19 +54,20 @@ describe('Tag Push Functionality', () => {
     });
 
     it('can interact with push table entries', () => {
-      cy.visit('/dashboard/push');
+      cy.visit('/dashboard/push?tab=all');
       cy.wait('@getPushes');
 
       cy.get('tbody tr').should('have.length.at.least', 1);
 
-      // Check for clickable elements in the first row
+      // Check for clickable elements in the first row. The repo name is a
+      // link (only rendered once the repo is registered); the row itself is
+      // the primary click target for opening the push (no per-row buttons).
       cy.get('tbody tr')
         .first()
         .within(() => {
-          // Should have links and buttons
-          cy.get('a').should('have.length.at.least', 1); // Repository links, etc.
-          cy.get('button').should('have.length.at.least', 1); // Action button
-        });
+          cy.get('a').should('have.length.at.least', 1); // Repository link
+        })
+        .should('have.attr', 'tabindex', '0'); // Row is keyboard-focusable/clickable
     });
   });
 

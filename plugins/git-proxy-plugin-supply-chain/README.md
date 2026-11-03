@@ -69,10 +69,14 @@ On any push that changes `go.mod` or `go.sum`:
 
 ## How it runs
 
-The plugin is constructed with `chainPhase: 'afterDiff'`, a GitProxy plugin option that runs the
-plugin **after** the built-in `getDiff` step. At that point GitProxy has cloned the remote and
+The push plugin is constructed with `phase: PushPhase.AFTER_DIFF` (and `chains: ['branch']`), a
+GitProxy plugin option that runs the plugin **after** the built-in `getDiff` step. At that point GitProxy has cloned the remote and
 written the incoming pack, so the plugin reads the exact post-push content of each changed
 manifest with `git show <newCommit>:<path>` and diffs it against `git show <oldCommit>:<path>`.
+Tag pushes carry no diff, so the plugin does not run on the tag chain.
+
+The pull plugin uses `phase: PullPhase.AFTER_AUTHORISATION`, so it only runs once the repository
+has been confirmed as authorised by `checkRepoInAuthorisedList`.
 
 ## Pull / clone protection
 

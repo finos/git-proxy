@@ -20,7 +20,7 @@ import { exec } from '../../src/proxy/processors/push-action/checkAuthorEmails';
 import { Action } from '../../src/proxy/actions';
 import * as configModule from '../../src/config';
 import * as validator from 'validator';
-import { SAMPLE_COMMIT } from '../../src/proxy/processors/constants';
+import { SAMPLE_COMMIT } from '../../src/proxy/constants';
 
 // mock dependencies
 vi.mock('../../src/config', async (importOriginal) => {

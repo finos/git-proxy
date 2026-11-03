@@ -1,0 +1,35 @@
+name: Label Dependabot PRs
+
+# Adds `security` to CVE fix PRs and `evergreen` to the rest
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+permissions: {}
+
+jobs:
+  label:
+    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Apply security or evergreen label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GROUP: ${{ steps.meta.outputs.dependency-group }}
+        run: |
+          if [[ "$GROUP" == *-security ]]; then
+            gh pr edit "$PR_NUMBER" --add-label security
+          else
+            gh pr edit "$PR_NUMBER" --add-label evergreen
+          fi

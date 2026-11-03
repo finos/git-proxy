@@ -18,6 +18,7 @@ import fs from 'fs';
 import Datastore from '@seald-io/nedb';
 
 import { User, UserQuery, PublicKeyRecord } from '../types';
+import { normaliseScmLogin, scmIdentityField } from '../helper';
 import { DuplicateSSHKeyError, UserNotFoundError } from '../../errors/DatabaseErrors';
 import { handleErrorAndLog } from '../../utils/errors';
 
@@ -87,6 +88,24 @@ export const findUserByEmail = (email: string): Promise<User | null> => {
         } else {
           resolve(doc);
         }
+      }
+    });
+  });
+};
+
+export const findUserByScmIdentity = (provider: string, login: string): Promise<User | null> => {
+  const field = scmIdentityField(provider);
+  if (!field) return Promise.resolve(null);
+  return new Promise<User | null>((resolve, reject) => {
+    db.find({ [field]: normaliseScmLogin(login) }, (err: Error | null, docs: User[]) => {
+      /* istanbul ignore if */
+      if (err) {
+        reject(err);
+      } else if (docs.length > 1) {
+        // Two users claiming one handle makes the identity ambiguous; nothing may resolve to either.
+        reject(new Error(`${provider} account ${login} is linked to more than one user`));
+      } else {
+        resolve(docs[0] ?? null);
       }
     });
   });

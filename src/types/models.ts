@@ -16,7 +16,6 @@
 
 interface AttestationReviewer {
   username: string;
-  gitAccount: string;
 }
 
 interface AttestationQuestion {
@@ -37,7 +36,7 @@ export interface UserData {
   email?: string;
   displayName?: string;
   title?: string;
-  gitAccount?: string;
+  scmIdentities?: Record<string, string>;
   admin?: boolean;
 }
 

@@ -20,6 +20,7 @@ import Module from 'node:module';
 
 import { Action } from './proxy/actions';
 import { handleErrorAndLog } from './utils/errors';
+import { PullPhase, PushChainName, PushPhase } from './proxy/processors/types';
 
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 ('use strict');
@@ -192,25 +193,68 @@ class ProxyPlugin {
 }
 
 /**
- * Where in the push chain a {@link PushActionPlugin} should run.
- * - `'start'` (default): the plugin runs before all built-in processors. This preserves the
- *   historical behaviour. At this point only commit metadata is available; the remote has not
- *   been cloned and no diff has been computed.
- * - `'afterDiff'`: the plugin runs immediately after the built-in `getDiff` processor, once the
- *   remote has been cloned, the incoming pack has been written and the unified diff is available.
- *   Use this for plugins that need to inspect changed file contents (e.g. dependency /
- *   supply-chain scanners). Tag pushes have no diff, so such plugins run just before the final
- *   authorisation gate on the tag chain.
+ * Options for all ActionPlugin instances.
+ * @property {boolean} isCollectible - If true, the plugin will not stop the chain if it fails. Errors will be collected
+ *     and reported at the end of the chain. Useful for plugins that are not critical to the success of the operation.
+ * @property {string} displayName - The name of the plugin which is used for user-facing progress reporting. Optional.
+ * @property {PushPhase | PullPhase} phase - The phase of the action chain where the plugin will be executed. Optional.
  */
-type PushChainPhase = 'start' | 'afterDiff';
+interface ActionPluginOptions {
+  readonly isCollectible?: boolean;
+  readonly displayName?: string;
+  readonly phase?: PushPhase | PullPhase;
+}
+
+/**
+ * Options for PushActionPlugin instances, extended from {ActionPluginOptions}.
+ * @property {PushPhase} phase - The phase of the *push* action chain where the plugin will be executed. Defaults to {PushPhase.AFTER_PERMISSIONS}.
+ * @property {PushChainName[]} chains - The push operations where the plugin will be executed. Optional, defaults to all push operations.
+ */
+interface PushPluginOptions extends ActionPluginOptions {
+  readonly phase?: PushPhase;
+  readonly chains?: PushChainName[];
+}
+
+/**
+ * Options for PullActionPlugin instances, extended from {ActionPluginOptions}.
+ * @property {PullPhase} phase - The phase of the *pull* action chain where the plugin will be executed. Defaults to {PullPhase.AFTER_AUTHORISATION}.
+ */
+interface PullPluginOptions extends ActionPluginOptions {
+  readonly phase?: PullPhase;
+}
+
+/**
+ * Base class for all action plugins (executed as part of the action chain for
+ * `git push` or `git pull` operations).
+ */
+export abstract class ActionPlugin extends ProxyPlugin {
+  exec: (req: Request, action: Action) => Promise<Action>;
+  readonly isCollectible: boolean;
+  readonly displayName?: string;
+  readonly phase: PushPhase | PullPhase;
+
+  /**
+   * Parent constructor for all ActionPlugin instances. Do not use this constructor directly.
+   */
+  constructor(
+    exec: (req: Request, action: Action) => Promise<Action>,
+    options: ActionPluginOptions & { phase: PushPhase | PullPhase },
+  ) {
+    super();
+    this.exec = exec;
+    this.isCollectible = options.isCollectible ?? false;
+    this.displayName = options.displayName;
+    this.phase = options.phase;
+  }
+}
 
 /**
  * A plugin which executes a function when receiving a git push request.
  */
-class PushActionPlugin extends ProxyPlugin {
-  isGitProxyPushActionPlugin: boolean;
-  exec: (req: Request, action: Action) => Promise<Action>;
-  chainPhase: PushChainPhase;
+class PushActionPlugin extends ActionPlugin {
+  isGitProxyPushActionPlugin = true;
+  declare readonly phase: PushPhase;
+  declare readonly chains?: PushChainName[];
 
   /**
    * Wrapper class which contains at least one function executed as part of the action chain for git push operations.
@@ -225,39 +269,30 @@ class PushActionPlugin extends ProxyPlugin {
    *   - Takes in an Express Request object as the first parameter (`req`).
    *   - Takes in an Action object as the second parameter (`action`).
    *   - Returns a Promise that resolves to an Action.
-   * @param {object} [options] - Optional plugin options.
-   * @param {PushChainPhase} [options.chainPhase='start'] - When the plugin runs in the push chain.
-   *   Use `'afterDiff'` to run after the built-in diff has been computed so the plugin can inspect
-   *   changed file contents.
+   *
+   * @param {PushPluginOptions} options - An object containing the following properties:
+   *   - {boolean} isCollectible - If true, the plugin will not stop the chain if it fails. Errors will be collected
+   *     and reported at the end of the chain. Useful for plugins that are not critical to the success of the operation.
+   *   - {string} displayName - The name of the plugin which is used for user-facing progress reporting. Optional.
+   *   - {PushPhase} phase - The phase of the *push* action chain where the plugin will be executed. Optional, defaults to {PushPhase.AFTER_PERMISSIONS}.
+   *   - {PushChainName[]} chains - The push operations where the plugin will be executed. Optional, defaults to all push operations.
    */
   constructor(
     exec: (req: Request, action: Action) => Promise<Action>,
-    options: { chainPhase?: PushChainPhase } = {},
+    options: PushPluginOptions = {},
   ) {
-    super();
+    super(exec, { ...options, phase: options.phase ?? PushPhase.AFTER_PERMISSIONS });
     this.isGitProxyPushActionPlugin = true;
-    this.exec = exec;
-    this.chainPhase = options.chainPhase ?? 'start';
+    this.chains = options.chains;
   }
 }
 
 /**
- * Where in the pull chain a {@link PullActionPlugin} should run.
- * - `'start'` (default): the plugin runs before all built-in pull processors (historical behaviour).
- *   Only repo/user metadata is available.
- * - `'afterAuth'`: the plugin runs after the built-in `checkRepoInAuthorisedList` step, i.e. once the
- *   repository has been confirmed as authorised. Use this for plugins that fetch and inspect the
- *   repository content on pull (e.g. supply-chain scanners) so they don't do so for unauthorised repos.
- */
-type PullChainPhase = 'start' | 'afterAuth';
-
-/**
  * A plugin which executes a function when receiving a git fetch request.
  */
-class PullActionPlugin extends ProxyPlugin {
-  isGitProxyPullActionPlugin: boolean;
-  exec: (req: Request, action: Action) => Promise<Action>;
-  chainPhase: PullChainPhase;
+class PullActionPlugin extends ActionPlugin {
+  isGitProxyPullActionPlugin = true;
+  declare readonly phase: PullPhase;
 
   /**
    * Wrapper class which contains at least one function executed as part of the action chain for git pull operations.
@@ -272,20 +307,30 @@ class PullActionPlugin extends ProxyPlugin {
    *   - Takes in an Express Request object as the first parameter (`req`).
    *   - Takes in an Action object as the second parameter (`action`).
    *   - Returns a Promise that resolves to an Action.
-   * @param {object} [options] - Optional plugin options.
-   * @param {PullChainPhase} [options.chainPhase='start'] - When the plugin runs in the pull chain.
-   *   Use `'afterAuth'` to run after the repository has been confirmed as authorised.
+   *
+   * @param {PushPluginOptions} options - An object containing the following properties:
+   *   - {boolean} isCollectible - If true, the plugin will not stop the chain if it fails. Errors will be collected
+   *     and reported at the end of the chain. Useful for plugins that are not critical to the success of the operation.
+   *   - {string} displayName - The name of the plugin which is used for user-facing progress reporting. Optional.
+   *   - {PullPhase} phase - The phase of the *pull* action chain where the plugin will be executed. Optional, defaults to {PullPhase.AFTER_AUTHORISATION}.
    */
   constructor(
     exec: (req: Request, action: Action) => Promise<Action>,
-    options: { chainPhase?: PullChainPhase } = {},
+    options: PullPluginOptions = {},
   ) {
-    super();
+    super(exec, { ...options, phase: options.phase ?? PullPhase.AFTER_AUTHORISATION });
     this.isGitProxyPullActionPlugin = true;
-    this.exec = exec;
-    this.chainPhase = options.chainPhase ?? 'start';
   }
 }
 
-export { PluginLoader, PushActionPlugin, PullActionPlugin, isCompatiblePlugin };
-export type { PushChainPhase, PullChainPhase };
+export {
+  PluginLoader,
+  PushActionPlugin,
+  PullActionPlugin,
+  isCompatiblePlugin,
+  PushPhase,
+  PullPhase,
+  PushChainName,
+  PushPluginOptions,
+  PullPluginOptions,
+};

@@ -44,7 +44,7 @@ Or with npx:
 npx -- @finos/git-proxy --config ./config.json
 ```
 
-### Set ports with ENV variables
+### Set ports & secrets with ENV variables
 
 By default, GitProxy uses port 8000 to expose the Git Server and 8080 for the frontend application.
 The ports can be changed by setting the `GIT_PROXY_SERVER_PORT`, `GIT_PROXY_HTTPS_SERVER_PORT` (optional),
@@ -76,6 +76,54 @@ export GIT_PROXY_UI_PORT="5000"
 These server settings can also be set in the [configuration file](./reference) using the
 `serverPort`, `httpsServerPort`, `uiHost`, `uiPort` and `httpsUiPort` properties. When a value is
 provided in both places, the environment variable takes precedence over the config file.
+
+For MongoDB, a non-empty `GIT_PROXY_MONGO_CONNECTION_STRING` overrides the selected sink's
+`connectionString`. If the variable is unset or empty, GitProxy uses the configured value.
+You can keep the connection string out of the configuration file by setting the environment
+variable and configuring the sink as follows:
+
+```json
+{
+  "sink": [{ "type": "mongo", "enabled": true }]
+}
+```
+
+An enabled MongoDB sink must have a non-empty connection string from either source. GitProxy
+reports an error if both are missing; it does not silently connect to localhost.
+
+:::note Upgrade note
+
+Previously, `GIT_PROXY_MONGO_CONNECTION_STRING` only took effect when the configured connection
+string was missing. If your deployment sets both to different values, upgrading switches the
+connection to the environment value. Unset the variable to keep using the configured value.
+The implicit `mongodb://localhost:27017/git-proxy` fallback has also been removed. The connection
+string in the shipped configuration remains unchanged.
+
+MongoDB and filesystem sink entries now reject unknown properties during schema validation.
+MongoDB's `options` object continues to accept arbitrary driver options.
+
+:::
+
+Authentication secrets can likewise be supplied with environment variables instead of being written
+into the configuration file, keeping them out of version control and allowing them to be injected at
+runtime from a secret store:
+
+| Environment variable           | Config file field                          | Used by                 |
+| ------------------------------ | ------------------------------------------ | ----------------------- |
+| `GIT_PROXY_LDAP_PASSWORD`      | `authentication[].adConfig.password`       | Active Directory / LDAP |
+| `GIT_PROXY_OIDC_CLIENT_SECRET` | `authentication[].oidcConfig.clientSecret` | OpenID Connect          |
+
+```
+export GIT_PROXY_LDAP_PASSWORD="your-ldap-password"
+export GIT_PROXY_OIDC_CLIENT_SECRET="your-oidc-client-secret"
+```
+
+Each secret follows the same precedence as the server settings above: a non-empty environment
+variable takes precedence over the config file, and an empty or unset environment variable falls
+back to the config file value. Because the secret can come from either source, the matching config
+file field is optional. An enabled authentication method needs its secret from at least one source.
+If both the environment variable and the config field are empty or unset, GitProxy fails to start,
+with an error naming both.
 
 ### Validate configuration
 
@@ -147,6 +195,8 @@ Each source can be one of three types:
 1. `file`: Load from a local JSON file
 2. `http`: Load from an HTTP endpoint
 3. `git`: Load from a Git repository
+
+For Git sources, `branch` is optional. When set, GitProxy follows that branch. Otherwise, it follows the repository's current default branch, including later default-branch changes. Refreshes replace the cached checkout with the remote version, recovering from force pushes and detached checkouts. If the remote has no usable default branch, a Git source without `branch` fails to load.
 
 When configuration changes are detected, GitProxy will:
 

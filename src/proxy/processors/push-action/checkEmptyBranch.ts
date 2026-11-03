@@ -15,10 +15,10 @@
  */
 
 import { Request } from 'express';
-import simpleGit from 'simple-git';
+import { simpleGit } from 'simple-git';
 
 import { Action, Step } from '../../actions';
-import { EMPTY_COMMIT_HASH } from '../constants';
+import { EMPTY_COMMIT_HASH } from '../../constants';
 import { handleErrorAndLog } from '../../../utils/errors';
 
 const isEmptyBranch = async (action: Action): Promise<boolean> => {

@@ -17,33 +17,63 @@
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { PluginLoader } from '../src/plugin';
 import { Action, PushType, RequestType } from '../src/proxy/actions';
+import { PullPhase, PushPhase } from '../src/proxy/processors/types';
 
-const mockLoader = {
-  pushPlugins: [
-    { exec: Object.assign(async () => console.log('foo'), { displayName: 'foo.exec' }) },
-  ],
-  pullPlugins: [
-    { exec: Object.assign(async () => console.log('foo'), { displayName: 'bar.exec' }) },
-  ],
+const createMockLoader = () => {
+  const pushExec = vi.fn(async (_req: unknown, action: unknown) => action);
+  const pullExec = vi.fn(async (_req: unknown, action: unknown) => action);
+  return {
+    pushPlugins: [
+      {
+        exec: pushExec,
+        phase: PushPhase.AFTER_PERMISSIONS,
+        displayName: 'mockPushPlugin',
+      },
+    ],
+    pullPlugins: [
+      {
+        exec: pullExec,
+        phase: PullPhase.AFTER_AUTHORISATION,
+        displayName: 'mockPullPlugin',
+      },
+    ],
+  };
 };
+
+const expectChainRunsPlugin = async (
+  chainFns: ReadonlyArray<{ displayName?: string }>,
+  plugin: { exec: ReturnType<typeof vi.fn>; displayName: string },
+) => {
+  const inserted = chainFns.find((fn) => fn.displayName === plugin.displayName) as
+    ((req: unknown, action: unknown) => Promise<unknown>) | undefined;
+  expect(inserted).toEqual(expect.any(Function));
+  const action = { id: plugin.displayName };
+  await inserted!({}, action);
+  expect(plugin.exec).toHaveBeenCalledTimes(1);
+  expect(plugin.exec).toHaveBeenCalledWith({}, action);
+};
+
+const collectibleFn = () => Object.assign(vi.fn(), { isCollectible: true });
+const nonCollectibleFn = () => Object.assign(vi.fn(), { isCollectible: false });
 
 const initMockPushProcessors = () => {
   return {
-    checkEmptyBranch: vi.fn(),
-    checkRepoInAuthorisedList: vi.fn(),
-    checkMessages: vi.fn(),
-    checkAuthorEmails: vi.fn(),
-    checkUserPushPermission: vi.fn(),
-    checkIfWaitingAuth: vi.fn(),
-    checkHiddenCommits: vi.fn(),
-    pullRemote: vi.fn(),
-    writePack: vi.fn(),
-    preReceive: vi.fn(),
-    getDiff: vi.fn(),
-    gitleaks: vi.fn(),
-    clearBareClone: vi.fn(),
-    scanDiff: vi.fn(),
-    blockForAuth: vi.fn(),
+    checkEmptyBranch: nonCollectibleFn(),
+    checkRepoInAuthorisedList: nonCollectibleFn(),
+    checkMessages: collectibleFn(),
+    checkAuthorEmails: collectibleFn(),
+    checkUserPushPermission: nonCollectibleFn(),
+    resolveUserFromToken: nonCollectibleFn(),
+    checkIfWaitingAuth: nonCollectibleFn(),
+    checkHiddenCommits: nonCollectibleFn(),
+    pullRemote: nonCollectibleFn(),
+    writePack: nonCollectibleFn(),
+    preReceive: collectibleFn(),
+    getDiff: nonCollectibleFn(),
+    gitleaks: collectibleFn(),
+    clearBareClone: nonCollectibleFn(),
+    scanDiff: collectibleFn(),
+    blockForAuth: nonCollectibleFn(),
   };
 };
 
@@ -72,6 +102,10 @@ describe('proxy chain', function () {
     // Initialize the mocks
     mockPushProcessors = initMockPushProcessors();
     mockPostProcessors = initMockPostProcessors();
+
+    // mockPreProcessors lives at module scope so needs manual reset
+    mockPreProcessors.parseAction.mockReset();
+    mockPreProcessors.parsePush.mockReset();
 
     // Mock the processors module
     vi.doMock('../src/proxy/processors', async () => ({
@@ -110,103 +144,73 @@ describe('proxy chain', function () {
     vi.resetModules();
   });
 
-  it('getChain should set pluginLoaded if loader is undefined', async () => {
+  it('getChain should throw an error if loader is undefined', async () => {
     chain.chainPluginLoader = undefined;
-    const actual = await chain.getChain({ type: 'push' });
-    expect(actual).toEqual(chain.branchPushChain);
-    expect(chain.chainPluginLoader).toBeUndefined();
-    expect(chain.pluginsInserted).toBe(true);
+    await expect(chain.getChain({ type: 'push' })).rejects.toThrow(
+      /Plugin loader was not initialized/,
+    );
   });
 
   it('getChain should load plugins from an initialized PluginLoader', async () => {
-    chain.chainPluginLoader = mockLoader;
-    const initialChain = [...chain.branchPushChain];
+    const loader = createMockLoader();
+    chain.chainPluginLoader = loader;
     const actual = await chain.getChain({ type: 'push' });
-    expect(actual.length).toBeGreaterThan(initialChain.length);
-    expect(chain.pluginsInserted).toBe(true);
+    await expectChainRunsPlugin(actual, loader.pushPlugins[0]);
   });
 
   it('getChain should load pull plugins from an initialized PluginLoader', async () => {
-    chain.chainPluginLoader = mockLoader;
-    const initialChain = [...chain.pullActionChain];
+    const loader = createMockLoader();
+    chain.chainPluginLoader = loader;
     const actual = await chain.getChain({ type: 'pull' });
-    expect(actual.length).toBeGreaterThan(initialChain.length);
-    expect(chain.pluginsInserted).toBe(true);
+    await expectChainRunsPlugin(actual, loader.pullPlugins[0]);
   });
 
-  it('getChain should insert start-phase push plugins at the beginning of the chain', async () => {
-    const startExec = Object.assign(async () => {}, { displayName: 'start.exec' });
-    chain.chainPluginLoader = {
-      pushPlugins: [{ exec: startExec }],
-      pullPlugins: [],
-    };
-    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.BRANCH });
-    expect(actual[0]).toBe(startExec);
+  const phasePlugin = (displayName: string, phase: string, chains?: string[]) => ({
+    exec: vi.fn(async (_req: unknown, action: unknown) => action),
+    displayName,
+    phase,
+    ...(chains ? { chains } : {}),
   });
+  const indexOfPlugin = (chainFns: ReadonlyArray<{ displayName?: string }>, name: string) =>
+    chainFns.findIndex((fn) => fn.displayName === name);
 
-  it('getChain should insert afterDiff push plugins immediately after getDiff', async () => {
-    const afterDiffExec = Object.assign(async () => {}, { displayName: 'afterDiff.exec' });
-    chain.chainPluginLoader = {
-      pushPlugins: [{ exec: afterDiffExec, chainPhase: 'afterDiff' }],
-      pullPlugins: [],
-    };
+  it('getChain should insert AFTER_DIFF push plugins immediately after getDiff', async () => {
+    const plugin = phasePlugin('afterDiffPlugin', PushPhase.AFTER_DIFF, ['branch']);
+    chain.chainPluginLoader = { pushPlugins: [plugin], pullPlugins: [] };
     const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.BRANCH });
     const diffIndex = actual.indexOf(processors.push.getDiff);
     expect(diffIndex).toBeGreaterThan(-1);
-    expect(actual[diffIndex + 1]).toBe(afterDiffExec);
-    // afterDiff plugins must not be inserted at the very start of the chain
-    expect(actual[0]).not.toBe(afterDiffExec);
+    expect(indexOfPlugin(actual, 'afterDiffPlugin')).toBe(diffIndex + 1);
+    // must run before the approval gate
+    expect(diffIndex + 1).toBeLessThan(actual.indexOf(processors.push.blockForAuth));
+    await expectChainRunsPlugin(actual, plugin);
   });
 
-  it('getChain should preserve registration order for multiple afterDiff push plugins', async () => {
-    const first = Object.assign(async () => {}, { displayName: 'first.exec' });
-    const second = Object.assign(async () => {}, { displayName: 'second.exec' });
-    chain.chainPluginLoader = {
-      pushPlugins: [
-        { exec: first, chainPhase: 'afterDiff' },
-        { exec: second, chainPhase: 'afterDiff' },
-      ],
-      pullPlugins: [],
-    };
+  it('getChain should preserve registration order for multiple AFTER_DIFF push plugins', async () => {
+    const first = phasePlugin('firstDiffPlugin', PushPhase.AFTER_DIFF, ['branch']);
+    const second = phasePlugin('secondDiffPlugin', PushPhase.AFTER_DIFF, ['branch']);
+    chain.chainPluginLoader = { pushPlugins: [first, second], pullPlugins: [] };
     const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.BRANCH });
     const diffIndex = actual.indexOf(processors.push.getDiff);
-    expect(actual[diffIndex + 1]).toBe(first);
-    expect(actual[diffIndex + 2]).toBe(second);
+    expect(indexOfPlugin(actual, 'firstDiffPlugin')).toBe(diffIndex + 1);
+    expect(indexOfPlugin(actual, 'secondDiffPlugin')).toBe(diffIndex + 2);
   });
 
-  it('getChain should insert afterAuth pull plugins after checkRepoInAuthorisedList', async () => {
-    const afterAuthExec = Object.assign(async () => {}, { displayName: 'pullScan.exec' });
-    chain.chainPluginLoader = {
-      pushPlugins: [],
-      pullPlugins: [{ exec: afterAuthExec, chainPhase: 'afterAuth' }],
-    };
+  it('getChain should not add branch-only AFTER_DIFF push plugins to the tag chain', async () => {
+    const plugin = phasePlugin('afterDiffPlugin', PushPhase.AFTER_DIFF, ['branch']);
+    chain.chainPluginLoader = { pushPlugins: [plugin], pullPlugins: [] };
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
+    expect(indexOfPlugin(actual, 'afterDiffPlugin')).toBe(-1);
+  });
+
+  it('getChain should insert AFTER_AUTHORISATION pull plugins after checkRepoInAuthorisedList', async () => {
+    const plugin = phasePlugin('pullScanPlugin', PullPhase.AFTER_AUTHORISATION);
+    chain.chainPluginLoader = { pushPlugins: [], pullPlugins: [plugin] };
     const actual = await chain.getChain({ type: RequestType.PULL });
     const authIndex = actual.indexOf(processors.push.checkRepoInAuthorisedList);
-    expect(authIndex).toBeGreaterThan(-1);
-    expect(actual[authIndex + 1]).toBe(afterAuthExec);
-    expect(actual[0]).not.toBe(afterAuthExec);
-  });
-
-  it('getChain should insert start-phase pull plugins before the auth check', async () => {
-    const startExec = Object.assign(async () => {}, { displayName: 'pullStart.exec' });
-    chain.chainPluginLoader = {
-      pushPlugins: [],
-      pullPlugins: [{ exec: startExec }],
-    };
-    const actual = await chain.getChain({ type: RequestType.PULL });
-    expect(actual[0]).toBe(startExec);
-  });
-
-  it('getChain should run afterDiff push plugins on the tag chain before blockForAuth', async () => {
-    const afterDiffExec = Object.assign(async () => {}, { displayName: 'afterDiff.exec' });
-    chain.chainPluginLoader = {
-      pushPlugins: [{ exec: afterDiffExec, chainPhase: 'afterDiff' }],
-      pullPlugins: [],
-    };
-    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
-    const blockIndex = actual.indexOf(processors.push.blockForAuth);
-    expect(blockIndex).toBeGreaterThan(-1);
-    expect(actual[blockIndex - 1]).toBe(afterDiffExec);
+    expect(authIndex).toBe(0);
+    expect(indexOfPlugin(actual, 'pullScanPlugin')).toBe(authIndex + 1);
+    await expectChainRunsPlugin(actual, plugin);
   });
 
   it('executeChain should stop executing if action has continue returns false', async () => {
@@ -529,6 +533,96 @@ describe('proxy chain', function () {
     expect(consoleErrorSpy).toHaveBeenCalledWith('Error during auto-rejection: Database error');
   });
 
+  describe('error collection', () => {
+    // simulates a real processor failing
+    const failStep = (message: string) => async (req: any, action: any) => {
+      action.steps = [...(action.steps ?? []), { error: true, errorMessage: message }];
+      action.error = true;
+      action.continue = () => false;
+      return action;
+    };
+
+    const setupPushAction = () => {
+      const action = {
+        type: 'push',
+        steps: [],
+        continue: () => true,
+        allowPush: false,
+      };
+      mockPreProcessors.parseAction.mockResolvedValue(action);
+      mockPreProcessors.parsePush.mockResolvedValue(action);
+      return action;
+    };
+
+    it('should continue past recoverable failures and run the remaining checks', async () => {
+      setupPushAction();
+      mockPushProcessors.checkMessages.mockImplementation(failStep('bad commit message'));
+
+      const result = await chain.executeChain({});
+
+      // all later steps still ran
+      expect(mockPushProcessors.checkAuthorEmails).toHaveBeenCalled();
+      expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
+      expect(mockPushProcessors.pullRemote).toHaveBeenCalled();
+      expect(mockPushProcessors.writePack).toHaveBeenCalled();
+      expect(mockPushProcessors.getDiff).toHaveBeenCalled();
+      expect(mockPushProcessors.gitleaks).toHaveBeenCalled();
+      expect(mockPushProcessors.scanDiff).toHaveBeenCalled();
+
+      // but a failing push is never queued for approval
+      expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+      expect(result.error).toBe(true);
+    });
+
+    it('should report every collected failure in a single combined message', async () => {
+      setupPushAction();
+      mockPushProcessors.checkMessages.mockImplementation(failStep('bad commit message'));
+      mockPushProcessors.scanDiff.mockImplementation(failStep('secret detected in diff'));
+
+      const result = await chain.executeChain({});
+
+      expect(result.errorMessage).toContain('The following 2 checks failed:');
+      expect(result.errorMessage).toContain('bad commit message');
+      expect(result.errorMessage).toContain('secret detected in diff');
+    });
+
+    it('should keep the original message when only one collectible step fails', async () => {
+      setupPushAction();
+      mockPushProcessors.checkAuthorEmails.mockImplementation(failStep('illegal author email'));
+
+      const result = await chain.executeChain({});
+
+      expect(result.errorMessage).toBeUndefined(); // addStep is mocked so chain must not overwrite
+      expect(result.steps).toHaveLength(1);
+      expect(result.steps[0].errorMessage).toBe('illegal author email');
+    });
+
+    it('should still stop immediately when a fatal step fails', async () => {
+      setupPushAction();
+      mockPushProcessors.checkUserPushPermission.mockImplementation(failStep('no push permission'));
+
+      await chain.executeChain({});
+
+      expect(mockPushProcessors.pullRemote).not.toHaveBeenCalled();
+      expect(mockPushProcessors.scanDiff).not.toHaveBeenCalled();
+      expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+    });
+
+    it('should not auto-approve a push that collected failures', async () => {
+      setupPushAction();
+      mockPushProcessors.checkMessages.mockImplementation(failStep('bad commit message'));
+      mockPushProcessors.preReceive.mockImplementation(async (req: any, action: any) => {
+        action.autoApproved = true;
+        return action;
+      });
+      const dbSpy = vi.spyOn(db, 'authorise');
+
+      await chain.executeChain({});
+
+      expect(dbSpy).not.toHaveBeenCalled();
+    });
+  });
+
   it('returns pullActionChain for pull actions', async () => {
     const action = new Action(
       '1',
@@ -567,19 +661,66 @@ describe('proxy chain', function () {
     expect(branchChain).toEqual(chain.branchPushChain);
   });
 
-  it('getChain should return tagPushChain if loader is undefined for tag pushes', async () => {
-    chain.chainPluginLoader = undefined;
+  it('getChain should load tag plugins from an initialized PluginLoader', async () => {
+    const loader = createMockLoader();
+    chain.chainPluginLoader = loader;
     const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
-    expect(actual).toEqual(chain.tagPushChain);
-    expect(chain.chainPluginLoader).toBeUndefined();
-    expect(chain.pluginsInserted).toBe(true);
+    await expectChainRunsPlugin(actual, loader.pushPlugins[0]);
   });
 
-  it('getChain should load tag plugins from an initialized PluginLoader', async () => {
-    chain.chainPluginLoader = mockLoader;
-    const initialChain = [...chain.tagPushChain];
-    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
-    expect(actual.length).toBeGreaterThan(initialChain.length);
-    expect(chain.pluginsInserted).toBe(true);
+  it('getChain throws when a loaded plugin does not attach to any chain', async () => {
+    chain.chainPluginLoader = {
+      pushPlugins: [{ exec: async () => undefined, displayName: 'LegacyPushPlugin' }],
+      pullPlugins: [],
+    };
+
+    await expect(chain.getChain({ type: 'push' })).rejects.toThrow(
+      /LegacyPushPlugin \(phase: none, chains: branch, tag\)/,
+    );
+    await expect(chain.getChain({ type: 'push' })).rejects.toThrow(/not added to any action chain/);
+  });
+
+  it('getChain throws when a plugin phase is missing from every chain it targets', async () => {
+    chain.chainPluginLoader = {
+      pushPlugins: [
+        {
+          exec: async () => undefined,
+          displayName: 'TagDiffPlugin',
+          phase: PushPhase.AFTER_DIFF,
+          chains: ['tag'],
+        },
+      ],
+      pullPlugins: [],
+    };
+
+    await expect(
+      chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG }),
+    ).rejects.toThrow(/TagDiffPlugin \(phase: AFTER_DIFF, chains: tag\)/);
+  });
+
+  it('keeps a plugin that attaches to one targeted chain when another chain lacks its phase', async () => {
+    const exec = vi.fn(async (_req: unknown, action: unknown) => action);
+    chain.chainPluginLoader = {
+      pushPlugins: [
+        {
+          exec,
+          displayName: 'branchDiffPlugin',
+          phase: PushPhase.AFTER_DIFF,
+          chains: ['branch', 'tag'],
+        },
+      ],
+      pullPlugins: [],
+    };
+
+    const branchChain = await chain.getChain({
+      type: RequestType.PUSH,
+      actionType: PushType.BRANCH,
+    });
+    await expectChainRunsPlugin(branchChain, { exec, displayName: 'branchDiffPlugin' });
+
+    const tagChain = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
+    expect(
+      tagChain.some((fn: { displayName?: string }) => fn.displayName === 'branchDiffPlugin'),
+    ).toBe(false);
   });
 });

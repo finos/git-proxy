@@ -28,6 +28,7 @@ import { exec as checkIfWaitingAuth } from './checkIfWaitingAuth';
 import { exec as checkMessages } from './checkMessages';
 import { exec as checkAuthorEmails } from './checkAuthorEmails';
 import { exec as checkUserPushPermission } from './checkUserPushPermission';
+import { exec as resolveUserFromToken } from './resolveUserFromToken';
 
 import { exec as checkEmptyBranch } from './checkEmptyBranch';
 
@@ -45,5 +46,6 @@ export {
   checkMessages,
   checkAuthorEmails,
   checkUserPushPermission,
+  resolveUserFromToken,
   checkEmptyBranch,
 };

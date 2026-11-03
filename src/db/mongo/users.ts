@@ -15,7 +15,7 @@
  */
 
 import { OptionalId, Document, ObjectId } from 'mongodb';
-import { toClass } from '../helper';
+import { toClass, scmIdentityField, normaliseScmLogin } from '../helper';
 import { User, UserQuery, PublicKeyRecord } from '../types';
 import { connect } from './helper';
 import _ from 'lodash';
@@ -32,6 +32,24 @@ export const findUserByEmail = async function (email: string): Promise<User | nu
   const collection = await connect(collectionName);
   const doc = await collection.findOne({ email: { $eq: email.toLowerCase() } });
   return doc ? toClass(doc, User.prototype) : null;
+};
+
+export const findUserByScmIdentity = async function (
+  provider: string,
+  login: string,
+): Promise<User | null> {
+  const field = scmIdentityField(provider);
+  if (!field) return null;
+  const collection = await connect(collectionName);
+  const docs = await collection
+    .find({ [field]: { $eq: normaliseScmLogin(login) } })
+    .limit(2)
+    .toArray();
+  if (docs.length > 1) {
+    // Two users claiming one handle makes the identity ambiguous; nothing may resolve to either.
+    throw new Error(`${provider} account ${login} is linked to more than one user`);
+  }
+  return docs[0] ? toClass(docs[0], User.prototype) : null;
 };
 
 export const findUserByOIDC = async function (oidcId: string): Promise<User | null> {

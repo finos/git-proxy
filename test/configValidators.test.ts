@@ -15,8 +15,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { validateConfig } from '../src/config/validators';
-import { GitProxyConfig } from '../src/config/generated/config';
+import { validateConfig, validateScmProviders } from '../src/config/validators';
+import { GitProxyConfig, SCMProviderType } from '../src/config/generated/config';
 
 describe('validators', () => {
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
@@ -413,6 +413,82 @@ describe('validators', () => {
       };
       expect(validateConfig(config)).toBe(true);
       expect(consoleErrorSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('validateScmProviders', () => {
+    const ok = (scmProviders: GitProxyConfig['scmProviders']) =>
+      validateScmProviders({ scmProviders } as GitProxyConfig);
+
+    it('accepts the built-in defaults', () => {
+      expect(
+        ok([
+          { name: 'github', type: SCMProviderType.Github, host: 'github.com' },
+          { name: 'gitlab', type: SCMProviderType.Gitlab, host: 'gitlab.com' },
+          { name: 'codeberg', type: SCMProviderType.Forgejo, host: 'codeberg.org' },
+          { name: 'gitea', type: SCMProviderType.Forgejo, host: 'gitea.com' },
+        ]),
+      ).toBe(true);
+    });
+
+    it('accepts an empty or missing list', () => {
+      expect(ok([])).toBe(true);
+      expect(validateScmProviders({} as GitProxyConfig)).toBe(true);
+    });
+
+    it.each([
+      ['github.com', SCMProviderType.Forgejo],
+      ['GitHub.com', SCMProviderType.Gitlab],
+      ['octo.ghe.com', SCMProviderType.Forgejo],
+      ['gitlab.com', SCMProviderType.Forgejo],
+      ['gitlab.com', SCMProviderType.Github],
+      ['codeberg.org', SCMProviderType.Gitlab],
+      ['gitea.com', SCMProviderType.Github],
+    ])('refuses %s configured as type %s', (host, type) => {
+      expect(ok([{ name: 'x', type, host }])).toBe(false);
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        expect.stringContaining('cannot be configured as type'),
+      );
+    });
+
+    it('takes self-hosted hosts as configured', () => {
+      expect(
+        ok([
+          { name: 'ghes', type: SCMProviderType.Github, host: 'github.example.com' },
+          { name: 'gerrit', type: SCMProviderType.Forgejo, host: 'gerrit.example.com' },
+          { name: 'forge', type: SCMProviderType.Forgejo, host: 'forge.example.com' },
+        ]),
+      ).toBe(true);
+    });
+
+    it('refuses duplicate names and duplicate hosts', () => {
+      expect(
+        ok([
+          { name: 'a', type: SCMProviderType.Github, host: 'github.com' },
+          { name: 'a', type: SCMProviderType.Gitlab, host: 'gitlab.com' },
+        ]),
+      ).toBe(false);
+      expect(
+        ok([
+          { name: 'a', type: SCMProviderType.Forgejo, host: 'git.example.com' },
+          { name: 'b', type: SCMProviderType.Forgejo, host: 'GIT.example.com' },
+        ]),
+      ).toBe(false);
+    });
+
+    it('refuses an entry without a name or host', () => {
+      expect(ok([{ name: '', type: SCMProviderType.Forgejo, host: 'git.example.com' }])).toBe(
+        false,
+      );
+      expect(ok([{ name: 'x', type: SCMProviderType.Forgejo, host: '' }])).toBe(false);
+    });
+
+    it('is part of validateConfig', () => {
+      expect(
+        validateConfig({
+          scmProviders: [{ name: 'x', type: SCMProviderType.Forgejo, host: 'github.com' }],
+        } as GitProxyConfig),
+      ).toBe(false);
     });
   });
 });
