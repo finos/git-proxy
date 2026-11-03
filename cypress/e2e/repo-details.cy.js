@@ -43,7 +43,13 @@ describe('Repo Details - User Management', () => {
     cy.get(`[data-testid="add-user-btn-${type}"]`).click();
     cy.get('[data-testid="add-user-dialog"]').should('be.visible');
     cy.get('[data-testid="add-user-confirm-btn"]').should('be.disabled');
-    cy.get('[data-testid="add-user-dialog"]').find('input').type(username);
+    // Typing key by key races Primer's inline autocomplete on slow runners and can drop
+    // characters, so set the whole query in one input event once the user list has loaded.
+    cy.get('[data-testid="add-user-dialog"]')
+      .find('input')
+      .should('be.enabled')
+      .click()
+      .pasteInto(username);
     cy.contains('[role="option"]', username).click();
     cy.get('[data-testid="add-user-confirm-btn"]').should('not.be.disabled').click();
     cy.get('[data-testid="add-user-dialog"]').should('not.exist');
