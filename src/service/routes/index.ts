@@ -23,7 +23,9 @@ import repo from './repo';
 import users from './users';
 import healthcheck from './healthcheck';
 import config from './config';
+import testRoutes from './test';
 import { jwtAuthHandler } from '../passport/jwtAuthHandler';
+import { passwordChangeHandler } from '../passport/passwordChangeHandler';
 import { Proxy } from '../../proxy';
 import * as appConfig from '../../config';
 
@@ -31,19 +33,18 @@ const testRouteLimiter = rateLimit(appConfig.getRateLimit());
 
 const routes = (proxy: Proxy) => {
   const router = express.Router();
+
   router.use('/api', home);
   router.use('/api/auth', auth.router);
   router.use('/api/v1/healthcheck', healthcheck);
-  router.use('/api/v1/push', jwtAuthHandler(), push);
-  router.use('/api/v1/repo', jwtAuthHandler(), repo(proxy));
-  router.use('/api/v1/user', jwtAuthHandler(), users);
+  router.use('/api/v1/push', jwtAuthHandler(), passwordChangeHandler, push);
+  router.use('/api/v1/repo', jwtAuthHandler(), passwordChangeHandler, repo(proxy));
+  router.use('/api/v1/user', jwtAuthHandler(), passwordChangeHandler, users);
   router.use('/api/v1/config', config);
 
   // Test-only cleanup endpoints (gated by NODE_ENV)
   if (process.env.NODE_ENV === 'test') {
-    import('./test').then((mod) => {
-      router.use('/api/v1/test', testRouteLimiter, jwtAuthHandler(), mod.default);
-    });
+    router.use('/api/v1/test', testRouteLimiter, jwtAuthHandler(), testRoutes);
   }
 
   return router;

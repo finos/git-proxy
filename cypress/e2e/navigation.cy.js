@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * Navigation & Shell
- * Strategy: Mix of real navigation and intercepts.
- */
 describe('Navigation & Shell', () => {
   beforeEach(() => {
     cy.login('admin', 'admin');
@@ -26,48 +22,64 @@ describe('Navigation & Shell', () => {
   afterEach(() => {
     cy.logout();
   });
-  it('Sidebar renders all visible links', () => {
-    cy.visit('/dashboard/repo');
-    cy.contains('Repositories').should('be.visible');
-    cy.contains('Dashboard').should('be.visible');
-  });
-  it('Sidebar links navigate correctly', () => {
-    cy.visit('/dashboard/repo');
-    cy.contains('Dashboard').click();
-    cy.url().should('include', '/dashboard/push');
-    cy.contains('Repositories').click();
-    cy.url().should('include', '/dashboard/repo');
-  });
-  it('Active sidebar item highlights', () => {
-    cy.visit('/dashboard/repo');
-    cy.get('[aria-current="page"]').should('exist');
-  });
-  it('Navbar renders correctly', () => {
+
+  it('Navbar renders all visible links', () => {
     cy.visit('/dashboard/repo');
 
-    cy.get('[data-testid="navbar"]').should('be.visible');
+    cy.get('[data-testid="dashboard-header"]').should('be.visible');
+    cy.get('[data-testid="dashboard-nav-desktop-repositories"]').should('be.visible');
+    cy.get('[data-testid="dashboard-nav-desktop-activity"]').should('be.visible');
+    cy.get('[data-testid="dashboard-nav-desktop-users"]').should('be.visible');
+    cy.get('[data-testid="dashboard-header-settings"]').should('be.visible');
   });
+
+  it('Navbar links navigate correctly', () => {
+    cy.visit('/dashboard/repo');
+
+    cy.get('[data-testid="dashboard-nav-desktop-activity"]').click();
+    cy.url().should('include', '/dashboard/push');
+
+    cy.get('[data-testid="dashboard-nav-desktop-users"]').click();
+    cy.url().should('include', '/dashboard/admin/user');
+
+    cy.get('[data-testid="dashboard-header-settings"]').click();
+    cy.url().should('include', '/dashboard/admin/settings');
+
+    cy.get('[data-testid="dashboard-nav-desktop-repositories"]').click();
+    cy.url().should('include', '/dashboard/repo');
+  });
+
+  it('Active navbar item is highlighted', () => {
+    cy.visit('/dashboard/push');
+
+    cy.get('[data-testid="dashboard-nav-desktop-activity"]').should(
+      'have.attr',
+      'aria-current',
+      'page',
+    );
+    cy.get('[data-testid="dashboard-nav-desktop-repositories"]').should(
+      'not.have.attr',
+      'aria-current',
+    );
+  });
+
   it('Footer renders', () => {
     cy.visit('/dashboard/repo');
 
-    cy.get('[data-testid="footer"]').should('exist');
     cy.get('[data-testid="footer"]').scrollIntoView();
-    cy.get('[data-testid="footer"]').should('be.visible');
+    cy.get('[data-testid="footer"]').should('be.visible').and('contain', 'GitProxy');
   });
-  // NOTE: Keep unauthenticated checks outside the logged-in hooks.
-  it('/ redirects to /dashboard/repo', () => {
-    cy.logout();
+
+  it('/ redirects to the repository list', () => {
     cy.visit('/');
-    cy.url().should('match', /\/(login|dashboard)/);
+
+    cy.url().should('include', '/dashboard/repo');
   });
 });
 
 describe('Unauthenticated access', () => {
-  it('Unauthenticated user is redirected to /login', () => {
-    Cypress.session.clearAllSavedSessions();
-    cy.clearCookies();
-    cy.clearLocalStorage();
-
+  it('Unauthenticated user is redirected to /login from the profile page', () => {
+    cy.logout();
     cy.visit('/dashboard/profile');
 
     cy.url().should('include', '/login');

@@ -50,7 +50,12 @@ module.exports = {
       },
       collapsible: true,
       collapsed: false,
-      items: ['configuration/overview', 'configuration/reference', 'configuration/pre-receive'],
+      items: [
+        'configuration/overview',
+        'configuration/reference',
+        'configuration/pre-receive',
+        'configuration/push-identity',
+      ],
     },
     {
       type: 'category',
@@ -64,7 +69,11 @@ module.exports = {
       },
       collapsible: true,
       collapsed: false,
-      items: ['architecture/architecture', 'architecture/processors'],
+      items: [
+        'architecture/architecture',
+        'architecture/processors',
+        'architecture/ssh-architecture',
+      ],
     },
     {
       type: 'category',
@@ -81,5 +90,6 @@ module.exports = {
       items: ['development/contributing', 'development/plugins', 'development/releases'],
     },
     'user-manual',
+    'ssh-setup',
   ],
 };

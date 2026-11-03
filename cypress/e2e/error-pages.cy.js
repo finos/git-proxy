@@ -14,10 +14,6 @@
  * limitations under the License.
  */
 
-/**
- * Error Pages
- * Strategy: Direct navigation. No API needed.
- */
 describe('Error Pages', () => {
   beforeEach(() => {
     cy.login('admin', 'admin');
@@ -26,35 +22,32 @@ describe('Error Pages', () => {
   afterEach(() => {
     cy.logout();
   });
-  it('Unknown route shows 404 page', () => {
+
+  it('Unknown dashboard route shows the 404 page', () => {
     cy.visit('/dashboard/nonexistent-page-xyz');
 
-    cy.get('[data-testid="not-found-page"]').should('be.visible');
-    cy.contains('404').should('be.visible');
+    cy.get('[data-testid="dashboard-header"]').should('be.visible');
+    cy.get('[data-testid="not-found-page"]').should('be.visible').and('contain', '404');
   });
-  it('Unauthorized route shows NotAuthorized page', () => {
-    const regularUser = {
-      username: `errorpage_user_${Date.now()}`,
-      password: 'pass123',
-      email: `errorpage_${Date.now()}@example.com`,
-      gitAccount: `errorpage_git_${Date.now()}`,
-    };
 
-    cy.request({
-      method: 'POST',
-      url: `${Cypress.env('API_BASE_URL') || Cypress.config('baseUrl')}/api/auth/create-user`,
-      body: regularUser,
-      failOnStatusCode: false,
-    });
+  it('Unknown top-level route shows the 404 page', () => {
+    cy.visit('/nonexistent-page-xyz');
 
-    cy.clearCookies();
-    cy.clearLocalStorage();
-    cy.login(regularUser.username, regularUser.password);
+    cy.get('[data-testid="not-found-page"]').should('be.visible').and('contain', '404');
+  });
+
+  it('404 page links back to home', () => {
+    cy.visit('/dashboard/nonexistent-page-xyz');
+
+    cy.get('[data-testid="not-found-page"]').contains('button', 'Go to home').click();
+    cy.url().should('include', '/dashboard/repo');
+  });
+
+  it('Not authorized route shows the 403 page', () => {
+    cy.logout();
+    cy.login('user', 'user');
     cy.visit('/not-authorized');
 
-    cy.get('[data-testid="not-authorized-page"]').should('be.visible');
-    cy.contains('403').should('be.visible');
-    cy.clearCookies();
-    cy.deleteTestUser(regularUser.username);
+    cy.get('[data-testid="not-authorized-page"]').should('be.visible').and('contain', '403');
   });
 });

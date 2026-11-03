@@ -14,209 +14,178 @@
  * limitations under the License.
  */
 
-/**
- * Repo Details - User Management
- * Strategy: Real API for all tests. Creates a test repo in before(), cleans up in after().
- */
 describe('Repo Details - User Management', () => {
+  const runId = Date.now();
+
   const testReviewer = {
     username: 'repo_detail_reviewer',
     password: 'reviewer123',
     email: 'repo_detail_reviewer@example.com',
-    gitAccount: 'repo_detail_reviewer',
   };
 
   const testContributor = {
     username: 'repo_detail_contributor',
     password: 'contributor123',
     email: 'repo_detail_contributor@example.com',
-    gitAccount: 'repo_detail_contributor',
   };
 
   const nonAdminUser = {
     username: 'repo_detail_regular',
     password: 'regular123',
     email: 'repo_detail_regular@example.com',
-    gitAccount: 'repo_detail_regular',
   };
 
+  const repoName = `cypress-repo-${runId}`;
+  const repoUrl = `https://github.com/cypress-test/${repoName}.git`;
   let testRepoId = null;
 
-  function getApiBaseUrl() {
-    return Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
-  }
+  const addUserViaDialog = (type, username) => {
+    cy.get(`[data-testid="add-user-btn-${type}"]`).click();
+    cy.get('[data-testid="add-user-dialog"]').should('be.visible');
+    cy.get('[data-testid="add-user-confirm-btn"]').should('be.disabled');
+    cy.get('[data-testid="add-user-dialog"]').find('input').type(username);
+    cy.contains('[role="option"]', username).click();
+    cy.get('[data-testid="add-user-confirm-btn"]').should('not.be.disabled').click();
+    cy.get('[data-testid="add-user-dialog"]').should('not.exist');
+  };
 
   before(() => {
     cy.login('admin', 'admin');
-    cy.createUser(
-      testReviewer.username,
-      testReviewer.password,
-      testReviewer.email,
-      testReviewer.gitAccount,
-    );
-    cy.createUser(
-      testContributor.username,
-      testContributor.password,
-      testContributor.email,
-      testContributor.gitAccount,
-    );
-    cy.createUser(
-      nonAdminUser.username,
-      nonAdminUser.password,
-      nonAdminUser.email,
-      nonAdminUser.gitAccount,
-    );
-    cy.request({
-      method: 'POST',
-      url: `${getApiBaseUrl()}/api/v1/repo`,
-      body: {
-        name: `cypress-repo-${Date.now()}`,
-        url: `https://github.com/test-org/cypress-test-repo-${Date.now()}.git`,
-        project: 'cypress-test',
-      },
-      failOnStatusCode: false,
-    }).then((res) => {
-      if (res.status >= 400) {
-        throw new Error(`Failed to create test repo: ${JSON.stringify(res.body).slice(0, 500)}`);
-      }
-      testRepoId = res.body._id;
+    cy.createUser(testReviewer.username, testReviewer.password, testReviewer.email);
+    cy.createUser(testContributor.username, testContributor.password, testContributor.email);
+    cy.createUser(nonAdminUser.username, nonAdminUser.password, nonAdminUser.email);
+    cy.createTestRepo('cypress-test', repoName, repoUrl).then((repo) => {
+      testRepoId = repo._id;
     });
-
     cy.logout();
   });
 
   after(() => {
+    cy.login('admin', 'admin');
     if (testRepoId) {
-      cy.login('admin', 'admin');
       cy.deleteRepo(testRepoId);
-      cy.logout();
     }
     cy.deleteTestUser(testReviewer.username);
     cy.deleteTestUser(testContributor.username);
     cy.deleteTestUser(nonAdminUser.username);
+    cy.logout();
   });
 
   beforeEach(() => {
-    cy.intercept('GET', 'https://api.github.com/repos/**', {
-      body: {
-        description: 'Test repo',
-        language: 'JavaScript',
-        created_at: '2024-01-01T00:00:00Z',
-        updated_at: '2024-01-01T00:00:00Z',
-        pushed_at: '2024-01-01T00:00:00Z',
-        html_url: 'https://github.com/test-org/test-repo',
-        owner: {
-          avatar_url: '',
-          html_url: 'https://github.com/test-org',
-        },
-      },
-    }).as('getRemoteRepo');
+    cy.stubScmMetadata();
   });
-  it('Repo info renders: project, name, URL links', () => {
-    cy.login('admin', 'admin');
-    cy.visit(`/dashboard/repo/${testRepoId}`);
-    cy.get('[data-testid="repo-info-card"]').should('be.visible');
-    cy.contains('Organization').should('be.visible');
+
+  afterEach(() => {
+    cy.logout();
   });
-  it('Reviewers table renders user list with links', () => {
+
+  it('Repo header renders project, name and URL', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
 
-    cy.get('[data-testid="reviewers-table"]').should('be.visible');
-    cy.contains('Reviewers').should('be.visible');
-  });
-  it('Contributors table renders user list with links', () => {
-    cy.login('admin', 'admin');
-    cy.visit(`/dashboard/repo/${testRepoId}`);
-    cy.get('[data-testid="contributors-table"]').should('exist');
-    cy.get('[data-testid="contributors-table"]').scrollIntoView();
-    cy.contains('Contributors').should('be.visible');
-  });
-  it('Admin can add reviewer via "Add Reviewer" button', () => {
-    cy.login('admin', 'admin');
-    cy.visit(`/dashboard/repo/${testRepoId}`);
-    cy.get('[data-testid="add-user-btn-authorise"]').click();
-    cy.get('[data-testid="add-user-dialog"]').should('be.visible');
-    cy.get('[data-testid="add-user-select"]').click();
-    cy.contains(`li.MuiMenuItem-root`, testReviewer.username).click();
-    cy.get('[data-testid="add-user-confirm-btn"]').click();
-    cy.get('[data-testid="add-user-dialog"]').should('not.exist');
-    cy.get('[data-testid="reviewers-table"]').contains(testReviewer.username).should('be.visible');
-  });
-  it('Admin can remove reviewer', () => {
-    cy.login('admin', 'admin');
-    cy.visit(`/dashboard/repo/${testRepoId}`);
-    cy.get('[data-testid="reviewers-table"]')
-      .contains(testReviewer.username)
-      .parents('tr')
-      .find('button')
-      .first()
-      .click();
-    cy.get('[data-testid="reviewers-table"]').contains(testReviewer.username).should('not.exist');
-  });
-  it('Admin can add contributor via "Add Contributor" button', () => {
-    cy.login('admin', 'admin');
-    cy.visit(`/dashboard/repo/${testRepoId}`);
-    cy.get('[data-testid="add-user-btn-push"]').click();
-    cy.get('[data-testid="add-user-dialog"]').should('be.visible');
-    cy.get('[data-testid="add-user-select"]').click();
-    cy.contains(`li.MuiMenuItem-root`, testContributor.username).click();
-    cy.get('[data-testid="add-user-confirm-btn"]').click();
-    cy.get('[data-testid="add-user-dialog"]').should('not.exist');
-    cy.get('[data-testid="contributors-table"]')
-      .contains(testContributor.username)
-      .should('be.visible');
-  });
-  it('Admin can remove contributor', () => {
-    cy.login('admin', 'admin');
-    cy.visit(`/dashboard/repo/${testRepoId}`);
-    cy.get('[data-testid="contributors-table"]')
-      .contains(testContributor.username)
-      .parents('tr')
-      .find('button')
-      .first()
-      .click();
-    cy.get('[data-testid="contributors-table"]')
-      .contains(testContributor.username)
-      .should('not.exist');
-  });
-  it('Delete repo dialog opens, confirms, navigates to repo list', () => {
-    cy.login('admin', 'admin');
-    cy.request({
-      method: 'POST',
-      url: `${getApiBaseUrl()}/api/v1/repo`,
-      body: {
-        name: `cypress-delete-repo-${Date.now()}`,
-        url: `https://github.com/test-org/cypress-delete-${Date.now()}.git`,
-        project: 'cypress-test',
-      },
-      failOnStatusCode: false,
-    }).then((res) => {
-      const deleteRepoId = res.body._id;
-      const deleteRepoName = res.body.name;
-
-      cy.visit(`/dashboard/repo/${deleteRepoId}`);
-      cy.get('[data-testid="delete-repo-button"]').click();
-      cy.get('[data-testid="delete-repo-dialog"]').should('be.visible');
-      cy.get('[data-testid="delete-repo-confirm-input"]').type(deleteRepoName);
-      cy.get('[data-testid="delete-repo-confirm-btn"]').should('not.be.disabled');
-      cy.get('[data-testid="delete-repo-confirm-btn"]').click();
-      cy.url().should('include', '/dashboard/repo');
+    cy.get('[data-testid="repo-header"]').within(() => {
+      cy.contains('cypress-test').should('be.visible');
+      cy.contains('a', repoName).should('be.visible');
+      cy.contains('a', `https://github.com/cypress-test/${repoName}`).should('be.visible');
     });
   });
-  it('Non-admin cannot see add/remove/delete buttons', () => {
-    cy.login(nonAdminUser.username, nonAdminUser.password);
-    cy.visit(`/dashboard/repo/${testRepoId}`);
-    cy.get('[data-testid="delete-repo-button"]').should('not.exist');
-    cy.get('[data-testid="add-user-btn-authorise"]').should('not.exist');
-    cy.get('[data-testid="add-user-btn-push"]').should('not.exist');
-  });
-  it('Code clone button renders with correct URL', () => {
+
+  it('Reviewers tab renders the reviewers table', () => {
     cy.login('admin', 'admin');
     cy.visit(`/dashboard/repo/${testRepoId}`);
-    cy.get('[data-testid="repo-info-card"]', { timeout: 15000 }).should('be.visible');
+
+    cy.get('[aria-label="Repository"]').contains('Reviewers').click();
+
+    cy.url().should('include', 'tab=reviewers');
     cy.get('[data-testid="reviewers-table"]').should('be.visible');
-    cy.get('[data-testid="code-clone-btn"]').scrollIntoView();
-    cy.get('[data-testid="code-clone-btn"]', { timeout: 10000 }).should('be.visible');
+  });
+
+  it('Contributors tab renders the contributors table', () => {
+    cy.login('admin', 'admin');
+    cy.visit(`/dashboard/repo/${testRepoId}`);
+
+    cy.get('[aria-label="Repository"]').contains('Contributors').click();
+
+    cy.url().should('include', 'tab=contributors');
+    cy.get('[data-testid="contributors-table"]').should('be.visible');
+  });
+
+  it('Admin can add and remove a reviewer', () => {
+    cy.login('admin', 'admin');
+    cy.visit(`/dashboard/repo/${testRepoId}?tab=reviewers`);
+
+    addUserViaDialog('authorise', testReviewer.username);
+    cy.get('[data-testid="reviewers-table"]').should('contain', testReviewer.username);
+
+    cy.get('[data-testid="reviewers-table"]')
+      .contains('tr', testReviewer.username)
+      .find('button')
+      .click();
+    cy.get('[data-testid="reviewers-table"]').should('not.contain', testReviewer.username);
+  });
+
+  it('Admin can add and remove a contributor', () => {
+    cy.login('admin', 'admin');
+    cy.visit(`/dashboard/repo/${testRepoId}?tab=contributors`);
+
+    addUserViaDialog('push', testContributor.username);
+    cy.get('[data-testid="contributors-table"]').should('contain', testContributor.username);
+
+    cy.get('[data-testid="contributors-table"]')
+      .contains('tr', testContributor.username)
+      .find('button')
+      .click();
+    cy.get('[data-testid="contributors-table"]').should('not.contain', testContributor.username);
+  });
+
+  it('Non-admin cannot see add/remove/delete buttons', () => {
+    cy.login('admin', 'admin');
+    cy.addUserAuthorisePermission(testRepoId, testReviewer.username);
+    cy.logout();
+
+    cy.login(nonAdminUser.username, nonAdminUser.password);
+    cy.visit(`/dashboard/repo/${testRepoId}?tab=reviewers`);
+
+    cy.get('[data-testid="reviewers-table"]').should('contain', testReviewer.username);
+    cy.get('[data-testid="delete-repo-button"]').should('not.exist');
+    cy.get('[data-testid="add-user-btn-authorise"]').should('not.exist');
+    cy.get('[data-testid="reviewers-table"]')
+      .contains('tr', testReviewer.username)
+      .find('button')
+      .should('not.exist');
+  });
+
+  it('Code button shows the proxy clone URL', () => {
+    cy.login('admin', 'admin');
+    cy.visit(`/dashboard/repo/${testRepoId}`);
+
+    cy.get('[data-testid="code-clone-btn"]').click();
+
+    cy.contains(`/github.com/cypress-test/${repoName}.git`).should('be.visible');
+    cy.get('[data-testid="repo-url"]').should('be.visible');
+  });
+
+  it('Delete repo dialog requires the repo name, then navigates to the repo list', () => {
+    const deleteRepoName = `cypress-delete-repo-${runId}`;
+
+    cy.login('admin', 'admin');
+    cy.createTestRepo(
+      'cypress-test',
+      deleteRepoName,
+      `https://github.com/cypress-test/${deleteRepoName}.git`,
+    ).then((repo) => {
+      cy.visit(`/dashboard/repo/${repo._id}`);
+    });
+
+    cy.get('[data-testid="delete-repo-button"]').click();
+    cy.get('[data-testid="delete-repo-dialog"]').should('be.visible');
+    cy.get('[data-testid="delete-repo-confirm-btn"]').should('be.disabled');
+
+    cy.get('#delete-repo-confirm-input').type(deleteRepoName);
+    cy.get('[data-testid="delete-repo-confirm-btn"]').should('not.be.disabled').click();
+
+    cy.url().should('match', /\/dashboard\/repo$/);
+    cy.get('[data-testid="repo-list-view"]').should('be.visible');
+    cy.contains(`cypress-test/${deleteRepoName}`).should('not.exist');
   });
 });

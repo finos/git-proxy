@@ -14,119 +14,121 @@
  * limitations under the License.
  */
 
-/**
- * Repo List - Search, Filter, Pagination
- * Strategy: Create 6+ test repos via API in before(), clean up in after().
- * Pagination tested here only. Search/filter use client-side logic.
- */
-describe('Repo List - Search, Filter, Pagination', () => {
+describe('Repo List - Search, Sort, Pagination', () => {
+  // The list shows 20 repositories per page, so 21 matching repos give exactly two pages.
+  const repoCount = 21;
+  const prefix = `cypress-list-${Date.now()}`;
+  const repoNames = Array.from(
+    { length: repoCount },
+    (_, i) => `${prefix}-${String(i).padStart(2, '0')}`,
+  );
   const createdRepoIds = [];
 
-  function getApiBaseUrl() {
-    return Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
-  }
+  const repoLink = (name) => `a[href^="/dashboard/repo/"]:contains("cypress-test/${name}")`;
 
   before(() => {
     cy.login('admin', 'admin');
-    for (let i = 0; i < 6; i++) {
-      const timestamp = Date.now() + i;
-      cy.request({
-        method: 'POST',
-        url: `${getApiBaseUrl()}/api/v1/repo`,
-        body: {
-          name: `cypress-pagination-repo-${i}`,
-          url: `https://github.com/cypress-test/pagination-repo-${timestamp}.git`,
-          project: 'cypress-test',
+    repoNames.forEach((name) => {
+      cy.createTestRepo('cypress-test', name, `https://github.com/cypress-test/${name}.git`).then(
+        (repo) => {
+          createdRepoIds.push(repo._id);
         },
-        failOnStatusCode: false,
-      }).then((res) => {
-        if (res.status < 400 && res.body._id) {
-          createdRepoIds.push(res.body._id);
-        }
-      });
-    }
-
+      );
+    });
     cy.logout();
   });
 
   after(() => {
+    cy.login('admin', 'admin');
     createdRepoIds.forEach((repoId) => {
       cy.deleteRepo(repoId);
     });
+    cy.logout();
   });
 
   beforeEach(() => {
+    cy.stubScmMetadata();
     cy.login('admin', 'admin');
   });
 
   afterEach(() => {
     cy.logout();
   });
+
   it('Search filters repos by name', () => {
     cy.visit('/dashboard/repo');
 
-    cy.get('[data-testid="search-input"]').should('be.visible');
-    cy.get('[data-testid="search-input"]').find('input').type('cypress-pagination-repo-0');
-    cy.get('[data-testid="search-input"]')
-      .find('input')
-      .should('have.value', 'cypress-pagination-repo-0');
-  });
-  it('Search filters repos by project', () => {
-    cy.visit('/dashboard/repo');
+    cy.get('[data-testid="search"]').find('input').pasteInto(repoNames[3]);
 
-    cy.get('[data-testid="search-input"]').should('be.visible');
-
-    cy.get('[data-testid="search-input"]').find('input').type('cypress-test');
-    cy.get('[data-testid="search-input"]').find('input').should('have.value', 'cypress-test');
+    cy.url().should('include', `filter=${repoNames[3]}`);
+    cy.get('[data-testid="repo-list-view"]').should('contain', '1 repository');
+    cy.get(repoLink(repoNames[3])).should('be.visible');
+    cy.get(repoLink(repoNames[4])).should('not.exist');
   });
+
+  it('Search filters repos by shared prefix', () => {
+    cy.visit(`/dashboard/repo?filter=${prefix}`);
+
+    cy.get('[data-testid="search"]').find('input').should('have.value', prefix);
+    cy.get('[data-testid="repo-list-view"]').should('contain', `${repoCount} repositories`);
+  });
+
   it('Clear search resets to all repos', () => {
-    cy.visit('/dashboard/repo');
+    cy.visit(`/dashboard/repo?filter=${repoNames[0]}`);
+    cy.get('[data-testid="repo-list-view"]').should('contain', '1 repository');
 
-    cy.get('[data-testid="search-input"]').should('be.visible');
+    cy.get('[data-testid="search"]').find('button').click();
 
-    cy.get('[data-testid="search-input"]').find('input').type('unique-filter-string');
-    cy.get('[data-testid="search-input"]')
-      .find('input')
-      .should('have.value', 'unique-filter-string');
-    cy.get('[data-testid="search-input"]').find('input').clear();
-    cy.get('[data-testid="search-input"]').find('input').should('have.value', '');
+    cy.get('[data-testid="search"]').find('input').should('have.value', '');
+    cy.url().should('not.include', 'filter=');
+    cy.get('[data-testid="pagination"]').should('be.visible');
   });
-  it('Filter dropdown sorts by Date Modified, Date Created, Alphabetical', () => {
-    cy.visit('/dashboard/repo');
 
-    cy.get('[data-testid="filter-dropdown"]').click();
+  it('Sort menu orders repos by name in both directions', () => {
+    cy.visit(`/dashboard/repo?filter=${prefix}`);
 
-    cy.get('[data-testid="filter-option-date-modified"]').should('be.visible');
-    cy.get('[data-testid="filter-option-date-created"]').should('be.visible');
-    cy.get('[data-testid="filter-option-alphabetical"]').should('be.visible');
+    cy.get('[data-testid="repo-sort-menu"]').click();
+    cy.get('[role="menuitemradio"]').contains('Name').click();
+    cy.url().should('match', /sort=name-(asc|desc)/);
 
-    cy.get('[data-testid="filter-option-alphabetical"]').click();
+    cy.get('[data-testid="repo-sort-menu"]').click();
+    cy.get('[role="menuitemradio"]').contains('Ascending').click();
+    cy.url().should('include', 'sort=name-asc');
+    cy.get('a[href^="/dashboard/repo/"]').first().should('contain', repoNames[0]);
 
-    cy.get('[data-testid="filter-dropdown"]').should('contain', 'Alphabetical');
+    cy.get('[data-testid="repo-sort-menu"]').click();
+    cy.get('[role="menuitemradio"]').contains('Descending').click();
+    cy.url().should('include', 'sort=name-desc');
+    cy.get('a[href^="/dashboard/repo/"]')
+      .first()
+      .should('contain', repoNames[repoCount - 1]);
   });
+
   it('Pagination renders and navigates between pages', () => {
-    cy.visit('/dashboard/repo');
+    cy.visit(`/dashboard/repo?filter=${prefix}&sort=name-asc`);
 
-    cy.get('[data-testid="search-input"]').should('be.visible');
-    cy.get('[data-testid="pagination-info"]').should('exist');
-    cy.get('[data-testid="pagination-info"]').scrollIntoView();
+    cy.get('[data-testid="pagination"]').should('be.visible');
+    cy.get(repoLink(repoNames[0])).should('be.visible');
+    cy.get(repoLink(repoNames[repoCount - 1])).should('not.exist');
 
-    cy.get('[data-testid="pagination-previous"]').should('be.visible');
-    cy.get('[data-testid="pagination-next"]').should('be.visible');
+    cy.get('[data-testid="pagination"]').contains('Next').click();
 
-    cy.get('[data-testid="pagination-next"]').click();
-    cy.get('[data-testid="pagination-info"]').should('contain', 'Page 2 of');
+    cy.url().should('include', 'page=2');
+    cy.get(repoLink(repoNames[repoCount - 1])).should('be.visible');
+    cy.get(repoLink(repoNames[0])).should('not.exist');
 
-    cy.get('[data-testid="pagination-previous"]').click();
-    cy.get('[data-testid="pagination-info"]').should('contain', 'Page 1 of');
+    cy.get('[data-testid="pagination"]').contains('Previous').click();
+
+    cy.url().should('not.include', 'page=2');
+    cy.get(repoLink(repoNames[0])).should('be.visible');
   });
-  it('Repo rows are clickable and navigate to Repo Details', () => {
-    cy.visit('/dashboard/repo');
 
-    cy.get('[data-testid="search-input"]').should('be.visible');
+  it('Repo rows link to Repo Details', () => {
+    cy.visit(`/dashboard/repo?filter=${repoNames[5]}`);
 
-    cy.get('a[href^="/dashboard/repo/"]').first().click();
+    cy.get(repoLink(repoNames[5])).click();
 
-    cy.url().should('match', /\/dashboard\/repo\/[a-f0-9]+/);
+    cy.url().should('match', /\/dashboard\/repo\/[^/?]+$/);
+    cy.get('[data-testid="repo-header"]').should('contain', repoNames[5]);
   });
 });

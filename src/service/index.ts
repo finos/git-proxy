@@ -26,16 +26,12 @@ import lusca from 'lusca';
 
 import * as config from '../config';
 import * as db from '../db';
-import { serverConfig } from '../config/env';
 import { Proxy } from '../proxy';
 import routes from './routes';
 import { configure } from './passport';
+import { UI_BUILD_PATH } from './urls';
 
 const limiter = rateLimit(config.getRateLimit());
-
-const { GIT_PROXY_UI_PORT: uiPort, GIT_PROXY_HTTPS_UI_PORT: uiHttpsPort } = serverConfig;
-
-const DEFAULT_SESSION_MAX_AGE_HOURS = 12;
 
 const app: Express = express();
 let _httpServer: http.Server | null = null;
@@ -135,29 +131,46 @@ const corsOptions: cors.CorsOptions = {
 };
 
 /**
- * Internal function used to bootstrap the Git Proxy API's express application.
+ * Internal function used to bootstrap GitProxy's API express application.
  * @param {Proxy} proxy A reference to the proxy, used to restart it when necessary.
  * @return {Promise<Express>} the express application
  */
+// Backend sink types that promise a persistent session store. If one of these
+// is active and getSessionStore() returns undefined, express-session would
+// silently fall back to MemoryStore — which loses sessions on restart and is
+// unsafe in any multi-process deployment. Throw loudly instead.
+const PERSISTENT_SESSION_BACKENDS = new Set(['mongo', 'postgres']);
+
 async function createApp(proxy: Proxy): Promise<Express> {
   // configuration of passport is async
   // Before we can bind the routes - we need the passport strategy
   const passport = await configure();
-  const absBuildPath = path.join(__dirname, '../../build');
+  const absBuildPath = UI_BUILD_PATH;
   app.use(cors(corsOptions));
   app.set('trust proxy', 1);
   app.use(limiter);
 
+  const backendType = config.getDatabase().type;
+  if (PERSISTENT_SESSION_BACKENDS.has(backendType)) {
+    await db.ensureSessionStoreReady();
+  }
+  const sessionStore = db.getSessionStore();
+  if (PERSISTENT_SESSION_BACKENDS.has(backendType) && !sessionStore) {
+    throw new Error(
+      `Session store for backend "${backendType}" failed to initialize — refusing to fall back to MemoryStore`,
+    );
+  }
+
   app.use(
     session({
-      store: db.getSessionStore(),
+      store: sessionStore,
       secret: config.getCookieSecret(),
       resave: false,
       saveUninitialized: false,
       cookie: {
         secure: 'auto',
         httpOnly: true,
-        maxAge: (config.getSessionMaxAgeHours() || DEFAULT_SESSION_MAX_AGE_HOURS) * 60 * 60 * 1000,
+        maxAge: config.getSessionMaxAgeHours() * 60 * 60 * 1000,
       },
     }),
   );
@@ -182,9 +195,14 @@ async function createApp(proxy: Proxy): Promise<Express> {
   app.use('/', routes(proxy));
   app.use('/', express.static(absBuildPath));
   app.get('/*path', (_req, res) => {
-    res.sendFile(path.join(`${absBuildPath}/index.html`));
+    res.sendFile(path.join(absBuildPath, 'index.html'));
   });
 
+  if (!fs.existsSync(path.join(absBuildPath, 'index.html'))) {
+    console.error(
+      `UI build not found at ${absBuildPath}. The package may have been built or published incorrectly`,
+    );
+  }
   return app;
 }
 
@@ -201,17 +219,17 @@ async function start(proxy: Proxy) {
   const app = await createApp(proxy);
 
   _httpServer = http.createServer(app);
-  _httpServer.listen(uiPort);
+  _httpServer.listen(config.getUIPort());
 
-  console.log(`Service Listening on ${uiPort}`);
+  console.log(`Service Listening on ${config.getUIPort()}`);
   app.emit('ready');
 
   if (config.getTLSEnabled()) {
     await new Promise<void>((resolve, reject) => {
       const server = https.createServer(getServiceTLSOptions(), app);
       server.on('error', reject);
-      server.listen(uiHttpsPort, () => {
-        console.log(`HTTPS Service Listening on ${uiHttpsPort}`);
+      server.listen(config.getHttpsUIPort(), () => {
+        console.log(`HTTPS Service Listening on ${config.getHttpsUIPort()}`);
         resolve();
       });
       _httpsServer = server;
@@ -230,7 +248,7 @@ async function stop(): Promise<void> {
   if (_httpServer) {
     closePromises.push(
       new Promise((resolve, reject) => {
-        console.log(`Stopping Service Listening on ${uiPort}`);
+        console.log(`Stopping Service Listening on ${config.getUIPort()}`);
         _httpServer!.close((err) => {
           if (err) {
             reject(err);

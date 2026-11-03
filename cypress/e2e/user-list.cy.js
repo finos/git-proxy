@@ -14,42 +14,65 @@
  * limitations under the License.
  */
 
-/**
- * User List (Admin)
- * Strategy: Real API. Tests cover only read access (create/delete UI not implemented).
- */
 describe('User List (Admin)', () => {
-  const nonAdminUser = {
+  const listedUser = {
     username: 'userlist_regular',
     password: 'regular123',
     email: 'userlist_regular@example.com',
-    gitAccount: 'userlist_regular',
   };
 
   before(() => {
     cy.login('admin', 'admin');
-    cy.createUser(
-      nonAdminUser.username,
-      nonAdminUser.password,
-      nonAdminUser.email,
-      nonAdminUser.gitAccount,
-    );
+    cy.createUser(listedUser.username, listedUser.password, listedUser.email);
     cy.logout();
   });
 
   after(() => {
-    cy.deleteTestUser(nonAdminUser.username);
+    cy.login('admin', 'admin');
+    cy.deleteTestUser(listedUser.username);
+    cy.logout();
   });
-  it('Renders list of all users', () => {
+
+  afterEach(() => {
+    cy.logout();
+  });
+
+  it('Renders the list of users', () => {
     cy.login('admin', 'admin');
     cy.visit('/dashboard/admin/user');
 
     cy.get('[data-testid="user-list-table"]').should('be.visible');
-    cy.get('[data-testid="user-list-table"]').contains('admin').should('be.visible');
+    cy.get('[aria-label="View profile for admin"]').should('be.visible');
+    cy.get(`[aria-label="View profile for ${listedUser.username}"]`).should('be.visible');
   });
-  it('Non-admin cannot access user list', () => {
-    cy.login(nonAdminUser.username, nonAdminUser.password);
+
+  it('Search filters users by username', () => {
+    cy.login('admin', 'admin');
     cy.visit('/dashboard/admin/user');
+
+    cy.get('[data-testid="search"]').find('input').pasteInto(listedUser.username);
+
+    cy.url().should('include', `filter=${listedUser.username}`);
+    cy.get('[data-testid="user-list-table"]').within(() => {
+      cy.get(`[aria-label="View profile for ${listedUser.username}"]`).should('be.visible');
+      cy.get('[aria-label="View profile for admin"]').should('not.exist');
+    });
+  });
+
+  it('User rows link to the user profile', () => {
+    cy.login('admin', 'admin');
+    cy.visit('/dashboard/admin/user');
+
+    cy.get(`[aria-label="View profile for ${listedUser.username}"]`).click();
+
+    cy.url().should('include', `/dashboard/user/${listedUser.username}`);
+    cy.get('[data-testid="profile-name"]').should('contain', listedUser.username);
+  });
+
+  it('Non-admin access follows the configured route rules', () => {
+    cy.login(listedUser.username, listedUser.password);
+    cy.visit('/dashboard/admin/user');
+
     cy.url().should('match', /\/(dashboard\/admin\/user|not-authorized|login)/);
   });
 });

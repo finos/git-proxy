@@ -19,30 +19,31 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
     username: 'testuser',
     password: 'user123',
     email: 'testuser@example.com',
-    gitAccount: 'testuser',
+    // Upstream access token, minted in before(); pushes present this, not the password.
+    upstreamToken: '',
   };
 
   const approverUser = {
     username: 'approver',
     password: 'approver123',
     email: 'approver@example.com',
-    gitAccount: 'approver',
   };
 
   before(() => {
     cy.login('admin', 'admin');
 
-    cy.createUser(testUser.username, testUser.password, testUser.email, testUser.gitAccount);
-    cy.createUser(
-      approverUser.username,
-      approverUser.password,
-      approverUser.email,
-      approverUser.gitAccount,
-    );
+    cy.createUser(testUser.username, testUser.password, testUser.email, {
+      'git-server': testUser.username,
+    });
+    cy.createUser(approverUser.username, approverUser.password, approverUser.email);
 
     cy.getTestRepoId().then((repoId) => {
       cy.addUserPushPermission(repoId, testUser.username);
       cy.addUserAuthorisePermission(repoId, approverUser.username);
+    });
+
+    cy.mintUpstreamToken(testUser.username, testUser.password).then((token) => {
+      testUser.upstreamToken = token;
     });
 
     cy.logout();
@@ -63,7 +64,7 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
   describe('Approve flow', () => {
     beforeEach(() => {
       const suffix = `approve-${Date.now()}`;
-      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+      cy.createPush(testUser.username, testUser.upstreamToken, testUser.email, suffix).as('pushId');
     });
 
     it('should approve a pending push via attestation dialog', function () {
@@ -105,7 +106,7 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
   describe('Reject flow', () => {
     beforeEach(() => {
       const suffix = `reject-${Date.now()}`;
-      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+      cy.createPush(testUser.username, testUser.upstreamToken, testUser.email, suffix).as('pushId');
     });
 
     it('should reject a pending push', function () {
@@ -117,7 +118,7 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
       cy.get('[data-testid="push-reject-btn"]').click();
 
       cy.get('[data-testid="push-reject-confirm-btn"]').should('be.disabled');
-      cy.get('#reason').type('Rejecting for test purposes');
+      cy.get('#push-reject-reason').type('Rejecting for test purposes');
 
       cy.get('[data-testid="push-reject-confirm-btn"]').should('not.be.disabled');
       cy.get('[data-testid="push-reject-confirm-btn"]').click();
@@ -137,7 +138,7 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
   describe('Cancel flow', () => {
     beforeEach(() => {
       const suffix = `cancel-${Date.now()}`;
-      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+      cy.createPush(testUser.username, testUser.upstreamToken, testUser.email, suffix).as('pushId');
     });
 
     it('should cancel a pending push', function () {
@@ -161,7 +162,7 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
   describe('Negative: unauthorized approve', () => {
     beforeEach(() => {
       const suffix = `neg-approve-${Date.now()}`;
-      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+      cy.createPush(testUser.username, testUser.upstreamToken, testUser.email, suffix).as('pushId');
     });
 
     it('should not change push state when user lacks canAuthorise permission', function () {
@@ -190,7 +191,7 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
   describe('Negative: unauthorized reject', () => {
     beforeEach(() => {
       const suffix = `neg-reject-${Date.now()}`;
-      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+      cy.createPush(testUser.username, testUser.upstreamToken, testUser.email, suffix).as('pushId');
     });
 
     it('should not change push state when user lacks canAuthorise permission', function () {
@@ -209,7 +210,7 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
   describe('Attestation dialog cancel does not cancel the push', () => {
     beforeEach(() => {
       const suffix = `dialog-cancel-${Date.now()}`;
-      cy.createPush(testUser.username, testUser.password, testUser.email, suffix).as('pushId');
+      cy.createPush(testUser.username, testUser.upstreamToken, testUser.email, suffix).as('pushId');
     });
 
     it('should close attestation dialog without affecting push status', function () {

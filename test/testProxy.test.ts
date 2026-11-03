@@ -54,6 +54,10 @@ vi.mock('../src/config', () => ({
   getTLSCertPemPath: vi.fn(),
   getPlugins: vi.fn(),
   getAuthorisedList: vi.fn(),
+  getSSHConfig: vi.fn(() => ({ enabled: false })),
+  getMaxPackSizeBytes: vi.fn(() => 500 * 1024 * 1024),
+  getServerPort: vi.fn(() => 8000),
+  getHttpsServerPort: vi.fn(() => 8443),
 }));
 
 vi.mock('../src/db', () => ({
@@ -61,6 +65,7 @@ vi.mock('../src/db', () => ({
   createRepo: vi.fn(),
   addUserCanPush: vi.fn(),
   addUserCanAuthorise: vi.fn(),
+  runMigrations: vi.fn(),
 }));
 
 vi.mock('../src/plugin', () => ({
@@ -69,13 +74,6 @@ vi.mock('../src/plugin', () => ({
 
 vi.mock('../src/proxy/chain', () => ({
   default: {},
-}));
-
-vi.mock('../src/config/env', () => ({
-  serverConfig: {
-    GIT_PROXY_SERVER_PORT: 8001,
-    GIT_PROXY_HTTPS_SERVER_PORT: 8444,
-  },
 }));
 
 vi.mock('fs', async (importOriginal) => {
@@ -181,7 +179,10 @@ describe('Proxy', () => {
     });
     vi.mocked(db.addUserCanPush).mockResolvedValue(undefined);
     vi.mocked(db.addUserCanAuthorise).mockResolvedValue(undefined);
-    vi.mocked(plugin.PluginLoader).mockReturnValue(mockPluginLoader as any);
+    vi.mocked(db.runMigrations).mockResolvedValue(undefined);
+    vi.mocked(plugin.PluginLoader).mockImplementation(function () {
+      return mockPluginLoader as any;
+    });
     vi.mocked(fs.readFileSync).mockReturnValue(Buffer.from('mock-cert'));
   });
 

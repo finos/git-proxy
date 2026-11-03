@@ -18,12 +18,35 @@ import bcrypt from 'bcryptjs';
 import { IVerifyOptions, Strategy as LocalStrategy } from 'passport-local';
 import type { PassportStatic } from 'passport';
 import * as db from '../../db';
-
+import type { DefaultLocalUser } from './types';
 export const type = 'local';
+
+const DEFAULT_LOCAL_USERS: DefaultLocalUser[] = [
+  {
+    username: 'admin',
+    password: 'admin',
+    email: 'admin@place.com',
+    admin: true,
+  },
+  {
+    username: 'user',
+    password: 'user',
+    email: 'user@place.com',
+    admin: false,
+  },
+];
+
+const isProduction = (): boolean => process.env.NODE_ENV === 'production';
+const isKnownDefaultCredentialAttempt = (username: string, password: string): boolean =>
+  DEFAULT_LOCAL_USERS.some(
+    (defaultUser) =>
+      defaultUser.username.toLowerCase() === username.toLowerCase() &&
+      defaultUser.password === password,
+  );
 
 // Dynamic import to always get the current db module instance
 // This is necessary for test environments where modules may be reset
-const getDb = () => import('../../db');
+const getDb = () => import('../../db/index.js');
 
 export const configure = async (passport: PassportStatic): Promise<PassportStatic> => {
   passport.use(
@@ -43,6 +66,19 @@ export const configure = async (passport: PassportStatic): Promise<PassportStati
           const passwordCorrect = await bcrypt.compare(password, user.password ?? '');
           if (!passwordCorrect) {
             return done(null, undefined, { message: 'Incorrect password.' });
+          }
+
+          // Force password reset when using default accounts in production
+          if (
+            isProduction() &&
+            isKnownDefaultCredentialAttempt(username, password) &&
+            !user.mustChangePassword
+          ) {
+            user.mustChangePassword = true;
+            await dbModule.updateUser({
+              username: user.username,
+              mustChangePassword: true,
+            });
           }
 
           return done(null, user);
@@ -78,15 +114,15 @@ export const createDefaultAdmin = async () => {
     username: string,
     password: string,
     email: string,
-    type: string,
     isAdmin: boolean,
   ) => {
     const user = await db.findUser(username);
     if (!user) {
-      await db.createUser(username, password, email, type, isAdmin);
+      await db.createUser(username, password, email, isAdmin, '', isProduction());
     }
   };
 
-  await createIfNotExists('admin', 'admin', 'admin@place.com', 'none', true);
-  await createIfNotExists('user', 'user', 'user@place.com', 'none', false);
+  for (const u of DEFAULT_LOCAL_USERS) {
+    await createIfNotExists(u.username, u.password, u.email, u.admin);
+  }
 };

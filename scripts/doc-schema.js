@@ -18,7 +18,7 @@ const { execFileSync } = require('child_process');
 const { writeFileSync, readFileSync, mkdtempSync } = require('fs');
 const { tmpdir } = require('os');
 const { sep } = require('path');
-const JSFH_CONFIG = './jsfh.config.json';
+const JSFH_CONFIG = './scripts/jsfh.config.json';
 const SCHEMA_FILE = './config.schema.json';
 const OUTPUT_PATH = './website/docs/configuration/reference.mdx';
 

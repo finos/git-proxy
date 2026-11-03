@@ -157,6 +157,40 @@ describe('gitleaks', () => {
       expect(result.steps[0].logs[2]).toContain('gitleaks - Gitleaks output: No leaks found');
     });
 
+    it('should pass --log-opts as one argument, unquoted and without a shell', async () => {
+      // With shell:true, Node joins command and args into a single command line
+      // for the platform shell. cmd.exe does not treat ' as a quote and does
+      // treat ^ as an escape, so the POSIX-quoted form arrived as
+      //   ["--log-opts='--first-parent", "abc123..def456'"]
+      // on Windows: split in two, and the ^ silently dropped. Dropping the ^
+      // narrows the revision range by one commit, so the first commit of the
+      // push goes unscanned.
+      vi.mocked(getAPIs).mockReturnValue({ gitleaks: { enabled: true } });
+
+      const mockChild = (exitCode: number, stdout: string, stderr: string) => ({
+        on: (event: string, cb: (exitCode: number) => void) => {
+          if (event === 'close') cb(exitCode);
+          return { stdout: { on: () => {} }, stderr: { on: () => {} } };
+        },
+        stdout: { on: (_: string, cb: (out: string) => void) => cb(stdout) },
+        stderr: { on: (_: string, cb: (err: string) => void) => cb(stderr) },
+      });
+
+      vi.mocked(spawn)
+        .mockReturnValueOnce(mockChild(0, 'rootcommit123', ''))
+        .mockReturnValueOnce(mockChild(0, '', 'No leaks found'));
+
+      await exec(req, action);
+
+      // call 0 is `git rev-list`, call 1 is `gitleaks`
+      const [command, args, opts] = vi.mocked(spawn).mock.calls[1];
+
+      expect(command).toBe('gitleaks');
+      expect(args).toContain('--log-opts=--first-parent abc123^..def456');
+      expect((args as string[]).some((arg) => arg.includes("'"))).toBe(false);
+      expect((opts as { shell?: boolean })?.shell).not.toBe(true);
+    });
+
     it('should handle scan with findings', async () => {
       vi.mocked(getAPIs).mockReturnValue({ gitleaks: { enabled: true } });
 

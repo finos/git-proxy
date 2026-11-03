@@ -45,8 +45,16 @@ vi.mock('../../../src/db/helper', () => ({
 }));
 
 describe('MongoDB Push Handler', async () => {
-  const { getPushes, getPush, deletePush, writeAudit, authorise, reject, cancel } =
-    await import('../../../src/db/mongo/pushes');
+  const {
+    getPushes,
+    getPushesForUserProfile,
+    getPush,
+    deletePush,
+    writeAudit,
+    authorise,
+    reject,
+    cancel,
+  } = await import('../../../src/db/mongo/pushes');
 
   const TEST_PUSH = {
     id: 'test-push-123',
@@ -99,6 +107,7 @@ describe('MongoDB Push Handler', async () => {
             _id: 0,
             id: 1,
             allowPush: 1,
+            attestation: 1,
             authorised: 1,
             blocked: 1,
             blockedMessage: 1,
@@ -111,11 +120,13 @@ describe('MongoDB Push Handler', async () => {
             method: 1,
             project: 1,
             rejected: 1,
+            rejection: 1,
             repo: 1,
             repoName: 1,
             timestamp: 1,
             type: 1,
             url: 1,
+            userEmail: 1,
           },
           sort: {
             timestamp: -1,
@@ -140,6 +151,37 @@ describe('MongoDB Push Handler', async () => {
         }),
       );
       expect(result).toEqual(mockPushes);
+    });
+  });
+
+  describe('getPushesForUserProfile', () => {
+    it('should get pushes for user profile with $or filter', async () => {
+      mockFindDocuments.mockResolvedValue([TEST_PUSH]);
+
+      const result = await getPushesForUserProfile(['a@example.com'], 'bob');
+
+      expect(mockFindDocuments).toHaveBeenCalledWith(
+        'pushes',
+        expect.objectContaining({
+          type: 'push',
+          $or: expect.arrayContaining([
+            { userEmail: { $in: ['a@example.com'] } },
+            {
+              'attestation.reviewer.username': expect.any(RegExp),
+            },
+          ]),
+        }),
+        expect.objectContaining({
+          sort: { timestamp: -1 },
+        }),
+      );
+      const filter = mockFindDocuments.mock.calls[0][1] as {
+        $or: Array<Record<string, unknown>>;
+      };
+      const reviewer = filter.$or[1]['attestation.reviewer.username'] as RegExp;
+      expect(reviewer.test('Bob')).toBe(true);
+      expect(reviewer.test('alice')).toBe(false);
+      expect(result).toEqual([TEST_PUSH]);
     });
   });
 

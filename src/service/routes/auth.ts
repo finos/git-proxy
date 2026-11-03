@@ -15,8 +15,9 @@
  */
 
 import express, { Request, Response, NextFunction } from 'express';
+import bcrypt from 'bcryptjs';
 import { getPassport, authStrategies } from '../passport';
-import { getAuthMethods } from '../../config';
+import { getAuthMethods, getUIHost, getUIPort } from '../../config';
 
 import * as db from '../../db';
 import * as passportLocal from '../passport/local';
@@ -24,15 +25,38 @@ import * as passportAD from '../passport/activeDirectory';
 
 import { User } from '../../db/types';
 import { AuthenticationElement } from '../../config/generated/config';
-
-import { isAdminUser, toPublicUser } from './utils';
+import { isAdminUser, mustChangePassword, toPublicUser } from './utils';
 import { handleErrorAndLog } from '../../utils/errors';
+import { getProviderByName } from '../../proxy/processors/push-action/tokenIdentity';
 
 const router = express.Router();
 const passport = getPassport();
 
-const { GIT_PROXY_UI_HOST: uiHost = 'http://localhost', GIT_PROXY_UI_PORT: uiPort = 3000 } =
-  process.env;
+const PASSWORD_MIN_LENGTH = 8;
+const PASSWORD_CHANGE_ALLOWED_PATHS = new Set([
+  '/',
+  '/config',
+  '/login',
+  '/logout',
+  '/profile',
+  '/change-password',
+  '/openidconnect',
+  '/openidconnect/callback',
+]);
+
+router.use((req: Request, res: Response, next: NextFunction) => {
+  if (!mustChangePassword(req.user)) {
+    return next();
+  }
+
+  if (PASSWORD_CHANGE_ALLOWED_PATHS.has(req.path)) {
+    return next();
+  }
+
+  return res.status(428).send({
+    message: 'Password change required before accessing this endpoint',
+  });
+});
 
 router.get('/', (_req: Request, res: Response) => {
   res.status(200).json({
@@ -137,7 +161,7 @@ router.get('/openidconnect/callback', (req: Request, res: Response, next: NextFu
           return res.status(500).end();
         }
         console.log('Logged in successfully. User:', user);
-        return res.redirect(`${uiHost}:${uiPort}/dashboard/profile`);
+        return res.redirect(`${getUIHost()}:${getUIPort()}/dashboard/profile`);
       });
     },
   )(req, res, next);
@@ -149,6 +173,85 @@ router.post('/logout', (req: Request, res: Response, next: NextFunction) => {
   });
   res.clearCookie('connect.sid');
   res.send({ isAuth: req.isAuthenticated(), user: req.user });
+});
+
+router.post('/change-password', async (req: Request, res: Response) => {
+  if (!req.user) {
+    res
+      .status(401)
+      .send({
+        message: 'Not logged in',
+      })
+      .end();
+    return;
+  }
+
+  const { currentPassword, newPassword } = req.body ?? {};
+  if (
+    typeof currentPassword !== 'string' ||
+    typeof newPassword !== 'string' ||
+    currentPassword.trim().length === 0 ||
+    newPassword.trim().length < PASSWORD_MIN_LENGTH
+  ) {
+    res
+      .status(400)
+      .send({
+        message: `currentPassword and newPassword are required, and newPassword must be at least ${PASSWORD_MIN_LENGTH} characters`,
+      })
+      .end();
+    return;
+  }
+
+  if (currentPassword === newPassword) {
+    res
+      .status(400)
+      .send({
+        message: 'newPassword must be different from currentPassword',
+      })
+      .end();
+    return;
+  }
+
+  try {
+    const user = await db.findUser((req.user as User).username);
+    if (!user) {
+      res.status(404).send({ message: 'User not found' }).end();
+      return;
+    }
+
+    if (!user.password) {
+      res
+        .status(400)
+        .send({ message: 'Password changes are not supported for this account' })
+        .end();
+      return;
+    }
+
+    const currentPasswordCorrect = await bcrypt.compare(currentPassword, user.password ?? '');
+    if (!currentPasswordCorrect) {
+      res.status(401).send({ message: 'Current password is incorrect' }).end();
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await db.updateUser({
+      username: user.username,
+      password: hashedPassword,
+      mustChangePassword: false,
+    });
+
+    (req.user as User).mustChangePassword = false;
+
+    res.status(200).send({ message: 'Password updated successfully' }).end();
+  } catch (error: unknown) {
+    const msg = handleErrorAndLog(error, 'Failed to update password');
+    res
+      .status(500)
+      .send({
+        message: msg,
+      })
+      .end();
+  }
 });
 
 router.get('/profile', async (req: Request, res: Response) => {
@@ -171,67 +274,46 @@ router.get('/profile', async (req: Request, res: Response) => {
   res.send(toPublicUser(userVal));
 });
 
-router.post('/gitAccount', async (req: Request, res: Response) => {
+router.post('/scm-identity', async (req: Request, res: Response) => {
   if (!req.user) {
-    res
-      .status(401)
-      .send({
-        message: 'Not logged in',
-      })
-      .end();
+    res.status(401).send({ message: 'Not logged in' }).end();
     return;
   }
 
   try {
-    let username =
-      req.body.username == null || req.body.username === 'undefined'
-        ? req.body.id
-        : req.body.username;
-    username = username?.split('@')[0];
+    const { provider, login } = req.body as { provider?: string; login?: string | null };
+    const username: string = req.body.username || (req.user as User).username;
 
-    if (!username) {
+    if (!provider || typeof provider !== 'string') {
+      res.status(400).send({ message: 'Missing provider. SCM identity not updated' }).end();
+      return;
+    }
+
+    if (!getProviderByName(provider)) {
       res
         .status(400)
-        .send({
-          message: 'Missing username. Git account not updated',
-        })
+        .send({ message: `Unknown SCM provider '${provider}'. SCM identity not updated` })
         .end();
       return;
     }
 
     const reqUser = await db.findUser((req.user as User).username);
     if (username !== reqUser?.username && !reqUser?.admin) {
-      res
-        .status(403)
-        .send({
-          message: 'Must be an admin to update a different account',
-        })
-        .end();
+      res.status(403).send({ message: 'Must be an admin to update a different account' }).end();
       return;
     }
 
     const user = await db.findUser(username);
     if (!user) {
-      res
-        .status(404)
-        .send({
-          message: 'User not found',
-        })
-        .end();
+      res.status(404).send({ message: 'User not found' }).end();
       return;
     }
 
-    user.gitAccount = req.body.gitAccount;
-    db.updateUser(user);
-    res.status(200).end();
+    await db.setUserScmIdentity(user.username, provider, login ?? null);
+    return res.status(200).send({ message: 'SCM identity updated successfully' }).end();
   } catch (error: unknown) {
-    const msg = handleErrorAndLog(error, 'Failed to update git account');
-    res
-      .status(500)
-      .send({
-        message: msg,
-      })
-      .end();
+    const msg = handleErrorAndLog(error, 'Failed to update SCM identity');
+    return res.status(500).send({ message: msg }).end();
   }
 });
 
@@ -247,20 +329,33 @@ router.post('/create-user', async (req: Request, res: Response) => {
   }
 
   try {
-    const { username, password, email, gitAccount, admin: isAdmin = false } = req.body;
+    const { username, password, email, scmIdentities = {}, admin: isAdmin = false } = req.body;
 
-    if (!username || !password || !email || !gitAccount) {
+    if (!username || !password || !email) {
       res
         .status(400)
         .send({
-          message:
-            'Missing required fields: username, password, email, and gitAccount are required',
+          message: 'Missing required fields: username, password, and email are required',
         })
         .end();
       return;
     }
 
-    await db.createUser(username, password, email, gitAccount, isAdmin);
+    if (
+      typeof scmIdentities !== 'object' ||
+      Array.isArray(scmIdentities) ||
+      Object.entries(scmIdentities).some(
+        ([provider, login]) => typeof login !== 'string' || !getProviderByName(provider),
+      )
+    ) {
+      res
+        .status(400)
+        .send({ message: 'scmIdentities must map configured provider names to account names' })
+        .end();
+      return;
+    }
+
+    await db.createUser(username, password, email, isAdmin, '', false, scmIdentities);
     res
       .status(201)
       .send({
@@ -277,6 +372,11 @@ router.post('/create-user', async (req: Request, res: Response) => {
       })
       .end();
   }
+});
+
+router.get('/csrf-token', (req: Request, res: Response) => {
+  console.log('req.user', req.user);
+  res.send({ csrfToken: (req as any).csrfToken() });
 });
 
 export default { router, loginSuccessHandler };

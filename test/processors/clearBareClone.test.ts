@@ -19,10 +19,12 @@ import fs from 'fs';
 import { exec as clearBareClone } from '../../src/proxy/processors/post-processor/clearBareClone';
 import { exec as pullRemote } from '../../src/proxy/processors/push-action/pullRemote';
 import { Action } from '../../src/proxy/actions/Action';
+import { PullRemoteBase } from '../../src/proxy/processors/push-action/PullRemoteBase';
 
 const actionId = '123__456';
 const timestamp = Date.now();
 const remoteFolder = `./.remote`;
+const checkoutFolder = `${remoteFolder}/${PullRemoteBase.checkoutDirName(actionId)}`;
 
 describe('clear local clones', () => {
   beforeAll(() => {
@@ -46,11 +48,11 @@ describe('clear local clones', () => {
       action,
     );
 
-    expect(fs.existsSync(`${remoteFolder}/${actionId}`)).toBe(true);
+    expect(fs.existsSync(checkoutFolder)).toBe(true);
 
     action = await clearBareClone(null, action);
 
-    expect(fs.existsSync(`${remoteFolder}/${actionId}`)).toBe(false);
+    expect(fs.existsSync(checkoutFolder)).toBe(false);
   }, 20000);
 
   afterAll(() => {

@@ -15,22 +15,44 @@
  */
 
 import { Request } from 'express';
+import path from 'path';
+import fs from 'fs';
 
-import { serverConfig } from '../config/env';
 import * as config from '../config';
 
-const { GIT_PROXY_SERVER_PORT: PROXY_HTTP_PORT, GIT_PROXY_UI_PORT: UI_PORT } = serverConfig;
+const normaliseProtocol = (protocol: string): string => {
+  if (protocol === 'ssh') return 'https';
+  return protocol || 'https';
+};
 
 export const getProxyURL = (req: Request): string => {
   return (
     config.getDomains().proxy ??
-    `${req.protocol}://${req.headers.host}`.replace(`:${UI_PORT}`, `:${PROXY_HTTP_PORT}`)
+    `${normaliseProtocol(req?.protocol)}://${req.headers.host}`.replace(
+      `:${config.getUIPort()}`,
+      `:${config.getServerPort()}`,
+    )
   );
 };
 
 export const getServiceUIURL = (req: Request): string => {
   return (
     config.getDomains().service ??
-    `${req.protocol}://${req.headers.host}`.replace(`:${PROXY_HTTP_PORT}`, `:${UI_PORT}`)
+    `${normaliseProtocol(req?.protocol)}://${req.headers.host}`.replace(
+      `:${config.getServerPort()}`,
+      `:${config.getUIPort()}`,
+    )
   );
 };
+
+function findPackageRoot(from: string = __dirname): string {
+  let dir = from;
+  for (;;) {
+    if (fs.existsSync(path.join(dir, 'package.json'))) return dir;
+    const parent = path.dirname(dir);
+    if (parent === dir) throw new Error('Could not locate GitProxy package root');
+    dir = parent;
+  }
+}
+
+export const UI_BUILD_PATH = path.join(findPackageRoot(), 'dist', 'build');

@@ -17,16 +17,77 @@
 import { existsSync, readFileSync } from 'fs';
 
 import defaultSettings from '../../proxy.config.json';
-import { GitProxyConfig, Convert } from './generated/config';
+import { GitProxyConfig, Convert, SCMProvider, AdConfig, OidcConfig } from './generated/config';
 import { ConfigLoader } from './ConfigLoader';
 import { Configuration } from './types';
 import { serverConfig } from './env';
 import { getConfigFile } from './file';
+import { GIGABYTE, MEGABYTE } from '../constants';
 import { validateConfig } from './validators';
+import { getDeprecatedConfigWarnings } from './deprecatedFields';
 import { handleErrorAndLog, handleErrorAndThrow } from '../utils/errors';
 
+export { setConfigFile, getConfigFile, validate } from './file';
+
+// Deprecated compatibility fields are still optional because the defaults do not set them.
+type OptionalTopLevelConfigKey = 'proxyUrl' | 'sslCertPemPath' | 'sslKeyPemPath';
+type RequiredTopLevelConfigKey = Exclude<keyof GitProxyConfig, OptionalTopLevelConfigKey>;
+
+export type FullGitProxyConfig = Required<Omit<GitProxyConfig, OptionalTopLevelConfigKey>> &
+  Pick<GitProxyConfig, OptionalTopLevelConfigKey>;
+
+const REQUIRED_TOP_LEVEL_CONFIG_KEYS = [
+  'api',
+  'apiAuthentication',
+  'attestationConfig',
+  'authentication',
+  'authorisedList',
+  'commitConfig',
+  'configurationSources',
+  'contactEmail',
+  'cookieSecret',
+  'csrfProtection',
+  'domains',
+  'httpsServerPort',
+  'httpsUiPort',
+  'limits',
+  'plugins',
+  'privateOrganizations',
+  'rateLimit',
+  'scmProviders',
+  'serverPort',
+  'sessionMaxAgeHours',
+  'sidebandProgress',
+  'sink',
+  'ssh',
+  'tempPassword',
+  'tls',
+  'uiHost',
+  'uiPort',
+  'uiRouteAuth',
+  'upstreamProxy',
+  'urlShortener',
+] as const satisfies readonly RequiredTopLevelConfigKey[];
+
+type MissingRequiredTopLevelConfigKeys = Exclude<
+  RequiredTopLevelConfigKey,
+  (typeof REQUIRED_TOP_LEVEL_CONFIG_KEYS)[number]
+>;
+type AssertNever<T extends never> = T;
+type _RequiredTopLevelConfigKeysAreExhaustive = AssertNever<MissingRequiredTopLevelConfigKeys>;
+
+export function assertHasRequiredTopLevelConfig(
+  config: GitProxyConfig,
+): asserts config is FullGitProxyConfig {
+  const missingKeys = REQUIRED_TOP_LEVEL_CONFIG_KEYS.filter((key) => config[key] === undefined);
+
+  if (missingKeys.length > 0) {
+    throw new Error(`Missing required top-level configuration values: ${missingKeys.join(', ')}`);
+  }
+}
+
 // Cache for current configuration
-let _currentConfig: GitProxyConfig | null = null;
+let _currentConfig: FullGitProxyConfig | null = null;
 let _configLoader: ConfigLoader | null = null;
 
 // Function to invalidate cache - useful for testing
@@ -56,10 +117,26 @@ function cleanUndefinedValues(obj: any): any {
 }
 
 /**
- * Load and merge default + user configuration with QuickType validation
- * @return {GitProxyConfig} The merged and validated configuration
+ * Resolve a numeric server setting, giving precedence to the environment
+ * variable (when set) over the user config file and then the default config,
+ * mirroring the handling of GIT_PROXY_COOKIE_SECRET.
  */
-function loadFullConfiguration(): GitProxyConfig {
+function resolveServerPort(
+  envValue: string | undefined,
+  userValue: number | undefined,
+  defaultValue: number | undefined,
+): number | undefined {
+  if (envValue !== undefined) {
+    return Number(envValue);
+  }
+  return userValue ?? defaultValue;
+}
+
+/**
+ * Load and merge default + user configuration with QuickType validation
+ * @return {FullGitProxyConfig} The merged and validated configuration
+ */
+function loadFullConfiguration(): FullGitProxyConfig {
   if (_currentConfig) {
     return _currentConfig;
   }
@@ -84,6 +161,10 @@ function loadFullConfiguration(): GitProxyConfig {
     }
   }
 
+  for (const message of getDeprecatedConfigWarnings(userSettings)) {
+    console.warn(message);
+  }
+
   _currentConfig = mergeConfigurations(defaultConfig, userSettings);
 
   if (!validateConfig(_currentConfig)) {
@@ -102,12 +183,12 @@ function loadFullConfiguration(): GitProxyConfig {
  * Merge configurations with environment variable overrides
  * @param {GitProxyConfig} defaultConfig - The default configuration
  * @param {Partial<GitProxyConfig>} userSettings - User-provided configuration overrides
- * @return {GitProxyConfig} The merged configuration
+ * @return {FullGitProxyConfig} The merged configuration
  */
 function mergeConfigurations(
   defaultConfig: GitProxyConfig,
   userSettings: Partial<GitProxyConfig>,
-): GitProxyConfig {
+): FullGitProxyConfig {
   // Special handling for TLS configuration when legacy fields are used
   let tlsConfig = userSettings.tls || defaultConfig.tls;
 
@@ -121,17 +202,27 @@ function mergeConfigurations(
     };
   }
 
-  return {
+  const config = {
     ...defaultConfig,
     ...userSettings,
     // Deep merge for specific objects
     api: userSettings.api ? cleanUndefinedValues(userSettings.api) : defaultConfig.api,
     domains: { ...defaultConfig.domains, ...userSettings.domains },
+    limits:
+      defaultConfig.limits || userSettings.limits
+        ? { ...(defaultConfig.limits ?? {}), ...(userSettings.limits ?? {}) }
+        : undefined,
     commitConfig: { ...defaultConfig.commitConfig, ...userSettings.commitConfig },
     attestationConfig: { ...defaultConfig.attestationConfig, ...userSettings.attestationConfig },
     rateLimit: userSettings.rateLimit || defaultConfig.rateLimit,
     tls: tlsConfig,
     tempPassword: { ...defaultConfig.tempPassword, ...userSettings.tempPassword },
+    ssh: {
+      ...defaultConfig.ssh,
+      ...userSettings.ssh,
+      // Ensure enabled is always a boolean
+      enabled: userSettings.ssh?.enabled ?? defaultConfig.ssh?.enabled ?? false,
+    },
     // Preserve legacy SSL fields
     sslKeyPemPath: userSettings.sslKeyPemPath || defaultConfig.sslKeyPemPath,
     sslCertPemPath: userSettings.sslCertPemPath || defaultConfig.sslCertPemPath,
@@ -140,7 +231,32 @@ function mergeConfigurations(
       serverConfig.GIT_PROXY_COOKIE_SECRET ||
       userSettings.cookieSecret ||
       defaultConfig.cookieSecret,
+    // Server settings: environment variable takes precedence over the config file.
+    serverPort: resolveServerPort(
+      serverConfig.GIT_PROXY_SERVER_PORT,
+      userSettings.serverPort,
+      defaultConfig.serverPort,
+    ),
+    httpsServerPort: resolveServerPort(
+      serverConfig.GIT_PROXY_HTTPS_SERVER_PORT,
+      userSettings.httpsServerPort,
+      defaultConfig.httpsServerPort,
+    ),
+    uiHost: serverConfig.GIT_PROXY_UI_HOST || userSettings.uiHost || defaultConfig.uiHost,
+    uiPort: resolveServerPort(
+      serverConfig.GIT_PROXY_UI_PORT,
+      userSettings.uiPort,
+      defaultConfig.uiPort,
+    ),
+    httpsUiPort: resolveServerPort(
+      serverConfig.GIT_PROXY_HTTPS_UI_PORT,
+      userSettings.httpsUiPort,
+      defaultConfig.httpsUiPort,
+    ),
   };
+
+  assertHasRequiredTopLevelConfig(config);
+  return config;
 }
 
 // Get configured proxy URL
@@ -149,10 +265,52 @@ export const getProxyUrl = (): string | undefined => {
   return config.proxyUrl;
 };
 
+/**
+ * Redacts the userinfo (credentials) from a proxy URL for safe logging.
+ * e.g. http://user:pass@proxy.corp.local:8080 → http://<redacted>@proxy.corp.local:8080
+ *
+ * WARNING: proxyUrl may contain plaintext credentials in the userinfo portion.
+ * Never log a raw proxy URL — always pass it through this helper first.
+ */
+export const redactProxyUrl = (url: string): string => {
+  return url.replace(/^(https?:\/\/)[^@]+@/, '$1<redacted>@');
+};
+
+// Get upstream proxy configuration
+export const getUpstreamProxyConfig = () => {
+  const config = loadFullConfiguration();
+  return config.upstreamProxy || {};
+};
+
 // Gets a list of authorised repositories
 export const getAuthorisedList = () => {
   const config = loadFullConfiguration();
-  return config.authorisedList || [];
+  return config.authorisedList;
+};
+
+// Get the UI/service HTTP port
+export const getUIPort = (): number => {
+  return loadFullConfiguration().uiPort;
+};
+
+// Get the proxy HTTP server port
+export const getServerPort = (): number => {
+  return loadFullConfiguration().serverPort;
+};
+
+// Get the proxy HTTPS server port
+export const getHttpsServerPort = (): number => {
+  return loadFullConfiguration().httpsServerPort;
+};
+
+// Get the UI host
+export const getUIHost = (): string => {
+  return loadFullConfiguration().uiHost;
+};
+
+// Get the UI/service HTTPS port
+export const getHttpsUIPort = (): number => {
+  return loadFullConfiguration().httpsUiPort;
 };
 
 // Gets a list of authorised repositories
@@ -164,13 +322,26 @@ export const getTempPasswordConfig = () => {
 // Gets the configured data sink, defaults to filesystem
 export const getDatabase = () => {
   const config = loadFullConfiguration();
-  const databases = config.sink || [];
+  const databases = config.sink;
 
   for (const db of databases) {
     if (db.enabled) {
-      // if mongodb is configured and connection string unspecified, fallback to env var
-      if (db.type === 'mongo' && !db.connectionString) {
-        db.connectionString = serverConfig.GIT_PROXY_MONGO_CONNECTION_STRING;
+      if (db.type === 'mongo') {
+        const connectionString =
+          serverConfig.GIT_PROXY_MONGO_CONNECTION_STRING || db.connectionString;
+        if (!connectionString) {
+          throw new Error(
+            'MongoDB connection string is required: set GIT_PROXY_MONGO_CONNECTION_STRING or sink.connectionString',
+          );
+        }
+        return { ...db, connectionString };
+      }
+      // The postgres connection string follows the same precedence as GitProxy's
+      // other environment variable overrides: env var, then user config, then the
+      // default config. The default config ships a connectionString, so a
+      // fallback-only env var would never apply.
+      if (db.type === 'postgres' && serverConfig.GIT_PROXY_POSTGRES_CONNECTION_STRING) {
+        db.connectionString = serverConfig.GIT_PROXY_POSTGRES_CONNECTION_STRING;
       }
       return db;
     }
@@ -187,7 +358,7 @@ export const getDatabase = () => {
  */
 export const getAuthMethods = () => {
   const config = loadFullConfiguration();
-  const authSources = config.authentication || [];
+  const authSources = config.authentication;
 
   const enabledAuthMethods = authSources.filter((auth) => auth.enabled);
 
@@ -206,7 +377,7 @@ export const getAuthMethods = () => {
  */
 export const getAPIAuthMethods = () => {
   const config = loadFullConfiguration();
-  const apiAuthSources = config.apiAuthentication || [];
+  const apiAuthSources = config.apiAuthentication;
 
   return apiAuthSources.filter((auth: { enabled: any }) => auth.enabled);
 };
@@ -215,6 +386,48 @@ export const getAPIAuthMethods = () => {
 export const getAuthentication = () => {
   const authMethods = getAuthMethods();
   return authMethods[0]; // Return first enabled method for backward compatibility
+};
+
+/**
+ * Resolve the Active Directory bind password.
+ *
+ * A non-empty GIT_PROXY_LDAP_PASSWORD environment variable takes precedence over
+ * the config file value, allowing the secret to be injected at runtime from a
+ * secret store and kept out of the config file. The schema no longer requires the
+ * config field, so an enabled Active Directory method must supply the password
+ * from one of the two sources; otherwise this throws.
+ * @param {AdConfig} adConfig The Active Directory configuration
+ * @return {string} The resolved, non-empty password
+ */
+export const getADPassword = (adConfig: AdConfig): string => {
+  const password = serverConfig.GIT_PROXY_LDAP_PASSWORD || adConfig.password;
+  if (!password) {
+    throw new Error(
+      'Active Directory password is required: set the GIT_PROXY_LDAP_PASSWORD environment variable or authentication adConfig.password',
+    );
+  }
+  return password;
+};
+
+/**
+ * Resolve the OIDC client secret.
+ *
+ * A non-empty GIT_PROXY_OIDC_CLIENT_SECRET environment variable takes precedence
+ * over the config file value, allowing the secret to be injected at runtime from a
+ * secret store and kept out of the config file. The schema no longer requires the
+ * config field, so an enabled OIDC method must supply the client secret from one of
+ * the two sources; otherwise this throws.
+ * @param {OidcConfig} oidcConfig The OIDC configuration
+ * @return {string} The resolved, non-empty client secret
+ */
+export const getOIDCClientSecret = (oidcConfig: OidcConfig): string => {
+  const clientSecret = serverConfig.GIT_PROXY_OIDC_CLIENT_SECRET || oidcConfig.clientSecret;
+  if (!clientSecret) {
+    throw new Error(
+      'OIDC client secret is required: set the GIT_PROXY_OIDC_CLIENT_SECRET environment variable or authentication oidcConfig.clientSecret',
+    );
+  }
+  return clientSecret;
 };
 
 // Log configuration to console
@@ -227,7 +440,7 @@ export const logConfiguration = () => {
 
 export const getAPIs = () => {
   const config = loadFullConfiguration();
-  return config.api || {};
+  return config.api;
 };
 
 export const getCookieSecret = (): string => {
@@ -242,25 +455,25 @@ export const getCookieSecret = (): string => {
 
 export const getSessionMaxAgeHours = (): number => {
   const config = loadFullConfiguration();
-  return config.sessionMaxAgeHours || 24;
+  return config.sessionMaxAgeHours;
 };
 
 // Get commit related configuration
 export const getCommitConfig = () => {
   const config = loadFullConfiguration();
-  return config.commitConfig || {};
+  return config.commitConfig;
 };
 
 // Get attestation related configuration
 export const getAttestationConfig = () => {
   const config = loadFullConfiguration();
-  return config.attestationConfig || {};
+  return config.attestationConfig;
 };
 
 // Get private organizations related configuration
 export const getPrivateOrganizations = () => {
   const config = loadFullConfiguration();
-  return config.privateOrganizations || [];
+  return config.privateOrganizations;
 };
 
 // Get URL shortener
@@ -284,7 +497,7 @@ export const getCSRFProtection = (): boolean | undefined => {
 // Get loadable push plugins
 export const getPlugins = () => {
   const config = loadFullConfiguration();
-  return config.plugins || [];
+  return config.plugins;
 };
 
 export const getTLSKeyPemPath = (): string | undefined => {
@@ -304,17 +517,90 @@ export const getTLSEnabled = (): boolean => {
 
 export const getDomains = () => {
   const config = loadFullConfiguration();
-  return config.domains || {};
+  return config.domains;
 };
 
 export const getUIRouteAuth = () => {
   const config = loadFullConfiguration();
-  return config.uiRouteAuth || {};
+  return config.uiRouteAuth;
 };
 
 export const getRateLimit = () => {
   const config = loadFullConfiguration();
   return config.rateLimit;
+};
+
+const resolveLimit = (configuredValue: number | undefined, fallback: number): number => {
+  if (
+    typeof configuredValue === 'number' &&
+    Number.isFinite(configuredValue) &&
+    configuredValue > 0
+  ) {
+    return configuredValue;
+  }
+
+  return fallback;
+};
+
+export const getMaxPackSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackSizeBytes, 1 * GIGABYTE);
+};
+
+export const getMaxDecompressedPackSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxDecompressedPackSizeBytes, 128 * MEGABYTE);
+};
+
+export const getMaxDecompressedObjectSizeBytes = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxDecompressedObjectSizeBytes, 64 * MEGABYTE);
+};
+
+export const getMaxPackExpansionRatio = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackExpansionRatio, 100);
+};
+
+export const getMaxPackObjects = (): number => {
+  const config = loadFullConfiguration();
+  return resolveLimit(config.limits?.maxPackObjects, 100_000);
+};
+
+/**
+ * SCM providers the proxy may ask to identify a pusher from the credential that
+ * accompanied the push. A user-supplied list replaces the built-in defaults.
+ * @return {SCMProvider[]} configured providers
+ */
+export const getScmProviders = (): SCMProvider[] => {
+  const config = loadFullConfiguration();
+  return config.scmProviders ?? [];
+};
+
+/**
+ * Whether per-step validation progress should be streamed to the git client's
+ * terminal during a push using git sideband channel 2.
+ * @return {boolean} true when sideband progress streaming is enabled
+ */
+export const getSidebandProgressEnabled = (): boolean => {
+  const config = loadFullConfiguration();
+  return config.sidebandProgress ?? true;
+};
+
+export const getSSHConfig = () => {
+  const defaultHostKey = {
+    privateKeyPath: '.ssh/proxy_host_key',
+    publicKeyPath: '.ssh/proxy_host_key.pub',
+  };
+
+  const config = loadFullConfiguration();
+  const sshConfig = config.ssh || { enabled: false };
+
+  if (sshConfig.enabled && !sshConfig.hostKey) {
+    sshConfig.hostKey = defaultHostKey;
+  }
+
+  return sshConfig;
 };
 
 // Function to handle configuration updates
@@ -325,12 +611,13 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     const validatedConfig = Convert.toGitProxyConfig(JSON.stringify(newConfig));
 
     // 2. Get proxy module dynamically to avoid circular dependency
-    const proxy = require('../proxy');
+    const proxy = (await import('../proxy/index.js')) as any;
 
     // 3. Stop existing services
     await proxy.stop();
 
     // 4. Update config
+    assertHasRequiredTopLevelConfig(validatedConfig);
     _currentConfig = validatedConfig;
 
     // 5. Restart services with new config
@@ -341,7 +628,7 @@ const handleConfigUpdate = async (newConfig: Configuration) => {
     handleErrorAndLog(error, 'Failed to apply new configuration');
     // Attempt to restart with previous config
     try {
-      const proxy = require('../proxy');
+      const proxy = (await import('../proxy/index.js')) as any;
       await proxy.start();
     } catch (startError: unknown) {
       handleErrorAndLog(startError, 'Failed to restart services');

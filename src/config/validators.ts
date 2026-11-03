@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { Convert, GitProxyConfig } from './generated/config';
+import { Convert, GitProxyConfig, SCMProvider, SCMProviderType } from './generated/config';
 import { getErrorMessage } from '../utils/errors';
 
-const validationChain = [validateCommitConfig];
+const validationChain = [validateCommitConfig, validateScmProviders];
 
 /**
  * Executes all custom validators on the configuration
@@ -41,6 +41,67 @@ function validateCommitConfig(config: GitProxyConfig): boolean {
     validateConfigRegex(config, 'commitConfig.diff.block.patterns') &&
     validateConfigRegex(config, 'commitConfig.diff.block.providers')
   );
+}
+
+/**
+ * Hosts whose identity API is public knowledge. A provider entry for one of
+ * these must use the matching type: configuring github.com as `git`, for
+ * example, would replace the GitHub token check with a plain Basic-auth probe
+ * and silently weaken every identity guarantee for pushes to it. Self-hosted
+ * hosts cannot be checked this way and are taken as configured.
+ */
+const CANONICAL_HOST_TYPES: { matches: (host: string) => boolean; type: SCMProviderType }[] = [
+  { matches: (h) => h === 'github.com' || h.endsWith('.ghe.com'), type: SCMProviderType.Github },
+  { matches: (h) => h === 'gitlab.com', type: SCMProviderType.Gitlab },
+  { matches: (h) => h === 'codeberg.org' || h === 'gitea.com', type: SCMProviderType.Forgejo },
+];
+
+export const canonicalTypeForHost = (host: string): SCMProviderType | null =>
+  CANONICAL_HOST_TYPES.find((c) => c.matches(host.toLowerCase()))?.type ?? null;
+
+/**
+ * Validates the scmProviders list: names and hosts are unique, and well-known
+ * hosts are not configured with a type other than their own.
+ * @param config The configuration to validate
+ * @returns true if the provider list is valid, false otherwise
+ */
+export function validateScmProviders(config: GitProxyConfig): boolean {
+  const providers: SCMProvider[] = config.scmProviders ?? [];
+  const names = new Set<string>();
+  const hosts = new Set<string>();
+  let valid = true;
+
+  for (const provider of providers) {
+    const host = provider.host?.toLowerCase() ?? '';
+    if (!provider.name?.trim() || !host) {
+      console.error(
+        `scmProviders: every entry needs a name and a host: ${JSON.stringify(provider)}`,
+      );
+      valid = false;
+      continue;
+    }
+    if (names.has(provider.name)) {
+      console.error(`scmProviders: duplicate provider name '${provider.name}'`);
+      valid = false;
+    }
+    if (hosts.has(host)) {
+      console.error(`scmProviders: host '${host}' is listed more than once`);
+      valid = false;
+    }
+    names.add(provider.name);
+    hosts.add(host);
+
+    const canonical = canonicalTypeForHost(host);
+    if (canonical && provider.type !== canonical) {
+      console.error(
+        `scmProviders: '${host}' is a ${canonical} host and cannot be configured as type '${provider.type}'. ` +
+          `Doing so would replace its identity check with a weaker one.`,
+      );
+      valid = false;
+    }
+  }
+
+  return valid;
 }
 
 /**

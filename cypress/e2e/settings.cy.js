@@ -14,49 +14,56 @@
  * limitations under the License.
  */
 
-/**
- * Settings Page
- * Strategy: Uses localStorage for JWT persistence. No backend API calls for save/clear.
- */
 describe('Settings Page', () => {
   beforeEach(() => {
     cy.login('admin', 'admin');
+    cy.visit('/dashboard/admin/settings');
   });
 
   afterEach(() => {
     cy.logout();
-    cy.window().then((win) => win.localStorage.clear());
   });
-  it('JWT token field renders with show/hide toggle', () => {
-    cy.visit('/dashboard/admin/settings');
 
-    cy.get('[data-testid="jwt-token-input"]').should('be.visible');
-    cy.get('[data-testid="jwt-token-toggle"]').should('be.visible');
+  it('JWT token field renders with show/hide toggle', () => {
+    cy.get('#jwt-token').should('be.visible').and('have.attr', 'type', 'password');
+
+    cy.get('[data-testid="jwt-token-toggle"]').click();
+    cy.get('#jwt-token').should('have.attr', 'type', 'text');
+
+    cy.get('[data-testid="jwt-token-toggle"]').click();
+    cy.get('#jwt-token').should('have.attr', 'type', 'password');
   });
-  it('Save button persists token and shows snackbar', () => {
-    cy.visit('/dashboard/admin/settings');
-    cy.get('[data-testid="jwt-token-input"]').find('input').type('test-jwt-token-12345');
+
+  it('Save button persists the token and shows a confirmation', () => {
+    cy.get('#jwt-token').type('test-jwt-token-12345');
+    cy.get('[data-testid="jwt-save-btn"]').click();
+
+    cy.contains('JWT token saved').should('be.visible');
+    cy.window()
+      .its('localStorage')
+      .invoke('getItem', 'ui_jwt_token')
+      .should('eq', 'test-jwt-token-12345');
+  });
+
+  it('Clear button removes the token and shows a confirmation', () => {
+    cy.get('#jwt-token').type('test-jwt-token-12345');
     cy.get('[data-testid="jwt-save-btn"]').click();
     cy.contains('JWT token saved').should('be.visible');
-  });
-  it('Clear button removes token and shows snackbar', () => {
-    cy.visit('/dashboard/admin/settings');
-    cy.get('[data-testid="jwt-token-input"]').find('input').type('test-jwt-token-12345');
-    cy.get('[data-testid="jwt-clear-btn"]').click();
-    cy.contains('JWT token cleared').should('be.visible');
-    cy.get('[data-testid="jwt-token-input"]').find('input').should('have.value', '');
-  });
-  it('Token persists across page reload', () => {
-    cy.visit('/dashboard/admin/settings');
 
-    cy.get('[data-testid="jwt-token-input"]').find('input').type('persistent-token-xyz');
+    cy.get('[data-testid="jwt-clear-btn"]').click();
+
+    cy.contains('JWT token cleared').should('be.visible');
+    cy.get('#jwt-token').should('have.value', '');
+    cy.window().its('localStorage').invoke('getItem', 'ui_jwt_token').should('be.null');
+  });
+
+  it('Token persists across page reload', () => {
+    cy.get('#jwt-token').type('persistent-token-xyz');
     cy.get('[data-testid="jwt-save-btn"]').click();
     cy.contains('JWT token saved').should('be.visible');
 
     cy.reload();
 
-    cy.get('[data-testid="jwt-token-input"]')
-      .find('input')
-      .should('have.value', 'persistent-token-xyz');
+    cy.get('#jwt-token').should('have.value', 'persistent-token-xyz');
   });
 });

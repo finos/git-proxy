@@ -20,7 +20,7 @@ import { describe, it, beforeEach, afterEach, expect, vi, Mock } from 'vitest';
 import fs from 'fs';
 import { GitProxyConfig } from '../src/config/generated/config';
 import { Proxy } from '../src/proxy';
-import { handleAndLogError } from '../src/utils/errors';
+import { handleErrorAndLog } from '../src/utils/errors';
 
 describe('Proxy Module TLS Certificate Loading', () => {
   let proxyModule: Proxy;
@@ -75,7 +75,9 @@ describe('Proxy Module TLS Certificate Loading', () => {
 
     vi.doMock('../src/plugin', () => {
       return {
-        PluginLoader: vi.fn(() => mockPluginLoader),
+        PluginLoader: vi.fn(function () {
+          return mockPluginLoader;
+        }),
       };
     });
 
@@ -123,7 +125,7 @@ describe('Proxy Module TLS Certificate Loading', () => {
     try {
       await proxyModule.stop();
     } catch (error: unknown) {
-      handleAndLogError(error, 'Error occurred when stopping the proxy');
+      handleErrorAndLog(error, 'Error occurred when stopping the proxy');
     }
     vi.restoreAllMocks();
   });

@@ -1,5 +1,5 @@
 name: 'Unused Dependencies'
-on: [pull_request]
+on: [pull_request, merge_group]
 
 permissions:
   contents: read
@@ -9,19 +9,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@fa2e9d605c4eeb9fcad4c99c224cee0c6c7f3594 # v2
+        uses: step-security/harden-runner@ccd8616d44fd3846e67624a50d5aad6d37bf2d25 # v2.22.1
         with:
           egress-policy: audit
 
       - name: 'Checkout Repository'
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: 'Setup Node.js'
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v6
         with:
           node-version: '24.x'
       - name: 'Run depcheck'
         run: |
-          npx depcheck --skip-missing --ignores="tsx,@babel/*,@commitlint/*,eslint,eslint-*,husky,ts-node,concurrently,nyc,prettier,typescript,tsconfig-paths,vite-tsconfig-paths,quicktype,history,@types/domutils,@vitest/coverage-v8,cross-env,c8"
+          npx depcheck --skip-missing --ignores="tsx,@babel/*,@commitlint/*,eslint,eslint-*,husky,ts-node,concurrently,prettier,typescript,tsconfig-paths,vite-tsconfig-paths,quicktype,history,@types/domutils,@vitest/coverage-v8,cross-env,c8,tailwindcss,react-is"
           echo $?
           if [[ $? == 1 ]]; then
             echo "Unused dependencies or devDependencies found"

@@ -14,16 +14,63 @@
  * limitations under the License.
  */
 
+import { createHash } from 'crypto';
+
 import { processGitURLForNameAndOrg, processUrlPath } from '../routes/helper';
 import { Step } from './Step';
 import { CompletedAttestation, CommitData, Rejection } from '../processors/types';
+import { TagData } from '../../types/models';
+
+export enum RequestType {
+  PUSH = 'push',
+
+  PULL = 'pull',
+
+  DEFAULT = 'default',
+}
+
+export enum PushType {
+  /** Push to a tag ref (refs/tags/*) */
+  TAG = 'tag',
+
+  /** Push to a branch ref (refs/heads/*) or any other non-tag ref */
+  BRANCH = 'branch',
+}
+
+export type PushIdParts = {
+  url: string;
+  branch?: string;
+  tags?: string[];
+  commitFrom: string;
+  commitTo: string;
+};
+
+/**
+ * Build the push ID based on to/from commits, repo, refs and tags.
+ *
+ * @param {PushIdParts} parts Parts that identify the push
+ * @return {string} A sha256 hash of the push
+ */
+export const buildPushId = (parts: PushIdParts): string => {
+  const tags = [...(parts.tags ?? [])].sort();
+  const material = [
+    parts.url,
+    parts.branch ?? '',
+    tags.join('\n'),
+    parts.commitFrom,
+    parts.commitTo,
+  ].join('\0');
+  return createHash('sha256').update(material).digest('hex');
+};
 
 /**
  * Class representing a Push.
  */
 class Action {
   id: string;
-  type: string;
+  legacyId?: string; // "commitFrom__commitTo" id for legacy pushes
+  type: RequestType;
+  actionType?: PushType;
   method: string;
   timestamp: number;
   project: string;
@@ -44,16 +91,25 @@ class Action {
   commitData?: CommitData[] = [];
   commitFrom?: string;
   commitTo?: string;
+  readonly diff?: string;
   branch?: string;
   message?: string;
   author?: string;
   user?: string;
   userEmail?: string;
+  /** Set only when `user` came from a session or a credential the SCM vouched for; never from pushed objects. */
+  pusherVerified?: boolean;
   attestation?: CompletedAttestation;
   rejection?: Rejection;
   lastStep?: Step;
   proxyGitPath?: string;
+  tags?: string[]; // legacy records can contain multiple tags
+  tagData?: TagData[];
   newIdxFiles?: string[];
+  protocol?: 'https' | 'ssh';
+  capabilities?: string[];
+  pullAuthStrategy?:
+    'basic' | 'ssh-user-key' | 'ssh-service-token' | 'ssh-agent-forwarding' | 'anonymous';
 
   /**
    * Create an action.
@@ -63,7 +119,7 @@ class Action {
    * @param {number} timestamp The timestamp of the action
    * @param {string} url The URL to the repo that should be proxied (with protocol, origin, repo path, but not the path for the git operation).
    */
-  constructor(id: string, type: string, method: string, timestamp: number, url: string) {
+  constructor(id: string, type: RequestType, method: string, timestamp: number, url: string) {
     this.id = id;
     this.type = type;
     this.method = method;
@@ -112,22 +168,40 @@ class Action {
 
   /**
    * Set the commit range for the action. Changes the action.id to be based on
-   * the commit details.
+   * commit details and repo/ref details from the push.
    * @param {string} commitFrom the starting commit
    * @param {string} commitTo the ending commit
    */
   setCommit(commitFrom: string, commitTo: string): void {
     this.commitFrom = commitFrom;
     this.commitTo = commitTo;
-    this.id = `${commitFrom}__${commitTo}`;
+    this.id = buildPushId({
+      url: this.url,
+      branch: this.branch,
+      tags: this.tags,
+      commitFrom,
+      commitTo,
+    });
   }
 
   /**
-   * Set the branch for the action.
+   * Set the branch for the action. Also recomputes the push ID
+   * if commit range is known.
+   *
    * @param {string} branch the branch
    */
   setBranch(branch: string): void {
     this.branch = branch;
+    // if commit range is known, recompute appropriate push ID
+    if (this.commitFrom !== undefined && this.commitTo !== undefined) {
+      this.id = buildPushId({
+        url: this.url,
+        branch: this.branch,
+        tags: this.tags,
+        commitFrom: this.commitFrom,
+        commitTo: this.commitTo,
+      });
+    }
   }
 
   /**
@@ -136,6 +210,20 @@ class Action {
    */
   setMessage(message: string): void {
     this.message = message;
+  }
+
+  /**
+   * Set the diff for the action. The diff can only be set once, so later
+   * processors and plugins cannot change it.
+   * @param {string} diff the diff
+   */
+  setDiff(diff: string): void {
+    Object.defineProperty(this, 'diff', {
+      value: diff,
+      enumerable: true, // still serialised to the DB and the API
+      writable: false,
+      configurable: false,
+    });
   }
 
   /**
