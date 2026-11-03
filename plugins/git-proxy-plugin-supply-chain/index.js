@@ -34,7 +34,7 @@ import { join } from 'node:path';
 // Peer dependencies; expected on the Node module path where @finos/git-proxy is installed.
 import { PushActionPlugin, PullActionPlugin, PushPhase, PullPhase } from '@finos/git-proxy/plugin';
 import { Step } from '@finos/git-proxy/proxy/actions';
-import simpleGit from 'simple-git';
+import { simpleGit } from 'simple-git';
 
 import { analyzeChangedFiles } from './lib/analyze.js';
 import { loadConfig } from './lib/config.js';
