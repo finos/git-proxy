@@ -181,7 +181,7 @@ const RepoDetails = () => {
                 alt=''
               />
             ) : null}
-            <div className='min-w-0'>
+            <div className='min-w-0' data-testid='repo-header'>
               <Text as='h1' className='m-0! text-xl! font-semibold! tracking-tight!'>
                 {orgHref ? (
                   <PrimerLink href={orgHref} target='_blank' rel='noopener noreferrer'>

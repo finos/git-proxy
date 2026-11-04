@@ -70,6 +70,7 @@ const RepositoriesSortMenu = ({ sort, onSortChange }: RepositoriesSortMenuProps)
         size='small'
         leadingVisual={ascending ? SortAscIcon : SortDescIcon}
         aria-label={`Sort repositories: ${axisLabel}, ${ariaDir}`}
+        data-testid='repo-sort-menu'
         className='max-w-[min(100%,18rem)] justify-end! px-2! text-(--fgColor-default)'
       >
         <span className='min-w-0 truncate text-right text-sm font-medium leading-normal [font-family:var(--fontStack-sansSerif)]'>
