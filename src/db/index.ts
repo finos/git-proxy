@@ -212,6 +212,7 @@ export const canUserCancelPush = async (id: string, user: string) => {
 };
 
 export const runMigrations = (): Promise<void> => applyMigrations(start(), migrations);
+export const rebuildRepoPushRollups = () => start().rebuildRepoPushRollups();
 export const getSessionStore = (): MongoDBStore | Store | undefined => start().getSessionStore();
 export const ensureSessionStoreReady = (): Promise<void> =>
   start().ensureSessionStoreReady?.() ?? Promise.resolve();

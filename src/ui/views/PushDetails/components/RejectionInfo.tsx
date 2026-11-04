@@ -19,6 +19,7 @@ import { DateTime } from 'luxon';
 import { Banner, Stack, Text } from '@primer/react';
 import UserDisplayLink from '../../../components/UserDisplayLink/UserDisplayLink';
 import { PushActionView } from '../../../types';
+import { parseReviewTimestamp } from '../../../utils/parseReviewTimestamp';
 
 interface RejectionInfoProps {
   push: PushActionView;
@@ -30,7 +31,7 @@ const RejectionInfo = ({ push }: RejectionInfoProps) => {
   }
 
   const rej = push.rejection;
-  const ts = DateTime.fromMillis(Number(rej.timestamp));
+  const ts = parseReviewTimestamp(rej.timestamp);
   const tsTitle = ts.toFormat('cccc, MMMM d yyyy, h:mm:ss a');
 
   return (
