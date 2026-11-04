@@ -347,8 +347,9 @@ describe('handleRefsErrorMessage', () => {
     const lengthHex = result.substring(0, 4);
     const length = parseInt(lengthHex, 16);
 
-    const errorBody = `ERR ${message}`;
+    const errorBody = `ERR ${message}\n`;
     expect(length).toBe(4 + Buffer.byteLength(errorBody));
+    expect(result.substring(length)).toBe('0000');
   });
 });
 
@@ -554,6 +555,29 @@ describe('proxyFilter', () => {
 
       expect(result).toBe(false);
       expect(setMock).toHaveBeenCalledWith('content-type', 'application/x-git-receive-pack-result');
+    });
+
+    it('should reject a fetch with an ERR packet', async () => {
+      mockReq.method = 'POST';
+      mockReq.url = '/github.com/finos/git-proxy.git/git-upload-pack';
+
+      vi.spyOn(helper, 'processUrlPath').mockReturnValue({
+        gitPath: '/finos/git-proxy.git/git-upload-pack',
+        repoPath: 'github.com',
+      });
+      vi.spyOn(helper, 'validGitRequest').mockReturnValue(true);
+
+      vi.spyOn(chain, 'executeChain').mockResolvedValue({
+        error: true,
+        blocked: false,
+        errorMessage: 'Fetch blocked',
+      } as Action);
+
+      const result = await proxyFilter?.(mockReq as Request, mockRes as Response);
+
+      expect(result).toBe(false);
+      expect(setMock).toHaveBeenCalledWith('content-type', 'application/x-git-upload-pack-result');
+      expect(sendMock.mock.calls[0][0]).toMatch(/^[0-9a-f]{4}ERR Fetch blocked\n0000$/);
     });
   });
 
@@ -1321,8 +1345,9 @@ describe('proxy route helpers', () => {
       const lengthHex = result.substring(0, 4);
       const length = parseInt(lengthHex, 16);
 
-      const errorBody = `ERR ${message}`;
+      const errorBody = `ERR ${message}\n`;
       expect(length).toBe(4 + Buffer.byteLength(errorBody));
+      expect(result.substring(length)).toBe('0000');
     });
   });
 });

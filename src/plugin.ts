@@ -234,6 +234,11 @@ export abstract class ActionPlugin extends ProxyPlugin {
   readonly phase: PushPhase | PullPhase;
 
   /**
+   * Optional, called if action chain completed without being rejected or blocked
+   */
+  onChainSuccess?(req: Request, action: Action): Promise<void> | void;
+
+  /**
    * Parent constructor for all ActionPlugin instances. Do not use this constructor directly.
    */
   constructor(

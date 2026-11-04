@@ -307,6 +307,6 @@ Recursively removes the contents of the (modified) repository clone stored in `.
   - Without deletion, `./.remote` would grow indefinitely as new repository clones are added for each push (rather than each repository!)
   - Each action gets a unique directory for isolation in [`pullRemote`](#pullremote), which allows pushes to the same repository for multiple users to be processed concurrently without conflicts or confusion over credentials.
 
-`clearBareClone` runs only if `pullRemote` was successful.
+`clearBareClone` runs whenever `proxyGitPath` is set at the end of the chain. This can happen after a successful `pullRemote` or when a plugin (such as [`extractPullData`](../development/plugins#scanning-pulls)) checked out the repo during a pull.
 
 Source: [/src/proxy/processors/post-processor/clearBareClone.ts](https://github.com/finos/git-proxy/blob/main/src/proxy/processors/post-processor/clearBareClone.ts)

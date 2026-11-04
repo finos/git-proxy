@@ -96,8 +96,12 @@ Executed when a user makes a `git push` to GitProxy. These are the actions in `p
 Executed when a user makes a `git clone` or `git pull` to GitProxy:
 
 - [`checkRepoInAuthorisedList`](processors.md#checkrepoinauthorisedlist)
+- `AFTER_AUTHORISATION` plugins
+- `AFTER_CHECKOUT` plugins
 
-At present, the pull action chain is only checking that the repository is configured in GitProxy. This ensures it will block pull requests for unknown repositories.
+By default, the pull action chain only checks that the repository is configured in GitProxy, to ensure pull requests for unknown repositories are blocked. This behaviour can be extended via plugins.
+
+Note that GitProxy doesn't parse or fetch the content of the pulls by default (as this slows down all git pull operations). Check out the [pull scanner plugin](../development/plugins.mdx#scanning-pulls) to learn how to enable this.
 
 #### Default action chain
 
@@ -111,7 +115,7 @@ The default action chain, much like the pull chain, is only checking that the re
 
 After processors in the chain are done executing, [`audit`](processors.md#audit) is called to store the action along with all of its execution steps in the database for auditing purposes.
 
-If [`pullRemote`](processors.md#pullremote) ran successfully and cloned the repository, then [`clearBareClone`](processors.md#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes with the same push ID.
+If [`pullRemote`](processors.md#pullremote) (or a plugin, such as the `extractPullData` sample) created a clone at `action.proxyGitPath`, then [`clearBareClone`](processors.md#clearbareclone) is run to clear up that clone, freeing disk space and ensuring that the _.remote/\*_ folder created does not conflict with any future pushes with the same push ID.
 
 Finally, if the action was auto-approved or auto-rejected as a result of running [`preReceive`](processors.md#prereceive), it will attempt to auto-approve or auto-reject it.
 
