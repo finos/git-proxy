@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigationType } from 'react-router';
 import { TextInput } from '@primer/react';
 import { SearchIcon, XIcon } from '@primer/octicons-react';
 
@@ -47,16 +48,52 @@ const ListFilterInput = ({
   name = DEFAULT_NAME,
   inputId,
 }: ListFilterInputProps) => {
+  const { key: navigationKey } = useLocation();
+  const navigationType = useNavigationType();
+  const [draft, setDraft] = useState(value);
+  const pendingSearches = useRef<string[]>([]);
+
+  useEffect(() => {
+    if (navigationType === 'POP') {
+      pendingSearches.current = [];
+      setDraft(value);
+      return;
+    }
+
+    const acknowledgedIndex = pendingSearches.current.lastIndexOf(value.trim());
+    if (acknowledgedIndex !== -1) {
+      pendingSearches.current.splice(0, acknowledgedIndex + 1);
+      return;
+    }
+
+    pendingSearches.current = [];
+    setDraft((current) => (current.trim() === value.trim() ? current : value));
+  }, [value, navigationKey, navigationType]);
+
+  const updateSearch = useCallback(
+    (query: string) => {
+      setDraft(query);
+      const normalizedQuery = query.trim();
+      const searches = pendingSearches.current;
+      const previousQuery = searches.length > 0 ? searches[searches.length - 1] : value.trim();
+      if (normalizedQuery !== previousQuery) {
+        searches.push(normalizedQuery);
+      }
+      onSearch(query);
+    },
+    [onSearch, value],
+  );
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      onSearch(e.target.value);
+      updateSearch(e.target.value);
     },
-    [onSearch],
+    [updateSearch],
   );
 
   const handleClear = useCallback(() => {
-    onSearch('');
-  }, [onSearch]);
+    updateSearch('');
+  }, [updateSearch]);
 
   return (
     <div className='list-filter-input-wrap w-full min-w-0' data-testid='search'>
@@ -72,10 +109,10 @@ const ListFilterInput = ({
         autoCorrect='off'
         autoCapitalize='off'
         spellCheck={false}
-        value={value}
+        value={draft}
         onChange={handleChange}
         trailingAction={
-          value ? (
+          draft ? (
             <TextInput.Action icon={XIcon} aria-label='Clear search' onClick={handleClear} />
           ) : undefined
         }
