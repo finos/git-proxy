@@ -18,9 +18,46 @@ import React, { useEffect } from 'react';
 import Layout from '@theme/Layout';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Avatar from '../components/avatar';
-import TerminalDemo from '../components/terminalDemo';
+import Link from '@docusaurus/Link';
+import useBaseUrl from '@docusaurus/useBaseUrl';
+import styles from './homepage.module.css';
 import Testimonials from './testimonials';
 import axios from 'axios';
+
+const capabilities = [
+  {
+    number: '01',
+    title: 'Inspect',
+    description:
+      'Analyse pushes before they leave your organisation, including commits, authors, diffs and secrets. Built-in processors include hidden-commit detection and Gitleaks secret scanning.',
+    to: '/docs/architecture/processors',
+    link: 'Explore the checks',
+  },
+  {
+    number: '02',
+    title: 'Enforce',
+    description:
+      'Apply repository access rules, commit policies, pre-receive hooks and approval workflows at the point of push.',
+    to: '/docs/configuration/reference',
+    link: 'Configure your policies',
+  },
+  {
+    number: '03',
+    title: 'Extend',
+    description:
+      'Add organisation-specific controls using configurable plugins, distributed as standard npm packages or loaded as JavaScript modules.',
+    to: '/docs/development/plugins',
+    link: 'Build a plugin',
+  },
+  {
+    number: '04',
+    title: 'Work across Git platforms',
+    description:
+      'Proxy GitHub, GitLab and other Git hosts from one instance. GitProxy v2 supports multiple hosts and Git operations over HTTP/HTTPS or SSH.',
+    to: '/docs/upgrading-to-v2',
+    link: 'Discover multi-host support',
+  },
+];
 
 /**
  * Home page component
@@ -29,225 +66,227 @@ import axios from 'axios';
 function Home() {
   const context = useDocusaurusContext();
   const { siteConfig = {} } = context;
+  const logoUrl = useBaseUrl('/img/git-proxy.png');
 
-  const [showDemo, setShowDemo] = React.useState(false);
   const [contributors, setContributors] = React.useState([]);
 
   useEffect(() => {
-    axios.get('https://api.github.com/repos/finos/git-proxy/contributors').then((res) => {
-      setContributors(res.data);
-    });
+    axios
+      .get('https://api.github.com/repos/finos/git-proxy/contributors')
+      .then(({ data }) => {
+        if (Array.isArray(data)) setContributors(data);
+      })
+      .catch(() => {
+        // The GitHub contributors link remains available if the API cannot load.
+      });
   }, []);
 
   return (
     <Layout title={`${siteConfig.title}`} description={`${siteConfig.tagline}`}>
-      <div className='hero hero--secondary'>
-        <div className='container text--center'>
-          <h1 className='hero__title'>GitProxy v{siteConfig.customFields.version} is out! 🥳</h1>
-          <div className='hero-intro'>
-            <p>
-              GitProxy deploys custom push protections and policies on top of Git. It is a highly
-              configurable framework allowing developers and organizations to enforce push
-              protections relevant to their developer workflow, security posture and risk appetite.
+      <main className={styles.home}>
+        <section className={styles.hero} aria-labelledby='intro-heading'>
+          <div className={styles.heroInner}>
+            <img className={styles.logo} src={logoUrl} alt='GitProxy' width='889' height='393' />
+            <h1 id='intro-heading'>
+              Open source contribution.
+              <br />
+              <span>With your guardrails.</span>
+            </h1>
+            <p className={styles.heroDescription}>
+              An open source policy and control layer between developers and Git hosting platforms.
             </p>
+            <div className={styles.actions}>
+              <Link className={styles.primaryAction} to='/docs/category/quickstart'>
+                Get started <span aria-hidden='true'>↗</span>
+              </Link>
+              <Link className={styles.secondaryAction} to='/docs'>
+                Read the documentation <span aria-hidden='true'>→</span>
+              </Link>
+            </div>
+            <p className={styles.projectNote}>Open source · Apache 2.0 · A FINOS project</p>
+          </div>
+        </section>
+
+        <section className={styles.section} aria-labelledby='capabilities-heading'>
+          <div className={styles.sectionHeading}>
+            <p className={styles.eyebrow}>Built around your workflow</p>
+            <h2 id='capabilities-heading'>Keep Git. Add the controls you need.</h2>
             <p>
-              GitProxy is built with a developer-first mindset. By presenting simple-to-follow
-              remediation instructions in the CLI/Terminal, it minimises the friction of use and
-              adoption, and keeps developers focused on what matters: committing and pushing code.
+              GitProxy intercepts Git pushes and applies configurable checks and workflows before
+              changes reach the remote repository. Combine the familiar open source contribution
+              experience with your organisation’s security, legal and compliance requirements.
             </p>
           </div>
-          <div className='margin-top--lg'>
-            <a
-              className='button button--outline button--primary button--lg margin-right--sm'
-              href='/docs'
-            >
-              Read our Docs
-            </a>
-            <button
-              onClick={() => setShowDemo(!showDemo)}
-              className='button button--outline button--secondary button--lg margin-left--sm'
-            >
-              {showDemo ? 'Hide' : 'Watch'} the demo &nbsp;🎬
-            </button>
-            <a
-              className='button button--outline button--secondary button--lg margin-left--sm'
-              href='/docs/category/quickstart'
-            >
-              Quickstart 🚀
-            </a>
+          <div className={styles.capabilities}>
+            {capabilities.map(({ number, title, description, to, link }) => (
+              <article className={styles.capability} key={title}>
+                <span className={styles.number} aria-hidden='true'>
+                  {number}
+                </span>
+                <div>
+                  <h3>{title}</h3>
+                  <p>{description}</p>
+                  <Link className={styles.textLink} to={to}>
+                    {link} <span aria-hidden='true'>→</span>
+                  </Link>
+                </div>
+              </article>
+            ))}
           </div>
-        </div>
-      </div>
-      <div className='hero hero--secondary'>
-        <div className='terminal-window shadow--tl'>
-          <header>
-            <div className='btn red'></div>
-            <div className='btn yellow'></div>
-            <div className='btn green'></div>
-          </header>
-          {showDemo ? (
-            <section style={{ background: 'black' }}>
-              <video
-                controls
-                style={{ width: '100%', display: 'block', aspectRatio: '16/9' }}
-                preload='metadata'
-              >
-                <source
-                  src='https://www.finos.org/hubfs/Projects%20%2B%20SIGs/Open%20Source%20Readiness%20OSR/OSR%20Meeting_%20GitProxy%20Jamie%20Slome%20Citi%20Presentation.mp4#t=496'
-                  type='video/mp4'
-                />
-                Your browser does not support the video tag.
-              </video>
-            </section>
-          ) : (
-            <section className='terminal'>
-              <TerminalDemo
-                src='/demo/git-push.cast'
-                narrowSrc='/demo/git-push-narrow.cast'
-                posterAt='0:14'
-                label='Terminal recording: a git push containing an AWS access key is blocked by GitProxy with the file and line to fix; after the key is moved to an environment variable, the push is accepted and GitProxy prints a link to request approval.'
-              />
-            </section>
-          )}
-        </div>
-      </div>
-      <Testimonials />
-      <div className='container text--center margin-top--xl'>
-        <h1 className='margin-top--md'>
-          Our{' '}
-          <span
-            style={{
-              color: 'purple',
-              border: '2px solid purple',
-              paddingTop: '5px',
-              paddingBottom: '5px',
-              paddingLeft: '10px',
-              paddingRight: '10px',
-              borderRadius: '30px',
-              backgroundColor: 'rgba(90, 34, 139, 0.1)',
-            }}
-          >
-            Maintainers
-          </span>
-        </h1>
-        <div className='row margin-top--xl margin-bottom--xl'>
-          <div className='col col--4'>
-            <div className='col-demo'>
-              {' '}
+        </section>
+
+        <section className={styles.workflow} aria-labelledby='workflow-heading'>
+          <div className={styles.section}>
+            <div className={styles.sectionHeading}>
+              <p className={styles.eyebrow}>Familiar Git. Configurable controls.</p>
+              <h2 id='workflow-heading'>Security controls without changing how developers work.</h2>
+              <p>
+                Developers continue to branch, commit and push with Git. GitProxy sits in the path
+                to the remote Git service, evaluates the push, and either blocks it with feedback or
+                allows it through the configured workflow.
+              </p>
+            </div>
+            <ol className={styles.flow} aria-label='How a push moves through GitProxy'>
+              <li className={styles.flowStep}>
+                <span className={styles.flowLabel}>01 / Developer</span>
+                <h3>Branch. Commit. Push.</h3>
+                <p>Use the Git tools and workflow you already know.</p>
+              </li>
+              <li className={`${styles.flowStep} ${styles.flowProxy}`}>
+                <span className={styles.flowLabel}>02 / GitProxy</span>
+                <h3>Your policies, at push.</h3>
+                <p>Inspect changes, enforce rules and follow configured approvals.</p>
+              </li>
+              <li className={styles.flowStep}>
+                <span className={styles.flowLabel}>03 / Git hosting</span>
+                <h3>Your remote repository.</h3>
+                <p>Changes proceed when the configured checks and workflow allow them.</p>
+              </li>
+            </ol>
+            <details className={styles.workflowDetails}>
+              <summary>What happens when a push needs approval?</summary>
+              <p>
+                GitProxy blocks the push and provides a link to request approval. Once the push is
+                approved, the developer can retry it using the same Git command.
+              </p>
+            </details>
+            <Link className={styles.textLink} to='/docs/architecture/processors'>
+              Explore the processing chain <span aria-hidden='true'>→</span>
+            </Link>
+          </div>
+        </section>
+
+        <section className={`${styles.section} ${styles.join}`} aria-labelledby='join-heading'>
+          <div>
+            <p className={styles.eyebrow}>A FINOS project, built in the open</p>
+            <h2 id='join-heading'>Try it. Use it. Help shape it.</h2>
+            <p>
+              Start with GitProxy, explore the code, or contribute a control your organisation
+              needs.
+            </p>
+          </div>
+          <div className={styles.joinLinks}>
+            <Link className={styles.textLink} to='/docs/category/quickstart'>
+              Quickstart <span aria-hidden='true'>↗</span>
+            </Link>
+            <Link className={styles.textLink} to='https://github.com/finos/git-proxy'>
+              View on GitHub <span aria-hidden='true'>↗</span>
+            </Link>
+            <Link
+              className={styles.textLink}
+              to='https://github.com/finos/git-proxy/blob/main/CONTRIBUTING.md'
+            >
+              Contribute <span aria-hidden='true'>↗</span>
+            </Link>
+          </div>
+        </section>
+        <Testimonials />
+        <section
+          className={`${styles.section} ${styles.maintainers}`}
+          aria-labelledby='maintainers-heading'
+        >
+          <h2 id='maintainers-heading'>Our maintainers</h2>
+          <ul className={styles.maintainerList}>
+            <li>
               <Avatar name='Paul Groves' description='Director at Citi' username='grovesy' />
-            </div>
-          </div>
-          <div className='col col--4'>
-            <div className='col-demo'>
-              {' '}
+            </li>
+            <li>
               <Avatar name='Jamie Slome' description='Emeritus Maintainer' username='JamieSlome' />
-            </div>
-          </div>
-          <div className='col col--4'>
-            <div className='col-demo'>
-              {' '}
+            </li>
+            <li>
               <Avatar
                 name='Juan Escalada'
                 description='Open Source Software Engineer at G-Research'
                 username='jescalada'
               />
-            </div>
-          </div>
-        </div>
-        <div className='row margin-bottom--xl'>
-          <div className='col col--4'>
-            <div className='col-demo'>
+            </li>
+            <li>
               <Avatar
                 name='Kris West'
                 description='Principal Engineer at NatWest Group'
                 username='kriswest'
               />
-            </div>
-          </div>
-          <div className='col col--4'>
-            <div className='col-demo'>
+            </li>
+            <li>
               <Avatar
                 name='Thomas Cooper'
                 description='Director, OSS Development at RBC'
                 username='coopernetes'
               />
-            </div>
-          </div>
-          <div className='col col--4'>
-            <div className='col-demo'>
+            </li>
+            <li>
               <Avatar
                 name='Jack Kelly'
                 description='Senior Consultant at ControlPlane'
                 username='06kellyjac'
               />
-            </div>
-          </div>
-        </div>
-        <div className='row margin-bottom--xl'>
-          <div className='col col--4'>
-            <div className='col-demo'>
+            </li>
+            <li>
               <Avatar
                 name='Andy Pols'
                 description='Engineer at Qube Research & Technologies'
                 username='andypols'
               />
-            </div>
-          </div>
-          <div className='col col--4'>
-            <div className='col-demo'>
+            </li>
+            <li>
               <Avatar
                 name='Fabio Vincenzi'
                 description='Open Source Software Engineer at G-Research'
                 username='fabiovincenzi'
               />
-            </div>
-          </div>
-          <div className='col col--4'>
-            <div className='col-demo'>
+            </li>
+            <li>
               <Avatar
                 name='Denis Coric'
                 description='Open Source Software Engineer at G-Research'
                 username='dcoric'
               />
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className='container text--center'>
-        <h1 className='margin-top--md'>
-          Our{' '}
-          <span
-            style={{
-              color: '#30d5c8',
-              border: '2px solid #30d5c8',
-              paddingTop: '5px',
-              paddingBottom: '5px',
-              paddingLeft: '10px',
-              paddingRight: '10px',
-              borderRadius: '30px',
-              backgroundColor: 'rgba(48, 213, 200, 0.1)',
-            }}
-          >
-            Contributors
-          </span>
-        </h1>
-        <div className='row margin-top--xl margin-bottom--xl'>
-          {contributors.map((contributor) => {
-            if (![29139614, 49699333].includes(contributor.id))
-              return (
-                <div key={contributor.id} className='col col--4'>
-                  <div className='col-demo'>
-                    <Avatar
-                      name={contributor.login}
-                      description={`${contributor.contributions} ${contributor.contributions > 1 ? 'contributions' : 'contribution'}`}
-                      username={contributor.login}
-                    />
-                  </div>
-                </div>
-              );
-          })}
-        </div>
-      </div>
+            </li>
+          </ul>
+        </section>
+        <section
+          className={`${styles.section} ${styles.maintainers}`}
+          aria-labelledby='contributors-heading'
+        >
+          <h2 id='contributors-heading'>Our contributors</h2>
+          <ul className={styles.maintainerList}>
+            {contributors
+              .filter(({ id }) => ![29139614, 49699333].includes(id))
+              .map(({ id, login, contributions }) => (
+                <li key={id}>
+                  <Avatar
+                    name={login}
+                    description={`${contributions} ${contributions === 1 ? 'contribution' : 'contributions'}`}
+                    username={login}
+                  />
+                </li>
+              ))}
+          </ul>
+          <a href='https://github.com/finos/git-proxy/graphs/contributors'>
+            View contributors on GitHub
+          </a>
+        </section>
+      </main>
     </Layout>
   );
 }
