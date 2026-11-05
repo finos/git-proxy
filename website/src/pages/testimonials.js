@@ -16,69 +16,30 @@
 
 import React from 'react';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
-import { LinkedInEmbed } from 'react-social-media-embed';
-import Slider from 'react-slick';
-import 'slick-carousel/slick/slick.css';
-import 'slick-carousel/slick/slick-theme.css';
+import styles from './homepage.module.css';
 
-/**
- * Home page component
- * @return {JSX.Element}
- */
 function Testimonials() {
-  const context = useDocusaurusContext();
-  const { siteConfig = {} } = context;
-  const { posts } = siteConfig.customFields;
-  const settings = {
-    infinite: true,
-    speed: 500,
-    slidesToShow: 3,
-    slidesToScroll: 3,
-    swipeToSlide: true,
-    swipe: true,
-    responsive: [
-      {
-        breakpoint: 1024,
-        settings: {
-          slidesToShow: 2,
-          slidesToScroll: 2,
-          infinite: true,
-          dots: true,
-        },
-      },
-      {
-        breakpoint: 800,
-        settings: {
-          slidesToShow: 1,
-          slidesToScroll: 1,
-          initialSlide: 1,
-        },
-      },
-    ],
-    dots: true,
-    arrows: true,
-  };
+  const { siteConfig } = useDocusaurusContext();
+  const posts = siteConfig.customFields.posts.filter((post) => post.platform === 'linkedin');
 
   return (
-    <div className='margin-top--md'>
-      <div className='container text--center'>
-        <h1 className=''>Testimonials 📣</h1>
-      </div>
-
-      <div className='container margin-top--xl margin-bottom--xl'>
-        <Slider {...settings}>
-          {posts
-            .filter((post) => post.platform === 'linkedin')
-            .map((post) => {
-              return (
-                <div key={post.url}>
-                  <LinkedInEmbed url={post.url} />
-                </div>
-              );
-            })}
-        </Slider>
-      </div>
-    </div>
+    <section
+      className={`${styles.section} ${styles.community}`}
+      aria-labelledby='community-heading'
+    >
+      <h2 id='community-heading'>From the community</h2>
+      <p>Explore posts about GitProxy shared by the community on LinkedIn.</p>
+      <details className={styles.communityPosts}>
+        <summary>Browse LinkedIn posts ({posts.length})</summary>
+        <ul className={styles.communityLinks}>
+          {posts.map(({ url }, index) => (
+            <li key={url}>
+              <a href={url.replace('/embed/feed/', '/feed/')}>LinkedIn post {index + 1}</a>
+            </li>
+          ))}
+        </ul>
+      </details>
+    </section>
   );
 }
 
