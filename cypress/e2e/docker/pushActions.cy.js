@@ -182,7 +182,10 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
 
       cy.get('[data-testid="attestation-confirm-btn"]').click();
 
-      // TODO: Assert snackbar feedback when the UI handles 403 push action responses.
+      // TODO: The server correctly returns 403 but the UI (src/ui/services/git-push.ts)
+      // only handles 401 errors in authorisePush/rejectPush. The 403 is silently
+      // ignored and the user is navigated away without feedback. Once the UI properly
+      // handles 403, this test should assert a snackbar error message is shown.
       cy.visit(`/dashboard/push/${this.pushId}`);
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
     });
@@ -201,7 +204,8 @@ describe('Push Actions (Approve, Reject, Cancel)', () => {
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
       cy.get('[data-testid="push-reject-btn"]').click();
 
-      // TODO: Assert snackbar feedback when the UI handles 403 push action responses.
+      // TODO: Same issue as unauthorized approve — UI ignores 403 from server.
+      // Once fixed, assert snackbar error message is shown.
       cy.visit(`/dashboard/push/${this.pushId}`);
       cy.get('[data-testid="push-status"]').should('contain', 'Pending');
     });
