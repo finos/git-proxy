@@ -18,8 +18,17 @@ import { isEqual } from 'lodash';
 import { Action } from '../proxy/actions';
 import { toClass } from './helper';
 
+// Internal storage markers that may exist on persisted records but must never
+// reach callers of the database layer.
 type StoredPush = Action & { _lastStepIndex?: number; _activity?: unknown };
 
+/**
+ * Prepares a push for storage. Works on a shallow copy, so the caller's Action
+ * is not modified. Any internal markers already on the input are dropped
+ * first. When `lastStep` is identical to the final entry in `steps`, the
+ * duplicate copy is replaced with `_lastStepIndex`, a reference to that entry.
+ * A `lastStep` that differs from the final step is stored as-is.
+ */
 export const compactPush = (action: Action) => {
   const stored: Partial<StoredPush> = { ...action };
   delete stored._lastStepIndex;
@@ -32,6 +41,13 @@ export const compactPush = (action: Action) => {
   return stored;
 };
 
+/**
+ * Reverses compactPush when reading a stored record back into an Action. If
+ * the record holds a valid `_lastStepIndex` and no `lastStep`, `lastStep` is
+ * rebuilt from that entry in `steps`. Records that store `lastStep` directly
+ * (a distinct last step, or historical records) keep it as stored. Internal
+ * markers are always removed from the returned Action.
+ */
 export const restorePush = (doc: unknown): Action => {
   const action: StoredPush = toClass(doc, Action.prototype);
   const index = action._lastStepIndex;
