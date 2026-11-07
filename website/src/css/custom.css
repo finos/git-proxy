@@ -90,20 +90,33 @@
   --ifm-navbar-height: 85px;
 }
 
+.hero-intro {
+  max-width: 820px;
+  margin: 0 auto;
+  font-size: 1.15rem;
+}
+
+.hero-intro p:last-child {
+  margin-bottom: 0;
+}
+
 .terminal-window {
   text-align: left;
-  width: 600px;
-  height: 380px;
+  width: calc(100% - 2rem);
+  max-width: 960px;
   border-radius: 10px;
   margin: auto;
-  position: relative;
+  overflow: hidden;
 }
 
 .terminal-window header {
   background: #e0e8f0;
   height: 30px;
-  border-radius: 8px 8px 0 0;
   padding-left: 10px;
+}
+
+[data-theme='dark'] .terminal-window header {
+  background: #2d333b;
 }
 
 .terminal-window header .btn {
@@ -127,66 +140,41 @@
 }
 
 .terminal-window section.terminal {
-  color: white;
-  font-family: Menlo, Monaco, 'Consolas', 'Courier New', 'Courier';
-  font-size: 11pt;
-  background: #30353a;
-  padding: 10px;
-  box-sizing: border-box;
-  position: absolute;
-  width: 100%;
-  top: 30px;
-  bottom: 0;
-  overflow: auto;
-  border-bottom-left-radius: 10px;
-  border-bottom-right-radius: 10px;
+  background: #0d1117;
+  aspect-ratio: 110 / 71;
 }
 
-.terminal-window section.terminal .typed-cursor {
-  opacity: 1;
-  -webkit-animation: blink 0.7s infinite;
-  -moz-animation: blink 0.7s infinite;
-  animation: blink 0.7s infinite;
-}
-@keyframes blink {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-@-webkit-keyframes blink {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-}
-@-moz-keyframes blink {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
+/* Sync with NARROW_MAX_WIDTH in terminalDemo.js (60x34 cast) */
+@media (max-width: 640px) {
+  .terminal-window section.terminal {
+    aspect-ratio: 60 / 81;
   }
 }
 
-.terminal-window .gray {
-  color: gray;
+/* GitHub dark palette */
+.ap-player.asciinema-player-theme-gitproxy {
+  --term-color-foreground: #e6edf3;
+  --term-color-background: #0d1117;
+  --term-color-0: #484f58;
+  --term-color-1: #ff7b72;
+  --term-color-2: #3fb950;
+  --term-color-3: #d29922;
+  --term-color-4: #58a6ff;
+  --term-color-5: #bc8cff;
+  --term-color-6: #39c5cf;
+  --term-color-7: #b1bac4;
+  --term-color-8: #7d8590;
+  --term-color-9: #ffa198;
+  --term-color-10: #56d364;
+  --term-color-11: #e3b341;
+  --term-color-12: #79c0ff;
+  --term-color-13: #d2a8ff;
+  --term-color-14: #56d4dd;
+  --term-color-15: #f0f6fc;
 }
-.terminal-window .green {
-  color: green;
+
+.terminal-demo .ap-wrapper {
+  justify-content: flex-start;
 }
 
 .slick-slide {
