@@ -36,10 +36,11 @@ import { PullRemoteSSH } from '../../src/proxy/processors/push-action/PullRemote
 import { PullRemoteHTTPSCached } from '../../src/proxy/processors/push-action/PullRemoteHTTPSCached';
 import { PullRemoteSSHCached } from '../../src/proxy/processors/push-action/PullRemoteSSHCached';
 
-const { testRoot } = await vi.hoisted(async () => {
+const { testRoot, testCacheDir } = await vi.hoisted(async () => {
   const nodePath = await import('path');
   const nodeOs = await import('os');
-  return { testRoot: nodePath.join(nodeOs.tmpdir(), `git-proxy-cached-clone-${process.pid}`) };
+  const root = nodePath.join(nodeOs.tmpdir(), `git-proxy-cached-clone-${process.pid}`);
+  return { testRoot: root, testCacheDir: nodePath.join(root, 'cache') };
 });
 
 // Point the shared cache manager at a throwaway folder instead of ./.remote/cache
@@ -48,7 +49,7 @@ vi.mock('../../src/proxy/processors/push-action/cache-manager', async (importOri
     await importOriginal<typeof import('../../src/proxy/processors/push-action/cache-manager')>();
   return {
     ...original,
-    cacheManager: new original.CacheManager(`${testRoot}/cache`, 1, 50),
+    cacheManager: new original.CacheManager(testCacheDir, 1, 50),
   };
 });
 
