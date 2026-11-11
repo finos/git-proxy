@@ -128,7 +128,9 @@ export async function clone(options: CloneOptions): Promise<void> {
     args.push('--bare');
   }
 
-  args.push(url, dir);
+  // '--' ends option parsing, so a url or dir starting with '-' (e.g. --upload-pack=...)
+  // can never be interpreted as an option
+  args.push('--', url, dir);
 
   const result = await runGit(args, { ...buildAuthEnv(url, username, password), ...env });
   if (result.status !== 0) {
@@ -149,7 +151,7 @@ export async function fetch(options: FetchOptions): Promise<void> {
   }
 
   // Mirror every branch and tag; --prune drops the ones deleted upstream
-  args.push(url, '+refs/heads/*:refs/heads/*', '+refs/tags/*:refs/tags/*');
+  args.push('--', url, '+refs/heads/*:refs/heads/*', '+refs/tags/*:refs/tags/*');
 
   const result = await runGit(args, { ...buildAuthEnv(url, username, password), ...env });
   if (result.status !== 0) {
@@ -163,7 +165,7 @@ export async function fetch(options: FetchOptions): Promise<void> {
 export async function cloneLocal(options: { sourceDir: string; targetDir: string }): Promise<void> {
   const { sourceDir, targetDir } = options;
 
-  const result = await runGit(['clone', sourceDir, targetDir]);
+  const result = await runGit(['clone', '--', sourceDir, targetDir]);
   if (result.status !== 0) {
     throw new Error(`Git local clone failed: ${result.stderr || 'Unknown error'}`);
   }

@@ -16,6 +16,9 @@
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { EventEmitter } from 'events';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import * as childProcess from 'child_process';
 
 import * as gitOps from '../../src/proxy/processors/push-action/git-operations';
@@ -110,6 +113,7 @@ describe('git-operations', () => {
       expect(args).toEqual([
         'clone',
         '--bare',
+        '--',
         'https://github.com/finos/git-proxy.git',
         '/tmp/out.git',
       ]);
@@ -140,6 +144,33 @@ describe('git-operations', () => {
       expect(lastCall().env.GIT_SSL_NO_VERIFY).toBe('1');
     });
 
+    // Relies on `touch` and POSIX file:// paths
+    it.skipIf(process.platform === 'win32')(
+      'never treats an argument starting with "-" as a git option',
+      async () => {
+        const root = fs.mkdtempSync(path.join(os.tmpdir(), 'git-proxy-argv-'));
+        const marker = path.join(root, 'pwned');
+        const realRepo = `file://${path.join(root, 'src.git')}`;
+        childProcess.execFileSync('git', ['init', '--bare', '-q', path.join(root, 'src.git')]);
+
+        // Run from the temp folder: git derives a destination dir from the repo name in the cwd
+        const cwd = process.cwd();
+        process.chdir(root);
+
+        try {
+          // Without '--' git parses the url as --upload-pack, clones realRepo and runs `touch`
+          await expect(
+            gitOps.clone({ url: `--upload-pack=touch ${marker}`, dir: realRepo }),
+          ).rejects.toThrow(/Git clone failed/);
+
+          expect(fs.existsSync(marker)).toBe(false);
+        } finally {
+          process.chdir(cwd);
+          fs.rmSync(root, { recursive: true, force: true });
+        }
+      },
+    );
+
     it('reports git stderr when the clone fails', async () => {
       spawnMock.mockImplementationOnce(fakeGit({ code: 128, stderr: 'fatal: not found' }));
 
@@ -168,6 +199,7 @@ describe('git-operations', () => {
         '/tmp/m.git',
         'fetch',
         '--prune',
+        '--',
         'https://github.com/a/b.git',
         '+refs/heads/*:refs/heads/*',
         '+refs/tags/*:refs/tags/*',
