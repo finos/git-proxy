@@ -21,9 +21,6 @@ import parseDiff, { File } from 'parse-diff';
 import { Action, Step } from '../../actions';
 import { getCommitConfig, getPrivateOrganizations } from '../../../config';
 
-const commitConfig = getCommitConfig();
-const privateOrganizations = getPrivateOrganizations();
-
 const BLOCK_TYPE = {
   LITERAL: 'Offending Literal',
   PATTERN: 'Offending Pattern',
@@ -85,6 +82,12 @@ const getDiffViolations = (
 };
 
 const combineMatches = (organization: string) => {
+  // Read the config here, each time a push is scanned, rather than once at the top of
+  // this file. The user's config is loaded after this module is first imported, so a
+  // top-level read would capture only the empty defaults, not the configured rules.
+  const commitConfig = getCommitConfig();
+  const privateOrganizations = getPrivateOrganizations();
+
   // Configured blocked literals
   const blockedLiterals: string[] = commitConfig?.diff?.block?.literals ?? [];
 
