@@ -18,6 +18,7 @@ import React, { useEffect, useState } from 'react';
 import { Routes, Route, Navigate, useLocation, useParams } from 'react-router';
 import Navbar from '../components/Navbars/Navbar';
 import Footer from '../components/Footer/Footer';
+import NotFound from '../views/Extras/NotFound';
 import routes from '../../routes';
 import logo from '../assets/img/git-proxy.png';
 import { UserContext } from '../context';
@@ -54,6 +55,7 @@ const App = ({ ...rest }: ActivitiesProps) => {
         return null;
       })}
       <Route path='/dashboard' element={<Navigate to='/dashboard/repo' replace />} />
+      <Route path='*' element={<NotFound />} />
     </Routes>
   );
 
