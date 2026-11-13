@@ -22,7 +22,7 @@ const { version } = require('../package.json');
 
 module.exports = {
   title: `${projectName}`,
-  tagline: `Deploy custom push protections and policies on top of Git`,
+  tagline: `Open source contribution. With your guardrails.`,
   url: 'https://git-proxy.finos.org',
   baseUrl: '/',
   favicon: 'img/favicon/favicon-finos.ico',
