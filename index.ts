@@ -71,7 +71,6 @@ console.log('Setting up the proxy and Service');
 
 // The deferred imports should cause these to be loaded on first access
 const proxy = new Proxy();
-proxy.start();
-Service.start(proxy);
+void proxy.start().then(() => Service.start(proxy));
 
 export { proxy, Service };
