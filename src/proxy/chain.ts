@@ -63,6 +63,7 @@ const tagPushChainElements: ChainElement[] = [
   proc.push.pullRemote,
   proc.push.writePack,
   PushPhase.AFTER_CHECKOUT,
+  proc.push.checkHiddenCommits,
   proc.push.preReceive,
   PushPhase.BEFORE_APPROVAL,
   proc.push.blockForAuth,
