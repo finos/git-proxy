@@ -158,6 +158,7 @@ export default function RepoAccessUserTable(props: RepoAccessUserTableProps): Re
       className='overflow-hidden rounded-md border border-(--borderColor-default,#d0d7de)'
       role='region'
       aria-label={props.ariaLabel}
+      data-testid={`${memberLabelPlural}-table`}
     >
       <DataTable<AccessRow> cellPadding='normal' columns={columns} data={tableRows} />
     </div>

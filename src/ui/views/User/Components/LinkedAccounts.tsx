@@ -70,7 +70,13 @@ export default function LinkedAccounts({
   };
 
   return (
-    <Stack direction='vertical' gap='normal' padding='none' className='min-w-0'>
+    <Stack
+      direction='vertical'
+      gap='normal'
+      padding='none'
+      className='min-w-0'
+      data-testid='linked-accounts'
+    >
       <Stack direction='vertical' gap='condensed' padding='none'>
         <Text className='text-sm font-semibold'>Linked accounts</Text>
         <Text className='text-sm text-(--fgColor-muted)'>

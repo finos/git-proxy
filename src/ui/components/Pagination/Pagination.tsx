@@ -45,6 +45,7 @@ const Pagination = ({
   return (
     <PrimerPagination
       className='mt-5'
+      data-testid='pagination'
       pageCount={pageCount}
       currentPage={currentPage}
       onPageChange={handlePageChange}
