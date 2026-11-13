@@ -8,6 +8,7 @@ on:
     branches: ['main', 'release/**']
   pull_request:
     branches: ['main', 'release/**']
+  merge_group:
   schedule:
     - cron: '0 6 * * 1' # Weekly Monday 6am UTC
 
@@ -20,7 +21,7 @@ jobs:
       security-events: write
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: audit
 
@@ -48,6 +49,6 @@ jobs:
 
       - name: Upload SARIF report
         if: ${{ always() }}
-        uses: github/codeql-action/upload-sarif@1c5b675653bb5c22dbe9b12b556ec555138e09fd # v4
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
         with:
           sarif_file: grype-results.sarif

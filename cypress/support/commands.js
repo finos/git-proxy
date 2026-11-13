@@ -142,9 +142,7 @@ Cypress.Commands.add('createTestTagPush', (pushData = {}) => {
         authorEmail: 'test-author@test.com',
       },
     ],
-    diff: {
-      content: '+++ test tag push implementation',
-    },
+    diff: '+++ test tag push implementation',
     ...pushData,
   };
 

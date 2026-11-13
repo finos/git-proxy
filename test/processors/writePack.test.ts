@@ -86,7 +86,7 @@ describe('writePack', () => {
       expect(spawnSyncMock).toHaveBeenNthCalledWith(
         2,
         'git',
-        ['receive-pack', 'repo'],
+        ['receive-pack', '--stateless-rpc', 'repo'],
         expect.objectContaining({
           cwd: path.join('path', 'to'),
           input: 'pack data',

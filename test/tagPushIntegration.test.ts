@@ -65,7 +65,7 @@ describe('Tag Push Integration', () => {
           authorEmail: 'dev2@finos.org',
         },
       ],
-      diff: { content: '+++ new tag support implementation' },
+      diff: '+++ new tag support implementation',
     } as any;
 
     it('correctly identifies as tag push', () => {

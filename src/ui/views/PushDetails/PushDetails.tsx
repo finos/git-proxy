@@ -232,7 +232,8 @@ const PushDetails = () => {
   if (!push) return <div>No push data found</div>;
 
   const commitCount = push.commitData?.length ?? 0;
-  const changeFileCount = countDiffFiles(push.diff?.content ?? '');
+  const diffText = push.diff ?? '';
+  const changeFileCount = countDiffFiles(diffText);
   const stepCount = push.steps?.length ?? 0;
 
   let statusTitle: PushStatusTitle = 'Pending';
@@ -456,7 +457,7 @@ const PushDetails = () => {
             </Stack>
           </GitProxyUnderlinePanels.Panel>
           <GitProxyUnderlinePanels.Panel>
-            <Diff diff={push.diff?.content || ''} />
+            <Diff diff={diffText} />
           </GitProxyUnderlinePanels.Panel>
           <GitProxyUnderlinePanels.Panel>
             <StepsTimeline steps={push.steps ?? []} />

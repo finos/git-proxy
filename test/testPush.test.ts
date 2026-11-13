@@ -498,8 +498,10 @@ describe('Push API', () => {
     const push = res.body.find((p: Action) => p.id === TEST_PUSH.id);
     expect(push).toBeDefined();
 
-    // Check that all values in push are in TEST_PUSH, except for _id
-    expect(push).toMatchObject(TEST_PUSH);
+    // Check that all values in push are in TEST_PUSH, except for _id and `steps`:
+    // list responses omit `steps` and `diff`, both of which carry the full diff.
+    const { steps, ...expectedPush } = TEST_PUSH;
+    expect(push).toMatchObject(expectedPush);
     expect(push.canceled).toBe(false);
   });
 

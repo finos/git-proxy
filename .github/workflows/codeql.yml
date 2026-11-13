@@ -5,6 +5,7 @@ on:
     branches: ['main', 'release/**']
   pull_request:
     branches: ['main', 'release/**']
+  merge_group:
   schedule:
     - cron: '25 10 * * 1'
 
@@ -26,7 +27,7 @@ jobs:
 
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
+        uses: step-security/harden-runner@46b06cea07f9e64621fdf066ba77ac6915163d43 # v2.22.3
         with:
           egress-policy: audit
 
@@ -34,14 +35,14 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@fa8392b7e54a5d74a53270a4aa7defa307aa415c # ratchet:github/codeql-action/init@v4
+        uses: github/codeql-action/init@1f8cacc39019c823a7cedf81adf1819b6deeb96c # ratchet:github/codeql-action/init@v4
         with:
           languages: ${{ matrix.language }}
 
       - name: Autobuild
-        uses: github/codeql-action/autobuild@fa8392b7e54a5d74a53270a4aa7defa307aa415c # ratchet:github/codeql-action/autobuild@v4
+        uses: github/codeql-action/autobuild@1f8cacc39019c823a7cedf81adf1819b6deeb96c # ratchet:github/codeql-action/autobuild@v4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@fa8392b7e54a5d74a53270a4aa7defa307aa415c # ratchet:github/codeql-action/analyze@v4
+        uses: github/codeql-action/analyze@1f8cacc39019c823a7cedf81adf1819b6deeb96c # ratchet:github/codeql-action/analyze@v4
         with:
           category: '/language:${{matrix.language}}'
