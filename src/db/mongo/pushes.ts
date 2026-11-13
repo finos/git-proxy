@@ -18,7 +18,8 @@ import { activityPrimaryStatusFromFlags } from '../../activity/activityPrimarySt
 import { canonicalRemoteUrl } from '../../activity/canonicalRemoteUrl';
 import { connect, findDocuments, findOneDocument } from './helper';
 import { Action } from '../../proxy/actions';
-import { toClass } from '../helper';
+import { pushListProjection } from '../pushProjection';
+import { compactPush, restorePush } from '../pushStorage';
 import {
   PushQuery,
   RepoActivityTabCounts,
@@ -120,33 +121,6 @@ const defaultPushQuery: Partial<PushQuery> = {
   type: 'push',
 };
 
-/** Fields returned for push list / activity UIs (shared by getPushes and getPushesForUserProfile). */
-const pushListProjection = {
-  _id: 0,
-  id: 1,
-  allowPush: 1,
-  attestation: 1,
-  authorised: 1,
-  blocked: 1,
-  blockedMessage: 1,
-  branch: 1,
-  canceled: 1,
-  commitData: 1,
-  commitFrom: 1,
-  commitTo: 1,
-  error: 1,
-  method: 1,
-  project: 1,
-  rejected: 1,
-  rejection: 1,
-  repo: 1,
-  repoName: 1,
-  timestamp: 1,
-  type: 1,
-  url: 1,
-  userEmail: 1,
-} as const;
-
 export const getPushes = async (
   query: Partial<PushQuery> = defaultPushQuery,
 ): Promise<Action[]> => {
@@ -169,7 +143,7 @@ export const getPushesForUserProfile = async (
 
 export const getPush = async (id: string): Promise<Action | null> => {
   const doc = await findOneDocument<Action>(collectionName, { id });
-  return doc ? (toClass(doc, Action.prototype) as Action) : null;
+  return doc ? restorePush(doc) : null;
 };
 
 export const deletePush = async function (id: string): Promise<void> {
@@ -178,14 +152,16 @@ export const deletePush = async function (id: string): Promise<void> {
 };
 
 export const writeAudit = async (action: Action): Promise<void> => {
-  const data = JSON.parse(JSON.stringify(action));
+  const data = JSON.parse(JSON.stringify(compactPush(action)));
   const options = { upsert: true };
   const collection = await connect(collectionName);
   delete data._id;
   if (typeof data.id !== 'string') {
     throw new Error('Invalid id');
   }
-  await collection.updateOne({ id: data.id }, { $set: data }, options);
+  const unset: Record<string, ''> =
+    data._lastStepIndex === undefined ? { _lastStepIndex: '' } : { lastStep: '' };
+  await collection.updateOne({ id: data.id }, { $set: data, $unset: unset }, options);
 };
 
 export const authorise = async (

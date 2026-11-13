@@ -583,11 +583,16 @@ describe('Database clients', () => {
     it('should be able to create a push', async () => {
       await db.writeAudit(TEST_PUSH);
       const pushes = await db.getPushes({});
-      // List responses omit `steps` (and `diff`): both carry the full diff, and
-      // every backend's list projection excludes them. `getPush` still returns them.
-      const { steps, ...expected } = TEST_PUSH;
-      const cleanPushes = cleanResponseData(expected, pushes);
-      expect(cleanPushes).toContainEqual(expected);
+      expect(pushes).toContainEqual(
+        expect.objectContaining({
+          id: TEST_PUSH.id,
+          user: TEST_PUSH.user,
+          userEmail: TEST_PUSH.userEmail,
+        }),
+      );
+      expect(pushes.find((push) => push.id === TEST_PUSH.id)).not.toHaveProperty('steps');
+      const detail = await db.getPush(TEST_PUSH.id);
+      expect(cleanResponseData(TEST_PUSH, detail!)).toEqual(TEST_PUSH);
     }, 20000);
 
     it('should be able to delete a push', async () => {
