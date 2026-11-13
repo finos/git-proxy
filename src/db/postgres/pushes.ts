@@ -16,7 +16,8 @@
 
 import { Action } from '../../proxy/actions';
 import { CompletedAttestation, Rejection } from '../../proxy/processors/types';
-import { toClass } from '../helper';
+import { pushListProjection } from '../pushProjection';
+import { compactPush, restorePush } from '../pushStorage';
 import { PushQuery } from '../types';
 export { getRepoPushRollupsByCanonicalUrl, rebuildRepoPushRollups } from './repoActivity';
 import { query, withTransaction } from './helper';
@@ -41,8 +42,14 @@ const FILTER_COLUMNS: Record<string, string> = {
   type: 'type',
 };
 
-const rowToAction = (row: { data: unknown }): Action =>
-  toClass(row.data, Action.prototype) as Action;
+const rowToAction = (row: { data: unknown }): Action => restorePush(row.data);
+
+const listFields = Object.entries(pushListProjection)
+  .filter(([, included]) => included)
+  .map(([field]) => `'${field}'`)
+  .join(', ');
+const listData = `(SELECT COALESCE(jsonb_object_agg(field, data->field), '{}'::jsonb)
+  FROM unnest(ARRAY[${listFields}]) AS field WHERE data ? field)`;
 
 /**
  * Pushes shown on a user profile: those the user made (any known email variant)
@@ -64,16 +71,12 @@ export const getPushesForUserProfile = async (
   }
 
   const result = await query<{ data: unknown }>(
-    `SELECT data - 'steps' - 'diff' AS data FROM pushes WHERE type = 'push' AND ${predicate} ORDER BY timestamp DESC`,
+    `SELECT ${listData} AS data FROM pushes WHERE type = 'push' AND ${predicate} ORDER BY timestamp DESC`,
     values,
   );
   return result.rows.map(rowToAction);
 };
 
-// List queries drop `steps` and `diff` from the returned document: both hold the
-// full diff (largest part of a push row) and the mongo backend's list projection
-// excludes them as well. The push-detail path (`getPush`) still returns the whole
-// document.
 export const getPushes = async (q: Partial<PushQuery> = defaultPushQuery): Promise<Action[]> => {
   const clauses: string[] = [];
   const values: unknown[] = [];
@@ -86,7 +89,7 @@ export const getPushes = async (q: Partial<PushQuery> = defaultPushQuery): Promi
 
   const where = clauses.length > 0 ? `WHERE ${clauses.join(' AND ')}` : '';
   const result = await query<{ data: unknown }>(
-    `SELECT data - 'steps' - 'diff' AS data FROM pushes ${where} ORDER BY timestamp DESC`,
+    `SELECT ${listData} AS data FROM pushes ${where} ORDER BY timestamp DESC`,
     values,
   );
   return result.rows.map(rowToAction);
@@ -109,7 +112,7 @@ const buildAuditUpsert = (action: Action): { text: string; values: unknown[] } =
 
   // Round-trip through JSON to drop class identity / mongo-specific _id fields
   // before persisting (mirrors mongo's `JSON.parse(JSON.stringify(action))`).
-  const data = JSON.parse(JSON.stringify(action));
+  const data = JSON.parse(JSON.stringify(compactPush(action)));
   delete data._id;
 
   return {

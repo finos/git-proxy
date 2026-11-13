@@ -23,38 +23,13 @@ import {
 } from './repoActivity';
 export { getRepoPushRollupsByCanonicalUrl, rebuildRepoPushRollups } from './repoActivity';
 import { Action } from '../../proxy/actions';
-import { toClass } from '../helper';
+import { pushListProjection } from '../pushProjection';
+import { compactPush, restorePush } from '../pushStorage';
 import { PushQuery } from '../types';
 import { CompletedAttestation, Rejection } from '../../proxy/processors/types';
 import { buildUserProfilePushFilter } from '../userProfilePushQuery';
 
 const collectionName = 'pushes';
-
-const pushListProjection = {
-  _id: 0,
-  id: 1,
-  allowPush: 1,
-  attestation: 1,
-  authorised: 1,
-  blocked: 1,
-  blockedMessage: 1,
-  branch: 1,
-  canceled: 1,
-  commitData: 1,
-  commitFrom: 1,
-  commitTo: 1,
-  error: 1,
-  method: 1,
-  project: 1,
-  rejected: 1,
-  rejection: 1,
-  repo: 1,
-  repoName: 1,
-  timestamp: 1,
-  type: 1,
-  url: 1,
-  userEmail: 1,
-} as const;
 
 const defaultPushQuery: Partial<PushQuery> = {
   error: false,
@@ -97,10 +72,7 @@ export const getPush = async (id: string): Promise<Action | null> => {
     id,
     '_activity.deleted': { $ne: true },
   });
-  if (!doc) return null;
-  const action: Action & { _activity?: unknown } = toClass(doc, Action.prototype);
-  delete action._activity;
-  return action;
+  return doc ? restorePush(doc) : null;
 };
 
 export const deletePush = async function (id: string): Promise<void> {
@@ -109,7 +81,7 @@ export const deletePush = async function (id: string): Promise<void> {
 
 export const writeAudit = async (action: Action): Promise<void> => {
   await initializeRepoActivity();
-  const data = JSON.parse(JSON.stringify(action));
+  const data = JSON.parse(JSON.stringify(compactPush(action)));
   const options = { upsert: true };
   const { pushes: collection } = await activityCollections();
   delete data._id;
@@ -117,6 +89,8 @@ export const writeAudit = async (action: Action): Promise<void> => {
   if (typeof data.id !== 'string') {
     throw new Error('Invalid id');
   }
+  const unset: Record<string, ''> =
+    data._lastStepIndex === undefined ? { _lastStepIndex: '' } : { lastStep: '' };
   const activity = activityState(action);
   await collection.updateOne(
     { id: data.id },
@@ -131,6 +105,7 @@ export const writeAudit = async (action: Action): Promise<void> => {
         '_activity.deleted': false,
       },
       $addToSet: { '_activity.keys': activity.key },
+      $unset: unset,
     },
     options,
   );

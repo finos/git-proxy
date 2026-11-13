@@ -19,6 +19,8 @@ import Datastore from '@seald-io/nedb';
 import { Action } from '../../proxy/actions/Action';
 import { toClass } from '../helper';
 import { PushQuery, RepoPushRollupsByCanonicalUrl } from '../types';
+import { pushListProjection } from '../pushProjection';
+import { compactPush, restorePush } from '../pushStorage';
 import {
   RepoActivityIndex,
   pushActivity,
@@ -86,12 +88,6 @@ const defaultPushQuery: Partial<PushQuery> = {
   type: 'push',
 };
 
-// List queries drop `steps` and `diff` from the returned document: both hold the
-// full diff (largest part of a push row), and the mongo and postgres list
-// projections exclude them as well. The push-detail path (`getPush`) still returns
-// the whole document.
-const pushListProjection = { steps: 0, diff: 0 } as const;
-
 export const getPushes = (query: Partial<PushQuery>): Promise<Action[]> => {
   if (!query) query = defaultPushQuery;
   return new Promise((resolve, reject) => {
@@ -149,7 +145,7 @@ export const getPush = async (id: string): Promise<Action | null> => {
         if (!doc) {
           resolve(null);
         } else {
-          resolve(toClass(doc, Action.prototype));
+          resolve(restorePush(doc));
         }
       }
     });
@@ -175,7 +171,7 @@ export const writeAudit = async (action: Action): Promise<void> => {
   return new Promise((resolve, reject) => {
     const contribution = pushActivity(action);
     const options = { multi: false, upsert: true };
-    db.update({ id: action.id }, action, options, (err) => {
+    db.update({ id: action.id }, compactPush(action), options, (err) => {
       // ignore for code coverage as neDB rarely returns errors even for an invalid query
       /* istanbul ignore if */
       if (err) {

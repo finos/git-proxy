@@ -90,7 +90,7 @@ const DeleteRepoDialog = ({ repoName, open, onClose, onConfirm }: ConfirmDeleteR
       width='large'
       height='auto'
     >
-      <Dialog.Body>
+      <Dialog.Body data-testid='delete-repo-dialog'>
         <Stack direction='vertical' gap='normal' padding='none'>
           <FormControl>
             <FormControl.Label htmlFor='delete-repo-confirm-input'>
@@ -114,7 +114,13 @@ const DeleteRepoDialog = ({ repoName, open, onClose, onConfirm }: ConfirmDeleteR
           <Button type='button' onClick={() => handleDialogClose('close-button')}>
             Cancel
           </Button>
-          <Button type='button' variant='danger' disabled={!canDelete} onClick={handleConfirm}>
+          <Button
+            type='button'
+            variant='danger'
+            disabled={!canDelete}
+            onClick={handleConfirm}
+            data-testid='delete-repo-confirm-btn'
+          >
             Delete Repository
           </Button>
         </div>
