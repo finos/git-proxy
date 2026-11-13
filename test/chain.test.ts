@@ -165,6 +165,54 @@ describe('proxy chain', function () {
     await expectChainRunsPlugin(actual, loader.pullPlugins[0]);
   });
 
+  const phasePlugin = (displayName: string, phase: string, chains?: string[]) => ({
+    exec: vi.fn(async (_req: unknown, action: unknown) => action),
+    displayName,
+    phase,
+    ...(chains ? { chains } : {}),
+  });
+  const indexOfPlugin = (chainFns: ReadonlyArray<{ displayName?: string }>, name: string) =>
+    chainFns.findIndex((fn) => fn.displayName === name);
+
+  it('getChain should insert AFTER_DIFF push plugins immediately after getDiff', async () => {
+    const plugin = phasePlugin('afterDiffPlugin', PushPhase.AFTER_DIFF, ['branch']);
+    chain.chainPluginLoader = { pushPlugins: [plugin], pullPlugins: [] };
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.BRANCH });
+    const diffIndex = actual.indexOf(processors.push.getDiff);
+    expect(diffIndex).toBeGreaterThan(-1);
+    expect(indexOfPlugin(actual, 'afterDiffPlugin')).toBe(diffIndex + 1);
+    // must run before the approval gate
+    expect(diffIndex + 1).toBeLessThan(actual.indexOf(processors.push.blockForAuth));
+    await expectChainRunsPlugin(actual, plugin);
+  });
+
+  it('getChain should preserve registration order for multiple AFTER_DIFF push plugins', async () => {
+    const first = phasePlugin('firstDiffPlugin', PushPhase.AFTER_DIFF, ['branch']);
+    const second = phasePlugin('secondDiffPlugin', PushPhase.AFTER_DIFF, ['branch']);
+    chain.chainPluginLoader = { pushPlugins: [first, second], pullPlugins: [] };
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.BRANCH });
+    const diffIndex = actual.indexOf(processors.push.getDiff);
+    expect(indexOfPlugin(actual, 'firstDiffPlugin')).toBe(diffIndex + 1);
+    expect(indexOfPlugin(actual, 'secondDiffPlugin')).toBe(diffIndex + 2);
+  });
+
+  it('getChain should not add branch-only AFTER_DIFF push plugins to the tag chain', async () => {
+    const plugin = phasePlugin('afterDiffPlugin', PushPhase.AFTER_DIFF, ['branch']);
+    chain.chainPluginLoader = { pushPlugins: [plugin], pullPlugins: [] };
+    const actual = await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
+    expect(indexOfPlugin(actual, 'afterDiffPlugin')).toBe(-1);
+  });
+
+  it('getChain should insert AFTER_AUTHORISATION pull plugins after checkRepoInAuthorisedList', async () => {
+    const plugin = phasePlugin('pullScanPlugin', PullPhase.AFTER_AUTHORISATION);
+    chain.chainPluginLoader = { pushPlugins: [], pullPlugins: [plugin] };
+    const actual = await chain.getChain({ type: RequestType.PULL });
+    const authIndex = actual.indexOf(processors.push.checkRepoInAuthorisedList);
+    expect(authIndex).toBe(0);
+    expect(indexOfPlugin(actual, 'pullScanPlugin')).toBe(authIndex + 1);
+    await expectChainRunsPlugin(actual, plugin);
+  });
+
   it('executeChain should stop executing if action has continue returns false', async () => {
     const req = {};
     const continuingAction = { type: 'push', continue: () => true, allowPush: false };

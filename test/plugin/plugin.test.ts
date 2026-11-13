@@ -19,7 +19,14 @@ import { spawnSync } from 'child_process';
 import { rmSync } from 'fs';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
-import { isCompatiblePlugin, PushActionPlugin, PluginLoader } from '../../src/plugin';
+import {
+  isCompatiblePlugin,
+  PushActionPlugin,
+  PullActionPlugin,
+  PluginLoader,
+  PushPhase,
+  PullPhase,
+} from '../../src/plugin';
 
 // On Windows, ESM requires file:// URLs instead of absolute paths
 const toPluginPath = (filePath: string): string => {
@@ -163,5 +170,24 @@ describe('plugin functions', () => {
     const plugin = new CustomPlugin(async () => ({ id: '123' }) as any);
     expect(isCompatiblePlugin(plugin)).toBe(true);
     expect(isCompatiblePlugin(plugin, 'isGitProxyPushActionPlugin')).toBe(true);
+  });
+
+  it('should default a PushActionPlugin phase to AFTER_PERMISSIONS on all push chains', () => {
+    const plugin = new PushActionPlugin(async () => ({}) as any);
+    expect(plugin.phase).toBe(PushPhase.AFTER_PERMISSIONS);
+    expect(plugin.chains).toBeUndefined();
+  });
+
+  it('should honour an explicit AFTER_DIFF phase and chains option', () => {
+    const plugin = new PushActionPlugin(async () => ({}) as any, {
+      phase: PushPhase.AFTER_DIFF,
+      chains: ['branch'],
+    });
+    expect(plugin.phase).toBe(PushPhase.AFTER_DIFF);
+    expect(plugin.chains).toEqual(['branch']);
+  });
+
+  it('should default a PullActionPlugin phase to AFTER_AUTHORISATION', () => {
+    expect(new PullActionPlugin(async () => ({}) as any).phase).toBe(PullPhase.AFTER_AUTHORISATION);
   });
 });
