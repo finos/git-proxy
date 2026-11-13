@@ -288,5 +288,8 @@ certs/*.pem
 /test/fixtures/test-package/package-lock.json
 cypress/screenshots/
 
+# Benchmark results
+benchmark-detailed-*/
+results*.csv
 # Agentic AI generated files
 /plans
