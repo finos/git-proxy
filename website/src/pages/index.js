@@ -22,6 +22,7 @@ import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './homepage.module.css';
 import Testimonials from './testimonials';
+import TerminalDemo from '../components/terminalDemo';
 import axios from 'axios';
 
 const capabilities = [
@@ -68,6 +69,7 @@ function Home() {
   const { siteConfig = {} } = context;
   const logoUrl = useBaseUrl('/img/git-proxy.png');
 
+  const [demoOpen, setDemoOpen] = React.useState(false);
   const [contributors, setContributors] = React.useState([]);
 
   useEffect(() => {
@@ -169,6 +171,27 @@ function Home() {
                 GitProxy blocks the push and provides a link to request approval. Once the push is
                 approved, the developer can retry it using the same Git command.
               </p>
+            </details>
+            <details
+              className={styles.workflowDetails}
+              onToggle={(event) => setDemoOpen(event.currentTarget.open)}
+            >
+              <summary>See a protected push in action</summary>
+              {demoOpen && (
+                <>
+                  <TerminalDemo
+                    src='/demo/git-push.cast'
+                    narrowSrc='/demo/git-push-narrow.cast'
+                    posterAt='0:14'
+                    label='Terminal recording showing a blocked push, remediation and an approval request.'
+                  />
+                  <p>
+                    <Link to='https://www.finos.org/hubfs/Projects%20%2B%20SIGs/Open%20Source%20Readiness%20OSR/OSR%20Meeting_%20GitProxy%20Jamie%20Slome%20Citi%20Presentation.mp4#t=496'>
+                      Watch the full GitProxy demo
+                    </Link>
+                  </p>
+                </>
+              )}
             </details>
             <Link className={styles.textLink} to='/docs/architecture/processors'>
               Explore the processing chain <span aria-hidden='true'>→</span>
