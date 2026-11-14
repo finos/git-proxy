@@ -600,6 +600,85 @@ describe('proxy chain', function () {
     expect(tagChain).toEqual(chain.tagPushChain);
   });
 
+  it('tagPushChain runs checkHiddenCommits after writePack', async () => {
+    await chain.getChain({ type: RequestType.PUSH, actionType: PushType.TAG });
+
+    const tagChain = chain.tagPushChain as unknown[];
+    const writePackIdx = tagChain.indexOf(mockPushProcessors.writePack);
+    const hiddenIdx = tagChain.indexOf(mockPushProcessors.checkHiddenCommits);
+
+    expect(writePackIdx).toBeGreaterThanOrEqual(0);
+    expect(hiddenIdx).toBeGreaterThan(writePackIdx);
+    expect(tagChain).toContain(mockPushProcessors.checkHiddenCommits);
+    expect(tagChain).not.toContain(mockPushProcessors.getDiff);
+    expect(tagChain).not.toContain(mockPushProcessors.gitleaks);
+    expect(tagChain).not.toContain(mockPushProcessors.scanDiff);
+    expect(tagChain).not.toContain(mockPushProcessors.checkAuthorEmails);
+  });
+
+  it('executeChain runs checkHiddenCommits for tag pushes', async () => {
+    const req = {};
+    const continuingAction = {
+      type: RequestType.PUSH,
+      actionType: PushType.TAG,
+      continue: () => true,
+      allowPush: false,
+    };
+    mockPreProcessors.parseAction.mockResolvedValue({ type: RequestType.PUSH });
+    mockPreProcessors.parsePush.mockResolvedValue(continuingAction);
+
+    const result = await chain.executeChain(req);
+
+    expect(mockPushProcessors.resolveUserFromToken).toHaveBeenCalled();
+    expect(mockPushProcessors.checkRepoInAuthorisedList).toHaveBeenCalled();
+    expect(mockPushProcessors.checkUserPushPermission).toHaveBeenCalled();
+    expect(mockPushProcessors.checkIfWaitingAuth).toHaveBeenCalled();
+    expect(mockPushProcessors.checkMessages).toHaveBeenCalled();
+    expect(mockPushProcessors.pullRemote).toHaveBeenCalled();
+    expect(mockPushProcessors.writePack).toHaveBeenCalled();
+    expect(mockPushProcessors.checkHiddenCommits).toHaveBeenCalled();
+    expect(mockPushProcessors.preReceive).toHaveBeenCalled();
+    expect(mockPushProcessors.blockForAuth).toHaveBeenCalled();
+
+    // branch-only processors must not run on the tag path
+    expect(mockPushProcessors.checkEmptyBranch).not.toHaveBeenCalled();
+    expect(mockPushProcessors.checkAuthorEmails).not.toHaveBeenCalled();
+    expect(mockPushProcessors.getDiff).not.toHaveBeenCalled();
+    expect(mockPushProcessors.gitleaks).not.toHaveBeenCalled();
+    expect(mockPushProcessors.scanDiff).not.toHaveBeenCalled();
+
+    expect(mockPostProcessors.audit).toHaveBeenCalled();
+    expect(mockPostProcessors.clearBareClone).toHaveBeenCalled();
+    expect(result.type).toBe(RequestType.PUSH);
+  });
+
+  it('executeChain stops a tag push when checkHiddenCommits blocks', async () => {
+    const req = {};
+    mockPreProcessors.parseAction.mockResolvedValue({ type: RequestType.PUSH });
+    mockPreProcessors.parsePush.mockResolvedValue({
+      type: RequestType.PUSH,
+      actionType: PushType.TAG,
+      continue: () => true,
+      allowPush: false,
+    });
+
+    mockPushProcessors.checkHiddenCommits.mockResolvedValue({
+      type: RequestType.PUSH,
+      actionType: PushType.TAG,
+      continue: () => false,
+      allowPush: false,
+      steps: [{ stepName: 'checkHiddenCommits', error: true }],
+    });
+
+    await chain.executeChain(req);
+
+    expect(mockPushProcessors.writePack).toHaveBeenCalled();
+    expect(mockPushProcessors.checkHiddenCommits).toHaveBeenCalled();
+    expect(mockPushProcessors.preReceive).not.toHaveBeenCalled();
+    expect(mockPushProcessors.blockForAuth).not.toHaveBeenCalled();
+    expect(mockPostProcessors.audit).toHaveBeenCalled();
+  });
+
   it('returns branchPushChain when action.type is push and actionType is BRANCH', async () => {
     const action = new Action(
       '3',
