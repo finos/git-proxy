@@ -123,6 +123,15 @@ describe.runIf(shouldRunMongoTests)('MongoDB Repo Integration Tests', () => {
       expect(result.length).toBe(1);
       expect(result[0].name).toBe('filter-repo');
     });
+
+    it('should filter repos by name (case-insensitive)', async () => {
+      await createRepo(createTestRepo({ name: 'case-filter-repo' }));
+
+      const result = await getRepos({ name: 'Case-Filter-Repo' });
+
+      expect(result.length).toBe(1);
+      expect(result[0].name).toBe('case-filter-repo');
+    });
   });
 
   describe('user management', () => {

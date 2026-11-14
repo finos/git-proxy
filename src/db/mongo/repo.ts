@@ -22,8 +22,11 @@ import { ObjectId, OptionalId, Document } from 'mongodb';
 const collectionName = 'repos';
 
 export const getRepos = async (query: Partial<RepoQuery> = {}): Promise<Repo[]> => {
+  // Repo names are stored lowercased, so match the name filter case-insensitively like getRepo
+  const filter =
+    typeof query.name === 'string' ? { ...query, name: query.name.toLowerCase() } : query;
   const collection = await connect(collectionName);
-  const docs = await collection.find(query).toArray();
+  const docs = await collection.find(filter).toArray();
   return _.chain(docs)
     .map((x) => toClass(x, Repo.prototype))
     .value();
