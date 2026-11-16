@@ -88,6 +88,12 @@ const exec = async (req: Request, action: Action): Promise<Action> => {
     const wants = unique(pull.wants);
     const haves = unique(pull.haves);
     if (wants.length === 0) {
+      if (pull.wantRefs?.length) {
+        step.setError(
+          'Fetch with want-ref but no want OIDs is unsupported. Refusing unscanned pull.',
+        );
+        return action;
+      }
       // Normal for a client that is already up to date; git usually doesn't even
       // send a fetch command in that case, only ls-refs.
       step.log('Fetch request has no wants (client up to date); nothing to check out.');
