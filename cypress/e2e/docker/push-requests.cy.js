@@ -36,7 +36,7 @@ describe('Push Requests - Tab Filtering', () => {
   const erroredPushId = `${marker}-errored`;
   const statuses = Object.keys(pushIds);
 
-  const getApiBaseUrl = () => Cypress.env('API_BASE_URL') || Cypress.config('baseUrl');
+  const getApiBaseUrl = () => Cypress.expose('API_BASE_URL') || Cypress.config('baseUrl');
   const pushRow = (id) => `tr[aria-label="Open activity ${id}"]`;
 
   function createPush(status) {
