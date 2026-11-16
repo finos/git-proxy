@@ -147,7 +147,7 @@ export class PullRemoteSSH extends PullRemoteBase {
       await this.cloneWithSystemGit(client, action, step);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      throw new Error(`SSH clone failed: ${message}`);
+      throw new Error(`SSH clone failed: ${message}`, { cause: error });
     }
 
     const sshUrl = convertToSSHUrl(action.url);

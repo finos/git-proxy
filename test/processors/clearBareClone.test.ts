@@ -50,7 +50,7 @@ describe('clear local clones', () => {
 
     expect(fs.existsSync(checkoutFolder)).toBe(true);
 
-    action = await clearBareClone(null, action);
+    await clearBareClone(null, action);
 
     expect(fs.existsSync(checkoutFolder)).toBe(false);
   }, 20000);
